@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { PlannerWorkspacePage } from "./modules/planner/PlannerWorkspacePage";
+import { AtlasApp } from "./modules/atlas/AtlasApp";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <PlannerWorkspacePage />
+    <AtlasApp />
   </React.StrictMode>,
 );

@@ -10,6 +10,234 @@
 body {
   margin: 0;
 }
+.atlas-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  background: #eef1ed;
+}
+.atlas-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  background: #10352c;
+  color: #e7f2ed;
+  padding: 20px 14px;
+}
+.atlas-brand {
+  padding: 8px 10px 22px;
+  display: grid;
+  gap: 2px;
+  border-bottom: 1px solid #386056;
+}
+.atlas-brand span,
+.atlas-brand small,
+.nav-group > span {
+  color: #9ac3b6;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.atlas-brand strong {
+  font-size: 28px;
+  color: #fff;
+}
+.nav-group {
+  display: grid;
+  gap: 3px;
+  margin-top: 18px;
+}
+.nav-group > span {
+  padding: 0 10px 5px;
+}
+.nav-group button {
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: #d0e1db;
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.nav-group button:hover,
+.nav-group button.active {
+  background: #285c4e;
+  color: #fff;
+}
+.nav-group button.active {
+  box-shadow: inset 3px 0 #d6a84b;
+  font-weight: 800;
+}
+.atlas-content {
+  min-width: 0;
+}
+.atlas-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 28px;
+  background: #fff;
+  border-bottom: 1px solid #d8ddda;
+}
+.atlas-topbar div {
+  display: grid;
+  gap: 2px;
+}
+.atlas-topbar span {
+  color: #70807a;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.atlas-topbar strong {
+  color: #22342e;
+  font-size: 12px;
+}
+.atlas-topbar mark {
+  background: #fff0cd;
+  color: #765b18;
+  padding: 6px 9px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.atlas-page {
+  padding: 30px 32px;
+  max-width: 1320px;
+}
+.page-kicker {
+  color: #397360;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.atlas-page h1 {
+  margin: 6px 0;
+  color: #163c32;
+  font-size: 29px;
+}
+.page-intro {
+  margin: 0 0 22px;
+  color: #66736d;
+  max-width: 720px;
+}
+.responsibility-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.responsibility-grid article,
+.journey-cards article,
+.handoff-board {
+  background: #fff;
+  border: 1px solid #d8ddda;
+  border-radius: 7px;
+  padding: 16px;
+  box-shadow: 0 1px 2px #12251d0a;
+}
+.responsibility-grid article span {
+  display: block;
+  color: #6e7a75;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.responsibility-grid article strong {
+  color: #233a33;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.page-action,
+.journey-cards button,
+.handoff-board button {
+  margin-top: 18px;
+  border: 0;
+  background: #17604d;
+  color: #fff;
+  border-radius: 5px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.journey-strip {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+.journey-strip div {
+  display: grid;
+  gap: 3px;
+  background: #e5f1ec;
+  border-left: 3px solid #2a745f;
+  padding: 10px;
+  font-size: 12px;
+}
+.journey-strip span {
+  color: #65736d;
+}
+.home-page {
+  max-width: 1420px;
+}
+.journey-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.journey-cards article > span {
+  font-size: 10px;
+  color: #397360;
+  font-weight: 800;
+}
+.journey-cards h2 {
+  margin: 5px 0;
+  font-size: 18px;
+}
+.journey-cards p {
+  margin: 0;
+  color: #67736e;
+  font-size: 12px;
+}
+.journey-cards ol {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  padding-left: 20px;
+  color: #34433d;
+  font-size: 12px;
+}
+.handoff-board {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.handoff-board h2 {
+  width: 100%;
+  margin: 0;
+  font-size: 16px;
+}
+.handoff-board button {
+  margin: 0;
+  background: #fff;
+  color: #17604d;
+  border: 1px solid #8fb3a7;
+}
+.requirement-recovery .recovery-context {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 32px;
+  background: #e7f2ed;
+  color: #215847;
+  font-size: 12px;
+}
+.requirement-recovery .recovery-context span {
+  font-weight: 800;
+}
 button,
 input,
 select {

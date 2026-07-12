@@ -7,7 +7,7 @@ export type DemandSourceType =
 export type Severity = "OK" | "INFO" | "WARNING" | "BLOCKING";
 export type Readiness = "READY" | "NEEDS_REVIEW" | "BLOCKED";
 export type SupplierStatus = "ASSIGNED" | "MISSING" | "SUGGESTED" | "CONFLICT";
-export type PlannerViewMode = "DATE" | "CUSTOMER" | "SOURCE" | "SUPPLIER";
+export type PlannerViewMode = "DATE" | "CUSTOMER" | "SOURCE";
 
 export type TraceStep = { label: string; value: string; note: string };
 export type DemandSource = {

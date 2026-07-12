@@ -56,15 +56,6 @@ function groupLines(
   const keyFor = (line: RequirementLine) => {
     if (viewMode === "CUSTOMER") return line.customer;
     if (viewMode === "SOURCE") return line.sourceType;
-    if (viewMode === "SUPPLIER") {
-      const fallback: Record<string, string> = {
-        MISSING: "Thiếu nhà cung cấp",
-        CONFLICT: "Xung đột nhà cung cấp",
-        SUGGESTED: "Nhà cung cấp đề xuất",
-        ASSIGNED: "Đã gán nhà cung cấp",
-      };
-      return line.supplierName ?? fallback[line.supplierStatus];
-    }
     return line.serviceDate;
   };
   lines.forEach((line) => {
