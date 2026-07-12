@@ -13,6 +13,26 @@ Build OPS ERP (Project Atlas), a maintainable and transferable ERP for school ca
 
 When code conflicts with approved documentation, stop and report the conflict.
 
+## Canonical workspace
+
+This repository is the source of truth for OPS ERP implementation work.
+
+- GitHub repository: `longpsu-bot/thuonghao-ops-erp`
+- User's canonical Windows repo path: `D:/Project/Repo/OPS/thuonghao-ops-erp`
+- Do not implement project changes in `C:/Users/hp/OneDrive/Documents/OPS ERP` or any copied workspace.
+
+Before editing code, every implementation agent must verify the actual working tree:
+
+```bash
+git rev-parse --show-toplevel
+git remote -v
+git branch --show-current
+git status --short
+pnpm ops:workspace
+```
+
+Proceed only when the Git top level is the real `thuonghao-ops-erp` repository and `origin` points to `https://github.com/longpsu-bot/thuonghao-ops-erp.git` or the equivalent SSH remote.
+
 ## Mandatory reading before implementation
 
 - `README.md`
@@ -61,6 +81,14 @@ Each implementation task should:
 
 Prefer small, reviewable changes. Unexpectedly broad diffs must be stopped and explained.
 
+## Branch discipline
+
+- Start each task from latest `main` unless the user explicitly says otherwise.
+- Create a bounded task branch before editing.
+- Do not leave work uncommitted on `main`.
+- Do not publish branches that contain no meaningful diff from `main`.
+- Push the branch and let GitHub Actions perform full validation.
+
 ## Validation workflow
 
 - Codex should run focused tests or checks needed to develop and debug the bounded change.
@@ -78,6 +106,16 @@ Prefer small, reviewable changes. Unexpectedly broad diffs must be stopped and e
 - Do not manually alter production schema outside approved emergency procedures.
 - Preserve stable line identity and traceability across demand, requirements, procurement, and fulfilment.
 - Do not create direct dependencies from new OPS ERP modules to undocumented legacy internals; use controlled adapter views or APIs.
+
+## Atlas product baseline
+
+Until explicitly expanded, Atlas implementation must preserve the approved three-stage operating baseline:
+
+1. Requirement Planning / Lập nhu cầu
+2. Purchase Planning / Lập kế hoạch mua hàng
+3. Warehouse Receiving / Nhập kho
+
+Dishes, recipes, and recipe change control are supporting-data/governance areas upstream of Requirement Planning, not additional active daily workflow stages.
 
 ## Definition of done
 
