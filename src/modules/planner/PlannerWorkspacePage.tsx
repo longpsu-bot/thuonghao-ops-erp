@@ -61,8 +61,8 @@ export function PlannerWorkspacePage() {
     [filters, selectedSource],
   );
   const selected = requirementLines.find((x) => x.id === selectedId);
-  const toggle = (key: keyof LocalLineState) => {
-    if (!selectedId || key === "reviewNote") return;
+  const toggle = (key: Exclude<keyof LocalLineState, "reviewNote">) => {
+    if (!selectedId) return;
     setLocalStates((old) => {
       const current = old[selectedId] ?? blankState();
       return { ...old, [selectedId]: { ...current, [key]: !current[key] } };
