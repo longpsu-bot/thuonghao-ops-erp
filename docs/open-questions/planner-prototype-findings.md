@@ -11,6 +11,7 @@ These questions were exposed by the fixture-driven screen. They deliberately do 
 2. Which role may mark a requirement ready, and does that require a separate approval?
 3. How should corrections before release differ from corrections against released snapshots?
 4. Should a blocked line prevent only itself, its source group, or the entire planning set from progressing?
+5. Should future planner review notes belong to a requirement row, demand source, date group, or planning set, and what visibility and edit lifecycle should they have?
 
 ## Calculation and trace
 
