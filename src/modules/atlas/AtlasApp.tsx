@@ -1,17 +1,11 @@
 import { useState } from "react";
 import {
+  atlasGroups,
   atlasPages,
   journeys,
   type AtlasPage,
   type AtlasPageId,
 } from "./atlasConfig";
-
-const groups = [
-  "Overview",
-  "Active Workflow",
-  "Supporting Data",
-  "Administration",
-];
 
 const purchaseOrderPreview = [
   {
@@ -114,7 +108,9 @@ function ResponsibilityPage({ page }: { page: AtlasPage }) {
           ))}
         </div>
       )}
-      <button className="page-action">{page.primaryAction} · mock data</button>
+      <button className="page-action" disabled>
+        {page.primaryAction} · mock data
+      </button>
     </section>
   );
 }
@@ -178,7 +174,7 @@ export function AtlasApp() {
           <small>Workflow prototype</small>
         </div>
         <nav aria-label="Atlas navigation">
-          {groups.map((group) => (
+          {atlasGroups.map((group) => (
             <div className="nav-group" key={group}>
               <span>{group}</span>
               {atlasPages

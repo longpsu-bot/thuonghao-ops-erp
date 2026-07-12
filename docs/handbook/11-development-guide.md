@@ -127,13 +127,32 @@ Business rules must be testable. Critical calculations, permissions, releases, a
 
 ---
 
-## 10. Documentation principle
+## 10. GitHub Actions validation
+
+Routine full-suite validation belongs to GitHub Actions rather than repeated Codex turns.
+
+For each pull request to `main`, the `Frontend CI` workflow runs:
+
+- `pnpm install --frozen-lockfile`;
+- `pnpm format`;
+- `pnpm typecheck`;
+- `pnpm test`;
+- `pnpm build`;
+- `git diff --check`.
+
+During implementation, Codex should run only the focused checks needed to build or debug the bounded change. After pushing, GitHub Actions becomes the routine merge-gate evidence.
+
+Codex should inspect logs and fix the code only when CI fails. It should not repeatedly run the entire successful suite merely to produce a narrative validation report. Additional local or specialized validation remains appropriate for migrations, security-sensitive changes, production incidents, or tasks whose risks are not covered by the standard workflow.
+
+Copilot or other AI code review is not enabled as a routine gate. Product, architecture, security, and visual workflow reviews remain human-governed and separate from automated CI.
+
+## 11. Documentation principle
 
 A code change that changes behavior should update documentation in the same branch or commit set.
 
 ---
 
-## 11. Commit message guidance
+## 12. Commit message guidance
 
 Preferred examples:
 
@@ -144,18 +163,19 @@ Preferred examples:
 
 ---
 
-## 12. Definition of done
+## 13. Definition of done
 
 A task is done when:
 
 - implementation matches approved scope;
-- tests pass;
+- focused implementation checks pass where needed;
+- the GitHub Actions validation workflow passes;
 - affected docs are updated;
 - no unauthorized architectural change occurred;
 - reviewer can understand the change from the PR summary.
 
 ---
 
-## 13. Review note
+## 14. Review note
 
 This guide will become stricter once React, Supabase migrations, and test tooling are introduced.

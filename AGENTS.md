@@ -61,6 +61,17 @@ Each implementation task should:
 
 Prefer small, reviewable changes. Unexpectedly broad diffs must be stopped and explained.
 
+## Validation workflow
+
+- Codex should run focused tests or checks needed to develop and debug the bounded change.
+- The full routine frontend validation suite is owned by GitHub Actions on every pull request to `main`.
+- The required workflow is `Frontend CI / Format, typecheck, test, build`.
+- Routine validation includes frozen dependency installation, formatting, typecheck, tests, build, and diff whitespace checks.
+- Do not spend Codex turns rerunning the full successful suite only to reproduce or report GitHub results.
+- Investigate and fix validation only when a targeted local check fails, GitHub Actions fails, CI is unavailable, or the task explicitly requires additional verification.
+- Never weaken, skip, or disable CI checks to merge a change.
+- A pull request is not ready to merge until its GitHub Actions validation passes and its product/architecture review is complete.
+
 ## Database rules
 
 - All schema changes must use version-controlled migrations.

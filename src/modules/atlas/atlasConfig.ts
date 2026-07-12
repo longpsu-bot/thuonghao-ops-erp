@@ -8,10 +8,19 @@ export type AtlasPageId =
   | "suppliers-eligibility"
   | "integration-status";
 
+export const atlasGroups = [
+  "Overview",
+  "Active Workflow",
+  "Supporting Data",
+  "Administration",
+] as const;
+
+export type AtlasGroup = (typeof atlasGroups)[number];
+
 export type AtlasPage = {
   id: AtlasPageId;
   label: string;
-  group: string;
+  group: AtlasGroup;
   role: string;
   input: string;
   responsibility: string;
