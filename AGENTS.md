@@ -33,6 +33,35 @@ pnpm ops:workspace
 
 Proceed only when the Git top level is the real `thuonghao-ops-erp` repository and `origin` points to `https://github.com/longpsu-bot/thuonghao-ops-erp.git` or the equivalent SSH remote.
 
+## Windows Node/pnpm PATH bootstrap
+
+If `node`, `pnpm`, or `pnpm ops:workspace` fails because the tool is not available on `PATH`, do not implement the task yet. First add the known Windows toolchain paths for the current shell/session only, then re-run the workspace check.
+
+Known user toolchain paths:
+
+- Node: `C:/Program Files/nodejs/node.exe`
+- pnpm: `C:/Users/hp/AppData/Roaming/npm/pnpm.cmd`
+
+For Windows `cmd.exe` sessions:
+
+```cmd
+set "PATH=C:\Program Files\nodejs;C:\Users\hp\AppData\Roaming\npm;%LOCALAPPDATA%\pnpm;%PATH%"
+where node
+where pnpm
+node -v
+pnpm -v
+pnpm ops:workspace
+```
+
+A helper script is also available:
+
+```cmd
+call scripts\ops-env.cmd
+pnpm ops:workspace
+```
+
+Stop and report the exact failure if Node or pnpm still cannot be found after this bootstrap. Do not continue by using another project folder.
+
 ## Mandatory reading before implementation
 
 - `README.md`
