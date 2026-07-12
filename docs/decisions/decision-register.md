@@ -22,6 +22,7 @@ This register records approved project and architecture decisions. Detailed deci
 | D-016 | Retool is not the primary long-term ERP interface. | Accepted | Current Retool apps contain substantial UI state, JavaScript, event, and query complexity; future use is limited to selected support/admin tools. |
 | D-017 | Do not build a generic formula engine initially. | Accepted | Typed functions and typed configuration tables are easier to audit, test, and maintain. |
 | D-018 | Released operational documents are immutable snapshots. | Accepted | Future data or rule changes must not silently rewrite commitments or history. |
+| D-019 | Build workflow documentation and UI prototypes before finalizing Supabase table/schema design. | Accepted | The database must support validated business workflows, not prematurely freeze assumptions before staff review, UI review, and rule design are clear. |
 
 ## Change procedure
 
