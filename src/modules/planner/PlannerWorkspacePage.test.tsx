@@ -21,7 +21,14 @@ describe("PlannerWorkspacePage", () => {
     render(<PlannerWorkspacePage />);
     fireEvent.click(screen.getByText("Nước màu dừa"));
     expect(
-      screen.getByRole("button", { name: "Đánh dấu sẵn sàng" }),
+      screen.getByRole("button", { name: "Tạo nháp sẵn sàng" }),
     ).toBeDisabled();
+  });
+  it("keeps fixture readiness separate from a local readiness draft", () => {
+    render(<PlannerWorkspacePage />);
+    fireEvent.click(screen.getByText("Định mức theo mẻ (suy luận mock)"));
+    fireEvent.click(screen.getByRole("button", { name: "Tạo nháp sẵn sàng" }));
+    expect(screen.getByText("Nháp: sẵn sàng")).toBeInTheDocument();
+    expect(screen.getByText("Sẵn sàng mua hàng (fixture)")).toBeInTheDocument();
   });
 });

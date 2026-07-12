@@ -107,11 +107,11 @@ export function PlannerWorkspacePage() {
         <div className="exception-metrics">
           <span>
             <b>{lines.filter((x) => x.readiness === "BLOCKED").length}</b> dòng
-            đang chặn
+            đang chặn (fixture)
           </span>
           <span>
             <b>{lines.filter((x) => x.readiness === "NEEDS_REVIEW").length}</b>{" "}
-            dòng cần duyệt
+            dòng cần duyệt (fixture)
           </span>
           <span>
             <b>{Object.values(localStates).filter((x) => x.flagged).length}</b>{" "}

@@ -104,10 +104,11 @@ export function RequirementTable({
                   </td>
                   <td>
                     <span
-                      className={`badge ready-${(local?.locallyReady ? "READY" : x.readiness).toLowerCase()}`}
+                      className={`badge ready-${x.readiness.toLowerCase()}`}
                     >
-                      {labels[local?.locallyReady ? "READY" : x.readiness]}
+                      {labels[x.readiness]}
                     </span>
+                    {local?.locallyReady && <small>Nháp: sẵn sàng</small>}
                     {local?.reviewed && <small>✓ Đã xem</small>}
                   </td>
                   <td>
@@ -252,7 +253,7 @@ export function RequirementDetail({
             disabled={line.readiness === "BLOCKED"}
             onClick={() => onAction("locallyReady")}
           >
-            Đánh dấu sẵn sàng
+            {state.locallyReady ? "Bỏ nháp sẵn sàng" : "Tạo nháp sẵn sàng"}
           </button>
         </div>
       </div>

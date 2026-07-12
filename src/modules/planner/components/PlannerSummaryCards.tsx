@@ -28,7 +28,10 @@ export function PlannerSummaryCards({
       "Thiếu nhà cung cấp",
       lines.filter((x) => x.supplierStatus === "MISSING").length,
     ],
-    ["Sẵn sàng mua hàng", lines.filter((x) => x.readiness === "READY").length],
+    [
+      "Sẵn sàng mua hàng (fixture)",
+      lines.filter((x) => x.readiness === "READY").length,
+    ],
   ];
   return (
     <section className="summary-grid" aria-label="Tóm tắt kế hoạch">
