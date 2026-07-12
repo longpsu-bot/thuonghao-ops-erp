@@ -1,13 +1,23 @@
 # TASK-001 — React Planner Workspace Prototype
 
-**Status:** Ready for Codex after product-owner confirmation  
+**Status:** Completed as UI exploration; not approved as application structure or final contract  
 **Type:** UI prototype  
 **Scope:** React only, mock data only  
 **Supabase work:** Explicitly out of scope  
 
 ---
 
-## 1. Objective
+## 0. Recovery disposition
+
+TASK-001 successfully explored the Requirement Review table, trace drawer, warning/readiness presentation, grouping, Vietnamese display conventions, and fixture/test patterns. It did not establish the Atlas application shell, navigation, page ownership, input flow, or cross-role handoffs.
+
+The output is therefore reclassified as **Requirement Review UI exploration**. Reusable assets are listed in `docs/recovery/2026-07-12-foundation-recovery-register.md`. The next implementation task is `TASK-002-atlas-shell-workflow-prototype.md`.
+
+This disposition prevents the fixture types, local actions, or one-page composition from being treated as approved backend contracts.
+
+---
+
+## 1. Original objective
 
 Build the first React prototype for the OPS ERP Planner Workspace.
 
@@ -203,13 +213,6 @@ The prototype is acceptable when:
 
 ---
 
-## 9. Follow-up after prototype review
+## 9. Corrected follow-up after prototype review
 
-After product-owner review, update or create:
-
-- planner data contract;
-- requirement read model draft;
-- planner command contract draft;
-- warning and blocker taxonomy;
-- conceptual data model notes;
-- Supabase schema proposal only after contracts are reviewed.
+Do not proceed directly to Planner contracts. First execute TASK-002 to establish the Atlas shell, page responsibilities, and connected catering/wholesale workflows. After product-owner review of that workflow, refine one approved page at a time and then derive its state, read, command, warning, permission, and audit contracts. Supabase schema work remains later.
