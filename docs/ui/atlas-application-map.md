@@ -1,7 +1,7 @@
 # Atlas Application Map and Page Responsibilities
 
-**Status:** TASK-002C prototype workflow map  
-**Authority:** UI information architecture for the active Atlas prototype  
+**Status:** TASK-002C prototype workflow map
+**Authority:** UI information architecture for the active Atlas prototype
 **Backend authorization:** None; this document does not authorize schema or RPC work.
 
 ## 1. Active workflow

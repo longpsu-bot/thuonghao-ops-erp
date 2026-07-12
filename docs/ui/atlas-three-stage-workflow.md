@@ -1,6 +1,6 @@
 # Atlas Three-Stage Workflow Prototype
 
-**Status:** Approved task implementation record  
+**Status:** Approved task implementation record
 **Scope:** React and TypeScript mock prototype only
 
 ## Active workflow
