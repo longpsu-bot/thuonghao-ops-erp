@@ -22,6 +22,8 @@ If the ingredient is used in a very small herb or garnish quantity, exact per-pe
 
 The calculation architecture must therefore support quantity treatment by usage context, not only by ingredient master category.
 
+This must still follow the OPS ERP calculation-governance principle: every calculation behavior must be editable or versioned, visible to authorized users or maintainers, traceable in outputs, and explainable during review. Herb / condiment treatment must not become a hidden heuristic or magic rule.
+
 ---
 
 ## Decision
@@ -54,6 +56,8 @@ he as garnish = 40g per 20 portions
 
 This is a requirement-calculation treatment, not procurement rounding. Procurement rounding may still apply after the batch allowance result is produced.
 
+The system must record which rule caused the treatment. A final requirement produced by herb / condiment batch allowance must be traceable back to the applied configuration record or approved deterministic rule.
+
 ---
 
 ## Product-owner review outcome on 2026-07-12
@@ -65,6 +69,7 @@ The following implementation direction is accepted:
 3. Thresholds must be determined after both ingredient review and recipe quantity review.
 4. The architecture should support a generic configuration-driven rule first, not one hard-coded rule per herb. Ingredient-specific overrides may be added later only where operational evidence requires them.
 5. For MVP, the system should infer herb / condiment treatment from configuration to reduce staff data-entry burden. Recipe editors should not require manual usage-class entry for every line at the beginning.
+6. No inference may operate as an invisible shortcut. Inference rules must be inspectable and traceable.
 
 ---
 
@@ -78,6 +83,7 @@ The following implementation direction is accepted:
 - Supports dual-use ingredients without duplicating ingredient records.
 - Keeps calculation explainable and configurable.
 - Reduces recipe-entry burden by allowing inference from backend configuration.
+- Preserves operational trust by making automatic inference auditable.
 
 ### Tradeoffs
 
@@ -111,6 +117,17 @@ Candidate configuration fields:
 - effective_to;
 - priority;
 - active flag.
+
+Every automatic inference result must expose:
+
+- applied rule identifier;
+- matched ingredient or ingredient group;
+- threshold used;
+- recipe-line quantity basis;
+- allowance batch size;
+- allowance quantity;
+- effective rule date;
+- whether an ingredient-specific or group-level rule was used.
 
 ---
 
