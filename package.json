@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "ops:workspace": "node scripts/check-workspace.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
