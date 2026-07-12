@@ -82,6 +82,12 @@ Product owner review needed for:
 
 ## 6. Current practical next prototype
 
+**Recovery update (2026-07-12):** TASK-001 produced useful Requirement Review components, but it jumped ahead of the Phase 3 application-shell and workflow-map sequence. It is retained as a UI exploration, not accepted as the Atlas application structure or final Planner contract.
+
+The next prototype is defined by `docs/implementation-tasks/TASK-002-atlas-shell-workflow-prototype.md` and `docs/ui/atlas-application-map.md`.
+
+## 6A. Superseded recommendation
+
 Recommended immediate UI prototype:
 
 ```text
@@ -113,7 +119,21 @@ The Master Data Review Workspace remains a supporting prototype. It is important
 
 ---
 
-## 7. Current likely first operational vertical
+## 7. Current Phase 3 sequence
+
+```text
+Atlas application shell and navigation
+  → visible page responsibilities and role handoffs
+  → mock catering journey
+  → mock wholesale journey
+  → integrate recovered Requirement Review components
+  → product-owner workflow review
+  → page-specific state/read/command contracts
+```
+
+No additional Planner feature polishing or Supabase design should precede this shell and workflow prototype.
+
+## 7A. Current likely first operational vertical
 
 Recommended first operational workflow after planner contract review:
 
@@ -161,11 +181,17 @@ Rationale:
 - first workflow ownership boundary between OPS v1 and OPS ERP;
 - legacy data classification;
 - staff review of ingredients, units, recipe quantities, and calculation-rule candidates;
-- product owner review of Planner Workspace UI contract;
-- React planner prototype review.
+- product owner review of the Atlas application map and end-to-end workflow;
+- React shell and connected workflow prototype review.
 
 ---
 
-## 10. Update rule
+## 10. Recovery references
+
+- `docs/recovery/2026-07-12-foundation-recovery-register.md`
+- `docs/ui/atlas-application-map.md`
+- `docs/implementation-tasks/TASK-002-atlas-shell-workflow-prototype.md`
+
+## 11. Update rule
 
 This file should be updated whenever project direction, phase, accepted scope, or blocking decisions change.
