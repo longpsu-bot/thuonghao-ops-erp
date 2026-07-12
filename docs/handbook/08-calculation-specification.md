@@ -31,6 +31,21 @@ For every final requirement, the system must be able to explain:
 - warning state;
 - release state.
 
+### 2.1 No hidden calculation logic
+
+No calculation behavior may exist as a hidden heuristic, hard-coded exception, or undocumented magic rule.
+
+Any behavior that changes quantity, classification, rounding, supplier assignment, release eligibility, warning status, or downstream operational output must be represented as a rule that is:
+
+- editable or versioned through backend configuration, migrations, or approved rule tables;
+- visible to authorized users or maintainers;
+- traceable in calculation outputs;
+- explainable during review;
+- covered by tests before implementation;
+- documented in the relevant handbook, module specification, or business-rule register.
+
+Automatic inference is allowed, but inferred results must still expose the rule that produced the inference. The system must never produce an operational quantity because of an invisible shortcut that cannot be inspected later.
+
 ---
 
 ## 3. Calculation pipeline
@@ -185,7 +200,7 @@ The rule must be configurable, not hard-coded.
 Candidate configuration fields:
 
 - ingredient_id or ingredient_group_id;
-- usage_class, for example MAIN, HERB, CONDIMENT, GARNISH, SEASONING;
+- inferred_usage_class, for example MAIN, HERB, CONDIMENT, GARNISH, SEASONING;
 - threshold_quantity_per_recipe_basis;
 - recipe_basis_portions, usually 100 portions;
 - allowance_batch_size, for example 10, 20, or 50 portions;
@@ -200,7 +215,7 @@ Candidate configuration fields:
 
 The preliminary precedence is:
 
-1. explicit recipe-line calculation method, if set;
+1. explicit recipe-line calculation method, if set in a future release;
 2. ingredient-specific herb / condiment allowance rule;
 3. ingredient-group herb / condiment allowance rule;
 4. default proportional calculation.
@@ -225,6 +240,14 @@ The trace must preserve:
 - allowance quantity;
 - resulting quantity;
 - rule identifier.
+
+### 8.6 MVP inference rule
+
+For MVP, staff should not be required to manually select a usage class for every recipe line.
+
+The system should infer herb / condiment treatment from backend configuration. Manual recipe-line classification may be introduced later for exceptions, but the initial design should reduce data-entry burden.
+
+Inference must remain inspectable. If the system infers a line as herb / condiment batch allowance, the requirement trace must identify the configuration rule that caused the inference.
 
 ---
 
@@ -322,7 +345,8 @@ Candidate calculation warnings:
 - rounding excess above tolerance;
 - released document affected by later change;
 - herb / condiment allowance rule missing for configured usage class;
-- ambiguous calculation method for ingredient used as both main ingredient and condiment.
+- ambiguous calculation method for ingredient used as both main ingredient and condiment;
+- calculation behavior applied without traceable rule identifier.
 
 ---
 
@@ -359,9 +383,13 @@ The frontend may preview quantities, but backend functions must be authoritative
 8. Should herb / condiment batch allowance be configured per ingredient, per ingredient group, or both?
 9. What default allowance batch sizes should be supported: 10, 20, 50 portions, or configurable arbitrary values?
 10. What threshold determines whether a dual-use ingredient is treated as main ingredient versus herb / condiment?
+11. Which calculation rules must be visible to business users versus technical maintainers only?
+12. What interface is required for viewing rule traces during requirement review?
 
 ---
 
 ## 18. Implementation note
 
 Codex must not implement the requirement engine until this document is reviewed and the blocking review questions are answered.
+
+Codex must not implement hidden calculation shortcuts. If a calculation behavior cannot be traced back to a documented rule, configuration record, or approved deterministic function, it is not acceptable for production use.
