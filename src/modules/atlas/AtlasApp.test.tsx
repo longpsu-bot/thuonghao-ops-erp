@@ -6,42 +6,32 @@ import { AtlasApp } from "./AtlasApp";
 afterEach(cleanup);
 
 describe("AtlasApp", () => {
-  it("shows exactly three active workflow stages", () => {
+  it("shows exactly the three approved active daily workflow stages", () => {
     render(<AtlasApp />);
-    expect(
-      screen.getByRole("heading", { name: "Active workflow stages" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "1. Requirement Planning" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "2. Purchase Planning" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "3. Warehouse Receiving" }),
-    ).toBeInTheDocument();
+    const stages = screen.getByLabelText("Ba giai đoạn vận hành hằng ngày");
+    expect(stages).toHaveTextContent("Lập nhu cầu");
+    expect(stages).toHaveTextContent("Lập kế hoạch mua hàng");
+    expect(stages).toHaveTextContent("Nhập kho");
+    expect(stages.querySelectorAll("button")).toHaveLength(3);
     expect(screen.queryByText("Dispatch Planning")).not.toBeInTheDocument();
+    expect(screen.queryByText("QA")).not.toBeInTheDocument();
   });
 
-  it("keeps destination with requirements and supplier coordination lightweight in purchase planning", () => {
+  it("keeps recipe pages in supporting data, outside the daily workflow", () => {
     render(<AtlasApp />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Requirement Planning" }),
-    );
-    expect(
-      screen.getByText(/Destination is planned with the requirement/),
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Purchase Planning" }));
-    expect(
-      screen.getByText(/No supplier confirmation required/),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Món ăn & Công thức" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" })).toBeInTheDocument();
+    const stages = screen.getByLabelText("Ba giai đoạn vận hành hằng ngày");
+    expect(stages).not.toHaveTextContent("Món ăn & Công thức");
+    expect(stages).not.toHaveTextContent("Kiểm soát thay đổi công thức");
   });
 
-  it("shows an ordered-versus-received discrepancy", () => {
+  it("shows the receiving shortage and keeps supplier coordination optional", () => {
     render(<AtlasApp />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Warehouse Receiving" }),
-    );
-    expect(screen.getByText("Discrepancy: short by 10 kg")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Lập kế hoạch mua hàng" }));
+    expect(screen.getByText(/không yêu cầu xác nhận NCC/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Nhập kho" }));
+    expect(screen.getAllByText("Thiếu 10 kg")).toHaveLength(2);
+    expect(screen.getByText(/đặt 250 kg · nhận 240 kg · thiếu 10 kg/i)).toBeInTheDocument();
   });
 });

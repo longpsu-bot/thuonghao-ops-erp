@@ -1,65 +1,59 @@
 # Atlas Application Map and Page Responsibilities
 
-**Status:** TASK-002C prototype workflow map
+**Status:** TASK-002D static prototype map
 **Authority:** UI information architecture for the active Atlas prototype
-**Backend authorization:** None; this document does not authorize schema or RPC work.
+**Backend authorization:** None; this document does not authorize schema, RPC, or integration work.
 
-## 1. Active workflow
+## Active daily workflow
 
-Atlas has exactly three active operational stages:
+Atlas has exactly three active daily workflow stages:
 
-1. **Requirement Planning** — review what is needed, who needs it, and the outbound destination. A school, kitchen, route, or other outbound target stays linked to the demand and requirement.
-2. **Purchase Planning** — assign suppliers and prepare the supplier order list. Supplier coordination may be an optional lightweight status or note; it is not a separate stage and is not required for a 24-hour catering cycle.
-3. **Warehouse Receiving** — compare ordered and received quantities and make discrepancies visible.
+1. **Lập nhu cầu** — review what is needed, who needs it, the service date, and the school, kitchen, or destination context together.
+2. **Lập kế hoạch mua hàng** — assign suppliers and prepare supplier orders. A supplier-coordination note or status is optional only; it is not a required confirmation workflow.
+3. **Nhập kho** — compare ordered and received quantities, and make shortages or discrepancies visible.
 
-## 2. Navigation model
+The intended handoff is **Lập nhu cầu → Lập kế hoạch mua hàng → Nhập kho**.
 
-### Overview
+## Navigation model
 
-- Operations Home
+### Tổng quan
 
-### Active Workflow
+- Bảng điều hành
 
-- Requirement Planning
-- Purchase Planning
-- Warehouse Receiving
+### Quy trình hằng ngày
 
-### Supporting Data
+- Lập nhu cầu
+- Lập kế hoạch mua hàng
+- Nhập kho
 
-- Customers and Schools
-- Ingredients and Units
-- Suppliers and Eligibility
+### Dữ liệu hỗ trợ
 
-### Administration
+- Khách hàng & Trường học
+- Nguyên liệu & Đơn vị
+- Nhà cung cấp & Điều kiện cung ứng
+- Món ăn & Công thức
+- Kiểm soát thay đổi công thức
 
-- Prototype Boundary
+## Supporting recipe governance
 
-## 3. Page responsibilities
+**Món ăn & Công thức** and **Kiểm soát thay đổi công thức** are supporting-data/governance areas, not active daily workflow stages. Recipe governance is upstream of **Lập nhu cầu**: recipe and BOM references can feed requirement planning but do not add another operational handoff.
 
-| Page                 | Owner      | Reads                                                    | Completion output                                               | Explicitly does not own                                          |
-| -------------------- | ---------- | -------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Requirement Planning | Planning   | demand, destination, requirement fixtures and warnings   | destination-linked requirements ready for purchase planning     | supplier coordination, receiving, delivery handoff               |
-| Purchase Planning    | Purchasing | destination-linked requirements and supplier eligibility | prepared supplier order list with an optional coordination note | required supplier-confirmation workflow, receipt recording       |
-| Warehouse Receiving  | Warehouse  | prepared order list and received-quantity fixture        | receiving result and discrepancy record                         | driver handoff, kitchen/school handoff, QA, inventory accounting |
+The current pages are static prototypes only. Full recipe editing, recipe CRUD, change-order submission, and authoritative change-order processing are explicitly deferred. A locked recipe must be changed through a future change-order process rather than a direct base-BOM edit.
 
-## 4. Prototype journeys
+## Page responsibilities
 
-### Catering
+| Page | Owner | Completion output | Explicitly does not own |
+| --- | --- | --- | --- |
+| Lập nhu cầu | Planning | Destination-linked requirements ready for purchase planning | supplier coordination, receiving, delivery handoff |
+| Lập kế hoạch mua hàng | Purchasing | Prepared supplier order list with optional coordination note | required supplier confirmation, receipt recording |
+| Nhập kho | Warehouse | Receiving comparison and discrepancy view | driver handoff, kitchen/school handoff, QA, inventory accounting |
+| Món ăn & Công thức | Recipe governance | Static recipe/BOM reference | active daily workflow, CRUD, backend calls |
+| Kiểm soát thay đổi công thức | Recipe governance | Static change-order concepts | change-order submission or backend command |
 
-Demand and destination → Requirement Planning → Purchase Planning → Warehouse Receiving.
+## Prototype fixtures and boundaries
 
-### Wholesale
+The receiving fixture compares a Jasmine rice order of **250 kg** with a receipt of **240 kg**, exposing a **10 kg shortage**. Fixture values are illustrative only; React does not calculate authoritative results.
 
-Direct ingredient order and destination → Requirement Planning → Purchase Planning → Warehouse Receiving.
+The UI is static prototype only. It creates no backend records, authoritative calculations, inventory accounting movements, released purchase documents, confirmations, or integrations.
 
-The receiving fixture compares a Jasmine rice order of 250 kg with a receipt of 240 kg and exposes a 10 kg shortage. Fixture values are illustrative only; React does not calculate authoritative results.
-
-## 5. Explicitly inactive areas
-
-Driver handoff, kitchen/school handoff, QA, payment, invoice, document generation, and accounting are not active stages in this prototype.
-
-Accounting is a future read and reconciliation/bookkeeping consumer of the same source-of-truth requirement, purchase, and receiving data. It does not own or recalculate the operational facts.
-
-## 6. Prototype boundary
-
-The interface uses static fixtures only. It creates no backend records, authoritative calculations, inventory accounting movements, purchase documents, confirmations, or integrations.
+Dispatch planning, driver handoff, kitchen/school handoff, QA, payment, invoice, and document generation are not active stages. Accounting remains a future reconciliation/bookkeeping consumer of source-of-truth requirement, purchase, and receiving data, not an active workflow stage.
