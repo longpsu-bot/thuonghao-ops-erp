@@ -16,7 +16,6 @@ const viewModes: Array<{ value: PlannerViewMode; label: string }> = [
   { value: "DATE", label: "Theo ngày" },
   { value: "CUSTOMER", label: "Theo trường / khách" },
   { value: "SOURCE", label: "Theo nguồn nhu cầu" },
-  { value: "SUPPLIER", label: "Theo nhà cung cấp" },
 ];
 
 const warningLabels: Record<string, string> = {
