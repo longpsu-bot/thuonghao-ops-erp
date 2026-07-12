@@ -30,6 +30,8 @@ This register records approved business rules. Module specifications may refine 
 | BR-024 | Requirement traces must record when herb/condiment batch allowance is applied, including the original recipe quantity, threshold, batch size, allowance quantity, and rule identifier. | Approved |
 | BR-025 | For MVP, herb/condiment usage should be inferred from backend configuration instead of requiring staff to manually classify every recipe line. | Approved as MVP direction |
 | BR-026 | The initial herb/condiment model should be generic and configuration-driven, with ingredient-specific exceptions allowed when master-data review proves they are needed. | Approved as architecture direction |
+| BR-027 | No calculation behavior may exist as a hidden or hard-coded magic rule. Every calculation behavior must be represented as an editable or versioned rule, visible to authorized users, traceable in outputs, and explainable during review. | Approved |
+| BR-028 | When an automatic inference rule is applied, the system must record which rule produced the inference and allow authorized users to inspect the rule basis. | Approved |
 
 ## Planned rule domains
 
