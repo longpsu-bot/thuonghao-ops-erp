@@ -18,6 +18,11 @@ Open questions are design matters that must be resolved before the affected capa
 | OQ-012 | Which unit conversions are globally valid and which must be ingredient-specific? | Open | Unit and calculation specification |
 | OQ-013 | Which supplier assignment rules are automatic, suggested, or manually authoritative? | Open | Procurement specification |
 | OQ-014 | What historical PO and dispatch information must be migrated versus retained in legacy read-only access? | Open | Migration matrix |
+| OQ-015 | Which ingredients or ingredient groups qualify for herb / condiment batch allowance? | Deferred until ingredient master-data review is complete | Requirement calculation configuration |
+| OQ-016 | Which usage classes should exist initially for recipe and calculation treatment? | Deferred until ingredient master-data review is complete | Recipe and calculation configuration |
+| OQ-017 | What quantity threshold separates main-ingredient proportional calculation from herb / condiment batch allowance? | Deferred until ingredient and recipe-quantity review is complete | Requirement calculation configuration |
+| OQ-018 | What default allowance batch sizes and quantities should be used for herb / condiment rules? | Open — prefer generic configurable rule; exact defaults pending review | Requirement calculation configuration |
+| OQ-019 | Should MVP require staff to manually classify every recipe line by usage class? | Resolved — no; MVP should infer from backend configuration, with explicit overrides possible later | Recipe editor scope |
 
 ## Resolution procedure
 
