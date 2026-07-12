@@ -85,7 +85,7 @@ Product owner review needed for:
 Recommended immediate UI prototype:
 
 ```text
-Planner Workspace
+Planner Workspace React prototype
   → planning overview
   → demand source review
   → requirement review
@@ -95,7 +95,19 @@ Planner Workspace
   → planning summary
 ```
 
-Reason: the planner is the daily operational decision center. It converts demand into actionable requirement readiness and exposes the workflow states that future data contracts, schema design, and backend commands must support.
+Reason: the planner is the daily operational decision center. It converts demand into actionable requirement readiness and exposes the workflow states that future data contracts, schema design, calculation rules, and backend commands must support.
+
+The Planner Workspace should be created in React first because screen design will answer many unresolved questions about:
+
+- what calculation outputs staff need to see;
+- what warning and blocking states are operationally meaningful;
+- how raw, adjusted, final, and orderable quantities should be presented;
+- where traceability is needed;
+- what table definitions must eventually support;
+- what backend command boundaries are required;
+- what belongs in master data versus transaction state.
+
+This first React prototype must use mock data or static fixtures. It must not create Supabase migrations, production RPCs, or authoritative calculation logic.
 
 The Master Data Review Workspace remains a supporting prototype. It is important, but it should not displace the planner as the first operational prototype.
 
@@ -124,6 +136,7 @@ OPS ERP should use UI-led, contract-constrained design before Supabase schema im
 
 This means:
 
+- React planner prototype comes before Supabase schema implementation;
 - UI prototypes are allowed before final schema work;
 - UI prototypes must not become hidden business logic;
 - each screen must define read data, draft state, validation, warnings, backend commands, and eventual data contracts;
@@ -133,13 +146,13 @@ Rationale:
 
 - table design should follow validated workflow needs;
 - calculation rules depend on ingredient, unit, and recipe review;
-- UI review exposes missing business states earlier than database-first work;
+- planner UI review exposes missing business states earlier than database-first work;
 - data contracts prevent React from recreating Retool-style hidden state and JavaScript logic;
 - premature schema design risks encoding old OPS v1 assumptions into OPS ERP.
 
 ---
 
-## 9. Open blockers before implementation
+## 9. Open blockers before Supabase implementation
 
 - exact procurement aggregation level;
 - role and permission matrix;
@@ -148,7 +161,8 @@ Rationale:
 - first workflow ownership boundary between OPS v1 and OPS ERP;
 - legacy data classification;
 - staff review of ingredients, units, recipe quantities, and calculation-rule candidates;
-- product owner review of Planner Workspace UI contract.
+- product owner review of Planner Workspace UI contract;
+- React planner prototype review.
 
 ---
 
