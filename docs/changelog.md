@@ -4,6 +4,25 @@ All notable architecture, documentation, and implementation changes should be re
 
 ---
 
+## 2026-07-12 — Planner workspace prioritized
+
+### Refined
+
+- Product owner challenged the previous focus on the master-data input/review page and identified the planner as the more critical operational workspace.
+- Accepted correction: the first operational prototype should be the Planner Workspace, while Master Data Review remains a supporting prototype.
+- The planner should drive workflow states and data/API contracts because it is the daily decision center that converts demand into requirement readiness.
+
+### Added
+
+- `docs/ui/planner-workspace.md`
+
+### Updated
+
+- `docs/ui/ui-catalogue.md`
+- `docs/current-context.md`
+
+---
+
 ## 2026-07-12 — UI-led, contract-constrained design sequence
 
 ### Refined
