@@ -1,63 +1,116 @@
 import { useState } from "react";
-import { PlannerWorkspacePage } from "../planner/PlannerWorkspacePage";
 import {
-  atlasPages,
   atlasGroups,
+  atlasPages,
   journeys,
   type AtlasPage,
   type AtlasPageId,
 } from "./atlasConfig";
 
-const journeyGroups = new Set(["Lập kế hoạch", "Mua hàng", "Thực hiện"]);
+const purchaseOrderPreview = [
+  {
+    ingredient: "Pumpkin",
+    supplier: "An Phu Produce",
+    quantity: "75 kg",
+    coordination: "Optional note: delivery window acknowledged by phone",
+  },
+  {
+    ingredient: "Jasmine rice",
+    supplier: "Thanh Cong Foods",
+    quantity: "250 kg",
+    coordination: "No supplier confirmation required for this 24-hour cycle",
+  },
+];
+
+const receivingPreview = [
+  {
+    ingredient: "Pumpkin",
+    ordered: "75 kg",
+    received: "75 kg",
+    result: "Matched",
+  },
+  {
+    ingredient: "Jasmine rice",
+    ordered: "250 kg",
+    received: "240 kg",
+    result: "Discrepancy: short by 10 kg",
+  },
+];
 
 function ResponsibilityPage({ page }: { page: AtlasPage }) {
   return (
     <section className="atlas-page">
       <div className="page-kicker">
-        CHỨC NĂNG DỰ KIẾN · PROTOTYPE · KHÔNG GHI DỮ LIỆU
+        MOCK PROTOTYPE · NO BACKEND OR DOCUMENT RELEASE
       </div>
       <h1>{page.label}</h1>
       <p className="page-intro">
-        Trang này mô tả trách nhiệm và bàn giao trong Atlas; chưa gọi backend và
-        chưa tạo chứng từ vận hành.
+        This page describes the responsibility and handoff for the Atlas
+        prototype. All values are static fixtures and no operational record is
+        created.
       </p>
       <div className="responsibility-grid">
         <article>
-          <span>Vai trò chịu trách nhiệm</span>
+          <span>Responsible role</span>
           <strong>{page.role}</strong>
         </article>
         <article>
-          <span>Đầu vào</span>
+          <span>Input</span>
           <strong>{page.input}</strong>
         </article>
         <article>
-          <span>Trách nhiệm chính</span>
+          <span>Primary responsibility</span>
           <strong>{page.responsibility}</strong>
         </article>
         <article>
-          <span>Đầu ra hoàn tất</span>
+          <span>Completed output</span>
           <strong>{page.output}</strong>
         </article>
         <article>
-          <span>Bàn giao tiếp theo</span>
+          <span>Next handoff</span>
           <strong>{page.handoff}</strong>
         </article>
       </div>
-      <button className="page-action" disabled>
-        {page.primaryAction} · thao tác dự kiến (prototype)
-      </button>
-      {journeyGroups.has(page.group) ? (
-        <div className="journey-strip" aria-label="Ngữ cảnh hành trình mẫu">
-          {journeys.map((journey) => (
-            <div key={journey.id}>
+      {page.id === "requirement-planning" && (
+        <div className="handoff-board">
+          <h2>Destination is planned with the requirement</h2>
+          <span>
+            Example: 75 kg pumpkin for Nguyen Du School · Route North. The
+            outbound destination remains attached before purchasing begins.
+          </span>
+        </div>
+      )}
+      {page.id === "purchase-planning" && (
+        <div className="handoff-board">
+          <h2>Supplier assignment and order preparation</h2>
+          {purchaseOrderPreview.map((line) => (
+            <article key={line.ingredient}>
               <strong>
-                {journey.id} · {journey.name}
+                {line.ingredient} · {line.quantity}
               </strong>
-              <span>{journey.context}</span>
-            </div>
+              <span>{line.supplier}</span>
+              <small>{line.coordination}</small>
+            </article>
           ))}
         </div>
-      ) : null}
+      )}
+      {page.id === "warehouse-receiving" && (
+        <div className="handoff-board">
+          <h2>Ordered versus received</h2>
+          {receivingPreview.map((line) => (
+            <article key={line.ingredient}>
+              <strong>{line.ingredient}</strong>
+              <span>
+                Ordered: {line.ordered} · Received: {line.received}
+              </span>
+              <small>{line.result}</small>
+            </article>
+          ))}
+        </div>
+      )}
+      <button className="page-action" disabled>
+        {page.primaryAction} · mock data
+      </button>
     </section>
   );
 }
@@ -69,13 +122,15 @@ function OperationsHome({
 }) {
   return (
     <section className="atlas-page home-page">
-      <div className="page-kicker">TRANG ĐIỀU HÀNH · DỮ LIỆU MẪU</div>
-      <h1>Trang điều hành</h1>
+      <div className="page-kicker">ATLAS WORKFLOW · MOCK DATA</div>
+      <h1>Three-stage operating workflow</h1>
       <p className="page-intro">
-        Kỳ vận hành 13/07/2026 – 15/07/2026 · 2 hành trình mẫu đang chờ rà soát.
+        Atlas currently focuses on requirements, purchase planning, and
+        warehouse receiving. Driver handoff, school handoff, QA, and accounting
+        workflows are not active stages.
       </p>
       <div className="journey-cards">
-        {journeys.map((journey, index) => (
+        {journeys.map((journey) => (
           <article key={journey.id}>
             <span>{journey.id}</span>
             <h2>{journey.name}</h2>
@@ -85,26 +140,22 @@ function OperationsHome({
                 <li key={step}>{step}</li>
               ))}
             </ol>
-            <button
-              onClick={() =>
-                onNavigate(index === 0 ? "menu-planning" : "additional-demand")
-              }
-            >
-              Mở trang bắt đầu hành trình
+            <button onClick={() => onNavigate("requirement-planning")}>
+              Open requirement planning
             </button>
           </article>
         ))}
       </div>
       <div className="handoff-board">
-        <h2>Điểm bàn giao cần kiểm tra</h2>
-        <button onClick={() => onNavigate("requirement-review")}>
-          Rà soát nhu cầu nguyên liệu · Lập kế hoạch → Mua hàng
+        <h2>Active workflow stages</h2>
+        <button onClick={() => onNavigate("requirement-planning")}>
+          1. Requirement Planning
         </button>
-        <button onClick={() => onNavigate("supplier-allocation")}>
-          Phân bổ nhà cung cấp · Mua hàng
+        <button onClick={() => onNavigate("purchase-planning")}>
+          2. Purchase Planning
         </button>
-        <button onClick={() => onNavigate("operational-qa")}>
-          Kiểm soát vận hành · phân tuyến ngoại lệ
+        <button onClick={() => onNavigate("warehouse-receiving")}>
+          3. Warehouse Receiving
         </button>
       </div>
     </section>
@@ -120,7 +171,7 @@ export function AtlasApp() {
         <div className="atlas-brand">
           <span>OPS ERP</span>
           <strong>Atlas</strong>
-          <small>Prototype luồng vận hành</small>
+          <small>Workflow prototype</small>
         </div>
         <nav aria-label="Atlas navigation">
           {atlasGroups.map((group) => (
@@ -144,29 +195,19 @@ export function AtlasApp() {
       <div className="atlas-content">
         <header className="atlas-topbar">
           <div>
-            <span>Kỳ vận hành</span>
+            <span>Operating period</span>
             <strong>13/07/2026 – 15/07/2026</strong>
           </div>
           <div>
-            <span>Trang hiện tại</span>
+            <span>Current page</span>
             <strong>
               {activePage.label} · {activePage.role}
             </strong>
           </div>
-          <mark>Prototype · không có backend</mark>
+          <mark>Prototype · no backend</mark>
         </header>
         {active === "operations-home" ? (
           <OperationsHome onNavigate={setActive} />
-        ) : active === "requirement-review" ? (
-          <div className="requirement-recovery">
-            <div className="recovery-context">
-              <span>Lập kế hoạch · Rà soát nhu cầu nguyên liệu</span>
-              <strong>
-                CAT-0713-ND + WS-2026-0714 · Bàn giao: Phân bổ nhà cung cấp
-              </strong>
-            </div>
-            <PlannerWorkspacePage />
-          </div>
         ) : (
           <ResponsibilityPage page={activePage} />
         )}
