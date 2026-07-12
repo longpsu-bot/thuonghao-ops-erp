@@ -32,6 +32,7 @@ Translate Atlas domains and operating stages into a staff-facing application str
 
 ### Fulfilment
 
+- Warehouse Receiving and Preparation
 - Dispatch Planning
 - Operational QA
 
@@ -51,17 +52,18 @@ Translate Atlas domains and operating stages into a staff-facing application str
 
 ## 3. Workflow pages
 
-| Page | Owner | Reads | User creates/changes | Completion output | Explicitly does not own |
-|---|---|---|---|---|---|
-| Demand Overview | Planning | menu, attendance, wholesale, pantry and correction status | opens the correct source workflow | complete and validated source set | recipe math, supplier assignment |
-| Attendance and Portions | Planning | schools, service dates, defaults | student/teacher portions and imports | confirmed quantity basis | menus, recipes, procurement |
-| Menu Planning | Planning | schools, dates, dishes and menu status | catering menu assignments/import review | catering demand | attendance values, BOM logic |
-| Additional Demand | Planning | customers, ingredients and dates | wholesale lines, pantry additions and manual corrections | direct ingredient demand | recipe explosion, supplier commitment |
-| Requirement Review | Planning | generated requirements, traces, adjustments and warnings | adjustment/substitution requests and review notes | requirements ready for procurement validation | supplier commitment, PO release |
-| Supplier Allocation | Purchasing | validated orderable requirements and supplier eligibility | supplier assignment and quantity splits | balanced purchase plan | source demand and recipe changes |
-| Purchase Orders | Purchasing | balanced allocation and document history | review, release and correction request | released supplier commitments | silent requirement recalculation |
-| Dispatch Planning | Warehouse/Dispatch | released requirements/PO context and customer delivery data | dispatch preparation and release | immutable dispatch documents | supplier master data |
-| Operational QA | Operations/Management | demand, requirement, PO and dispatch snapshots | resolution routing and controlled correction initiation | reconciled exceptions | direct hidden repair writes |
+| Page                                | Owner                 | Reads                                                       | User creates/changes                                     | Completion output                             | Explicitly does not own                         |
+| ----------------------------------- | --------------------- | ----------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| Demand Overview                     | Planning              | menu, attendance, wholesale, pantry and correction status   | opens the correct source workflow                        | complete and validated source set             | recipe math, supplier assignment                |
+| Attendance and Portions             | Planning              | schools, service dates, defaults                            | student/teacher portions and imports                     | confirmed quantity basis                      | menus, recipes, procurement                     |
+| Menu Planning                       | Planning              | schools, dates, dishes and menu status                      | catering menu assignments/import review                  | catering demand                               | attendance values, BOM logic                    |
+| Additional Demand                   | Planning              | customers, ingredients and dates                            | wholesale lines, pantry additions and manual corrections | direct ingredient demand                      | recipe explosion, supplier commitment           |
+| Requirement Review                  | Planning              | generated requirements, traces, adjustments and warnings    | adjustment/substitution requests and review notes        | requirements ready for procurement validation | supplier commitment, PO release                 |
+| Supplier Allocation                 | Purchasing            | validated orderable requirements and supplier eligibility   | supplier assignment and quantity splits                  | balanced purchase plan                        | source demand and recipe changes                |
+| Purchase Orders                     | Purchasing            | balanced allocation and document history                    | review, release and correction request                   | released supplier commitments                 | silent requirement recalculation                |
+| Warehouse Receiving and Preparation | Warehouse             | released PO context and preparation requirements            | receiving and preparation review                         | prepared handover context                     | outbound dispatch release, inventory accounting |
+| Dispatch Planning                   | Warehouse/Dispatch    | released requirements/PO context and customer delivery data | dispatch preparation and release                         | immutable dispatch documents                  | supplier master data                            |
+| Operational QA                      | Operations/Management | demand, requirement, PO and dispatch snapshots              | resolution routing and controlled correction initiation  | reconciled exceptions                         | direct hidden repair writes                     |
 
 ## 4. Interface hierarchy
 
@@ -128,11 +130,11 @@ Components: exception queue, comparison table, lineage links, resolution routing
 
 ### Catering
 
-Menu assignment + portions → catering demand → generated requirement → adjustment review → supplier allocation → PO preview → dispatch preview → QA result.
+Menu assignment + portions → catering demand → generated requirement → adjustment review → supplier allocation → PO preview → warehouse receiving and preparation preview → dispatch preview → QA result.
 
 ### Wholesale
 
-Direct ingredient order → validated direct requirement → supplier allocation → PO preview → dispatch preview → QA result.
+Direct ingredient order → validated direct requirement → supplier allocation → PO preview → warehouse receiving and preparation preview → dispatch preview → QA result.
 
 Each journey uses explicit fixture values. React does not calculate authoritative results.
 

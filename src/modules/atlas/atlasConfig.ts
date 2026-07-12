@@ -7,6 +7,7 @@ export type AtlasPageId =
   | "requirement-review"
   | "supplier-allocation"
   | "purchase-orders"
+  | "warehouse-receiving"
   | "dispatch-planning"
   | "operational-qa"
   | "customers-schools"
@@ -126,8 +127,19 @@ export const atlasPages: AtlasPage[] = [
     input: "Phân bổ cân bằng và lịch sử",
     responsibility: "Rà soát phát hành đơn mua hàng",
     output: "Cam kết nhà cung cấp đã phát hành",
-    handoff: "Lập kế hoạch giao nhận",
+    handoff: "Tiếp nhận và chuẩn bị kho",
     primaryAction: "Xem bản nháp đơn mua hàng",
+  },
+  {
+    id: "warehouse-receiving",
+    label: "Tiếp nhận và chuẩn bị kho",
+    group: "Thực hiện",
+    role: "Nhân viên kho",
+    input: "Ngữ cảnh đơn mua hàng đã phát hành và nhu cầu chuẩn bị",
+    responsibility: "Rà soát tiếp nhận mẫu và chuẩn bị hàng trước giao nhận",
+    output: "Hàng mẫu sẵn sàng bàn giao giao nhận",
+    handoff: "Lập kế hoạch giao nhận",
+    primaryAction: "Rà soát tiếp nhận và chuẩn bị",
   },
   {
     id: "dispatch-planning",
@@ -241,6 +253,7 @@ export const journeys = [
       "Rà soát nhu cầu nguyên liệu",
       "Phân bổ nhà cung cấp",
       "Đơn mua hàng",
+      "Tiếp nhận và chuẩn bị kho",
       "Lập kế hoạch giao nhận",
       "Kiểm soát vận hành",
     ],
@@ -254,6 +267,7 @@ export const journeys = [
       "Rà soát nhu cầu nguyên liệu",
       "Phân bổ nhà cung cấp",
       "Đơn mua hàng",
+      "Tiếp nhận và chuẩn bị kho",
       "Lập kế hoạch giao nhận",
       "Kiểm soát vận hành",
     ],

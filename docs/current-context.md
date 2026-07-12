@@ -3,7 +3,7 @@
 **Status:** Active project memory  
 **Last updated:** 2026-07-12  
 **Authority:** Working context summary  
-**Review required:** No — update continuously as project state changes  
+**Review required:** No — update continuously as project state changes
 
 ---
 
@@ -132,6 +132,8 @@ Atlas application shell and navigation
 ```
 
 No additional Planner feature polishing or Supabase design should precede this shell and workflow prototype.
+
+**TASK-002B update (2026-07-12):** The connected mock workflow prototype includes a distinct warehouse receiving and preparation boundary between purchase-order context and outbound dispatch. Its fixture progress is local-only and resets on reload; it does not represent receiving persistence, inventory accounting, or release commands.
 
 ## 7A. Current likely first operational vertical
 

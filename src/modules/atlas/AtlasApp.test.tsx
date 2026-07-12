@@ -1,8 +1,15 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it } from "vitest";
 import { AtlasApp } from "./AtlasApp";
 import { atlasPages, journeys } from "./atlasConfig";
+import { workflowJourneys } from "./workflowFixtures";
 
 afterEach(cleanup);
 
@@ -106,5 +113,109 @@ describe("AtlasApp", () => {
         name: "Rà soát nguồn thiếu · thao tác dự kiến (prototype)",
       }),
     ).toBeDisabled();
+  });
+
+  it.each(workflowJourneys)(
+    "moves the $id fixture through its predefined local workflow stages",
+    (journey) => {
+      render(<AtlasApp />);
+      const journeyCard = screen.getByText(journey.id).closest("article")!;
+      fireEvent.click(
+        within(journeyCard).getByRole("button", {
+          name: "Mở hành trình mẫu",
+        }),
+      );
+
+      expect(
+        screen.getByText(`Hành trình đang chọn: ${journey.id}`),
+      ).toBeInTheDocument();
+
+      journey.stages.slice(1).forEach((stage) => {
+        fireEvent.click(
+          screen.getByRole("button", {
+            name: "Mô phỏng hoàn tất và chuyển bàn giao",
+          }),
+        );
+        expect(screen.getByText(`Giai đoạn hiện tại`)).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: stage.label })).toHaveClass(
+          "active",
+        );
+      });
+
+      expect(
+        screen.getByRole("button", { name: "Đã đến QA mẫu" }),
+      ).toBeDisabled();
+    },
+  );
+
+  it("shows the wholesale mock blocker without preventing local prototype progress", () => {
+    render(<AtlasApp />);
+    const wholesaleCard = screen.getByText("WS-2026-0714").closest("article")!;
+    fireEvent.click(
+      within(wholesaleCard).getByRole("button", { name: "Mở hành trình mẫu" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mô phỏng hoàn tất và chuyển bàn giao",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mô phỏng hoàn tất và chuyển bàn giao",
+      }),
+    );
+    expect(screen.getByText(/cần rà soát nhà cung cấp/i)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mô phỏng hoàn tất và chuyển bàn giao",
+      }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Đơn mua hàng" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps warehouse receiving and preparation separate from outbound dispatch", () => {
+    render(<AtlasApp />);
+    fireEvent.click(screen.getByRole("button", { name: "Đơn mua hàng" }));
+    expect(
+      screen.getByRole("heading", { name: "Đơn mua hàng" }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp nhận và chuẩn bị kho" }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Tiếp nhận và chuẩn bị kho" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Nhân viên kho")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Lập kế hoạch giao nhận" }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Lập kế hoạch giao nhận" }),
+    ).toBeInTheDocument();
+  });
+
+  it("resets local workflow progress when the prototype remounts", () => {
+    const { unmount } = render(<AtlasApp />);
+    const cateringCard = screen.getByText("CAT-0713-ND").closest("article")!;
+    fireEvent.click(
+      within(cateringCard).getByRole("button", { name: "Mở hành trình mẫu" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Mô phỏng hoàn tất và chuyển bàn giao",
+      }),
+    );
+    expect(
+      screen.getByRole("heading", { name: "Điểm danh và suất ăn" }),
+    ).toBeInTheDocument();
+    unmount();
+
+    render(<AtlasApp />);
+    fireEvent.click(screen.getByRole("button", { name: "Lập thực đơn" }));
+    expect(
+      screen.getByText("Nhu cầu catering mẫu: 620 suất"),
+    ).toBeInTheDocument();
   });
 });
