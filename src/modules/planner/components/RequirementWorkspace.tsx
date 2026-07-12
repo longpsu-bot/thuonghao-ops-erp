@@ -1,4 +1,6 @@
-import type { LocalLineState, RequirementLine } from "../types";
+import { Fragment } from "react";
+import type { LocalLineState, RequirementLine, ViewMode } from "../types";
+const formatDate = (value: string) => `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`;
 const qty = (n: number) =>
   new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(n);
 const labels: Record<string, string> = {
@@ -14,6 +16,10 @@ const labels: Record<string, string> = {
   READY: "Sẵn sàng",
   NEEDS_REVIEW: "Cần duyệt",
   BLOCKED: "Đang chặn",
+  OK: "Bình thường",
+  INFO: "Thông tin",
+  WARNING: "Cần chú ý",
+  BLOCKING: "Đang chặn",
 };
 
 export function RequirementTable({
@@ -21,12 +27,25 @@ export function RequirementTable({
   selected,
   onSelect,
   states,
+  viewMode,
 }: {
   lines: RequirementLine[];
   selected?: string;
   onSelect: (id: string) => void;
   states: Record<string, LocalLineState>;
+  viewMode: ViewMode;
 }) {
+  const groupKey = (line: RequirementLine) => {
+    if (viewMode === "CUSTOMER") return line.customer;
+    if (viewMode === "SOURCE") return labels[line.sourceType];
+    if (viewMode === "SUPPLIER") return line.supplierName ?? "Chưa có nhà cung cấp";
+    return formatDate(line.serviceDate);
+  };
+  const groups = lines.reduce<Record<string, RequirementLine[]>>((result, line) => {
+    const key = groupKey(line);
+    (result[key] ??= []).push(line);
+    return result;
+  }, {});
   return (
     <section className="table-section">
       <div className="section-heading">
@@ -61,7 +80,15 @@ export function RequirementTable({
             </tr>
           </thead>
           <tbody>
-            {lines.map((x) => {
+            {Object.entries(groups).map(([group, groupLines]) => (
+              <Fragment key={group}>
+                <tr className="group-row">
+                  <td colSpan={13}>
+                    <strong>{group}</strong>
+                    <span>{groupLines.length} dòng · {groupLines.filter((x) => x.readiness === "READY").length} sẵn sàng · {groupLines.filter((x) => x.readiness === "BLOCKED").length} đang chặn</span>
+                  </td>
+                </tr>
+                {groupLines.map((x) => {
               const local = states[x.id];
               return (
                 <tr
@@ -70,7 +97,7 @@ export function RequirementTable({
                   onClick={() => onSelect(x.id)}
                 >
                   <td>
-                    {x.serviceDate.slice(8, 10)}/{x.serviceDate.slice(5, 7)}
+                    {formatDate(x.serviceDate)}
                   </td>
                   <td>
                     <strong>{x.customer}</strong>
@@ -88,7 +115,7 @@ export function RequirementTable({
                   <td>{x.unit}</td>
                   <td>
                     <span className={`badge ${x.severity.toLowerCase()}`}>
-                      {x.severity}
+                      {labels[x.severity]}
                     </span>
                     {local?.flagged && (
                       <small className="flagged">Đã gắn cờ</small>
@@ -124,7 +151,9 @@ export function RequirementTable({
                   </td>
                 </tr>
               );
-            })}
+                })}
+              </Fragment>
+            ))}
           </tbody>
         </table>
         {!lines.length && (
@@ -139,11 +168,13 @@ export function RequirementDetail({
   line,
   state,
   onAction,
+  onReviewNoteChange,
   onClose,
 }: {
   line: RequirementLine;
   state: LocalLineState;
   onAction: (key: keyof LocalLineState) => void;
+  onReviewNoteChange: (note: string) => void;
   onClose: () => void;
 }) {
   return (
@@ -153,7 +184,7 @@ export function RequirementDetail({
           <span className="eyebrow">CHI TIẾT · PROTOTYPE</span>
           <h2>{line.ingredient}</h2>
           <p>
-            {line.customer} · {line.serviceDate}
+            {line.customer} · {formatDate(line.serviceDate)}
           </p>
         </div>
         <button className="icon-button" aria-label="Đóng" onClick={onClose}>
@@ -211,7 +242,7 @@ export function RequirementDetail({
               : "callout"
           }
         >
-          <h3>Cảnh báo · {line.severity}</h3>
+          <h3>Cảnh báo · {labels[line.severity]}</h3>
           <strong>{line.warningCode ?? "Không có mã cảnh báo"}</strong>
           <p>{line.warningExplanation}</p>
         </section>
@@ -222,6 +253,15 @@ export function RequirementDetail({
             {line.supplierName ? ` · ${line.supplierName}` : ""}
           </p>
           <small>Chỉ là dữ liệu fixture; UI không tự chọn nhà cung cấp.</small>
+        </section>
+        <section className="review-note">
+          <h3>Ghi chú rà soát cục bộ</h3>
+          <textarea
+            value={state.reviewNote}
+            onChange={(event) => onReviewNoteChange(event.target.value)}
+            placeholder="Ghi nhận điều cần kiểm tra hoặc bàn giao…"
+          />
+          <small>Chỉ lưu trong bộ nhớ trình duyệt; tải lại trang sẽ xóa ghi chú.</small>
         </section>
         <section>
           <h3>Câu hỏi chưa giải quyết</h3>
