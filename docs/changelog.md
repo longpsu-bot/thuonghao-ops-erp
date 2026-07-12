@@ -4,6 +4,26 @@ All notable architecture, documentation, and implementation changes should be re
 
 ---
 
+## 2026-07-12 — UI-led, contract-constrained design sequence
+
+### Refined
+
+- Replaced loose `documentation-first and UI-first` wording with the more precise rule: `UI-led, contract-constrained design before Supabase schema implementation`.
+- Clarified that UI prototypes may precede final Supabase schema work, but each prototype must define states, actions, warnings, data contracts, and eventual backend command boundaries.
+- Clarified that UI prototypes must not recreate Retool-style hidden business logic inside React.
+
+### Added
+
+- `docs/ui/master-data-review-workspace.md`
+
+### Updated
+
+- `docs/decisions/decision-register.md`
+- `docs/current-context.md`
+- `docs/handbook/12-rollout-and-migration-plan.md`
+
+---
+
 ## 2026-07-12 — UI and documentation before Supabase schema
 
 ### Accepted
