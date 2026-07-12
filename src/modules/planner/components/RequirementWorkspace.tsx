@@ -173,7 +173,7 @@ export function RequirementDetail({
 }: {
   line: RequirementLine;
   state: LocalLineState;
-  onAction: (key: keyof LocalLineState) => void;
+  onAction: (key: Exclude<keyof LocalLineState, "reviewNote">) => void;
   onReviewNoteChange: (note: string) => void;
   onClose: () => void;
 }) {
