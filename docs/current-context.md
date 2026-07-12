@@ -13,7 +13,7 @@
 - Internal codename: Project Atlas
 - Repository: `longpsu-bot/thuonghao-ops-erp`
 - Source of truth: GitHub repository
-- Primary development approach: architecture-first, UI/documentation-first, Codex-assisted implementation
+- Primary development approach: architecture-first, UI-led, contract-constrained, Codex-assisted implementation
 
 ---
 
@@ -53,7 +53,7 @@ Completed baseline documents:
 
 1. Business before technology.
 2. Architecture before implementation.
-3. Workflow documentation and UI review before Supabase schema finalization.
+3. Use UI-led, contract-constrained design before Supabase schema implementation.
 4. GitHub is the source of truth.
 5. Codex implements bounded approved tasks.
 6. React coordinates; backend decides.
@@ -77,9 +77,25 @@ Product owner review needed for:
 
 ---
 
-## 6. Current likely first vertical
+## 6. Current practical next prototype
 
-Recommended first vertical workflow:
+Recommended immediate UI prototype:
+
+```text
+Master Data Review Workspace
+  → ingredient review
+  → unit and conversion review
+  → recipe-line review
+  → calculation-rule candidate review
+```
+
+Reason: staff are already reviewing ingredients, and the calculation engine depends on clean ingredient, unit, and recipe-line assumptions.
+
+---
+
+## 7. Current likely first operational vertical
+
+Recommended first operational workflow after master-data review:
 
 ```text
 Wholesale order
@@ -93,22 +109,28 @@ Reason: wholesale is a new demand source and can be built with less dependency o
 
 ---
 
-## 7. Current sequencing decision
+## 8. Current sequencing decision
 
-OPS ERP should continue with workflow documentation, staff review, and UI prototypes before Supabase schema implementation.
+OPS ERP should use UI-led, contract-constrained design before Supabase schema implementation.
+
+This means:
+
+- UI prototypes are allowed before final schema work;
+- UI prototypes must not become hidden business logic;
+- each screen must define read data, draft state, validation, warnings, backend commands, and eventual data contracts;
+- Supabase schema and RPC implementation should begin only after the relevant workflow, UI states, rule behavior, and API contracts are sufficiently reviewed.
 
 Rationale:
 
 - table design should follow validated workflow needs;
 - calculation rules depend on ingredient, unit, and recipe review;
 - UI review exposes missing business states earlier than database-first work;
+- data contracts prevent React from recreating Retool-style hidden state and JavaScript logic;
 - premature schema design risks encoding old OPS v1 assumptions into OPS ERP.
-
-Supabase design remains part of the target architecture, but schema implementation should begin only after the relevant workflow, data definitions, UI states, and calculation rules are sufficiently reviewed.
 
 ---
 
-## 8. Open blockers before implementation
+## 9. Open blockers before implementation
 
 - exact procurement aggregation level;
 - role and permission matrix;
@@ -120,6 +142,6 @@ Supabase design remains part of the target architecture, but schema implementati
 
 ---
 
-## 9. Update rule
+## 10. Update rule
 
 This file should be updated whenever project direction, phase, accepted scope, or blocking decisions change.
