@@ -1,73 +1,83 @@
-import { Fragment } from "react";
-import type { LocalLineState, RequirementLine, ViewMode } from "../types";
-const formatDate = (value: string) => `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`;
-const qty = (n: number) =>
-  new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(n);
-const labels: Record<string, string> = {
+import { formatDateVi } from "../date";
+import type { LocalLineState, RequirementLine } from "../types";
+
+const qty = (value: number) =>
+  new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(value);
+
+const sourceLabels: Record<string, string> = {
   CATERING_MENU: "Thực đơn",
   WHOLESALE_ORDER: "Bán sỉ",
-  PANTRY_ADD: "Bổ sung",
+  PANTRY_ADD: "Bổ sung kho",
   MANUAL_DEMAND: "Thủ công",
   CORRECTION: "Điều chỉnh",
-  ASSIGNED: "Đã gán",
-  MISSING: "Thiếu NCC",
-  SUGGESTED: "Đề xuất",
-  CONFLICT: "Xung đột",
-  READY: "Sẵn sàng",
-  NEEDS_REVIEW: "Cần duyệt",
-  BLOCKED: "Đang chặn",
+};
+
+const severityLabels: Record<string, string> = {
   OK: "Bình thường",
   INFO: "Thông tin",
-  WARNING: "Cần chú ý",
+  WARNING: "Cần kiểm tra",
   BLOCKING: "Đang chặn",
 };
 
+const supplierLabels: Record<string, string> = {
+  ASSIGNED: "Đã gán NCC",
+  MISSING: "Thiếu NCC",
+  SUGGESTED: "NCC đề xuất",
+  CONFLICT: "Xung đột NCC",
+};
+
+const readinessLabels: Record<string, string> = {
+  READY: "Sẵn sàng",
+  NEEDS_REVIEW: "Cần xử lý",
+  BLOCKED: "Bị chặn",
+};
+
+const blockedReasons: Record<string, string> = {
+  MISSING_SUPPLIER: "Thiếu nhà cung cấp",
+  INACTIVE_INGREDIENT: "Nguyên liệu ngưng hoạt động",
+};
+
+export type RequirementGroup = {
+  id: string;
+  title: string;
+  summary: string;
+  lines: RequirementLine[];
+};
+
 export function RequirementTable({
-  lines,
+  groups,
   selected,
   onSelect,
   states,
-  viewMode,
 }: {
-  lines: RequirementLine[];
+  groups: RequirementGroup[];
   selected?: string;
   onSelect: (id: string) => void;
   states: Record<string, LocalLineState>;
-  viewMode: ViewMode;
 }) {
-  const groupKey = (line: RequirementLine) => {
-    if (viewMode === "CUSTOMER") return line.customer;
-    if (viewMode === "SOURCE") return labels[line.sourceType];
-    if (viewMode === "SUPPLIER") return line.supplierName ?? "Chưa có nhà cung cấp";
-    return formatDate(line.serviceDate);
-  };
-  const groups = lines.reduce<Record<string, RequirementLine[]>>((result, line) => {
-    const key = groupKey(line);
-    (result[key] ??= []).push(line);
-    return result;
-  }, {});
+  const count = groups.reduce((total, group) => total + group.lines.length, 0);
   return (
     <section className="table-section">
       <div className="section-heading">
         <div>
           <span className="eyebrow">YÊU CẦU NGUYÊN LIỆU</span>
           <h2>
-            Kiểm tra yêu cầu <small>{lines.length} dòng</small>
+            Kiểm tra yêu cầu <small>{count} dòng</small>
           </h2>
         </div>
         <span className="legend">
-          <i className="dot blocking" /> Chặn <i className="dot warning" /> Cảnh
-          báo
+          <i className="dot blocking" /> Chặn <i className="dot warning" /> Cần
+          kiểm tra
         </span>
       </div>
       <div className="table-scroll">
         <table>
           <thead>
             <tr>
-              <th>Ngày</th>
-              <th>Trường / khách</th>
+              <th className="sticky-col sticky-date">Ngày</th>
+              <th className="sticky-col sticky-customer">Trường / khách</th>
+              <th className="sticky-col sticky-ingredient">Nguyên liệu</th>
               <th>Nguồn</th>
-              <th>Nguyên liệu</th>
               <th>Chế độ tính</th>
               <th className="num">Thô</th>
               <th className="num">Sau điều chỉnh</th>
@@ -80,87 +90,115 @@ export function RequirementTable({
             </tr>
           </thead>
           <tbody>
-            {Object.entries(groups).map(([group, groupLines]) => (
-              <Fragment key={group}>
-                <tr className="group-row">
-                  <td colSpan={13}>
-                    <strong>{group}</strong>
-                    <span>{groupLines.length} dòng · {groupLines.filter((x) => x.readiness === "READY").length} sẵn sàng · {groupLines.filter((x) => x.readiness === "BLOCKED").length} đang chặn</span>
-                  </td>
-                </tr>
-                {groupLines.map((x) => {
-              const local = states[x.id];
-              return (
-                <tr
-                  key={x.id}
-                  className={`${selected === x.id ? "selected-row" : ""} severity-${x.severity.toLowerCase()}`}
-                  onClick={() => onSelect(x.id)}
-                >
-                  <td>
-                    {formatDate(x.serviceDate)}
-                  </td>
-                  <td>
-                    <strong>{x.customer}</strong>
-                    <small>{x.sourceReference}</small>
-                  </td>
-                  <td>{labels[x.sourceType]}</td>
-                  <td>
-                    <strong>{x.ingredient}</strong>
-                    <small>{x.ingredientGroup}</small>
-                  </td>
-                  <td>{x.calculationMode}</td>
-                  <td className="num">{qty(x.rawQuantity)}</td>
-                  <td className="num adjusted">{qty(x.adjustedQuantity)}</td>
-                  <td className="num orderable">{qty(x.orderableQuantity)}</td>
-                  <td>{x.unit}</td>
-                  <td>
-                    <span className={`badge ${x.severity.toLowerCase()}`}>
-                      {labels[x.severity]}
-                    </span>
-                    {local?.flagged && (
-                      <small className="flagged">Đã gắn cờ</small>
-                    )}
-                  </td>
-                  <td>
-                    <span
-                      className={`badge supplier-${x.supplierStatus.toLowerCase()}`}
-                    >
-                      {labels[x.supplierStatus]}
-                    </span>
-                    <small>{x.supplierName}</small>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ready-${x.readiness.toLowerCase()}`}
-                    >
-                      {labels[x.readiness]}
-                    </span>
-                    {local?.locallyReady && <small>Nháp: sẵn sàng</small>}
-                    {local?.reviewed && <small>✓ Đã xem</small>}
-                  </td>
-                  <td>
-                    <button
-                      className="trace-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelect(x.id);
-                      }}
-                    >
-                      Chi tiết →
-                    </button>
-                  </td>
-                </tr>
-              );
-                })}
-              </Fragment>
+            {groups.map((group) => (
+              <GroupRows
+                key={group.id}
+                group={group}
+                selected={selected}
+                onSelect={onSelect}
+                states={states}
+              />
             ))}
           </tbody>
         </table>
-        {!lines.length && (
+        {!groups.length && (
           <div className="empty">Không có dữ liệu phù hợp bộ lọc.</div>
         )}
       </div>
     </section>
+  );
+}
+
+function GroupRows({
+  group,
+  selected,
+  onSelect,
+  states,
+}: {
+  group: RequirementGroup;
+  selected?: string;
+  onSelect: (id: string) => void;
+  states: Record<string, LocalLineState>;
+}) {
+  return (
+    <>
+      <tr className="group-row">
+        <td colSpan={13}>
+          <strong>{group.title}</strong>
+          <span>{group.summary}</span>
+        </td>
+      </tr>
+      {group.lines.map((line) => {
+        const local = states[line.id];
+        const blockedReason =
+          line.readiness === "BLOCKED"
+            ? (blockedReasons[line.warningCode ?? ""] ??
+              line.warningExplanation)
+            : undefined;
+        return (
+          <tr
+            key={line.id}
+            className={`${selected === line.id ? "selected-row" : ""} severity-${line.severity.toLowerCase()}`}
+            onClick={() => onSelect(line.id)}
+          >
+            <td className="sticky-col sticky-date">
+              {formatDateVi(line.serviceDate)}
+            </td>
+            <td className="sticky-col sticky-customer">
+              <strong>{line.customer}</strong>
+              <small>{line.sourceReference}</small>
+            </td>
+            <td className="sticky-col sticky-ingredient">
+              <strong>{line.ingredient}</strong>
+              <small>{line.ingredientGroup}</small>
+            </td>
+            <td>{sourceLabels[line.sourceType]}</td>
+            <td>{line.calculationMode}</td>
+            <td className="num">{qty(line.rawQuantity)}</td>
+            <td className="num adjusted">{qty(line.adjustedQuantity)}</td>
+            <td className="num orderable">{qty(line.orderableQuantity)}</td>
+            <td>{line.unit}</td>
+            <td>
+              <span className={`badge ${line.severity.toLowerCase()}`}>
+                {severityLabels[line.severity]}
+              </span>
+              {blockedReason && (
+                <small className="blocked-reason">
+                  Bị chặn: {blockedReason}
+                </small>
+              )}
+              {local?.flagged && <small className="flagged">Đã gắn cờ</small>}
+            </td>
+            <td>
+              <span
+                className={`badge supplier-${line.supplierStatus.toLowerCase()}`}
+              >
+                {supplierLabels[line.supplierStatus]}
+              </span>
+              <small>{line.supplierName}</small>
+            </td>
+            <td>
+              <span className={`badge ready-${line.readiness.toLowerCase()}`}>
+                {readinessLabels[line.readiness]}
+              </span>
+              {local?.locallyReady && <small>Nháp: sẵn sàng</small>}
+              {local?.reviewed && <small>✓ Đã xem</small>}
+            </td>
+            <td>
+              <button
+                className="trace-button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelect(line.id);
+                }}
+              >
+                Chi tiết →
+              </button>
+            </td>
+          </tr>
+        );
+      })}
+    </>
   );
 }
 
@@ -174,7 +212,7 @@ export function RequirementDetail({
   line: RequirementLine;
   state: LocalLineState;
   onAction: (key: Exclude<keyof LocalLineState, "reviewNote">) => void;
-  onReviewNoteChange: (note: string) => void;
+  onReviewNoteChange: (value: string) => void;
   onClose: () => void;
 }) {
   return (
@@ -184,7 +222,7 @@ export function RequirementDetail({
           <span className="eyebrow">CHI TIẾT · PROTOTYPE</span>
           <h2>{line.ingredient}</h2>
           <p>
-            {line.customer} · {formatDate(line.serviceDate)}
+            {line.customer} · {formatDateVi(line.serviceDate)}
           </p>
         </div>
         <button className="icon-button" aria-label="Đóng" onClick={onClose}>
@@ -215,13 +253,13 @@ export function RequirementDetail({
             <span className="prototype-label">DỮ LIỆU MẪU</span>
           </h3>
           <ol className="trace-list">
-            {line.trace.map((s, i) => (
-              <li key={`${s.label}-${i}`}>
-                <span>{i + 1}</span>
+            {line.trace.map((step, index) => (
+              <li key={`${step.label}-${index}`}>
+                <span>{index + 1}</span>
                 <div>
-                  <strong>{s.label}</strong>
-                  <b>{s.value}</b>
-                  <small>{s.note}</small>
+                  <strong>{step.label}</strong>
+                  <b>{step.value}</b>
+                  <small>{step.note}</small>
                 </div>
               </li>
             ))}
@@ -242,32 +280,32 @@ export function RequirementDetail({
               : "callout"
           }
         >
-          <h3>Cảnh báo · {labels[line.severity]}</h3>
+          <h3>Cảnh báo · {severityLabels[line.severity]}</h3>
           <strong>{line.warningCode ?? "Không có mã cảnh báo"}</strong>
           <p>{line.warningExplanation}</p>
         </section>
         <section>
           <h3>Xem trước gán nhà cung cấp</h3>
           <p>
-            <strong>{labels[line.supplierStatus]}</strong>
+            <strong>{supplierLabels[line.supplierStatus]}</strong>
             {line.supplierName ? ` · ${line.supplierName}` : ""}
           </p>
           <small>Chỉ là dữ liệu fixture; UI không tự chọn nhà cung cấp.</small>
         </section>
-        <section className="review-note">
-          <h3>Ghi chú rà soát cục bộ</h3>
+        <section>
+          <h3>Ghi chú rà soát</h3>
           <textarea
+            aria-label="Ghi chú rà soát"
             value={state.reviewNote}
+            placeholder="Ghi chú này chỉ lưu cục bộ và sẽ mất khi tải lại trang."
             onChange={(event) => onReviewNoteChange(event.target.value)}
-            placeholder="Ghi nhận điều cần kiểm tra hoặc bàn giao…"
           />
-          <small>Chỉ lưu trong bộ nhớ trình duyệt; tải lại trang sẽ xóa ghi chú.</small>
         </section>
         <section>
           <h3>Câu hỏi chưa giải quyết</h3>
           <ul>
-            {line.openQuestions.map((q) => (
-              <li key={q}>{q}</li>
+            {line.openQuestions.map((question) => (
+              <li key={question}>{question}</li>
             ))}
           </ul>
         </section>

@@ -1,5 +1,5 @@
 import type { DemandSource } from "../types";
-const formatDate = (value: string) => `${value.slice(8, 10)}/${value.slice(5, 7)}/${value.slice(0, 4)}`;
+import { formatDateVi } from "../date";
 const labels: Record<string, string> = {
   CATERING_MENU: "Thực đơn",
   WHOLESALE_ORDER: "Bán sỉ",
@@ -44,7 +44,7 @@ export function DemandSourcePanel({
             <strong>{s.reference}</strong>
             <span>{s.customer}</span>
             <small>
-              {formatDate(s.serviceDate)} · {s.basis}
+              {formatDateVi(s.serviceDate)} · {s.basis}
             </small>
           </button>
         ))}
