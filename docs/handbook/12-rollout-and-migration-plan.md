@@ -37,7 +37,21 @@ Each legacy object must be classified as:
 
 ## 4. Sequencing principle
 
-OPS ERP should use a documentation-first and UI-first implementation sequence before final Supabase schema implementation.
+OPS ERP should use a **UI-led, contract-constrained design sequence** before final Supabase schema implementation.
+
+This is not loose UI-first development.
+
+UI prototypes may come before final schema work, but every prototype must identify:
+
+- read data;
+- draft state;
+- validation state;
+- warning and blocking state;
+- user actions;
+- backend commands;
+- calculation preview versus authoritative calculation;
+- audit and trace requirements;
+- eventual data/API contracts.
 
 The intended sequence is:
 
@@ -48,7 +62,9 @@ Staff-facing documentation and review
     ↓
 UI / screen prototype
     ↓
-State and data contract review
+State model and data contract review
+    ↓
+Conceptual data model
     ↓
 Supabase schema and RPC design
     ↓
@@ -57,7 +73,9 @@ Implementation and testing
 
 This avoids freezing database assumptions before the workflow, screen states, staff behavior, and calculation rules are sufficiently understood.
 
-Supabase remains the target backend platform, but table design should follow validated workflow and UI needs rather than leading them prematurely.
+It also avoids recreating Retool-style complexity inside React. UI prototypes must expose business states and contracts; they must not become the owner of hidden business logic.
+
+Supabase remains the target backend platform, but table design should follow validated workflow, UI state, and API contract needs rather than leading them prematurely.
 
 ---
 
@@ -125,7 +143,7 @@ This phase may use mock data or static fixtures. It should not require final Sup
 
 ### Phase 6 — First vertical workflow
 
-Recommended first vertical:
+Recommended first operational vertical:
 
 ```text
 Wholesale order
@@ -135,7 +153,9 @@ Wholesale order
     → dispatch draft
 ```
 
-Wholesale is a good first vertical because it is a new workflow and does not require full recipe migration.
+Wholesale is a good first operational vertical because it is a new workflow and does not require full recipe migration.
+
+Before this operational vertical, the recommended immediate prototype is the Master Data Review Workspace because the requirement engine depends on clean ingredients, units, recipe-line treatment, and calculation-rule candidates.
 
 ### Phase 7 — Catering integration
 
@@ -224,6 +244,7 @@ A workflow may migrate to OPS ERP when:
 - business process is documented;
 - staff-facing review materials are accepted where applicable;
 - UI workflow is usable;
+- UI state model is explicit;
 - permissions are defined;
 - data ownership is clear;
 - data contracts and API commands are reviewed;
@@ -240,12 +261,13 @@ A workflow may migrate to OPS ERP when:
 1. Which workflow should OPS ERP own first: wholesale, requirements review, procurement, or dispatch?
 2. Which OPS v1 data must be visible in OPS ERP on day one?
 3. Which workflow failure would be most damaging operationally?
-4. How long should v1 and v3 run in parallel?
+4. How long should v1 and OPS ERP run in parallel?
 5. Which staff can pilot the first workflow?
 6. Which screens should be prototyped before Supabase schema work starts?
+7. Which screen states are advisory only, and which must map to authoritative backend commands?
 
 ---
 
 ## 11. Implementation note
 
-Codex must not begin Supabase schema implementation or production migration work until the relevant workflow documentation, UI flow, data contracts, ownership boundary, and review questions are explicitly documented.
+Codex must not begin Supabase schema implementation or production migration work until the relevant workflow documentation, UI flow, state model, data contracts, ownership boundary, and review questions are explicitly documented.
