@@ -24,6 +24,10 @@ This register records approved business rules. Module specifications may refine 
 | BR-018 | Stable line identity must be preserved across requirements, supplier assignment, purchase-order lines, dispatch lines, and audit history. | Approved |
 | BR-019 | Security authorization must be enforced in the backend through RLS and RPC privileges, not solely through hidden UI controls. | Approved |
 | BR-020 | Service-role credentials must never be exposed in the React frontend. | Approved |
+| BR-021 | A dual-use ingredient may be calculated as a main ingredient or as an herb/condiment depending on recipe-line usage context and configured quantity threshold. | Draft — product owner review required |
+| BR-022 | Herb/condiment quantities below the configured threshold may use batch allowance calculation instead of exact per-portion proportional calculation. | Draft — product owner review required |
+| BR-023 | Herb/condiment batch allowance rules must be backend-authoritative, configurable, traceable, and separate from procurement rounding. | Draft — product owner review required |
+| BR-024 | Requirement traces must record when herb/condiment batch allowance is applied, including the original recipe quantity, threshold, batch size, allowance quantity, and rule identifier. | Draft — product owner review required |
 
 ## Planned rule domains
 
@@ -33,6 +37,7 @@ Future rules will be grouped under:
 - Recipes
 - Adjustments and substitutions
 - Requirement calculation
+- Herb and condiment allowance
 - Unit conversion
 - Rounding and packaging
 - Supplier allocation
