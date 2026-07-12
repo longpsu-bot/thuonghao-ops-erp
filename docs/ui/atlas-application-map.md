@@ -9,8 +9,8 @@
 Atlas has exactly three active daily workflow stages:
 
 1. **Lập nhu cầu** — review what is needed, who needs it, the service date, and the school, kitchen, or destination context together.
-2. **Lập kế hoạch mua hàng** — assign suppliers and prepare supplier orders. A supplier-coordination note or status is optional only; it is not a required confirmation workflow.
-3. **Nhập kho** — compare ordered and received quantities, and make shortages or discrepancies visible.
+2. **Lập kế hoạch mua hàng** — assign suppliers and prepare supplier orders. One requirement may be split across multiple suppliers; a supplier-coordination note or status is optional only, not a required confirmation workflow.
+3. **Nhập kho** — compare ordered and received quantities by supplier allocation, and make shortages, downstream impact, or follow-up needs visible.
 
 The intended handoff is **Lập nhu cầu → Lập kế hoạch mua hàng → Nhập kho**.
 
@@ -52,7 +52,7 @@ The current pages are static prototypes only. Full recipe editing, recipe CRUD, 
 
 ## Prototype fixtures and boundaries
 
-The receiving fixture compares a Jasmine rice order of **250 kg** with a receipt of **240 kg**, exposing a **10 kg shortage**. Fixture values are illustrative only; React does not calculate authoritative results.
+The purchase-planning fixture demonstrates a 250 kg Jasmine-rice requirement split between two suppliers. The receiving fixture links a 10 kg shortage to Thành Công Foods and shows its impact on Bếp Minh An. Fixture values are illustrative only; React does not calculate authoritative results.
 
 The UI is static prototype only. It creates no backend records, authoritative calculations, inventory accounting movements, released purchase documents, confirmations, or integrations.
 

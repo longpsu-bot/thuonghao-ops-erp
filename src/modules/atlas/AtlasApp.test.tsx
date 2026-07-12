@@ -26,12 +26,20 @@ describe("AtlasApp", () => {
     expect(stages).not.toHaveTextContent("Kiểm soát thay đổi công thức");
   });
 
-  it("shows the receiving shortage and keeps supplier coordination optional", () => {
+  it("shows split supplier assignment and keeps supplier coordination optional", () => {
     render(<AtlasApp />);
     fireEvent.click(screen.getByRole("button", { name: "Lập kế hoạch mua hàng" }));
-    expect(screen.getByText(/không yêu cầu xác nhận NCC/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Gạo Jasmine")).toHaveLength(2);
+    expect(screen.getByText("150 kg")).toBeInTheDocument();
+    expect(screen.getByText("100 kg")).toBeInTheDocument();
+    expect(screen.getByText(/ghi chú phối hợp là tùy chọn/i)).toBeInTheDocument();
+  });
+
+  it("shows the supplier-linked receiving shortage and downstream impact", () => {
+    render(<AtlasApp />);
     fireEvent.click(screen.getByRole("button", { name: "Nhập kho" }));
     expect(screen.getAllByText("Thiếu 10 kg")).toHaveLength(2);
-    expect(screen.getByText(/đặt 250 kg · nhận 240 kg · thiếu 10 kg/i)).toBeInTheDocument();
+    expect(screen.getByText("Thành Công Foods")).toBeInTheDocument();
+    expect(screen.getAllByText(/Bếp Minh An còn thiếu 10 kg/i)).toHaveLength(2);
   });
 });
