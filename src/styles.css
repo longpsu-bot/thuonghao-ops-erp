@@ -163,6 +163,11 @@ body {
   font-size: 12px;
   font-weight: 700;
 }
+
+.page-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
 .journey-strip {
   display: flex;
   gap: 12px;
