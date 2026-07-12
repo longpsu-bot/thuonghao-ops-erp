@@ -4,6 +4,25 @@ All notable architecture, documentation, and implementation changes should be re
 
 ---
 
+## 2026-07-12 — React-first planner prototype
+
+### Accepted
+
+- Product owner confirmed that the Planner Workspace should be created with React first because screen design will answer many open questions about calculation behavior, table definitions, workflow states, and data contracts.
+- The React-first planner prototype must use mock data or static fixtures only.
+- Supabase schema, migrations, RPCs, and authoritative calculation logic remain out of scope until the planner contract is reviewed.
+
+### Added
+
+- `docs/implementation-tasks/TASK-001-planner-workspace-react-prototype.md`
+
+### Updated
+
+- `docs/ui/ui-catalogue.md`
+- `docs/current-context.md`
+
+---
+
 ## 2026-07-12 — Planner workspace prioritized
 
 ### Refined
