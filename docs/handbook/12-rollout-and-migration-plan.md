@@ -35,7 +35,33 @@ Each legacy object must be classified as:
 
 ---
 
-## 4. Recommended rollout phases
+## 4. Sequencing principle
+
+OPS ERP should use a documentation-first and UI-first implementation sequence before final Supabase schema implementation.
+
+The intended sequence is:
+
+```text
+Business workflow definition
+    ↓
+Staff-facing documentation and review
+    ↓
+UI / screen prototype
+    ↓
+State and data contract review
+    ↓
+Supabase schema and RPC design
+    ↓
+Implementation and testing
+```
+
+This avoids freezing database assumptions before the workflow, screen states, staff behavior, and calculation rules are sufficiently understood.
+
+Supabase remains the target backend platform, but table design should follow validated workflow and UI needs rather than leading them prematurely.
+
+---
+
+## 5. Recommended rollout phases
 
 ### Phase 0 — Foundation
 
@@ -55,26 +81,49 @@ Each legacy object must be classified as:
 - operating roles;
 - review of open business questions.
 
-### Phase 2 — System architecture
+### Phase 2 — Master data and rule review
 
-- system map;
-- domain model;
-- module specs;
-- calculation specification;
-- security model;
-- API standards.
+- ingredient master-data review;
+- unit and conversion review;
+- recipe-line review;
+- calculation-rule candidate review;
+- Vietnamese staff-facing review package.
 
-### Phase 3 — Technical foundation
+### Phase 3 — UI and workflow prototype
 
 - React app shell;
-- Supabase project configuration;
-- authentication;
-- layout;
-- navigation;
+- navigation model;
+- screen flows;
+- role-based page access draft;
+- form states;
+- table states;
+- warning and blocking states;
+- save/release/correction states;
+- export/reporting expectations.
+
+This phase may use mock data or static fixtures. It should not require final Supabase schema.
+
+### Phase 4 — Data contracts and API design
+
+- screen-to-data requirements;
+- read models;
+- command contracts;
+- validation errors;
+- calculation trace shape;
+- audit event shape;
+- permission checks.
+
+### Phase 5 — Supabase technical foundation
+
+- schema design;
+- migrations;
+- Supabase Auth;
+- RLS policies;
+- RPC command implementation;
 - typed API layer;
 - testing framework.
 
-### Phase 4 — First vertical workflow
+### Phase 6 — First vertical workflow
 
 Recommended first vertical:
 
@@ -88,7 +137,7 @@ Wholesale order
 
 Wholesale is a good first vertical because it is a new workflow and does not require full recipe migration.
 
-### Phase 5 — Catering integration
+### Phase 7 — Catering integration
 
 - legacy menu adapter;
 - recipe adapter or migration;
@@ -97,7 +146,7 @@ Wholesale is a good first vertical because it is a new workflow and does not req
 - adjustment workflow;
 - requirement review.
 
-### Phase 6 — Procurement and dispatch migration
+### Phase 8 — Procurement and dispatch migration
 
 - supplier assignment;
 - purchase order release;
@@ -105,7 +154,7 @@ Wholesale is a good first vertical because it is a new workflow and does not req
 - correction flow;
 - v1/v3 reconciliation.
 
-### Phase 7 — Production adoption
+### Phase 9 — Production adoption
 
 - selected live workflow;
 - staff training;
@@ -115,7 +164,7 @@ Wholesale is a good first vertical because it is a new workflow and does not req
 
 ---
 
-## 5. Coexistence rule
+## 6. Coexistence rule
 
 Only one system may own writes for a workflow at a given time.
 
@@ -127,7 +176,7 @@ Examples:
 
 ---
 
-## 6. Migration candidates
+## 7. Migration candidates
 
 ### Likely reference first
 
@@ -155,7 +204,7 @@ Examples:
 
 ---
 
-## 7. Rollback principle
+## 8. Rollback principle
 
 Every production rollout must have a rollback path.
 
@@ -168,31 +217,35 @@ Rollback may mean:
 
 ---
 
-## 8. Acceptance criteria for workflow migration
+## 9. Acceptance criteria for workflow migration
 
 A workflow may migrate to OPS ERP when:
 
 - business process is documented;
+- staff-facing review materials are accepted where applicable;
+- UI workflow is usable;
 - permissions are defined;
 - data ownership is clear;
+- data contracts and API commands are reviewed;
+- Supabase schema and RPCs are tested;
 - tests exist for critical rules;
-- staff workflow is usable;
 - export/reporting needs are met;
 - rollback path exists;
 - product owner accepts pilot results.
 
 ---
 
-## 9. Review questions
+## 10. Review questions
 
 1. Which workflow should OPS ERP own first: wholesale, requirements review, procurement, or dispatch?
 2. Which OPS v1 data must be visible in OPS ERP on day one?
 3. Which workflow failure would be most damaging operationally?
 4. How long should v1 and v3 run in parallel?
 5. Which staff can pilot the first workflow?
+6. Which screens should be prototyped before Supabase schema work starts?
 
 ---
 
-## 10. Implementation note
+## 11. Implementation note
 
-Codex must not begin production migration work until the workflow ownership boundary is explicitly documented.
+Codex must not begin Supabase schema implementation or production migration work until the relevant workflow documentation, UI flow, data contracts, ownership boundary, and review questions are explicitly documented.
