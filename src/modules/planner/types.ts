@@ -7,6 +7,7 @@ export type DemandSourceType =
 export type Severity = "OK" | "INFO" | "WARNING" | "BLOCKING";
 export type Readiness = "READY" | "NEEDS_REVIEW" | "BLOCKED";
 export type SupplierStatus = "ASSIGNED" | "MISSING" | "SUGGESTED" | "CONFLICT";
+export type ViewMode = "DATE" | "CUSTOMER" | "SOURCE" | "SUPPLIER";
 
 export type TraceStep = { label: string; value: string; note: string };
 export type DemandSource = {
@@ -51,6 +52,7 @@ export type LocalLineState = {
   substitutionDraft: boolean;
   overrideDraft: boolean;
   locallyReady: boolean;
+  reviewNote: string;
 };
 export type Filters = {
   from: string;
@@ -60,4 +62,5 @@ export type Filters = {
   severity: string;
   readiness: string;
   search: string;
+  exceptionOnly: boolean;
 };
