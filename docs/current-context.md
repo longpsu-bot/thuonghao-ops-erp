@@ -46,6 +46,8 @@ Completed baseline documents:
 - Rollout and Migration Plan
 - Master-data review package
 - Vietnamese staff-facing master-data review package
+- Master Data Review Workspace UI spec
+- Planner Workspace UI spec
 
 ---
 
@@ -68,12 +70,13 @@ Completed baseline documents:
 
 Product owner review needed for:
 
-1. Business Processes
-2. Calculation Specification
-3. Security Model
-4. Rollout and Migration Plan
-5. Business Glossary Vietnamese labels
-6. Master-data review results after staff review
+1. Planner Workspace UI spec
+2. Business Processes
+3. Calculation Specification
+4. Security Model
+5. Rollout and Migration Plan
+6. Business Glossary Vietnamese labels
+7. Master-data review results after staff review
 
 ---
 
@@ -82,30 +85,36 @@ Product owner review needed for:
 Recommended immediate UI prototype:
 
 ```text
-Master Data Review Workspace
-  → ingredient review
-  → unit and conversion review
-  → recipe-line review
-  → calculation-rule candidate review
+Planner Workspace
+  → planning overview
+  → demand source review
+  → requirement review
+  → adjustments and exceptions
+  → supplier assignment preview
+  → procurement readiness
+  → planning summary
 ```
 
-Reason: staff are already reviewing ingredients, and the calculation engine depends on clean ingredient, unit, and recipe-line assumptions.
+Reason: the planner is the daily operational decision center. It converts demand into actionable requirement readiness and exposes the workflow states that future data contracts, schema design, and backend commands must support.
+
+The Master Data Review Workspace remains a supporting prototype. It is important, but it should not displace the planner as the first operational prototype.
 
 ---
 
 ## 7. Current likely first operational vertical
 
-Recommended first operational workflow after master-data review:
+Recommended first operational workflow after planner contract review:
 
 ```text
-Wholesale order
-  → canonical demand
-  → requirement review
+Demand sources
+  → planner workspace
+  → reviewed requirements
+  → procurement readiness
   → procurement planning
   → dispatch draft
 ```
 
-Reason: wholesale is a new demand source and can be built with less dependency on full legacy recipe migration.
+Wholesale remains a strong candidate for the first live demand source because it is newer and has less dependency on full legacy recipe migration. However, the planner should be designed broadly enough to support catering, wholesale, pantry additions, and manual corrections.
 
 ---
 
@@ -138,7 +147,8 @@ Rationale:
 - correction process after release;
 - first workflow ownership boundary between OPS v1 and OPS ERP;
 - legacy data classification;
-- staff review of ingredients, units, recipe quantities, and calculation-rule candidates.
+- staff review of ingredients, units, recipe quantities, and calculation-rule candidates;
+- product owner review of Planner Workspace UI contract.
 
 ---
 
