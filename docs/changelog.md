@@ -4,15 +4,29 @@ All notable architecture, documentation, and implementation changes should be re
 
 ---
 
-## 2026-07-12 — Master data review baseline accepted
+## 2026-07-12 — UI and documentation before Supabase schema
 
-### Accepted baseline
+### Accepted
 
-- Vietnamese staff-facing master-data review package is accepted as a practical baseline for staff review.
-- The package may be revised after ingredient master-data cleanup, unit review, and recipe quantity review.
-- The accepted direction remains: calculation rules must be configurable, viewable, versioned where needed, traceable, and explainable. No hidden or hard-coded magic calculation rules are allowed.
+- Product owner confirmed the implementation sequence should remain documentation-first and UI-first before Supabase schema implementation.
+- Supabase remains the target backend platform, but schema work should follow reviewed workflows, UI states, data contracts, master-data review, and calculation-rule design.
 
-### Relevant documents
+### Updated
+
+- `docs/decisions/decision-register.md`
+- `docs/current-context.md`
+- `docs/handbook/12-rollout-and-migration-plan.md`
+
+---
+
+## 2026-07-12 — Vietnamese master-data review package accepted as baseline
+
+### Accepted
+
+- Vietnamese staff-facing master-data review package is accepted as a practical baseline.
+- The package may be revised after staff complete the review of ingredients, units, and recipe quantities.
+
+### Added
 
 - `docs/master-data/vi/README.md`
 - `docs/master-data/vi/01-ra-soat-danh-muc-nguyen-lieu.md`
