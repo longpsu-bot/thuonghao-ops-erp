@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { AttendanceWorkbench } from "../attendance/AttendanceWorkbench";
 import { WeeklyMenuWorkbench } from "../weekly-menu/WeeklyMenuWorkbench";
 import type { AtlasPage } from "./atlasConfig";
 import {
@@ -118,37 +119,7 @@ export function PlanningSourcesPage() {
   );
   const content: Record<(typeof sourceTabs)[number], ReactNode> = {
     "Thực đơn tuần": <WeeklyMenuWorkbench />,
-    "Sĩ số / suất ăn": (
-      <CompactTable
-        headers={[
-          "Trace ID",
-          "Ngày",
-          "Trường / đơn vị",
-          "Suất kế hoạch",
-          "Suất thực tế",
-          "Chênh lệch",
-          "Lý do",
-          "Trạng thái xác nhận",
-          "Người nhập",
-          "Người xác nhận",
-        ]}
-      >
-        <tr>
-          <td>OPS-2026-0714-ND-BIDO-001</td>
-          <td>14/07/2026</td>
-          <td>Trường Nguyễn Du</td>
-          <td>333</td>
-          <td>320</td>
-          <td>-13</td>
-          <td>Học sinh nghỉ</td>
-          <td>
-            <Chip tone="ok">Đã xác nhận</Chip>
-          </td>
-          <td>Hà · Bếp trung tâm</td>
-          <td>Lan · Điều hành</td>
-        </tr>
-      </CompactTable>
-    ),
+    "Sĩ số / suất ăn": <AttendanceWorkbench />,
     "Hàng đặt riêng": (
       <CompactTable
         headers={[

@@ -52,6 +52,25 @@ describe("Atlas operations workbench", () => {
     ).toBeInTheDocument();
   });
 
+  it("keeps Attendance actions decision-first and details expandable", () => {
+    render(<AtlasApp initialPage="planning-sources" />);
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số / suất ăn" }));
+    expect(screen.getByLabelText("Tóm tắt số suất")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Duyệt số suất" }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra số suất" }));
+    fireEvent.click(screen.getByRole("button", { name: "Duyệt số suất" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Bàn giao tạo nhu cầu" }),
+    );
+    expect(
+      screen.getByText("Đã bàn giao số suất cho bước tạo nhu cầu."),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem chi tiết" }));
+    expect(screen.getByText("Suất học sinh")).toBeInTheDocument();
+  });
+
   it("keeps Weekly Menu actions decision-first and detail expandable", () => {
     render(<AtlasApp initialPage="planning-sources" />);
     expect(screen.getByLabelText("Tóm tắt thực đơn tuần")).toBeInTheDocument();
