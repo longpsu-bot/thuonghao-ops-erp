@@ -1,24 +1,23 @@
-# Rà soát giao diện Atlas cho nhân sự
+# Atlas UI review instructions
 
-## Mở Storybook tại máy cục bộ
+## App preview: full workflow review
 
-1. Cài dependencies bằng `pnpm install`.
-2. Chạy `pnpm storybook`.
-3. Mở địa chỉ được hiển thị trong terminal, mặc định là `http://localhost:6006`.
+1. Download the `atlas-ui-review` artifact.
+2. Unzip the download.
+3. Open `index.html` in a browser.
+4. Review the full workflow.
 
-## Cần rà soát
+Use the app preview to review the end-to-end workflow, including how pages and workflow states connect.
 
-- Câu chữ tiếng Việt: có rõ vai trò, trạng thái, việc cần làm và bước bàn giao không.
-- Luồng thao tác: nhân sự có biết phải xử lý ngoại lệ nào trước và chuyển việc cho ai không.
-- Các trạng thái mẫu: kế hoạch bình thường, ưu tiên ngoại lệ, bị chặn/thiếu dữ liệu và ghi chú nhập kho.
-- Những thông tin, cảnh báo hoặc bước nghiệp vụ còn thiếu để hoàn thành công việc hằng ngày.
+## Storybook preview: component and state review
 
-## Chưa cần rà soát
+1. Download the `atlas-storybook-review` artifact.
+2. Unzip the download.
+3. Open `index.html` in a browser.
+4. Review isolated UI components and states.
 
-- Tính đúng của số lượng, quy tắc tính, làm tròn, phân bổ hay quyết định nghiệp vụ.
-- Phân quyền, đăng nhập, lưu dữ liệu, phát hành chứng từ, tồn kho và đối soát thực tế.
-- Hiệu năng, tích hợp Supabase/Retool/Google Sheets, hay dữ liệu sản xuất.
+Use the Storybook preview to focus on individual components, representative states, and the wording or visual treatment of those states.
 
-## Phạm vi dữ liệu
+## Scope of both previews
 
-Tất cả nội dung trong Storybook là fixture/mock cục bộ. Không có kết nối tới Supabase, Retool, Google Sheets, dữ liệu sản xuất hoặc dịch vụ AI.
+Neither artifact contains a backend, production data, or real operations. They do not perform real import or export, generate real documents, update inventory, run QA, process payments, or create invoices.
