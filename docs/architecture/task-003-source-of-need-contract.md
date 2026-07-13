@@ -3,7 +3,8 @@
 **Status:** Draft v0.1  
 **Scope:** Backend/domain contract only  
 **Implementation:** No database migration, no SQL, no React integration  
-**Related UI baseline:** TASK-002G Atlas source-of-need workflow
+**Related UI baseline:** TASK-002G Atlas source-of-need workflow  
+**Decision addendum:** `docs/architecture/task-003-source-of-need-contract-decisions.md`
 
 ## 1. Purpose
 
@@ -19,6 +20,8 @@ The contract answers four ERP questions:
 Purchase planning must consume `ConfirmedNeed`, not raw menu rows, raw attendance rows, pantry rows, direct request rows, or manual UI values.
 
 The purpose of this document is to define the contract before implementation so Supabase, future React screens, and any Retool support tooling share the same operating model.
+
+> Working v0.2 decisions are recorded in `task-003-source-of-need-contract-decisions.md`. Fold them into this parent contract before marking PR #18 ready.
 
 ## 2. Core Rule
 
@@ -148,7 +151,7 @@ Released PO, dispatch, and receiving-form records should snapshot released facts
 
 - released quantity
 - item labels
-- supplier
+- supplier or fulfilment source
 - destination
 - delivery requirement
 - source or revision version
@@ -197,7 +200,7 @@ direct_ingredient_request
 → direct ingredient need
 
 pantry_need
-→ internal / pantry ingredient need
+→ internal / pantry ingredient need created by Planning
 
 manual_adjustment
 → modifies calculated or direct need
@@ -248,6 +251,7 @@ type ConfirmedNeed = {
     | "reopened"
     | "cancelled";
 
+  reason_code?: string;
   reason?: string;
   note?: string;
 
@@ -330,7 +334,7 @@ type SourceRef = {
 }
 ```
 
-### Example — Pantry Need
+### Example — Planning-Owned Pantry Need
 
 ```json
 {
@@ -339,7 +343,7 @@ type SourceRef = {
   "source_refs": [
     {
       "source_type": "pantry_need",
-      "label": "Dầu ăn · bổ sung pantry bếp trung tâm",
+      "label": "Dầu ăn · nhu cầu pantry do Kế hoạch lập",
       "contribution": "20 lít"
     }
   ]
@@ -367,7 +371,7 @@ type SourceRef = {
     },
     {
       "source_type": "manual_adjustment",
-      "label": "Giảm 3 kg theo xác nhận sĩ số thực tế",
+      "label": "Điều chỉnh theo định lượng vận hành thực tế",
       "contribution": "-3 kg"
     }
   ]
@@ -399,7 +403,7 @@ State meaning:
 | `draft`        | Source exists but is not ready for purchasing.                                 |
 | `needs_review` | Missing attendance, unknown dish, missing recipe/BOM, missing quantity, or manual issue. |
 | `confirmed`    | Official quantity is approved for purchasing.                                  |
-| `reopened`     | Previously confirmed line is being corrected.                                  |
+| `reopened`     | Previously confirmed demand line is being corrected.                           |
 | `cancelled`    | Need is no longer valid and must not be purchased.                             |
 
 State rules:
@@ -408,6 +412,7 @@ State rules:
 - Reopening a confirmed need must create an event.
 - Cancelling a confirmed need must create an event and must not silently remove downstream history.
 - A reopened need must be reconfirmed before new downstream allocation.
+- Procurement replacement is not automatically the same as reopening demand; see the decision addendum.
 
 ## 8. Command Contracts
 
@@ -417,7 +422,7 @@ Initial backend commands:
 syncWeeklyMenuSource(payload)
 upsertAttendanceSource(payload)
 createDirectIngredientRequest(payload)
-generatePantryNeeds(payload)
+createPantryNeed(payload)
 
 previewCalculatedNeeds(params)
 
@@ -442,11 +447,11 @@ No purchase allocation should be created from a non-confirmed need.
 | `syncWeeklyMenuSource`            | Imports or synchronizes menu source facts.                                  |
 | `upsertAttendanceSource`          | Creates or updates attendance / portion source facts.                       |
 | `createDirectIngredientRequest`   | Creates a direct ingredient request that can become a confirmed need.       |
-| `generatePantryNeeds`             | Creates pantry/internal ingredient needs for confirmation.                  |
+| `createPantryNeed`                | Creates Planning-owned pantry/internal ingredient needs for confirmation.   |
 | `previewCalculatedNeeds`          | Shows calculated needs before confirmation; must not authorize purchasing.  |
-| `upsertActualNeedOverride`        | Applies manual quantity correction with reason and traceability.            |
-| `confirmNeed`                     | Approves final quantity for purchasing.                                     |
-| `reopenConfirmedNeed`             | Reopens a confirmed need for correction.                                    |
+| `upsertActualNeedOverride`        | Applies quantity correction with traceability and tiered reason policy.     |
+| `confirmNeed`                     | Approves final quantity for purchasing or fulfilment routing.               |
+| `reopenConfirmedNeed`             | Reopens a confirmed demand line for correction.                             |
 | `cancelConfirmedNeed`             | Cancels a need that is no longer valid.                                     |
 
 ## 9. Event Contracts
@@ -459,12 +464,15 @@ Initial event types:
 planning_source_synced
 attendance_source_upserted
 direct_request_created
-pantry_need_generated
+pantry_need_created
 calculated_need_previewed
 actual_need_overridden
 need_confirmed
 need_reopened
 need_cancelled
+purchase_ingredient_replaced
+allocation_revised
+document_revision_required
 ```
 
 Event shape:
@@ -483,6 +491,7 @@ type OpsEvent = {
   actor_email?: string;
 
   occurred_at: string;
+  reason_code?: string;
   reason?: string;
 
   before?: unknown;
@@ -494,8 +503,9 @@ Event requirements:
 
 - Events must identify the affected entity.
 - Events must record actor and timestamp when available.
-- Quantity changes must include reason.
+- Quantity changes must record before/after value.
 - Reopen and cancellation must be visible in event history.
+- Free-text reason is not required for every routine pre-confirmation edit.
 - Events are audit support for operational traceability; they are not a full event-sourcing design in TASK-003.
 
 ## 10. UI Read Models
@@ -544,7 +554,9 @@ Known gaps:
 - no explicit `confirmed_needs` snapshot table yet
 - no explicit `confirmed_need_source_refs` lineage table yet
 - no unified `ops_events` table yet
-- pantry and direct request need clearer authoritative contracts
+- pantry needs need a Planning-owned authoritative contract
+- internal warehouse fulfilment and external supplier purchasing need separate source types later
+- procurement replacement needs an explicit downstream revision model
 - downstream records do not yet consistently reference `confirmed_need_id`
 
 ## 12. First Implementation Slice
@@ -585,21 +597,35 @@ Explicitly out of scope for TASK-003:
 - replacing Retool immediately
 - production data changes
 
-## 14. Decision Checkpoint
+## 14. Approved Working Decisions v0.2
 
-Before implementation, answer these business questions:
+The following decisions are accepted for TASK-003 direction:
 
-1. Is `ConfirmedNeed` the correct gate before purchasing?
-2. Can a direct ingredient request bypass recipe/BOM?
-3. Can pantry needs be confirmed by Kho, or must Kế hoạch confirm them?
-4. Who can reopen a confirmed need?
-5. What happens if a need changes after PO is released?
-6. Should manual adjustments require reason every time?
-7. Should `trace_id` be generated per ingredient line or per source bundle?
-8. Should downstream documents reference `confirmed_need_id` from the first implementation slice?
-9. Which v1 keys caused the most pain and must not be repeated?
+1. `ConfirmedNeed` is the gate before purchasing.
+2. Direct ingredient requests may bypass recipe/BOM as controlled source records.
+3. Pantry requests are created by Planning.
+4. If stock is insufficient, fulfilment routes to external PO.
+5. If stock is sufficient, fulfilment routes to Warehouse as an internal fulfilment source, not an accounting supplier.
+6. Demand reopening is distinct from procurement ingredient replacement.
+7. Procurement replacement must be visible to dispatch and warehouse through downstream revision/snapshot records.
+8. Manual quantity edits need low-friction audit; free-text reasons are required only for higher-risk actions.
+9. `trace_id` is generated per confirmed ingredient line.
+10. Downstream documents should reference `confirmed_need_id` from the first implementation slice onward.
+11. Composite v1 keys must not be reused as operational identity.
 
-## 15. Acceptance Criteria for This Contract
+Detailed decision language is recorded in `task-003-source-of-need-contract-decisions.md`.
+
+## 15. Remaining Open Questions
+
+Before TASK-004 implementation, decide:
+
+1. What variance threshold moves an adjustment from routine audit to reason-category audit?
+2. Which ingredients or item categories require free-text notes?
+3. Who can approve procurement replacements: Purchase lead, Planning lead, or BGĐ?
+4. Should `source_bundle_id` / `planning_batch_id` exist in TASK-004, or later?
+5. How should Warehouse-as-internal-fulfilment appear in the UI without becoming an accounting supplier?
+
+## 16. Acceptance Criteria for This Contract
 
 This contract is acceptable when it clearly defines:
 
@@ -611,5 +637,6 @@ This contract is acceptable when it clearly defines:
 - which read models future UI needs
 - what existing Supabase concepts can be reused
 - what is deliberately out of scope
+- how pantry needs, procurement replacements, and manual adjustments are handled at the contract level
 
-No migration, SQL, backend command, or UI implementation is required for TASK-003 v0.1.
+No migration, SQL, backend command, or UI implementation is required for TASK-003 v0.1/v0.2.
