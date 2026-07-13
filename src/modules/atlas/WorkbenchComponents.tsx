@@ -71,11 +71,14 @@ export function ActionBar({ actions }: { actions: string[] }) {
 
 export function TracePanel({ onClose }: { onClose: () => void }) {
   const stages = [
-    ["Nguồn", "Thực đơn / Hàng đặt riêng / Điều chỉnh thủ công"],
-    ["Xác nhận nhu cầu", "Nhu cầu thực tế đã xác nhận"],
+    ["Nguồn kế hoạch", "Thực đơn tuần / Sĩ số / Hàng đặt riêng / Pantry"],
+    ["Công thức / định lượng", "Canh bí đỏ · 0,225 kg/suất"],
+    ["Nhu cầu tính toán", "75 kg theo 320 suất thực tế"],
+    ["Nhu cầu thực tế xác nhận", "72 kg · điều chỉnh -3 kg"],
     ["Phân bổ NCC", "Phân bổ chính và bổ sung"],
     ["PO", "PO-0714-008"],
-    ["Phiếu xuất", "PXK-0714-ND"],
+    ["Phiếu xuất kho", "PXK-0714-ND"],
+    ["Phiếu nhận hàng", "PNH-0714-008 · biểu mẫu trước nhận"],
     ["Nhập kho", "240 / 250 kg đã nhận"],
     ["Ngoại lệ", "Thiếu 10 kg · Thu mua xử lý"],
   ];

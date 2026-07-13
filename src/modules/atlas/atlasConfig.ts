@@ -1,5 +1,6 @@
 export type AtlasPageId =
   | "control-board"
+  | "planning-sources"
   | "requirement-planning"
   | "purchase-planning"
   | "document-release"
@@ -37,8 +38,17 @@ export const atlasPages: AtlasPage[] = [
     handoff: "Trang công việc có ngoại lệ",
   },
   {
+    id: "planning-sources",
+    label: "Nguồn kế hoạch",
+    group: "Vận hành hằng ngày",
+    decision: "Nguồn nào tạo ra nhu cầu nguyên liệu cần được kiểm tra?",
+    object: "Dòng nguồn kế hoạch",
+    state: "Nhập nguồn → kiểm tra → xác nhận",
+    handoff: "Tổng hợp & xác nhận nhu cầu",
+  },
+  {
     id: "requirement-planning",
-    label: "Lập nhu cầu",
+    label: "Tổng hợp & xác nhận nhu cầu",
     group: "Vận hành hằng ngày",
     decision: "Nhu cầu thực tế nào được xác nhận?",
     object: "Dòng nhu cầu",
@@ -56,7 +66,7 @@ export const atlasPages: AtlasPage[] = [
   },
   {
     id: "document-release",
-    label: "Phát hành đơn / phiếu",
+    label: "Phát hành chứng từ",
     group: "Vận hành hằng ngày",
     decision: "Tài liệu vận hành nào đủ điều kiện phát hành?",
     object: "PO, phiếu xuất kho, dòng đối chiếu",

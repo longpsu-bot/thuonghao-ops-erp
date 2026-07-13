@@ -3,6 +3,7 @@ import { atlasGroups, atlasPages, type AtlasPageId } from "./atlasConfig";
 import {
   ControlBoardPage,
   DocumentReleasePage,
+  PlanningSourcesPage,
   PurchasePlanningPage,
   RequirementPlanningPage,
   SupportingPage,
@@ -16,6 +17,7 @@ export function AtlasApp() {
   const page = atlasPages.find((candidate) => candidate.id === active)!;
   let content = <SupportingPage page={page} />;
   if (active === "control-board") content = <ControlBoardPage />;
+  if (active === "planning-sources") content = <PlanningSourcesPage />;
   if (active === "requirement-planning") content = <RequirementPlanningPage />;
   if (active === "purchase-planning") content = <PurchasePlanningPage />;
   if (active === "document-release") content = <DocumentReleasePage />;

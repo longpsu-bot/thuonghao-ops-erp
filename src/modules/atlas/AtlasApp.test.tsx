@@ -5,13 +5,14 @@ import { AtlasApp } from "./AtlasApp";
 
 afterEach(cleanup);
 describe("Atlas operations workbench", () => {
-  it("shows the five daily workbench pages and exception-first control board", () => {
+  it("shows the corrected daily workbench navigation and upstream control board", () => {
     render(<AtlasApp />);
     [
       "Bảng điều hành",
-      "Lập nhu cầu",
+      "Nguồn kế hoạch",
+      "Tổng hợp & xác nhận nhu cầu",
       "Lập kế hoạch mua hàng",
-      "Phát hành đơn / phiếu",
+      "Phát hành chứng từ",
       "Nhập kho & xử lý chênh lệch",
     ].forEach((name) =>
       expect(screen.getByRole("button", { name })).toBeInTheDocument(),
@@ -26,9 +27,34 @@ describe("Atlas operations workbench", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Dữ liệu & quản trị")).toBeInTheDocument();
   });
+  it("shows source planning tabs and source status", () => {
+    render(<AtlasApp />);
+    fireEvent.click(screen.getByRole("button", { name: "Nguồn kế hoạch" }));
+    [
+      "Thực đơn tuần",
+      "Sĩ số / suất ăn",
+      "Hàng đặt riêng",
+      "Pantry / nhu cầu nội bộ",
+      "Tóm tắt nguồn",
+    ].forEach((name) =>
+      expect(screen.getByRole("tab", { name })).toBeInTheDocument(),
+    );
+    expect(screen.getAllByText(/Google Sheet tuần/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Canh bí đỏ")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
+    expect(screen.getByText("Bổ sung suất đặt riêng")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("tab", { name: "Pantry / nhu cầu nội bộ" }),
+    );
+    expect(
+      screen.getByText(/không phải hạch toán tồn kho/),
+    ).toBeInTheDocument();
+  });
   it("shows actual-need confirmation with the merged recipient and destination", () => {
     render(<AtlasApp />);
-    fireEvent.click(screen.getByRole("button", { name: "Lập nhu cầu" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tổng hợp & xác nhận nhu cầu" }),
+    );
     expect(screen.getByText(/Nhu cầu tính toán/)).toBeInTheDocument();
     expect(screen.getByText("Nguồn")).toBeInTheDocument();
     expect(screen.getByText("Lý do / ghi chú")).toBeInTheDocument();
@@ -49,6 +75,7 @@ describe("Atlas operations workbench", () => {
     expect(
       screen.getByRole("button", { name: "Xác nhận nhu cầu" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Vì sao có nhu cầu này?")).toBeInTheDocument();
   });
   it("represents supplier split allocation", () => {
     render(<AtlasApp />);
@@ -63,24 +90,22 @@ describe("Atlas operations workbench", () => {
     expect(screen.getAllByText("OPS-2026-0714-MA-GAO-001").length).toBe(2);
     expect(screen.getByText("Ghi chú giao hàng")).toBeInTheDocument();
   });
-  it("shows release panels and PO-versus-dispatch reconciliation", () => {
+  it("shows release tabs and reconciliation", () => {
     render(<AtlasApp />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phát hành đơn / phiếu" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Phát hành chứng từ" }));
     expect(
-      screen.getByText("Đơn đặt nhà cung cấp / PO Release"),
+      screen.getByRole("tab", { name: "Đơn đặt NCC / PO" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("Phiếu xuất kho / Dispatch Order Release"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Đối chiếu PO và Phiếu xuất kho"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Chế độ xuất")).toBeInTheDocument();
+    expect(screen.getByText("Theo dòng đang lọc")).toBeInTheDocument();
     expect(screen.getByText("PO-0714-008")).toBeInTheDocument();
-    expect(screen.getByText("PXK-0714-MA")).toBeInTheDocument();
-    expect(screen.getByText("Delta")).toBeInTheDocument();
-    expect(screen.getAllByText("Lần phát hành 1").length).toBe(2);
+    fireEvent.click(screen.getByRole("tab", { name: "Phiếu nhận hàng" }));
+    expect(
+      screen.getByText(/không phải kết quả nhận thực tế/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Đối chiếu chứng từ" }));
+    expect(screen.getByText("SL dự kiến nhận")).toBeInTheDocument();
+    expect(screen.getByText("Lệch số lượng")).toBeInTheDocument();
   });
   it("shows supplier-linked receiving, downstream impact, and supporting recipe governance", () => {
     render(<AtlasApp />);
@@ -123,7 +148,7 @@ describe("Atlas operations workbench", () => {
     expect(
       screen.getByRole("complementary", { name: "Chuỗi truy xuất" }),
     ).toBeInTheDocument();
-    expect(screen.getAllByText("Nguồn").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Nguồn kế hoạch").length).toBeGreaterThan(0);
     expect(
       screen.getByText(/không tạo sự kiện, chứng từ hay/),
     ).toBeInTheDocument();

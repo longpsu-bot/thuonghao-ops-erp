@@ -1,11 +1,36 @@
 # Atlas Operations Workbench Requirements
 
-**Status:** TASK-002F approved prototype direction
+**Status:** TASK-002G approved source-of-need prototype direction
 **Scope:** React + TypeScript, static/local fixtures only
 
 ## Product model
 
 Atlas is a compact daily operations workbench, not a presentation dashboard. Each daily page makes an operational decision, owns a work object, exposes state and exceptions, then hands a defined output to the next workspace.
+
+## OPS v1 source-of-need model
+
+Ingredient needs are generated from weekly menu, attendance / portions, direct ingredient requests, pantry / internal needs, recipe/BOM, and actual-need override / manual adjustment. The prototype exposes these sources before ingredient aggregation so each line can answer where it came from and what changed.
+
+## Corrected daily workflow
+
+0. **Bảng điều hành**
+1. **Nguồn kế hoạch**
+2. **Tổng hợp & xác nhận nhu cầu**
+3. **Lập kế hoạch mua hàng**
+4. **Phát hành chứng từ**
+5. **Nhập kho & xử lý chênh lệch**
+
+## Release workspace model
+
+The release workspace has local-only tabs for **Đơn đặt NCC / PO**, **Phiếu xuất kho**, **Phiếu nhận hàng**, and **Đối chiếu chứng từ**. Phiếu nhận hàng is a pre-issued warehouse checklist/form, not an actual receiving result. Actual receiving remains in **Nhập kho & xử lý chênh lệch**.
+
+## Traceability and table placement
+
+Every line should help answer: where did this need come from; what changed; who confirmed it; what quantity became official; what document was generated; what was handed off; what exception happened; and who owns the next action. Trace/source fields stay left, operational quantities and statuses stay centre, and people, ownership, evidence, and confirmation metadata stay at the far right.
+
+## Prototype import/export boundary
+
+Atlas may display source, import, export, file, and document states. It must not perform real import/export, document generation, backend writes, or production-data updates.
 
 OPS v1 is the business-behaviour reference, not the UI reference. Atlas preserves its operational patterns: actual-need review, supplier allocation, controlled document release, supplier-linked receiving, and visible exception handling. It consolidates Retool fragmentation into five workspaces rather than separate screens for customer, route, supplier coordination, documents, and discrepancy follow-up.
 
@@ -38,13 +63,13 @@ After release, the prototype presents the document as locked. A correction requi
 
 Atlas presents one visible operational trace chain: **Nguồn → Xác nhận nhu cầu → Phân bổ NCC → PO → Phiếu xuất → Nhập kho → Ngoại lệ**. A static Trace ID, for example `OPS-2026-0714-MA-GAO-001`, is repeated on related fixture lines so staff can follow the same requirement across workspaces.
 
-| Page | Trace responsibility |
-| --- | --- |
-| Bảng điều hành | Makes exception source, Trace ID, affected object, owner, next step, and exception age visible. |
-| Lập nhu cầu | Records fixture-level source, actual-entry and confirmation roles, rationale, and procurement handoff; Hàng đặt riêng remains a queue/filter within this workspace. |
-| Lập kế hoạch mua hàng | Keeps the confirmed need and its Trace ID visible across split supplier allocations, including remaining quantity and delivery note. |
-| Phát hành đơn / phiếu | Reconciles the confirmed need, PO, and Phiếu xuất quantities, references, delta, release state, revision reason, and release version. |
-| Nhập kho & xử lý chênh lệch | Connects expected versus actual receipt to PO/allocation references, evidence status, exception owner, affected destination, and next action. |
+| Page                        | Trace responsibility                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bảng điều hành              | Makes exception source, Trace ID, affected object, owner, next step, and exception age visible.                                                                     |
+| Lập nhu cầu                 | Records fixture-level source, actual-entry and confirmation roles, rationale, and procurement handoff; Hàng đặt riêng remains a queue/filter within this workspace. |
+| Lập kế hoạch mua hàng       | Keeps the confirmed need and its Trace ID visible across split supplier allocations, including remaining quantity and delivery note.                                |
+| Phát hành đơn / phiếu       | Reconciles the confirmed need, PO, and Phiếu xuất quantities, references, delta, release state, revision reason, and release version.                               |
+| Nhập kho & xử lý chênh lệch | Connects expected versus actual receipt to PO/allocation references, evidence status, exception owner, affected destination, and next action.                       |
 
 The compact Trace Drawer is static and local only. It demonstrates how the chain can be inspected, but it does not create audit records, documents, releases, commands, backend writes, or real event history. A future backend implementation must preserve the chain with immutable events and released snapshots; that is explicitly out of scope for this prototype.
 

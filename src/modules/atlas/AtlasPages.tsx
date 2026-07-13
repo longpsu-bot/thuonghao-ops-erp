@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from "react";
 import type { AtlasPage } from "./atlasConfig";
 import {
   ActionBar,
@@ -18,8 +19,11 @@ const affected = {
 
 export function ControlBoardPage() {
   const queue = [
-    ["Nhu cầu chưa nhập thực tế", "12", "Lập nhu cầu"],
-    ["Nhu cầu chờ xác nhận", "8", "Lập nhu cầu"],
+    ["Thực đơn có dòng lỗi", "2", "Nguồn kế hoạch"],
+    ["Sĩ số chờ xác nhận", "8", "Nguồn kế hoạch"],
+    ["Hàng đặt riêng chờ duyệt", "2", "Nguồn kế hoạch"],
+    ["Pantry cần kiểm tra", "3", "Nguồn kế hoạch"],
+    ["Nhu cầu chưa bàn giao Thu mua", "6", "Tổng hợp nhu cầu"],
     ["NCC chưa phân công / lệch", "5", "Mua hàng"],
     ["PO / phiếu chưa phát hành", "6", "Phát hành"],
     ["PO và phiếu xuất lệch", "3", "Phát hành"],
@@ -93,12 +97,221 @@ export function ControlBoardPage() {
     </>
   );
 }
+
+const sourceTabs = [
+  "Thực đơn tuần",
+  "Sĩ số / suất ăn",
+  "Hàng đặt riêng",
+  "Pantry / nhu cầu nội bộ",
+  "Tóm tắt nguồn",
+] as const;
+
+export function PlanningSourcesPage() {
+  const [tab, setTab] = useState<(typeof sourceTabs)[number]>(sourceTabs[0]);
+  const sourceStatus = (
+    <div className="trace-filter">
+      <b>Nguồn dữ liệu:</b> Google Sheet tuần / prototype fixture · Lần cập nhật
+      nguồn: 13/07 17:30 · 18 dòng hợp lệ · 2 dòng lỗi ·{" "}
+      <Chip tone="warning">Cần kiểm tra</Chip>
+    </div>
+  );
+  const content: Record<(typeof sourceTabs)[number], ReactNode> = {
+    "Thực đơn tuần": (
+      <CompactTable
+        headers={[
+          "Trace ID",
+          "Tuần / ngày phục vụ",
+          "Trường / đơn vị",
+          "Buổi / nhóm món",
+          "Món",
+          "Nguồn cập nhật",
+          "Dòng hợp lệ",
+          "Dòng cần kiểm tra",
+          "Trạng thái thực đơn",
+          "Người xác nhận",
+        ]}
+      >
+        <tr>
+          <td>OPS-2026-0714-ND-BIDO-001</td>
+          <td>Tuần 29 · 14/07</td>
+          <td>Trường Nguyễn Du</td>
+          <td>Sáng · Canh</td>
+          <td>Canh bí đỏ</td>
+          <td>Google Sheet tuần</td>
+          <td>18</td>
+          <td>0</td>
+          <td>
+            <Chip tone="ok">Đã xác nhận</Chip>
+          </td>
+          <td>Lan · Điều hành</td>
+        </tr>
+        <tr>
+          <td>OPS-2026-0714-MA-GAO-001</td>
+          <td>Tuần 29 · 14/07</td>
+          <td>Trường Minh An</td>
+          <td>Trưa · Cơm</td>
+          <td>Cơm</td>
+          <td>Prototype fixture</td>
+          <td>0</td>
+          <td>1</td>
+          <td>
+            <Chip tone="warning">Cần kiểm tra món</Chip>
+          </td>
+          <td>—</td>
+        </tr>
+      </CompactTable>
+    ),
+    "Sĩ số / suất ăn": (
+      <CompactTable
+        headers={[
+          "Trace ID",
+          "Ngày",
+          "Trường / đơn vị",
+          "Suất kế hoạch",
+          "Suất thực tế",
+          "Chênh lệch",
+          "Lý do",
+          "Trạng thái xác nhận",
+          "Người nhập",
+          "Người xác nhận",
+        ]}
+      >
+        <tr>
+          <td>OPS-2026-0714-ND-BIDO-001</td>
+          <td>14/07/2026</td>
+          <td>Trường Nguyễn Du</td>
+          <td>333</td>
+          <td>320</td>
+          <td>-13</td>
+          <td>Học sinh nghỉ</td>
+          <td>
+            <Chip tone="ok">Đã xác nhận</Chip>
+          </td>
+          <td>Hà · Bếp trung tâm</td>
+          <td>Lan · Điều hành</td>
+        </tr>
+      </CompactTable>
+    ),
+    "Hàng đặt riêng": (
+      <CompactTable
+        headers={[
+          "Trace ID",
+          "Ngày",
+          "Người / bộ phận yêu cầu",
+          "Đơn vị nhận / Điểm giao",
+          "Nguyên liệu",
+          "Số lượng yêu cầu",
+          "Lý do yêu cầu",
+          "Ưu tiên",
+          "Trạng thái duyệt",
+          "Người xác nhận",
+        ]}
+      >
+        <tr>
+          <td>OPS-2026-0714-MA-GAO-001</td>
+          <td>14/07/2026</td>
+          <td>Quân · Bếp Minh An</td>
+          <td>Bếp Minh An · Tuyến Đông</td>
+          <td>Gạo Jasmine</td>
+          <td>250 kg</td>
+          <td>Bổ sung suất đặt riêng</td>
+          <td>Cao</td>
+          <td>
+            <Chip tone="warning">Chờ duyệt</Chip>
+          </td>
+          <td>—</td>
+        </tr>
+      </CompactTable>
+    ),
+    "Pantry / nhu cầu nội bộ": (
+      <>
+        <p className="supporting-copy">
+          Pantry ở đây chỉ là nguồn kế hoạch; không phải hạch toán tồn kho.
+        </p>
+        <CompactTable
+          headers={[
+            "Trace ID",
+            "Ngày",
+            "Bộ phận / trường",
+            "Mục đích sử dụng",
+            "Nguyên liệu",
+            "Tồn hiện có / trạng thái pantry",
+            "Cần bổ sung",
+            "Tần suất / lịch pantry",
+            "Trạng thái",
+            "Người xác nhận",
+          ]}
+        >
+          <tr>
+            <td>OPS-2026-0714-PN-DAU-001</td>
+            <td>14/07/2026</td>
+            <td>Bếp trung tâm</td>
+            <td>Vật tư nấu ăn</td>
+            <td>Dầu ăn</td>
+            <td>Cần kiểm tra</td>
+            <td>20 lít</td>
+            <td>Thứ ba hằng tuần</td>
+            <td>
+              <Chip tone="warning">Chờ rà soát</Chip>
+            </td>
+            <td>Mai · Kho</td>
+          </tr>
+        </CompactTable>
+      </>
+    ),
+    "Tóm tắt nguồn": (
+      <div className="exception-grid">
+        {[
+          ["Thực đơn tuần", "18 hợp lệ · 2 lỗi", "Đã xác nhận"],
+          ["Sĩ số / suất ăn", "3 thay đổi", "1 chờ xác nhận"],
+          ["Hàng đặt riêng", "2 yêu cầu", "1 chờ duyệt"],
+          ["Pantry / nhu cầu nội bộ", "1 đến hạn", "1 chờ rà soát"],
+        ].map(([label, value, status]) => (
+          <article key={label}>
+            <span>{label}</span>
+            <strong>{value}</strong>
+            <small>{status}</small>
+          </article>
+        ))}
+      </div>
+    ),
+  };
+  return (
+    <>
+      <Panel
+        title="Nguồn tạo nhu cầu"
+        description="Trả lời: vì sao các nhu cầu nguyên liệu này tồn tại?"
+        status={<Chip tone="warning">4 nguồn cần xử lý</Chip>}
+      >
+        <div
+          className="workbench-actions"
+          role="tablist"
+          aria-label="Nguồn kế hoạch"
+        >
+          {sourceTabs.map((item) => (
+            <button
+              key={item}
+              className={item === tab ? "primary" : ""}
+              role="tab"
+              aria-selected={item === tab}
+              onClick={() => setTab(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+        {sourceStatus}
+        {content[tab]}
+      </Panel>
+    </>
+  );
+}
 export function RequirementPlanningPage() {
   return (
     <>
       <Panel
-        title="Dòng nhu cầu thực tế"
-        description="Nhu cầu tính toán → nhu cầu thực tế → chênh lệch → xác nhận → bàn giao mua hàng."
+        title="Tổng hợp & xác nhận nhu cầu"
+        description="Tất cả nguồn kế hoạch → công thức / định lượng → nhu cầu tính toán → nhu cầu thực tế xác nhận."
         status={<Chip tone="warning">8 chờ xác nhận</Chip>}
       >
         <div className="trace-filter" aria-label="Bộ lọc nguồn nhu cầu">
@@ -111,6 +324,7 @@ export function RequirementPlanningPage() {
         <CompactTable
           headers={[
             "Trace ID",
+            "Nguồn",
             "Ngày",
             "Đơn vị nhận / Điểm giao",
             "Món",
@@ -119,7 +333,6 @@ export function RequirementPlanningPage() {
             "Tính toán",
             "Thực tế",
             "Chênh lệch",
-            "Nguồn",
             "Trạng thái",
             "Lý do / ghi chú",
             "Bàn giao Thu mua",
@@ -129,6 +342,7 @@ export function RequirementPlanningPage() {
         >
           <tr>
             <td>OPS-2026-0714-ND-BIDO-001</td>
+            <td>Thực đơn · Sĩ số</td>
             <td>14/07/2026</td>
             <td>
               <Recipient {...recipient} />
@@ -139,7 +353,6 @@ export function RequirementPlanningPage() {
             <td>75</td>
             <td>72</td>
             <td>-3</td>
-            <td>Thực đơn</td>
             <td>
               <Chip tone="warning">Đã điều chỉnh</Chip>
             </td>
@@ -152,6 +365,7 @@ export function RequirementPlanningPage() {
           </tr>
           <tr>
             <td>OPS-2026-0714-MA-GAO-001</td>
+            <td>Hàng đặt riêng</td>
             <td>14/07/2026</td>
             <td>
               <Recipient {...affected} />
@@ -164,7 +378,6 @@ export function RequirementPlanningPage() {
               <button className="inline-action">Nhập nhu cầu</button>
             </td>
             <td>—</td>
-            <td>Hàng đặt riêng</td>
             <td>
               <Chip tone="danger">Chưa nhập thực tế</Chip>
             </td>
@@ -176,6 +389,29 @@ export function RequirementPlanningPage() {
             <td>—</td>
           </tr>
         </CompactTable>
+      </Panel>
+      <Panel
+        title="Vì sao có nhu cầu này?"
+        description="Giải thích dòng đang chọn theo nguồn, định lượng và xác nhận; chỉ minh hoạ cục bộ."
+        status={<Chip tone="ok">OPS-2026-0714-ND-BIDO-001</Chip>}
+      >
+        <div className="recipe-grid">
+          <article>
+            <b>Món / trường / ngày</b>
+            <strong>Canh bí đỏ · Trường Nguyễn Du · 14/07/2026</strong>
+            <small>Thực đơn tuần · sĩ số thực tế 320 suất</small>
+          </article>
+          <article>
+            <b>Công thức / định lượng</b>
+            <strong>Bí đỏ · 0,225 kg/suất</strong>
+            <small>Nhu cầu tính toán: 75 kg</small>
+          </article>
+          <article>
+            <b>Điều chỉnh / nhu cầu cuối</b>
+            <strong>-3 kg → 72 kg</strong>
+            <small>Lan · Điều hành xác nhận</small>
+          </article>
+        </div>
       </Panel>
       <ActionBar
         actions={[
@@ -275,105 +511,211 @@ export function PurchasePlanningPage() {
   );
 }
 export function DocumentReleasePage() {
-  const cards = [
-    [
-      "Đơn đặt nhà cung cấp / PO Release",
-      "Ready to release",
-      "Gạo Jasmine · 150 kg · giao 05:30",
-      "Có thể chỉnh phân bổ, giờ giao và ghi chú trước phát hành.",
-    ],
-    [
-      "Phiếu xuất kho / Dispatch Order Release",
-      "Draft",
-      "PXK-0714-ND · Bí đỏ · 72 kg",
-      "Chờ rà soát điểm giao và số lượng xuất.",
-    ],
-    [
-      "Đối chiếu PO và Phiếu xuất kho",
-      "MISMATCH",
-      "Nhu cầu 250 kg · PO 250 kg · phiếu 240 kg",
-      "Lệch -10 kg; cần revision trước phát hành lại.",
-    ],
-  ];
-  return (
-    <>
-      <div className="release-grid">
-        {cards.map(([title, status, value, detail]) => (
-          <Panel
-            key={title}
-            title={title}
-            status={
-              <Chip tone={status === "MISMATCH" ? "danger" : "warning"}>
-                {status}
-              </Chip>
-            }
-          >
-            <ul className="release-list">
-              <li>{value}</li>
-              <li>{detail}</li>
-              <li>Trạng thái in / xuất: prototype</li>
-            </ul>
-          </Panel>
-        ))}
-      </div>
+  const tabs = [
+    "Đơn đặt NCC / PO",
+    "Phiếu xuất kho",
+    "Phiếu nhận hàng",
+    "Đối chiếu chứng từ",
+  ] as const;
+  const [tab, setTab] = useState<(typeof tabs)[number]>(tabs[0]);
+  const body: Record<(typeof tabs)[number], ReactNode> = {
+    "Đơn đặt NCC / PO": (
       <Panel
-        title="Đối chiếu phát hành theo Trace ID"
-        description="Kiểm tra nhu cầu đã xác nhận, PO và Phiếu xuất kho trước khi bàn giao nhập kho."
+        title="Đơn đặt NCC / PO"
+        description="Chế độ xuất: Tất cả / Theo NCC / Theo nhóm đi chợ. Dữ liệu xuất: theo dòng đang lọc."
+        status={<Chip tone="warning">Sẵn sàng phát hành</Chip>}
       >
         <CompactTable
           headers={[
             "Trace ID",
+            "NCC",
             "PO",
+            "Nhu cầu xác nhận",
+            "SL PO",
+            "Chế độ xuất",
+            "Dữ liệu xuất",
+            "Trạng thái file",
+            "Trạng thái phát hành",
+            "Phiên bản",
+            "Người phát hành",
+          ]}
+        >
+          <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
+            <td>Thành Công Foods</td>
+            <td>PO-0714-008</td>
+            <td>250 kg</td>
+            <td>150 kg</td>
+            <td>Theo NCC</td>
+            <td>Theo dòng đang lọc</td>
+            <td>Đã tạo bản nháp</td>
+            <td>
+              <Chip tone="warning">Sẵn sàng phát hành</Chip>
+            </td>
+            <td>Lần 1</td>
+            <td>Lan</td>
+          </tr>
+        </CompactTable>
+        <ActionBar
+          actions={["Xem trước PO", "Xuất PO", "Phát hành PO", "Mở lại PO"]}
+        />
+      </Panel>
+    ),
+    "Phiếu xuất kho": (
+      <Panel
+        title="Phiếu xuất kho"
+        description="Phiếu xuất được đối chiếu với nhu cầu xác nhận và PO trước phát hành."
+      >
+        <CompactTable
+          headers={[
+            "Trace ID",
             "Phiếu xuất kho",
+            "Đơn vị nhận / Điểm giao",
+            "Nguyên liệu",
+            "SL cần xuất",
+            "SL theo PO",
+            "Delta",
+            "Trạng thái phát hành",
+            "Phiên bản",
+            "Người phát hành",
+          ]}
+        >
+          <tr>
+            <td>OPS-2026-0714-ND-BIDO-001</td>
+            <td>PXK-0714-ND</td>
+            <td>Trường Nguyễn Du · Bếp trung tâm</td>
+            <td>Bí đỏ</td>
+            <td>72 kg</td>
+            <td>72 kg</td>
+            <td>0</td>
+            <td>
+              <Chip tone="ok">Đã phát hành</Chip>
+            </td>
+            <td>Lần 1</td>
+            <td>Lan</td>
+          </tr>
+        </CompactTable>
+        <ActionBar
+          actions={[
+            "Xem trước phiếu xuất",
+            "Xuất / in phiếu xuất",
+            "Phát hành phiếu xuất",
+            "Mở lại phiếu xuất",
+          ]}
+        />
+      </Panel>
+    ),
+    "Phiếu nhận hàng": (
+      <Panel
+        title="Phiếu nhận hàng"
+        description="Biểu mẫu kiểm tra trước khi nhận hàng tại kho; không phải kết quả nhận thực tế. Kết quả thực tế nằm ở Nhập kho & xử lý chênh lệch."
+      >
+        <CompactTable
+          headers={[
+            "Trace ID",
+            "Phiếu nhận hàng",
+            "NCC",
+            "PO",
+            "Nguyên liệu",
+            "SL dự kiến nhận",
+            "Khung giờ nhận",
+            "Người nhận dự kiến",
+            "Trạng thái biểu mẫu",
+            "Người phát hành",
+          ]}
+        >
+          <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
+            <td>PNH-0714-008</td>
+            <td>Thành Công Foods</td>
+            <td>PO-0714-008</td>
+            <td>Gạo Jasmine</td>
+            <td>150 kg</td>
+            <td>05:30–05:45</td>
+            <td>Mai · Kho</td>
+            <td>
+              <Chip tone="warning">Bản nháp</Chip>
+            </td>
+            <td>Lan</td>
+          </tr>
+        </CompactTable>
+        <ActionBar
+          actions={[
+            "Xem trước phiếu nhận",
+            "Xuất / in phiếu nhận",
+            "Phát hành phiếu nhận",
+          ]}
+        />
+      </Panel>
+    ),
+    "Đối chiếu chứng từ": (
+      <Panel
+        title="Đối chiếu chứng từ"
+        description="Nhu cầu xác nhận → PO → phiếu xuất → dự kiến nhận; các dòng lệch cần điều chỉnh hoặc mở lại."
+      >
+        <CompactTable
+          headers={[
+            "Trace ID",
             "Nhu cầu xác nhận",
             "SL PO",
             "SL Phiếu xuất",
+            "SL dự kiến nhận",
             "Delta",
-            "Trạng thái phát hành",
-            "Lý do revision / mở lại",
+            "Trạng thái đối chiếu",
+            "Lý do điều chỉnh / mở lại",
             "Phiên bản",
           ]}
         >
           <tr>
             <td>OPS-2026-0714-MA-GAO-001</td>
-            <td>PO-0714-008</td>
-            <td>PXK-0714-MA</td>
             <td>250 kg</td>
             <td>250 kg</td>
             <td>240 kg</td>
+            <td>250 kg</td>
             <td>-10 kg</td>
             <td>
-              <Chip tone="danger">Needs revision</Chip>
+              <Chip tone="danger">Lệch số lượng</Chip>
             </td>
-            <td>Thiếu 10 kg so với PO; mở lại để bổ sung</td>
-            <td>Lần phát hành 1</td>
+            <td>Cần điều chỉnh phiếu xuất</td>
+            <td>Lần 1</td>
           </tr>
           <tr>
             <td>OPS-2026-0714-ND-BIDO-001</td>
-            <td>PO-0714-006</td>
-            <td>PXK-0714-ND</td>
             <td>72 kg</td>
             <td>72 kg</td>
-            <td>75 kg</td>
-            <td>+3 kg</td>
+            <td>72 kg</td>
+            <td>72 kg</td>
+            <td>0</td>
             <td>
-              <Chip tone="warning">Reopened</Chip>
+              <Chip tone="ok">Khớp</Chip>
             </td>
-            <td>Điều chỉnh PXK theo điểm giao</td>
-            <td>Lần phát hành 1</td>
+            <td>—</td>
+            <td>Lần 1</td>
           </tr>
         </CompactTable>
       </Panel>
-      <ActionBar
-        actions={[
-          "Phát hành PO",
-          "Phát hành Phiếu xuất kho",
-          "Xuất file / in",
-          "Mở lại để điều chỉnh",
-          "Xem chênh lệch",
-          "Ghi chú lý do phát hành lại",
-        ]}
-      />
+    ),
+  };
+  return (
+    <>
+      <div
+        className="workbench-actions"
+        role="tablist"
+        aria-label="Không gian phát hành chứng từ"
+      >
+        {tabs.map((item) => (
+          <button
+            key={item}
+            className={item === tab ? "primary" : ""}
+            role="tab"
+            aria-selected={item === tab}
+            onClick={() => setTab(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+      {body[tab]}
     </>
   );
 }
