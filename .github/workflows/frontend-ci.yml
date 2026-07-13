@@ -55,10 +55,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Markdown documents may intentionally use trailing spaces for hard line breaks.
       - name: Check pull request diff
         if: github.event_name == 'pull_request'
-        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+        run: git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" -- . ':(exclude)docs/**/*.md'
 
       - name: Check pushed diff
         if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
-        run: git diff --check "${{ github.event.before }}...${{ github.sha }}"
+        run: git diff --check "${{ github.event.before }}...${{ github.sha }}" -- . ':(exclude)docs/**/*.md'
