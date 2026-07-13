@@ -32,6 +32,7 @@ Important project decisions must be recorded in this repository. Chat history an
 ## Documentation map
 
 - `docs/handbook/` — governing business and architecture documents
+- `docs/architecture/` — backend/domain architecture contracts
 - `docs/decisions/` — decision register and ADRs
 - `docs/business-rules/` — business-rule catalogue
 - `docs/open-questions/` — unresolved design questions
