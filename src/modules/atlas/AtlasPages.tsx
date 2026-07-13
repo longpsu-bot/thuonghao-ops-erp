@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { WeeklyMenuWorkbench } from "../weekly-menu/WeeklyMenuWorkbench";
 import type { AtlasPage } from "./atlasConfig";
 import {
   ActionBar,
@@ -116,51 +117,7 @@ export function PlanningSourcesPage() {
     </div>
   );
   const content: Record<(typeof sourceTabs)[number], ReactNode> = {
-    "Thực đơn tuần": (
-      <CompactTable
-        headers={[
-          "Trace ID",
-          "Tuần / ngày phục vụ",
-          "Trường / đơn vị",
-          "Buổi / nhóm món",
-          "Món",
-          "Nguồn cập nhật",
-          "Dòng hợp lệ",
-          "Dòng cần kiểm tra",
-          "Trạng thái thực đơn",
-          "Người xác nhận",
-        ]}
-      >
-        <tr>
-          <td>OPS-2026-0714-ND-BIDO-001</td>
-          <td>Tuần 29 · 14/07</td>
-          <td>Trường Nguyễn Du</td>
-          <td>Sáng · Canh</td>
-          <td>Canh bí đỏ</td>
-          <td>Google Sheet tuần</td>
-          <td>18</td>
-          <td>0</td>
-          <td>
-            <Chip tone="ok">Đã xác nhận</Chip>
-          </td>
-          <td>Lan · Điều hành</td>
-        </tr>
-        <tr>
-          <td>OPS-2026-0714-ND-COM-002</td>
-          <td>Tuần 29 · 14/07</td>
-          <td>Trường Minh An</td>
-          <td>Trưa · Cơm</td>
-          <td>Cơm</td>
-          <td>Prototype fixture</td>
-          <td>0</td>
-          <td>1</td>
-          <td>
-            <Chip tone="warning">Cần kiểm tra món</Chip>
-          </td>
-          <td>—</td>
-        </tr>
-      </CompactTable>
-    ),
+    "Thực đơn tuần": <WeeklyMenuWorkbench />,
     "Sĩ số / suất ăn": (
       <CompactTable
         headers={[
