@@ -68,6 +68,57 @@ export function ActionBar({ actions }: { actions: string[] }) {
     </>
   );
 }
+
+export function TracePanel({ onClose }: { onClose: () => void }) {
+  const stages = [
+    ["Nguồn kế hoạch", "Thực đơn tuần / Sĩ số / Hàng đặt riêng / Pantry"],
+    ["Công thức / định lượng", "Canh bí đỏ · 0,225 kg/suất"],
+    ["Nhu cầu tính toán", "75 kg theo 320 suất thực tế"],
+    ["Nhu cầu thực tế xác nhận", "72 kg · điều chỉnh -3 kg"],
+    ["Phân bổ NCC", "Phân bổ chính và bổ sung"],
+    ["PO", "PO-0714-008"],
+    ["Phiếu xuất kho", "PXK-0714-ND"],
+    ["Phiếu nhận hàng", "PNH-0714-008 · biểu mẫu trước nhận"],
+    ["Nhập kho", "240 / 250 kg đã nhận"],
+    ["Ngoại lệ", "Thiếu 10 kg · Thu mua xử lý"],
+  ];
+  return (
+    <>
+      <button
+        className="trace-scrim"
+        aria-label="Đóng chuỗi truy xuất"
+        onClick={onClose}
+      />
+      <aside className="trace-panel" aria-label="Chuỗi truy xuất">
+        <div className="trace-panel-head">
+          <div>
+            <span>TRACEABILITY · STATIC PROTOTYPE</span>
+            <h2>Chuỗi truy xuất</h2>
+            <strong>OPS-2026-0714-MA-GAO-001</strong>
+          </div>
+          <button aria-label="Đóng chuỗi truy xuất" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <ol className="atlas-trace-list">
+          {stages.map(([stage, detail], index) => (
+            <li key={stage}>
+              <span>{index + 1}</span>
+              <div>
+                <b>{stage}</b>
+                <small>{detail}</small>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="trace-prototype-note">
+          Chỉ minh hoạ liên kết dữ liệu cục bộ; không tạo sự kiện, chứng từ hay
+          nhật ký kiểm toán thực tế.
+        </p>
+      </aside>
+    </>
+  );
+}
 export function PageShell({
   page,
   children,
