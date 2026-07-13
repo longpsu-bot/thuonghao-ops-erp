@@ -27,6 +27,8 @@ describe("Atlas operations workbench", () => {
     render(<AtlasApp />);
     fireEvent.click(screen.getByRole("button", { name: "Lập nhu cầu" }));
     expect(screen.getByText(/Nhu cầu tính toán/)).toBeInTheDocument();
+    expect(screen.getByText("Nguồn")).toBeInTheDocument();
+    expect(screen.getByText("Lý do / ghi chú")).toBeInTheDocument();
     expect(screen.getAllByText("Trường Nguyễn Du").length).toBeGreaterThan(0);
     expect(screen.getByText("Bếp trung tâm · Tuyến Bắc")).toBeInTheDocument();
     expect(
@@ -65,6 +67,7 @@ describe("Atlas operations workbench", () => {
       screen.getByRole("button", { name: "Nhập kho & xử lý chênh lệch" }),
     );
     expect(screen.getByText("Thành Công Foods")).toBeInTheDocument();
+    expect(screen.getByText("Dự kiến")).toBeInTheDocument();
     expect(screen.getByText(/Thiếu cho bếp Minh An/)).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" }),

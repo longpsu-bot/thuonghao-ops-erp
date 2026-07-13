@@ -92,7 +92,9 @@ export function RequirementPlanningPage() {
             "Tính toán",
             "Thực tế",
             "Chênh lệch",
+            "Nguồn",
             "Trạng thái",
+            "Lý do / ghi chú",
           ]}
         >
           <tr>
@@ -106,9 +108,11 @@ export function RequirementPlanningPage() {
             <td>75</td>
             <td>72</td>
             <td>-3</td>
+            <td>Thực đơn</td>
             <td>
               <Chip tone="warning">Đã điều chỉnh</Chip>
             </td>
+            <td>Giảm theo số suất thực tế</td>
           </tr>
           <tr>
             <td>14/07/2026</td>
@@ -123,9 +127,11 @@ export function RequirementPlanningPage() {
               <button className="inline-action">Nhập nhu cầu</button>
             </td>
             <td>—</td>
+            <td>Đơn bán sỉ</td>
             <td>
               <Chip tone="danger">Chưa nhập thực tế</Chip>
             </td>
+            <td>Chờ bếp xác nhận</td>
           </tr>
         </CompactTable>
       </Panel>
@@ -287,6 +293,7 @@ export function WarehouseReceivingPage() {
             "Nguyên liệu",
             "Đơn vị nhận / Điểm giao",
             "Đặt",
+            "Dự kiến",
             "Thực nhận",
             "Ngoại lệ",
             "Ảnh hưởng phía sau",
@@ -303,6 +310,7 @@ export function WarehouseReceivingPage() {
             <td>
               <Recipient {...affected} />
             </td>
+            <td>250 kg</td>
             <td>250 kg</td>
             <td>240 kg</td>
             <td>
@@ -321,6 +329,7 @@ export function WarehouseReceivingPage() {
             <td>
               <Recipient {...recipient} />
             </td>
+            <td>72 kg</td>
             <td>72 kg</td>
             <td>72 kg</td>
             <td>

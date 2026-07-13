@@ -1,6 +1,6 @@
 # Atlas Operations Workbench Requirements
 
-**Status:** TASK-002F approved prototype direction  
+**Status:** TASK-002F approved prototype direction
 **Scope:** React + TypeScript, static/local fixtures only
 
 ## Product model
