@@ -1,34 +1,66 @@
 import { useState } from "react";
-import { atlasGroups, atlasPages, type AtlasPage, type AtlasPageId } from "./atlasConfig";
+import { atlasGroups, atlasPages, type AtlasPageId } from "./atlasConfig";
+import {
+  ControlBoardPage,
+  DocumentReleasePage,
+  PurchasePlanningPage,
+  RequirementPlanningPage,
+  SupportingPage,
+  WarehouseReceivingPage,
+} from "./AtlasPages";
+import { PageShell } from "./WorkbenchComponents";
 
-const requirementRows = [
-  ["14/07/2026", "Trường Nguyễn Du\nBếp trung tâm · Tuyến Bắc", "Canh bí đỏ", "Bí đỏ", "kg", "75", "72", "-3", "Thực đơn", "Đã điều chỉnh"],
-  ["14/07/2026", "Trường Minh An\nBếp Minh An · Tuyến Đông", "Cơm", "Gạo Jasmine", "kg", "250", "", "—", "Đơn bán sỉ", "Chưa nhập thực tế"],
-];
-const purchaseRows = [
-  ["Gạo Jasmine", "Trường Minh An\nBếp Minh An · Tuyến Đông", "250 kg", "150 kg", "100 kg", "Thành Công Foods", "Chính", "Phân công một phần"],
-  ["Gạo Jasmine", "Trường Minh An\nBếp Minh An · Tuyến Đông", "250 kg", "100 kg", "0 kg", "Nam Việt Supply", "Bổ sung", "Đã phân công đủ"],
-  ["Bí đỏ", "Trường Nguyễn Du\nBếp trung tâm · Tuyến Bắc", "72 kg", "0 kg", "72 kg", "—", "Dự phòng", "Chưa phân công"],
-];
+export function AtlasApp() {
+  const [active, setActive] = useState<AtlasPageId>("control-board");
+  const page = atlasPages.find((candidate) => candidate.id === active)!;
+  let content = <SupportingPage page={page} />;
+  if (active === "control-board") content = <ControlBoardPage />;
+  if (active === "requirement-planning") content = <RequirementPlanningPage />;
+  if (active === "purchase-planning") content = <PurchasePlanningPage />;
+  if (active === "document-release") content = <DocumentReleasePage />;
+  if (active === "warehouse-receiving") content = <WarehouseReceivingPage />;
 
-function Chip({ children, tone = "neutral" }: { children: string; tone?: string }) {
-  return <span className={`workbench-chip ${tone}`}>{children}</span>;
+  return (
+    <div className="atlas-shell">
+      <aside className="atlas-sidebar">
+        <div className="atlas-brand">
+          <span>OPS ERP</span>
+          <strong>Atlas</strong>
+          <small>Operations workbench</small>
+        </div>
+        <nav aria-label="Điều hướng Atlas">
+          {atlasGroups.map((group) => (
+            <div className="nav-group" key={group}>
+              <span>{group}</span>
+              {atlasPages
+                .filter((candidate) => candidate.group === group)
+                .map((candidate) => (
+                  <button
+                    key={candidate.id}
+                    className={candidate.id === active ? "active" : ""}
+                    onClick={() => setActive(candidate.id)}
+                  >
+                    {candidate.label}
+                  </button>
+                ))}
+            </div>
+          ))}
+        </nav>
+      </aside>
+      <div className="atlas-content">
+        <header className="atlas-topbar">
+          <div>
+            <span>Ngày phục vụ</span>
+            <strong>14/07/2026 · Ca sáng</strong>
+          </div>
+          <div>
+            <span>Không gian hiện tại</span>
+            <strong>{page.label}</strong>
+          </div>
+          <mark>Prototype · dữ liệu cục bộ</mark>
+        </header>
+        <PageShell page={page}>{content}</PageShell>
+      </div>
+    </div>
+  );
 }
-function Meta({ page }: { page: AtlasPage }) {
-  return <div className="page-meta"><span><b>Quyết định</b>{page.decision}</span><span><b>Đối tượng</b>{page.object}</span><span><b>Trạng thái</b>{page.state}</span><span><b>Bàn giao</b>{page.handoff}</span></div>;
-}
-function ActionBar({ actions }: { actions: string[] }) {
-  const [notice, setNotice] = useState("");
-  return <><div className="workbench-actions">{actions.map((action, index) => <button key={action} className={index === 0 ? "primary" : ""} onClick={() => setNotice(`${action}: thao tác prototype đã được ghi nhận cục bộ.`)}>{action}</button>)}</div>{notice && <p className="prototype-notice">{notice}</p>}</>;
-}
-function ControlBoard() {
-  const cards = [["Nhu cầu chưa nhập thực tế", "12", "Lập nhu cầu"], ["Nhu cầu chờ xác nhận", "8", "Lập nhu cầu"], ["Nguyên liệu chưa phân công NCC", "5", "Mua hàng"], ["PO / phiếu xuất chưa phát hành", "6", "Phát hành"], ["PO và phiếu xuất lệch", "3", "Phát hành"], ["NCC giao thiếu / trễ / sai", "4", "Nhập kho"]];
-  return <><div className="exception-grid">{cards.map(([label, count, owner]) => <article key={label}><span>{label}</span><strong>{count}</strong><small>{owner}</small></article>)}</div><section className="work-panel"><div className="panel-heading"><div><h2>Hàng đợi cần chú ý</h2><p>Ưu tiên theo rủi ro ảnh hưởng đơn vị nhận, bếp và tuyến.</p></div><Chip tone="danger">4 ảnh hưởng vận hành</Chip></div><table className="compact-table"><thead><tr><th>Ngoại lệ</th><th>Đơn vị nhận / Điểm giao</th><th>Chi tiết</th><th>Hành động tiếp theo</th></tr></thead><tbody><tr><td><Chip tone="danger">NCC giao thiếu</Chip></td><td>Trường Minh An<br/><small>Bếp Minh An · Tuyến Đông</small></td><td>Gạo Jasmine thiếu 10 kg</td><td>Đánh dấu cần bổ sung</td></tr><tr><td><Chip tone="warning">PO / phiếu xuất lệch</Chip></td><td>Trường Nguyễn Du<br/><small>Bếp trung tâm · Tuyến Bắc</small></td><td>PO 72 kg · Phiếu xuất 75 kg</td><td>Xem chênh lệch</td></tr></tbody></table></section></>;
-}
-function RequirementPage() { return <><section className="work-panel"><div className="panel-heading"><div><h2>Dòng nhu cầu thực tế</h2><p>Nhu cầu tính toán → nhập thực tế → chênh lệch → xác nhận.</p></div><Chip tone="warning">8 chờ xác nhận</Chip></div><table className="compact-table"><thead><tr>{["Ngày phục vụ", "Đơn vị nhận / Điểm giao", "Món", "Nguyên liệu", "ĐVT", "Tính toán", "Thực tế", "Chênh lệch", "Nguồn", "Trạng thái"].map(x => <th key={x}>{x}</th>)}</tr></thead><tbody>{requirementRows.map(row => <tr key={row[3]}>{row.map((cell, i) => <td key={`${cell}-${i}`}>{i === 1 ? <>{cell.split("\n")[0]}<br/><small>{cell.split("\n")[1]}</small></> : i === 9 ? <Chip tone={cell === "Đã điều chỉnh" ? "warning" : "danger"}>{cell || "—"}</Chip> : cell || <button className="inline-action">Nhập nhu cầu</button>}</td>)}</tr>)}</tbody></table></section><ActionBar actions={["Nhập nhu cầu thực tế", "Lưu số lượng", "Xác nhận nhu cầu", "Mở lại để điều chỉnh", "Xem lịch sử / lý do điều chỉnh"]}/></> }
-function PurchasePage() { return <><section className="work-panel"><div className="panel-heading"><div><h2>Phân bổ nhu cầu theo NCC</h2><p>Một dòng nhu cầu có thể được chia cho nhiều NCC, bao gồm NCC dự phòng.</p></div><Chip tone="danger">1 chưa phân công</Chip></div><table className="compact-table"><thead><tr>{["Nguyên liệu", "Đơn vị nhận / Điểm giao bị ảnh hưởng", "Nhu cầu thực tế đã xác nhận", "Phân bổ", "Còn lại", "Nhà cung cấp", "Vai trò", "Trạng thái"].map(x => <th key={x}>{x}</th>)}</tr></thead><tbody>{purchaseRows.map(row => <tr key={`${row[0]}-${row[5]}`}>{row.map((cell, i) => <td key={`${cell}-${i}`}>{i === 1 ? <>{cell.split("\n")[0]}<br/><small>{cell.split("\n")[1]}</small></> : i === 7 ? <Chip tone={cell === "Đã phân công đủ" ? "ok" : "warning"}>{cell}</Chip> : cell}</td>)}</tr>)}</tbody></table></section><ActionBar actions={["Tự phân công NCC mặc định", "Chia NCC", "Cân bằng số lượng", "Xóa dòng NCC", "Lưu phân công", "Chuẩn bị PO"]}/></> }
-function ReleasePage() { const panels = [["Đơn đặt nhà cung cấp / PO Release", ["Thành Công Foods · 14/07/2026", "Gạo Jasmine · 150 kg · 05:30", "Sẵn sàng phát hành · Cảnh báo: có điều chỉnh"]], ["Phiếu xuất kho / Dispatch Order Release", ["PXK-0714-ND · 14/07/2026", "Trường Nguyễn Du · Bí đỏ · 72 kg", "Nháp · Chưa in / xuất"]], ["Đối chiếu PO và Phiếu xuất kho", ["Gạo Jasmine · nhu cầu 250 kg", "PO 250 kg · Phiếu xuất 240 kg", "MISMATCH · lệch -10 kg"]]]; return <><div className="release-grid">{panels.map(([title, lines]) => <section className="work-panel" key={title as string}><div className="panel-heading"><h2>{title}</h2><Chip tone={String(title).includes("Đối chiếu") ? "danger" : "warning"}>{String(title).includes("PO Release") ? "Ready to release" : String(title).includes("Phiếu") ? "Draft" : "MISMATCH"}</Chip></div><ul className="release-list">{(lines as string[]).map(line => <li key={line}>{line}</li>)}</ul></section>)}</div><ActionBar actions={["Phát hành PO", "Phát hành Phiếu xuất kho", "Xuất file / in", "Mở lại để điều chỉnh", "Xem chênh lệch", "Ghi chú lý do phát hành lại"]}/></> }
-function ReceivingPage() { return <><section className="work-panel"><div className="panel-heading"><div><h2>Kết quả nhận hàng theo NCC</h2><p>Ghi nhận thực nhận, chênh lệch, ảnh hưởng và hành động tiếp theo.</p></div><Chip tone="danger">2 cần xử lý</Chip></div><table className="compact-table"><thead><tr>{["NCC / tham chiếu PO", "Nguyên liệu", "Đơn vị nhận / Điểm giao", "Đặt", "Dự kiến", "Thực nhận", "Ngoại lệ", "Ảnh hưởng phía sau", "Hành động tiếp"].map(x => <th key={x}>{x}</th>)}</tr></thead><tbody><tr><td>Thành Công Foods<br/><small>PO-0714-008</small></td><td>Gạo Jasmine</td><td>Trường Minh An<br/><small>Bếp Minh An · Tuyến Đông</small></td><td>250 kg</td><td>250 kg</td><td>240 kg</td><td><Chip tone="danger">Thiếu hàng</Chip></td><td>Thiếu cho bếp Minh An 10 kg</td><td>Đánh dấu cần bổ sung · Báo Thu mua</td></tr><tr><td>An Phú Produce<br/><small>PO-0714-006</small></td><td>Bí đỏ</td><td>Trường Nguyễn Du<br/><small>Bếp trung tâm · Tuyến Bắc</small></td><td>72 kg</td><td>72 kg</td><td>72 kg</td><td><Chip tone="ok">Nhận đủ</Chip></td><td>Không ảnh hưởng</td><td>Hoàn tất</td></tr></tbody></table></section><ActionBar actions={["Ghi nhận thực nhận", "Ghi nhận chênh lệch", "Đánh dấu cần bổ sung", "Đánh dấu cần thay thế", "Báo Thu mua / BGĐ", "Đính kèm bằng chứng"]}/></> }
-function SupportingPage({ page }: { page: AtlasPage }) { const recipe = page.id === "recipe-governance"; return <section className="work-panel supporting-panel"><div className="panel-heading"><div><h2>{page.label}</h2><p>Trang dữ liệu hỗ trợ và quản trị; không phải một bước vận hành hằng ngày.</p></div><Chip>Supporting</Chip></div>{recipe ? <div className="recipe-grid"><article><b>Món / công thức</b><strong>Canh bí đỏ · BOM hiện hành v3</strong><small>Phạm vi: Trường Nguyễn Du · Đang hiệu lực</small></article><article><b>Đề xuất thay đổi</b><strong>Điều chỉnh số lượng bí đỏ</strong><small>Hiệu lực 21/07/2026 · xem trước ảnh hưởng</small></article><article><b>Lịch sử</b><strong>v2 → v3</strong><small>Thay thế hành lá bằng ngò rí</small></article></div> : <p className="supporting-copy">Dữ liệu tham chiếu cho {page.handoff}. Prototype không cho phép thay đổi dữ liệu thực tế.</p>}</section> }
-function PageContent({ page }: { page: AtlasPage }) { if (page.id === "control-board") return <ControlBoard />; if (page.id === "requirement-planning") return <RequirementPage />; if (page.id === "purchase-planning") return <PurchasePage />; if (page.id === "document-release") return <ReleasePage />; if (page.id === "warehouse-receiving") return <ReceivingPage />; return <SupportingPage page={page} />; }
-export function AtlasApp() { const [active, setActive] = useState<AtlasPageId>("control-board"); const page = atlasPages.find(p => p.id === active)!; return <div className="atlas-shell"><aside className="atlas-sidebar"><div className="atlas-brand"><span>OPS ERP</span><strong>Atlas</strong><small>Operations workbench</small></div><nav aria-label="Điều hướng Atlas">{atlasGroups.map(group => <div className="nav-group" key={group}><span>{group}</span>{atlasPages.filter(p => p.group === group).map(p => <button key={p.id} className={p.id === active ? "active" : ""} onClick={() => setActive(p.id)}>{p.label}</button>)}</div>)}</nav></aside><div className="atlas-content"><header className="atlas-topbar"><div><span>Ngày phục vụ</span><strong>14/07/2026 · Ca sáng</strong></div><div><span>Không gian hiện tại</span><strong>{page.label}</strong></div><mark>Prototype · dữ liệu cục bộ</mark></header><main className="atlas-page"><div className="page-kicker">ATLAS · ĐIỀU HÀNH HẰNG NGÀY</div><h1>{page.label}</h1><Meta page={page}/><PageContent page={page}/></main></div></div>; }
