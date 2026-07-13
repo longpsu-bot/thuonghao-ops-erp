@@ -19,8 +19,12 @@ describe("AtlasApp", () => {
 
   it("keeps recipe pages in supporting data, outside the daily workflow", () => {
     render(<AtlasApp />);
-    expect(screen.getByRole("button", { name: "Món ăn & Công thức" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Món ăn & Công thức" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" }),
+    ).toBeInTheDocument();
     const stages = screen.getByLabelText("Ba giai đoạn vận hành hằng ngày");
     expect(stages).not.toHaveTextContent("Món ăn & Công thức");
     expect(stages).not.toHaveTextContent("Kiểm soát thay đổi công thức");
@@ -28,11 +32,15 @@ describe("AtlasApp", () => {
 
   it("shows split supplier assignment and keeps supplier coordination optional", () => {
     render(<AtlasApp />);
-    fireEvent.click(screen.getByRole("button", { name: "Lập kế hoạch mua hàng" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Lập kế hoạch mua hàng" }),
+    );
     expect(screen.getAllByText("Gạo Jasmine")).toHaveLength(2);
     expect(screen.getByText("150 kg")).toBeInTheDocument();
     expect(screen.getByText("100 kg")).toBeInTheDocument();
-    expect(screen.getByText(/ghi chú phối hợp là tùy chọn/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/ghi chú phối hợp là tùy chọn/i),
+    ).toBeInTheDocument();
   });
 
   it("shows the supplier-linked receiving shortage and downstream impact", () => {
