@@ -50,10 +50,27 @@ jobs:
       - name: Build Vite app review
         run: pnpm build
 
+      - name: Add Vite app review launcher
+        run: node scripts/create-review-launcher.mjs dist "Open Atlas Review.bat" 4173
+
       - name: Upload Vite app review artifact
         uses: actions/upload-artifact@v4
         with:
           name: atlas-ui-review
           path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Build Storybook review
+        run: pnpm build-storybook
+
+      - name: Add Storybook review launcher
+        run: node scripts/create-review-launcher.mjs storybook-static "Open Storybook Review.bat" 6006
+
+      - name: Upload Storybook review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlas-storybook-review
+          path: storybook-static/
           if-no-files-found: error
           retention-days: 7

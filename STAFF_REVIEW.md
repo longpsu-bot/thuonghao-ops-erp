@@ -1,24 +1,27 @@
-# Rà soát giao diện Atlas cho nhân sự
+# Atlas UI review instructions
 
-## Mở Storybook tại máy cục bộ
+## App preview: full workflow review
 
-1. Cài dependencies bằng `pnpm install`.
-2. Chạy `pnpm storybook`.
-3. Mở địa chỉ được hiển thị trong terminal, mặc định là `http://localhost:6006`.
+1. Download the `atlas-ui-review` artifact.
+2. Unzip the download.
+3. Double-click `Open Atlas Review.bat`.
+4. Keep the launcher window open while you review the full workflow.
 
-## Cần rà soát
+The launcher opens the preview in your browser. No Python, Node, pnpm, npm, Git, or developer tools are required. Close the launcher window when you finish reviewing. If the launcher does not work but `index.html` opens correctly in your browser, you may use `index.html` as a fallback.
 
-- Câu chữ tiếng Việt: có rõ vai trò, trạng thái, việc cần làm và bước bàn giao không.
-- Luồng thao tác: nhân sự có biết phải xử lý ngoại lệ nào trước và chuyển việc cho ai không.
-- Các trạng thái mẫu: kế hoạch bình thường, ưu tiên ngoại lệ, bị chặn/thiếu dữ liệu và ghi chú nhập kho.
-- Những thông tin, cảnh báo hoặc bước nghiệp vụ còn thiếu để hoàn thành công việc hằng ngày.
+Use the app preview to review the end-to-end workflow, including how pages and workflow states connect.
 
-## Chưa cần rà soát
+## Storybook preview: component and state review
 
-- Tính đúng của số lượng, quy tắc tính, làm tròn, phân bổ hay quyết định nghiệp vụ.
-- Phân quyền, đăng nhập, lưu dữ liệu, phát hành chứng từ, tồn kho và đối soát thực tế.
-- Hiệu năng, tích hợp Supabase/Retool/Google Sheets, hay dữ liệu sản xuất.
+1. Download the `atlas-storybook-review` artifact.
+2. Unzip the download.
+3. Double-click `Open Storybook Review.bat`.
+4. Keep the launcher window open while you review isolated UI components and states.
 
-## Phạm vi dữ liệu
+The launcher opens the preview in your browser. No Python, Node, pnpm, npm, Git, or developer tools are required. Close the launcher window when you finish reviewing. If the launcher does not work but `index.html` opens correctly in your browser, you may use `index.html` as a fallback.
 
-Tất cả nội dung trong Storybook là fixture/mock cục bộ. Không có kết nối tới Supabase, Retool, Google Sheets, dữ liệu sản xuất hoặc dịch vụ AI.
+Use the Storybook preview to focus on individual components, representative states, and the wording or visual treatment of those states.
+
+## Scope of both previews
+
+Neither artifact contains a backend, production data, or real operations. They do not perform real import or export, generate real documents, update inventory, run QA, process payments, or create invoices.
