@@ -25,6 +25,17 @@ const initialFilters: Filters = {
   readiness: "",
   search: "",
 };
+
+export type PlannerReviewScenario =
+  "all" | "normal" | "exception-first" | "blocked";
+
+function filtersForScenario(scenario: PlannerReviewScenario): Filters {
+  if (scenario === "normal") return { ...initialFilters, readiness: "READY" };
+  if (scenario === "blocked") {
+    return { ...initialFilters, readiness: "BLOCKED" };
+  }
+  return initialFilters;
+}
 const blankState = (): LocalLineState => ({
   reviewed: false,
   flagged: false,
@@ -90,10 +101,18 @@ function groupLines(
   });
 }
 
-export function PlannerWorkspacePage() {
-  const [filters, setFilters] = useState(initialFilters);
+export function PlannerWorkspacePage({
+  reviewScenario = "all",
+}: {
+  reviewScenario?: PlannerReviewScenario;
+}) {
+  const [filters, setFilters] = useState(() =>
+    filtersForScenario(reviewScenario),
+  );
   const [viewMode, setViewMode] = useState<PlannerViewMode>("DATE");
-  const [attentionOnly, setAttentionOnly] = useState(false);
+  const [attentionOnly, setAttentionOnly] = useState(
+    reviewScenario === "exception-first",
+  );
   const [selectedSource, setSelectedSource] = useState("");
   const [selectedId, setSelectedId] = useState<string>();
   const [localStates, setLocalStates] = useState<
@@ -152,9 +171,9 @@ export function PlannerWorkspacePage() {
     }));
   };
   const reset = () => {
-    setFilters(initialFilters);
+    setFilters(filtersForScenario(reviewScenario));
     setViewMode("DATE");
-    setAttentionOnly(false);
+    setAttentionOnly(reviewScenario === "exception-first");
     setSelectedSource("");
     setSelectedId(undefined);
     setLocalStates({});

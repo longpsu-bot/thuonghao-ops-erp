@@ -47,13 +47,13 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Build static UI
-        run: pnpm build
+      - name: Build Storybook review
+        run: pnpm build-storybook
 
-      - name: Upload UI review artifact
+      - name: Upload Storybook review artifact
         uses: actions/upload-artifact@v4
         with:
-          name: atlas-ui-review
-          path: dist/
+          name: atlas-storybook-review
+          path: storybook-static/
           if-no-files-found: error
           retention-days: 7
