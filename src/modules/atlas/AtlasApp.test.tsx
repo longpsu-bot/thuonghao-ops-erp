@@ -38,6 +38,12 @@ describe("Atlas operations workbench", () => {
     expect(screen.getByText("Người nhập thực tế")).toBeInTheDocument();
     expect(screen.getByText("Người xác nhận")).toBeInTheDocument();
     expect(screen.getByText("Bàn giao Thu mua")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("columnheader")
+        .slice(-2)
+        .map((header) => header.textContent),
+    ).toEqual(["Người nhập thực tế", "Người xác nhận"]);
     expect(screen.getAllByText("Trường Nguyễn Du").length).toBeGreaterThan(0);
     expect(screen.getByText("Bếp trung tâm · Tuyến Bắc")).toBeInTheDocument();
     expect(
@@ -87,6 +93,17 @@ describe("Atlas operations workbench", () => {
     expect(screen.getByText("Trạng thái bằng chứng")).toBeInTheDocument();
     expect(screen.getByText("Chủ xử lý")).toBeInTheDocument();
     expect(screen.getByText("240 kg")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("columnheader")
+        .slice(-4)
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Ảnh hưởng phía sau",
+      "Bước tiếp",
+      "Trạng thái bằng chứng",
+      "Chủ xử lý",
+    ]);
     fireEvent.click(
       screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" }),
     );

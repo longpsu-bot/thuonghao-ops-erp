@@ -120,11 +120,11 @@ export function RequirementPlanningPage() {
             "Thực tế",
             "Chênh lệch",
             "Nguồn",
-            "Người nhập thực tế",
-            "Người xác nhận",
             "Trạng thái",
             "Lý do / ghi chú",
             "Bàn giao Thu mua",
+            "Người nhập thực tế",
+            "Người xác nhận",
           ]}
         >
           <tr>
@@ -140,8 +140,6 @@ export function RequirementPlanningPage() {
             <td>72</td>
             <td>-3</td>
             <td>Thực đơn</td>
-            <td>Hà · Bếp trung tâm</td>
-            <td>Lan · Điều hành</td>
             <td>
               <Chip tone="warning">Đã điều chỉnh</Chip>
             </td>
@@ -149,6 +147,8 @@ export function RequirementPlanningPage() {
             <td>
               <Chip tone="ok">Đã bàn giao</Chip>
             </td>
+            <td>Hà · Bếp trung tâm</td>
+            <td>Lan · Điều hành</td>
           </tr>
           <tr>
             <td>OPS-2026-0714-MA-GAO-001</td>
@@ -165,8 +165,6 @@ export function RequirementPlanningPage() {
             </td>
             <td>—</td>
             <td>Hàng đặt riêng</td>
-            <td>Quân · Bếp Minh An</td>
-            <td>—</td>
             <td>
               <Chip tone="danger">Chưa nhập thực tế</Chip>
             </td>
@@ -174,6 +172,8 @@ export function RequirementPlanningPage() {
             <td>
               <Chip tone="warning">Chưa bàn giao</Chip>
             </td>
+            <td>Quân · Bếp Minh An</td>
+            <td>—</td>
           </tr>
         </CompactTable>
       </Panel>
@@ -393,11 +393,11 @@ export function WarehouseReceivingPage() {
             "Đơn vị nhận / Điểm giao",
             "Dự kiến",
             "Thực nhận",
-            "Trạng thái bằng chứng",
             "Ngoại lệ",
-            "Chủ xử lý",
             "Ảnh hưởng phía sau",
             "Bước tiếp",
+            "Trạng thái bằng chứng",
+            "Chủ xử lý",
           ]}
         >
           <tr>
@@ -414,14 +414,14 @@ export function WarehouseReceivingPage() {
             <td>250 kg</td>
             <td>240 kg</td>
             <td>
-              <Chip tone="warning">Ảnh giao hàng chờ tải</Chip>
-            </td>
-            <td>
               <Chip tone="danger">Thiếu hàng</Chip>
             </td>
             <td>Thiếu cho bếp Minh An 10 kg</td>
-            <td>Thu mua · Minh</td>
             <td>Thu mua · cần bổ sung</td>
+            <td>
+              <Chip tone="warning">Ảnh giao hàng chờ tải</Chip>
+            </td>
+            <td>Thu mua · Minh</td>
           </tr>
           <tr>
             <td>OPS-2026-0714-ND-BIDO-001</td>
@@ -437,14 +437,14 @@ export function WarehouseReceivingPage() {
             <td>72 kg</td>
             <td>72 kg</td>
             <td>
-              <Chip tone="ok">Đủ ảnh / ký nhận</Chip>
-            </td>
-            <td>
               <Chip tone="ok">Nhận đủ</Chip>
             </td>
             <td>Không ảnh hưởng</td>
-            <td>Điều hành · Lan</td>
             <td>Hoàn tất</td>
+            <td>
+              <Chip tone="ok">Đủ ảnh / ký nhận</Chip>
+            </td>
+            <td>Điều hành · Lan</td>
           </tr>
         </CompactTable>
       </Panel>

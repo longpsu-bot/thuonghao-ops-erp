@@ -48,6 +48,8 @@ Atlas presents one visible operational trace chain: **Nguồn → Xác nhận nh
 
 The compact Trace Drawer is static and local only. It demonstrates how the chain can be inspected, but it does not create audit records, documents, releases, commands, backend writes, or real event history. A future backend implementation must preserve the chain with immutable events and released snapshots; that is explicitly out of scope for this prototype.
 
+Signature and accountability fields are placed at the far right of operational tables. Trace/source fields stay left; operational quantities and statuses stay center; people, ownership, evidence, and confirmation metadata stay rightmost.
+
 ## Supporting governance
 
 Customers/schools, ingredients/units, and suppliers/conditions are supporting data. Recipe Governance is one governance workspace for dish/recipe selection, effective BOM, scope, active/locked status, proposed add/replace/adjust/remove/swap action, effective date, impact preview, and history. It is not a daily workflow page.
