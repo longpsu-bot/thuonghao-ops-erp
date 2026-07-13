@@ -44,30 +44,49 @@ export function ControlBoardPage() {
         <CompactTable
           headers={[
             "Ngoại lệ",
+            "Trace ID",
+            "Nguồn",
             "Đơn vị nhận / Điểm giao",
-            "Chi tiết",
-            "Chủ sở hữu / bước tiếp",
+            "Đối tượng ảnh hưởng",
+            "Trạng thái hiện tại",
+            "Chủ xử lý",
+            "Bước tiếp",
+            "Tuổi ngoại lệ",
           ]}
         >
           <tr>
             <td>
               <Chip tone="danger">NCC giao thiếu</Chip>
             </td>
+            <td>OPS-2026-0714-MA-GAO-001</td>
+            <td>Nhu cầu thực tế xác nhận</td>
             <td>
               <Recipient {...affected} />
             </td>
-            <td>Gạo Jasmine thiếu 10 kg</td>
-            <td>Thu mua · đánh dấu cần bổ sung</td>
+            <td>Gạo Jasmine · thiếu 10 kg</td>
+            <td>
+              <Chip tone="danger">Chờ bổ sung</Chip>
+            </td>
+            <td>Thu mua · Minh</td>
+            <td>Chốt NCC bổ sung trước 05:15</td>
+            <td>42 phút</td>
           </tr>
           <tr>
             <td>
               <Chip tone="warning">PO / phiếu xuất lệch</Chip>
             </td>
+            <td>OPS-2026-0714-ND-BIDO-001</td>
+            <td>Thực đơn</td>
             <td>
               <Recipient {...recipient} />
             </td>
-            <td>PO 72 kg · Phiếu xuất 75 kg</td>
-            <td>Phát hành · xem chênh lệch</td>
+            <td>Bí đỏ · PO 72 kg / PXK 75 kg</td>
+            <td>
+              <Chip tone="warning">Cần revision</Chip>
+            </td>
+            <td>Phát hành · Lan</td>
+            <td>Mở lại PXK và phát hành lần 2</td>
+            <td>18 phút</td>
           </tr>
         </CompactTable>
       </Panel>
@@ -82,8 +101,16 @@ export function RequirementPlanningPage() {
         description="Nhu cầu tính toán → nhu cầu thực tế → chênh lệch → xác nhận → bàn giao mua hàng."
         status={<Chip tone="warning">8 chờ xác nhận</Chip>}
       >
+        <div className="trace-filter" aria-label="Bộ lọc nguồn nhu cầu">
+          <b>Hàng đợi nguồn:</b>
+          <Chip tone="warning">Hàng đặt riêng · 2 cần xác nhận</Chip>
+          <span>
+            Hiển thị cùng nhu cầu thực đơn, không tạo trang vận hành riêng.
+          </span>
+        </div>
         <CompactTable
           headers={[
+            "Trace ID",
             "Ngày",
             "Đơn vị nhận / Điểm giao",
             "Món",
@@ -93,11 +120,15 @@ export function RequirementPlanningPage() {
             "Thực tế",
             "Chênh lệch",
             "Nguồn",
+            "Người nhập thực tế",
+            "Người xác nhận",
             "Trạng thái",
             "Lý do / ghi chú",
+            "Bàn giao Thu mua",
           ]}
         >
           <tr>
+            <td>OPS-2026-0714-ND-BIDO-001</td>
             <td>14/07/2026</td>
             <td>
               <Recipient {...recipient} />
@@ -109,12 +140,18 @@ export function RequirementPlanningPage() {
             <td>72</td>
             <td>-3</td>
             <td>Thực đơn</td>
+            <td>Hà · Bếp trung tâm</td>
+            <td>Lan · Điều hành</td>
             <td>
               <Chip tone="warning">Đã điều chỉnh</Chip>
             </td>
             <td>Giảm theo số suất thực tế</td>
+            <td>
+              <Chip tone="ok">Đã bàn giao</Chip>
+            </td>
           </tr>
           <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
             <td>14/07/2026</td>
             <td>
               <Recipient {...affected} />
@@ -127,11 +164,16 @@ export function RequirementPlanningPage() {
               <button className="inline-action">Nhập nhu cầu</button>
             </td>
             <td>—</td>
-            <td>Đơn bán sỉ</td>
+            <td>Hàng đặt riêng</td>
+            <td>Quân · Bếp Minh An</td>
+            <td>—</td>
             <td>
               <Chip tone="danger">Chưa nhập thực tế</Chip>
             </td>
             <td>Chờ bếp xác nhận</td>
+            <td>
+              <Chip tone="warning">Chưa bàn giao</Chip>
+            </td>
           </tr>
         </CompactTable>
       </Panel>
@@ -157,17 +199,20 @@ export function PurchasePlanningPage() {
       >
         <CompactTable
           headers={[
+            "Trace ID",
             "Nguyên liệu",
             "Đơn vị nhận / Điểm giao",
-            "Nhu cầu",
-            "Phân bổ",
+            "Nhu cầu đã xác nhận",
+            "Phân bổ NCC",
             "Còn lại",
             "NCC",
             "Vai trò",
             "Trạng thái",
+            "Ghi chú giao hàng",
           ]}
         >
           <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
             <td>Gạo Jasmine</td>
             <td>
               <Recipient {...affected} />
@@ -180,8 +225,10 @@ export function PurchasePlanningPage() {
             <td>
               <Chip tone="warning">Phân công một phần</Chip>
             </td>
+            <td>Giao 05:30 · đợt chính</td>
           </tr>
           <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
             <td>Gạo Jasmine</td>
             <td>
               <Recipient {...affected} />
@@ -194,8 +241,10 @@ export function PurchasePlanningPage() {
             <td>
               <Chip tone="ok">Đã phân công đủ</Chip>
             </td>
+            <td>Giao 05:45 · bù phần còn lại</td>
           </tr>
           <tr>
+            <td>OPS-2026-0714-ND-BIDO-001</td>
             <td>Bí đỏ</td>
             <td>
               <Recipient {...recipient} />
@@ -208,6 +257,7 @@ export function PurchasePlanningPage() {
             <td>
               <Chip tone="danger">Chưa phân công</Chip>
             </td>
+            <td>Chờ NCC dự phòng</td>
           </tr>
         </CompactTable>
       </Panel>
@@ -266,6 +316,54 @@ export function DocumentReleasePage() {
           </Panel>
         ))}
       </div>
+      <Panel
+        title="Đối chiếu phát hành theo Trace ID"
+        description="Kiểm tra nhu cầu đã xác nhận, PO và Phiếu xuất kho trước khi bàn giao nhập kho."
+      >
+        <CompactTable
+          headers={[
+            "Trace ID",
+            "PO",
+            "Phiếu xuất kho",
+            "Nhu cầu xác nhận",
+            "SL PO",
+            "SL Phiếu xuất",
+            "Delta",
+            "Trạng thái phát hành",
+            "Lý do revision / mở lại",
+            "Phiên bản",
+          ]}
+        >
+          <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
+            <td>PO-0714-008</td>
+            <td>PXK-0714-MA</td>
+            <td>250 kg</td>
+            <td>250 kg</td>
+            <td>240 kg</td>
+            <td>-10 kg</td>
+            <td>
+              <Chip tone="danger">Needs revision</Chip>
+            </td>
+            <td>Thiếu 10 kg so với PO; mở lại để bổ sung</td>
+            <td>Lần phát hành 1</td>
+          </tr>
+          <tr>
+            <td>OPS-2026-0714-ND-BIDO-001</td>
+            <td>PO-0714-006</td>
+            <td>PXK-0714-ND</td>
+            <td>72 kg</td>
+            <td>72 kg</td>
+            <td>75 kg</td>
+            <td>+3 kg</td>
+            <td>
+              <Chip tone="warning">Reopened</Chip>
+            </td>
+            <td>Điều chỉnh PXK theo điểm giao</td>
+            <td>Lần phát hành 1</td>
+          </tr>
+        </CompactTable>
+      </Panel>
       <ActionBar
         actions={[
           "Phát hành PO",
@@ -289,41 +387,48 @@ export function WarehouseReceivingPage() {
       >
         <CompactTable
           headers={[
-            "NCC / PO",
+            "Trace ID",
+            "NCC / PO / Phân bổ",
             "Nguyên liệu",
             "Đơn vị nhận / Điểm giao",
-            "Đặt",
             "Dự kiến",
             "Thực nhận",
+            "Trạng thái bằng chứng",
             "Ngoại lệ",
+            "Chủ xử lý",
             "Ảnh hưởng phía sau",
             "Bước tiếp",
           ]}
         >
           <tr>
+            <td>OPS-2026-0714-MA-GAO-001</td>
             <td>
               Thành Công Foods
               <br />
-              <small>PO-0714-008</small>
+              <small>PO-0714-008 · PB-NCC-021</small>
             </td>
             <td>Gạo Jasmine</td>
             <td>
               <Recipient {...affected} />
             </td>
             <td>250 kg</td>
-            <td>250 kg</td>
             <td>240 kg</td>
+            <td>
+              <Chip tone="warning">Ảnh giao hàng chờ tải</Chip>
+            </td>
             <td>
               <Chip tone="danger">Thiếu hàng</Chip>
             </td>
             <td>Thiếu cho bếp Minh An 10 kg</td>
+            <td>Thu mua · Minh</td>
             <td>Thu mua · cần bổ sung</td>
           </tr>
           <tr>
+            <td>OPS-2026-0714-ND-BIDO-001</td>
             <td>
               An Phú Produce
               <br />
-              <small>PO-0714-006</small>
+              <small>PO-0714-006 · PB-NCC-018</small>
             </td>
             <td>Bí đỏ</td>
             <td>
@@ -331,11 +436,14 @@ export function WarehouseReceivingPage() {
             </td>
             <td>72 kg</td>
             <td>72 kg</td>
-            <td>72 kg</td>
+            <td>
+              <Chip tone="ok">Đủ ảnh / ký nhận</Chip>
+            </td>
             <td>
               <Chip tone="ok">Nhận đủ</Chip>
             </td>
             <td>Không ảnh hưởng</td>
+            <td>Điều hành · Lan</td>
             <td>Hoàn tất</td>
           </tr>
         </CompactTable>

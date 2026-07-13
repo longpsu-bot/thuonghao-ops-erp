@@ -34,6 +34,20 @@ Before release, a draft may change allocation, quantity, delivery time, recipien
 
 After release, the prototype presents the document as locked. A correction requires **Needs revision** or **Reopened**, a recorded reason, and re-release. In production this must become an immutable released snapshot with a revision/cancellation/compensating action, never a silent rewrite. This prototype has no real command, document generation, persistence, locking, or audit record.
 
+## Traceability model
+
+Atlas presents one visible operational trace chain: **Nguồn → Xác nhận nhu cầu → Phân bổ NCC → PO → Phiếu xuất → Nhập kho → Ngoại lệ**. A static Trace ID, for example `OPS-2026-0714-MA-GAO-001`, is repeated on related fixture lines so staff can follow the same requirement across workspaces.
+
+| Page | Trace responsibility |
+| --- | --- |
+| Bảng điều hành | Makes exception source, Trace ID, affected object, owner, next step, and exception age visible. |
+| Lập nhu cầu | Records fixture-level source, actual-entry and confirmation roles, rationale, and procurement handoff; Hàng đặt riêng remains a queue/filter within this workspace. |
+| Lập kế hoạch mua hàng | Keeps the confirmed need and its Trace ID visible across split supplier allocations, including remaining quantity and delivery note. |
+| Phát hành đơn / phiếu | Reconciles the confirmed need, PO, and Phiếu xuất quantities, references, delta, release state, revision reason, and release version. |
+| Nhập kho & xử lý chênh lệch | Connects expected versus actual receipt to PO/allocation references, evidence status, exception owner, affected destination, and next action. |
+
+The compact Trace Drawer is static and local only. It demonstrates how the chain can be inspected, but it does not create audit records, documents, releases, commands, backend writes, or real event history. A future backend implementation must preserve the chain with immutable events and released snapshots; that is explicitly out of scope for this prototype.
+
 ## Supporting governance
 
 Customers/schools, ingredients/units, and suppliers/conditions are supporting data. Recipe Governance is one governance workspace for dish/recipe selection, effective BOM, scope, active/locked status, proposed add/replace/adjust/remove/swap action, effective date, impact preview, and history. It is not a daily workflow page.

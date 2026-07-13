@@ -104,6 +104,15 @@ body {
   font-size: 11px;
   font-weight: 800;
 }
+.trace-toggle {
+  border: 1px solid #8fb3a7;
+  border-radius: 4px;
+  background: #fff;
+  color: #17604d;
+  padding: 7px 9px;
+  font-size: 11px;
+  font-weight: 800;
+}
 .atlas-page {
   padding: 30px 32px;
   max-width: 1320px;
@@ -940,6 +949,108 @@ tbody tr.selected-row {
   border: 1px solid #d8ddda;
   box-shadow: 0 1px 2px #12251d0a;
   overflow: hidden;
+}
+.trace-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: #f6f8f7;
+  border-bottom: 1px solid #e0e4e2;
+  color: #617069;
+  font-size: 11px;
+}
+.trace-filter b {
+  color: #315247;
+}
+.trace-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: 0;
+  background: #0c1c1760;
+}
+.trace-panel {
+  position: fixed;
+  z-index: 21;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 410px;
+  background: #fff;
+  box-shadow: -10px 0 30px #091a1460;
+}
+.trace-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 21px;
+  background: #173d33;
+  color: #fff;
+}
+.trace-panel-head span {
+  color: #b6d4ca;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.trace-panel-head h2 {
+  margin: 5px 0;
+  font-size: 21px;
+}
+.trace-panel-head strong {
+  font-size: 11px;
+  color: #f3d58c;
+}
+.trace-panel-head button {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 28px;
+}
+.atlas-trace-list {
+  list-style: none;
+  padding: 22px;
+  margin: 0;
+  display: grid;
+  gap: 13px;
+}
+.atlas-trace-list li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+}
+.atlas-trace-list li > span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #dfece7;
+  color: #17604d;
+  text-align: center;
+  line-height: 22px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.atlas-trace-list div {
+  display: grid;
+  gap: 3px;
+}
+.atlas-trace-list b {
+  color: #24483d;
+  font-size: 12px;
+}
+.atlas-trace-list small {
+  color: #6e7d76;
+  font-size: 11px;
+}
+.trace-prototype-note {
+  margin: 0 22px;
+  padding: 11px;
+  background: #fff8e7;
+  color: #765b18;
+  border: 1px solid #e3cc91;
+  font-size: 11px;
+  line-height: 1.4;
 }
 .panel-heading {
   min-height: 62px;

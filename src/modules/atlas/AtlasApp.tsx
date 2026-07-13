@@ -8,10 +8,11 @@ import {
   SupportingPage,
   WarehouseReceivingPage,
 } from "./AtlasPages";
-import { PageShell } from "./WorkbenchComponents";
+import { PageShell, TracePanel } from "./WorkbenchComponents";
 
 export function AtlasApp() {
   const [active, setActive] = useState<AtlasPageId>("control-board");
+  const [traceOpen, setTraceOpen] = useState(false);
   const page = atlasPages.find((candidate) => candidate.id === active)!;
   let content = <SupportingPage page={page} />;
   if (active === "control-board") content = <ControlBoardPage />;
@@ -57,10 +58,14 @@ export function AtlasApp() {
             <span>Không gian hiện tại</span>
             <strong>{page.label}</strong>
           </div>
+          <button className="trace-toggle" onClick={() => setTraceOpen(true)}>
+            Mở chuỗi truy xuất
+          </button>
           <mark>Prototype · dữ liệu cục bộ</mark>
         </header>
         <PageShell page={page}>{content}</PageShell>
       </div>
+      {traceOpen && <TracePanel onClose={() => setTraceOpen(false)} />}
     </div>
   );
 }
