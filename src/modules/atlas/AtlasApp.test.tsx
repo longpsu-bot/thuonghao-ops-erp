@@ -40,6 +40,7 @@ describe("Atlas operations workbench", () => {
       expect(screen.getByRole("tab", { name })).toBeInTheDocument(),
     );
     expect(screen.getAllByText(/Google Sheet tuần/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Xem chi tiết" }));
     expect(screen.getByText("Canh bí đỏ")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Hàng đặt riêng" }));
     expect(screen.getByText("Bổ sung suất đặt riêng")).toBeInTheDocument();
@@ -48,6 +49,23 @@ describe("Atlas operations workbench", () => {
     );
     expect(
       screen.getByText(/không phải hạch toán tồn kho/),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps Weekly Menu actions decision-first and detail expandable", () => {
+    render(<AtlasApp initialPage="planning-sources" />);
+    expect(screen.getByLabelText("Tóm tắt thực đơn tuần")).toBeInTheDocument();
+    expect(screen.getByText("Lỗi chặn")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Duyệt thực đơn" }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra thực đơn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Duyệt thực đơn" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Yêu cầu tạo nhu cầu" }),
+    );
+    expect(
+      screen.getByText("Đã yêu cầu tạo nhu cầu từ phiên bản đã duyệt."),
     ).toBeInTheDocument();
   });
   it("shows actual-need confirmation with the merged recipient and destination", () => {
