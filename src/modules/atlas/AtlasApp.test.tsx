@@ -71,11 +71,21 @@ describe("Atlas operations workbench", () => {
         .map((header) => header.textContent),
     ).toEqual(["Người nhập thực tế", "Người xác nhận"]);
     expect(screen.getAllByText("Trường Nguyễn Du").length).toBeGreaterThan(0);
-    expect(screen.getByText("Bếp trung tâm · Tuyến Bắc")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Bếp trung tâm · Tuyến Bắc").length,
+    ).toBeGreaterThan(0);
     expect(
       screen.getByRole("button", { name: "Xác nhận nhu cầu" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Vì sao có nhu cầu này?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Hàng đặt riêng · OPS-2026-0714-MA-GAO-001"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Pantry / nhu cầu nội bộ · OPS-2026-0714-PN-DAU-001"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Nhu cầu cuối: 250 kg/)).toBeInTheDocument();
+    expect(screen.getByText(/Nhu cầu cuối: 20 lít/)).toBeInTheDocument();
   });
   it("represents supplier split allocation", () => {
     render(<AtlasApp />);
@@ -149,6 +159,19 @@ describe("Atlas operations workbench", () => {
       screen.getByRole("complementary", { name: "Chuỗi truy xuất" }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("Nguồn kế hoạch").length).toBeGreaterThan(0);
+    [
+      "Công thức / định lượng",
+      "Nhu cầu tính toán",
+      "Nhu cầu thực tế xác nhận",
+      "Phân bổ NCC",
+      "PO",
+      "Phiếu xuất kho",
+      "Phiếu nhận hàng",
+      "Nhập kho",
+      "Ngoại lệ",
+    ].forEach((stage) =>
+      expect(screen.getAllByText(stage).length).toBeGreaterThan(0),
+    );
     expect(
       screen.getByText(/không tạo sự kiện, chứng từ hay/),
     ).toBeInTheDocument();

@@ -47,13 +47,13 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-      - name: Build Storybook review
-        run: pnpm build-storybook
+      - name: Build Vite app review
+        run: pnpm build
 
-      - name: Upload Storybook review artifact
+      - name: Upload Vite app review artifact
         uses: actions/upload-artifact@v4
         with:
-          name: atlas-storybook-review
-          path: storybook-static/
+          name: atlas-ui-review
+          path: dist/
           if-no-files-found: error
           retention-days: 7

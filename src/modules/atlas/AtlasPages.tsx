@@ -146,7 +146,7 @@ export function PlanningSourcesPage() {
           <td>Lan · Điều hành</td>
         </tr>
         <tr>
-          <td>OPS-2026-0714-MA-GAO-001</td>
+          <td>OPS-2026-0714-ND-COM-002</td>
           <td>Tuần 29 · 14/07</td>
           <td>Trường Minh An</td>
           <td>Trưa · Cơm</td>
@@ -388,6 +388,27 @@ export function RequirementPlanningPage() {
             <td>Quân · Bếp Minh An</td>
             <td>—</td>
           </tr>
+          <tr>
+            <td>OPS-2026-0714-PN-DAU-001</td>
+            <td>Pantry / nhu cầu nội bộ</td>
+            <td>14/07/2026</td>
+            <td>Bếp trung tâm · Tuyến Bắc</td>
+            <td>Pantry</td>
+            <td>Dầu ăn</td>
+            <td>lít</td>
+            <td>20</td>
+            <td>20</td>
+            <td>0</td>
+            <td>
+              <Chip tone="warning">Chờ rà soát</Chip>
+            </td>
+            <td>Bổ sung vật tư nấu ăn theo lịch pantry</td>
+            <td>
+              <Chip tone="warning">Chưa bàn giao</Chip>
+            </td>
+            <td>Mai · Kho</td>
+            <td>—</td>
+          </tr>
         </CompactTable>
       </Panel>
       <Panel
@@ -410,6 +431,24 @@ export function RequirementPlanningPage() {
             <b>Điều chỉnh / nhu cầu cuối</b>
             <strong>-3 kg → 72 kg</strong>
             <small>Lan · Điều hành xác nhận</small>
+          </article>
+        </div>
+        <div className="recipe-grid">
+          <article>
+            <b>Hàng đặt riêng · OPS-2026-0714-MA-GAO-001</b>
+            <strong>Gạo Jasmine · 250 kg</strong>
+            <small>
+              Người yêu cầu: Quân · Bếp Minh An. Lý do: bổ sung suất đặt riêng.
+              Trạng thái: chờ xác nhận. Nhu cầu cuối: 250 kg.
+            </small>
+          </article>
+          <article>
+            <b>Pantry / nhu cầu nội bộ · OPS-2026-0714-PN-DAU-001</b>
+            <strong>Dầu ăn · 20 lít</strong>
+            <small>
+              Đơn vị phụ trách: Bếp trung tâm. Mục đích: vật tư nấu ăn theo lịch
+              pantry. Trạng thái: chờ rà soát. Nhu cầu cuối: 20 lít.
+            </small>
           </article>
         </div>
       </Panel>
