@@ -46,6 +46,9 @@ function approved() {
   ).menu;
   return ApproveWeeklyMenu(validated, "manager-minh", at).menu;
 }
+function needGenerationRequested() {
+  return RequestPlanningNeedGeneration(approved(), "planner-lan", at).menu;
+}
 
 describe("Weekly Menu domain", () => {
   it("creates Draft menu lines from a valid import", () => {
@@ -90,6 +93,20 @@ describe("Weekly Menu domain", () => {
       at,
     );
     expect(result.accepted).toBe(false);
+  });
+  it("cannot demote an approved menu by validating it", () => {
+    const menu = approved();
+    const result = ValidateWeeklyMenu(menu, references, "planner-lan", at);
+    expect(result.accepted).toBe(false);
+    expect(result.menu.status).toBe("APPROVED");
+    expect(result.menu.changes).toEqual(menu.changes);
+  });
+  it("cannot demote a need-generation-requested menu by validating it", () => {
+    const menu = needGenerationRequested();
+    const result = ValidateWeeklyMenu(menu, references, "planner-lan", at);
+    expect(result.accepted).toBe(false);
+    expect(result.menu.status).toBe("NEED_GENERATION_REQUESTED");
+    expect(result.menu.changes).toEqual(menu.changes);
   });
   it("preserves the reopen reason in change history", () => {
     const result = ReopenWeeklyMenu(

@@ -91,9 +91,11 @@ export type WeeklyMenuCommandResult = {
 
 export type WeeklyMenuValidationResult = {
   menu: WeeklyMenu;
+  accepted: boolean;
   isValid: boolean;
   blockingIssues: WeeklyMenuIssue[];
   warnings: WeeklyMenuIssue[];
+  message?: string;
 };
 
 export type WeeklyMenuImportRow = {
@@ -244,6 +246,19 @@ export function ValidateWeeklyMenu(
   actorId: string,
   at: string,
 ): WeeklyMenuValidationResult {
+  if (
+    menu.status === "APPROVED" ||
+    menu.status === "NEED_GENERATION_REQUESTED"
+  ) {
+    return {
+      menu,
+      accepted: false,
+      isValid: false,
+      blockingIssues: menu.issues.filter((current) => current.isBlocking),
+      warnings: menu.issues.filter((current) => !current.isBlocking),
+      message: "Reopen the approved menu before validating again.",
+    };
+  }
   const issues = validate(menu, references);
   const isValid = !issues.some((current) => current.isBlocking);
   const next = withChange(
@@ -257,6 +272,7 @@ export function ValidateWeeklyMenu(
   );
   return {
     menu: next,
+    accepted: true,
     isValid,
     blockingIssues: issues.filter((current) => current.isBlocking),
     warnings: issues.filter((current) => !current.isBlocking),
@@ -414,6 +430,7 @@ export type WeeklyMenuWorkbench = {
   warningCount: number;
   changedSchoolDayCount: number;
   canApprove: boolean;
+  canValidate: boolean;
   canRequestNeedGeneration: boolean;
   lines: WeeklyMenuLine[];
 };
@@ -446,6 +463,10 @@ export function WeeklyMenuWorkbench(menu: WeeklyMenu): WeeklyMenuWorkbench {
     warningCount: menu.issues.length - blockingIssueCount,
     changedSchoolDayCount,
     canApprove: menu.status === "VALIDATED" && blockingIssueCount === 0,
+    canValidate:
+      menu.status === "DRAFT" ||
+      menu.status === "REOPENED" ||
+      menu.status === "VALIDATED",
     canRequestNeedGeneration: menu.status === "APPROVED",
     lines: menu.lines,
   };

@@ -131,7 +131,11 @@ export function WeeklyMenuWorkbench() {
         </article>
       </div>
       <div className="workbench-actions">
-        <button className="primary" onClick={validate}>
+        <button
+          className="primary"
+          onClick={validate}
+          disabled={!workbench.canValidate}
+        >
           Kiểm tra thực đơn
         </button>
         <button onClick={approve} disabled={!workbench.canApprove}>
