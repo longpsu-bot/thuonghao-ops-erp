@@ -10,8 +10,12 @@ import {
 } from "./AtlasPages";
 import { PageShell } from "./WorkbenchComponents";
 
-export function AtlasApp() {
-  const [active, setActive] = useState<AtlasPageId>("control-board");
+export function AtlasApp({
+  initialPage = "control-board",
+}: {
+  initialPage?: AtlasPageId;
+}) {
+  const [active, setActive] = useState<AtlasPageId>(initialPage);
   const page = atlasPages.find((candidate) => candidate.id === active)!;
   let content = <SupportingPage page={page} />;
   if (active === "control-board") content = <ControlBoardPage />;
