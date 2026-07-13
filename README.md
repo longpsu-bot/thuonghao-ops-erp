@@ -29,6 +29,12 @@ The project is in **Foundation Release FR-1**. The current focus is business arc
 
 Important project decisions must be recorded in this repository. Chat history and AI memory are working aids, not formal project records.
 
+## Primary architecture baseline
+
+Start with [`ARCH-001 — OPS ERP Business Architecture`](docs/architecture/arch-001-ops-erp-business-architecture.md).
+
+ARCH-001 defines the Atlas mission, domain-first design method, design principles, MVP flow, and architecture freeze for delivery. It is the baseline for future domain contracts and implementation tasks.
+
 ## Documentation map
 
 - `docs/handbook/` — governing business and architecture documents
