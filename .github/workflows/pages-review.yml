@@ -1,9 +1,7 @@
 name: Deploy Atlas UI review to GitHub Pages
 
 on:
-  push:
-    branches:
-      - main
+  # Manual until the GitHub Pages environment is explicitly configured.
   workflow_dispatch:
 
 permissions:
