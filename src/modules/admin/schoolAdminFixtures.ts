@@ -4,45 +4,45 @@ export const schoolAdminFixture: SchoolAdminState = {
   schoolGroups: [
     {
       schoolGroupId: "group-thuong-hao",
-      schoolGroupName: "ThÆ°á»£ng Háº£o Catering",
+      schoolGroupName: "Thượng Hảo Catering",
     },
   ],
   schoolTypes: [
     {
       schoolTypeId: "primary",
-      schoolTypeName: "Tiá»ƒu há»c",
+      schoolTypeName: "Tiểu học",
       requiresPlanningType: true,
     },
     {
       schoolTypeId: "kindergarten",
-      schoolTypeName: "Máº§m non",
+      schoolTypeName: "Mầm non",
       requiresPlanningType: true,
     },
   ],
   serviceCalendars: [
     {
       serviceCalendarId: "weekday-morning",
-      calendarName: "Thá»© hai â€“ Thá»© sáu",
+      calendarName: "Thứ hai – Thứ sáu",
       rules: ["MON", "TUE", "WED", "THU", "FRI"].map((weekday) => ({
         serviceDayRuleId: `weekday-${weekday}`,
         weekday: weekday as "MON",
         isServiceDay: true,
-        serviceWindow: "06:30â€“10:30",
+        serviceWindow: "06:30–10:30",
       })),
     },
   ],
   deliveryLocations: [
     {
       deliveryLocationId: "nd-central-kitchen",
-      locationName: "Báº¿p TrÆ°á»ng Nguyá»…n Du",
-      address: "Quáº­n 1, TP.HCM",
-      deliveryNotes: "Giao cá»•ng phÃ­a báº¯c",
+      locationName: "Bếp Trường Nguyễn Du",
+      address: "Quận 1, TP.HCM",
+      deliveryNotes: "Giao cổng phía bắc",
     },
   ],
   schools: [
     {
       schoolId: "school-nguyen-du",
-      schoolName: "TrÆ°á»ng Nguyá»…n Du",
+      schoolName: "Trường Nguyễn Du",
       schoolGroupId: "group-thuong-hao",
       status: "ACTIVE",
       displayOrder: 10,
@@ -50,7 +50,7 @@ export const schoolAdminFixture: SchoolAdminState = {
         schoolTypeId: "primary",
         serviceCalendarId: "weekday-morning",
         defaultDeliveryLocationId: "nd-central-kitchen",
-        operationalNotes: "Báº¿p trung tÃ¢m Â· tuyáº¿n Báº¯c",
+        operationalNotes: "Bếp trung tâm · tuyến Bắc",
         requiresSchoolTypeForPlanning: true,
         requiresDeliveryLocationForFulfilment: true,
       },
@@ -68,7 +68,7 @@ export const schoolAdminFixture: SchoolAdminState = {
     },
     {
       schoolId: "school-minh-an",
-      schoolName: "TrÆ°á»ng Minh An",
+      schoolName: "Trường Minh An",
       schoolGroupId: "group-thuong-hao",
       status: "INACTIVE",
       displayOrder: 20,
