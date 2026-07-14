@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { AttendanceWorkbench } from "../attendance/AttendanceWorkbench";
 import { ConfirmedNeedWorkbench } from "../confirmed-need/ConfirmedNeedWorkbench";
 import { NeedGenerationWorkbench } from "../need-generation/NeedGenerationWorkbench";
+import { PurchaseHandoffWorkbench } from "../purchase-handoff/PurchaseHandoffWorkbench";
 import { WeeklyMenuWorkbench } from "../weekly-menu/WeeklyMenuWorkbench";
 import type { AtlasPage } from "./atlasConfig";
 import {
@@ -241,6 +242,7 @@ export function RequirementPlanningPage() {
     <>
       <NeedGenerationWorkbench />
       <ConfirmedNeedWorkbench />
+      <PurchaseHandoffWorkbench />
       <Panel
         title="Tổng hợp & xác nhận nhu cầu"
         description="Tất cả nguồn kế hoạch → công thức / định lượng → nhu cầu tính toán → nhu cầu thực tế xác nhận."
