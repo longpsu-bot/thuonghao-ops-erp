@@ -6,21 +6,26 @@ import { DispatchDeliveryWorkbench } from "./DispatchDeliveryWorkbench";
 afterEach(cleanup);
 
 describe("DispatchDeliveryWorkbench", () => {
-  it("renders decision-first status, sources, blockers, warnings, and evidence", () => {
+  it("renders the morning decision, source ownership, execution, and attention views", () => {
     render(<DispatchDeliveryWorkbench />);
     expect(
-      screen.getByText(
-        /Are Planning-released and Procurement-fulfilled requirements assigned/,
-      ),
+      screen.getByText(/What is required, fulfilled, ready to load/),
     ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Dispatch morning decision summary"),
+    ).toHaveTextContent("7 Planning requirements");
     expect(screen.getAllByText("SCHOOL_CATERING").length).toBeGreaterThan(0);
     expect(screen.getAllByText("WHOLESALE").length).toBeGreaterThan(0);
-    expect(screen.getByText("Blockers:")).toBeInTheDocument();
     expect(screen.getByText("Warnings:")).toBeInTheDocument();
-    expect(screen.getAllByText("READY")).toHaveLength(5);
+    expect(screen.getByText("Operator attention queue")).toBeInTheDocument();
+    expect(screen.getAllByText("MISSING_FULFILMENT_EVIDENCE").length).toBe(1);
+    expect(screen.getAllByText("UNRESOLVED_EXCEPTION").length).toBe(1);
+    expect(screen.getAllByText("RETURN_EVIDENCE_REQUIRED").length).toBe(1);
+    expect(screen.getAllByText("INACTIVE_DESTINATION").length).toBe(1);
     expect(
-      screen.getByText(/operator attention before the trip can close/),
-    ).toBeInTheDocument();
+      screen.getAllByText("SUPPLIER_PO 25 kg + WAREHOUSE_STOCK 10 kg"),
+    ).toHaveLength(1);
+    expect(screen.getByText(/RETURN-HANDOVER-006/)).toBeInTheDocument();
   });
 
   it("renders the required ownership boundary note", () => {

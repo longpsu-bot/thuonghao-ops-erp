@@ -113,7 +113,8 @@ Goal: move Planning-released, Procurement-fulfilled requirements to schools, who
 - ✅ Dispatch planning and reference assignment prototype
 - ✅ Load and delivery confirmation prototype
 - ✅ Delivery exception, return evidence, and closure prototype
-- ⬜ Dispatch integration and operator-workflow review
+- ✅ Dispatch integration and operator-workflow review
+- ⬜ MVP vertical-slice operator review
 
 Dispatch boundary:
 
