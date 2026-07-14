@@ -8,9 +8,9 @@ The repository is the authoritative source for business definitions, architectur
 
 ## Current status
 
-Atlas has completed the Admin / Master Data Management in-memory prototype sequence.
+Atlas has completed the Admin / Master Data Management in-memory prototype sequence and is drafting the PD-05 Dispatch and Delivery contract.
 
-The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract, School info, Ingredients & Suppliers, consolidated Dishes & Recipes foundations, and Admin integration/operator-workflow review are complete as in-memory prototypes. PD-05 Dispatch and Delivery is the next roadmap domain. Production/QA and Finance/Accounting are deferred for the MVP.
+The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract, School info, Ingredients & Suppliers, consolidated Dishes & Recipes foundations, and Admin integration/operator-workflow review are complete as in-memory prototypes. PD-05 Dispatch and Delivery contract is drafted for review. Production/QA and Finance/Accounting are deferred for the MVP.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 
