@@ -26,9 +26,9 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Need Generation contract
 - ✅ Need Generation foundation
 - ✅ Confirmed Need contract
-- 🟡 Confirmed Need foundation — implemented in PD-01.9, pending review and merge
+- ✅ Confirmed Need foundation
 - ✅ Purchase Handoff contract
-- ⬜ Purchase Handoff foundation
+- 🟡 Purchase Handoff foundation — implemented in PD-01.11, pending review and merge
 - ⬜ Planning integration and operator-workflow review
 
 Planning completion boundary:
