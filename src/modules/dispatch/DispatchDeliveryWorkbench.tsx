@@ -1,42 +1,40 @@
 import { Chip, CompactTable, Panel } from "../atlas/WorkbenchComponents";
 import { DispatchDeliveryWorkbench as buildReadModel } from "./dispatchDeliveryDomain";
-import { dispatchDeliveryInputFixture } from "./dispatchDeliveryFixtures";
+import { dispatchOperatorReviewFixture } from "./dispatchDeliveryFixtures";
 
 export function DispatchDeliveryWorkbench() {
-  const model = buildReadModel(dispatchDeliveryInputFixture);
+  const model = buildReadModel(dispatchOperatorReviewFixture);
   return (
     <>
       <Panel
-        title="Dispatch and Delivery decision"
-        description="Are Planning-released and Procurement-fulfilled requirements assigned, loaded, delivered, or unresolved? Which stops require operator attention before the trip can close?"
+        title="2AM–8AM Dispatch control"
+        description="What is required, fulfilled, ready to load, assigned, delivered, returned, exceptional, or blocking trip closure?"
         status={
-          <Chip tone={model.blockers.length ? "danger" : "warning"}>
-            {model.blockers.length
-              ? `${model.blockers.length} blockers`
-              : "Ready for assignment"}
+          <Chip tone={model.counts.unresolved ? "danger" : "ok"}>
+            {model.counts.unresolved} unresolved requirements
           </Chip>
         }
       >
-        <div aria-label="Dispatch decision summary" className="trace-filter">
-          <b>Decision now:</b> {model.rows.length} released requirements have
-          matching fulfilment allocations and physical evidence. Assign a trip,
-          confirm each source-backed load, then resolve every destination
-          outcome.
+        <div
+          aria-label="Dispatch morning decision summary"
+          className="trace-filter"
+        >
+          <b>Morning wave:</b> {model.counts.total} Planning requirements ·{" "}
+          {model.counts.readyToLoad} ready to load · {model.counts.assigned}{" "}
+          assigned · {model.counts.delivered} delivered ·{" "}
+          {model.counts.unresolved} need attention.
         </div>
         <CompactTable
           headers={[
             "Source of need",
-            "Requirement / allocation",
-            "Evidence",
-            "Plan / trip",
-            "Stop / destination",
-            "Loaded / delivered / returned / exception",
-            "Driver / vehicle",
-            "Delivery evidence",
+            "Planning requirement",
+            "Procurement allocation",
+            "Physical evidence",
+            "Ready to load",
           ]}
         >
           {model.rows.map((row) => (
-            <tr key={row.requirementReference}>
+            <tr key={`need-${row.requirementReference}`}>
               <td>
                 <Chip
                   tone={
@@ -49,55 +47,118 @@ export function DispatchDeliveryWorkbench() {
               <td>
                 {row.requirementReference}
                 <br />
-                <small>{row.allocationReference}</small>
+                <small>
+                  {row.requirementStatus} · {row.planningReleaseReference}
+                </small>
+              </td>
+              <td>
+                {row.allocationReference}
+                <br />
+                <small>{row.fulfilmentSourceSplit}</small>
               </td>
               <td>
                 <Chip tone={row.evidenceStatus === "READY" ? "ok" : "danger"}>
                   {row.evidenceStatus}
                 </Chip>
-              </td>
-              <td>
-                {row.planStatus}
                 <br />
-                <small>{row.tripStatus}</small>
+                <small>
+                  {row.fulfilled} / {row.allocated} {row.unit} fulfilled
+                </small>
               </td>
               <td>
-                {row.stopSequence}. {row.destination}
+                <Chip tone={row.readyToLoad ? "ok" : "danger"}>
+                  {row.readyToLoad ? "READY" : "BLOCKED"}
+                </Chip>
               </td>
-              <td>
-                {row.loaded} / {row.delivered} / {row.returned} /{" "}
-                {row.exception} {row.unit}
-              </td>
-              <td>{row.driverVehicleReference}</td>
-              <td>{row.deliveryEvidence}</td>
             </tr>
           ))}
         </CompactTable>
       </Panel>
       <Panel
-        title="Operator attention"
-        description="Stops and evidence that must be resolved before trip closure."
+        title="Trip, load, and destination outcome"
+        description="Assignment and quantity reconciliation for each Planning requirement."
         status={
-          <Chip tone={model.attentionStops.length ? "warning" : "ok"}>
-            {model.attentionStops.length} stops
+          <Chip tone={model.counts.assigned ? "warning" : "danger"}>
+            {model.counts.assigned} assigned
           </Chip>
         }
       >
-        {model.attentionStops.length ? (
-          <ul>
-            {model.attentionStops.map((stop) => (
-              <li key={stop}>{stop}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>No unresolved stops.</p>
-        )}
-        <p>
-          <b>Blockers:</b>{" "}
-          {model.blockers.length
-            ? model.blockers.join(" ")
-            : "None in the prepared fixture."}
-        </p>
+        <CompactTable
+          headers={[
+            "Plan / trip",
+            "Driver / vehicle",
+            "Stop / destination",
+            "Delivery location",
+            "Required / loaded / delivered / returned / exception",
+            "Delivery evidence",
+            "Closure readiness",
+          ]}
+        >
+          {model.rows.map((row) => (
+            <tr key={`outcome-${row.requirementReference}`}>
+              <td>
+                {row.planReference} · {row.planStatus}
+                <br />
+                <small>
+                  {row.tripReference} · {row.tripStatus}
+                </small>
+              </td>
+              <td>
+                {row.driverReference}
+                <br />
+                <small>{row.vehicleReference}</small>
+              </td>
+              <td>
+                {row.stopSequence ?? "—"}. {row.destination}
+                <br />
+                <small>{row.stopStatus}</small>
+              </td>
+              <td>{row.deliveryLocation}</td>
+              <td>
+                {row.required} / {row.loaded} / {row.delivered} / {row.returned}{" "}
+                / {row.exception} {row.unit}
+              </td>
+              <td>{row.deliveryEvidence}</td>
+              <td>
+                <Chip
+                  tone={
+                    row.closureReadiness === "CLOSED" ||
+                    row.closureReadiness === "READY_TO_CLOSE"
+                      ? "ok"
+                      : "danger"
+                  }
+                >
+                  {row.closureReadiness}
+                </Chip>
+              </td>
+            </tr>
+          ))}
+        </CompactTable>
+      </Panel>
+      <Panel
+        title="Operator attention queue"
+        description="Resolve these items before the affected trip can close."
+        status={
+          <Chip tone={model.attentionQueue.length ? "danger" : "ok"}>
+            {model.attentionQueue.length} attention items
+          </Chip>
+        }
+      >
+        <CompactTable headers={["Blocker", "Requirement / stop", "Action"]}>
+          {model.attentionQueue.map((item, index) => (
+            <tr
+              key={`${item.requirementReference}-${item.attentionCode}-${index}`}
+            >
+              <td>{item.attentionCode}</td>
+              <td>
+                {item.requirementReference}
+                <br />
+                <small>{item.stopReference ?? "No stop assigned"}</small>
+              </td>
+              <td>{item.message}</td>
+            </tr>
+          ))}
+        </CompactTable>
         <p>
           <b>Warnings:</b> {model.warnings.join(" ")}
         </p>

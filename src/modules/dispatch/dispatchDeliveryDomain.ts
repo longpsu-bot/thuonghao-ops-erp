@@ -1151,127 +1151,375 @@ export function AttemptUpstreamMutation(
   ]);
 }
 
+export type DispatchAttentionCode =
+  | "INACTIVE_DESTINATION"
+  | "MISSING_FULFILMENT_EVIDENCE"
+  | "MIXED_FULFILMENT_INCOMPLETE"
+  | "TRIP_NOT_ASSIGNED"
+  | "LOAD_NOT_CONFIRMED"
+  | "DELIVERY_EVIDENCE_MISSING"
+  | "DELIVERY_EXCEEDS_LOADED"
+  | "UNRESOLVED_EXCEPTION"
+  | "RETURN_EVIDENCE_REQUIRED"
+  | "TRIP_CLOSURE_BLOCKED";
+
+export type DispatchAttentionItem = Readonly<{
+  attentionCode: DispatchAttentionCode;
+  requirementReference: string;
+  stopReference?: string;
+  message: string;
+}>;
+
+export type DispatchDeliveryWorkbenchRow = Readonly<{
+  sourceOfNeed: SourceOfNeed;
+  requirementReference: string;
+  planningReleaseReference: string;
+  requirementStatus: DispatchRequirementStatus;
+  allocationReference: string;
+  fulfilmentSourceSplit: string;
+  evidenceStatus: "READY" | "MISSING";
+  readyToLoad: boolean;
+  planReference: string;
+  planStatus: string;
+  tripReference: string;
+  tripStatus: string;
+  tripAssignmentStatus: "ASSIGNED" | "UNASSIGNED";
+  driverReference: string;
+  vehicleReference: string;
+  stopSequence: number | null;
+  stopStatus: string;
+  destination: string;
+  deliveryLocation: string;
+  required: number;
+  allocated: number;
+  fulfilled: number;
+  loaded: number;
+  delivered: number;
+  returned: number;
+  exception: number;
+  unit: string;
+  deliveryEvidence: string;
+  closureReadiness: "NOT_STARTED" | "BLOCKED" | "READY_TO_CLOSE" | "CLOSED";
+  blockers: readonly string[];
+}>;
+
 export type DispatchDeliveryWorkbenchReadModel = Readonly<{
-  rows: readonly Readonly<{
-    sourceOfNeed: SourceOfNeed;
-    requirementReference: string;
-    allocationReference: string;
-    evidenceStatus: "READY" | "MISSING";
-    planStatus: string;
-    tripStatus: string;
-    stopSequence: number;
-    destination: string;
-    loaded: number;
-    delivered: number;
-    returned: number;
-    exception: number;
-    unit: string;
-    driverVehicleReference: string;
-    deliveryEvidence: string;
-  }>[];
+  rows: readonly DispatchDeliveryWorkbenchRow[];
+  attentionQueue: readonly DispatchAttentionItem[];
   blockers: readonly string[];
   warnings: readonly string[];
   attentionStops: readonly string[];
+  counts: Readonly<{
+    total: number;
+    readyToLoad: number;
+    assigned: number;
+    delivered: number;
+    unresolved: number;
+  }>;
 }>;
+
+function matchingEvidence(
+  state: DispatchDeliveryState,
+  allocationLine: FulfilmentAllocationLine,
+) {
+  return state.fulfilmentEvidence.filter(
+    (candidate) =>
+      candidate.fulfilmentAllocationLineId ===
+        allocationLine.fulfilmentAllocationLineId &&
+      evidenceTypeFor(allocationLine.sourceType, candidate.evidenceType),
+  );
+}
 
 export function DispatchDeliveryWorkbench(
   state: DispatchDeliveryState,
 ): DispatchDeliveryWorkbenchReadModel {
-  const trip = state.trips[0];
-  const plan = state.plans[0];
-  const rows = state.requirements.map((requirement, index) => {
-    const allocation = state.allocations.find(
-      (candidate) =>
-        candidate.dispatchRequirementId === requirement.dispatchRequirementId,
-    );
-    const stop = trip?.stops.find(
-      (candidate) =>
-        candidate.dispatchRequirementId === requirement.dispatchRequirementId,
-    );
-    const loads = state.loads
-      .filter(
+  const attentionQueue: DispatchAttentionItem[] = [];
+  const rows: DispatchDeliveryWorkbenchRow[] = state.requirements.map(
+    (requirement) => {
+      const requirementReference = requirement.dispatchRequirementId;
+      const allocation = state.allocations.find(
+        (candidate) => candidate.dispatchRequirementId === requirementReference,
+      );
+      const plan = state.plans.find((candidate) =>
+        candidate.dispatchRequirementIds.includes(requirementReference),
+      );
+      const trip = state.trips.find(
         (candidate) =>
-          candidate.dispatchRequirementId === requirement.dispatchRequirementId,
-      )
-      .flatMap((candidate) => candidate.lines);
-    const loadIds = loads.map((candidate) => candidate.dispatchLoadLineId);
-    const confirmations = state.confirmations
-      .flatMap((candidate) => candidate.lines)
-      .filter((candidate) => loadIds.includes(candidate.dispatchLoadLineId));
-    const evidenceReady =
-      allocation?.lines.every((line) =>
-        state.fulfilmentEvidence.some(
-          (candidate) =>
-            candidate.fulfilmentAllocationLineId ===
-              line.fulfilmentAllocationLineId &&
-            evidenceTypeFor(line.sourceType, candidate.evidenceType),
+          candidate.dispatchPlanId === plan?.dispatchPlanId &&
+          candidate.stops.some(
+            (stop) => stop.dispatchRequirementId === requirementReference,
+          ),
+      );
+      const stop = trip?.stops.find(
+        (candidate) => candidate.dispatchRequirementId === requirementReference,
+      );
+      const loads = state.loads.filter(
+        (candidate) =>
+          candidate.dispatchRequirementId === requirementReference &&
+          (!trip || candidate.dispatchTripId === trip.dispatchTripId),
+      );
+      const loadLines = loads.flatMap((candidate) => candidate.lines);
+      const loadIds = loadLines.map(
+        (candidate) => candidate.dispatchLoadLineId,
+      );
+      const confirmations = state.confirmations.filter(
+        (candidate) =>
+          candidate.dispatchStopId === stop?.dispatchStopId ||
+          candidate.lines.some((line) =>
+            loadIds.includes(line.dispatchLoadLineId),
+          ),
+      );
+      const confirmationLines = confirmations.flatMap(
+        (candidate) => candidate.lines,
+      );
+      const exceptions = state.exceptions.filter(
+        (candidate) =>
+          candidate.dispatchStopId === stop?.dispatchStopId ||
+          loadIds.includes(candidate.dispatchLoadLineId),
+      );
+      const returns = state.returns.filter((candidate) =>
+        loadIds.includes(candidate.dispatchLoadLineId),
+      );
+      const required = total(
+        requirement.lines.map((candidate) => candidate.requiredQuantity),
+      );
+      const allocated = total(
+        allocation?.lines.map((candidate) => candidate.allocatedQuantity) ?? [],
+      );
+      const fulfilled = total(
+        allocation?.lines.flatMap((candidate) =>
+          matchingEvidence(state, candidate).map(
+            (evidence) => evidence.fulfilledQuantity,
+          ),
+        ) ?? [],
+      );
+      const loaded = total(
+        loadLines.map((candidate) => candidate.loadedQuantity),
+      );
+      const delivered = total(
+        confirmationLines.map((candidate) => candidate.deliveredQuantity),
+      );
+      const returned = Math.max(
+        total(confirmationLines.map((candidate) => candidate.returnedQuantity)),
+        total(returns.map((candidate) => candidate.returnedQuantity)),
+      );
+      const exceptionQuantity = Math.max(
+        total(
+          confirmationLines.map((candidate) => candidate.exceptionQuantity),
         ),
-      ) ?? false;
-    return {
-      sourceOfNeed: requirement.sourceOfNeed,
-      requirementReference: requirement.dispatchRequirementId,
-      allocationReference: allocation?.fulfilmentAllocationId ?? "Missing",
-      evidenceStatus: evidenceReady ? ("READY" as const) : ("MISSING" as const),
-      planStatus: plan?.status ?? "NOT_PLANNED",
-      tripStatus: trip?.status ?? "NOT_ASSIGNED",
-      stopSequence: stop?.stopSequence ?? index + 1,
-      destination: requirement.destinationName,
-      loaded: total(loads.map((candidate) => candidate.loadedQuantity)),
-      delivered: total(
-        confirmations.map((candidate) => candidate.deliveredQuantity),
-      ),
-      returned: total(
-        confirmations.map((candidate) => candidate.returnedQuantity),
-      ),
-      exception: total(
-        confirmations.map((candidate) => candidate.exceptionQuantity),
-      ),
-      unit: requirement.lines[0]?.requiredUnit ?? "",
-      driverVehicleReference:
-        [trip?.driverReference, trip?.vehicleReference]
-          .filter(Boolean)
-          .join(" / ") || "Unassigned",
-      deliveryEvidence:
-        state.confirmations
-          .find(
-            (candidate) => candidate.dispatchStopId === stop?.dispatchStopId,
+        total(exceptions.map((candidate) => candidate.exceptionQuantity)),
+      );
+      const evidenceReady =
+        allocation?.lines.every(
+          (line) =>
+            total(
+              matchingEvidence(state, line).map(
+                (candidate) => candidate.fulfilledQuantity,
+              ),
+            ) >= line.allocatedQuantity,
+        ) ?? false;
+      const blockers = validateRequirement(state, requirementReference)
+        .issues.filter((candidate) => candidate.isBlocking)
+        .map((candidate) => candidate.message);
+      const addAttention = (
+        attentionCode: DispatchAttentionCode,
+        message: string,
+      ) => {
+        attentionQueue.push({
+          attentionCode,
+          requirementReference,
+          stopReference: stop?.dispatchStopId,
+          message,
+        });
+        blockers.push(message);
+      };
+
+      if (
+        (!requirement.destinationActive ||
+          !requirement.deliveryLocationActive) &&
+        !requirement.activeOverrideEvidence
+      )
+        addAttention(
+          "INACTIVE_DESTINATION",
+          `${requirementReference}: inactive destination or delivery location requires override evidence.`,
+        );
+      if (!evidenceReady) {
+        addAttention(
+          "MISSING_FULFILMENT_EVIDENCE",
+          `${requirementReference}: physical fulfilment evidence is incomplete.`,
+        );
+        if ((allocation?.lines.length ?? 0) > 1)
+          addAttention(
+            "MIXED_FULFILMENT_INCOMPLETE",
+            `${requirementReference}: every supplier and warehouse allocation portion requires matching evidence.`,
+          );
+      }
+      if (!trip)
+        addAttention(
+          "TRIP_NOT_ASSIGNED",
+          `${requirementReference}: dispatch trip is not assigned.`,
+        );
+      else if (!trip.driverReference || !trip.vehicleReference)
+        addAttention(
+          "TRIP_NOT_ASSIGNED",
+          `${requirementReference}: driver and vehicle references are incomplete.`,
+        );
+      if (trip && !loads.length)
+        addAttention(
+          "LOAD_NOT_CONFIRMED",
+          `${requirementReference}: source-backed load is not confirmed.`,
+        );
+      if (
+        stop &&
+        ["DELIVERED", "PARTIALLY_DELIVERED", "FAILED"].includes(stop.status) &&
+        (!confirmations.length ||
+          confirmations.some((candidate) => !candidate.evidence.length))
+      )
+        addAttention(
+          "DELIVERY_EVIDENCE_MISSING",
+          `${requirementReference}: destination outcome requires delivery evidence.`,
+        );
+      if (delivered > loaded)
+        addAttention(
+          "DELIVERY_EXCEEDS_LOADED",
+          `${requirementReference}: delivered quantity exceeds loaded quantity.`,
+        );
+      const unresolved = exceptions.filter((candidate) => !candidate.resolved);
+      if (unresolved.length) {
+        addAttention(
+          "UNRESOLVED_EXCEPTION",
+          `${requirementReference}: ${unresolved.length} delivery exception(s) remain unresolved.`,
+        );
+        if (
+          unresolved.some(
+            (candidate) =>
+              !returns.some(
+                (returnEvidence) =>
+                  returnEvidence.deliveryExceptionId ===
+                  candidate.deliveryExceptionId,
+              ),
           )
-          ?.evidence.map((candidate) => candidate.evidenceReference)
-          .join(", ") ?? "Pending",
-    };
-  });
-  const blockers = state.requirements.flatMap((requirement) =>
-    validateRequirement(state, requirement.dispatchRequirementId)
-      .issues.filter((candidate) => candidate.isBlocking)
-      .map((candidate) => candidate.message),
+        )
+          addAttention(
+            "RETURN_EVIDENCE_REQUIRED",
+            `${requirementReference}: return evidence is required to resolve the exception path.`,
+          );
+      }
+
+      const closed =
+        trip?.status === "DELIVERED" ||
+        trip?.status === "CLOSED_WITH_EXCEPTION";
+      const tripStopIds =
+        trip?.stops.map((candidate) => candidate.dispatchStopId) ?? [];
+      const tripHasUnresolvedException = state.exceptions.some(
+        (candidate) =>
+          tripStopIds.includes(candidate.dispatchStopId) && !candidate.resolved,
+      );
+      const tripStopsResolved =
+        trip?.stops.every((candidate) =>
+          ["DELIVERED", "RESOLVED_WITH_EXCEPTION"].includes(candidate.status),
+        ) ?? false;
+      const readyToClose =
+        Boolean(trip) &&
+        !closed &&
+        blockers.length === 0 &&
+        tripStopsResolved &&
+        !tripHasUnresolvedException;
+      let closureReadiness: DispatchDeliveryWorkbenchRow["closureReadiness"] =
+        !plan
+          ? "NOT_STARTED"
+          : closed
+            ? "CLOSED"
+            : readyToClose
+              ? "READY_TO_CLOSE"
+              : "BLOCKED";
+      if (plan && !closed && !readyToClose)
+        addAttention(
+          "TRIP_CLOSURE_BLOCKED",
+          `${requirementReference}: trip closure is blocked by incomplete assignment, loading, delivery, or exception resolution.`,
+        );
+      if (!plan) closureReadiness = "NOT_STARTED";
+
+      return {
+        sourceOfNeed: requirement.sourceOfNeed,
+        requirementReference,
+        planningReleaseReference: requirement.planningReleaseReference,
+        requirementStatus: requirement.requirementStatus,
+        allocationReference: allocation?.fulfilmentAllocationId ?? "MISSING",
+        fulfilmentSourceSplit:
+          allocation?.lines
+            .map(
+              (candidate) =>
+                `${candidate.sourceType} ${candidate.allocatedQuantity} ${candidate.allocatedUnit}`,
+            )
+            .join(" + ") ?? "MISSING",
+        evidenceStatus: evidenceReady ? "READY" : "MISSING",
+        readyToLoad: evidenceReady && allocated >= required,
+        planReference: plan?.dispatchPlanId ?? "NOT_PLANNED",
+        planStatus: plan?.status ?? "NOT_PLANNED",
+        tripReference: trip?.dispatchTripId ?? "NOT_ASSIGNED",
+        tripStatus: trip?.status ?? "NOT_ASSIGNED",
+        tripAssignmentStatus: trip ? "ASSIGNED" : "UNASSIGNED",
+        driverReference: trip?.driverReference ?? "UNASSIGNED",
+        vehicleReference: trip?.vehicleReference ?? "UNASSIGNED",
+        stopSequence: stop?.stopSequence ?? null,
+        stopStatus: stop?.status ?? "NOT_ASSIGNED",
+        destination: requirement.destinationName,
+        deliveryLocation: requirement.deliveryLocationId,
+        required,
+        allocated,
+        fulfilled,
+        loaded,
+        delivered,
+        returned,
+        exception: exceptionQuantity,
+        unit: requirement.lines[0]?.requiredUnit ?? "",
+        deliveryEvidence:
+          [
+            ...confirmations
+              .flatMap((candidate) => candidate.evidence)
+              .map((candidate) => candidate.evidenceReference),
+            ...returns.map((candidate) => candidate.evidenceReference),
+          ].join(", ") || "MISSING",
+        closureReadiness,
+        blockers,
+      };
+    },
   );
-  for (const row of rows) {
-    if (row.allocationReference === "Missing")
-      blockers.push(
-        `Missing fulfilment allocation for ${row.requirementReference}.`,
-      );
-    if (row.evidenceStatus === "MISSING")
-      blockers.push(
-        `Missing physical fulfilment evidence for ${row.requirementReference}.`,
-      );
-  }
   const warnings = state.requirements
     .flatMap((candidate) => [
       candidate.operationalNote,
       candidate.sourceOfNeed === "WHOLESALE"
-        ? "Wholesale delivery requirement uses a manually supplied customer-order trace."
+        ? `${candidate.dispatchRequirementId}: wholesale delivery uses a manually supplied customer-order trace.`
         : undefined,
     ])
     .filter((candidate): candidate is string => Boolean(candidate));
-  const attentionStops =
-    trip?.stops
-      .filter(
-        (candidate) =>
-          !["DELIVERED", "RESOLVED_WITH_EXCEPTION"].includes(candidate.status),
-      )
-      .map(
-        (candidate) =>
-          `${candidate.stopSequence}. ${candidate.destinationName} â€” ${candidate.status}`,
-      ) ?? [];
-  return { rows, blockers, warnings, attentionStops };
+  const blockers = rows.flatMap((candidate) => candidate.blockers);
+  const attentionStops = rows
+    .filter(
+      (candidate) =>
+        candidate.stopSequence !== null && candidate.blockers.length,
+    )
+    .map(
+      (candidate) =>
+        `${candidate.stopSequence}. ${candidate.destination} — ${candidate.stopStatus}`,
+    );
+  return {
+    rows,
+    attentionQueue,
+    blockers,
+    warnings,
+    attentionStops,
+    counts: {
+      total: rows.length,
+      readyToLoad: rows.filter((candidate) => candidate.readyToLoad).length,
+      assigned: rows.filter(
+        (candidate) => candidate.tripAssignmentStatus === "ASSIGNED",
+      ).length,
+      delivered: rows.filter(
+        (candidate) => candidate.stopStatus === "DELIVERED",
+      ).length,
+      unresolved: rows.filter((candidate) => candidate.blockers.length).length,
+    },
+  };
 }
