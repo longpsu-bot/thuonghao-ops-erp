@@ -10,7 +10,7 @@ The repository is the authoritative source for business definitions, architectur
 
 Atlas is in Admin / Master Data Management delivery.
 
-The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract plus the School info and Ingredients & Suppliers management foundations are complete as in-memory prototypes. Dishes & Recipes remains the next Admin section. Production/QA and Finance/Accounting are deferred for the MVP.
+The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract plus the School info, Ingredients & Suppliers, and consolidated Dishes & Recipes management foundations are complete as in-memory prototypes. Admin integration and operator-workflow review is next. Production/QA and Finance/Accounting are deferred for the MVP.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 

@@ -621,37 +621,16 @@ export function WarehouseStockReleasePage() {
   return <WarehouseStockReleaseWorkbench />;
 }
 export function SupportingPage({ page }: { page: AtlasPage }) {
-  const recipe = page.id === "recipe-governance";
   return (
     <Panel
       title={page.label}
       description="Dữ liệu hỗ trợ và quản trị; không phải một bước vận hành hằng ngày."
       status={<Chip>Supporting / governance</Chip>}
     >
-      {recipe ? (
-        <div className="recipe-grid">
-          <article>
-            <b>Món / công thức</b>
-            <strong>Canh bí đỏ · BOM hiện hành v3</strong>
-            <small>Phạm vi: Trường Nguyễn Du · đang hiệu lực</small>
-          </article>
-          <article>
-            <b>Đề xuất thay đổi</b>
-            <strong>Điều chỉnh số lượng bí đỏ</strong>
-            <small>Hiệu lực 21/07/2026 · xem trước ảnh hưởng</small>
-          </article>
-          <article>
-            <b>Lịch sử</b>
-            <strong>v2 → v3</strong>
-            <small>Thay thế hành lá bằng ngò rí</small>
-          </article>
-        </div>
-      ) : (
-        <p className="supporting-copy">
-          Đối tượng: {page.object}. Bàn giao: {page.handoff}. Prototype không
-          thay đổi dữ liệu thực tế.
-        </p>
-      )}
+      <p className="supporting-copy">
+        Đối tượng: {page.object}. Bàn giao: {page.handoff}. Prototype không thay
+        đổi dữ liệu thực tế.
+      </p>
     </Panel>
   );
 }
