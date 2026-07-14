@@ -1102,6 +1102,6 @@ export function IngredientSupplierAdminWorkbench(
       ...state.ingredientSupplierChanges,
     ].sort((left, right) => right.at.localeCompare(left.at)),
     boundaryNote:
-      "Admin governs ingredient, unit, supplier, eligibility, and preference reference data only. It does not create supplier commitments or rewrite Planning, Procurement, Warehouse, Dispatch, Production/QA, or Finance facts.",
+      "Admin governs ingredient, unit, supplier, eligibility, and preference reference data only. It does not create supplier commitments or rewrite Planning, Procurement, Warehouse, Dispatch, Production/QA, or Finance/Accounting facts. It performs no Planning recalculation, Procurement assignment, PO, supplier confirmation, Warehouse movement, QA approval, Production execution, or financial/accounting transaction.",
   };
 }

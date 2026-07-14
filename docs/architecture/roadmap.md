@@ -74,7 +74,7 @@ Goal: maintain the master data required for Atlas MVP launch and OPS v1 replacem
 - ✅ School info management foundation (in-memory prototype)
 - ✅ Ingredients & Suppliers management foundation (in-memory prototype)
 - ✅ Dishes & Recipes management foundation (in-memory consolidated workbench)
-- ⬜ Admin integration and operator-workflow review
+- ✅ Admin integration and operator-workflow review
 
 Admin MVP boundary:
 
