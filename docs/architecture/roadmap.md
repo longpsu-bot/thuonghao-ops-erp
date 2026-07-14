@@ -28,8 +28,8 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Confirmed Need contract
 - ✅ Confirmed Need foundation
 - ✅ Purchase Handoff contract
-- 🟡 Purchase Handoff foundation — implemented in PD-01.11, pending review and merge
-- ⬜ Planning integration and operator-workflow review
+- ✅ Purchase Handoff foundation
+- 🟡 Planning integration and operator-workflow review — implemented in this PR, pending review and merge
 
 Planning completion boundary:
 

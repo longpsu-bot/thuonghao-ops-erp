@@ -10,7 +10,7 @@ The repository is the authoritative source for business definitions, architectur
 
 Atlas is in Planning Domain MVP delivery.
 
-Completed foundations include Weekly Menu, Attendance, and Planning Input Readiness. Need Generation, Confirmed Need, and Purchase Handoff contracts are approved; their bounded implementations are the remaining PD-01 delivery work.
+Completed foundations include Weekly Menu, Attendance, Planning Input Readiness, Need Generation, Confirmed Need, and Purchase Handoff. The bounded PD-01 integration and architecture-conformance review is pending review and merge.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 
