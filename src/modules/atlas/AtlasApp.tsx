@@ -8,6 +8,7 @@ import {
   RequirementPlanningPage,
   SupportingPage,
   WarehouseReceivingPage,
+  WarehouseStockReleasePage,
 } from "./AtlasPages";
 import { PageShell, TracePanel } from "./WorkbenchComponents";
 
@@ -26,6 +27,8 @@ export function AtlasApp({
   if (active === "purchase-planning") content = <PurchasePlanningPage />;
   if (active === "document-release") content = <DocumentReleasePage />;
   if (active === "warehouse-receiving") content = <WarehouseReceivingPage />;
+  if (active === "warehouse-stock-release")
+    content = <WarehouseStockReleasePage />;
 
   return (
     <div className="atlas-shell">

@@ -61,9 +61,8 @@ Goal: receive, hold, fulfil, pick, and release goods with controlled stock trace
 - ✅ Warehouse domain contract
 - ✅ Warehouse in-memory foundation (goods receipt, discrepancies, stock/lot identity)
 - ✅ Warehouse integration and operator-workflow review
-- 🟡 Warehouse Stock Release contract — drafted in this PR, pending review and merge
-- ⬜ Internal fulfilment
-- ⬜ Picking and warehouse dispatch
+- ✅ Warehouse Stock Release contract
+- 🟡 Warehouse Stock Release in-memory foundation — reservation, picking, custody release, movement posting, and on-hand reduction implemented in this PR, pending review and merge
 - ⬜ Inventory adjustment and stock count
 
 ## PD-04 — Production and Quality
