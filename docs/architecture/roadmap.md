@@ -59,7 +59,8 @@ Goal: convert released purchase demand into controlled supplier commitments.
 Goal: receive, hold, fulfil, pick, and release goods with controlled stock traceability.
 
 - ✅ Warehouse domain contract
-- 🟡 Warehouse in-memory foundation (goods receipt, discrepancies, stock/lot identity) — pending review and merge
+- ✅ Warehouse in-memory foundation (goods receipt, discrepancies, stock/lot identity)
+- 🟡 Warehouse integration and operator-workflow review — implemented in this PR, pending review and merge
 - ⬜ Internal fulfilment
 - ⬜ Picking and warehouse dispatch
 - ⬜ Inventory adjustment and stock count
