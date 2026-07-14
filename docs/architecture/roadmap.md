@@ -24,9 +24,9 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Attendance contract and foundation
 - ✅ Planning Input Readiness contract and foundation
 - ✅ Need Generation contract
-- 🟡 Need Generation foundation — implemented in PD-01.7, pending review and merge
+- ✅ Need Generation foundation
 - ✅ Confirmed Need contract
-- ⬜ Confirmed Need foundation
+- 🟡 Confirmed Need foundation — implemented in PD-01.9, pending review and merge
 - ✅ Purchase Handoff contract
 - ⬜ Purchase Handoff foundation
 - ⬜ Planning integration and operator-workflow review
