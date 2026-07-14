@@ -115,6 +115,7 @@ Goal: move Planning-released, Procurement-fulfilled requirements to schools, who
 - ✅ Delivery exception, return evidence, and closure prototype
 - ✅ Dispatch integration and operator-workflow review
 - ✅ MVP vertical-slice operator review
+- ✅ MVP morning chaos simulation
 
 Dispatch boundary:
 
