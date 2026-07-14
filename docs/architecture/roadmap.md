@@ -29,7 +29,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Confirmed Need foundation
 - ✅ Purchase Handoff contract
 - ✅ Purchase Handoff foundation
-- 🟡 Planning integration and operator-workflow review — implemented in this PR, pending review and merge
+- ✅ Planning integration and operator-workflow review
 
 Planning completion boundary:
 
@@ -45,7 +45,7 @@ Weekly Menu / Attendance / Other controlled sources
 
 Goal: convert released purchase demand into controlled supplier commitments.
 
-- ⬜ Procurement domain contract
+- 🟡 Procurement domain contract — implemented in this PR, pending review and merge
 - ⬜ Supplier assignment
 - ⬜ Purchase allocation and split handling
 - ⬜ Purchase orders and revisions
