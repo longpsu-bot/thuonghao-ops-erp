@@ -8,9 +8,9 @@ The repository is the authoritative source for business definitions, architectur
 
 ## Current status
 
-Atlas is in Warehouse integration and architecture-conformance review.
+Atlas is in Warehouse Stock Release contract delivery.
 
-The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract and bounded in-memory foundation are complete; its integration/operator-workflow review is pending review and merge.
+The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, and integration/operator-workflow review are complete. The Warehouse Stock Release contract is drafted and pending review and merge.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 
