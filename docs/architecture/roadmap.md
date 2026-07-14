@@ -72,7 +72,7 @@ Goal: maintain the master data required for Atlas MVP launch and OPS v1 replacem
 
 - ✅ Admin / Master Data Management domain contract
 - ✅ School info management foundation (in-memory prototype)
-- ⬜ Ingredients & Suppliers management foundation
+- ✅ Ingredients & Suppliers management foundation (in-memory prototype)
 - ⬜ Dishes & Recipes management foundation
 - ⬜ Admin integration and operator-workflow review
 
