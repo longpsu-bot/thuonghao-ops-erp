@@ -94,7 +94,7 @@ OPS v1 Retool screen/layer separation is evidence only, not a target domain spli
 
 ## PD-05 — Dispatch and Delivery
 
-Goal: move released goods to kitchens, schools, and other destinations with explicit handoffs and exceptions.
+Goal: move Planning-released, Procurement-fulfilled requirements to schools, wholesale customers, kitchens, and other destinations with explicit loading, delivery, exception, and return evidence.
 
 - ✅ Dispatch and Delivery contract
 - ⬜ Dispatch planning
@@ -105,8 +105,17 @@ Goal: move released goods to kitchens, schools, and other destinations with expl
 Dispatch boundary:
 
 ```text
-Warehouse confirms goods left warehouse-controlled stock custody.
-Dispatch and Delivery confirms transport, destination outcome, exception, or return resolution.
+Planning releases what, how many, where, and by when.
+Procurement allocates how the requirement will be fulfilled.
+Supplier or warehouse evidence proves physical fulfilment.
+Dispatch confirms transport, destination outcome, exception, or return resolution.
+```
+
+Source-of-need rule:
+
+```text
+School catering and wholesale requirements must both converge into Planning-owned DispatchRequirement lines before Procurement fulfilment and Dispatch execution.
+WarehouseRelease is only one fulfilment-evidence type, not the mandatory dispatch trigger.
 ```
 
 ## Deferred — Production and Quality
