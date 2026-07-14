@@ -1,7 +1,7 @@
 # PD-03 — Warehouse integration and architecture conformance review
 
-**Status:** Implemented in this PR; pending review and merge  
-**Scope:** Procurement → Warehouse handoff and the in-memory Warehouse foundation  
+**Status:** Implemented in this PR; pending review and merge
+**Scope:** Procurement → Warehouse handoff and the in-memory Warehouse foundation
 **Authority:** ARCH-001, ARCH-002, Procurement Domain Contract, Warehouse Domain Contract
 
 ## Summary
