@@ -7,6 +7,7 @@
 - ✅ Complete or merged baseline
 - 🟡 In progress
 - ⬜ Not started
+- ↘️ Deferred from MVP sequence
 
 ## Foundation
 
@@ -62,18 +63,34 @@ Goal: receive, hold, fulfil, pick, and release goods with controlled stock trace
 - ✅ Warehouse in-memory foundation (goods receipt, discrepancies, stock/lot identity)
 - ✅ Warehouse integration and operator-workflow review
 - ✅ Warehouse Stock Release contract
-- 🟡 Warehouse Stock Release in-memory foundation — reservation, picking, custody release, movement posting, and on-hand reduction implemented in this PR, pending review and merge
+- ✅ Warehouse Stock Release in-memory foundation (reservation, picking, custody release, movement posting, on-hand reduction)
 - ⬜ Inventory adjustment and stock count
 
-## PD-04 — Production and Quality
+## PD-04 — Admin / Master Data Management
 
-Goal: support kitchen execution, portioning, food safety, inspection, waste, and corrective action.
+Goal: maintain the master data required for Atlas MVP launch and OPS v1 replacement.
 
-- ⬜ Production domain contract
-- ⬜ Quality domain contract
-- ⬜ Production planning and execution
-- ⬜ Inspection and food-safety controls
-- ⬜ Waste and exception handling
+- 🟡 Admin / Master Data Management domain contract — drafted in this PR, pending review and merge
+- ⬜ School info management foundation
+- ⬜ Ingredients & Suppliers management foundation
+- ⬜ Dishes & Recipes management foundation
+- ⬜ Admin integration and operator-workflow review
+
+Admin MVP boundary:
+
+```text
+Schools
++ Ingredients & Suppliers
++ Dishes & Recipes
+= clean master data for Planning, Procurement, and Warehouse
+```
+
+Recipe UI decision:
+
+```text
+Dishes & Recipes should be one consolidated Atlas workbench.
+OPS v1 Retool screen/layer separation is evidence only, not a target domain split.
+```
 
 ## PD-05 — Dispatch and Delivery
 
@@ -85,15 +102,25 @@ Goal: move released goods to kitchens, schools, and other destinations with expl
 - ⬜ Delivery confirmation
 - ⬜ Delivery exception and return handling
 
-## PD-06 — Finance and Reporting
+## Deferred — Production and Quality
+
+Goal: support kitchen execution, portioning, food safety, inspection, waste, and corrective action.
+
+- ↘️ Production domain contract deferred from current MVP sequence
+- ↘️ Quality domain contract deferred from current MVP sequence
+- ↘️ Production planning and execution deferred from current MVP sequence
+- ↘️ Inspection and food-safety controls deferred from current MVP sequence
+- ↘️ Waste and exception handling deferred from current MVP sequence
+
+## Deferred — Finance and Reporting
 
 Goal: add costing, invoices, settlement, management reporting, and cross-domain analysis without redefining operational ownership.
 
-- ⬜ Finance contract
-- ⬜ Cost and price analysis
-- ⬜ Invoice and settlement
-- ⬜ Management reporting
-- ⬜ Cross-domain operational reporting
+- ↘️ Finance contract deferred from current MVP sequence
+- ↘️ Cost and price analysis deferred from current MVP sequence
+- ↘️ Invoice and settlement deferred from current MVP sequence
+- ↘️ Management reporting deferred from current MVP sequence
+- ↘️ Cross-domain operational reporting deferred from current MVP sequence
 
 ## Delivery rule
 
