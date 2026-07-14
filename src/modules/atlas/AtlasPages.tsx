@@ -5,6 +5,7 @@ import { NeedGenerationWorkbench } from "../need-generation/NeedGenerationWorkbe
 import { ProcurementWorkbench } from "../procurement/ProcurementWorkbench";
 import { WarehouseWorkbench } from "../warehouse/WarehouseWorkbench";
 import { WarehouseStockReleaseWorkbench } from "../warehouse/WarehouseStockReleaseWorkbench";
+import { DispatchDeliveryWorkbench } from "../dispatch/DispatchDeliveryWorkbench";
 import { PurchaseHandoffWorkbench } from "../purchase-handoff/PurchaseHandoffWorkbench";
 import { WeeklyMenuWorkbench } from "../weekly-menu/WeeklyMenuWorkbench";
 import type { AtlasPage } from "./atlasConfig";
@@ -619,6 +620,9 @@ export function WarehouseReceivingPage() {
 }
 export function WarehouseStockReleasePage() {
   return <WarehouseStockReleaseWorkbench />;
+}
+export function DispatchDeliveryPage() {
+  return <DispatchDeliveryWorkbench />;
 }
 export function SupportingPage({ page }: { page: AtlasPage }) {
   return (

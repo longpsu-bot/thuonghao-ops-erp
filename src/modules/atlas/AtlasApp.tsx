@@ -6,6 +6,7 @@ import { atlasGroups, atlasPages, type AtlasPageId } from "./atlasConfig";
 import {
   ControlBoardPage,
   DocumentReleasePage,
+  DispatchDeliveryPage,
   PlanningSourcesPage,
   PurchasePlanningPage,
   RequirementPlanningPage,
@@ -32,6 +33,7 @@ export function AtlasApp({
   if (active === "warehouse-receiving") content = <WarehouseReceivingPage />;
   if (active === "warehouse-stock-release")
     content = <WarehouseStockReleasePage />;
+  if (active === "dispatch-delivery") content = <DispatchDeliveryPage />;
   if (active === "customers-schools") content = <SchoolAdminWorkbench />;
   if (active === "ingredients-units" || active === "suppliers-eligibility")
     content = <IngredientSupplierAdminWorkbench />;

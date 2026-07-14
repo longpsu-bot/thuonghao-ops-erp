@@ -6,6 +6,7 @@ export type AtlasPageId =
   | "document-release"
   | "warehouse-receiving"
   | "warehouse-stock-release"
+  | "dispatch-delivery"
   | "customers-schools"
   | "ingredients-units"
   | "suppliers-eligibility"
@@ -92,6 +93,16 @@ export const atlasPages: AtlasPage[] = [
     state: "Reserve → pick → release custody → post stock reduction",
     handoff:
       "Custody evidence only; destination delivery remains outside Warehouse",
+  },
+  {
+    id: "dispatch-delivery",
+    label: "Dispatch & Delivery",
+    group: atlasGroups[0],
+    decision:
+      "Are fulfilled requirements assigned, loaded, delivered, or unresolved?",
+    object: "Dispatch plan, trip, load, stop, delivery outcome",
+    state: "Planned → assigned → loaded → in transit → closed",
+    handoff: "Destination outcome, exception, or return resolution",
   },
   {
     id: "customers-schools",

@@ -109,10 +109,11 @@ OPS v1 Retool screen/layer separation is evidence only, not a target domain spli
 Goal: move Planning-released, Procurement-fulfilled requirements to schools, wholesale customers, kitchens, and other destinations with explicit loading, delivery, exception, and return evidence.
 
 - ✅ Dispatch and Delivery contract
-- ⬜ Dispatch planning
-- ⬜ Driver handoff
-- ⬜ Delivery confirmation
-- ⬜ Delivery exception and return handling
+- ✅ Dispatch and Delivery bounded in-memory foundation
+- ✅ Dispatch planning and reference assignment prototype
+- ✅ Load and delivery confirmation prototype
+- ✅ Delivery exception, return evidence, and closure prototype
+- ⬜ Dispatch integration and operator-workflow review
 
 Dispatch boundary:
 
