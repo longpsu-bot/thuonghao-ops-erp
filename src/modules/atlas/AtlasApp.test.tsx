@@ -23,7 +23,7 @@ describe("Atlas operations workbench", () => {
     expect(screen.getByText("Chủ xử lý")).toBeInTheDocument();
     expect(screen.getByText("Tuổi ngoại lệ")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" }),
+      screen.getByRole("button", { name: "Dishes & Recipes" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Dữ liệu & quản trị")).toBeInTheDocument();
   });
@@ -156,7 +156,7 @@ describe("Atlas operations workbench", () => {
     expect(screen.getByText("SL dự kiến nhận")).toBeInTheDocument();
     expect(screen.getByText("Lệch số lượng")).toBeInTheDocument();
   });
-  it("shows supplier-linked receiving, downstream impact, and supporting recipe governance", () => {
+  it("shows supplier-linked receiving, downstream impact, and the consolidated recipe workbench", () => {
     render(<AtlasApp />);
     fireEvent.click(
       screen.getByRole("button", { name: "Nhập kho & xử lý chênh lệch" }),
@@ -170,12 +170,11 @@ describe("Atlas operations workbench", () => {
     expect(
       screen.getByRole("button", { name: "Start receiving session" }),
     ).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Dishes & Recipes" }));
     expect(
-      screen.getByText(/không phải một bước vận hành hằng ngày/),
+      screen.getByLabelText("Dishes and recipes administration summary"),
     ).toBeInTheDocument();
+    expect(screen.getByText("BOM lines")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Ranh giới prototype" }),
     );

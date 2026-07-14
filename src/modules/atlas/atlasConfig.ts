@@ -122,12 +122,12 @@ export const atlasPages: AtlasPage[] = [
   },
   {
     id: "recipe-governance",
-    label: "Kiểm soát thay đổi công thức",
+    label: "Dishes & Recipes",
     group: "Dữ liệu & quản trị",
-    decision: "Thay đổi công thức nào được đề xuất?",
-    object: "Đề xuất thay đổi công thức",
-    state: "Hiệu lực / khóa / đề xuất",
-    handoff: "Dữ liệu hỗ trợ lập nhu cầu",
+    decision: "Is this dish and recipe version safe to release for Planning?",
+    object: "Dish, recipe version, BOM, variant, review evidence",
+    state: "Draft → validated → released for Planning → locked",
+    handoff: "Versioned reference for future Planning and Need Generation",
   },
   {
     id: "prototype-boundary",
