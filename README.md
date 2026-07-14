@@ -8,9 +8,9 @@ The repository is the authoritative source for business definitions, architectur
 
 ## Current status
 
-Atlas is in Planning Domain MVP delivery.
+Atlas is in Procurement Domain MVP delivery.
 
-Completed foundations include Weekly Menu, Attendance, Planning Input Readiness, Need Generation, Confirmed Need, and Purchase Handoff. The bounded PD-01 integration and architecture-conformance review is pending review and merge.
+The Planning Domain foundation and integration review are complete. The Procurement contract is approved, and its bounded in-memory foundation is in delivery.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 

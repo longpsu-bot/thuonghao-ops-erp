@@ -45,7 +45,8 @@ Weekly Menu / Attendance / Other controlled sources
 
 Goal: convert released purchase demand into controlled supplier commitments.
 
-- 🟡 Procurement domain contract — implemented in this PR, pending review and merge
+- ✅ Procurement domain contract
+- 🟡 Procurement foundation — implemented in this PR, pending review and merge
 - ⬜ Supplier assignment
 - ⬜ Purchase allocation and split handling
 - ⬜ Purchase orders and revisions

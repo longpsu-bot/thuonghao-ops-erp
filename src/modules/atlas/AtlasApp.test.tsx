@@ -124,18 +124,20 @@ describe("Atlas operations workbench", () => {
     expect(screen.getByText(/Nhu cầu cuối: 250 kg/)).toBeInTheDocument();
     expect(screen.getByText(/Nhu cầu cuối: 20 lít/)).toBeInTheDocument();
   });
-  it("represents supplier split allocation", () => {
+  it("exposes the command-gated Procurement workbench", () => {
     render(<AtlasApp />);
     fireEvent.click(
       screen.getByRole("button", { name: "Lập kế hoạch mua hàng" }),
     );
-    expect(screen.getByText("Thành Công Foods")).toBeInTheDocument();
-    expect(screen.getByText("Nam Việt Supply")).toBeInTheDocument();
-    expect(screen.getByText("Chia NCC")).toBeInTheDocument();
-    expect(screen.getByText("Phân công một phần")).toBeInTheDocument();
-    expect(screen.getByText("Chưa phân công")).toBeInTheDocument();
-    expect(screen.getAllByText("OPS-2026-0714-MA-GAO-001").length).toBe(2);
-    expect(screen.getByText("Ghi chú giao hàng")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Procurement decision summary"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Validate allocation" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Release PO to supplier" }),
+    ).toBeDisabled();
   });
   it("shows release tabs and reconciliation", () => {
     render(<AtlasApp />);
