@@ -44,16 +44,28 @@ Weekly Menu / Attendance / Other controlled sources
 
 ## PD-02 — Procurement
 
-Goal: convert released purchase demand into controlled supplier commitments.
+Goal: convert released purchase demand and dispatch requirements into controlled supplier commitments and fulfilment allocations.
 
 - ✅ Procurement domain contract
 - ✅ Procurement foundation
 - ✅ Procurement integration and operator-workflow review
+- ✅ Procurement fulfilment allocation amendment
 - ⬜ Production supplier assignment and policy
 - ⬜ Purchase allocation split and overage handling
 - ⬜ Production purchase orders and external supplier communication
 - ⬜ Production supplier confirmation and exception handling
 - ⬜ Supplier-performance support
+
+Procurement fulfilment boundary:
+
+```text
+Planning releases what, how many, where, and by when.
+Procurement allocates how the requirement will be fulfilled.
+Supplier, warehouse, or future production records physical fulfilment evidence.
+Dispatch confirms transport, destination outcome, exception, or return resolution.
+```
+
+Procurement owns `FulfilmentAllocation` and `FulfilmentAllocationLine`. It does not own Planning requirement quantities, Warehouse stock release evidence, supplier physical receiving evidence, Dispatch loading, or delivery confirmation.
 
 ## PD-03 — Warehouse
 
