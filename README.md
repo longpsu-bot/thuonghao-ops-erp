@@ -8,9 +8,9 @@ The repository is the authoritative source for business definitions, architectur
 
 ## Current status
 
-Atlas is in Admin / Master Data Management contract delivery.
+Atlas is in Admin / Master Data Management delivery.
 
-The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. Production/QA and Finance/Accounting are deferred for the MVP. The Admin / Master Data Management contract is drafted in this PR, pending review and merge.
+The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract and School info management foundation are complete as in-memory prototypes. Ingredients & Suppliers and Dishes & Recipes remain future Admin sections. Production/QA and Finance/Accounting are deferred for the MVP.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 
