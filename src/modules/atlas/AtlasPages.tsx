@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { AttendanceWorkbench } from "../attendance/AttendanceWorkbench";
 import { ConfirmedNeedWorkbench } from "../confirmed-need/ConfirmedNeedWorkbench";
 import { NeedGenerationWorkbench } from "../need-generation/NeedGenerationWorkbench";
+import { ProcurementWorkbench } from "../procurement/ProcurementWorkbench";
 import { PurchaseHandoffWorkbench } from "../purchase-handoff/PurchaseHandoffWorkbench";
 import { WeeklyMenuWorkbench } from "../weekly-menu/WeeklyMenuWorkbench";
 import type { AtlasPage } from "./atlasConfig";
@@ -399,90 +400,9 @@ export function RequirementPlanningPage() {
   );
 }
 export function PurchasePlanningPage() {
-  return (
-    <>
-      <Panel
-        title="Hàng đợi phân bổ NCC"
-        description="Một nhu cầu đã xác nhận có thể chia nhiều NCC, phân công một phần, hoặc dùng NCC dự phòng."
-        status={<Chip tone="danger">1 chưa phân công</Chip>}
-      >
-        <CompactTable
-          headers={[
-            "Trace ID",
-            "Nguyên liệu",
-            "Đơn vị nhận / Điểm giao",
-            "Nhu cầu đã xác nhận",
-            "Phân bổ NCC",
-            "Còn lại",
-            "NCC",
-            "Vai trò",
-            "Trạng thái",
-            "Ghi chú giao hàng",
-          ]}
-        >
-          <tr>
-            <td>OPS-2026-0714-MA-GAO-001</td>
-            <td>Gạo Jasmine</td>
-            <td>
-              <Recipient {...affected} />
-            </td>
-            <td>250 kg</td>
-            <td>150 kg</td>
-            <td>100 kg</td>
-            <td>Thành Công Foods</td>
-            <td>Chính</td>
-            <td>
-              <Chip tone="warning">Phân công một phần</Chip>
-            </td>
-            <td>Giao 05:30 · đợt chính</td>
-          </tr>
-          <tr>
-            <td>OPS-2026-0714-MA-GAO-001</td>
-            <td>Gạo Jasmine</td>
-            <td>
-              <Recipient {...affected} />
-            </td>
-            <td>250 kg</td>
-            <td>100 kg</td>
-            <td>0 kg</td>
-            <td>Nam Việt Supply</td>
-            <td>Bổ sung</td>
-            <td>
-              <Chip tone="ok">Đã phân công đủ</Chip>
-            </td>
-            <td>Giao 05:45 · bù phần còn lại</td>
-          </tr>
-          <tr>
-            <td>OPS-2026-0714-ND-BIDO-001</td>
-            <td>Bí đỏ</td>
-            <td>
-              <Recipient {...recipient} />
-            </td>
-            <td>72 kg</td>
-            <td>0 kg</td>
-            <td>72 kg</td>
-            <td>—</td>
-            <td>Dự phòng</td>
-            <td>
-              <Chip tone="danger">Chưa phân công</Chip>
-            </td>
-            <td>Chờ NCC dự phòng</td>
-          </tr>
-        </CompactTable>
-      </Panel>
-      <ActionBar
-        actions={[
-          "Tự phân công NCC mặc định",
-          "Chia NCC",
-          "Cân bằng số lượng",
-          "Xóa dòng NCC",
-          "Lưu phân công",
-          "Chuẩn bị PO",
-        ]}
-      />
-    </>
-  );
+  return <ProcurementWorkbench />;
 }
+
 export function DocumentReleasePage() {
   const tabs = [
     "Đơn đặt NCC / PO",
