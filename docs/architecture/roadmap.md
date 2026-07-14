@@ -47,7 +47,7 @@ Goal: convert released purchase demand into controlled supplier commitments.
 
 - ✅ Procurement domain contract
 - ✅ Procurement foundation
-- 🟡 Procurement integration and operator-workflow review — implemented in this PR, pending review and merge
+- ✅ Procurement integration and operator-workflow review
 - ⬜ Production supplier assignment and policy
 - ⬜ Purchase allocation split and overage handling
 - ⬜ Production purchase orders and external supplier communication
@@ -58,7 +58,7 @@ Goal: convert released purchase demand into controlled supplier commitments.
 
 Goal: receive, hold, fulfil, pick, and release goods with controlled stock traceability.
 
-- ⬜ Warehouse domain contract
+- 🟡 Warehouse domain contract — drafted in this PR, pending review and merge
 - ⬜ Goods receipt and discrepancies
 - ⬜ Stock / lot visibility
 - ⬜ Internal fulfilment
