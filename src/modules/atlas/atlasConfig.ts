@@ -101,7 +101,7 @@ export const atlasPages: AtlasPage[] = [
     decision:
       "Are fulfilled requirements assigned, loaded, delivered, or unresolved?",
     object: "Dispatch plan, trip, load, stop, delivery outcome",
-    state: "Planned â†’ assigned â†’ loaded â†’ in transit â†’ closed",
+    state: "Planned → assigned → loaded → in transit → closed",
     handoff: "Destination outcome, exception, or return resolution",
   },
   {
