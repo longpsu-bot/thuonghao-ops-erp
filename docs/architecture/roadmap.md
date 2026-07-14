@@ -70,8 +70,8 @@ Goal: receive, hold, fulfil, pick, and release goods with controlled stock trace
 
 Goal: maintain the master data required for Atlas MVP launch and OPS v1 replacement.
 
-- 🟡 Admin / Master Data Management domain contract — drafted in this PR, pending review and merge
-- ⬜ School info management foundation
+- ✅ Admin / Master Data Management domain contract
+- ✅ School info management foundation (in-memory prototype)
 - ⬜ Ingredients & Suppliers management foundation
 - ⬜ Dishes & Recipes management foundation
 - ⬜ Admin integration and operator-workflow review
