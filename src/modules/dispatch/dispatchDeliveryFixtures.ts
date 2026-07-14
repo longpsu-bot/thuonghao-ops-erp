@@ -418,6 +418,8 @@ export const normalSchoolCrossDockDispatchFixture = completedDispatchFixture(
 export const normalSchoolWarehouseDispatchFixture = completedDispatchFixture(
   "DR-SCHOOL-WAREHOUSE-002",
 );
+export const normalMixedDispatchFixture =
+  completedDispatchFixture("DR-MIXED-004");
 export const normalWholesaleDispatchFixture =
   completedDispatchFixture("DR-WHOLESALE-003");
 
