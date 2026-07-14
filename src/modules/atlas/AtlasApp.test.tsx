@@ -161,23 +161,15 @@ describe("Atlas operations workbench", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Nhập kho & xử lý chênh lệch" }),
     );
-    expect(screen.getByText("Thành Công Foods")).toBeInTheDocument();
-    expect(screen.getByText("Dự kiến")).toBeInTheDocument();
-    expect(screen.getByText(/Thiếu cho bếp Minh An/)).toBeInTheDocument();
-    expect(screen.getByText("Trạng thái bằng chứng")).toBeInTheDocument();
-    expect(screen.getByText("Chủ xử lý")).toBeInTheDocument();
-    expect(screen.getByText("240 kg")).toBeInTheDocument();
     expect(
-      screen
-        .getAllByRole("columnheader")
-        .slice(-4)
-        .map((header) => header.textContent),
-    ).toEqual([
-      "Ảnh hưởng phía sau",
-      "Bước tiếp",
-      "Trạng thái bằng chứng",
-      "Chủ xử lý",
-    ]);
+      screen.getByText("Warehouse receiving decision"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Supplier-confirmed PO:")).toBeInTheDocument();
+    expect(screen.getByText("Expected")).toBeInTheDocument();
+    expect(screen.getByText("Source trace")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start receiving session" }),
+    ).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Kiểm soát thay đổi công thức" }),
     );
