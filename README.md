@@ -8,9 +8,9 @@ The repository is the authoritative source for business definitions, architectur
 
 ## Current status
 
-Atlas is in Procurement Domain MVP integration review.
+Atlas is in Warehouse Domain contract delivery.
 
-The Planning Domain foundation and integration review are complete. The Procurement contract and bounded in-memory foundation are complete; the Procurement integration and operator-workflow review is implemented and pending review and merge.
+The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, and integration/operator-workflow review are complete. The Warehouse domain contract is drafted and pending review and merge.
 
 See [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md) for current status.
 
