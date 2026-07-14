@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IngredientSupplierAdminWorkbench } from "../admin/IngredientSupplierAdminWorkbench";
 import { SchoolAdminWorkbench } from "../admin/SchoolAdminWorkbench";
 import { atlasGroups, atlasPages, type AtlasPageId } from "./atlasConfig";
 import {
@@ -31,6 +32,8 @@ export function AtlasApp({
   if (active === "warehouse-stock-release")
     content = <WarehouseStockReleasePage />;
   if (active === "customers-schools") content = <SchoolAdminWorkbench />;
+  if (active === "ingredients-units" || active === "suppliers-eligibility")
+    content = <IngredientSupplierAdminWorkbench />;
 
   return (
     <div className="atlas-shell">
