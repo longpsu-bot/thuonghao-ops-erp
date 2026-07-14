@@ -18,20 +18,32 @@ When code conflicts with approved documentation, stop and report the conflict.
 This repository is the source of truth for OPS ERP implementation work.
 
 - GitHub repository: `longpsu-bot/thuonghao-ops-erp`
-- User's canonical Windows repo path: `D:/Project/Repo/OPS/thuonghao-ops-erp`
-- Do not implement project changes in `C:/Users/hp/OneDrive/Documents/OPS ERP` or any copied workspace.
+- Canonical workspace is the task-authorized checkout of the real `thuonghao-ops-erp` repository on the current machine.
+- A local path is not globally canonical across machines. Previously used paths, such as `D:/Project/Repo/OPS/thuonghao-ops-erp` or `E:/Project/OPS ERP/thuonghao-ops-erp`, are valid only when the user explicitly identifies that checkout as canonical for the current task and the verification checks below pass.
+- Do not implement project changes in copied, stale, cloud-synced, or unverified workspaces.
+- If multiple checkouts exist, stop and ask the user to identify which checkout is canonical for the current task before editing.
 
 Before editing code, every implementation agent must verify the actual working tree:
 
 ```bash
 git rev-parse --show-toplevel
 git remote -v
+git fetch origin
 git branch --show-current
 git status --short
 pnpm ops:workspace
 ```
 
-Proceed only when the Git top level is the real `thuonghao-ops-erp` repository and `origin` points to `https://github.com/longpsu-bot/thuonghao-ops-erp.git` or the equivalent SSH remote.
+Proceed only when all of the following are true:
+
+- the Git top level is the real `thuonghao-ops-erp` repository;
+- `origin` points to `https://github.com/longpsu-bot/thuonghao-ops-erp.git` or the equivalent SSH remote;
+- the current branch starts from latest `origin/main` unless the user explicitly says otherwise;
+- `git status --short` is clean before task work begins;
+- no untracked or local-only work will be overwritten;
+- only the user-authorized checkout is used for the current task.
+
+If any verification fails, stop and report the mismatch instead of mutating the workspace.
 
 ## Mandatory reading before implementation
 
