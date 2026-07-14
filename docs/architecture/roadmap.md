@@ -46,11 +46,12 @@ Weekly Menu / Attendance / Other controlled sources
 Goal: convert released purchase demand into controlled supplier commitments.
 
 - ✅ Procurement domain contract
-- 🟡 Procurement foundation — implemented in this PR, pending review and merge
-- ⬜ Supplier assignment
-- ⬜ Purchase allocation and split handling
-- ⬜ Purchase orders and revisions
-- ⬜ Supplier confirmation and exception handling
+- ✅ Procurement foundation
+- 🟡 Procurement integration and operator-workflow review — implemented in this PR, pending review and merge
+- ⬜ Production supplier assignment and policy
+- ⬜ Purchase allocation split and overage handling
+- ⬜ Production purchase orders and external supplier communication
+- ⬜ Production supplier confirmation and exception handling
 - ⬜ Supplier-performance support
 
 ## PD-03 — Warehouse
