@@ -96,11 +96,18 @@ OPS v1 Retool screen/layer separation is evidence only, not a target domain spli
 
 Goal: move released goods to kitchens, schools, and other destinations with explicit handoffs and exceptions.
 
-- ⬜ Dispatch and Delivery contract
+- ✅ Dispatch and Delivery contract
 - ⬜ Dispatch planning
 - ⬜ Driver handoff
 - ⬜ Delivery confirmation
 - ⬜ Delivery exception and return handling
+
+Dispatch boundary:
+
+```text
+Warehouse confirms goods left warehouse-controlled stock custody.
+Dispatch and Delivery confirms transport, destination outcome, exception, or return resolution.
+```
 
 ## Deferred — Production and Quality
 
