@@ -5,6 +5,7 @@ export type AtlasPageId =
   | "purchase-planning"
   | "document-release"
   | "warehouse-receiving"
+  | "warehouse-stock-release"
   | "customers-schools"
   | "ingredients-units"
   | "suppliers-eligibility"
@@ -81,6 +82,16 @@ export const atlasPages: AtlasPage[] = [
     object: "Dòng nhận hàng / ngoại lệ",
     state: "Ghi nhận → xử lý ngoại lệ",
     handoff: "Thu mua / BGĐ theo ngoại lệ",
+  },
+  {
+    id: "warehouse-stock-release",
+    label: "Warehouse stock release",
+    group: atlasGroups[0],
+    decision: "Can traced stock leave Warehouse-controlled custody?",
+    object: "Reservation, pick list, Warehouse release, stock movement",
+    state: "Reserve → pick → release custody → post stock reduction",
+    handoff:
+      "Custody evidence only; destination delivery remains outside Warehouse",
   },
   {
     id: "customers-schools",

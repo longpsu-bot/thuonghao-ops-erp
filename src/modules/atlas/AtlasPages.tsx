@@ -4,6 +4,7 @@ import { ConfirmedNeedWorkbench } from "../confirmed-need/ConfirmedNeedWorkbench
 import { NeedGenerationWorkbench } from "../need-generation/NeedGenerationWorkbench";
 import { ProcurementWorkbench } from "../procurement/ProcurementWorkbench";
 import { WarehouseWorkbench } from "../warehouse/WarehouseWorkbench";
+import { WarehouseStockReleaseWorkbench } from "../warehouse/WarehouseStockReleaseWorkbench";
 import { PurchaseHandoffWorkbench } from "../purchase-handoff/PurchaseHandoffWorkbench";
 import { WeeklyMenuWorkbench } from "../weekly-menu/WeeklyMenuWorkbench";
 import type { AtlasPage } from "./atlasConfig";
@@ -615,6 +616,9 @@ export function DocumentReleasePage() {
 }
 export function WarehouseReceivingPage() {
   return <WarehouseWorkbench />;
+}
+export function WarehouseStockReleasePage() {
+  return <WarehouseStockReleaseWorkbench />;
 }
 export function SupportingPage({ page }: { page: AtlasPage }) {
   const recipe = page.id === "recipe-governance";
