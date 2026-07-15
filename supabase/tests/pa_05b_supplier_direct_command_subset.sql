@@ -56,6 +56,14 @@ select is(
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
+      and p.proname in (
+        'record_supplier_receiving_evidence',
+        'apply_supplier_evidence_to_allocation',
+        'confirm_dispatch_load',
+        'record_dispatch_departure',
+        'confirm_successful_delivery',
+        'get_supplier_direct_trace'
+      )
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
   6,
@@ -81,6 +89,14 @@ select ok(
     join pg_namespace n on n.oid = p.pronamespace
     join pg_roles r on r.oid = p.proowner
     where n.nspname = 'atlas_api'
+      and p.proname in (
+        'record_supplier_receiving_evidence',
+        'apply_supplier_evidence_to_allocation',
+        'confirm_dispatch_load',
+        'record_dispatch_departure',
+        'confirm_successful_delivery',
+        'get_supplier_direct_trace'
+      )
       and (
         not p.prosecdef
         or p.proconfig is null
