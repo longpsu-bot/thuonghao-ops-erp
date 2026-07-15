@@ -140,7 +140,11 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-01 Atlas Persistence Contract — canonical identity, classifications, aggregates, snapshots/revisions, evidence, transactions, authorization, audit, read models, and legacy boundary
 - ✅ PA-02 physical schema and constraint design — namespaces, table catalog, line identity, revisions/snapshots, evidence applications, quantity/time rules, transaction matrix, indexes, access preview, read models, legacy staging, and first supplier-direct slice
 - ✅ PA-03 authorization, RLS, command surface, and transaction safety design — actor/capability scopes, dedicated API functions, revoke-first grants, RLS, idempotency, optimistic concurrency, locking/isolation, safe errors, reporting/storage/integration security, and first-slice test design
-- 🟡 PA-04 first migration foundation for the supplier-direct Slice 1 — implemented in the current PR with private schemas, typed traceability, evidence applications, forced RLS, revoke-first privileges, private read models, and local pgTAP verification; pending review and merge
+- ✅ PA-04 supplier-direct Slice 1 migration foundation — merged with private schemas, typed traceability, evidence applications, forced RLS, revoke-first privileges, private read models, and local pgTAP verification
+- 🟡 PA-05A supplier-direct command/RPC contract design — proposed documentation contract for business-command names, envelopes, authorization, idempotency, locking, events/audit, and shaped reads; no callable SQL yet
+- ⬜ PA-05B bounded SQL command implementation — actor/receipt helpers plus evidence-to-delivery commands and security/concurrency tests
+- ⬜ PA-05C authorized read API wrappers — shaped, capability/scope-filtered read functions
+- ⬜ PA-06 read-only React connection — only after PA-05B behavior/tests and PA-05C read wrappers are approved
 - ⬜ Controlled seed/reference data
 - ⬜ First connected wholesale supplier-direct vertical slice
 - ⬜ Legacy migration rehearsal and operator validation
@@ -153,12 +157,15 @@ Approved PA-01 contract
 → PA-02 schema and constraint design
 → PA-03 authorization / RLS / command and transaction safety
 → PA-04 supplier-direct migration foundation and private derived read models
-→ separately approved command/RPC surface and connected-client slice
+→ PA-05A command/RPC contract design
+→ PA-05B bounded SQL commands and security tests
+→ PA-05C authorized shaped read API wrappers
+→ PA-06 read-only React connection
 → rehearsal and operator validation
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the first executable database foundation: it creates only new Atlas roles, private schemas, authoritative tables, indexes, comments, forced-RLS posture, revoke-first privileges, and private security-invoker trace views for one supplier-direct wholesale happy path. PA-04 creates no command/RPC function or policy that grants runtime access, exposes no domain schema, links no hosted Supabase project, inserts no seed or production row, mutates no OPS v1 object, and authorizes no client integration or cutover. Command implementation, runtime policies/grants, connected React work, Warehouse, legacy rehearsal, and deployment remain separate approval gates.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation: it creates only new Atlas roles, private schemas, authoritative tables, indexes, comments, forced-RLS posture, revoke-first privileges, and private security-invoker trace views for one supplier-direct wholesale happy path. PA-05A now defines the command/read contract without implementing functions. PA-05B command implementation, PA-05C runtime read wrappers, PA-06 connected React work, Warehouse, legacy rehearsal, and deployment remain separate approval gates.
 
 ## Deferred — Production and Quality
 
