@@ -1,14 +1,14 @@
 # PA-05D — Bounded Planning command family
 
 **Status:** Proposed implementation contract; documentation only  
-**Scope:** Supplier-direct wholesale Slice 1 Planning source-to-dispatch-requirement command family  
+**Scope:** Supplier-direct wholesale Slice 1, from wholesale source to released Dispatch Requirement  
 **Authority:** ARCH-001, ARCH-002, PA-01 through PA-05B-H1, PA-05A, the Confirmed Need and Purchase Handoff contracts, and the amended Dispatch/Delivery boundary  
 **Implementation issue:** #85  
-**Next gate:** One bounded SQL implementation PR after this contract is approved
+**Implementation instructions:** `docs/implementation-tasks/TASK-PA-05D-planning-command-family.md`
 
 ## 1. Executive decision
 
-PA-05D adds the missing Planning-owned beginning of the supplier-direct wholesale Slice 1 backend. It does not add a generic Planning workflow. It implements one deliberately narrow path:
+PA-05D implements the missing Planning-owned beginning of the supplier-direct wholesale backend:
 
 ```text
 Wholesale customer source
@@ -25,7 +25,9 @@ The callable surface is exactly:
 3. `atlas_api.release_purchase_handoff(request jsonb) returns jsonb`
 4. `atlas_api.release_dispatch_requirement(request jsonb) returns jsonb`
 
-PA-05D creates no Procurement allocation, purchase order, physical evidence, dispatch plan, trip, stop, load, delivery, UI, deployment, seed data, or OPS v1 change.
+Contract version: `PA-05D.v1`.
+
+PA-05D creates no Procurement allocation, purchase order, physical evidence, dispatch plan, trip, stop, load, delivery, read API, UI, deployment, seed data, or OPS v1 change.
 
 ## 2. OPS_SYSTEM_MAP placement
 
@@ -39,24 +41,26 @@ Business Capability
 Business Domain
 → Planning
 
-Business Object
+Business Objects
 → WholesaleOrder
 → ConfirmedNeedBatch / ConfirmedNeedLine
 → PurchaseHandoff
 → DispatchRequirement
 
 Business Contract
-→ Planning owns what is required, quantity, destination, service date, and release snapshots
-→ downstream domains consume but never rewrite these facts
+→ Planning owns item, quantity, destination, service date, and release snapshots
+→ downstream domains consume but never rewrite those facts
 
-Command / Event
+Commands / Events
 → record_wholesale_source / WholesaleOrderRecorded
 → release_wholesale_order / WholesaleOrderReleased
 → release_purchase_handoff / PurchaseHandoffReleased
 → release_dispatch_requirement / DispatchRequirementReleased
 
 Read Model
-→ no new public read API; existing trace/readiness APIs remain authoritative read surfaces
+→ no new public read API
+→ existing trace, readiness, blocker, and audit reads remain approved advisory surfaces
+→ authoritative writes continue to lock and re-read domain tables
 
 Application
 → none in PA-05D
@@ -65,42 +69,36 @@ Technology
 → PostgreSQL/Supabase migration, SECURITY DEFINER functions, least-privilege runtime role, RLS, pgTAP
 ```
 
-## 3. Why this command family is required
+## 3. Why PA-05D is required
 
-PA-05B and PA-05C implement the latter half of the supplier-direct path: Evidence records what physically arrived, Dispatch records load/departure/delivery, and authorized reads expose trace/readiness/blockers/audit. Their tests currently construct Planning, Procurement, and Dispatch-setup prerequisites directly as rolled-back fixtures.
+PA-05B and PA-05C implement the latter half of the supplier-direct path: physical Evidence, load, departure, successful delivery, trace, readiness, blockers, and audit reads. Their tests currently create Planning, Procurement, and Dispatch-setup prerequisites directly as rolled-back fixtures.
 
-The backend therefore cannot yet author its own source-to-requirement chain. PA-05D removes the first prerequisite gap while preserving business ownership:
+PA-05D removes the first prerequisite gap. Its output becomes immutable input to Procurement and later to Dispatch.
 
-```text
-Planning output
-→ becomes the immutable input to Procurement
-→ later becomes the immutable input to Dispatch
-```
+OPS v1 Retool and OPS v2 SQL remain business evidence only. Atlas preserves their operational intent—capture daily demand and create purchasing/dispatch inputs—but does not copy their screen/query coupling or broad public-function posture.
 
-OPS v1 Retool and the current OPS v2 SQL remain business evidence only. Their operational intent—capture daily demand, confirm purchasing inputs, and materialize dispatch outputs—is preserved, but their screen/query coupling and broad public-function posture are not copied into Atlas.
+## 4. Bounded direct-wholesale simplification
 
-## 4. Bounded simplification for direct wholesale
-
-The full Planning contracts support generic creation, validation, adjustment, approval, reopening, invalidation, and revision workflows. PA-05D intentionally does not expose that complete lifecycle.
+The generic Planning contracts include separate create, validate, adjust, approve, reopen, invalidate, revise, and cancel commands. PA-05D deliberately does not implement that full lifecycle.
 
 For supplier-direct wholesale Slice 1:
 
-- the customer order is a manually confirmed direct source, not a menu/attendance/BOM calculation;
-- every recorded line is an exact ingredient, positive quantity, controlled unit, destination, and service date;
-- `release_wholesale_order` performs validation, approval, and release atomically;
-- the command materializes a pass-through Confirmed Need in final `RELEASED_FOR_PURCHASE_HANDOFF` state;
-- `theoretical_quantity` equals `confirmed_quantity` equals the released wholesale line quantity;
-- the releasing actor is both approval and release actor for this bounded path;
-- `release_purchase_handoff` performs preparation, validation, and release atomically;
-- `release_dispatch_requirement` creates one released Planning delivery obligation from one released handoff revision.
+- the source is a manually confirmed wholesale customer order, not menu/attendance/BOM calculation;
+- every line has an exact ingredient, positive quantity, controlled unit, destination, and service date;
+- `release_wholesale_order` validates, approves, and releases atomically;
+- it materializes a pass-through Confirmed Need directly in `RELEASED_FOR_PURCHASE_HANDOFF`;
+- `theoretical_quantity = confirmed_quantity = released wholesale quantity`;
+- the releasing actor is recorded as both approval and release actor for this bounded path;
+- `release_purchase_handoff` prepares, validates, and releases atomically;
+- `release_dispatch_requirement` creates one released Planning obligation from one released handoff revision.
 
-This is a slice-specific shortcut, not a replacement for the school-catering Planning lifecycle. Separate commands remain required before Atlas persists calculated school-catering demand, manual confirmed-need adjustments, reopening, invalidation, additive revisions, or cancellations.
+This shortcut is valid only for direct wholesale. School-catering persistence, manual confirmed-need adjustment, separation of duties, reopening, invalidation, additive revisions, and cancellation require later approved commands.
 
-## 5. Shared request and result contract
+## 5. Shared command contract
 
-### 5.1 Request envelope
+### 5.1 Envelope
 
-All four commands use contract version `PA-05D.v1` and require:
+All commands require:
 
 ```json
 {
@@ -117,11 +115,11 @@ All four commands use contract version `PA-05D.v1` and require:
 }
 ```
 
-The server resolves the authenticated subject and actor. Caller actor IDs, delegated actors, management overrides, approvals, table names, status names, and generated aggregate IDs are not accepted in payloads.
+The server resolves the authenticated subject and actor. Payloads must not accept actor IDs, delegated actors, management overrides, approvals, generated aggregate IDs, table names, or lifecycle status names.
 
-### 5.2 Success result
+### 5.2 Result
 
-A success response follows the existing Atlas command shape:
+Success follows the established Atlas shape:
 
 ```text
 success
@@ -137,48 +135,33 @@ warnings
 blockers
 ```
 
-Generated root, line, revision, and snapshot IDs are returned only as allowlisted opaque IDs needed by the next command or diagnostics.
+Failure follows the established safe error shape with `domain: PLANNING`. SQL, policy, role, JWT, credential, service-role, and stack-trace details are never returned.
 
-### 5.3 Failure result
+### 5.3 Atomicity
 
-Failures use the existing safe command error envelope:
+Every successful command creates exactly:
 
-```text
-success: false
-error_code
-safe_message
-domain: PLANNING
-command_name
-retryable
-field_errors
-blocking_references
-expected_version
-actual_version
-correlation_id
-command_id
-```
+- one completed command receipt;
+- one domain event;
+- one audit event;
+- one safe response.
 
-No SQL, table, policy, role, JWT, credential, stack trace, or service-role information is returned.
+Exact replay returns the original response and IDs. Same command ID or scoped idempotency key with a different canonical request returns `IDEMPOTENCY_CONFLICT`. Stale expected version returns `STALE_VERSION`. Multi-line writes are all-or-nothing.
 
-## 6. Command contract: `record_wholesale_source`
+## 6. Command definitions
 
-### 6.1 Purpose
+### 6.1 `record_wholesale_source`
 
-Create one Draft wholesale source root and its stable lines/current line revisions. This records customer demand only; it does not approve or release demand.
+**Capability:** `wholesale_source.record`  
+**Scope:** matching customer or delivery location, or `GLOBAL`
 
-### 6.2 Required capability and scope
-
-- Capability: `wholesale_source.record`
-- Owning domain: `PLANNING`
-- Required relational scope: matching `customer_id` or `delivery_location_id`, or `GLOBAL`
-
-### 6.3 Payload
+Payload:
 
 ```json
 {
   "customer_id": "<uuid>",
   "delivery_location_id": "<uuid>",
-  "customer_order_reference": "<required non-empty text, max 200>",
+  "customer_order_reference": "<required text, max 200>",
   "service_date": "YYYY-MM-DD",
   "lines": [
     {
@@ -191,395 +174,225 @@ Create one Draft wholesale source root and its stable lines/current line revisio
 }
 ```
 
-The `lines` array must contain 1–100 entries. `source_line_number` values must be positive and unique in the request.
+Rules:
 
-### 6.4 Validation
+- `expected_version` must be `1`;
+- 1–100 lines;
+- positive, unique source-line numbers;
+- positive quantities;
+- active wholesale customer;
+- active location belonging to that customer;
+- active ingredients and units;
+- required non-empty customer reference;
+- reject an existing non-cancelled order with the same customer/reference.
 
-The command rejects:
+Writes:
 
-- missing, malformed, empty, or oversized payload fields;
-- a customer that is not active or not `WHOLESALE`;
-- an inactive delivery location or a location that does not belong to the customer;
-- an inactive ingredient or unit;
-- non-positive quantity;
-- duplicate source-line numbers;
-- an existing non-cancelled wholesale order with the same customer and customer-order reference;
-- `expected_version` other than `1` for this create command;
-- unsupported delegation/override fields.
+- one `wholesale_orders` root in `DRAFT`, version `1`;
+- stable `wholesale_order_lines`;
+- current revision-1 `wholesale_order_line_revisions` in `DRAFT` with command ID;
+- `WholesaleOrderRecorded` event and matching audit event.
 
-### 6.5 Writes
+It creates no downstream Planning object.
 
-Atomically create:
+### 6.2 `release_wholesale_order`
 
-- one `atlas_planning.wholesale_orders` row in `DRAFT`, version `1`;
-- one `wholesale_order_lines` row per payload line;
-- one current `wholesale_order_line_revisions` row per line with revision `1`, status `DRAFT`, and the command ID;
-- one `WholesaleOrderRecorded` domain event;
-- one matching audit event;
-- one completed command receipt.
+**Capability:** `wholesale_order.release`  
+**Payload:** `{ "wholesale_order_id": "<uuid>" }`  
+**Scope:** resolved from the authoritative order
 
-No Confirmed Need, Purchase Handoff, Dispatch Requirement, Procurement, Evidence, or Dispatch row is created.
+Preconditions:
 
-### 6.6 Idempotency scope and event
+- root status `DRAFT` and version equals `expected_version`;
+- at least one stable line;
+- every line has exactly one current Draft revision;
+- active customer, matching active location, ingredients, and units;
+- positive quantities;
+- no prior Confirmed Need batch or downstream fact for this source.
 
-- Receipt scope: customer + normalized customer-order reference
-- Event type: `WholesaleOrderRecorded`
-- Aggregate type: `WholesaleOrder`
-- Aggregate version: `1`
+Writes atomically:
 
-## 7. Command contract: `release_wholesale_order`
+1. update the wholesale root to `RELEASED` and increment version once;
+2. record approval and release actor/time;
+3. update current line revisions to `RELEASED`;
+4. create one Confirmed Need batch in `RELEASED_FOR_PURCHASE_HANDOFF`, version `1`;
+5. create one stable Confirmed Need line per wholesale line;
+6. create released revision-1 Confirmed Need line revisions with exact source, ingredient, unit, and equal theoretical/confirmed/released quantities;
+7. create one approval snapshot and exact snapshot lines using the released ingredient name;
+8. emit `WholesaleOrderReleased` and matching audit event.
 
-### 7.1 Purpose
+Intermediate `VALIDATED` and `APPROVED` states are proven inside the transaction but not persisted as separate command results in this bounded path.
 
-Validate and release one Draft wholesale order and atomically materialize the exact pass-through Confirmed Need release consumed by Purchase Handoff.
+### 6.3 `release_purchase_handoff`
 
-### 7.2 Required capability and scope
+**Capability:** `purchase_handoff.release`  
+**Payload:** `{ "confirmed_need_batch_id": "<uuid>" }`  
+**Scope:** resolved through the authoritative wholesale source
 
-- Capability: `wholesale_order.release`
-- Owning domain: `PLANNING`
-- Scope: customer/location resolved from the authoritative order
+Preconditions:
 
-### 7.3 Payload
-
-```json
-{
-  "wholesale_order_id": "<uuid>"
-}
-```
-
-`expected_version` must equal the current wholesale-order root version.
-
-### 7.4 Preconditions
-
-The command requires:
-
-- order status `DRAFT`;
-- at least one current Draft line revision;
-- every stable line has exactly one current line revision;
-- active wholesale customer, active matching delivery location, active ingredients, and active units;
-- all quantities remain positive;
-- no prior Confirmed Need batch for the order;
-- no downstream handoff, allocation, PO, evidence, or dispatch facts for this source.
-
-### 7.5 Writes
-
-Atomically:
-
-1. update the wholesale order to `RELEASED`;
-2. record approval and release actor/time on the order;
-3. increment the wholesale-order root version exactly once;
-4. update current wholesale line revisions from `DRAFT` to `RELEASED`;
-5. create one Confirmed Need batch in `RELEASED_FOR_PURCHASE_HANDOFF`, version `1`;
-6. create stable Confirmed Need lines mapped one-to-one to wholesale stable lines;
-7. create current Confirmed Need line revisions with:
-   - revision number `1`;
-   - exact wholesale line-revision reference;
-   - `theoretical_quantity = confirmed_quantity = requested_quantity`;
-   - exact ingredient and unit;
-   - status `RELEASED`;
-8. create one approval snapshot for approved version `1`;
-9. create one snapshot line per Confirmed Need line using the ingredient name captured at release;
-10. append one `WholesaleOrderReleased` domain event and one audit event;
-11. complete the command receipt with the generated Confirmed Need IDs.
-
-### 7.6 Deliberate simplification
-
-The command does not persist intermediate `VALIDATED` or `APPROVED` states. It proves those checks inside the same transaction and records the final immutable release. This is valid only for the direct-wholesale pass-through path.
-
-### 7.7 Event
-
-- Event type: `WholesaleOrderReleased`
-- Aggregate type: `WholesaleOrder`
-- Aggregate version: the new wholesale-order version
-- Payload summary includes the generated Confirmed Need batch ID, released line count, service date, customer ID, and location ID.
-
-## 8. Command contract: `release_purchase_handoff`
-
-### 8.1 Purpose
-
-Create and release one Procurement-facing Purchase Handoff from one released direct-wholesale Confirmed Need batch.
-
-### 8.2 Required capability and scope
-
-- Capability: `purchase_handoff.release`
-- Owning domain: `PLANNING`
-- Scope: customer/location resolved through the authoritative wholesale source
-
-### 8.3 Payload
-
-```json
-{
-  "confirmed_need_batch_id": "<uuid>"
-}
-```
-
-`expected_version` must equal the current Confirmed Need batch version.
-
-### 8.4 Preconditions
-
-The command requires:
-
-- batch status `RELEASED_FOR_PURCHASE_HANDOFF`;
+- Confirmed Need batch version equals `expected_version`;
+- status `RELEASED_FOR_PURCHASE_HANDOFF`;
 - approval and release actor/time present;
-- an approval snapshot matching the expected batch version;
-- each stable Confirmed Need line has one current released line revision and one matching snapshot line;
-- each released quantity is positive for this direct-wholesale slice;
-- exact wholesale source revision, ingredient, unit, service date, and destination lineage;
-- no existing Purchase Handoff batch for the Confirmed Need batch.
+- approval snapshot matches the current batch version;
+- each stable line has one current released revision and matching snapshot line;
+- positive quantity and complete wholesale source, ingredient, unit, date, and destination lineage;
+- no existing Purchase Handoff batch for the source batch.
 
-### 8.5 Writes
-
-Atomically create:
+Writes atomically:
 
 - one Purchase Handoff batch in `RELEASED_TO_PROCUREMENT`, version `1`;
-- one current `BASE` Purchase Handoff revision in `RELEASED_TO_PROCUREMENT` with release actor/time and command ID;
+- one current `BASE` revision in `RELEASED_TO_PROCUREMENT` with release actor/time and command ID;
 - one stable handoff line per Confirmed Need line;
-- one handoff line revision with exact quantity, unit, service date, delivery location, and source Confirmed Need revision;
-- one immutable purchase-demand reference per handoff line revision linking the approved snapshot line and exact wholesale source revision;
-- one `PurchaseHandoffReleased` domain event;
-- one audit event;
-- one completed command receipt.
+- exact handoff line revisions with quantity, unit, service date, delivery location, and source revision;
+- one immutable purchase-demand reference per line;
+- `PurchaseHandoffReleased` event and matching audit event.
 
-The command creates no supplier assignment, fulfilment allocation, PO, supplier confirmation, or physical evidence.
+It creates no supplier assignment, allocation, PO, supplier confirmation, or physical evidence.
 
-### 8.6 Event
+### 6.4 `release_dispatch_requirement`
 
-- Event type: `PurchaseHandoffReleased`
-- Aggregate type: `PurchaseHandoff`
-- Aggregate version: `1`
+**Capability:** `dispatch_requirement.release`  
+**Payload:** `{ "purchase_handoff_revision_id": "<uuid>" }`  
+**Scope:** resolved through the authoritative wholesale source and handoff
 
-## 9. Command contract: `release_dispatch_requirement`
+Preconditions:
 
-### 9.1 Purpose
+- Purchase Handoff root version equals `expected_version`;
+- root and selected current revision are `RELEASED_TO_PROCUREMENT`;
+- revision has release actor/time;
+- every stable handoff line has exactly one line revision and one purchase-demand reference;
+- all lines resolve to one wholesale customer, location, and service date;
+- customer and location remain valid;
+- no current released Dispatch Requirement exists for the selected handoff revision.
 
-Create one Planning-owned released delivery obligation from one current released Purchase Handoff revision.
+Writes atomically:
 
-### 9.2 Required capability and scope
-
-- Capability: `dispatch_requirement.release`
-- Owning domain: `PLANNING`
-- Scope: customer/location resolved through the authoritative wholesale source and handoff
-
-### 9.3 Payload
-
-```json
-{
-  "purchase_handoff_revision_id": "<uuid>"
-}
-```
-
-`expected_version` must equal the Purchase Handoff batch root version.
-
-### 9.4 Preconditions
-
-The command requires:
-
-- handoff root and revision status `RELEASED_TO_PROCUREMENT`;
-- the selected revision is current and has release actor/time;
-- every stable handoff line has exactly one line revision in the selected revision;
-- every handoff line has a purchase-demand reference and exact source lineage;
-- all lines resolve to the same wholesale customer, delivery location, and service date;
-- customer and location are still valid at release time;
-- no current released Dispatch Requirement already exists for the handoff revision.
-
-### 9.5 Writes
-
-Atomically create:
-
-- one `DispatchRequirement` root with source `WHOLESALE`, status `RELEASED`, version `1`;
-- one current `BASE` requirement revision with status `RELEASED`;
+- one wholesale `DispatchRequirement` root in `RELEASED`, version `1`;
+- one current `BASE` requirement revision in `RELEASED`;
 - customer name, location name, address, timezone, and optional delivery-window snapshots;
 - one stable requirement line per handoff stable line;
-- one requirement line revision with exact handoff revision, ingredient, quantity, and unit;
-- one `DispatchRequirementReleased` domain event;
-- one audit event;
-- one completed command receipt.
+- exact requirement line revisions with handoff lineage, ingredient, quantity, and unit;
+- `DispatchRequirementReleased` event and matching audit event.
 
-The command creates no fulfilment allocation, dispatch plan, trip, stop, load, or delivery row.
+It creates no fulfilment allocation, plan, trip, stop, load, or delivery fact.
 
-### 9.6 Event
+## 7. Authorization and runtime boundary
 
-- Event type: `DispatchRequirementReleased`
-- Aggregate type: `DispatchRequirement`
-- Aggregate version: `1`
-
-## 10. Authorization and runtime boundary
-
-PA-05D introduces one no-login, no-inherit role:
+PA-05D introduces:
 
 ```text
 atlas_planning_command_runtime
 ```
 
-It owns only the four PA-05D entry functions.
+The role is `NOLOGIN`, `NOINHERIT` and owns only the four PA-05D entry functions.
 
-It may receive only the practical minimum needed to:
+It may receive only the practical minimum to:
 
 - resolve actors, capabilities, memberships, and scopes;
 - use command receipts and existing private command helpers;
 - read required Admin customer/location/ingredient/unit references;
-- write the approved Planning tables for these four commands;
-- insert Planning domain and audit events.
+- write the approved Planning tables;
+- append Planning domain and audit events.
 
 It must not have:
 
-- `CREATE` on any Atlas schema after function ownership transfer;
-- Procurement, Evidence, Dispatch, Warehouse, Storage, or legacy write privileges;
-- sequence mutation privileges;
-- direct membership in another command runtime;
+- Atlas schema `CREATE` after function ownership transfer;
+- sequence mutation;
+- Procurement, Evidence, Dispatch, Warehouse, Storage, reporting-write, or legacy privileges;
+- membership in another command runtime;
 - broad `FOR ALL` RLS policies where verb-specific policies are practical.
 
-`authenticated` receives execute on the four reviewed functions only after all public execute is revoked. `anon` and `service_role` receive no execute. API roles retain no direct private table, view, or sequence privileges.
+`authenticated` receives execute on the four reviewed functions only after public execute is revoked. `anon` and `service_role` receive no execute. API roles retain no direct private relation access. Existing Evidence, Dispatch, and Read runtime privileges must not broaden.
 
-## 11. Shared command infrastructure
+## 8. Shared infrastructure and locking
 
-PA-05D may reuse the existing private PA-05B helpers where their behavior is already generic and tested:
+PA-05D may reuse the tested PA-05B private helpers for parsing, auth resolution, safe errors, authorization, hashing, receipt/replay/conflict handling, and command completion.
 
-- safe UUID/bigint/numeric/timestamp parsing;
-- current auth-subject resolution;
-- safe command errors;
-- actor and capability/scope authorization;
-- canonical request hashing;
-- command receipt begin/replay/conflict handling;
-- command completion.
-
-PA-05D must add a private request validator for `PA-05D.v1`; it must not change the `PA-05B.v1` validator or the behavior of the nine existing API functions.
-
-The private helper names are implementation history, not public business contracts. Avoid renaming or generalizing them in this task unless compilation requires a narrowly reviewed compatibility wrapper.
-
-## 12. Transactions, locks, and concurrency
-
-Each command is one short statement transaction under `read committed`.
+It must add a private `PA-05D.v1` request validator and must not change PA-05B or PA-05C public behavior. Avoid broad helper renaming or a generic command framework.
 
 Lock order:
 
 ```text
-1. command receipt
-2. Admin customer/location/ingredient/unit references
-3. Planning source root
-4. Planning stable lines and current revisions in UUID order
-5. Planning downstream root/snapshots created by the command
-6. audit and domain events
+receipt
+→ Admin references
+→ Planning parent root
+→ Planning lines/current revisions in deterministic UUID order
+→ new Planning snapshots/downstream roots
+→ domain event and audit event
 ```
 
-Rules:
+Re-read status, version, current-revision state, active references, and lineage after locks. Serialization and deadlock failures are retryable whole-command failures.
 
-- acquire parent/root locks before child rows;
-- lock multiple rows in deterministic UUID order;
-- re-read status, version, current revision, active references, and lineage after locks;
-- stale expected version returns `STALE_VERSION` with no domain write;
-- exact replay returns the stored safe response;
-- same key or command ID with a different request returns `IDEMPOTENCY_CONFLICT`;
-- all multi-line writes succeed or fail together;
-- serialization/deadlock failures are retryable whole-command failures;
-- deterministic validation failures are safe non-retryable results;
-- one successful command creates one receipt, one domain event, and one audit event.
+## 9. Allowed race-safety constraints
 
-## 13. Database constraints allowed in PA-05D
+The implementation may add only narrowly justified constraints/indexes for:
 
-The implementation may add only constraints/indexes required to make the approved command contract race-safe, including:
-
-- one active/non-cancelled wholesale order per `(customer_id, customer_order_reference)`;
+- one non-cancelled wholesale order per customer/reference;
 - one Confirmed Need batch per wholesale order for this slice;
-- one current released Dispatch Requirement per released Purchase Handoff revision.
+- one current released Dispatch Requirement per released handoff revision.
 
-Any additional schema object requires explicit justification in the PR description. Do not introduce generic workflow, status, numbering, queue, or orchestration tables.
+Do not add workflow, queue, numbering, orchestration, or generic status tables.
 
-## 14. Required errors
+## 10. Verification contract
 
-At minimum, tests must cover:
+A dedicated PA-05D pgTAP suite must prove:
 
-- `VALIDATION_FAILED`
-- `AUTHENTICATION_REQUIRED`
-- `AUTH_SUBJECT_MISMATCH`
-- `ACTOR_NOT_FOUND`
-- `AUTH_SUBJECT_INACTIVE`
-- `ACTOR_INACTIVE`
-- `CAPABILITY_DENIED`
-- `SCOPE_DENIED`
-- `DELEGATION_NOT_SUPPORTED`
-- `STALE_VERSION`
-- `IDEMPOTENCY_CONFLICT`
-- `INVARIANT_VIOLATION`
-- `RETRYABLE_CONCURRENCY_FAILURE`
-- `INTERNAL_COMMAND_FAILURE`
+### API and privileges
 
-Messages must be safe and expressed in business terms.
-
-## 15. Verification contract
-
-A dedicated PA-05D pgTAP file must prove:
-
-### Callable and privilege boundary
-
-- the API function count becomes exactly 13;
-- the four functions are `SECURITY DEFINER`, owned by `atlas_planning_command_runtime`, use an empty fixed search path, and use no dynamic SQL;
-- Planning runtime has no schema `CREATE`, sequence mutation, or non-Planning domain writes;
-- Evidence and Dispatch runtimes gain no Planning write privilege;
+- exactly 13 reviewed `atlas_api` functions;
+- all four PA-05D functions are hardened definers owned by Planning runtime, use empty fixed search paths, and contain no dynamic SQL;
+- Planning runtime has no Atlas schema `CREATE`, sequence mutation, or non-Planning write privilege;
+- Evidence and Dispatch runtimes cannot write Planning facts;
+- `authenticated` can execute exactly 13 functions;
 - `anon` and `service_role` cannot execute Atlas API functions;
-- `authenticated` can execute exactly the 13 reviewed functions;
 - API roles retain no direct private relation access.
 
-### Authorization and envelope
+### Authorization and validation
 
-- missing/mismatched/revoked auth subject, inactive actor, missing capability, and wrong scope fail closed;
-- malformed, unbounded, unsupported delegation, empty lines, duplicate line numbers, and non-positive quantities fail safely.
+- missing/mismatched/revoked auth subject, inactive actor, missing capability, wrong scope, and unsupported delegation fail closed;
+- malformed input, zero or more than 100 lines, duplicate line numbers, inactive references, wrong customer/location relation, and non-positive quantities fail safely.
 
 ### Business behavior
 
-- multi-line wholesale source creation is atomic;
-- exact replay returns the original IDs and creates no duplicates;
-- same key/different payload conflicts;
+- multi-line source creation is atomic;
+- replay returns original IDs without duplicates;
+- conflicting replay fails;
 - duplicate customer-order reference is rejected;
-- wholesale release rejects stale version or wrong lifecycle;
+- stale version and wrong lifecycle fail without mutation;
 - wholesale release creates exact released Confirmed Need rows and approval snapshot;
-- handoff release preserves confirmed/snapshot/source lineage and creates no supplier/PO fact;
-- requirement release preserves customer/location/date and line lineage and creates no allocation/Dispatch execution fact;
-- each successful command creates one receipt, one domain event, and one audit event;
-- deterministic failure creates no misleading domain/event/audit mutation;
-- the existing supplier-direct trace can consume the generated Planning chain after later Procurement/Dispatch fixture completion.
+- handoff release preserves confirmed/snapshot/source lineage and creates no Procurement fact;
+- requirement release preserves customer/location/date/line lineage and creates no allocation or Dispatch execution fact;
+- each success creates exactly one receipt, event, and audit row;
+- deterministic failure creates no misleading domain/event/audit mutation.
 
-### Regression
+PA-04, PA-05B, PA-05C, and PA-05B-H1 tests must remain green except for narrow cumulative API-count/owner expectations required by the four new functions.
 
-Run PA-04, PA-05B, PA-05C, and PA-05B-H1 tests unchanged except narrow cumulative API-count/owner expectations where required.
-
-## 16. Explicit exclusions
+## 11. Explicit exclusions
 
 PA-05D adds no:
 
-- generic Need Generation command;
-- school-catering menu, attendance, recipe, or BOM persistence;
-- confirmed-need adjustment, reopen, invalidation, additive revision, or cancellation command;
-- supplier assignment, fulfilment allocation, purchase order, or supplier confirmation;
-- Warehouse schema or stock behavior;
-- supplier physical evidence command beyond existing PA-05B;
-- dispatch plan, trip, stop, load, departure, delivery, exception, return, or closure command beyond existing PA-05B;
+- generic Need Generation or school-catering persistence;
+- confirmed-need adjustment, reopen, invalidation, revision, or cancellation;
+- supplier assignment, fulfilment allocation, PO, or supplier confirmation;
+- Dispatch plan, trip, stop, exception, return, or closure setup;
+- new Evidence/load/departure/delivery behavior;
 - new read API;
-- React or generated Supabase types;
-- Edge Function or Storage feature;
+- React, generated Supabase type, Edge Function, or Storage;
 - controlled seed/reference data;
 - live Supabase deployment or hosted-project command;
-- production data, credentials, Retool change, or OPS v1 mutation;
-- Production/QA, Finance, or generic workflow engine.
+- production data, credential, Retool change, or OPS v1 mutation;
+- Warehouse, Production/QA, Finance, or generic workflow engine.
 
-## 17. Rollback and next gates
+## 12. Rollback and next gates
 
-Before deployment, rollback is a Git revert/removal of the unshipped migration, tests, and docs. No hosted database is authorized.
+Before deployment, rollback is Git removal/reversion of the unshipped migration, tests, and documentation. No hosted database is authorized.
 
-After PA-05D is reviewed and merged, the next bounded backend tasks are:
+After PA-05D:
 
 ```text
-PA-05E — Procurement command family
-→ allocate_supplier_direct_fulfilment
-→ release_supplier_purchase_order
-
-PA-05F — Dispatch setup command family
-→ create_dispatch_plan
-→ create_or_assign_dispatch_trip and stops
-
-PA-05G — backend end-to-end acceptance
-→ source → Planning release → allocation → PO → Evidence
-→ load → departure → delivery → trace
+PA-05E — Procurement allocation and released supplier PO
+→ PA-05F — Dispatch plan/trip/stop setup
+→ PA-05G — backend source-to-delivery acceptance
+→ PA-06 — React connection under the current backend-first sequencing decision
 ```
-
-PA-06 React connection remains after backend acceptance under the product owner's current sequencing decision.
