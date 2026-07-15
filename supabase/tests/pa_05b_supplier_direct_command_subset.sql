@@ -107,11 +107,23 @@ select ok(
         )
         or (
           p.proname <> 'get_supplier_direct_trace'
-          and r.rolname <> 'atlas_command_runtime'
+          and r.rolname <> 'atlas_evidence_command_runtime'
+          and p.proname in (
+            'record_supplier_receiving_evidence',
+            'apply_supplier_evidence_to_allocation'
+          )
+        )
+        or (
+          p.proname in (
+            'confirm_dispatch_load',
+            'record_dispatch_departure',
+            'confirm_successful_delivery'
+          )
+          and r.rolname <> 'atlas_dispatch_command_runtime'
         )
       )
   ),
-  'all PA-05B entry functions are hardened definers owned by the approved runtime roles'
+  'all PA-05B entry functions are hardened definers owned by their narrowed runtime roles'
 );
 
 set local role authenticated;
