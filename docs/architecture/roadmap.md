@@ -135,12 +135,12 @@ WarehouseRelease is only one fulfilment-evidence type, not the mandatory dispatc
 
 ## PA — Persistence architecture
 
-Goal: define and review the authoritative Atlas persistence boundary before any PostgreSQL or Supabase implementation.
+Goal: define, review, and incrementally implement the authoritative Atlas persistence boundary without linking or mutating production systems.
 
 - ✅ PA-01 Atlas Persistence Contract — canonical identity, classifications, aggregates, snapshots/revisions, evidence, transactions, authorization, audit, read models, and legacy boundary
 - ✅ PA-02 physical schema and constraint design — namespaces, table catalog, line identity, revisions/snapshots, evidence applications, quantity/time rules, transaction matrix, indexes, access preview, read models, legacy staging, and first supplier-direct slice
-- 🟡 PA-03 authorization, RLS, command surface, and transaction safety design — actor/capability scopes, dedicated API functions, revoke-first grants, RLS, idempotency, optimistic concurrency, locking/isolation, safe errors, reporting/storage/integration security, and first-slice tests documented in the current PR
-- ⬜ PA-04 first migration foundation for the supplier-direct Slice 1, after PA-03 gates are approved
+- ✅ PA-03 authorization, RLS, command surface, and transaction safety design — actor/capability scopes, dedicated API functions, revoke-first grants, RLS, idempotency, optimistic concurrency, locking/isolation, safe errors, reporting/storage/integration security, and first-slice test design
+- 🟡 PA-04 first migration foundation for the supplier-direct Slice 1 — implemented in the current PR with private schemas, typed traceability, evidence applications, forced RLS, revoke-first privileges, private read models, and local pgTAP verification; pending review and merge
 - ⬜ Controlled seed/reference data
 - ⬜ First connected wholesale supplier-direct vertical slice
 - ⬜ Legacy migration rehearsal and operator validation
@@ -152,12 +152,13 @@ Persistence gate:
 Approved PA-01 contract
 → PA-02 schema and constraint design
 → PA-03 authorization / RLS / command and transaction safety
-→ PA-04 supplier-direct migration, commands, and derived read models
+→ PA-04 supplier-direct migration foundation and private derived read models
+→ separately approved command/RPC surface and connected-client slice
 → rehearsal and operator validation
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are documentation and architecture only. PA-02 recommends private domain namespaces, typed cross-domain foreign keys/bridges, immutable revisions, and mandatory evidence applications. PA-03 adds a dedicated function-only `atlas_api` boundary, server-owned capabilities/scopes, revoke-first grants, RLS direction, mandatory idempotency/versioning, deterministic locks, transactional safety gates, and safe errors. None authorizes a migration, database object, backend integration, credential, legacy extraction, production-data change, or cutover.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the first executable database foundation: it creates only new Atlas roles, private schemas, authoritative tables, indexes, comments, forced-RLS posture, revoke-first privileges, and private security-invoker trace views for one supplier-direct wholesale happy path. PA-04 creates no command/RPC function or policy that grants runtime access, exposes no domain schema, links no hosted Supabase project, inserts no seed or production row, mutates no OPS v1 object, and authorizes no client integration or cutover. Command implementation, runtime policies/grants, connected React work, Warehouse, legacy rehearsal, and deployment remain separate approval gates.
 
 ## Deferred — Production and Quality
 
