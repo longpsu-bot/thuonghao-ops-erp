@@ -22,6 +22,7 @@ PA-05B provides the first supplier-direct evidence-to-delivery write spine and a
 8. Reads create no command receipts, domain events, audit events, tasks, workflow state, or domain mutations.
 9. Issue #82 remains the gate before broader write-command expansion.
 10. React remains disconnected.
+11. A PA-05C selector must be authorized across every selected relational tuple before shaping; a mixed or unauthorized result set fails closed and must not be partially expanded from a sampled scope.
 
 ## Consequences
 

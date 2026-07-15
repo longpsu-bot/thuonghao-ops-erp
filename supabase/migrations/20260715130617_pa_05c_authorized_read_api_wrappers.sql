@@ -79,6 +79,53 @@ begin
 end;
 $$;
 
+-- Evaluates the complete actor/capability/scope tuple for one candidate read row.
+-- Read selectors must be authorized as a set before JSON shaping and are also
+-- filtered by this helper at the row boundary as defence in depth.
+create or replace function atlas_core.pa_05c_actor_can_read_scope(
+  actor_id uuid,
+  capability_code text,
+  customer_id uuid,
+  delivery_location_id uuid,
+  dispatch_trip_id uuid
+)
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from atlas_core.actor_role_memberships arm
+    join atlas_core.roles r on r.role_id = arm.role_id
+    join atlas_core.role_capabilities rc on rc.role_id = r.role_id
+    join atlas_core.capabilities c on c.capability_id = rc.capability_id
+    where arm.actor_id = pa_05c_actor_can_read_scope.actor_id
+      and arm.membership_status = 'ACTIVE'
+      and arm.effective_from <= pg_catalog.transaction_timestamp()
+      and (arm.effective_to is null or arm.effective_to > pg_catalog.transaction_timestamp())
+      and r.role_status = 'ACTIVE'
+      and c.capability_status = 'ACTIVE'
+      and c.capability_code = pa_05c_actor_can_read_scope.capability_code
+  ) and exists (
+    select 1
+    from atlas_core.actor_scopes s
+    where s.actor_id = pa_05c_actor_can_read_scope.actor_id
+      and s.scope_status = 'ACTIVE'
+      and s.effective_from <= pg_catalog.transaction_timestamp()
+      and (s.effective_to is null or s.effective_to > pg_catalog.transaction_timestamp())
+      and (
+        s.scope_kind = 'GLOBAL'
+        or (s.scope_kind = 'CUSTOMER' and s.customer_id = pa_05c_actor_can_read_scope.customer_id)
+        or (s.scope_kind = 'DELIVERY_LOCATION'
+          and s.delivery_location_id = pa_05c_actor_can_read_scope.delivery_location_id)
+        or (s.scope_kind = 'DISPATCH_TRIP'
+          and s.dispatch_trip_id = pa_05c_actor_can_read_scope.dispatch_trip_id)
+      )
+  );
+$$;
+
 create or replace function atlas_core.pa_05c_aggregate_scope(
   aggregate_type text,
   aggregate_id uuid
@@ -164,8 +211,7 @@ as $$
     from atlas_planning.dispatch_requirements dr
     where pa_05c_aggregate_scope.aggregate_type = 'DISPATCH_REQUIREMENT'
       and dr.dispatch_requirement_id = pa_05c_aggregate_scope.aggregate_id
-  ) s
-  limit 1;
+  ) s;
 $$;
 
 create or replace function atlas_api.get_dispatch_evidence_readiness(request jsonb)
@@ -184,8 +230,10 @@ declare
   v_requirement_revision_id uuid;
   v_source_revision_id uuid;
   v_selector_count integer;
-  v_customer_id uuid;
-  v_location_id uuid;
+  v_scope_count integer;
+  v_unauthorized_scope_count integer;
+  v_scope_customer_id uuid;
+  v_scope_location_id uuid;
   v_scope_trip_id uuid;
   v_items jsonb;
 begin
@@ -213,10 +261,8 @@ begin
   if v_actor_context ? 'error' then return v_actor_context -> 'error'; end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_actor_context ->> 'actor_id');
 
-  select q.customer_id, q.delivery_location_id, q.dispatch_trip_id
-  into v_customer_id, v_location_id, v_scope_trip_id
-  from (
-    select dr.customer_id, dr.delivery_location_id, dt.dispatch_trip_id
+  with selector_scopes as (
+    select distinct dr.customer_id, dr.delivery_location_id, dt.dispatch_trip_id
     from atlas_planning.dispatch_requirements dr
     join atlas_planning.dispatch_requirement_revisions drr
       on drr.dispatch_requirement_id = dr.dispatch_requirement_id
@@ -232,20 +278,33 @@ begin
     where (v_trip_id is not null and dt.dispatch_trip_id = v_trip_id)
        or (v_requirement_revision_id is not null and drr.dispatch_requirement_revision_id = v_requirement_revision_id)
        or (v_source_revision_id is not null and cnlr.wholesale_order_line_revision_id = v_source_revision_id)
-    order by dt.dispatch_trip_id nulls last
-    limit 1
-  ) q;
+  )
+  select count(*)::integer,
+    count(*) filter (where not atlas_core.pa_05c_actor_can_read_scope(
+      v_actor_id, 'dispatch_evidence_readiness.read', customer_id, delivery_location_id, dispatch_trip_id
+    ))::integer,
+    (pg_catalog.array_agg(customer_id order by customer_id))[1],
+    (pg_catalog.array_agg(delivery_location_id order by delivery_location_id))[1],
+    (pg_catalog.array_agg(dispatch_trip_id order by dispatch_trip_id))[1]
+  into v_scope_count, v_unauthorized_scope_count,
+    v_scope_customer_id, v_scope_location_id, v_scope_trip_id
+  from selector_scopes;
 
-  if not found then
+  if v_scope_count = 0 then
     return atlas_core.pa_05c_read_error(
       request, v_name, 'NOT_FOUND', 'No supplier-direct readiness context matches the selector.'
     );
   end if;
   v_error := atlas_core.pa_05b_authorize_actor(
     request, v_actor_id, 'dispatch_evidence_readiness.read', 'REPORTING', v_name,
-    v_customer_id, v_location_id, coalesce(v_trip_id, v_scope_trip_id)
+    v_scope_customer_id, v_scope_location_id, v_scope_trip_id
   );
-  if v_error is not null then return v_error; end if;
+  if v_error is not null and v_error ->> 'error_code' = 'CAPABILITY_DENIED' then return v_error; end if;
+  if v_unauthorized_scope_count > 0 then
+    return atlas_core.pa_05c_read_error(
+      request, v_name, 'SCOPE_DENIED', 'The selected readiness context includes an unauthorized Atlas scope.'
+    );
+  end if;
 
   with lines as (
     select
@@ -317,9 +376,13 @@ begin
         on sre.supplier_receiving_evidence_id = ea.supplier_receiving_evidence_id
       where ea.fulfilment_allocation_line_revision_id = falr.fulfilment_allocation_line_revision_id
     ) e on true
-    where (v_trip_id is not null and dt.dispatch_trip_id = v_trip_id)
-       or (v_requirement_revision_id is not null and drr.dispatch_requirement_revision_id = v_requirement_revision_id)
-       or (v_source_revision_id is not null and cnlr.wholesale_order_line_revision_id = v_source_revision_id)
+    where (
+      (v_trip_id is not null and dt.dispatch_trip_id = v_trip_id)
+      or (v_requirement_revision_id is not null and drr.dispatch_requirement_revision_id = v_requirement_revision_id)
+      or (v_source_revision_id is not null and cnlr.wholesale_order_line_revision_id = v_source_revision_id)
+    ) and atlas_core.pa_05c_actor_can_read_scope(
+        v_actor_id, 'dispatch_evidence_readiness.read', dr.customer_id, dr.delivery_location_id, dt.dispatch_trip_id
+      )
   ), shaped as (
     select *, case
       when delivered then 'DELIVERED'
@@ -366,7 +429,7 @@ begin
     'success', true, 'contract_version', 'PA-05C.v1',
     'selector', request -> 'payload',
     'authorized_scope', pg_catalog.jsonb_build_object(
-      'customer_id', v_customer_id, 'delivery_location_id', v_location_id,
+      'customer_id', v_scope_customer_id, 'delivery_location_id', v_scope_location_id,
       'dispatch_trip_id', coalesce(v_trip_id, v_scope_trip_id)
     ),
     'readiness_items', v_items,
@@ -397,6 +460,8 @@ declare
   v_location_id uuid;
   v_service_date date;
   v_mode_count integer;
+  v_scope_count integer;
+  v_unauthorized_scope_count integer;
   v_scope_customer_id uuid;
   v_scope_location_id uuid;
   v_blockers jsonb;
@@ -423,23 +488,36 @@ begin
   if v_actor_context ? 'error' then return v_actor_context -> 'error'; end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_actor_context ->> 'actor_id');
 
-  select dr.customer_id, dr.delivery_location_id
-  into v_scope_customer_id, v_scope_location_id
-  from atlas_planning.dispatch_requirements dr
-  join atlas_planning.dispatch_requirement_revisions drr on drr.dispatch_requirement_id = dr.dispatch_requirement_id
-  left join atlas_dispatch.dispatch_stops ds on ds.dispatch_requirement_revision_id = drr.dispatch_requirement_revision_id
-  where (v_trip_id is not null and ds.dispatch_trip_id = v_trip_id)
-     or (v_customer_id is not null and dr.customer_id = v_customer_id and dr.service_date = v_service_date)
-     or (v_location_id is not null and dr.delivery_location_id = v_location_id and dr.service_date = v_service_date)
-  limit 1;
-  if not found then
+  with selector_scopes as (
+    select distinct dr.customer_id, dr.delivery_location_id, ds.dispatch_trip_id
+    from atlas_planning.dispatch_requirements dr
+    join atlas_planning.dispatch_requirement_revisions drr on drr.dispatch_requirement_id = dr.dispatch_requirement_id
+    left join atlas_dispatch.dispatch_stops ds on ds.dispatch_requirement_revision_id = drr.dispatch_requirement_revision_id
+    where (v_trip_id is not null and ds.dispatch_trip_id = v_trip_id)
+       or (v_customer_id is not null and dr.customer_id = v_customer_id and dr.service_date = v_service_date)
+       or (v_location_id is not null and dr.delivery_location_id = v_location_id and dr.service_date = v_service_date)
+  )
+  select count(*)::integer,
+    count(*) filter (where not atlas_core.pa_05c_actor_can_read_scope(
+      v_actor_id, 'operator_blockers.read', customer_id, delivery_location_id, dispatch_trip_id
+    ))::integer,
+    (pg_catalog.array_agg(customer_id order by customer_id))[1],
+    (pg_catalog.array_agg(delivery_location_id order by delivery_location_id))[1]
+  into v_scope_count, v_unauthorized_scope_count, v_scope_customer_id, v_scope_location_id
+  from selector_scopes;
+  if v_scope_count = 0 then
     return atlas_core.pa_05c_read_error(request, v_name, 'NOT_FOUND', 'No supplier-direct operating context matches the selector.');
   end if;
   v_error := atlas_core.pa_05b_authorize_actor(
     request, v_actor_id, 'operator_blockers.read', 'REPORTING', v_name,
     v_scope_customer_id, v_scope_location_id, v_trip_id
   );
-  if v_error is not null then return v_error; end if;
+  if v_error is not null and v_error ->> 'error_code' = 'CAPABILITY_DENIED' then return v_error; end if;
+  if v_unauthorized_scope_count > 0 then
+    return atlas_core.pa_05c_read_error(
+      request, v_name, 'SCOPE_DENIED', 'The selected blocker context includes an unauthorized Atlas scope.'
+    );
+  end if;
 
   with context_lines as (
     select dr.customer_id, dr.delivery_location_id, dr.service_date,
@@ -495,9 +573,13 @@ begin
         on sre.supplier_receiving_evidence_id = ea.supplier_receiving_evidence_id
       where ea.fulfilment_allocation_line_revision_id = falr.fulfilment_allocation_line_revision_id
     ) e on true
-    where (v_trip_id is not null and dt.dispatch_trip_id = v_trip_id)
-       or (v_customer_id is not null and dr.customer_id = v_customer_id and dr.service_date = v_service_date)
-       or (v_location_id is not null and dr.delivery_location_id = v_location_id and dr.service_date = v_service_date)
+    where (
+      (v_trip_id is not null and dt.dispatch_trip_id = v_trip_id)
+      or (v_customer_id is not null and dr.customer_id = v_customer_id and dr.service_date = v_service_date)
+      or (v_location_id is not null and dr.delivery_location_id = v_location_id and dr.service_date = v_service_date)
+    ) and atlas_core.pa_05c_actor_can_read_scope(
+      v_actor_id, 'operator_blockers.read', dr.customer_id, dr.delivery_location_id, dt.dispatch_trip_id
+    )
   ), blocker_rows as (
     select c.*, b.blocker_type, b.severity, b.source_domain, b.safe_message, b.suggested_owning_team
     from context_lines c
@@ -563,6 +645,7 @@ declare
   v_aggregate_id uuid;
   v_selector_count integer;
   v_scope_count integer;
+  v_unresolved_scope_count integer;
   v_scope_customer_id uuid;
   v_scope_location_id uuid;
   v_scope_trip_id uuid;
@@ -603,6 +686,12 @@ begin
     where (v_command_id is not null and e.command_id = v_command_id)
        or (v_correlation_id is not null and e.correlation_id = v_correlation_id)
        or (v_aggregate_type is not null and e.aggregate_type = v_aggregate_type and e.aggregate_id = v_aggregate_id)
+  ), target_scope_counts as (
+    select count(*) filter (where not exists (
+      select 1
+      from atlas_core.pa_05c_aggregate_scope(t.aggregate_type, t.aggregate_id) s
+    ))::integer as unresolved_scope_count
+    from targets t
   ), scopes as (
     select s.customer_id, s.delivery_location_id, s.dispatch_trip_id, s.public_reference
     from targets t
@@ -614,15 +703,17 @@ begin
     group by customer_id, delivery_location_id, dispatch_trip_id
   )
   select count(*)::integer,
+    max(tsc.unresolved_scope_count),
     (pg_catalog.array_agg(customer_id order by customer_id))[1],
     (pg_catalog.array_agg(delivery_location_id order by delivery_location_id))[1],
     (pg_catalog.array_agg(dispatch_trip_id order by dispatch_trip_id))[1],
     min(public_reference)
-  into v_scope_count, v_scope_customer_id, v_scope_location_id,
+  into v_scope_count, v_unresolved_scope_count, v_scope_customer_id, v_scope_location_id,
     v_scope_trip_id, v_scope_public_reference
-  from scope_groups;
+  from scope_groups
+  cross join target_scope_counts tsc;
 
-  if v_scope_count = 0 then
+  if v_scope_count = 0 or v_unresolved_scope_count > 0 then
     return atlas_core.pa_05c_read_error(
       request, v_name, 'NOT_FOUND_OR_UNSUPPORTED',
       'No authorized supplier-direct timeline context matches the selector.'
@@ -660,19 +751,35 @@ begin
         de.aggregate_type, de.aggregate_id, de.aggregate_version,
         de.command_id, de.correlation_id, de.actor_id,
         null::text reason_code, null::text reason_note
-      from atlas_audit.domain_events de
-      where (v_command_id is not null and de.command_id = v_command_id)
+       from atlas_audit.domain_events de
+       where (
+         (v_command_id is not null and de.command_id = v_command_id)
          or (v_correlation_id is not null and de.correlation_id = v_correlation_id)
          or (v_aggregate_type is not null and de.aggregate_type = v_aggregate_type and de.aggregate_id = v_aggregate_id)
+       ) and exists (
+           select 1 from atlas_core.pa_05c_aggregate_scope(de.aggregate_type, de.aggregate_id) scope
+           where atlas_core.pa_05c_actor_can_read_scope(
+             v_actor_id, 'command_audit_timeline.read',
+             scope.customer_id, scope.delivery_location_id, scope.dispatch_trip_id
+           )
+         )
       union all
       select 'AUDIT', ae.audit_event_id, ae.occurred_at, ae.recorded_at,
         ae.event_type, ae.source_domain, ae.aggregate_type, ae.aggregate_id,
         ae.aggregate_version_after, ae.command_id, ae.correlation_id, ae.actor_id,
         ae.reason_code, ae.reason_note
-      from atlas_audit.audit_events ae
-      where (v_command_id is not null and ae.command_id = v_command_id)
+       from atlas_audit.audit_events ae
+       where (
+         (v_command_id is not null and ae.command_id = v_command_id)
          or (v_correlation_id is not null and ae.correlation_id = v_correlation_id)
          or (v_aggregate_type is not null and ae.aggregate_type = v_aggregate_type and ae.aggregate_id = v_aggregate_id)
+       ) and exists (
+           select 1 from atlas_core.pa_05c_aggregate_scope(ae.aggregate_type, ae.aggregate_id) scope
+           where atlas_core.pa_05c_actor_can_read_scope(
+             v_actor_id, 'command_audit_timeline.read',
+             scope.customer_id, scope.delivery_location_id, scope.dispatch_trip_id
+           )
+         )
     ) all_events
     order by occurred_at, stable_id
     limit 100
@@ -751,6 +858,7 @@ create policy pa_05c_read_select on atlas_audit.audit_events
 
 alter function atlas_core.pa_05c_read_error(jsonb, text, text, text, jsonb) owner to atlas_owner;
 alter function atlas_core.pa_05c_validate_envelope(jsonb, text) owner to atlas_owner;
+alter function atlas_core.pa_05c_actor_can_read_scope(uuid, text, uuid, uuid, uuid) owner to atlas_owner;
 alter function atlas_core.pa_05c_aggregate_scope(text, uuid) owner to atlas_owner;
 
 grant atlas_read_runtime to postgres with set true;
@@ -762,10 +870,12 @@ revoke create on schema atlas_api from atlas_read_runtime;
 
 revoke execute on function atlas_core.pa_05c_read_error(jsonb, text, text, text, jsonb),
   atlas_core.pa_05c_validate_envelope(jsonb, text),
+  atlas_core.pa_05c_actor_can_read_scope(uuid, text, uuid, uuid, uuid),
   atlas_core.pa_05c_aggregate_scope(text, uuid)
 from public, anon, authenticated, service_role;
 grant execute on function atlas_core.pa_05c_read_error(jsonb, text, text, text, jsonb),
   atlas_core.pa_05c_validate_envelope(jsonb, text),
+  atlas_core.pa_05c_actor_can_read_scope(uuid, text, uuid, uuid, uuid),
   atlas_core.pa_05c_aggregate_scope(text, uuid)
 to atlas_read_runtime;
 

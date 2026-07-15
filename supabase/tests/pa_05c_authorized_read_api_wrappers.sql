@@ -105,14 +105,16 @@ insert into atlas_core.actors (actor_id, actor_type, display_name, actor_status,
   ('15000000-0000-0000-0000-000000000002','HUMAN','PA-05C inactive','INACTIVE',timestamptz '2026-07-15 00:00:00+00'),
   ('15000000-0000-0000-0000-000000000003','HUMAN','PA-05C revoked','ACTIVE',null),
   ('15000000-0000-0000-0000-000000000004','HUMAN','PA-05C no capability','ACTIVE',null),
-  ('15000000-0000-0000-0000-000000000005','HUMAN','PA-05C wrong scope','ACTIVE',null);
+  ('15000000-0000-0000-0000-000000000005','HUMAN','PA-05C wrong scope','ACTIVE',null),
+  ('15000000-0000-0000-0000-000000000006','HUMAN','PA-05C location reader','ACTIVE',null);
 insert into atlas_core.actor_auth_subjects
   (actor_auth_subject_id,actor_id,auth_subject_id,subject_status,revoked_at) values
   ('15000000-0000-0000-0000-000000000011','15000000-0000-0000-0000-000000000001','15000000-0000-0000-0000-000000000101','ACTIVE',null),
   ('15000000-0000-0000-0000-000000000012','15000000-0000-0000-0000-000000000002','15000000-0000-0000-0000-000000000102','ACTIVE',null),
   ('15000000-0000-0000-0000-000000000013','15000000-0000-0000-0000-000000000003','15000000-0000-0000-0000-000000000103','REVOKED',timestamptz '2026-07-15 00:01:00+00'),
   ('15000000-0000-0000-0000-000000000014','15000000-0000-0000-0000-000000000004','15000000-0000-0000-0000-000000000104','ACTIVE',null),
-  ('15000000-0000-0000-0000-000000000015','15000000-0000-0000-0000-000000000005','15000000-0000-0000-0000-000000000105','ACTIVE',null);
+  ('15000000-0000-0000-0000-000000000015','15000000-0000-0000-0000-000000000005','15000000-0000-0000-0000-000000000105','ACTIVE',null),
+  ('15000000-0000-0000-0000-000000000016','15000000-0000-0000-0000-000000000006','15000000-0000-0000-0000-000000000106','ACTIVE',null);
 insert into atlas_core.roles (role_id,role_code,role_name) values
   ('15100000-0000-0000-0000-000000000001','pa05c.reader','PA-05C reader'),
   ('15100000-0000-0000-0000-000000000002','pa05c.none','PA-05C no reads');
@@ -130,7 +132,8 @@ insert into atlas_core.actor_role_memberships (actor_id,role_id) values
   ('15000000-0000-0000-0000-000000000002','15100000-0000-0000-0000-000000000001'),
   ('15000000-0000-0000-0000-000000000003','15100000-0000-0000-0000-000000000001'),
   ('15000000-0000-0000-0000-000000000004','15100000-0000-0000-0000-000000000002'),
-  ('15000000-0000-0000-0000-000000000005','15100000-0000-0000-0000-000000000001');
+  ('15000000-0000-0000-0000-000000000005','15100000-0000-0000-0000-000000000001'),
+  ('15000000-0000-0000-0000-000000000006','15100000-0000-0000-0000-000000000001');
 
 insert into atlas_admin.customers (customer_id,customer_code,customer_name) values
   ('25000000-0000-0000-0000-000000000100','pa05c-customer','PA-05C customer'),
@@ -138,6 +141,7 @@ insert into atlas_admin.customers (customer_id,customer_code,customer_name) valu
 insert into atlas_admin.delivery_locations
   (delivery_location_id,customer_id,location_code,location_name,address_text) values
   ('25000000-0000-0000-0000-000000000101','25000000-0000-0000-0000-000000000100','pa05c-location','PA-05C location','Test address'),
+  ('25000000-0000-0000-0000-000000000105','25000000-0000-0000-0000-000000000100','pa05c-location-2','PA-05C location 2','Second address'),
   ('25000000-0000-0000-0000-000000000111','25000000-0000-0000-0000-000000000110','pa05c-other','PA-05C other','Other address');
 insert into atlas_admin.units (unit_id,unit_code,unit_name,dimension_code) values
   ('25000000-0000-0000-0000-000000000102','pa05c-kg','PA-05C kilogram','mass');
@@ -148,6 +152,8 @@ insert into atlas_admin.suppliers (supplier_id,supplier_code,supplier_name) valu
 insert into atlas_core.actor_scopes (actor_id,scope_kind,customer_id) values
   ('15000000-0000-0000-0000-000000000001','CUSTOMER','25000000-0000-0000-0000-000000000100'),
   ('15000000-0000-0000-0000-000000000005','CUSTOMER','25000000-0000-0000-0000-000000000110');
+insert into atlas_core.actor_scopes (actor_id,scope_kind,delivery_location_id) values
+  ('15000000-0000-0000-0000-000000000006','DELIVERY_LOCATION','25000000-0000-0000-0000-000000000101');
 insert into atlas_core.actor_scopes (actor_id,scope_kind) values
   ('15000000-0000-0000-0000-000000000002','GLOBAL'),
   ('15000000-0000-0000-0000-000000000003','GLOBAL'),
@@ -231,6 +237,36 @@ insert into atlas_dispatch.dispatch_trips
 insert into atlas_dispatch.dispatch_stops
   (dispatch_stop_id,dispatch_trip_id,stop_sequence,dispatch_requirement_revision_id,customer_id,delivery_location_id,stop_status) values
   ('55000000-0000-0000-0000-000000000903','55000000-0000-0000-0000-000000000902',1,'35000000-0000-0000-0000-000000000501','25000000-0000-0000-0000-000000000100','25000000-0000-0000-0000-000000000101','LOADED');
+
+-- A synthetic second stop and readiness line exercise read-scope expansion
+-- without adding a command or operational mutation.
+insert into atlas_planning.dispatch_requirements
+  (dispatch_requirement_id,customer_id,delivery_location_id,service_date,requirement_status) values
+  ('35000000-0000-0000-0000-000000000504','25000000-0000-0000-0000-000000000100','25000000-0000-0000-0000-000000000105',date '2026-07-15','RELEASED');
+insert into atlas_planning.dispatch_requirement_revisions
+  (dispatch_requirement_revision_id,dispatch_requirement_id,purchase_handoff_revision_id,revision_number,revision_status,customer_name_snapshot,location_name_snapshot,address_snapshot,released_by_actor_id,released_at) values
+  ('35000000-0000-0000-0000-000000000505','35000000-0000-0000-0000-000000000504','35000000-0000-0000-0000-000000000401',1,'RELEASED','PA-05C customer','PA-05C location 2','Second address','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:21:00+00');
+insert into atlas_dispatch.dispatch_stops
+  (dispatch_stop_id,dispatch_trip_id,stop_sequence,dispatch_requirement_revision_id,customer_id,delivery_location_id,stop_status) values
+  ('55000000-0000-0000-0000-000000000907','55000000-0000-0000-0000-000000000902',2,'35000000-0000-0000-0000-000000000505','25000000-0000-0000-0000-000000000100','25000000-0000-0000-0000-000000000105','LOADED');
+insert into atlas_planning.dispatch_requirement_lines
+  (dispatch_requirement_line_id,dispatch_requirement_id,purchase_handoff_line_id) values
+  ('35000000-0000-0000-0000-000000000506','35000000-0000-0000-0000-000000000504','35000000-0000-0000-0000-000000000402');
+insert into atlas_planning.dispatch_requirement_line_revisions
+  (dispatch_requirement_line_revision_id,dispatch_requirement_revision_id,dispatch_requirement_line_id,purchase_handoff_line_revision_id,ingredient_id,required_quantity,unit_id) values
+  ('35000000-0000-0000-0000-000000000507','35000000-0000-0000-0000-000000000505','35000000-0000-0000-0000-000000000506','35000000-0000-0000-0000-000000000403','25000000-0000-0000-0000-000000000103',10,'25000000-0000-0000-0000-000000000102');
+insert into atlas_procurement.fulfilment_allocations
+  (fulfilment_allocation_id,dispatch_requirement_id,allocation_status) values
+  ('45000000-0000-0000-0000-000000000604','35000000-0000-0000-0000-000000000504','READY_FOR_DISPATCH');
+insert into atlas_procurement.fulfilment_allocation_revisions
+  (fulfilment_allocation_revision_id,fulfilment_allocation_id,revision_number,revision_status,allocated_by_actor_id) values
+  ('45000000-0000-0000-0000-000000000605','45000000-0000-0000-0000-000000000604',1,'READY_FOR_DISPATCH','15000000-0000-0000-0000-000000000001');
+insert into atlas_procurement.fulfilment_allocation_lines
+  (fulfilment_allocation_line_id,fulfilment_allocation_id,dispatch_requirement_line_id,portion_sequence) values
+  ('45000000-0000-0000-0000-000000000606','45000000-0000-0000-0000-000000000604','35000000-0000-0000-0000-000000000506',1);
+insert into atlas_procurement.fulfilment_allocation_line_revisions
+  (fulfilment_allocation_line_revision_id,fulfilment_allocation_revision_id,fulfilment_allocation_line_id,dispatch_requirement_line_revision_id,supplier_id,allocated_quantity,unit_id,line_status) values
+  ('45000000-0000-0000-0000-000000000607','45000000-0000-0000-0000-000000000605','45000000-0000-0000-0000-000000000606','35000000-0000-0000-0000-000000000507','25000000-0000-0000-0000-000000000104',10,'25000000-0000-0000-0000-000000000102','EVIDENCED');
 insert into atlas_evidence.supplier_receiving_evidence
   (supplier_receiving_evidence_id,supplier_id,purchase_order_line_revision_id,ingredient_id,evidence_reference,evidence_quantity,unit_id,evidence_status,occurred_at,recorded_by_actor_id,command_id,correlation_id) values
   ('65000000-0000-0000-0000-000000000001','25000000-0000-0000-0000-000000000104','45000000-0000-0000-0000-000000000703','25000000-0000-0000-0000-000000000103','PA05C-EVIDENCE-001',10,'25000000-0000-0000-0000-000000000102','VALID',timestamptz '2026-07-15 00:30:00+00','15000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000010');
@@ -252,10 +288,11 @@ insert into atlas_core.command_receipts
   ('75000000-0000-0000-0000-000000000001','record_dispatch_departure','DISPATCH_TRIP:55000000-0000-0000-0000-000000000902','pa05c-timeline','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001',1,repeat('a',64),'COMPLETED',timestamptz '2026-07-15 00:40:00+00');
 insert into atlas_audit.domain_events
   (domain_event_id,event_type,source_domain,aggregate_type,aggregate_id,aggregate_version,command_receipt_id,command_id,correlation_id,actor_id,occurred_at) values
-  ('75000000-0000-0000-0000-000000000002','DISPATCH_DEPARTED','DISPATCH','DISPATCH_TRIP','55000000-0000-0000-0000-000000000902',2,'75000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:39:00+00');
+  ('75000000-0000-0000-0000-000000000002','DISPATCH_DEPARTED','DISPATCH','DISPATCH_STOP','55000000-0000-0000-0000-000000000903',2,'75000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:39:00+00'),
+  ('75000000-0000-0000-0000-000000000004','TRIP_REVIEWED','DISPATCH','DISPATCH_TRIP','55000000-0000-0000-0000-000000000902',2,null,'95000000-0000-0000-0000-000000000005','95000000-0000-0000-0000-000000000011','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:41:00+00');
 insert into atlas_audit.audit_events
   (audit_event_id,event_type,source_domain,aggregate_type,aggregate_id,aggregate_version_before,aggregate_version_after,command_receipt_id,command_id,correlation_id,actor_id,reason_code,reason_note,source_interface,occurred_at) values
-  ('75000000-0000-0000-0000-000000000003','DISPATCH_DEPARTED','DISPATCH','DISPATCH_TRIP','55000000-0000-0000-0000-000000000902',1,2,'75000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001','PA05C_TEST','Safe test reason','PGTAP',timestamptz '2026-07-15 00:39:00+00');
+  ('75000000-0000-0000-0000-000000000003','DISPATCH_DEPARTED','DISPATCH','DISPATCH_STOP','55000000-0000-0000-0000-000000000903',1,2,'75000000-0000-0000-0000-000000000001','95000000-0000-0000-0000-000000000004','95000000-0000-0000-0000-000000000010','15000000-0000-0000-0000-000000000001','PA05C_TEST','Safe test reason','PGTAP',timestamptz '2026-07-15 00:39:00+00');
 
 create function pg_temp.pa05c_request(subject uuid, payload jsonb)
 returns jsonb language sql immutable set search_path='' as $$
@@ -314,20 +351,51 @@ select ok((atlas_api.get_operator_blockers(pg_temp.pa05c_request(
 select is((atlas_api.get_operator_blockers(pg_temp.pa05c_request(
   '15000000-0000-0000-0000-000000000101','{}'::jsonb))->>'error_code'),'UNBOUNDED_OR_AMBIGUOUS_SELECTOR','operator blockers rejects unbounded payload');
 
+-- A location-scoped actor cannot use a customer/date or multi-stop trip selector
+-- to expand from the authorized first location into the second location.
+set local request.jwt.claim.sub='15000000-0000-0000-0000-000000000106';
+select is((atlas_api.get_operator_blockers(pg_temp.pa05c_request(
+  '15000000-0000-0000-0000-000000000106',jsonb_build_object(
+    'customer_id','25000000-0000-0000-0000-000000000100','service_date','2026-07-15'
+  )))->>'error_code'),'SCOPE_DENIED','location-scoped actor is denied a customer/date selector spanning two locations');
+select is((atlas_api.get_operator_blockers(pg_temp.pa05c_request(
+  '15000000-0000-0000-0000-000000000106',jsonb_build_object(
+    'dispatch_trip_id','55000000-0000-0000-0000-000000000902'
+  )))->>'error_code'),'SCOPE_DENIED','location-scoped actor is denied a multi-stop trip selector');
+select is((atlas_api.get_dispatch_evidence_readiness(pg_temp.pa05c_request(
+  '15000000-0000-0000-0000-000000000106',jsonb_build_object(
+    'dispatch_trip_id','55000000-0000-0000-0000-000000000902'
+  )))->>'error_code'),'SCOPE_DENIED','readiness denies a multi-stop trip before shaping unauthorized rows');
+set local request.jwt.claim.sub='15000000-0000-0000-0000-000000000101';
+select is((atlas_api.get_operator_blockers(pg_temp.pa05c_request(
+  '15000000-0000-0000-0000-000000000101',jsonb_build_object(
+    'customer_id','25000000-0000-0000-0000-000000000100','service_date','2026-07-15'
+  )))->>'success'),'true','customer-scoped actor may read all selected customer/date locations');
+
 select is((atlas_api.get_command_audit_timeline(pg_temp.pa05c_request(
-  '15000000-0000-0000-0000-000000000101',jsonb_build_object('command_id','95000000-0000-0000-0000-000000000004')))->>'success'),'true','audit timeline returns a known command');
+  '15000000-0000-0000-0000-000000000101',jsonb_build_object(
+    'aggregate_type','DISPATCH_STOP','aggregate_id','55000000-0000-0000-0000-000000000903'
+  )))->>'success'),'true','audit timeline returns a known single-scope aggregate');
+set local request.jwt.claim.sub='15000000-0000-0000-0000-000000000106';
+select is((atlas_api.get_command_audit_timeline(pg_temp.pa05c_request(
+  '15000000-0000-0000-0000-000000000106',jsonb_build_object(
+    'aggregate_type','DISPATCH_TRIP','aggregate_id','55000000-0000-0000-0000-000000000902'
+  )))->>'error_code'),'AMBIGUOUS_SCOPE','multi-location trip timeline fails closed');
+set local request.jwt.claim.sub='15000000-0000-0000-0000-000000000101';
 select is((atlas_api.get_command_audit_timeline(pg_temp.pa05c_request(
   '15000000-0000-0000-0000-000000000101','{}'::jsonb))->>'error_code'),'UNBOUNDED_OR_AMBIGUOUS_SELECTOR','audit timeline rejects unbounded payload');
 select ok(
   (atlas_api.get_command_audit_timeline(pg_temp.pa05c_request(
-    '15000000-0000-0000-0000-000000000101',jsonb_build_object('command_id','95000000-0000-0000-0000-000000000004')))::text
+    '15000000-0000-0000-0000-000000000101',jsonb_build_object(
+      'aggregate_type','DISPATCH_STOP','aggregate_id','55000000-0000-0000-0000-000000000903'
+    )))::text
     !~* '(request_hash|response_payload|sql internals|credential|jwt|service.role|stack trace)'),
   'audit timeline excludes prohibited internals'
 );
 reset role;
 
 select is((select count(*)::integer from atlas_core.command_receipts),1,'reads create no command receipts');
-select is((select count(*)::integer from atlas_audit.domain_events),1,'reads create no domain events');
+select is((select count(*)::integer from atlas_audit.domain_events),2,'reads create no domain events');
 select is((select count(*)::integer from atlas_audit.audit_events),1,'reads create no audit events');
 select is((select count(*)::integer from atlas_dispatch.dispatch_loads),1,'reads do not mutate domain rows');
 

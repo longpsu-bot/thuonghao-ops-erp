@@ -65,6 +65,8 @@ All PA-05C functions accept:
 
 The asserted subject is not trusted. The function resolves the current JWT subject server-side through the PA-05B helper pattern, requires an active Supabase Auth subject and active Atlas actor, rejects subject mismatch and unsupported delegation/override fields, then verifies the required capability and a current relational scope.
 
+Authorization applies to every relational tuple selected for a read, before JSON shaping. A selector that spans any tuple outside the actor's current scope fails closed with a safe scope error; it never authorizes one sampled row and then returns a wider result set. Per-row scope checks remain in the read CTEs as defence in depth.
+
 Capabilities are:
 
 - `dispatch_evidence_readiness.read`
