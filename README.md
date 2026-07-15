@@ -10,7 +10,7 @@ The repository is the authoritative source for business definitions, architectur
 
 Atlas has completed the Admin / Master Data Management in-memory prototype sequence, the bounded PD-05.1 Dispatch and Delivery foundation, the PD-05.2 Dispatch integration/operator-workflow review, the MVP vertical-slice operator review, and the fixture-backed MVP morning chaos simulation. The synthetic vertical slice now traces school catering, mixed fulfilment, wholesale, delivery exception/return, and blocked operating-day scenarios from source need to delivery outcome while preserving domain ownership and operator attention. Atlas page `mvp-operations-simulation` exposes the 02:00–08:00 simulation as a read-only review surface.
 
-PA-01 now proposes the Atlas persistence architecture before any database implementation. It defines canonical identity, persistence classifications, aggregate and transaction boundaries, immutable snapshots and revisions, source-owned evidence, authorization capabilities, audit, derived read models, and the legacy migration boundary. It authorizes no schema, migration, RLS, RPC, Edge Function, backend, Supabase client, Retool, credential, or production-data change.
+PA-01 defines the Atlas persistence contract before database implementation. PA-02 now proposes the physical PostgreSQL/Supabase namespace, table catalog, typed cross-domain line spine, revision/snapshot patterns, evidence-application constraints, quantity/time conventions, transaction matrix, indexes, access preview, derived read models, legacy staging, and the first supplier-direct wholesale schema subset. PA-02 remains architecture documentation and authorizes no migration, SQL object, RLS, RPC, Edge Function, backend, Supabase client, Retool, credential, or production-data change.
 
 The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, integration/operator-workflow review, and fulfilment-allocation amendment are complete as architecture baselines. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract, School info, Ingredients & Suppliers, consolidated Dishes & Recipes foundations, and Admin integration/operator-workflow review are complete as in-memory prototypes. PD-05 Dispatch and Delivery starts from Planning-released dispatch requirements, Procurement fulfilment allocation, and physical fulfilment evidence rather than mandatory Warehouse release. Its in-memory foundation and operator review prove trip/load/delivery, attention, exception, return, and closure rules. Production/QA and Finance/Accounting are deferred for the MVP.
 
@@ -56,8 +56,9 @@ Before changing code, read `AGENTS.md` and the relevant domain contract.
 4. [`Atlas Vision`](docs/architecture/atlas-vision.md) — why Atlas exists and what success means
 5. [`Roadmap`](docs/architecture/roadmap.md) — delivery order and current status
 6. [`PA-01 — Atlas Persistence Contract`](docs/architecture/pa-01-atlas-persistence-contract.md) — proposed authority for future persistence design
-7. The relevant contract under `docs/architecture/`
-8. The corresponding GitHub issue and pull request
+7. [`PA-02 — Physical Schema and Constraint Design`](docs/architecture/pa-02-physical-schema-and-constraint-design.md) — proposed physical design before migrations
+8. The relevant contract under `docs/architecture/`
+9. The corresponding GitHub issue and pull request
 
 ## Architecture method
 
