@@ -133,6 +133,32 @@ School catering and wholesale requirements must both converge into Planning-owne
 WarehouseRelease is only one fulfilment-evidence type, not the mandatory dispatch trigger.
 ```
 
+## PA — Persistence architecture
+
+Goal: define and review the authoritative Atlas persistence boundary before any PostgreSQL or Supabase implementation.
+
+- 🟡 PA-01 Atlas Persistence Contract — canonical identity, classifications, aggregates, snapshots/revisions, evidence, transactions, authorization, audit, read models, and legacy boundary documented in the current PR
+- ⬜ PA-02 physical schema design
+- ⬜ RLS and command-authorization design
+- ⬜ Transactional command/RPC implementation
+- ⬜ Controlled seed/reference data
+- ⬜ First connected wholesale supplier-direct vertical slice
+- ⬜ Legacy migration rehearsal and operator validation
+- ⬜ Separately approved staged rollout
+
+Persistence gate:
+
+```text
+Approved PA-01 contract
+→ PA-02 schema and constraint design
+→ authorization / RLS
+→ transactional commands and derived read models
+→ rehearsal and operator validation
+→ separately approved production rollout
+```
+
+PA-01 is documentation and architecture only. It does not authorize a migration, database object, backend integration, credential, legacy extraction, production-data change, or cutover.
+
 ## Deferred — Production and Quality
 
 Goal: support kitchen execution, portioning, food safety, inspection, waste, and corrective action.
