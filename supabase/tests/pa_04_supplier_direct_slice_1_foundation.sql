@@ -87,13 +87,12 @@ select ok(
         'atlas_evidence',
         'atlas_dispatch',
         'atlas_audit',
-        'atlas_reporting',
-        'atlas_api'
+        'atlas_reporting'
       ]
     ) as atlas_schema(schema_name)
     where has_schema_privilege(api_role.role_name, atlas_schema.schema_name, 'USAGE')
   ),
-  'API roles have no Atlas schema usage in the foundation'
+  'API roles have no usage on private Atlas schemas'
 );
 
 select ok(
@@ -121,8 +120,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  0,
-  'atlas_api is reserved and exposes no command or read functions'
+  6,
+  'atlas_api contains only the six approved PA-05B entry functions'
 );
 
 select ok(
