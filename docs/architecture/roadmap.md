@@ -142,9 +142,10 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-03 authorization, RLS, command surface, and transaction safety design — actor/capability scopes, dedicated API functions, revoke-first grants, RLS, idempotency, optimistic concurrency, locking/isolation, safe errors, reporting/storage/integration security, and first-slice test design
 - ✅ PA-04 supplier-direct Slice 1 migration foundation — merged with private schemas, typed traceability, evidence applications, forced RLS, revoke-first privileges, private read models, and local pgTAP verification
 - ✅ PA-05A supplier-direct command/RPC contract design — completed on main with business-command names, envelopes, authorization, idempotency, locking, events/audit, and shaped-read contracts
-- 🟡 PA-05B bounded SQL command implementation — current proposed implementation with actor/receipt helpers, five evidence-to-delivery commands, one shaped trace, and security/concurrency/invariant tests
-- ⬜ PA-05C authorized read API wrappers — shaped, capability/scope-filtered read functions
-- ⬜ PA-06 read-only React connection — later, only after PA-05B behavior/tests and PA-05C read wrappers are approved
+- ✅ PA-05B bounded SQL command implementation — merged with actor/receipt helpers, five evidence-to-delivery commands, one shaped trace, and security/concurrency/invariant tests
+- 🟡 PA-05C authorized read API wrappers — current read-only implementation with shaped, capability/scope-filtered readiness, blocker, and audit-timeline functions
+- ⬜ PA-05B-H1 / issue #82 — open runtime-role hardening gate before broader write-command expansion
+- ⬜ PA-06 read-only React connection — later, only after PA-05C review and explicit security-posture acceptance
 - ⬜ Controlled seed/reference data
 - ⬜ First connected wholesale supplier-direct vertical slice
 - ⬜ Legacy migration rehearsal and operator validation
@@ -165,7 +166,7 @@ Approved PA-01 contract
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation: it creates only new Atlas roles, private schemas, authoritative tables, indexes, comments, forced-RLS posture, revoke-first privileges, and private security-invoker trace views for one supplier-direct wholesale happy path. PA-05A is completed on main. PA-05B is the current proposed bounded command implementation and remains pending review/merge; it does not connect or deploy a client. PA-05C runtime read wrappers, PA-06 read-only React work, broader command coverage, Warehouse, legacy rehearsal, and deployment remain separate approval gates.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation: it creates only new Atlas roles, private schemas, authoritative tables, indexes, comments, forced-RLS posture, revoke-first privileges, and private security-invoker trace views for one supplier-direct wholesale happy path. PA-05A and PA-05B are completed on main. PA-05C is the current read-only API-wrapper implementation and may proceed before issue #82 because it adds no write capability. Issue #82 remains open and blocks broader write-command expansion. PA-06 read-only React work may proceed only after PA-05C review and explicit security-posture acceptance; broader command coverage, Warehouse, legacy rehearsal, and deployment remain separate approval gates.
 
 ## Deferred — Production and Quality
 
