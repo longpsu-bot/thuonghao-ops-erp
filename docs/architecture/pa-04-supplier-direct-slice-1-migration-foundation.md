@@ -96,7 +96,7 @@ PA-04 creates 52 tables.
 - `actor_scopes`
 - `command_receipts`
 
-`actor_auth_subjects` stores a unique registered Supabase Auth subject identifier. It deliberately does not require an unauthorized foreign key into Supabase-owned `auth.users`; future actor resolution must validate the subject server-side.
+`actor_auth_subjects` permits one ACTIVE auth subject per actor, with historical revoked links preserved, while keeping each registered Supabase Auth subject identifier unique. It deliberately does not require an unauthorized foreign key into Supabase-owned `auth.users`; future actor resolution must validate the subject server-side.
 
 ### `atlas_admin` — 6 tables
 

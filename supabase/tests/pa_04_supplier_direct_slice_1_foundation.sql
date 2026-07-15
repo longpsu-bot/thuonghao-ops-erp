@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(20);
+select plan(23);
 
 select is(
   (
@@ -246,6 +246,89 @@ insert into atlas_core.actors (
   '00000000-0000-0000-0000-000000000001',
   'HUMAN',
   'PA-04 synthetic operator'
+);
+
+insert into atlas_core.actor_auth_subjects (
+  actor_auth_subject_id,
+  actor_id,
+  auth_subject_id
+) values (
+  '00000000-0000-0000-0000-000000000010',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000011'
+);
+
+update atlas_core.actor_auth_subjects
+set subject_status = 'REVOKED',
+    revoked_at = timestamptz '2026-07-15 00:01:00+00'
+where actor_auth_subject_id = '00000000-0000-0000-0000-000000000010';
+
+insert into atlas_core.actor_auth_subjects (
+  actor_auth_subject_id,
+  actor_id,
+  auth_subject_id
+) values (
+  '00000000-0000-0000-0000-000000000012',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000013'
+);
+
+update atlas_core.actor_auth_subjects
+set subject_status = 'REVOKED',
+    revoked_at = timestamptz '2026-07-15 00:02:00+00'
+where actor_auth_subject_id = '00000000-0000-0000-0000-000000000012';
+
+insert into atlas_core.actor_auth_subjects (
+  actor_auth_subject_id,
+  actor_id,
+  auth_subject_id
+) values (
+  '00000000-0000-0000-0000-000000000014',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000015'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from atlas_core.actor_auth_subjects
+    where actor_id = '00000000-0000-0000-0000-000000000001'
+      and subject_status = 'ACTIVE'
+  ),
+  1,
+  'an actor can replace revoked auth subjects and retain one active subject'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_core.actor_auth_subjects (
+      actor_auth_subject_id,
+      actor_id,
+      auth_subject_id
+    ) values (
+      '00000000-0000-0000-0000-000000000016',
+      '00000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000017'
+    )
+  $$,
+  '23505',
+  'duplicate key value violates unique constraint "actor_auth_subjects_active_actor_key"',
+  'actor_auth_subjects_active_actor_key rejects a second active subject for one actor'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from atlas_core.actor_auth_subjects
+    where actor_id = '00000000-0000-0000-0000-000000000001'
+      and subject_status = 'REVOKED'
+      and auth_subject_id in (
+        '00000000-0000-0000-0000-000000000011',
+        '00000000-0000-0000-0000-000000000013'
+      )
+  ),
+  2,
+  'revoked historical auth-subject links remain queryable and unchanged'
 );
 
 insert into atlas_admin.customers (

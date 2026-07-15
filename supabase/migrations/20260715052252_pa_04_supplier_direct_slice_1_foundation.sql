@@ -74,7 +74,6 @@ create table atlas_core.actor_auth_subjects (
   constraint actor_auth_subjects_pkey primary key (actor_auth_subject_id),
   constraint actor_auth_subjects_actor_fkey foreign key (actor_id)
     references atlas_core.actors (actor_id) on delete restrict,
-  constraint actor_auth_subjects_actor_key unique (actor_id),
   constraint actor_auth_subjects_subject_key unique (auth_provider, auth_subject_id),
   constraint actor_auth_subjects_provider_check check (auth_provider = 'SUPABASE_AUTH'),
   constraint actor_auth_subjects_status_check check (subject_status in ('ACTIVE', 'REVOKED')),
@@ -1446,6 +1445,9 @@ create table atlas_audit.audit_events (
   constraint audit_events_time_check check (recorded_at >= occurred_at)
 );
 
+create unique index actor_auth_subjects_active_actor_key
+  on atlas_core.actor_auth_subjects (actor_id)
+  where subject_status = 'ACTIVE';
 create unique index actor_role_memberships_active_key
   on atlas_core.actor_role_memberships (actor_id, role_id)
   where membership_status = 'ACTIVE';
@@ -1718,7 +1720,7 @@ join atlas_dispatch.delivery_confirmations dc
   on dc.delivery_confirmation_id = dcl.delivery_confirmation_id;
 
 comment on table atlas_core.actors is 'Stable server-owned Atlas actors; historical actors are deactivated, not deleted.';
-comment on table atlas_core.actor_auth_subjects is 'Controlled link from an Atlas actor to one Supabase Auth subject.';
+comment on table atlas_core.actor_auth_subjects is 'Controlled links from an Atlas actor to one active Supabase Auth subject, with revoked history preserved.';
 comment on table atlas_core.roles is 'Assignable authorization bundles; roles never imply unrestricted access.';
 comment on table atlas_core.capabilities is 'Server-owned capability vocabulary for future atlas_api command checks.';
 comment on table atlas_core.role_capabilities is 'Controlled role-to-capability assignments.';
