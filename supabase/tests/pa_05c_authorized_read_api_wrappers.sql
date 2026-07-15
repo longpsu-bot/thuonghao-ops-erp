@@ -240,12 +240,18 @@ insert into atlas_dispatch.dispatch_stops
 
 -- A synthetic second stop and readiness line exercise read-scope expansion
 -- without adding a command or operational mutation.
+insert into atlas_planning.purchase_handoff_revisions
+  (purchase_handoff_revision_id,purchase_handoff_batch_id,revision_number,revision_kind,revision_status,is_current,released_by_actor_id,released_at) values
+  ('35000000-0000-0000-0000-000000000404','35000000-0000-0000-0000-000000000400',2,'ADDITIVE','RELEASED_TO_PROCUREMENT',false,'15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:20:30+00');
+insert into atlas_planning.purchase_handoff_line_revisions
+  (purchase_handoff_line_revision_id,purchase_handoff_revision_id,purchase_handoff_line_id,confirmed_need_line_revision_id,ingredient_id,handoff_quantity,unit_id,service_date,delivery_location_id) values
+  ('35000000-0000-0000-0000-000000000405','35000000-0000-0000-0000-000000000404','35000000-0000-0000-0000-000000000402','35000000-0000-0000-0000-000000000302','25000000-0000-0000-0000-000000000103',10,'25000000-0000-0000-0000-000000000102',date '2026-07-15','25000000-0000-0000-0000-000000000105');
 insert into atlas_planning.dispatch_requirements
   (dispatch_requirement_id,customer_id,delivery_location_id,service_date,requirement_status) values
   ('35000000-0000-0000-0000-000000000504','25000000-0000-0000-0000-000000000100','25000000-0000-0000-0000-000000000105',date '2026-07-15','RELEASED');
 insert into atlas_planning.dispatch_requirement_revisions
   (dispatch_requirement_revision_id,dispatch_requirement_id,purchase_handoff_revision_id,revision_number,revision_status,customer_name_snapshot,location_name_snapshot,address_snapshot,released_by_actor_id,released_at) values
-  ('35000000-0000-0000-0000-000000000505','35000000-0000-0000-0000-000000000504','35000000-0000-0000-0000-000000000401',1,'RELEASED','PA-05C customer','PA-05C location 2','Second address','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:21:00+00');
+  ('35000000-0000-0000-0000-000000000505','35000000-0000-0000-0000-000000000504','35000000-0000-0000-0000-000000000404',1,'RELEASED','PA-05C customer','PA-05C location 2','Second address','15000000-0000-0000-0000-000000000001',timestamptz '2026-07-15 00:21:00+00');
 insert into atlas_dispatch.dispatch_stops
   (dispatch_stop_id,dispatch_trip_id,stop_sequence,dispatch_requirement_revision_id,customer_id,delivery_location_id,stop_status) values
   ('55000000-0000-0000-0000-000000000907','55000000-0000-0000-0000-000000000902',2,'35000000-0000-0000-0000-000000000505','25000000-0000-0000-0000-000000000100','25000000-0000-0000-0000-000000000105','LOADED');
@@ -254,7 +260,7 @@ insert into atlas_planning.dispatch_requirement_lines
   ('35000000-0000-0000-0000-000000000506','35000000-0000-0000-0000-000000000504','35000000-0000-0000-0000-000000000402');
 insert into atlas_planning.dispatch_requirement_line_revisions
   (dispatch_requirement_line_revision_id,dispatch_requirement_revision_id,dispatch_requirement_line_id,purchase_handoff_line_revision_id,ingredient_id,required_quantity,unit_id) values
-  ('35000000-0000-0000-0000-000000000507','35000000-0000-0000-0000-000000000505','35000000-0000-0000-0000-000000000506','35000000-0000-0000-0000-000000000403','25000000-0000-0000-0000-000000000103',10,'25000000-0000-0000-0000-000000000102');
+  ('35000000-0000-0000-0000-000000000507','35000000-0000-0000-0000-000000000505','35000000-0000-0000-0000-000000000506','35000000-0000-0000-0000-000000000405','25000000-0000-0000-0000-000000000103',10,'25000000-0000-0000-0000-000000000102');
 insert into atlas_procurement.fulfilment_allocations
   (fulfilment_allocation_id,dispatch_requirement_id,allocation_status) values
   ('45000000-0000-0000-0000-000000000604','35000000-0000-0000-0000-000000000504','READY_FOR_DISPATCH');

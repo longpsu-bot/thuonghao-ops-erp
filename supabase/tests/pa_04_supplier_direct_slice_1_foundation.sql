@@ -120,8 +120,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  9,
-  'atlas_api contains only the six PA-05B and three PA-05C entry functions'
+  13,
+  'atlas_api contains only the reviewed PA-05B, PA-05C, and PA-05D entry functions'
 );
 
 select ok(
