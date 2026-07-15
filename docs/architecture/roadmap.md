@@ -145,7 +145,7 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05B bounded SQL command implementation — merged with actor/receipt helpers, five evidence-to-delivery commands, one shaped trace, and security/concurrency/invariant tests
 - ✅ PA-05C authorized read API wrappers — shaped, capability/scope-filtered readiness, blocker, and audit-timeline functions
 - ✅ PA-05B-H1 / issue #82 — runtime-role hardening completed: separate Evidence and Dispatch command owners, read-only read owner, revoke-first access, and effective-privilege pgTAP audit
-- 🟡 PA-05D bounded Planning command family — proposed contract and Issue #85 for wholesale source, released pass-through Confirmed Need, Purchase Handoff, and Dispatch Requirement
+- 🟡 PA-05D bounded Planning command family — implemented on the Issue #85 review branch with four Planning commands, a dedicated least-privilege runtime, exact source-to-requirement lineage, and 60 focused pgTAP assertions; pending review and merge
 - ⬜ PA-05E bounded Procurement command family — supplier-direct fulfilment allocation and released supplier purchase order
 - ⬜ PA-05F bounded Dispatch setup command family — dispatch plan, requirement admission, trip, and stop setup
 - ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-delivery path using the PA-05D through PA-05F prerequisites and existing PA-05B/PA-05C surface

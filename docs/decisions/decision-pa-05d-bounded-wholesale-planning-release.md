@@ -1,6 +1,6 @@
 # Decision — PA-05D bounded wholesale Planning release
 
-**Status:** Proposed with PA-05D; pending review and merge  
+**Status:** Accepted; implementation pending review and merge
 **Date:** 2026-07-15  
 **Related contract:** `docs/architecture/pa-05d-planning-command-family-contract.md`  
 **Implementation issue:** #85

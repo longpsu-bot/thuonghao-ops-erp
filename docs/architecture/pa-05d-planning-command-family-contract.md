@@ -1,10 +1,12 @@
 # PA-05D — Bounded Planning command family
 
-**Status:** Proposed implementation contract; documentation only  
+**Status:** Approved implementation contract; implemented on the Issue #85 task branch pending review
 **Scope:** Supplier-direct wholesale Slice 1, from wholesale source to released Dispatch Requirement  
 **Authority:** ARCH-001, ARCH-002, PA-01 through PA-05B-H1, PA-05A, the Confirmed Need and Purchase Handoff contracts, and the amended Dispatch/Delivery boundary  
 **Implementation issue:** #85  
 **Implementation instructions:** `docs/implementation-tasks/TASK-PA-05D-planning-command-family.md`
+**Migration:** `supabase/migrations/20260715163344_pa_05d_planning_command_family.sql`
+**Verification:** `supabase/tests/pa_05d_planning_command_family.sql` (60 rolled-back assertions)
 
 ## 1. Executive decision
 
