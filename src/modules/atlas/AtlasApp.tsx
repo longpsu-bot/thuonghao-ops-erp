@@ -15,6 +15,7 @@ import {
   WarehouseStockReleasePage,
 } from "./AtlasPages";
 import { PageShell, TracePanel } from "./WorkbenchComponents";
+import { MvpMorningChaosPage } from "./MvpMorningChaosPage";
 
 export function AtlasApp({
   initialPage = "control-board",
@@ -34,6 +35,7 @@ export function AtlasApp({
   if (active === "warehouse-stock-release")
     content = <WarehouseStockReleasePage />;
   if (active === "dispatch-delivery") content = <DispatchDeliveryPage />;
+  if (active === "mvp-operations-simulation") content = <MvpMorningChaosPage />;
   if (active === "customers-schools") content = <SchoolAdminWorkbench />;
   if (active === "ingredients-units" || active === "suppliers-eligibility")
     content = <IngredientSupplierAdminWorkbench />;

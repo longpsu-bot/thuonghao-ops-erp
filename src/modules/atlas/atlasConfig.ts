@@ -7,6 +7,7 @@ export type AtlasPageId =
   | "warehouse-receiving"
   | "warehouse-stock-release"
   | "dispatch-delivery"
+  | "mvp-operations-simulation"
   | "customers-schools"
   | "ingredients-units"
   | "suppliers-eligibility"
@@ -103,6 +104,15 @@ export const atlasPages: AtlasPage[] = [
     object: "Dispatch plan, trip, load, stop, delivery outcome",
     state: "Planned → assigned → loaded → in transit → closed",
     handoff: "Destination outcome, exception, or return resolution",
+  },
+  {
+    id: "mvp-operations-simulation",
+    label: "MVP Morning Simulation",
+    group: atlasGroups[0],
+    decision: "What still needs attention at the end of the 02:00–08:00 run?",
+    object: "Fixture-backed operating-day review",
+    state: "02:00 timeline → delivery outcomes → unresolved at 08:00",
+    handoff: "Read-only review; ownership remains with the existing modules",
   },
   {
     id: "customers-schools",
