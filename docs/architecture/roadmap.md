@@ -137,9 +137,9 @@ WarehouseRelease is only one fulfilment-evidence type, not the mandatory dispatc
 
 Goal: define and review the authoritative Atlas persistence boundary before any PostgreSQL or Supabase implementation.
 
-- 🟡 PA-01 Atlas Persistence Contract — canonical identity, classifications, aggregates, snapshots/revisions, evidence, transactions, authorization, audit, read models, and legacy boundary documented in the current PR
-- ⬜ PA-02 physical schema design
-- ⬜ RLS and command-authorization design
+- ✅ PA-01 Atlas Persistence Contract — canonical identity, classifications, aggregates, snapshots/revisions, evidence, transactions, authorization, audit, read models, and legacy boundary
+- 🟡 PA-02 physical schema and constraint design — namespaces, table catalog, line identity, revisions/snapshots, evidence applications, quantity/time rules, transaction matrix, indexes, access preview, read models, legacy staging, and first supplier-direct slice documented in the current PR
+- ⬜ PA-03 RLS, grants, and command-authorization design
 - ⬜ Transactional command/RPC implementation
 - ⬜ Controlled seed/reference data
 - ⬜ First connected wholesale supplier-direct vertical slice
@@ -157,7 +157,7 @@ Approved PA-01 contract
 → separately approved production rollout
 ```
 
-PA-01 is documentation and architecture only. It does not authorize a migration, database object, backend integration, credential, legacy extraction, production-data change, or cutover.
+PA-01 and PA-02 are documentation and architecture only. PA-02 recommends private `atlas_*` namespaces, typed cross-domain foreign keys/bridges, immutable revisions, and mandatory evidence applications, but it does not authorize a migration, database object, backend integration, credential, legacy extraction, production-data change, or cutover.
 
 ## Deferred — Production and Quality
 
