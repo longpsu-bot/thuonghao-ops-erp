@@ -24,7 +24,7 @@ Planning releases, Procurement allocation and purchase-order release, and Dispat
 
 `atlas_api` remains the only callable Atlas schema. `authenticated` receives schema usage and execute on the six listed functions only. `anon` and `service_role` receive neither. None of the three API roles receives direct table, view, sequence, or private-schema access.
 
-The five writes are `security definer` functions owned by the no-login `atlas_command_runtime` role. The shaped read is a hardened `security definer` function owned by `atlas_read_runtime`. Every entry function has an empty fixed `search_path`, fully qualified references, and no dynamic SQL or caller-controlled object name.
+After PA-05B-H1, the two Evidence writes are `security definer` functions owned by the no-login `atlas_evidence_command_runtime` role and the three Dispatch writes are owned by `atlas_dispatch_command_runtime`. The shaped trace and PA-05C read wrappers are owned by `atlas_read_runtime`; the former shared `atlas_command_runtime` retains no effective Atlas privilege. Every entry function has an empty fixed `search_path`, fully qualified references, and no dynamic SQL or caller-controlled object name.
 
 Private helpers live in `atlas_core`, are owned by `atlas_owner`, and are executable only by the runtime role that needs them. Runtime table grants are verb-specific and paired with forced-RLS policies named only for the runtime roles. Narrow `UPDATE` grants on reference rows exist solely because PostgreSQL row locks require the privilege; no matching update policy is present, so those reference rows cannot be changed through the runtime path.
 
