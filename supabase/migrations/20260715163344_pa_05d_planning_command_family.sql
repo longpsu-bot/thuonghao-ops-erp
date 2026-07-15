@@ -12,9 +12,11 @@ begin
 end
 $$;
 
+drop index atlas_planning.wholesale_orders_customer_reference_key;
+
 create unique index wholesale_orders_active_customer_reference_key
   on atlas_planning.wholesale_orders (customer_id, customer_order_reference)
-  where order_status <> 'CANCELLED';
+  where customer_order_reference is not null and order_status <> 'CANCELLED';
 
 create unique index confirmed_need_batches_wholesale_order_key
   on atlas_planning.confirmed_need_batches (wholesale_order_id);
@@ -30,7 +32,7 @@ immutable
 set search_path = ''
 as $$
 begin
-  if value is null or pg_catalog.btrim(value) = '' then
+  if value is null or value !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then
     return null;
   end if;
   return value::date;
@@ -570,6 +572,7 @@ declare
   v_line_count integer;
   v_source_line_number bigint;
   v_ingredient_id uuid;
+  v_wholesale_order_line_revision_id uuid;
   v_unit_id uuid;
   v_quantity numeric;
   v_customer_type text;
@@ -593,7 +596,16 @@ begin
   v_service_date := atlas_core.pa_05d_safe_date(v_payload ->> 'service_date');
   v_lines := v_payload -> 'lines';
 
-  if atlas_core.pa_05b_safe_bigint(request ->> 'expected_version') <> 1
+  if v_payload ? 'delegated_actor_id' then
+    return atlas_core.pa_05b_command_error(
+      request, 'DELEGATION_NOT_SUPPORTED', 'Delegation is not supported for this command.',
+      'PLANNING', v_command_name
+    );
+  end if;
+
+  if not (v_payload ?& array['customer_id', 'delivery_location_id', 'customer_order_reference', 'service_date', 'lines'])
+     or v_payload - array['customer_id', 'delivery_location_id', 'customer_order_reference', 'service_date', 'lines'] <> '{}'::jsonb
+     or atlas_core.pa_05b_safe_bigint(request ->> 'expected_version') <> 1
      or v_customer_id is null or v_delivery_location_id is null
      or v_customer_order_reference = '' or pg_catalog.length(v_customer_order_reference) > 200
      or v_service_date is null
@@ -627,7 +639,8 @@ begin
     v_ingredient_id := atlas_core.pa_05b_safe_uuid(v_line ->> 'ingredient_id');
     v_unit_id := atlas_core.pa_05b_safe_uuid(v_line ->> 'unit_id');
     v_quantity := atlas_core.pa_05b_safe_numeric(v_line ->> 'requested_quantity');
-    if v_line ?| array['actor_id', 'status', 'line_status', 'revision_status', 'wholesale_order_line_id', 'wholesale_order_line_revision_id']
+    if not (v_line ?& array['source_line_number', 'ingredient_id', 'requested_quantity', 'unit_id'])
+       or v_line - array['source_line_number', 'ingredient_id', 'requested_quantity', 'unit_id'] <> '{}'::jsonb
        or v_source_line_number is null or v_source_line_number <= 0 or v_source_line_number > 2147483647
        or v_ingredient_id is null or v_unit_id is null or v_quantity is null or v_quantity <= 0 then
       return atlas_core.pa_05b_command_error(
@@ -748,8 +761,8 @@ begin
       atlas_core.pa_05b_safe_numeric(v_line ->> 'requested_quantity'),
       atlas_core.pa_05b_safe_uuid(v_line ->> 'unit_id'),
       'DRAFT', true, atlas_core.pa_05b_safe_uuid(request ->> 'command_id'), v_actor_id
-    ) returning wholesale_order_line_revision_id into v_ingredient_id;
-    v_line_revision_ids := v_line_revision_ids || pg_catalog.jsonb_build_array(v_ingredient_id);
+    ) returning wholesale_order_line_revision_id into v_wholesale_order_line_revision_id;
+    v_line_revision_ids := v_line_revision_ids || pg_catalog.jsonb_build_array(v_wholesale_order_line_revision_id);
   end loop;
 
   insert into atlas_audit.domain_events (
@@ -928,15 +941,22 @@ begin
   join atlas_planning.confirmed_need_approval_snapshots cns on cns.confirmed_need_batch_id = cnl.confirmed_need_batch_id and cns.approved_version = v_batch_version
   join atlas_planning.confirmed_need_snapshot_lines cnsl on cnsl.confirmed_need_approval_snapshot_id = cns.confirmed_need_approval_snapshot_id and cnsl.confirmed_need_line_revision_id = cnlr.confirmed_need_line_revision_id
   join atlas_planning.wholesale_order_line_revisions wolr on wolr.wholesale_order_line_revision_id = cnlr.wholesale_order_line_revision_id
+  join atlas_planning.wholesale_order_lines wol on wol.wholesale_order_line_id = cnl.wholesale_order_line_id
   where cnl.confirmed_need_batch_id = v_confirmed_need_batch_id
+    and wol.wholesale_order_id = v_wholesale_order_id
+    and wolr.wholesale_order_line_id = cnl.wholesale_order_line_id
+    and wolr.is_current and wolr.revision_status = 'RELEASED'
     and cnlr.is_current and cnlr.revision_status = 'RELEASED'
     and cnlr.confirmed_quantity > 0
-    and cnsl.approved_quantity = cnlr.confirmed_quantity
+    and wolr.requested_quantity = cnlr.theoretical_quantity
+    and cnlr.theoretical_quantity = cnlr.confirmed_quantity
+    and cnlr.confirmed_quantity = cnsl.approved_quantity
     and cnsl.ingredient_id = cnlr.ingredient_id and cnsl.unit_id = cnlr.unit_id
     and wolr.ingredient_id = cnlr.ingredient_id and wolr.unit_id = cnlr.unit_id;
 
   if v_batch_status <> 'RELEASED_FOR_PURCHASE_HANDOFF'
      or v_approved_by is null or v_approved_at is null or v_released_by is null or v_released_at is null
+     or v_period_start <> v_service_date or v_period_end <> v_service_date
      or v_line_count < 1 or v_valid_count <> v_line_count
      or not exists (
        select 1 from atlas_admin.customers c
@@ -1209,11 +1229,51 @@ begin
   join atlas_planning.purchase_handoff_line_revisions phlr
     on phlr.purchase_handoff_line_id = phl.purchase_handoff_line_id
    and phlr.purchase_handoff_revision_id = v_purchase_handoff_revision_id
+  join atlas_planning.confirmed_need_lines cnl
+    on cnl.confirmed_need_line_id = phl.confirmed_need_line_id
+   and cnl.confirmed_need_batch_id = v_confirmed_need_batch_id
+  join atlas_planning.confirmed_need_line_revisions cnlr
+    on cnlr.confirmed_need_line_revision_id = phlr.confirmed_need_line_revision_id
+   and cnlr.confirmed_need_line_id = cnl.confirmed_need_line_id
+  join atlas_planning.confirmed_need_batches cnb
+    on cnb.confirmed_need_batch_id = v_confirmed_need_batch_id
+   and cnb.wholesale_order_id = v_wholesale_order_id
   join atlas_planning.purchase_demand_references pdr
     on pdr.purchase_handoff_line_revision_id = phlr.purchase_handoff_line_revision_id
+  join atlas_planning.confirmed_need_approval_snapshots cns
+    on cns.confirmed_need_batch_id = v_confirmed_need_batch_id
+   and cns.approved_version = cnb.version
+  join atlas_planning.confirmed_need_snapshot_lines cnsl
+    on cnsl.confirmed_need_snapshot_line_id = pdr.confirmed_need_snapshot_line_id
+   and cnsl.confirmed_need_approval_snapshot_id = cns.confirmed_need_approval_snapshot_id
+   and cnsl.confirmed_need_line_revision_id = cnlr.confirmed_need_line_revision_id
+  join atlas_planning.wholesale_order_line_revisions wolr
+    on wolr.wholesale_order_line_revision_id = pdr.wholesale_order_line_revision_id
+   and wolr.wholesale_order_line_revision_id = cnlr.wholesale_order_line_revision_id
+  join atlas_planning.wholesale_order_lines wol
+    on wol.wholesale_order_line_id = cnl.wholesale_order_line_id
+   and wol.wholesale_order_line_id = wolr.wholesale_order_line_id
+   and wol.wholesale_order_id = v_wholesale_order_id
   where phl.purchase_handoff_batch_id = v_purchase_handoff_batch_id
+    and cnb.batch_status = 'RELEASED_FOR_PURCHASE_HANDOFF'
+    and cnb.period_start = v_service_date and cnb.period_end = v_service_date
+    and cnlr.is_current and cnlr.revision_status = 'RELEASED'
+    and wolr.is_current and wolr.revision_status = 'RELEASED'
+    and phlr.delivery_location_id = v_delivery_location_id
+    and phlr.service_date = v_service_date
     and phlr.handoff_quantity > 0
-    and pdr.approved_quantity = phlr.handoff_quantity and pdr.unit_id = phlr.unit_id;
+    and phlr.ingredient_id = cnlr.ingredient_id
+    and cnlr.ingredient_id = cnsl.ingredient_id
+    and cnsl.ingredient_id = wolr.ingredient_id
+    and phlr.unit_id = cnlr.unit_id
+    and cnlr.unit_id = cnsl.unit_id
+    and cnsl.unit_id = wolr.unit_id
+    and wolr.unit_id = pdr.unit_id
+    and wolr.requested_quantity = cnlr.theoretical_quantity
+    and cnlr.theoretical_quantity = cnlr.confirmed_quantity
+    and cnlr.confirmed_quantity = cnsl.approved_quantity
+    and cnsl.approved_quantity = pdr.approved_quantity
+    and pdr.approved_quantity = phlr.handoff_quantity;
   select count(*)::integer into v_scope_count from (
     select phlr.delivery_location_id, phlr.service_date
     from atlas_planning.purchase_handoff_line_revisions phlr

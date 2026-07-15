@@ -113,7 +113,15 @@ select ok(
 );
 
 select ok(
-  exists (select 1 from pg_indexes where schemaname = 'atlas_planning' and indexname = 'wholesale_orders_active_customer_reference_key' and indexdef ilike '%unique%')
+  not exists (select 1 from pg_indexes where schemaname = 'atlas_planning' and indexname = 'wholesale_orders_customer_reference_key')
+  and exists (
+    select 1 from pg_indexes
+    where schemaname = 'atlas_planning'
+      and indexname = 'wholesale_orders_active_customer_reference_key'
+      and indexdef ilike '%unique%'
+      and indexdef ~* 'customer_order_reference IS NOT NULL'
+      and indexdef ~* 'order_status.*<>.*CANCELLED'
+  )
   and exists (select 1 from pg_indexes where schemaname = 'atlas_planning' and indexname = 'confirmed_need_batches_wholesale_order_key' and indexdef ilike '%unique%')
   and exists (select 1 from pg_indexes where schemaname = 'atlas_planning' and indexname = 'dispatch_requirement_revisions_released_handoff_key' and indexdef ilike '%unique%'),
   'narrow PA-05D race-safety uniqueness is present'
@@ -237,6 +245,18 @@ insert into pa05d_results values ('delegation', atlas_api.record_wholesale_sourc
 insert into pa05d_results values ('zero_lines', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
   'd9000000-0000-0000-0000-000000000010','zero-lines',1,'d0000000-0000-0000-0000-000000000101',
   jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-ZERO','service_date','2026-07-16','lines','[]'::jsonb))));
+insert into pa05d_results values ('unknown_top_level', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000016','unknown-top-level',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-UNKNOWN-TOP','service_date','2026-07-16','supplier_id','d3000000-0000-0000-0000-000000000001','lines',jsonb_build_array(
+    jsonb_build_object('source_line_number',1,'ingredient_id','d3000000-0000-0000-0000-000000000031','requested_quantity',1,'unit_id','d3000000-0000-0000-0000-000000000021'))))));
+insert into pa05d_results values ('unknown_line_field', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000017','unknown-line-field',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-UNKNOWN-LINE','service_date','2026-07-16','lines',jsonb_build_array(
+    jsonb_build_object('source_line_number',1,'ingredient_id','d3000000-0000-0000-0000-000000000031','requested_quantity',1,'unit_id','d3000000-0000-0000-0000-000000000021','purchase_order_id','d3000000-0000-0000-0000-000000000001'))))));
+insert into pa05d_results values ('non_iso_date', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000018','non-iso-date',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-NON-ISO','service_date','07/16/2026','lines',jsonb_build_array(
+    jsonb_build_object('source_line_number',1,'ingredient_id','d3000000-0000-0000-0000-000000000031','requested_quantity',1,'unit_id','d3000000-0000-0000-0000-000000000021'))))));
 insert into pa05d_results values ('duplicate_lines', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
   'd9000000-0000-0000-0000-000000000011','duplicate-lines',1,'d0000000-0000-0000-0000-000000000101',
   jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-DUP-LINES','service_date','2026-07-16','lines',jsonb_build_array(
@@ -316,6 +336,9 @@ select is((select response_payload ->> 'error_code' from pa05d_results where res
 select is((select response_payload ->> 'error_code' from pa05d_results where result_name='wrong_scope'),'SCOPE_DENIED','wrong relational scope fails closed');
 select is((select response_payload ->> 'error_code' from pa05d_results where result_name='delegation'),'DELEGATION_NOT_SUPPORTED','delegation fails closed with the established safe code');
 select is((select response_payload ->> 'error_code' from pa05d_results where result_name='zero_lines'),'VALIDATION_FAILED','zero source lines fail safely');
+select is((select response_payload ->> 'error_code' from pa05d_results where result_name='unknown_top_level'),'VALIDATION_FAILED','unknown wholesale source top-level fields fail safely');
+select is((select response_payload ->> 'error_code' from pa05d_results where result_name='unknown_line_field'),'VALIDATION_FAILED','unknown wholesale source line fields fail safely');
+select is((select response_payload ->> 'error_code' from pa05d_results where result_name='non_iso_date'),'VALIDATION_FAILED','non-ISO wholesale service dates fail safely');
 select is((select response_payload ->> 'error_code' from pa05d_results where result_name='duplicate_lines'),'VALIDATION_FAILED','duplicate source line numbers fail safely');
 select is((select response_payload ->> 'error_code' from pa05d_results where result_name='nonpositive'),'VALIDATION_FAILED','nonpositive quantity fails safely');
 select is((select response_payload ->> 'error_code' from pa05d_results where result_name='oversized'),'VALIDATION_FAILED','more than 100 source lines fail safely');
@@ -354,6 +377,102 @@ select is((select count(*)::integer from atlas_audit.audit_events where source_d
 select is((select count(*)::integer from atlas_audit.domain_events where command_id='d9000000-0000-0000-0000-000000000201'),0,'deterministic stale failure creates no domain event');
 select is((select count(*)::integer from atlas_audit.audit_events where command_id='d9000000-0000-0000-0000-000000000201'),0,'deterministic stale failure creates no audit event');
 select ok(exists(select 1 from atlas_core.command_receipts where command_id='d9000000-0000-0000-0000-000000000201' and outcome='FAILED_NON_RETRYABLE' and error_code='STALE_VERSION'),'deterministic stale failure is retained safely');
+
+insert into atlas_planning.wholesale_orders (
+  customer_id, delivery_location_id, customer_order_reference, service_date,
+  order_status, version, created_by_actor_id
+) values (
+  'd3000000-0000-0000-0000-000000000001', 'd3000000-0000-0000-0000-000000000011',
+  'PA05D-CANCELLED-REUSE', date '2026-07-16', 'CANCELLED', 1,
+  'd0000000-0000-0000-0000-000000000001'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
+insert into pa05d_results values ('cancelled_reference_reuse', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000601','cancelled-reference-reuse',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-CANCELLED-REUSE','service_date','2026-07-16','lines',jsonb_build_array(
+    jsonb_build_object('source_line_number',1,'ingredient_id','d3000000-0000-0000-0000-000000000031','requested_quantity',1,'unit_id','d3000000-0000-0000-0000-000000000021'))))));
+reset role;
+
+select ok((select (response_payload ->> 'success')::boolean from pa05d_results where result_name='cancelled_reference_reuse'),'a cancelled-only customer reference can be reused');
+select is((select count(*)::integer from atlas_planning.wholesale_orders where customer_order_reference='PA05D-CANCELLED-REUSE'),2,'cancelled and replacement active roots coexist under one narrow index');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
+insert into pa05d_results values ('crosswire_handoff_record', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000701','crosswire-handoff-record',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-XWIRE-HANDOFF','service_date','2026-07-16','lines',jsonb_build_array(
+    jsonb_build_object('source_line_number',1,'ingredient_id','d3000000-0000-0000-0000-000000000031','requested_quantity',10,'unit_id','d3000000-0000-0000-0000-000000000021'))))));
+insert into pa05d_results values ('crosswire_handoff_release', atlas_api.release_wholesale_order(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000702','crosswire-handoff-release',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('wholesale_order_id',(select response_payload #>> '{affected_aggregate_ids,wholesale_order_id}' from pa05d_results where result_name='crosswire_handoff_record')))));
+reset role;
+
+update atlas_planning.confirmed_need_lines
+set wholesale_order_line_id = (
+  select wol.wholesale_order_line_id
+  from atlas_planning.wholesale_order_lines wol
+  join atlas_planning.wholesale_orders wo using (wholesale_order_id)
+  where wo.customer_order_reference = 'PA05D-ORDER-1' and wol.source_line_number = 1
+)
+where confirmed_need_batch_id = (
+  select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
+  from pa05d_results where result_name='crosswire_handoff_release'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
+insert into pa05d_results values ('crosswire_handoff', atlas_api.release_purchase_handoff(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000703','crosswire-handoff',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('confirmed_need_batch_id',(select response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}' from pa05d_results where result_name='crosswire_handoff_release')))));
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05d_results where result_name='crosswire_handoff'),'INVARIANT_VIOLATION','cross-wired Confirmed Need and wholesale stable-line lineage blocks handoff release');
+select is((select count(*)::integer from atlas_planning.purchase_handoff_batches where confirmed_need_batch_id=(select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from pa05d_results where result_name='crosswire_handoff_release')),0,'cross-wired handoff creates no handoff domain rows');
+select is((select count(*)::integer from atlas_audit.domain_events where command_id='d9000000-0000-0000-0000-000000000703'),0,'cross-wired handoff creates no domain event');
+select is((select count(*)::integer from atlas_audit.audit_events where command_id='d9000000-0000-0000-0000-000000000703'),0,'cross-wired handoff creates no audit event');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
+insert into pa05d_results values ('crosswire_requirement_record', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000711','crosswire-requirement-record',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('customer_id','d3000000-0000-0000-0000-000000000001','delivery_location_id','d3000000-0000-0000-0000-000000000011','customer_order_reference','PA05D-XWIRE-REQUIREMENT','service_date','2026-07-16','lines',jsonb_build_array(
+    jsonb_build_object('source_line_number',1,'ingredient_id','d3000000-0000-0000-0000-000000000031','requested_quantity',10,'unit_id','d3000000-0000-0000-0000-000000000021'))))));
+insert into pa05d_results values ('crosswire_requirement_release', atlas_api.release_wholesale_order(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000712','crosswire-requirement-release',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('wholesale_order_id',(select response_payload #>> '{affected_aggregate_ids,wholesale_order_id}' from pa05d_results where result_name='crosswire_requirement_record')))));
+insert into pa05d_results values ('crosswire_requirement_handoff', atlas_api.release_purchase_handoff(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000713','crosswire-requirement-handoff',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('confirmed_need_batch_id',(select response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}' from pa05d_results where result_name='crosswire_requirement_release')))));
+reset role;
+
+update atlas_planning.purchase_handoff_line_revisions
+set confirmed_need_line_revision_id = (
+  select cnlr.confirmed_need_line_revision_id
+  from atlas_planning.confirmed_need_line_revisions cnlr
+  join atlas_planning.confirmed_need_lines cnl using (confirmed_need_line_id)
+  join atlas_planning.confirmed_need_batches cnb using (confirmed_need_batch_id)
+  join atlas_planning.wholesale_orders wo using (wholesale_order_id)
+  join atlas_planning.wholesale_order_lines wol on wol.wholesale_order_line_id = cnl.wholesale_order_line_id
+  where wo.customer_order_reference = 'PA05D-ORDER-1' and wol.source_line_number = 1
+)
+where purchase_handoff_revision_id = (
+  select (response_payload #>> '{affected_aggregate_ids,purchase_handoff_revision_id}')::uuid
+  from pa05d_results where result_name='crosswire_requirement_handoff'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
+insert into pa05d_results values ('crosswire_requirement', atlas_api.release_dispatch_requirement(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000714','crosswire-requirement',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('purchase_handoff_revision_id',(select response_payload #>> '{affected_aggregate_ids,purchase_handoff_revision_id}' from pa05d_results where result_name='crosswire_requirement_handoff')))));
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05d_results where result_name='crosswire_requirement'),'INVARIANT_VIOLATION','cross-wired handoff, Confirmed Need, and demand-reference lineage blocks requirement release');
+select is((select count(*)::integer from atlas_planning.dispatch_requirement_revisions where purchase_handoff_revision_id=(select (response_payload #>> '{affected_aggregate_ids,purchase_handoff_revision_id}')::uuid from pa05d_results where result_name='crosswire_requirement_handoff')),0,'cross-wired requirement creates no requirement domain rows');
+select is((select count(*)::integer from atlas_audit.domain_events where command_id='d9000000-0000-0000-0000-000000000714'),0,'cross-wired requirement creates no domain event');
+select is((select count(*)::integer from atlas_audit.audit_events where command_id='d9000000-0000-0000-0000-000000000714'),0,'cross-wired requirement creates no audit event');
 
 select * from finish();
 rollback;

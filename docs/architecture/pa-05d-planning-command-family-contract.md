@@ -6,7 +6,7 @@
 **Implementation issue:** #85  
 **Implementation instructions:** `docs/implementation-tasks/TASK-PA-05D-planning-command-family.md`
 **Migration:** `supabase/migrations/20260715163344_pa_05d_planning_command_family.sql`
-**Verification:** `supabase/tests/pa_05d_planning_command_family.sql` (60 rolled-back assertions)
+**Verification:** `supabase/tests/pa_05d_planning_command_family.sql` (73 rolled-back assertions)
 
 ## 1. Executive decision
 
@@ -238,6 +238,7 @@ Preconditions:
 - approval and release actor/time present;
 - approval snapshot matches the current batch version;
 - each stable line has one current released revision and matching snapshot line;
+- each stable Confirmed Need line, its selected revision, approval-snapshot line, wholesale stable line, and wholesale revision belong to one exact source chain, with matching ingredient, unit, service date, and requested/theoretical/confirmed/approved quantities;
 - positive quantity and complete wholesale source, ingredient, unit, date, and destination lineage;
 - no existing Purchase Handoff batch for the source batch.
 
@@ -264,6 +265,7 @@ Preconditions:
 - root and selected current revision are `RELEASED_TO_PROCUREMENT`;
 - revision has release actor/time;
 - every stable handoff line has exactly one line revision and one purchase-demand reference;
+- each handoff line, Confirmed Need line/revision, approval-snapshot line, purchase-demand reference, and wholesale stable line/revision belongs to one exact source chain, with matching ingredient, unit, requested/theoretical/confirmed/approved/handoff quantities;
 - all lines resolve to one wholesale customer, location, and service date;
 - customer and location remain valid;
 - no current released Dispatch Requirement exists for the selected handoff revision.
@@ -335,6 +337,8 @@ The implementation may add only narrowly justified constraints/indexes for:
 - one current released Dispatch Requirement per released handoff revision.
 
 Do not add workflow, queue, numbering, orchestration, or generic status tables.
+
+For wholesale customer references, PA-05D replaces the broader PA-04 non-null-reference index with one partial unique index whose predicate requires a non-null reference and `order_status <> 'CANCELLED'`. A cancelled-only reference may therefore be reused, while duplicate active references remain prohibited.
 
 ## 10. Verification contract
 
