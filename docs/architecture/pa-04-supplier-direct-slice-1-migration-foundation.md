@@ -265,7 +265,7 @@ The repository now has a standard local Supabase configuration:
 
 The migration was applied from a clean database using the local Supabase PostgreSQL `17.6.1.005` image. The pgTAP file runs in a transaction and rolls back all synthetic fixture data.
 
-The 20 checks prove:
+The 23 checks prove:
 
 - exact schema and table bounds;
 - no Warehouse schema;
