@@ -145,11 +145,29 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05B bounded SQL command implementation — merged with actor/receipt helpers, five evidence-to-delivery commands, one shaped trace, and security/concurrency/invariant tests
 - ✅ PA-05C authorized read API wrappers — shaped, capability/scope-filtered readiness, blocker, and audit-timeline functions
 - ✅ PA-05B-H1 / issue #82 — runtime-role hardening completed: separate Evidence and Dispatch command owners, read-only read owner, revoke-first access, and effective-privilege pgTAP audit
-- ⬜ PA-06 read-only React connection — later, only after PA-05C review and explicit security-posture acceptance
-- ⬜ Controlled seed/reference data
+- 🟡 PA-05D bounded Planning command family — proposed contract and Issue #85 for wholesale source, released pass-through Confirmed Need, Purchase Handoff, and Dispatch Requirement
+- ⬜ PA-05E bounded Procurement command family — supplier-direct fulfilment allocation and released supplier purchase order
+- ⬜ PA-05F bounded Dispatch setup command family — dispatch plan, requirement admission, trip, and stop setup
+- ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-delivery path using the PA-05D through PA-05F prerequisites and existing PA-05B/PA-05C surface
+- ⬜ PA-06 React connection — after PA-05G under the product owner's backend-first sequencing decision
+- ⬜ Controlled seed/reference data — separately approved after backend acceptance; not required for rolled-back local fixtures
 - ⬜ First connected wholesale supplier-direct vertical slice
 - ⬜ Legacy migration rehearsal and operator validation
 - ⬜ Separately approved staged rollout
+
+Backend completion boundary:
+
+```text
+Wholesale source
+→ Planning release chain
+→ Procurement allocation and supplier PO
+→ Dispatch plan/trip/stop setup
+→ supplier evidence
+→ load
+→ departure
+→ successful delivery
+→ authorized trace/readiness/blockers/audit
+```
 
 Persistence gate:
 
@@ -159,15 +177,19 @@ Approved PA-01 contract
 → PA-03 authorization / RLS / command and transaction safety
 → PA-04 supplier-direct migration foundation and private derived read models
 → PA-05A command/RPC contract design
-→ PA-05B bounded SQL commands and security tests
+→ PA-05B bounded Evidence/Dispatch execution commands and security tests
 → PA-05C authorized shaped read API wrappers
 → PA-05B-H1 runtime-role hardening
-→ PA-06 read-only React connection
+→ PA-05D Planning command family
+→ PA-05E Procurement command family
+→ PA-05F Dispatch setup command family
+→ PA-05G backend end-to-end acceptance
+→ PA-06 React connection
 → rehearsal and operator validation
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation: it creates only new Atlas roles, private schemas, authoritative tables, indexes, comments, forced-RLS posture, revoke-first privileges, and private security-invoker trace views for one supplier-direct wholesale happy path. PA-05A, PA-05B, PA-05C, and PA-05B-H1 are completed on main. PA-05B-H1 retires the shared command-runtime access, assigns the two Evidence commands and three Dispatch commands to separate no-login SECURITY DEFINER owners, preserves the read-only owner, and verifies effective privileges through pgTAP. Issue #82 is safe to close; any broader command coverage still requires an approved command contract, a least-privilege role review, and its own security tests. PA-06 read-only React work may proceed only after PA-05C review and explicit security-posture acceptance; Warehouse, legacy rehearsal, and deployment remain separate approval gates.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, and PA-05B-H1 are completed on `main`; the current nine-function API covers supplier Evidence, load/departure/successful delivery, trace, readiness, blockers, and audit reads. PA-05D is the proposed Planning-owned beginning of the wholesale source-to-requirement path. PA-05E and PA-05F will remove the remaining Procurement and Dispatch-setup fixture prerequisites. PA-05G is the gate at which the supplier-direct wholesale Slice 1 backend may be called complete. PA-06 follows that acceptance gate under the product owner's current sequencing decision. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
 
 ## Deferred — Production and Quality
 
