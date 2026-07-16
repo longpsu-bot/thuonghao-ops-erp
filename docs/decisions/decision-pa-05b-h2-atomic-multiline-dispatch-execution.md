@@ -122,15 +122,20 @@ Rejected because Atlas has no connected write client or live deployment dependin
 
 Rejected because the first supplier-direct slice requires exact full-line loading and successful delivery. Exception and return handling need separate approved contracts.
 
+### Fold trip closure into H2
+
+Rejected because `close_successful_trip` is a separate approved business command with its own invariant and event. Issue #93 tracks it after PA-05F and before PA-05G so H2 remains a correction of the existing three functions.
+
 ## Consequences
 
 Positive:
 
-- PA-05D and PA-05E multi-line outputs can reach delivery through authoritative commands;
+- PA-05D and PA-05E multi-line outputs can reach successful delivery through authoritative commands;
 - load and delivery are atomic at their real operational boundaries;
 - departure proves full coverage rather than mere load existence;
 - multi-stop authorization fails closed;
-- PA-05F and PA-05G can proceed against a coherent execution contract.
+- PA-05F and the separately bounded trip-closure command can proceed against a coherent execution contract;
+- PA-05G can remain a pure acceptance task.
 
 Trade-offs:
 
