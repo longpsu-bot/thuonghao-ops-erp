@@ -126,6 +126,116 @@ select ok(
   'all PA-05B entry functions are hardened definers owned by their narrowed runtime roles'
 );
 
+select is(
+  (
+    select count(*)::integer
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'atlas_api'
+  ),
+  15,
+  'reviewed atlas_api surface remains exactly 15 functions'
+);
+
+select is(
+  (
+    select r.rolname
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    join pg_roles r on r.oid = p.proowner
+    where n.nspname = 'atlas_core'
+      and p.proname = 'pa_05b_h2_validate_command_request'
+      and pg_get_function_identity_arguments(p.oid) = 'request jsonb, command_name text'
+  ),
+  'atlas_owner',
+  'PA-05B-H2 private request validator is owned by atlas_owner'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc p
+    cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
+    where p.oid = 'atlas_core.pa_05b_h2_validate_command_request(jsonb,text)'::regprocedure
+      and acl.grantee = 0
+      and acl.privilege_type = 'EXECUTE'
+  )
+  and not exists (
+    select 1
+    from unnest(array['anon', 'authenticated', 'service_role']) api_role(role_name)
+    where has_function_privilege(
+      api_role.role_name,
+      'atlas_core.pa_05b_h2_validate_command_request(jsonb,text)'::regprocedure,
+      'EXECUTE'
+    )
+  ),
+  'PUBLIC and API roles cannot execute the PA-05B-H2 private validator'
+);
+
+select ok(
+  has_function_privilege(
+    'atlas_dispatch_command_runtime',
+    'atlas_core.pa_05b_h2_validate_command_request(jsonb,text)'::regprocedure,
+    'EXECUTE'
+  ),
+  'atlas_dispatch_command_runtime alone receives private-validator execute'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_namespace n
+    where n.nspname like 'atlas\_%' escape '\'
+      and has_schema_privilege('atlas_dispatch_command_runtime', n.oid, 'CREATE')
+  )
+  and not exists (
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname like 'atlas\_%' escape '\'
+      and c.relkind = 'S'
+      and (
+        has_sequence_privilege('atlas_dispatch_command_runtime', c.oid, 'USAGE')
+        or has_sequence_privilege('atlas_dispatch_command_runtime', c.oid, 'UPDATE')
+      )
+  ),
+  'Dispatch runtime receives no Atlas schema CREATE or sequence mutation privilege'
+);
+
+select ok(
+  pg_get_functiondef('atlas_api.record_dispatch_departure(jsonb)'::regprocedure)
+    ~ $re$(?s)if v_locked_scope_count <> v_stop_count.*?raise exception using\s+errcode = '40001',\s+message = 'trip stop scope changed during authorization';\s+end if;$re$,
+  'post-lock departure scope change raises SQLSTATE 40001'
+);
+
+select ok(
+  position(
+    'pa_05b_finish_command' in coalesce(
+      substring(
+        pg_get_functiondef('atlas_api.record_dispatch_departure(jsonb)'::regprocedure)
+        from $re$(?s)if v_locked_scope_count <> v_stop_count.*?end if;$re$
+      ),
+      ''
+    )
+  ) = 0,
+  'post-lock departure scope-change branch does not finalize a failed receipt'
+);
+
+select ok(
+  pg_get_functiondef('atlas_api.record_dispatch_departure(jsonb)'::regprocedure)
+    ~ $re$(?s)when serialization_failure or deadlock_detected then.*?'RETRYABLE_CONCURRENCY_FAILURE'$re$
+  and position(
+    'FAILED_NON_RETRYABLE' in coalesce(
+      substring(
+        pg_get_functiondef('atlas_api.record_dispatch_departure(jsonb)'::regprocedure)
+        from $re$(?s)if v_locked_scope_count <> v_stop_count.*?end if;$re$
+      ),
+      ''
+    )
+  ) = 0,
+  'SQLSTATE 40001 scope race rolls back the receipt and classifies only as retryable'
+);
+
 set local role authenticated;
 select throws_ok(
   $$
@@ -153,7 +263,8 @@ insert into atlas_core.actors (
   ('10000000-0000-0000-0000-000000000002', 'HUMAN', 'PA-05B inactive actor', 'INACTIVE', timestamptz '2026-07-15 00:00:00+00'),
   ('10000000-0000-0000-0000-000000000003', 'HUMAN', 'PA-05B revoked subject actor', 'ACTIVE', null),
   ('10000000-0000-0000-0000-000000000004', 'HUMAN', 'PA-05B wrong capability actor', 'ACTIVE', null),
-  ('10000000-0000-0000-0000-000000000005', 'HUMAN', 'PA-05B wrong scope actor', 'ACTIVE', null);
+  ('10000000-0000-0000-0000-000000000005', 'HUMAN', 'PA-05B wrong scope actor', 'ACTIVE', null),
+  ('10000000-0000-0000-0000-000000000006', 'HUMAN', 'PA-05B global Dispatch reviewer', 'ACTIVE', null);
 
 insert into atlas_core.actor_auth_subjects (
   actor_auth_subject_id, actor_id, auth_subject_id, subject_status, revoked_at
@@ -162,7 +273,8 @@ insert into atlas_core.actor_auth_subjects (
   ('10000000-0000-0000-0000-000000000012', '10000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000102', 'ACTIVE', null),
   ('10000000-0000-0000-0000-000000000013', '10000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000103', 'REVOKED', timestamptz '2026-07-15 00:01:00+00'),
   ('10000000-0000-0000-0000-000000000014', '10000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000104', 'ACTIVE', null),
-  ('10000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000105', 'ACTIVE', null);
+  ('10000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000105', 'ACTIVE', null),
+  ('10000000-0000-0000-0000-000000000016', '10000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000199', 'ACTIVE', null);
 
 insert into atlas_core.roles (role_id, role_code, role_name) values
   ('11000000-0000-0000-0000-000000000001', 'pa05b.operator', 'PA-05B operator'),
@@ -200,7 +312,8 @@ insert into atlas_core.actor_role_memberships (actor_id, role_id) values
   ('10000000-0000-0000-0000-000000000002', '11000000-0000-0000-0000-000000000001'),
   ('10000000-0000-0000-0000-000000000003', '11000000-0000-0000-0000-000000000001'),
   ('10000000-0000-0000-0000-000000000004', '11000000-0000-0000-0000-000000000002'),
-  ('10000000-0000-0000-0000-000000000005', '11000000-0000-0000-0000-000000000001');
+  ('10000000-0000-0000-0000-000000000005', '11000000-0000-0000-0000-000000000001'),
+  ('10000000-0000-0000-0000-000000000006', '11000000-0000-0000-0000-000000000001');
 
 insert into atlas_admin.customers (
   customer_id, customer_code, customer_name
@@ -229,7 +342,8 @@ insert into atlas_core.actor_scopes (actor_id, scope_kind, customer_id) values
 insert into atlas_core.actor_scopes (actor_id, scope_kind) values
   ('10000000-0000-0000-0000-000000000002', 'GLOBAL'),
   ('10000000-0000-0000-0000-000000000003', 'GLOBAL'),
-  ('10000000-0000-0000-0000-000000000004', 'GLOBAL');
+  ('10000000-0000-0000-0000-000000000004', 'GLOBAL'),
+  ('10000000-0000-0000-0000-000000000006', 'GLOBAL');
 
 -- Synthetic released Planning and Procurement prerequisites.
 insert into atlas_planning.wholesale_orders (
@@ -1608,6 +1722,77 @@ select 'h2_load_stop_two', pg_temp.pa05b_request(
 ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
 from pa05b_results where result_name = 'h2_apply_stop_two';
 
+-- A GLOBAL-scoped actor must still fail closed when a Dispatch stop is
+-- cross-wired away from the Planning-owned destination.
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_crosswired_destination',
+       (request_payload - 'command_id' - 'idempotency_key' - 'requested_by_auth_subject') ||
+       jsonb_build_object(
+         'command_id', '90000000-0000-0000-0000-000000000818',
+         'idempotency_key', 'h2-load-crosswired-destination',
+         'requested_by_auth_subject', '10000000-0000-0000-0000-000000000199'
+       )
+from pa05b_requests where request_name = 'h2_load_stop_one';
+
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000110',
+    delivery_location_id = '20000000-0000-0000-0000-000000000111'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000954';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000199', true);
+insert into pa05b_results
+select 'h2_load_crosswired_destination', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_crosswired_destination';
+reset role;
+
+select is(
+  (select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_crosswired_destination'),
+  'INVARIANT_VIOLATION',
+  'GLOBAL-scoped load rejects a stop cross-wired from its Planning destination'
+);
+select is(
+  (select count(*)::integer from atlas_dispatch.dispatch_loads where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'),
+  0,
+  'cross-wired load creates no load root'
+);
+select is(
+  (
+    select count(*)::integer
+    from atlas_dispatch.dispatch_load_lines dll
+    join atlas_dispatch.dispatch_loads dl on dl.dispatch_load_id = dll.dispatch_load_id
+    where dl.dispatch_trip_id = '50000000-0000-0000-0000-000000000953'
+  ),
+  0,
+  'cross-wired load creates no load line'
+);
+select is(
+  (
+    select count(*)::integer
+    from atlas_dispatch.dispatch_load_line_applications dlla
+    join atlas_dispatch.dispatch_load_lines dll on dll.dispatch_load_line_id = dlla.dispatch_load_line_id
+    join atlas_dispatch.dispatch_loads dl on dl.dispatch_load_id = dll.dispatch_load_id
+    where dl.dispatch_trip_id = '50000000-0000-0000-0000-000000000953'
+  ),
+  0,
+  'cross-wired load creates no evidence bridge'
+);
+select is(
+  (select count(*)::integer from atlas_audit.domain_events where command_id = '90000000-0000-0000-0000-000000000818'),
+  0,
+  'cross-wired load emits no domain event'
+);
+select is(
+  (select count(*)::integer from atlas_audit.audit_events where command_id = '90000000-0000-0000-0000-000000000818'),
+  0,
+  'cross-wired load emits no audit event'
+);
+
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000100',
+    delivery_location_id = '20000000-0000-0000-0000-000000000101'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000954';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
 insert into pa05b_results select 'h2_load_stop_one', atlas_api.confirm_dispatch_load(request_payload)
@@ -1725,6 +1910,63 @@ select is((select response_payload ->> 'error_code' from pa05b_results where res
 select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_duplicate_line'), 'VALIDATION_FAILED', 'duplicate nested load-line identity is rejected');
 select is((select count(*)::integer from atlas_dispatch.dispatch_loads where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 2, 'failed and replayed load requests add no load roots');
 
+-- A GLOBAL-scoped actor cannot depart a fully loaded trip whose stop is
+-- cross-wired away from its authoritative Planning destination.
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000110',
+    delivery_location_id = '20000000-0000-0000-0000-000000000111'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000955';
+
+insert into pa05b_requests (request_name, request_payload) values (
+  'h2_depart_crosswired_destination',
+  pg_temp.pa05b_request(
+    '90000000-0000-0000-0000-000000000819', 'h2-depart-crosswired-destination', 3,
+    '10000000-0000-0000-0000-000000000199',
+    jsonb_build_object(
+      'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+      'departed_at', '2026-07-15T02:00:00+00:00'
+    )
+  ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000199', true);
+insert into pa05b_results
+select 'h2_depart_crosswired_destination', atlas_api.record_dispatch_departure(request_payload)
+from pa05b_requests where request_name = 'h2_depart_crosswired_destination';
+reset role;
+
+select is(
+  (select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_depart_crosswired_destination'),
+  'INVARIANT_VIOLATION',
+  'GLOBAL-scoped departure rejects a cross-wired authoritative stop destination'
+);
+select is(
+  (select trip_status from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'),
+  'LOADED',
+  'cross-wired departure leaves the trip LOADED'
+);
+select is(
+  (select count(*)::integer from atlas_dispatch.dispatch_stops where dispatch_trip_id = '50000000-0000-0000-0000-000000000953' and stop_status = 'LOADED'),
+  2,
+  'cross-wired departure leaves every stop LOADED'
+);
+select is(
+  (select count(*)::integer from atlas_audit.domain_events where command_id = '90000000-0000-0000-0000-000000000819'),
+  0,
+  'cross-wired departure emits no domain event'
+);
+select is(
+  (select count(*)::integer from atlas_audit.audit_events where command_id = '90000000-0000-0000-0000-000000000819'),
+  0,
+  'cross-wired departure emits no audit event'
+);
+
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000100',
+    delivery_location_id = '20000000-0000-0000-0000-000000000101'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000955';
+
 -- Assignment must exist independently of otherwise valid plan membership.
 insert into atlas_dispatch.dispatch_trips (
   dispatch_trip_id, dispatch_plan_id, trip_reference, trip_status,
@@ -1773,19 +2015,109 @@ reset role;
 select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_no_assignment'), 'TRIP_ASSIGNMENT_REQUIRED', 'load rejects a trip without an active driver or vehicle reference');
 select is((select count(*)::integer from atlas_dispatch.dispatch_loads where dispatch_trip_id = '50000000-0000-0000-0000-000000000956'), 0, 'assignment failure creates no load facts');
 
--- Every distinct stop tuple must authorize before receipt registration.
-update atlas_dispatch.dispatch_stops
-set customer_id = '20000000-0000-0000-0000-000000000110',
-    delivery_location_id = '20000000-0000-0000-0000-000000000111'
-where dispatch_stop_id = '50000000-0000-0000-0000-000000000955';
+-- Customer-scoped authorization remains a separate rule: this fixture has
+-- two internally valid authoritative Planning destinations, while the actor
+-- is scoped only to the first customer.
+insert into atlas_planning.dispatch_requirements (
+  dispatch_requirement_id, customer_id, delivery_location_id,
+  service_date, requirement_status
+) values (
+  '30000000-0000-0000-0000-000000000550',
+  '20000000-0000-0000-0000-000000000110',
+  '20000000-0000-0000-0000-000000000111',
+  date '2026-07-15', 'RELEASED'
+);
+
+insert into atlas_planning.purchase_handoff_revisions (
+  purchase_handoff_revision_id, purchase_handoff_batch_id,
+  revision_number, revision_kind, revision_status, is_current,
+  predecessor_revision_id, released_by_actor_id, released_at
+) values (
+  '31000000-0000-0000-0000-000000000825',
+  '31000000-0000-0000-0000-000000000820',
+  2, 'ADDITIVE', 'RELEASED_TO_PROCUREMENT', false,
+  '31000000-0000-0000-0000-000000000821',
+  '10000000-0000-0000-0000-000000000001',
+  timestamptz '2026-07-15 00:29:00+00'
+);
+
+insert into atlas_planning.dispatch_requirement_revisions (
+  dispatch_requirement_revision_id, dispatch_requirement_id,
+  purchase_handoff_revision_id, revision_number, revision_status,
+  customer_name_snapshot, location_name_snapshot, address_snapshot,
+  released_by_actor_id, released_at
+) values (
+  '30000000-0000-0000-0000-000000000551',
+  '30000000-0000-0000-0000-000000000550',
+  '31000000-0000-0000-0000-000000000825', 1, 'RELEASED',
+  'PA-05B other customer', 'PA-05B other location', 'PA-05B other address',
+  '10000000-0000-0000-0000-000000000001',
+  timestamptz '2026-07-15 00:30:00+00'
+);
+
+insert into atlas_procurement.fulfilment_allocations (
+  fulfilment_allocation_id, dispatch_requirement_id, allocation_status
+) values (
+  '40000000-0000-0000-0000-000000000650',
+  '30000000-0000-0000-0000-000000000550', 'READY_FOR_DISPATCH'
+);
+
+insert into atlas_procurement.fulfilment_allocation_revisions (
+  fulfilment_allocation_revision_id, fulfilment_allocation_id,
+  revision_number, revision_status, allocated_by_actor_id
+) values (
+  '40000000-0000-0000-0000-000000000651',
+  '40000000-0000-0000-0000-000000000650', 1, 'READY_FOR_DISPATCH',
+  '10000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_dispatch.dispatch_plan_requirements (
+  dispatch_plan_requirement_id, dispatch_plan_id,
+  dispatch_requirement_revision_id, fulfilment_allocation_revision_id
+) values (
+  '50000000-0000-0000-0000-000000000962',
+  '50000000-0000-0000-0000-000000000950',
+  '30000000-0000-0000-0000-000000000551',
+  '40000000-0000-0000-0000-000000000651'
+);
+
+insert into atlas_dispatch.dispatch_trips (
+  dispatch_trip_id, dispatch_plan_id, trip_reference, trip_status,
+  driver_actor_id, vehicle_reference, planned_departure_at
+) values (
+  '50000000-0000-0000-0000-000000000963',
+  '50000000-0000-0000-0000-000000000950', 'PA05B-H2-SCOPE-TRIP', 'LOADED',
+  '10000000-0000-0000-0000-000000000001', 'PA05B-H2-SCOPE-VEHICLE',
+  timestamptz '2026-07-15 02:00:00+00'
+);
+
+insert into atlas_dispatch.dispatch_stops (
+  dispatch_stop_id, dispatch_trip_id, stop_sequence,
+  dispatch_requirement_revision_id, customer_id, delivery_location_id,
+  stop_status
+) values
+  (
+    '50000000-0000-0000-0000-000000000964',
+    '50000000-0000-0000-0000-000000000963', 1,
+    '30000000-0000-0000-0000-000000000531',
+    '20000000-0000-0000-0000-000000000100',
+    '20000000-0000-0000-0000-000000000101', 'LOADED'
+  ),
+  (
+    '50000000-0000-0000-0000-000000000965',
+    '50000000-0000-0000-0000-000000000963', 2,
+    '30000000-0000-0000-0000-000000000551',
+    '20000000-0000-0000-0000-000000000110',
+    '20000000-0000-0000-0000-000000000111', 'LOADED'
+  );
 
 insert into pa05b_requests (request_name, request_payload) values (
   'h2_depart_partial_scope',
   pg_temp.pa05b_request(
-    '90000000-0000-0000-0000-000000000812', 'h2-depart-partial-scope', 3,
+    '90000000-0000-0000-0000-000000000812', 'h2-depart-partial-scope', 1,
     '10000000-0000-0000-0000-000000000101',
     jsonb_build_object(
-      'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+      'dispatch_trip_id', '50000000-0000-0000-0000-000000000963',
       'departed_at', '2026-07-15T02:00:00+00:00'
     )
   ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
@@ -1797,13 +2129,8 @@ insert into pa05b_results select 'h2_depart_partial_scope', atlas_api.record_dis
 from pa05b_requests where request_name = 'h2_depart_partial_scope';
 reset role;
 
-select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_depart_partial_scope'), 'SCOPE_DENIED', 'departure rejects an actor authorized only for the first stop tuple');
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_depart_partial_scope'), 'SCOPE_DENIED', 'customer-scoped departure rejects a second authoritative Planning customer');
 select is((select count(*)::integer from atlas_core.command_receipts where command_id = '90000000-0000-0000-0000-000000000812'), 0, 'trip-wide authorization failure occurs before receipt registration');
-
-update atlas_dispatch.dispatch_stops
-set customer_id = '20000000-0000-0000-0000-000000000100',
-    delivery_location_id = '20000000-0000-0000-0000-000000000101'
-where dispatch_stop_id = '50000000-0000-0000-0000-000000000955';
 
 insert into pa05b_requests (request_name, request_payload) values (
   'h2_depart_multi_stop',
@@ -1882,6 +2209,67 @@ from (
   from atlas_dispatch.dispatch_load_lines dll
   where dll.dispatch_stop_id = '50000000-0000-0000-0000-000000000955'
 ) loaded;
+
+-- A GLOBAL-scoped actor cannot confirm delivery through a stop destination
+-- that no longer matches the exact Planning membership and confirmed load.
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_delivery_crosswired_destination',
+       (request_payload - 'command_id' - 'idempotency_key' - 'requested_by_auth_subject') ||
+       jsonb_build_object(
+         'command_id', '90000000-0000-0000-0000-000000000821',
+         'idempotency_key', 'h2-delivery-crosswired-destination',
+         'requested_by_auth_subject', '10000000-0000-0000-0000-000000000199'
+       )
+from pa05b_requests where request_name = 'h2_delivery_stop_one';
+
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000110',
+    delivery_location_id = '20000000-0000-0000-0000-000000000111'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000954';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000199', true);
+insert into pa05b_results
+select 'h2_delivery_crosswired_destination', atlas_api.confirm_successful_delivery(request_payload)
+from pa05b_requests where request_name = 'h2_delivery_crosswired_destination';
+reset role;
+
+select is(
+  (select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_delivery_crosswired_destination'),
+  'INVARIANT_VIOLATION',
+  'GLOBAL-scoped delivery rejects a stop cross-wired from its exact Planning membership'
+);
+select is(
+  (select count(*)::integer from atlas_dispatch.delivery_confirmations where dispatch_stop_id = '50000000-0000-0000-0000-000000000954'),
+  0,
+  'cross-wired delivery creates no confirmation root'
+);
+select is(
+  (
+    select count(*)::integer
+    from atlas_dispatch.delivery_confirmation_lines dcl
+    join atlas_dispatch.delivery_confirmations dc
+      on dc.delivery_confirmation_id = dcl.delivery_confirmation_id
+    where dc.dispatch_stop_id = '50000000-0000-0000-0000-000000000954'
+  ),
+  0,
+  'cross-wired delivery creates no confirmation line'
+);
+select is(
+  (select count(*)::integer from atlas_audit.domain_events where command_id = '90000000-0000-0000-0000-000000000821'),
+  0,
+  'cross-wired delivery emits no domain event'
+);
+select is(
+  (select count(*)::integer from atlas_audit.audit_events where command_id = '90000000-0000-0000-0000-000000000821'),
+  0,
+  'cross-wired delivery emits no audit event'
+);
+
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000100',
+    delivery_location_id = '20000000-0000-0000-0000-000000000101'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000954';
 
 insert into pa05b_requests (request_name, request_payload)
 select 'h2_delivery_old_shape',

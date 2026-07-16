@@ -300,7 +300,10 @@ begin
 end;
 $$;
 
-revoke all on function atlas_core.pa_05b_h2_validate_command_request(jsonb, text) from public;
+alter function atlas_core.pa_05b_h2_validate_command_request(jsonb, text)
+  owner to atlas_owner;
+revoke all on function atlas_core.pa_05b_h2_validate_command_request(jsonb, text)
+  from public, anon, authenticated, service_role;
 grant execute on function atlas_core.pa_05b_h2_validate_command_request(jsonb, text)
   to atlas_dispatch_command_runtime;
 
@@ -410,8 +413,14 @@ declare
   v_stop_status text;
   v_customer_id uuid;
   v_delivery_location_id uuid;
+  v_stop_customer_id uuid;
+  v_stop_delivery_location_id uuid;
+  v_location_customer_id uuid;
+  v_plan_requirement_id uuid;
   v_requirement_id uuid;
   v_allocation_id uuid;
+  v_membership_signature jsonb;
+  v_locked_membership_signature jsonb;
   v_driver_status text;
   v_requirement_root_count integer;
   v_requirement_revision_count integer;
@@ -450,11 +459,15 @@ begin
 
   select dt.dispatch_plan_id, dt.trip_status, dt.version,
          dt.driver_actor_id, dt.vehicle_reference,
-         ds.stop_status, ds.customer_id, ds.delivery_location_id,
+         ds.stop_status, dr.customer_id, dr.delivery_location_id,
+         ds.customer_id, ds.delivery_location_id, loc.customer_id,
+         dpr.dispatch_plan_requirement_id,
          drr.dispatch_requirement_id, far.fulfilment_allocation_id
     into v_plan_id, v_trip_status, v_trip_version,
          v_driver_actor_id, v_vehicle_reference,
          v_stop_status, v_customer_id, v_delivery_location_id,
+         v_stop_customer_id, v_stop_delivery_location_id,
+         v_location_customer_id, v_plan_requirement_id,
          v_requirement_id, v_allocation_id
   from atlas_dispatch.dispatch_trips dt
   join atlas_dispatch.dispatch_stops ds
@@ -464,8 +477,15 @@ begin
    and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
   join atlas_planning.dispatch_requirement_revisions drr
     on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirements dr
+    on dr.dispatch_requirement_id = drr.dispatch_requirement_id
   join atlas_procurement.fulfilment_allocation_revisions far
     on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+  join atlas_procurement.fulfilment_allocations fa
+    on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+   and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+  join atlas_admin.delivery_locations loc
+    on loc.delivery_location_id = dr.delivery_location_id
   where dt.dispatch_trip_id = v_trip_id
     and ds.dispatch_stop_id = v_stop_id
     and ds.dispatch_requirement_revision_id = v_requirement_revision_id
@@ -479,6 +499,31 @@ begin
       'DISPATCH', v_command_name
     );
   end if;
+
+  if v_stop_customer_id <> v_customer_id
+     or v_stop_delivery_location_id <> v_delivery_location_id
+     or v_location_customer_id <> v_customer_id then
+    return atlas_core.pa_05b_command_error(
+      request, 'INVARIANT_VIOLATION',
+      'The Dispatch stop destination does not match its Planning requirement.',
+      'DISPATCH', v_command_name
+    );
+  end if;
+
+  v_membership_signature := pg_catalog.jsonb_build_object(
+    'dispatch_trip_id', v_trip_id,
+    'dispatch_stop_id', v_stop_id,
+    'dispatch_plan_id', v_plan_id,
+    'dispatch_plan_requirement_id', v_plan_requirement_id,
+    'dispatch_requirement_revision_id', v_requirement_revision_id,
+    'dispatch_requirement_id', v_requirement_id,
+    'fulfilment_allocation_revision_id', v_allocation_revision_id,
+    'fulfilment_allocation_id', v_allocation_id,
+    'customer_id', v_customer_id,
+    'delivery_location_id', v_delivery_location_id,
+    'stop_customer_id', v_stop_customer_id,
+    'stop_delivery_location_id', v_stop_delivery_location_id
+  );
 
   v_authorization_error := atlas_core.pa_05b_authorize_actor(
     request, v_actor_id, 'dispatch_load.confirm', 'DISPATCH', v_command_name,
@@ -721,6 +766,56 @@ begin
       from pg_catalog.jsonb_array_elements(v_payload -> 'lines') line_value
       cross join lateral pg_catalog.jsonb_array_elements(line_value -> 'evidence_applications') application_value
     ) order by dlla.dispatch_load_line_application_id for update;
+
+  select pg_catalog.jsonb_build_object(
+           'dispatch_trip_id', dt.dispatch_trip_id,
+           'dispatch_stop_id', ds.dispatch_stop_id,
+           'dispatch_plan_id', dt.dispatch_plan_id,
+           'dispatch_plan_requirement_id', dpr.dispatch_plan_requirement_id,
+           'dispatch_requirement_revision_id', drr.dispatch_requirement_revision_id,
+           'dispatch_requirement_id', dr.dispatch_requirement_id,
+           'fulfilment_allocation_revision_id', far.fulfilment_allocation_revision_id,
+           'fulfilment_allocation_id', fa.fulfilment_allocation_id,
+           'customer_id', dr.customer_id,
+           'delivery_location_id', dr.delivery_location_id,
+           'stop_customer_id', ds.customer_id,
+           'stop_delivery_location_id', ds.delivery_location_id
+         )
+    into v_locked_membership_signature
+  from atlas_dispatch.dispatch_trips dt
+  join atlas_dispatch.dispatch_stops ds
+    on ds.dispatch_trip_id = dt.dispatch_trip_id
+  join atlas_dispatch.dispatch_plan_requirements dpr
+    on dpr.dispatch_plan_id = dt.dispatch_plan_id
+   and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirement_revisions drr
+    on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirements dr
+    on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+  join atlas_procurement.fulfilment_allocation_revisions far
+    on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+  join atlas_procurement.fulfilment_allocations fa
+    on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+   and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+  join atlas_admin.delivery_locations loc
+    on loc.delivery_location_id = dr.delivery_location_id
+   and loc.customer_id = dr.customer_id
+  where dt.dispatch_trip_id = v_trip_id
+    and ds.dispatch_stop_id = v_stop_id
+    and ds.dispatch_requirement_revision_id = v_requirement_revision_id
+    and dpr.dispatch_requirement_revision_id = v_requirement_revision_id
+    and dpr.fulfilment_allocation_revision_id = v_allocation_revision_id
+    and ds.customer_id = dr.customer_id
+    and ds.delivery_location_id = dr.delivery_location_id;
+
+  if v_locked_membership_signature is distinct from v_membership_signature then
+    v_error := atlas_core.pa_05b_command_error(
+      request, 'INVARIANT_VIOLATION',
+      'The exact Planning destination and Dispatch membership changed or is cross-wired.',
+      'DISPATCH', v_command_name
+    );
+    return atlas_core.pa_05b_finish_command(v_receipt_id, v_error, false);
+  end if;
 
   select dt.trip_status, dt.version, dt.driver_actor_id, dt.vehicle_reference,
          ds.stop_status, a.actor_status
@@ -1249,8 +1344,22 @@ declare
   v_stop_status text;
   v_customer_id uuid;
   v_delivery_location_id uuid;
+  v_stop_customer_id uuid;
+  v_stop_delivery_location_id uuid;
+  v_location_customer_id uuid;
   v_requirement_revision_id uuid;
+  v_requirement_id uuid;
+  v_allocation_revision_id uuid;
+  v_allocation_id uuid;
+  v_plan_requirement_id uuid;
+  v_membership_count integer;
+  v_locked_membership_count integer;
+  v_load_count integer;
+  v_locked_load_count integer;
   v_load_id uuid;
+  v_locked_load_id uuid;
+  v_membership_signature jsonb;
+  v_locked_membership_signature jsonb;
   v_raw_line_count integer;
   v_submitted_line_count integer;
   v_valid_line_count integer;
@@ -1275,21 +1384,116 @@ begin
   if v_actor_context ? 'error' then return v_actor_context -> 'error'; end if;
   v_actor_id := (v_actor_context ->> 'actor_id')::uuid;
 
-  select dt.dispatch_plan_id, dt.trip_status, dt.version, dt.departed_at,
-         ds.stop_status, ds.customer_id, ds.delivery_location_id,
-         ds.dispatch_requirement_revision_id
-    into v_plan_id, v_trip_status, v_trip_version, v_departed_at,
-         v_stop_status, v_customer_id, v_delivery_location_id,
-         v_requirement_revision_id
+  select count(*)::integer
+    into v_membership_count
   from atlas_dispatch.dispatch_trips dt
-  join atlas_dispatch.dispatch_stops ds on ds.dispatch_trip_id = dt.dispatch_trip_id
-  where dt.dispatch_trip_id = v_trip_id and ds.dispatch_stop_id = v_stop_id;
-  if not found then
+  join atlas_dispatch.dispatch_stops ds
+    on ds.dispatch_trip_id = dt.dispatch_trip_id
+  join atlas_dispatch.dispatch_plan_requirements dpr
+    on dpr.dispatch_plan_id = dt.dispatch_plan_id
+   and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirement_revisions drr
+    on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirements dr
+    on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+  join atlas_procurement.fulfilment_allocation_revisions far
+    on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+  join atlas_procurement.fulfilment_allocations fa
+    on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+   and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+  join atlas_admin.delivery_locations loc
+    on loc.delivery_location_id = dr.delivery_location_id
+   and loc.customer_id = dr.customer_id
+  where dt.dispatch_trip_id = v_trip_id
+    and ds.dispatch_stop_id = v_stop_id
+    and ds.customer_id = dr.customer_id
+    and ds.delivery_location_id = dr.delivery_location_id
+    and dr.requirement_status = 'RELEASED'
+    and drr.revision_status = 'RELEASED' and drr.is_current
+    and fa.allocation_status = 'READY_FOR_DISPATCH'
+    and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current;
+
+  if v_membership_count <> 1 then
     return atlas_core.pa_05b_command_error(
-      request, 'VALIDATION_FAILED', 'The trip and stop could not be validated.',
+      request, 'INVARIANT_VIOLATION',
+      'The stop does not have one exact current Planning destination and allocation membership.',
       'DISPATCH', v_command_name
     );
   end if;
+
+  select dt.dispatch_plan_id, dt.trip_status, dt.version, dt.departed_at,
+         ds.stop_status, dr.customer_id, dr.delivery_location_id,
+         ds.customer_id, ds.delivery_location_id, loc.customer_id,
+         drr.dispatch_requirement_revision_id, drr.dispatch_requirement_id,
+         far.fulfilment_allocation_revision_id, far.fulfilment_allocation_id,
+         dpr.dispatch_plan_requirement_id
+    into v_plan_id, v_trip_status, v_trip_version, v_departed_at,
+         v_stop_status, v_customer_id, v_delivery_location_id,
+         v_stop_customer_id, v_stop_delivery_location_id,
+         v_location_customer_id, v_requirement_revision_id, v_requirement_id,
+         v_allocation_revision_id, v_allocation_id, v_plan_requirement_id
+  from atlas_dispatch.dispatch_trips dt
+  join atlas_dispatch.dispatch_stops ds
+    on ds.dispatch_trip_id = dt.dispatch_trip_id
+  join atlas_dispatch.dispatch_plan_requirements dpr
+    on dpr.dispatch_plan_id = dt.dispatch_plan_id
+   and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirement_revisions drr
+    on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirements dr
+    on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+  join atlas_procurement.fulfilment_allocation_revisions far
+    on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+  join atlas_procurement.fulfilment_allocations fa
+    on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+   and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+  join atlas_admin.delivery_locations loc
+    on loc.delivery_location_id = dr.delivery_location_id
+   and loc.customer_id = dr.customer_id
+  where dt.dispatch_trip_id = v_trip_id
+    and ds.dispatch_stop_id = v_stop_id
+    and ds.customer_id = dr.customer_id
+    and ds.delivery_location_id = dr.delivery_location_id
+    and dr.requirement_status = 'RELEASED'
+    and drr.revision_status = 'RELEASED' and drr.is_current
+    and fa.allocation_status = 'READY_FOR_DISPATCH'
+    and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current;
+
+  select count(*)::integer,
+         (pg_catalog.array_agg(dl.dispatch_load_id order by dl.dispatch_load_id))[1]
+    into v_load_count, v_load_id
+  from atlas_dispatch.dispatch_loads dl
+  where dl.dispatch_trip_id = v_trip_id
+    and dl.dispatch_requirement_revision_id = v_requirement_revision_id
+    and dl.fulfilment_allocation_revision_id = v_allocation_revision_id
+    and dl.load_status = 'CONFIRMED';
+
+  if v_load_count <> 1 then
+    return atlas_core.pa_05b_command_error(
+      request, 'DELIVERY_RECONCILIATION_FAILED',
+      'The stop does not have exactly one current confirmed load for its plan membership.',
+      'DISPATCH', v_command_name
+    );
+  end if;
+
+  v_membership_signature := pg_catalog.jsonb_build_object(
+    'dispatch_trip_id', v_trip_id,
+    'dispatch_stop_id', v_stop_id,
+    'dispatch_plan_id', v_plan_id,
+    'dispatch_plan_requirement_id', v_plan_requirement_id,
+    'dispatch_requirement_revision_id', v_requirement_revision_id,
+    'dispatch_requirement_id', v_requirement_id,
+    'fulfilment_allocation_revision_id', v_allocation_revision_id,
+    'fulfilment_allocation_id', v_allocation_id,
+    'customer_id', v_customer_id,
+    'delivery_location_id', v_delivery_location_id,
+    'dispatch_load_id', v_load_id,
+    'dispatch_load_line_ids', (
+      select pg_catalog.jsonb_agg(dll.dispatch_load_line_id order by dll.dispatch_load_line_id)
+      from atlas_dispatch.dispatch_load_lines dll
+      where dll.dispatch_load_id = v_load_id
+    )
+  );
 
   v_authorization_error := atlas_core.pa_05b_authorize_actor(
     request, v_actor_id, 'delivery_success.confirm', 'DISPATCH', v_command_name,
@@ -1303,6 +1507,8 @@ begin
   if v_begin ->> 'status' in ('REPLAY', 'ERROR') then return v_begin -> 'response'; end if;
   v_receipt_id := (v_begin ->> 'receipt_id')::uuid;
 
+  perform 1 from atlas_admin.customers c
+    where c.customer_id = v_customer_id for key share;
   perform 1 from atlas_admin.delivery_locations loc
     where loc.delivery_location_id = v_delivery_location_id for key share;
   perform 1 from atlas_admin.units u
@@ -1313,16 +1519,14 @@ begin
   perform 1 from atlas_dispatch.dispatch_plans dp
     where dp.dispatch_plan_id = v_plan_id for key share;
   perform 1 from atlas_dispatch.dispatch_plan_requirements dpr
-    where dpr.dispatch_plan_id = v_plan_id
-      and dpr.dispatch_requirement_revision_id = v_requirement_revision_id
+    where dpr.dispatch_plan_requirement_id = v_plan_requirement_id
     order by dpr.dispatch_plan_requirement_id for key share;
   perform 1 from atlas_dispatch.dispatch_trips dt
     where dt.dispatch_trip_id = v_trip_id for update;
   perform 1 from atlas_dispatch.dispatch_stops ds
     where ds.dispatch_stop_id = v_stop_id for update;
   perform 1 from atlas_dispatch.dispatch_loads dl
-    where dl.dispatch_trip_id = v_trip_id
-      and dl.dispatch_requirement_revision_id = v_requirement_revision_id
+    where dl.dispatch_load_id = v_load_id
     order by dl.dispatch_load_id for update;
   perform 1 from atlas_dispatch.dispatch_load_lines dll
     where dll.dispatch_stop_id = v_stop_id
@@ -1330,6 +1534,101 @@ begin
   perform 1 from atlas_dispatch.delivery_confirmations dc
     where dc.dispatch_stop_id = v_stop_id
     order by dc.delivery_confirmation_id for update;
+
+  select count(*)::integer
+    into v_locked_membership_count
+  from atlas_dispatch.dispatch_trips dt
+  join atlas_dispatch.dispatch_stops ds
+    on ds.dispatch_trip_id = dt.dispatch_trip_id
+  join atlas_dispatch.dispatch_plan_requirements dpr
+    on dpr.dispatch_plan_id = dt.dispatch_plan_id
+   and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirement_revisions drr
+    on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirements dr
+    on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+  join atlas_procurement.fulfilment_allocation_revisions far
+    on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+  join atlas_procurement.fulfilment_allocations fa
+    on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+   and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+  join atlas_admin.delivery_locations loc
+    on loc.delivery_location_id = dr.delivery_location_id
+   and loc.customer_id = dr.customer_id
+  where dt.dispatch_trip_id = v_trip_id
+    and ds.dispatch_stop_id = v_stop_id
+    and ds.customer_id = dr.customer_id
+    and ds.delivery_location_id = dr.delivery_location_id
+    and dr.requirement_status = 'RELEASED'
+    and drr.revision_status = 'RELEASED' and drr.is_current
+    and fa.allocation_status = 'READY_FOR_DISPATCH'
+    and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current;
+
+  select count(*)::integer,
+         (pg_catalog.array_agg(dl.dispatch_load_id order by dl.dispatch_load_id))[1]
+    into v_locked_load_count, v_locked_load_id
+  from atlas_dispatch.dispatch_loads dl
+  where dl.dispatch_trip_id = v_trip_id
+    and dl.dispatch_requirement_revision_id = v_requirement_revision_id
+    and dl.fulfilment_allocation_revision_id = v_allocation_revision_id
+    and dl.load_status = 'CONFIRMED';
+
+  select pg_catalog.jsonb_build_object(
+           'dispatch_trip_id', dt.dispatch_trip_id,
+           'dispatch_stop_id', ds.dispatch_stop_id,
+           'dispatch_plan_id', dt.dispatch_plan_id,
+           'dispatch_plan_requirement_id', dpr.dispatch_plan_requirement_id,
+           'dispatch_requirement_revision_id', drr.dispatch_requirement_revision_id,
+           'dispatch_requirement_id', dr.dispatch_requirement_id,
+           'fulfilment_allocation_revision_id', far.fulfilment_allocation_revision_id,
+           'fulfilment_allocation_id', fa.fulfilment_allocation_id,
+           'customer_id', dr.customer_id,
+           'delivery_location_id', dr.delivery_location_id,
+           'dispatch_load_id', v_locked_load_id,
+           'dispatch_load_line_ids', (
+             select pg_catalog.jsonb_agg(dll.dispatch_load_line_id order by dll.dispatch_load_line_id)
+             from atlas_dispatch.dispatch_load_lines dll
+             where dll.dispatch_load_id = v_locked_load_id
+           )
+         )
+    into v_locked_membership_signature
+  from atlas_dispatch.dispatch_trips dt
+  join atlas_dispatch.dispatch_stops ds
+    on ds.dispatch_trip_id = dt.dispatch_trip_id
+  join atlas_dispatch.dispatch_plan_requirements dpr
+    on dpr.dispatch_plan_id = dt.dispatch_plan_id
+   and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirement_revisions drr
+    on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+  join atlas_planning.dispatch_requirements dr
+    on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+  join atlas_procurement.fulfilment_allocation_revisions far
+    on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+  join atlas_procurement.fulfilment_allocations fa
+    on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+   and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+  join atlas_admin.delivery_locations loc
+    on loc.delivery_location_id = dr.delivery_location_id
+   and loc.customer_id = dr.customer_id
+  where dt.dispatch_trip_id = v_trip_id
+    and ds.dispatch_stop_id = v_stop_id
+    and ds.customer_id = dr.customer_id
+    and ds.delivery_location_id = dr.delivery_location_id
+    and dr.requirement_status = 'RELEASED'
+    and drr.revision_status = 'RELEASED' and drr.is_current
+    and fa.allocation_status = 'READY_FOR_DISPATCH'
+    and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current;
+
+  if v_locked_membership_count <> 1
+     or v_locked_load_count <> 1
+     or v_locked_membership_signature is distinct from v_membership_signature then
+    v_error := atlas_core.pa_05b_command_error(
+      request, 'DELIVERY_RECONCILIATION_FAILED',
+      'The exact Planning destination, plan membership, or confirmed load changed or is cross-wired.',
+      'DISPATCH', v_command_name
+    );
+    return atlas_core.pa_05b_finish_command(v_receipt_id, v_error, false);
+  end if;
 
   select dt.trip_status, dt.version, dt.departed_at, ds.stop_status
     into v_trip_status, v_trip_version, v_departed_at, v_stop_status
@@ -1379,24 +1678,8 @@ begin
   end if;
 
   select count(*)::integer into v_raw_line_count
-  from atlas_dispatch.dispatch_loads dl
-  join atlas_dispatch.dispatch_load_lines dll on dll.dispatch_load_id = dl.dispatch_load_id
-  where dl.dispatch_trip_id = v_trip_id
-    and dl.dispatch_requirement_revision_id = v_requirement_revision_id
-    and dl.load_status = 'CONFIRMED'
-    and dll.dispatch_stop_id = v_stop_id
-    and dll.line_status = 'CONFIRMED';
-
-  select dl.dispatch_load_id into v_load_id
-  from atlas_dispatch.dispatch_loads dl
-  join atlas_dispatch.dispatch_load_lines dll on dll.dispatch_load_id = dl.dispatch_load_id
-  where dl.dispatch_trip_id = v_trip_id
-    and dl.dispatch_requirement_revision_id = v_requirement_revision_id
-    and dl.load_status = 'CONFIRMED'
-    and dll.dispatch_stop_id = v_stop_id
-    and dll.line_status = 'CONFIRMED'
-  order by dl.dispatch_load_id
-  limit 1;
+  from atlas_dispatch.dispatch_load_lines dll
+  where dll.dispatch_load_id = v_load_id;
   v_submitted_line_count := pg_catalog.jsonb_array_length(v_payload -> 'lines');
 
   with submitted as (
@@ -1411,13 +1694,23 @@ begin
   from submitted s
   join atlas_dispatch.dispatch_load_lines dll
     on dll.dispatch_load_line_id = s.dispatch_load_line_id
+   and dll.dispatch_load_id = v_load_id
    and dll.dispatch_stop_id = v_stop_id
    and dll.line_status = 'CONFIRMED'
-  join atlas_dispatch.dispatch_loads dl
-    on dl.dispatch_load_id = dll.dispatch_load_id
-   and dl.dispatch_trip_id = v_trip_id
-   and dl.dispatch_requirement_revision_id = v_requirement_revision_id
-   and dl.load_status = 'CONFIRMED'
+  join atlas_planning.dispatch_requirement_line_revisions drlr
+    on drlr.dispatch_requirement_line_revision_id = dll.dispatch_requirement_line_revision_id
+   and drlr.dispatch_requirement_revision_id = v_requirement_revision_id
+  join atlas_planning.dispatch_requirement_lines drl
+    on drl.dispatch_requirement_line_id = drlr.dispatch_requirement_line_id
+   and drl.dispatch_requirement_id = v_requirement_id
+  join atlas_procurement.fulfilment_allocation_line_revisions falr
+    on falr.fulfilment_allocation_line_revision_id = dll.fulfilment_allocation_line_revision_id
+   and falr.fulfilment_allocation_revision_id = v_allocation_revision_id
+   and falr.dispatch_requirement_line_revision_id = drlr.dispatch_requirement_line_revision_id
+  join atlas_procurement.fulfilment_allocation_lines fal
+    on fal.fulfilment_allocation_line_id = falr.fulfilment_allocation_line_id
+   and fal.fulfilment_allocation_id = v_allocation_id
+   and fal.dispatch_requirement_line_id = drl.dispatch_requirement_line_id
   where s.delivered_quantity = dll.loaded_quantity
     and s.returned_quantity = 0 and s.exception_quantity = 0
     and s.unit_id = dll.unit_id
@@ -1430,23 +1723,19 @@ begin
   if v_raw_line_count < 1
      or v_raw_line_count <> v_submitted_line_count
      or v_raw_line_count <> v_valid_line_count
-     or 1 <> (
-       select count(distinct dl.dispatch_load_id)
-       from atlas_dispatch.dispatch_loads dl
-       join atlas_dispatch.dispatch_load_lines dll on dll.dispatch_load_id = dl.dispatch_load_id
-       join atlas_dispatch.dispatch_plan_requirements dpr
-         on dpr.dispatch_plan_id = v_plan_id
-        and dpr.dispatch_requirement_revision_id = dl.dispatch_requirement_revision_id
-        and dpr.fulfilment_allocation_revision_id = dl.fulfilment_allocation_revision_id
-       where dl.dispatch_trip_id = v_trip_id
-         and dl.dispatch_requirement_revision_id = v_requirement_revision_id
-         and dl.load_status = 'CONFIRMED'
-         and dll.dispatch_stop_id = v_stop_id
-         and dll.line_status = 'CONFIRMED'
+     or exists (
+       select 1
+       from atlas_dispatch.dispatch_loads other_load
+       join atlas_dispatch.dispatch_load_lines other_line
+         on other_line.dispatch_load_id = other_load.dispatch_load_id
+       where other_load.dispatch_trip_id = v_trip_id
+         and other_load.load_status = 'CONFIRMED'
+         and other_line.dispatch_stop_id = v_stop_id
+         and other_load.dispatch_load_id <> v_load_id
      ) then
     v_error := atlas_core.pa_05b_command_error(
       request, 'DELIVERY_RECONCILIATION_FAILED',
-      'Successful delivery must cover every and only current load line exactly.',
+      'Successful delivery must cover every and only exact current load line.',
       'DISPATCH', v_command_name
     );
     return atlas_core.pa_05b_finish_command(v_receipt_id, v_error, false);
@@ -1617,6 +1906,8 @@ declare
   v_scope_signature jsonb;
   v_locked_scope_signature jsonb;
   v_stop_count integer;
+  v_scope_count integer;
+  v_locked_scope_count integer;
   v_updated_stop_count integer;
   v_new_trip_version bigint;
   v_stop_versions jsonb;
@@ -1647,19 +1938,9 @@ begin
     );
   end if;
 
-  select count(*)::integer,
-         pg_catalog.jsonb_agg(
-           pg_catalog.jsonb_build_object(
-             'customer_id', scopes.customer_id,
-             'delivery_location_id', scopes.delivery_location_id
-           ) order by scopes.customer_id, scopes.delivery_location_id
-         )
-    into v_stop_count, v_scope_signature
-  from (
-    select distinct ds.customer_id, ds.delivery_location_id
-    from atlas_dispatch.dispatch_stops ds
-    where ds.dispatch_trip_id = v_trip_id
-  ) scopes;
+  select count(*)::integer into v_stop_count
+  from atlas_dispatch.dispatch_stops ds
+  where ds.dispatch_trip_id = v_trip_id;
   if v_stop_count < 1 then
     return atlas_core.pa_05b_command_error(
       request, 'VALIDATION_FAILED', 'A trip must contain at least one stop.',
@@ -1667,13 +1948,120 @@ begin
     );
   end if;
 
-  -- Every distinct customer/location/trip tuple is authorized before receipt
-  -- registration. The signature is checked again after root locks below.
+  select count(*)::integer,
+         pg_catalog.jsonb_agg(
+           pg_catalog.jsonb_build_object(
+             'dispatch_stop_id', scopes.dispatch_stop_id,
+             'customer_id', scopes.customer_id,
+             'delivery_location_id', scopes.delivery_location_id,
+             'dispatch_requirement_revision_id', scopes.dispatch_requirement_revision_id,
+             'dispatch_requirement_id', scopes.dispatch_requirement_id,
+             'fulfilment_allocation_revision_id', scopes.fulfilment_allocation_revision_id,
+             'fulfilment_allocation_id', scopes.fulfilment_allocation_id
+           ) order by scopes.dispatch_stop_id
+         )
+    into v_scope_count, v_scope_signature
+  from (
+    select ds.dispatch_stop_id, dr.customer_id, dr.delivery_location_id,
+           drr.dispatch_requirement_revision_id, drr.dispatch_requirement_id,
+           far.fulfilment_allocation_revision_id, far.fulfilment_allocation_id
+    from atlas_dispatch.dispatch_trips dt
+    join atlas_dispatch.dispatch_stops ds
+      on ds.dispatch_trip_id = dt.dispatch_trip_id
+    join atlas_dispatch.dispatch_plan_requirements dpr
+      on dpr.dispatch_plan_id = dt.dispatch_plan_id
+     and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirement_revisions drr
+      on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirements dr
+      on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+    join atlas_procurement.fulfilment_allocation_revisions far
+      on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+    join atlas_procurement.fulfilment_allocations fa
+      on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+     and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+    join atlas_admin.delivery_locations loc
+      on loc.delivery_location_id = dr.delivery_location_id
+     and loc.customer_id = dr.customer_id
+    where dt.dispatch_trip_id = v_trip_id
+      and ds.customer_id = dr.customer_id
+      and ds.delivery_location_id = dr.delivery_location_id
+      and dr.requirement_status = 'RELEASED'
+      and drr.revision_status = 'RELEASED' and drr.is_current
+      and fa.allocation_status = 'READY_FOR_DISPATCH'
+      and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current
+  ) scopes;
+
+  if v_scope_count <> v_stop_count
+     or exists (
+       select 1
+       from atlas_dispatch.dispatch_stops ds
+       where ds.dispatch_trip_id = v_trip_id
+         and 1 <> (
+           select count(*)
+           from atlas_dispatch.dispatch_trips dt
+           join atlas_dispatch.dispatch_plan_requirements dpr
+             on dpr.dispatch_plan_id = dt.dispatch_plan_id
+            and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+           join atlas_planning.dispatch_requirement_revisions drr
+             on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+           join atlas_planning.dispatch_requirements dr
+             on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+           join atlas_procurement.fulfilment_allocation_revisions far
+             on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+           join atlas_procurement.fulfilment_allocations fa
+             on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+            and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+           join atlas_admin.delivery_locations loc
+             on loc.delivery_location_id = dr.delivery_location_id
+            and loc.customer_id = dr.customer_id
+           where dt.dispatch_trip_id = v_trip_id
+             and ds.dispatch_trip_id = dt.dispatch_trip_id
+             and ds.customer_id = dr.customer_id
+             and ds.delivery_location_id = dr.delivery_location_id
+             and dr.requirement_status = 'RELEASED'
+             and drr.revision_status = 'RELEASED' and drr.is_current
+             and fa.allocation_status = 'READY_FOR_DISPATCH'
+             and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current
+         )
+     ) then
+    return atlas_core.pa_05b_command_error(
+      request, 'INVARIANT_VIOLATION',
+      'Every trip stop must have one exact current Planning destination and allocation membership.',
+      'DISPATCH', v_command_name
+    );
+  end if;
+
+  -- Every authoritative Planning customer/location/trip tuple is authorized
+  -- before receipt registration. Stop destination columns are not trusted.
   for v_scope in
-    select distinct ds.customer_id, ds.delivery_location_id
-    from atlas_dispatch.dispatch_stops ds
-    where ds.dispatch_trip_id = v_trip_id
-    order by ds.customer_id, ds.delivery_location_id
+    select distinct dr.customer_id, dr.delivery_location_id
+    from atlas_dispatch.dispatch_trips dt
+    join atlas_dispatch.dispatch_stops ds
+      on ds.dispatch_trip_id = dt.dispatch_trip_id
+    join atlas_dispatch.dispatch_plan_requirements dpr
+      on dpr.dispatch_plan_id = dt.dispatch_plan_id
+     and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirement_revisions drr
+      on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirements dr
+      on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+    join atlas_procurement.fulfilment_allocation_revisions far
+      on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+    join atlas_procurement.fulfilment_allocations fa
+      on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+     and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+    join atlas_admin.delivery_locations loc
+      on loc.delivery_location_id = dr.delivery_location_id
+     and loc.customer_id = dr.customer_id
+    where dt.dispatch_trip_id = v_trip_id
+      and ds.customer_id = dr.customer_id
+      and ds.delivery_location_id = dr.delivery_location_id
+      and dr.requirement_status = 'RELEASED'
+      and drr.revision_status = 'RELEASED' and drr.is_current
+      and fa.allocation_status = 'READY_FOR_DISPATCH'
+      and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current
+    order by dr.customer_id, dr.delivery_location_id
   loop
     v_authorization_error := atlas_core.pa_05b_authorize_actor(
       request, v_actor_id, 'dispatch_departure.record', 'DISPATCH', v_command_name,
@@ -1693,13 +2081,13 @@ begin
     where a.actor_id = v_driver_actor_id for key share;
   perform 1 from atlas_admin.customers c
     where c.customer_id in (
-      select ds.customer_id from atlas_dispatch.dispatch_stops ds
-      where ds.dispatch_trip_id = v_trip_id
+      select (scope_value ->> 'customer_id')::uuid
+      from pg_catalog.jsonb_array_elements(v_scope_signature) scope_value
     ) order by c.customer_id for key share;
   perform 1 from atlas_admin.delivery_locations loc
     where loc.delivery_location_id in (
-      select ds.delivery_location_id from atlas_dispatch.dispatch_stops ds
-      where ds.dispatch_trip_id = v_trip_id
+      select (scope_value ->> 'delivery_location_id')::uuid
+      from pg_catalog.jsonb_array_elements(v_scope_signature) scope_value
     ) order by loc.delivery_location_id for key share;
   perform 1 from atlas_admin.suppliers s
     where s.supplier_id in (
@@ -1984,26 +2372,55 @@ begin
   left join atlas_core.actors a on a.actor_id = dt.driver_actor_id
   where dt.dispatch_trip_id = v_trip_id;
 
-  select pg_catalog.jsonb_agg(
+  select count(*)::integer,
+         pg_catalog.jsonb_agg(
            pg_catalog.jsonb_build_object(
+             'dispatch_stop_id', scopes.dispatch_stop_id,
              'customer_id', scopes.customer_id,
-             'delivery_location_id', scopes.delivery_location_id
-           ) order by scopes.customer_id, scopes.delivery_location_id
+             'delivery_location_id', scopes.delivery_location_id,
+             'dispatch_requirement_revision_id', scopes.dispatch_requirement_revision_id,
+             'dispatch_requirement_id', scopes.dispatch_requirement_id,
+             'fulfilment_allocation_revision_id', scopes.fulfilment_allocation_revision_id,
+             'fulfilment_allocation_id', scopes.fulfilment_allocation_id
+           ) order by scopes.dispatch_stop_id
          )
-    into v_locked_scope_signature
+    into v_locked_scope_count, v_locked_scope_signature
   from (
-    select distinct ds.customer_id, ds.delivery_location_id
-    from atlas_dispatch.dispatch_stops ds
-    where ds.dispatch_trip_id = v_trip_id
+    select ds.dispatch_stop_id, dr.customer_id, dr.delivery_location_id,
+           drr.dispatch_requirement_revision_id, drr.dispatch_requirement_id,
+           far.fulfilment_allocation_revision_id, far.fulfilment_allocation_id
+    from atlas_dispatch.dispatch_trips dt
+    join atlas_dispatch.dispatch_stops ds
+      on ds.dispatch_trip_id = dt.dispatch_trip_id
+    join atlas_dispatch.dispatch_plan_requirements dpr
+      on dpr.dispatch_plan_id = dt.dispatch_plan_id
+     and dpr.dispatch_requirement_revision_id = ds.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirement_revisions drr
+      on drr.dispatch_requirement_revision_id = dpr.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirements dr
+      on dr.dispatch_requirement_id = drr.dispatch_requirement_id
+    join atlas_procurement.fulfilment_allocation_revisions far
+      on far.fulfilment_allocation_revision_id = dpr.fulfilment_allocation_revision_id
+    join atlas_procurement.fulfilment_allocations fa
+      on fa.fulfilment_allocation_id = far.fulfilment_allocation_id
+     and fa.dispatch_requirement_id = dr.dispatch_requirement_id
+    join atlas_admin.delivery_locations loc
+      on loc.delivery_location_id = dr.delivery_location_id
+     and loc.customer_id = dr.customer_id
+    where dt.dispatch_trip_id = v_trip_id
+      and ds.customer_id = dr.customer_id
+      and ds.delivery_location_id = dr.delivery_location_id
+      and dr.requirement_status = 'RELEASED'
+      and drr.revision_status = 'RELEASED' and drr.is_current
+      and fa.allocation_status = 'READY_FOR_DISPATCH'
+      and far.revision_status = 'READY_FOR_DISPATCH' and far.is_current
   ) scopes;
 
-  if v_locked_scope_signature is distinct from v_scope_signature then
-    v_error := atlas_core.pa_05b_command_error(
-      request, 'RETRYABLE_CONCURRENCY_FAILURE',
-      'Trip stop scope changed during authorization. Retry the exact request.',
-      'DISPATCH', v_command_name, true
-    );
-    return atlas_core.pa_05b_finish_command(v_receipt_id, v_error, false);
+  if v_locked_scope_count <> v_stop_count
+     or v_locked_scope_signature is distinct from v_scope_signature then
+    raise exception using
+      errcode = '40001',
+      message = 'trip stop scope changed during authorization';
   end if;
 
   if v_trip_version <> (request ->> 'expected_version')::bigint then

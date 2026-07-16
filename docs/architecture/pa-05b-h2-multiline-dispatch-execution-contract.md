@@ -138,7 +138,10 @@ The request uses exact field allowlists, 1–100 load lines, 1–100 evidence ap
 - trip belongs to the plan and is `ASSIGNED` or `LOADED`;
 - selected stop belongs to the trip and is `PENDING`;
 - stop, plan membership, requirement revision, and allocation revision form one exact scope;
-- actor is authorized for the stop customer/location/trip tuple;
+- the allocation root belongs to the same Planning requirement root;
+- the stop customer/location equals the Planning requirement customer/location, and the delivery location belongs to that customer;
+- actor is authorized for the Planning-owned customer/location and selected trip;
+- the complete destination and membership identity is re-read after deterministic locks before any load, event, or audit fact is created;
 - no current confirmed load already exists for that trip/requirement/allocation;
 - raw revision children, stable root lines, submitted lines, and fully valid lines have equal cardinality for both requirement and allocation;
 - every allocation line is represented exactly once;
@@ -186,19 +189,20 @@ Planning, Procurement, and Evidence facts are not mutated.
 
 ### Business invariants
 
-Departure acts on the entire trip. Before receipt registration, authorize every distinct:
+Departure acts on the entire trip. Before receipt registration, join every stop through its exact current plan requirement/allocation membership and authorize every distinct Planning-owned:
 
 ```text
 customer_id + delivery_location_id + dispatch_trip_id
 ```
 
-One unauthorized stop rejects the whole command. A trip-scoped actor may satisfy all tuples; customer/location scopes must cover each stop independently.
+One invalid membership, destination mismatch, or unauthorized stop rejects the whole command. A trip-scoped actor may satisfy all tuples; customer/location scopes must cover each authoritative tuple independently. Stop destination columns are never an authorization source until they match Planning.
 
 After locks, prove:
 
 - trip is `LOADED`, not departed, and current;
 - every selected-trip stop is `LOADED`;
 - every stop points to one compatible plan requirement/allocation membership;
+- every stop customer/location still equals the Planning requirement customer/location and the delivery location still belongs to that customer;
 - every stop has exactly one current confirmed load for that membership;
 - every current trip load belongs to a selected-trip stop and membership;
 - no extra load root exists outside those scopes;
@@ -207,6 +211,8 @@ After locks, prove:
 - every load line remains exactly covered by valid load-application bridges and valid source evidence;
 - no application is over-consumed across confirmed loads;
 - no missing, extra, duplicate, voided, superseded, or cross-wired child exists.
+
+The pre/post-lock scope signature contains stop, customer, delivery-location, requirement-revision, and allocation-revision identity. A scope change during authorization raises SQLSTATE `40001`; the enclosing block rolls back the receipt and returns `RETRYABLE_CONCURRENCY_FAILURE` through the existing serialization handler.
 
 Do not require every membership in the overall plan to be on this trip; a plan may contain multiple trips.
 
@@ -244,9 +250,11 @@ The request uses exact field allowlists, 1–100 unique load-line identities, an
 - trip is `IN_TRANSIT` or `PARTIALLY_DELIVERED` and has departed;
 - selected stop belongs to the trip and is `IN_TRANSIT`;
 - selected stop has exactly one current confirmed load for its plan membership;
+- selected stop customer/location equals the current Planning requirement destination and the allocation root belongs to that requirement root;
+- the selected load root uses the exact requirement and allocation revisions admitted by the plan membership;
 - no current valid delivery confirmation exists;
-- raw current load lines = submitted lines = fully valid load lines;
-- every submitted line belongs to the selected trip, stop, and current load;
+- raw current load lines = submitted lines = fully valid exact-chain load lines;
+- every submitted line belongs to that exact load root and selected stop;
 - no extra, missing, duplicate, cross-wired, or previously confirmed line exists;
 - delivered quantity and unit exactly equal the load line;
 - return quantity = 0 and exception quantity = 0 for every line.
@@ -275,6 +283,8 @@ Retain `atlas_dispatch_command_runtime`:
 - narrowly extended read/lock access only where complete PO/evidence lineage requires it;
 - no Planning, Procurement, or Evidence mutation;
 - no Warehouse, Storage, reporting-write, legacy, or external-service authority.
+
+The private `atlas_core.pa_05b_h2_validate_command_request(jsonb, text)` helper is owned by `atlas_owner`; `PUBLIC`, `anon`, `authenticated`, and `service_role` cannot execute it, while `atlas_dispatch_command_runtime` retains the sole required execute grant.
 
 Keep the capabilities:
 

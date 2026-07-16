@@ -89,7 +89,7 @@ It does not expose the underlying view shape, command receipts, request hashes, 
 
 ## 7. Verification
 
-The updated PA-05B pgTAP file contains 66 assertions, and the focused PA-05B-H2 suite contains 104 assertions. Coverage includes:
+The updated PA-05B pgTAP file contains 66 assertions, and the focused PA-05B-H2 suite contains 128 assertions. Coverage includes:
 
 - private-schema and direct-table denial plus exact RPC grants;
 - hardened owners/search paths and direct-insert denial;
@@ -100,6 +100,10 @@ The updated PA-05B pgTAP file contains 66 assertions, and the focused PA-05B-H2 
 - successful-only delivery reconciliation and return/exception rejection;
 - one receipt/event/audit result for success and no misleading mutation/event/audit for failure;
 - authorized shaped trace and relational scope denial.
+- Planning-owned destination and exact requirement/allocation membership checks for load, every departure stop, and successful delivery;
+- retryable SQLSTATE `40001` classification for post-lock departure scope changes without a durable failed receipt;
+- private PA-05B-H2 validator ownership by `atlas_owner` and execute-only access for `atlas_dispatch_command_runtime`;
+- GLOBAL-scoped negative fixtures proving destination cross-wires create no load, departure, delivery, domain-event, or audit facts.
 
 All synthetic business, authorization, and lifecycle rows are rolled back. PA-05B-H2 updates the three Dispatch request scenarios to the multi-line contract and adds a separate focused multi-line suite; Evidence scenarios remain on the original PA-05B contract.
 
