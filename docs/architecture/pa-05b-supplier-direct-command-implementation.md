@@ -1,9 +1,9 @@
 # PA-05B - Supplier-direct command implementation
 
-**Status:** Completed on `main`; execution correction PA-05B-H2 proposed in Issue #91  
+**Status:** Completed on `main`; execution correction PA-05B-H2 implemented in the current review change
 **Scope:** Supplier-direct wholesale Slice 1 evidence-to-delivery command subset  
 **Authority:** PA-01 through PA-05A and the approved Planning, Procurement, Evidence, and Dispatch boundaries  
-**Next gates:** PA-05B-H2 multi-line Dispatch execution, PA-05F Dispatch setup, PA-05B-H3 successful trip closure, then PA-05G backend acceptance
+**Next gates after this review change:** PA-05F Dispatch setup, PA-05B-H3 successful trip closure, then PA-05G backend acceptance
 
 ## 1. Outcome and boundary
 
@@ -89,7 +89,7 @@ It does not expose the underlying view shape, command receipts, request hashes, 
 
 ## 7. Verification
 
-The merged PA-05B pgTAP file contains 64 assertions. Coverage includes:
+The updated PA-05B pgTAP file contains 66 assertions, and the focused PA-05B-H2 suite contains 128 assertions. Coverage includes:
 
 - private-schema and direct-table denial plus exact RPC grants;
 - hardened owners/search paths and direct-insert denial;
@@ -100,8 +100,12 @@ The merged PA-05B pgTAP file contains 64 assertions. Coverage includes:
 - successful-only delivery reconciliation and return/exception rejection;
 - one receipt/event/audit result for success and no misleading mutation/event/audit for failure;
 - authorized shaped trace and relational scope denial.
+- Planning-owned destination and exact requirement/allocation membership checks for load, every departure stop, and successful delivery;
+- retryable SQLSTATE `40001` classification for post-lock departure scope changes without a durable failed receipt;
+- private PA-05B-H2 validator ownership by `atlas_owner` and execute-only access for `atlas_dispatch_command_runtime`;
+- GLOBAL-scoped negative fixtures proving destination cross-wires create no load, departure, delivery, domain-event, or audit facts.
 
-All synthetic business, authorization, and lifecycle rows are rolled back. PA-05B-H2 must update only the three Dispatch request scenarios in this suite and add a separate focused multi-line suite; Evidence scenarios remain on the original PA-05B contract.
+All synthetic business, authorization, and lifecycle rows are rolled back. PA-05B-H2 updates the three Dispatch request scenarios to the multi-line contract and adds a separate focused multi-line suite; Evidence scenarios remain on the original PA-05B contract.
 
 ## 8. Limitations, rollback, and next gates
 
