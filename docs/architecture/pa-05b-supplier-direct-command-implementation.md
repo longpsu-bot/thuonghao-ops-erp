@@ -1,9 +1,9 @@
 # PA-05B - Supplier-direct command implementation
 
-**Status:** Implemented on the bounded PA-05B branch; pending review and merge
-**Scope:** Supplier-direct wholesale Slice 1 evidence-to-delivery command subset
-**Authority:** PA-01 through PA-05A and the approved Planning, Procurement, Evidence, and Dispatch boundaries
-**Next gates:** PA-05C authorized read wrappers, then PA-06 read-only React connection
+**Status:** Completed on `main`; execution correction PA-05B-H2 proposed in Issue #91  
+**Scope:** Supplier-direct wholesale Slice 1 evidence-to-delivery command subset  
+**Authority:** PA-01 through PA-05A and the approved Planning, Procurement, Evidence, and Dispatch boundaries  
+**Next gates:** PA-05B-H2 multi-line Dispatch execution, PA-05F Dispatch setup, PA-05B-H3 successful trip closure, then PA-05G backend acceptance
 
 ## 1. Outcome and boundary
 
@@ -18,11 +18,11 @@ The implemented callable surface is exactly:
 - `atlas_api.confirm_successful_delivery(request jsonb) returns jsonb`
 - `atlas_api.get_supplier_direct_trace(request jsonb) returns jsonb`
 
-Planning releases, Procurement allocation and purchase-order release, and Dispatch plan/trip/stop setup are prerequisites. PA-05B does not add commands that author them. Tests create synthetic prerequisite rows inside a transaction and roll them back.
+Planning releases, Procurement allocation and purchase-order release, and Dispatch plan/trip/stop setup were prerequisites when PA-05B was implemented. PA-05D and PA-05E now author the Planning and Procurement prerequisites. PA-05F remains responsible for plan/trip/stop setup. The approved PA-05A closure command remains a separately tracked follow-up in Issue #93.
 
 ## 2. Callable and private security boundary
 
-`atlas_api` remains the only callable Atlas schema. `authenticated` receives schema usage and execute on the six listed functions only. `anon` and `service_role` receive neither. None of the three API roles receives direct table, view, sequence, or private-schema access.
+`atlas_api` remains the only callable Atlas schema. `authenticated` receives schema usage and execute only on the reviewed functions. `anon` and `service_role` receive neither. None of the three API roles receives direct table, view, sequence, or private-schema access.
 
 After PA-05B-H1, the two Evidence writes are `security definer` functions owned by the no-login `atlas_evidence_command_runtime` role and the three Dispatch writes are owned by `atlas_dispatch_command_runtime`. The shaped trace and PA-05C read wrappers are owned by `atlas_read_runtime`; the former shared `atlas_command_runtime` retains no effective Atlas privilege. Every entry function has an empty fixed `search_path`, fully qualified references, and no dynamic SQL or caller-controlled object name.
 
@@ -30,7 +30,7 @@ Private helpers live in `atlas_core`, are owned by `atlas_owner`, and are execut
 
 ## 3. Request, actor, and result handling
 
-Every write accepts contract version `PA-05B.v1` and requires:
+The original PA-05B writes accept contract version `PA-05B.v1` and require:
 
 ```text
 command_id, correlation_id, idempotency_key, expected_version,
@@ -65,15 +65,21 @@ Each function is one short authoritative statement transaction under the caller'
 
 `apply_supplier_evidence_to_allocation` requires current valid evidence and exact supplier/ingredient/unit lineage to the allocation-line revision. The active sum for one evidence row cannot exceed evidence quantity. The active sum for one allocation-line revision cannot exceed allocated quantity. A duplicate active evidence/allocation pair is rejected. Procurement quantities are not changed.
 
-### Load and departure
+### Original load and departure boundary
 
-`confirm_dispatch_load` requires an eligible assigned trip and stop, matching released requirement/allocation revisions, a valid evidence application, exact ingredient/unit lineage, positive quantity, and sufficient unconsumed applied evidence. It creates one confirmed load, line, and load-application bridge and advances the trip/stop to `LOADED`; it does not depart the trip.
+The merged PA-05B implementation validates one load-line request at a time against one evidence application, creates one load root/line/application bridge, and advances the trip and stop. Departure revalidates current evidence coverage for the confirmed loads before advancing the trip and loaded stops.
 
-`record_dispatch_departure` locks and re-reads all current load, evidence, and application facts. Every confirmed load quantity must remain fully covered by valid evidence and applications. A voided or superseded source, missing bridge, or quantity gap blocks departure. Success advances the trip and loaded stops to `IN_TRANSIT` once.
+This was sufficient for the first bounded evidence-to-delivery proof but is not sufficient for the multi-line requirements and allocations now authored by PA-05D and PA-05E. PA-05B-H2 replaces the Dispatch request behavior with one atomic multi-line load per stop requirement, exact full-line departure revalidation, and trip-wide authorization. It does not change Evidence ownership or add a public function.
 
-### Successful delivery
+### Original successful-delivery boundary
 
-`confirm_successful_delivery` is deliberately successful-path-only. The trip and stop must already be in transit; the load must be confirmed; unit must match; delivered quantity must be positive and exactly equal the loaded quantity; return and exception quantities must be zero. Success creates one confirmation and one exact line and advances the stop/trip delivery status. Return, exception, Warehouse, Finance, and QA behavior are not implied.
+The merged `confirm_successful_delivery` command is successful-path-only and reconciles one submitted load line exactly. It rejects a stop containing another current confirmed load line.
+
+PA-05B-H2 replaces that one-line assumption with one atomic stop-level confirmation containing every current confirmed load line. Return, exception, Warehouse, Finance, and QA behavior remain excluded.
+
+### Successful trip closure
+
+The approved catalog includes `close_successful_trip`, which is not implemented by PA-05B or PA-05B-H2. A fully delivered trip currently reaches `DELIVERED` but does not have an authoritative closure command that validates the complete successful path, sets `completed_at`, and emits `SuccessfulDispatchTripClosed`. Issue #93 tracks that separate bounded command so PA-05G can remain acceptance-only.
 
 ## 6. Shaped read
 
@@ -83,7 +89,7 @@ It does not expose the underlying view shape, command receipts, request hashes, 
 
 ## 7. Verification
 
-The PA-05B pgTAP file contains 64 assertions. Together with the updated cumulative PA-04 file, the local database suite contains 87 passing assertions. Coverage includes:
+The merged PA-05B pgTAP file contains 64 assertions. Coverage includes:
 
 - private-schema and direct-table denial plus exact RPC grants;
 - hardened owners/search paths and direct-insert denial;
@@ -95,12 +101,20 @@ The PA-05B pgTAP file contains 64 assertions. Together with the updated cumulati
 - one receipt/event/audit result for success and no misleading mutation/event/audit for failure;
 - authorized shaped trace and relational scope denial.
 
-All synthetic business, authorization, and lifecycle rows are rolled back. PA-04 migration SQL remains unchanged; only its cumulative-schema test expectations were updated for the new approved API surface.
+All synthetic business, authorization, and lifecycle rows are rolled back. PA-05B-H2 must update only the three Dispatch request scenarios in this suite and add a separate focused multi-line suite; Evidence scenarios remain on the original PA-05B contract.
 
 ## 8. Limitations, rollback, and next gates
 
-This migration is forward-only source history. Before any deployment, rollback is removal/reversion of the unshipped migration. After deployment, reversal would require a reviewed follow-up migration that revokes execute, drops the functions/policies/helpers in dependency order, and preserves already-written evidence, dispatch, receipt, event, and audit history.
+PA-05B and its follow-ups are forward-only source history. Before deployment, rollback is removal/reversion of the unshipped migration. After deployment, reversal would require a reviewed follow-up migration that revokes execute, replaces functions/policies/helpers in dependency order, and preserves already-written evidence, dispatch, receipt, event, and audit history.
 
-PA-05B intentionally excludes the rest of the PA-05A command catalog, generalized read APIs, production reference/seed data, generated Supabase types, React integration, Edge Functions, Storage/evidence files, credentials, live Supabase projects or branches, Retool changes, OPS v1 mutation, Warehouse stock, school-catering recipes/BOM, delivery exception/return execution, Production/QA, Finance, and a generic workflow engine.
+PA-05B intentionally excludes generalized read APIs, production reference/seed data, generated Supabase types, React integration, Edge Functions, Storage/evidence files, credentials, live Supabase projects or branches, Retool changes, OPS v1 mutation, Warehouse stock, school-catering recipes/BOM, delivery exception/return execution, Production/QA, Finance, and a generic workflow engine.
 
-React remains disconnected because PA-05B proves only the bounded backend command subset and one verification trace. PA-05C must add and review the remaining capability/scope-filtered shaped read wrappers. PA-06 may connect a read-only React surface only after PA-05B and PA-05C are approved; write UI integration and any deployment remain separately authorized work.
+The corrected backend sequence is:
+
+```text
+PA-05B-H2 multi-line Dispatch execution
+→ PA-05F Dispatch plan/trip/stop setup
+→ PA-05B-H3 successful trip closure
+→ PA-05G command-authored backend acceptance
+→ PA-06 React connection
+```
