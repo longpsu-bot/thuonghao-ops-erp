@@ -9,8 +9,8 @@ grant execute on all functions in schema extensions to authenticated;
 
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api'),
-  15,
-  'Atlas API contains exactly 15 reviewed functions'
+  17,
+  'Atlas API contains exactly 17 reviewed functions'
 );
 
 select ok(
@@ -85,8 +85,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  15,
-  'authenticated can execute exactly the 15 reviewed functions'
+  17,
+  'authenticated can execute exactly the 17 reviewed functions'
 );
 
 select ok(
