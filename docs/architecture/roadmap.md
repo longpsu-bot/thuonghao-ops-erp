@@ -149,7 +149,8 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05E bounded Procurement command family — completed on `main` with exact full-line supplier allocation, separate all-lines-per-supplier purchase-order release, a dedicated least-privilege runtime, and 78 focused pgTAP assertions
 - 🟡 PA-05B-H2 multi-line Dispatch execution correction — Issue #91 contract package in review: atomic multi-line load, full-line trip departure revalidation, multi-line successful delivery, and trip-wide scope authorization without adding an API function
 - ⬜ PA-05F bounded Dispatch setup command family — dispatch plan, requirement admission, trip, and stop setup, after PA-05B-H2
-- ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-delivery path using PA-05D, PA-05E, PA-05B-H2, PA-05F, and the existing Evidence/read surface
+- ⬜ PA-05B-H3 successful Dispatch trip closure — Issue #93: close a fully reconciled delivered trip, set completion time, and emit the approved closure event
+- ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-trip-closure path using PA-05D, PA-05E, PA-05B-H2, PA-05F, PA-05B-H3, and the existing Evidence/read surface
 - ⬜ PA-06 React connection — after PA-05G under the product owner's backend-first sequencing decision
 - ⬜ Controlled seed/reference data — separately approved after backend acceptance; not required for rolled-back local fixtures
 - ⬜ First connected wholesale supplier-direct vertical slice
@@ -167,6 +168,7 @@ Wholesale source
 → exact multi-line load
 → full-line departure
 → successful multi-line delivery
+→ successful trip closure
 → authorized trace/readiness/blockers/audit
 ```
 
@@ -185,13 +187,14 @@ Approved PA-01 contract
 → PA-05E Procurement command family
 → PA-05B-H2 multi-line Dispatch execution correction
 → PA-05F Dispatch setup command family
+→ PA-05B-H3 successful trip closure
 → PA-05G backend end-to-end acceptance
 → PA-06 React connection
 → rehearsal and operator validation
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, PA-05D, and PA-05E are completed on `main`; the reviewed 15-function API covers the Planning release chain, Procurement allocation and supplier PO, supplier Evidence, load/departure/successful delivery, trace, readiness, blockers, and audit reads. Capability review found that the existing Dispatch execution payloads still assume one load line per stop, which is incompatible with the multi-line outputs now produced by PA-05D and PA-05E. PA-05B-H2 corrects that bounded execution contract before PA-05F removes the remaining Dispatch-setup fixture prerequisite. PA-05G is the gate at which the supplier-direct wholesale Slice 1 backend may be called complete. PA-06 follows that acceptance gate. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, PA-05D, and PA-05E are completed on `main`; the reviewed 15-function API covers the Planning release chain, Procurement allocation and supplier PO, supplier Evidence, load/departure/successful delivery, trace, readiness, blockers, and audit reads. Capability review found that the existing Dispatch execution payloads still assume one load line per stop, which is incompatible with the multi-line outputs now produced by PA-05D and PA-05E. PA-05B-H2 corrects that execution contract before PA-05F removes the Dispatch-setup fixture prerequisite. The approved catalog also requires successful trip closure, tracked separately in Issue #93, so PA-05G can remain a pure command-authored acceptance gate. PA-06 follows that acceptance. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
 
 ## Deferred — Production and Quality
 
