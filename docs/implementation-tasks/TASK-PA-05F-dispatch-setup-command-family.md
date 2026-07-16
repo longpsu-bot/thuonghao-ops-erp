@@ -5,7 +5,7 @@
 **Branch:** `task/pa-05f-dispatch-setup-command-family`  
 **Draft PR title:** `PA-05F: Add bounded Dispatch setup command family`
 
-## 1. Recommended Codex settings
+## 1. Codex settings
 
 ```text
 Model: Sol
@@ -15,9 +15,9 @@ Parallel agents: Off
 Subagents: Off
 ```
 
-Use one primary implementation run. PA-05F is an authoritative write task involving multi-root versions, cross-domain lineage, all-scope authorization, stable parent locks, RLS, and a shared least-privilege runtime. Spark is not the first implementation model.
+Use one primary implementation run. This is an authoritative multi-root write task with cross-domain lineage, all-scope authorization, optimistic versions, stable parent locks, RLS, and a shared least-privilege runtime.
 
-## 2. Start-state verification
+## 2. Verify the workspace
 
 Follow `AGENTS.md` before editing:
 
@@ -40,25 +40,23 @@ task/pa-05f-dispatch-setup-command-family
 
 Do not amend the documentation branch.
 
-## 3. Mandatory reading
+## 3. Read before implementation
 
-Read before making changes:
+Read:
 
 1. `AGENTS.md`
 2. `README.md`
-3. `docs/handbook/01-vision-product-charter.md`
-4. `docs/decisions/decision-register.md`
-5. `docs/business-rules/business-rule-register.md`
-6. `docs/architecture/arch-001-ops-erp-business-architecture.md`
-7. `docs/architecture/arch-002-atlas-system-map.md`
-8. `docs/architecture/dispatch-delivery-domain-contract.md`
-9. `docs/architecture/pa-05a-supplier-direct-command-rpc-contract.md`
-10. `docs/architecture/pa-05f-dispatch-setup-command-family-contract.md`
-11. `docs/decisions/decision-pa-05f-bounded-dispatch-setup.md`
-12. GitHub Issue #95 and its comments
-13. PA-04, PA-05B-H1, PA-05D, PA-05E, and PA-05B-H2 migrations/tests
+3. the mandatory handbook, decision-register, and business-rule files named by `AGENTS.md`
+4. `docs/architecture/arch-001-ops-erp-business-architecture.md`
+5. `docs/architecture/arch-002-atlas-system-map.md`
+6. `docs/architecture/dispatch-delivery-domain-contract.md`
+7. `docs/architecture/pa-05a-supplier-direct-command-rpc-contract.md`
+8. `docs/architecture/pa-05f-dispatch-setup-command-family-contract.md`
+9. `docs/decisions/decision-pa-05f-bounded-dispatch-setup.md`
+10. Issue #95 and its comments
+11. relevant PA-04, PA-05B-H1, PA-05D, PA-05E, and PA-05B-H2 migrations/tests
 
-The PA-05F architecture contract, decision record, task, and Issue #95 are the sources of truth. Stop if code or schema contradicts them.
+The PA-05F architecture contract and Issue #95 contain the exact payloads, invariants, outputs, tests, and exclusions. Do not restate or reinterpret them into a broader design. Stop when code or schema contradicts them.
 
 ## 4. OPS_SYSTEM_MAP placement
 
@@ -67,7 +65,8 @@ Mission
 → complete one authoritative supplier-direct wholesale operating path
 
 Business Capability
-→ create an exact Dispatch plan and assign exact plan memberships to a trip
+→ create an exact Dispatch plan
+→ assign exact plan memberships to one executable trip and ordered stops
 
 Business Domain
 → Dispatch
@@ -79,7 +78,7 @@ Business Objects
 → DispatchStop
 
 Business Contract
-→ upstream Planning and Procurement facts remain immutable
+→ Planning and Procurement remain authoritative upstream owners
 → Dispatch owns grouping, assignment references, and stop order
 
 Commands / Events
@@ -96,7 +95,7 @@ Technology
 → one forward-only migration, existing Dispatch runtime, focused pgTAP
 ```
 
-## 5. Exact public surface
+## 5. Exact implementation scope
 
 Add exactly:
 
@@ -105,174 +104,51 @@ atlas_api.create_dispatch_plan(request jsonb)
 atlas_api.create_or_assign_dispatch_trip(request jsonb)
 ```
 
-Contract version:
+Use:
 
 ```text
-PA-05F.v1
+contract_version = PA-05F.v1
 ```
 
 The reviewed `atlas_api` surface must contain exactly 17 functions afterward.
 
 Do not add, rename, overload, or remove another public function.
 
-## 6. Command 1 — create Dispatch plan
+### `create_dispatch_plan`
 
-### Exact payload
+Implement sections 6 and 9 of the PA-05F contract exactly:
 
-```json
-{
-  "plan_reference": "text",
-  "dispatch_wave": null,
-  "requirements": [
-    {
-      "dispatch_requirement_revision_id": "uuid",
-      "fulfilment_allocation_revision_id": "uuid",
-      "expected_dispatch_requirement_version": 1,
-      "expected_fulfilment_allocation_version": 1
-    }
-  ]
-}
-```
+- exact nested request allowlists and named upstream versions;
+- authorization for every authoritative Planning destination before receipt registration;
+- deterministic locking and post-lock revalidation of the complete PA-05D/PA-05E/released-PO chain;
+- one shared service date derived from Planning;
+- no active plan membership for a selected exact requirement/allocation pair;
+- one `PLANNED` plan plus all submitted memberships atomically;
+- one receipt, `DispatchPlanCreated` event, audit event, and safe response;
+- no trip, stop, Evidence, load, delivery, or closure fact.
 
-### Input validation
+Physical Evidence is not a plan-creation gate.
 
-- exact PA-05F.v1 ten-field envelope;
-- envelope `expected_version = 1`;
-- exact payload allowlist;
-- exact nested requirement allowlist;
-- plan reference trimmed, non-empty, max 200;
-- nullable wave; if present trimmed, non-empty, max 100;
-- 1–100 requirement objects;
-- valid UUIDs and positive named versions;
-- unique requirement revision, allocation revision, and exact pair;
-- no caller service date, customer, location, quantity, supplier, status, actor, or generated ID.
+### `create_or_assign_dispatch_trip`
 
-### Authorization before receipt
+Implement sections 7 and 9 of the PA-05F contract exactly:
 
-Resolve every exact pair through authoritative Planning and Procurement records and authorize every distinct Planning customer/location tuple using capability:
-
-```text
-dispatch_plan.create
-```
-
-One unauthorized tuple rejects the whole request before receipt registration.
-
-Do not authorize from a caller-supplied destination or an unvalidated downstream copy.
-
-### Locked authoritative validation
-
-For every pair, prove the complete current chain described in the PA-05F contract:
-
-- released Planning root/current revision and named root version;
-- exact raw/stable/valid requirement-line cardinality;
-- complete PA-05D wholesale source lineage;
-- current ready allocation root/revision and named root version;
-- allocation root belongs to the same requirement root;
-- exact raw/stable/valid allocation-line cardinality;
-- one full `SUPPLIER_PO` portion per requirement line;
-- exact ingredient, quantity, and unit equality;
-- exactly one current released PO line/revision per allocation line;
-- exact supplier, item, quantity, unit, destination, and service date;
-- active customer/location/supplier/ingredient/unit references;
-- one shared service date across the request;
-- no active plan membership for any selected pair;
-- unused plan reference.
-
-Physical Evidence is not required.
-
-### Writes
-
-Create:
-
-- one `dispatch_plans` root in `PLANNED`, version 1;
-- one `dispatch_plan_requirements` row per selected pair;
-- one completed receipt;
-- one `DispatchPlanCreated` event;
-- one audit event;
-- one safe response.
-
-Create no trip, stop, load, Evidence, delivery, or closure record.
-
-## 7. Command 2 — create and assign one trip
-
-### Exact payload
-
-```json
-{
-  "dispatch_plan_id": "uuid",
-  "trip_reference": "text",
-  "driver_actor_id": null,
-  "vehicle_reference": "text",
-  "planned_departure_at": null,
-  "stops": [
-    {
-      "dispatch_plan_requirement_id": "uuid",
-      "stop_sequence": 1
-    }
-  ]
-}
-```
-
-### Input validation
-
-- exact PA-05F.v1 envelope;
-- envelope `expected_version` is the current plan version;
-- exact payload and stop allowlists;
-- valid plan UUID;
-- trip reference trimmed, non-empty, max 200;
-- nullable driver UUID;
-- nullable vehicle reference; if present trimmed, non-empty, max 200;
-- at least one driver or vehicle reference;
-- nullable valid planned-departure timestamptz;
-- 1–100 stops;
-- unique membership IDs;
-- unique positive contiguous sequences beginning at 1;
-- no caller destination, requirement revision, status, route window, scope, or generated ID.
-
-### Authorization before receipt
-
-Resolve selected memberships through the current plan, Planning requirements, and allocations. Authorize every distinct authoritative customer/location tuple using:
-
-```text
-dispatch_trip.assign
-```
-
-The target driver is not the initiating authorization source. Delegation and management override remain unsupported.
-
-### Locked authoritative validation
-
-Prove:
-
-- plan exists, is `PLANNED`, and matches expected version;
-- every selected membership belongs to the plan;
-- every selected membership retains current released Planning, current ready allocation, and released-PO lineage;
-- every selected destination remains active and relationally valid;
-- every membership service date equals the plan service date;
-- selected memberships are not assigned to a non-cancelled/non-voided trip under the plan;
-- trip reference is unused;
-- driver, when present, is active and type `HUMAN` or `DELEGATED_DRIVER`;
-- assignment values remain valid after locks.
-
-Multiple trip commands may consume disjoint membership subsets.
-
-### Writes
-
-Create/update:
-
-- one `dispatch_trips` root under the plan in `ASSIGNED`, version 1;
-- one `dispatch_stops` row per selected membership in `PENDING`, version 1;
+- exact nested request allowlists;
+- current plan expected version;
+- active driver and/or non-empty vehicle reference;
+- authorization for every authoritative selected-stop destination before receipt registration;
+- deterministic plan/membership/trip/stop locks and post-lock revalidation;
+- disjoint membership subsets so one plan may contain multiple trips;
+- unique contiguous stop sequence beginning at 1;
 - stop requirement/customer/location derived from Planning;
-- requested sequence only;
-- null planned stop windows;
-- plan version incremented exactly once, status unchanged;
-- one completed receipt;
-- one `DispatchTripAssigned` event;
-- one audit event;
-- one safe response.
+- null planned stop windows in PA-05F.v1;
+- one `ASSIGNED` trip and all `PENDING` stops atomically;
+- one plan-version increment, one receipt, `DispatchTripAssigned` event, audit event, and safe response;
+- no Evidence, load, departure, delivery, exception, return, or closure fact.
 
-Create no load, Evidence, departure, delivery, exception, return, or closure fact. Do not create actor scopes, delegations, HR, fleet, or credential records.
+Do not create actor scopes, delegations, HR, fleet, or credential records.
 
-## 8. Runtime and security
+## 6. Runtime and security
 
 Reuse:
 
@@ -280,21 +156,23 @@ Reuse:
 atlas_dispatch_command_runtime
 ```
 
-Do not create another role.
+Do not create another runtime role.
 
-Requirements:
+Required posture:
 
-- role remains `NOLOGIN`, `NOINHERIT`;
-- own the two new functions plus the three existing Dispatch execution functions;
+- `NOLOGIN`, `NOINHERIT` retained;
+- two new functions owned by the Dispatch runtime;
 - fixed empty `search_path`;
-- no dynamic SQL;
-- revoke execute from `PUBLIC`, `anon`, `authenticated`, and `service_role` before granting the two reviewed signatures to `authenticated`;
-- no API-role private relation or sequence access;
-- add only missing verb-specific relation grants and RLS policies;
-- insert only plan, membership, trip, stop, receipt, event, and audit rows;
-- update only the selected Dispatch Plan version for the trip command;
-- no Planning, Procurement, Evidence, Warehouse, reporting, Storage, legacy, or OPS v1 mutation;
-- no Atlas schema `CREATE` after temporary ownership transfer;
+- static SQL only;
+- revoke-first API execute boundary;
+- `authenticated` executes the reviewed 17-function allowlist only;
+- `anon` and `service_role` execute no Atlas function;
+- API roles retain no direct private relation or sequence access;
+- add only missing verb-specific grants and forced-RLS policies;
+- Dispatch runtime may insert plan, membership, trip, stop, receipt, event, and audit rows;
+- Dispatch runtime may update only the selected plan root for the PA-05F trip command;
+- no Planning, Procurement, Evidence, Warehouse, reporting, Storage, legacy, Retool, or OPS v1 mutation;
+- no Atlas schema `CREATE` after ownership transfer;
 - no sequence `USAGE` or `UPDATE`.
 
 Add capabilities:
@@ -306,79 +184,45 @@ dispatch_trip.assign
 
 Both belong to `DISPATCH`.
 
-A private `atlas_core.pa_05f_validate_command_request(jsonb, text)` may be added only if needed. It must:
+A PA-05F validator is allowed only when required for the versioned nested shapes. It must remain command-specific, use an empty search path, be owned by `atlas_owner`, and be executable only by `atlas_dispatch_command_runtime`.
 
-- preserve prior validator behavior;
-- be owned by `atlas_owner`;
-- use a fixed empty search path;
-- be executable only by `atlas_dispatch_command_runtime`;
-- not become a generic framework.
+## 7. Simplicity gate
 
-## 9. Concurrency and idempotency
-
-Reuse existing command helpers where appropriate. Do not refactor PA-05B-H2 helpers merely for aesthetic reuse.
-
-### Plan command
-
-- authorize all tuples before receipt;
-- lock selected requirement roots by UUID;
-- lock selected allocation roots by UUID;
-- lock revisions/children/PO lineage deterministically;
-- lock existing Dispatch plan memberships for selected pairs;
-- re-read named versions, statuses, destinations, exact cardinalities, and absence of active membership;
-- rely on stable parent locks to serialize competing plan admission.
-
-### Trip command
-
-- authorize all selected membership tuples before receipt;
-- lock plan root first;
-- lock selected plan-membership rows by UUID;
-- lock existing trips/stops under the plan deterministically;
-- re-read plan version, memberships, destinations, assignment, and unassigned set;
-- update plan and insert trip/stops atomically.
-
-Exact replay returns the original response. A changed nested payload under the same identity conflicts. Deterministic failure creates no setup/event/audit mutation. `40001`/`40P01` rolls back the receipt and is retryable.
-
-Do not add a generic concurrency harness, queue, or orchestration layer.
-
-## 10. Persistence and simplicity gate
-
-Use existing tables only:
+Use only the existing PA-04 Dispatch setup tables:
 
 ```text
-atlas_dispatch.dispatch_plans
-atlas_dispatch.dispatch_plan_requirements
-atlas_dispatch.dispatch_trips
-atlas_dispatch.dispatch_stops
+dispatch_plans
+dispatch_plan_requirements
+dispatch_trips
+dispatch_stops
 ```
 
-Hard constraints:
+Do not add:
 
-- no table or column;
-- no view, trigger, sequence, queue, or job;
-- no generic routing, scheduling, assignment, workflow, document, repository, or event-sourcing abstraction;
-- no separate plan-admission command;
-- no unassigned trip stage;
-- no reassignment, cancellation, resequencing, or route-window command;
-- no route optimization, GPS, geography, HR, payroll, fleet, fuel, or vehicle master;
-- no read API;
-- no Evidence/load/departure/delivery/closure behavior;
-- no UI, generated type, deployment, seed, Storage, Edge Function, Retool, or OPS v1 work.
+- a table, column, view, trigger, sequence, queue, or job;
+- a generic routing, scheduling, assignment, workflow, document, repository, or event-sourcing abstraction;
+- a separate plan-admission command;
+- an unassigned-trip persistence stage;
+- reassignment, cancellation, resequencing, or route-window commands;
+- route optimization, GPS, geography, HR, payroll, fleet, fuel, or vehicle master data;
+- a read API;
+- Evidence, load, departure, delivery, exception, return, or closure behavior;
+- UI, generated types, deployment, seed data, Storage, Edge Functions, Retool, or OPS v1 work.
 
-Do not add an index or constraint unless a named tested PA-05F race cannot be protected by existing constraints plus stable parent locks. Stop and report before introducing a new authoritative concept.
+Do not add an index or constraint unless a named, tested PA-05F race cannot be protected by existing constraints and stable parent locks. Stop before introducing a new authoritative concept.
 
-Before finalizing, produce a complexity inventory for every new helper, index/constraint, grant, policy, and event:
+Before finalizing, inventory every new helper, index/constraint, grant, policy, and event:
 
 1. command requiring it;
-2. invariant/security boundary protected;
+2. invariant or security boundary protected;
 3. failure without it;
 4. why an existing object is insufficient.
 
 Remove anything that cannot be justified.
 
-## 11. Migration workflow
+## 8. Migration and permitted files
 
-Before running Supabase CLI migration commands, inspect:
+Before creating the migration, inspect:
 
 ```bash
 supabase --version
@@ -387,7 +231,7 @@ supabase migration --help
 supabase migration new --help
 ```
 
-Create one forward-only migration through the supported CLI workflow. Do not edit merged migrations or invent the timestamp manually.
+Create one forward-only migration through the supported Supabase CLI workflow. Do not edit merged migrations or invent the timestamp manually.
 
 Expected new files:
 
@@ -396,113 +240,76 @@ supabase/migrations/<generated>_pa_05f_dispatch_setup_command_family.sql
 supabase/tests/pa_05f_dispatch_setup_command_family.sql
 ```
 
-Narrow updates are permitted only to:
+Narrow updates are permitted only for:
 
-- cumulative API/function-owner expectations directly changed from 15 to 17;
-- PA-05F architecture/task/status documentation;
+- cumulative API/function-owner expectations changed from 15 to 17;
+- PA-05F implementation status and documentation;
 - README/roadmap status;
-- directly affected PA-05B-H1/H2 tests where the expanded function inventory requires it.
+- directly affected PA-05B-H1/H2 tests.
 
-Stop if the diff expands beyond the approved file families without a concrete contract reason.
+Stop and explain an unexpectedly broad diff.
 
-## 12. Focused pgTAP acceptance
+## 9. Focused pgTAP acceptance
 
-The PA-05F suite must prove at least:
+Implement every test group in section 11 of the PA-05F contract and Issue #95.
 
-### Security and surface
+At minimum prove:
 
-- exactly 17 functions;
-- two hardened new definers owned by Dispatch runtime;
-- no new role;
-- exact API execute boundary;
-- no direct API-role table/view/sequence access;
-- no mutable search path or dynamic SQL;
-- no schema CREATE or sequence mutation;
-- no cross-domain Dispatch mutation;
-- no unauthorized Dispatch setup insert by other runtimes.
-
-### Plan
-
-- same-date multi-requirement/multi-destination success;
-- derived service date;
-- exact submitted membership set;
-- exact Planning/allocation/released-PO lineage and cardinality;
+- exactly 17 reviewed functions and exact runtime ownership/execute boundaries;
+- no direct API-role private access, schema `CREATE`, sequence mutation, or cross-domain write authority;
+- same-date multi-requirement/multi-destination plan success;
+- exact Planning/allocation/released-PO lineage and child cardinality;
 - all-scope authorization before receipt;
-- mixed date, duplicate pair, malformed shape, stale named version, inactive reference, missing/revised PO, cross-wire, pre-existing active membership, and duplicate reference failure;
-- exact replay and nested conflict;
-- no partial plan/membership/event/audit facts on failure;
-- no trip/stop/load/evidence/delivery facts on success.
+- derived service date and exact membership set;
+- mixed date, duplicate, stale, inactive, missing/revised PO, cross-wired, already-planned, malformed, and duplicate-reference failures;
+- assigned multi-stop trip success from a subset and a second disjoint trip;
+- exact Planning-derived stop destinations;
+- assignment, driver, sequence, membership, stale-plan, lineage, and destination failures;
+- replay, nested conflict, atomic failure, one event/audit per success, and exact plan version increments;
+- no excluded downstream facts;
+- PA-05B-H1 and PA-05B-H2 compatibility.
 
-### Trip
+Use rolled-back synthetic fixtures. Prefer PA-05D and PA-05E commands for upstream prerequisites where practical. Add no persistent seed data.
 
-- assigned multi-stop trip from a subset;
-- second disjoint trip under same plan;
-- plan version increments once per successful trip command;
-- exact derived stop destination;
-- no assignment, inactive/wrong-type driver, malformed vehicle, duplicate/non-contiguous sequence, duplicate membership, wrong-plan membership, already-assigned membership, stale plan, upstream change, and cross-wire failure;
-- exact replay and nested conflict;
-- no plan increment or trip/stop/event/audit facts on failure;
-- no load/evidence/departure/delivery/closure facts on success.
+## 10. Validation economy
 
-### Regression
+Follow `AGENTS.md` validation ownership.
 
-- PA-05B-H1 runtime ownership/effective privilege expectations remain valid;
-- PA-05B-H2 accepts command-authored setup records without public behavior changes.
-
-Use rolled-back synthetic fixtures. Prefer PA-05D and PA-05E commands to author upstream prerequisites where practical. Do not add persistent seed data.
-
-## 13. Validation economy
-
-Follow `AGENTS.md`.
-
-During implementation:
-
-- run focused SQL/pgTAP checks required to develop PA-05F;
-- do not repeatedly reset the database;
-- do not run the full routine frontend suite locally.
+During implementation, run only focused checks required to develop and debug PA-05F.
 
 Near completion, run locally:
 
 1. one clean local Supabase reset;
-2. `supabase/tests/pa_05f_dispatch_setup_command_family.sql`;
-3. `supabase/tests/pa_05b_h1_runtime_role_hardening_test.sql`;
-4. `supabase/tests/pa_05b_h2_multiline_dispatch_execution.sql`;
-5. any predecessor pgTAP file directly edited for cumulative expectations;
+2. PA-05F pgTAP;
+3. PA-05B-H1 runtime-hardening pgTAP;
+4. PA-05B-H2 pgTAP;
+5. any predecessor pgTAP directly edited for cumulative expectations;
 6. `git diff --check`.
 
-Push and open the draft PR. GitHub Actions owns:
+Do not run the routine full frontend suite locally.
 
-- frozen install;
-- workspace validation;
-- formatting;
-- typecheck;
-- full application tests;
-- production build;
-- Storybook build;
-- review artifacts;
-- diff validation;
-- Qodana.
+Push the branch and open the draft PR. GitHub Actions owns frozen install, workspace validation, formatting, typecheck, full application tests, production build, Storybook build, review artifacts, diff validation, and Qodana.
 
-Do not wait for GitHub Actions after opening the draft PR. Do not claim checks passed until observed.
+Do not wait for GitHub Actions after opening the draft PR. Do not claim checks passed until completed results are observed.
 
-## 14. Stop conditions
+## 11. Stop conditions
 
-Stop and produce a contract-gap report if:
+Stop and produce a contract-gap report when:
 
-- existing tables cannot represent the approved outputs;
+- existing tables cannot represent the approved output;
 - exact Planning/allocation/released-PO lineage cannot be proven;
-- stable parent locking cannot serialize active plan admission or one-trip-per-membership safety;
-- H2 needs mandatory planned windows or another stop shape;
+- stable parent locks cannot serialize active plan admission or one-trip-per-membership safety;
+- PA-05B-H2 requires mandatory planned windows or another stop shape;
 - a separate admission, unassigned-trip, reassignment, cancellation, or update command is required;
 - cross-domain mutation is required;
 - a new public function, table, or column appears necessary;
 - implementation would change PA-05B-H2 behavior.
 
-The gap report must identify the exact contract rule, conflicting schema/code, smallest documentation amendment, migration effect, and confirmation that no implementation or external mutation was performed.
+Do not improvise a workaround.
 
-## 15. Publication rule
+## 12. Publication and report
 
-When implementation and focused local validation are complete:
+When focused validation passes:
 
 1. commit intentionally;
 2. push `task/pa-05f-dispatch-setup-command-family`;
@@ -510,21 +317,17 @@ When implementation and focused local validation are complete:
 4. do not mark ready;
 5. do not merge;
 6. do not close Issue #95;
-7. do not deploy or mutate any external service.
+7. do not deploy or mutate an external service.
 
 Return:
 
-1. branch and commit SHA;
-2. draft PR number;
-3. files changed;
-4. exact two-function surface and total API count;
-5. exact payloads and outputs;
-6. authoritative rows read, locked, inserted, and updated;
-7. complete membership, destination, line-cardinality, version, assignment, and scope invariants;
-8. runtime ownership, grants, revocations, and RLS;
-9. complexity inventory;
-10. pgTAP assertion counts;
-11. focused local validation performed;
-12. checks delegated to GitHub Actions;
-13. contract deviations, or explicitly `none`;
-14. confirmation that no PA-05B-H3, PA-05G, UI, deployment, live Supabase, production data, Retool, OPS v1, Warehouse, Storage, Edge Function, seed, HR, fleet, or route-optimization behavior was added.
+- branch, commit SHA, and draft PR number;
+- files changed;
+- exact two-function surface and total API count;
+- inputs, outputs, rows read/locked/written/updated, and complete invariants;
+- runtime ownership, grants, revocations, and RLS;
+- complexity inventory;
+- pgTAP counts and focused local validation;
+- checks delegated to GitHub Actions;
+- contract deviations, or explicitly `none`;
+- confirmation that no PA-05B-H3, PA-05G, UI, deployment, live Supabase, production data, Retool, OPS v1, Warehouse, Storage, Edge Function, seed, HR, fleet, or route-optimization behavior was added.
