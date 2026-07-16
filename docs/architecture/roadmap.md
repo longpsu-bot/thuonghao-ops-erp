@@ -145,8 +145,8 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05B bounded SQL command implementation — merged with actor/receipt helpers, five evidence-to-delivery commands, one shaped trace, and security/concurrency/invariant tests
 - ✅ PA-05C authorized read API wrappers — shaped, capability/scope-filtered readiness, blocker, and audit-timeline functions
 - ✅ PA-05B-H1 / issue #82 — runtime-role hardening completed: separate Evidence and Dispatch command owners, read-only read owner, revoke-first access, and effective-privilege pgTAP audit
-- 🟡 PA-05D bounded Planning command family — implemented on the Issue #85 review branch with four Planning commands, a dedicated least-privilege runtime, exact source-to-requirement lineage, and 73 focused pgTAP assertions; pending review and merge
-- ⬜ PA-05E bounded Procurement command family — supplier-direct fulfilment allocation and released supplier purchase order
+- ✅ PA-05D bounded Planning command family — completed on `main` with four Planning commands, a dedicated least-privilege runtime, exact source-to-requirement lineage, and focused pgTAP coverage
+- 🟡 PA-05E bounded Procurement command family — implemented on the Issue #88 review branch with exact full-line supplier allocation, separate all-lines-per-supplier purchase-order release, a dedicated least-privilege runtime, and focused pgTAP coverage; pending review and merge
 - ⬜ PA-05F bounded Dispatch setup command family — dispatch plan, requirement admission, trip, and stop setup
 - ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-delivery path using the PA-05D through PA-05F prerequisites and existing PA-05B/PA-05C surface
 - ⬜ PA-06 React connection — after PA-05G under the product owner's backend-first sequencing decision
@@ -189,7 +189,7 @@ Approved PA-01 contract
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, and PA-05B-H1 are completed on `main`; the current nine-function API covers supplier Evidence, load/departure/successful delivery, trace, readiness, blockers, and audit reads. PA-05D is the proposed Planning-owned beginning of the wholesale source-to-requirement path. PA-05E and PA-05F will remove the remaining Procurement and Dispatch-setup fixture prerequisites. PA-05G is the gate at which the supplier-direct wholesale Slice 1 backend may be called complete. PA-06 follows that acceptance gate under the product owner's current sequencing decision. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, and PA-05D are completed on `main`; the reviewed 13-function API covers the Planning release chain, supplier Evidence, load/departure/successful delivery, trace, readiness, blockers, and audit reads. PA-05E adds two Procurement-owned commands for exact supplier allocation and released supplier purchase orders, bringing the reviewed surface to 15 functions. PA-05F will remove the remaining Dispatch-setup fixture prerequisite. PA-05G is the gate at which the supplier-direct wholesale Slice 1 backend may be called complete. PA-06 follows that acceptance gate under the product owner's current sequencing decision. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
 
 ## Deferred — Production and Quality
 

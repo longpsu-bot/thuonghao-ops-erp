@@ -1,6 +1,6 @@
 # Decision — PA-05E bounded supplier-direct Procurement
 
-**Status:** Proposed  
+**Status:** Approved; implemented on the Issue #88 branch pending review and merge
 **Issue:** #88
 
 ## Decision

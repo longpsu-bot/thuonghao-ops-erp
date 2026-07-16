@@ -8,7 +8,7 @@ grant execute on all functions in schema extensions to authenticated;
 
 select ok(
   not exists (
-    select 1 from unnest(array['atlas_command_runtime', 'atlas_evidence_command_runtime', 'atlas_dispatch_command_runtime', 'atlas_planning_command_runtime', 'atlas_read_runtime']) r(role_name)
+    select 1 from unnest(array['atlas_command_runtime', 'atlas_evidence_command_runtime', 'atlas_dispatch_command_runtime', 'atlas_planning_command_runtime', 'atlas_procurement_command_runtime', 'atlas_read_runtime']) r(role_name)
     cross join unnest(array['atlas_core','atlas_admin','atlas_planning','atlas_procurement','atlas_evidence','atlas_dispatch','atlas_audit','atlas_reporting','atlas_api']) s(schema_name)
     where has_schema_privilege(r.role_name, s.schema_name, 'CREATE')
   ),
@@ -57,8 +57,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  13,
-  'authenticated can execute exactly the 13 reviewed PA-05B, PA-05C, and PA-05D API functions'
+  15,
+  'authenticated can execute exactly the 15 reviewed PA-05B, PA-05C, PA-05D, and PA-05E API functions'
 );
 
 select ok(
@@ -80,6 +80,7 @@ select ok(
       (p.proname in ('record_supplier_receiving_evidence','apply_supplier_evidence_to_allocation') and r.rolname <> 'atlas_evidence_command_runtime')
       or (p.proname in ('confirm_dispatch_load','record_dispatch_departure','confirm_successful_delivery') and r.rolname <> 'atlas_dispatch_command_runtime')
       or (p.proname in ('record_wholesale_source','release_wholesale_order','release_purchase_handoff','release_dispatch_requirement') and r.rolname <> 'atlas_planning_command_runtime')
+      or (p.proname in ('allocate_supplier_direct_fulfilment','release_supplier_purchase_order') and r.rolname <> 'atlas_procurement_command_runtime')
       or (p.proname in ('get_supplier_direct_trace','get_dispatch_evidence_readiness','get_operator_blockers','get_command_audit_timeline') and r.rolname <> 'atlas_read_runtime')
     )
   ),
@@ -88,8 +89,8 @@ select ok(
 
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api'),
-  13,
-  'no Atlas API functions beyond the reviewed PA-05B, PA-05C, and PA-05D surface exist'
+  15,
+  'no Atlas API functions beyond the reviewed PA-05B, PA-05C, PA-05D, and PA-05E surface exist'
 );
 
 select ok(
