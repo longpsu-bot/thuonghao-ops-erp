@@ -3,7 +3,7 @@
 **Status:** Completed on `main`; execution correction PA-05B-H2 proposed in Issue #91  
 **Scope:** Supplier-direct wholesale Slice 1 evidence-to-delivery command subset  
 **Authority:** PA-01 through PA-05A and the approved Planning, Procurement, Evidence, and Dispatch boundaries  
-**Next gates:** PA-05B-H2 multi-line Dispatch execution correction, then PA-05F Dispatch setup and PA-05G backend acceptance
+**Next gates:** PA-05B-H2 multi-line Dispatch execution, PA-05F Dispatch setup, PA-05B-H3 successful trip closure, then PA-05G backend acceptance
 
 ## 1. Outcome and boundary
 
@@ -18,7 +18,7 @@ The implemented callable surface is exactly:
 - `atlas_api.confirm_successful_delivery(request jsonb) returns jsonb`
 - `atlas_api.get_supplier_direct_trace(request jsonb) returns jsonb`
 
-Planning releases, Procurement allocation and purchase-order release, and Dispatch plan/trip/stop setup were prerequisites when PA-05B was implemented. PA-05D and PA-05E now author the Planning and Procurement prerequisites. PA-05F remains responsible for plan/trip/stop setup.
+Planning releases, Procurement allocation and purchase-order release, and Dispatch plan/trip/stop setup were prerequisites when PA-05B was implemented. PA-05D and PA-05E now author the Planning and Procurement prerequisites. PA-05F remains responsible for plan/trip/stop setup. The approved PA-05A closure command remains a separately tracked follow-up in Issue #93.
 
 ## 2. Callable and private security boundary
 
@@ -77,6 +77,10 @@ The merged `confirm_successful_delivery` command is successful-path-only and rec
 
 PA-05B-H2 replaces that one-line assumption with one atomic stop-level confirmation containing every current confirmed load line. Return, exception, Warehouse, Finance, and QA behavior remain excluded.
 
+### Successful trip closure
+
+The approved catalog includes `close_successful_trip`, which is not implemented by PA-05B or PA-05B-H2. A fully delivered trip currently reaches `DELIVERED` but does not have an authoritative closure command that validates the complete successful path, sets `completed_at`, and emits `SuccessfulDispatchTripClosed`. Issue #93 tracks that separate bounded command so PA-05G can remain acceptance-only.
+
 ## 6. Shaped read
 
 `get_supplier_direct_trace` accepts an authorized wholesale-order-line revision and internally reads the private PA-04 trace model plus allowlisted source/status records. It returns public references, opaque lineage IDs, stage statuses, exact quantities, evidence readiness, load/delivery state, and safe blockers/warnings.
@@ -110,6 +114,7 @@ The corrected backend sequence is:
 ```text
 PA-05B-H2 multi-line Dispatch execution
 → PA-05F Dispatch plan/trip/stop setup
+→ PA-05B-H3 successful trip closure
 → PA-05G command-authored backend acceptance
 → PA-06 React connection
 ```
