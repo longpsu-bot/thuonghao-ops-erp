@@ -1,10 +1,12 @@
 # PA-05E — Bounded Procurement command family
 
-**Status:** Proposed implementation contract; documentation only  
+**Status:** Approved implementation contract; implemented on the Issue #88 branch pending review and merge
 **Scope:** Supplier-direct wholesale Slice 1, from released Dispatch Requirement to released supplier purchase orders  
 **Authority:** ARCH-001, ARCH-002, PA-01 through PA-05D, PA-05A, Procurement contracts, and the amended Dispatch/Delivery boundary  
 **Implementation issue:** #88  
 **Implementation instructions:** `docs/implementation-tasks/TASK-PA-05E-procurement-command-family.md`
+**Migration:** `supabase/migrations/20260716023909_pa_05e_procurement_command_family.sql`
+**pgTAP:** `supabase/tests/pa_05e_procurement_command_family.sql` (78 assertions)
 
 ## 1. Executive decision
 

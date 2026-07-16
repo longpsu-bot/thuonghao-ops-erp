@@ -327,6 +327,11 @@ returns jsonb language sql stable security definer set search_path = '' as $$
            drlr.unit_id,
            row_number() over (order by drlr.dispatch_requirement_line_revision_id) as line_rank
     from atlas_planning.dispatch_requirement_line_revisions drlr
+    join atlas_planning.dispatch_requirement_revisions drr
+      on drr.dispatch_requirement_revision_id = drlr.dispatch_requirement_revision_id
+    join atlas_planning.dispatch_requirement_lines drl
+      on drl.dispatch_requirement_line_id = drlr.dispatch_requirement_line_id
+     and drl.dispatch_requirement_id = drr.dispatch_requirement_id
     where drlr.dispatch_requirement_revision_id = requirement_revision_id
   )
   select pg_catalog.jsonb_build_object(
@@ -491,6 +496,42 @@ insert into pa05e_results values ('crosswire', atlas_api.allocate_supplier_direc
 )));
 
 reset role;
+insert into atlas_planning.dispatch_requirement_line_revisions (
+  dispatch_requirement_line_revision_id, dispatch_requirement_revision_id,
+  dispatch_requirement_line_id, purchase_handoff_line_revision_id,
+  ingredient_id, required_quantity, unit_id
+)
+select
+  'e6000000-0000-0000-0000-000000000001',
+  (select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_revision_id}')::uuid
+   from pa05e_results where result_name='requirement'),
+  drlr.dispatch_requirement_line_id, drlr.purchase_handoff_line_revision_id,
+  drlr.ingredient_id, drlr.required_quantity, drlr.unit_id
+from atlas_planning.dispatch_requirement_line_revisions drlr
+where drlr.dispatch_requirement_revision_id = (
+  select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_revision_id}')::uuid
+  from pa05e_results where result_name='requirement-other'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','e0000000-0000-0000-0000-000000000101',true);
+insert into pa05e_results values ('crosswire-child', atlas_api.allocate_supplier_direct_fulfilment(pg_temp.pa05e_request(
+  'e9000000-0000-0000-0000-000000000222','crosswire-child',1,'e0000000-0000-0000-0000-000000000101',
+  pg_temp.pa05e_allocation_payload((select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_revision_id}')::uuid from pa05e_results where result_name='requirement'))
+)));
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05e_results where result_name='crosswire-child'),'INVARIANT_VIOLATION','allocation rejects an extra selected-revision child cross-wired to another requirement root');
+select ok(
+  (select count(*) = 0 from atlas_procurement.fulfilment_allocations)
+  and not exists (select 1 from atlas_audit.domain_events where command_id='e9000000-0000-0000-0000-000000000222')
+  and not exists (select 1 from atlas_audit.audit_events where command_id='e9000000-0000-0000-0000-000000000222'),
+  'cross-wired requirement child creates no allocation, Procurement domain event, or audit event'
+);
+
+delete from atlas_planning.dispatch_requirement_line_revisions
+where dispatch_requirement_line_revision_id='e6000000-0000-0000-0000-000000000001';
+
 update atlas_planning.dispatch_requirements
 set requirement_status='DRAFT'
 where dispatch_requirement_id=(
@@ -528,6 +569,114 @@ reset role;
 select is((select count(*)::integer from atlas_procurement.purchase_orders),0,'allocation creates no purchase order fact');
 select is((select count(*)::integer from atlas_evidence.supplier_receiving_evidence),0,'allocation creates no Evidence fact');
 select is((select count(*)::integer from atlas_dispatch.dispatch_plans),0,'allocation creates no Dispatch execution fact');
+
+update atlas_planning.dispatch_requirements
+set requirement_status='RELEASED'
+where dispatch_requirement_id=(
+  select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_id}')::uuid
+  from pa05e_results where result_name='requirement-other'
+);
+
+insert into atlas_procurement.fulfilment_allocations (
+  fulfilment_allocation_id, dispatch_requirement_id, allocation_status, version
+) values (
+  'e7000000-0000-0000-0000-000000000001',
+  (select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_id}')::uuid
+   from pa05e_results where result_name='requirement-other'),
+  'READY_FOR_DISPATCH', 1
+);
+insert into atlas_procurement.fulfilment_allocation_revisions (
+  fulfilment_allocation_revision_id, fulfilment_allocation_id, revision_number,
+  revision_kind, revision_status, is_current, allocated_by_actor_id
+) values (
+  'e7000000-0000-0000-0000-000000000002',
+  'e7000000-0000-0000-0000-000000000001', 1, 'BASE',
+  'READY_FOR_DISPATCH', true, 'e0000000-0000-0000-0000-000000000001'
+);
+insert into atlas_procurement.fulfilment_allocation_lines (
+  fulfilment_allocation_line_id, fulfilment_allocation_id,
+  dispatch_requirement_line_id, portion_sequence
+)
+select
+  'e7000000-0000-0000-0000-000000000003',
+  'e7000000-0000-0000-0000-000000000001',
+  drlr.dispatch_requirement_line_id, 1
+from atlas_planning.dispatch_requirement_line_revisions drlr
+where drlr.dispatch_requirement_revision_id=(
+  select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_revision_id}')::uuid
+  from pa05e_results where result_name='requirement-other'
+);
+insert into atlas_procurement.fulfilment_allocation_line_revisions (
+  fulfilment_allocation_line_revision_id, fulfilment_allocation_revision_id,
+  fulfilment_allocation_line_id, dispatch_requirement_line_revision_id,
+  fulfilment_source_type, supplier_id, allocated_quantity, unit_id, line_status
+)
+select
+  'e7000000-0000-0000-0000-000000000004',
+  'e7000000-0000-0000-0000-000000000002',
+  'e7000000-0000-0000-0000-000000000003',
+  drlr.dispatch_requirement_line_revision_id, 'SUPPLIER_PO',
+  'e3000000-0000-0000-0000-000000000041', drlr.required_quantity,
+  drlr.unit_id, 'READY_FOR_EVIDENCE'
+from atlas_planning.dispatch_requirement_line_revisions drlr
+where drlr.dispatch_requirement_revision_id=(
+  select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_revision_id}')::uuid
+  from pa05e_results where result_name='requirement-other'
+);
+insert into atlas_procurement.fulfilment_allocation_line_revisions (
+  fulfilment_allocation_line_revision_id, fulfilment_allocation_revision_id,
+  fulfilment_allocation_line_id, dispatch_requirement_line_revision_id,
+  fulfilment_source_type, supplier_id, allocated_quantity, unit_id, line_status
+)
+select
+  'e7000000-0000-0000-0000-000000000005',
+  (select (response_payload #>> '{affected_aggregate_ids,fulfilment_allocation_revision_id}')::uuid
+   from pa05e_results where result_name='allocate'),
+  'e7000000-0000-0000-0000-000000000003',
+  drlr.dispatch_requirement_line_revision_id, 'SUPPLIER_PO',
+  'e3000000-0000-0000-0000-000000000041', drlr.required_quantity,
+  drlr.unit_id, 'READY_FOR_EVIDENCE'
+from atlas_planning.dispatch_requirement_line_revisions drlr
+where drlr.dispatch_requirement_revision_id=(
+  select (response_payload #>> '{affected_aggregate_ids,dispatch_requirement_revision_id}')::uuid
+  from pa05e_results where result_name='requirement-other'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','e0000000-0000-0000-0000-000000000101',true);
+
+insert into pa05e_results values ('po-crosswire-child', atlas_api.release_supplier_purchase_order(pg_temp.pa05e_request(
+  'e9000000-0000-0000-0000-000000000407','po-crosswire-child',1,'e0000000-0000-0000-0000-000000000101',
+  jsonb_build_object(
+    'fulfilment_allocation_revision_id',(select response_payload #>> '{affected_aggregate_ids,fulfilment_allocation_revision_id}' from pa05e_results where result_name='allocate'),
+    'supplier_id','e3000000-0000-0000-0000-000000000041','document_number','PA05E-PO-CROSSWIRE'
+  )
+)));
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05e_results where result_name='po-crosswire-child'),'INVARIANT_VIOLATION','PO release rejects an extra selected-revision allocation child cross-wired to another allocation root');
+select ok(
+  (select count(*) = 0 from atlas_procurement.purchase_orders)
+  and (select count(*) = 0 from atlas_procurement.purchase_order_revisions)
+  and (select count(*) = 0 from atlas_procurement.purchase_order_lines)
+  and (select count(*) = 0 from atlas_procurement.purchase_order_line_revisions)
+  and not exists (select 1 from atlas_audit.domain_events where command_id='e9000000-0000-0000-0000-000000000407')
+  and not exists (select 1 from atlas_audit.audit_events where command_id='e9000000-0000-0000-0000-000000000407'),
+  'cross-wired allocation child creates no PO root, revision, line, domain event, or audit event'
+);
+
+delete from atlas_procurement.fulfilment_allocation_line_revisions
+where fulfilment_allocation_line_revision_id in (
+  'e7000000-0000-0000-0000-000000000005',
+  'e7000000-0000-0000-0000-000000000004'
+);
+delete from atlas_procurement.fulfilment_allocation_lines
+where fulfilment_allocation_line_id='e7000000-0000-0000-0000-000000000003';
+delete from atlas_procurement.fulfilment_allocation_revisions
+where fulfilment_allocation_revision_id='e7000000-0000-0000-0000-000000000002';
+delete from atlas_procurement.fulfilment_allocations
+where fulfilment_allocation_id='e7000000-0000-0000-0000-000000000001';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','e0000000-0000-0000-0000-000000000101',true);
 

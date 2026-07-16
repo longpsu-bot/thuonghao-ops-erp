@@ -153,6 +153,7 @@ declare
   v_service_date date;
   v_supplier_name text;
   v_location_name text;
+  v_raw_allocation_line_revision_count integer;
   v_allocation_line_count integer;
   v_valid_line_count integer;
   v_supplier_line_count integer;
@@ -297,8 +298,12 @@ begin
     order by po.purchase_order_id for key share;
   perform 1 from atlas_procurement.purchase_order_lines pol
     where pol.fulfilment_allocation_line_id in (
-      select falr.fulfilment_allocation_line_id
+      select fal.fulfilment_allocation_line_id
       from atlas_procurement.fulfilment_allocation_line_revisions falr
+      join atlas_procurement.fulfilment_allocation_lines fal
+        on fal.fulfilment_allocation_line_id = falr.fulfilment_allocation_line_id
+       and fal.fulfilment_allocation_id = v_fulfilment_allocation_id
+       and fal.portion_sequence = 1
       where falr.fulfilment_allocation_revision_id = v_fulfilment_allocation_revision_id
         and falr.supplier_id = v_supplier_id
     ) order by pol.purchase_order_line_id for key share;
@@ -333,6 +338,10 @@ begin
   select count(*)::integer into v_allocation_line_count
   from atlas_procurement.fulfilment_allocation_lines fal
   where fal.fulfilment_allocation_id = v_fulfilment_allocation_id;
+
+  select count(*)::integer into v_raw_allocation_line_revision_count
+  from atlas_procurement.fulfilment_allocation_line_revisions falr
+  where falr.fulfilment_allocation_revision_id = v_fulfilment_allocation_revision_id;
 
   select count(*)::integer,
          count(*) filter (where falr.supplier_id = v_supplier_id)::integer
@@ -445,6 +454,7 @@ begin
   if v_allocation_status <> 'READY_FOR_DISPATCH'
      or v_revision_status <> 'READY_FOR_DISPATCH' or not v_revision_current
      or v_allocation_line_count < 1
+     or v_raw_allocation_line_revision_count <> v_allocation_line_count
      or v_valid_line_count <> v_allocation_line_count
      or v_supplier_line_count < 1
      or v_supplier_name is null or pg_catalog.btrim(v_supplier_name) = ''
@@ -466,12 +476,18 @@ begin
        join atlas_procurement.fulfilment_allocation_line_revisions falr
          on falr.fulfilment_allocation_line_revision_id = polr.fulfilment_allocation_line_revision_id
         and falr.fulfilment_allocation_revision_id = v_fulfilment_allocation_revision_id
+       join atlas_procurement.fulfilment_allocation_lines fal
+         on fal.fulfilment_allocation_line_id = falr.fulfilment_allocation_line_id
+        and fal.fulfilment_allocation_id = v_fulfilment_allocation_id
+        and fal.portion_sequence = 1
      )
      or exists (
        select 1
        from atlas_procurement.purchase_order_lines pol
        join atlas_procurement.fulfilment_allocation_lines fal
          on fal.fulfilment_allocation_line_id = pol.fulfilment_allocation_line_id
+        and fal.fulfilment_allocation_id = v_fulfilment_allocation_id
+        and fal.portion_sequence = 1
        join atlas_procurement.fulfilment_allocation_line_revisions falr
          on falr.fulfilment_allocation_line_id = fal.fulfilment_allocation_line_id
         and falr.fulfilment_allocation_revision_id = v_fulfilment_allocation_revision_id
@@ -511,6 +527,8 @@ begin
       from atlas_procurement.fulfilment_allocation_line_revisions falr
       join atlas_procurement.fulfilment_allocation_lines fal
         on fal.fulfilment_allocation_line_id = falr.fulfilment_allocation_line_id
+       and fal.fulfilment_allocation_id = v_fulfilment_allocation_id
+       and fal.portion_sequence = 1
       join atlas_planning.dispatch_requirement_line_revisions drlr
         on drlr.dispatch_requirement_line_revision_id = falr.dispatch_requirement_line_revision_id
       where falr.fulfilment_allocation_revision_id = v_fulfilment_allocation_revision_id
@@ -649,6 +667,7 @@ declare
   v_revision_current boolean;
   v_submitted_count integer;
   v_distinct_count integer;
+  v_raw_requirement_line_revision_count integer;
   v_requirement_line_count integer;
   v_valid_line_count integer;
   v_supplier_count integer;
@@ -835,6 +854,10 @@ begin
   from atlas_planning.dispatch_requirement_lines drl
   where drl.dispatch_requirement_id = v_dispatch_requirement_id;
 
+  select count(*)::integer into v_raw_requirement_line_revision_count
+  from atlas_planning.dispatch_requirement_line_revisions drlr
+  where drlr.dispatch_requirement_revision_id = v_dispatch_requirement_revision_id;
+
   with submitted as (
     select
       atlas_core.pa_05b_safe_uuid(x.value ->> 'dispatch_requirement_line_revision_id') as line_revision_id,
@@ -945,6 +968,7 @@ begin
   if v_requirement_status <> 'RELEASED'
      or v_revision_status <> 'RELEASED' or not v_revision_current
      or v_requirement_line_count < 1
+     or v_raw_requirement_line_revision_count <> v_requirement_line_count
      or v_submitted_count <> v_requirement_line_count
      or v_distinct_count <> v_requirement_line_count
      or v_valid_line_count <> v_requirement_line_count
