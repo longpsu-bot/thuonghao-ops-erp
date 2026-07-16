@@ -148,9 +148,9 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05D bounded Planning command family — completed on `main` with four Planning commands, a dedicated least-privilege runtime, exact source-to-requirement lineage, and focused pgTAP coverage
 - ✅ PA-05E bounded Procurement command family — completed on `main` with exact full-line supplier allocation, separate all-lines-per-supplier purchase-order release, a dedicated least-privilege runtime, and 78 focused pgTAP assertions
 - ✅ PA-05B-H2 multi-line Dispatch execution correction — merged with atomic multi-line load, full-line trip departure revalidation, Planning-owned destination enforcement, multi-line successful delivery, trip-wide scope authorization, and 128 focused pgTAP assertions
-- 🟡 PA-05F bounded Dispatch setup command family — contract, decision, task, and Issue #95 prepared for exact plan, requirement-admission, assigned-trip, and derived-stop implementation
+- 🟡 PA-05F bounded Dispatch setup command family — contract, decision, task, and Issue #95 prepared for Evidence-gated plan, requirement-admission, assigned-trip, and derived-stop implementation
 - ⬜ PA-05B-H3 successful Dispatch trip closure — Issue #93: close a fully reconciled delivered trip, set completion time, and emit the approved closure event
-- ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-trip-closure path using PA-05D, PA-05E, PA-05B-H2, PA-05F, PA-05B-H3, and the existing Evidence/read surface
+- ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-trip-closure path using PA-05D, PA-05E, PA-05B Evidence, PA-05F, PA-05B-H2, PA-05B-H3, and the existing read surface
 - ⬜ PA-06 React connection — after PA-05G under the product owner's backend-first sequencing decision
 - ⬜ Controlled seed/reference data — separately approved after backend acceptance; not required for rolled-back local fixtures
 - ⬜ First connected wholesale supplier-direct vertical slice
@@ -163,8 +163,8 @@ Backend completion boundary:
 Wholesale source
 → Planning release chain
 → Procurement allocation and supplier PO
+→ source-owned supplier evidence and exact applications
 → Dispatch plan/trip/stop setup
-→ supplier evidence
 → exact multi-line load
 → full-line departure
 → successful multi-line delivery
@@ -186,7 +186,7 @@ Approved PA-01 contract
 → PA-05D Planning command family
 → PA-05E Procurement command family
 → PA-05B-H2 multi-line Dispatch execution correction
-→ PA-05F Dispatch setup command family
+→ PA-05F Evidence-gated Dispatch setup command family
 → PA-05B-H3 successful trip closure
 → PA-05G backend end-to-end acceptance
 → PA-06 React connection
@@ -194,7 +194,7 @@ Approved PA-01 contract
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, PA-05D, PA-05E, and PA-05B-H2 are completed on `main`; the reviewed 15-function API covers the Planning release chain, Procurement allocation and supplier PO, supplier Evidence, atomic multi-line load, trip-wide departure, stop-level multi-line delivery, trace, readiness, blockers, and audit reads. PA-05F is the current bounded implementation gate under Issue #95 and will add exactly two Dispatch setup commands, increasing the reviewed surface to 17 only after implementation. The approved catalog also requires successful trip closure, tracked separately in Issue #93, so PA-05G can remain a pure command-authored acceptance gate. PA-06 follows that acceptance. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, PA-05D, PA-05E, and PA-05B-H2 are completed on `main`; the reviewed 15-function API covers the Planning release chain, Procurement allocation and supplier PO, supplier Evidence, atomic multi-line load, trip-wide departure, stop-level multi-line delivery, trace, readiness, blockers, and audit reads. PA-05F is the current bounded implementation gate under Issue #95 and will add exactly two Evidence-gated Dispatch setup commands, increasing the reviewed surface to 17 only after implementation. The approved catalog also requires successful trip closure, tracked separately in Issue #93, so PA-05G can remain a pure command-authored acceptance gate. PA-06 follows that acceptance. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
 
 ## Deferred — Production and Quality
 
