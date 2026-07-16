@@ -1,23 +1,25 @@
 # PA-05F — Bounded Dispatch setup command family
 
 **Status:** Approved implementation contract; implementation not started  
-**Scope:** Supplier-direct wholesale Slice 1, from committed Dispatch requirements to assigned trips and exact stops  
+**Scope:** Supplier-direct wholesale Slice 1, from physically ready Dispatch requirements to assigned trips and exact stops  
 **Authority:** ARCH-001, ARCH-002, PA-01 through PA-05E, PA-05B-H2, PA-05A, the Dispatch and Delivery Domain Contract, and Issue #95  
 **Implementation issue:** #95  
 **Implementation instructions:** `docs/implementation-tasks/TASK-PA-05F-dispatch-setup-command-family.md`
 
 ## 1. Executive decision
 
-PA-05F removes the remaining fixture-authored prerequisite before supplier-direct Dispatch execution:
+PA-05F removes the remaining fixture-authored prerequisite before supplier-direct Dispatch execution while preserving the approved dependency:
 
 ```text
-Released Dispatch Requirement
-+ current exact supplier-direct Fulfilment Allocation
-+ released supplier Purchase Orders
-→ Dispatch Plan and requirement admission
-→ assigned Dispatch Trip
-→ exact Dispatch Stops
+DispatchRequirement
++ FulfilmentAllocation
++ current valid FulfilmentEvidence
+→ DispatchPlan
+→ assigned DispatchTrip
+→ exact DispatchStops
 ```
+
+For the supplier-direct Slice 1, `FulfilmentEvidence` means current valid supplier receiving/cross-dock evidence that has been validly applied to every exact allocation-line revision at full quantity.
 
 PA-05F adds exactly two public commands:
 
@@ -39,7 +41,7 @@ Mission
 → complete one authoritative supplier-direct wholesale operating path
 
 Business Capability
-→ group committed delivery obligations into a Dispatch plan
+→ group physically ready delivery obligations into a Dispatch plan
 → assign exact plan requirements to an executable trip and stop sequence
 
 Business Domain
@@ -54,6 +56,7 @@ Business Objects
 Business Contract
 → Planning owns item, quantity, destination, service date, and release snapshots
 → Procurement owns fulfilment allocation, supplier assignment, and released supplier commitment
+→ the physical source owns receiving/cross-dock evidence and its valid application
 → Dispatch owns plan grouping, trip assignment references, and stop sequence
 → Dispatch consumes upstream facts without rewriting them
 
@@ -76,17 +79,18 @@ Technology
 
 ## 3. Why PA-05F is required
 
-PA-05D and PA-05E now author the upstream Planning and Procurement records. PA-05B-H2 can execute atomic multi-line loading, full-trip departure, and multi-line delivery. Its tests still create Dispatch Plan, Plan Requirement, Trip, and Stop rows directly as rolled-back fixtures.
+PA-05D and PA-05E author the Planning and Procurement records. Existing PA-05B Evidence commands author supplier receiving evidence and exact evidence applications. PA-05B-H2 can execute atomic multi-line loading, full-trip departure, and multi-line delivery. Its tests still create Dispatch Plan, Plan Requirement, Trip, and Stop rows directly as rolled-back fixtures.
 
-PA-05F makes those records command-authored while keeping their ownership narrow:
+PA-05F makes those records command-authored while retaining the approved ownership and dependency:
 
 ```text
 Planning says what, how much, where, and when.
-Procurement says which supplier commitments fulfil it.
-Dispatch decides how committed requirements are grouped and transported.
+Procurement says how and from which supplier it will be fulfilled.
+The physical source proves that the allocation is actually ready.
+Dispatch groups and transports only those physically ready obligations.
 ```
 
-OPS v1 Retool remains business evidence only. Its current dispatch-confirmation path creates day/destination headers and destructively refreshes line sets. Atlas must preserve the operational intent while replacing UI-coupled replacement SQL with idempotent, versioned, auditable commands.
+OPS v1 Retool remains business evidence only. Its dispatch-confirmation path creates day/destination headers and destructively refreshes line sets. Atlas preserves the operational intent while replacing UI-coupled replacement SQL with idempotent, versioned, auditable commands and source-owned evidence.
 
 ## 4. Bounded v1 simplification
 
@@ -94,16 +98,18 @@ PA-05F.v1 implements the minimum setup needed by PA-05B-H2 and PA-05G:
 
 - one plan command atomically creates the plan and its initial requirement memberships;
 - there is no separate `admit_requirement_to_dispatch_plan` command;
+- the plan command discovers and validates current evidence; the caller does not choose evidence IDs;
+- every selected allocation line must be fully covered by current valid evidence applications;
 - one trip command atomically creates an already assigned trip and its exact stops;
 - there is no persisted `PLANNED` trip awaiting a second assignment command;
 - a plan may contain multiple trips;
 - each selected plan requirement belongs to at most one non-cancelled/non-voided trip;
 - stop destination values are derived from Planning, never supplied by the caller;
 - caller-authored route windows are deferred;
-- physical Evidence is not a plan-creation prerequisite;
-- PA-05B-H2 independently gates load and departure against current Evidence.
+- PA-05F reads and locks Evidence but never creates, changes, supersedes, voids, or consumes it;
+- PA-05B-H2 independently revalidates Evidence again at load and departure.
 
-This avoids a generic routing, scheduling, assignment, or workflow engine.
+This avoids a generic routing, scheduling, assignment, evidence, or workflow engine.
 
 ## 5. Shared command envelope and result
 
@@ -174,7 +180,7 @@ Rules:
 - each revision ID is a valid UUID;
 - each named upstream expected version is positive;
 - requirement revision IDs, allocation revision IDs, and exact pairs are unique in the request;
-- caller does not supply service date, customer, location, quantity, supplier, status, actor, or generated IDs.
+- caller does not supply service date, customer, location, quantity, supplier, evidence ID, status, actor, or generated ID.
 
 ### 6.3 Authoritative preconditions
 
@@ -207,13 +213,28 @@ Before receipt registration, resolve and authorize every authoritative destinati
 - supplier, ingredient, ordered quantity, unit, destination, and service date reconcile exactly;
 - active supplier, ingredient, and unit references remain valid.
 
+#### Source-owned physical evidence
+
+For every selected current allocation-line revision:
+
+- at least one current valid `evidence_applications` row exists;
+- every application points to that exact allocation-line revision;
+- every application has `application_status = VALID` and has no current valid successor that supersedes it;
+- every source `supplier_receiving_evidence` row has `evidence_status = VALID` and has no current valid successor that supersedes it;
+- source evidence points to the exact current released PO-line revision for that allocation line;
+- source supplier equals the allocation supplier and PO supplier;
+- source and application ingredient/unit lineage equals the allocation and requirement line;
+- the sum of current valid applied quantity for the allocation line equals its allocated quantity exactly;
+- the sum of all current valid applications of each source evidence row does not exceed that evidence row’s quantity;
+- no non-voided Dispatch load or valid load-application bridge already consumes the selected requirement/allocation pair.
+
+Missing, partial, excess, voided, superseded, stale, cross-wired, wrong-supplier, wrong-PO, wrong-item, wrong-unit, or over-applied evidence blocks plan creation.
+
 #### Plan scope
 
 - all selected requirements have one identical authoritative service date;
 - no selected exact requirement/allocation pair is already admitted to another Dispatch Plan whose status is not `CANCELLED`;
 - the supplied plan reference is unused.
-
-Physical Evidence is deliberately not required. Planning a committed obligation and loading evidenced goods remain separate decisions.
 
 ### 6.4 Atomic output
 
@@ -232,7 +253,7 @@ Create exactly:
 - one audit event;
 - one safe response containing plan ID/version, derived service date, and membership IDs.
 
-It creates no trip, stop, load, Evidence, departure, delivery, exception, return, or closure fact.
+The command reads and locks current Evidence but creates no trip, stop, Evidence, load, departure, delivery, exception, return, or closure fact.
 
 ## 7. Command 2 — `create_or_assign_dispatch_trip`
 
@@ -277,7 +298,7 @@ Rules:
 - unknown top-level and nested fields are rejected;
 - each membership ID is unique;
 - stop sequences are positive, unique, contiguous, and begin at 1;
-- caller does not supply customer, delivery location, requirement revision, stop status, plan status, route window, actor scope, or generated IDs.
+- caller does not supply customer, delivery location, requirement revision, evidence ID, stop status, plan status, route window, actor scope, or generated ID.
 
 ### 7.3 Authoritative preconditions
 
@@ -286,7 +307,9 @@ Before receipt registration, resolve each selected membership to one authoritati
 - one Dispatch Plan exists, remains `PLANNED`, and has the expected version;
 - every selected plan-requirement membership belongs to that plan;
 - each membership still points to one current released requirement and one current ready allocation belonging to that requirement;
-- each allocation retains exact released supplier-PO coverage as required by plan admission;
+- each allocation retains exact current released supplier-PO coverage;
+- every selected allocation line remains fully covered by current valid source-owned evidence using the same evidence rules as plan creation;
+- no non-voided load or valid load-application bridge already exists for a selected membership;
 - each selected requirement customer/location remains active and relationally valid;
 - every membership has the same service date as the plan;
 - no selected membership is already represented by a stop under a trip in the same plan whose status is not `CANCELLED` or `VOIDED`;
@@ -324,7 +347,7 @@ Create/update exactly:
 - one audit event;
 - one safe response containing plan version, trip ID/version, and stop IDs/versions.
 
-It creates no load, Evidence, departure, delivery, exception, return, or closure fact. It does not create or modify actor scope, delegation, HR, or fleet records.
+The command reads and locks current Evidence but creates no load, Evidence, departure, delivery, exception, return, or closure fact. It does not create or modify actor scope, delegation, HR, or fleet records.
 
 ## 8. Runtime and authorization boundary
 
@@ -341,7 +364,7 @@ The role remains `NOLOGIN`, `NOINHERIT` and owns:
 
 PA-05F may add only the missing privileges needed to:
 
-- read and row-lock the approved Admin, Planning, Procurement, PO, and Dispatch lineage;
+- read and row-lock approved Admin, Planning, Procurement, PO, Evidence, and Dispatch lineage;
 - insert Dispatch Plan, Plan Requirement, Trip, and Stop rows;
 - update the selected Dispatch Plan version;
 - use command receipts and append one domain/audit event per command.
@@ -369,6 +392,7 @@ receipt/security
 → Admin references
 → Planning roots/revisions/children
 → Procurement roots/revisions/children and PO lineage
+→ Evidence sources/applications
 → Dispatch plan/memberships/trips/stops
 → event/audit
 ```
@@ -379,33 +403,37 @@ receipt/security
 - lock selected requirement roots in UUID order;
 - lock selected allocation roots in UUID order;
 - lock relevant current revisions/children and released PO lineage deterministically;
+- lock relevant source evidence and evidence applications deterministically;
 - lock existing Dispatch plan/membership rows for the selected pairs;
-- re-read versions, statuses, destinations, line cardinalities, and membership absence;
+- re-read versions, statuses, destinations, line cardinalities, evidence coverage, and membership absence;
 - stable upstream roots serialize competing admissions.
 
 ### Trip creation
 
 - authorize every selected membership tuple before receipt registration;
-- lock the Dispatch Plan root first;
+- lock the Dispatch Plan root first, then re-enter the global upstream order for the selected immutable memberships;
+- lock selected Planning, Procurement, PO, and Evidence lineage deterministically;
 - lock selected plan memberships in UUID order;
 - lock existing plan trips/stops in deterministic order;
-- re-read plan version, upstream current state, assignment, and unassigned membership set;
+- re-read plan version, upstream current state, evidence readiness, assignment, and unassigned membership set;
 - increment plan once and insert the trip/stops atomically.
 
-`40001`, `40P01`, or an explicitly classified scope/membership race is retryable and must leave no durable receipt or partial Dispatch setup.
+`40001`, `40P01`, or an explicitly classified scope/membership/evidence race is retryable and must leave no durable receipt or partial Dispatch setup.
 
 ## 10. Persistence and simplification gate
 
-Use only existing PA-04 tables:
+Use only existing PA-04 Dispatch setup tables:
 
 - `dispatch_plans`;
 - `dispatch_plan_requirements`;
 - `dispatch_trips`;
 - `dispatch_stops`.
 
-Do not add a table, column, view, trigger, sequence, queue, job, generic routing engine, scheduling engine, assignment framework, workflow engine, document framework, repository abstraction, or event-sourcing layer.
+Do not add a table, column, view, trigger, sequence, queue, job, generic routing engine, scheduling engine, assignment framework, evidence framework, workflow engine, document framework, repository abstraction, or event-sourcing layer.
 
 Do not add a separate admission command, an unassigned trip stage, reassignment, cancellation, route optimization, GPS, live tracking, driver payroll, fleet maintenance, vehicle master data, fuel, caller-authored stop destination, or caller-authored route windows.
+
+Do not add or alter an Evidence command. PA-05F only reads and locks existing supplier evidence and applications.
 
 An index or constraint may be added only for a named race or uniqueness invariant that cannot be protected by existing constraints plus stable parent locks. The implementation must stop and report before adding a new authoritative concept.
 
@@ -436,29 +464,31 @@ The suite must prove:
 
 ### Plan command
 
-- one multi-requirement, multi-destination, same-service-date plan succeeds atomically;
+- one multi-requirement, multi-destination, same-service-date, fully evidenced plan succeeds atomically;
 - service date is derived from Planning;
-- exact requirement/allocation/PO lineage and cardinality are preserved;
+- exact requirement/allocation/PO/evidence lineage and cardinality are preserved;
 - every and only submitted pair is admitted;
 - authorization covers every authoritative destination before receipt registration;
-- mixed dates, duplicate pair, stale named version, inactive reference, missing/revised PO, malformed child cardinality, cross-wired requirement/allocation/PO, pre-existing active plan membership, and duplicate plan reference fail closed;
+- mixed dates, duplicate pair, stale named version, inactive reference, missing/revised PO, missing/partial/voided/superseded/over-applied/cross-wired evidence, malformed child cardinality, cross-wired requirement/allocation/PO, pre-existing active plan membership, existing load, and duplicate plan reference fail closed;
 - exact replay returns original IDs;
 - changed nested request conflicts;
 - failed commands create no plan, membership, event, or audit row.
 
 ### Trip command
 
-- one assigned multi-stop trip succeeds from a subset of plan memberships;
+- one assigned multi-stop trip succeeds from a fully evidenced subset of plan memberships;
 - a second trip consumes a disjoint subset and increments the plan version once;
 - stop destination and requirement revision are derived exactly from Planning membership;
-- no assignment, inactive/wrong-type driver, malformed vehicle reference, duplicate or non-contiguous stop sequence, duplicate membership, membership from another plan, already assigned membership, stale plan version, upstream lineage change, and cross-wired destination fail closed;
+- evidence invalidated after planning blocks trip creation;
+- no assignment, inactive/wrong-type driver, malformed vehicle reference, duplicate or non-contiguous stop sequence, duplicate membership, membership from another plan, already assigned membership, existing load, stale plan version, upstream lineage change, and cross-wired destination fail closed;
 - exact replay and nested conflict are safe;
 - failed commands create no trip, stop, event, or audit row and do not increment the plan.
 
 ### Boundary and regression
 
-- plan creation creates no trip, stop, load, Evidence, delivery, or closure fact;
-- trip creation creates no load, Evidence, departure, delivery, or closure fact;
+- plan creation creates no trip, stop, Evidence, load, delivery, or closure fact;
+- trip creation creates no Evidence, load, departure, delivery, or closure fact;
+- PA-05B Evidence behavior remains unchanged;
 - PA-05B-H1 runtime-hardening expectations remain valid;
 - PA-05B-H2 can consume command-authored plan/trip/stop outputs without changing its public behavior.
 
@@ -472,10 +502,11 @@ Near completion, run locally:
 
 1. one clean Supabase reset;
 2. PA-05F pgTAP;
-3. PA-05B-H1 runtime-hardening pgTAP;
-4. PA-05B-H2 pgTAP;
-5. any predecessor suite directly edited for cumulative API/runtime expectations;
-6. `git diff --check`.
+3. PA-05B supplier-direct pgTAP because PA-05F consumes Evidence/application semantics;
+4. PA-05B-H1 runtime-hardening pgTAP;
+5. PA-05B-H2 pgTAP;
+6. any predecessor suite directly edited for cumulative API/runtime expectations;
+7. `git diff --check`.
 
 Do not run the routine full frontend suite locally. Push the branch, open a draft PR, and allow GitHub Actions to own frozen install, workspace validation, formatting, typecheck, full application tests, build, Storybook, artifacts, diff validation, and Qodana. Do not claim those checks passed until completed results are observed.
 
@@ -484,7 +515,7 @@ Do not run the routine full frontend suite locally. Push the branch, open a draf
 Stop and report rather than improvise if:
 
 - existing tables cannot represent the approved plan, assigned trip, or stop output;
-- exact Planning/Procurement/released-PO lineage cannot be proven;
+- exact Planning/Procurement/released-PO/current-Evidence lineage cannot be proven;
 - stable parent locks cannot serialize active plan admission or one-trip-per-membership safety;
 - PA-05B-H2 requires a different stop shape or mandatory planned windows;
 - implementation would require a public admission, reassignment, cancellation, or update command;
@@ -495,7 +526,7 @@ Stop and report rather than improvise if:
 
 PA-05F does not add:
 
-- Evidence recording or application;
+- Evidence recording, application, correction, supersession, or voiding;
 - load, departure, delivery, exception, return, or trip closure behavior;
 - PA-05B-H3 or PA-05G;
 - React or generated Supabase types;
@@ -507,12 +538,13 @@ PA-05F does not add:
 
 ## 15. Completion boundary
 
-After PA-05F, Atlas can command-author the path through executable Dispatch setup:
+After PA-05F, Atlas can command-author the path through executable Dispatch setup in the approved order:
 
 ```text
 Wholesale source
 → Planning release chain
 → supplier-direct allocation and released POs
+→ source-owned supplier evidence and exact applications
 → Dispatch Plan
 → assigned Dispatch Trip
 → exact Dispatch Stops
