@@ -1,6 +1,6 @@
 # PA-05B-H2 — Multi-line Dispatch execution correction
 
-**Status:** Proposed implementation contract; documentation only  
+**Status:** Implemented in the current review change; pending merge
 **Scope:** Supplier-direct wholesale Slice 1 load, departure, and successful-delivery correction  
 **Authority:** ARCH-001, ARCH-002, PA-01 through PA-05E, PA-05A, and the Dispatch and Delivery Domain Contract  
 **Implementation issue:** #91  

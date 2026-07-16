@@ -1280,5 +1280,669 @@ select ok(
 );
 select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'trace_wrong_scope'), 'SCOPE_DENIED', 'trace read enforces relational customer scope');
 
+-- This focused extension retains the rolled-back PA-05B command fixture so H2
+-- can prove trip-wide multi-stop behavior without introducing PA-05F authoring.
+
+-- Two released one-line requirements derived from current PA-05D handoff
+-- lineage give one trip two independently loadable stops.
+insert into atlas_planning.wholesale_orders (
+  wholesale_order_id, customer_id, delivery_location_id,
+  customer_order_reference, service_date, order_status,
+  created_by_actor_id, approved_by_actor_id, approved_at,
+  released_by_actor_id, released_at
+) values
+  ('31000000-0000-0000-0000-000000000800', '20000000-0000-0000-0000-000000000100', '20000000-0000-0000-0000-000000000101', 'PA05B-H2-ORDER-A', date '2026-07-15', 'RELEASED', '10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:05:00+00', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:10:00+00'),
+  ('31000000-0000-0000-0000-000000000900', '20000000-0000-0000-0000-000000000100', '20000000-0000-0000-0000-000000000101', 'PA05B-H2-ORDER-B', date '2026-07-15', 'RELEASED', '10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:05:00+00', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:10:00+00');
+
+insert into atlas_planning.wholesale_order_lines (
+  wholesale_order_line_id, wholesale_order_id, source_line_number
+) values
+  ('31000000-0000-0000-0000-000000000801', '31000000-0000-0000-0000-000000000800', 1),
+  ('31000000-0000-0000-0000-000000000901', '31000000-0000-0000-0000-000000000900', 1);
+
+insert into atlas_planning.wholesale_order_line_revisions (
+  wholesale_order_line_revision_id, wholesale_order_line_id, revision_number,
+  ingredient_id, requested_quantity, unit_id, revision_status, created_by_actor_id
+) values
+  ('31000000-0000-0000-0000-000000000802', '31000000-0000-0000-0000-000000000801', 1, '20000000-0000-0000-0000-000000000103', 10, '20000000-0000-0000-0000-000000000102', 'RELEASED', '10000000-0000-0000-0000-000000000001'),
+  ('31000000-0000-0000-0000-000000000902', '31000000-0000-0000-0000-000000000901', 1, '20000000-0000-0000-0000-000000000103', 5, '20000000-0000-0000-0000-000000000102', 'RELEASED', '10000000-0000-0000-0000-000000000001');
+
+insert into atlas_planning.confirmed_need_batches (
+  confirmed_need_batch_id, wholesale_order_id, period_start, period_end,
+  batch_status, created_by_actor_id, approved_by_actor_id, approved_at,
+  released_by_actor_id, released_at
+) values
+  ('31000000-0000-0000-0000-000000000810', '31000000-0000-0000-0000-000000000800', date '2026-07-15', date '2026-07-15', 'RELEASED_FOR_PURCHASE_HANDOFF', '10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:15:00+00', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:20:00+00'),
+  ('31000000-0000-0000-0000-000000000910', '31000000-0000-0000-0000-000000000900', date '2026-07-15', date '2026-07-15', 'RELEASED_FOR_PURCHASE_HANDOFF', '10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:15:00+00', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:20:00+00');
+
+insert into atlas_planning.confirmed_need_lines (
+  confirmed_need_line_id, confirmed_need_batch_id, wholesale_order_line_id
+) values
+  ('31000000-0000-0000-0000-000000000811', '31000000-0000-0000-0000-000000000810', '31000000-0000-0000-0000-000000000801'),
+  ('31000000-0000-0000-0000-000000000911', '31000000-0000-0000-0000-000000000910', '31000000-0000-0000-0000-000000000901');
+
+insert into atlas_planning.confirmed_need_line_revisions (
+  confirmed_need_line_revision_id, confirmed_need_line_id, revision_number,
+  wholesale_order_line_revision_id, ingredient_id, theoretical_quantity,
+  confirmed_quantity, unit_id, revision_status, created_by_actor_id
+) values
+  ('31000000-0000-0000-0000-000000000812', '31000000-0000-0000-0000-000000000811', 1, '31000000-0000-0000-0000-000000000802', '20000000-0000-0000-0000-000000000103', 10, 10, '20000000-0000-0000-0000-000000000102', 'RELEASED', '10000000-0000-0000-0000-000000000001'),
+  ('31000000-0000-0000-0000-000000000912', '31000000-0000-0000-0000-000000000911', 1, '31000000-0000-0000-0000-000000000902', '20000000-0000-0000-0000-000000000103', 5, 5, '20000000-0000-0000-0000-000000000102', 'RELEASED', '10000000-0000-0000-0000-000000000001');
+
+insert into atlas_planning.confirmed_need_approval_snapshots (
+  confirmed_need_approval_snapshot_id, confirmed_need_batch_id, approved_version,
+  approved_by_actor_id, approved_at, command_id
+) values
+  ('31000000-0000-0000-0000-000000000813', '31000000-0000-0000-0000-000000000810', 1, '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:15:00+00', '91000000-0000-0000-0000-000000000020'),
+  ('31000000-0000-0000-0000-000000000913', '31000000-0000-0000-0000-000000000910', 1, '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:15:00+00', '91000000-0000-0000-0000-000000000021');
+
+insert into atlas_planning.confirmed_need_snapshot_lines (
+  confirmed_need_snapshot_line_id, confirmed_need_approval_snapshot_id,
+  confirmed_need_line_revision_id, ingredient_id, approved_quantity,
+  unit_id, ingredient_name_snapshot
+) values
+  ('31000000-0000-0000-0000-000000000814', '31000000-0000-0000-0000-000000000813', '31000000-0000-0000-0000-000000000812', '20000000-0000-0000-0000-000000000103', 10, '20000000-0000-0000-0000-000000000102', 'PA-05B rice'),
+  ('31000000-0000-0000-0000-000000000914', '31000000-0000-0000-0000-000000000913', '31000000-0000-0000-0000-000000000912', '20000000-0000-0000-0000-000000000103', 5, '20000000-0000-0000-0000-000000000102', 'PA-05B rice');
+
+insert into atlas_planning.purchase_handoff_batches (
+  purchase_handoff_batch_id, confirmed_need_batch_id, period_start, period_end,
+  handoff_status, created_by_actor_id
+) values
+  ('31000000-0000-0000-0000-000000000820', '31000000-0000-0000-0000-000000000810', date '2026-07-15', date '2026-07-15', 'RELEASED_TO_PROCUREMENT', '10000000-0000-0000-0000-000000000001'),
+  ('31000000-0000-0000-0000-000000000920', '31000000-0000-0000-0000-000000000910', date '2026-07-15', date '2026-07-15', 'RELEASED_TO_PROCUREMENT', '10000000-0000-0000-0000-000000000001');
+
+insert into atlas_planning.purchase_handoff_revisions (
+  purchase_handoff_revision_id, purchase_handoff_batch_id, revision_number,
+  revision_status, released_by_actor_id, released_at
+) values
+  ('31000000-0000-0000-0000-000000000821', '31000000-0000-0000-0000-000000000820', 1, 'RELEASED_TO_PROCUREMENT', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:25:00+00'),
+  ('31000000-0000-0000-0000-000000000921', '31000000-0000-0000-0000-000000000920', 1, 'RELEASED_TO_PROCUREMENT', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:25:00+00');
+
+insert into atlas_planning.purchase_handoff_lines (
+  purchase_handoff_line_id, purchase_handoff_batch_id, confirmed_need_line_id
+) values
+  ('31000000-0000-0000-0000-000000000822', '31000000-0000-0000-0000-000000000820', '31000000-0000-0000-0000-000000000811'),
+  ('31000000-0000-0000-0000-000000000922', '31000000-0000-0000-0000-000000000920', '31000000-0000-0000-0000-000000000911');
+
+insert into atlas_planning.purchase_handoff_line_revisions (
+  purchase_handoff_line_revision_id, purchase_handoff_revision_id,
+  purchase_handoff_line_id, confirmed_need_line_revision_id, ingredient_id,
+  handoff_quantity, unit_id, service_date, delivery_location_id
+) values
+  ('31000000-0000-0000-0000-000000000823', '31000000-0000-0000-0000-000000000821', '31000000-0000-0000-0000-000000000822', '31000000-0000-0000-0000-000000000812', '20000000-0000-0000-0000-000000000103', 10, '20000000-0000-0000-0000-000000000102', date '2026-07-15', '20000000-0000-0000-0000-000000000101'),
+  ('31000000-0000-0000-0000-000000000923', '31000000-0000-0000-0000-000000000921', '31000000-0000-0000-0000-000000000922', '31000000-0000-0000-0000-000000000912', '20000000-0000-0000-0000-000000000103', 5, '20000000-0000-0000-0000-000000000102', date '2026-07-15', '20000000-0000-0000-0000-000000000101');
+
+insert into atlas_planning.purchase_demand_references (
+  purchase_demand_reference_id, purchase_handoff_line_revision_id,
+  confirmed_need_snapshot_line_id, wholesale_order_line_revision_id,
+  approved_quantity, unit_id
+) values
+  ('31000000-0000-0000-0000-000000000824', '31000000-0000-0000-0000-000000000823', '31000000-0000-0000-0000-000000000814', '31000000-0000-0000-0000-000000000802', 10, '20000000-0000-0000-0000-000000000102'),
+  ('31000000-0000-0000-0000-000000000924', '31000000-0000-0000-0000-000000000923', '31000000-0000-0000-0000-000000000914', '31000000-0000-0000-0000-000000000902', 5, '20000000-0000-0000-0000-000000000102');
+
+insert into atlas_planning.dispatch_requirements (
+  dispatch_requirement_id, customer_id, delivery_location_id,
+  service_date, requirement_status
+) values
+  ('30000000-0000-0000-0000-000000000530', '20000000-0000-0000-0000-000000000100', '20000000-0000-0000-0000-000000000101', date '2026-07-15', 'RELEASED'),
+  ('30000000-0000-0000-0000-000000000540', '20000000-0000-0000-0000-000000000100', '20000000-0000-0000-0000-000000000101', date '2026-07-15', 'RELEASED');
+
+insert into atlas_planning.dispatch_requirement_revisions (
+  dispatch_requirement_revision_id, dispatch_requirement_id,
+  purchase_handoff_revision_id, revision_number, revision_status,
+  customer_name_snapshot, location_name_snapshot, address_snapshot,
+  released_by_actor_id, released_at
+) values
+  ('30000000-0000-0000-0000-000000000531', '30000000-0000-0000-0000-000000000530', '31000000-0000-0000-0000-000000000821', 1, 'RELEASED', 'PA-05B wholesale customer', 'PA-05B delivery location', 'PA-05B test address', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:30:00+00'),
+  ('30000000-0000-0000-0000-000000000541', '30000000-0000-0000-0000-000000000540', '31000000-0000-0000-0000-000000000921', 1, 'RELEASED', 'PA-05B wholesale customer', 'PA-05B delivery location', 'PA-05B test address', '10000000-0000-0000-0000-000000000001', timestamptz '2026-07-15 00:30:00+00');
+
+insert into atlas_planning.dispatch_requirement_lines (
+  dispatch_requirement_line_id, dispatch_requirement_id,
+  purchase_handoff_line_id
+) values
+  ('30000000-0000-0000-0000-000000000532', '30000000-0000-0000-0000-000000000530', '31000000-0000-0000-0000-000000000822'),
+  ('30000000-0000-0000-0000-000000000542', '30000000-0000-0000-0000-000000000540', '31000000-0000-0000-0000-000000000922');
+
+insert into atlas_planning.dispatch_requirement_line_revisions (
+  dispatch_requirement_line_revision_id, dispatch_requirement_revision_id,
+  dispatch_requirement_line_id, purchase_handoff_line_revision_id,
+  ingredient_id, required_quantity, unit_id
+) values
+  ('30000000-0000-0000-0000-000000000533', '30000000-0000-0000-0000-000000000531', '30000000-0000-0000-0000-000000000532', '31000000-0000-0000-0000-000000000823', '20000000-0000-0000-0000-000000000103', 10, '20000000-0000-0000-0000-000000000102'),
+  ('30000000-0000-0000-0000-000000000543', '30000000-0000-0000-0000-000000000541', '30000000-0000-0000-0000-000000000542', '31000000-0000-0000-0000-000000000923', '20000000-0000-0000-0000-000000000103', 5, '20000000-0000-0000-0000-000000000102');
+
+insert into atlas_procurement.fulfilment_allocations (
+  fulfilment_allocation_id, dispatch_requirement_id, allocation_status
+) values
+  ('40000000-0000-0000-0000-000000000630', '30000000-0000-0000-0000-000000000530', 'READY_FOR_DISPATCH'),
+  ('40000000-0000-0000-0000-000000000640', '30000000-0000-0000-0000-000000000540', 'READY_FOR_DISPATCH');
+
+insert into atlas_procurement.fulfilment_allocation_revisions (
+  fulfilment_allocation_revision_id, fulfilment_allocation_id,
+  revision_number, revision_status, allocated_by_actor_id
+) values
+  ('40000000-0000-0000-0000-000000000631', '40000000-0000-0000-0000-000000000630', 1, 'READY_FOR_DISPATCH', '10000000-0000-0000-0000-000000000001'),
+  ('40000000-0000-0000-0000-000000000641', '40000000-0000-0000-0000-000000000640', 1, 'READY_FOR_DISPATCH', '10000000-0000-0000-0000-000000000001');
+
+insert into atlas_procurement.fulfilment_allocation_lines (
+  fulfilment_allocation_line_id, fulfilment_allocation_id,
+  dispatch_requirement_line_id, portion_sequence
+) values
+  ('40000000-0000-0000-0000-000000000632', '40000000-0000-0000-0000-000000000630', '30000000-0000-0000-0000-000000000532', 1),
+  ('40000000-0000-0000-0000-000000000642', '40000000-0000-0000-0000-000000000640', '30000000-0000-0000-0000-000000000542', 1);
+
+insert into atlas_procurement.fulfilment_allocation_line_revisions (
+  fulfilment_allocation_line_revision_id, fulfilment_allocation_revision_id,
+  fulfilment_allocation_line_id, dispatch_requirement_line_revision_id,
+  supplier_id, allocated_quantity, unit_id, line_status
+) values
+  ('40000000-0000-0000-0000-000000000633', '40000000-0000-0000-0000-000000000631', '40000000-0000-0000-0000-000000000632', '30000000-0000-0000-0000-000000000533', '20000000-0000-0000-0000-000000000104', 10, '20000000-0000-0000-0000-000000000102', 'READY_FOR_EVIDENCE'),
+  ('40000000-0000-0000-0000-000000000643', '40000000-0000-0000-0000-000000000641', '40000000-0000-0000-0000-000000000642', '30000000-0000-0000-0000-000000000543', '20000000-0000-0000-0000-000000000104', 5, '20000000-0000-0000-0000-000000000102', 'READY_FOR_EVIDENCE');
+
+insert into atlas_procurement.purchase_order_lines (
+  purchase_order_line_id, purchase_order_id, fulfilment_allocation_line_id
+) values
+  ('40000000-0000-0000-0000-000000000710', '40000000-0000-0000-0000-000000000700', '40000000-0000-0000-0000-000000000632'),
+  ('40000000-0000-0000-0000-000000000712', '40000000-0000-0000-0000-000000000700', '40000000-0000-0000-0000-000000000642');
+
+insert into atlas_procurement.purchase_order_line_revisions (
+  purchase_order_line_revision_id, purchase_order_revision_id,
+  purchase_order_line_id, fulfilment_allocation_line_revision_id,
+  ingredient_id, ordered_quantity, unit_id, delivery_location_id, service_date
+) values
+  ('40000000-0000-0000-0000-000000000711', '40000000-0000-0000-0000-000000000701', '40000000-0000-0000-0000-000000000710', '40000000-0000-0000-0000-000000000633', '20000000-0000-0000-0000-000000000103', 10, '20000000-0000-0000-0000-000000000102', '20000000-0000-0000-0000-000000000101', date '2026-07-15'),
+  ('40000000-0000-0000-0000-000000000713', '40000000-0000-0000-0000-000000000701', '40000000-0000-0000-0000-000000000712', '40000000-0000-0000-0000-000000000643', '20000000-0000-0000-0000-000000000103', 5, '20000000-0000-0000-0000-000000000102', '20000000-0000-0000-0000-000000000101', date '2026-07-15');
+
+insert into atlas_dispatch.dispatch_plans (
+  dispatch_plan_id, plan_reference, service_date, created_by_actor_id
+) values (
+  '50000000-0000-0000-0000-000000000950', 'PA05B-H2-MULTI-STOP', date '2026-07-15',
+  '10000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_dispatch.dispatch_plan_requirements (
+  dispatch_plan_requirement_id, dispatch_plan_id,
+  dispatch_requirement_revision_id, fulfilment_allocation_revision_id
+) values
+  ('50000000-0000-0000-0000-000000000951', '50000000-0000-0000-0000-000000000950', '30000000-0000-0000-0000-000000000531', '40000000-0000-0000-0000-000000000631'),
+  ('50000000-0000-0000-0000-000000000952', '50000000-0000-0000-0000-000000000950', '30000000-0000-0000-0000-000000000541', '40000000-0000-0000-0000-000000000641');
+
+insert into atlas_dispatch.dispatch_trips (
+  dispatch_trip_id, dispatch_plan_id, trip_reference, trip_status,
+  driver_actor_id, vehicle_reference, planned_departure_at
+) values (
+  '50000000-0000-0000-0000-000000000953',
+  '50000000-0000-0000-0000-000000000950', 'PA05B-H2-TRIP', 'ASSIGNED',
+  '10000000-0000-0000-0000-000000000001', 'PA05B-H2-VEHICLE',
+  timestamptz '2026-07-15 02:00:00+00'
+);
+
+insert into atlas_dispatch.dispatch_stops (
+  dispatch_stop_id, dispatch_trip_id, stop_sequence,
+  dispatch_requirement_revision_id, customer_id, delivery_location_id
+) values
+  ('50000000-0000-0000-0000-000000000954', '50000000-0000-0000-0000-000000000953', 1, '30000000-0000-0000-0000-000000000531', '20000000-0000-0000-0000-000000000100', '20000000-0000-0000-0000-000000000101'),
+  ('50000000-0000-0000-0000-000000000955', '50000000-0000-0000-0000-000000000953', 2, '30000000-0000-0000-0000-000000000541', '20000000-0000-0000-0000-000000000100', '20000000-0000-0000-0000-000000000101');
+
+-- Evidence remains command-authored under PA-05B.v1.
+insert into pa05b_requests (request_name, request_payload) values
+  ('h2_record_stop_one', pg_temp.pa05b_request(
+    '90000000-0000-0000-0000-000000000801', 'h2-record-stop-one', 1,
+    '10000000-0000-0000-0000-000000000101',
+    jsonb_build_object(
+      'purchase_order_line_revision_id', '40000000-0000-0000-0000-000000000711',
+      'supplier_id', '20000000-0000-0000-0000-000000000104',
+      'ingredient_id', '20000000-0000-0000-0000-000000000103',
+      'unit_id', '20000000-0000-0000-0000-000000000102',
+      'evidence_quantity', 10,
+      'evidence_reference', 'PA05B-H2-STOP-ONE',
+      'occurred_at', '2026-07-15T01:40:00+00:00'
+    )
+  )),
+  ('h2_record_stop_two', pg_temp.pa05b_request(
+    '90000000-0000-0000-0000-000000000802', 'h2-record-stop-two', 1,
+    '10000000-0000-0000-0000-000000000101',
+    jsonb_build_object(
+      'purchase_order_line_revision_id', '40000000-0000-0000-0000-000000000713',
+      'supplier_id', '20000000-0000-0000-0000-000000000104',
+      'ingredient_id', '20000000-0000-0000-0000-000000000103',
+      'unit_id', '20000000-0000-0000-0000-000000000102',
+      'evidence_quantity', 5,
+      'evidence_reference', 'PA05B-H2-STOP-TWO',
+      'occurred_at', '2026-07-15T01:40:00+00:00'
+    )
+  ));
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_record_stop_one', atlas_api.record_supplier_receiving_evidence(request_payload)
+from pa05b_requests where request_name = 'h2_record_stop_one';
+insert into pa05b_results select 'h2_record_stop_two', atlas_api.record_supplier_receiving_evidence(request_payload)
+from pa05b_requests where request_name = 'h2_record_stop_two';
+reset role;
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_apply_stop_one', pg_temp.pa05b_request(
+  '90000000-0000-0000-0000-000000000803', 'h2-apply-stop-one', 1,
+  '10000000-0000-0000-0000-000000000101',
+  jsonb_build_object(
+    'supplier_receiving_evidence_id', response_payload -> 'affected_aggregate_ids' ->> 'supplier_receiving_evidence_id',
+    'fulfilment_allocation_line_revision_id', '40000000-0000-0000-0000-000000000633',
+    'unit_id', '20000000-0000-0000-0000-000000000102',
+    'applied_quantity', 10,
+    'occurred_at', '2026-07-15T01:41:00+00:00'
+  )
+) from pa05b_results where result_name = 'h2_record_stop_one';
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_apply_stop_two', pg_temp.pa05b_request(
+  '90000000-0000-0000-0000-000000000804', 'h2-apply-stop-two', 1,
+  '10000000-0000-0000-0000-000000000101',
+  jsonb_build_object(
+    'supplier_receiving_evidence_id', response_payload -> 'affected_aggregate_ids' ->> 'supplier_receiving_evidence_id',
+    'fulfilment_allocation_line_revision_id', '40000000-0000-0000-0000-000000000643',
+    'unit_id', '20000000-0000-0000-0000-000000000102',
+    'applied_quantity', 5,
+    'occurred_at', '2026-07-15T01:41:00+00:00'
+  )
+) from pa05b_results where result_name = 'h2_record_stop_two';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_apply_stop_one', atlas_api.apply_supplier_evidence_to_allocation(request_payload)
+from pa05b_requests where request_name = 'h2_apply_stop_one';
+insert into pa05b_results select 'h2_apply_stop_two', atlas_api.apply_supplier_evidence_to_allocation(request_payload)
+from pa05b_requests where request_name = 'h2_apply_stop_two';
+reset role;
+
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_apply_stop_one'), 'first multi-stop allocation has command-authored Evidence coverage');
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_apply_stop_two'), 'second multi-stop allocation has command-authored Evidence coverage');
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_stop_one', pg_temp.pa05b_request(
+  '90000000-0000-0000-0000-000000000805', 'h2-load-stop-one', 1,
+  '10000000-0000-0000-0000-000000000101',
+  jsonb_build_object(
+    'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+    'dispatch_stop_id', '50000000-0000-0000-0000-000000000954',
+    'dispatch_requirement_revision_id', '30000000-0000-0000-0000-000000000531',
+    'fulfilment_allocation_revision_id', '40000000-0000-0000-0000-000000000631',
+    'loaded_at', '2026-07-15T01:45:00+00:00',
+    'lines', jsonb_build_array(jsonb_build_object(
+      'dispatch_requirement_line_revision_id', '30000000-0000-0000-0000-000000000533',
+      'fulfilment_allocation_line_revision_id', '40000000-0000-0000-0000-000000000633',
+      'loaded_quantity', 10,
+      'unit_id', '20000000-0000-0000-0000-000000000102',
+      'evidence_applications', jsonb_build_array(jsonb_build_object(
+        'evidence_application_id', response_payload -> 'affected_aggregate_ids' ->> 'evidence_application_id',
+        'applied_to_load_quantity', 10,
+        'unit_id', '20000000-0000-0000-0000-000000000102'
+      ))
+    ))
+  )
+) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+from pa05b_results where result_name = 'h2_apply_stop_one';
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_stop_two', pg_temp.pa05b_request(
+  '90000000-0000-0000-0000-000000000806', 'h2-load-stop-two', 2,
+  '10000000-0000-0000-0000-000000000101',
+  jsonb_build_object(
+    'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+    'dispatch_stop_id', '50000000-0000-0000-0000-000000000955',
+    'dispatch_requirement_revision_id', '30000000-0000-0000-0000-000000000541',
+    'fulfilment_allocation_revision_id', '40000000-0000-0000-0000-000000000641',
+    'loaded_at', '2026-07-15T01:46:00+00:00',
+    'lines', jsonb_build_array(jsonb_build_object(
+      'dispatch_requirement_line_revision_id', '30000000-0000-0000-0000-000000000543',
+      'fulfilment_allocation_line_revision_id', '40000000-0000-0000-0000-000000000643',
+      'loaded_quantity', 5,
+      'unit_id', '20000000-0000-0000-0000-000000000102',
+      'evidence_applications', jsonb_build_array(jsonb_build_object(
+        'evidence_application_id', response_payload -> 'affected_aggregate_ids' ->> 'evidence_application_id',
+        'applied_to_load_quantity', 5,
+        'unit_id', '20000000-0000-0000-0000-000000000102'
+      ))
+    ))
+  )
+) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+from pa05b_results where result_name = 'h2_apply_stop_two';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_load_stop_one', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_stop_one';
+reset role;
+
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_load_stop_one'), 'first stop loads and moves the trip to LOADED');
+select is((select version::integer from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 2, 'first stop load increments the trip once');
+
+insert into pa05b_requests (request_name, request_payload) values (
+  'h2_depart_incomplete',
+  pg_temp.pa05b_request(
+    '90000000-0000-0000-0000-000000000807', 'h2-depart-incomplete', 2,
+    '10000000-0000-0000-0000-000000000101',
+    jsonb_build_object(
+      'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+      'departed_at', '2026-07-15T02:00:00+00:00'
+    )
+  ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_depart_incomplete', atlas_api.record_dispatch_departure(request_payload)
+from pa05b_requests where request_name = 'h2_depart_incomplete';
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_depart_incomplete'), 'DEPARTURE_BLOCKED', 'departure rejects a multi-stop trip with a missing stop load');
+select is((select count(*)::integer from atlas_audit.domain_events where command_id = '90000000-0000-0000-0000-000000000807'), 0, 'blocked incomplete departure emits no domain event');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_load_stop_two', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_stop_two';
+insert into pa05b_results select 'h2_load_stop_two_replay', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_stop_two';
+reset role;
+
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_load_stop_two'), 'second stop loads while trip remains LOADED');
+select is((select response_payload from pa05b_results where result_name = 'h2_load_stop_two_replay'), (select response_payload from pa05b_results where result_name = 'h2_load_stop_two'), 'nested second-stop load replay returns original IDs');
+select is((select trip_status from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 'LOADED', 'second stop load keeps the trip LOADED');
+select is((select version::integer from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 3, 'second stop load increments trip exactly once');
+select is((select count(*)::integer from atlas_dispatch.dispatch_loads where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 2, 'multi-stop trip has exactly one load root per stop');
+
+-- Exact nested hashes conflict, and obsolete or malformed shapes fail before writes.
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_nested_conflict',
+       jsonb_set(
+         request_payload,
+         '{payload,lines,0,loaded_quantity}',
+         '4'::jsonb
+       )
+from pa05b_requests where request_name = 'h2_load_stop_two';
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_old_shape',
+       jsonb_set(
+         jsonb_set(
+           jsonb_set(
+             (request_payload - 'command_id' - 'idempotency_key') ||
+               jsonb_build_object(
+                 'command_id', '90000000-0000-0000-0000-000000000808',
+                 'idempotency_key', 'h2-load-old-shape'
+               ),
+             '{payload}',
+             (request_payload -> 'payload') - 'lines'
+           ),
+           '{payload,loaded_quantity}', '5'::jsonb
+         ),
+         '{payload,fulfilment_allocation_line_revision_id}',
+         to_jsonb('40000000-0000-0000-0000-000000000643'::text)
+       )
+from pa05b_requests where request_name = 'h2_load_stop_two';
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_unknown_field',
+       jsonb_set(
+         (request_payload - 'command_id' - 'idempotency_key') ||
+           jsonb_build_object(
+             'command_id', '90000000-0000-0000-0000-000000000809',
+             'idempotency_key', 'h2-load-unknown'
+           ),
+         '{payload,unexpected}', 'true'::jsonb
+       )
+from pa05b_requests where request_name = 'h2_load_stop_two';
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_duplicate_line',
+       jsonb_set(
+         (request_payload - 'command_id' - 'idempotency_key') ||
+           jsonb_build_object(
+             'command_id', '90000000-0000-0000-0000-000000000810',
+             'idempotency_key', 'h2-load-duplicate'
+           ),
+         '{payload,lines}',
+         jsonb_build_array(request_payload -> 'payload' -> 'lines' -> 0, request_payload -> 'payload' -> 'lines' -> 0)
+       )
+from pa05b_requests where request_name = 'h2_load_stop_two';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_load_nested_conflict', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_nested_conflict';
+insert into pa05b_results select 'h2_load_old_shape', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_old_shape';
+insert into pa05b_results select 'h2_load_unknown_field', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_unknown_field';
+insert into pa05b_results select 'h2_load_duplicate_line', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_duplicate_line';
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_nested_conflict'), 'IDEMPOTENCY_CONFLICT', 'changed nested load payload conflicts with completed command identity');
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_old_shape'), 'VALIDATION_FAILED', 'obsolete single-line load shape is rejected');
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_unknown_field'), 'VALIDATION_FAILED', 'unknown load payload field is rejected');
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_duplicate_line'), 'VALIDATION_FAILED', 'duplicate nested load-line identity is rejected');
+select is((select count(*)::integer from atlas_dispatch.dispatch_loads where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 2, 'failed and replayed load requests add no load roots');
+
+-- Assignment must exist independently of otherwise valid plan membership.
+insert into atlas_dispatch.dispatch_trips (
+  dispatch_trip_id, dispatch_plan_id, trip_reference, trip_status,
+  driver_actor_id, vehicle_reference, planned_departure_at
+) values (
+  '50000000-0000-0000-0000-000000000956',
+  '50000000-0000-0000-0000-000000000950', 'PA05B-H2-NO-ASSIGNMENT',
+  'ASSIGNED', null, null, timestamptz '2026-07-15 02:00:00+00'
+);
+insert into atlas_dispatch.dispatch_stops (
+  dispatch_stop_id, dispatch_trip_id, stop_sequence,
+  dispatch_requirement_revision_id, customer_id, delivery_location_id
+) values (
+  '50000000-0000-0000-0000-000000000957',
+  '50000000-0000-0000-0000-000000000956', 1,
+  '30000000-0000-0000-0000-000000000541',
+  '20000000-0000-0000-0000-000000000100',
+  '20000000-0000-0000-0000-000000000101'
+);
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_load_no_assignment',
+       jsonb_set(
+         jsonb_set(
+           jsonb_set(
+             (request_payload - 'command_id' - 'idempotency_key') ||
+               jsonb_build_object(
+                 'command_id', '90000000-0000-0000-0000-000000000811',
+                 'idempotency_key', 'h2-load-no-assignment',
+                 'expected_version', 1
+               ),
+             '{payload,dispatch_trip_id}', to_jsonb('50000000-0000-0000-0000-000000000956'::text)
+           ),
+           '{payload,dispatch_stop_id}', to_jsonb('50000000-0000-0000-0000-000000000957'::text)
+         ),
+         '{payload,loaded_at}', to_jsonb('2026-07-15T01:47:00+00:00'::text)
+       )
+from pa05b_requests where request_name = 'h2_load_stop_two';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_load_no_assignment', atlas_api.confirm_dispatch_load(request_payload)
+from pa05b_requests where request_name = 'h2_load_no_assignment';
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_load_no_assignment'), 'TRIP_ASSIGNMENT_REQUIRED', 'load rejects a trip without an active driver or vehicle reference');
+select is((select count(*)::integer from atlas_dispatch.dispatch_loads where dispatch_trip_id = '50000000-0000-0000-0000-000000000956'), 0, 'assignment failure creates no load facts');
+
+-- Every distinct stop tuple must authorize before receipt registration.
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000110',
+    delivery_location_id = '20000000-0000-0000-0000-000000000111'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000955';
+
+insert into pa05b_requests (request_name, request_payload) values (
+  'h2_depart_partial_scope',
+  pg_temp.pa05b_request(
+    '90000000-0000-0000-0000-000000000812', 'h2-depart-partial-scope', 3,
+    '10000000-0000-0000-0000-000000000101',
+    jsonb_build_object(
+      'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+      'departed_at', '2026-07-15T02:00:00+00:00'
+    )
+  ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_depart_partial_scope', atlas_api.record_dispatch_departure(request_payload)
+from pa05b_requests where request_name = 'h2_depart_partial_scope';
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_depart_partial_scope'), 'SCOPE_DENIED', 'departure rejects an actor authorized only for the first stop tuple');
+select is((select count(*)::integer from atlas_core.command_receipts where command_id = '90000000-0000-0000-0000-000000000812'), 0, 'trip-wide authorization failure occurs before receipt registration');
+
+update atlas_dispatch.dispatch_stops
+set customer_id = '20000000-0000-0000-0000-000000000100',
+    delivery_location_id = '20000000-0000-0000-0000-000000000101'
+where dispatch_stop_id = '50000000-0000-0000-0000-000000000955';
+
+insert into pa05b_requests (request_name, request_payload) values (
+  'h2_depart_multi_stop',
+  pg_temp.pa05b_request(
+    '90000000-0000-0000-0000-000000000813', 'h2-depart-multi-stop', 3,
+    '10000000-0000-0000-0000-000000000101',
+    jsonb_build_object(
+      'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+      'departed_at', '2026-07-15T02:00:00+00:00'
+    )
+  ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_depart_multi_stop', atlas_api.record_dispatch_departure(request_payload)
+from pa05b_requests where request_name = 'h2_depart_multi_stop';
+insert into pa05b_results select 'h2_depart_multi_stop_replay', atlas_api.record_dispatch_departure(request_payload)
+from pa05b_requests where request_name = 'h2_depart_multi_stop';
+reset role;
+
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_depart_multi_stop'), 'fully loaded and authorized multi-stop trip departs');
+select is((select response_payload from pa05b_results where result_name = 'h2_depart_multi_stop_replay'), (select response_payload from pa05b_results where result_name = 'h2_depart_multi_stop'), 'multi-stop departure supports exact replay');
+select is((select trip_status from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 'IN_TRANSIT', 'departure advances the multi-stop trip');
+select is((select version::integer from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 4, 'departure increments the trip exactly once');
+select is((select count(*)::integer from atlas_dispatch.dispatch_stops where dispatch_trip_id = '50000000-0000-0000-0000-000000000953' and stop_status = 'IN_TRANSIT' and version = 3), 2, 'departure increments every selected-trip stop exactly once');
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_delivery_stop_one',
+       pg_temp.pa05b_request(
+         '90000000-0000-0000-0000-000000000814', 'h2-delivery-stop-one', 4,
+         '10000000-0000-0000-0000-000000000101',
+         jsonb_build_object(
+           'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+           'dispatch_stop_id', '50000000-0000-0000-0000-000000000954',
+           'confirmed_at', '2026-07-15T02:10:00+00:00',
+           'received_by_reference', 'H2-STOP-ONE-RECEIVER',
+           'notes', null,
+           'lines', loaded.lines
+         )
+       ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+from (
+  select jsonb_agg(jsonb_build_object(
+    'dispatch_load_line_id', dll.dispatch_load_line_id,
+    'delivered_quantity', dll.loaded_quantity,
+    'returned_quantity', 0,
+    'exception_quantity', 0,
+    'unit_id', dll.unit_id
+  ) order by dll.dispatch_load_line_id) as lines
+  from atlas_dispatch.dispatch_load_lines dll
+  where dll.dispatch_stop_id = '50000000-0000-0000-0000-000000000954'
+) loaded;
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_delivery_stop_two',
+       pg_temp.pa05b_request(
+         '90000000-0000-0000-0000-000000000815', 'h2-delivery-stop-two', 5,
+         '10000000-0000-0000-0000-000000000101',
+         jsonb_build_object(
+           'dispatch_trip_id', '50000000-0000-0000-0000-000000000953',
+           'dispatch_stop_id', '50000000-0000-0000-0000-000000000955',
+           'confirmed_at', '2026-07-15T02:15:00+00:00',
+           'received_by_reference', null,
+           'notes', 'final H2 stop',
+           'lines', loaded.lines
+         )
+       ) || jsonb_build_object('contract_version', 'PA-05B-H2.v1')
+from (
+  select jsonb_agg(jsonb_build_object(
+    'dispatch_load_line_id', dll.dispatch_load_line_id,
+    'delivered_quantity', dll.loaded_quantity,
+    'returned_quantity', 0,
+    'exception_quantity', 0,
+    'unit_id', dll.unit_id
+  ) order by dll.dispatch_load_line_id) as lines
+  from atlas_dispatch.dispatch_load_lines dll
+  where dll.dispatch_stop_id = '50000000-0000-0000-0000-000000000955'
+) loaded;
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_delivery_old_shape',
+       jsonb_set(
+         jsonb_set(
+           (request_payload - 'command_id' - 'idempotency_key') ||
+             jsonb_build_object(
+               'command_id', '90000000-0000-0000-0000-000000000816',
+               'idempotency_key', 'h2-delivery-old-shape'
+             ),
+           '{payload}', (request_payload -> 'payload') - 'lines'
+         ),
+         '{payload,dispatch_load_line_id}',
+         to_jsonb((request_payload -> 'payload' -> 'lines' -> 0 ->> 'dispatch_load_line_id'))
+       )
+from pa05b_requests where request_name = 'h2_delivery_stop_one';
+
+insert into pa05b_requests (request_name, request_payload)
+select 'h2_delivery_empty_lines',
+       jsonb_set(
+         (request_payload - 'command_id' - 'idempotency_key') ||
+           jsonb_build_object(
+             'command_id', '90000000-0000-0000-0000-000000000817',
+             'idempotency_key', 'h2-delivery-empty-lines'
+           ),
+         '{payload,lines}', '[]'::jsonb
+       )
+from pa05b_requests where request_name = 'h2_delivery_stop_one';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_delivery_old_shape', atlas_api.confirm_successful_delivery(request_payload)
+from pa05b_requests where request_name = 'h2_delivery_old_shape';
+insert into pa05b_results select 'h2_delivery_empty_lines', atlas_api.confirm_successful_delivery(request_payload)
+from pa05b_requests where request_name = 'h2_delivery_empty_lines';
+insert into pa05b_results select 'h2_delivery_stop_one', atlas_api.confirm_successful_delivery(request_payload)
+from pa05b_requests where request_name = 'h2_delivery_stop_one';
+reset role;
+
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_delivery_old_shape'), 'VALIDATION_FAILED', 'obsolete single-load-line delivery shape is rejected');
+select is((select response_payload ->> 'error_code' from pa05b_results where result_name = 'h2_delivery_empty_lines'), 'VALIDATION_FAILED', 'empty delivery line set is rejected');
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_delivery_stop_one'), 'first multi-stop delivery confirms atomically');
+select is((select trip_status from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 'PARTIALLY_DELIVERED', 'first delivered stop leaves the trip partially delivered');
+select is((select version::integer from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 5, 'first delivery increments current trip version once');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000101', true);
+insert into pa05b_results select 'h2_delivery_stop_two', atlas_api.confirm_successful_delivery(request_payload)
+from pa05b_requests where request_name = 'h2_delivery_stop_two';
+insert into pa05b_results select 'h2_delivery_stop_two_replay', atlas_api.confirm_successful_delivery(request_payload)
+from pa05b_requests where request_name = 'h2_delivery_stop_two';
+reset role;
+
+select ok((select (response_payload ->> 'success')::boolean from pa05b_results where result_name = 'h2_delivery_stop_two'), 'final multi-stop delivery confirms atomically');
+select is((select response_payload from pa05b_results where result_name = 'h2_delivery_stop_two_replay'), (select response_payload from pa05b_results where result_name = 'h2_delivery_stop_two'), 'final delivery replay returns original confirmation IDs');
+select is((select trip_status from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 'DELIVERED', 'final stop changes the trip to DELIVERED');
+select is((select version::integer from atlas_dispatch.dispatch_trips where dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 6, 'final delivery increments current trip version once');
+select is((select count(*)::integer from atlas_dispatch.delivery_confirmations dc join atlas_dispatch.dispatch_stops ds on ds.dispatch_stop_id = dc.dispatch_stop_id where ds.dispatch_trip_id = '50000000-0000-0000-0000-000000000953'), 2, 'multi-stop delivery creates exactly one confirmation root per stop');
+select is((select count(*)::integer from atlas_dispatch.delivery_confirmation_lines dcl join atlas_dispatch.dispatch_load_lines dll on dll.dispatch_load_line_id = dcl.dispatch_load_line_id where dll.dispatch_stop_id in ('50000000-0000-0000-0000-000000000954', '50000000-0000-0000-0000-000000000955')), 2, 'multi-stop delivery creates every exact confirmation line once');
+select is((select count(*)::integer from atlas_audit.domain_events where command_id in ('90000000-0000-0000-0000-000000000814', '90000000-0000-0000-0000-000000000815')), 2, 'two successful stop deliveries emit exactly two domain events');
+select is((select count(*)::integer from atlas_audit.audit_events where command_id in ('90000000-0000-0000-0000-000000000814', '90000000-0000-0000-0000-000000000815')), 2, 'two successful stop deliveries emit exactly two audit events');
+
 select * from finish();
 rollback;
