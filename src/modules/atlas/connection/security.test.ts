@@ -30,4 +30,12 @@ describe("PA-06B browser-source security boundary", () => {
     expect(browserSource).toContain("ATLAS_RPC_FUNCTIONS[functionName]");
     expect(browserSource).not.toMatch(/rpc\s*\(\s*functionName/);
   });
+
+  it("disables built-in PostgREST retries without a retry wrapper", () => {
+    expect(clientSource).toContain("db: { retry: false }");
+    expect(rpcSource).toContain(".retry(false)");
+    expect(browserSource).not.toMatch(
+      /retryWith|withRetry|fetchRetry|retryFetch|global\s*:\s*\{[^}]*fetch/,
+    );
+  });
 });

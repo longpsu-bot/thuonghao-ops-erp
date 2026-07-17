@@ -31,7 +31,8 @@ function rpcClient(
   response: { data: unknown; error: unknown },
   currentSession: Session | null = session(),
 ) {
-  const rpc = vi.fn().mockResolvedValue(response);
+  const retry = vi.fn().mockResolvedValue(response);
+  const rpc = vi.fn(() => ({ retry }));
   const schema = vi.fn(() => ({ rpc }));
   const getSession = vi.fn().mockResolvedValue({
     data: { session: currentSession },
@@ -42,6 +43,7 @@ function rpcClient(
     getSession,
     schema,
     rpc,
+    retry,
   };
 }
 
@@ -91,6 +93,7 @@ describe("Atlas RPC transport", () => {
     expect(fake.rpc).toHaveBeenCalledWith("get_operator_blockers", {
       request: { requested_by_auth_subject: authSubject },
     });
+    expect(fake.retry).toHaveBeenCalledWith(false);
   });
 
   it("preserves a structured successful response", async () => {
@@ -132,6 +135,7 @@ describe("Atlas RPC transport", () => {
         expected_version: 1,
         actual_version: 2,
         correlation_id: "correlation-1",
+        command_name: "release_wholesale_order",
       },
       error: null,
     });
@@ -145,6 +149,43 @@ describe("Atlas RPC transport", () => {
       expect(result.error.safe_message).toBe("Safe backend message.");
       expect(result.error.expected_version).toBe(1);
       expect(result.error.actual_version).toBe(2);
+      expect(result.error.command_name).toBe("release_wholesale_order");
+    }
+  });
+
+  it("preserves only reviewed PA-05C read error fields", async () => {
+    const fake = rpcClient({
+      data: {
+        success: false,
+        error_code: "NOT_FOUND",
+        safe_message: "No operating context matched.",
+        contract_version: "PA-05C.v1",
+        domain: "REPORTING",
+        read_name: "get_operator_blockers",
+        raw_sql: "select private_value",
+        token: "private-token",
+        key: "private-key",
+        stack: "private-stack",
+      },
+      error: null,
+    });
+    const result = await createAtlasRpcTransport(fake.client).invoke(
+      "atlas_api.get_operator_blockers",
+      {},
+    );
+    expect(result.kind).toBe("backend_error");
+    if (result.kind === "backend_error") {
+      expect(result.error).toMatchObject({
+        contract_version: "PA-05C.v1",
+        read_name: "get_operator_blockers",
+      });
+      expect(result.error).not.toHaveProperty("raw_sql");
+      expect(result.error).not.toHaveProperty("token");
+      expect(result.error).not.toHaveProperty("key");
+      expect(result.error).not.toHaveProperty("stack");
+      expect(JSON.stringify(result.error)).not.toMatch(
+        /private_value|private-token|private-key|private-stack/,
+      );
     }
   });
 
@@ -159,6 +200,8 @@ describe("Atlas RPC transport", () => {
     );
     expect(result.kind).toBe("transport_error");
     expect(fake.rpc).toHaveBeenCalledOnce();
+    expect(fake.retry).toHaveBeenCalledOnce();
+    expect(fake.retry).toHaveBeenCalledWith(false);
     expect(JSON.stringify(result)).not.toContain("local-access-token");
     if (result.kind === "transport_error") {
       expect(result.diagnostic.code).toBe("NETWORK_FAILURE");

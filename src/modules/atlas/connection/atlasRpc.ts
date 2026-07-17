@@ -49,8 +49,10 @@ export type AtlasSafeBackendError = {
   success: false;
   error_code: string;
   safe_message: string;
+  contract_version?: string;
   domain?: string;
   command_name?: string;
+  read_name?: string;
   retryable?: boolean;
   field_errors?: JsonValue[];
   blocking_references?: JsonValue[];
@@ -118,8 +120,10 @@ function safeBackendError(
         : "The backend rejected the request safely.",
   };
   const stringKeys = [
+    "contract_version",
     "domain",
     "command_name",
+    "read_name",
     "correlation_id",
     "command_id",
   ] as const;
@@ -191,7 +195,8 @@ export function createAtlasRpcTransport(client: SupabaseClient) {
       const rpcName = ATLAS_RPC_FUNCTIONS[functionName];
       const { data, error } = await client
         .schema("atlas_api")
-        .rpc(rpcName, { request: authoritativeRequest });
+        .rpc(rpcName, { request: authoritativeRequest })
+        .retry(false);
 
       if (error) {
         const networkFailure = appearsToBeNetworkFailure(error);

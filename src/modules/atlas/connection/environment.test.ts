@@ -66,7 +66,7 @@ describe("Atlas browser environment", () => {
     expect(factory).not.toHaveBeenCalled();
   });
 
-  it("initializes one client with only the URL and publishable key", () => {
+  it("initializes one client with browser-safe settings and retries disabled", () => {
     const client = {} as SupabaseClient;
     const factory = vi.fn(() => client);
     const result = createAtlasSupabaseClient(
@@ -81,6 +81,7 @@ describe("Atlas browser environment", () => {
     expect(factory).toHaveBeenCalledWith(
       "http://localhost:54321",
       "local-publishable",
+      { db: { retry: false } },
     );
   });
 });
