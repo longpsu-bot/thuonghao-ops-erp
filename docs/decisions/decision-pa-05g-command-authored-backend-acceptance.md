@@ -1,6 +1,6 @@
 # Decision — PA-05G Command-Authored Backend Acceptance
 
-**Status:** Approved; PA-05C-H2 prerequisite satisfied; implementation waits for the PA-05G documentation PR to merge  
+**Status:** Implemented; 82-assertion focused local acceptance passes; pending review and merge
 **Date:** 2026-07-17  
 **Issue:** #100  
 **Prerequisite:** PA-05C-H2 merged in PR #104 at `649cb953218bfaea401309c0520c49bbce1ced3b`
@@ -72,3 +72,9 @@ A failing acceptance path is evidence of a predecessor defect. PA-05G must stop,
 A passing PA-05G unblocks PA-06 planning and provides a durable example of the IDs and versions a client must carry.
 
 It does not prove hosted deployment, Auth provisioning, production reference data, operator usability, React/Vercel integration, performance, observability, backup/rollback, Warehouse, mixed fulfilment, exception/return, Finance, or Production/QA.
+
+## Observed outcome
+
+The rolled-back suite at `supabase/tests/pa_05g_backend_end_to_end_acceptance.sql` passes 82 focused assertions after a clean local reset. All 17 command executions succeed under one correlation and reconcile to 17 completed receipts, 17 domain events, and 17 audit events. The four authorized read function types return the complete safe terminal path without domain mutation, and the API remains exactly 18 functions with no direct private access for API roles.
+
+No predecessor defect or contract deviation was found. PA-06 is unblocked for planning only after this acceptance change is reviewed and merged.
