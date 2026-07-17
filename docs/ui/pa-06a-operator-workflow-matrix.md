@@ -1,0 +1,93 @@
+# PA-06A — Operator Workflow Matrix
+
+**Status:** Proposed documentation contract; pending review
+**API authority:** [PA-06A Application Connection Contract](../architecture/pa-06a-application-connection-contract.md#6-canonical-atlas-api-registry)
+
+This document owns operator workflow behavior. It does not duplicate exact API payloads, selectors, response keys, or error contracts. Registry IDs link to the sole canonical API registry.
+
+## 1. Workflow rules
+
+For every workflow:
+
+- the operator sees the business object and current version being acted on;
+- the action form shows which values are operator supplied and which are authoritative context;
+- a confirmation step states the intended transition;
+- the outcome shows command ID, correlation ID, affected aggregate IDs, returned versions, event ID, audit ID, warnings, and blockers;
+- `STALE_VERSION` preserves the draft but requires refresh and a new command intent;
+- `RETRYABLE_CONCURRENCY_FAILURE` permits retry of the exact immutable request only;
+- exact replay is labeled as the original completed result;
+- capability and scope denials have no client-side bypass;
+- a read is advisory and never makes a command safe.
+
+## 2. Planning workflows
+
+| Workflow | Operator, trigger, and goal | Prerequisite and information needed | Registry entry and operator input categories | Authoritative transition and output | Success, blocker, recovery, audit, and next action |
+|---|---|---|---|---|---|
+| Record wholesale source | Planning coordinator receives an accepted customer order and needs one authoritative source | Known active wholesale customer, matching delivery location, service date, customer reference, exact ingredient/unit/quantity lines | [CMD-01](../architecture/pa-06a-application-connection-contract.md#cmd-01); operator supplies source reference, date, and lines; context supplies authoritative IDs | Creates Wholesale Order `DRAFT`, v1 and stable line revisions; returns order/line IDs and order version | Show “Draft recorded,” IDs, v1, event/audit links. Validation keeps the draft. Retry only the exact request. Next: release order after review. |
+| Release wholesale order | Planning release controller has reviewed a Draft and wants to make it official | Known Wholesale Order ID, current version, complete active lines and destination | [CMD-02](../architecture/pa-06a-application-connection-contract.md#cmd-02); operator supplies reason and confirmation | Order `DRAFT → RELEASED`; creates released Confirmed Need Batch and approval snapshot | Show released status, new order version, Confirmed Need IDs/v1. Stale result requires authoritative refresh; if no detail read is available, stop rather than infer. Next: release Purchase Handoff. |
+| Release Purchase Handoff | Planning controller receives one released Confirmed Need Batch | Known Batch ID/version, approval snapshot and exact source lineage | [CMD-03](../architecture/pa-06a-application-connection-contract.md#cmd-03) | Creates Purchase Handoff `RELEASED_TO_PROCUREMENT`, v1, line revisions, and demand references | Show Handoff root/revision/line IDs and audit evidence. Cross-wired or incomplete snapshots block atomically. Next: release Dispatch Requirement. |
+| Release Dispatch Requirement | Planning controller needs one delivery obligation for the released handoff | Known current Handoff revision and Handoff root version; one authoritative customer/location/date scope | [CMD-04](../architecture/pa-06a-application-connection-contract.md#cmd-04) | Creates Dispatch Requirement `RELEASED`, v1 and exact line revisions | Show destination snapshots, requirement IDs/v1, event/audit evidence. Stale or multi-scope lineage blocks. Next: Procurement allocation. |
+
+## 3. Procurement workflows
+
+| Workflow | Operator, trigger, and goal | Prerequisite and information needed | Registry entry and operator input categories | Authoritative transition and output | Success, blocker, recovery, audit, and next action |
+|---|---|---|---|---|---|
+| Allocate supplier-direct fulfilment | Buyer receives a released requirement and assigns every exact line | Known requirement revision, root version, every line revision, supplier choices, exact quantity/unit | [CMD-05](../architecture/pa-06a-application-connection-contract.md#cmd-05); operator selects supplier per line but cannot alter required quantity/unit | Creates allocation root/revision `READY_FOR_DISPATCH`, v1; lines `READY_FOR_EVIDENCE` | Show complete line coverage and allocation IDs/v1. Missing/duplicate lines, quantity/unit edits, or stale requirement block all rows. Next: release one PO per supplier. |
+| Release supplier Purchase Order | Buyer has one supplier represented in the ready allocation | Known allocation revision/current version, supplier, unique document number, supplier-specific line summary | [CMD-06](../architecture/pa-06a-application-connection-contract.md#cmd-06) | Creates supplier PO `RELEASED_TO_SUPPLIER`, v1; allocation version is returned unchanged | Confirmation shows supplier, document number, lines, date, destination. Success exposes PO root/revision/line IDs. Duplicate document or supplier/allocation PO blocks. Next: record Evidence against returned PO lines. |
+
+## 4. Evidence workflows
+
+| Workflow | Operator, trigger, and goal | Prerequisite and information needed | Registry entry and operator input categories | Authoritative transition and output | Success, blocker, recovery, audit, and next action |
+|---|---|---|---|---|---|
+| Record supplier Evidence | Evidence clerk receives a supplier document or cross-dock record | Known released PO line revision and PO version; supplier, item, unit, quantity, reference, occurrence time | [CMD-07](../architecture/pa-06a-application-connection-contract.md#cmd-07) | Creates one valid Supplier Receiving Evidence; PO remains unchanged | Confirmation shows supplier/PO/item/quantity/unit/reference. Duplicate reference, wrong lineage, future time, or stale PO blocks. Success shows Evidence ID and guarded PO version. Next: apply Evidence. |
+| Apply Evidence to allocation | Evidence clerk assigns physical evidence to the exact obligation | Known current valid Evidence ID, allocation-line revision, allocation version, quantity/unit | [CMD-08](../architecture/pa-06a-application-connection-contract.md#cmd-08) | Creates one valid Evidence Application; allocation remains unchanged | Show source Evidence and target allocation line before confirmation. Over-application, wrong lineage, voided Evidence, or stale allocation blocks. Success shows application ID. Next: inspect readiness. |
+| Inspect Evidence readiness | Evidence or Dispatch operator needs to know whether exact lines can progress | A known Trip, requirement revision, or source-line revision | [READ-02](../architecture/pa-06a-application-connection-contract.md#read-02) | No transition; returns per-line readiness and quantities | Show allocated/loaded/applied quantities, Evidence refs, status, blockers, warnings. Do not infer command permission. Next: resolve Evidence or proceed to a known-context Dispatch action. |
+| Inspect operator blockers | Evidence or Dispatch operator needs safe owning-team guidance | Known Trip or known date plus customer/location | [READ-03](../architecture/pa-06a-application-connection-contract.md#read-03) | No transition; returns derived observations, not tasks | Show severity, safe message, affected opaque IDs, public Trip reference, owning team, observed time. Empty result is not proof that every workflow is complete. |
+
+## 5. Dispatch workflows
+
+| Workflow | Operator, trigger, and goal | Prerequisite and information needed | Registry entry and operator input categories | Authoritative transition and output | Success, blocker, recovery, audit, and next action |
+|---|---|---|---|---|---|
+| Create Dispatch Plan | Dispatch planner groups fully evidenced same-date obligations | Known exact requirement/allocation pairs and both current versions; unused Plan reference; optional wave | [CMD-09](../architecture/pa-06a-application-connection-contract.md#cmd-09) | Creates Plan `PLANNED`, v1 and exact memberships; derives service date | Show Plan/membership IDs, derived date, v1, audit evidence. Missing/partial/stale/cross-wired Evidence blocks. Next: assign a Trip. |
+| Assign Trip and Stops | Dispatch planner assigns a vehicle/driver and ordered membership subset | Known Plan ID/current version, unassigned membership IDs, Trip reference, contiguous stop order, driver and/or vehicle | [CMD-10](../architecture/pa-06a-application-connection-contract.md#cmd-10) | Creates Trip `ASSIGNED`, v1; Stops `PENDING`, v1; increments Plan | Show Plan/Trip/Stop versions. Invalid assignment, duplicate sequence, stale Evidence, or already assigned membership blocks. Next: confirm loads. |
+| Confirm multi-line load | Dispatch controller has physical goods and exact Evidence applications | Known Trip/Stop/membership revisions, Trip version, load time, every exact line and Evidence bridge | [CMD-11](../architecture/pa-06a-application-connection-contract.md#cmd-11) | Creates confirmed Dispatch Load/lines/bridges; Trip and selected Stop become `LOADED` and increment | Confirmation shows every line and evidence quantity. Missing/extra lines, wrong unit/quantity, over-consumed Evidence, or stale Trip blocks atomically. Next: load remaining Stops or depart. |
+| Record departure | Dispatch controller confirms the entire Trip is ready to move | Known Trip ID/current version; all Stops fully loaded; non-future departure after loads | [CMD-12](../architecture/pa-06a-application-connection-contract.md#cmd-12) | Trip and all Stops `LOADED → IN_TRANSIT`; all versions increment | Show all affected Stop IDs/versions. Any incomplete load, invalid Evidence, destination mismatch, or stale Trip blocks the whole Trip. Next: successful delivery per Stop. |
+| Confirm successful delivery | Delivery operator has destination receipt for one Stop | Known Trip/Stop, current Trip version, exact current load lines, receiver reference/notes, confirmation time | [CMD-13](../architecture/pa-06a-application-connection-contract.md#cmd-13) | Creates valid Delivery Confirmation/lines; Stop `DELIVERED`; Trip partial or fully `DELIVERED` | Show exact delivered quantities and zero return/exception. Any short, excess, return, exception, wrong unit, missing line, or stale Trip blocks. Next: other Stops or closure. |
+| Close successful Trip | Dispatch controller sees a fully delivered and reconciled Trip | Known Trip ID/current version, completion time after all confirmations | [CMD-14](../architecture/pa-06a-application-connection-contract.md#cmd-14) | Preserves `DELIVERED`, records completion, increments Trip | Show completion time, new Trip version, closure event/audit. Incomplete or cross-wired Stop/load/delivery state blocks. No further successful-path write is defined. |
+
+## 6. Trace and audit workflows
+
+| Workflow | Operator, trigger, and goal | Prerequisite and information needed | Registry entry | Output and behavior | Recovery and next action |
+|---|---|---|---|---|---|
+| Completed source-to-delivery trace | Authorized operator investigates one completed source line | Known Wholesale Order line revision ID | [READ-01](../architecture/pa-06a-application-connection-contract.md#read-01) | Public references, opaque lineage IDs, stage statuses, quantity reconciliation, Evidence readiness | Not found means no completed trace for that selector. Use the audit timeline for command history. |
+| Command/audit history | Authorized operator explains a command, journey, or aggregate | Known command ID, correlation ID, or supported aggregate type/ID | [READ-04](../architecture/pa-06a-application-connection-contract.md#read-04) | Safe receipt summary plus domain and audit events, bounded to 100 events | Unsupported or mixed-scope selector fails closed. Return to the owning known-context workbench; do not broaden to private-table access. |
+
+## 7. Outcome presentation contract
+
+Every command outcome view must make these categories visible:
+
+```text
+Command result
+→ safe operator message
+→ command ID and correlation ID
+→ affected aggregate IDs
+→ returned new versions
+→ event ID and audit ID
+→ warnings and blockers
+→ replay / stale / retryable / denied classification
+→ next permitted operator action
+```
+
+A toast alone is insufficient for an authoritative write.
+
+## 8. Intentionally unsupported operator paths
+
+The accepted supplier-direct slice does not provide operator workflows for:
+
+- partial allocation or split portions;
+- PO draft, approval, amendment, cancellation, supplier acknowledgement, pricing, tax, or payment;
+- Evidence correction, supersession, or voiding through the reviewed 18-function boundary;
+- partial delivery, refusal, return, exception, redelivery, or reopening;
+- Warehouse custody, stock movement, Production/QA, Finance, HR, payroll, fleet, GPS, fuel, or route optimization.
+
+The UI must not expose prototype buttons for these transitions as though backend commands exist.
