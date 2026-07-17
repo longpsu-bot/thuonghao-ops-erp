@@ -1,126 +1,71 @@
 # Decision — PA-05C-H2 Current Command Timeline Scope
 
-**Status:** Approved; documentation prerequisite pending review and merge
-
-**Date:** 2026-07-17
-
+**Status:** Approved; documentation prerequisite pending review and merge  
+**Date:** 2026-07-17  
 **Issue:** #102
 
 ## Context
 
-PA-05C implemented the bounded `get_command_audit_timeline` read before the current Planning, Procurement, Dispatch setup, and successful closure commands existed.
+PA-05C’s public audit-timeline design is fail-closed and remains valid. Its private aggregate-to-scope helper was written before PA-05D, PA-05E, PA-05F, and PA-05B-H3.
 
-Its authorization design is correct: every selected aggregate must resolve to authoritative customer/location/trip scope; unresolved targets and correlations spanning multiple relational scopes fail closed.
+Merged commands now emit aggregate types the helper does not recognize. A full source-to-closure correlation therefore fails as unsupported, and upstream aggregates cannot yet resolve to the trip that currently contains their obligation.
 
-The private resolver's aggregate vocabulary is stale. Current command events use CamelCase aggregate names and aggregate classes that the original helper does not support. Consequently an authorized operator cannot retrieve timelines produced by the current command surface, and PA-05G cannot verify a complete correlation without changing the read contract.
+PA-05G is acceptance-only and must not hide this read-contract gap.
 
 ## Decision
 
-Implement a narrow read-only compatibility amendment:
+Implement PA-05C-H2 before PA-05G:
+
+```text
+replace the private aggregate-scope resolver
+→ support the current explicit aggregate vocabulary
+→ follow exact existing lineage to every current trip scope
+→ retain unresolved and mixed-scope failure
+```
+
+No public function is added or changed. The API remains exactly 18 functions and the public read remains `PA-05C.v1`.
+
+## Scope semantics
+
+An upstream aggregate may use current authoritative relationships to resolve the destination and trip that now contains it.
+
+- Before trip admission: customer/location with null trip is valid.
+- After trip admission: return the linked trip tuple.
+- Multiple linked tuples: return all and let the existing timeline reject ambiguity.
+- Unknown aggregate type: remain unsupported.
+
+Do not reconstruct historical authorization from event payloads, sample one tuple, or permit a mixed correlation merely because the caller has GLOBAL scope.
+
+## Security
+
+Reuse `atlas_read_runtime` with only required SELECT/USAGE and SELECT-only RLS additions. The private helper remains owner-hardened, static, fixed-search-path, and inaccessible to API roles.
+
+No write, sequence, schema-CREATE, command-runtime, or direct API-role private access is allowed.
+
+## Why this is separate
+
+A passing PA-05G must prove existing commands and reads compose correctly. Fixing the resolver inside PA-05G would turn acceptance into implementation and make the result misleading.
+
+Required order:
 
 ```text
 PA-05C-H2
-→ replace the private aggregate-to-scope resolver
-→ support every aggregate type emitted by the current 18-function API
-→ derive downstream trip scope for upstream aggregates when a trip exists
-→ preserve strict unresolved/mixed-scope rejection
-```
-
-No public function is added. The API remains exactly 18 functions.
-
-The existing `PA-05C.v1` request and response shape remains unchanged.
-
-## Supported aggregate classes
-
-The resolver will support the exact current names:
-
-```text
-WholesaleOrder
-PurchaseHandoff
-DispatchRequirement
-FulfilmentAllocation
-PurchaseOrder
-SupplierReceivingEvidence
-EvidenceApplication
-DispatchPlan
-DispatchTrip
-DispatchLoad
-DeliveryConfirmation
-```
-
-It will retain the originally supported uppercase aliases for backward-compatible tests and existing stored rows.
-
-Unknown names remain unsupported. The implementation must not create a generic registry or automatically normalize arbitrary text.
-
-## Canonical scope decision
-
-An upstream aggregate's scope is not limited to the state that existed when its event was recorded. For read authorization, the resolver may follow current authoritative relationships to determine every destination and trip that now contains that aggregate's obligation.
-
-This allows a completed one-trip correlation to resolve all Planning, Procurement, Evidence, and Dispatch event aggregates to the same customer/location/trip tuple.
-
-When no trip exists, customer/location with a null trip remains valid.
-
-When more than one tuple exists, the resolver returns all tuples and the existing timeline fails closed as ambiguous. It must not sample one relation.
-
-## Security decision
-
-Reuse `atlas_read_runtime` and forced RLS.
-
-Only missing SELECT/USAGE and SELECT-only policies may be added. API roles receive no direct private access. No write, sequence, schema-CREATE, command-runtime membership, dynamic SQL, or new role is permitted.
-
-## Why this is a prerequisite to PA-05G
-
-PA-05G is an acceptance-only task. It must validate the existing command and read contracts, not patch them.
-
-Without PA-05C-H2, actual current events such as `WholesaleOrder`, `FulfilmentAllocation`, `DispatchPlan`, and `DispatchTrip` fail the timeline resolver. Hiding that gap inside PA-05G would invalidate the acceptance result.
-
-The sequence is therefore:
-
-```text
-PA-05C-H2 current command timeline scope
-→ PA-05G command-authored backend acceptance
-→ PA-06 React connection
+→ PA-05G
+→ PA-06
 ```
 
 ## Rejected alternatives
 
-### Weaken PA-05G by skipping the timeline
+- Skip the audit timeline in PA-05G — rejected because audit visibility is part of the approved backend boundary.
+- Rename historical/current event aggregates — rejected as an unnecessary write-side change.
+- Add a registry or generic graph engine — rejected as speculative persistence/abstraction.
+- Authorize a sampled event — rejected because it recreates the PA-05C-H1 flaw.
+- Broaden the public response — rejected; the current shape is sufficient.
 
-Rejected. Audit visibility is part of the approved backend boundary future operators and React must consume.
+## Consequences and limits
 
-### Change event aggregate names
+The complete current command path becomes readable through the existing API, including by matching trip-scoped actors when all aggregates belong to that trip.
 
-Rejected. The emitted names are current authoritative facts and changing historical writers would broaden the task.
+The timeline remains capped at 100 events and still rejects correlations spanning multiple relational scopes. This is current-state relational authorization, not event-sourced historical authorization reconstruction.
 
-### Add a generic aggregate registry
-
-Rejected. The current bounded vocabulary is small and explicit. A registry adds persistence and administration without an operational invariant.
-
-### Let the timeline authorize only one sampled event
-
-Rejected. This recreates the PA-05C-H1 sampled-scope flaw.
-
-### Permit multiple scopes when the actor is GLOBAL
-
-Rejected for this amendment. The current public contract intentionally rejects correlations that are not one bounded relational context. Broader cross-scope reporting requires a separate decision.
-
-## Consequences
-
-Positive:
-
-- current command events become readable through the existing authorized API;
-- one complete same-trip correlation can be verified by PA-05G;
-- trip-scoped operators can inspect the full history of that trip, including upstream aggregates currently admitted to it;
-- unsupported and mixed-scope reads remain fail closed;
-- no write-command or application complexity is introduced.
-
-Limitations:
-
-- timeline remains bounded to 100 shaped events;
-- correlations spanning multiple customers, locations, or trips remain rejected;
-- current relationships are used for scope resolution; the read is not an event-sourced historical authorization reconstruction;
-- no new reporting search, pagination, export, or cross-trip analytics is added.
-
-## Next gate
-
-After PA-05C-H2 implementation is merged and verified, the PA-05G documentation prerequisite can be finalized and Codex can implement the command-authored acceptance suite.
+No reporting search, export, pagination, UI, deployment, or production-readiness claim is added.
