@@ -12,7 +12,7 @@ Atlas has completed the Admin / Master Data Management in-memory prototype seque
 
 PA-01 defines the Atlas persistence contract. PA-02 defines the physical PostgreSQL/Supabase namespace, table catalog, typed cross-domain line spine, revision/snapshot patterns, evidence-application constraints, quantity/time conventions, transaction matrix, indexes, access preview, derived read models, legacy staging, and the first supplier-direct wholesale schema subset. PA-03 defines the actor/capability model, dedicated `atlas_api` function surface, revoke-first grants, RLS direction, security-definer hardening, mandatory idempotency and optimistic concurrency, deterministic locking/isolation, safe errors, reporting/storage/integration controls, and first-slice security tests. PA-04 is the merged version-controlled migration foundation for supplier-direct Slice 1: nine private Atlas schemas, 52 authoritative tables, two private security-invoker trace views, forced RLS, revoke-first privileges, and a 23-check pgTAP verification script. PA-05A is complete on `main` as the supplier-direct business-command/RPC and shaped-read contract. PA-05B is merged with five evidence-to-delivery commands, one authorized shaped trace, hardened runtime roles/RLS, and 64 focused pgTAP assertions. PA-05C adds three bounded, capability/scope-filtered API wrappers for evidence readiness, operator blockers, and command/audit timeline visibility. PA-05B-H1 closes Issue #82’s shared-runtime privilege risk by splitting the PA-05B command owners into Evidence and Dispatch roles, retaining read-only ownership for the approved read surface, and adding a 10-check effective-privilege audit.
 
-PA-05D, PA-05E, and PA-05B-H2 are complete on `main`. PA-05F is implemented by this bounded change under Issue #95: two new commands require full current valid source-owned Evidence for every selected allocation line before creating a Dispatch Plan, then author exact Plan Requirement memberships, assigned Trips, and Planning-derived Stops through the existing hardened Dispatch runtime. This raises the reviewed API boundary from 15 to exactly 17 functions without adding routing optimization, a new runtime role, or any Planning, Procurement, or Evidence mutation authority. The approved PA-05A catalog retains a separate successful-trip closure command, tracked by Issue #93, so the remaining backend sequence is PA-05B-H3 successful trip closure, PA-05G end-to-end backend acceptance, then PA-06 React connection.
+PA-05D, PA-05E, PA-05B-H2, and PA-05F are complete on `main`. PA-05B-H3 is implemented by this bounded change under Issue #93: one new command closes only a departed, fully delivered, exactly reconciled Dispatch Trip, preserves `DELIVERED`, records `completed_at`, increments the trip version once, and emits one closure event plus one audit event through the existing hardened Dispatch runtime. This raises the reviewed API boundary from 17 to exactly 18 functions without adding a runtime role, table, workflow status, read API, or Planning, Procurement, or Evidence mutation authority. The remaining backend sequence is PA-05G end-to-end backend acceptance, then PA-06 React connection.
 
 The Planning Domain foundation and integration review are complete. The Procurement contract, bounded in-memory foundation, integration/operator-workflow review, and fulfilment-allocation amendment are complete as architecture baselines. The Warehouse domain contract, bounded in-memory receiving foundation, integration/operator-workflow review, Stock Release contract, and bounded in-memory Stock Release foundation are complete. The Admin / Master Data Management contract, School info, Ingredients & Suppliers, consolidated Dishes & Recipes foundations, and Admin integration/operator-workflow review are complete as in-memory prototypes. PD-05 Dispatch and Delivery starts from Planning-released dispatch requirements, Procurement fulfilment allocation, and physical fulfilment evidence rather than mandatory Warehouse release. Its in-memory foundation and operator review prove trip/load/delivery, attention, exception, return, and closure rules. Production/QA and Finance/Accounting are deferred for the MVP.
 
@@ -46,7 +46,7 @@ Requirements:
 - pnpm
 - GitHub access to the private repository
 
-No Supabase credential or production-data access is required. The PA-04 through PA-05F migrations can be verified against a disposable local PostgreSQL/Supabase-compatible database without linking a hosted project.
+No Supabase credential or production-data access is required. The PA-04 through PA-05B-H3 migrations can be verified against a disposable local PostgreSQL/Supabase-compatible database without linking a hosted project.
 
 Before changing code, read `AGENTS.md` and the relevant domain contract.
 
@@ -69,8 +69,9 @@ Before changing code, read `AGENTS.md` and the relevant domain contract.
 15. [`PA-05E — Bounded Procurement command family`](docs/architecture/pa-05e-procurement-command-family-contract.md) — exact supplier allocation and released supplier purchase-order contract
 16. [`PA-05B-H2 — Multi-line Dispatch execution correction`](docs/architecture/pa-05b-h2-multiline-dispatch-execution-contract.md) — atomic multi-line load, trip-wide departure revalidation, and multi-line successful delivery
 17. [`PA-05F — Bounded Dispatch setup command family`](docs/architecture/pa-05f-dispatch-setup-command-family-contract.md) — Evidence-gated Dispatch Plan, Plan Requirement, assigned Trip, and derived Stop setup
-18. The relevant contract under `docs/architecture/`
-19. The corresponding GitHub issue and pull request
+18. [`PA-05B-H3 — Successful Dispatch Trip closure`](docs/architecture/pa-05b-h3-successful-trip-closure-contract.md) — exact delivered-trip reconciliation, completion stamp, event, and audit contract
+19. The relevant contract under `docs/architecture/`
+20. The corresponding GitHub issue and pull request
 
 ## Architecture method
 
