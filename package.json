@@ -17,7 +17,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "format": "prettier --check package.json tsconfig.json vite.config.ts index.html src .storybook STAFF_REVIEW.md docs/open-questions/planner-prototype-findings.md docs/implementation-tasks/TASK-PA-06B-local-supabase-connection-foundation.md scripts/provision-local-atlas-identity.mjs scripts/verify-local-supabase-connection.mjs"
+    "format": "prettier --check package.json tsconfig.json vite.config.ts index.html src .storybook STAFF_REVIEW.md docs/open-questions/planner-prototype-findings.md docs/implementation-tasks/TASK-PA-06B-local-supabase-connection-foundation.md scripts/local-supabase-status.mjs scripts/local-supabase-status.test.mjs scripts/provision-local-atlas-identity.mjs scripts/verify-local-supabase-connection.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.7",
@@ -34,6 +34,7 @@
     "jsdom": "29.1.1",
     "prettier": "3.9.5",
     "storybook": "^10.5.0",
+    "supabase": "2.109.1",
     "typescript": "7.0.2",
     "vite": "8.1.4",
     "vitest": "4.1.10"

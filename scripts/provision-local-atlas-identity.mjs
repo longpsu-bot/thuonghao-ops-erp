@@ -1,39 +1,17 @@
-import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import {
+  readLocalSupabaseStatus,
+  runPinnedSupabase,
+} from "./local-supabase-status.mjs";
 
 const authSubject = "b6000000-0000-0000-0000-000000000101";
 const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
 
-function localStatus() {
-  let output;
-  try {
-    output = execFileSync("supabase", ["status", "-o", "json"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-  } catch {
-    throw new Error(
-      "Local Supabase status is unhealthy. Start the complete local stack before provisioning.",
-    );
-  }
-  const status = JSON.parse(output);
-  const apiUrl = new URL(status.API_URL);
-  if (!["127.0.0.1", "localhost"].includes(apiUrl.hostname)) {
-    throw new Error("PA-06B provisioning is restricted to local Supabase.");
-  }
-  if (!status.SECRET_KEY) {
-    throw new Error(
-      "The local Supabase secret key is unavailable from CLI status.",
-    );
-  }
-  return { apiUrl: apiUrl.origin, secretKey: status.SECRET_KEY };
-}
-
-async function provisionAuthUser(apiUrl, secretKey) {
-  const admin = createClient(apiUrl, secretKey, {
+async function provisionAuthUser(apiUrl, serviceRoleKey) {
+  const admin = createClient(apiUrl, serviceRoleKey, {
+    db: { retry: false },
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -75,36 +53,25 @@ function provisionAtlasMapping() {
   const sqlPath = fileURLToPath(
     new URL("../supabase/local/pa_06b_synthetic_identity.sql", import.meta.url),
   );
-  const result = spawnSync(
-    "docker",
-    [
-      "exec",
-      "-i",
-      "supabase_db_thuonghao-ops-erp",
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-v",
-      "ON_ERROR_STOP=1",
-    ],
-    {
-      input: readFileSync(sqlPath, "utf8"),
-      encoding: "utf8",
-      stdio: ["pipe", "inherit", "inherit"],
-    },
+  const assertionPath = fileURLToPath(
+    new URL(
+      "../supabase/local/pa_06b_synthetic_identity_assertion.sql",
+      import.meta.url,
+    ),
   );
-  if (result.status !== 0) {
-    throw new Error(
-      "The synthetic Atlas actor mapping could not be provisioned.",
-    );
-  }
+  runPinnedSupabase(["db", "query", "--local", "--file", sqlPath], {
+    stdio: "inherit",
+  });
+  runPinnedSupabase(["db", "query", "--local", "--file", assertionPath], {
+    stdio: "inherit",
+  });
 }
 
 async function main() {
-  const { apiUrl, secretKey } = localStatus();
-  await provisionAuthUser(apiUrl, secretKey);
+  const { apiUrl, serviceRoleKey } = readLocalSupabaseStatus({
+    requireAdminKey: true,
+  });
+  await provisionAuthUser(apiUrl, serviceRoleKey);
   provisionAtlasMapping();
   console.log(`Provisioned deterministic local Atlas identity: ${email}`);
 }

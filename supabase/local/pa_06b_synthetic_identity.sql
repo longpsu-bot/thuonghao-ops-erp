@@ -68,7 +68,7 @@ insert into atlas_core.capabilities (
   'b6000000-0000-0000-0000-000000000004',
   'operator_blockers.read',
   'Read bounded operator blockers',
-  'AUDIT'
+  'DISPATCH'
 )
 on conflict (capability_id) do update set
   capability_code = excluded.capability_code,
