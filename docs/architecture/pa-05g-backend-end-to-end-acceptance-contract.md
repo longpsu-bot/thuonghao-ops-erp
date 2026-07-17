@@ -1,6 +1,6 @@
 # PA-05G — Backend End-to-End Acceptance Contract
 
-**Status:** Approved acceptance contract; PA-05C-H2 prerequisite satisfied; implementation waits for this documentation PR to merge  
+**Status:** Implemented; 82-assertion focused local acceptance passes; pending review and merge
 **Issue:** #100  
 **Prerequisite:** PA-05C-H2 merged in PR #104 at `649cb953218bfaea401309c0520c49bbce1ced3b`
 
@@ -198,6 +198,14 @@ Do not rerun every predecessor suite or routine frontend checks. GitHub Actions 
 ## Result gate
 
 A passing reviewed PA-05G unblocks PA-06 React connection planning only. It does not authorize live deployment, production seed/reference data, Retool/OPS v1 change, Vercel production setup, or rollout.
+
+## Implementation outcome
+
+`supabase/tests/pa_05g_backend_end_to_end_acceptance.sql` passes 82 rolled-back assertions after a clean local Supabase reset. It command-authors all 17 executions under one correlation and proves exact two-line/two-supplier lineage through final Trip status `DELIVERED`, Stop version 4, Trip version 5, departure `2026-07-16T18:00:00Z`, and completion `2026-07-16T18:30:00Z`.
+
+The suite observes exactly 17 completed receipts, 17 domain events, and 17 audit events. Both source-line traces return their exact delivered quantities, readiness returns two `DELIVERED` items, blockers returns only two `DELIVERY_COMPLETED` information items, and the timeline returns all 17 domain plus 17 audit events including `SuccessfulDispatchTripClosed`. Read-side row counts remain unchanged.
+
+No contract deviation, migration, function, privilege, RLS, dependency, application, or persistent-data change was required. This result unblocks PA-06 for planning only after review and merge; the existing exclusions remain unchanged.
 
 ## Exclusions
 
