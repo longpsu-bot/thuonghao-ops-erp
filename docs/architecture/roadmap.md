@@ -150,6 +150,7 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05B-H2 multi-line Dispatch execution correction — merged with atomic multi-line load, full-line trip departure revalidation, Planning-owned destination enforcement, multi-line successful delivery, trip-wide scope authorization, and 128 focused pgTAP assertions
 - ✅ PA-05F bounded Dispatch setup command family — implemented with fully evidenced exact-pair plan admission, disjoint assigned-trip subsets, Planning-derived stops, one plan-version increment per trip, the reused hardened Dispatch runtime, and 51 focused pgTAP assertions
 - ✅ PA-05B-H3 successful Dispatch trip closure — implemented under Issue #93 with exact trip/stop/membership/load/delivery reconciliation, preserved `DELIVERED` status, one completion stamp/version increment, one closure event, one audit event, and 46 focused pgTAP assertions
+- ✅ PA-05C-H2 current command timeline scope — implemented under Issue #102 with the existing private resolver, exact current aggregate vocabulary, same-trip upstream scope resolution, five minimum SELECT/RLS additions, and 46 focused pgTAP assertions
 - ⬜ PA-05G backend end-to-end acceptance — authoritative source-to-trip-closure path using PA-05D, PA-05E, PA-05B Evidence, PA-05F, PA-05B-H2, PA-05B-H3, and the existing read surface
 - ⬜ PA-06 React connection — after PA-05G under the product owner's backend-first sequencing decision
 - ⬜ Controlled seed/reference data — separately approved after backend acceptance; not required for rolled-back local fixtures
@@ -188,13 +189,14 @@ Approved PA-01 contract
 → PA-05B-H2 multi-line Dispatch execution correction
 → PA-05F Evidence-gated Dispatch setup command family
 → PA-05B-H3 successful trip closure
+→ PA-05C-H2 current command timeline scope compatibility
 → PA-05G backend end-to-end acceptance
 → PA-06 React connection
 → rehearsal and operator validation
 → separately approved production rollout
 ```
 
-PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, PA-05D, PA-05E, PA-05B-H2, and PA-05F are completed on `main`; PA-05B-H3 is implemented by this bounded change. The reviewed 18-function API now covers the Planning release chain, Procurement allocation and supplier PO, supplier Evidence, Evidence-gated Dispatch Plan and assigned-trip setup, atomic multi-line load, trip-wide departure, stop-level multi-line delivery, exact successful trip closure, trace, readiness, blockers, and audit reads. PA-05G remains the next pure command-authored backend acceptance gate, followed by PA-06. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
+PA-01 through PA-03 are approved documentation and architecture baselines. PA-04 is the merged first executable database foundation. PA-05A, PA-05B, PA-05C, PA-05B-H1, PA-05D, PA-05E, PA-05B-H2, PA-05F, and PA-05B-H3 are completed on `main`; PA-05C-H2 is implemented by this bounded change. The reviewed 18-function API now covers the Planning release chain, Procurement allocation and supplier PO, supplier Evidence, Evidence-gated Dispatch Plan and assigned-trip setup, atomic multi-line load, trip-wide departure, stop-level multi-line delivery, exact successful trip closure, trace, readiness, blockers, and current aggregate-compatible audit reads. PA-05G remains the next pure command-authored backend acceptance gate, followed by PA-06. Controlled production seed/reference data, legacy rehearsal, deployment, Warehouse, school catering, and broader write-command coverage remain separately approved work.
 
 ## Deferred — Production and Quality
 
