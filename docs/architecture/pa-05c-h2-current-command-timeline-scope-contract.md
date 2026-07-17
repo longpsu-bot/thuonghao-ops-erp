@@ -1,24 +1,20 @@
 # PA-05C-H2 — Current Command Timeline Scope Contract
 
-**Status:** Approved implementation contract; documentation prerequisite pending review and merge
-
-**Domain:** Reporting / Read
-
-**Capability:** Return one authorized, bounded command/audit timeline for the complete current supplier-direct command surface.
-
+**Status:** Approved implementation contract; documentation prerequisite pending review and merge  
+**Domain:** Reporting / Read  
 **Issue:** #102
 
-## 1. Executive decision
+## Purpose
 
-PA-05C introduced `atlas_api.get_command_audit_timeline(jsonb)` before the Planning, Procurement, Dispatch-setup, and successful-closure command families were implemented.
+PA-05C implemented `atlas_api.get_command_audit_timeline(jsonb)` before the current Planning, Procurement, Dispatch setup, and trip-closure commands existed.
 
-The public read remains correct in principle: select one command, correlation, or aggregate; resolve every selected event aggregate to authoritative relational scope; reject unresolved or mixed scope; authorize before shaping; expose only allowlisted fields.
+The public read contract remains correct: every selected event aggregate must resolve to authoritative relational scope; unresolved or mixed scope fails closed; only authorized, allowlisted fields are returned.
 
-Its private aggregate resolver is now stale. Current commands emit CamelCase aggregate types and new aggregate classes that the original helper does not recognize.
+The private helper `atlas_core.pa_05c_aggregate_scope(text, uuid)` is stale. It recognizes an older uppercase subset, while merged commands now emit CamelCase aggregate types such as `WholesaleOrder`, `FulfilmentAllocation`, `DispatchPlan`, and `DispatchTrip`.
 
-PA-05C-H2 corrects only this private read-scope compatibility boundary. It adds no public function and changes no write command.
+PA-05C-H2 updates only this private scope resolver and the minimum read-only privileges needed by it.
 
-## 2. OPS_SYSTEM_MAP placement
+## OPS_SYSTEM_MAP
 
 ```text
 Mission
@@ -31,10 +27,10 @@ Business Domain
 → Reporting / Read
 
 Business Object
-→ existing command receipts, domain events, audit events, and owning aggregates
+→ existing receipts, events, audits, and their owning aggregates
 
 Business Contract
-→ every selected aggregate resolves to every authoritative relational tuple
+→ every selected aggregate resolves to every authoritative scope tuple
 → unsupported or mixed scope fails closed
 
 Command / Event
@@ -47,84 +43,36 @@ Application
 → none
 
 Technology
-→ one forward-only read-only migration, private resolver replacement,
-  minimum read grants/RLS, and focused pgTAP
+→ one read-only migration, one private helper replacement, focused pgTAP
 ```
 
-## 3. Public surface
+## Public boundary
 
-Keep exactly:
+Keep the existing public function, selector contract, response shape, `PA-05C.v1` version, and 100-event limit.
 
-```sql
-atlas_api.get_command_audit_timeline(request jsonb) returns jsonb
-```
+The reviewed `atlas_api` surface remains exactly **18 functions**.
 
-Keep contract version and response shape:
+Do not add, remove, rename, overload, or change the signature of any public function.
+
+## Supported aggregate vocabulary
+
+Support the exact current aggregate types:
 
 ```text
-PA-05C.v1
+WholesaleOrder
+PurchaseHandoff
+DispatchRequirement
+FulfilmentAllocation
+PurchaseOrder
+SupplierReceivingEvidence
+EvidenceApplication
+DispatchPlan
+DispatchTrip
+DispatchLoad
+DeliveryConfirmation
 ```
 
-The reviewed `atlas_api` surface remains exactly 18 functions.
-
-Do not add, remove, rename, overload, or change the signature of a public function.
-
-The existing selectors remain:
-
-- one `command_id`;
-- one `correlation_id`;
-- one exact `aggregate_type` plus `aggregate_id`.
-
-The existing 100-event bound and allowlisted response fields remain.
-
-## 4. Private resolver boundary
-
-Replace:
-
-```sql
-atlas_core.pa_05c_aggregate_scope(
-  aggregate_type text,
-  aggregate_id uuid
-)
-returns table (
-  customer_id uuid,
-  delivery_location_id uuid,
-  dispatch_trip_id uuid,
-  public_reference text
-)
-```
-
-The helper remains:
-
-- `LANGUAGE SQL` unless a demonstrated SQL limitation requires PL/pgSQL;
-- `STABLE`;
-- `SECURITY INVOKER`;
-- fixed `search_path = ''`;
-- fully qualified static SQL;
-- owned by `atlas_owner`;
-- executable only by `atlas_read_runtime`.
-
-Do not introduce dynamic SQL or a generic aggregate registry.
-
-## 5. Supported current aggregate types
-
-Support the exact aggregate types currently emitted by merged commands:
-
-| Aggregate type | Current command events |
-| --- | --- |
-| `WholesaleOrder` | `WholesaleOrderRecorded`, `WholesaleOrderReleased` |
-| `PurchaseHandoff` | `PurchaseHandoffReleased` |
-| `DispatchRequirement` | `DispatchRequirementReleased` |
-| `FulfilmentAllocation` | `SupplierDirectFulfilmentAllocated` |
-| `PurchaseOrder` | `SupplierPurchaseOrderReleased` |
-| `SupplierReceivingEvidence` | `SupplierReceivingEvidenceRecorded` |
-| `EvidenceApplication` | `EvidenceAppliedToAllocation` |
-| `DispatchPlan` | `DispatchPlanCreated` |
-| `DispatchTrip` | `DispatchTripAssigned`, `DispatchDeparted`, `SuccessfulDispatchTripClosed` |
-| `DispatchLoad` | `DispatchLoadConfirmed` |
-| `DeliveryConfirmation` | `SuccessfulDeliveryConfirmed` |
-
-Retain compatibility for existing PA-05C-supported aliases and fixtures:
+Retain compatibility with the existing aliases:
 
 ```text
 SUPPLIER_RECEIVING_EVIDENCE
@@ -136,11 +84,11 @@ DELIVERY_CONFIRMATION
 DISPATCH_REQUIREMENT
 ```
 
-Unknown aggregate names remain unsupported. Do not lower-case or otherwise normalize arbitrary input into an accepted type.
+Unknown aggregate names remain unsupported. Do not accept arbitrary case-folded or normalized names.
 
-## 6. Canonical scope semantics
+## Canonical scope rule
 
-For each supported aggregate, return every authoritative tuple represented by that aggregate:
+For each supported aggregate, return every authoritative tuple represented by it:
 
 ```text
 customer_id
@@ -149,209 +97,49 @@ dispatch_trip_id when currently admitted to a trip
 public_reference
 ```
 
-### 6.1 Root ownership
+Use existing relationships, never event payload summaries.
 
-The authoritative customer/location comes from the Planning `DispatchRequirement` lineage, or from the source `WholesaleOrder` before a requirement exists.
+| Aggregate | Required path to authoritative scope |
+| --- | --- |
+| `WholesaleOrder` | wholesale → Confirmed Need → Handoff → Dispatch Requirement → Plan membership → Stop/Trip when present |
+| `PurchaseHandoff` | Handoff batch/current revision → Dispatch Requirement → Plan membership → Stop/Trip when present |
+| `DispatchRequirement` | requirement/current revision → Plan membership → Stop/Trip when present |
+| `FulfilmentAllocation` | allocation/current revision → requirement → exact Plan membership → Stop/Trip when present |
+| `PurchaseOrder` | PO/current lines → allocation lines/root → requirement → Plan membership → Stop/Trip when present |
+| `SupplierReceivingEvidence` | Evidence → released PO line → allocation line/root → requirement → Plan membership → Stop/Trip when present |
+| `EvidenceApplication` | application → allocation line/root → requirement → Plan membership → Stop/Trip when present |
+| `DispatchPlan` | plan memberships → requirements → trips/stops |
+| `DispatchTrip` | trip → stops → requirements |
+| `DispatchStop` alias | stop → trip → requirement |
+| `DispatchLoad` | load → trip and requirement |
+| `DeliveryConfirmation` | confirmation → stop/trip → requirement |
 
-Do not trust snapshots or downstream copies when an authoritative owner row exists.
+Before a trip exists, an upstream aggregate may resolve to customer/location with a null trip.
 
-### 6.2 Downstream trip resolution
+When an aggregate spans multiple customers, locations, or trips, return all tuples. Never sample, truncate, or use `LIMIT 1`. The existing timeline must continue rejecting mixed relational scope.
 
-For Planning, Procurement, PO, and Evidence aggregates, resolve the trip through the exact current chain when one exists:
+For a completed single-trip supplier-direct correlation, all supported aggregates must resolve to the same customer/location/trip tuple.
 
-```text
-source aggregate
-→ current Dispatch Requirement root/revision
-→ exact Fulfilment Allocation root/revision where applicable
-→ Dispatch Plan Requirement membership
-→ Dispatch Stop
-→ Dispatch Trip
-```
+Use stable operator-safe references where available: customer order reference, PO document number, Evidence reference, plan reference, or trip reference. Otherwise use the aggregate ID text.
 
-For a complete one-trip supplier-direct journey, every aggregate in the shared correlation must resolve to the same customer/location/trip tuple.
+## Security boundary
 
-Before a trip exists, an upstream aggregate may resolve to customer/location with `dispatch_trip_id = null`.
+Reuse `atlas_read_runtime`.
 
-### 6.3 Multiple scope
+The helper remains:
 
-If one aggregate currently spans more than one customer, location, or trip, return all tuples.
+- stable;
+- `SECURITY INVOKER`;
+- fixed `search_path = ''`;
+- fully qualified static SQL;
+- owned by `atlas_owner`;
+- executable only by `atlas_read_runtime`.
 
-Do not sample, truncate, use `LIMIT 1`, or choose a preferred tuple.
+Add only missing schema `USAGE`, relation `SELECT`, and SELECT-only forced-RLS policies required by the exact joins.
 
-The existing timeline must continue failing closed when the selected command/correlation/aggregate spans more than one relational scope.
+Do not grant write, sequence, schema-CREATE, or command-runtime authority. `authenticated`, `anon`, and `service_role` receive no direct private relation or helper access.
 
-### 6.4 Public reference
-
-Return an operator-safe reference suitable for `public_aggregate_reference`.
-
-Prefer stable business references when available:
-
-- wholesale customer order reference;
-- Dispatch Plan reference;
-- Dispatch Trip reference;
-- supplier PO document number;
-- supplier Evidence reference.
-
-Otherwise return a stable existing business ID text. Do not expose private table names or SQL implementation details.
-
-## 7. Required mapping paths
-
-The implementation must prove exact ownership through existing foreign-key lineage.
-
-### `WholesaleOrder`
-
-```text
-wholesale_orders
-→ confirmed_need_batches
-→ purchase_handoff_batches/revisions
-→ dispatch_requirement_revisions/root
-→ plan memberships/stops/trips when present
-```
-
-### `PurchaseHandoff`
-
-```text
-purchase_handoff_batches
-→ confirmed_need_batches
-→ wholesale_orders
-→ current handoff revision
-→ dispatch_requirement_revisions/root
-→ plan memberships/stops/trips when present
-```
-
-### `DispatchRequirement`
-
-```text
-dispatch_requirements
-→ current released revision
-→ plan membership
-→ stop/trip when present
-```
-
-### `FulfilmentAllocation`
-
-```text
-fulfilment_allocations
-→ dispatch_requirements
-→ current allocation revision
-→ exact plan membership
-→ stop/trip when present
-```
-
-### `PurchaseOrder`
-
-```text
-purchase_orders
-→ current PO revision/lines
-→ allocation line/revision
-→ allocation root
-→ Dispatch Requirement
-→ plan membership/stop/trip when present
-```
-
-### `SupplierReceivingEvidence`
-
-```text
-supplier_receiving_evidence
-→ released PO line revision
-→ allocation line revision/root
-→ Dispatch Requirement
-→ plan membership/stop/trip when present
-```
-
-### `EvidenceApplication`
-
-```text
-evidence_applications
-→ allocation line revision/root
-→ Dispatch Requirement
-→ plan membership/stop/trip when present
-```
-
-### `DispatchPlan`
-
-```text
-dispatch_plans
-→ plan memberships
-→ Dispatch Requirements
-→ trips/stops
-```
-
-### `DispatchTrip`
-
-```text
-dispatch_trips
-→ stops
-→ Dispatch Requirements
-```
-
-### `DispatchStop`
-
-```text
-dispatch_stops
-→ trip
-→ Dispatch Requirement
-```
-
-### `DispatchLoad`
-
-```text
-dispatch_loads
-→ trip
-→ Dispatch Requirement revision/root
-```
-
-### `DeliveryConfirmation`
-
-```text
-delivery_confirmations
-→ stop/trip
-→ Dispatch Requirement
-```
-
-## 8. Timeline behavior retained
-
-`get_command_audit_timeline` must continue to:
-
-- resolve the authenticated active actor;
-- require `command_audit_timeline.read`;
-- reject unbounded or ambiguous selectors;
-- resolve every selected domain/audit target before shaping;
-- reject any unresolved target as `NOT_FOUND_OR_UNSUPPORTED`;
-- reject mixed relational scope as `AMBIGUOUS_SCOPE`;
-- authorize the complete resolved tuple;
-- return at most 100 ordered domain/audit rows;
-- expose one safe command-receipt summary and allowlisted events;
-- create no receipt, event, audit, or domain mutation.
-
-Do not change read semantics merely to make PA-05G pass.
-
-## 9. Security and privilege boundary
-
-Reuse:
-
-```text
-atlas_read_runtime
-```
-
-Add only missing:
-
-- schema `USAGE`;
-- relation `SELECT`;
-- SELECT-only forced-RLS policies;
-- private-helper execute grant.
-
-The read runtime must receive no:
-
-- INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, or TRIGGER privilege;
-- sequence USAGE or UPDATE;
-- schema CREATE;
-- role membership into a command runtime;
-- Planning, Procurement, Evidence, Dispatch, Audit, reporting, Storage, legacy, Retool, or OPS v1 write path.
-
-`authenticated`, `anon`, and `service_role` receive no direct private relation or helper access. Public API execute boundaries remain unchanged.
-
-## 10. Verification contract
+## Verification
 
 Add:
 
@@ -359,93 +147,48 @@ Add:
 supabase/tests/pa_05c_h2_current_command_timeline_scope.sql
 ```
 
-The focused suite must prove:
+The suite must prove:
 
-### Surface and helper hardening
+- API surface remains exactly 18 functions;
+- helper ownership, security mode, search path, static SQL, and private execution;
+- read runtime has no write, sequence, or schema-CREATE authority;
+- every current aggregate type and retained alias resolves to the expected tuple;
+- current CamelCase command, correlation, and aggregate selectors succeed;
+- a complete same-trip correlation is readable by GLOBAL and matching DISPATCH_TRIP scope;
+- missing scope, mixed location/trip, and unsupported aggregate fail closed;
+- all selected rows within the 100-event bound are returned;
+- prohibited internals are absent;
+- reads create no receipt, event, audit, or domain mutation.
 
-- exactly 18 reviewed `atlas_api` functions;
-- no public function addition or removal;
-- helper owner is `atlas_owner`;
-- helper is stable, security invoker, fixed-search-path, and static;
-- only `atlas_read_runtime` can execute the helper;
-- API roles retain no direct private-table/view/sequence access;
-- no read-runtime write, sequence, or schema-CREATE authority.
+Retain the original PA-05C suite. Change it only for narrow cumulative expectations when necessary.
 
-### Current aggregate vocabulary
+## Simplicity gate
 
-- each exact current aggregate type resolves to the expected customer/location/trip;
-- every retained uppercase alias resolves equivalently;
-- current CamelCase command-ID and aggregate selectors succeed;
-- an unsupported aggregate remains unsupported.
-
-### Complete same-trip correlation
-
-Using one rolled-back linked source-to-trip fixture and one correlation containing event/audit rows for every current aggregate type:
-
-- the correlation resolves to exactly one canonical tuple;
-- a GLOBAL actor succeeds;
-- a matching DISPATCH_TRIP-scoped actor succeeds because every upstream aggregate resolves to that trip;
-- every selected domain and audit event is present within the 100-event limit;
-- shaped output contains no request hash, stored response payload, JWT, credential, service-role, SQL, policy, or stack-trace field.
-
-### Fail-closed behavior
-
-- an actor lacking one required tuple is denied;
-- a correlation spanning two locations fails closed;
-- a correlation spanning two trips fails closed;
-- a target with no supported mapping fails `NOT_FOUND_OR_UNSUPPORTED`;
-- no read side effect occurs.
-
-Retain the original PA-05C scenarios. Update them only where a narrow cumulative expectation or current aggregate naming assertion is required.
-
-## 11. Simplicity gate
-
-The expected change is:
+Expected change:
 
 ```text
 one private resolver replacement
-+ minimum missing read grants/RLS
-+ one focused pgTAP file
-+ narrow documentation/status updates
++ minimum SELECT grants/RLS
++ one focused pgTAP suite
++ narrow documentation updates
 ```
 
-Do not add:
+Do not add a public function, registry table, dynamic SQL, graph engine, persisted scope cache, materialized view, trigger, queue, job, runtime role, application adapter, UI, generated type, or seed data.
 
-- a public function;
-- a generic aggregate registry table;
-- dynamic SQL;
-- a graph engine;
-- persisted scope cache;
-- a materialized view;
-- trigger, queue, or job;
-- runtime role;
-- write command;
-- application adapter;
-- UI or generated types;
-- seed data.
+Stop and report if existing relationships cannot derive current scope, if mixed-scope rejection must be weakened, or if the public timeline signature/shape must change.
 
-## 12. Stop conditions
-
-Stop and report if:
-
-- current aggregate scope cannot be derived from existing relationships;
-- same-trip canonicalization requires weakening mixed-scope rejection;
-- the public timeline signature or response shape must change;
-- direct private access must be granted to an API role;
-- a table, registry, new public function, or runtime role appears necessary.
-
-## 13. Validation economy
+## Validation economy
 
 Near completion run locally:
 
 1. one clean Supabase reset;
-2. `pa_05c_h2_current_command_timeline_scope.sql`;
-3. `pa_05c_authorized_read_api_wrappers.sql`;
-4. `pa_05b_h1_runtime_role_hardening_test.sql` when runtime grants/RLS change;
+2. PA-05C-H2 pgTAP;
+3. existing PA-05C pgTAP;
+4. PA-05B-H1 pgTAP only when read-runtime privileges change;
 5. `git diff --check`.
 
-Routine frontend/repository validation belongs to GitHub Actions. Do not wait for Actions after opening the draft implementation PR.
+GitHub Actions owns routine repository/frontend validation. Do not wait for Actions after opening the draft implementation PR.
 
-## 14. Explicit exclusions
+## Exclusions
 
-No write command, PA-05G implementation, API count change, React/UI, generated types, live Supabase deployment, production data, credentials, seed data, Retool change, OPS v1 mutation, Warehouse, Storage, Edge Function, Finance, Production/QA, exception/return workflow, or generic framework.
+No write-command change, PA-05G implementation, API-count change, React/UI, live deployment, production data, credentials, seed data, Retool/OPS v1 mutation, Warehouse, Storage, Edge Function, Finance, Production/QA, exception/return flow, or generic framework.
