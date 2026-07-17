@@ -10,14 +10,14 @@ grant execute on all functions in schema extensions to authenticated;
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='atlas_api'),
-  17,
-  'Atlas API contains exactly 17 reviewed functions'
+  18,
+  'Atlas API contains exactly 18 reviewed functions'
 );
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='atlas_api' and has_function_privilege('authenticated',p.oid,'EXECUTE')),
-  17,
-  'authenticated can execute exactly the 17 reviewed Atlas API functions'
+  18,
+  'authenticated can execute exactly the 18 reviewed Atlas API functions'
 );
 select ok(
   not exists (
@@ -53,8 +53,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_roles r on r.oid=p.proowner
    where r.rolname='atlas_dispatch_command_runtime'),
-  5,
-  'Dispatch runtime owns only the three H2 and two PA-05F entry functions'
+  6,
+  'Dispatch runtime owns only the three H2, two PA-05F, and one PA-05B-H3 entry functions'
 );
 select ok(
   not has_schema_privilege('atlas_dispatch_command_runtime','atlas_api','CREATE')

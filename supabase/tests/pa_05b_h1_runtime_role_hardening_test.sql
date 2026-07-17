@@ -57,8 +57,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  17,
-  'authenticated can execute exactly the 17 reviewed functions through PA-05F'
+  18,
+  'authenticated can execute exactly the 18 reviewed functions through PA-05B-H3'
 );
 
 select ok(
@@ -78,7 +78,7 @@ select ok(
     select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace join pg_roles r on r.oid = p.proowner
     where n.nspname = 'atlas_api' and (
       (p.proname in ('record_supplier_receiving_evidence','apply_supplier_evidence_to_allocation') and r.rolname <> 'atlas_evidence_command_runtime')
-      or (p.proname in ('confirm_dispatch_load','record_dispatch_departure','confirm_successful_delivery','create_dispatch_plan','create_or_assign_dispatch_trip') and r.rolname <> 'atlas_dispatch_command_runtime')
+      or (p.proname in ('confirm_dispatch_load','record_dispatch_departure','confirm_successful_delivery','create_dispatch_plan','create_or_assign_dispatch_trip','close_successful_trip') and r.rolname <> 'atlas_dispatch_command_runtime')
       or (p.proname in ('record_wholesale_source','release_wholesale_order','release_purchase_handoff','release_dispatch_requirement') and r.rolname <> 'atlas_planning_command_runtime')
       or (p.proname in ('allocate_supplier_direct_fulfilment','release_supplier_purchase_order') and r.rolname <> 'atlas_procurement_command_runtime')
       or (p.proname in ('get_supplier_direct_trace','get_dispatch_evidence_readiness','get_operator_blockers','get_command_audit_timeline') and r.rolname <> 'atlas_read_runtime')
@@ -89,8 +89,8 @@ select ok(
 
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api'),
-  17,
-  'no Atlas API functions beyond the reviewed surface through PA-05F exist'
+  18,
+  'no Atlas API functions beyond the reviewed surface through PA-05B-H3 exist'
 );
 
 select ok(

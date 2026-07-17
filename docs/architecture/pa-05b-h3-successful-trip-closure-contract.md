@@ -1,6 +1,6 @@
 # PA-05B-H3 — Successful Dispatch Trip Closure Contract
 
-**Status:** Approved implementation contract; documentation prerequisite pending review and merge
+**Status:** Approved implementation contract; documentation prerequisite merged
 
 **Domain:** Dispatch and Delivery
 
