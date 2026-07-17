@@ -1,8 +1,10 @@
 # PA-05C-H2 — Current Command Timeline Scope Contract
 
-**Status:** Approved implementation contract; documentation prerequisite pending review and merge  
+**Status:** Implemented on the PA-05C-H2 task branch; pending review and merge
 **Domain:** Reporting / Read  
 **Issue:** #102
+**Migration:** `supabase/migrations/20260717042323_pa_05c_h2_current_command_timeline_scope.sql`
+**Verification:** `supabase/tests/pa_05c_h2_current_command_timeline_scope.sql` (46 rolled-back assertions)
 
 ## Purpose
 
@@ -192,3 +194,17 @@ GitHub Actions owns routine repository/frontend validation. Do not wait for Acti
 ## Exclusions
 
 No write-command change, PA-05G implementation, API-count change, React/UI, live deployment, production data, credentials, seed data, Retool/OPS v1 mutation, Warehouse, Storage, Edge Function, Finance, Production/QA, exception/return flow, or generic framework.
+
+## Implementation outcome
+
+PA-05C-H2 replaces only `atlas_core.pa_05c_aggregate_scope(text, uuid)`. The helper remains stable, `SECURITY INVOKER`, owned by `atlas_owner`, fixed to an empty `search_path`, and executable only by `atlas_read_runtime` among API/runtime roles.
+
+The implementation adds the five previously missing read-runtime `SELECT` grants and matching SELECT-only forced-RLS policies for:
+
+- `atlas_planning.confirmed_need_batches`;
+- `atlas_planning.purchase_handoff_batches`;
+- `atlas_planning.purchase_handoff_revisions`;
+- `atlas_procurement.fulfilment_allocations`;
+- `atlas_dispatch.dispatch_plan_requirements`.
+
+The public `PA-05C.v1` timeline body, selector contract, response shape, allowlist, and 100-event bound are unchanged. The reviewed `atlas_api` surface remains exactly 18 functions. No contract deviation or public/write-side change was required.
