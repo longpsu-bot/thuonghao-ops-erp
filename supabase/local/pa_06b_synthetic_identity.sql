@@ -131,4 +131,3 @@ on conflict (actor_scope_id) do update set
   reason_note = excluded.reason_note;
 
 commit;
-
