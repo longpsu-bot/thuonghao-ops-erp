@@ -14,10 +14,12 @@
     "ops:workspace": "node scripts/check-workspace.mjs",
     "local:auth:provision": "node scripts/provision-local-atlas-identity.mjs",
     "local:connection:verify": "node scripts/verify-local-supabase-connection.mjs",
+    "local:pa06c:provision": "node scripts/provision-local-pa06c-fixture.mjs",
+    "local:pa06c:verify": "node scripts/verify-local-pa06c-supplier-evidence.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
-    "format": "prettier --check package.json tsconfig.json vite.config.ts index.html src .storybook STAFF_REVIEW.md docs/open-questions/planner-prototype-findings.md docs/implementation-tasks/TASK-PA-06B-local-supabase-connection-foundation.md scripts/local-supabase-status.mjs scripts/local-supabase-status.test.mjs scripts/provision-local-atlas-identity.mjs scripts/verify-local-supabase-connection.mjs"
+    "format": "prettier --check package.json tsconfig.json vite.config.ts index.html src .storybook STAFF_REVIEW.md docs/open-questions/planner-prototype-findings.md docs/implementation-tasks/TASK-PA-06B-local-supabase-connection-foundation.md docs/implementation-tasks/TASK-PA-06C-supplier-evidence-readiness-pilot.md scripts/local-supabase-status.mjs scripts/local-supabase-status.test.mjs scripts/provision-local-atlas-identity.mjs scripts/verify-local-supabase-connection.mjs scripts/provision-local-pa06c-fixture.mjs scripts/verify-local-pa06c-supplier-evidence.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.7",

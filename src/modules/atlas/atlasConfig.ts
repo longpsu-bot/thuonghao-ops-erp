@@ -4,6 +4,7 @@ export type AtlasPageId =
   | "requirement-planning"
   | "purchase-planning"
   | "document-release"
+  | "supplier-evidence-readiness"
   | "warehouse-receiving"
   | "warehouse-stock-release"
   | "dispatch-delivery"
@@ -75,6 +76,16 @@ export const atlasPages: AtlasPage[] = [
     object: "PO, phiếu xuất kho, dòng đối chiếu",
     state: "Nháp → sẵn sàng → phát hành",
     handoff: "Nhập kho & xử lý chênh lệch",
+  },
+  {
+    id: "supplier-evidence-readiness",
+    label: "Supplier Evidence & Readiness",
+    group: atlasGroups[0],
+    decision:
+      "Has bounded supplier Evidence been recorded and applied to the exact allocation?",
+    object: "Supplier Receiving Evidence and Evidence Application",
+    state: "Review → record Evidence → refresh → apply → refresh → audit",
+    handoff: "Advisory readiness only; no work queue or automatic progression",
   },
   {
     id: "warehouse-receiving",

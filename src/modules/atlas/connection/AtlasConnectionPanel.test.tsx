@@ -173,6 +173,7 @@ describe("Atlas local connection panel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Sign-in failed. Check the local synthetic account",
     );
+    expect(screen.getByLabelText("Local password")).toHaveValue("");
     expect(document.body.textContent).not.toContain("raw provider failure");
   });
 

@@ -1,24 +1,29 @@
-import { useCallback, useState, type FormEvent } from "react";
-import { useAtlasAuthSession } from "./authSession";
+import { useEffect, useState, type FormEvent } from "react";
+import {
+  useAtlasAuthSession,
+  type AtlasAuthSessionController,
+} from "./authSession";
 import {
   getAtlasSupabaseClient,
   type AtlasSupabaseClientResult,
 } from "./supabaseClient";
 
-export function AtlasConnectionPanel({
-  connection = getAtlasSupabaseClient(),
+export function AtlasConnectionPanelView({
+  auth,
 }: {
-  connection?: AtlasSupabaseClientResult;
+  auth: AtlasAuthSessionController;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const clearConnectionState = useCallback(() => setPassword(""), []);
-  const auth = useAtlasAuthSession(connection, clearConnectionState);
+
+  useEffect(() => {
+    if (auth.state.status !== "unauthenticated") setPassword("");
+  }, [auth.state.status]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const signedIn = await auth.signIn(email, password);
-    if (signedIn) setPassword("");
+    await auth.signIn(email, password);
+    setPassword("");
   };
 
   return (
@@ -89,4 +94,13 @@ export function AtlasConnectionPanel({
       {auth.safeAuthError && <p role="alert">{auth.safeAuthError}</p>}
     </section>
   );
+}
+
+export function AtlasConnectionPanel({
+  connection = getAtlasSupabaseClient(),
+}: {
+  connection?: AtlasSupabaseClientResult;
+}) {
+  const auth = useAtlasAuthSession(connection);
+  return <AtlasConnectionPanelView auth={auth} />;
 }
