@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { IngredientSupplierAdminWorkbench } from "../admin/IngredientSupplierAdminWorkbench";
 import { DishRecipeAdminWorkbench } from "../admin/DishRecipeAdminWorkbench";
 import { SchoolAdminWorkbench } from "../admin/SchoolAdminWorkbench";
@@ -16,15 +16,33 @@ import {
 } from "./AtlasPages";
 import { PageShell, TracePanel } from "./WorkbenchComponents";
 import { MvpMorningChaosPage } from "./MvpMorningChaosPage";
-import { AtlasConnectionPanel } from "./connection/AtlasConnectionPanel";
+import { AtlasConnectionPanelView } from "./connection/AtlasConnectionPanel";
+import { createAtlasRpcTransport } from "./connection/atlasRpc";
+import { useAtlasAuthSession } from "./connection/authSession";
+import {
+  getAtlasSupabaseClient,
+  type AtlasSupabaseClientResult,
+} from "./connection/supabaseClient";
+import { SupplierEvidenceReadinessWorkbench } from "./evidence/SupplierEvidenceReadinessWorkbench";
+import { createSupplierEvidenceApi } from "./evidence/supplierEvidenceApi";
 
 export function AtlasApp({
   initialPage = "control-board",
+  connection = getAtlasSupabaseClient(),
 }: {
   initialPage?: AtlasPageId;
+  connection?: AtlasSupabaseClientResult;
 }) {
   const [active, setActive] = useState<AtlasPageId>(initialPage);
   const [traceOpen, setTraceOpen] = useState(false);
+  const auth = useAtlasAuthSession(connection);
+  const evidenceApi = useMemo(
+    () =>
+      connection.status === "configured"
+        ? createSupplierEvidenceApi(createAtlasRpcTransport(connection.client))
+        : undefined,
+    [connection],
+  );
   const page = atlasPages.find((candidate) => candidate.id === active)!;
   let content = <SupportingPage page={page} />;
   if (active === "control-board") content = <ControlBoardPage />;
@@ -32,6 +50,13 @@ export function AtlasApp({
   if (active === "requirement-planning") content = <RequirementPlanningPage />;
   if (active === "purchase-planning") content = <PurchasePlanningPage />;
   if (active === "document-release") content = <DocumentReleasePage />;
+  if (active === "supplier-evidence-readiness")
+    content = (
+      <SupplierEvidenceReadinessWorkbench
+        authState={auth.state}
+        api={evidenceApi}
+      />
+    );
   if (active === "warehouse-receiving") content = <WarehouseReceivingPage />;
   if (active === "warehouse-stock-release")
     content = <WarehouseStockReleasePage />;
@@ -84,7 +109,7 @@ export function AtlasApp({
           </button>
           <mark>Prototype · dữ liệu cục bộ</mark>
         </header>
-        <AtlasConnectionPanel />
+        <AtlasConnectionPanelView auth={auth} />
         <PageShell page={page}>{content}</PageShell>
       </div>
       {traceOpen && <TracePanel onClose={() => setTraceOpen(false)} />}

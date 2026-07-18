@@ -11,7 +11,10 @@ on:
       - "scripts/local-supabase-status.test.mjs"
       - "scripts/provision-local-atlas-identity.mjs"
       - "scripts/verify-local-supabase-connection.mjs"
+      - "scripts/provision-local-pa06c-fixture.mjs"
+      - "scripts/verify-local-pa06c-supplier-evidence.mjs"
       - "src/modules/atlas/connection/**"
+      - "src/modules/atlas/evidence/**"
       - ".env.example"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -26,7 +29,10 @@ on:
       - "scripts/local-supabase-status.test.mjs"
       - "scripts/provision-local-atlas-identity.mjs"
       - "scripts/verify-local-supabase-connection.mjs"
+      - "scripts/provision-local-pa06c-fixture.mjs"
+      - "scripts/verify-local-pa06c-supplier-evidence.mjs"
       - "src/modules/atlas/connection/**"
+      - "src/modules/atlas/evidence/**"
       - ".env.example"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -97,6 +103,9 @@ jobs:
           pnpm local:auth:provision
           pnpm local:auth:provision
           pnpm local:connection:verify
+          pnpm local:pa06c:provision
+          pnpm local:pa06c:provision
+          pnpm local:pa06c:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()

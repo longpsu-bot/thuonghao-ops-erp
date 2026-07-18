@@ -176,3 +176,5 @@ export function useAtlasAuthSession(
     canSubmitCommands: state.status === "authenticated",
   };
 }
+
+export type AtlasAuthSessionController = ReturnType<typeof useAtlasAuthSession>;

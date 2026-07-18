@@ -4,6 +4,8 @@ import clientSource from "./supabaseClient.ts?raw";
 import authSource from "./authSession.ts?raw";
 import rpcSource from "./atlasRpc.ts?raw";
 import panelSource from "./AtlasConnectionPanel.tsx?raw";
+import evidenceApiSource from "../evidence/supplierEvidenceApi.ts?raw";
+import evidenceWorkbenchSource from "../evidence/SupplierEvidenceReadinessWorkbench.tsx?raw";
 
 describe("PA-06B browser-source security boundary", () => {
   const browserSource = [
@@ -12,6 +14,8 @@ describe("PA-06B browser-source security boundary", () => {
     authSource,
     rpcSource,
     panelSource,
+    evidenceApiSource,
+    evidenceWorkbenchSource,
   ].join("\n");
 
   it("contains no browser service-role variable or hosted project reference", () => {
@@ -29,6 +33,17 @@ describe("PA-06B browser-source security boundary", () => {
     expect(browserSource).toContain('.schema("atlas_api")');
     expect(browserSource).toContain("ATLAS_RPC_FUNCTIONS[functionName]");
     expect(browserSource).not.toMatch(/rpc\s*\(\s*functionName/);
+  });
+
+  it("limits the PA-06C adapter to its exact five-function subset", () => {
+    expect(evidenceApiSource.match(/atlas_api\.[a-z_]+/g)).toEqual([
+      "atlas_api.record_supplier_receiving_evidence",
+      "atlas_api.apply_supplier_evidence_to_allocation",
+      "atlas_api.get_dispatch_evidence_readiness",
+      "atlas_api.get_operator_blockers",
+      "atlas_api.get_command_audit_timeline",
+    ]);
+    expect(evidenceWorkbenchSource).not.toMatch(/\.from\s*\(|\.rpc\s*\(/);
   });
 
   it("disables built-in PostgREST retries without a retry wrapper", () => {
