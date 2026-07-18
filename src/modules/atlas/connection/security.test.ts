@@ -33,6 +33,7 @@ describe("PA-06B browser-source security boundary", () => {
 
   it("disables built-in PostgREST retries without a retry wrapper", () => {
     expect(clientSource).toContain("db: { retry: false }");
+    expect(clientSource).not.toMatch(/\bas\s+(?:never|any)\b/);
     expect(rpcSource).toContain(".retry(false)");
     expect(browserSource).not.toMatch(
       /retryWith|withRetry|fetchRetry|retryFetch|global\s*:\s*\{[^}]*fetch/,

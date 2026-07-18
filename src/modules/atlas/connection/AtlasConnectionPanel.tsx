@@ -17,7 +17,8 @@ export function AtlasConnectionPanel({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    await auth.signIn(email, password);
+    const signedIn = await auth.signIn(email, password);
+    if (signedIn) setPassword("");
   };
 
   return (

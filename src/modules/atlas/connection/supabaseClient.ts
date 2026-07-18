@@ -8,18 +8,31 @@ export type AtlasSupabaseClientResult =
   | { status: "configured"; client: SupabaseClient }
   | { status: "configuration_error"; safeMessage: string };
 
+type SupabaseCreateClientOptions = NonNullable<
+  Parameters<typeof createClient>[2]
+>;
+type SupabaseCreateClientDbOptions = NonNullable<
+  SupabaseCreateClientOptions["db"]
+>;
+type AtlasSupabaseClientOptions = Omit<SupabaseCreateClientOptions, "db"> & {
+  db: Omit<SupabaseCreateClientDbOptions, "schema"> & {
+    schema?: "public";
+    retry: false;
+  };
+};
+
 export const ATLAS_SUPABASE_CLIENT_OPTIONS = {
   db: { retry: false },
-} as const;
+} satisfies AtlasSupabaseClientOptions;
 
 type ClientFactory = (
   url: string,
   publishableKey: string,
-  options: typeof ATLAS_SUPABASE_CLIENT_OPTIONS,
+  options: AtlasSupabaseClientOptions,
 ) => SupabaseClient;
 
 const defaultClientFactory: ClientFactory = (url, publishableKey, options) =>
-  createClient(url, publishableKey, options as never);
+  createClient(url, publishableKey, options);
 
 export function createAtlasSupabaseClient(
   environment: AtlasEnvironmentResult,

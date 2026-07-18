@@ -187,6 +187,31 @@ describe("Atlas local connection panel", () => {
     expect(fake.signOut).toHaveBeenCalledWith({ scope: "local" });
   });
 
+  it("clears the password after successful sign-in while retaining the email", async () => {
+    const fake = fakeConnection();
+    render(<AtlasConnectionPanel connection={fake.connection} />);
+    const emailInput = await screen.findByLabelText("Local email");
+    const passwordInput = screen.getByLabelText("Local password");
+
+    fireEvent.change(emailInput, {
+      target: { value: "atlas.operator@local.test" },
+    });
+    fireEvent.change(passwordInput, {
+      target: { value: "synthetic-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in locally" }));
+
+    await screen.findByRole("button", { name: "Sign out" });
+    act(() => fake.emit("INITIAL_SESSION", null));
+    expect(
+      await screen.findByRole("button", { name: "Sign in locally" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Local email")).toHaveValue(
+      "atlas.operator@local.test",
+    );
+    expect(screen.getByLabelText("Local password")).toHaveValue("");
+  });
+
   it("renders an expired session and disables the sign-in form", async () => {
     const expired = session(Math.floor(Date.now() / 1000) - 1);
     const fake = fakeConnection({ initialSession: expired });
