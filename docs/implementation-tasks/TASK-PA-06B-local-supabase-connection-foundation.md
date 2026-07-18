@@ -176,7 +176,7 @@ Observed GitHub evidence on 2026-07-18:
 - real email/password sign-in passed with Auth subject `b6000000-0000-0000-0000-000000000101`;
 - the authenticated non-mutating `get_operator_blockers` probe returned the reviewed `SAFE_NOT_FOUND` category;
 - local-scope sign-out passed and `getSession()` returned no remaining session;
-- the workflow issued no business write and retained no database volume or local credential.
+- the Auth connection probe issued no business write; PA-05G command exercises remained inside its rolled-back test transaction, and cleanup retained no database volume or local credential.
 
 Final frontend evidence for the same change set:
 
