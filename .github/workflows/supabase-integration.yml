@@ -1,0 +1,142 @@
+name: Supabase Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/supabase-integration.yml"
+      - "supabase/**"
+      - "scripts/local-supabase-status.mjs"
+      - "scripts/local-supabase-status.test.mjs"
+      - "scripts/provision-local-atlas-identity.mjs"
+      - "scripts/verify-local-supabase-connection.mjs"
+      - "src/modules/atlas/connection/**"
+      - ".env.example"
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/supabase-integration.yml"
+      - "supabase/**"
+      - "scripts/local-supabase-status.mjs"
+      - "scripts/local-supabase-status.test.mjs"
+      - "scripts/provision-local-atlas-identity.mjs"
+      - "scripts/verify-local-supabase-connection.mjs"
+      - "src/modules/atlas/connection/**"
+      - ".env.example"
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  acceptance:
+    name: Local Auth and RPC acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start reduced local Supabase
+        shell: bash
+        run: |
+          set -uo pipefail
+          start_log="${RUNNER_TEMP}/supabase-start.log"
+
+          if pnpm exec supabase start \
+            --exclude analytics,edge-runtime,functions,imgproxy,inbucket,meta,realtime,storage,studio,vector \
+            >"${start_log}" 2>&1; then
+            echo "Reduced local Supabase stack started successfully."
+          else
+            echo "::error::Reduced local Supabase stack failed to start."
+            sed -E \
+              -e '/(ANON_KEY|SERVICE_ROLE_KEY|SECRET_KEY|PUBLISHABLE_KEY|anon key|service.?role key|publishable key|secret key|JWT secret|DB URL|DATABASE_URL|postgres(ql)?:\/\/)/Id' \
+              -e 's/eyJ[A-Za-z0-9._-]+/[REDACTED_JWT]/g' \
+              -e 's/sb_publishable_[A-Za-z0-9._-]+/[REDACTED_PUBLISHABLE_KEY]/g' \
+              -e 's/sb_secret_[A-Za-z0-9._-]+/[REDACTED_SECRET_KEY]/g' \
+              -e 's/(Bearer )[A-Za-z0-9._-]+/\1[REDACTED]/g' \
+              "${start_log}" | tail -n 120
+            exit 1
+          fi
+
+      - name: Reset and verify local Atlas acceptance
+        run: |
+          pnpm exec supabase db reset --local --no-seed
+          pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
+          pnpm local:auth:provision
+          pnpm local:auth:provision
+          pnpm local:connection:verify
+
+      - name: Capture bounded failure diagnostics
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+
+          sanitize() {
+            sed -E \
+              -e '/(ANON_KEY|SERVICE_ROLE_KEY|SECRET_KEY|PUBLISHABLE_KEY|anon key|service.?role key|publishable key|secret key|JWT secret|DB URL|DATABASE_URL|postgres(ql)?:\/\/)/Id' \
+              -e 's/eyJ[A-Za-z0-9._-]+/[REDACTED_JWT]/g' \
+              -e 's/sb_publishable_[A-Za-z0-9._-]+/[REDACTED_PUBLISHABLE_KEY]/g' \
+              -e 's/sb_secret_[A-Za-z0-9._-]+/[REDACTED_SECRET_KEY]/g' \
+              -e 's/(Bearer )[A-Za-z0-9._-]+/\1[REDACTED]/g'
+          }
+
+          echo "Runner memory"
+          free -h
+          echo "Runner disk"
+          df -h
+          echo "Docker version"
+          docker version
+          echo "Docker info"
+          docker info
+          echo "Container summary"
+          docker ps -a --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+          echo "Container resource snapshot"
+          docker stats --no-stream --format 'table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}'
+
+          mapfile -t containers < <(
+            docker ps -a --format '{{.Names}}' |
+              grep -E '^supabase_(kong|auth|rest|db)_' || true
+          )
+          for container in "${containers[@]}"; do
+            docker inspect --format \
+              'name={{.Name}} image={{.Config.Image}} state={{.State.Status}} exit_code={{.State.ExitCode}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restart_count={{.RestartCount}}' \
+              "${container}"
+            echo "Sanitized final log lines for ${container}"
+            docker logs --tail 160 "${container}" 2>&1 | sanitize | tail -n 160
+          done
+
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup || true
