@@ -1,4 +1,5 @@
-begin;
+do $pa_06b_identity$
+begin
 
 insert into atlas_admin.customers (
   customer_id,
@@ -130,4 +131,5 @@ on conflict (actor_scope_id) do update set
   effective_to = null,
   reason_note = excluded.reason_note;
 
-commit;
+end;
+$pa_06b_identity$;

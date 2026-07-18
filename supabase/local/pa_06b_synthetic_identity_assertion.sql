@@ -1,5 +1,3 @@
-begin;
-
 do $$
 begin
   if not exists (
@@ -75,5 +73,3 @@ begin
   end if;
 end;
 $$;
-
-commit;
