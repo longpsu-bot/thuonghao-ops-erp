@@ -1,6 +1,6 @@
 # TASK-PA-06B — Local Supabase Application Connection Foundation
 
-**Status:** Corrective code complete; local acceptance blocked after two pinned-CLI Kong health failures
+**Status:** Implementation and GitHub-hosted integration acceptance complete; draft PR pending product/architecture review
 **Starting `main` SHA:** `c3ed56bb34e10f6d24cab0c77211905c35a0b6f2`  
 **Branch:** `task/pa-06b-local-supabase-connection-foundation`
 
@@ -37,6 +37,7 @@ PA-06B delivers one bounded, non-production connection path:
 - display only the local email and Auth subject;
 - track initial session load, Auth events, expiry, and local sign-out;
 - clear connection state on sign-out or expiry;
+- clear the password immediately after successful sign-in while retaining the local email;
 - expose a reviewed transport for the 18 PA-06A `atlas_api` functions.
 
 No business workflow, command form, automatic RPC call, hosted environment, production identity, or production data path is connected. The panel says this explicitly.
@@ -62,7 +63,7 @@ For the pinned local CLI, `ANON_KEY` is the guaranteed browser-safe status field
 
 The session hook subscribes once per configured client, reads the initial session, and unsubscribes on cleanup. It represents configuration error, loading, unauthenticated, authenticated, and expired states explicitly.
 
-`session.user.id` is the sole browser source for `requested_by_auth_subject`. Caller input with that name is overwritten immediately before each RPC. Tokens and raw Auth errors are never rendered or logged. Sign-out uses local scope. Sign-out, expiry, a failed session read, and an unexpected `SIGNED_OUT` event clear the password and any caller-owned connection state. Expiry does not replay a command: the operator must sign in, review, and create a new command intent.
+`session.user.id` is the sole browser source for `requested_by_auth_subject`. Caller input with that name is overwritten immediately before each RPC. Tokens and raw Auth errors are never rendered or logged. A successful sign-in clears the password immediately and retains the email. Sign-out uses local scope. Sign-in failure, sign-out, expiry, a failed session read, and an unexpected `SIGNED_OUT` event also clear the password and any caller-owned connection state. Expiry does not replay a command: the operator must sign in, review, and create a new command intent.
 
 ## 6. Reviewed RPC transport boundary
 
@@ -95,7 +96,7 @@ Browser security tests prohibit service-role variables, hosted Supabase referenc
 
 ## 7. Synthetic local identity
 
-`pnpm local:auth:provision` is designed to create or update one deterministic local-only Auth user through the local Admin API, then apply and assert the Atlas actor mapping with the supported `pnpm exec supabase db query --local --file ...` command. It has no generated-container-name dependency. It refuses a non-loopback API URL, does not log a key or token, and keeps `SERVICE_ROLE_KEY` in the Node provisioning process only.
+`pnpm local:auth:provision` creates or updates one deterministic local-only Auth user through the local Admin API, then applies and asserts the Atlas actor mapping with `pnpm exec supabase db query --local --file ...`. Each fixture file is one atomic `DO` statement because pinned CLI `2.109.1` sends a query file as one prepared statement. The path has no generated-container-name dependency, refuses a non-loopback API URL, does not log a key or token, and keeps `SERVICE_ROLE_KEY` in the Node provisioning process only.
 
 Synthetic identity:
 
@@ -105,9 +106,9 @@ Synthetic identity:
 - capability: `operator_blockers.read` only;
 - scope: one synthetic customer only.
 
-The SQL remains outside automatic global seed execution. Its fixed identifiers and upserts are designed for repeatable clean-reset provisioning, and a separate SQL assertion checks the active Auth-subject mapping, actor, role, capability, role-capability grant, effective membership, and customer scope. The corrective pass could not execute the two required provisioning runs because the pinned CLI could not establish a healthy gateway; idempotency is therefore not claimed as observed evidence.
+The SQL remains outside automatic global seed execution. Its fixed identifiers and upserts support repeatable clean-reset provisioning, and a separate SQL assertion checks the active Auth-subject mapping, actor, role, capability, role-capability grant, effective membership, and customer scope. GitHub-hosted acceptance run `29624145271` executed the identical provisioning command twice successfully, so provisioning idempotency and both assertion passes are observed.
 
-`pnpm local:connection:verify` is designed to sign in with the deterministic identity, verify the session subject, call the non-mutating `atlas_api.get_operator_blockers` read with a valid `PA-05C.v1` envelope, accept only success or the reviewed safe `NOT_FOUND` shape, sign out locally, and verify that no session remains. The probe explicitly disables request retry and never issues a business write. This real path remains unobserved while Kong is unhealthy.
+`pnpm local:connection:verify` signs in with the deterministic identity, verifies the session subject, calls the non-mutating `atlas_api.get_operator_blockers` read with a valid `PA-05C.v1` envelope, accepts only success or the reviewed safe `NOT_FOUND` shape, signs out locally, and verifies that no session remains. The probe explicitly disables request retry and never issues a business write. GitHub-hosted acceptance observed subject `b6000000-0000-0000-0000-000000000101`, the safe `NOT_FOUND` category, and a cleared session after local sign-out.
 
 ## 8. Local runbook
 
@@ -116,7 +117,7 @@ From the repository root:
 ```powershell
 pnpm exec supabase start --debug
 pnpm exec supabase db reset --local --no-seed
-pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql
+pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
 pnpm local:auth:provision
 pnpm local:auth:provision
 pnpm local:connection:verify
@@ -135,7 +136,7 @@ Open `http://127.0.0.1:3000`, use the synthetic credentials maintained in the lo
 pnpm exec supabase stop --no-backup
 ```
 
-## 9. Validation evidence and machine limitation
+## 9. Validation and integration acceptance evidence
 
 Corrective evidence recorded on 2026-07-17:
 
@@ -152,7 +153,36 @@ Corrective evidence recorded on 2026-07-17:
 - clean start attempt 2 applied migrations and started PostgREST `14.14`; PostgREST connected to PostgreSQL `17.6` and loaded exactly 18 RPCs. Kong emitted no container log lines, remained unhealthy, never listened on loopback port `54321`, and every `/rest-admin/v1/ready` probe was refused. The CLI then pruned all nine containers, database/storage volumes, and the generated network;
 - no `--ignore-health-check`, generated Compose edit, proxy replacement, direct PostgREST fallback, hosted project, Auth/JWT weakening, or third start attempt was used.
 
-Because the task requires stopping after two evidence-based attempts, the corrective pass did not run `db reset`, focused PA-05G pgTAP, two provisioning executions, the real Auth sign-in, authenticated Atlas read, sign-out/no-session assertion, or browser verification. Those results remain **not observed**, not passed. Earlier historical pgTAP count debt (15/17 versus the approved 18-function surface) remains out of scope and was not edited.
+At the end of the Windows corrective pass, the two-attempt limit meant `db reset`, focused PA-05G pgTAP, two provisioning executions, the real Auth sign-in, authenticated Atlas read, sign-out/no-session assertion, and browser verification were not observed on that machine. The GitHub-hosted evidence below subsequently closed the reset, pgTAP, provisioning, Auth, read, and sign-out items without requiring personal-computer Docker. Browser visual review remains owned by component tests and UI Review Export. Earlier historical pgTAP count debt (15/17 versus the approved 18-function surface) remains out of scope and was not edited.
+
+The Windows/Kong evidence above remains useful local-environment history. It is not the PA-06B acceptance environment and personal-computer Docker success is no longer required. GitHub-hosted workflow `.github/workflows/supabase-integration.yml`, workflow `Supabase Integration`, job `Local Auth and RPC acceptance`, is the authoritative integration acceptance path. It runs on `ubuntu-latest` with a 30-minute timeout and retains only PostgreSQL, Kong, PostgREST, and GoTrue/Auth. For pinned CLI `2.109.1`, the exact start command is:
+
+```bash
+pnpm exec supabase start --exclude analytics,edge-runtime,functions,imgproxy,inbucket,meta,realtime,storage,studio,vector
+```
+
+The workflow uses no repository Supabase secrets, hosted credentials, project reference, login, or link. Supabase start output is redirected to an ephemeral runner file and is never printed or uploaded raw. Failure output and relevant bounded container logs remove credential-labelled lines and redact legacy JWT values, `sb_publishable_...`, `sb_secret_...`, and bearer tokens. Cleanup always runs `supabase stop --no-backup`.
+
+Observed GitHub evidence on 2026-07-18:
+
+- initial run `29623955883` proved reduced-stack start, clean reset and all migrations, PA-05G, and the 18-function surface, then exposed one Linux-specific fixture-execution issue: multiple top-level SQL commands cannot be sent as one prepared statement by `db query --file`;
+- correction cycle 1 changed only the two local fixture files to one atomic `DO` statement each; no migration, schema, API, Auth policy, or business behavior changed;
+- run `29624145271` passed `Local Auth and RPC acceptance` in 3m05s and completed unconditional cleanup;
+- database reset completed after applying every repository migration;
+- focused `supabase/tests/pa_05g_backend_end_to_end_acceptance.sql` passed one file and all 82 tests;
+- the passing PA-05G assertions proved `atlas_api` contains exactly 18 functions, `authenticated` executes exactly those 18, and `anon`/`service_role` execute none;
+- first provisioning passed its Auth creation/update and Atlas mapping assertions;
+- the identical second provisioning passed, proving repeatability;
+- real email/password sign-in passed with Auth subject `b6000000-0000-0000-0000-000000000101`;
+- the authenticated non-mutating `get_operator_blockers` probe returned the reviewed `SAFE_NOT_FOUND` category;
+- local-scope sign-out passed and `getSession()` returned no remaining session;
+- the workflow issued no business write and retained no database volume or local credential.
+
+Final frontend evidence for the same change set:
+
+- the local full suite passed workspace validation, frozen installation, formatting, typecheck, 38 test files/230 tests, application build, Storybook build, and `git diff --check`;
+- GitHub `Frontend CI / Format, typecheck, test, build`, `UI Review Export / Build UI review artifact`, and Qodana passed at head `dfeeb5b321bcf6db6830da73628d19da1172d896`;
+- existing non-blocking chunk-size and Storybook plugin-timing advisories remain; GitHub also reports the non-blocking Node 20 action-runtime deprecation while the required v4 actions are forced onto Node 24.
 
 ## 10. Simplicity inventory
 
@@ -186,4 +216,4 @@ No migration or production-data change exists, so there is no database rollback.
 
 The browser holds only the URL, local publishable key, and ordinary user session managed by Supabase. The service/Admin key is confined to a loopback-only provisioning process and never enters Vite source, browser configuration, checked-in env, UI, logs, or diagnostics. The backend remains authoritative for actor mapping, active status, capability, relational scope, concurrency, idempotency, and audit behavior.
 
-PA-06C must not begin until a compatible local Docker environment gives `pnpm exec supabase start --debug` a healthy Kong/API gateway on `http://127.0.0.1:54321`, followed by a clean reset, green focused PA-05G pgTAP, two successful identical provisioning runs, the real synthetic Auth/session/`get_operator_blockers`/sign-out verification, and the required browser checks. The next approved decision must also identify the first bounded operator workflow and its exact subset of the 18-function registry; PA-06B intentionally chooses none.
+GitHub-hosted acceptance now satisfies the PA-06B technical connection gate: healthy reduced stack, clean reset, focused PA-05G, exact 18-function surface, two identical provisioning passes, real synthetic Auth/session/`get_operator_blockers`/sign-out verification, and disposable cleanup. PA-06C must still not begin until PR #108 completes product/architecture review and a separate approved task identifies the first bounded operator workflow and its exact subset of the 18-function registry. PA-06B intentionally chooses none, creates no business workflow, and does not authorize merge or deployment.
