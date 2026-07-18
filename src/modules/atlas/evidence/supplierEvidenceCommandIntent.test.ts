@@ -71,7 +71,7 @@ describe("PA-06C frozen command intent", () => {
         safe_message: "Retry may be attempted explicitly.",
       },
     });
-    const replayed = commandIntentReducer(concurrency, {
+    const retryResult = commandIntentReducer(concurrency, {
       type: "SUCCESS",
       response: { command_id: request.command_id },
       exactRetry: true,
@@ -79,8 +79,10 @@ describe("PA-06C frozen command intent", () => {
 
     expect(concurrency.intent).toBe(intent);
     expect(concurrency.intent?.serializedRequest).toBe(JSON.stringify(request));
-    expect(replayed.phase).toBe("exact_replay");
-    expect(replayed.notice).toContain("Already completed");
+    expect(retryResult.phase).toBe("exact_retry_result");
+    expect(retryResult.notice).toBe(
+      "An authoritative result was returned for the exact frozen request. No duplicate was created.",
+    );
   });
 
   it.each([

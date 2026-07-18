@@ -6,7 +6,7 @@ export type CommandIntentPhase =
   | "reviewed"
   | "submitting"
   | "success"
-  | "exact_replay"
+  | "exact_retry_result"
   | "stale"
   | "retryable_concurrency"
   | "denied"
@@ -132,11 +132,11 @@ export function commandIntentReducer<Draft>(
     case "SUCCESS":
       return {
         ...state,
-        phase: action.exactRetry ? "exact_replay" : "success",
+        phase: action.exactRetry ? "exact_retry_result" : "success",
         response: action.response,
         error: null,
         notice: action.exactRetry
-          ? "Already completed — the original authoritative result was returned."
+          ? "An authoritative result was returned for the exact frozen request. No duplicate was created."
           : null,
       };
     case "BACKEND_ERROR":

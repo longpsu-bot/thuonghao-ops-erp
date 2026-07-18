@@ -16,6 +16,7 @@ import { SupplierEvidenceReadinessWorkbench } from "./SupplierEvidenceReadinessW
 import type { SupplierEvidenceApi } from "./supplierEvidenceApi";
 
 const authSubject = "b6000000-0000-0000-0000-000000000101";
+const otherAuthSubject = "b6000000-0000-0000-0000-000000000102";
 const evidenceId = "b6c40000-0000-0000-0000-000000000101";
 
 const session: Session = {
@@ -42,6 +43,32 @@ const authenticated: AtlasAuthState = {
   authSubject,
 };
 
+function authenticatedAs(subject: string): AtlasAuthState {
+  const nextSession: Session = {
+    ...session,
+    access_token: `local-access-token-${subject}`,
+    user: {
+      ...session.user,
+      id: subject,
+      email: `atlas.operator.${subject.slice(-3)}@local.test`,
+    },
+  };
+  return {
+    status: "authenticated",
+    session: nextSession,
+    user: nextSession.user,
+    authSubject: subject,
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
+
 function success(response: Record<string, unknown>): AtlasRpcResult {
   return {
     kind: "success",
@@ -61,6 +88,16 @@ function backendError(
       error_code: errorCode,
       safe_message: safeMessage,
       ...extra,
+    },
+  } as AtlasRpcResult;
+}
+
+function authError(safeMessage = "The session is no longer valid.") {
+  return {
+    kind: "auth_error",
+    diagnostic: {
+      code: "SESSION_REQUIRED",
+      safeMessage,
     },
   } as AtlasRpcResult;
 }
@@ -305,7 +342,7 @@ describe("PA-06C Supplier Evidence & Readiness workbench", () => {
         actual_version: 2,
       }),
     );
-    const api = await renderLoaded(fakeApi({ getReadiness, recordEvidence }));
+    await renderLoaded(fakeApi({ getReadiness, recordEvidence }));
     fireEvent.change(screen.getByLabelText("Evidence quantity"), {
       target: { value: "6" },
     });
@@ -365,7 +402,7 @@ describe("PA-06C Supplier Evidence & Readiness workbench", () => {
           safe_operator_message: "Supplier Evidence recorded.",
         }),
       );
-    const api = await renderLoaded(fakeApi({ recordEvidence }));
+    await renderLoaded(fakeApi({ recordEvidence }));
     fireEvent.click(
       screen.getByRole("button", { name: "Review Record Evidence" }),
     );
@@ -382,7 +419,13 @@ describe("PA-06C Supplier Evidence & Readiness workbench", () => {
       screen.getByRole("button", { name: "Retry exact frozen request" }),
     );
 
-    expect(await screen.findByText(/Already completed/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "An authoritative result was returned for the exact frozen request. No duplicate was created.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("exact retry result")).toBeInTheDocument();
+    expect(screen.queryByText(/Already completed/)).not.toBeInTheDocument();
     expect(recordEvidence).toHaveBeenCalledTimes(2);
     expect(JSON.stringify(recordEvidence.mock.calls[1][0])).toBe(serialized);
   });
@@ -478,7 +521,7 @@ describe("PA-06C Supplier Evidence & Readiness workbench", () => {
     expect(recordEvidence).toHaveBeenCalledOnce();
   });
 
-  it("preserves a non-secret draft but clears reviewed identity when the session ends", async () => {
+  it("clears every authorization-scoped view and outcome while preserving non-secret drafts on session expiry", async () => {
     const api = fakeApi();
     const rendered = render(
       <SupplierEvidenceReadinessWorkbench
@@ -490,12 +533,25 @@ describe("PA-06C Supplier Evidence & Readiness workbench", () => {
     fireEvent.change(screen.getByLabelText("Evidence quantity"), {
       target: { value: "7" },
     });
+    fireEvent.change(screen.getByLabelText("Applied Evidence quantity"), {
+      target: { value: "3" },
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "Review Record Evidence" }),
     );
-    expect(
+    fireEvent.click(
       screen.getByRole("button", { name: "Submit Record Evidence" }),
-    ).toBeEnabled();
+    );
+    await screen.findByText(evidenceId);
+    await screen.findByText(
+      "SUPPLIER_RECEIVING_EVIDENCE_RECORDED · 2026-07-18T01:00:00.000Z",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Apply Evidence" }),
+    );
+    expect(
+      screen.getByRole("region", { name: "Apply Evidence review" }),
+    ).toBeInTheDocument();
 
     rendered.rerender(
       <SupplierEvidenceReadinessWorkbench
@@ -513,10 +569,226 @@ describe("PA-06C Supplier Evidence & Readiness workbench", () => {
       ).toBeDisabled(),
     );
     expect(screen.getByLabelText("Evidence quantity")).toHaveValue(7);
+    expect(screen.getByLabelText("Applied Evidence quantity")).toHaveValue(3);
     expect(screen.getAllByText(/non-secret draft is preserved/)).toHaveLength(
       2,
     );
-    expect(api.recordEvidence).not.toHaveBeenCalled();
+    expect(screen.queryByText("EVIDENCE_INCOMPLETE")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Evidence application is incomplete."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        "SUPPLIER_RECEIVING_EVIDENCE_RECORDED · 2026-07-18T01:00:00.000Z",
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(evidenceId)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Supplier Evidence recorded."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Apply Evidence review" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("No authoritative fixture context is loaded."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("No bounded blocker observations were returned."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Submit or inspect a known command to load its bounded timeline.",
+      ),
+    ).toBeInTheDocument();
+    expect(api.recordEvidence).toHaveBeenCalledOnce();
+    expect(api.applyEvidence).not.toHaveBeenCalled();
+  });
+
+  it("does not let late READ-02 or READ-03 results repopulate state after session loss", async () => {
+    const pendingReadiness = deferred<AtlasRpcResult>();
+    const pendingBlockers = deferred<AtlasRpcResult>();
+    const api = fakeApi({
+      getReadiness: vi.fn(() => pendingReadiness.promise),
+      getBlockers: vi.fn(() => pendingBlockers.promise),
+    });
+    const rendered = render(
+      <SupplierEvidenceReadinessWorkbench
+        authState={authenticated}
+        api={api}
+      />,
+    );
+    await waitFor(() => expect(api.getReadiness).toHaveBeenCalledOnce());
+    expect(api.getBlockers).toHaveBeenCalledOnce();
+
+    rendered.rerender(
+      <SupplierEvidenceReadinessWorkbench
+        authState={{
+          status: "session_expired",
+          safeMessage: "The session expired.",
+        }}
+        api={api}
+      />,
+    );
+    await screen.findByText("No authoritative fixture context is loaded.");
+
+    await act(async () => {
+      pendingReadiness.resolve(readinessResult());
+      pendingBlockers.resolve(blockerResult);
+      await Promise.all([pendingReadiness.promise, pendingBlockers.promise]);
+    });
+
+    expect(screen.queryByText("EVIDENCE_INCOMPLETE")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Evidence application is incomplete."),
+    ).not.toBeInTheDocument();
+    expect(api.getReadiness).toHaveBeenCalledOnce();
+    expect(api.getBlockers).toHaveBeenCalledOnce();
+  });
+
+  it("does not let a late READ-04 result repopulate the audit timeline after session loss", async () => {
+    const pendingTimeline = deferred<AtlasRpcResult>();
+    const api = fakeApi({
+      getTimeline: vi.fn(() => pendingTimeline.promise),
+    });
+    const rendered = render(
+      <SupplierEvidenceReadinessWorkbench
+        authState={authenticated}
+        api={api}
+      />,
+    );
+    await screen.findByText("EVIDENCE_INCOMPLETE");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Record Evidence" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Submit Record Evidence" }),
+    );
+    await waitFor(() => expect(api.getTimeline).toHaveBeenCalledOnce());
+
+    rendered.rerender(
+      <SupplierEvidenceReadinessWorkbench
+        authState={{
+          status: "session_expired",
+          safeMessage: "The session expired.",
+        }}
+        api={api}
+      />,
+    );
+    await screen.findByText(
+      "Submit or inspect a known command to load its bounded timeline.",
+    );
+
+    await act(async () => {
+      pendingTimeline.resolve(timelineResult);
+      await pendingTimeline.promise;
+    });
+
+    expect(
+      screen.queryByText(
+        "SUPPLIER_RECEIVING_EVIDENCE_RECORDED · 2026-07-18T01:00:00.000Z",
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(evidenceId)).not.toBeInTheDocument();
+  });
+
+  it("clears subject A data before loading fresh authorized reads for subject B", async () => {
+    const pendingReadinessForB = deferred<AtlasRpcResult>();
+    const pendingBlockersForB = deferred<AtlasRpcResult>();
+    const getReadiness = vi.fn((subject: string) =>
+      subject === authSubject
+        ? Promise.resolve(readinessResult())
+        : pendingReadinessForB.promise,
+    );
+    const getBlockers = vi.fn((subject: string) =>
+      subject === authSubject
+        ? Promise.resolve(blockerResult)
+        : pendingBlockersForB.promise,
+    );
+    const api = fakeApi({ getReadiness, getBlockers });
+    const rendered = render(
+      <SupplierEvidenceReadinessWorkbench
+        authState={authenticated}
+        api={api}
+      />,
+    );
+    await screen.findByText("EVIDENCE_INCOMPLETE");
+    expect(
+      screen.getAllByText("Evidence application is incomplete."),
+    ).not.toHaveLength(0);
+
+    rendered.rerender(
+      <SupplierEvidenceReadinessWorkbench
+        authState={authenticatedAs(otherAuthSubject)}
+        api={api}
+      />,
+    );
+    await waitFor(() => expect(getReadiness).toHaveBeenCalledTimes(2));
+    expect(getBlockers).toHaveBeenCalledTimes(2);
+    expect(getReadiness.mock.calls[1][0]).toBe(otherAuthSubject);
+    expect(getBlockers.mock.calls[1][0]).toBe(otherAuthSubject);
+    expect(screen.queryByText("EVIDENCE_INCOMPLETE")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Evidence application is incomplete."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Review Record Evidence" }),
+    ).toBeDisabled();
+
+    await act(async () => {
+      pendingReadinessForB.resolve(readinessResult(2, PA06C_FIXTURE.quantity));
+      pendingBlockersForB.resolve(success({ blockers: [] }));
+      await Promise.all([
+        pendingReadinessForB.promise,
+        pendingBlockersForB.promise,
+      ]);
+    });
+
+    expect(await screen.findByText("EVIDENCE_COMPLETE")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Review Record Evidence" }),
+    ).toBeEnabled();
+  });
+
+  it("clears authorized state and waits for an Auth transition after a read returns Auth error", async () => {
+    const getReadiness = vi
+      .fn()
+      .mockResolvedValueOnce(readinessResult())
+      .mockResolvedValueOnce(authError())
+      .mockResolvedValueOnce(readinessResult(2));
+    const api = fakeApi({ getReadiness });
+    const rendered = render(
+      <SupplierEvidenceReadinessWorkbench
+        authState={authenticated}
+        api={api}
+      />,
+    );
+    await screen.findByText("EVIDENCE_INCOMPLETE");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Refresh approved reads" }),
+    );
+
+    await screen.findByText("No authoritative fixture context is loaded.");
+    expect(screen.queryByText("EVIDENCE_INCOMPLETE")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Evidence application is incomplete."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Refresh approved reads" }),
+    ).toBeDisabled();
+    expect(getReadiness).toHaveBeenCalledTimes(2);
+    expect(api.getBlockers).toHaveBeenCalledTimes(2);
+
+    rendered.rerender(
+      <SupplierEvidenceReadinessWorkbench
+        authState={authenticatedAs(authSubject)}
+        api={api}
+      />,
+    );
+    await waitFor(() => expect(getReadiness).toHaveBeenCalledTimes(3));
+    expect(api.getBlockers).toHaveBeenCalledTimes(3);
+    expect(
+      screen.getByRole("button", { name: "Review Record Evidence" }),
+    ).toBeEnabled();
   });
 
   it("refreshes after reauthentication without replaying the cleared intent", async () => {

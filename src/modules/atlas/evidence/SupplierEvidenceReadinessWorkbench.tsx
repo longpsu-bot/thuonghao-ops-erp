@@ -224,9 +224,9 @@ function OutcomePanel({
       typeof state.response?.safe_operator_message === "string"
         ? state.response.safe_operator_message
         : "The authoritative command completed.";
-  } else if (state.phase === "exact_replay") {
+  } else if (state.phase === "exact_retry_result") {
     tone = "ok";
-    label = "exact replay";
+    label = "exact retry result";
   } else if (
     state.phase === "stale" ||
     state.phase === "retryable_concurrency" ||
@@ -296,6 +296,12 @@ export function SupplierEvidenceReadinessWorkbench({
   api?: SupplierEvidenceApi;
   initialModel?: SupplierEvidenceWorkbenchInitialModel;
 }) {
+  const authenticated = authState.status === "authenticated";
+  const authSubject = authenticated ? authState.authSubject : null;
+  const authIdentity = `${authState.status}:${authSubject ?? ""}`;
+  const authSessionToken = authenticated
+    ? authState.session.access_token
+    : null;
   const [correlationId] = useState(() => crypto.randomUUID());
   const [readiness, setReadiness] = useState<
     ReadState<EvidenceReadinessItem[]>
@@ -318,13 +324,17 @@ export function SupplierEvidenceReadinessWorkbench({
     commandIntentReducer<ApplyDraft>,
     initialModel?.applyState ?? initialCommandIntentState(initialApplyDraft()),
   );
-  const previousAuthStatus = useRef(authState.status);
-
-  const authenticated = authState.status === "authenticated";
-  const authSubject = authenticated ? authState.authSubject : null;
-  const authIdentity = `${authState.status}:${authSubject ?? ""}`;
+  const [authorizationInvalidated, setAuthorizationInvalidated] =
+    useState(!authenticated);
+  const authorizationInvalidatedRef = useRef(!authenticated);
+  const previousAuthIdentity = useRef<string | null>(null);
+  const previousAuthSessionToken = useRef(authSessionToken);
   const authIdentityRef = useRef(authIdentity);
+  const readinessRequestGeneration = useRef(0);
+  const blockerRequestGeneration = useRef(0);
+  const timelineRequestGeneration = useRef(0);
   authIdentityRef.current = authIdentity;
+  const authorized = authenticated && !authorizationInvalidated;
   const context = currentContext(readiness.data);
   const recordEditLocked =
     recordState.phase === "submitting" ||
@@ -333,14 +343,46 @@ export function SupplierEvidenceReadinessWorkbench({
     applyState.phase === "submitting" ||
     applyState.phase === "ambiguous_transport";
 
+  const clearAuthorizedWorkbenchState = useCallback(() => {
+    authorizationInvalidatedRef.current = true;
+    setAuthorizationInvalidated(true);
+    readinessRequestGeneration.current += 1;
+    blockerRequestGeneration.current += 1;
+    timelineRequestGeneration.current += 1;
+    setReadiness({ status: "idle", data: [] });
+    setBlockers({ status: "idle", data: [] });
+    setTimeline({ status: "idle", data: null });
+    setAuthoritativeEvidenceId(null);
+    dispatchRecord({ type: "SESSION_LOST" });
+    dispatchApply({ type: "SESSION_LOST" });
+  }, []);
+
   const loadReads = useCallback(async () => {
-    if (!api || !authSubject) return false;
+    if (!api || !authSubject || authorizationInvalidatedRef.current)
+      return false;
+    const requestAuthIdentity = authIdentityRef.current;
+    const readinessGeneration = ++readinessRequestGeneration.current;
+    const blockerGeneration = ++blockerRequestGeneration.current;
     setReadiness((current) => ({ status: "loading", data: current.data }));
     setBlockers((current) => ({ status: "loading", data: current.data }));
     const [readinessResult, blockerResult] = await Promise.all([
       api.getReadiness(authSubject, correlationId),
       api.getBlockers(authSubject, correlationId),
     ]);
+    if (
+      authIdentityRef.current !== requestAuthIdentity ||
+      authorizationInvalidatedRef.current ||
+      readinessRequestGeneration.current !== readinessGeneration ||
+      blockerRequestGeneration.current !== blockerGeneration
+    )
+      return false;
+    if (
+      readinessResult.kind === "auth_error" ||
+      blockerResult.kind === "auth_error"
+    ) {
+      clearAuthorizedWorkbenchState();
+      return false;
+    }
     const readinessItems = successArray<EvidenceReadinessItem>(
       readinessResult,
       "readiness_items",
@@ -368,17 +410,29 @@ export function SupplierEvidenceReadinessWorkbench({
       }));
     }
     return Boolean(readinessItems && blockerItems);
-  }, [api, authSubject, correlationId]);
+  }, [api, authSubject, clearAuthorizedWorkbenchState, correlationId]);
 
   const loadTimeline = useCallback(
     async (commandId: string) => {
-      if (!api || !authSubject) return;
+      if (!api || !authSubject || authorizationInvalidatedRef.current) return;
+      const requestAuthIdentity = authIdentityRef.current;
+      const timelineGeneration = ++timelineRequestGeneration.current;
       setTimeline((current) => ({ status: "loading", data: current.data }));
       const result = await api.getTimeline(
         authSubject,
         correlationId,
         commandId,
       );
+      if (
+        authIdentityRef.current !== requestAuthIdentity ||
+        authorizationInvalidatedRef.current ||
+        timelineRequestGeneration.current !== timelineGeneration
+      )
+        return;
+      if (result.kind === "auth_error") {
+        clearAuthorizedWorkbenchState();
+        return;
+      }
       if (result.kind !== "success") {
         setTimeline((current) => ({
           status: "error",
@@ -403,41 +457,55 @@ export function SupplierEvidenceReadinessWorkbench({
         },
       });
     },
-    [api, authSubject, correlationId],
+    [api, authSubject, clearAuthorizedWorkbenchState, correlationId],
   );
 
   useEffect(() => {
     if (
-      authenticated &&
+      authorized &&
       readiness.status === "idle" &&
       !initialModel?.disableAutoLoad
     ) {
       void loadReads();
     }
-  }, [
-    authenticated,
-    initialModel?.disableAutoLoad,
-    loadReads,
-    readiness.status,
-  ]);
+  }, [authorized, initialModel?.disableAutoLoad, loadReads, readiness.status]);
 
   useEffect(() => {
-    const previous = previousAuthStatus.current;
-    previousAuthStatus.current = authState.status;
-    if (previous === "authenticated" && authState.status !== "authenticated") {
-      setAuthoritativeEvidenceId(null);
-      setTimeline({ status: "idle", data: null });
-      dispatchRecord({ type: "SESSION_LOST" });
-      dispatchApply({ type: "SESSION_LOST" });
-    } else if (
-      previous !== "authenticated" &&
-      authState.status === "authenticated"
-    ) {
+    const previous = previousAuthIdentity.current;
+    const previousSessionToken = previousAuthSessionToken.current;
+    previousAuthIdentity.current = authIdentity;
+    previousAuthSessionToken.current = authSessionToken;
+    if (previous === null) {
+      if (!authenticated) clearAuthorizedWorkbenchState();
+      return;
+    }
+    if (previous === authIdentity) {
+      if (
+        authenticated &&
+        authorizationInvalidatedRef.current &&
+        previousSessionToken !== authSessionToken
+      ) {
+        authorizationInvalidatedRef.current = false;
+        setAuthorizationInvalidated(false);
+        dispatchRecord({ type: "SESSION_RESTORED" });
+        dispatchApply({ type: "SESSION_RESTORED" });
+      }
+      return;
+    }
+
+    clearAuthorizedWorkbenchState();
+    if (authenticated) {
+      authorizationInvalidatedRef.current = false;
+      setAuthorizationInvalidated(false);
       dispatchRecord({ type: "SESSION_RESTORED" });
       dispatchApply({ type: "SESSION_RESTORED" });
-      if (!initialModel?.disableAutoLoad) void loadReads();
     }
-  }, [authState.status, initialModel?.disableAutoLoad, loadReads]);
+  }, [
+    authIdentity,
+    authenticated,
+    authSessionToken,
+    clearAuthorizedWorkbenchState,
+  ]);
 
   const editRecord = (change: Partial<RecordDraft>) =>
     dispatchRecord({
@@ -451,7 +519,7 @@ export function SupplierEvidenceReadinessWorkbench({
     });
 
   const reviewRecord = () => {
-    if (!context || !authSubject) return;
+    if (!authorized || !context || !authSubject) return;
     const quantity = Number(recordState.draft.evidenceQuantity);
     const occurredAt = new Date(recordState.draft.occurredAt);
     if (
@@ -487,7 +555,8 @@ export function SupplierEvidenceReadinessWorkbench({
   };
 
   const reviewApply = () => {
-    if (!context || !authSubject || !authoritativeEvidenceId) return;
+    if (!authorized || !context || !authSubject || !authoritativeEvidenceId)
+      return;
     const quantity = Number(applyState.draft.appliedQuantity);
     const occurredAt = new Date(applyState.draft.occurredAt);
     if (
@@ -525,14 +594,24 @@ export function SupplierEvidenceReadinessWorkbench({
   ) => {
     const state = kind === "record" ? recordState : applyState;
     const dispatch = kind === "record" ? dispatchRecord : dispatchApply;
-    if (!api || !authSubject || !state.intent) return;
+    if (
+      !api ||
+      !authSubject ||
+      authorizationInvalidatedRef.current ||
+      !state.intent
+    )
+      return;
     const submissionAuthIdentity = authIdentity;
     dispatch({ type: "SUBMIT" });
     const result =
       kind === "record"
         ? await api.recordEvidence(state.intent.request)
         : await api.applyEvidence(state.intent.request);
-    if (authIdentityRef.current !== submissionAuthIdentity) return;
+    if (
+      authIdentityRef.current !== submissionAuthIdentity ||
+      authorizationInvalidatedRef.current
+    )
+      return;
     if (result.kind === "success") {
       const response = result.response as Record<string, unknown>;
       dispatch({ type: "SUCCESS", response, exactRetry });
@@ -562,8 +641,7 @@ export function SupplierEvidenceReadinessWorkbench({
       return;
     }
     if (result.kind === "auth_error") {
-      dispatch({ type: "SESSION_LOST" });
-      setAuthoritativeEvidenceId(null);
+      clearAuthorizedWorkbenchState();
       return;
     }
     dispatch({
@@ -728,7 +806,7 @@ export function SupplierEvidenceReadinessWorkbench({
           )}
           <button
             type="button"
-            disabled={!authenticated || readiness.status === "loading"}
+            disabled={!authorized || readiness.status === "loading"}
             onClick={() => void refreshApprovedReads()}
           >
             Refresh approved reads
@@ -866,7 +944,7 @@ export function SupplierEvidenceReadinessWorkbench({
             <button
               type="button"
               disabled={
-                !authenticated ||
+                !authorized ||
                 !context ||
                 readiness.status !== "success" ||
                 recordEditLocked ||
@@ -879,7 +957,7 @@ export function SupplierEvidenceReadinessWorkbench({
             <button
               type="button"
               className="primary"
-              disabled={recordState.phase !== "reviewed" || !authenticated}
+              disabled={recordState.phase !== "reviewed" || !authorized}
               onClick={() => void executeCommand("record")}
             >
               Submit Record Evidence
@@ -980,7 +1058,7 @@ export function SupplierEvidenceReadinessWorkbench({
             <button
               type="button"
               disabled={
-                !authenticated ||
+                !authorized ||
                 !context ||
                 !authoritativeEvidenceId ||
                 readiness.status !== "success" ||
@@ -994,7 +1072,7 @@ export function SupplierEvidenceReadinessWorkbench({
             <button
               type="button"
               className="primary"
-              disabled={applyState.phase !== "reviewed" || !authenticated}
+              disabled={applyState.phase !== "reviewed" || !authorized}
               onClick={() => void executeCommand("apply")}
             >
               Submit Apply Evidence

@@ -105,11 +105,15 @@ function commandState<Draft>(
   const base = initialCommandIntentState(draft);
   const intent = freezeCommandIntent(commandRequest(kind));
   if (phase === "reviewed") return { ...base, phase, intent };
-  if (phase === "success" || phase === "exact_replay") {
+  if (phase === "success" || phase === "exact_retry_result") {
     return {
       ...base,
       phase,
       intent,
+      notice:
+        phase === "exact_retry_result"
+          ? "An authoritative result was returned for the exact frozen request. No duplicate was created."
+          : null,
       response: {
         success: true,
         command_id: intent.request.command_id,
@@ -270,6 +274,15 @@ export const RecordSuccess: Story = {
   args: {
     initialModel: model({
       recordState: commandState(recordDraft, "record", "success"),
+      evidenceId,
+    }),
+  },
+};
+
+export const ExactRetryResult: Story = {
+  args: {
+    initialModel: model({
+      recordState: commandState(recordDraft, "record", "exact_retry_result"),
       evidenceId,
     }),
   },
