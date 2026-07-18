@@ -613,16 +613,16 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Selector payload:** exactly one of `dispatch_trip_id`, `dispatch_requirement_revision_id`, or `wholesale_order_line_revision_id`.
 - **Authoritative aggregate:** no mutation; bounded readiness context.
 - **IDs and versions consumed:** one known bounded selector and authenticated subject.
-- **IDs and versions returned:** selector and authorized scope; per-line Trip/Stop/requirement/allocation IDs; unit; allocated, loaded, and applied Evidence quantities; Evidence references/status; application status; readiness status.
+- **IDs and versions returned:** selector and authorized scope; per-line Trip/Stop/requirement/allocation IDs; unit; allocated, loaded, and applied Evidence quantities; Evidence references/status; application status; readiness status; additive `command_context` with the current Fulfilment Allocation root/version/revision/stable line/line revision and all exact active current PO commitment root/version/revision/line lineages.
 - **Lifecycle transition:** none; `advisory_only = true`.
 - **Warnings and blockers:** per-line statuses include `READY`, `MISSING_EVIDENCE`, `PARTIAL_EVIDENCE`, `VOIDED_OR_SUPERSEDED_EVIDENCE`, `NOT_LOADED`, and `DELIVERED`, with safe warning/blocker arrays.
-- **Safe errors:** `VALIDATION_FAILED`, `UNBOUNDED_OR_AMBIGUOUS_SELECTOR`, `NOT_FOUND`, authentication/capability/scope denial, or `INTERNAL_READ_FAILURE`.
-- **Stale-version behavior:** not applicable; commands revalidate authoritative state.
+- **Safe errors:** `VALIDATION_FAILED`, `UNBOUNDED_OR_AMBIGUOUS_SELECTOR`, `NOT_FOUND`, `CURRENT_LINEAGE_CONFLICT`, authentication/capability/scope denial, or `INTERNAL_READ_FAILURE`.
+- **Stale-version behavior:** after CMD-07 or CMD-08 returns `STALE_VERSION`, the application may refresh this read with its known `wholesale_order_line_revision_id`, require a new review, and create a new command intent using the matching authoritative version from `command_context`; it must not promote diagnostic `actual_version` or audit history into an expected version.
 - **Retryable-concurrency behavior:** not applicable.
 - **Exact replay:** not applicable.
 - **Changed idempotency reuse:** not applicable.
 - **Audit and trace visibility:** creates no event; its opaque IDs may be used for authorized READ-04 selectors where supported.
-- **Next permitted operator action:** operator reviews readiness; the application may present a candidate command only if its required authoritative context is already known. The read never authorizes the command.
+- **Next permitted operator action:** operator reviews readiness and the exact current command context; the application may create a new candidate CMD-07/CMD-08 intent from the matching lineage after review. The read never authorizes the command. See `docs/architecture/pa-05c-h3-evidence-readiness-current-command-context.md`.
 
 <a id="read-03"></a>
 ### READ-03 — `atlas_api.get_operator_blockers(jsonb)`

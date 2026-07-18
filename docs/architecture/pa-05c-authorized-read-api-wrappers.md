@@ -46,6 +46,8 @@ The existing PA-05B function `atlas_api.get_supplier_direct_trace(request jsonb)
 
 `get_dispatch_evidence_readiness` returns shaped trip, stop, requirement, allocation, evidence, application, and quantity references. Each item derives one of `READY`, `MISSING_EVIDENCE`, `PARTIAL_EVIDENCE`, `VOIDED_OR_SUPERSEDED_EVIDENCE`, `NOT_LOADED`, or `DELIVERED`, plus safe blockers and warnings.
 
+PA-05C-H3 additively includes bounded current Allocation and Purchase Order command context on each readiness item so a caller with an existing selector can refresh authoritative root versions and exact current lineages after `STALE_VERSION`. Historical Evidence references retain their existing readiness semantics. See `docs/architecture/pa-05c-h3-evidence-readiness-current-command-context.md`.
+
 `get_operator_blockers` derives operator-facing facts for a bounded context. It may return `NO_SUPPLIER_EVIDENCE`, `EVIDENCE_PARTIAL`, `EVIDENCE_VOIDED`, `NOT_LOADED`, `DEPARTURE_BLOCKED`, `DELIVERY_PENDING`, and `DELIVERY_COMPLETED`. Each blocker identifies a safe source domain, severity, opaque affected IDs, public references where available, observation time, and owning team. These rows are derived observations, not persisted tasks.
 
 `get_command_audit_timeline` returns a safe command receipt summary plus domain and audit events for one authorized context. A combined deterministic limit of 100 events is applied. It excludes request hashes, raw response payloads, before/after payload summaries, SQL or policy internals, credentials, JWT content, service-role information, and stack traces.
@@ -98,6 +100,8 @@ The functions are `SECURITY DEFINER`, owned by the no-login `atlas_read_runtime`
 ## 6. Response model
 
 Successful responses include the contract version, bounded selector, authorized scope, allowlisted opaque IDs and public references, deterministic shaped results, and a safe operator message. No response is a raw row or `select *` projection. Internal authorization vocabulary, database structure, unsafe payload JSON, credentials, and exception text are not exposed.
+
+READ-02's additive `command_context` is not discovery or a queue: it is derived only for authorized readiness rows selected through the existing three bounded selectors. Zero active PO commitments are an empty array, legitimate commitments across split allocation portions are preserved in deterministic item order, cancelled/superseded revisions are excluded, and contradictory active current lineage fails closed with `CURRENT_LINEAGE_CONFLICT`.
 
 ## 7. Relationship to PA-05B
 
