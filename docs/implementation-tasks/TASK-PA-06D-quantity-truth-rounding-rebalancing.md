@@ -37,26 +37,44 @@ The four available OPS exports were reviewed read-only. The Purchase Planner exp
 - PO and Dispatch confirmation, reads and export formatters;
 - exact `EPS=1e-6`, `toFixed(6)`, `round6`, ratios, total comparison and residual behavior.
 
-| Retained evidence                      | SHA-256                                                            |
-| -------------------------------------- | ------------------------------------------------------------------ |
-| OPS Admin production export            | `8C5BA8205C1DE37966B1ED0A0762DB6B508D634E7EA91E92788308B0AFD2BAE1` |
-| OPS Công thức export                   | `E50AB600E98C1AC683BD449C8B2C859846C0BF5E5AE2A5A807BBE827B03852E9` |
-| OPS Nguyên liệu và Nhà cung ứng export | `0DA3AD9F1C31DC29504B63F711150153C16F09451E2A8D299A9EC61048BC9722` |
-| OPS Lên đơn, Đặt hàng export           | `2714512AB9A47CF9E560305C48192ABD45AB3E99ACC5ADE5C26C5414DD263093` |
-| Retained `schema.sql`                  | `1254D4DE81AE0B581B87666F4AA7195932ACB9ED8559B677AE9F0AA95C24DB6D` |
+| Retained path and exact file name                  | Artifact type      | SHA-256                                                            |
+| -------------------------------------------------- | ------------------ | ------------------------------------------------------------------ |
+| `/mnt/data/OPS - Admin (in production).json`       | Retool JSON export | `A6D74CA01F7942687E8639FFEF73DBA5A89C6BCBF653F9454011CEC551549350` |
+| `/mnt/data/OPS - Công thức.json`                   | Retool JSON export | `B38C86AC3B1FED985F6BC07D91C0708CF5AACCCC682434BA2498960D1DA1B809` |
+| `/mnt/data/OPS - Nguyên liệu và Nhà cung ứng.json` | Retool JSON export | `2FB973CBD6A3900252AA9037A1D4D197551BCCC93DB60E36512D97F27D903648` |
+| `/mnt/data/OPS - Lên đơn, Đặt hàng (1).json`       | Retool JSON export | `6F6FF8D025696D375F354A86126661D20C3E9908D6475D40ECB14EE006B4A371` |
+| `/mnt/data/schema.sql`                             | PostgreSQL schema  | `1254D4DE81AE0B581B87666F4AA7195932ACB9ED8559B677AE9F0AA95C24DB6D` |
+
+The exact retained JSON bytes were no longer mounted during the 2026-07-19 correction pass. The original draft mistakenly presented hashes from differently named or different-byte files under `D:\Project\OPS v2` as retained hashes. The contract records those local alternatives, their exact names/types/hashes, and the reason they differ. The local `D:\Project\OPS\schema.sql` was re-hashed and matches the retained schema hash.
 
 Observed active invocation:
 
 ```text
-master save
-→ q_ppwb_save_actual_need
-→ ops_v2.app_upsert_actual_need_overrides_bulk
-→ ops_v2.fn_rebalance_purchase_assignments_for_keys_planner
+q_ppwb_master_load
+→ public.v_actual_needs_effective_orderable
+→ public.actual_need_overrides
+→ public.purchase_assignments
 
-detail save
+js_ppwb_save_actual_need
+→ q_ppwb_save_actual_need
+→ public.app_upsert_actual_need_overrides_bulk
+→ public.fn_rebalance_purchase_assignments_for_keys_fast
+
+q_ppwb_detail_pool_load
+→ public views and tables
+
+js_ppwb_detail_save
 → q_ppwb_detail_replace_family
-→ ops_v2.app_replace_purchase_assignments_family_planner
+→ public.app_replace_purchase_assignments_family_planner
+
+q_po_confirm
+→ public.app_confirm_purchase_orders
+
+q_dispatch_confirm
+→ public.app_confirm_dispatch
 ```
+
+The duplicate `q_ppwb_master_save_and_rebalance` query also targets `public.app_upsert_actual_need_overrides_bulk`, but `js_ppwb_save_actual_need` selects `q_ppwb_save_actual_need`. The active public grain is `service_date + school_id + ingredient_id`. The public bulk upsert stores exact `qty_actual`, calls the public fast rebalance across existing and positive-baseline ingredient families, prefers the override over `qty_final_orderable`, may insert the preferred supplier, rounds non-final proportional rows to six decimals, gives the final technically sorted row the exact residual, and deletes family rows when the new total is nonpositive.
 
 The server rebalance is proportional; manual Retool `Cân bằng` is sequential fill/cap; detail save accepts exact manual decimals; local state is optimistic; master refresh performs readback while detail save does not. The exported detail-save JavaScript contains duplicated declarations, so it is evidence of intent and query linkage, not proof of reliable live execution.
 
@@ -68,9 +86,9 @@ Review covers:
 
 - `ingredient_order_step`, `ceil_to_step`, `theoretical_orderable_qty`;
 - effective need/orderable/assignment feed views;
-- all relevant public/OPS_V2 upsert, rebalance and family-replacement variants;
+- all relevant public/OPS_V2 upsert, rebalance and family-replacement variants, classified separately from Retool invocation evidence;
 - Purchase Assignment and Actual Need Override triggers;
-- active OPS_V2 PO and Dispatch confirmation;
+- public PO and Dispatch confirmation invoked by the retained export, plus OPS_V2 equivalents classified as present but uninvoked by that export;
 - PO/Dispatch line/read/export flow;
 - quantity/ratio types and constraints.
 
@@ -80,8 +98,10 @@ Key evidence:
 - six-decimal behavior is selected in functions/JavaScript, not a universal schema scale;
 - current live ingredient configuration is `0.1` for kg and `1` for current other/count-like units, but those are purchase steps, not approved Planning steps;
 - theoretical orderable logic may round below source need at/above its threshold;
-- OPS_V2 PO sums exact portions, while OPS_V2 Dispatch applies a second ceiling;
-- no OPS_V2 constraint enforces supplier portions as purchase-step multiples or exact family totals.
+- the active public PO path sums exact portions, while the active public Dispatch path applies a second ceiling;
+- no reviewed public or OPS_V2 constraint enforces supplier portions as purchase-step multiples or exact family totals;
+- public uses `service_date + school_id + ingredient_id`; OPS_V2 uses `service_date + school_id + effective_line_key`;
+- OPS_V2 objects are present, but the retained export does not invoke them and therefore does not establish them as its active path.
 
 ## 4. Deliverables
 
@@ -107,7 +127,9 @@ Add minimal navigation/register links only to the roadmap, PA-06A screen map, bu
 - Proportional default; sequential Retool behavior recorded as legacy evidence requiring decision.
 - Exact WYSIWYG preview/commit/readback/PO/Dispatch invariant.
 - Two Vietnamese-first workbench specifications.
+- Workbench B title `Phân bổ số lượng cho nhà cung cấp`, with action `Xem trước phân bổ lại theo tỷ lệ` and tick support wording `Tổng số đơn vị theo bước đặt hàng`.
 - Complete glossary, operator-state matrix, 18 full copy examples and language QA corrections.
+- Comparison of `Nhu cầu vận hành`, `Nhu cầu đề xuất xác nhận`, and `Số lượng đề xuất xác nhận`; `Nhu cầu vận hành` remains proposed pending product-owner and operations-language review.
 - Seventeen explicit product decisions with unresolved items not marked approved.
 - Gap analysis against the current 18-function Atlas API.
 - Smallest backend and later UI follow-ups.
@@ -120,7 +142,16 @@ Do not modify React, Storybook, application behavior, package files, dependencie
 
 ### 7.1 PA-06D-H1 backend follow-up
 
-One separately approved bounded task for one unreleased Purchase Handoff line:
+Accepted baseline:
+
+```text
+Wholesale source
+→ released Confirmed Need Batch/line revisions
+→ CMD-03 creates Purchase Handoff directly in RELEASED_TO_PROCUREMENT, version 1
+→ CMD-04 creates a released Dispatch Requirement
+```
+
+PA-06D-H1 is a preferred future insertion point, not an approved task. If separately approved, it should attach Quantity Decision preview/confirmation to a Confirmed Need line/revision, and CMD-03 should consume that confirmed decision when releasing the Purchase Handoff. The bounded work would include:
 
 - effective-dated Quantity Decision rule resolution;
 - authorized line detail/discovery read;
@@ -130,11 +161,11 @@ One separately approved bounded task for one unreleased Purchase Handoff line:
 - authoritative command result and authorized readback;
 - focused invariant, authorization, stale, idempotency and WYSIWYG tests.
 
-It must not silently change the 18-function registry, add multi-supplier allocation or broaden scope.
+This direction requires explicit architecture, command-contract, registry, lineage, authorization, event, audit, and test approval before implementation. An explicit new intermediate object between Confirmed Need and Purchase Handoff is an alternative architecture change, not an already approved object. Neither option may silently change the 18-function registry, add multi-supplier allocation or broaden scope.
 
 ### 7.2 Smallest later UI follow-up
 
-Implement only `Rà soát số lượng nhu cầu` against the approved PA-06D-H1 boundary. Include Vietnamese preview/confirmation, stale and ambiguous-outcome handling, exact returned snapshot, authorized readback and audit link. Do not enable allocation edits until a separate split-allocation backend contract is approved.
+After an insertion point and PA-06D-H1 boundary are explicitly approved and implemented, implement only `Rà soát số lượng nhu cầu`. Include Vietnamese preview/confirmation, stale and ambiguous-outcome handling, exact returned snapshot, authorized readback and audit link. Do not enable allocation edits until a separate split-allocation backend contract is approved.
 
 ### 7.3 Deferred
 
@@ -152,6 +183,7 @@ Implement only `Rà soát số lượng nhu cầu` against the approved PA-06D-H
 - Existing authoritative documents are changed only by minimal links/register entries.
 - Every required precision, rule, example, contradiction, UI state, glossary field, decision and API gap is present.
 - Normal operator copy is Vietnamese-only, natural and actionable.
+- Document language QA passes; product-owner terminology approval and rendered operations review remain pending and are not represented as final passes.
 - No unresolved product choice is labeled approved.
 - Repository diff contains documentation only.
 - `pnpm ops:workspace`, `pnpm install --frozen-lockfile`, `pnpm format`, and `git diff --check` pass.
@@ -171,7 +203,7 @@ The PR body must state:
 
 ## 10. Verification record
 
-Verified on 2026-07-18 in the canonical repository and task branch:
+Initial verification on 2026-07-18 in the canonical repository and task branch:
 
 - local starting `main` and `origin/main` both resolved to `f25acededa6750f6ab08326333bff588e437f41b`, which includes merged PR #112;
 - `pnpm ops:workspace` passed and identified the intended repository, origin and branch;
@@ -181,3 +213,14 @@ Verified on 2026-07-18 in the canonical repository and task branch:
 - relative Markdown file links in the five deliverables and four minimally linked documents resolved locally;
 - `git diff --check` passed before staging and `git diff --cached --check` passed on the exact nine-file staged scope;
 - no wider frontend suite was run because the diff is documentation-only and no focused failure or CI requirement called for it.
+
+Correction verification on 2026-07-19 in the same task branch:
+
+- direct inspection of the Retool source ZIP established the controller/query targets as public and confirmed that the duplicate master-save query is not the controller target;
+- the exact retained `/mnt/data` artifact names and review-recorded SHA-256 values were asserted in the evidence tables; the exact retained JSON bytes were not mounted for recalculation, so this limitation is explicit rather than masked;
+- the local alternative JSON exports, Retool source ZIP, and local schema were re-hashed; the local schema matched the retained schema record;
+- `pnpm ops:workspace`, `pnpm install --frozen-lockfile`, and `pnpm format` passed with the bundled non-interactive runtime;
+- the five PA-06D documents passed an explicit Prettier check and `git diff --check`;
+- relative Markdown file links resolved across the five deliverables and four navigation/register documents;
+- targeted assertions passed for public-path attribution, public/OPS_V2 grains, lifecycle wording, retained hash records, corrected Vietnamese terms, and the three separate language-review statuses;
+- no frontend, SQL, migration, RPC, Retool, Supabase, production-data, or deployment behavior was changed.
