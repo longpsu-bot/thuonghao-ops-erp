@@ -33,6 +33,8 @@ This register records approved business rules. Module specifications may refine 
 | BR-027 | No calculation behavior may exist as a hidden or hard-coded magic rule. Every calculation behavior must be represented as an editable or versioned rule, visible to authorized users, traceable in outputs, and explainable during review. | Approved |
 | BR-028 | When an automatic inference rule is applied, the system must record which rule produced the inference and allow authorized users to inspect the rule basis. | Approved |
 
+Detailed legacy evidence, approved directions, recommendations, and still-pending quantity decisions are separated in the [PA-06D Rounding and Rebalancing Rule Register](pa-06d-rounding-rebalancing-rule-register.md). A PA-06D row is not approved unless its status explicitly says so.
+
 ## Planned rule domains
 
 Future rules will be grouped under:
