@@ -3,3 +3,7 @@ node_modules/
 dist/
 storybook-static/
 *.tsbuildinfo
+.env
+.env.local
+.env.*.local
+!.env.example

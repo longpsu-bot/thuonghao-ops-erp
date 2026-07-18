@@ -73,6 +73,67 @@ body {
 .atlas-content {
   min-width: 0;
 }
+.atlas-connection {
+  margin: 14px 32px 0;
+  padding: 12px 14px;
+  border: 1px solid #c7d8d1;
+  background: #f4f8f6;
+  color: #284137;
+  font-size: 11px;
+}
+.atlas-connection-heading,
+.atlas-connection form,
+.atlas-connection-identity {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.atlas-connection-heading {
+  align-items: center;
+  justify-content: space-between;
+}
+.atlas-connection-heading div,
+.atlas-connection label,
+.atlas-connection-identity span {
+  display: grid;
+  gap: 4px;
+}
+.atlas-connection-heading small {
+  color: #617069;
+}
+.atlas-connection mark {
+  padding: 4px 7px;
+  background: #fff0d7;
+  color: #7a500f;
+  font-weight: 800;
+}
+.atlas-connection form,
+.atlas-connection-identity {
+  margin-top: 10px;
+}
+.atlas-connection input {
+  min-width: 190px;
+  padding: 6px 8px;
+  border: 1px solid #aec4bc;
+  border-radius: 4px;
+}
+.atlas-connection button {
+  padding: 7px 10px;
+  border: 1px solid #17604d;
+  border-radius: 4px;
+  background: #17604d;
+  color: #fff;
+  font-weight: 700;
+}
+.atlas-connection code {
+  color: #315247;
+  font-size: 10px;
+}
+.atlas-connection [role="alert"] {
+  color: #8b2020;
+  font-weight: 700;
+}
 .atlas-topbar {
   display: flex;
   align-items: center;

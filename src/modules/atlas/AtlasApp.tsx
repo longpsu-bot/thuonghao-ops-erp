@@ -16,6 +16,7 @@ import {
 } from "./AtlasPages";
 import { PageShell, TracePanel } from "./WorkbenchComponents";
 import { MvpMorningChaosPage } from "./MvpMorningChaosPage";
+import { AtlasConnectionPanel } from "./connection/AtlasConnectionPanel";
 
 export function AtlasApp({
   initialPage = "control-board",
@@ -83,6 +84,7 @@ export function AtlasApp({
           </button>
           <mark>Prototype · dữ liệu cục bộ</mark>
         </header>
+        <AtlasConnectionPanel />
         <PageShell page={page}>{content}</PageShell>
       </div>
       {traceOpen && <TracePanel onClose={() => setTraceOpen(false)} />}
