@@ -83,6 +83,8 @@ Required attributes:
 
 This reference enables an operator to explain why the demand exists and how it was derived.
 
+**PA-06E-H0 compatibility qualification:** the singular `theoretical_need_line_id` above is not a settled one-to-one physical grain for school catering. The operational Confirmed Need line remains part of this same aggregate, but one school-catering line revision may reference an immutable membership set of multiple atomic Theoretical Need lines whose controlled-unit sum is its theoretical quantity. Direct-wholesale may remain singular. A later approved parent-contract amendment must pluralize the school-catering source-reference semantics and qualify `CreateConfirmedNeedsFromGeneration`; the bounded physical direction is recorded in [PA-06E-H0](pa-06e-h0-school-catering-persistence-and-materialization-contract.md).
+
 ### 2.4 ConfirmedNeedAdjustment
 
 Represents a controlled Planning adjustment.
