@@ -109,7 +109,7 @@ create table atlas_planning.weekly_menu_lines (
     menu_slot_code
   ),
   constraint weekly_menu_lines_menu_slot_code_check check (
-    menu_slot_code = lower(menu_slot_code)
+    menu_slot_code = lower(btrim(menu_slot_code))
     and btrim(menu_slot_code) <> ''
   ),
   constraint weekly_menu_lines_status_check check (
@@ -232,7 +232,7 @@ create table atlas_planning.weekly_menu_approval_snapshot_lines (
     weekly_menu_version > 0
   ),
   constraint weekly_menu_approval_snapshot_lines_menu_slot_code_check check (
-    menu_slot_code = lower(menu_slot_code)
+    menu_slot_code = lower(btrim(menu_slot_code))
     and btrim(menu_slot_code) <> ''
   ),
   constraint weekly_menu_approval_snapshot_lines_source_row_reference_check check (
@@ -297,6 +297,18 @@ begin
       message = 'weekly menu identity and service-week scope are immutable';
   end if;
 
+  if new.source_type is distinct from old.source_type
+    or new.source_name is distinct from old.source_name
+    or new.source_signature is distinct from old.source_signature
+    or new.row_count is distinct from old.row_count
+    or new.imported_by_actor_id is distinct from old.imported_by_actor_id
+    or new.imported_at is distinct from old.imported_at
+  then
+    raise exception using
+      errcode = '23514',
+      message = 'weekly menu import and source evidence are immutable after creation';
+  end if;
+
   if new.version < old.version
     or new.version > old.version + 1
   then
@@ -316,6 +328,19 @@ begin
     raise exception using
       errcode = '23514',
       message = 'established weekly menu approval evidence is immutable across later transitions';
+  end if;
+
+  if new.weekly_menu_status is distinct from old.weekly_menu_status
+    and new.weekly_menu_status <> 'APPROVED'
+    and (
+      new.latest_approval_snapshot_id is distinct from old.latest_approval_snapshot_id
+      or new.latest_approved_by_actor_id is distinct from old.latest_approved_by_actor_id
+      or new.latest_approved_at is distinct from old.latest_approved_at
+    )
+  then
+    raise exception using
+      errcode = '23514',
+      message = 'weekly menu approval evidence changes only during approval';
   end if;
 
   if new.weekly_menu_status = old.weekly_menu_status then

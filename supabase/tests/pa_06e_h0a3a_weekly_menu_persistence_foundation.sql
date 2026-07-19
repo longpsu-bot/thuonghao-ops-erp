@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(74);
+select plan(96);
 
 select is(
   (
@@ -311,6 +311,23 @@ select is(
 
 select throws_ok(
   $$
+    update atlas_planning.weekly_menus
+    set source_type = 'SYNTHETIC_FIXTURE_CORRECTED',
+        source_name = 'PA-06E-H0A3a corrected week one',
+        source_signature = 'sha256:week-one-corrected',
+        row_count = 4,
+        imported_by_actor_id = '9a000000-0000-0000-0000-000000000003',
+        imported_at = timestamptz '2026-07-19 08:15:00+07',
+        updated_at = transaction_timestamp()
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'same-state DRAFT updates cannot rewrite established source and import evidence'
+);
+
+select throws_ok(
+  $$
     insert into atlas_planning.weekly_menus (
       weekly_menu_id, week_start, week_end, source_type, source_name,
       source_signature, weekly_menu_status, imported_by_actor_id
@@ -323,6 +340,55 @@ select throws_ok(
   '23514',
   'new weekly menus must enter as DRAFT',
   'every Weekly Menu must enter through DRAFT'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menus (
+      weekly_menu_id, week_start, week_end, source_type, source_name,
+      source_signature, weekly_menu_status, imported_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000207',
+      date '2026-08-18', date '2026-08-24', 'FIXTURE', 'invalid approved state',
+      'invalid-approved', 'APPROVED', '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new weekly menus must enter as DRAFT',
+  'a new Weekly Menu cannot enter directly as APPROVED'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menus (
+      weekly_menu_id, week_start, week_end, source_type, source_name,
+      source_signature, weekly_menu_status, imported_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000208',
+      date '2026-08-25', date '2026-08-31', 'FIXTURE', 'invalid requested state',
+      'invalid-requested', 'NEED_GENERATION_REQUESTED',
+      '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new weekly menus must enter as DRAFT',
+  'a new Weekly Menu cannot enter directly as NEED_GENERATION_REQUESTED'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menus (
+      weekly_menu_id, week_start, week_end, source_type, source_name,
+      source_signature, weekly_menu_status, imported_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000209',
+      date '2026-09-01', date '2026-09-07', 'FIXTURE', 'invalid reopened state',
+      'invalid-reopened', 'REOPENED', '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new weekly menus must enter as DRAFT',
+  'a new Weekly Menu cannot enter directly as REOPENED'
 );
 
 select throws_ok(
@@ -497,6 +563,131 @@ select throws_ok(
       weekly_menu_line_id, weekly_menu_id, school_id, service_date,
       menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
     ) values (
+      '9a000000-0000-0000-0000-000000000216',
+      '9a000000-0000-0000-0000-000000000200',
+      '9a000000-0000-0000-0000-000000000121',
+      date '2026-07-24', ' soup',
+      '9a000000-0000-0000-0000-000000000130',
+      '9a000000-0000-0000-0000-000000000001',
+      '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
+  'working menu-slot evidence rejects leading whitespace'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_lines (
+      weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+      menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000217',
+      '9a000000-0000-0000-0000-000000000200',
+      '9a000000-0000-0000-0000-000000000121',
+      date '2026-07-25', 'soup ',
+      '9a000000-0000-0000-0000-000000000130',
+      '9a000000-0000-0000-0000-000000000001',
+      '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
+  'working menu-slot evidence rejects trailing whitespace'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_lines (
+      weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+      menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000218',
+      '9a000000-0000-0000-0000-000000000200',
+      '9a000000-0000-0000-0000-000000000121',
+      date '2026-07-26', '',
+      '9a000000-0000-0000-0000-000000000130',
+      '9a000000-0000-0000-0000-000000000001',
+      '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
+  'working menu-slot evidence rejects an empty code'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_lines (
+      weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+      menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000219',
+      '9a000000-0000-0000-0000-000000000200',
+      '9a000000-0000-0000-0000-000000000121',
+      date '2026-07-27', '   ',
+      '9a000000-0000-0000-0000-000000000130',
+      '9a000000-0000-0000-0000-000000000001',
+      '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
+  'working menu-slot evidence rejects a whitespace-only code'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_lines (
+      weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+      menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+    ) values (
+      '9a000000-0000-0000-0000-000000000225',
+      '9a000000-0000-0000-0000-000000000200',
+      '9a000000-0000-0000-0000-000000000120',
+      date '2026-07-21', ' soup ',
+      '9a000000-0000-0000-0000-000000000132',
+      '9a000000-0000-0000-0000-000000000001',
+      '9a000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514',
+  'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
+  'surrounding whitespace cannot bypass the existing soup assignment uniqueness'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menu_lines
+    set menu_slot_code = ' Soup '
+    where weekly_menu_line_id = '9a000000-0000-0000-0000-000000000210'
+  $$,
+  '23514',
+  'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
+  'working-line updates cannot introduce noncanonical menu-slot storage'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from pg_constraint
+    where conname in (
+      'weekly_menu_lines_menu_slot_code_check',
+      'weekly_menu_approval_snapshot_lines_menu_slot_code_check'
+    )
+      and pg_get_constraintdef(oid) like '%lower(btrim(menu_slot_code))%'
+  ),
+  2,
+  'working and snapshot menu-slot checks both require trimmed lowercase storage'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_lines (
+      weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+      menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+    ) values (
       '9a000000-0000-0000-0000-000000000215',
       '9a000000-0000-0000-0000-000000000200',
       '9a000000-0000-0000-0000-000000000120',
@@ -520,6 +711,30 @@ select throws_ok(
   '23514',
   'stable weekly menu line identity and ownership are immutable',
   'stable Weekly Menu line ownership cannot be reassigned'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'VALIDATED',
+        source_type = 'SMUGGLED_SOURCE_TYPE'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'validation cannot rewrite the imported source type'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'VALIDATED',
+        source_name = 'smuggled source name'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'validation cannot rewrite the imported source name'
 );
 
 select lives_ok(
@@ -564,56 +779,109 @@ select throws_ok(
   'validated Weekly Menu lines cannot be deleted'
 );
 
+insert into atlas_planning.weekly_menu_approval_snapshots (
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  approved_by_actor_id, approved_at
+) values (
+  '9a000000-0000-0000-0000-000000000220',
+  '9a000000-0000-0000-0000-000000000200', 1,
+  '9a000000-0000-0000-0000-000000000002',
+  timestamptz '2026-07-19 09:00:00+07'
+);
+
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id,
+  source_row_reference
+) values
+  (
+    '9a000000-0000-0000-0000-000000000221',
+    '9a000000-0000-0000-0000-000000000220',
+    '9a000000-0000-0000-0000-000000000200', 1,
+    '9a000000-0000-0000-0000-000000000210',
+    '9a000000-0000-0000-0000-000000000120', date '2026-07-21', 'soup',
+    '9a000000-0000-0000-0000-000000000130', 'Sheet1!A2'
+  ),
+  (
+    '9a000000-0000-0000-0000-000000000222',
+    '9a000000-0000-0000-0000-000000000220',
+    '9a000000-0000-0000-0000-000000000200', 1,
+    '9a000000-0000-0000-0000-000000000211',
+    '9a000000-0000-0000-0000-000000000120', date '2026-07-21', 'savory',
+    '9a000000-0000-0000-0000-000000000131', 'Sheet1!B2'
+  );
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+      weekly_menu_approval_snapshot_line_id,
+      weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+      weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id,
+      source_row_reference
+    ) values (
+      '9a000000-0000-0000-0000-000000000223',
+      '9a000000-0000-0000-0000-000000000220',
+      '9a000000-0000-0000-0000-000000000200', 1,
+      '9a000000-0000-0000-0000-000000000210',
+      '9a000000-0000-0000-0000-000000000120', date '2026-07-21', ' soup',
+      '9a000000-0000-0000-0000-000000000130', 'Sheet1!A2'
+    )
+  $$,
+  '23514',
+  'approval snapshot lines must exactly copy active weekly menu lines',
+  'snapshot menu-slot evidence rejects leading whitespace'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+      weekly_menu_approval_snapshot_line_id,
+      weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+      weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id,
+      source_row_reference
+    ) values (
+      '9a000000-0000-0000-0000-000000000224',
+      '9a000000-0000-0000-0000-000000000220',
+      '9a000000-0000-0000-0000-000000000200', 1,
+      '9a000000-0000-0000-0000-000000000210',
+      '9a000000-0000-0000-0000-000000000120', date '2026-07-21', 'soup ',
+      '9a000000-0000-0000-0000-000000000130', 'Sheet1!A2'
+    )
+  $$,
+  '23514',
+  'approval snapshot lines must exactly copy active weekly menu lines',
+  'snapshot menu-slot evidence rejects trailing whitespace'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'APPROVED',
+        source_signature = 'smuggled-approval-signature',
+        latest_approved_by_actor_id = '9a000000-0000-0000-0000-000000000002',
+        latest_approved_at = timestamptz '2026-07-19 09:00:00+07',
+        latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000220'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'approval cannot rewrite the imported source signature'
+);
+
 select lives_ok(
-  $test$
-    do $body$
-    begin
-      insert into atlas_planning.weekly_menu_approval_snapshots (
-        weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
-        approved_by_actor_id, approved_at
-      ) values (
-        '9a000000-0000-0000-0000-000000000220',
-        '9a000000-0000-0000-0000-000000000200', 1,
-        '9a000000-0000-0000-0000-000000000002',
-        timestamptz '2026-07-19 09:00:00+07'
-      );
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'APPROVED',
+        latest_approved_by_actor_id = '9a000000-0000-0000-0000-000000000002',
+        latest_approved_at = timestamptz '2026-07-19 09:00:00+07',
+        latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000220',
+        updated_at = transaction_timestamp()
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200';
 
-      insert into atlas_planning.weekly_menu_approval_snapshot_lines (
-        weekly_menu_approval_snapshot_line_id,
-        weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
-        weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id,
-        source_row_reference
-      ) values
-        (
-          '9a000000-0000-0000-0000-000000000221',
-          '9a000000-0000-0000-0000-000000000220',
-          '9a000000-0000-0000-0000-000000000200', 1,
-          '9a000000-0000-0000-0000-000000000210',
-          '9a000000-0000-0000-0000-000000000120', date '2026-07-21', 'soup',
-          '9a000000-0000-0000-0000-000000000130', 'Sheet1!A2'
-        ),
-        (
-          '9a000000-0000-0000-0000-000000000222',
-          '9a000000-0000-0000-0000-000000000220',
-          '9a000000-0000-0000-0000-000000000200', 1,
-          '9a000000-0000-0000-0000-000000000211',
-          '9a000000-0000-0000-0000-000000000120', date '2026-07-21', 'savory',
-          '9a000000-0000-0000-0000-000000000131', 'Sheet1!B2'
-        );
-
-      update atlas_planning.weekly_menus
-      set weekly_menu_status = 'APPROVED',
-          latest_approved_by_actor_id = '9a000000-0000-0000-0000-000000000002',
-          latest_approved_at = timestamptz '2026-07-19 09:00:00+07',
-          latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000220',
-          updated_at = transaction_timestamp()
-      where weekly_menu_id = '9a000000-0000-0000-0000-000000000200';
-
-      set constraints all immediate;
-      set constraints all deferred;
-    end
-    $body$
-  $test$,
+    set constraints all immediate;
+    set constraints all deferred
+  $$,
   'VALIDATED advances to APPROVED only with one complete exact active-line snapshot'
 );
 
@@ -675,6 +943,18 @@ select throws_ok(
   'approved Weekly Menu lines cannot be edited'
 );
 
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'NEED_GENERATION_REQUESTED',
+        row_count = row_count + 1
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'Need Generation request cannot rewrite the imported row count'
+);
+
 select lives_ok(
   $$
     update atlas_planning.weekly_menus
@@ -712,6 +992,19 @@ select throws_ok(
   'reopen cannot reuse the approved version'
 );
 
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'REOPENED',
+        version = version + 1,
+        imported_by_actor_id = '9a000000-0000-0000-0000-000000000003'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'reopen cannot rewrite the importing actor'
+);
+
 select lives_ok(
   $$
     update atlas_planning.weekly_menus
@@ -739,6 +1032,23 @@ select is(
   'reopen preserves the complete established approval evidence while advancing the version'
 );
 
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set source_type = 'SYNTHETIC_REIMPORT',
+        source_name = 'PA-06E-H0A3a reopened reimport',
+        source_signature = 'sha256:week-one-reopened',
+        row_count = 3,
+        imported_by_actor_id = '9a000000-0000-0000-0000-000000000001',
+        imported_at = timestamptz '2026-07-19 08:20:00+07',
+        updated_at = transaction_timestamp()
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'same-state REOPENED updates cannot rewrite established source and import evidence'
+);
+
 select lives_ok(
   $$
     update atlas_planning.weekly_menu_lines
@@ -759,6 +1069,18 @@ select is(
   ),
   '(9a000000-0000-0000-0000-000000000130,Sheet1!A2)',
   'reopened line correction does not rewrite the prior approval snapshot'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'DRAFT',
+        imported_at = timestamptz '2026-07-19 08:30:00+07'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'return to DRAFT cannot rewrite the imported timestamp'
 );
 
 select lives_ok(
@@ -1172,6 +1494,30 @@ select throws_ok(
   '23514',
   'established weekly menu approval evidence is immutable across later transitions',
   'reopen cannot reassign established snapshot evidence'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'REOPENED',
+        version = version + 1,
+        source_name = 'smuggled approved reopen source'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000300'
+  $$,
+  '23514',
+  'weekly menu import and source evidence are immutable after creation',
+  'an APPROVED-to-REOPENED transition cannot rewrite source evidence'
+);
+
+select lives_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set weekly_menu_status = 'REOPENED',
+        version = version + 1,
+        updated_at = transaction_timestamp()
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000300'
+  $$,
+  'APPROVED advances legitimately to REOPENED with immutable evidence unchanged'
 );
 
 select ok(
