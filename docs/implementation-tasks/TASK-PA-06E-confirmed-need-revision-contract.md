@@ -29,7 +29,17 @@ The task is governed by repository documentation first, then merged migrations/t
 - Planning Need Generation, Confirmed Need, Purchase Handoff, source-governance, and unit contracts;
 - PA-06A registry and UI-contract boundary, PA-06C task evidence, and all PA-06D architecture, rule, decision, UI, and task records.
 
-No approved-document conflict was found. The existing physical model already supports stable lines, predecessor-linked revisions, separate theoretical and confirmed quantities, immutable approval snapshots, explicit reopen, and separate release. `PA-05D.v1` additionally proves direct-wholesale pass-through equality and must remain unchanged.
+The correction pass also reread the exact merged PA-04/PA-05D migrations and the product/architecture review on PR #114. Five conflicts or incompletenesses were reconciled explicitly:
+
+| Finding                                  | Governing evidence                                                                                                                                                        | Corrected PA-06E position                                                                                                                                   |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Business reuse versus physical readiness | The parent contract defines generic Confirmed Need; PA-04 requires `wholesale_order_id`, `wholesale_order_line_id`, and `wholesale_order_line_revision_id`.               | Retain the aggregate, but require H0 school-catering source generalization before H1; fake wholesale lineage is prohibited.                                 |
+| Line decision evidence                   | The parent defines `ConfirmedNeedAdjustment`; PA-02 proposes append-only evidence; PA-04 omits it and exposes only revision creator/command plus batch approval evidence. | Treat line decision evidence as a persistence gap and recommend a hybrid revision-payload plus append-only evidence model, pending H0.                      |
+| Missing validation transition            | The parent defines `VALIDATED`, `ValidateConfirmedNeeds`, `ConfirmedNeedsValidated`, and `ConfirmedNeedValidationFailed`.                                                 | Retain proposed `validate_confirmed_needs`; approval requires its exact validated batch version.                                                            |
+| Row immutability wording                 | Current revisions contain mutable `is_current` and `revision_status`.                                                                                                     | Freeze revision payload; allow controlled current/status supersession metadata; keep snapshots/releases/events/audit/downstream references fully immutable. |
+| Missing materialization boundary         | The parent defines `CreateConfirmedNeedsFromGeneration`; PA-05D only materializes wholesale pass-through.                                                                 | H0 must define `create_confirmed_needs_from_generation`; source owners never write a confirmed Planning decision.                                           |
+
+`PA-05D.v1` continues to prove direct-wholesale pass-through equality and remains unchanged.
 
 ## 3. Documentation deliverables
 
@@ -52,62 +62,100 @@ It also adds minimal navigation or compatibility references in:
 - Calculated Requirement is exact calculation evidence; Theoretical Quantity is that evidence on an exact Confirmed Need line revision.
 - Confirmed Quantity is Planning decision evidence only after explicit confirmation; a system-created value is labeled as a proposal until then.
 - Released Confirmed Quantity comes only from an immutable approved snapshot released by Planning.
-- Existing Confirmed Need line revisions carry source correction and operator adjustment; no separate confirmation aggregate is required.
-- A corrected recipe, BOM, menu, attendance count, unit conversion, source mapping, or ingredient activation creates new source/calculation evidence and a pending-review Confirmed Need revision. It does not rewrite prior facts.
-- Review is line-level; approval and release are complete-batch actions. Partial release is not supported absent new evidence and approval.
+- Existing logical Confirmed Need source-reference/adjustment children carry source and decision semantics; current PA-04 physical tables do not yet persist school-catering lineage or complete line evidence. No separate confirmation aggregate is required.
+- A corrected recipe, BOM, menu, attendance count, unit conversion, source mapping, or ingredient activation is versioned by its owner; Need Generation calculates; a controlled Planning materialization boundary creates the pending-review Confirmed Need consequence. It does not rewrite prior payloads or facts.
+- Review is line-level; validation, approval, and release are separate complete-batch actions. Partial release is not supported absent new evidence and approval.
+- Revision quantity/item/unit/source/creation payload is immutable; only current/status lifecycle metadata may change on supersession. Snapshots and downstream references are fully immutable.
 - Direct-wholesale remains exact pass-through and `PA-05D.v1` remains unchanged.
 - Purchase consequence shown in Planning is advisory only; Procurement remains authoritative for purchasable quantity, allocation, PO, and Dispatch lineage.
 - Production operational policies must be versioned and fail closed. The `0.01 kg` Planning step and `0.1 kg` advisory purchase step are fixtures only.
 - Proposed functions and capabilities in PA-06E are not additions to the canonical PA-06A registry.
+- H0 persistence/source generalization and materialization must precede H1 one-line read/preview/confirm.
 
-## 5. Later first backend slice — proposed, not authorized here
+## 5. Corrected future backend sequence — proposed, not authorized here
 
-### 5.1 Bounded scenario
+### 5.1 PA-06E-H0 — school-catering persistence/source generalization and materialization contract
 
-Use one synthetic school-catering line with:
+H0 must separately define and obtain approval for:
 
-- stable Confirmed Need line identity;
-- one exact source/calculation revision;
+- a governed physical implementation of logical `ConfirmedNeedSourceReference` using dedicated and/or typed relational children consistent with PA-02;
+- removal/generalization of the required wholesale-only source dependency for school-catering rows while preserving `PA-05D.v1` compatibility;
+- a physical line decision-evidence model for actor/time, reason, before/after, rule/source set, exact revision/batch version, command, and unchanged acceptance;
+- the Planning-owned/integration-authorized `create_confirmed_needs_from_generation` materialization boundary for initial and corrected generation results;
+- migration/backfill/rollback, private-table security, runtime ownership, grants/RLS, idempotency, locks, events/audit, and focused database tests.
+
+Source-reference options to evaluate are a dedicated child, declared typed relations, or a bounded typed child family. Decision-evidence options are an append-only child, bounded revision metadata, or the recommended hybrid. Exact physical choices remain pending. H0 must reject fake wholesale records, free-text polymorphic IDs, caller-authored table names, and generic unvalidated JSON lineage.
+
+This PR writes no H0 DDL, migration, command, grant, or test.
+
+### 5.2 PA-06E-H1 — one-line authorized read, preview, and confirmation
+
+H1 may begin only after the H0-generalized physical model exists. Its one synthetic school-catering line includes:
+
+- stable Confirmed Need line identity without wholesale lineage;
+- one exact Need Generation/source revision and governed source-reference set;
 - one authenticated Planning actor and approved school/date scope;
 - one effective versioned Planning policy using a `0.01 kg` fixture step;
 - one theoretical quantity and one proposed confirmed quantity;
-- one governed reason when the confirmed result differs;
-- one backend preview;
-- one preview-bound confirmation command;
-- one exact result, authoritative readback, receipt, event, and audit record.
+- one explicit unchanged or adjusted line decision-evidence result;
+- one backend preview and preview-bound confirmation;
+- one exact result, authoritative readback, receipt, event, audit, and append-only line decision record.
 
-### 5.2 Proposed callable boundary
+An H1 test fixture may provision the starting line locally instead of executing materialization, but only against the already generalized H0 schema. It cannot fake wholesale references.
 
-The first slice may propose only:
+### 5.3 Proposed callable/dependency boundary
+
+H0 must contract the noncanonical materialization gap:
+
+1. `atlas_api.create_confirmed_needs_from_generation(request jsonb) returns jsonb`
+
+H1 may propose only:
 
 1. `atlas_api.get_confirmed_need_review(request jsonb) returns jsonb`
 2. `atlas_api.preview_confirmed_need_confirmation(request jsonb) returns jsonb`
 3. `atlas_api.confirm_need_quantities(request jsonb) returns jsonb`
 
-Names, capabilities, schemas, ownership, and grants remain pending until the implementation task performs security review and explicitly updates the canonical registry.
+Later lifecycle work must retain:
 
-### 5.3 Preview/commit acceptance
+1. `atlas_api.validate_confirmed_needs(request jsonb) returns jsonb`
+2. `atlas_api.approve_confirmed_need_batch(request jsonb) returns jsonb`
+3. `atlas_api.release_confirmed_need_batch(request jsonb) returns jsonb`
+4. `atlas_api.reopen_confirmed_need_batch(request jsonb) returns jsonb`
+
+The review/lifecycle family therefore has seven functions; materialization is a separate H0 prerequisite. All names, capabilities, schemas, ownership, grants, and registry entries remain pending.
+
+### 5.4 Preview/commit acceptance
 
 The later confirmation command must:
 
 - require the exact line revision, calculation/source revision, policy version, expected batch version, preview hash/token, idempotency key, and actor scope used by preview;
 - reject stale, mismatched, ambiguous, invalid, or unauthorized input without partial writes;
 - recompute or verify authoritative results inside the backend boundary;
-- create or bind the intended decision revision according to the approved material-revision policy;
+- create a successor only for a material payload change, or bind append-only unchanged-acceptance evidence to the exact current Draft revision;
 - increment the batch concurrency version exactly once for one committed command;
-- preserve unchanged lines and all historical revisions;
+- preserve unchanged lines and every historical revision payload while allowing controlled current/status supersession metadata;
 - return an exact receipt and authoritative readback that match what the UI showed;
-- record actor, reason, request hash, predecessor/current identity, event, and audit evidence.
+- record actor/time, reason, before/after, rule/source set, batch/revision versions, request hash, predecessor/current identity, unchanged/adjusted acceptance kind, event, and audit evidence.
 
-### 5.4 Explicit exclusions from the first slice
+### 5.5 Explicit exclusions from H1
 
-The first slice does not include batch approval, batch release, CMD-03, Purchase Handoff, Procurement allocation, PO, Dispatch, downstream correction, direct-wholesale behavior, production data, live queues, UI, or deployment.
+H1 does not include materialization execution, complete-batch validation, approval, release, CMD-03, Purchase Handoff, Procurement allocation, PO, Dispatch, downstream correction, direct-wholesale behavior, production data, live queues, UI, or deployment.
 
 ## 6. Future implementation test blueprint
 
 A later approved backend task must provide focused automated tests for:
 
-### 6.1 Calculation and policy
+### 6.1 H0 persistence and materialization
+
+- current merged schema assertions prove all three required Confirmed Need source fields are wholesale-specific;
+- school-catering materialization cannot use fake wholesale records, free-text polymorphic IDs, caller-authored table names, or generic unvalidated JSON lineage;
+- governed source references bind exact generation/source revisions through typed relational constraints;
+- `create_confirmed_needs_from_generation` creates/refreshes Draft lines and non-authoritative proposals but never confirms Planning authority;
+- corrected generation creates explicit successor Draft revisions or new stable lines without changing old payloads;
+- append-only line evidence captures changed and unchanged acceptance with actor/time, before/after, reason, rule/source, exact versions, and command; and
+- PA-05D direct-wholesale schema, functions, equality, and tests remain unchanged.
+
+### 6.2 Calculation and policy
 
 - exact high-scale theoretical calculation remains distinguishable from Planning operational precision;
 - `0.01 kg` fixture quantization is deterministic and does not derive from numeric column scale;
@@ -115,16 +163,17 @@ A later approved backend task must provide focused automated tests for:
 - the policy version used by preview is the policy version committed;
 - the `0.1 kg` purchase consequence is visibly advisory and creates no Procurement fact.
 
-### 6.2 Revision and history
+### 6.3 Revision and history
 
 - a material operator change creates the expected predecessor-linked successor and supersedes only the prior current revision;
 - a recipe or BOM correction creates new calculation evidence and a pending-review successor;
-- prior approved and released revisions and snapshot lines remain byte-for-byte stable;
+- prior revision quantity/item/unit/source/predecessor/creation/command payload remains unchanged, while controlled `is_current`/status metadata may transition on supersession;
+- approval snapshots, snapshot lines, release evidence, receipts, events, audit, and downstream references remain fully unchanged;
 - accepting an unchanged proposal follows the approved no-noise rule and still records explicit decision evidence;
 - exact zero remains traceable and follows the approved zero-release policy;
 - stable line identity is preserved when business identity is unchanged and is not reused when ingredient or scope identity changes.
 
-### 6.3 Preview, concurrency, and idempotency
+### 6.4 Preview, concurrency, and idempotency
 
 - preview and commit return the same quantities, rule version, reason consequence, and display-ready exact value;
 - an expected-batch-version mismatch rejects with no writes;
@@ -133,7 +182,7 @@ A later approved backend task must provide focused automated tests for:
 - same idempotency key plus different request returns conflict;
 - one multi-line confirmation, when later approved, increments the batch version once and changes only intended lines.
 
-### 6.4 Authorization and safe errors
+### 6.5 Authorization and safe errors
 
 - browser/authenticated roles have no direct private-table access;
 - read, preview, and confirm each require their exact capability and current effective school/date scope;
@@ -141,8 +190,11 @@ A later approved backend task must provide focused automated tests for:
 - safe error envelopes contain no SQL text, private schema name, policy internals, or confidential row data;
 - function ownership, fixed empty search path, grants, and absence of dynamic SQL meet the security contract.
 
-### 6.5 Batch and downstream gates for later slices
+### 6.6 Validation, batch, and downstream gates for later slices
 
+- successful validation produces an exact `VALIDATED` batch version and `ConfirmedNeedsValidated` evidence;
+- failed validation leaves the batch unapproved and returns/persists governed issues with `ConfirmedNeedValidationFailed` under the later command contract;
+- approval requires the exact validated version/line/decision set and rechecks critical invariants;
 - stale, invalid, or unreviewed lines block full-batch approval;
 - approval snapshots exact current revisions and increments batch version once;
 - release consumes the exact approved snapshot and is separate from approval;
@@ -162,33 +214,40 @@ A later approved backend task must provide focused automated tests for:
 - [x] Include the `10.234 kg` / `10.20 kg` / recipe revision 7 / Confirmed Need revision 3 / later `10.654 kg` example.
 - [x] Preserve direct-wholesale pass-through and CMD-03 compatibility.
 - [x] Define WYSIWYG preview/commit, proposed API delta, authorization, errors/recovery, Vietnamese-term status, first slice, and tests.
-- [x] Record eighteen decision rows and distinguish approved from pending choices.
+- [x] Record twenty-six decision rows and distinguish approved from pending physical/product choices.
+- [x] Separate reusable business semantics from wholesale-specific physical-schema readiness and prohibit fake wholesale lineage.
+- [x] Identify governed source-reference and line decision-evidence persistence as H0 prerequisites.
+- [x] Define unchanged-proposal acceptance through append-only evidence without an identical successor revision.
+- [x] Restore `validate_confirmed_needs` for the approved `VALIDATED` transition.
+- [x] Separate immutable revision payload from controlled current/status lifecycle metadata.
+- [x] Restore `create_confirmed_needs_from_generation` materialization responsibility.
+- [x] Sequence H0 before H1 and leave validation/approval/release/CMD-03 for later tasks.
 - [x] Add only the three requested documents and five minimal cross-references.
 - [x] Make no executable, registry, package, live-system, or deployment change.
 
 ## 8. Validation record
 
-Validation on 2026-07-19:
+Correction-pass validation on 2026-07-19:
 
-- `pnpm ops:workspace` — passed on the exact task branch and canonical origin; expected working-tree changes were reported.
-- `pnpm install --frozen-lockfile` — passed; lockfile was already up to date.
+- `pnpm ops:workspace` — passed on the exact existing task branch and canonical origin; expected working-tree changes were reported.
+- `pnpm install --frozen-lockfile` — passed; the verified lockfile was already up to date.
 - `pnpm format` — passed; every file in the routine repository format scope matched Prettier.
-- explicit Prettier `--check` of the three new PA-06E files — passed after formatting the two new files that required it.
-- `git diff --check` — passed.
-- relative Markdown-link validation — passed for all eight changed Markdown files.
-- targeted content assertions — passed for exactly eight Markdown changes, eighteen decision rows, nine correction types, five timing windows, six proposed APIs, existing-aggregate choice, quantity separation, direct-wholesale equality, source-revision behavior, immutable prior facts, unchanged CMD-03 boundary, Procurement ownership, and pending-decision labels.
+- explicit Prettier `--check` of all three corrected PA-06E files — passed after formatting.
+- `git diff --check` and `git diff --cached --check` — passed.
+- relative Markdown-link validation — passed for all three corrected Markdown files.
+- targeted correction assertions — passed for exactly three Markdown changes, twenty-six decision rows, eight API-gap entries, and all five review corrections: wholesale-specific schema limits/fake-lineage prohibition, governed source-reference prerequisite, explicit changed/unchanged line decision evidence, retained validation command/events, immutable payload versus lifecycle metadata, Need Generation materialization, H0-before-H1 order, unchanged `PA-05D.v1`, noncanonical APIs, and documentation-only scope.
 
 The routine full frontend format/typecheck/test/build suite remains owned by GitHub Actions under `Frontend CI / Format, typecheck, test, build`.
 
 ## 9. Prohibited changes
 
-Do not add or modify SQL, migrations, functions, grants, RLS, generated types, React, Storybook, packages, Retool, Supabase project configuration, production data, OPS v1, credentials, deployment, or the canonical API registry. Do not implement approval, release, handoff, Procurement, PO, Dispatch, or direct-wholesale behavior.
+Do not add or modify SQL, migrations, functions, grants, RLS, generated types, React, Storybook, packages, Retool, Supabase project configuration, production data, OPS v1, credentials, deployment, or the canonical API registry. Do not implement H0, H1, materialization, validation, approval, release, handoff, Procurement, PO, Dispatch, or direct-wholesale behavior.
 
-Do not introduce a new business aggregate, generic decision framework, partial release, silently mutable released document, or cross-domain workflow without a separately approved ADR or task.
+Do not introduce a new business aggregate, fake wholesale lineage, polymorphic free-text source IDs, caller-authored table names, generic unvalidated JSON lineage, generic decision framework, partial release, silently mutable released document, or cross-domain workflow without a separately approved ADR or task.
 
 ## 10. Publication boundary
 
-Publish this task as a draft pull request titled `PA-06E: Define Confirmed Need revision and source-correction contract`. The pull request must remain draft, unmerged, and undeployed. Its description must state that PA-06D is the merged prerequisite; calculated and confirmed quantities remain distinct; existing Confirmed Need is retained; no Planning Quantity Confirmation is added; direct-wholesale is unchanged; no backend or UI behavior changed; no Supabase, Retool, or production state changed; and proposed APIs are not canonical registry entries.
+Publish this task as a draft pull request titled `PA-06E: Define Confirmed Need revision and source-correction contract`. The pull request must remain draft, unmerged, and undeployed. Its description must state that PA-06D is the merged prerequisite; calculated and confirmed quantities remain distinct; existing Confirmed Need is retained; current physical persistence is wholesale-specific; H0 source/evidence generalization and materialization must precede H1; validation is restored; no Planning Quantity Confirmation is added; direct-wholesale is unchanged; no backend or UI behavior changed; no Supabase, Retool, or production state changed; and proposed APIs are not canonical registry entries.
 
 ## 11. Migration and rollback effect
 
