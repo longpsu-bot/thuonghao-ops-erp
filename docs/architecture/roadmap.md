@@ -33,7 +33,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Planning integration and operator-workflow review
 - 🟡 PA-06D quantity truth, operational precision, rounding, rebalancing, and write-fidelity documentation — [contract](pa-06d-quantity-truth-rounding-rebalancing-contract.md); implementation and unresolved product decisions remain unapproved
 - 🟡 PA-06E Confirmed Need review, adjustment, revision, and source-correction documentation — [contract](pa-06e-confirmed-need-review-adjustment-revision-contract.md) and [decision](../decisions/decision-pa-06e-confirmed-need-source-correction.md); implementation and pending product decisions remain unapproved
-- 🟡 PA-06E-H0 school-catering persistence and materialization architecture — [contract](pa-06e-h0-school-catering-persistence-and-materialization-contract.md), [decision](../decisions/decision-pa-06e-h0-source-lineage-and-decision-evidence.md), and [task](../implementation-tasks/TASK-PA-06E-H0-school-catering-persistence-materialization.md); H0A/H0B/H0C implementation, H1, and unresolved physical/product decisions remain unapproved
+- 🟡 PA-06E-H0 school-catering persistence and materialization architecture — [contract](pa-06e-h0-school-catering-persistence-and-materialization-contract.md), [decision](../decisions/decision-pa-06e-h0-source-lineage-and-decision-evidence.md), and [task](../implementation-tasks/TASK-PA-06E-H0-school-catering-persistence-materialization.md); the bounded [H0A1 school/customer/location foundation](../implementation-tasks/TASK-PA-06E-H0A1-school-customer-location-foundation.md) is implemented pending review, while later H0A/H0B/H0C work, H1, and remaining physical/product decisions remain unapproved
 
 Planning completion boundary:
 

@@ -152,9 +152,13 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-None of the tasks below is authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review.
+None of the tasks below was authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 is subsequently authorized by Issue #117 and tracked in [TASK-PA-06E-H0A1](TASK-PA-06E-H0A1-school-customer-location-foundation.md); every later task remains unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
+
+**Status:** Implemented by [TASK-PA-06E-H0A1](TASK-PA-06E-H0A1-school-customer-location-foundation.md) under Issue #117; pending review and merge
+
+**Decision:** [Decision PA-06E-H0A1 — School and Delivery-Location Ownership](../decisions/decision-pa-06e-h0a1-school-delivery-location-ownership.md)
 
 **Owner:** Admin / Master Data
 
@@ -164,7 +168,9 @@ None of the tasks below is authorized by this documentation PR. Each requires it
 
 **Prohibited:** Menu, Attendance, Recipe, Need Generation, Confirmed Need, commands, production data, hosted changes.
 
-**Blocking decisions:** School/Customer relation, customer-type generalization, location ownership, service-date scope, organization/site ownership.
+**Resolved for H0A1:** School/Customer relation, customer-type generalization, same-customer default-location ownership, and relational `SCHOOL` scope.
+
+**Still outside H0A1:** service-date scope, downstream operational identity, and every later Planning/materialization decision.
 
 ### H0A2 — Recipe/BOM immutable reference foundation
 
