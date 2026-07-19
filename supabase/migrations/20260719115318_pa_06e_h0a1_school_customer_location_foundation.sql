@@ -148,6 +148,10 @@ create index actor_scopes_school_idx
   on atlas_core.actor_scopes (school_id)
   where school_id is not null;
 
+comment on table atlas_admin.customers is
+  'Admin-owned customer master reference supporting WHOLESALE and SCHOOL_CATERING classifications.';
+comment on table atlas_core.actor_scopes is
+  'Typed actor authorization scopes for GLOBAL, CUSTOMER, DELIVERY_LOCATION, DISPATCH_TRIP, and SCHOOL targets.';
 comment on table atlas_admin.school_types is
   'Private school classification reference data. H0A1 adds structure only and seeds no rows.';
 comment on table atlas_admin.schools is
