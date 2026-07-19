@@ -12,6 +12,8 @@
 
 **Decisions:** [PA-06D Quantity Truth and Write Fidelity](../decisions/decision-pa-06d-quantity-truth-and-write-fidelity.md)
 
+**Confirmed Need resolution:** [PA-06E Confirmed Need Review, Adjustment, Revision, and Source Correction](pa-06e-confirmed-need-review-adjustment-revision-contract.md) resolves the pending insertion-point recommendation by retaining the existing Confirmed Need revision; it adds no Quantity Decision aggregate and authorizes no implementation.
+
 ## 1. Outcome and boundary
 
 This contract establishes the business meanings and invariants that must exist before Atlas implements quantity review, purchase quantization, supplier allocation, rebalancing, or document release. It does not approve a SQL design, RPC, migration, React implementation, Retool change, deployment, or production write.
@@ -324,7 +326,7 @@ CMD-03 creates the handoff already released to Procurement, so the accepted API 
 
 ### 9.4 Smallest follow-ups
 
-**Preferred future insertion point, not approved:** a separately approved PA-06D-H1 architecture and backend task would attach a versioned Quantity Decision preview/confirmation to a Confirmed Need line/revision. CMD-03 would then consume the confirmed Quantity Decision when releasing the Purchase Handoff. That task would require authorized detail/discovery read, effective rule resolution, backend preview, preview-bound confirmation, exact ticks, receipt/event/audit, authoritative readback, and an explicit CMD-03 contract/registry change. PA-06D recommends this location but does not approve the architecture or implementation.
+**Insertion-point resolution:** PA-06E retains the versioned Confirmed Need line revision itself as the Planning decision boundary; it does not add a separate Quantity Decision. PA-06E proposes a later authorized review read, backend preview, preview-bound confirmation, receipt/event/audit, and authoritative readback. CMD-03 and the canonical registry remain unchanged until a separate implementation contract is approved.
 
 **Alternative requiring architecture change:** define an explicit new intermediate object between Confirmed Need and Purchase Handoff, then amend the domain lifecycle, command contracts, registry, lineage, authorization, events, audit, tests, and UI. This is not an implementation shortcut and is not approved by PA-06D.
 

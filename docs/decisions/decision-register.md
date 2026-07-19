@@ -26,6 +26,8 @@ This register records approved project and architecture decisions. Detailed deci
 
 PA-06D approved directions and unresolved product choices are tracked separately in [Decision PA-06D — Quantity Truth and Write Fidelity](decision-pa-06d-quantity-truth-and-write-fidelity.md). Pending PA-06D rows are not accepted project decisions.
 
+PA-06E approved directions and unresolved product choices are tracked separately in [Decision PA-06E — Confirmed Need Source Correction](decision-pa-06e-confirmed-need-source-correction.md). The existing Confirmed Need revision is retained and no Planning confirmation aggregate is introduced; pending PA-06E rows and proposed APIs are not accepted project decisions or canonical registry entries.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
