@@ -46,9 +46,9 @@ The migration is additive and seeds no production row. Before operational data o
 
 - `pnpm install --frozen-lockfile`: pass; dependencies were already current.
 - local Supabase reset with `--no-seed`: pass; every migration replayed through H0A2.
-- focused `supabase test db supabase/tests/pa_06e_h0a2_recipe_bom_immutable_reference_foundation.sql --local`: pass, 77/77 assertions.
+- focused `supabase test db supabase/tests/pa_06e_h0a2_recipe_bom_immutable_reference_foundation.sql --local`: pass, 88/88 assertions after the bounded governance correction.
 - `supabase db diff --local --schema atlas_admin,atlas_core`: pass; no schema changes found after reset.
-- affected-schema database lint: no errors. It reports one pre-existing warning in `atlas_core.pa_05d_safe_date` about an `IMMUTABLE` routine containing a `STABLE` expression; H0A2 does not alter that function.
+- affected-schema database lint: pass; no errors or warnings.
 - focused catalog assertions: all 15 H0A2 foreign keys use `ON DELETE RESTRICT` and have matching leading-column indexes; the five relations are owned by `atlas_owner`, have RLS enabled and forced, and have zero policies; exposed relation/function ACL entries and H0A2 sequences are zero; the exact 18-function `atlas_api` registry and zero role/capability seed counts are unchanged.
 
 Formatting, whitespace, publication, and GitHub Actions results are recorded on the draft pull request after they run.

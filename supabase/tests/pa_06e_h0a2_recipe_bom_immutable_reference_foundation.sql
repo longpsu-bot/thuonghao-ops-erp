@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(77);
+select plan(88);
 
 select is(
   (
@@ -183,11 +183,17 @@ insert into atlas_core.actors (
   actor_id,
   actor_type,
   display_name
-) values (
-  '8a000000-0000-0000-0000-000000000001',
-  'HUMAN',
-  'PA-06E-H0A2 recipe administrator'
-);
+) values
+  (
+    '8a000000-0000-0000-0000-000000000001',
+    'HUMAN',
+    'PA-06E-H0A2 recipe administrator'
+  ),
+  (
+    '8a000000-0000-0000-0000-000000000002',
+    'HUMAN',
+    'PA-06E-H0A2 alternate recipe administrator'
+  );
 
 insert into atlas_admin.school_types (
   school_type_id,
@@ -479,6 +485,49 @@ insert into atlas_admin.recipes (
 
 select throws_ok(
   $$
+    update atlas_admin.recipes
+    set dish_id = '8a000000-0000-0000-0000-000000000101'
+    where recipe_id = '8a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'recipe dish and school type scope are immutable',
+  'a stable Recipe root cannot be reassigned to another Dish'
+);
+
+select throws_ok(
+  $$
+    update atlas_admin.recipes
+    set school_type_id = '8a000000-0000-0000-0000-000000000011'
+    where recipe_id = '8a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'recipe dish and school type scope are immutable',
+  'a general Recipe cannot be reassigned to a typed SchoolType scope'
+);
+
+select throws_ok(
+  $$
+    update atlas_admin.recipes
+    set school_type_id = null
+    where recipe_id = '8a000000-0000-0000-0000-000000000203'
+  $$,
+  '23514',
+  'recipe dish and school type scope are immutable',
+  'a typed Recipe cannot be reassigned to the general scope'
+);
+
+select lives_ok(
+  $$
+    update atlas_admin.recipes
+    set version = version + 1,
+        updated_at = timestamptz '2026-07-19 00:30:00+00'
+    where recipe_id = '8a000000-0000-0000-0000-000000000205'
+  $$,
+  'approved Recipe version and timestamp maintenance remains available'
+);
+
+select throws_ok(
+  $$
     insert into atlas_admin.recipe_versions (
       recipe_version_id,
       recipe_id,
@@ -517,6 +566,99 @@ select throws_ok(
   '23514',
   'new row for relation "recipe_versions" violates check constraint "recipe_versions_basis_portions_check"',
   'Recipe basis portions must be positive'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_admin.recipe_versions (
+      recipe_version_id,
+      recipe_id,
+      version_number,
+      basis_portions,
+      recipe_version_status,
+      created_by_actor_id,
+      validated_by_actor_id,
+      validated_at
+    ) values (
+      '8a000000-0000-0000-0000-000000000302',
+      '8a000000-0000-0000-0000-000000000200',
+      20,
+      100,
+      'VALIDATED',
+      '8a000000-0000-0000-0000-000000000001',
+      '8a000000-0000-0000-0000-000000000001',
+      timestamptz '2026-07-19 00:40:00+00'
+    )
+  $$,
+  '23514',
+  'new recipe versions must enter as DRAFT',
+  'a RecipeVersion cannot be inserted directly as VALIDATED'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_admin.recipe_versions (
+      recipe_version_id,
+      recipe_id,
+      version_number,
+      basis_portions,
+      recipe_version_status,
+      created_by_actor_id,
+      validated_by_actor_id,
+      validated_at,
+      released_by_actor_id,
+      released_at
+    ) values (
+      '8a000000-0000-0000-0000-000000000303',
+      '8a000000-0000-0000-0000-000000000200',
+      21,
+      100,
+      'RELEASED_FOR_PLANNING',
+      '8a000000-0000-0000-0000-000000000001',
+      '8a000000-0000-0000-0000-000000000001',
+      timestamptz '2026-07-19 00:41:00+00',
+      '8a000000-0000-0000-0000-000000000001',
+      timestamptz '2026-07-19 00:42:00+00'
+    )
+  $$,
+  '23514',
+  'new recipe versions must enter as DRAFT',
+  'a RecipeVersion cannot be inserted directly as RELEASED_FOR_PLANNING'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_admin.recipe_versions (
+      recipe_version_id,
+      recipe_id,
+      version_number,
+      basis_portions,
+      recipe_version_status,
+      created_by_actor_id,
+      validated_by_actor_id,
+      validated_at,
+      released_by_actor_id,
+      released_at,
+      locked_by_actor_id,
+      locked_at
+    ) values (
+      '8a000000-0000-0000-0000-000000000304',
+      '8a000000-0000-0000-0000-000000000200',
+      22,
+      100,
+      'LOCKED',
+      '8a000000-0000-0000-0000-000000000001',
+      '8a000000-0000-0000-0000-000000000001',
+      timestamptz '2026-07-19 00:43:00+00',
+      '8a000000-0000-0000-0000-000000000001',
+      timestamptz '2026-07-19 00:44:00+00',
+      '8a000000-0000-0000-0000-000000000001',
+      timestamptz '2026-07-19 00:45:00+00'
+    )
+  $$,
+  '23514',
+  'new recipe versions must enter as DRAFT',
+  'a RecipeVersion cannot be inserted directly as LOCKED'
 );
 
 insert into atlas_admin.recipe_versions (
@@ -591,6 +733,17 @@ select throws_ok(
   '23505',
   'duplicate key value violates unique constraint "recipe_lines_recipe_line_code_key"',
   'RecipeLine codes are unique within one Recipe'
+);
+
+select throws_ok(
+  $$
+    update atlas_admin.recipe_lines
+    set recipe_id = '8a000000-0000-0000-0000-000000000203'
+    where recipe_line_id = '8a000000-0000-0000-0000-000000000402'
+  $$,
+  '23514',
+  'stable recipe line ownership is immutable',
+  'an unused stable RecipeLine cannot be reassigned to another Recipe'
 );
 
 select throws_ok(
@@ -794,6 +947,21 @@ select lives_ok(
 
 select throws_ok(
   $$
+    update atlas_admin.recipe_versions
+    set recipe_version_status = 'RELEASED_FOR_PLANNING',
+        validated_by_actor_id = '8a000000-0000-0000-0000-000000000002',
+        validated_at = timestamptz '2026-07-19 01:00:30+00',
+        released_by_actor_id = '8a000000-0000-0000-0000-000000000001',
+        released_at = timestamptz '2026-07-19 01:05:00+00'
+    where recipe_version_id = '8a000000-0000-0000-0000-000000000310'
+  $$,
+  '23514',
+  'established recipe validation evidence is immutable',
+  'VALIDATED to RELEASED preserves its original validation actor and timestamp'
+);
+
+select throws_ok(
+  $$
     update atlas_admin.recipe_line_revisions
     set quantity_per_basis = 999
     where recipe_line_revision_id = '8a000000-0000-0000-0000-000000000510'
@@ -823,6 +991,21 @@ select is(
   ),
   1,
   'one Recipe has exactly one current released RecipeVersion'
+);
+
+select throws_ok(
+  $$
+    update atlas_admin.recipe_versions
+    set recipe_version_status = 'LOCKED',
+        released_by_actor_id = '8a000000-0000-0000-0000-000000000002',
+        released_at = timestamptz '2026-07-19 01:06:00+00',
+        locked_by_actor_id = '8a000000-0000-0000-0000-000000000001',
+        locked_at = timestamptz '2026-07-19 01:07:00+00'
+    where recipe_version_id = '8a000000-0000-0000-0000-000000000310'
+  $$,
+  '23514',
+  'established recipe release evidence is immutable',
+  'RELEASED to LOCKED preserves its original release actor and timestamp'
 );
 
 insert into atlas_admin.recipe_versions (
@@ -1242,6 +1425,20 @@ select is(
   'successor release preserves the one-current-release invariant'
 );
 
+select ok(
+  (
+    select validated_by_actor_id = '8a000000-0000-0000-0000-000000000001'
+      and validated_at = timestamptz '2026-07-19 01:00:00+00'
+      and released_by_actor_id = '8a000000-0000-0000-0000-000000000001'
+      and released_at = timestamptz '2026-07-19 01:05:00+00'
+      and locked_by_actor_id = '8a000000-0000-0000-0000-000000000001'
+      and locked_at = timestamptz '2026-07-19 02:10:00+00'
+    from atlas_admin.recipe_versions
+    where recipe_version_id = '8a000000-0000-0000-0000-000000000310'
+  ),
+  'automatic predecessor locking preserves validation and release evidence and adds only lock evidence'
+);
+
 select throws_ok(
   $$
     update atlas_admin.recipe_versions
@@ -1274,8 +1471,8 @@ select throws_ok(
     where recipe_version_id = '8a000000-0000-0000-0000-000000000310'
   $$,
   '23514',
-  'locked recipe versions are immutable',
-  'LOCKED RecipeVersions never become editable again'
+  'established recipe release evidence is immutable',
+  'LOCKED RecipeVersions reject attempts to rewrite historical lifecycle evidence'
 );
 
 insert into atlas_admin.recipe_versions (

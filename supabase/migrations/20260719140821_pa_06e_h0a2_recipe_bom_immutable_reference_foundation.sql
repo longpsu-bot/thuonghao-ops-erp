@@ -300,6 +300,28 @@ as $$
 declare
   current_release atlas_admin.recipe_versions%rowtype;
 begin
+  if tg_table_name = 'recipes' then
+    if new.dish_id is distinct from old.dish_id
+      or new.school_type_id is distinct from old.school_type_id
+    then
+      raise exception using
+        errcode = '23514',
+        message = 'recipe dish and school type scope are immutable';
+    end if;
+
+    return new;
+  end if;
+
+  if tg_op = 'INSERT' then
+    if new.recipe_version_status <> 'DRAFT' then
+      raise exception using
+        errcode = '23514',
+        message = 'new recipe versions must enter as DRAFT';
+    end if;
+
+    return new;
+  end if;
+
   if tg_op = 'DELETE' then
     if old.recipe_version_status in ('RELEASED_FOR_PLANNING', 'LOCKED') then
       raise exception using
@@ -319,6 +341,39 @@ begin
     raise exception using
       errcode = '23514',
       message = 'recipe version identity and predecessor are immutable';
+  end if;
+
+  if old.validated_by_actor_id is not null
+    and (
+      new.validated_by_actor_id is distinct from old.validated_by_actor_id
+      or new.validated_at is distinct from old.validated_at
+    )
+  then
+    raise exception using
+      errcode = '23514',
+      message = 'established recipe validation evidence is immutable';
+  end if;
+
+  if old.released_by_actor_id is not null
+    and (
+      new.released_by_actor_id is distinct from old.released_by_actor_id
+      or new.released_at is distinct from old.released_at
+    )
+  then
+    raise exception using
+      errcode = '23514',
+      message = 'established recipe release evidence is immutable';
+  end if;
+
+  if old.locked_by_actor_id is not null
+    and (
+      new.locked_by_actor_id is distinct from old.locked_by_actor_id
+      or new.locked_at is distinct from old.locked_at
+    )
+  then
+    raise exception using
+      errcode = '23514',
+      message = 'established recipe lock evidence is immutable';
   end if;
 
   if old.recipe_version_status = 'LOCKED' and new is distinct from old then
@@ -397,6 +452,16 @@ declare
   target_version atlas_admin.recipe_versions%rowtype;
   predecessor_revision atlas_admin.recipe_line_revisions%rowtype;
 begin
+  if tg_table_name = 'recipe_lines' then
+    if new.recipe_id is distinct from old.recipe_id then
+      raise exception using
+        errcode = '23514',
+        message = 'stable recipe line ownership is immutable';
+    end if;
+
+    return new;
+  end if;
+
   if tg_op = 'UPDATE' or tg_op = 'DELETE' then
     raise exception using
       errcode = '23514',
@@ -572,9 +637,17 @@ begin
 end
 $$;
 
-create trigger recipe_versions_lifecycle_guard
-before update or delete on atlas_admin.recipe_versions
+create trigger recipes_immutable_scope_guard
+before update on atlas_admin.recipes
 for each row execute function atlas_admin.pa_06e_h0a2_recipe_version_lifecycle_guard();
+
+create trigger recipe_versions_lifecycle_guard
+before insert or update or delete on atlas_admin.recipe_versions
+for each row execute function atlas_admin.pa_06e_h0a2_recipe_version_lifecycle_guard();
+
+create trigger recipe_lines_immutable_ownership_guard
+before update on atlas_admin.recipe_lines
+for each row execute function atlas_admin.pa_06e_h0a2_recipe_line_revision_guard();
 
 create trigger recipe_line_revisions_immutable_lineage_guard
 before insert or update or delete on atlas_admin.recipe_line_revisions
