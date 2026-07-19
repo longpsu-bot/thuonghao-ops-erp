@@ -24,6 +24,8 @@ This register records approved project and architecture decisions. Detailed deci
 | D-018 | Released operational documents are immutable snapshots. | Accepted | Future data or rule changes must not silently rewrite commitments or history. |
 | D-019 | Use UI-led, contract-constrained design before Supabase schema implementation. | Accepted | Workflow and UI prototypes should expose required states, actions, warnings, and data contracts before database tables and RPCs are finalized. This prevents premature schema design while avoiding UI-only logic that recreates Retool-style complexity. |
 
+PA-06D approved directions and unresolved product choices are tracked separately in [Decision PA-06D — Quantity Truth and Write Fidelity](decision-pa-06d-quantity-truth-and-write-fidelity.md). Pending PA-06D rows are not accepted project decisions.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

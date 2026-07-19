@@ -31,6 +31,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Purchase Handoff contract
 - ✅ Purchase Handoff foundation
 - ✅ Planning integration and operator-workflow review
+- 🟡 PA-06D quantity truth, operational precision, rounding, rebalancing, and write-fidelity documentation — [contract](pa-06d-quantity-truth-rounding-rebalancing-contract.md); implementation and unresolved product decisions remain unapproved
 
 Planning completion boundary:
 

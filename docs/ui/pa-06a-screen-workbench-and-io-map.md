@@ -3,6 +3,7 @@
 **Status:** Proposed documentation contract; pending review
 **Canonical API registry:** [PA-06A Application Connection Contract](../architecture/pa-06a-application-connection-contract.md#6-canonical-atlas-api-registry)
 **Formal read-gap register owner:** This document
+**PA-06D quantity extension:** [Requirement Quantity Review and Supplier Allocation Workbenches](pa-06d-requirement-allocation-workbench-spec.md); this extension does not close PA-06A read gaps or authorize implementation
 
 ## 1. Exact frontend and prototype artifacts
 
