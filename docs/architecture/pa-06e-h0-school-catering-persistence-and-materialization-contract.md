@@ -37,14 +37,14 @@ confirmed_need_lines.wholesale_order_line_id
 confirmed_need_line_revisions.wholesale_order_line_revision_id
 ```
 
-The selected proposal is the smallest design that preserves typed integrity and `PA-05D.v1` compatibility:
+The corrected proposal is the smallest design that preserves the active operational confirmation intent, atomic calculation trace, typed integrity, and `PA-05D.v1` compatibility:
 
-1. Persist the missing school-catering source and calculation prerequisites in separate H0A tasks.
-2. Generalize the existing Confirmed Need batch, stable-line, and revision rows with inline typed source alternatives and row-local exactly-one-source constraints.
-3. Give every atomic theoretical source contribution an immutable line and an explicit one-to-one predecessor when corrected.
-4. Keep authoritative quantities and exact source on immutable line revisions; append human decision evidence in a private child and retain one current-decision pointer on the stable line.
-5. Implement materialization separately in H0C. It writes Draft proposals and source lineage only; it never records a Planning decision, approval, release, handoff, Procurement fact, or Dispatch fact.
-6. Make a production Planning precision policy a strict H1 prerequisite, not an H0 materialization default.
+1. Persist the missing school-catering source and calculation prerequisites in separate H0A tasks. Atomic Theoretical Need lines remain the calculation grain.
+2. Select, subject to explicit product-owner approval, one operational Confirmed Need stable line per typed service-date, school/destination, ingredient, controlled-unit, and approved-scope tuple. One atomic contribution is **not** one Confirmed Need line.
+3. Give each immutable school-catering line revision a private typed contribution-membership snapshot containing every exact Theoretical Need line included in its theoretical total.
+4. Enforce operational identity, exact released-run membership, membership ownership, and total-equals-contributions in PostgreSQL through composite keys/FKs, partial unique indexes, and mandatory deferred constraint triggers. Command checks are defense in depth only.
+5. Implement materialization separately in H0C. It groups a complete released run into Draft operational proposals and immutable memberships; it never records a Planning decision, approval, release, handoff, Procurement fact, or Dispatch fact.
+6. Create Planning policy roots/revisions in H1A, then create decision-evidence persistence with a mandatory policy FK and current-decision integrity in H1B1. Only H1B2 may expose authorized read, preview, and confirmation.
 
 Every new physical name, function name, capability, event, error, role, and constraint in this document is **proposed for review** unless explicitly identified as an already approved baseline. Nothing here modifies the canonical PA-06A 18-function registry.
 
@@ -53,7 +53,7 @@ Every new physical name, function name, capability, event, error, role, and cons
 | Layer               | PA-06E-H0 placement                                                                                                                                                                                             |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Mission             | Preserve explainable school-catering need from controlled inputs through a Draft Planning review boundary.                                                                                                      |
-| Business capability | Persist governed inputs and calculation output; materialize exact calculated contributions for Planning review.                                                                                                 |
+| Business capability | Persist governed inputs and atomic calculation output; materialize grouped operational requirements with exact contribution membership for Planning review.                                                     |
 | Business domain     | Admin owns school/customer/location references; Recipe owns Recipe/BOM versions; Planning owns Menu, Attendance, readiness, Need Generation, and Confirmed Need.                                                |
 | Business object     | Existing School/reference objects, Weekly Menu, Attendance, Planning Input Set, Need Generation run, Theoretical Need line, existing Confirmed Need aggregate, and existing logical source/adjustment children. |
 | Business contract   | This H0 contract plus the approved parent contracts; no lifecycle or aggregate is added.                                                                                                                        |
@@ -118,32 +118,53 @@ The merged database contains none of the following physical capabilities:
 
 The current `atlas_admin.customers.customer_type` check accepts only `WHOLESALE`. A delivery location belongs to a wholesale customer. A school/date/ingredient H1 fixture therefore cannot be made genuine by inserting invented wholesale records or by treating fixture labels as typed lineage.
 
+### 3.3 Active OPS v1 operational-grain evidence
+
+The retained active Purchase Planner path was reread from `OPS-v1-retool-app.zip`, and its matching `public` schema/function definitions were reread from the retained-schema-equivalent `schema.sql`. The active controller invokes `q_ppwb_save_actual_need`, not the duplicate master-save query. The exact active family is:
+
+```text
+Purchase Planner family_token
+= service_date | school_id | ingredient_id
+
+public.actual_need_overrides primary/conflict key
+= (service_date, school_id, ingredient_id)
+
+public.purchase_assignments master grouping
+= (service_date, school_id, ingredient_id)
+```
+
+The active master query constructs that `family_token`, joins `actual_need_overrides` on those three columns, and groups supplier assignments on those same columns. `public.app_upsert_actual_need_overrides_bulk` canonicalizes and upserts one exact operator-entered value with `ON CONFLICT (service_date, school_id, ingredient_id)` before downstream rebalance.
+
+This is evidence that the operational confirmation family is an ingredient requirement total for a school and service date. It is **not** a schema to copy blindly: Atlas must additionally retain typed destination, unit, approved operational scope, immutable revisions, policy binding, source membership, authorization, and audit. The evidence does not approve legacy rounding, hidden rebalance, destructive replacement, public-schema access, or Retool as an authority.
+
 ## 4. Prerequisite inventory and dependency matrix
 
 The classification values in this table are the exact Issue #115 categories. “Required in H0” means part of the future H0 program, not implemented by this documentation task.
 
-| Dependency                                                         | Current evidence                                            | Classification                                                      | Bounded owner/sequence                                              | H1 consequence                                                                                 |
-| ------------------------------------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Actor, capability, scope, receipt, event, and audit infrastructure | Merged and exercised by PA-04 through PA-05G                | already merged and reusable                                         | Reuse; extend only through a separately approved security migration | H1 reuses the same envelope and safe-error model.                                              |
-| Ingredient and Unit references                                     | Merged; wholesale-compatible                                | already merged and reusable                                         | Reuse after active/reference validation                             | H1 binds exact active unit and policy.                                                         |
-| Confirmed Need roots, stable lines, revisions, approval snapshots  | Merged; source FKs are wholesale-only                       | already merged and reusable                                         | H0B generalizes; it does not replace the aggregate                  | H1 operates only after H0B.                                                                    |
-| Admin school/customer/location references                          | No school relation; current customer type is wholesale-only | required before H0 implementation but owned by another bounded task | H0A1 — Admin school and service-location foundation                 | H1 scope and read context cannot be genuine without it.                                        |
-| Recipe/BOM version references                                      | Logical contracts/prototypes only; no merged tables         | required before H0 implementation but owned by another bounded task | H0A2 — Recipe/BOM immutable reference foundation                    | H1 source explanation depends on exact stable and revision IDs.                                |
-| Weekly Menu persistence                                            | Logical contract/prototype only                             | required before H0 implementation but owned by another bounded task | H0A3a — Weekly Menu persistence                                     | Need Generation cannot claim menu lineage without it.                                          |
-| Attendance persistence                                             | Logical contract/prototype only                             | required before H0 implementation but owned by another bounded task | H0A3b — Attendance persistence                                      | Need Generation cannot claim portion lineage without it.                                       |
-| Planning Input Set/readiness persistence                           | Logical contract/prototype only                             | required before H0 implementation but owned by another bounded task | H0A4 — Input readiness and immutable input snapshot                 | Generation must fail closed without exact approved inputs.                                     |
-| Need Generation run and theoretical-line persistence               | Logical contract/prototype only                             | required in H0                                                      | H0A5 — Need Generation persistence                                  | H1 cannot use a fake or mutable calculation row.                                               |
-| Theoretical-line typed source lineage                              | PA-02 candidate only                                        | required in H0                                                      | H0A5 — typed source bridges and predecessor model                   | H1 reads exact authoritative upstream trace.                                                   |
-| Stable source-contribution identity                                | No physical predecessor on theoretical lines                | required in H0                                                      | H0A5 — explicit predecessor and atomic contribution grain           | H1 corrections cannot match by ingredient/name/order.                                          |
-| Confirmed Need source generalization                               | Three required wholesale FKs                                | required in H0                                                      | H0B — inline typed alternatives and compatibility constraints       | H1 fixture must use `NEED_GENERATION`, never fake wholesale.                                   |
-| Line decision evidence                                             | Logical adjustment only; no complete physical child         | required in H0                                                      | H0B — append-only decision child and current pointer                | H1 confirmation must write explicit changed or unchanged evidence.                             |
-| Planning quantity-policy reference                                 | No production root/revision                                 | required only for H1                                                | H1A — policy root/revision before read/preview/confirm              | H1 preview and commit fail closed when missing or ambiguous.                                   |
-| Materialization command                                            | No school-catering command                                  | required in H0                                                      | H0C — `create_confirmed_needs_from_generation`                      | H1 normally consumes its output; local fixtures may provision the same generalized shape only. |
-| Authorized review/readback                                         | No school-catering read                                     | required only for H1                                                | H1B — one exact batch/readback surface                              | Must expose no private relation.                                                               |
-| Backend preview and Planning confirmation                          | No school-catering commands                                 | required only for H1                                                | H1B — preview and confirm after H1A                                 | Must bind policy/source/version and write line decision evidence.                              |
-| Complete-batch validation, approval, release                       | Parent lifecycle approved; generic physical commands absent | later production concern                                            | Later bounded tasks                                                 | H1 does not validate, approve, or release.                                                     |
-| School-catering CMD-03 integration                                 | Current CMD-03 is `PA-05D.v1` wholesale-only                | later production concern                                            | Later contract and migration                                        | H1 cannot create Purchase Handoff.                                                             |
-| Removal release policy, split/merge policy, downstream correction  | Unresolved in PA-06E                                        | later production concern                                            | Separate product/architecture decisions                             | H0C fails closed; H1 cannot bypass.                                                            |
+| Dependency                                                         | Current evidence                                                         | Classification                                                      | Bounded owner/sequence                                                  | H1 consequence                                                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Actor, capability, scope, receipt, event, and audit infrastructure | Merged and exercised by PA-04 through PA-05G                             | already merged and reusable                                         | Reuse; extend only through a separately approved security migration     | H1 reuses the same envelope and safe-error model.                                              |
+| Ingredient and Unit references                                     | Merged; wholesale-compatible                                             | already merged and reusable                                         | Reuse after active/reference validation                                 | H1 binds exact active unit and policy.                                                         |
+| Confirmed Need roots, stable lines, revisions, approval snapshots  | Merged; source FKs are wholesale-only                                    | already merged and reusable                                         | H0B1 generalizes; it does not replace the aggregate                     | H1 operates only after H0B1/H0C.                                                               |
+| Admin school/customer/location references                          | No school relation; current customer type is wholesale-only              | required before H0 implementation but owned by another bounded task | H0A1 — Admin school and service-location foundation                     | H1 scope and read context cannot be genuine without it.                                        |
+| Recipe/BOM version references                                      | Logical contracts/prototypes only; no merged tables                      | required before H0 implementation but owned by another bounded task | H0A2 — Recipe/BOM immutable reference foundation                        | H1 source explanation depends on exact stable and revision IDs.                                |
+| Weekly Menu persistence                                            | Logical contract/prototype only                                          | required before H0 implementation but owned by another bounded task | H0A3a — Weekly Menu persistence                                         | Need Generation cannot claim menu lineage without it.                                          |
+| Attendance persistence                                             | Logical contract/prototype only                                          | required before H0 implementation but owned by another bounded task | H0A3b — Attendance persistence                                          | Need Generation cannot claim portion lineage without it.                                       |
+| Planning Input Set/readiness persistence                           | Logical contract/prototype only                                          | required before H0 implementation but owned by another bounded task | H0A4 — Input readiness and immutable input snapshot                     | Generation must fail closed without exact approved inputs.                                     |
+| Need Generation run and theoretical-line persistence               | Logical contract/prototype only                                          | required in H0                                                      | H0A5 — Need Generation persistence                                      | H1 cannot use a fake or mutable calculation row.                                               |
+| Theoretical-line typed source lineage                              | PA-02 candidate only                                                     | required in H0                                                      | H0A5 — typed source bridges and predecessor model                       | H1 reads exact authoritative upstream trace.                                                   |
+| Stable source-contribution identity                                | No physical predecessor on theoretical lines                             | required in H0                                                      | H0A5 — explicit predecessor and atomic contribution grain               | H1 corrections cannot match by ingredient/name/order.                                          |
+| Operational Confirmed Need identity                                | Active OPS v1 evidence is school/date/ingredient; Atlas design unsettled | required in H0                                                      | H0B1 — typed operational tuple after product approval                   | H1 must review one operational requirement, not one source contribution.                       |
+| Revision contribution membership                                   | No physical membership snapshot                                          | required in H0                                                      | H0B1 — immutable typed revision contribution bridge                     | H1 explains every atomic source contributing to the reviewed total.                            |
+| Confirmed Need source generalization                               | Three required wholesale FKs                                             | required in H0                                                      | H0B1 — source generalization and enforceable membership constraints     | H1 fixture must use `NEED_GENERATION`, never fake wholesale.                                   |
+| Line decision evidence                                             | Logical adjustment only; no complete physical child                      | required only for H1                                                | H1B1 — append-only decision child, mandatory policy FK, current pointer | H1B2 confirmation writes explicit changed or unchanged evidence.                               |
+| Planning quantity-policy reference                                 | No production root/revision                                              | required only for H1                                                | H1A — policy root/revision before read/preview/confirm                  | H1 preview and commit fail closed when missing or ambiguous.                                   |
+| Materialization command                                            | No school-catering command                                               | required in H0                                                      | H0C — `create_confirmed_needs_from_generation`                          | H1 normally consumes its output; local fixtures may provision the same generalized shape only. |
+| Authorized review/readback                                         | No school-catering read                                                  | required only for H1                                                | H1B2 — one exact batch/readback surface                                 | Must expose no private relation.                                                               |
+| Backend preview and Planning confirmation                          | No school-catering commands                                              | required only for H1                                                | H1B2 — preview and confirm after H1A/H1B1                               | Must bind policy/source/version and write line decision evidence.                              |
+| Complete-batch validation, approval, release                       | Parent lifecycle approved; generic physical commands absent              | later production concern                                            | Later bounded tasks                                                     | H1 does not validate, approve, or release.                                                     |
+| School-catering CMD-03 integration                                 | Current CMD-03 is `PA-05D.v1` wholesale-only                             | later production concern                                            | Later contract and migration                                            | H1 cannot create Purchase Handoff.                                                             |
+| Removal release policy, split/merge policy, downstream correction  | Unresolved in PA-06E                                                     | later production concern                                            | Separate product/architecture decisions                                 | H0C fails closed; H1 cannot bypass.                                                            |
 
 ## 5. Bounded implementation sequence
 
@@ -157,165 +178,189 @@ H0A3b — Attendance persistence and approval snapshots
 H0A4 — Planning Input Set/readiness persistence
 H0A5 — Need Generation run, atomic theoretical lines, typed sources, predecessor chain
   ↓
-H0B — Confirmed Need typed-source generalization and line decision evidence
+H0B1 — operational Confirmed Need identity, source generalization, and revision contribution membership
   ↓
 H0C — create_confirmed_needs_from_generation materialization command
   ↓
 H1A — versioned Planning quantity-policy root/revision
   ↓
-H1B — authorized review, preview, and confirmation for one synthetic line
+H1B1 — line decision-evidence table, mandatory policy FK, and current-decision integrity
+  ↓
+H1B2 — authorized read, preview, and confirmation for one synthetic operational line
   ↓
 Later — validation, approval, release, school-catering CMD-03, downstream correction
 ```
 
-The H0A labels are a decomposition contract, not authorized issues or migrations. H0A1 and H0A2 belong to different business owners and must remain separately reviewable. Weekly Menu and Attendance also retain independent lifecycles and approval snapshots. H0A4 may begin only after the exact upstream snapshot contracts are stable. H0A5 consumes them but does not edit them.
+The H0A labels are a decomposition contract, not authorized issues or migrations. H0A1 and H0A2 belong to different business owners and must remain separately reviewable. Weekly Menu and Attendance also retain independent lifecycles and approval snapshots. H0A4 may begin only after the exact upstream snapshot contracts are stable. H0A5 consumes them but does not edit them. H0B1 intentionally creates no decision table or insert path; decision persistence follows the policy in H1B1 so a decision can never exist without an exact policy revision.
 
-## 6. Source-lineage alternatives
+## 6. Calculation grain versus Planning confirmation grain
 
-### 6.1 Alternative A — inline typed source columns
-
-Generalize the existing Confirmed Need rows with nullable typed alternatives and exactly-one-source checks:
-
-- batch origin: Wholesale Order or initial Need Generation run;
-- stable-line origin: Wholesale Order line or initial Theoretical Need line; and
-- revision source: Wholesale Order line revision or exact current Theoretical Need line.
-
-**Strengths:** fewest new records; row-local checks; direct typed FKs; existing wholesale columns and joins remain available; one exact source exists at each existing ownership level.
-
-**Risks:** source-kind consistency across batch, line, and revision also needs transactional validation; the logical `ConfirmedNeedSourceReference` is represented by typed columns rather than one same-named table.
-
-### 6.2 Alternative B — dedicated typed source-reference child records
-
-Add one private child table containing the Confirmed Need owner IDs plus nullable Wholesale and Need Generation FKs.
-
-**Strengths:** represents the logical child explicitly and keeps existing rows narrow.
-
-**Risks:** adds a second current/uniqueness relationship beside every revision; still requires nullable alternatives and exactly-one checks; a batch/line/revision can be cross-wired unless the command and extra constraints validate all levels.
-
-### 6.3 Alternative C — bounded typed child family
-
-Add a logical source-reference root and separate wholesale and Need Generation typed child tables.
-
-**Strengths:** extensible and explicit; each source-family row contains only its own FKs.
-
-**Risks:** at least three new tables; “exactly one child family” is not a simple row check; it needs a deferred constraint trigger, a mutable discriminator protocol, or command-only enforcement across tables. That is more machinery than the two currently approved source families require.
-
-### 6.4 Selected proposal
-
-**Select Alternative A, subject to architecture and migration review.**
-
-The source cardinality is exactly one at each existing owner level, so typed inline alternatives are smaller and easier to constrain than a child hierarchy. This choice does not weaken the logical `ConfirmedNeedSourceReference`; it maps that logical child to declared typed foreign keys on the rows whose identity it qualifies.
-
-The proposal is deliberately bounded to `WHOLESALE` and `NEED_GENERATION`. Adding another source family requires an explicit contract and migration. Free-text polymorphic IDs, caller-authored table names, unvalidated lineage JSON, generic source registries, and fake wholesale rows remain prohibited.
-
-## 7. Selected physical direction
-
-### 7.1 Source ownership at three levels
-
-| Existing owner                  | Wholesale typed source                      | School-catering typed source               | Meaning                                                                          |
-| ------------------------------- | ------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `confirmed_need_batches`        | existing `wholesale_order_id`               | proposed `origin_need_generation_run_id`   | Immutable aggregate origin. A correction does not rewrite this origin.           |
-| `confirmed_need_lines`          | existing `wholesale_order_line_id`          | proposed `origin_theoretical_need_line_id` | Stable source-contribution origin. It never changes to a different contribution. |
-| `confirmed_need_line_revisions` | existing `wholesale_order_line_revision_id` | proposed `theoretical_need_line_id`        | Exact source result for this immutable payload revision.                         |
-
-Each level receives a constrained `source_kind` with only `WHOLESALE` and `NEED_GENERATION`. Each row must satisfy the matching exactly-one-source rule. Existing wholesale FKs remain typed and become nullable only after existing rows are classified and constraints are validated.
-
-The batch's generation FK is an **origin**. The exact current corrected run is derived from every current line revision's theoretical line and is revalidated transactionally. It is not written over the origin.
-
-### 7.2 Required consistency invariants
-
-The future migration and command tests must prove:
-
-1. Batch, stable line, and current revision use the same source kind.
-2. A wholesale stable line and revision belong to the batch's exact Wholesale Order.
-3. A school-catering stable-line origin belongs to the batch's origin run or its explicit correction chain.
-4. Every school-catering current revision's Theoretical Need line belongs to one exact released current run.
-5. That Theoretical Need line is the stable-line origin or an explicit predecessor-chain successor of it.
-6. The revision ingredient, unit, and theoretical quantity exactly equal the referenced Theoretical Need line.
-7. One non-additive source contribution appears at most once in one batch.
-8. A current school-catering batch cannot mix generation runs, input snapshots, schools, dates, or locations outside its approved batch scope.
-9. A wholesale row cannot carry a Need Generation source and a school-catering row cannot carry a wholesale source.
-10. All typed FKs use `on delete restrict`; operational history is never cascade-deleted.
-
-Row checks enforce exactly-one-source. Composite uniqueness and typed FKs enforce local identity. Cross-row ancestry, same-run, same-scope, and quantity equality remain authoritative command checks under locks and are covered by pgTAP. Whether a narrowly scoped deferred constraint trigger is also justified is pending migration review; H0 does not assume one.
-
-## 8. Stable source-contribution identity and correction model
-
-### 8.1 Alternatives evaluated
-
-| Alternative                                                                | Assessment                                                                                                                                                         |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Explicit `predecessor_theoretical_need_line_id`                            | Selected for ordinary one-to-one correction. It is typed, direct, auditable, and does not add an aggregate.                                                        |
-| New stable governed Source Contribution aggregate                          | Rejected for H0. It duplicates identity already supplied by stable upstream Menu/Attendance/RecipeLine anchors and adds lifecycle/governance with no current need. |
-| Recompute a key from ingredient/name/order or broad school/date/ingredient | Rejected. Ingredient correction must retain identity; names and array order are mutable; broad coincidence can conflate different RecipeLine contributions.        |
-| Generic split/merge relation aggregate                                     | Deferred. H0 rejects split/merge rather than introducing a general graph before product rules exist.                                                               |
-
-### 8.2 Atomic theoretical-line grain
-
-H0A5 must persist one Theoretical Need line per atomic source contribution. Cross-source or cross-RecipeLine totals are derived read models, not source identity.
-
-For a recipe-derived contribution, the stable identity comparison uses typed stable anchors such as:
+### 6.1 Alternative A — contribution-grain Confirmed Need
 
 ```text
-stable WeeklyMenuLine
-+ stable AttendanceLine
-+ stable RecipeLine/BOMLine
-+ school/service-date/menu-slot scope
+one Confirmed Need line
+= one atomic Theoretical Need contribution
 ```
 
-Exact approved snapshot IDs and exact RecipeLine revisions are still stored as lineage, but version IDs are not the stable contribution identity. Ingredient ID, display name, calculated quantity, array position, and generated row order are not identity fields. This permits an ingredient or quantity correction on the same stable RecipeLine/BOMLine to remain the same source contribution.
+This was the initial H0 proposal. It preserves simple one-to-one lineage, but it does not match the retained active Purchase Planner family. When several RecipeLine/BOMLine contributions produce the same school/date/ingredient requirement, an operator confirms one operational total. Alternative A would therefore require an authoritative distribution or rebalancing rule that allocates the confirmed total back across contribution lines.
 
-### 8.3 Predecessor rules
+No such Planning distribution, residual, priority, or rebalancing rule is approved. Retool's downstream supplier rebalance is Procurement evidence and cannot authorize a Planning allocation rule. Alternative A is rejected for school-catering Confirmed Need.
 
-The proposed `theoretical_need_lines.predecessor_theoretical_need_line_id` is nullable for an initial or genuinely new contribution and required for an accepted one-to-one correction.
+### 6.2 Alternative B — operational requirement-grain Confirmed Need
 
-The generation boundary must validate:
+```text
+one Confirmed Need stable line
+= service date
++ school/destination
++ ingredient
++ controlled unit
++ approved operational scope
+```
 
-- predecessor and successor are different rows;
-- predecessor is from the immediately prior accepted calculation chain for the same scope;
-- stable typed contribution anchors match;
-- exact source revisions may change;
-- ingredient and quantity may change when the stable RecipeLine/BOMLine identity remains;
-- one accepted direct successor exists per predecessor;
-- a genuinely new contribution has no predecessor and no prior stable-anchor match; and
-- a line is never linked merely because its ingredient, display name, school/date/ingredient tuple, or position matches.
+One immutable line revision records the exact total theoretical quantity derived from a complete immutable set of atomic Theoretical Need contributions. Planning makes one decision on that operational total. The active OPS v1 key supports the service-date/school/ingredient intent; destination, controlled unit, and any additional typed scope remain Atlas requirements rather than copied legacy fields.
 
-### 8.4 New, changed, removed, split, and merged contributions
+### 6.3 Selected direction and approval gate
 
-| Case                                                    | Required representation                                                                                                            | H0C behavior                                                                                                                                                |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Quantity correction on same RecipeLine/BOMLine          | New immutable theoretical line with direct predecessor; same typed stable anchors                                                  | Reuse stable Confirmed Need line; create successor Draft revision.                                                                                          |
-| Ingredient correction on same stable RecipeLine/BOMLine | New theoretical line with direct predecessor and changed ingredient                                                                | Reuse stable Confirmed Need line; create successor Draft revision with new ingredient; never carry prior confirmed authority.                               |
-| Genuinely new contribution                              | New theoretical line with no predecessor and unique stable anchors                                                                 | Create new stable Confirmed Need line and Draft revision 1.                                                                                                 |
-| Removed contribution                                    | Explicit immutable successor/tombstone with `REMOVED` disposition, zero calculated contribution, predecessor, and correction trace | Preserve all history and reject materialization with `SOURCE_REMOVAL_POLICY_REQUIRED` until zero/removal policy is approved. Absence alone is not removal.  |
-| Split or merge                                          | Cannot be represented as a normal one-to-one predecessor chain                                                                     | Need Generation remains blocked or H0C rejects typed conflicting predecessor sets with `SOURCE_SPLIT_MERGE_POLICY_REQUIRED`. No inference or partial write. |
-| Prior active line missing from corrected result         | No explicit successor/tombstone                                                                                                    | Reject as `SOURCE_MAPPING_INCOMPLETE`; do not infer removal.                                                                                                |
+**Select Alternative B as the proposed school-catering physical direction, subject to explicit product-owner approval of the exact operational identity.** No new aggregate is introduced; this is the stable-line grain inside the existing Confirmed Need aggregate.
 
-The `REMOVED` disposition is a proposed physical vocabulary on theoretical calculation output, not a new business aggregate or a released zero-demand policy. Its exact table constraint remains pending H0A5 review.
+H0B1 is blocked until H0A1/H0A5 and product review settle the exact typed identity fields. At minimum, changing service date, school, destination, ingredient, or controlled unit creates or selects a different stable line. Any later approved scope dimension has the same identity effect. Stable identity is never a name, display order, client token, JSON object, or hash.
+
+Atomic Theoretical Need lines remain the calculation grain. Grouping them for confirmation does not merge or erase their source identities:
+
+```text
+Atomic Theoretical Need lines
+→ immutable contribution-membership snapshot
+→ one operational Confirmed Need line revision
+→ one Planning decision
+```
+
+## 7. Source-membership alternatives
+
+### 7.1 Model A — revision contribution-membership snapshot
+
+Add one private revision-owned typed bridge:
+
+```text
+ConfirmedNeedLineRevision
+→ ConfirmedNeedLineRevisionContribution[]
+→ exact released TheoreticalNeedLine
+→ exact source quantity/unit and exact controlled-unit contribution
+```
+
+The bridge stores no Menu, Attendance, Recipe, or BOM payload. Those facts remain reachable through the Theoretical Need line's typed source bridges. The revision snapshot stores only the exact membership and normalized contribution facts necessary to reproduce the reviewed total.
+
+### 7.2 Model B — released generation requirement group
+
+Need Generation could create an immutable grouped operational result with atomic contribution children, and Confirmed Need could reference that result.
+
+This makes grouping relationally explicit upstream, but it makes Need Generation own a Planning confirmation grouping and introduces another grouped object/lifecycle before evidence proves it is reused outside Confirmed Need. It also duplicates the revision snapshot needed to preserve what Planning actually reviewed. Model B is not smaller for the current boundary.
+
+### 7.3 Model C — another typed relational design
+
+A separate source-reference root plus typed wholesale and school-catering children remains possible, but it adds a current child-family protocol without improving membership ownership or total enforcement. Free-text polymorphism, caller-authored object names, generic source registries, and unvalidated JSON remain prohibited.
+
+### 7.4 Selected model
+
+**Select Model A, subject to H0B1 migration review.** It keeps atomic trace, supports many contributions per operational line, makes each revision's complete membership immutable, and leaves direct-wholesale source columns and behavior intact.
+
+The corrected typed mapping is:
+
+| Owner                        | Wholesale path                               | School-catering path                                                               |
+| ---------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Confirmed Need batch         | exact existing Wholesale Order               | immutable origin Need Generation run plus controlled current released-run snapshot |
+| Stable Confirmed Need line   | exact existing Wholesale Order line          | immutable typed operational identity; no singular origin Theoretical Need line     |
+| Confirmed Need line revision | exact existing Wholesale Order line revision | exact released run/snapshot plus one immutable contribution-membership set         |
+| Revision contribution        | prohibited for Wholesale                     | exact released Theoretical Need line and controlled-unit contribution              |
+
+The logical `ConfirmedNeedSourceReference` is implemented for school catering by the batch's typed released-run identity plus the revision-owned membership set. Direct-wholesale remains singular and does not manufacture membership rows.
+
+## 8. Operational identity and source-correction behavior
+
+### 8.1 Atomic contribution identity
+
+H0A5 still persists one immutable Theoretical Need line per atomic contribution. Ordinary one-to-one correction uses `predecessor_theoretical_need_line_id` and stable typed anchors such as Weekly Menu line, Attendance line, and RecipeLine/BOMLine. Ingredient, name, display order, array position, generated order, and broad school/date/ingredient coincidence are never contribution identity.
+
+The predecessor chain explains contribution continuity; it no longer defines Confirmed Need stable-line identity. Multiple independent contribution chains may be members of the same operational line revision.
+
+### 8.2 Required correction behavior
+
+| Correction                                                        | Contribution result                                                               | Operational Confirmed Need result                                                                                                                                                                                                                  |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quantity correction on one RecipeLine/BOMLine                     | Create an immutable successor contribution with the explicit predecessor.         | Recompute the same operational group; create one successor revision and a complete new membership snapshot.                                                                                                                                        |
+| New contribution for the same operational ingredient              | Create a new atomic line with no predecessor and unique typed anchors.            | Add it to the same operational line's new membership; create one successor revision.                                                                                                                                                               |
+| Removed contribution                                              | Persist an explicit predecessor-linked `REMOVED` result; absence is insufficient. | The proposed next membership excludes it and the total changes, but H0C rejects until zero/removal policy is approved. Prior membership remains immutable.                                                                                         |
+| Ingredient correction on the same RecipeLine/BOMLine              | Create a predecessor-linked contribution with the new ingredient.                 | Remove the contribution from the old ingredient group and add it to the new group. Create affected successor revisions; never mutate a stable line's ingredient identity. If the old group becomes empty/zero, fail closed pending removal policy. |
+| New ingredient requirement                                        | Create a new atomic contribution with no predecessor.                             | Create a new stable operational line unless an exact same-identity line already exists in the batch.                                                                                                                                               |
+| Service date, school, destination, unit, or approved scope change | Preserve the source predecessor trace where factually valid.                      | The contribution leaves the old operational identity and enters a different stable line; the old line is never repurposed.                                                                                                                         |
+| Split or merge                                                    | Use an explicit typed mapping only after policy exists.                           | H0C rejects the whole command while mapping/approval policy is missing; no inference or partial materialization.                                                                                                                                   |
+
+H0 never distributes an operator-confirmed total back into contributions. Contributions explain the system-calculated theoretical total; the Planning decision belongs to the operational line revision.
+
+### 8.3 Revision-owned membership shape
+
+The proposed private `confirmed_need_line_revision_contributions` bridge carries at least:
+
+- bridge ID, Confirmed Need batch, stable line, and exact line revision;
+- exact Need Generation run/version and immutable release-snapshot identity;
+- exact Theoretical Need line;
+- exact source contribution quantity and source unit;
+- exact normalized contribution quantity in the operational line's controlled unit;
+- exact conversion-rule revision when source and controlled units differ;
+- service date, typed school/destination, ingredient, controlled unit, and every approved operational-scope identity needed by composite FKs; and
+- originating materialization command and creation time.
+
+Membership is nonempty for every school-catering revision, unique by `(confirmed_need_line_revision_id, theoretical_need_line_id)`, immutable after insertion, and protected by `on delete restrict`. Display order is not authoritative membership.
+
+### 8.4 Selected database-enforcement strategy
+
+Command validation alone is insufficient. The selected direction deliberately combines generated/denormalized parent identities, composite unique keys and composite foreign keys, partial unique indexes, and mandatory deferred constraint triggers.
+
+Database-declarative enforcement must include:
+
+1. Row checks enforce exactly one batch source: Wholesale Order or Need Generation origin/current release; exactly one revision source family; and no school-catering membership on a Wholesale revision.
+2. A composite unique key on the exact typed operational identity prevents two stable school-catering lines for the same batch/date/school/destination/ingredient/unit/approved scope. Identity columns are immutable.
+3. Composite FKs bind every revision to its batch/stable line/source kind and its own exact released-run snapshot, and bind every membership row to that exact revision tuple. The current-source trigger additionally requires the stable line's current revision to use the batch's controlled current released-run snapshot.
+4. Composite FKs bind every membership row to one line in the exact immutable Need Generation release snapshot and to the same typed service/date/destination/ingredient/controlled-unit scope. Cross-unit membership also requires the exact conversion-rule revision.
+5. The existing partial unique current-revision rule remains database-enforced for every stable line.
+6. Existing Wholesale Order/line/revision FKs, source-specific uniqueness, and `PA-05D.v1` tests remain unchanged; Wholesale revisions cannot have contribution-membership rows.
+
+The following constraint triggers are mandatory future H0B1/H1B1 design elements, not optional possibilities:
+
+| Proposed constraint trigger                   | Exact invariant                                                                                                                                                                                                                                                                                                                                                            | Affected tables                                                                                                                                  | Timing                                                                                                                           | Lock assumptions and failure behavior                                                                                                                                                                                                   | Required pgTAP proof                                                                                                                                                                                                                         |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `confirmed_need_current_source_consistency`   | Batch and stable-line source kinds agree; immutable origin is retained; the controlled current release is a valid same-scope successor in the origin correction chain; the current line revision uses that exact current release; historical revisions retain their own exact releases; Wholesale rows retain the exact Wholesale Order chain and have no membership rows. | Confirmed Need batches, stable lines, line revisions, revision contributions, Need Generation runs/release snapshots                             | `DEFERRABLE INITIALLY DEFERRED`; checked at transaction end after a complete initial/correction write                            | Owning command locks batch, stable lines, and current revisions in deterministic ID order. Failure aborts the whole transaction and is translated to a safe lineage-conflict error; no partial row is visible.                          | Reject mixed kinds, unrelated origin/current runs, current-revision/run mismatch, wrong scope, Wholesale cross-wire, and Wholesale membership; preserve a valid historical revision/release and accept one atomic current-source transition. |
+| `confirmed_need_revision_membership_total`    | Every school-catering revision owns one nonempty immutable membership set; every member belongs to its exact released snapshot and operational identity; `theoretical_quantity` equals the exact sum of normalized contributions in the controlled unit.                                                                                                                   | Confirmed Need line revisions, revision contributions, Need Generation release snapshot lines, Theoretical Need lines, conversion-rule revisions | `DEFERRABLE INITIALLY DEFERRED`; fires for revision or membership insert/update/delete and validates the final transaction state | Command locks the revision and referenced theoretical/release rows before inserts. Equality uses exact PostgreSQL `numeric`, never epsilon. Any missing, extra, duplicate, wrong-unit, stale, or unequal member rolls back the command. | Prove one/many members, duplicate rejection, wrong run/scope/unit/conversion rejection, missing member, extra member, update/delete immutability, and exact sum mismatch including fractional values.                                        |
+| `confirmed_need_current_decision_consistency` | A non-null current decision belongs to the same stable line and exact current revision and references one existing effective Planning policy revision; no decision can point to a superseded revision.                                                                                                                                                                     | Confirmed Need stable lines, line revisions, line decisions, Planning policy revisions                                                           | Created only by H1B1 as `DEFERRABLE INITIALLY DEFERRED`; checked after successor revision/decision/pointer changes               | Confirmation locks batch, stable line, current revision, policy, and decision chain in that order. Failure aborts revision, decision, pointer, receipt, event, and audit together.                                                      | Reject cross-line/cross-revision pointers, missing/stale policy, superseded-current target, forked evidence correction, and any decision row without the mandatory policy FK.                                                                |
+
+H0C revalidates the applicable H0B1 source/membership conditions under the same locks to return domain-safe errors before constraint failure where possible. H1B2 later revalidates the H1B1 decision/policy condition. These command checks are defense in depth; they are not the integrity boundary.
 
 ## 9. Schema-delta catalog without executable DDL
 
 This catalog states physical intent only. It is not migration syntax.
 
-| Object/change                                  | Proposed shape                                                                                                                            | Constraint/index direction                                                                                  | Status                                                    |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `atlas_admin.schools` or approved equivalent   | Stable school identity linked to the approved customer and delivery-location model                                                        | Typed FKs, active/effective state, no delete when referenced                                                | **Pending product/physical decision**; H0A1 blocker.      |
-| Existing customer/location generalization      | Permit approved school-catering ownership without weakening wholesale relationships                                                       | Preserve current wholesale rows and exact location ownership                                                | **Pending H0A1 decision**.                                |
-| Recipe/BOM physical family                     | Dish, Recipe, immutable Recipe Version, stable RecipeLine/BOMLine, immutable line revision                                                | Stable line identity; exact revision FKs; no released-row overwrite                                         | **Pending H0A2 physical decision**.                       |
-| Weekly Menu physical family                    | Root, stable lines, approval snapshot, snapshot lines                                                                                     | Exact school/date/slot/dish and approved version                                                            | **Required H0A3a; table details pending its task**.       |
-| Attendance physical family                     | Root, stable lines, approval snapshot, snapshot lines                                                                                     | Exact school/date portion facts and approved version                                                        | **Required H0A3b; table details pending its task**.       |
-| Planning Input Set/readiness                   | Root, typed input references, immutable readiness snapshot, issues                                                                        | Exactly one approved Menu and Attendance set for the declared scope                                         | **Required H0A4; exact scope pending**.                   |
-| `need_generation_runs`                         | Root with input snapshot, calculation-rule revision, status, scope, version                                                               | Released run immutable; unique run number per input set                                                     | **Proposed PA-02-aligned H0A5 direction**.                |
-| `need_generation_input_snapshots`              | Exact Menu, Attendance, Recipe/BOM, readiness, conversion, and calculation-rule versions                                                  | Typed relations; no required lineage JSON                                                                   | **Proposed H0A5 direction**.                              |
-| `theoretical_need_lines`                       | One atomic contribution; run, school/date, ingredient, quantity/unit, disposition, predecessor                                            | Unique atomic source anchor per run; predecessor indexed; active quantity nonnegative; removed exactly zero | **Selected proposal; pending H0A5 migration approval**.   |
-| `theoretical_need_line_sources`                | Typed bridge rows to exact Menu snapshot line, Attendance snapshot line, RecipeLine/BOMLine revision, and other approved source revisions | Exactly one typed source FK per bridge row; required source-kind set per calculation kind                   | **Selected PA-02 direction; pending exact source set**.   |
-| `confirmed_need_batches` generalization        | Add source kind and origin Need Generation run; retain wholesale FK                                                                       | Exactly one typed origin; unique wholesale order or generation origin as applicable                         | **Selected proposal; pending H0B migration approval**.    |
-| `confirmed_need_lines` generalization          | Add source kind, origin Theoretical Need line, and nullable current decision pointer; retain wholesale line FK                            | Exactly one typed origin; unique source contribution in batch; pointer belongs to same line                 | **Selected proposal; pending H0B migration approval**.    |
-| `confirmed_need_line_revisions` generalization | Add source kind and exact Theoretical Need line; retain wholesale revision FK                                                             | Exactly one typed source; unique revision number; one current; predecessor chain; immutable payload         | **Selected proposal; pending H0B migration approval**.    |
-| `confirmed_need_line_decisions`                | Append-only line decision evidence described in section 10                                                                                | Unique decision number per stable line; unique command/line; no delete; predecessor/supersession chain      | **Selected proposal; pending H0B migration approval**.    |
-| Planning policy root/revisions                 | Stable policy scope plus immutable effective revision, unit, positive step, owner/effective period                                        | No overlapping eligible revision in same governed scope; no fallback                                        | **Required only for H1; exact scope/precedence pending**. |
+| Object/change                                       | Proposed shape                                                                                                                                                                                 | Constraint/index direction                                                                                  | Status                                                                 |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `atlas_admin.schools` or approved equivalent        | Stable school identity linked to the approved customer and delivery-location model                                                                                                             | Typed FKs, active/effective state, no delete when referenced                                                | **Pending product/physical decision**; H0A1 blocker.                   |
+| Existing customer/location generalization           | Permit approved school-catering ownership without weakening wholesale relationships                                                                                                            | Preserve current wholesale rows and exact location ownership                                                | **Pending H0A1 decision**.                                             |
+| Recipe/BOM physical family                          | Dish, Recipe, immutable Recipe Version, stable RecipeLine/BOMLine, immutable line revision                                                                                                     | Stable line identity; exact revision FKs; no released-row overwrite                                         | **Pending H0A2 physical decision**.                                    |
+| Weekly Menu physical family                         | Root, stable lines, approval snapshot, snapshot lines                                                                                                                                          | Exact school/date/slot/dish and approved version                                                            | **Required H0A3a; table details pending its task**.                    |
+| Attendance physical family                          | Root, stable lines, approval snapshot, snapshot lines                                                                                                                                          | Exact school/date portion facts and approved version                                                        | **Required H0A3b; table details pending its task**.                    |
+| Planning Input Set/readiness                        | Root, typed input references, immutable readiness snapshot, issues                                                                                                                             | Exactly one approved Menu and Attendance set for the declared scope                                         | **Required H0A4; exact scope pending**.                                |
+| `need_generation_runs`                              | Root with input snapshot, calculation-rule revision, status, scope, version                                                                                                                    | Released run immutable; unique run number per input set                                                     | **Proposed PA-02-aligned H0A5 direction**.                             |
+| `need_generation_input_snapshots`                   | Exact Menu, Attendance, Recipe/BOM, readiness, conversion, and calculation-rule versions                                                                                                       | Typed relations; no required lineage JSON                                                                   | **Proposed H0A5 direction**.                                           |
+| Need Generation release snapshot/lines              | Immutable released run/version and exact released Theoretical Need line membership                                                                                                             | Composite unique keys permit typed FK from H0B1 membership to one exact released line                       | **Required H0A5 direction; exact names pending**.                      |
+| `theoretical_need_lines`                            | One atomic contribution; run, school/date, ingredient, quantity/unit, disposition, predecessor                                                                                                 | Unique atomic source anchor per run; predecessor indexed; active quantity nonnegative; removed exactly zero | **Selected proposal; pending H0A5 migration approval**.                |
+| `theoretical_need_line_sources`                     | Typed bridge rows to exact Menu snapshot line, Attendance snapshot line, RecipeLine/BOMLine revision, and other approved source revisions                                                      | Exactly one typed source FK per bridge row; required source-kind set per calculation kind                   | **Selected PA-02 direction; pending exact source set**.                |
+| `confirmed_need_batches` generalization             | Add source kind, immutable origin run, and controlled current released-run snapshot; retain Wholesale FK                                                                                       | Exactly one typed source family; origin immutable; current snapshot belongs to its correction chain         | **Selected proposal; pending H0B1 migration approval**.                |
+| `confirmed_need_lines` generalization               | Retain Wholesale line FK; for school catering add immutable typed operational identity fields, not one origin theoretical line                                                                 | Composite operational identity unique per batch; source kind consistent; no current-decision pointer yet    | **Selected proposal; product identity approval required before H0B1**. |
+| `confirmed_need_line_revisions` generalization      | Retain Wholesale revision FK; school-catering revision binds its exact released snapshot and owns one membership set; the current revision agrees with the batch's controlled current snapshot | Unique revision number; one current; composite ownership/source keys; immutable payload                     | **Selected proposal; pending H0B1 migration approval**.                |
+| `confirmed_need_line_revision_contributions`        | Revision-owned typed membership over exact released Theoretical Need lines, quantities, units, normalization rule, and operational identity                                                    | Nonempty/unique/immutable; composite FKs; mandatory deferred exact-total trigger                            | **Selected Model A; pending H0B1 migration approval**.                 |
+| Planning policy root/revisions                      | Stable policy scope plus immutable effective revision, unit, positive step, owner/effective period                                                                                             | No overlapping eligible revision in same governed scope; no fallback                                        | **Required H1A; exact scope/precedence pending**.                      |
+| `confirmed_need_line_decisions` and current pointer | Append-only line decision evidence described in section 10; pointer added only with the mandatory policy FK                                                                                    | NOT NULL policy FK, unique decision/command rules, mandatory deferred current-decision trigger              | **Required H1B1 after H1A; no H0 insert surface**.                     |
 
-## 10. Line decision-evidence physical design
+## 10. H1B1 line decision-evidence physical design
+
+H0B1 and H0C create no decision table, current-decision pointer, or decision insert privilege. H1A first creates the policy root/revisions. H1B1 then creates the following decision structure with a mandatory, non-null policy-revision FK before H1B2 exposes any read/preview/confirm function.
 
 ### 10.1 Alternatives evaluated
 
@@ -336,7 +381,7 @@ The private `confirmed_need_line_decisions` child records at least:
 - proposed/prior confirmed before value;
 - authoritative confirmed after value;
 - exact unit;
-- exact Need Generation run and Theoretical Need line;
+- exact Need Generation released run/snapshot and exact current revision contribution-membership set;
 - exact Planning policy revision;
 - batch version before and after;
 - reason code and conditional reason note;
@@ -348,10 +393,10 @@ The decision child is evidence, not an aggregate. The Confirmed Need batch versi
 
 ### 10.3 Current and unique decision rules
 
-The selected proposal adds a nullable current-decision pointer to the stable Confirmed Need line.
+H1B1 adds a nullable current-decision pointer to the stable Confirmed Need line in the same bounded migration as the decision child and mandatory policy FK.
 
-- H0C leaves it null because materialization creates no Planning decision.
-- H1 confirmation appends a decision row and moves the pointer atomically.
+- Existing materialized rows receive a null pointer because materialization created no Planning decision.
+- H1B2 confirmation appends a decision row and moves the pointer atomically.
 - The pointer must reference a decision for the same stable line and its current line revision.
 - Decision numbers are positive and unique within the line.
 - One command may decide several lines, but `(command_id, confirmed_need_line_id)` is unique.
@@ -359,7 +404,7 @@ The selected proposal adds a nullable current-decision pointer to the stable Con
 - Decision rows are never updated or deleted. A correction appends a full replacement evidence row, advances the pointer, and retains the prior row.
 - Moving the pointer and any permitted prior-revision `is_current`/status metadata happens only inside the owning command while the batch is locked.
 
-The exact composite FK/index arrangement for “pointer belongs to same line” is a migration-review detail, but the invariant is mandatory and must be database-tested.
+Composite keys/FKs establish local line/revision ownership, and the mandatory deferred `confirmed_need_current_decision_consistency` trigger in section 8.4 proves that the pointer targets the same line's exact current revision and one existing policy revision at transaction end.
 
 ### 10.4 Before/after and reason semantics
 
@@ -385,7 +430,7 @@ A successor line revision carries the changed quantity and the same exact source
 
 ### 10.5 Source and policy binding
 
-Every school-catering decision binds the exact current Theoretical Need line and exact policy revision. A Draft materialization revision may have no policy because it is not authoritative. The decision is invalid if source, line revision, batch version, policy, or scope changes before commit.
+Every school-catering decision binds the exact current immutable contribution-membership set and exact policy revision. A Draft materialization revision has no decision or policy binding because it is not authoritative. The decision is invalid if any member, release snapshot, line revision, batch version, policy, or scope changes before commit.
 
 This avoids mutating a materialized Draft merely to add a later policy reference. For adjusted confirmation, the successor revision and the decision are created together; for unchanged acceptance, the decision supplies the missing authority and policy binding without quantity duplication.
 
@@ -397,11 +442,11 @@ The existing logical adjustment history is derived from decision rows where `dec
 
 ### 11.1 H0/H1 decision
 
-**Selected proposal:** H0 does not create a minimum production Planning policy. A versioned, fail-closed policy is a strict H1 prerequisite.
+**Selected proposal:** H0 does not create a minimum production Planning policy. H1A creates the versioned, fail-closed policy before H1B1 can create decision persistence and its mandatory policy FK.
 
 H0C copies exact theoretical quantity into the existing `confirmed_quantity` storage field as a clearly non-authoritative Draft proposal. It performs no Planning step quantization, rounding, trimming, or confirmation. Authority is derived from explicit line decision evidence, not from the presence of a numeric value.
 
-H1 preview and commit must refuse to operate until one exact effective Planning policy revision resolves. This keeps fixture values such as `0.01 kg` test-only and prevents an H0 migration from approving production operations policy accidentally.
+No decision row can exist before H1A/H1B1 because H0 has no decision table, H1B1 requires a non-null typed FK to an H1A policy revision, and API/runtime roles receive no decision-table insert privilege. H1B2 preview and commit must refuse to operate until one exact effective Planning policy revision resolves. This keeps fixture values such as `0.01 kg` test-only and prevents an H0 migration from approving production operations policy accidentally.
 
 ### 11.2 Required future policy behavior
 
@@ -472,10 +517,12 @@ The command must authoritatively resolve and lock:
 - one exact Need Generation run and requested version;
 - run status `RELEASED_FOR_CONFIRMATION` and its immutable release evidence;
 - one complete input snapshot and approved typed Menu/Attendance/Recipe/BOM/calculation references;
-- every active theoretical line and typed source bridge;
-- every predecessor and disposition needed to prove the source-contribution set;
+- every released atomic theoretical line, release-snapshot membership, and typed source bridge;
+- every predecessor, explicit removal, and typed mapping needed to prove the complete source-contribution set;
 - active ingredients and units;
-- the target Confirmed Need batch, stable lines, current revisions, and decision pointers where correcting; and
+- every exact conversion rule required to express a contribution in its controlled operational unit;
+- the product-approved operational identity definition and deterministic server-side grouping result;
+- the target Confirmed Need batch, stable lines, current revisions, and current released-run pointer where correcting; and
 - absence of an incompatible batch/materialization for the same origin.
 
 Any missing, stale, ambiguous, cross-scope, split/merge, implicit removal, or fake source fails the complete command.
@@ -484,30 +531,34 @@ Any missing, stale, ambiguous, cross-scope, split/merge, implicit removal, or fa
 
 For a run with no prior Confirmed Need batch:
 
-1. Create one `NEED_GENERATION` Confirmed Need batch in `DRAFT_REVIEW`, version 1, whose origin is the exact released run.
-2. For every active atomic Theoretical Need line, create one stable `NEED_GENERATION` Confirmed Need line whose origin is that line.
-3. Create revision 1 in `DRAFT`, current, with exact ingredient, unit, theoretical quantity, source line, and predecessor metadata.
-4. Set the stored candidate confirmed quantity equal to the exact theoretical quantity without rounding; authorized reads must label it proposed because no current decision exists.
-5. Leave every current-decision pointer null.
-6. Create no approval snapshot, release, Purchase Handoff, Planning policy fact, or decision evidence.
-7. Append exactly one completed receipt, `ConfirmedNeedsCreated` domain event, and matching audit event atomically.
+1. Consume one exact immutable `RELEASED_FOR_CONFIRMATION` run/version and its complete released-line snapshot.
+2. Group all active atomic contributions by the exact product-approved operational identity: service date, typed school/destination, ingredient, controlled unit, and every approved scope field.
+3. Create one `NEED_GENERATION` Confirmed Need batch in `DRAFT_REVIEW`, version 1, whose immutable origin and current source are the exact released run/snapshot.
+4. Create one stable Confirmed Need line per operational group. Its identity fields are immutable and contain no singular origin Theoretical Need line.
+5. Create revision 1 in `DRAFT`, current, with the exact group identity and theoretical total.
+6. Create the revision's complete immutable contribution-membership snapshot. Every member references an exact released Theoretical Need line and exact controlled-unit contribution.
+7. Require the revision theoretical quantity to equal the exact PostgreSQL `numeric` sum of those controlled-unit contributions through the deferred database constraint.
+8. Set the stored candidate confirmed quantity equal to the exact theoretical total without Planning quantization; authorized reads must label it proposed because no decision exists.
+9. Create no decision table row, policy fact, approval snapshot, release, Purchase Handoff, Procurement, or Dispatch fact.
+10. Append exactly one completed receipt, `ConfirmedNeedsCreated` domain event, and matching audit event atomically.
 
 ### 12.5 Corrected materialization
 
 For an exact existing batch in `DRAFT_REVIEW` or explicitly `REOPENED`:
 
-1. Verify the new released run is the allowed corrected successor of the batch's current exact run.
-2. Require an explicit one-to-one theoretical predecessor for every reused contribution.
-3. Reuse a stable Confirmed Need line only when the new theoretical line descends from that line's exact prior theoretical source.
-4. Create a successor Draft revision for every reused contribution, even when quantity is unchanged, because source binding changed and Planning must review again.
-5. Mark only the prior revision's controlled current/status metadata noncurrent/superseded; never change its payload.
-6. Clear the stable line's current-decision pointer for the new Draft consequence; old decision rows remain historical.
-7. Create a new stable line and revision 1 for a genuinely new contribution.
-8. Set every new proposal equal to the new theoretical quantity. Do not carry a prior confirmed value automatically; that product choice remains pending.
-9. Reject explicit removed tombstones until removal/zero policy is approved.
-10. Reject incomplete, split, merge, duplicate-predecessor, and mixed-scope mappings with no partial write.
-11. Increment the batch version exactly once regardless of affected-line count.
-12. Append exactly one completed receipt, proposed `ConfirmedNeedsRematerialized` domain event, and matching audit event atomically.
+1. Verify the new released run is the allowed corrected successor of the batch's controlled current released run and resolve its complete contribution set.
+2. Validate every ordinary contribution predecessor, genuinely new contribution, explicit removal, ingredient move, and any typed split/merge mapping before writing.
+3. Regroup the complete new contribution set by the approved operational identity and compare the full group set with current stable operational lines.
+4. Reuse a stable line only when the full operational identity is unchanged. Contribution predecessor ancestry explains membership changes but never permits the stable line's date, school, destination, ingredient, unit, or other approved identity field to mutate.
+5. Create one successor Draft revision and complete new immutable membership snapshot for every affected existing operational group, including source-only or membership-only changes with an unchanged total.
+6. Preserve every prior revision and membership payload; mark only controlled current/status metadata noncurrent/superseded.
+7. H1B1/H1B2 decision evidence, when it later exists, remains historical. The new revision has no current decision; its stable-line current-decision pointer is cleared atomically by the H1B1 integrity protocol.
+8. Create new stable operational lines and revision 1 for new operational identities, including a new ingredient requirement or the destination line of an ingredient correction when absent.
+9. Handle an ingredient correction as an explicit contribution move from the old ingredient group's new membership to the new ingredient group's new membership. Never mutate the old stable line's ingredient.
+10. Set each new proposal equal to its exact recomputed theoretical total. Do not carry a prior confirmed value automatically; that product choice remains pending.
+11. Reject unresolved zero/empty-group, removal, split, merge, incomplete, duplicate-predecessor, ambiguous conversion, and mixed-scope cases with no partial write.
+12. Move the batch's controlled current released-run pointer, increment the batch version exactly once, and make all revisions/memberships/current metadata visible atomically.
+13. Append exactly one completed receipt, proposed `ConfirmedNeedsRematerialized` domain event, and matching audit event atomically.
 
 If the batch is `APPROVED` or `RELEASED_FOR_PURCHASE_HANDOFF`, H0C returns `REOPEN_REQUIRED`; it never reopens automatically. If Purchase Handoff exists, H0C cannot mutate it and returns the governed downstream-correction blocker.
 
@@ -525,6 +576,7 @@ affected_aggregate_ids.confirmed_need_batch_id
 affected_aggregate_ids.created_confirmed_need_line_ids[]
 affected_aggregate_ids.reused_confirmed_need_line_ids[]
 affected_aggregate_ids.created_line_revision_ids[]
+affected_aggregate_ids.created_revision_contribution_ids[]
 affected_aggregate_ids.current_line_revision_ids[]
 affected_aggregate_ids.superseded_line_revision_ids[]
 new_versions.need_generation_run_version
@@ -536,27 +588,30 @@ warnings[]
 blockers[]
 ```
 
-Alternative A creates no standalone source-reference ID. Exact source IDs are the returned/current Theoretical Need line IDs reachable from each returned revision and may also be returned in a bounded ordered `source_bindings` array if API review approves that field.
+Exact source IDs are the immutable membership rows and their referenced Theoretical Need lines. A bounded response may return per-revision membership counts and IDs, but it never accepts or echoes caller-authored membership, grouping, quantities, or lineage as authority.
 
 ### 12.7 Safe errors and write certainty
 
-| Proposed error                       | Meaning and write behavior                                                           |
-| ------------------------------------ | ------------------------------------------------------------------------------------ |
-| `VALIDATION_FAILED`                  | Malformed/unknown fields or invalid creation sentinel; no domain write.              |
-| `GENERATION_NOT_RELEASED`            | Run is not exactly released for confirmation; no domain write.                       |
-| `SOURCE_LINEAGE_INCOMPLETE`          | Required typed input/source/revision is missing; no domain write.                    |
-| `SOURCE_REVISION_STALE`              | Run, input snapshot, source revision, or target source changed; no domain write.     |
-| `SOURCE_MAPPING_INCOMPLETE`          | A prior active contribution has no explicit successor/tombstone; no domain write.    |
-| `SOURCE_SUCCESSOR_AMBIGUOUS`         | Duplicate or cross-wired predecessor; no domain write.                               |
-| `SOURCE_REMOVAL_POLICY_REQUIRED`     | Explicit removal is present but release behavior is unapproved; no domain write.     |
-| `SOURCE_SPLIT_MERGE_POLICY_REQUIRED` | Split/merge cannot be represented by the approved one-to-one chain; no domain write. |
-| `REOPEN_REQUIRED`                    | Approved/released batch must be explicitly reopened; no domain write.                |
-| `DOWNSTREAM_CORRECTION_REQUIRED`     | Existing Handoff or later commitment prevents silent correction; no domain write.    |
-| `STALE_VERSION`                      | Expected run/batch version differs; no domain write and no blind retry.              |
-| `CAPABILITY_DENIED` / `SCOPE_DENIED` | Server-owned authorization fails; no domain write and no selector broadening.        |
-| `IDEMPOTENCY_CONFLICT`               | Same command/key with different canonical intent; no new write.                      |
-| `RETRYABLE_CONCURRENCY_FAILURE`      | Whole transaction rolled back; retry only the exact frozen request.                  |
-| `INTERNAL_COMMAND_FAILURE`           | No success may be inferred; reconcile by command ID before retry.                    |
+| Proposed error                       | Meaning and write behavior                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `VALIDATION_FAILED`                  | Malformed/unknown fields or invalid creation sentinel; no domain write.                     |
+| `GENERATION_NOT_RELEASED`            | Run is not exactly released for confirmation; no domain write.                              |
+| `SOURCE_LINEAGE_INCOMPLETE`          | Required typed input/source/revision is missing; no domain write.                           |
+| `SOURCE_REVISION_STALE`              | Run, input snapshot, source revision, or target source changed; no domain write.            |
+| `SOURCE_MAPPING_INCOMPLETE`          | A prior active contribution has no explicit successor/tombstone; no domain write.           |
+| `SOURCE_SUCCESSOR_AMBIGUOUS`         | Duplicate or cross-wired predecessor; no domain write.                                      |
+| `OPERATIONAL_IDENTITY_UNAPPROVED`    | Exact typed grouping identity is not approved/resolvable; no domain write.                  |
+| `CONTRIBUTION_MEMBERSHIP_INVALID`    | Membership is empty, duplicate, wrong-run, cross-scope, or wrong-unit; no domain write.     |
+| `CONTRIBUTION_TOTAL_MISMATCH`        | Exact normalized contribution sum differs from revision theoretical total; no domain write. |
+| `SOURCE_REMOVAL_POLICY_REQUIRED`     | Explicit removal is present but release behavior is unapproved; no domain write.            |
+| `SOURCE_SPLIT_MERGE_POLICY_REQUIRED` | Split/merge cannot be represented by the approved one-to-one chain; no domain write.        |
+| `REOPEN_REQUIRED`                    | Approved/released batch must be explicitly reopened; no domain write.                       |
+| `DOWNSTREAM_CORRECTION_REQUIRED`     | Existing Handoff or later commitment prevents silent correction; no domain write.           |
+| `STALE_VERSION`                      | Expected run/batch version differs; no domain write and no blind retry.                     |
+| `CAPABILITY_DENIED` / `SCOPE_DENIED` | Server-owned authorization fails; no domain write and no selector broadening.               |
+| `IDEMPOTENCY_CONFLICT`               | Same command/key with different canonical intent; no new write.                             |
+| `RETRYABLE_CONCURRENCY_FAILURE`      | Whole transaction rolled back; retry only the exact frozen request.                         |
+| `INTERNAL_COMMAND_FAILURE`           | No success may be inferred; reconcile by command ID before retry.                           |
 
 Exact error names are proposed and noncanonical. They must be reconciled with the established safe envelope before implementation.
 
@@ -567,7 +622,7 @@ Exact error names are proposed and noncanonical. They must be reconciled with th
 - Changed reuse returns `IDEMPOTENCY_CONFLICT`.
 - A deterministic failure after receipt creation may retain a safe `FAILED_NON_RETRYABLE` receipt under the existing helper contract; it creates no domain or audit event.
 - Two initial calls for the same run cannot create two batches.
-- Two correction calls for the same batch/version cannot fork the current revision chain.
+- Two correction calls for the same batch/version cannot fork any current revision or membership chain.
 - One successful correction increments the batch once.
 - Serialization/deadlock handling retries or reports the complete transaction only; no partial line result becomes visible.
 
@@ -578,13 +633,15 @@ Exact error names are proposed and noncanonical. They must be reconciled with th
 The preferred migration path is staged and forward-compatible:
 
 1. Implement each approved H0A prerequisite in its own migration/task and test it independently.
-2. Add nullable source-kind and Need Generation alternative columns to existing Confirmed Need tables.
+2. H0B1 adds nullable source-kind, immutable origin/current released-run references, typed operational identity fields, revision ownership keys, and the private revision-contribution bridge. It adds no decision table or current-decision pointer.
 3. Classify existing rows as `WHOLESALE` from their required typed FKs; inspect and prove counts in local/approved environments only.
-4. Add and validate typed FKs, source-kind checks, row-local exactly-one checks, and source-specific uniqueness/indexes.
+4. Add and validate typed/composite FKs, source-kind checks, row-local exactly-one checks, operational-identity uniqueness, membership indexes, and the mandatory H0B1 deferred constraint triggers.
 5. Update internal PA-05D inserts to write explicit `WHOLESALE` classification while preserving its public request, response, capability, events, quantities, and transitions.
 6. Only after backfill and validation, remove `not null` from the three wholesale source columns so `NEED_GENERATION` rows can exist.
-7. Add the append-only decision child and nullable stable-line current-decision pointer; do not invent decisions for existing wholesale rows.
-8. Implement H0C in a later migration after H0B constraints and tests pass.
+7. Implement H0C only after H0B1 operational identity, membership, composite constraints, triggers, and compatibility tests pass.
+8. H1A separately creates Planning policy roots/revisions and their non-overlap/fail-closed constraints.
+9. H1B1 then creates the append-only decision child, mandatory non-null policy FK, nullable stable-line current-decision pointer, and mandatory deferred current-decision trigger. It invents no decision backfill and grants no decision insert path.
+10. H1B2 creates the first authorized read/preview/confirm functions and only then grants their exact execution/runtime privileges.
 
 Making a current wholesale FK nullable is a controlled compatibility generalization, not destructive data migration. The FK remains and `WHOLESALE` rows still require it. No row is moved behind a compatibility view and no existing public command signature changes.
 
@@ -615,18 +672,19 @@ Future migration review must include:
 - current partial unique indexes on Wholesale and Confirmed Need line revisions;
 - one Confirmed Need batch per non-null Wholesale Order origin;
 - one initial Confirmed Need batch per non-null Need Generation origin;
-- one stable Confirmed Need line per typed origin within a batch;
-- one line revision per exact typed source within its stable line;
-- indexed Need Generation run, predecessor, input snapshot, and every typed source bridge FK;
+- one stable school-catering Confirmed Need line per exact typed operational identity within a batch;
+- one line revision number/current revision per stable line and one immutable contribution set per school-catering revision;
+- unique `(line_revision_id, theoretical_need_line_id)` membership and indexed membership ownership/released-source/scope composite FKs;
+- indexed Need Generation run, release snapshot, predecessor, input snapshot, conversion rule, and every typed source bridge FK;
 - one unique direct successor for an accepted one-to-one predecessor chain;
-- decision number uniqueness per line, command/line uniqueness, decision predecessor non-forking, and current pointer integrity; and
+- H1B1 decision number uniqueness per line, command/line uniqueness, decision predecessor non-forking, mandatory policy FK, and current pointer integrity; and
 - service-period/status indexes only for approved read/command paths.
 
 No index may rely on ingredient name, display order, or an unvalidated source hash as authoritative identity.
 
 ### 13.4 Rollback and forward-fix
 
-Before any school-catering row or H0C execution exists, an unshipped migration can be reverted through normal Git review. Once operational school-catering history exists, rollback must not drop generalized columns, source tables, theoretical lines, decisions, receipts, events, or audit evidence.
+Before any school-catering row or H0C execution exists, an unshipped migration can be reverted through normal Git review. Once operational school-catering history exists, rollback must not drop generalized columns, source tables, theoretical lines, revision memberships, decisions, receipts, events, or audit evidence.
 
 The safe operational response is:
 
@@ -674,12 +732,13 @@ Proposed lock order, within PA-03's global Planning class and ascending by UUID 
 command receipt
 → school/customer/location and ingredient/unit references
 → Recipe/BOM and approved source snapshot references
-→ Planning Input Set and Need Generation run
-→ theoretical lines, predecessors, and typed source bridges
+→ Planning Input Set, Need Generation run, and exact release snapshot
+→ theoretical lines, predecessors, conversions, and typed source bridges
 → target Confirmed Need batch
-→ stable Confirmed Need lines
-→ current line revisions and decision pointers
-→ inserts and controlled supersession metadata
+→ stable Confirmed Need lines in operational-identity order
+→ current line revisions and any existing decision pointers
+→ successor revisions and complete contribution memberships
+→ controlled current/source metadata
 → one domain event and one audit event
 ```
 
@@ -687,7 +746,7 @@ The target IDs may be discovered before locking, but their state is not trusted 
 
 ### 14.5 Atomicity and safe outcomes
 
-One success transaction includes every batch/line/revision/source classification change, the batch version, the completed receipt, one event, and one audit event. Any invalid line rolls back all domain writes. External calls, file work, notifications, or client interaction never occur inside the transaction.
+One success transaction includes every batch/line/revision/source classification change, every complete membership snapshot, exact totals, the batch version, the completed receipt, one event, and one audit event. Any invalid group or contribution rolls back all domain writes. External calls, file work, notifications, or client interaction never occur inside the transaction.
 
 Safe errors disclose only public contract fields, current/expected version when authorized, opaque allowed references, write certainty, retryability, and recovery. SQL, table/policy/constraint names, stack traces, JWTs, credentials, and private source payloads remain server-only diagnostics.
 
@@ -707,41 +766,56 @@ Safe errors disclose only public contract fields, current/expected version when 
 - split/merge remains blocked and explicit; and
 - no source identity depends on ingredient name, display name, array order, generated order, or broad school/date/ingredient coincidence.
 
-### 15.2 H0B constraints and compatibility
+### 15.2 H0B1 constraints and compatibility
 
-- every source level satisfies exactly one of Wholesale or Need Generation;
-- mixed source kinds and cross-wired batch/line/revision chains fail;
+- every batch/revision satisfies exactly one of Wholesale or Need Generation and stable-line source kind agrees;
+- the product-approved operational identity is unique and immutable within a batch;
+- one atomic contribution is not silently materialized as one school-catering Confirmed Need line;
+- each school-catering revision owns one nonempty immutable typed membership snapshot;
+- membership rows bind exact released-run lines and the same operational identity through composite FKs;
+- revision theoretical total equals the exact controlled-unit contribution sum through the mandatory deferred trigger;
+- mixed source kinds, wrong run/snapshot, wrong line/revision ownership, wrong scope/unit/conversion, and cross-wired chains fail at the database boundary;
 - a school-catering row cannot use a fake wholesale source;
 - a wholesale row cannot use a Need Generation source;
+- a Wholesale revision cannot own contribution-membership rows;
 - existing wholesale fixtures retain exact `PA-05D.v1` behavior and equality;
 - existing PA-05D payloads/responses/events/capabilities remain unchanged;
-- stable Confirmed Need line continuity occurs only through the exact theoretical predecessor chain;
-- a different source contribution cannot reuse a stable Confirmed Need line;
+- theoretical predecessor ancestry remains atomic contribution trace rather than Confirmed Need stable-line identity;
+- a stable line is never reused when date, school, destination, ingredient, unit, or approved scope changes;
 - one current revision per stable line and valid direct revision predecessors;
-- prior revision payload is immutable while controlled current/status metadata may supersede it;
-- decision rows are append-only, current pointer cannot cross lines/revisions, and a decision predecessor cannot fork;
-- `UNCHANGED_PROPOSAL_ACCEPTED` requires no identical successor revision;
-- `ADJUSTED_QUANTITY_CONFIRMED` binds exact before/after, actor/time, reason, source, policy, versions, and command; and
-- adjusted decision rows derive the logical adjustment history exactly.
+- prior revision and membership payloads are immutable while controlled current/status metadata may supersede them; and
+- direct constraint failures and command revalidation both roll back the whole transaction.
 
 ### 15.3 H0C materialization behavior
 
 - only one exact `RELEASED_FOR_CONFIRMATION` run/version is consumed;
-- initial materialization creates one Draft batch, stable lines, Draft revisions, and exact typed source bindings;
-- proposed quantity equals exact theoretical quantity without rounding and is not authoritative;
+- initial materialization groups the complete released contribution set by approved operational identity;
+- it creates one stable line/revision/membership per operational group, not per contribution;
+- proposed quantity equals the exact contribution total without rounding and is not authoritative;
 - materialization creates no line decision evidence, policy fact, approval snapshot, release, Handoff, Procurement, or Dispatch fact;
-- correction reuses a stable line only for an exact predecessor-chain successor;
-- correction creates a new revision even when only source binding changed;
-- new contributions create new stable lines;
-- removed, missing, split, merge, duplicate-predecessor, and mixed-scope cases reject atomically;
-- prior revisions, decisions, approvals, releases, handoffs, POs, Dispatch facts, receipts, events, and audit remain unchanged;
+- quantity correction and a new same-ingredient contribution update the same operational group through one successor revision and complete new membership;
+- ingredient correction moves membership between immutable old/new ingredient stable lines and never mutates stable-line identity;
+- new operational identities create new stable lines;
+- removed, zero/empty, missing, split, merge, duplicate-predecessor, ambiguous conversion, and mixed-scope cases reject atomically while policy is missing;
+- prior revisions, memberships, decisions, approvals, releases, handoffs, POs, Dispatch facts, receipts, events, and audit remain unchanged;
 - exact replay returns the same IDs and creates no duplicates;
 - changed idempotency reuse conflicts;
 - stale run, batch, line, source, and target state reject with no partial write;
 - concurrent initial/correction calls create one safe chain; and
 - one success creates exactly one completed receipt, one domain event, and one audit event.
 
-### 15.4 Authorization and security
+### 15.4 H1B1 decision-evidence constraints
+
+- H1A policy roots/revisions exist before the decision table migration;
+- every decision has a non-null typed FK to one exact policy revision;
+- no H0 function/runtime/API role can insert a decision;
+- current decision belongs to the same stable line and exact current revision through composite ownership plus the mandatory deferred trigger;
+- `UNCHANGED_PROPOSAL_ACCEPTED` requires no identical successor revision;
+- `ADJUSTED_QUANTITY_CONFIRMED` binds exact before/after, actor/time, reason, membership set, policy, versions, and command;
+- a superseded decision cannot fork and decision rows remain append-only; and
+- adjusted decision rows derive the logical adjustment history exactly.
+
+### 15.5 Authorization and security
 
 - unauthenticated, mismatched subject, inactive actor, inactive membership, missing capability, wrong school/customer/location/date scope, and unsupported delegation fail closed;
 - selector broadening and a global fallback are absent;
@@ -753,12 +827,12 @@ Safe errors disclose only public contract fields, current/expected version when 
 - forced RLS and revoke-first grants cover every new table; and
 - future migration PRs pass Supabase/Postgres advisors and focused pgTAP security checks.
 
-### 15.5 H1 gate tests
+### 15.6 H1B2 gate tests
 
-Before H1 begins, tests must prove:
+Before H1B2 begins, tests must prove:
 
-- one genuine school/date/ingredient line exists without wholesale lineage;
-- one exact current generation/source chain exists;
+- one genuine operational school/date/destination/ingredient/unit line exists without wholesale lineage and has one or more exact atomic contributions;
+- one exact current generation release and immutable membership set exists;
 - no Planning decision exists immediately after materialization;
 - one effective versioned fixture policy exists only in rolled-back/local test data;
 - missing or ambiguous policy fails closed;
@@ -767,14 +841,17 @@ Before H1 begins, tests must prove:
 
 ## 16. H1 gate
 
-PA-06E-H1 is blocked until all of these are merged and verified:
+PA-06E-H1B2 is blocked until all of these are merged and verified:
 
-1. H0A1 through H0A5 provide genuine typed school-catering sources and one released generation result.
-2. H0B provides typed Confirmed Need sources and append-only line decision evidence.
-3. H0C materializes one Draft line without a Planning decision.
-4. H1A provides one exact effective versioned Planning policy and fail-closed resolution.
-5. The school/customer/location/date authorization model is approved and tested.
-6. API names, capabilities, owners, grants, request/response fields, safe errors, and events are approved for the bounded H1 slice.
+1. H0A1 through H0A5 provide genuine typed school-catering sources, atomic theoretical contributions, and one immutable released generation result/snapshot.
+2. Product review approves the exact operational Confirmed Need identity.
+3. H0B1 provides operational stable lines, revision-owned typed contribution memberships, composite constraints, and mandatory deferred integrity triggers; it provides no decision table.
+4. H0C materializes grouped Draft operational lines without a Planning decision.
+5. H1A provides one exact effective versioned Planning policy and fail-closed resolution.
+6. H1B1 provides append-only line decision evidence, a mandatory policy FK, current-decision pointer/integrity trigger, and no browser/API insert path.
+7. H1B2 has approved read/preview/confirm contracts; only its implementation may introduce the first Planning-decision write path.
+8. The school/customer/location/date authorization model is approved and tested.
+9. API names, capabilities, owners, grants, request/response fields, safe errors, and events are approved for the bounded H1 slice.
 
 A locally inserted synthetic line may replace execution of H0C only in H1 tests after the generalized H0 schema exists. It must use genuine H0 typed source rows and cannot use fake wholesale records.
 
@@ -791,31 +868,35 @@ No implementation agent may guess the following:
 5. Exact Planning Input Set scope grain and whether one generation run may span multiple schools, dates, or locations.
 6. Exact calculation-rule and conversion-rule revision roots required by Need Generation.
 7. Exact theoretical-line `REMOVED` disposition constraint and correction evidence.
-8. Whether cross-row source consistency also warrants a deferred constraint trigger after command enforcement is proven.
-9. Exact decision-current composite FK/index design and decision-evidence correction reason rules.
-10. Existing environment row counts and whether any non-wholesale data already violates the proposed classification; no production inspection is authorized here.
+8. Product-approved operational identity beyond the mandatory service-date/school/destination/ingredient/controlled-unit fields, including any program, meal, service-window, or organizational scope dimension.
+9. Exact names and redundant column layout for release-snapshot, operational-identity, composite-FK, and contribution-membership keys. The composite/deferred enforcement direction itself is selected and is not optional.
+10. Exact trigger function names, batching/performance limits, and safe error mapping. The three invariant classes and deferred timing in section 8.4 remain mandatory.
+11. Exact H1B1 decision-current composite columns/indexes and evidence-correction reason rules within the selected mandatory policy/current-decision constraint direction.
+12. Existing environment row counts and whether any non-wholesale data already violates the proposed classification; no production inspection is authorized here.
 
 ### 17.2 Product and policy decisions
 
-11. Zero/removal review and release behavior.
-12. Split and merge mapping/approval behavior.
-13. Whether a prior confirmed quantity may be offered as a corrected-run proposal; H0C defaults to the new theoretical value until approved otherwise.
-14. Planning policy scope levels, precedence, owner, approver, effective-date semantics, and production step values.
-15. Reason-code taxonomy, when a note is mandatory, and decision-evidence correction authority.
-16. Separation of duties for materialization, confirmation, later approval, and release.
-17. Whether purchase-policy absence blocks Planning confirmation or only later handoff; H0 persists no purchase advisory.
+13. Explicit product-owner approval of Alternative B and the final operational Confirmed Need identity.
+14. Zero/empty-line and removed-contribution review, materialization, approval, and release behavior.
+15. Split and merge mapping/approval behavior.
+16. Whether a prior confirmed quantity may be offered as a corrected-run proposal; H0C defaults to the new exact theoretical total until approved otherwise.
+17. Planning policy scope levels, precedence, owner, approver, effective-date semantics, and production step values.
+18. Reason-code taxonomy, when a note is mandatory, and decision-evidence correction authority.
+19. Separation of duties for materialization, confirmation, later approval, and release.
+20. Whether purchase-policy absence blocks Planning confirmation or only later handoff; H0 persists no purchase advisory.
 
 ### 17.3 API, security, and operations decisions
 
-18. Canonical function, capability, contract-version, event, and safe-error names.
-19. Whether H0C is callable by Planning humans, a dedicated integration actor, or both.
-20. Exact school/customer/location/service-date scope predicates and scope-storage extension.
-21. Exact runtime-role name and practical least-privilege grant set.
-22. Maximum run/line count, statement timeout, lock timeout, and retry policy for materialization.
-23. Deterministic failed-command receipt policy for every proposed H0C error.
-24. Registry versioning and how the canonical 18-function boundary is amended, if approved.
-25. Event payload and audit before/after minimization rules.
-26. Cutover, rehearsal, production backfill, and deployment plan. None is part of H0 documentation.
+21. Canonical function, capability, contract-version, event, and safe-error names.
+22. Whether H0C is callable by Planning humans, a dedicated integration actor, or both.
+23. Exact school/customer/location/service-date scope predicates and scope-storage extension.
+24. Exact runtime-role name and practical least-privilege grant set.
+25. Maximum run/contribution/group count, statement timeout, lock timeout, and retry policy for materialization and deferred checks.
+26. Deterministic failed-command receipt policy for every proposed H0C error.
+27. Registry versioning and how the canonical 18-function boundary is amended, if approved.
+28. Event payload and audit before/after minimization rules.
+29. Ownership and timing of the focused PD-01.8/PA-02 parent-contract amendment after operational-grain approval.
+30. Cutover, rehearsal, production backfill, and deployment plan. None is part of H0 documentation.
 
 ## 18. Security, migration, and rollback effect of this task
 
