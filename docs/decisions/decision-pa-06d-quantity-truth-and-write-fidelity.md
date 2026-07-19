@@ -6,6 +6,8 @@
 
 **Rule evidence:** [PA-06D Rounding and Rebalancing Rule Register](../business-rules/pa-06d-rounding-rebalancing-rule-register.md)
 
+**Confirmed Need resolution:** [Decision PA-06E — Confirmed Need Source Correction](decision-pa-06e-confirmed-need-source-correction.md) retains the existing Confirmed Need revision and adds no Quantity Decision aggregate. Its proposed APIs and pending rows remain unapproved.
+
 ## 1. Decisions already established by the task
 
 The following directions are authoritative prerequisites for future design:
@@ -53,7 +55,7 @@ On success, command output contains the exact persisted snapshot. The client dis
 ## 4. Consequences and non-decisions
 
 - The existing PA-05E full-line allocation remains valid only for its approved bounded supplier-direct slice; it does not authorize multi-supplier portions.
-- The preferred future Quantity Decision insertion point is the Confirmed Need line/revision before CMD-03; CMD-03 would consume the confirmed decision. This is a recommendation, not approval, and requires an explicit architecture and command-contract change.
+- PA-06E resolves the preferred insertion point as the existing Confirmed Need line revision before CMD-03, without a separate Quantity Decision object. CMD-03 consumption changes still require an explicit architecture and command-contract change.
 - A new intermediate object between Confirmed Need and Purchase Handoff is an alternative architecture change, not an approved PA-06D object.
 - `Nhu cầu vận hành` is **Proposed pending product-owner and operations-language review**; PA-06D records alternatives but does not settle the final Vietnamese term.
 - No implementation may infer approval for the candidate Planning steps, residual policy, locks, automatic supplier proposal, zero behavior or released-PO correction path.

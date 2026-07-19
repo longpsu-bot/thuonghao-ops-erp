@@ -29,6 +29,8 @@ The callable surface is exactly:
 
 Contract version: `PA-05D.v1`.
 
+[PA-06E](pa-06e-confirmed-need-review-adjustment-revision-contract.md) retains the existing Confirmed Need line-revision model for future school-catering review and source correction; it does not change this contract's direct-wholesale pass-through equality or any `PA-05D.v1` command.
+
 PA-05D creates no Procurement allocation, purchase order, physical evidence, dispatch plan, trip, stop, load, delivery, read API, UI, deployment, seed data, or OPS v1 change.
 
 ## 2. OPS_SYSTEM_MAP placement
