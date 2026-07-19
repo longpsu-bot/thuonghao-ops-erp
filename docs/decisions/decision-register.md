@@ -30,6 +30,8 @@ PA-06E approved directions and unresolved product choices are tracked separately
 
 PA-06E-H0 physical recommendations and unresolved prerequisites are tracked separately in [Decision PA-06E-H0 — Source Lineage and Decision Evidence](decision-pa-06e-h0-source-lineage-and-decision-evidence.md). The selected inline typed-source, theoretical predecessor, decision-evidence, policy-gate, and materialization directions remain proposed until product, architecture, security, and migration review; no implementation or API-registry change is approved by that record.
 
+The bounded PA-06E-H0A1 customer, school, same-customer default delivery-location, and relational `SCHOOL` scope model is recorded in [Decision PA-06E-H0A1 — School and Delivery-Location Ownership](decision-pa-06e-h0a1-school-delivery-location-ownership.md). Issue #117 accepts this reference foundation only; later school-catering lineage, calculation, confirmation, policy, and API decisions remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
