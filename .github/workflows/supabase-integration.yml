@@ -99,6 +99,7 @@ jobs:
         run: |
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/pa_06e_h0a1_school_customer_location_foundation.sql --local
+          pnpm exec supabase test db supabase/tests/pa_06e_h0a2_recipe_bom_immutable_reference_foundation.sql --local
           pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
           pnpm exec supabase test db supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql --local
           pnpm local:auth:provision

@@ -32,6 +32,8 @@ PA-06E-H0 physical recommendations and unresolved prerequisites are tracked sepa
 
 The bounded PA-06E-H0A1 customer, school, same-customer default delivery-location, and relational `SCHOOL` scope model is recorded in [Decision PA-06E-H0A1 — School and Delivery-Location Ownership](decision-pa-06e-h0a1-school-delivery-location-ownership.md). Issue #117 accepts this reference foundation only; later school-catering lineage, calculation, confirmation, policy, and API decisions remain outside its authority.
 
+The bounded PA-06E-H0A2 Dish, scoped Recipe, RecipeVersion release, stable RecipeLine, and immutable RecipeLineRevision model is recorded in [Decision PA-06E-H0A2 — Immutable Recipe and BOM Reference Lineage](decision-pa-06e-h0a2-immutable-recipe-bom-reference-lineage.md). Issue #119 accepts this private reference foundation only; selection precedence, commands, review/unlock workflow, calculation policy, Planning lineage, and later materialization decisions remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

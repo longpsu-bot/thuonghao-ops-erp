@@ -152,11 +152,11 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-None of the tasks below was authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 is subsequently authorized by Issue #117 and tracked in [TASK-PA-06E-H0A1](TASK-PA-06E-H0A1-school-customer-location-foundation.md); every later task remains unapproved here.
+None of the tasks below was authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was subsequently authorized by Issue #117 and merged; H0A2 is subsequently authorized by Issue #119 and tracked in [TASK-PA-06E-H0A2](TASK-PA-06E-H0A2-recipe-bom-immutable-reference-foundation.md). Every later task remains unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
 
-**Status:** Implemented by [TASK-PA-06E-H0A1](TASK-PA-06E-H0A1-school-customer-location-foundation.md) under Issue #117; pending review and merge
+**Status:** Implemented by [TASK-PA-06E-H0A1](TASK-PA-06E-H0A1-school-customer-location-foundation.md) under Issue #117 and merged into `main`
 
 **Decision:** [Decision PA-06E-H0A1 — School and Delivery-Location Ownership](../decisions/decision-pa-06e-h0a1-school-delivery-location-ownership.md)
 
@@ -174,6 +174,10 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 
 ### H0A2 — Recipe/BOM immutable reference foundation
 
+**Status:** Implemented by [TASK-PA-06E-H0A2](TASK-PA-06E-H0A2-recipe-bom-immutable-reference-foundation.md) under Issue #119; pending draft-PR review
+
+**Decision:** [Decision PA-06E-H0A2 — Immutable Recipe and BOM Reference Lineage](../decisions/decision-pa-06e-h0a2-immutable-recipe-bom-reference-lineage.md)
+
 **Owner:** Recipe / Admin governance
 
 **Objective:** Persist stable Dish/Recipe/RecipeLine or BOMLine identities and exact immutable revisions required by calculation lineage.
@@ -182,7 +186,9 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 
 **Prohibited:** Planning calculations, Menu/Attendance writes, Confirmed Need, generic formula engine, QA/Production approval.
 
-**Blocking decisions:** RecipeLine/BOMLine physical relationship, version release mechanics, correction identity, calculation-rule reference.
+**Resolved for H0A2:** one stable RecipeLine root, immutable exact predecessor-linked revisions, atomic release-successor locking, composition completeness, and fixed proportional-per-basis reference semantics.
+
+**Still outside H0A2:** recipe selection precedence, commands/APIs, review or unlock workflows, calculation and conversion policy, Planning lineage, and every later materialization decision.
 
 ### H0A3a — Weekly Menu persistence
 
