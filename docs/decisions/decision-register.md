@@ -28,6 +28,8 @@ PA-06D approved directions and unresolved product choices are tracked separately
 
 PA-06E approved directions and unresolved product choices are tracked separately in [Decision PA-06E — Confirmed Need Source Correction](decision-pa-06e-confirmed-need-source-correction.md). The existing Confirmed Need revision is retained and no Planning confirmation aggregate is introduced; pending PA-06E rows and proposed APIs are not accepted project decisions or canonical registry entries.
 
+PA-06E-H0 physical recommendations and unresolved prerequisites are tracked separately in [Decision PA-06E-H0 — Source Lineage and Decision Evidence](decision-pa-06e-h0-source-lineage-and-decision-evidence.md). The selected inline typed-source, theoretical predecessor, decision-evidence, policy-gate, and materialization directions remain proposed until product, architecture, security, and migration review; no implementation or API-registry change is approved by that record.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
