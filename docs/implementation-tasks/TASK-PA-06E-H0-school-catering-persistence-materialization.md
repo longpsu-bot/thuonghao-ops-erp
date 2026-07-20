@@ -152,7 +152,7 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-None of the tasks below was authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was subsequently authorized by Issue #117 and merged; H0A2 was authorized by Issue #119 and merged; H0A3a was authorized by Issue #121 and is tracked in [TASK-PA-06E-H0A3a](TASK-PA-06E-H0A3a-weekly-menu-persistence-foundation.md). Every later task remains unapproved here.
+None of the tasks below was authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was subsequently authorized by Issue #117 and merged; H0A2 was authorized by Issue #119 and merged; H0A3a was authorized by Issue #121 and merged; H0A3b was authorized by Issue #123 and is tracked in [TASK-PA-06E-H0A3b](TASK-PA-06E-H0A3b-attendance-persistence-foundation.md). Every later task remains unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
 
@@ -192,7 +192,7 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 
 ### H0A3a — Weekly Menu persistence
 
-**Status:** Implemented by [TASK-PA-06E-H0A3a](TASK-PA-06E-H0A3a-weekly-menu-persistence-foundation.md) under Issue #121; pending draft-PR review
+**Status:** Implemented by [TASK-PA-06E-H0A3a](TASK-PA-06E-H0A3a-weekly-menu-persistence-foundation.md) under Issue #121 and merged into `main`
 
 **Decision:** [Decision PA-06E-H0A3a — Controlled Weekly Menu Persistence](../decisions/decision-pa-06e-h0a3a-controlled-weekly-menu-persistence.md)
 
@@ -210,6 +210,10 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 
 ### H0A3b — Attendance persistence
 
+**Status:** Implemented by [TASK-PA-06E-H0A3b](TASK-PA-06E-H0A3b-attendance-persistence-foundation.md) under Issue #123; pending draft-PR review
+
+**Decision:** [Decision PA-06E-H0A3b — Controlled Attendance Persistence](../decisions/decision-pa-06e-h0a3b-controlled-attendance-persistence.md)
+
 **Owner:** Planning
 
 **Objective:** Persist one controlled Attendance root, stable school/date portions, approval snapshot, and snapshot lines.
@@ -217,6 +221,10 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 **Expected physical scope:** parent-contract lifecycle, typed school/date, nonnegative portions, immutable approved snapshot.
 
 **Prohibited:** Menu mutation, ingredient calculation, Confirmed Need, production import.
+
+**Resolved for H0A3b:** one stable arbitrary inclusive-period Attendance root, typed School/date exact nonnegative integer portions, locked lifecycle and working refresh rules, exact immutable approval snapshots, active-line completeness, and retained prior approvals across reopen/later-version work.
+
+**Still outside H0A3b:** commands, authorization, import behavior, defaults, omitted-School/day and inactive-School policy, reasons, issues/events, Planning Input Set, readiness, Need Generation, ingredient calculation, API/UI, hosted execution, and production rollout.
 
 ### H0A4 — Planning Input Set and readiness persistence
 
