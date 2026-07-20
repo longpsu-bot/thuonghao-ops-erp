@@ -38,6 +38,8 @@ The bounded PA-06E-H0A3a stable Weekly Menu root, typed working lines, exact app
 
 The bounded PA-06E-H0A3b stable Attendance batch, School/date exact-portion lines, exact approval snapshot, and immutable snapshot-line model is recorded in [Decision PA-06E-H0A3b — Controlled Attendance Persistence](decision-pa-06e-h0a3b-controlled-attendance-persistence.md). Issue #123 accepts this private persistence foundation only; commands, authorization, import behavior, defaults, inactive-School policy, issues/events, Planning Input Set, readiness, Need Generation, API/UI, hosted execution, and production rollout remain outside its authority.
 
+The bounded PA-06E-H0A4a Planning Input Readiness design is recorded in [Decision PA-06E-H0A4 — Planning Input Readiness](decision-pa-06e-h0a4-planning-input-readiness.md). Issue #125 accepts one stable exact-period root, immutable evaluation versions/issues, direct typed Weekly Menu and Attendance approval-snapshot bindings, period containment, a closed lifecycle, explicit invalidation, nonblocking warnings with acknowledgement deferred, and handoff-only request semantics. Persistence, commands, authorization, events, API/UI, hosted execution, calculation, and downstream materialization remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
