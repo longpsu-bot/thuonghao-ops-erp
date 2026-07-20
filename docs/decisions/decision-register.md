@@ -42,6 +42,8 @@ The bounded PA-06E-H0A4a Planning Input Readiness design is recorded in [Decisio
 
 The bounded PA-06E-H0A4b private persistence implementation is recorded in [Decision PA-06E-H0A4b — Planning Input Readiness Persistence](decision-pa-06e-h0a4b-planning-input-readiness-persistence.md). Issue #127 accepts exactly three Planning relations, direct typed source snapshot ownership, immutable sequential evaluations/issues, exact blocker/warning evidence, the closed lifecycle, explicit invalidation, forced RLS with zero policies, and 123 focused pgTAP assertions. Commands, authorization, events, acknowledgement, read/API/UI surfaces, hosted execution, calculation, H0A5, and downstream materialization remain outside its authority.
 
+The bounded PA-06E-H0A5a Need Generation design is recorded in [Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage](decision-pa-06e-h0a5-need-generation-lineage.md). Issue #129 accepts one exact input-set/evaluation run attempt, a linear correction chain, immutable typed input and Recipe-use evidence, one fixed proportional numeric calculation contract, deterministic Recipe precedence, source-Unit output, atomic direct typed lineage, explicit predecessor/removal semantics, a closed issue catalog, the four-state lifecycle, and an immutable release boundary. H0A5b persistence, commands, authorization, API/UI, hosted execution, Confirmed Need materialization, downstream correction, and production rollout remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

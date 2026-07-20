@@ -10,6 +10,8 @@
 
 **Decision record:** [Decision PA-06E-H0 — Source Lineage and Decision Evidence](../decisions/decision-pa-06e-h0-source-lineage-and-decision-evidence.md)
 
+**Need Generation decision:** [Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md)
+
 **Implementation decomposition:** [TASK-PA-06E-H0](../implementation-tasks/TASK-PA-06E-H0-school-catering-persistence-materialization.md)
 
 ## 1. Executive outcome
@@ -150,10 +152,10 @@ The classification values in this table are the exact Issue #115 categories. “
 | Recipe/BOM version references                                      | H0A2 immutable Recipe/BOM reference foundation merged                    | required before H0 implementation but owned by another bounded task | H0A2 — merged immutable reference foundation                            | H1 source explanation uses exact stable and revision IDs.                                      |
 | Weekly Menu persistence                                            | H0A3a stable root and exact immutable approval snapshots merged          | required before H0 implementation but owned by another bounded task | H0A3a — merged Weekly Menu persistence                                  | Need Generation can bind exact approved Menu evidence.                                         |
 | Attendance persistence                                             | H0A3b stable root and exact immutable approval snapshots merged          | required before H0 implementation but owned by another bounded task | H0A3b — merged Attendance persistence                                   | Need Generation can bind exact approved portion evidence.                                      |
-| Planning Input Set/readiness persistence                           | H0A4a decision closed; no persistence yet                                | required before H0 implementation but owned by another bounded task | H0A4a decision, then H0A4b persistence                                  | Generation must fail closed without the exact current immutable evaluation and typed snapshots. |
-| Need Generation run and theoretical-line persistence               | Logical contract/prototype only                                          | required in H0                                                      | H0A5 — Need Generation persistence                                      | H1 cannot use a fake or mutable calculation row.                                               |
-| Theoretical-line typed source lineage                              | PA-02 candidate only                                                     | required in H0                                                      | H0A5 — typed source bridges and predecessor model                       | H1 reads exact authoritative upstream trace.                                                   |
-| Stable source-contribution identity                                | No physical predecessor on theoretical lines                             | required in H0                                                      | H0A5 — explicit predecessor and atomic contribution grain               | H1 corrections cannot match by ingredient/name/order.                                          |
+| Planning Input Set/readiness persistence                           | H0A4a decision and H0A4b private persistence merged                      | required before H0 implementation but owned by another bounded task | H0A4a decision and merged H0A4b persistence                             | Generation must fail closed without the exact current immutable evaluation and typed snapshots. |
+| Need Generation run and theoretical-line persistence               | H0A5a run, calculation, lifecycle, issue, and release decisions accepted | required in H0                                                      | H0A5a accepted decision; H0A5b persistence separately authorized       | H1 cannot use a fake or mutable calculation row.                                               |
+| Theoretical-line typed source lineage                              | H0A5a direct typed anchors and bounded typed run-use relations accepted  | required in H0                                                      | H0A5a accepted decision; H0A5b persistence separately authorized       | H1 reads exact authoritative upstream trace.                                                   |
+| Stable source-contribution identity                                | H0A5a atomic anchor tuple and one-to-one predecessor rules accepted      | required in H0                                                      | H0A5a accepted decision; H0A5b persistence separately authorized       | H1 corrections cannot match by ingredient/name/order.                                          |
 | Operational Confirmed Need identity                                | Active OPS v1 evidence is school/date/ingredient; Atlas design unsettled | required in H0                                                      | H0B1 — typed operational tuple after product approval                   | H1 must review one operational requirement, not one source contribution.                       |
 | Revision contribution membership                                   | No physical membership snapshot                                          | required in H0                                                      | H0B1 — immutable typed revision contribution bridge                     | H1 explains every atomic source contributing to the reviewed total.                            |
 | Confirmed Need source generalization                               | Three required wholesale FKs                                             | required in H0                                                      | H0B1 — source generalization and enforceable membership constraints     | H1 fixture must use `NEED_GENERATION`, never fake wholesale.                                   |
@@ -177,7 +179,8 @@ H0A3a — Weekly Menu persistence and approval snapshots
 H0A3b — Attendance persistence and approval snapshots
 H0A4a — Planning Input Set/readiness decision closure
 H0A4b — Planning Input Set/readiness persistence
-H0A5 — Need Generation run, atomic theoretical lines, typed sources, predecessor chain
+H0A5a — Need Generation run, calculation, lifecycle, issue, release, and lineage decision closure
+H0A5b — Need Generation private persistence and database invariants
   ↓
 H0B1 — operational Confirmed Need identity, source generalization, and revision contribution membership
   ↓
@@ -192,7 +195,7 @@ H1B2 — authorized read, preview, and confirmation for one synthetic operationa
 Later — validation, approval, release, school-catering CMD-03, downstream correction
 ```
 
-The H0A labels are a decomposition contract, not blanket authorization for issues or migrations. H0A1 and H0A2 belong to different business owners and must remain separately reviewable. Weekly Menu and Attendance also retain independent lifecycles and approval snapshots. H0A4a closes the readiness design in [Decision PA-06E-H0A4](../decisions/decision-pa-06e-h0a4-planning-input-readiness.md); a separately authorized H0A4b must implement it. H0A5 consumes the exact current immutable evaluation and its typed snapshot bindings but does not edit them. H0B1 intentionally creates no decision table or insert path; decision persistence follows the policy in H1B1 so a decision can never exist without an exact policy revision.
+The H0A labels are a decomposition contract, not blanket authorization for issues or migrations. H0A1 and H0A2 belong to different business owners and must remain separately reviewable. Weekly Menu and Attendance also retain independent lifecycles and approval snapshots. H0A4a closes the readiness design in [Decision PA-06E-H0A4](../decisions/decision-pa-06e-h0a4-planning-input-readiness.md), and H0A4b has merged its exact private persistence. H0A5a closes the Need Generation design in [Decision PA-06E-H0A5](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md); a separately authorized H0A5b must implement it. Need Generation consumes the exact current immutable evaluation and its typed snapshot bindings but does not edit them. H0B1 intentionally creates no decision table or insert path; decision persistence follows the policy in H1B1 so a decision can never exist without an exact policy revision.
 
 ## 6. Calculation grain versus Planning confirmation grain
 
@@ -248,7 +251,7 @@ ConfirmedNeedLineRevision
 → exact source quantity/unit and exact controlled-unit contribution
 ```
 
-The bridge stores no Menu, Attendance, Recipe, or BOM payload. Those facts remain reachable through the Theoretical Need line's typed source bridges. The revision snapshot stores only the exact membership and normalized contribution facts necessary to reproduce the reviewed total.
+The bridge stores no Menu, Attendance, Recipe, or BOM payload. Those facts remain reachable through the Theoretical Need line's direct typed source anchors and bounded typed run-use relations. The revision snapshot stores only the exact membership and normalized contribution facts necessary to reproduce the reviewed total.
 
 ### 7.2 Model B — released generation requirement group
 
@@ -346,12 +349,13 @@ This catalog states physical intent only. It is not migration syntax.
 | Recipe/BOM physical family                          | Dish, scoped Recipe, immutable Recipe Version, stable RecipeLine, immutable line revision                                                                                                      | Stable line identity; exact revision FKs; no released-row overwrite                                         | **Merged by H0A2**.                                                    |
 | Weekly Menu physical family                         | Stable seven-day root, stable lines, approval snapshot, snapshot lines                                                                                                                          | Exact School/date/slot/Dish and approved version ownership                                                  | **Merged by H0A3a**.                                                   |
 | Attendance physical family                          | Stable arbitrary inclusive-period root, stable School/date lines, approval snapshot, snapshot lines                                                                                            | Exact School/date portion facts and approved version ownership                                             | **Merged by H0A3b**.                                                   |
-| Planning Input Set/readiness                        | One stable exact-period root, positive immutable evaluation versions, two direct typed approval-snapshot bindings, immutable evaluation issues                                                | Unique exact inclusive period; at most one snapshot per source type; exact snapshot/root/version ownership; source periods contain evaluated period | **H0A4a design accepted; H0A4b persistence pending separate approval**. |
-| `need_generation_runs`                              | Root with input snapshot, calculation-rule revision, status, scope, version                                                                                                                    | Released run immutable; unique run number per input set                                                     | **Proposed PA-02-aligned H0A5 direction**.                             |
-| `need_generation_input_snapshots`                   | Exact Menu, Attendance, Recipe/BOM, readiness, conversion, and calculation-rule versions                                                                                                       | Typed relations; no required lineage JSON                                                                   | **Proposed H0A5 direction**.                                           |
-| Need Generation release snapshot/lines              | Immutable released run/version and exact released Theoretical Need line membership                                                                                                             | Composite unique keys permit typed FK from H0B1 membership to one exact released line                       | **Required H0A5 direction; exact names pending**.                      |
-| `theoretical_need_lines`                            | One atomic contribution; run, school/date, ingredient, quantity/unit, disposition, predecessor                                                                                                 | Unique atomic source anchor per run; predecessor indexed; active quantity nonnegative; removed exactly zero | **Selected proposal; pending H0A5 migration approval**.                |
-| `theoretical_need_line_sources`                     | Typed bridge rows to exact Menu snapshot line, Attendance snapshot line, RecipeLine/BOMLine revision, and other approved source revisions                                                      | Exactly one typed source FK per bridge row; required source-kind set per calculation kind                   | **Selected PA-02 direction; pending exact source set**.                |
+| Planning Input Set/readiness                        | One stable exact-period root, positive immutable evaluation versions, two direct typed approval-snapshot bindings, immutable evaluation issues                                                | Unique exact inclusive period; at most one snapshot per source type; exact snapshot/root/version ownership; source periods contain evaluated period | **H0A4a design accepted; H0A4b persistence merged**.                   |
+| `need_generation_runs`                              | One accepted attempt for one exact Planning Input Set/current evaluation; local attempt ordinal, predecessor, four-state lifecycle, optimistic version                                         | One linear same-input-set chain; no fork/cycle/cross-period predecessor; released terminal immutable        | **H0A5a selected; H0A5b persistence pending separate authorization**.  |
+| `need_generation_input_snapshots`                   | One immutable run header with exact input-set/evaluation and Menu/Attendance triples, plus bounded typed Recipe selection/use relations and one fixed calculation-contract revision             | Exact H0A4b ownership; no generic registry or lineage JSON; complete immutable evidence                     | **H0A5a selected; H0A5b persistence pending separate authorization**.  |
+| Need Generation calculation contract                | Stable contract root and immutable positive revision for the fixed proportional Recipe formula and numeric semantics                                                                           | Formula identity and parameters are revisioned; no generic formula engine                                   | **H0A5a selected; H0A5b persistence pending separate authorization**.  |
+| `theoretical_need_lines`                            | One immutable atomic Menu × Attendance × RecipeLine contribution with direct typed source anchors, source Unit, disposition, and optional predecessor                                           | Anchor uniqueness per run; at most one same-input-set successor; `ACTIVE >= 0`; `REMOVED = 0`               | **H0A5a selected; H0A5b persistence pending separate authorization**.  |
+| Need Generation issues                              | Immutable coded run evidence from the closed H0A5a catalog with typed context where applicable                                                                                                 | Append-only; blockers prevent validation/release; invalid evidence requires a successor run                 | **H0A5a selected; H0A5b persistence pending separate authorization**.  |
+| Need Generation release snapshot/lines/issues       | Immutable release header and exact line and issue membership for one exact released run/version                                                                                                | Complete one-run membership; no later row can enter the released boundary                                  | **H0A5a selected; H0A5b persistence pending separate authorization**.  |
 | `confirmed_need_batches` generalization             | Add source kind, immutable origin run, and controlled current released-run snapshot; retain Wholesale FK                                                                                       | Exactly one typed source family; origin immutable; current snapshot belongs to its correction chain         | **Selected proposal; pending H0B1 migration approval**.                |
 | `confirmed_need_lines` generalization               | Retain Wholesale line FK; for school catering add immutable typed operational identity fields, not one origin theoretical line                                                                 | Composite operational identity unique per batch; source kind consistent; no current-decision pointer yet    | **Selected proposal; product identity approval required before H0B1**. |
 | `confirmed_need_line_revisions` generalization      | Retain Wholesale revision FK; school-catering revision binds its exact released snapshot and owns one membership set; the current revision agrees with the batch's controlled current snapshot | Unique revision number; one current; composite ownership/source keys; immutable payload                     | **Selected proposal; pending H0B1 migration approval**.                |
@@ -518,7 +522,7 @@ The command must authoritatively resolve and lock:
 - one exact Need Generation run and requested version;
 - run status `RELEASED_FOR_CONFIRMATION` and its immutable release evidence;
 - one complete input snapshot and approved typed Menu/Attendance/Recipe/BOM/calculation references;
-- every released atomic theoretical line, release-snapshot membership, and typed source bridge;
+- every released atomic theoretical line, release-snapshot membership, direct typed source anchor, and bounded typed run-use relation;
 - every predecessor, explicit removal, and typed mapping needed to prove the complete source-contribution set;
 - active ingredients and units;
 - every exact conversion rule required to express a contribution in its controlled operational unit;
@@ -676,7 +680,7 @@ Future migration review must include:
 - one stable school-catering Confirmed Need line per exact typed operational identity within a batch;
 - one line revision number/current revision per stable line and one immutable contribution set per school-catering revision;
 - unique `(line_revision_id, theoretical_need_line_id)` membership and indexed membership ownership/released-source/scope composite FKs;
-- indexed Need Generation run, release snapshot, predecessor, input snapshot, conversion rule, and every typed source bridge FK;
+- indexed Need Generation run, release snapshot, predecessor, input snapshot, future conversion rule when approved, direct typed source anchor, and bounded typed run-use FK;
 - one unique direct successor for an accepted one-to-one predecessor chain;
 - H1B1 decision number uniqueness per line, command/line uniqueness, decision predecessor non-forking, mandatory policy FK, and current pointer integrity; and
 - service-period/status indexes only for approved read/command paths.
@@ -734,7 +738,7 @@ command receipt
 → school/customer/location and ingredient/unit references
 → Recipe/BOM and approved source snapshot references
 → Planning Input Set, Need Generation run, and exact release snapshot
-→ theoretical lines, predecessors, conversions, and typed source bridges
+→ theoretical lines, predecessors, direct typed source anchors, and bounded typed run-use relations
 → target Confirmed Need batch
 → stable Confirmed Need lines in operational-identity order
 → current line revisions and any existing decision pointers
@@ -761,8 +765,8 @@ Safe errors disclose only public contract fields, current/expected version when 
 - each evaluation has at most one direct typed Weekly Menu approval-snapshot binding and at most one direct typed Attendance approval-snapshot binding;
 - each `READY` evaluation binds both exact snapshot/root/version families, and both source periods wholly contain the evaluated period;
 - blocking and warning issues belong immutably to exactly one evaluation, and the closed lifecycle preserves the exact current evaluation across request/invalidation;
-- a released Need Generation run binds exact input, Recipe/BOM, conversion, and calculation-rule revisions;
-- every theoretical line has the required typed source bridges;
+- a released Need Generation run binds exact input, Recipe/BOM, and fixed calculation-contract revisions; the source-unit H0A5b slice has no conversion revision;
+- every theoretical line has the required direct typed source anchors and bounded typed run-use evidence;
 - theoretical lines are atomic source contributions rather than ingredient-name aggregates;
 - quantity and ingredient corrections on the same stable RecipeLine/BOMLine use an explicit predecessor;
 - new contribution has no predecessor and receives unique stable anchors;
@@ -869,9 +873,9 @@ The first four prerequisite decisions below are retained for provenance and mark
 2. **Resolved by H0A1:** `customer_type` permits the approved school-catering customer type without weakening wholesale ownership.
 3. **Resolved by H0A2:** the exact Dish/Recipe/RecipeVersion/RecipeLine/RecipeLineRevision physical family and stable/revision identity are merged.
 4. **Resolved by H0A3a/H0A3b:** exact Weekly Menu and Attendance roots, stable lines, approval snapshots, snapshot lines, and correction-history mechanics are merged.
-5. Whether one generation run may span multiple schools, dates, or locations. H0A4a resolves the Planning Input Set root grain as one stable root per exact inclusive evaluated period; that root grain must not be reopened here.
-6. Exact calculation-rule and conversion-rule revision roots required by Need Generation.
-7. Exact theoretical-line `REMOVED` disposition constraint and correction evidence.
+5. **Resolved by H0A5a:** one generation run is one accepted attempt for one exact Planning Input Set/current evaluation and may include all Schools, dates, and locations contained by those exact typed snapshots.
+6. **Resolved by H0A5a:** the first slice uses one fixed versioned calculation contract and preserves the RecipeLineRevision source Unit; no conversion-rule family or generic formula engine is introduced.
+7. **Resolved by H0A5a:** a predecessor-linked `REMOVED` line has exact zero quantity and explicit H0A2 removed-revision evidence; silent omission of a prior active contribution blocks the successor.
 8. Product-approved operational identity beyond the mandatory service-date/school/destination/ingredient/controlled-unit fields, including any program, meal, service-window, or organizational scope dimension.
 9. Exact names and redundant column layout for release-snapshot, operational-identity, composite-FK, and contribution-membership keys. The composite/deferred enforcement direction itself is selected and is not optional.
 10. Exact trigger function names, batching/performance limits, and safe error mapping. The three invariant classes and deferred timing in section 8.4 remain mandatory.
