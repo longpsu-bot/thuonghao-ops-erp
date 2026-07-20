@@ -21,7 +21,7 @@ The root service period is any inclusive seven-calendar-day range where `week_en
 
 ## Stable root and working-line decision
 
-The Weekly Menu root retains its UUID and exact service-week scope through import, correction, approval, Need Generation request, and reopen. Source type, source name, and source signature are nonblank evidence. Row count is nonnegative, and the root version is positive.
+The Weekly Menu root retains its UUID and exact service-week scope through import, correction, approval, Need Generation request, and reopen. Source type, source name, and source signature are nonblank evidence. Row count is nonnegative, and the root version is positive. Source type, source name, source signature, row count, imported actor/time, and `updated_at` describe the current working version: they may be refreshed only by same-state `DRAFT` or `REOPENED` updates, and that refresh does not require a version change. Every lifecycle transition preserves those source/import facts, while same-state `VALIDATED`, `APPROVED`, and `NEED_GENERATION_REQUESTED` updates cannot rewrite them.
 
 Every root enters as `DRAFT`. The only accepted transitions are:
 

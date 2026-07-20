@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(96);
+select plan(103);
 
 select is(
   (
@@ -309,7 +309,7 @@ select is(
   'new Weekly Menu lifecycle, positive version, and nonnegative row-count defaults are exact'
 );
 
-select throws_ok(
+select lives_ok(
   $$
     update atlas_planning.weekly_menus
     set source_type = 'SYNTHETIC_FIXTURE_CORRECTED',
@@ -318,12 +318,41 @@ select throws_ok(
         row_count = 4,
         imported_by_actor_id = '9a000000-0000-0000-0000-000000000003',
         imported_at = timestamptz '2026-07-19 08:15:00+07',
-        updated_at = transaction_timestamp()
+        updated_at = updated_at + interval '1 second'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
-  '23514',
-  'weekly menu import and source evidence are immutable after creation',
-  'same-state DRAFT updates cannot rewrite established source and import evidence'
+  'same-state DRAFT refreshes may replace the complete working source and import evidence'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_planning.weekly_menus
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+      and source_type = 'SYNTHETIC_FIXTURE_CORRECTED'
+      and source_name = 'PA-06E-H0A3a corrected week one'
+      and source_signature = 'sha256:week-one-corrected'
+      and row_count = 4
+      and imported_by_actor_id = '9a000000-0000-0000-0000-000000000003'
+      and imported_at = timestamptz '2026-07-19 08:15:00+07'
+      and updated_at = created_at + interval '1 second'
+  ),
+  'all refreshed DRAFT source, import, row-count, and update-time values persist exactly'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_planning.weekly_menus
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+      and week_start = date '2026-07-21'
+      and week_end = date '2026-07-27'
+      and version = 1
+      and latest_approved_by_actor_id is null
+      and latest_approved_at is null
+      and latest_approval_snapshot_id is null
+  ),
+  'DRAFT refresh preserves root identity, week scope, version, and empty approval history'
 );
 
 select throws_ok(
@@ -721,7 +750,7 @@ select throws_ok(
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
   'validation cannot rewrite the imported source type'
 );
 
@@ -729,22 +758,32 @@ select throws_ok(
   $$
     update atlas_planning.weekly_menus
     set weekly_menu_status = 'VALIDATED',
-        source_name = 'smuggled source name'
+        updated_at = updated_at + interval '1 second'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
-  'validation cannot rewrite the imported source name'
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
+  'validation cannot rewrite the working update timestamp'
 );
 
 select lives_ok(
   $$
     update atlas_planning.weekly_menus
-    set weekly_menu_status = 'VALIDATED',
-        updated_at = transaction_timestamp()
+    set weekly_menu_status = 'VALIDATED'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   'DRAFT advances to VALIDATED without skipping a lifecycle state'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set source_type = 'IMMUTABLE_VALIDATED_SOURCE'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
+  'same-state VALIDATED updates cannot rewrite source or import evidence'
 );
 
 select throws_ok(
@@ -865,7 +904,7 @@ select throws_ok(
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
   'approval cannot rewrite the imported source signature'
 );
 
@@ -875,8 +914,7 @@ select lives_ok(
     set weekly_menu_status = 'APPROVED',
         latest_approved_by_actor_id = '9a000000-0000-0000-0000-000000000002',
         latest_approved_at = timestamptz '2026-07-19 09:00:00+07',
-        latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000220',
-        updated_at = transaction_timestamp()
+        latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000220'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200';
 
     set constraints all immediate;
@@ -909,6 +947,17 @@ select is(
   ),
   '(APPROVED,9a000000-0000-0000-0000-000000000002,"2026-07-19 02:00:00+00",9a000000-0000-0000-0000-000000000220,1)',
   'approved root evidence points to the exact current snapshot and actor/time'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
+    set source_name = 'immutable approved source'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
+  'same-state APPROVED updates cannot rewrite source or import evidence'
 );
 
 select throws_ok(
@@ -951,15 +1000,14 @@ select throws_ok(
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
   'Need Generation request cannot rewrite the imported row count'
 );
 
 select lives_ok(
   $$
     update atlas_planning.weekly_menus
-    set weekly_menu_status = 'NEED_GENERATION_REQUESTED',
-        updated_at = transaction_timestamp()
+    set weekly_menu_status = 'NEED_GENERATION_REQUESTED'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200';
     set constraints all immediate;
     set constraints all deferred
@@ -984,6 +1032,17 @@ select is(
 select throws_ok(
   $$
     update atlas_planning.weekly_menus
+    set source_signature = 'immutable-requested-signature'
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+  $$,
+  '23514',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
+  'same-state NEED_GENERATION_REQUESTED updates cannot rewrite source or import evidence'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.weekly_menus
     set weekly_menu_status = 'REOPENED'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
@@ -997,11 +1056,11 @@ select throws_ok(
     update atlas_planning.weekly_menus
     set weekly_menu_status = 'REOPENED',
         version = version + 1,
-        imported_by_actor_id = '9a000000-0000-0000-0000-000000000003'
+        imported_by_actor_id = '9a000000-0000-0000-0000-000000000001'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
   'reopen cannot rewrite the importing actor'
 );
 
@@ -1009,8 +1068,7 @@ select lives_ok(
   $$
     update atlas_planning.weekly_menus
     set weekly_menu_status = 'REOPENED',
-        version = version + 1,
-        updated_at = transaction_timestamp()
+        version = version + 1
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   'NEED_GENERATION_REQUESTED reopens as the next working version'
@@ -1032,7 +1090,7 @@ select is(
   'reopen preserves the complete established approval evidence while advancing the version'
 );
 
-select throws_ok(
+select lives_ok(
   $$
     update atlas_planning.weekly_menus
     set source_type = 'SYNTHETIC_REIMPORT',
@@ -1041,12 +1099,41 @@ select throws_ok(
         row_count = 3,
         imported_by_actor_id = '9a000000-0000-0000-0000-000000000001',
         imported_at = timestamptz '2026-07-19 08:20:00+07',
-        updated_at = transaction_timestamp()
+        updated_at = updated_at + interval '1 second'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
-  '23514',
-  'weekly menu import and source evidence are immutable after creation',
-  'same-state REOPENED updates cannot rewrite established source and import evidence'
+  'same-state REOPENED refreshes may replace the complete working source and import evidence'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_planning.weekly_menus
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+      and source_type = 'SYNTHETIC_REIMPORT'
+      and source_name = 'PA-06E-H0A3a reopened reimport'
+      and source_signature = 'sha256:week-one-reopened'
+      and row_count = 3
+      and imported_by_actor_id = '9a000000-0000-0000-0000-000000000001'
+      and imported_at = timestamptz '2026-07-19 08:20:00+07'
+      and updated_at = created_at + interval '2 seconds'
+  ),
+  'all refreshed REOPENED source, import, row-count, and update-time values persist exactly'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_planning.weekly_menus
+    where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
+      and week_start = date '2026-07-21'
+      and week_end = date '2026-07-27'
+      and version = 2
+      and latest_approved_by_actor_id = '9a000000-0000-0000-0000-000000000002'
+      and latest_approved_at = timestamptz '2026-07-19 09:00:00+07'
+      and latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000220'
+  ),
+  'REOPENED refresh preserves root identity, week scope, version, and prior approval history'
 );
 
 select lives_ok(
@@ -1079,15 +1166,14 @@ select throws_ok(
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
   'return to DRAFT cannot rewrite the imported timestamp'
 );
 
 select lives_ok(
   $$
     update atlas_planning.weekly_menus
-    set weekly_menu_status = 'DRAFT',
-        updated_at = transaction_timestamp()
+    set weekly_menu_status = 'DRAFT'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   'REOPENED advances only to DRAFT while retaining its stable root'
@@ -1096,8 +1182,7 @@ select lives_ok(
 select lives_ok(
   $$
     update atlas_planning.weekly_menus
-    set weekly_menu_status = 'VALIDATED',
-        updated_at = transaction_timestamp()
+    set weekly_menu_status = 'VALIDATED'
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000200'
   $$,
   'the corrected later working version returns through VALIDATED'
@@ -1144,8 +1229,7 @@ select lives_ok(
       set weekly_menu_status = 'APPROVED',
           latest_approved_by_actor_id = '9a000000-0000-0000-0000-000000000003',
           latest_approved_at = timestamptz '2026-07-19 11:00:00+07',
-          latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000230',
-          updated_at = transaction_timestamp()
+          latest_approval_snapshot_id = '9a000000-0000-0000-0000-000000000230'
       where weekly_menu_id = '9a000000-0000-0000-0000-000000000200';
 
       set constraints all immediate;
@@ -1505,7 +1589,7 @@ select throws_ok(
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000300'
   $$,
   '23514',
-  'weekly menu import and source evidence are immutable after creation',
+  'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes',
   'an APPROVED-to-REOPENED transition cannot rewrite source evidence'
 );
 
@@ -1513,8 +1597,7 @@ select lives_ok(
   $$
     update atlas_planning.weekly_menus
     set weekly_menu_status = 'REOPENED',
-        version = version + 1,
-        updated_at = transaction_timestamp()
+        version = version + 1
     where weekly_menu_id = '9a000000-0000-0000-0000-000000000300'
   $$,
   'APPROVED advances legitimately to REOPENED with immutable evidence unchanged'

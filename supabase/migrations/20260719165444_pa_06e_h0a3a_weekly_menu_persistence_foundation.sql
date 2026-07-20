@@ -297,16 +297,22 @@ begin
       message = 'weekly menu identity and service-week scope are immutable';
   end if;
 
-  if new.source_type is distinct from old.source_type
+  if (
+    new.source_type is distinct from old.source_type
     or new.source_name is distinct from old.source_name
     or new.source_signature is distinct from old.source_signature
     or new.row_count is distinct from old.row_count
     or new.imported_by_actor_id is distinct from old.imported_by_actor_id
     or new.imported_at is distinct from old.imported_at
+    or new.updated_at is distinct from old.updated_at
+  ) and not (
+    new.weekly_menu_status = old.weekly_menu_status
+    and old.weekly_menu_status in ('DRAFT', 'REOPENED')
+  )
   then
     raise exception using
       errcode = '23514',
-      message = 'weekly menu import and source evidence are immutable after creation';
+      message = 'weekly menu import and source evidence may change only during same-state DRAFT or REOPENED refreshes';
   end if;
 
   if new.version < old.version
