@@ -152,7 +152,7 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-None of the tasks below was authorized by this documentation PR. Each requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was subsequently authorized by Issue #117 and merged; H0A2 was authorized by Issue #119 and merged; H0A3a was authorized by Issue #121 and merged; H0A3b was authorized by Issue #123 and is tracked in [TASK-PA-06E-H0A3b](TASK-PA-06E-H0A3b-attendance-persistence-foundation.md). Every later task remains unapproved here.
+This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged. Issue #125 authorizes only the H0A4a decision record in [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md). H0A4b persistence and every later task remain unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
 
@@ -210,7 +210,7 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 
 ### H0A3b — Attendance persistence
 
-**Status:** Implemented by [TASK-PA-06E-H0A3b](TASK-PA-06E-H0A3b-attendance-persistence-foundation.md) under Issue #123; pending draft-PR review
+**Status:** Implemented by [TASK-PA-06E-H0A3b](TASK-PA-06E-H0A3b-attendance-persistence-foundation.md) under Issue #123 and merged into `main`
 
 **Decision:** [Decision PA-06E-H0A3b — Controlled Attendance Persistence](../decisions/decision-pa-06e-h0a3b-controlled-attendance-persistence.md)
 
@@ -226,17 +226,35 @@ None of the tasks below was authorized by this documentation PR. Each requires i
 
 **Still outside H0A3b:** commands, authorization, import behavior, defaults, omitted-School/day and inactive-School policy, reasons, issues/events, Planning Input Set, readiness, Need Generation, ingredient calculation, API/UI, hosted execution, and production rollout.
 
-### H0A4 — Planning Input Set and readiness persistence
+### H0A4a — Planning Input Set/readiness decision closure
+
+**Status:** Documentation completed by [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md) under Issue #125; pending independent review
+
+**Decision:** [Decision PA-06E-H0A4 — Planning Input Readiness](../decisions/decision-pa-06e-h0a4-planning-input-readiness.md)
 
 **Owner:** Planning
 
-**Objective:** Persist one exact compatibility/readiness evaluation over approved Menu and Attendance snapshots.
+**Objective:** Close root grain, immutable evaluation/version, typed source binding, period containment, issue classification, lifecycle, invalidation, warning acknowledgement, and downstream handoff decisions before persistence.
 
-**Expected physical scope:** root, typed input references, immutable readiness snapshot, blocking issues, exact version invalidation.
+**Resolved for H0A4a:** one stable exact-period root; append-only positive evaluation versions; direct typed bindings to at most one exact Weekly Menu and one exact Attendance approval snapshot; containment; immutable evaluation-owned issues; closed lifecycle; explicit invalidation; nonblocking warnings with acknowledgement deferred; handoff-only request state.
+
+**Prohibited:** every database/runtime/API change and all ingredient calculation or downstream materialization.
+
+### H0A4b — Planning Input Set and readiness persistence
+
+**Status:** Not authorized
+
+**Owner:** Planning
+
+**Objective:** Persist the exact H0A4a model without reopening its accepted decisions.
+
+**Expected physical scope:** exact-period root, immutable evaluation versions, two direct typed snapshot FK families, immutable evaluation issues, current pointer/status, database constraints, security, and focused pgTAP.
 
 **Prohibited:** ingredient calculation, Recipe edits, Confirmed Need, browser-authored readiness.
 
-**Blocking decisions:** input-set scope grain, warning acknowledgement, exact source snapshot relation.
+**Required test decomposition:** independently runnable structure/security, evaluation/source-snapshot integrity, and lifecycle/issues/invalidation suites, each with exclusive invariant ownership and exact evidence declared by the future issue.
+
+**Still pending:** physical names, migration mechanics, commands, authorization, reasons/events, safe errors, and API contract.
 
 ### H0A5 — Need Generation and typed theoretical lineage
 
@@ -315,7 +333,7 @@ Complete-batch validation, approval, release, school-catering CMD-03, Purchase H
 ### 7.1 H0A acceptance
 
 - [ ] Genuine typed school/customer/location references exist under an approved ownership model.
-- [ ] Exact immutable Recipe/BOM, Menu, Attendance, and readiness snapshots exist.
+- [ ] Exact immutable Recipe/BOM, Menu, Attendance, and readiness evaluations/snapshots exist.
 - [ ] Need Generation releases one immutable run/version with atomic theoretical lines.
 - [ ] Every theoretical line has complete typed source lineage.
 - [ ] Same-contribution correction uses an explicit predecessor.
@@ -473,7 +491,7 @@ Stop the affected future implementation task if any of these remains unresolved:
 
 1. school/customer/location ownership or relational scope;
 2. RecipeLine/BOMLine stable physical identity;
-3. input/run batch scope grain;
+3. generation-run batch scope grain; the Planning Input Set root grain is resolved by H0A4a and must not be guessed differently;
 4. calculation-rule revision and complete typed source set;
 5. removal/zero or split/merge behavior;
 6. exact operational identity fields and product-owner approval;

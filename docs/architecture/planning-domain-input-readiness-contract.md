@@ -1,258 +1,195 @@
 # PD-01.4 — Planning Domain Input Readiness Contract
 
-**Status:** MVP contract v0.1  
-**Domain:** Planning  
-**Business owner:** Tổ Kế hoạch  
+**Status:** Contract v0.2; H0A4a decisions accepted, persistence deferred to H0A4b
+**Domain:** Planning
+**Business owner:** Tổ Kế hoạch
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
+**Decision:** [Decision PA-06E-H0A4 — Planning Input Readiness](../decisions/decision-pa-06e-h0a4-planning-input-readiness.md)
 
 ## 1. Purpose
 
-Planning Input Readiness is the Planning-owned gate that determines whether a service period has controlled inputs for Need Generation.
-
-Weekly Menu answers **what food is planned**. Attendance answers **how many portions are needed**. Input Readiness answers **whether those approved inputs are compatible and ready to be handed to Need Generation**.
-
-This contract does not define ingredient calculation. It does not create needs, supplier assignments, purchase orders, warehouse documents, or dispatch documents. It only defines the readiness gate between approved Planning inputs and a later Need Generation capability.
-
-Core business rule:
+Planning Input Readiness is the Planning-owned compatibility gate between approved Weekly Menu and Attendance evidence and a later Need Generation capability.
 
 ```text
-Approved Weekly Menu
-+ Approved Attendance
-= Ready for Need Generation
+one exact approved Weekly Menu snapshot
++ one exact approved Attendance snapshot
++ full containment of the evaluated period in both source periods
++ no blocking compatibility issue
+= READY
 ```
 
-The rule is simple, but the gate must be explicit because future Need Generation must never run from uncontrolled, mismatched, silently edited, or partially approved inputs.
+This contract does not calculate ingredients or create downstream operational data. It makes one exact, immutable readiness decision explainable and reusable without allowing later source changes to rewrite history.
 
-## 2. Ownership and business objects
+## 2. Authoritative object model
 
-Planning owns the readiness decision. Weekly Menu and Attendance remain separate Planning objects with their own lifecycles and approvals. Input Readiness references their approved versions; it does not edit them.
+### 2.1 Stable Planning Input Set root
 
-### 2.1 PlanningInputSet
+There is exactly one stable `PlanningInputSet` root for each exact inclusive `(period_start, period_end)` pair. The root is not split by School, customer, source type, source version, location, or evaluator. Re-evaluating the same exact period retains the root.
 
-Represents one readiness evaluation for a service period.
+The root owns controlled current state only:
 
-Required attributes:
+- its exact inclusive evaluated period;
+- current lifecycle status;
+- one exact current-evaluation pointer; and
+- the minimum metadata needed by a later authorized implementation.
 
-- `planning_input_set_id`
-- `period_start` and `period_end`
-- `status`
-- `weekly_menu_reference`
-- `attendance_reference`
-- `blocking_issue_count` and `warning_count`
-- `evaluated_by` and `evaluated_at`
-- `requested_by` and `requested_at` when Need Generation is requested
-- `version`
+The period is immutable after root creation. A different period creates or resolves a different root. H0A4 does not decide whether one future Need Generation run may cover one or many schools, dates, or locations.
 
-The set is the unit of readiness evaluation and future Need Generation handoff. It should reference stable approved input versions, not only dates or mutable display rows.
+### 2.2 Immutable readiness evaluation
 
-### 2.2 PlanningInputReference
+Each evaluation creates a new immutable evaluation for the stable root with a positive, root-local `evaluation_version`. Version 1 is the first evaluation; every permitted re-evaluation uses the next positive version. An evaluation records:
 
-Represents a versioned reference to an upstream Planning input.
+- the exact stable root and evaluation version;
+- an immutable result of `NOT_READY` or `READY`;
+- evaluation actor and time when a later command contract supplies them;
+- the two direct typed source-snapshot bindings described below; and
+- the complete immutable issue set for that evaluation.
 
-Required attributes:
+The root's current-evaluation pointer may advance to the newly inserted evaluation in the same future transaction. Prior evaluations remain addressable and must not be updated or deleted.
 
-- `input_type` (`WEEKLY_MENU` or `ATTENDANCE`)
-- `input_id`
-- `input_version`
-- `input_status`
-- `period_start` and `period_end`
-- `approved_by` and `approved_at` when available
-- `handoff_status` when available
+`NEED_GENERATION_REQUESTED` and `INVALIDATED` are root lifecycle states, not rewritten evaluation results. A root in either state still points to the exact evaluation whose evidence caused the transition.
 
-The reference is intentionally lightweight. It is enough for Planning to prove which Weekly Menu and Attendance versions were evaluated.
+### 2.3 Direct typed source-snapshot bindings
 
-### 2.3 PlanningInputReadinessIssue
+Every evaluation has two distinct, typed relational binding slots:
 
-Represents a blocking issue or warning created by the readiness evaluation.
+1. at most one exact Weekly Menu approval snapshot; and
+2. at most one exact Attendance approval snapshot.
 
-Required attributes:
+Each present binding proves the exact immutable snapshot ID, its stable source root, its positive approved source version, and typed ownership between them. The future database design must enforce those relations with typed foreign keys, including composite ownership where required by the approved upstream snapshot schemas.
 
-- `readiness_issue_id`
-- `planning_input_set_id`
-- `severity` (`BLOCKING` or `WARNING`)
-- `issue_code`
-- `message`
-- `input_type` when the issue is tied to a specific input
-- `school_id` and `service_date` when coverage-specific
-- `is_blocking`
+The selected model does not use a generic or polymorphic input-reference relation. A hash, JSON payload, source name, date, status string, or untyped `(input_type, input_id, input_version)` tuple is not an authoritative binding.
 
-Blocking issues prevent Need Generation request. Warnings remain visible to Planning and may require acknowledgement later, but the MVP gate may still proceed if no blocking issue exists.
+`READY` and `NEED_GENERATION_REQUESTED` require both exact bindings. A `NOT_READY` evaluation may omit one or both bindings only when its immutable blocking issues explain each absence or incompatibility. An attempted mismatched source root/version is never accepted as an authoritative binding.
 
-### 2.4 PlanningInputReadinessChange
+### 2.4 Immutable evaluation issues
 
-Represents an auditable command result or lifecycle event. It records event ID, event type, actor, timestamp, affected input references, before/after readiness status, and reason where applicable.
+Every readiness issue belongs to exactly one immutable evaluation, not merely to the stable root. Issues are append-only evidence and are never refreshed, resolved in place, reassigned to a later evaluation, or deleted. Re-evaluation creates a new issue set on the next evaluation version.
 
-### 2.5 Readiness snapshot and version
+An issue has one severity, `BLOCKING` or `WARNING`, an approved issue code, a safe explanation, and optional typed School/date/source context when applicable. A later implementation may choose physical names, but it must preserve evaluation ownership and immutability.
 
-When readiness passes, the system records the evaluated Weekly Menu version, Attendance version, readiness result, issue summary, actor, and timestamp. When Need Generation is requested, it must reference this readiness snapshot. Later changes to Weekly Menu or Attendance invalidate the prior readiness result unless the input set is explicitly re-evaluated.
+## 3. Evaluated-period compatibility
 
-## 3. Lifecycle
+All periods are inclusive and valid only when `period_start <= period_end`.
+
+For each source snapshot, compatibility is containment rather than period equality:
 
 ```text
-Not Ready
-  → Ready
-  → Need Generation Requested
+source_period_start <= evaluated_period_start
+and source_period_end >= evaluated_period_end
 ```
 
-Correction path:
+- The Weekly Menu source may cover its exact seven-day Monday-through-Sunday week while the evaluated period is any wholly contained subset.
+- The Attendance source may use any exact inclusive period allowed by H0A3b, but that single snapshot must wholly contain the evaluated period.
+- Partial overlap, disjoint periods, or any uncovered evaluated day is blocking.
+- Multiple Menu or Attendance snapshots must not be combined to manufacture coverage.
 
-```text
-Ready / Need Generation Requested
-  → Invalidated by input change or explicit reopen
-  → Not Ready
-  → Ready
-```
+Period containment proves only the temporal compatibility of the two source snapshots. It does not assert that every School/date combination exists.
 
-### Not Ready
+## 4. Closed lifecycle
 
-One or both Planning inputs are missing, not approved, incompatible, or have blocking readiness issues.
+The root status set is closed:
 
-### Ready
+- `NOT_READY`
+- `READY`
+- `NEED_GENERATION_REQUESTED`
+- `INVALIDATED`
 
-Weekly Menu and Attendance are both controlled, approved or already handed off, compatible for the service period, and free from blocking readiness issues.
+The only valid creations and transitions are:
 
-### Need Generation Requested
+| Current state               | Operation               | Next state                  | Evaluation effect                               |
+| --------------------------- | ----------------------- | --------------------------- | ----------------------------------------------- |
+| no root/current evaluation  | first evaluation        | `NOT_READY` or `READY`      | create version 1 and point the root to it       |
+| `NOT_READY`                 | re-evaluation           | `NOT_READY` or `READY`      | create the next version and advance the pointer |
+| `INVALIDATED`               | re-evaluation           | `NOT_READY` or `READY`      | create the next version and advance the pointer |
+| `READY`                     | request Need Generation | `NEED_GENERATION_REQUESTED` | retain the same exact current evaluation        |
+| `READY`                     | explicit invalidation   | `INVALIDATED`               | retain the same exact current evaluation        |
+| `NEED_GENERATION_REQUESTED` | explicit invalidation   | `INVALIDATED`               | retain the same exact current evaluation        |
 
-Planning has requested Need Generation from a ready input set. This is a handoff state only. It does not mean ingredient needs have been calculated inside this contract.
+Every other transition is rejected. In particular:
 
-### Invalidated
+- `READY` or `NEED_GENERATION_REQUESTED` cannot be re-evaluated directly; it must first be explicitly invalidated;
+- `NOT_READY` cannot request Need Generation or transition directly to `INVALIDATED`;
+- `INVALIDATED` cannot request Need Generation;
+- request and invalidation do not increment the evaluation version; and
+- no lifecycle operation may mutate the current or prior evaluation, its bindings, or its issues.
 
-A previously ready or requested set becomes invalid because one referenced input was reopened, revised, replaced, or otherwise changed. The system must not silently reuse the old readiness result after input revision.
+Need Generation request is a handoff marker only. It requires one exact current evaluation whose immutable result is `READY`, both exact source bindings, and zero blocking issues.
 
-## 4. Commands
+Later approval, reopen, correction, or replacement of an upstream Weekly Menu or Attendance root does not automatically alter a Planning Input Set. A later authorized command may explicitly invalidate the affected `READY` or `NEED_GENERATION_REQUESTED` root, with its reason/event/authorization contract defined outside H0A4a. There are no automatic cross-domain source triggers.
 
-Commands are the only approved way to change readiness state.
+## 5. Compatibility issue classification
 
-### EvaluatePlanningInputReadiness
+### 5.1 Blocking issues
 
-Evaluates Weekly Menu and Attendance references for a service period. It checks existence, approval state, period compatibility, blocking issues, and school/date coverage. It creates or updates a PlanningInputSet, refreshes readiness issues, and emits one of:
+The following stable classifications block `READY` and Need Generation request:
 
-- `PlanningInputReadinessPassed`
-- `PlanningInputReadinessFailed`
+| Issue code                                           | Exact condition                                                                                          |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT`              | no exact Weekly Menu approval snapshot is available for the evaluation                                   |
+| `MISSING_ATTENDANCE_APPROVAL_SNAPSHOT`               | no exact Attendance approval snapshot is available for the evaluation                                    |
+| `SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH`                 | a source snapshot does not belong to the claimed typed source root and approved version                  |
+| `WEEKLY_MENU_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD` | the Weekly Menu snapshot period does not wholly contain the evaluated period                             |
+| `ATTENDANCE_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD`  | the Attendance snapshot period does not wholly contain the evaluated period                              |
+| `STALE_OR_MISMATCHED_SNAPSHOT_BINDING`               | a caller expectation or candidate binding does not match the exact snapshot/root/version being evaluated |
+| `REQUEST_WITHOUT_CURRENT_READY_EVALUATION`           | request state lacks one exact current `READY` evaluation, both exact bindings, or zero blocking issues   |
 
-It may run repeatedly before Need Generation is requested. It must not mutate Weekly Menu or Attendance.
+A database constraint that rejects an impossible typed binding and a readiness issue that explains the failed compatibility decision are complementary future safeguards. Neither permits an invalid reference to become authoritative evidence.
 
-### RequestNeedGenerationFromInputs
+### 5.2 Warnings
 
-Requests Need Generation using a Ready PlanningInputSet. It records the readiness snapshot, actor, timestamp, Weekly Menu reference, and Attendance reference. It emits `NeedGenerationRequestedFromPlanningInputs`.
+The following stable classifications are warnings and do not block readiness by themselves:
 
-The command is rejected when the set is Not Ready, Invalidated, missing an approved input reference, or has blocking readiness issues.
+| Issue code                            | Exact condition                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------- |
+| `MENU_SCHOOL_DATE_WITHOUT_ATTENDANCE` | a Menu School/date within the evaluated period has no Attendance snapshot line  |
+| `ATTENDANCE_SCHOOL_DATE_WITHOUT_MENU` | an Attendance School/date within the evaluated period has no Menu snapshot line |
+| `ZERO_ATTENDANCE_FOR_PLANNED_MENU`    | a School/date has a planned Menu and zero total Attendance portions             |
 
-### InvalidatePlanningInputReadiness
+These warnings compare only facts actually present in the two bound immutable snapshots within the evaluated period. H0A4 does not invent an expected-School catalogue, required School/day completeness rule, omitted-day meaning, defaults, slot policy, or active-School policy.
 
-Invalidates a previously Ready or Need Generation Requested input set when a referenced Weekly Menu or Attendance version changes, reopens, or is replaced. It records actor, timestamp, reason, and affected input reference. It emits `PlanningInputReadinessInvalidated`.
+### 5.3 Warning acknowledgement is deferred
 
-Invalidation does not cancel or rewrite released downstream documents. Later behavior for already generated needs must be defined by the Need Generation and Confirmed Need contracts.
+Warnings remain immutable and visible, but they do not block readiness and have no acknowledgement workflow in H0A4. H0A4 introduces no acknowledgement table or status, actor/time record, waiver, override, exception, or implicit acceptance field. Any future acknowledgement requirement needs a separate approved decision and migration.
 
-## 5. Events
+## 6. Upstream and downstream boundaries
 
-Minimum event set:
+Weekly Menu and Attendance retain ownership of their roots, working versions, approval snapshots, and snapshot lines. Readiness references but never edits those objects.
 
-- `PlanningInputReadinessEvaluated`
-- `PlanningInputReadinessPassed`
-- `PlanningInputReadinessFailed`
-- `PlanningInputReadinessInvalidated`
-- `NeedGenerationRequestedFromPlanningInputs`
+`NEED_GENERATION_REQUESTED` records only that the exact current readiness evidence was handed off. H0A4 does not:
 
-Each event carries event ID, PlanningInputSet ID, input references, actor, timestamp, readiness result, issue summary, and reason where applicable. Events explain the readiness decision; they do not perform ingredient calculation.
+- calculate ingredient quantities;
+- resolve Recipe/BOM revisions;
+- create or release a Need Generation run;
+- create Theoretical Need or Confirmed Need;
+- assign suppliers or rebalance Procurement;
+- mutate Warehouse, Dispatch, Finance, or source Planning data; or
+- expose browser-authored authoritative state.
 
-## 6. Read models
+Future H0A5 may consume the exact current immutable evaluation and its two typed bindings. It must not edit H0A4 evidence and must fail closed if the current root state/evaluation does not satisfy the approved handoff contract.
 
-Read models serve the UI and are not an alternative command path.
+## 7. Read behavior and decision-first UX
 
-### PlanningInputReadinessWorkbench
+Read models may show the evaluated period, root status, current evaluation version/result, exact source snapshot/root/version evidence, issue counts, issue details, evaluation metadata, and handoff/invalidation history. Historical evaluation versions and their issue sets must remain queryable.
 
-The primary Planning workspace for this step. It shows the service period, Weekly Menu status, Attendance status, readiness status, issue counts, input versions, and available action.
+The primary question is: **Can Planning request Need Generation for this exact period?** UI visibility is not authorization or integrity enforcement. React may coordinate interaction, but authoritative lifecycle and binding rules belong to the future backend design.
 
-### PlanningInputReadinessIssues
+## 8. Retool evidence and compatibility
 
-Groups blocking issues and warnings by input type, service date, school, and issue code. It should make mismatches obvious without forcing the user to inspect all menu and attendance lines.
+The retained OPS v1 evidence records a Weekly Menu week/date-range selector, a separate Attendance date picker, an Attendance XLSX path that can represent one service date, legacy public writes, and hidden downstream rebalance reactions. It does not show a controlled combined readiness object. Atlas preserves the useful business facts—explicit period selection, source visibility, and handoff—while rejecting public writes, implicit rebalance, mutable source inference, and Retool page structure as authority. This qualitative review used retained repository/Issue evidence only; H0A4a did not inspect or change hosted Retool or Supabase state.
 
-### PlanningInputReadinessSummary
+## 9. Future H0A4b persistence and tests
 
-Manager-facing summary showing evaluated input versions, approval actors/timestamps, blocking and warning counts, readiness result, and whether Need Generation has been requested.
+H0A4a authorizes no SQL. A later H0A4b issue must name the migration and predefine at least these three independently runnable pgTAP suites:
 
-### PlanningInputReadinessHistory
+1. **Structure and security** — proposed file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_structure_security.sql`. Owns relation/column/constraint presence, positive and unique version structure, direct typed FK structure, private-schema posture, RLS/grants, and absence of unintended runtime write access.
+2. **Evaluation and source-snapshot integrity** — proposed file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql`. Owns the unique exact-period root grain, one-or-zero typed binding per source family, exact snapshot/root/version ownership, period containment, `READY` binding requirements, rejection of multi-snapshot coverage, and current-evaluation pointer ownership.
+3. **Lifecycle, issues, and invalidation** — proposed file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql`. Owns the complete transition matrix, evaluation-version advancement rules, request/invalidation version preservation, immutable evaluation/issue history, blocking/warning classifications, request gate, explicit invalidation behavior, re-evaluation after invalidation, and absence of automatic cross-domain triggers.
 
-Explains evaluations, readiness failures, readiness passes, invalidations, and Need Generation requests, including the actor and timestamp for each event.
+Every invariant must have exactly one owning suite. Each suite must own its transaction, deterministic fixtures, exact `plan(N)`, `finish()`, and rollback; run independently as `supabase test db <exact-suite-path> --local`; and report `Files=1`, its exact assertion count, and `Result: PASS`. The H0A4b issue must replace `N` with a declared assertion count for each suite before implementation. H0A4b must add new tests and must not modify earlier migration tests to make its design pass.
 
-## 7. MVP readiness rules
+## 10. H0A4a implementation boundary
 
-The following are blocking unless a later approved rule explicitly changes their classification:
+This decision slice changes documentation only. It adds no migration, schema object, SQL, RPC, trigger, function, event, API registry entry, RLS policy, grant, runtime role, generated type, React behavior, package, hosted Supabase/Retool state, production data, or H0A5 behavior.
 
-- Weekly Menu is missing for the service period.
-- Attendance is missing for the service period.
-- Weekly Menu is not `APPROVED` or already marked for need generation.
-- Attendance is not `APPROVED` or already marked used for need generation.
-- Weekly Menu has unresolved blocking issues.
-- Attendance has unresolved blocking issues.
-- Weekly Menu and Attendance service periods are not the same and no explicit compatibility rule exists.
-- Attendance contains a school/date that cannot be matched to the service period being evaluated.
-- A referenced approved input version has changed after readiness was evaluated.
-- Need Generation is requested from a Not Ready or Invalidated set.
-
-Warnings may include:
-
-- Attendance exists for a school/date with no planned menu line.
-- Menu exists for a school/date with no attendance line.
-- Zero portions for a school/date with a planned menu.
-- Input versions differ from a previously evaluated set for the same service period.
-
-The MVP may allow warnings while keeping them visible. Later policy may require acknowledgement for selected warnings.
-
-## 8. Domain boundaries and downstream relationship
-
-Planning Input Readiness belongs to Planning.
-
-It references Weekly Menu and Attendance, but it does not own or edit either object. It does not import menus, import attendance, correct portions, approve attendance, approve menus, or reopen upstream inputs.
-
-It does not calculate ingredient needs. Need Generation is the next bounded Planning capability and must define its own rules for deriving theoretical needs from approved input versions.
-
-It does not assign suppliers, create purchase orders, mutate warehouse stock, create dispatch documents, edit recipe/BOM, perform QA, or create finance/accounting records.
-
-Other domains may later read the readiness result or downstream generated needs, but they may not redefine whether Planning inputs were ready.
-
-## 9. Decision-first UX
-
-The default workbench answers: **Can Planning request Need Generation for this service period?**
-
-Primary view shows only:
-
-- service period;
-- Weekly Menu status;
-- Attendance status;
-- readiness status;
-- blocking issue count;
-- warning count;
-- request Need Generation action.
-
-Expandable detail shows:
-
-- referenced Weekly Menu version;
-- referenced Attendance version;
-- mismatched school/date coverage;
-- blocking issue details;
-- warning details;
-- evaluated by/at;
-- request actor/time.
-
-Audit and history are not shown by default; they are available through a detail or explain view.
-
-React may coordinate this interaction, but it must not calculate authoritative ingredient needs.
-
-## 10. OPS v1 compatibility notes
-
-The following OPS v1 structures are reference evidence, not a prescribed Atlas schema:
-
-- Weekly Menu currently flows through `daily_orders`, `daily_order_dishes`, and related menu sync functions.
-- Attendance currently lives around `daily_orders` and `app_upsert_daily_orders_bulk(...)`.
-- Existing downstream purchase-assignment rebalance reacts to changes in planning sources.
-- OPS v1 exposes separate operational screens for menu and attendance; Atlas should preserve the business intent while giving Planning a clearer readiness gate.
-
-Atlas should preserve the intent: controlled source inputs, visible blocking conditions, explicit handoff, and traceable downstream impact. It should not copy Retool page structure or treat current tables and triggers as the final domain contract.
-
-## 11. Out of scope and implementation readiness
-
-PD-01.4 does not implement React UI, Supabase migrations or RPCs, Retool changes, production-data changes, Need Generation calculation, supplier assignment, purchase orders, warehouse, dispatch, finance, recipe, BOM, QA, or accounting behavior.
-
-The next bounded implementation task may provide an in-memory readiness domain, read models, tests, and a minimal Planning readiness workbench. It must preserve this contract's core rule: Need Generation can only be requested from explicitly ready, versioned Planning inputs.
+Command names, command parameters, authorization, actor attribution, reason taxonomy, events, safe errors, API contracts, and final physical names remain for separately approved implementation work.
