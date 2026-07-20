@@ -34,6 +34,8 @@ The bounded PA-06E-H0A1 customer, school, same-customer default delivery-locatio
 
 The bounded PA-06E-H0A2 Dish, scoped Recipe, RecipeVersion release, stable RecipeLine, and immutable RecipeLineRevision model is recorded in [Decision PA-06E-H0A2 — Immutable Recipe and BOM Reference Lineage](decision-pa-06e-h0a2-immutable-recipe-bom-reference-lineage.md). Issue #119 accepts this private reference foundation only; selection precedence, commands, review/unlock workflow, calculation policy, Planning lineage, and later materialization decisions remain outside its authority.
 
+The bounded PA-06E-H0A3a stable Weekly Menu root, typed working lines, exact approval snapshot, and immutable snapshot-line model is recorded in [Decision PA-06E-H0A3a — Controlled Weekly Menu Persistence](decision-pa-06e-h0a3a-controlled-weekly-menu-persistence.md). Issue #121 accepts this private persistence foundation only; commands, authorization, issues/events, slot policy, Attendance, Need Generation, API/UI, hosted execution, and production rollout remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
