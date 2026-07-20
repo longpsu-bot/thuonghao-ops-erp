@@ -67,6 +67,16 @@ H0A3b adds no `atlas_api` function, runtime owner, role, capability, membership,
 
 Retained OPS v1, Retool, spreadsheets, and the TypeScript Attendance prototype are qualitative evidence only. Atlas does not copy, write, synchronize, or infer portion defaults from them in this task.
 
+## Independent pgTAP ownership decision
+
+H0A3b verification is divided into three independently runnable files with non-overlapping invariant ownership:
+
+- `supabase/tests/pa_06e_h0a3b_attendance_structure_security.sql` owns 28 structure/security assertions: exact schema, columns, constraints, restrictive indexed foreign keys, private guards/triggers, ownership, RLS, grants, search paths, API registry, and zero authorization seeds.
+- `supabase/tests/pa_06e_h0a3b_attendance_lifecycle_mutability.sql` owns 78 lifecycle/mutability assertions: inclusive periods, DRAFT-first creation, exact transitions and versions, source refresh/preservation, frozen states, stable identity, exact portions, and DRAFT/REOPENED line mutation.
+- `supabase/tests/pa_06e_h0a3b_attendance_approval_snapshot_integrity.sql` owns 40 approval-history assertions: exact current-version snapshots, completeness and field-copy rejection, actor/time/root binding, use/reopen preservation, later approval, and immutable historical snapshots.
+
+Each suite owns its transaction and fixtures and passes independently after a clean reset. The 146 assertions are combined supplemental coverage only; no invariant is claimed by more than one suite.
+
 ## Deferred decisions
 
 The following remain separate work:

@@ -33,11 +33,19 @@ Add the minimum private Planning persistence foundation for one stable Attendanc
 ## Files and acceptance evidence
 
 - Migration: `supabase/migrations/20260720051142_pa_06e_h0a3b_attendance_persistence_foundation.sql`
-- Focused pgTAP: `supabase/tests/pa_06e_h0a3b_attendance_persistence_foundation.sql`
-- Supabase Integration workflow command immediately after the H0A3a focused suite
+- Structure/security pgTAP: `supabase/tests/pa_06e_h0a3b_attendance_structure_security.sql`
+- Lifecycle/mutability pgTAP: `supabase/tests/pa_06e_h0a3b_attendance_lifecycle_mutability.sql`
+- Approval-snapshot integrity pgTAP: `supabase/tests/pa_06e_h0a3b_attendance_approval_snapshot_integrity.sql`
+- three Supabase Integration workflow commands immediately after the H0A3a focused suite and before PA-05G/PA-05C-H3
 - This task, its decision, and minimal roadmap/register/parent-task references
 
-The focused test contains 126 assertions. It proves the exact four-relation schema and approved columns; generated UUID identities; arbitrary inclusive periods; DRAFT-first insertion in every non-DRAFT state; exact transitions and version behavior; same-state working source refreshes; source immutability during all six lifecycle transitions; frozen same-state protection; working-only line mutation; stable line identity; exact integer and zero portions; inactive-School policy deferral; exact approval completeness; every individual copied snapshot field; wrong-version, cross-batch, invalid, missing, extra, and duplicate rejection; immutable old and new snapshots; restrictive indexed foreign keys; `atlas_owner` ownership; forced RLS with zero policies; fail-closed privileges and search paths; the unchanged 18-function API registry; and zero role or capability seeds.
+The three independent suites contain 146 supplemental assertions in total. Their ownership is intentionally disjoint:
+
+- `pa_06e_h0a3b_attendance_structure_security.sql` contains 28 assertions and owns only the exact four-relation schema, columns, database-generated UUID identities, exact constraint/constraint-trigger catalog, restrictive typed foreign-key targets and leading indexes, private guard/trigger catalog, `atlas_owner` ownership, forced RLS with zero policies, fail-closed privileges and search paths, the unchanged 18-function API registry, and zero role/capability seeds.
+- `pa_06e_h0a3b_attendance_lifecycle_mutability.sql` contains 78 assertions and owns only arbitrary inclusive periods, DRAFT-first insertion, exact lifecycle/version transitions, all six source-preservation transition paths, same-state DRAFT/REOPENED refresh, frozen-state protection, stable root/line identity, working-only line mutation, exact nonnegative integer portions including zero, and inactive-School policy deferral.
+- `pa_06e_h0a3b_attendance_approval_snapshot_integrity.sql` contains 40 assertions and owns only exact approval completeness, individual copied snapshot fields, wrong-version/cross-batch/invalid/missing/extra/duplicate rejection, exact root actor/time/snapshot binding, used-version preservation, reopen correction history, later-version approval, and immutable old/new snapshots.
+
+Each file begins its own transaction, installs pgTAP if needed, declares an exact plan, creates only its own noncolliding synthetic fixtures when needed, calls `finish()`, and rolls back. Every suite passes by itself immediately after a clean local database reset; the combined 146 count is supplemental coverage only and is not evidence that any one suite is independently reviewable.
 
 ## Exclusions
 
@@ -52,8 +60,10 @@ The migration is additive and seeds no production row. Before operational data o
 - canonical workspace preflight at baseline `6c6f09e8f2993defe4a041a15caea9f20ea15cb9`: pass;
 - `pnpm install --frozen-lockfile`: pass; dependencies already current;
 - local Supabase reset with `--no-seed`: pass; every migration replayed through H0A3b;
-- focused `supabase test db supabase/tests/pa_06e_h0a3b_attendance_persistence_foundation.sql --local`: pass, 126/126 assertions;
-- registered database regressions: H0A1 59/59, H0A2 88/88, H0A3a 103/103, PA-05G 82/82, and PA-05C-H3 37/37 pass after the H0A3b migration;
+- independent reset plus `supabase test db supabase/tests/pa_06e_h0a3b_attendance_structure_security.sql --local`: pass, `Files=1`, 28/28 assertions, `Result: PASS`;
+- independent reset plus `supabase test db supabase/tests/pa_06e_h0a3b_attendance_lifecycle_mutability.sql --local`: pass, `Files=1`, 78/78 assertions, `Result: PASS`;
+- independent reset plus `supabase test db supabase/tests/pa_06e_h0a3b_attendance_approval_snapshot_integrity.sql --local`: pass, `Files=1`, 40/40 assertions, `Result: PASS`;
+- final-reset registered database sequence: H0A1 59/59, H0A2 88/88, H0A3a 103/103, H0A3b structure/security 28/28, H0A3b lifecycle/mutability 78/78, H0A3b approval-snapshot integrity 40/40, PA-05G 82/82, and PA-05C-H3 37/37 pass in workflow order after the unchanged H0A3b migration;
 - `supabase db diff --local --schema atlas_planning,atlas_admin,atlas_core`: pass; no schema changes found after reset;
 - affected-schema database lint: completes with only the documented pre-existing `atlas_core.pa_05d_safe_date` volatility warning and no error;
 - catalog audits: four relations and four guards are `atlas_owner` owned; all four relations have enabled and forced RLS with zero policies; unexpected table, function, and Atlas default grants are zero; no Attendance sequence exists; all 12 operational foreign keys are restrictive with zero missing leading indexes; the `atlas_api` registry remains exactly 18 functions; and role/capability row counts remain zero;
