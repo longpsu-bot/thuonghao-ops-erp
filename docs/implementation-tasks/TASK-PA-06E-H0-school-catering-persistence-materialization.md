@@ -152,7 +152,7 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged. Issue #125 authorizes only the H0A4a decision record in [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md). H0A4b persistence and every later task remain unapproved here.
+This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged. Issue #125 authorized the H0A4a decision record in [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md), and Issue #127 authorizes the bounded H0A4b persistence in [TASK-PA-06E-H0A4b](TASK-PA-06E-H0A4b-planning-input-readiness-persistence.md). Every later task remains unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
 
@@ -242,7 +242,7 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H0A4b — Planning Input Set and readiness persistence
 
-**Status:** Not authorized
+**Status:** Implemented and locally validated under Issue #127; pending draft-PR review
 
 **Owner:** Planning
 
@@ -254,7 +254,9 @@ This parent documentation did not authorize implementation. Each child requires 
 
 **Required test decomposition:** independently runnable structure/security, evaluation/source-snapshot integrity, and lifecycle/issues/invalidation suites, each with exclusive invariant ownership and exact evidence declared by the future issue.
 
-**Still pending:** physical names, migration mechanics, commands, authorization, reasons/events, safe errors, and API contract.
+**Implemented by H0A4b:** the exact three-relation private persistence model, direct typed snapshot bindings, deferred cross-row integrity, immutable issues/evaluations, closed lifecycle, forced RLS with zero policies, and three independent pgTAP suites totaling 123 assertions.
+
+**Still pending:** commands, authorization, reasons/events, safe errors, read/API contracts, acknowledgement, hosted execution, and every H0A5 or downstream calculation.
 
 ### H0A5 — Need Generation and typed theoretical lineage
 
