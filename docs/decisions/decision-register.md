@@ -36,6 +36,8 @@ The bounded PA-06E-H0A2 Dish, scoped Recipe, RecipeVersion release, stable Recip
 
 The bounded PA-06E-H0A3a stable Weekly Menu root, typed working lines, exact approval snapshot, and immutable snapshot-line model is recorded in [Decision PA-06E-H0A3a — Controlled Weekly Menu Persistence](decision-pa-06e-h0a3a-controlled-weekly-menu-persistence.md). Issue #121 accepts this private persistence foundation only; commands, authorization, issues/events, slot policy, Attendance, Need Generation, API/UI, hosted execution, and production rollout remain outside its authority.
 
+The bounded PA-06E-H0A3b stable Attendance batch, School/date exact-portion lines, exact approval snapshot, and immutable snapshot-line model is recorded in [Decision PA-06E-H0A3b — Controlled Attendance Persistence](decision-pa-06e-h0a3b-controlled-attendance-persistence.md). Issue #123 accepts this private persistence foundation only; commands, authorization, import behavior, defaults, inactive-School policy, issues/events, Planning Input Set, readiness, Need Generation, API/UI, hosted execution, and production rollout remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
