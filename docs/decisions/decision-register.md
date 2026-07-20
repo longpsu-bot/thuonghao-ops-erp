@@ -40,6 +40,8 @@ The bounded PA-06E-H0A3b stable Attendance batch, School/date exact-portion line
 
 The bounded PA-06E-H0A4a Planning Input Readiness design is recorded in [Decision PA-06E-H0A4 — Planning Input Readiness](decision-pa-06e-h0a4-planning-input-readiness.md). Issue #125 accepts one stable exact-period root, immutable evaluation versions/issues, direct typed Weekly Menu and Attendance approval-snapshot bindings, period containment, a closed lifecycle, explicit invalidation, nonblocking warnings with acknowledgement deferred, and handoff-only request semantics. Persistence, commands, authorization, events, API/UI, hosted execution, calculation, and downstream materialization remain outside its authority.
 
+The bounded PA-06E-H0A4b private persistence implementation is recorded in [Decision PA-06E-H0A4b — Planning Input Readiness Persistence](decision-pa-06e-h0a4b-planning-input-readiness-persistence.md). Issue #127 accepts exactly three Planning relations, direct typed source snapshot ownership, immutable sequential evaluations/issues, exact blocker/warning evidence, the closed lifecycle, explicit invalidation, forced RLS with zero policies, and 123 focused pgTAP assertions. Commands, authorization, events, acknowledgement, read/API/UI surfaces, hosted execution, calculation, H0A5, and downstream materialization remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

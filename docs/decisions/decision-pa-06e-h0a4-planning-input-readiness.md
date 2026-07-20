@@ -1,6 +1,6 @@
 # Decision PA-06E-H0A4 — Planning Input Readiness
 
-**Status:** Accepted for H0A4 design; persistence not implemented
+**Status:** Accepted for H0A4 design; bounded H0A4b persistence implemented under Issue #127
 **Date:** 2026-07-20
 **Issue:** GitHub Issue #125
 **Scope:** PA-06E-H0A4a documentation and decision closure only
@@ -112,3 +112,7 @@ Each suite must own its transaction, fixtures, exact `plan(N)`, `finish()`, and 
 ## Excluded authority
 
 This decision creates no physical schema, migration, SQL, RPC, trigger, API/event contract, authorization rule, reason taxonomy, UI, hosted change, production-data change, Need Generation calculation, Recipe/BOM behavior, Theoretical Need, Confirmed Need, or Procurement behavior.
+
+## H0A4b implementation status
+
+Issue #127 implements the accepted persistence boundary in [Decision PA-06E-H0A4b](decision-pa-06e-h0a4b-planning-input-readiness-persistence.md). It does not change the H0A4a decisions or authorize commands, APIs, authorization, events, acknowledgement, calculation, hosted execution, or H0A5.
