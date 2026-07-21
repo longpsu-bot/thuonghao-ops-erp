@@ -152,7 +152,7 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged. Issue #125 authorized the H0A4a decision record in [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md), and Issue #127 authorizes the bounded H0A4b persistence in [TASK-PA-06E-H0A4b](TASK-PA-06E-H0A4b-planning-input-readiness-persistence.md). Every later task remains unapproved here.
+This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged; H0A4a was authorized by Issue #125 and merged; H0A4b was authorized by Issue #127 and merged. Issue #129 authorizes only the H0A5a decision record in [TASK-PA-06E-H0A5a](TASK-PA-06E-H0A5a-need-generation-decision.md). H0A5b and every later task remain unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
 
@@ -228,7 +228,7 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H0A4a — Planning Input Set/readiness decision closure
 
-**Status:** Documentation completed by [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md) under Issue #125; pending independent review
+**Status:** Documentation completed by [TASK-PA-06E-H0A4a](TASK-PA-06E-H0A4a-planning-input-readiness-decision.md) under Issue #125 and merged into `main`
 
 **Decision:** [Decision PA-06E-H0A4 — Planning Input Readiness](../decisions/decision-pa-06e-h0a4-planning-input-readiness.md)
 
@@ -242,7 +242,9 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H0A4b — Planning Input Set and readiness persistence
 
-**Status:** Implemented and locally validated under Issue #127; pending draft-PR review
+**Status:** Implemented by [TASK-PA-06E-H0A4b](TASK-PA-06E-H0A4b-planning-input-readiness-persistence.md) under Issue #127 and merged into `main`
+
+**Decision:** [Decision PA-06E-H0A4b — Planning Input Readiness Persistence](../decisions/decision-pa-06e-h0a4b-planning-input-readiness-persistence.md)
 
 **Owner:** Planning
 
@@ -256,17 +258,35 @@ This parent documentation did not authorize implementation. Each child requires 
 
 **Implemented by H0A4b:** the exact three-relation private persistence model, direct typed snapshot bindings, deferred cross-row integrity, immutable issues/evaluations, closed lifecycle, forced RLS with zero policies, and three independent pgTAP suites totaling 123 assertions.
 
-**Still pending:** commands, authorization, reasons/events, safe errors, read/API contracts, acknowledgement, hosted execution, and every H0A5 or downstream calculation.
+**Still pending:** commands, authorization, reasons/events, safe errors, read/API contracts, acknowledgement, hosted execution, H0A5b persistence, and every downstream calculation implementation.
 
-### H0A5 — Need Generation and typed theoretical lineage
+### H0A5a — Need Generation decision closure
+
+**Status:** Documentation completed by [TASK-PA-06E-H0A5a](TASK-PA-06E-H0A5a-need-generation-decision.md) under Issue #129; pending independent review
+
+**Decision:** [Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md)
 
 **Owner:** Planning, consuming Recipe/Admin references read-only
 
-**Objective:** Persist one released calculation run with atomic theoretical contributions, complete typed sources, and explicit predecessor correction identity.
+**Objective:** Close the generation gate, run/snapshot/calculation grain, Recipe precedence, Unit policy, atomic lineage, correction/removal semantics, issue catalog, lifecycle, release boundary, and future persistence/test decomposition before database work.
 
-**Expected physical scope:** run, input snapshot, theoretical lines, typed source bridges, predecessor/disposition constraints, issues, RLS/grants, pgTAP.
+**Resolved for H0A5a:** one accepted attempt for one exact Planning Input Set/current evaluation; one linear same-input-set run chain; exact H0A4b and H0A2 snapshot bindings; fixed proportional-per-basis PostgreSQL numeric calculation; SchoolType-first Recipe precedence with ambiguity blocking; source-Unit output with no conversion family in the first slice; one immutable atomic contribution with direct typed anchors and bounded typed run-use relations; one-to-one predecessor and explicit `REMOVED` semantics; closed issue catalog; four-state lifecycle; immutable release membership; and four exclusive H0A5b test families.
 
-**Acceptance focus:** no aggregation-based identity; same stable RecipeLine quantity/ingredient correction is one-to-one; new contribution is distinct; removed is explicit; split/merge blocks.
+**Prohibited:** every database/runtime/API change, Confirmed Need, Planning decision, Procurement, generic source registry, generic formula/conversion engine, free-text/JSON lineage, hosted execution, and production rollout.
+
+### H0A5b — Need Generation private persistence
+
+**Status:** Not authorized by Issue #129
+
+**Owner:** Planning, consuming Recipe/Admin references read-only
+
+**Objective:** Persist the exact H0A5a contract without reopening its accepted decisions.
+
+**Expected physical scope:** run and current/predecessor control, exact input snapshot and typed Recipe-use relations, fixed calculation-contract revision, atomic theoretical lines with direct anchors, issues, immutable release membership, deferred integrity, forced RLS with zero browser policies, grants, and focused pgTAP.
+
+**Required test decomposition:** independently runnable structure/security, run/input/calculation integrity, atomic-lineage/correction, and lifecycle/issues/release suites with exclusive invariant ownership.
+
+**Acceptance focus:** exact requested/current-ready gate; no aggregation-based identity; deterministic Recipe selection and numeric calculation; one-to-one correction; new contribution distinct; explicit removed result; ambiguity, silent omission, split/merge, stale evidence, Unit mismatch, and overflow block atomically.
 
 **Prohibited:** Confirmed Need, Planning decision, Procurement, generic source registry, free-text/JSON lineage.
 
@@ -493,9 +513,9 @@ Stop the affected future implementation task if any of these remains unresolved:
 
 1. school/customer/location ownership or relational scope;
 2. RecipeLine/BOMLine stable physical identity;
-3. generation-run batch scope grain; the Planning Input Set root grain is resolved by H0A4a and must not be guessed differently;
-4. calculation-rule revision and complete typed source set;
-5. removal/zero or split/merge behavior;
+3. **Resolved by H0A5a:** generation-run batch scope is one attempt for one exact Planning Input Set/current evaluation;
+4. **Resolved by H0A5a:** one fixed calculation-contract revision and the complete bounded typed input/source set;
+5. **Resolved by H0A5a for theoretical output:** zero-active warning, predecessor-linked removed-zero evidence, and split/merge blocking; downstream H0C zero/empty-group/removal handling still requires its own decision;
 6. exact operational identity fields and product-owner approval;
 7. exact composite key/FK/constraint-trigger columns, names, lock performance, and migration-validation plan within the selected mandatory database-enforcement direction;
 8. decision-current columns/indexes, reason policy, or evidence-correction authority;

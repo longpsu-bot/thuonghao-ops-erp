@@ -1,282 +1,284 @@
 # PD-01.6 — Planning Domain Need Generation Contract
 
-**Status:** MVP contract v0.1  
-**Domain:** Planning  
-**Business owner:** Tổ Kế hoạch  
+**Status:** MVP contract v0.2; H0A5a decisions accepted, H0A5b persistence deferred
+
+**Domain:** Planning
+
+**Business owner:** Tổ Kế hoạch
+
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
+
+**Decision:** [Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md)
 
 ## 1. Purpose
 
-Need Generation is the Planning-owned capability that converts a ready Planning input set into traceable theoretical need lines.
-
-Planning Input Readiness answers whether approved Weekly Menu and Attendance inputs are controlled and compatible. Need Generation answers what theoretical ingredients and quantities are required before Planning confirms the final demand.
-
-This contract does not approve procurement demand. It does not assign suppliers, create purchase orders, mutate warehouse stock, create dispatch documents, edit recipe/BOM data, perform QA, or create finance records.
-
-Core business rule:
+Need Generation converts one exact requested Planning input set into immutable, atomic theoretical ingredient contributions for later Planning confirmation.
 
 ```text
-Ready PlanningInputSet
-+ approved calculation rules
-+ referenced recipe/BOM data
-= Theoretical needs for confirmation
+one exact Planning Input Set
++ its exact current READY evaluation
++ exact immutable Menu and Attendance evidence
++ exact eligible Recipe evidence
++ one approved fixed calculation-contract revision
+= one controlled Need Generation run
++ atomic Theoretical Need contributions
++ one immutable release snapshot when released
 ```
 
-The output of this contract is not purchase-ready. It must be reviewed by the later Confirmed Need capability.
+Planning Input Readiness answers whether exact approved Menu and Attendance evidence is controlled and compatible. Need Generation answers which exact theoretical ingredient contributions result from that evidence. Confirmed Need remains the later Planning approval gate.
 
-## 2. Ownership and business objects
+Need Generation does not confirm demand, group operational requirements, assign suppliers, rebalance Purchase Assignments, create purchase orders, mutate Warehouse stock, create Dispatch documents, edit Recipe/BOM data, perform QA/Production, or create Finance records.
 
-Planning owns the Need Generation run and generated theoretical lines. Recipe/BOM data remains owned by the Recipe domain. Need Generation references recipe/BOM versions; it does not edit them.
+## 2. Ownership and authoritative objects
+
+Planning owns the run, run input snapshot, Theoretical Need lines, Need Generation issues, and release snapshot. Admin and Recipe retain ownership of every referenced School, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision, Ingredient, and Unit.
 
 ### 2.1 NeedGenerationRun
 
-Represents one generation attempt for a service period.
+One run is one accepted generation attempt for one exact Planning Input Set and one exact current immutable H0A4b evaluation. It inherits the exact inclusive Planning Input Set period and cannot combine input sets or evaluations. It is never one run per School, date, Menu line, Recipe line, Ingredient, or contribution.
 
-Required attributes:
+The run is a positive-version mutable control root. Generation starts at version 1. Each valid lifecycle transition increments the version exactly once. Generated facts are not mutable through that root.
 
-- `need_generation_run_id`
-- `planning_input_set_id`
-- `period_start` and `period_end`
-- `status`
-- `input_snapshot`
-- `generated_line_count`
-- `blocking_issue_count` and `warning_count`
-- `generated_by` and `generated_at`
-- `validated_by` and `validated_at` when validated
-- `released_by` and `released_at` when released for confirmation
-- `version`
-
-The run is the unit of generation, validation, and release for confirmation. It must reference stable input versions rather than mutable UI rows.
+Recalculation creates a new run after explicit predecessor invalidation. Runs for one Planning Input Set form at most one linear correction chain with a positive local attempt ordinal, one direct predecessor, at most one direct successor, no fork, no cycle, no self-link, and no cross-period/input-set link. Only the current terminal run may validate or release.
 
 ### 2.2 NeedGenerationInputSnapshot
 
-Represents the exact Planning inputs and calculation references used by a run.
+Every run owns one immutable input-snapshot header and bounded typed use relations. They bind:
 
-Required attributes:
+- exact Planning Input Set;
+- exact Planning Input Evaluation and positive evaluation version;
+- exact Weekly Menu approval snapshot/root/version inherited from that evaluation;
+- exact Attendance approval snapshot/root/version inherited from that evaluation;
+- one mandatory exact calculation-contract revision;
+- exact selected Recipes and RecipeVersions;
+- exact stable RecipeLines and RecipeLineRevisions used; and
+- each exact future conversion revision actually used.
 
-- `planning_input_set_id`
-- `weekly_menu_id` and `weekly_menu_version`
-- `attendance_batch_id` and `attendance_version`
-- `readiness_snapshot_id` or equivalent readiness version
-- `calculation_rule_version`
-- referenced recipe/BOM version metadata where available
+The merged H0A4b root has no `planningInputSetVersion`, and the exact evaluation ID/version replaces the prototype's generic `readinessSnapshotId`. Composite typed ownership must prevent substitution of either readiness-bound source snapshot.
 
-This snapshot is required so future users can explain why a theoretical line was produced.
+Recipe selection evidence records exact typed IDs, including the Menu snapshot line, stable Menu line, School, SchoolType used when present, Dish, selected Recipe, and selected RecipeVersion. Composition-use evidence records each stable RecipeLine and exact RecipeLineRevision.
 
-### 2.3 TheoreticalNeedLine
+No generic input/reference registry, polymorphic text owner, caller-authored object type, JSON-only lineage, hash-only relation, name identity, token, or concatenated string is authoritative.
 
-Represents one generated theoretical need line before Planning confirmation.
+### 2.3 CalculationContractRevision
 
-Required attributes:
+Every run binds one immutable approved revision identifying the fixed proportional-per-basis formula, operand order, source fields, numeric semantics, final storage coercion, and contract version.
 
-- `theoretical_need_line_id`
-- `need_generation_run_id`
-- `service_date`
-- `school_id`
-- `dish_id`
-- `recipe_id` and `recipe_version` when available
-- `bom_line_id` when available
-- `ingredient_id`
-- `quantity`
-- `unit`
-- `source_trace_id`
-- `calculation_trace`
-- `status`
+It is not a generic formula engine, expression language, caller-supplied expression, yield/allowance rule, rounding policy, conversion rule, supplier rule, or Procurement rule.
 
-A theoretical line is a calculation result, not an approved demand line. It can feed Confirmed Need, but Procurement must not consume it directly.
+### 2.4 TheoreticalNeedLine
 
-### 2.4 NeedGenerationIssue
-
-Represents a blocking issue or warning created during generation or validation.
-
-Required attributes:
-
-- `need_generation_issue_id`
-- `need_generation_run_id`
-- `theoretical_need_line_id` when line-specific
-- `severity` (`BLOCKING` or `WARNING`)
-- `issue_code`
-- `message`
-- `school_id`, `service_date`, `dish_id`, `recipe_id`, `ingredient_id` when applicable
-- `is_blocking`
-
-Blocking issues prevent release for confirmation.
-
-### 2.5 NeedGenerationChange
-
-Represents an auditable command result or lifecycle event. It records event ID, event type, actor, timestamp, affected run or line, before/after status, and reason where applicable.
-
-### 2.6 Generated snapshot and version
-
-When generated needs are released for confirmation, the system records the run version, input snapshot, generated theoretical line identities, issue summary, actor, and timestamp. Later recalculation creates a new explicit run or version and must not silently overwrite a released generated snapshot.
-
-## 3. Lifecycle
+One line is one immutable atomic contribution for the exact combination of:
 
 ```text
-Not Generated
-  → Generated
-  → Validated
-  → Released for Confirmation
+run
++ Weekly Menu approval-snapshot line
++ Attendance approval-snapshot line
++ selected Recipe and RecipeVersion
++ stable RecipeLine and exact RecipeLineRevision
++ Ingredient
++ RecipeLineRevision source Unit
++ calculation-contract revision
++ conversion-rule revision when used
 ```
 
-Correction path:
+The line also retains the stable Weekly Menu and Attendance line anchors carried by the exact snapshot lines. Its opaque UUID is not derived from source strings. The complete atomic anchor is unique within the run with null conversion treated deterministically.
+
+Lines are not aggregated by Ingredient, School/date, Menu line, Recipe, or RecipeLine. H0B1 may later group several released contributions inside one Confirmed Need line revision, but H0A5 performs no grouping or confirmation.
+
+The line disposition is exactly `ACTIVE` or `REMOVED`. Quantity uses exact PostgreSQL `numeric(20,6)` in the exact source Unit.
+
+### 2.5 NeedGenerationIssue
+
+Each persisted issue belongs to one exact run and optionally one exact line plus typed context. Individual issue rows are immutable. New system-discovered validation/release-integrity issues may be appended by a later authorized transaction, but an issue cannot be edited, acknowledged, waived, overridden, resolved in place, reclassified, or deleted.
+
+Need Generation owns only readiness-entry, run, Recipe-selection, calculation, theoretical-lineage, predecessor, and release classifications. It does not copy H0A4 warnings as mutable Need Generation issues.
+
+### 2.6 NeedGenerationReleaseSnapshot
+
+Release creates one immutable header for the exact resulting released run version, exact input snapshot, release actor/time, line/disposition counts, and exact issue summary.
+
+Immutable release lines contain every-and-only releasable Theoretical Need line, including valid `ACTIVE` zero and valid `REMOVED` lines. Typed issue membership contains every-and-only issue in the release summary. Missing, extra, altered, duplicate, cross-run, wrong-version, or wrong-summary membership is invalid.
+
+The release snapshot remains queryable after invalidation and successor generation. H0B1 consumes exact release rows through typed FKs and cannot edit H0A5 evidence.
+
+## 3. Generation entry and readiness binding
+
+Generation requires all of the following to remain true in one transaction:
+
+- Planning Input Set root status is `NEED_GENERATION_REQUESTED`, not merely `READY`;
+- the root's current pointer equals the exact expected evaluation;
+- the immutable evaluation result is `READY` with zero blockers;
+- its exact Menu and Attendance source families are both populated;
+- both upstream root versions and latest approval snapshots still equal the evaluation bindings;
+- upstream statuses remain allowed by H0A4b; and
+- both source periods still contain the exact evaluated period.
+
+`READY` is a readiness result, not the Need Generation entry state. A rejected precondition cannot create a partial run or incomplete input snapshot. H0A5 never edits the root, evaluation, bindings, or issues.
+
+## 4. Fixed MVP formula and numeric contract
+
+For each planned Menu line with one exact Attendance line and one selected eligible Recipe composition:
 
 ```text
-Generated / Validated / Released for Confirmation
-  → Invalidated by input or recipe/BOM revision
-  → Not Generated
-  → Generated
+portions
+= student_portions + teacher_portions
+
+theoretical source quantity
+= portions
+× exact RecipeLineRevision.quantity_per_basis
+÷ exact released RecipeVersion.basis_portions
 ```
 
-### Not Generated
+Rules:
 
-A ready input set exists, but no theoretical needs have been produced for the selected service period and version.
+1. Student and teacher portions come from the exact immutable Attendance approval-snapshot line and are summed before calculation.
+2. Cast each integer portion to `bigint` before addition.
+3. Recipe quantity, disposition, and positive basis come from the exact selected immutable released Recipe evidence.
+4. Evaluate multiply then divide in PostgreSQL `numeric` without an intermediate typmod cast, truncation, binary float, or client arithmetic.
+5. Coerce once to `numeric(20,6)`. PostgreSQL numeric scale coercion is the selected technical representation rule, including ties away from zero.
+6. Reject invalid, negative, non-finite, failed, or final-storage-overflow results. Do not clamp or compare with epsilon.
+7. Any persisted rule or conversion factor uses strictly positive `numeric(24,12)` when applicable. The fixed MVP formula has no configurable multiplier.
+8. Zero portions create one warning-bearing `ACTIVE` zero line per otherwise valid `PRESENT` RecipeLineRevision. Zero is not omission or removal.
 
-### Generated
+No Planning or purchase rounding, purchase-unit normalization, supplier rule, yield, allowance, waste, or generic formula engine is introduced. React and Retool are not authoritative calculators.
 
-The system has produced theoretical lines and issues. Blocking issues may still exist.
+## 5. Recipe selection
 
-### Validated
+For each exact Menu snapshot line:
 
-Generated theoretical lines have no unresolved blocking issues. Warnings may remain visible to Planning.
+```text
+one eligible Recipe for the Menu School's exact SchoolType
+→ otherwise one eligible general Recipe
+→ otherwise blocking issue
+```
 
-### Released for Confirmation
+When the School has no SchoolType, the exact typed tier is empty and the general tier is evaluated. One eligible exact typed Recipe overrides an eligible general Recipe. General is used only when no exact typed Recipe is eligible.
 
-Planning has released the generated theoretical run to Confirmed Need review. This does not mean the quantities are approved for Procurement.
+A candidate is eligible only when:
 
-### Invalidated
+- the exact Dish is `ACTIVE` and requires Need Generation;
+- the Recipe belongs to that Dish, has the matching exact/null scope, and is `ACTIVE`;
+- one exact current RecipeVersion is `RELEASED_FOR_PLANNING`;
+- the basis is strictly positive;
+- the exact released composition is complete;
+- every required stable RecipeLine has the exact immutable RecipeLineRevision used; and
+- active generated contributions reference valid active Ingredients and Units.
 
-A generated run became stale because the readiness snapshot, Weekly Menu, Attendance, calculation rule, or recipe/BOM references changed. The prior output remains traceable, but it must not be reused as current without explicit re-generation.
+Historical `LOCKED` RecipeVersions explain old runs only and are not selected for new generation. Multiple eligible candidates in the chosen tier are blocking. Caller choice, UI/display order, names, UUID ordering, and arbitrary first-row selection are rejected.
 
-## 4. Commands
+H0A5 adds no expected-School/day or active-School/SchoolType policy. Later reference changes do not erase old calculation evidence.
 
-Commands are the only approved way to change Need Generation state.
+## 6. Unit and conversion boundary
 
-### GenerateTheoreticalNeedsFromInputs
+H0A5 output stays in the exact RecipeLineRevision source Unit. The calculation Unit equals that Unit, so the source-unit H0A5b slice uses no conversion and binds no conversion revision.
 
-Consumes a Ready or Need Generation Requested PlanningInputSet. It snapshots input references, applies approved calculation rules, references recipe/BOM data, creates theoretical need lines, creates issues, and emits `TheoreticalNeedsGenerated`.
+H0A5b must not create a conversion family, production conversion values, or an untyped placeholder UUID. A requested differing Unit fails closed until a separately approved immutable conversion family exists.
 
-The command is rejected when the input set is Not Ready or Invalidated.
+Every future used conversion must have typed exact from/to Unit FKs, a strictly positive finite `numeric(24,12)` factor, one exact approved relational scope, immutable revision identity, unambiguous effective applicability, and typed links from both run input evidence and the exact line. Names, implicit paths, current-row lookups without revision evidence, supplier fallback, and generic text scope are invalid.
 
-### ValidateGeneratedNeeds
+Calculation-contract revision is mandatory for every run. Conversion-rule revision is present only when a real conversion occurs.
 
-Evaluates generated lines and issues. It emits `NeedGenerationValidated` when no blocking issues remain, or `NeedGenerationValidationFailed` otherwise. It may not silently recalculate released generated needs.
+## 7. Typed source and correction lineage
 
-### ReleaseGeneratedNeedsForConfirmation
+Mandatory cardinality-one source anchors are direct typed columns on the atomic line, supported by bounded typed run-use relations. A generic one-ID source registry is rejected.
 
-Releases a Validated generation run to Confirmed Need. It records actor, timestamp, released version, and line identities. It emits `GeneratedNeedsReleasedForConfirmation`.
+Across directly linked successor runs, predecessor continuity requires the same stable Weekly Menu line, stable Attendance line, stable RecipeLine, Planning Input Set, and period. Exact snapshot lines, RecipeVersion/Revision, Ingredient, Unit, and quantity may change because those are correction facts.
 
-The command is rejected when the run is not Validated or has unresolved blocking issues.
+Required correction behavior:
 
-### InvalidateGeneratedNeeds
+- quantity correction on the same stable RecipeLine has exactly one predecessor;
+- Ingredient correction on the same stable RecipeLine has exactly one predecessor, while old/new Ingredient facts remain visible;
+- an Attendance correction on the same stable Attendance line preserves one-to-one compatible RecipeLine continuity;
+- a genuinely new stable RecipeLine contribution is `ACTIVE` with no predecessor;
+- an explicit removal is `REMOVED`, exact zero, has exactly one predecessor, and binds one exact released H0A2 `REMOVED` RecipeLineRevision; and
+- a prior `REMOVED` contribution remains immutable exact-zero historical evidence with its exact predecessor and H0A2 removal evidence, and need not be repeated while the same stable RecipeLine remains absent or outside the selected `PRESENT` composition.
 
-Invalidates a Generated, Validated, or Released for Confirmation run when referenced inputs, calculation rules, or recipe/BOM versions change. It records actor, timestamp, reason, and affected reference. It emits `NeedGenerationInvalidated`.
+One predecessor has at most one successor. Same-run, unrelated-chain, cross-period/input-set, cross-anchor, fork, split, and merge links are invalid. Every prior `ACTIVE` contribution must have one exact compatible `ACTIVE` or valid `REMOVED` successor. Silent omission is blocking. Menu/Dish/Recipe-family replacement that cannot preserve stable anchors is not treated as implicit removal.
 
-Invalidation does not rewrite Confirmed Need, Purchase Handoff, or any later released documents.
+Omission of a prior `REMOVED` contribution is valid only while the same stable RecipeLine does not reappear as `PRESENT` in the selected released Recipe composition.
 
-## 5. Events
+Reintroduction of the same stable RecipeLine after a prior `REMOVED` theoretical contribution is unsupported in the first H0A5b slice. When one directly linked successor run for the same Planning Input Set and immutable period selects an H0A2 `PRESENT` RecipeLineRevision for the same stable RecipeLine whose direct-predecessor-run contribution was `REMOVED`, generation:
 
-Minimum event set:
+- does not treat the stable RecipeLine as genuinely new;
+- does not create an `ACTIVE` line without a predecessor;
+- does not infer a `REMOVED → ACTIVE` predecessor relation;
+- records the `BLOCKING` classification `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL`;
+- keeps the run in `GENERATED` and prevents validation and release; and
+- requires explicit invalidation and a later separately approved contract extension before the reintroduction can be generated successfully.
 
-- `TheoreticalNeedsGenerated`
-- `NeedGenerationValidated`
-- `NeedGenerationValidationFailed`
-- `GeneratedNeedsReleasedForConfirmation`
-- `NeedGenerationInvalidated`
+Only the exact typed direct run chain, Planning Input Set, period, stable RecipeLine, predecessor theoretical `REMOVED` disposition, and successor H0A2 `PRESENT` revision establish this case. Ingredient identity or name, line ordering, quantity equality, Recipe display order, hashes, JSON, UI state, and OPS v1 effective-needs rows do not.
 
-Each event carries event ID, NeedGenerationRun ID, input snapshot reference, actor, timestamp, issue summary, and reason where applicable.
+A later separately approved decision may add explicit reintroduction support only after defining whether `REMOVED → ACTIVE` is one-to-one correction identity, exact predecessor ownership, release membership, issue and lifecycle effects, H0B1 contribution interpretation, and focused migration and pgTAP changes. H0A5a does not authorize that extension.
 
-## 6. Read models
+## 8. Issue classification
 
-Read models serve the UI and are not an alternative command path.
+The exact closed catalog and severity are defined in [Decision PA-06E-H0A5](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md#28-closed-issue-and-rejection-catalog).
 
-### NeedGenerationWorkbench
+The catalog contains exactly 35 codes. At minimum it classifies exact readiness entry/currentness, missing Attendance, missing/ambiguous/incomplete Recipe, invalid basis/revision/reference, conversion, calculation, typed trace, duplicate atomic anchor, predecessor/fork/split/merge/omission/removal, unsupported reintroduction after removal, zero active quantity, and every release membership failure.
 
-Primary Planning workspace for this step. It shows service period, input readiness status, generation status, issue counts, generated line count, and release action.
+`UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` is `BLOCKING` exactly when a directly linked successor Need Generation run selects a `PRESENT` RecipeLineRevision for a stable RecipeLine whose corresponding theoretical contribution in the direct predecessor run was `REMOVED`.
 
-### NeedGenerationIssues
+All stale-input, eligibility, factor/result, lineage, predecessor, removal, unsupported reintroduction, split/merge, and release failures are `BLOCKING`. `ZERO_ACTIVE_THEORETICAL_QUANTITY` is the sole H0A5 `WARNING`. Warnings alone do not block validation or release.
 
-Groups blocking issues and warnings by service date, school, dish, recipe, BOM line, ingredient, and issue code.
+## 9. Closed lifecycle
 
-### TheoreticalNeedsReview
+The status set is exactly:
 
-Shows generated theoretical lines with source trace, quantity, unit, recipe/BOM reference, and calculation trace. It supports explanation, not procurement execution.
+```text
+GENERATED
+VALIDATED
+RELEASED_FOR_CONFIRMATION
+INVALIDATED
+```
 
-### NeedGenerationSummary
+Allowed transitions are exactly:
 
-Manager-facing summary showing input versions, generated line count, blocking/warning counts, generated by/at, validated by/at, and released by/at.
+```text
+GENERATED → VALIDATED
+GENERATED → INVALIDATED
+VALIDATED → RELEASED_FOR_CONFIRMATION
+VALIDATED → INVALIDATED
+RELEASED_FOR_CONFIRMATION → INVALIDATED
+```
 
-### NeedGenerationHistory
+Generation creates version 1. Each valid transition increments exactly once. Release binds the resulting released run version. All other transitions, same-state mutation, direct resurrection, and nonterminal predecessor progression are rejected.
 
-Explains generation, validation, failure, release, and invalidation events.
+Validation requires the current terminal run, zero blockers, and complete calculation, source, predecessor, and count evidence. Release requires `VALIDATED`, zero blockers, and one every-and-only immutable release snapshot. Release does not create Confirmed Need.
 
-## 7. MVP validation rules
+Invalidation preserves all evidence and does not automatically create a successor. Recalculation creates a new run after invalidation. Menu, Attendance, readiness, Recipe, Dish, Ingredient, Unit, calculation-contract, or future conversion changes do not rewrite or automatically invalidate a run.
 
-The following are blocking unless a later approved rule explicitly changes their classification:
+Actual operations/commands, actor authorization, reasons, events, receipts, safe errors, and API/read surfaces remain later tasks.
 
-- PlanningInputSet is missing, Not Ready, or Invalidated.
-- Weekly Menu or Attendance version differs from the readiness snapshot.
-- Missing active recipe for a planned dish that requires calculation.
-- Missing BOM lines for a required recipe.
-- Missing or inactive ingredient reference unless explicitly allowed by policy.
-- Generated theoretical quantity is negative.
-- Generated line lacks source trace to input and recipe/BOM references.
-- Release for confirmation attempted while blocking issues remain.
-- Released generated needs are recalculated or overwritten without explicit invalidation and new version/run.
+## 10. Release and downstream boundary
 
-Warnings may include zero theoretical quantity, recipe/BOM version differs from previously used version, or non-blocking inactive metadata that requires later review.
+Release membership includes every-and-only immutable run line and proves exact quantity, Unit, disposition, predecessor, calculation revision, optional conversion revision, and typed source facts. Release issue membership proves the exact summary. Release facts are immutable after creation and remain retained after invalidation or successor generation.
 
-## 8. Domain boundaries and downstream relationship
+Confirmed Need remains a later Planning-owned aggregate and approval gate. H0B1 may group multiple released atomic contributions inside an operational line revision. H0A5 performs no grouping, review, adjustment, approval, or release to Procurement.
 
-Need Generation belongs to Planning.
+Procurement cannot edit or consume unreleased theoretical lines as approved demand. Purchase Assignment rebalance is downstream Procurement behavior and is not part of Need Generation.
 
-It references Weekly Menu, Attendance, Readiness, Recipe, and BOM data, but it does not own or edit those objects.
+## 11. OPS v1 and prototype compatibility
 
-Need Generation does not approve demand. Confirmed Need is the later Planning approval gate that can review, adjust, approve, and release demand.
+OPS v1 effective-needs views and Retool direct joins are qualitative evidence only. They do not define a run, input snapshot, atomic line, predecessor, release snapshot, calculation rule, conversion rule, API, or ID.
 
-Need Generation does not assign suppliers, create purchase orders, mutate warehouse stock, create dispatch documents, perform QA, create finance records, or edit recipe/BOM data.
+The TypeScript prototype remains a non-authoritative UI/domain demonstration. H0A5 supersedes its Ready-or-requested entry, root version, generic readiness ID, first active Recipe, `number` arithmetic, quantity-per-portion shortcut, concatenated trace, mutable line status, and line-array release membership assumptions.
 
-Procurement must not consume theoretical lines directly as approved demand.
+## 12. H0A5b persistence and tests
 
-## 9. Decision-first UX
+H0A5a creates no SQL. A later H0A5b issue must define exact physical names and exact `plan(N)` counts before coding for four independently runnable, exclusive invariant families:
 
-The default workbench answers: **Can Planning release generated theoretical needs for confirmation?**
+1. H0A5 structure/security;
+2. H0A5 run/input/recipe/calculation integrity;
+3. H0A5 theoretical-line/source/predecessor/release integrity; and
+4. H0A5 lifecycle/issues/invalidation/history.
 
-Primary view shows only:
+Every invariant has one owner only. Each suite owns its transaction, deterministic noncolliding fixtures, exact plan, `finish()`, rollback, one exact-path workflow command, `Files=1`, exact assertion count, and `Result: PASS`. H0A1–H0A4 tests remain unchanged.
 
-- service period;
-- readiness/input status;
-- generation status;
-- blocking issue count;
-- warning count;
-- generated line count;
-- release for confirmation action.
+Only the H0A5 theoretical-line/source/predecessor/release integrity suite owns assertions that a prior removed line may be omitted while the stable RecipeLine remains absent, the prior removed line remains immutable, a reintroduced `PRESENT` stable RecipeLine is neither accepted as new nor given an inferred predecessor, the exact blocker is required, validation and release fail, and unrelated genuinely new stable RecipeLines remain valid without predecessors.
 
-Expandable detail shows:
+## 13. Scope and migration effect
 
-- input snapshot versions;
-- generated line details;
-- missing recipe/BOM/ingredient blockers;
-- calculation trace;
-- issue explanations;
-- generation and validation history.
+This H0A5a amendment changes documentation only. It creates no migration, SQL, pgTAP, workflow, function, RPC, role, capability, policy, event, reason, receipt, API/read model, generated type, React behavior, package, Retool change, OPS v1 change, hosted Supabase action, production data, credential, deployment, Confirmed Need, Procurement, Warehouse, Dispatch, QA, Production, or Finance behavior.
 
-Audit and history are not shown by default; they are available through a detail or explain view.
-
-React may coordinate interaction, but it must not hide authoritative calculation rules inside UI components.
-
-## 10. OPS v1 compatibility notes
-
-The following OPS v1 structures are reference evidence, not a prescribed Atlas schema:
-
-- theoretical needs currently derive from planning sources and effective BOM views/functions;
-- effective BOM behavior is business evidence for recipe/BOM resolution;
-- current purchase-assignment rebalance is downstream behavior and must not be treated as Need Generation ownership.
-
-Atlas should preserve the intent: controlled inputs, traceable calculation, explicit generation, visible blockers, and no direct jump from theoretical lines to procurement execution.
-
-## 11. Out of scope and implementation readiness
-
-PD-01.6 does not implement React UI, Supabase migrations or RPCs, Retool changes, production-data changes, Confirmed Need implementation, supplier assignment, purchase orders, warehouse, dispatch, finance, QA, or recipe/BOM editing.
-
-The next bounded implementation task may provide an in-memory Need Generation domain, tests, and a minimal review workbench. It must preserve the rule that generated theoretical needs are not confirmed purchase demand.
+Documentation rollback is a normal Git revert. H0A5b and every command/runtime/downstream task require separate authorization.
