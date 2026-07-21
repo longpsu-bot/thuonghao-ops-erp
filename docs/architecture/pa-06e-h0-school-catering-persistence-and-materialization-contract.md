@@ -1,6 +1,6 @@
 # PA-06E-H0 — School-Catering Persistence and Materialization Contract
 
-**Status:** Proposed architecture contract; documentation only; product, architecture, security, and migration review required
+**Status:** Architecture contract; H0A1 through H0A5b foundations implemented, later materialization and runtime work still requires separate approval
 
 **Issue:** [#115](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/115)
 
@@ -876,11 +876,12 @@ The first four prerequisite decisions below are retained for provenance and mark
 5. **Resolved by H0A5a:** one generation run is one accepted attempt for one exact Planning Input Set/current evaluation and may include all Schools, dates, and locations contained by those exact typed snapshots.
 6. **Resolved by H0A5a:** the first slice uses one fixed versioned calculation contract and preserves the RecipeLineRevision source Unit; no conversion-rule family or generic formula engine is introduced.
 7. **Resolved by H0A5a:** a predecessor-linked `REMOVED` line has exact zero quantity and explicit H0A2 removed-revision evidence; silent omission of a prior active contribution blocks the successor.
-8. Product-approved operational identity beyond the mandatory service-date/school/destination/ingredient/controlled-unit fields, including any program, meal, service-window, or organizational scope dimension.
-9. Exact names and redundant column layout for release-snapshot, operational-identity, composite-FK, and contribution-membership keys. The composite/deferred enforcement direction itself is selected and is not optional.
-10. Exact trigger function names, batching/performance limits, and safe error mapping. The three invariant classes and deferred timing in section 8.4 remain mandatory.
-11. Exact H1B1 decision-current composite columns/indexes and evidence-correction reason rules within the selected mandatory policy/current-decision constraint direction.
-12. Existing environment row counts and whether any non-wholesale data already violates the proposed classification; no production inspection is authorized here.
+8. **Resolved by H0A5b:** the exact 11-relation private catalog, four guards, 22 triggers, typed calculation/source/predecessor constraints, immutable issue and release membership, and 244-assertion decomposition are implemented under Issue #131.
+9. Product-approved operational identity beyond the mandatory service-date/school/destination/ingredient/controlled-unit fields, including any program, meal, service-window, or organizational scope dimension.
+10. Exact downstream operational-identity and H0B1 contribution-membership keys; H0A5b release-membership names are resolved.
+11. Batching/performance limits and safe error mapping for future commands; H0A5b trigger names and deferred enforcement are resolved.
+12. Exact H1B1 decision-current composite columns/indexes and evidence-correction reason rules within the selected mandatory policy/current-decision constraint direction.
+13. Existing environment row counts and whether any non-wholesale data already violates the proposed classification; no production inspection is authorized here.
 
 ### 17.2 Product and policy decisions
 

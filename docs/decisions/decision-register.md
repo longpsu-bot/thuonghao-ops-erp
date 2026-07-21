@@ -44,6 +44,8 @@ The bounded PA-06E-H0A4b private persistence implementation is recorded in [Deci
 
 The bounded PA-06E-H0A5a Need Generation design is recorded in [Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage](decision-pa-06e-h0a5-need-generation-lineage.md). Issue #129 accepts one exact input-set/evaluation run attempt, a linear correction chain, immutable typed input and Recipe-use evidence, one fixed proportional numeric calculation contract, deterministic Recipe precedence, source-Unit output, atomic direct typed lineage, explicit predecessor/removal semantics, a closed issue catalog, the four-state lifecycle, and an immutable release boundary. H0A5b persistence, commands, authorization, API/UI, hosted execution, Confirmed Need materialization, downstream correction, and production rollout remain outside its authority.
 
+The bounded PA-06E-H0A5b private persistence implementation is recorded in [Decision PA-06E-H0A5b — Need Generation Persistence](decision-pa-06e-h0a5b-need-generation-persistence.md). Issue #131 implements exactly 11 private Planning relations, four guards, 22 relation-local triggers, fixed PostgreSQL numeric calculation, typed readiness/Recipe/source/predecessor lineage, the exact post-entry issue catalog, closed lifecycle, immutable release membership, and 244 focused pgTAP assertions. Commands, authorization, API/UI, hosted execution, supported reintroduction, Confirmed Need materialization, Procurement, and production rollout remain outside its authority.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

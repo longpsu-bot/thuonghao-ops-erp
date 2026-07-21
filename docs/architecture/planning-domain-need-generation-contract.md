@@ -1,6 +1,6 @@
 # PD-01.6 — Planning Domain Need Generation Contract
 
-**Status:** MVP contract v0.2; H0A5a decisions accepted, H0A5b persistence deferred
+**Status:** MVP contract v0.3; H0A5a decisions accepted and H0A5b private persistence implemented under Issue #131, pending independent governance review
 
 **Domain:** Planning
 
