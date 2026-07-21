@@ -107,6 +107,10 @@ jobs:
           pnpm exec supabase test db supabase/tests/pa_06e_h0a4b_planning_input_readiness_structure_security.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql --local
+          pnpm exec supabase test db supabase/tests/pa_06e_h0a5b_need_generation_structure_security.sql --local
+          pnpm exec supabase test db supabase/tests/pa_06e_h0a5b_need_generation_run_input_recipe_calculation_integrity.sql --local
+          pnpm exec supabase test db supabase/tests/pa_06e_h0a5b_theoretical_line_source_predecessor_release_integrity.sql --local
+          pnpm exec supabase test db supabase/tests/pa_06e_h0a5b_need_generation_lifecycle_issues_invalidation_history.sql --local
           pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
           pnpm exec supabase test db supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql --local
           pnpm local:auth:provision

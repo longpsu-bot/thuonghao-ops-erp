@@ -1,6 +1,6 @@
 # Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage
 
-**Status:** Accepted for the bounded H0A5a design under Issue #129; H0A5b persistence remains separately authorized work
+**Status:** Accepted H0A5a design; implemented by the bounded H0A5b persistence under Issue #131, pending independent governance review
 
 **Date:** 2026-07-21
 

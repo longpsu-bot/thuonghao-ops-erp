@@ -152,7 +152,7 @@ The proposed noncanonical `atlas_api.create_confirmed_needs_from_generation(requ
 
 ## 6. Future implementation decomposition
 
-This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged; H0A4a was authorized by Issue #125 and merged; H0A4b was authorized by Issue #127 and merged. Issue #129 authorizes only the H0A5a decision record in [TASK-PA-06E-H0A5a](TASK-PA-06E-H0A5a-need-generation-decision.md). H0A5b and every later task remain unapproved here.
+This parent documentation did not authorize implementation. Each child requires its own issue, clean branch from then-current `main`, exact allowed files, migration/rollback plan, and review. H0A1 was authorized by Issue #117 and merged; H0A2 by Issue #119 and merged; H0A3a by Issue #121 and merged; H0A3b by Issue #123 and merged; H0A4a was authorized by Issue #125 and merged; H0A4b was authorized by Issue #127 and merged; H0A5a was authorized by Issue #129 and merged; H0A5b was separately authorized by Issue #131 and implemented by [TASK-PA-06E-H0A5b](TASK-PA-06E-H0A5b-need-generation-persistence.md), pending independent governance review. Every later task remains unapproved here.
 
 ### H0A1 — Admin school and service-location reference foundation
 
@@ -276,13 +276,15 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H0A5b — Need Generation private persistence
 
-**Status:** Not authorized by Issue #129
+**Status:** Implemented by [TASK-PA-06E-H0A5b](TASK-PA-06E-H0A5b-need-generation-persistence.md) under Issue #131; pending independent governance review
 
 **Owner:** Planning, consuming Recipe/Admin references read-only
 
 **Objective:** Persist the exact H0A5a contract without reopening its accepted decisions.
 
 **Expected physical scope:** run and current/predecessor control, exact input snapshot and typed Recipe-use relations, fixed calculation-contract revision, atomic theoretical lines with direct anchors, issues, immutable release membership, deferred integrity, forced RLS with zero browser policies, grants, and focused pgTAP.
+
+**Implemented by H0A5b:** exactly 11 private relations, four private guards, 22 relation-local triggers, fixed PostgreSQL numeric calculation, direct typed lineage, removal and fail-closed reintroduction behavior, the closed lifecycle, immutable release membership, and four independent pgTAP suites totaling 244 assertions.
 
 **Required test decomposition:** independently runnable structure/security, run/input/calculation integrity, atomic-lineage/correction, and lifecycle/issues/release suites with exclusive invariant ownership.
 
