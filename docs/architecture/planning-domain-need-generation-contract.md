@@ -192,17 +192,34 @@ Required correction behavior:
 - an Attendance correction on the same stable Attendance line preserves one-to-one compatible RecipeLine continuity;
 - a genuinely new stable RecipeLine contribution is `ACTIVE` with no predecessor;
 - an explicit removal is `REMOVED`, exact zero, has exactly one predecessor, and binds one exact released H0A2 `REMOVED` RecipeLineRevision; and
-- a prior `REMOVED` contribution is terminal and need not be repeated.
+- a prior `REMOVED` contribution remains immutable exact-zero historical evidence with its exact predecessor and H0A2 removal evidence, and need not be repeated while the same stable RecipeLine remains absent or outside the selected `PRESENT` composition.
 
 One predecessor has at most one successor. Same-run, unrelated-chain, cross-period/input-set, cross-anchor, fork, split, and merge links are invalid. Every prior `ACTIVE` contribution must have one exact compatible `ACTIVE` or valid `REMOVED` successor. Silent omission is blocking. Menu/Dish/Recipe-family replacement that cannot preserve stable anchors is not treated as implicit removal.
+
+Omission of a prior `REMOVED` contribution is valid only while the same stable RecipeLine does not reappear as `PRESENT` in the selected released Recipe composition.
+
+Reintroduction of the same stable RecipeLine after a prior `REMOVED` theoretical contribution is unsupported in the first H0A5b slice. When one directly linked successor run for the same Planning Input Set and immutable period selects an H0A2 `PRESENT` RecipeLineRevision for the same stable RecipeLine whose direct-predecessor-run contribution was `REMOVED`, generation:
+
+- does not treat the stable RecipeLine as genuinely new;
+- does not create an `ACTIVE` line without a predecessor;
+- does not infer a `REMOVED → ACTIVE` predecessor relation;
+- records the `BLOCKING` classification `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL`;
+- keeps the run in `GENERATED` and prevents validation and release; and
+- requires explicit invalidation and a later separately approved contract extension before the reintroduction can be generated successfully.
+
+Only the exact typed direct run chain, Planning Input Set, period, stable RecipeLine, predecessor theoretical `REMOVED` disposition, and successor H0A2 `PRESENT` revision establish this case. Ingredient identity or name, line ordering, quantity equality, Recipe display order, hashes, JSON, UI state, and OPS v1 effective-needs rows do not.
+
+A later separately approved decision may add explicit reintroduction support only after defining whether `REMOVED → ACTIVE` is one-to-one correction identity, exact predecessor ownership, release membership, issue and lifecycle effects, H0B1 contribution interpretation, and focused migration and pgTAP changes. H0A5a does not authorize that extension.
 
 ## 8. Issue classification
 
 The exact closed catalog and severity are defined in [Decision PA-06E-H0A5](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md#28-closed-issue-and-rejection-catalog).
 
-At minimum it classifies exact readiness entry/currentness, missing Attendance, missing/ambiguous/incomplete Recipe, invalid basis/revision/reference, conversion, calculation, typed trace, duplicate atomic anchor, predecessor/fork/split/merge/omission/removal, zero active quantity, and every release membership failure.
+The catalog contains exactly 35 codes. At minimum it classifies exact readiness entry/currentness, missing Attendance, missing/ambiguous/incomplete Recipe, invalid basis/revision/reference, conversion, calculation, typed trace, duplicate atomic anchor, predecessor/fork/split/merge/omission/removal, unsupported reintroduction after removal, zero active quantity, and every release membership failure.
 
-All stale-input, eligibility, factor/result, lineage, predecessor, removal, split/merge, and release failures are `BLOCKING`. `ZERO_ACTIVE_THEORETICAL_QUANTITY` is the sole H0A5 `WARNING`. Warnings alone do not block validation or release.
+`UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` is `BLOCKING` exactly when a directly linked successor Need Generation run selects a `PRESENT` RecipeLineRevision for a stable RecipeLine whose corresponding theoretical contribution in the direct predecessor run was `REMOVED`.
+
+All stale-input, eligibility, factor/result, lineage, predecessor, removal, unsupported reintroduction, split/merge, and release failures are `BLOCKING`. `ZERO_ACTIVE_THEORETICAL_QUANTITY` is the sole H0A5 `WARNING`. Warnings alone do not block validation or release.
 
 ## 9. Closed lifecycle
 
@@ -257,6 +274,8 @@ H0A5a creates no SQL. A later H0A5b issue must define exact physical names and e
 4. H0A5 lifecycle/issues/invalidation/history.
 
 Every invariant has one owner only. Each suite owns its transaction, deterministic noncolliding fixtures, exact plan, `finish()`, rollback, one exact-path workflow command, `Files=1`, exact assertion count, and `Result: PASS`. H0A1–H0A4 tests remain unchanged.
+
+Only the H0A5 theoretical-line/source/predecessor/release integrity suite owns assertions that a prior removed line may be omitted while the stable RecipeLine remains absent, the prior removed line remains immutable, a reintroduced `PRESENT` stable RecipeLine is neither accepted as new nor given an inferred predecessor, the exact blocker is required, validation and release fail, and unrelated genuinely new stable RecipeLines remain valid without predecessors.
 
 ## 13. Scope and migration effect
 

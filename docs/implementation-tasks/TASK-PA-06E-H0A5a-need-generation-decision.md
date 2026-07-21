@@ -1,6 +1,6 @@
 # TASK-PA-06E-H0A5a — Need Generation Run and Theoretical-Lineage Decision
 
-**Status:** Documentation decision completed on the task branch; validation and draft-PR evidence recorded below
+**Status:** Documentation decision corrected on the task branch; the removed-line reintroduction governance blocker is resolved; correction validation and exact-head draft-PR evidence are refreshed below
 
 **Issue:** [#129](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/129)
 
@@ -64,11 +64,13 @@ The task treats the following prototype assumptions as non-authoritative and sup
 - The line uses direct typed source anchors and bounded typed run-use relations; generic source registries, JSON, hashes, names, tokens, and concatenated IDs are rejected.
 - Quantity and Ingredient corrections on the same stable RecipeLine have exactly one predecessor; a new stable RecipeLine has none.
 - `ACTIVE` and `REMOVED` are the only dispositions. `REMOVED` is exact zero, has one predecessor, and requires exact released H0A2 `REMOVED` evidence.
+- A prior `REMOVED` contribution remains immutable and may be omitted only while the same stable RecipeLine does not reappear as `PRESENT` in the selected released Recipe composition.
+- Reintroduction of that same stable RecipeLine as `PRESENT` is unsupported in the first H0A5b slice. It is not new, creates no `ACTIVE` line without a predecessor, receives no inferred `REMOVED → ACTIVE` predecessor, records `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL`, remains `GENERATED`, and cannot validate or release before invalidation and a later approved extension.
 - Forks, same-run/unrelated predecessors, split, merge, cross-anchor wiring, and silent prior-`ACTIVE` omission block release.
 
 ### Issues, lifecycle, and release
 
-- The decision defines a closed 34-code Need Generation classification catalog. Every condition except `ZERO_ACTIVE_THEORETICAL_QUANTITY` is blocking.
+- The decision defines a closed 35-code Need Generation classification catalog. Every condition except `ZERO_ACTIVE_THEORETICAL_QUANTITY` is blocking; `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` is the exact new blocker.
 - Need Generation does not copy H0A4 warnings or add acknowledgement, waiver, override, or operator-editable issue mutation.
 - Lifecycle is exactly `GENERATED`, `VALIDATED`, `RELEASED_FOR_CONFIRMATION`, and `INVALIDATED` with only the five requested transitions and one version increment per valid transition.
 - Invalidation preserves run, input, line, issue, and release evidence; no upstream trigger invalidates automatically; successor generation is explicit.
@@ -105,11 +107,14 @@ Before coding, the H0A5b issue must declare exact filenames and exact `plan(N)` 
 
 Each suite owns its transaction, deterministic noncolliding fixtures, exact plan, `finish()`, rollback, one exact-path workflow command, `Files=1`, exact assertion count, and `Result: PASS`. H0A1–H0A4 tests remain unchanged.
 
+The H0A5 theoretical-line/source/predecessor/release integrity suite exclusively owns future assertions for permitted omission of an immutable prior removed line while its stable RecipeLine remains absent; blocked `PRESENT` reintroduction of that stable RecipeLine; absence of both a new no-predecessor line and an inferred `REMOVED → ACTIVE` predecessor; the exact blocker; failed validation and release; and unaffected genuinely new stable RecipeLines with no predecessor. No other future suite owns those assertions.
+
 ## 6. Exclusions
 
 No SQL, migration, pgTAP, workflow, RPC, trigger, role, capability, policy, event, reason, receipt, API/read surface, generated type, TypeScript, React, package, lockfile, Retool export, OPS v1 schema, hosted Supabase access, production data, credential, deployment, Confirmed Need, Procurement, Warehouse, Dispatch, QA, Production, Finance, H0A5b, H0B1, or H0C behavior is part of this task.
 
-The historical stash described as `preserve-local-h0a3a-edits-before-issue-127` remains unrelated and must not be applied, modified, dropped, compared as task evidence, or included.
+Historical H0A3a stash was not present in the canonical checkout.
+No stash was created, applied, modified, or included.
 
 ## 7. Acceptance criteria
 
@@ -121,6 +126,7 @@ The historical stash described as `preserve-local-h0a3a-edits-before-issue-127` 
 - [x] Source Unit is selected and the future conversion boundary is fail-closed without production values.
 - [x] Atomic theoretical contribution identity and typed source shape are closed without aggregation or a generic registry.
 - [x] One-to-one predecessor, `ACTIVE`/`REMOVED`, fork/split/merge, and silent-omission rules are closed.
+- [x] Removed-line omission is bounded to continued absence, and same-stable-RecipeLine `PRESENT` reintroduction fails closed with `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL`, no active line, no inferred predecessor, and blocked validation/release.
 - [x] Exact issue ownership/catalog/severity and no-acknowledgement boundary are closed.
 - [x] Lifecycle, version behavior, explicit invalidation, successor generation, and no automatic triggers are closed.
 - [x] Separate immutable release header, line membership, issue membership, and H0B1 typed consumption are closed.
@@ -135,7 +141,7 @@ Final local validation and exact changed-file evidence:
 
 - canonical workspace and baseline: passed before editing at `9a3c9896d4ffd0c3eaae4a931d5b57607feb788c`;
 - Issue #129 was open with `atlas:ready`, no matching branch/PR existed, and the issue moved to `atlas:working` when work began;
-- the historical H0A3a stash was located by message and never applied or included;
+- Historical H0A3a stash was not present in the canonical checkout. No stash was created, applied, modified, or included;
 - `pnpm install --frozen-lockfile`: passed with the lockfile already current under pnpm 11.7.0;
 - `pnpm format`: passed;
 - direct Prettier checks for both new documents and the replaced Need Generation contract: passed; the repository has no broader configured Markdown-format or documentation-link script, and the minimally amended parent documents retain their established table layout;
@@ -145,6 +151,21 @@ Final local validation and exact changed-file evidence:
 - local Markdown target resolution for all eight changed documents and `git diff --check`: passed;
 - exact eight-file documentation-only scope audit: passed, with no migration, pgTAP, workflow, API/RPC, role/capability, generated type, application, package/lockfile, Retool, OPS v1, hosted, data, credential, deployment, or H0A5b implementation path; and
 - publication and exact-head GitHub Actions evidence: recorded on the draft PR after completion.
+
+Governance correction validation from prior reviewed head `1f4c350fa73d115b392abc54eca37a9f29c05022`:
+
+- correction scope: only this task record, the H0A5 decision, and the Need Generation contract; the full PR remains exactly the existing eight documentation files;
+- `pnpm ops:workspace`: passed in the explicitly authorized E: checkout; the repository script retained its obsolete configured D:-path preference warning, which the user's E: authorization superseded for this correction;
+- `pnpm install --frozen-lockfile`: passed with the lockfile already current under pnpm 11.9.0;
+- `pnpm format`: passed;
+- direct Prettier check for all three correction documents: passed;
+- `pnpm typecheck`: passed;
+- `pnpm test`: passed, 41 files and 265 tests;
+- `pnpm build`: passed with the existing nonblocking Vite chunk-size advisory;
+- local Markdown target resolution: passed for all 62 local links in the eight PR documents;
+- issue catalog audit: exactly 35 codes, exactly one warning (`ZERO_ACTIVE_THEORETICAL_QUANTITY`), and no remaining 34-code reference;
+- reintroduction semantics and exclusive future-suite ownership: consistent across the decision, contract, and task record; and
+- `git diff --check`, `git diff --cached --check`, documentation-only scope, and prohibited-path audits: passed.
 
 ## 9. Migration and rollback
 
