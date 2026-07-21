@@ -2193,6 +2193,237 @@ begin
       message = 'theoretical lines require exact typed sources, source Unit, disposition, and authoritative numeric result';
   end if;
 
+  if v_initial_check and exists (
+    select 1
+    from atlas_planning.theoretical_need_lines as line
+    join atlas_admin.ingredients as ingredient
+      on ingredient.ingredient_id = line.ingredient_id
+    join atlas_admin.units as unit
+      on unit.unit_id = line.unit_id
+    where line.need_generation_run_id = v_run.need_generation_run_id
+      and line.line_disposition = 'ACTIVE'
+      and (
+        ingredient.ingredient_status <> 'ACTIVE'
+        or unit.unit_status <> 'ACTIVE'
+      )
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'new ACTIVE theoretical lines require active Ingredients and Units';
+  end if;
+
+  if v_initial_check and exists (
+    select 1
+    from atlas_planning.need_generation_recipe_selections as selection
+    join atlas_planning.need_generation_recipe_line_uses as line_use
+      on line_use.need_generation_recipe_selection_id = selection.need_generation_recipe_selection_id
+     and line_use.need_generation_run_id = selection.need_generation_run_id
+    join atlas_admin.recipe_line_revisions as recipe_revision
+      on recipe_revision.recipe_line_revision_id = line_use.recipe_line_revision_id
+     and recipe_revision.line_disposition = 'PRESENT'
+    join atlas_planning.weekly_menu_approval_snapshot_lines as menu_line
+      on menu_line.weekly_menu_approval_snapshot_line_id = selection.weekly_menu_approval_snapshot_line_id
+    join atlas_planning.attendance_approval_snapshot_lines as attendance_line
+      on attendance_line.attendance_approval_snapshot_id = v_snapshot.attendance_approval_snapshot_id
+     and attendance_line.school_id = menu_line.school_id
+     and attendance_line.service_date = menu_line.service_date
+    join atlas_admin.ingredients as ingredient
+      on ingredient.ingredient_id = recipe_revision.ingredient_id
+    where selection.need_generation_run_id = v_run.need_generation_run_id
+      and ingredient.ingredient_status <> 'ACTIVE'
+      and not exists (
+        select 1
+        from atlas_planning.theoretical_need_lines as line
+        where line.need_generation_run_id = v_run.need_generation_run_id
+          and line.need_generation_recipe_line_use_id = line_use.need_generation_recipe_line_use_id
+          and line.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+          and line.line_disposition = 'ACTIVE'
+      )
+      and not exists (
+        select 1
+        from atlas_planning.need_generation_issues as issue
+        where issue.need_generation_run_id = v_run.need_generation_run_id
+          and issue.theoretical_need_line_id is null
+          and issue.issue_code = 'INACTIVE_OR_INVALID_INGREDIENT'
+          and issue.severity = 'BLOCKING'
+          and issue.weekly_menu_approval_snapshot_line_id = menu_line.weekly_menu_approval_snapshot_line_id
+          and issue.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+          and issue.school_id = menu_line.school_id
+          and issue.service_date = menu_line.service_date
+          and issue.dish_id = menu_line.dish_id
+          and issue.recipe_id = selection.recipe_id
+          and issue.recipe_line_id = line_use.recipe_line_id
+          and issue.ingredient_id = recipe_revision.ingredient_id
+          and issue.unit_id = recipe_revision.unit_id
+      )
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'an inactive Ingredient produces no ACTIVE line and requires its exact blocker';
+  end if;
+
+  if v_initial_check and exists (
+    select 1
+    from atlas_planning.need_generation_recipe_selections as selection
+    join atlas_planning.need_generation_recipe_line_uses as line_use
+      on line_use.need_generation_recipe_selection_id = selection.need_generation_recipe_selection_id
+     and line_use.need_generation_run_id = selection.need_generation_run_id
+    join atlas_admin.recipe_line_revisions as recipe_revision
+      on recipe_revision.recipe_line_revision_id = line_use.recipe_line_revision_id
+     and recipe_revision.line_disposition = 'PRESENT'
+    join atlas_planning.weekly_menu_approval_snapshot_lines as menu_line
+      on menu_line.weekly_menu_approval_snapshot_line_id = selection.weekly_menu_approval_snapshot_line_id
+    join atlas_planning.attendance_approval_snapshot_lines as attendance_line
+      on attendance_line.attendance_approval_snapshot_id = v_snapshot.attendance_approval_snapshot_id
+     and attendance_line.school_id = menu_line.school_id
+     and attendance_line.service_date = menu_line.service_date
+    join atlas_admin.units as unit
+      on unit.unit_id = recipe_revision.unit_id
+    where selection.need_generation_run_id = v_run.need_generation_run_id
+      and unit.unit_status <> 'ACTIVE'
+      and not exists (
+        select 1
+        from atlas_planning.theoretical_need_lines as line
+        where line.need_generation_run_id = v_run.need_generation_run_id
+          and line.need_generation_recipe_line_use_id = line_use.need_generation_recipe_line_use_id
+          and line.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+          and line.line_disposition = 'ACTIVE'
+      )
+      and not exists (
+        select 1
+        from atlas_planning.need_generation_issues as issue
+        where issue.need_generation_run_id = v_run.need_generation_run_id
+          and issue.theoretical_need_line_id is null
+          and issue.issue_code = 'INACTIVE_OR_INVALID_UNIT'
+          and issue.severity = 'BLOCKING'
+          and issue.weekly_menu_approval_snapshot_line_id = menu_line.weekly_menu_approval_snapshot_line_id
+          and issue.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+          and issue.school_id = menu_line.school_id
+          and issue.service_date = menu_line.service_date
+          and issue.dish_id = menu_line.dish_id
+          and issue.recipe_id = selection.recipe_id
+          and issue.recipe_line_id = line_use.recipe_line_id
+          and issue.ingredient_id = recipe_revision.ingredient_id
+          and issue.unit_id = recipe_revision.unit_id
+      )
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'an inactive Unit produces no ACTIVE line and requires its exact blocker';
+  end if;
+
+  if v_initial_check and exists (
+    select 1
+    from atlas_planning.need_generation_recipe_selections as selection
+    join atlas_planning.need_generation_recipe_line_uses as line_use
+      on line_use.need_generation_recipe_selection_id = selection.need_generation_recipe_selection_id
+     and line_use.need_generation_run_id = selection.need_generation_run_id
+    join atlas_admin.recipe_line_revisions as recipe_revision
+      on recipe_revision.recipe_line_revision_id = line_use.recipe_line_revision_id
+     and recipe_revision.line_disposition = 'PRESENT'
+    join atlas_planning.weekly_menu_approval_snapshot_lines as menu_line
+      on menu_line.weekly_menu_approval_snapshot_line_id = selection.weekly_menu_approval_snapshot_line_id
+    join atlas_planning.attendance_approval_snapshot_lines as attendance_line
+      on attendance_line.attendance_approval_snapshot_id = v_snapshot.attendance_approval_snapshot_id
+     and attendance_line.school_id = menu_line.school_id
+     and attendance_line.service_date = menu_line.service_date
+    join atlas_admin.ingredients as ingredient
+      on ingredient.ingredient_id = recipe_revision.ingredient_id
+    join atlas_admin.units as unit
+      on unit.unit_id = recipe_revision.unit_id
+    where selection.need_generation_run_id = v_run.need_generation_run_id
+      and (
+        select count(*)
+        from atlas_planning.theoretical_need_lines as line
+        where line.need_generation_run_id = v_run.need_generation_run_id
+          and line.need_generation_recipe_selection_id = selection.need_generation_recipe_selection_id
+          and line.need_generation_recipe_line_use_id = line_use.need_generation_recipe_line_use_id
+          and line.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+          and line.line_disposition = 'ACTIVE'
+      ) <> 1
+      and not (
+        v_run.predecessor_need_generation_run_id is not null
+        and exists (
+          select 1
+          from atlas_planning.theoretical_need_lines as prior
+          where prior.need_generation_run_id = v_run.predecessor_need_generation_run_id
+            and prior.recipe_line_id = line_use.recipe_line_id
+            and prior.line_disposition = 'REMOVED'
+        )
+        and exists (
+          select 1
+          from atlas_planning.need_generation_issues as issue
+          where issue.need_generation_run_id = v_run.need_generation_run_id
+            and issue.theoretical_need_line_id is null
+            and issue.issue_code = 'UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL'
+            and issue.severity = 'BLOCKING'
+            and issue.recipe_id = selection.recipe_id
+            and issue.recipe_line_id = line_use.recipe_line_id
+        )
+      )
+      and not (
+        ingredient.ingredient_status <> 'ACTIVE'
+        and exists (
+          select 1
+          from atlas_planning.need_generation_issues as issue
+          where issue.need_generation_run_id = v_run.need_generation_run_id
+            and issue.theoretical_need_line_id is null
+            and issue.issue_code = 'INACTIVE_OR_INVALID_INGREDIENT'
+            and issue.severity = 'BLOCKING'
+            and issue.weekly_menu_approval_snapshot_line_id = menu_line.weekly_menu_approval_snapshot_line_id
+            and issue.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+            and issue.school_id = menu_line.school_id
+            and issue.service_date = menu_line.service_date
+            and issue.dish_id = menu_line.dish_id
+            and issue.recipe_id = selection.recipe_id
+            and issue.recipe_line_id = line_use.recipe_line_id
+            and issue.ingredient_id = recipe_revision.ingredient_id
+            and issue.unit_id = recipe_revision.unit_id
+        )
+      )
+      and not (
+        unit.unit_status <> 'ACTIVE'
+        and exists (
+          select 1
+          from atlas_planning.need_generation_issues as issue
+          where issue.need_generation_run_id = v_run.need_generation_run_id
+            and issue.theoretical_need_line_id is null
+            and issue.issue_code = 'INACTIVE_OR_INVALID_UNIT'
+            and issue.severity = 'BLOCKING'
+            and issue.weekly_menu_approval_snapshot_line_id = menu_line.weekly_menu_approval_snapshot_line_id
+            and issue.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+            and issue.school_id = menu_line.school_id
+            and issue.service_date = menu_line.service_date
+            and issue.dish_id = menu_line.dish_id
+            and issue.recipe_id = selection.recipe_id
+            and issue.recipe_line_id = line_use.recipe_line_id
+            and issue.ingredient_id = recipe_revision.ingredient_id
+            and issue.unit_id = recipe_revision.unit_id
+        )
+      )
+      and not exists (
+        select 1
+        from atlas_planning.need_generation_issues as issue
+        where issue.need_generation_run_id = v_run.need_generation_run_id
+          and issue.theoretical_need_line_id is null
+          and issue.issue_code = 'NEGATIVE_OR_INVALID_CALCULATION_RESULT'
+          and issue.severity = 'BLOCKING'
+          and issue.weekly_menu_approval_snapshot_line_id = menu_line.weekly_menu_approval_snapshot_line_id
+          and issue.attendance_approval_snapshot_line_id = attendance_line.attendance_approval_snapshot_line_id
+          and issue.school_id = menu_line.school_id
+          and issue.service_date = menu_line.service_date
+          and issue.dish_id = menu_line.dish_id
+          and issue.recipe_id = selection.recipe_id
+          and issue.recipe_line_id = line_use.recipe_line_id
+          and issue.ingredient_id = recipe_revision.ingredient_id
+          and issue.unit_id = recipe_revision.unit_id
+      )
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'every PRESENT RecipeLine use with exact Attendance requires one ACTIVE theoretical line or exact permitted blocker';
+  end if;
+
   if exists (
     select 1
     from atlas_planning.theoretical_need_lines as line

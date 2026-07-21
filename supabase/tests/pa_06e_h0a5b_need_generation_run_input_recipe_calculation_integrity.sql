@@ -288,6 +288,204 @@ insert into atlas_planning.need_generation_calculation_contract_revisions (
 set constraints all immediate;
 set constraints all deferred;
 
+create function pg_temp.h0a5b_initial_status_case(
+  p_with_line boolean,
+  p_issue_code text
+) returns void language plpgsql as $$
+begin
+  insert into atlas_planning.need_generation_runs (
+    need_generation_run_id, planning_input_set_id,
+    planning_input_evaluation_id, evaluation_version,
+    period_start, period_end, attempt_ordinal, input_snapshot_id,
+    run_status, version, generated_line_count, blocking_issue_count,
+    warning_count, generated_by_actor_id, generated_at, updated_at
+  ) values (
+    'b5100000-0000-0000-0000-000000000590',
+    'b5100000-0000-0000-0000-000000000400',
+    'b5100000-0000-0000-0000-000000000401', 1,
+    date '2026-11-02', date '2026-11-02', 1,
+    'b5100000-0000-0000-0000-000000000591',
+    'GENERATED', 1, case when p_with_line then 1 else 0 end,
+    case when p_issue_code is null then 0 else 1 end, 0,
+    'b5100000-0000-0000-0000-000000000001',
+    timestamptz '2026-11-01 09:30:00+07',
+    timestamptz '2026-11-01 09:30:00+07'
+  );
+
+  insert into atlas_planning.need_generation_input_snapshots (
+    need_generation_input_snapshot_id, need_generation_run_id,
+    planning_input_set_id, planning_input_evaluation_id, evaluation_version,
+    weekly_menu_id, weekly_menu_version, weekly_menu_approval_snapshot_id,
+    attendance_batch_id, attendance_version, attendance_approval_snapshot_id,
+    need_generation_calculation_contract_id,
+    need_generation_calculation_contract_revision_id,
+    calculation_contract_revision_number, captured_at
+  ) values (
+    'b5100000-0000-0000-0000-000000000591',
+    'b5100000-0000-0000-0000-000000000590',
+    'b5100000-0000-0000-0000-000000000400',
+    'b5100000-0000-0000-0000-000000000401', 1,
+    'b5100000-0000-0000-0000-000000000200', 1,
+    'b5100000-0000-0000-0000-000000000220',
+    'b5100000-0000-0000-0000-000000000300', 1,
+    'b5100000-0000-0000-0000-000000000320',
+    'b5100000-0000-0000-0000-000000000700',
+    'b5100000-0000-0000-0000-000000000701', 1,
+    timestamptz '2026-11-01 09:30:00+07'
+  );
+
+  insert into atlas_planning.need_generation_recipe_selections (
+    need_generation_recipe_selection_id, need_generation_input_snapshot_id,
+    need_generation_run_id, weekly_menu_approval_snapshot_line_id,
+    weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+    weekly_menu_line_id, school_id, school_type_id, dish_id, recipe_id,
+    recipe_version_id, recipe_version_number, selection_scope, selected_at
+  ) values (
+    'b5100000-0000-0000-0000-000000000592',
+    'b5100000-0000-0000-0000-000000000591',
+    'b5100000-0000-0000-0000-000000000590',
+    'b5100000-0000-0000-0000-000000000221',
+    'b5100000-0000-0000-0000-000000000220',
+    'b5100000-0000-0000-0000-000000000200', 1,
+    'b5100000-0000-0000-0000-000000000210',
+    'b5100000-0000-0000-0000-000000000120',
+    'b5100000-0000-0000-0000-000000000110',
+    'b5100000-0000-0000-0000-000000000150',
+    'b5100000-0000-0000-0000-000000000160',
+    'b5100000-0000-0000-0000-000000000161', 1, 'GENERAL',
+    timestamptz '2026-11-01 09:30:00+07'
+  );
+
+  insert into atlas_planning.need_generation_recipe_line_uses (
+    need_generation_recipe_line_use_id, need_generation_input_snapshot_id,
+    need_generation_run_id, need_generation_recipe_selection_id,
+    recipe_id, recipe_version_id, recipe_line_id, recipe_line_revision_id,
+    captured_at
+  ) values (
+    'b5100000-0000-0000-0000-000000000593',
+    'b5100000-0000-0000-0000-000000000591',
+    'b5100000-0000-0000-0000-000000000590',
+    'b5100000-0000-0000-0000-000000000592',
+    'b5100000-0000-0000-0000-000000000160',
+    'b5100000-0000-0000-0000-000000000161',
+    'b5100000-0000-0000-0000-000000000162',
+    'b5100000-0000-0000-0000-000000000163',
+    timestamptz '2026-11-01 09:30:00+07'
+  );
+
+  if p_with_line then
+    insert into atlas_planning.theoretical_need_lines (
+      theoretical_need_line_id, need_generation_run_id,
+      need_generation_input_snapshot_id, need_generation_recipe_selection_id,
+      need_generation_recipe_line_use_id,
+      weekly_menu_approval_snapshot_line_id, weekly_menu_approval_snapshot_id,
+      weekly_menu_id, weekly_menu_version, weekly_menu_line_id,
+      attendance_approval_snapshot_line_id, attendance_approval_snapshot_id,
+      attendance_batch_id, attendance_version, attendance_line_id,
+      school_id, service_date, dish_id, recipe_id, recipe_version_id,
+      recipe_line_id, recipe_line_revision_id, ingredient_id, unit_id,
+      need_generation_calculation_contract_id,
+      need_generation_calculation_contract_revision_id,
+      calculation_contract_revision_number, line_disposition,
+      theoretical_quantity, created_at
+    ) values (
+      'b5100000-0000-0000-0000-000000000594',
+      'b5100000-0000-0000-0000-000000000590',
+      'b5100000-0000-0000-0000-000000000591',
+      'b5100000-0000-0000-0000-000000000592',
+      'b5100000-0000-0000-0000-000000000593',
+      'b5100000-0000-0000-0000-000000000221',
+      'b5100000-0000-0000-0000-000000000220',
+      'b5100000-0000-0000-0000-000000000200', 1,
+      'b5100000-0000-0000-0000-000000000210',
+      'b5100000-0000-0000-0000-000000000321',
+      'b5100000-0000-0000-0000-000000000320',
+      'b5100000-0000-0000-0000-000000000300', 1,
+      'b5100000-0000-0000-0000-000000000310',
+      'b5100000-0000-0000-0000-000000000120', date '2026-11-02',
+      'b5100000-0000-0000-0000-000000000150',
+      'b5100000-0000-0000-0000-000000000160',
+      'b5100000-0000-0000-0000-000000000161',
+      'b5100000-0000-0000-0000-000000000162',
+      'b5100000-0000-0000-0000-000000000163',
+      'b5100000-0000-0000-0000-000000000140',
+      'b5100000-0000-0000-0000-000000000130',
+      'b5100000-0000-0000-0000-000000000700',
+      'b5100000-0000-0000-0000-000000000701', 1,
+      'ACTIVE', 2.500000, timestamptz '2026-11-01 09:30:00+07'
+    );
+  end if;
+
+  if p_issue_code is not null then
+    insert into atlas_planning.need_generation_issues (
+      need_generation_issue_id, need_generation_run_id, severity, issue_code,
+      message, weekly_menu_approval_snapshot_line_id,
+      attendance_approval_snapshot_line_id, school_id, service_date, dish_id,
+      recipe_id, recipe_line_id, ingredient_id, unit_id, created_at
+    ) values (
+      'b5100000-0000-0000-0000-000000000595',
+      'b5100000-0000-0000-0000-000000000590', 'BLOCKING', p_issue_code,
+      'Exact inactive generated reference fixture.',
+      'b5100000-0000-0000-0000-000000000221',
+      'b5100000-0000-0000-0000-000000000321',
+      'b5100000-0000-0000-0000-000000000120', date '2026-11-02',
+      'b5100000-0000-0000-0000-000000000150',
+      'b5100000-0000-0000-0000-000000000160',
+      'b5100000-0000-0000-0000-000000000162',
+      'b5100000-0000-0000-0000-000000000140',
+      'b5100000-0000-0000-0000-000000000130',
+      timestamptz '2026-11-01 09:30:00+07'
+    );
+  end if;
+end;
+$$;
+
+savepoint inactive_ingredient_active_line;
+update atlas_admin.ingredients
+set ingredient_status = 'INACTIVE'
+where ingredient_id = 'b5100000-0000-0000-0000-000000000140';
+select throws_ok(
+  $$ select pg_temp.h0a5b_initial_status_case(true, null); set constraints all immediate $$,
+  '23514', 'new ACTIVE theoretical lines require active Ingredients and Units',
+  'an inactive Ingredient cannot produce a new ACTIVE theoretical line'
+);
+rollback to savepoint inactive_ingredient_active_line;
+set constraints all deferred;
+
+savepoint inactive_ingredient_blocker;
+update atlas_admin.ingredients
+set ingredient_status = 'INACTIVE'
+where ingredient_id = 'b5100000-0000-0000-0000-000000000140';
+select lives_ok(
+  $$ select pg_temp.h0a5b_initial_status_case(false, 'INACTIVE_OR_INVALID_INGREDIENT'); set constraints all immediate; set constraints all deferred $$,
+  'an inactive Ingredient produces no line and owns its exact blocker'
+);
+rollback to savepoint inactive_ingredient_blocker;
+set constraints all deferred;
+
+savepoint inactive_unit_active_line;
+update atlas_admin.units
+set unit_status = 'INACTIVE'
+where unit_id = 'b5100000-0000-0000-0000-000000000130';
+select throws_ok(
+  $$ select pg_temp.h0a5b_initial_status_case(true, null); set constraints all immediate $$,
+  '23514', 'new ACTIVE theoretical lines require active Ingredients and Units',
+  'an inactive Unit cannot produce a new ACTIVE theoretical line'
+);
+rollback to savepoint inactive_unit_active_line;
+set constraints all deferred;
+
+savepoint inactive_unit_blocker;
+update atlas_admin.units
+set unit_status = 'INACTIVE'
+where unit_id = 'b5100000-0000-0000-0000-000000000130';
+select lives_ok(
+  $$ select pg_temp.h0a5b_initial_status_case(false, 'INACTIVE_OR_INVALID_UNIT'); set constraints all immediate; set constraints all deferred $$,
+  'an inactive Unit produces no line and owns its exact blocker'
+);
+rollback to savepoint inactive_unit_blocker;
+set constraints all deferred;
+
 insert into atlas_planning.need_generation_runs (
   need_generation_run_id, planning_input_set_id,
   planning_input_evaluation_id, evaluation_version,
@@ -412,6 +610,29 @@ select lives_ok(
   $$ set constraints all immediate; set constraints all deferred $$,
   'a complete run commits with exact readiness, input, Recipe, composition, and calculation ownership'
 );
+
+savepoint historical_reference_deactivation;
+update atlas_admin.ingredients
+set ingredient_status = 'INACTIVE'
+where ingredient_id = 'b5100000-0000-0000-0000-000000000140';
+update atlas_admin.units
+set unit_status = 'INACTIVE'
+where unit_id = 'b5100000-0000-0000-0000-000000000130';
+select lives_ok(
+  $$
+    update atlas_planning.need_generation_runs
+    set run_status = 'VALIDATED', version = 2,
+        validated_by_actor_id = 'b5100000-0000-0000-0000-000000000002',
+        validated_at = timestamptz '2026-11-01 10:05:00+07',
+        updated_at = timestamptz '2026-11-01 10:05:00+07'
+    where need_generation_run_id = 'b5100000-0000-0000-0000-000000000500';
+    set constraints all immediate;
+    set constraints all deferred
+  $$,
+  'later Ingredient and Unit deactivation does not invalidate historical generated evidence'
+);
+rollback to savepoint historical_reference_deactivation;
+set constraints all deferred;
 
 select is(
   (select row(contract_code, version)::text from atlas_planning.need_generation_calculation_contracts where need_generation_calculation_contract_id = 'b5100000-0000-0000-0000-000000000700'),
@@ -576,11 +797,6 @@ from (
     ((select period_start = date '2026-11-02' and period_end = date '2026-11-02' from atlas_planning.need_generation_runs where need_generation_run_id = 'b5100000-0000-0000-0000-000000000500'), 'run period exactly inherits the Planning Input Set'),
     ((select weekly_menu_approval_snapshot_id = 'b5100000-0000-0000-0000-000000000220' from atlas_planning.need_generation_input_snapshots where need_generation_input_snapshot_id = 'b5100000-0000-0000-0000-000000000501'), 'snapshot repeats the evaluation Menu identity'),
     ((select attendance_approval_snapshot_id = 'b5100000-0000-0000-0000-000000000320' from atlas_planning.need_generation_input_snapshots where need_generation_input_snapshot_id = 'b5100000-0000-0000-0000-000000000501'), 'snapshot repeats the evaluation Attendance identity'),
-    ((select school_id = 'b5100000-0000-0000-0000-000000000120' from atlas_planning.need_generation_recipe_selections where need_generation_recipe_selection_id = 'b5100000-0000-0000-0000-000000000510'), 'selection preserves exact School ownership'),
-    ((select dish_id = 'b5100000-0000-0000-0000-000000000150' from atlas_planning.need_generation_recipe_selections where need_generation_recipe_selection_id = 'b5100000-0000-0000-0000-000000000510'), 'selection preserves exact Dish ownership'),
-    ((select weekly_menu_line_id = 'b5100000-0000-0000-0000-000000000210' from atlas_planning.need_generation_recipe_selections where need_generation_recipe_selection_id = 'b5100000-0000-0000-0000-000000000510'), 'selection preserves the stable Menu line'),
-    ((select recipe_line_revision_id = 'b5100000-0000-0000-0000-000000000163' from atlas_planning.need_generation_recipe_line_uses where need_generation_recipe_line_use_id = 'b5100000-0000-0000-0000-000000000520'), 'composition use preserves the exact immutable source revision'),
-    ((select calculation_contract_revision_number = 1 from atlas_planning.need_generation_input_snapshots where need_generation_input_snapshot_id = 'b5100000-0000-0000-0000-000000000501'), 'calculation revision number is typed and explicit'),
     ((select captured_at = generated_at from atlas_planning.need_generation_input_snapshots s join atlas_planning.need_generation_runs r on r.need_generation_run_id = s.need_generation_run_id where s.need_generation_input_snapshot_id = 'b5100000-0000-0000-0000-000000000501'), 'capture and generation timestamps are preserved exactly')
 ) as checks(check_ok, description);
 

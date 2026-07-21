@@ -48,6 +48,8 @@ Each relation owns one ordinary guard trigger and one initially deferred constra
 - Every selected RecipeVersion captures every-and-only its exact typed H0A2 composition.
 - PostgreSQL evaluates student-plus-teacher portions multiplied by Recipe quantity and divided by basis, with one final `numeric(20,6)` coercion.
 - Every output is one atomic contribution with complete direct typed lineage and the RecipeLineRevision source Unit.
+- Every eligible `PRESENT` RecipeLine use with exact Attendance owns one matching `ACTIVE` line unless an exact permitted blocker explains the omission; an empty stored count cannot mask missing output.
+- Initial generation accepts only active Ingredient and Unit references. Inactive references create no active line and require their exact blockers, while later reference deactivation leaves historical generated and released evidence unchanged.
 - Active, removed, new, predecessor, silent-omission, and unsupported-reintroduction behavior is fail closed.
 - The exact persisted 31-code issue catalog has one warning and immutable issue evidence.
 - Lifecycle is closed to four states and exact version increments.
@@ -81,6 +83,7 @@ The migration is additive. Before operational use it can be reverted as an unshi
 
 ## Validation record
 
+- Governance-correction evidence rejects a complete `PRESENT` composition with exact Attendance and no theoretical output, rejects new active lines for inactive Ingredient or Unit references, accepts only the corresponding exact no-line blockers, and proves later reference deactivation is non-retroactive.
 - Four independent clean-reset runs passed at `Files=1`, `Tests=44/60/76/64`, and `Result: PASS`; combined H0A5b evidence is 244/244.
 - A final clean reset replayed every migration and the registered sequence passed exactly 15 files and 882/882 assertions.
 - Affected-schema lint completed without errors; only the documented pre-existing `atlas_core.pa_05d_safe_date` and `atlas_api.confirm_successful_delivery` warnings remain.

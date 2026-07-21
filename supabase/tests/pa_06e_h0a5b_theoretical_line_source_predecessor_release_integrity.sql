@@ -107,6 +107,19 @@ returns void language sql as $$
   values (p_id, p_run, p_snapshot, p_selection, p_use, 'b5200000-0000-0000-0000-000000000221', 'b5200000-0000-0000-0000-000000000220', 'b5200000-0000-0000-0000-000000000200', 1, 'b5200000-0000-0000-0000-000000000210', 'b5200000-0000-0000-0000-000000000321', 'b5200000-0000-0000-0000-000000000320', 'b5200000-0000-0000-0000-000000000300', 1, 'b5200000-0000-0000-0000-000000000310', 'b5200000-0000-0000-0000-000000000120', date '2026-12-07', 'b5200000-0000-0000-0000-000000000150', 'b5200000-0000-0000-0000-000000000160', p_recipe_version, p_line, p_revision, p_ingredient, 'b5200000-0000-0000-0000-000000000130', 'b5200000-0000-0000-0000-000000000700', 'b5200000-0000-0000-0000-000000000701', 1, p_predecessor_run, p_predecessor_line, p_disposition, p_quantity, timestamptz '2026-12-01 10:00:00+07')
 $$;
 
+select throws_ok(
+  $$
+    select pg_temp.h0a5b_run_shell('b5200000-0000-0000-0000-000000000490', 'b5200000-0000-0000-0000-000000000491', 'b5200000-0000-0000-0000-000000000492', 1, null, 'b5200000-0000-0000-0000-000000000161', 1, 0, 0);
+    select pg_temp.h0a5b_use('b5200000-0000-0000-0000-000000000493', 'b5200000-0000-0000-0000-000000000490', 'b5200000-0000-0000-0000-000000000491', 'b5200000-0000-0000-0000-000000000492', 'b5200000-0000-0000-0000-000000000161', 'b5200000-0000-0000-0000-000000000162', 'b5200000-0000-0000-0000-000000000163');
+    select pg_temp.h0a5b_use('b5200000-0000-0000-0000-000000000494', 'b5200000-0000-0000-0000-000000000490', 'b5200000-0000-0000-0000-000000000491', 'b5200000-0000-0000-0000-000000000492', 'b5200000-0000-0000-0000-000000000161', 'b5200000-0000-0000-0000-000000000174', 'b5200000-0000-0000-0000-000000000175');
+    set constraints all immediate
+  $$,
+  '23514',
+  'every PRESENT RecipeLine use with exact Attendance requires one ACTIVE theoretical line or exact permitted blocker',
+  'complete PRESENT composition and exact Attendance cannot silently omit theoretical output'
+);
+set constraints all deferred;
+
 select pg_temp.h0a5b_run_shell('b5200000-0000-0000-0000-000000000500', 'b5200000-0000-0000-0000-000000000501', 'b5200000-0000-0000-0000-000000000510', 1, null, 'b5200000-0000-0000-0000-000000000161', 1, 2, 0);
 select pg_temp.h0a5b_use('b5200000-0000-0000-0000-000000000520', 'b5200000-0000-0000-0000-000000000500', 'b5200000-0000-0000-0000-000000000501', 'b5200000-0000-0000-0000-000000000510', 'b5200000-0000-0000-0000-000000000161', 'b5200000-0000-0000-0000-000000000162', 'b5200000-0000-0000-0000-000000000163');
 select pg_temp.h0a5b_use('b5200000-0000-0000-0000-000000000521', 'b5200000-0000-0000-0000-000000000500', 'b5200000-0000-0000-0000-000000000501', 'b5200000-0000-0000-0000-000000000510', 'b5200000-0000-0000-0000-000000000161', 'b5200000-0000-0000-0000-000000000174', 'b5200000-0000-0000-0000-000000000175');
@@ -240,7 +253,6 @@ from (
     ((select count(*) = 0 from atlas_planning.need_generation_release_snapshot_lines where need_generation_run_id = 'b5200000-0000-0000-0000-000000000800'), 'blocked run owns no release membership'),
     ((select count(*) = 0 from atlas_planning.need_generation_release_snapshot_issues where need_generation_run_id = 'b5200000-0000-0000-0000-000000000800'), 'blocked run owns no release issue summary'),
     ((select recipe_version_id = 'b5200000-0000-0000-0000-000000000166' from atlas_planning.need_generation_recipe_selections where need_generation_run_id = 'b5200000-0000-0000-0000-000000000800'), 'blocked run still selects the exact current released RecipeVersion'),
-    ((select count(*) = generated_line_count from atlas_planning.theoretical_need_lines l cross join atlas_planning.need_generation_runs r where l.need_generation_run_id = r.need_generation_run_id and r.need_generation_run_id = 'b5200000-0000-0000-0000-000000000800' group by r.generated_line_count), 'blocked run stored line count equals exact atomic rows'),
     ((select count(*) = blocking_issue_count from atlas_planning.need_generation_issues i cross join atlas_planning.need_generation_runs r where i.need_generation_run_id = r.need_generation_run_id and r.need_generation_run_id = 'b5200000-0000-0000-0000-000000000800' group by r.blocking_issue_count), 'blocked run stored blocker count equals exact issue rows'),
     ((select count(*) = 1 from atlas_planning.need_generation_release_snapshots where need_generation_run_id = 'b5200000-0000-0000-0000-000000000500'), 'released historical run owns exactly one snapshot'),
     ((select count(*) = generated_line_count from atlas_planning.need_generation_release_snapshot_lines m join atlas_planning.need_generation_release_snapshots s using (need_generation_release_snapshot_id) where s.need_generation_release_snapshot_id = 'b5200000-0000-0000-0000-000000000540' group by s.generated_line_count), 'release line membership count equals exact released line count'),

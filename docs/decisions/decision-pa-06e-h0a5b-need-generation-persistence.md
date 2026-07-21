@@ -64,6 +64,8 @@ At transaction end, a new run requires:
 
 Recipe selection is deterministic: eligible exact SchoolType Recipe first, otherwise eligible general Recipe, otherwise a blocker. Every selected released RecipeVersion has every-and-only its exact H0A2 RecipeLineRevision composition represented in typed use rows, including `PRESENT` and `REMOVED` revisions. A Dish with `requires_need_generation = false` produces no selection, line, or issue.
 
+For every eligible `PRESENT` RecipeLine use with one exact Attendance snapshot line, initial generation owns exactly one matching `ACTIVE` theoretical line unless the exact inactive-Ingredient, inactive-Unit, invalid-calculation, or unsupported-reintroduction blocker explains the omission. A stored count equal to an empty output set is not sufficient evidence of completeness.
+
 ## Atomic lineage and correction history
 
 Each `theoretical_need_lines` row is one immutable atomic contribution. Direct typed FKs retain its run, input snapshot, Recipe selection/use, Menu snapshot and stable line, Attendance snapshot and stable line, School, date, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision, Ingredient, Unit, and calculation root/revision.
@@ -71,6 +73,8 @@ Each `theoretical_need_lines` row is one immutable atomic contribution. Direct t
 `ACTIVE` quantity is nonnegative. Exact zero requires exactly one `ZERO_ACTIVE_THEORETICAL_QUANTITY` warning. `REMOVED` quantity is zero, carries exact H0A2 `REMOVED` evidence, and points to one compatible line in the direct predecessor run. Predecessors cannot self-link, fork, split, merge, cross a period/input set, or skip a prior active contribution silently.
 
 A genuinely new stable RecipeLine is `ACTIVE` without a predecessor. A removed line may remain absent while its stable RecipeLine remains absent. If the stable line reappears as H0A2 `PRESENT`, no line is created, no `REMOVED → ACTIVE` predecessor is inferred, and `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` blocks validation and release.
+
+New `ACTIVE` contributions require the exact referenced Ingredient and source Unit to be `ACTIVE`. An inactive reference produces no active line and requires `INACTIVE_OR_INVALID_INGREDIENT` or `INACTIVE_OR_INVALID_UNIT` with the exact source context. This reference-status test is generation-entry eligibility only: later Ingredient or Unit deactivation neither rewrites nor automatically invalidates historical generated, validated, or released evidence.
 
 ## Issues, lifecycle, and release
 
@@ -99,7 +103,7 @@ The private guard catalog is exactly:
 3. `atlas_planning.pa_06e_h0a5b_immutable_evidence_guard()`
 4. `atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()`
 
-Every one of the 11 relations has one ordinary `<relation>_guard` trigger and one `DEFERRABLE INITIALLY DEFERRED` `<relation>_integrity` constraint trigger: exactly 22 triggers. Transaction-end enforcement owns circular root/snapshot and contract/revision pointers, readiness/currentness, counts, every-and-only composition, typed source equality, predecessor completeness, unsupported reintroduction, and release completeness.
+Every one of the 11 relations has one ordinary `<relation>_guard` trigger and one `DEFERRABLE INITIALLY DEFERRED` `<relation>_integrity` constraint trigger: exactly 22 triggers. Transaction-end enforcement owns circular root/snapshot and contract/revision pointers, readiness/currentness, counts, every-and-only composition, reverse theoretical-output completeness, initial active Ingredient/Unit eligibility with exact blockers, typed source equality, predecessor completeness, unsupported reintroduction, and release completeness.
 
 All relations and functions are owned by `atlas_owner`. Functions are invoker-security with `search_path = ''`. RLS is enabled and forced on every relation with zero policies. `PUBLIC`, `anon`, `authenticated`, and `service_role` receive no relation privileges or function execution. All FKs use `ON DELETE RESTRICT` and operational composite FKs have leading indexes. UUID identities are database-generated and no production row is seeded. The canonical `atlas_api` surface remains exactly 18 functions.
 
