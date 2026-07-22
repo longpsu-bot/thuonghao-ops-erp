@@ -148,7 +148,7 @@ The source Unit and quantity equal the exact immutable Theoretical Need facts. T
 
 Every Need Generation revision has nonempty, immutable, nondeletable membership. It contains every and only ACTIVE release member in its service-date/School/Ingredient/source-Unit group. Its theoretical_quantity equals the exact PostgreSQL numeric sum of controlled contributions. REMOVED members, substitutions, omissions, duplicates, conversion, rounding, clamps, residuals, and hidden allocations are rejected.
 
-For the batch's controlled-current release, all current revision memberships form one exact disjoint partition: every active release line appears once, with no omission or duplication across lines, groups, or destinations. Historical and superseded memberships remain immutable but do not participate in current-partition counting.
+For the batch's controlled-current release, all current revision memberships form one exact disjoint partition: every active release line appears once, with no omission or duplication across lines, groups, or destinations. The invariant is enforced from the existing deferred batch/line current-source boundary and from revision/contribution membership changes. A released source with active members cannot own an empty Confirmed Need batch, and a stable line without a current revision cannot commit. An empty active-release set may have an empty partition. Historical, noncurrent, and superseded memberships remain immutable but do not participate in current-partition counting.
 
 ## Function and trigger catalog
 
@@ -171,6 +171,8 @@ Exactly nine triggers are created:
 9. confirmed_need_line_revision_contributions_membership_total
 
 The final five are DEFERRABLE INITIALLY DEFERRED. No trigger is installed on an upstream H0A5b or Admin relation.
+
+The partition correction reuses the existing functions and triggers. The catalogs remain exactly three functions, nine triggers, and five deferred triggers. The four-suite test and assertion catalogs also remain unchanged at 52, 56, 68, and 80 assertions (256 total), with 19 files and 1138 assertions in the registered regression.
 
 ## PA-05D and security compatibility
 

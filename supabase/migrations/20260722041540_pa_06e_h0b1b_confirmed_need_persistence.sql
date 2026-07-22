@@ -788,6 +788,33 @@ begin
     raise exception using errcode = '23514', message = 'Need Generation revision source or operational identity is inconsistent';
   end if;
 
+  if exists (
+    select snapshot_line.need_generation_release_snapshot_line_id
+    from atlas_planning.need_generation_release_snapshot_lines snapshot_line
+    join atlas_planning.theoretical_need_lines theoretical
+      on theoretical.theoretical_need_line_id = snapshot_line.theoretical_need_line_id
+    left join atlas_planning.confirmed_need_line_revision_contributions contribution
+      on contribution.need_generation_release_snapshot_line_id = snapshot_line.need_generation_release_snapshot_line_id
+      and contribution.confirmed_need_batch_id = v_batch_id
+      and contribution.need_generation_run_id = v_batch.current_need_generation_run_id
+      and contribution.need_generation_run_version = v_batch.current_need_generation_run_version
+      and contribution.need_generation_release_snapshot_id = v_batch.current_need_generation_release_snapshot_id
+    left join atlas_planning.confirmed_need_line_revisions revision
+      on revision.confirmed_need_line_revision_id = contribution.confirmed_need_line_revision_id
+      and revision.confirmed_need_batch_id = v_batch_id
+      and revision.source_kind = 'NEED_GENERATION'
+      and revision.is_current
+      and revision.need_generation_run_id = v_batch.current_need_generation_run_id
+      and revision.need_generation_run_version = v_batch.current_need_generation_run_version
+      and revision.need_generation_release_snapshot_id = v_batch.current_need_generation_release_snapshot_id
+    where snapshot_line.need_generation_release_snapshot_id = v_batch.current_need_generation_release_snapshot_id
+      and theoretical.line_disposition = 'ACTIVE'
+    group by snapshot_line.need_generation_release_snapshot_line_id
+    having count(revision.confirmed_need_line_revision_id) <> 1
+  ) then
+    raise exception using errcode = '23514', message = 'Current Need Generation revisions must exactly partition the active release';
+  end if;
+
   return null;
 end;
 $$;

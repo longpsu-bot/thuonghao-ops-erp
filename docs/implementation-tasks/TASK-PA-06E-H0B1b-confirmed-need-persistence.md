@@ -23,7 +23,8 @@ Implement the accepted H0B1 identity and contribution-membership decision as one
 - Added restrictive parent keys and composite foreign keys for exact released source, operational ownership, School/customer, and destination/customer facts.
 - Enforced exact no-conversion contribution equality.
 - Added exactly three private constraint functions and nine triggers.
-- Enforced nonempty every-and-only revision membership, exact numeric totals, immutable history, direct-successor current-source advancement, and the exact current-batch partition.
+- Enforced nonempty every-and-only revision membership, exact numeric totals, immutable history, direct-successor current-source advancement, and the exact current-batch partition from the deferred batch/line current-source boundary and revision/contribution changes.
+- Rejected a released source with active members when its Confirmed Need batch is empty and rejected a stable line without a current revision; an empty active release may retain an empty partition.
 - Preserved existing PA-05D owners, RLS, policies, grants, functions, behavior, and the 18-function API registry.
 - Registered four independent H0B1b pgTAP suites after H0A5b and before PA-05G.
 
@@ -54,13 +55,16 @@ Each new suite runs after its own seedless local reset:
 
 The final registered Supabase sequence is 19 files and 1138 assertions and runs after one final seedless reset.
 
+The correction reuses the existing catalog: exactly 3 functions, 9 triggers with 5 deferred, 4 test files, and the unchanged 52/56/68/80 assertion plans. No function, trigger, test file, or registered assertion is added.
+
 Additional validation covers frozen dependency installation; formatting, typecheck, frontend tests, and build; whitespace checks; workspace verification; affected-schema database lint and structural schema diff; exact schema catalogs; owner/RLS/policy/grant and retained PA-05D compatibility; the unchanged 18-function API; zero upstream triggers; forbidden surfaces; and local security and performance advisors.
 
 ## Local validation evidence
 
 - Independent seedless resets: 52/52, 56/56, 68/68, and 80/80; each reports Files=1 and Result: PASS.
+- Partition-boundary correction: one seedless reset followed by the focused contribution suite, Files=1 and Tests=80, Result: PASS.
 - H0B1b total: 4 files and 256/256 assertions.
-- Final seedless reset and exact registered sequence: 19 files and 1138/1138 assertions; every file reports Result: PASS.
+- The prior reviewed head passed the final seedless reset and exact registered sequence: 19 files and 1138/1138 assertions. GitHub Actions owns the authoritative full regression for the correction head.
 - Database lint: no affected-schema errors.
 - Structural schema diff: no changes between migrations and the local database.
 - Catalog audit: 4 affected relations, the exact 19-column contribution relation, 3 functions, 9 triggers with the final 5 deferred, 4 atlas_owner relations with forced RLS, zero contribution policies/grants, zero upstream H0B1b triggers, and 18 unchanged atlas_api functions.
