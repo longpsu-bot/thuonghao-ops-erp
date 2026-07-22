@@ -1,6 +1,6 @@
 # TASK-PA-06E-H0Ca — Materialization Command Contract
 
-**Status:** Architect-owned documentation implementation in progress
+**Status:** Architect-owned documentation implementation complete; publication and exact-head review pending
 
 **Issue:** [#137](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/137)
 
@@ -12,7 +12,7 @@
 
 ## Objective
 
-Close the command, authorization, runtime, limits, events, audit, receipt, safe-error, and future test-ownership decisions required before implementing the Need Generation to Draft Confirmed Need materialization boundary.
+Close the command, authorization, runtime, limits, events, audit, receipt, safe-error, bounded-response, correction-history, and future test-ownership decisions required before implementing the Need Generation to Draft Confirmed Need materialization boundary.
 
 This task is documentation only. It changes no PostgreSQL, Supabase, Retool, application code, generated type, package, credential, deployment, or production data.
 
@@ -34,17 +34,20 @@ The canonical and physical boundary remains exactly 18 functions during H0Ca. H0
 ## Delivered architecture scope
 
 - Reserve CMD-15 without renumbering CMD-01 through CMD-14 or READ-01 through READ-04.
-- Accept the exact request, success fields, safe errors, events, version semantics, replay behavior, and failure certainty in the H0C decision.
+- Accept the exact request, bounded success fields, safe errors, events, version semantics, replay behavior, and failure certainty in the H0C decision.
+- Replace unbounded line/revision/contribution UUID arrays with two aggregate IDs, exact versions, and seven committed result counts.
 - Select active authenticated HUMAN Planning actors for v1.
 - Require complete-set authorization across GLOBAL, CUSTOMER, SCHOOL, or DELIVERY_LOCATION scopes.
 - Select deterministic destination capture from the School's valid same-customer default location.
 - Prevent corrected materialization from silently following later default-location changes.
-- Close initial and corrected materialization behavior against merged H0A5/H0B1 persistence.
+- Require one successor revision for every operational group retained under a corrected release because each current revision must bind the new controlled-current source triple.
+- Permit historical stable-line retirement only when an exact direct one-to-one Ingredient correction empties the old group; no empty or zero-membership successor revision is created.
+- Reject every other unresolved empty old group as `SOURCE_REMOVAL_POLICY_REQUIRED`.
 - Preserve seven-part stable identity, no-conversion grouping, immutable revision membership, exact totals, and current-release partition enforcement.
 - Select `atlas_planning_materialization_runtime` as the dedicated least-privilege runtime.
 - Preserve the PA-05D runtime and its four functions exactly.
 - Close hard size and timeout limits.
-- Close receipt, replay, deterministic failure, event, and audit behavior.
+- Close receipt, replay, deterministic failure, bounded event, and bounded audit behavior.
 - Reserve four focused H0Cb test families without assigning assertion counts.
 
 ## Registry state
@@ -65,6 +68,29 @@ physical atlas_api surface = 19
 ```
 
 H0Cb must prove those values at one exact head. It must not publish a registry entry without the executable secured function or deploy a function without its canonical entry.
+
+## Bounded response rule
+
+The future success response returns only:
+
+- exact Need Generation Run ID;
+- exact Confirmed Need Batch ID;
+- exact run and batch versions; and
+- counts for created/reused/retired lines, created revisions and memberships, current revisions, and superseded revisions.
+
+It does not return arrays of every generated UUID. Detailed lineage remains in private immutable relations for a later authorized read surface.
+
+## Corrected-run history rule
+
+A corrected run changes the batch controlled-current run/version/release snapshot. Therefore:
+
+- every operational group retained in the new release receives a successor Draft revision with complete membership from the new release, even when quantity and membership facts are otherwise unchanged;
+- every replaced prior current revision becomes `SUPERSEDED` and noncurrent;
+- a genuinely new identity receives a new stable line and revision 1;
+- an exact direct one-to-one Ingredient correction may move its contribution to a new Ingredient group;
+- when that accepted move empties the old group, the old current revision is superseded and the old stable line remains historical with no current revision;
+- an old group that remains nonempty receives a successor revision from its remaining complete membership;
+- no stable-line identity is mutated and no empty or zero-membership revision is created.
 
 ## Security boundary
 
@@ -97,9 +123,9 @@ H0Cb must not add a read surface, Planning policy, decision evidence, validation
 
 H0Cb owns exactly four independent families:
 
-1. canonical registry, request validator, capability, runtime, grants, policies, and forbidden surfaces;
-2. initial materialization, grouping, exact quantities/membership, response, receipt/event/audit, replay, and limits;
-3. corrected materialization, stable-line reuse/new identity, Ingredient move, immutable history, source advancement, and one-version increment;
+1. canonical registry, request validator, capability, runtime, grants, policies, bounded response, and forbidden surfaces;
+2. initial materialization, grouping, exact quantities/membership, response counts, receipt/event/audit, replay, and limits;
+3. corrected materialization, successor revision for every retained group, new identity, exact Ingredient-move retirement, immutable history, source advancement, and one-version increment;
 4. safe errors, authorization/scope, removal/zero/split/merge/conversion/downstream blockers, stale state, and concurrency.
 
 The H0Cb issue must fix exact `plan(N)` values before implementation.
@@ -122,6 +148,9 @@ GitHub Actions owns full repository validation. Documentation review must prove:
 - the H0C decision contains one complete reserved CMD-15 contract;
 - PA-06A and the physical API remain exactly 18 during H0Ca;
 - H0Cb alone owns the atomic transition to 19;
+- the response remains bounded at the maximum accepted command size;
+- corrected-run revision/current-source semantics agree with H0B1;
+- exact Ingredient-move retirement preserves history without an invalid empty revision;
 - existing command/read IDs are unchanged;
 - H0C decisions are closed without executable scope;
 - PA-05D behavior is unchanged;
