@@ -1,6 +1,6 @@
 # TASK-PA-06E-H0B1a — Confirmed Need Identity Decision
 
-**Status:** Documentation decision implemented under Issue #133; pending independent governance review
+**Status:** Documentation decision implemented under Issue #133; governance corrections incorporated; pending independent governance re-review
 
 **Task type:** Product/architecture decision and future persistence decomposition only
 
@@ -46,7 +46,7 @@ Reviewed authority/evidence includes:
 - H0A5a Need Generation decision and contract;
 - H0A5b decision, migration, four focused suites, exact release membership, and typed theoretical lineage;
 - merged PA-04 Confirmed Need relations;
-- PA-05D request/response/event contract, migration, tests, and exact Wholesale pass-through equality;
+- PA-05D request/response/event contract, migration, tests, exact Wholesale pass-through equality, and its retained RLS policy/grant catalog;
 - the canonical PA-06A 18-function registry; and
 - retained OPS v1/Retool school/date/ingredient grouping evidence.
 
@@ -95,6 +95,8 @@ Authorization remains separate. No generic operational-scope column is approved.
 
 H0A5b retains one immutable atomic Theoretical Need line per exact calculation contribution. Confirmed Need groups all `ACTIVE` released contributions with the exact operational tuple into one immutable line-revision membership and one exact theoretical total. One contribution is not one stable Confirmed Need line.
 
+For one school-catering batch at its controlled-current release, all current line revisions together form one exact disjoint partition of the complete `ACTIVE` release membership. Every active release line appears exactly once across current operational lines; no line is omitted or duplicated across different stable lines or destinations. Historical and superseded revision memberships remain immutable but do not participate in current-partition counting.
+
 ### 4.3 No-conversion first slice
 
 For every member:
@@ -134,15 +136,22 @@ Future H0B1b must implement exactly:
 
 Both are `DEFERRABLE INITIALLY DEFERRED` constraint guards owned by Confirmed Need relations. They read immutable upstream typed evidence but add no trigger to Need Generation, School, location, Ingredient, or Unit. Command validation is defense in depth.
 
-The first guard proves exact source families, origin/current correction-chain behavior, period, current-revision source, operational identity, historical retention, Wholesale lineage, and zero Wholesale membership. The second proves nonempty every-and-only `ACTIVE` release membership, exact source/identity/quantity/Unit facts, no-conversion equality, uniqueness, exact total, immutability, history, and zero Wholesale membership.
+The first guard proves exact source families, origin/current correction-chain behavior, period, current-revision source, operational identity, historical retention, Wholesale lineage, and zero Wholesale membership. The second proves nonempty every-and-only `ACTIVE` membership inside each revision, the exact disjoint partition of all active members across the batch's current line revisions, exact source/identity/quantity/Unit facts, no-conversion equality, uniqueness, exact total, immutability, history, and zero Wholesale membership.
 
 ### 4.8 Wholesale compatibility
 
-H0B1b safely defaults/classifies existing and unchanged PA-05D-created rows as `WHOLESALE`, proves their exact source chain, and only then makes the three Wholesale source columns nullable by alternative. Existing keys, lifecycle, revisions, snapshots, events, audit, requests/responses, errors, downstream IDs, and exact pass-through equality remain unchanged. No PA-05D migration or test is modified, and its runtime gains no new privilege.
+H0B1b safely defaults/classifies existing and unchanged PA-05D-created rows as `WHOLESALE`, proves their exact source chain, and only then makes the three Wholesale source columns nullable by alternative. Existing keys, lifecycle, revisions, snapshots, events, audit, requests/responses, errors, downstream IDs, exact pass-through equality, relation grants, and named PA-05D RLS policies remain unchanged. No PA-05D migration or test is modified, and its runtime gains no H0A5b or contribution privilege.
 
 ### 4.9 Security and API
 
-Future H0B1b is `atlas_owner`-owned private persistence with forced RLS, zero policies, revoke-first grants, and no direct `PUBLIC`, `anon`, `authenticated`, or `service_role` access. It adds no view/RPC/role/capability/runtime/seed/type/read model. `atlas_api` remains exactly 18 functions.
+Future H0B1b preserves the existing relation-specific private posture:
+
+- `confirmed_need_batches`, `confirmed_need_lines`, and `confirmed_need_line_revisions` remain `atlas_owner`-owned with forced RLS and retain the exact existing PA-05D runtime grants and named `pa_05d_planning_select` / `pa_05d_planning_insert` policies;
+- H0B1b does not drop, rename, replace, broaden, or duplicate those policies or grants;
+- unchanged PA-05D functions continue creating only `WHOLESALE` rows through the source-kind default and exact row-family checks;
+- the new contribution relation is `atlas_owner`-owned, forced-RLS, zero-policy, and grants no access to `PUBLIC`, `anon`, `authenticated`, `service_role`, or `atlas_planning_command_runtime`;
+- the PA-05D runtime receives no privilege on H0A5b source relations or the contribution relation; and
+- no view/RPC/application function/new role/capability/runtime/seed/type/read model is added. `atlas_api` remains exactly 18 functions.
 
 ## 5. Future H0B1b implementation boundary
 
@@ -155,7 +164,8 @@ A separately approved H0B1b may:
 - add minimum supporting composite unique keys to typed Admin/H0A5b parents;
 - add restrictive composite FKs and source-specific uniqueness;
 - add the two named deferred guards and relation-local immutability protection;
-- preserve private ownership/RLS/grants; and
+- preserve the exact existing PA-05D policies/grants on the three existing relations;
+- apply forced RLS, zero policies, and zero PA-05D/API-role grants only to the new contribution relation; and
 - add four new focused pgTAP suites.
 
 It may not add a command, browser/API surface, decision/policy/adjustment structure, conversion family, grouped source aggregate, compatibility view, public relation, generated type, UI, or hosted/production action.
@@ -164,10 +174,10 @@ It may not add a command, browser/API surface, decision/policy/adjustment struct
 
 The H0B1b issue must name four independently runnable files and fix exact `plan(N)` counts before coding:
 
-1. structure/security/catalog;
+1. structure/security/catalog, including retained PA-05D policies/grants on the three existing relations and zero policies/grants on the new contribution relation;
 2. Wholesale compatibility/source-kind classification;
 3. school-catering operational identity/current-source consistency; and
-4. contribution membership/exact total/immutability/history.
+4. contribution membership/exact total/disjoint current partition/immutability/history.
 
 Each suite has one exclusive invariant family, its own transaction and deterministic noncolliding fixtures, `finish()`, rollback, one exact-path command, `Files=1`, the exact assertion count, and `Result: PASS`. Existing H0A and PA-05D tests remain unchanged.
 
@@ -181,8 +191,10 @@ Each suite has one exclusive invariant family, its own transaction and determini
 - [x] Batch origin/current and correction-chain rules are exact.
 - [x] Stable-line and immutable revision source fields are exact.
 - [x] Contribution columns, command ownership, complete membership, and exact-total rules are exact.
+- [x] Current school-catering memberships form an exact disjoint partition of every active member in the controlled-current release.
 - [x] Two deferred guard names, owners, affected relations, transaction-end proofs, and history behavior are exact.
-- [x] PA-05D behavior and existing tests remain unchanged.
+- [x] PA-05D behavior, existing tests, relation grants, and named RLS policies remain unchanged.
+- [x] The new contribution relation alone has zero policies and no PA-05D/API-role grants.
 - [x] Private security and unchanged 18-function API boundary are exact.
 - [x] Four future test families have exclusive ownership.
 - [x] Nine required alternatives are explicitly selected/rejected in the decision.
@@ -214,4 +226,4 @@ This task changes documentation only. Security, runtime privileges, RLS, schema,
 
 ## 9. Stop boundary
 
-After the draft PR's exact-head workflows pass, apply `atlas:merge-ready` to Issue #133 and the PR, post the required exact-head evidence, and stop. Do not merge, create H0B1b, start H0C/H1, or perform hosted/production work.
+After the draft PR's exact-head workflows pass, apply `atlas:merge-ready` to Issue #133 and the PR, post the required exact-head evidence, and stop. Do not create H0B1b, start H0C/H1, or perform hosted/production work. Merge remains subject to independent governance authorization.
