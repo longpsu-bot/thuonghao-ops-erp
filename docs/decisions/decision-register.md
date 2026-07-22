@@ -46,6 +46,8 @@ The bounded PA-06E-H0A5a Need Generation design is recorded in [Decision PA-06E-
 
 The bounded PA-06E-H0A5b private persistence implementation is recorded in [Decision PA-06E-H0A5b — Need Generation Persistence](decision-pa-06e-h0a5b-need-generation-persistence.md). Issue #131 implements exactly 11 private Planning relations, four guards, 22 relation-local triggers, fixed PostgreSQL numeric calculation, typed readiness/Recipe/source/predecessor lineage, the exact post-entry issue catalog, closed lifecycle, immutable release membership, and 244 focused pgTAP assertions. Commands, authorization, API/UI, hosted execution, supported reintroduction, Confirmed Need materialization, Procurement, and production rollout remain outside its authority.
 
+The bounded PA-06E-H0B1a decision is recorded in [Decision PA-06E-H0B1 — Confirmed Need Identity and Contribution Membership](decision-pa-06e-h0b1-confirmed-need-identity-membership.md). Issue #133 accepts the exact batch/date/customer/School/delivery-location/Ingredient/controlled-Unit stable-line tuple, separation of authorization from identity, a no-conversion source-Unit-equals-controlled-Unit slice, explicit `WHOLESALE`/`NEED_GENERATION` source families on the existing aggregate, immutable revision-owned plural contribution membership, exact numeric totals, the two mandatory deferred guards, unchanged PA-05D behavior, private security, and four future H0B1b test families. H0B1b persistence, H0C, H1 decisions/policy/runtime, APIs/UI, hosted execution, and production rollout remain separately unauthorized.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:
