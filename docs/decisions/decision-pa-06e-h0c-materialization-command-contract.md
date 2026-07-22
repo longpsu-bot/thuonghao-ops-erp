@@ -23,7 +23,7 @@ capability: confirmed_need_generation.materialize
 
 The command consumes one exact immutable Need Generation release and makes one Planning-owned Confirmed Need Batch the authoritative aggregate. It creates Draft operational proposals and immutable contribution membership only. It does not create a Planning decision, policy fact, approval snapshot, release, Purchase Handoff, Procurement fact, Warehouse fact, Dispatch fact, or application workflow state.
 
-H0Ca is the sole pre-implementation source for the reserved CMD-15 contract. H0Cb must atomically implement the function and append its exact application-facing entry to the PA-06A canonical registry in the same reviewed change. After H0Cb merges, PA-06A becomes the sole exact request/response registry and this decision remains the architectural rationale.
+H0Ca is the sole pre-implementation source for the reserved CMD-15 contract. H0Cb must atomically implement the function and append its exact application-facing entry to the PA-06A canonical registry in the same reviewed change. After H0Cb merges, PA-06A becomes the sole exact executable request/response registry and this decision remains the architectural rationale.
 
 ## 2. Canonical registry governance
 
@@ -107,24 +107,31 @@ Rules:
 - Unknown envelope or payload fields fail validation.
 - The caller never supplies release-snapshot identity, quantities, grouping, membership, source lineage, Ingredient, Unit, Customer, School, destination, actor authority, status, policy, decision, approval, release, or downstream facts.
 
-## 5. Exact success contract
+## 5. Exact bounded success contract
 
-The command returns the shared success envelope with these exact additions:
+The command returns the shared success envelope with exactly these additions:
 
 ```text
 affected_aggregate_ids.need_generation_run_id
 affected_aggregate_ids.confirmed_need_batch_id
-affected_aggregate_ids.created_confirmed_need_line_ids[]
-affected_aggregate_ids.reused_confirmed_need_line_ids[]
-affected_aggregate_ids.created_line_revision_ids[]
-affected_aggregate_ids.created_revision_contribution_ids[]
-affected_aggregate_ids.current_line_revision_ids[]
-affected_aggregate_ids.superseded_line_revision_ids[]
+
 new_versions.need_generation_run_version
 new_versions.confirmed_need_batch_version
+
+result_counts.created_confirmed_need_line_count
+result_counts.reused_confirmed_need_line_count
+result_counts.retired_confirmed_need_line_count
+result_counts.created_line_revision_count
+result_counts.created_revision_contribution_count
+result_counts.current_line_revision_count
+result_counts.superseded_line_revision_count
 ```
 
-No private source payload, caller-authored grouping, or complete membership array is returned as authority.
+`result_counts` is one allowlisted top-level object. Counts are nonnegative integers derived from committed rows.
+
+The response does not return arrays of every line, revision, or contribution UUID. A valid H0C transaction may create up to 25,000 membership rows and 15,000 operational groups; returning every private ID would violate the bounded-response and minimum-disclosure boundary. Detailed IDs and source evidence remain in private immutable relations for later authorized reads.
+
+No private source payload, caller-authored grouping, complete membership array, Menu/Attendance/Recipe payload, or authorization fact is returned as authority.
 
 ## 6. Actor and authorization
 
@@ -176,18 +183,24 @@ The requested run must be the direct released successor of the controlled-curren
 
 The command:
 
-- locks and rereads the complete old/new source sets and current Confirmed Need state;
+- locks and rereads the complete old and new source sets and current Confirmed Need state;
 - deterministically regroups the complete new active set;
 - reuses a stable line only when the complete seven-part identity is unchanged;
-- creates a successor Draft revision for every affected reused line, including source-only or membership-only change with unchanged total;
-- preserves prior revision and membership payloads;
-- changes only controlled prior current/status metadata;
+- creates one successor Draft revision with complete new membership for **every operational group retained in the new release**, even when quantity and membership facts are otherwise unchanged, because every current revision must bind the batch's new controlled-current source triple;
+- preserves every prior revision and membership payload;
+- marks each replaced prior current revision `SUPERSEDED` and noncurrent;
 - creates new stable lines and revision 1 for genuinely new identities;
-- permits one exact one-to-one Ingredient correction to move a contribution between immutable old/new Ingredient groups;
-- permits genuinely new same-Ingredient contributions to join the matching group;
+- permits a direct one-to-one Ingredient correction only when exact H0A5 predecessor evidence maps one prior active contribution to one new active contribution with a changed Ingredient and no split or merge;
+- moves the corrected contribution to the new Ingredient group without mutating the old stable line's identity;
+- when that matched move empties the old Ingredient group, supersedes its old current revision and leaves the historical stable line with no current revision rather than creating a prohibited empty or zero-membership revision;
+- when an old group remains nonempty after matched moves, creates its required successor revision from the remaining complete active membership;
+- permits genuinely new same-Ingredient contributions to join the matching retained or new group;
+- rejects any empty old group not explained entirely by accepted direct one-to-one Ingredient moves as `SOURCE_REMOVAL_POLICY_REQUIRED`;
 - sets each new proposal to the new exact theoretical total, never carrying a prior proposal or confirmed value automatically;
 - advances the controlled-current source and increments the batch version exactly once; and
 - completes one receipt, one `ConfirmedNeedsRematerialized` event, and one audit event.
+
+A retired stable line is historical, not deleted or cancelled. Its revisions and memberships remain immutable, it has no current revision, and it is excluded from the current-release partition by the merged H0B1 rules.
 
 H0C never reopens a batch automatically.
 
@@ -258,10 +271,10 @@ Lock order is: receipt; Admin references; Recipe/source snapshots; Planning Inpu
 - Deterministic nonretryable failure after receipt acquisition stores one `FAILED_NON_RETRYABLE` receipt and creates no event or audit event.
 - Retryable transaction failure leaves no completed failure receipt.
 - Success stores one completed receipt, one domain event, and one audit event.
-- Exact replay returns the original response and IDs.
+- Exact replay returns the original bounded response and IDs.
 - Changed command/key reuse returns `IDEMPOTENCY_CONFLICT`.
 
-Event payloads contain the exact source triple, period, aggregate metadata, and created/reused/superseded counts—not complete membership arrays, names, source-owner payloads, or authorization facts.
+Event payloads contain the exact source triple, period, aggregate metadata, and the same bounded created/reused/retired/superseded counts—not UUID arrays, complete memberships, names, source-owner payloads, or authorization facts.
 
 Audit before/after contains batch status, version, controlled-current source triple, and bounded counts. Detailed lineage remains in immutable relations.
 
@@ -274,9 +287,9 @@ H0Cb must:
 3. append CMD-15 to PA-06A only when the executable function exists;
 4. prove the canonical registry and physical `atlas_api` surface both equal 19 at the exact head; and
 5. create exactly four independent test families:
-   - registry/validator/security/runtime/catalog;
+   - registry/validator/security/runtime/catalog and bounded response schema;
    - initial materialization/grouping/receipt/replay/limits;
-   - corrected materialization/history/Ingredient move/source advancement;
+   - corrected materialization with a successor revision for every retained group, historical-line retirement for an exact Ingredient move, and source advancement;
    - errors/authorization/blockers/stale/concurrency.
 
 Exact `plan(N)` values belong to the H0Cb issue before coding. Existing H0A, H0B1, and PA-05D tests remain unchanged.
