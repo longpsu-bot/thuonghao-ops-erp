@@ -1,6 +1,6 @@
 # PD-01.8 — Planning Domain Confirmed Need Contract
 
-**Status:** MVP contract v0.1  
+**Status:** MVP contract v0.2; H0B1 school-catering identity and contribution-membership amendment accepted
 **Domain:** Planning  
 **Business owner:** Tổ Kế hoạch  
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
@@ -25,7 +25,7 @@ The output of this contract is approved demand for Purchase Handoff, not a purch
 
 ## 2. Ownership and business objects
 
-Planning owns Confirmed Need. Need Generation remains the source of calculated theoretical lines. Confirmed Need references generated lines and records Planning's approval and adjustments.
+Planning owns Confirmed Need. Wholesale Order or Need Generation is the exact typed source family. School-catering Confirmed Need revisions reference plural released atomic contributions; later Planning decisions and approval remain owned by Confirmed Need.
 
 ### 2.1 ConfirmedNeedBatch
 
@@ -34,10 +34,10 @@ Represents one controlled review and approval batch for a service period.
 Required attributes:
 
 - `confirmed_need_batch_id`
-- `need_generation_run_id`
+- one explicit `source_kind` (`WHOLESALE` or `NEED_GENERATION`)
 - `period_start` and `period_end`
 - `status`
-- `source_generation_reference`
+- exact Wholesale Order source, or immutable origin plus controlled-current Need Generation run/released-version/release-snapshot triples
 - `line_count`
 - `blocking_issue_count` and `warning_count`
 - `created_by` and `created_at`
@@ -55,35 +55,32 @@ Required attributes:
 
 - `confirmed_need_line_id`
 - `confirmed_need_batch_id`
-- `theoretical_need_line_id`
 - `service_date`
+- `customer_id`
 - `school_id`
-- `dish_id` when applicable
+- `delivery_location_id`
 - `ingredient_id`
-- `theoretical_quantity`
-- `confirmed_quantity`
-- `unit`
-- `source_trace_id`
-- `status`
+- `controlled_unit_id`
+- one explicit source kind and exact source-family ownership
 
-The confirmed line is the stable demand identity that downstream handoff should reference. It must preserve the original theoretical source trace even when Planning adjusts the quantity.
+For school catering, stable identity is exactly `batch + service_date + customer + School + delivery_location + Ingredient + controlled Unit`. Customer/School/location ownership is relationally enforced, the captured destination does not follow a later School default change, and changing any tuple member selects or creates another line. Dish, Menu, Recipe, RecipeLine, Theoretical Need ID, supplier, purchase Unit, ordering, names, tokens, UI state, and authorization scope are not stable identity.
+
+Quantity and source facts belong to immutable `ConfirmedNeedLineRevision` rows. One revision stores exact theoretical quantity, Draft proposal/confirmed quantity, operational Unit, exact released source, predecessor/history, and a complete revision-owned contribution membership for school catering. One atomic contribution is not one Confirmed Need line.
 
 ### 2.3 ConfirmedNeedSourceReference
 
-Represents the trace from a confirmed line to upstream generation and inputs.
+Represents the trace from a Confirmed Need revision to its exact typed upstream source.
 
 Required attributes:
 
-- `need_generation_run_id`
-- `theoretical_need_line_id`
-- `planning_input_set_id`
-- `weekly_menu_reference`
-- `attendance_reference`
-- `recipe_bom_reference` when available
+- Wholesale uses the existing singular Wholesale Order/batch, line, and line-revision chain.
+- School catering uses batch origin/current Need Generation release triples, an immutable release triple on every line revision, and plural `confirmed_need_line_revision_contributions` rows.
+- Each school-catering contribution binds one exact release-snapshot line and one exact `ACTIVE` Theoretical Need line with the same service date, School, Ingredient, and Unit.
+- Customer and delivery location are captured operational identity and repeat through restrictive revision/membership ownership; upstream Menu/Attendance/Recipe facts remain reachable from the Theoretical Need line.
 
-This reference enables an operator to explain why the demand exists and how it was derived.
+This typed source family enables an operator to explain why the demand exists and how the exact theoretical total was derived without copying upstream payloads.
 
-**PA-06E-H0 compatibility qualification:** the singular `theoretical_need_line_id` above is not a settled one-to-one physical grain for school catering. The operational Confirmed Need line remains part of this same aggregate, but one school-catering line revision may reference an immutable membership set of multiple atomic Theoretical Need lines whose controlled-unit sum is its theoretical quantity. Direct-wholesale may remain singular. A later approved parent-contract amendment must pluralize the school-catering source-reference semantics and qualify `CreateConfirmedNeedsFromGeneration`; the bounded physical direction is recorded in [PA-06E-H0](pa-06e-h0-school-catering-persistence-and-materialization-contract.md).
+**PA-06E-H0B1 amendment:** [Decision PA-06E-H0B1](../decisions/decision-pa-06e-h0b1-confirmed-need-identity-membership.md) is authoritative for the exact seven-part tuple, `WHOLESALE`/`NEED_GENERATION` alternatives, revision-owned plural membership, no-conversion Unit equality, exact membership total, and future deferred database guards. Direct Wholesale remains singular and unchanged.
 
 ### 2.4 ConfirmedNeedAdjustment
 
@@ -170,7 +167,9 @@ Commands are the only approved way to change Confirmed Need state.
 
 ### CreateConfirmedNeedsFromGeneration
 
-Creates a Draft Review batch from a Need Generation run that is Released for Confirmation. It copies theoretical lines into confirmed lines, sets initial confirmed quantity equal to theoretical quantity, records source references, and emits `ConfirmedNeedsCreated`.
+Creates a Draft Review batch from one exact Need Generation run/released version/release snapshot. It groups every `ACTIVE` release member by the exact school-catering operational tuple, creates one stable line and immutable Draft revision per group, records complete revision-owned contribution membership, and sets the stored `confirmed_quantity` proposal equal to the exact theoretical membership total. That proposal is not Planning authority until later decision evidence exists.
+
+Every member stays in its exact source Unit; source Unit equals controlled Unit and controlled contribution quantity equals source theoretical quantity. The command fails closed when grouping would require conversion. It creates no Planning decision, approval, release, Purchase Handoff, or downstream fact.
 
 The command is rejected if the source generation run is not Released for Confirmation.
 
@@ -241,7 +240,7 @@ Manager-facing summary showing source generation version, line counts, adjustmen
 The following are blocking unless a later approved rule explicitly changes their classification:
 
 - Source Need Generation run is missing or not Released for Confirmation.
-- Confirmed line lacks source trace to the theoretical need line.
+- Confirmed revision lacks its exact typed source trace; a school-catering revision lacks nonempty every-and-only released contribution membership or exact membership total.
 - Confirmed quantity is negative.
 - Manual adjustment lacks reason code or note.
 - Manual adjustment lacks before/after quantity evidence.
