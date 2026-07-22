@@ -37,7 +37,43 @@ select ok(
   (select relrowsecurity and relforcerowsecurity from pg_class where oid = 'atlas_planning.confirmed_need_line_revision_contributions'::regclass),
   'contribution membership has enabled and forced RLS'
 );
-select is((select count(*)::integer from pg_policy where polrelid = 'atlas_planning.confirmed_need_line_revision_contributions'::regclass), 0, 'contribution membership has zero policies');
+select is(
+  (
+    select jsonb_object_agg(
+      policy.polname,
+      jsonb_build_object(
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+    )
+    from pg_policy policy
+    where policy.polrelid = 'atlas_planning.confirmed_need_line_revision_contributions'::regclass
+  ),
+  jsonb_build_object(
+    'pa_06e_h0cb_contribution_insert', jsonb_build_object(
+      'command', 'a',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+      'using', null,
+      'with_check', 'true'
+    ),
+    'pa_06e_h0cb_contribution_select', jsonb_build_object(
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+      'using', 'true',
+      'with_check', null
+    )
+  ),
+  'contribution membership has exactly the two dedicated-runtime permissive policies'
+);
 select is(
   (
     select count(*)::integer
@@ -131,8 +167,8 @@ select is((select count(*)::integer from pg_trigger trigger join pg_class relati
 select is((select count(*)::integer from pg_policy where polrelid in ('atlas_planning.confirmed_need_batches'::regclass,'atlas_planning.confirmed_need_lines'::regclass,'atlas_planning.confirmed_need_line_revisions'::regclass) and polname in ('pa_05d_planning_select','pa_05d_planning_insert')), 6, 'all six named PA-05D Confirmed Need policies are retained');
 select is((select count(*)::integer from pg_class relation cross join lateral aclexplode(coalesce(relation.relacl, acldefault('r', relation.relowner))) privilege join pg_roles role on role.oid = privilege.grantee where relation.oid in ('atlas_planning.confirmed_need_batches'::regclass,'atlas_planning.confirmed_need_lines'::regclass,'atlas_planning.confirmed_need_line_revisions'::regclass) and role.rolname = 'atlas_planning_command_runtime' and privilege.privilege_type in ('SELECT','INSERT','UPDATE')), 9, 'the nine existing PA-05D Confirmed Need runtime grants are retained');
 select is((select count(*)::integer from pg_class relation cross join lateral aclexplode(coalesce(relation.relacl, acldefault('r', relation.relowner))) privilege join pg_roles role on role.oid = privilege.grantee where relation.oid = 'atlas_planning.confirmed_need_line_revision_contributions'::regclass and role.rolname = 'atlas_planning_command_runtime'), 0, 'Planning runtime has zero contribution privileges');
-select is((select count(*)::integer from pg_proc join pg_namespace on pg_namespace.oid = pg_proc.pronamespace where nspname = 'atlas_api'), 18, 'the canonical atlas_api registry remains exactly eighteen functions');
-select is((select count(*)::integer from pg_proc join pg_namespace on pg_namespace.oid = pg_proc.pronamespace where nspname = 'atlas_api' and proname like '%confirmed_need%'), 0, 'H0B1b adds no Confirmed Need API function');
+select is((select count(*)::integer from pg_proc join pg_namespace on pg_namespace.oid = pg_proc.pronamespace where nspname = 'atlas_api'), 19, 'the canonical atlas_api registry advances to exactly nineteen functions');
+select is((select count(*)::integer from pg_proc join pg_namespace on pg_namespace.oid = pg_proc.pronamespace where nspname = 'atlas_api' and proname like '%confirmed_need%'), 1, 'H0Cb adds exactly CMD-15 to the Confirmed Need API catalog');
 select is((select count(*)::integer from pg_class join pg_namespace on pg_namespace.oid = pg_class.relnamespace where nspname = 'atlas_planning' and relkind = 'r' and relname like 'confirmed_need%' and relname in ('confirmed_need_batches','confirmed_need_lines','confirmed_need_line_revisions','confirmed_need_line_revision_contributions')), 4, 'the generalized aggregate consists of exactly the three retained relations and one new relation');
 select is((select regexp_count(pg_get_constraintdef(oid), 'WHOLESALE|NEED_GENERATION') from pg_constraint where conrelid = 'atlas_planning.confirmed_need_batches'::regclass and conname = 'confirmed_need_batches_source_kind_check'), 2, 'the source vocabulary contains only WHOLESALE and NEED_GENERATION');
 

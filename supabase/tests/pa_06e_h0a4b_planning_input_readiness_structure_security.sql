@@ -389,8 +389,8 @@ select is(
     select count(*)::integer from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
-  ), 18,
-  'H0A4b preserves the exact 18-function atlas_api surface'
+  ), 19,
+  'H0A4b remains compatible with the exact 19-function atlas_api surface'
 );
 
 select ok(

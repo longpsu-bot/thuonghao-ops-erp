@@ -13,8 +13,8 @@ select is(
    from pg_proc p
    join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api'),
-  18,
-  'atlas_api remains exactly the 18 reviewed functions'
+  19,
+  'atlas_api contains exactly the 19 reviewed functions'
 );
 
 select is(
@@ -23,8 +23,8 @@ select is(
    join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api'
      and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  18,
-  'authenticated executes exactly the 18 reviewed functions'
+  19,
+  'authenticated executes exactly the 19 reviewed functions'
 );
 
 select ok(

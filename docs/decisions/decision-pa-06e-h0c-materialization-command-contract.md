@@ -1,6 +1,6 @@
 # Decision PA-06E-H0C — Materialization Command Contract
 
-**Status:** Accepted architecture decision; documentation only; executable implementation and canonical registry amendment remain H0Cb
+**Status:** Implemented under Issue #143; focused H0Cb validation complete; pending independent governance review
 
 **Date:** 2026-07-22
 
@@ -8,7 +8,9 @@
 
 **Baseline:** `68edd07527697113bd9d6c5306d917b66adb88ce`
 
-**Implementation record:** [TASK-PA-06E-H0Ca](../implementation-tasks/TASK-PA-06E-H0Ca-materialization-command-contract.md)
+**Architecture record:** [TASK-PA-06E-H0Ca](../implementation-tasks/TASK-PA-06E-H0Ca-materialization-command-contract.md)
+
+**Implementation record:** [TASK-PA-06E-H0Cb](../implementation-tasks/TASK-PA-06E-H0Cb-confirmed-need-materialization-command.md)
 
 ## 1. Decision outcome
 
@@ -27,15 +29,15 @@ H0Ca is the sole pre-implementation source for the reserved CMD-15 contract. H0C
 
 ## 2. Canonical registry governance
 
-PA-06A remains the canonical registry of executable application functions. It stays exactly:
+PA-06A remains the canonical registry of executable application functions. At the H0Cb exact head it is exactly:
 
 ```text
-14 write commands
+15 write commands
 + 4 authorized reads
-= 18 executable functions
+= 19 executable functions
 ```
 
-H0Ca does not add a non-executable entry to that registry. Publishing a planned function there before its migration, runtime, grants, and tests exist would make the canonical application contract disagree with the database security boundary.
+H0Ca did not add a non-executable entry to that registry. H0Cb now publishes CMD-15 atomically with its migration, dedicated runtime, grants/policies, and four focused suites, so the canonical registry and physical catalog agree at 19.
 
 H0Cb must perform one atomic registry transition:
 
@@ -292,12 +294,12 @@ H0Cb must:
    - corrected materialization with a successor revision for every retained group, historical-line retirement for an exact Ingredient move, and source advancement;
    - errors/authorization/blockers/stale/concurrency.
 
-Exact `plan(N)` values belong to the H0Cb issue before coding. Existing H0A, H0B1, and PA-05D tests remain unchanged.
+Issue #143 fixes the four H0Cb plans at `64`, `80`, `104`, and `112`, for exactly `360/360` focused assertions. Prior H0A/H0B1/PA-05 behavioral plans and fixtures remain unchanged. The only prior-test compatibility amendment is the explicitly authorized executable `atlas_api` catalog expectation from 18 to 19 (including CMD-15 in exact signature arrays); existing `plan(N)` values do not change.
 
 ## 15. Consequences
 
-H0Ca closes the business and command decisions needed for H0Cb without misrepresenting an unimplemented function as executable. H0Cb is the only task authorized to transition the canonical registry from 18 to 19.
+H0Ca closed the business and command decisions without misrepresenting an unimplemented function as executable. H0Cb implements that accepted contract and performs the single authorized canonical/physical transition from 18 to 19.
 
 H1 policy, decision evidence, authorized review/preview/confirmation, validation, approval, release, Purchase Handoff, Procurement, Warehouse, Dispatch, application connection, hosted deployment, and production rollout remain separate.
 
-Documentation rollback is a normal Git revert. No database or production rollback exists because H0Ca changes no executable state.
+Documentation rollback is a normal Git revert. The H0Cb migration is additive and has not been applied to hosted or production systems in this task. Before any future deployment/use, rollback may remove CMD-15, its capability, policies/grants, and dedicated runtime together; after operational receipts or Confirmed Need rows exist, rollback requires a separately approved data-preserving procedure rather than silent deletion.

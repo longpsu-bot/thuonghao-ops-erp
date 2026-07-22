@@ -984,6 +984,7 @@ select is(
     'close_successful_trip(request jsonb)',
     'confirm_dispatch_load(request jsonb)',
     'confirm_successful_delivery(request jsonb)',
+    'create_confirmed_needs_from_generation(request jsonb)',
     'create_dispatch_plan(request jsonb)',
     'create_or_assign_dispatch_trip(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
@@ -998,7 +999,7 @@ select is(
     'release_supplier_purchase_order(request jsonb)',
     'release_wholesale_order(request jsonb)'
   ]::text[],
-  'the exact 18-function atlas_api registry and signatures are unchanged'
+  'the exact 19-function atlas_api registry includes CMD-15'
 );
 
 select is(

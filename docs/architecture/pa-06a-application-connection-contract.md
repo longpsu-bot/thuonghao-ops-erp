@@ -3,7 +3,7 @@
 **Status:** Proposed documentation contract; pending review
 **Baseline:** `59640c33ec3eb759c28659991a751261cdb352ab`
 **Scope:** Application contract and operator workflow planning only
-**Canonical API registry:** This document is the sole PA-06A source for the exact 18-function application-facing registry.
+**Canonical API registry:** This document is the sole PA-06A source for the exact 19-function application-facing registry.
 
 ## 1. Decision
 
@@ -11,7 +11,7 @@ PA-06A defines how a staff-facing React application may coordinate the accepted 
 
 The accepted boundary remains exactly:
 
-- 14 write commands;
+- 15 write commands;
 - four authorized reads;
 - authenticated subject resolution and active-actor checks on the server;
 - capability and relational scope enforcement on the server;
@@ -73,6 +73,7 @@ The phrase “five-page prototype” is imprecise. The active requirements docum
 | Mission | Business capability | Domain | Business object | Registry entries | Operator workflow | Application workbench |
 |---|---|---|---|---|---|---|
 | Convert an accepted wholesale source into authoritative released demand | Record and release wholesale demand | Planning | Wholesale Order, Confirmed Need Batch | CMD-01, CMD-02 | Capture exact customer demand, then release it | Planning Source & Release |
+| Convert an exact released school-catering calculation into Draft operational demand | Materialize complete Need Generation membership | Planning | Need Generation Run, Confirmed Need Batch, stable lines and immutable revisions | CMD-15 | Group the complete released calculation for Planning review without approving or releasing it | Requirement Planning |
 | Hand released demand to Procurement and delivery planning | Release Purchase Handoff and Dispatch Requirement | Planning | Purchase Handoff, Dispatch Requirement | CMD-03, CMD-04 | Verify released lineage and issue downstream Planning contracts | Planning Source & Release |
 | Commit exact released demand to suppliers | Allocate supplier-direct fulfilment and release supplier POs | Procurement | Fulfilment Allocation, Purchase Order | CMD-05, CMD-06 | Assign all requirement lines exactly and release supplier commitments | Procurement Commitment |
 | Prove physical supplier fulfilment | Record and apply supplier Evidence | Evidence | Supplier Receiving Evidence, Evidence Application | CMD-07, CMD-08, READ-02, READ-03 | Record a supplier document, apply exact quantities, inspect readiness | Supplier Evidence & Readiness |
@@ -90,7 +91,7 @@ The phrase “five-page prototype” is imprecise. The active requirements docum
 
 PA-06A does not silently replace that baseline. It makes the following explicit decision:
 
-- CMD-01 through CMD-04 belong within **Requirement Planning**.
+- CMD-01 through CMD-04 and CMD-15 belong within **Requirement Planning**.
 - CMD-05 and CMD-06 belong within **Purchase Planning**.
 - Supplier-direct Evidence in CMD-07 and CMD-08 does **not** belong to Warehouse Receiving. The accepted business contract assigns the fact to the Evidence domain and expressly excludes Warehouse mutation.
 - Dispatch setup and execution do not belong to Warehouse Receiving.
@@ -586,6 +587,26 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Audit and trace visibility:** emits `SuccessfulDispatchTripClosed`; READ-01 and READ-04 expose the completed path and closure event.
 - **Next permitted operator action:** no further successful-path write is defined; use READ-01 and READ-04 for review.
 
+<a id="cmd-15"></a>
+### CMD-15 — `atlas_api.create_confirmed_needs_from_generation(jsonb)`
+
+- **Contract version:** `PA-06E-H0C.v1`
+- **Required capability:** `confirmed_need_generation.materialize`
+- **Payload:** `{"need_generation_run_id":"uuid","need_generation_run_version":1,"confirmed_need_batch_id":null}`; null batch means initial materialization and a non-null exact batch selects direct-successor correction.
+- **Authoritative aggregate:** Confirmed Need Batch.
+- **IDs and versions consumed:** one exact released Need Generation Run/version/release snapshot; initial `expected_version = 1`, or the exact current batch version for correction.
+- **IDs and versions returned:** `affected_aggregate_ids.need_generation_run_id`, `affected_aggregate_ids.confirmed_need_batch_id`, `new_versions.need_generation_run_version`, and `new_versions.confirmed_need_batch_version`.
+- **Result counts:** exactly created/reused/retired Confirmed Need lines, created line revisions, created revision contributions, current line revisions, and superseded line revisions.
+- **Lifecycle transition:** initial creation writes one `NEED_GENERATION` batch in `DRAFT_REVIEW`, version 1; correction preserves `DRAFT_REVIEW` or `REOPENED` and increments the batch once. It never reopens, validates, approves, or releases automatically.
+- **Materialization rule:** group the complete active immutable release by service date, Customer, School, captured destination, Ingredient, and no-conversion Unit; proposal quantity equals the exact PostgreSQL numeric theoretical total.
+- **Correction history:** require the exact direct released successor; create a successor Draft revision for every retained group; preserve prior revisions/memberships; allow historical-line retirement only for an accepted exact one-to-one Ingredient move that empties the old group.
+- **Warnings and blockers:** successful v1 response returns empty arrays and no generated line, revision, contribution, or source-ID arrays.
+- **Safe errors:** common command errors plus `GENERATION_NOT_RELEASED`, `SOURCE_LINEAGE_INCOMPLETE`, `SOURCE_REVISION_STALE`, `SOURCE_MAPPING_INCOMPLETE`, `SOURCE_SUCCESSOR_AMBIGUOUS`, `OPERATIONAL_IDENTITY_UNAPPROVED`, `CONTRIBUTION_MEMBERSHIP_INVALID`, `CONTRIBUTION_TOTAL_MISMATCH`, `EMPTY_ACTIVE_RELEASE`, `ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED`, `SOURCE_REMOVAL_POLICY_REQUIRED`, `SOURCE_SPLIT_MERGE_POLICY_REQUIRED`, `REOPEN_REQUIRED`, `DOWNSTREAM_CORRECTION_REQUIRED`, and `MATERIALIZATION_LIMIT_EXCEEDED`.
+- **Limits and concurrency:** 14 inclusive days, 500 Schools, 25,000 active release members, 15,000 operational groups, five-second lock timeout, 120-second statement timeout, deterministic locks, and no internal retry.
+- **Exact replay:** returns the original bounded response; changed command/idempotency reuse returns `IDEMPOTENCY_CONFLICT`.
+- **Audit and trace visibility:** emits `ConfirmedNeedsCreated` or `ConfirmedNeedsRematerialized` plus one matching bounded audit event. No H0C read model is added.
+- **Next permitted operator action:** review the Draft Confirmed Need through a separately approved read/decision surface; CMD-15 itself authorizes no validation, approval, release, or downstream action.
+
 <a id="read-01"></a>
 ### READ-01 — `atlas_api.get_supplier_direct_trace(jsonb)`
 
@@ -770,5 +791,5 @@ PA-06A intentionally defers:
 - production data or seed strategy;
 - document/PDF generation;
 - returns, exceptions, cancellation, reopening, or mixed fulfilment;
-- Warehouse, school-catering, Finance, Production/QA, HR, payroll, fleet, GPS, fuel, and route optimization;
+- Warehouse, school-catering workflow beyond CMD-15 Draft materialization, Finance, Production/QA, HR, payroll, fleet, GPS, fuel, and route optimization;
 - any change to Issue #105 or the live OPS v1 project.

@@ -800,8 +800,8 @@ select ok(
 );
 
 -- Reviewed surface and direct-access boundary.
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'),18,'Atlas API contains exactly 18 reviewed functions');
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api' and has_function_privilege('authenticated',p.oid,'EXECUTE')),18,'authenticated executes exactly the 18 reviewed Atlas API functions');
+select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'),19,'Atlas API contains exactly 19 reviewed functions');
+select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api' and has_function_privilege('authenticated',p.oid,'EXECUTE')),19,'authenticated executes exactly the 19 reviewed Atlas API functions');
 select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   cross join unnest(array['anon','service_role']) x(role_name)

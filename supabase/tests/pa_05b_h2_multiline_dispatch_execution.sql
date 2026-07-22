@@ -133,8 +133,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  18,
-  'reviewed atlas_api surface is exactly 18 functions through PA-05B-H3'
+  19,
+  'reviewed atlas_api surface is exactly 19 functions through PA-06E-H0Cb'
 );
 
 select is(
