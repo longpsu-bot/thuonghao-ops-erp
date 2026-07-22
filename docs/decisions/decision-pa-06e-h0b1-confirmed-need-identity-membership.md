@@ -1,6 +1,6 @@
 # Decision PA-06E-H0B1 — Confirmed Need Identity and Contribution Membership
 
-**Status:** Accepted architecture decision for the later H0B1b private-persistence task; documentation only
+**Status:** Accepted architecture decision for the later H0B1b private-persistence task; governance corrections incorporated; documentation only
 
 **Date:** 2026-07-22
 
@@ -220,7 +220,7 @@ At transaction end:
 4. Every member is an exact row of the revision's release snapshot and exact released run/version.
 5. Every referenced Theoretical Need line is `ACTIVE`, not `REMOVED`.
 6. Every member matches the revision/stable line's service date, School, captured customer/destination, Ingredient, and Unit identity.
-7. The membership is complete: it contains every-and-only `ACTIVE` release member in the revision source snapshot that belongs to that service-date/School/Ingredient/source-Unit operational group. The captured customer/destination is common to the group and is proven by revision ownership.
+7. The membership is complete within its revision: it contains every-and-only `ACTIVE` release member in the revision source snapshot that belongs to that service-date/School/Ingredient/source-Unit operational group. The captured customer/destination is common to the group and is proven by revision ownership.
 8. `source_theoretical_quantity` equals the exact Theoretical Need quantity.
 9. `source_unit_id` equals the exact Theoretical Need Unit.
 10. `controlled_contribution_quantity = source_theoretical_quantity`.
@@ -228,8 +228,10 @@ At transaction end:
 12. `revision.theoretical_quantity` equals the exact PostgreSQL `numeric` sum of all controlled contribution quantities.
 13. There is no epsilon, rounding, clamp, residual, supplier allocation, rebalance, or hidden adjustment.
 14. Membership rows are immutable and nondeletable. Display or insertion order is non-authoritative.
+15. For each `NEED_GENERATION` batch at its controlled-current run/version/release snapshot, the memberships of all current line revisions form one exact disjoint partition of the release snapshot's complete `ACTIVE` Theoretical Need membership: every active release line appears in exactly one current revision, none is omitted, and none is duplicated across stable lines, operational groups, or captured destinations.
+16. Historical, noncurrent, and superseded revisions retain immutable memberships but are excluded from current-partition counting.
 
-The complete-set rule prevents a caller from manufacturing a matching total by omitting or substituting released atomic lines.
+The revision-complete rule prevents a caller from manufacturing a matching total by omitting or substituting released atomic lines inside a group. The batch-current partition rule prevents one authoritative release line from being claimed by two current operational lines or from disappearing between current operational groups.
 
 ## 6. Mandatory deferred enforcement
 
@@ -256,11 +258,11 @@ H0B1b owns exactly these cross-row guards as PostgreSQL `DEFERRABLE INITIALLY DE
 
 **Installed on:** `confirmed_need_line_revisions` and `confirmed_need_line_revision_contributions` for relevant insert/update/delete events. It reads immutable H0A5b release-snapshot lines and Theoretical Need lines but installs no upstream trigger.
 
-**Proves at transaction end:** every invariant in section 5.3, including source-kind eligibility, nonempty every-and-only released membership, exact active source facts, exact operational identity, no-conversion equality, uniqueness, exact numeric total, Wholesale zero-membership, and immutable history.
+**Proves at transaction end:** every invariant in section 5.3, including source-kind eligibility, nonempty every-and-only released membership within each revision, the exact disjoint current-batch partition of all active release members, exact active source facts, exact operational identity, no-conversion equality, uniqueness, exact numeric total, Wholesale zero-membership, and immutable history.
 
 Both guards are database integrity boundaries. Later command checks repeat them only for safe domain errors. Deferral permits one transaction to insert or advance the batch, create successor revisions, and create complete memberships in dependency order; it does not permit a partially valid commit.
 
-H0C must later lock the target batch/current revision and exact source run/release rows in deterministic identifier order before mutation. If ownership, source state, membership, totals, or lock assumptions cannot be proven, the command and database guard fail closed. No history row is repaired, deleted, or rewritten.
+H0C must later lock the target batch/current revision and exact source run/release rows in deterministic identifier order before mutation. If ownership, source state, membership, current-partition completeness, totals, or lock assumptions cannot be proven, the command and database guard fail closed. No history row is repaired, deleted, or rewritten.
 
 ## 7. Wholesale compatibility and migration direction
 
@@ -289,17 +291,18 @@ The PA-05D runtime receives no Need Generation or contribution privilege.
 
 ## 8. Security and API boundary
 
-The future H0B1b persistence remains private:
+The future H0B1b persistence retains the existing mixed private posture exactly:
 
-- owner `atlas_owner`;
-- RLS enabled and forced on the new relation;
-- zero policies;
-- no direct relation or sequence privilege for `PUBLIC`, `anon`, `authenticated`, or `service_role`;
-- no browser view, RPC, function, role, capability, runtime, seed, generated type, event, or read model;
-- no service-role credential or hosted Supabase action; and
+- the three generalized existing relations remain owned by `atlas_owner`, retain forced RLS, and preserve the exact existing PA-05D runtime grants and named `pa_05d_planning_select` / `pa_05d_planning_insert` policies required by unchanged direct-Wholesale commands;
+- H0B1b must not drop, rename, replace, broaden, or duplicate those PA-05D policies or grants;
+- unchanged PA-05D functions continue to create only `WHOLESALE` rows through the retained default and exact row-family checks;
+- the new `confirmed_need_line_revision_contributions` relation is `atlas_owner`-owned, has RLS enabled and forced, has zero policies, and grants no relation or sequence privilege to `PUBLIC`, `anon`, `authenticated`, `service_role`, or `atlas_planning_command_runtime`;
+- the PA-05D runtime receives no privilege on H0A5b Need Generation relations or the new contribution relation;
+- no browser view, RPC, application function, new role, capability, runtime, seed, generated type, event, or read model is added;
+- no service-role credential or hosted Supabase action occurs; and
 - the canonical `atlas_api` registry remains exactly 18 functions.
 
-H0B1b may add owner-only constraint functions required by the two named guards. Such functions use fixed empty `search_path`, fully qualified static SQL, have public execute revoked, and are not application commands.
+H0B1b may add owner-only constraint functions required by the two named guards. Such functions use fixed empty `search_path`, fully qualified static SQL, have execute revoked from `PUBLIC` and API roles, and are not application commands.
 
 ## 9. Alternatives selected and rejected
 
@@ -319,16 +322,16 @@ H0B1b may add owner-only constraint functions required by the two named guards. 
 
 H0B1b must create four independently runnable files/families and must fix each exact `plan(N)` in its issue before coding:
 
-1. H0B1 structure/security/catalog.
-2. H0B1 Wholesale compatibility and exact source-kind classification.
+1. H0B1 structure/security/catalog, including the unchanged 18-function API registry, retained PA-05D relation-policy/grant catalog on the three existing relations, and zero-policy/zero-grant posture on the new contribution relation.
+2. H0B1 Wholesale compatibility and exact source-kind classification, including unchanged PA-05D inserts and behavior.
 3. H0B1 school-catering operational identity and current-source consistency.
-4. H0B1 contribution membership, exact total, immutability, and history.
+4. H0B1 contribution membership, exact total, exact disjoint current-batch partition, immutability, and history.
 
 Each suite owns one family only, opens its own transaction, uses deterministic noncolliding fixtures, calls `finish()`, rolls back, has one exact-path command, reports `Files=1`, its exact assertion count, and `Result: PASS`. H0A and PA-05D tests remain unchanged and are not repartitioned.
 
 ## 11. Consequences and remaining boundaries
 
-H0B1b is now implementable without inventing a material decision. Its allowed database scope is the three generalized Confirmed Need relations, one new contribution relation, minimum supporting keys on already merged typed parents, the two named guards, private security, and four focused test families.
+H0B1b is now implementable without inventing a material decision. Its allowed database scope is the three generalized Confirmed Need relations, one new contribution relation, minimum supporting keys on already merged typed parents, the two named guards, exact PA-05D compatibility, relation-specific private security, and four focused test families.
 
 The following remain later decisions or tasks and do not block H0B1b:
 
