@@ -1,6 +1,6 @@
 # TASK-PA-06E-H1A - Planning Quantity Policy Persistence
 
-**Status:** Future implementation blueprint; SQL is not approved
+**Status:** Product contract approved; future SQL implementation remains unauthorized until the pre-H1A platform-maintenance dependency is merged
 
 **Preparation issue:** [#145](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/145)
 
@@ -8,11 +8,13 @@
 
 **Canonical decision:** [Decision PA-06E-H1A - Planning Quantity Policy](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md)
 
+**Required platform dependency:** [TASK-PLATFORM-PRE-H1A - Current Test-Catalog Consolidation](TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md)
+
 **Migration order:** After merged PA-06E-H0C/CMD-15 and before H1B1 decision persistence
 
 ## 1. Objective and authorization boundary
 
-Implement one seedless private persistence slice for the accepted Planning quantity-policy contract after the product owner explicitly approves H1A-P01 through H1A-P10.
+Implement one seedless private persistence slice for the approved Planning quantity-policy contract after the dedicated pre-H1A platform-maintenance task is separately authorized, completed, validated, and merged.
 
 The later implementation may add only:
 
@@ -20,9 +22,9 @@ The later implementation may add only:
 - one revision family with positive Planning step, service-date effectivity, bounded lifecycle, and historical preservation;
 - the minimum private guards required for immutable-after-activation revisions and deterministic non-overlap;
 - rolled-back synthetic pgTAP fixtures; and
-- the test-governance correction that keeps mutable whole-platform catalog assertions in one dedicated current-state suite.
+- the H1A current-state delta in the already-merged dedicated platform catalog suite.
 
-It must not implement policy administration commands, runtime authorization, H1B1 decision rows, H1B2 reads/previews/confirmation, validation, approval, release, CMD-03, Procurement, React, Retool, hosted Supabase, production policy rows, credentials, or deployment.
+It must not modify any of the 18 historical suites owned by the platform-maintenance dependency. It also must not implement policy administration commands, runtime authorization, H1B1 decision rows, H1B2 reads/previews/confirmation, validation, approval, release, CMD-03, Procurement, React, Retool, hosted Supabase, production policy rows, credentials, or deployment.
 
 ## 2. Future baseline rule
 
@@ -30,16 +32,17 @@ The future implementation issue must name one exact `origin/main` commit before 
 
 1. include `5987f1fc9711b7bde094a610e598ff92d71e850d` as an ancestor;
 2. include the merged product-owner-approved H1A decision record;
-3. include merged H0C/CMD-15 with the exact 19-function application API surface unless a separately approved intervening change updates the current-state catalog;
-4. contain no merged H1B1 or H1B2 implementation;
-5. pass `pnpm ops:workspace`; and
-6. be clean and equal to the freshly fetched `origin/main` head used by the future issue.
+3. include the merged PLATFORM-PRE-H1A current test-catalog consolidation;
+4. include merged H0C/CMD-15 with the exact 19-function application API surface unless a separately approved intervening change updates the current-state catalog;
+5. contain no merged H1B1 or H1B2 implementation;
+6. pass `pnpm ops:workspace`; and
+7. be clean and equal to the freshly fetched `origin/main` head used by the future issue.
 
-The future issue must record that exact SHA. It must not reuse this documentation branch or the merged H0Cb branch. If current `origin/main` contains a policy, Unit, authorization, test-catalog, or API change that conflicts with this blueprint, stop and amend the decision/task documentation before SQL work.
+The future issue must record that exact SHA. It must not reuse this documentation branch, the platform-maintenance branch, or the merged H0Cb branch. If current `origin/main` contains a policy, Unit, authorization, test-catalog, or API change that conflicts with this blueprint, stop and amend the decision/task documentation before SQL work.
 
-## 3. Prerequisite approval gate
+## 3. Product approval and platform prerequisite
 
-Do not publish or start the future implementation issue until the product owner explicitly accepts or amends:
+The product owner approved on 2026-07-23:
 
 - H1A-P01 ownership and administration;
 - H1A-P02 exact-Unit-only scope;
@@ -50,9 +53,12 @@ Do not publish or start the future implementation issue until the product owner 
 - H1A-P07 service-date/effective-time semantics;
 - H1A-P08 revision and stale binding;
 - H1A-P09 lifecycle and mutability; and
-- H1A-P10 fail-closed behavior.
+- H1A-P10 fail-closed behavior; and
+- separation of whole-platform test-catalog consolidation into a dedicated pre-H1A maintenance task.
 
-The future issue must quote the accepted decisions and link the approval comment. A recommendation, fixture, merged documentation file, or absence of objection is not approval.
+The product-approval gate is satisfied. The future implementation issue must quote the accepted decisions and link this merged decision record.
+
+The SQL gate is not satisfied until the dedicated platform-maintenance task is separately authorized, merged, and green. The H1A issue must link that merged PR and prove that its branch does not modify any of the 18 historical suites.
 
 ## 4. Exact future business and physical scope
 
@@ -204,30 +210,19 @@ Only these new/changed files are allowed for H1A behavior:
 9. `docs/architecture/roadmap.md`
 10. `docs/decisions/decision-register.md`
 
-### 6.2 Test-governance-only amendments
+### 6.2 Platform-maintenance dependency boundary
 
-At baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`, the repository-wide scan identifies mutable whole-platform catalog assertions in the following historical/current suites. The future issue may amend these files only to move such assertions to `atlas_current_platform_security_catalog.sql` and adjust the affected pgTAP plans; their permanent domain assertions and fixtures must not change:
+The dedicated [PLATFORM-PRE-H1A task](TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md) exclusively owns creation of the current-state suite and relocation of mutable whole-platform assertions from the 18 historical suites.
 
-1. `supabase/tests/pa_04_supplier_direct_slice_1_foundation.sql`
-2. `supabase/tests/pa_05b_h1_runtime_role_hardening_test.sql`
-3. `supabase/tests/pa_05b_h2_multiline_dispatch_execution.sql`
-4. `supabase/tests/pa_05b_h3_successful_trip_closure.sql`
-5. `supabase/tests/pa_05c_h2_current_command_timeline_scope.sql`
-6. `supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql`
-7. `supabase/tests/pa_05d_planning_command_family.sql`
-8. `supabase/tests/pa_05e_procurement_command_family.sql`
-9. `supabase/tests/pa_05f_dispatch_setup_command_family.sql`
-10. `supabase/tests/pa_05g_backend_end_to_end_acceptance.sql`
-11. `supabase/tests/pa_06e_h0a1_school_customer_location_foundation.sql`
-12. `supabase/tests/pa_06e_h0a2_recipe_bom_immutable_reference_foundation.sql`
-13. `supabase/tests/pa_06e_h0a3a_weekly_menu_persistence_foundation.sql`
-14. `supabase/tests/pa_06e_h0a3b_attendance_structure_security.sql`
-15. `supabase/tests/pa_06e_h0a4b_planning_input_readiness_structure_security.sql`
-16. `supabase/tests/pa_06e_h0a5b_need_generation_structure_security.sql`
-17. `supabase/tests/pa_06e_h0b1b_confirmed_need_structure_security_catalog.sql`
-18. `supabase/tests/pa_06e_h0cb_materialization_registry_security_catalog.sql`
+At the H1A baseline:
 
-The future publication-time scan may prove that a file above no longer contains a mutable whole-platform assertion; omit it rather than making a no-op edit. If a new affected file appears outside this list, stop and amend the task boundary before editing. Do not update old domain suites with the new relation, function, trigger, role, capability, policy, grant, or API counts.
+- `atlas_current_platform_security_catalog.sql` must already exist and run in CI;
+- the platform-maintenance PR must already be merged;
+- the 18 historical suites are prohibited H1A files;
+- H1A may amend only the dedicated current-state suite for its exact `+2` relation, `+3` function, `+3` trigger, and zero role/capability/policy/API deltas; and
+- H1A may not relocate, repair, weaken, or duplicate a whole-platform assertion in a historical suite.
+
+If any historical suite still requires amendment for H1A, stop. The platform-maintenance dependency is incomplete and must be corrected in a separate maintenance PR.
 
 No other file is allowed without an explicit issue amendment. In particular, do not modify PA-06A, package files, generated types, React/TypeScript, Retool, local project credentials, deployment files, or any earlier migration.
 
@@ -252,9 +247,9 @@ The scan must record:
 - every pgTAP assertion that counts or enumerates whole-platform roles, capabilities, policies, grants, triggers, functions, relations, or API entries;
 - every workflow that registers a database suite;
 - every documentation registry that states an exact catalog count; and
-- whether the planned H1A delta changes each assertion or only requires relocating it.
+- whether the planned H1A delta is fully expressible in the already-consolidated current-state suite.
 
-The future issue must authorize every affected file and exact expected current-state delta before coding. Discovery of an unauthorized affected assertion is a stop condition, not permission to patch another historical suite.
+The future issue must authorize every affected file and exact expected current-state delta before coding. Discovery of a historical assertion that still needs amendment is a stop condition, not permission to patch that suite in H1A.
 
 ## 8. pgTAP decomposition and ownership
 
@@ -311,7 +306,7 @@ Permanent effectivity/representability invariants:
 - incompatible precision examples fail without normalization;
 - no Unit conversion;
 - stale revision binding is detectable by exact re-resolution; and
-- all candidate values are rolled-back fixtures, never migration seed.
+- approved `0.01 kg` and `1` values are rolled-back fixtures, never migration seed.
 
 H1A has no preview/commit function, so this suite proves physical determinism and exact numeric predicates. H1B2 later owns safe API errors and zero-write command behavior.
 
@@ -327,7 +322,7 @@ Current platform assertions only:
 - current private-schema ownership/RLS posture; and
 - the H1A delta of two relations, three private functions, three triggers, and zero roles/capabilities/policies/API entries.
 
-This suite is intentionally current-state and may be amended by later approved catalog changes. Historical PA-04/PA-05/H0 domain suites retain only permanent invariants owned by their original capability.
+This suite must already exist from the merged PLATFORM-PRE-H1A dependency. H1A amends it only for the exact approved H1A delta. Historical PA-04/PA-05/H0 domain suites are prohibited H1A files.
 
 ## 9. Assertion classification rule
 
@@ -358,7 +353,7 @@ Keep these only in `atlas_current_platform_security_catalog.sql`:
 - exact `atlas_api` function count/signature list; and
 - exact total object deltas at the current head.
 
-Do not copy current-state totals into H0A, H0B1, H0C, PA-04, or PA-05 suites. Moving an assertion must not weaken it: the new suite must assert the same or stronger exact current state before the old duplicate is removed.
+Do not copy current-state totals into H0A, H0B1, H0C, PA-04, or PA-05 suites. H1A does not move catalog assertions; the merged platform-maintenance dependency must already have completed that work.
 
 ## 10. Migration ordering and execution boundary
 
@@ -386,7 +381,7 @@ The future implementation should run:
 - seedless local reset;
 - the three H1A suites independently;
 - the dedicated current platform security/catalog suite independently;
-- every historical suite whose catalog assertion was moved;
+- a prohibited-file audit proving none of the 18 historical suites changed;
 - focused H0B1b and H0Cb behavioral compatibility suites;
 - migration lint/advisor checks required by the then-current repository workflow;
 - changed SQL/Markdown formatting;
@@ -394,7 +389,7 @@ The future implementation should run:
 - `git diff --check`; and
 - exact changed-file and prohibited-file audits.
 
-Register the three H1A suites and `atlas_current_platform_security_catalog.sql` explicitly in `.github/workflows/supabase-integration.yml`. GitHub Actions remains authoritative for the complete regression.
+The dedicated current-state suite must already be registered by the merged platform-maintenance task. Register only the three new H1A suites in `.github/workflows/supabase-integration.yml`. GitHub Actions remains authoritative for the complete regression.
 
 Do not rerun or weaken unrelated full suites merely to manufacture a local all-green claim. Investigate any focused or CI failure that the bounded change causes.
 
@@ -416,16 +411,16 @@ No hosted or production rollback is part of H1A. The future PR must state explic
 
 Stop the future implementation and apply the repository's blocked workflow if:
 
-1. any H1A-P01 through H1A-P10 decision lacks explicit product-owner approval;
-2. an exact step value would be treated as approved from a fixture or recommendation;
+1. the implementation conflicts with any approved H1A-P01 through H1A-P10 decision;
+2. the exact `0.01 kg` or `1` step is inferred for a Unit outside its approved exact scope;
 3. exact-Unit-only scope conflicts with the approved Unit contract;
 4. Unit conversion becomes necessary;
 5. service-date resolution or half-open effectivity cannot remain deterministic;
 6. a generic rule/policy/workflow engine, JSON rule payload, polymorphic scope, or dynamic object name appears necessary;
 7. another relation, function, trigger, extension, role, capability, runtime, RLS policy, positive runtime grant, API function, view, or PA-06A entry becomes necessary;
 8. a production writer or administration command becomes necessary in H1A;
-9. a new affected current-state assertion appears outside the exact allowed files;
-10. a historical domain suite would need a behavioral or fixture change rather than a catalog-assertion relocation;
+9. any of the 18 historical suites requires an H1A edit, proving the platform-maintenance dependency is incomplete;
+10. a new affected current-state assertion appears outside the exact allowed files;
 11. H0C/CMD-15 or PA-05D compatibility would change;
 12. production seed, hosted Supabase, Retool, React, generated types, credentials, or deployment becomes necessary; or
 13. the task cannot remain one additive migration with rolled-back synthetic fixtures.
@@ -435,11 +430,13 @@ Document the exact contradiction and make no further repository change.
 ## 14. Definition of done for the future task
 
 - Product approval is linked and exact.
+- The PLATFORM-PRE-H1A current test-catalog consolidation is merged and linked.
 - The branch starts from the recorded future baseline.
 - Exactly two private relations, three private functions, and three triggers are implemented.
 - Exact-Unit scope, positive step, lifecycle, half-open intervals, non-overlap, immutability, and history pass.
 - No role, capability, runtime, policy, API function, registry entry, or production seed is added.
 - Permanent H1A invariants and mutable current-state catalog assertions are separated.
+- None of the 18 historical suites is modified.
 - The publication-time impact scan is recorded and every affected file was pre-authorized.
 - H0B1b/H0Cb compatibility remains exact.
 - Security implications and rollback boundary are recorded.

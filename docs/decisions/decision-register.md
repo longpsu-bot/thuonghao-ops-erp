@@ -50,7 +50,9 @@ The bounded PA-06E-H0B1a decision is recorded in [Decision PA-06E-H0B1 — Confi
 
 PA-06E-H0B1b persistence and H0C/CMD-15 are merged on baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`. H0C creates only non-authoritative Draft proposals from exact released Need Generation evidence; it does not create Planning policy or decision authority.
 
-The sole canonical H1A-P01 through H1A-P10 registry is [Decision PA-06E-H1A - Planning Quantity Policy](decision-pa-06e-h1a-planning-quantity-policy.md). It recommends the smallest exact-controlled-Unit policy model, half-open Asia/Bangkok service-date effectivity, immutable-after-activation revisions, exact whole-tick representability, stale binding rejection, and no fallback. Every H1A product decision, including candidate `0.01 kg` and `1` steps, remains `PENDING_PRODUCT_OWNER_APPROVAL`; H1A SQL, H1B1, H1B2, hosted Supabase, Retool, production seed, and React connection remain unapproved.
+The sole canonical H1A-P01 through H1A-P10 registry is [Decision PA-06E-H1A - Planning Quantity Policy](decision-pa-06e-h1a-planning-quantity-policy.md). The product owner approved all ten recommendations on 2026-07-23, including the exact-controlled-Unit model, `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed indivisible/count Unit, no fallback or Unit conversion, half-open Asia/Bangkok service-date effectivity, exact whole-tick representability, immutable-after-activation revisions, stale binding rejection, bounded lifecycle, and fail-closed missing/ambiguous policy.
+
+The product owner also approved separating whole-platform test-catalog consolidation into [TASK-PLATFORM-PRE-H1A - Current Test-Catalog Consolidation](../implementation-tasks/TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md). That maintenance task must be separately authorized and merged before H1A persistence; it exclusively owns the 18 historical-suite amendments. H1A SQL must not modify those suites. H1A SQL, H1B1, H1B2, hosted Supabase, Retool, production seed, and React connection remain unapproved.
 
 ## Change procedure
 
