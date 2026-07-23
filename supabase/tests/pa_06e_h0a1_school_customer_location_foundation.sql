@@ -925,16 +925,51 @@ select ok(
   'browser-facing API roles have no direct school-table privileges'
 );
 
-select ok(
-  not exists (
-    select 1
-    from pg_policy p
-    where p.polrelid in (
+select is(
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text
+    )
+    from pg_policy policy
+    where policy.polrelid in (
       'atlas_admin.school_types'::regclass,
       'atlas_admin.schools'::regclass
     )
   ),
-  'school tables expose no direct RLS policy path'
+  jsonb_build_array(
+    jsonb_build_object(
+      'relation', 'atlas_admin.school_types',
+      'name', 'pa_06e_h0cb_materialization_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+      'using', 'true',
+      'with_check', null
+    ),
+    jsonb_build_object(
+      'relation', 'atlas_admin.schools',
+      'name', 'pa_06e_h0cb_materialization_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+      'using', 'true',
+      'with_check', null
+    )
+  ),
+  'school tables have exactly the two dedicated-runtime permissive SELECT policies'
 );
 
 select ok(
@@ -1009,9 +1044,27 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from atlas_core.capabilities),
-  0,
-  'H0A1 seeds no capabilities'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'capability_code', capability_code,
+        'capability_name', capability_name,
+        'owning_domain', owning_domain,
+        'capability_status', capability_status
+      )
+      order by capability_code
+    )
+    from atlas_core.capabilities
+  ),
+  jsonb_build_array(
+    jsonb_build_object(
+      'capability_code', 'confirmed_need_generation.materialize',
+      'capability_name', 'Materialize Confirmed Need from Need Generation',
+      'owning_domain', 'PLANNING',
+      'capability_status', 'ACTIVE'
+    )
+  ),
+  'the capability catalog contains only the active Planning materialization capability'
 );
 
 select * from finish();
