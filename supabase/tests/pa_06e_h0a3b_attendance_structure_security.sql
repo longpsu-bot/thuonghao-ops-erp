@@ -394,7 +394,22 @@ select ok(
 
 select is(
   (
-    select count(*)::integer
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text, policy.polname
+    )
     from pg_policy policy
     where policy.polrelid in (
       'atlas_planning.attendance_batches'::regclass,
@@ -403,8 +418,28 @@ select is(
       'atlas_planning.attendance_approval_snapshot_lines'::regclass
     )
   ),
-  0,
-  'H0A3b adds zero RLS policies'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', expected.relation_name,
+        'name', 'pa_06e_h0cb_materialization_select',
+        'command', 'r',
+        'permissive', true,
+        'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+        'using', 'true',
+        'with_check', null
+      )
+      order by expected.relation_name
+    )
+    from (
+      values
+        ('atlas_planning.attendance_batches'),
+        ('atlas_planning.attendance_lines'),
+        ('atlas_planning.attendance_approval_snapshots'),
+        ('atlas_planning.attendance_approval_snapshot_lines')
+    ) expected(relation_name)
+  ),
+  'H0A3b has exactly four dedicated-runtime permissive SELECT policies'
 );
 
 select is(
@@ -547,7 +582,29 @@ select is(
 );
 
 select is((select count(*)::integer from atlas_core.roles), 0, 'H0A3b seeds no roles');
-select is((select count(*)::integer from atlas_core.capabilities), 0, 'H0A3b seeds no capabilities');
+select is(
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'capability_code', capability_code,
+        'capability_name', capability_name,
+        'owning_domain', owning_domain,
+        'capability_status', capability_status
+      )
+      order by capability_code
+    )
+    from atlas_core.capabilities
+  ),
+  jsonb_build_array(
+    jsonb_build_object(
+      'capability_code', 'confirmed_need_generation.materialize',
+      'capability_name', 'Materialize Confirmed Need from Need Generation',
+      'owning_domain', 'PLANNING',
+      'capability_status', 'ACTIVE'
+    )
+  ),
+  'the capability catalog contains only the active Planning materialization capability'
+);
 
 select * from finish();
 
