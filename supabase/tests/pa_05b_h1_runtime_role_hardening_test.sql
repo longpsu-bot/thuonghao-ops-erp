@@ -57,8 +57,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  18,
-  'authenticated can execute exactly the 18 reviewed functions through PA-05B-H3'
+  19,
+  'authenticated can execute exactly the 19 reviewed functions through PA-06E-H0Cb'
 );
 
 select ok(
@@ -89,8 +89,8 @@ select ok(
 
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api'),
-  18,
-  'no Atlas API functions beyond the reviewed surface through PA-05B-H3 exist'
+  19,
+  'no Atlas API functions beyond the reviewed surface through PA-06E-H0Cb exist'
 );
 
 select ok(

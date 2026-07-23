@@ -286,14 +286,50 @@ select is(
 
 select is(
   (
-    select count(*)::integer from pg_policy p
-    where p.polrelid in (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text, policy.polname
+    )
+    from pg_policy policy
+    where policy.polrelid in (
       'atlas_planning.planning_input_sets'::regclass,
       'atlas_planning.planning_input_evaluations'::regclass,
       'atlas_planning.planning_input_evaluation_issues'::regclass
     )
-  ), 0,
-  'the private persistence slice creates zero RLS policies'
+  ),
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', expected.relation_name,
+        'name', 'pa_06e_h0cb_materialization_select',
+        'command', 'r',
+        'permissive', true,
+        'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+        'using', 'true',
+        'with_check', null
+      )
+      order by expected.relation_name
+    )
+    from (
+      values
+        ('atlas_planning.planning_input_sets'),
+        ('atlas_planning.planning_input_evaluations'),
+        ('atlas_planning.planning_input_evaluation_issues')
+    ) expected(relation_name)
+  ),
+  'H0A4b has exactly three dedicated-runtime permissive SELECT policies'
 );
 
 select is(
@@ -389,8 +425,8 @@ select is(
     select count(*)::integer from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
-  ), 18,
-  'H0A4b preserves the exact 18-function atlas_api surface'
+  ), 19,
+  'H0A4b remains compatible with the exact 19-function atlas_api surface'
 );
 
 select ok(

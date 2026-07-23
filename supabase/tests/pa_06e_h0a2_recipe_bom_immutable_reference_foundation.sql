@@ -1742,7 +1742,22 @@ select ok(
 
 select is(
   (
-    select count(*)::integer
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text, policy.polname
+    )
     from pg_policy policy
     where policy.polrelid in (
       'atlas_admin.dishes'::regclass,
@@ -1752,8 +1767,29 @@ select is(
       'atlas_admin.recipe_line_revisions'::regclass
     )
   ),
-  0,
-  'H0A2 adds zero RLS policies'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', expected.relation_name,
+        'name', 'pa_06e_h0cb_materialization_select',
+        'command', 'r',
+        'permissive', true,
+        'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+        'using', 'true',
+        'with_check', null
+      )
+      order by expected.relation_name
+    )
+    from (
+      values
+        ('atlas_admin.dishes'),
+        ('atlas_admin.recipes'),
+        ('atlas_admin.recipe_versions'),
+        ('atlas_admin.recipe_lines'),
+        ('atlas_admin.recipe_line_revisions')
+    ) expected(relation_name)
+  ),
+  'H0A2 has exactly five dedicated-runtime permissive SELECT policies'
 );
 
 select is(
@@ -1878,6 +1914,7 @@ select is(
     'close_successful_trip(request jsonb)',
     'confirm_dispatch_load(request jsonb)',
     'confirm_successful_delivery(request jsonb)',
+    'create_confirmed_needs_from_generation(request jsonb)',
     'create_dispatch_plan(request jsonb)',
     'create_or_assign_dispatch_trip(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
@@ -1892,7 +1929,7 @@ select is(
     'release_supplier_purchase_order(request jsonb)',
     'release_wholesale_order(request jsonb)'
   ]::text[],
-  'the exact 18-function atlas_api registry remains unchanged'
+  'the exact 19-function atlas_api registry includes CMD-15'
 );
 
 select is(
@@ -1902,9 +1939,27 @@ select is(
 );
 
 select is(
-  (select count(*)::integer from atlas_core.capabilities),
-  0,
-  'H0A2 seeds no capabilities'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'capability_code', capability_code,
+        'capability_name', capability_name,
+        'owning_domain', owning_domain,
+        'capability_status', capability_status
+      )
+      order by capability_code
+    )
+    from atlas_core.capabilities
+  ),
+  jsonb_build_array(
+    jsonb_build_object(
+      'capability_code', 'confirmed_need_generation.materialize',
+      'capability_name', 'Materialize Confirmed Need from Need Generation',
+      'owning_domain', 'PLANNING',
+      'capability_status', 'ACTIVE'
+    )
+  ),
+  'the capability catalog contains only the active Planning materialization capability'
 );
 
 select * from finish();

@@ -13,8 +13,8 @@ select is(
    from pg_proc p
    join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'atlas_api'),
-  18,
-  'the reviewed atlas_api surface remains exactly 18 functions'
+  19,
+  'the reviewed atlas_api surface is exactly 19 functions'
 );
 select ok(
   not has_function_privilege('anon', 'atlas_api.get_dispatch_evidence_readiness(jsonb)', 'EXECUTE'),

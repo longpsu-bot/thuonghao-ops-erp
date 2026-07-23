@@ -167,19 +167,66 @@ select is(
 
 select is(
   (
-    select count(*)::integer
-    from pg_policy p
-    where p.polrelid in (
-      select c.oid
-      from pg_class c
-      join pg_namespace n on n.oid = c.relnamespace
-      where n.nspname = 'atlas_planning'
-        and c.relkind = 'r'
-        and (c.relname like 'need_generation_%' or c.relname = 'theoretical_need_lines')
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text, policy.polname
+    )
+    from pg_policy policy
+    where policy.polrelid in (
+      'atlas_planning.need_generation_calculation_contracts'::regclass,
+      'atlas_planning.need_generation_calculation_contract_revisions'::regclass,
+      'atlas_planning.need_generation_runs'::regclass,
+      'atlas_planning.need_generation_input_snapshots'::regclass,
+      'atlas_planning.need_generation_recipe_selections'::regclass,
+      'atlas_planning.need_generation_recipe_line_uses'::regclass,
+      'atlas_planning.theoretical_need_lines'::regclass,
+      'atlas_planning.need_generation_issues'::regclass,
+      'atlas_planning.need_generation_release_snapshots'::regclass,
+      'atlas_planning.need_generation_release_snapshot_lines'::regclass,
+      'atlas_planning.need_generation_release_snapshot_issues'::regclass
     )
   ),
-  0,
-  'the private persistence slice creates zero RLS policies'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', expected.relation_name,
+        'name', 'pa_06e_h0cb_materialization_select',
+        'command', 'r',
+        'permissive', true,
+        'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
+        'using', 'true',
+        'with_check', null
+      )
+      order by expected.relation_name
+    )
+    from (
+      values
+        ('atlas_planning.need_generation_calculation_contracts'),
+        ('atlas_planning.need_generation_calculation_contract_revisions'),
+        ('atlas_planning.need_generation_runs'),
+        ('atlas_planning.need_generation_input_snapshots'),
+        ('atlas_planning.need_generation_recipe_selections'),
+        ('atlas_planning.need_generation_recipe_line_uses'),
+        ('atlas_planning.theoretical_need_lines'),
+        ('atlas_planning.need_generation_issues'),
+        ('atlas_planning.need_generation_release_snapshots'),
+        ('atlas_planning.need_generation_release_snapshot_lines'),
+        ('atlas_planning.need_generation_release_snapshot_issues')
+    ) expected(relation_name)
+  ),
+  'H0A5b has exactly eleven dedicated-runtime permissive SELECT policies'
 );
 
 select is(
@@ -435,8 +482,8 @@ select ok(
 
 select is(
   (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api'),
-  18,
-  'H0A5b preserves the exact eighteen-function atlas_api surface'
+  19,
+  'H0A5b remains compatible with the exact nineteen-function atlas_api surface'
 );
 
 select ok(
