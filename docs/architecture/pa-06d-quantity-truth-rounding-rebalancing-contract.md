@@ -14,6 +14,8 @@
 
 **Confirmed Need resolution:** [PA-06E Confirmed Need Review, Adjustment, Revision, and Source Correction](pa-06e-confirmed-need-review-adjustment-revision-contract.md) resolves the pending insertion-point recommendation by retaining the existing Confirmed Need revision; it adds no Quantity Decision aggregate and authorizes no implementation.
 
+**Planning policy resolution:** [Decision PA-06E-H1A - Planning Quantity Policy](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md) recommends one exact-controlled-Unit policy root, deterministic non-overlapping revisions, exact whole-tick representability, and no fallback. Every H1A product decision and candidate step remains `PENDING_PRODUCT_OWNER_APPROVAL`; H1A SQL is unapproved.
+
 ## 1. Outcome and boundary
 
 This contract establishes the business meanings and invariants that must exist before Atlas implements quantity review, purchase quantization, supplier allocation, rebalancing, or document release. It does not approve a SQL design, RPC, migration, React implementation, Retool change, deployment, or production write.
@@ -43,7 +45,7 @@ The following separation is approved. Values labeled **pending** are not approve
 | `calculation_precision`        | Precision retained while deriving quantities and entitlements  | PostgreSQL high-precision `numeric`; do not truncate to display scale during calculation        | Approved direction                                            |
 | `comparison_epsilon`           | Technical tolerance for legacy floating-point comparisons      | OPS evidence is `0.000001`; future tick equality should be exact                                | Approved distinction; future use pending                      |
 | `ratio_precision`              | Precision of a derived supplier share                          | Up to six decimals when useful; ratios never author supplier quantities                         | Approved direction                                            |
-| `planning_operational_step`    | Smallest meaningful Planning confirmation increment for a unit | Proposed default: `0.01 kg`; indivisible/count units: `1`; unit-policy exceptions explicit      | Pending product approval                                      |
+| `planning_operational_step` | Smallest meaningful Planning confirmation increment for a unit | Candidate first slice: `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed count Unit, and no fallback | Pending product approval in H1A |
 | `purchase_order_step`          | Smallest purchasable increment                                 | Ingredient/supplier policy; current OPS data uses `0.1 kg` and `1` for current count-like units | Upward-only direction approved; exact fallback policy pending |
 | `persisted_quantity_precision` | Exact operational value stored                                 | Persist integer ticks plus step/rule identity, or an exactly equivalent decimal representation  | Recommended; physical design pending                          |
 | `display_precision`            | Digits required to show the entire operational value           | Derived from the applicable step; raw calculation may appear in secondary details               | Approved direction                                            |
@@ -344,3 +346,5 @@ CMD-03 creates the handoff already released to Procurement, so the accepted API 
 8. **Smallest UI follow-up:** Requirement Quantity Review only after the insertion point, backend contract, and any CMD-03 change are approved and implemented.
 9. **Deferred:** multi-supplier command, fixed portions, supplier-specific steps, released-PO correction, document generation and rollout.
 10. **Awaiting product approval:** exact Planning steps, fallback purchase steps, removal of threshold `2`, supplier-specific step precedence, fixed portions, residual priority/ties, automatic supplier proposal, zero behavior, released-PO correction path, rule owner and effective-date governance.
+
+The Planning-owned subset of item 10 is now prepared only in the canonical [H1A decision registry](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md). It does not approve a production step, policy row, migration, H1B1, or H1B2.

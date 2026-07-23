@@ -8,6 +8,8 @@
 
 **Confirmed Need resolution:** [Decision PA-06E — Confirmed Need Source Correction](decision-pa-06e-confirmed-need-source-correction.md) retains the existing Confirmed Need revision and adds no Quantity Decision aggregate. Its proposed APIs and pending rows remain unapproved.
 
+**Planning policy resolution:** [Decision PA-06E-H1A - Planning Quantity Policy](decision-pa-06e-h1a-planning-quantity-policy.md) is the canonical H1A-P01 through H1A-P10 registry. It recommends exact-Unit-only Planning policy and fail-closed exact ticks, but all ten rows and the candidate `0.01 kg` / `1` values remain `PENDING_PRODUCT_OWNER_APPROVAL`.
+
 ## 1. Decisions already established by the task
 
 The following directions are authoritative prerequisites for future design:
@@ -61,3 +63,4 @@ On success, command output contains the exact persisted snapshot. The client dis
 - No implementation may infer approval for the candidate Planning steps, residual policy, locks, automatic supplier proposal, zero behavior or released-PO correction path.
 - No direct table access, Retool orchestration, destructive family replacement, client-authored rounding or client-authored rebalancing is authorized.
 - No new API function or registry change is authorized by this decision document.
+- H1A preparation does not settle Procurement purchase steps, supplier allocation quanta, residual ordering, PO correction, or Dispatch commitment. H1A SQL, H1B1, and H1B2 remain separately unapproved.

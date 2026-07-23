@@ -48,6 +48,10 @@ The bounded PA-06E-H0A5b private persistence implementation is recorded in [Deci
 
 The bounded PA-06E-H0B1a decision is recorded in [Decision PA-06E-H0B1 — Confirmed Need Identity and Contribution Membership](decision-pa-06e-h0b1-confirmed-need-identity-membership.md). Issue #133 accepts the exact batch/date/customer/School/delivery-location/Ingredient/controlled-Unit stable-line tuple, separation of authorization from identity, a no-conversion source-Unit-equals-controlled-Unit slice, explicit `WHOLESALE`/`NEED_GENERATION` source families on the existing aggregate, immutable revision-owned plural contribution membership, exact numeric totals, the two mandatory deferred guards, unchanged PA-05D behavior, private security, and four future H0B1b test families. H0B1b persistence, H0C, H1 decisions/policy/runtime, APIs/UI, hosted execution, and production rollout remain separately unauthorized.
 
+PA-06E-H0B1b persistence and H0C/CMD-15 are merged on baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`. H0C creates only non-authoritative Draft proposals from exact released Need Generation evidence; it does not create Planning policy or decision authority.
+
+The sole canonical H1A-P01 through H1A-P10 registry is [Decision PA-06E-H1A - Planning Quantity Policy](decision-pa-06e-h1a-planning-quantity-policy.md). It recommends the smallest exact-controlled-Unit policy model, half-open Asia/Bangkok service-date effectivity, immutable-after-activation revisions, exact whole-tick representability, stale binding rejection, and no fallback. Every H1A product decision, including candidate `0.01 kg` and `1` steps, remains `PENDING_PRODUCT_OWNER_APPROVAL`; H1A SQL, H1B1, H1B2, hosted Supabase, Retool, production seed, and React connection remain unapproved.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

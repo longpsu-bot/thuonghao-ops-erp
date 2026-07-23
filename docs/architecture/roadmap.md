@@ -33,7 +33,15 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Planning integration and operator-workflow review
 - 🟡 PA-06D quantity truth, operational precision, rounding, rebalancing, and write-fidelity documentation — [contract](pa-06d-quantity-truth-rounding-rebalancing-contract.md); implementation and unresolved product decisions remain unapproved
 - 🟡 PA-06E Confirmed Need review, adjustment, revision, and source-correction documentation — [contract](pa-06e-confirmed-need-review-adjustment-revision-contract.md) and [decision](../decisions/decision-pa-06e-confirmed-need-source-correction.md); implementation and pending product decisions remain unapproved
-- 🟡 PA-06E-H0 school-catering persistence and materialization architecture — [contract](pa-06e-h0-school-catering-persistence-and-materialization-contract.md), [parent decision](../decisions/decision-pa-06e-h0-source-lineage-and-decision-evidence.md), [H0B1 identity/membership decision](../decisions/decision-pa-06e-h0b1-confirmed-need-identity-membership.md), and [task decomposition](../implementation-tasks/TASK-PA-06E-H0-school-catering-persistence-materialization.md); H0A1 through H0A5b and H0B1b are merged; H0Cb CMD-15 materialization is implemented under Issue #143 with its dedicated runtime, atomic 18→19 registry transition, initial/direct-successor history behavior, and 360 focused assertions pending independent governance review; H1 and all hosted/production/application work remain separately unapproved
+- ✅ PA-06E-H0C/CMD-15 Confirmed Need materialization — merged by PR #144 on exact baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`; [decision](../decisions/decision-pa-06e-h0c-materialization-command-contract.md) and [implementation record](../implementation-tasks/TASK-PA-06E-H0Cb-confirmed-need-materialization-command.md)
+- 🟡 PA-06E-H1A0 Planning quantity-policy decision preparation — sole active Atlas task; [canonical decision registry](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md) and [future implementation blueprint](../implementation-tasks/TASK-PA-06E-H1A-planning-quantity-policy-persistence.md); every H1A-P01 through H1A-P10 decision remains pending product-owner approval
+- ⬜ PA-06E-H1A SQL persistence — unapproved
+- ⬜ PA-06E-H1B1 policy-bound line-decision persistence — unapproved
+- ⬜ PA-06E-H1B2 authorized review/preview/confirmation — unapproved
+- ⬜ Hosted Supabase action for this path — unapproved
+- ⬜ Retool change for this path — unapproved
+- ⬜ Production Planning policy seed — unapproved
+- ⬜ React connection for this path — unapproved
 
 Planning completion boundary:
 
