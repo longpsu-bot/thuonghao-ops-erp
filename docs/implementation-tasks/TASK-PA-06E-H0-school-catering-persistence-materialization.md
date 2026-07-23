@@ -312,7 +312,7 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H0B1b — Confirmed Need source generalization and membership persistence
 
-**Status:** Future separately authorized implementation task
+**Status:** Implemented and merged into `main`
 
 **Owner:** Planning
 
@@ -326,6 +326,8 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H0C — Need Generation materialization command
 
+**Status:** CMD-15 implemented and merged by PR #144 on baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`
+
 **Owner:** Planning
 
 **Objective:** Implement only the reviewed materialization contract against the merged H0A/H0B1b schema.
@@ -338,13 +340,21 @@ This parent documentation did not authorize implementation. Each child requires 
 
 ### H1A — Planning quantity-policy persistence
 
+**Status:** H1A product contract approved on 2026-07-23; H1A SQL remains unapproved and blocked on the separate pre-H1A platform-maintenance task
+
+**Decision:** [Decision PA-06E-H1A - Planning Quantity Policy](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md)
+
+**Implementation blueprint:** [TASK-PA-06E-H1A](TASK-PA-06E-H1A-planning-quantity-policy-persistence.md)
+
+**Required platform dependency:** [TASK-PLATFORM-PRE-H1A](TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md)
+
 **Owner:** Planning policy governance, with product-owner approval
 
 **Objective:** Persist the minimum versioned/effective Planning step policy required for fail-closed preview/commit.
 
-**Expected physical scope:** typed scope/unit root, immutable revision, positive step, non-overlap, exact precedence, rolled-back fixture data.
+**Expected physical scope:** one exact-controlled-Unit root, immutable-after-activation revision, positive step, half-open service-date effectivity, non-overlap, exact precedence, and rolled-back fixture data.
 
-**Prohibited:** production values without approval, generic formula engine, silent fallback.
+**Prohibited:** H1A implementation before the separate platform-maintenance dependency is authorized and merged; modification of its 18 historical suites; production seed; generic formula engine; Unit conversion; dimension/context fallback; runtime/API/capability; or silent normalization.
 
 ### H1B1 — Policy-bound line-decision persistence
 
@@ -457,6 +467,8 @@ Each future task runs focused pgTAP appropriate to its migration. Cumulative tes
 
 No future implementation task may weaken, skip, or replace existing PA-04/PA-05D tests to make the new path pass.
 
+From H1 onward, permanent domain invariants stay in their owning domain suites. The dedicated [PLATFORM-PRE-H1A maintenance task](TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md) exclusively owns moving mutable whole-platform role, capability, RLS-policy, grant, and `atlas_api` assertions out of the 18 historical suites into one current-state security/catalog suite. H1A depends on that merged task, updates only the consolidated current-state suite for its approved catalog delta, and must not modify any of the 18 historical suites.
+
 ## 9. Documentation-task acceptance criteria
 
 - [x] Start from merged PA-06E commit `df6205bbea8bb445c52093911a4531add47a76d2`.
@@ -543,7 +555,7 @@ Stop the affected future implementation task if any of these remains unresolved:
 6. **Resolved by H0B1a:** exact seven-part operational identity and no additional business-identity dimension;
 7. **Resolved by H0B1a for H0B1b design:** exact field concepts, composite-key/FK direction, two constraint-trigger names/owners, and four test families; the future H0B1b issue must still fix executable DDL, exact `plan(N)` counts, lock-performance limits, and migration validation;
 8. decision-current columns/indexes, reason policy, or evidence-correction authority;
-9. Planning policy scope/precedence/owner/production step;
+9. **Resolved by H1A product approval:** exact Planning scope, precedence, ownership, production steps, representability, effectivity, lifecycle, stale binding, and fail-closed behavior; H1A SQL remains blocked until the separate platform-maintenance dependency is merged;
 10. actor class, capability, service-date scope, runtime grants, or registry approval;
 11. request/response/error/event/version contract;
 12. **Resolved by H0B1a:** focused PD-01.8/PA-02 parent-contract amendments are included with the decision;

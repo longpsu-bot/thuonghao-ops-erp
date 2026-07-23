@@ -10,6 +10,12 @@
 
 **Implementation boundary:** [TASK-PA-06E — Confirmed Need Revision Contract](../implementation-tasks/TASK-PA-06E-confirmed-need-revision-contract.md)
 
+**Planning policy decision:** [Decision PA-06E-H1A - Planning Quantity Policy](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md)
+
+**Future policy persistence task:** [TASK-PA-06E-H1A - Planning Quantity Policy Persistence](../implementation-tasks/TASK-PA-06E-H1A-planning-quantity-policy-persistence.md)
+
+**Required pre-H1A maintenance:** [TASK-PLATFORM-PRE-H1A - Current Test-Catalog Consolidation](../implementation-tasks/TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md)
+
 ## 1. Executive decision
 
 Atlas will reuse the existing Planning-owned Confirmed Need **business aggregate**: `ConfirmedNeedBatch`, stable `ConfirmedNeedLine`, versioned `ConfirmedNeedLineRevision`, logical `ConfirmedNeedSourceReference`, logical `ConfirmedNeedAdjustment`, and approval snapshots.
@@ -504,7 +510,7 @@ Planning policy and storage capacity are separate.
 | Excess input precision             | Reject with a safe field error; never silently trim or round.                                                     |
 | PostgreSQL six-decimal scale       | Storage capacity only; not operator precision or an approved step.                                                |
 
-The exact production Planning steps, unit taxonomy, policy owner, and effective-date governance remain pending unless separately approved.
+The product owner approved H1A-P01 through H1A-P10 as recommended on 2026-07-23: one exact controlled-Unit root, no Unit-dimension or contextual fallback, `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed indivisible/count Unit, no Unit conversion, half-open service-date intervals, exact whole-tick representability, stale revision rejection, bounded lifecycle, and fail-closed resolution. No production row or H1A SQL is approved.
 
 ## 12. Advisory purchase consequence boundary
 
@@ -768,7 +774,9 @@ PA-06E and H0B1a do not authorize H0B1b DDL or H0C commands. H0B1b must explicit
 
 ### 18.2 PA-06E-H1 — one-line review/preview/confirm
 
-Only after H0's generalized persistence exists, H1 may contain exactly:
+H0C/CMD-15 is merged on baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`. The H1A product contract is approved. The dedicated PLATFORM-PRE-H1A current test-catalog consolidation must be separately authorized and merged before H1A persistence begins; H1A must not modify its 18 historical suites. H1A SQL, H1B1 decision persistence, and H1B2 review/preview/confirmation remain separately unapproved.
+
+Only after an approved H1A policy migration and H1B1 decision-evidence migration exist may H1B2 contain exactly:
 
 - one synthetic school/date/ingredient Confirmed Need stable line provisioned locally without wholesale lineage;
 - one deterministic calculation/source revision and theoretical quantity;
@@ -894,10 +902,10 @@ PA-06E does not mark any of the three final.
 6. **Batch strategy:** line review followed by complete-batch validation, exact validated-version approval, and separate release; no partial release.
 7. **CMD-03 compatibility:** CMD-03 continues to consume a released exact snapshot; PA-05D direct wholesale remains unchanged. School-catering implementation must be separately contracted without silently changing `PA-05D.v1`.
 8. **Proposed API:** one separate H0 materialization gap plus a seven-function review/lifecycle family; only read/preview/confirm belong in H1, and every name remains noncanonical.
-9. **First backend boundary:** H0B1b must first generalize exact source lineage and revision membership with no decision evidence; H0C later materializes Draft proposals; H1 then proves one synthetic line, policy, preview, confirmation, result, readback, line evidence, event/audit/receipt, with no validation, approval, release, handoff, Procurement, or production queue.
+9. **First backend boundary:** H0B1b and H0C now provide exact source lineage, revision membership, and non-authoritative Draft materialization. After the platform test-catalog maintenance dependency merges, H1A must separately persist the approved exact-Unit policy without editing the 18 historical suites; H1B1 must add policy-bound decision evidence without an insert surface; and only H1B2 may prove one synthetic line, preview, confirmation, result, readback, line evidence, event/audit/receipt, with no validation, approval, release, handoff, Procurement, or production queue.
 10. **Deferred downstream work:** Handoff invalidation/supersession, allocation/PO correction, Dispatch correction, and cross-domain compensation.
 11. **Vietnamese terminology:** stable terms continue; the three Planning proposal labels remain pending.
-12. **Remaining product/architecture decisions:** H0B1 identity/source/membership decisions are closed. H0C command details; line decision-evidence physical shape; unchanged-acceptance reason rules; exact Planning policy/steps and owner; zero-line release behavior; prior-confirmed carry proposal; separation of duties; service-date authorization; purchase-advisory blocking; API names/capabilities; downstream correction variants; and final Vietnamese terms remain later work.
+12. **Remaining product/architecture decisions:** H0B1 identity/source/membership and H1A Planning policy decisions are closed. H0C command details; line decision-evidence physical shape; unchanged-acceptance reason rules; zero-line release behavior; prior-confirmed carry proposal; service-date authorization; purchase-advisory blocking; API names/capabilities; downstream correction variants; and final Vietnamese terms remain later work.
 
 ## 22. Security, migration, and rollback effect
 
