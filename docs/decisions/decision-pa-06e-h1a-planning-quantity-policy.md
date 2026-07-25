@@ -1,12 +1,14 @@
 # Decision PA-06E-H1A - Planning Quantity Policy
 
-**Status:** H1A-P01 through H1A-P10 approved by the product owner as recommended on 2026-07-23; H1A SQL remains separately unauthorized
+**Status:** Accepted product contract; bounded private persistence implemented under Issue #149 from exact baseline `74855287e91cb07151e8d9b21ad0e6d31b57e9da`
 
-**Issue:** [#145](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/145)
+**Product-decision issue:** [#145](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/145)
 
-**Exact preparation baseline:** `5987f1fc9711b7bde094a610e598ff92d71e850d`
+**Implementation issue:** [#149](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/149)
 
-**Future implementation task:** [TASK-PA-06E-H1A - Planning Quantity Policy Persistence](../implementation-tasks/TASK-PA-06E-H1A-planning-quantity-policy-persistence.md)
+**Implementation authorization:** [Phase 0 inventory](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/149#issuecomment-5079125342) and [architect approval/correction](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/149#issuecomment-5079461520)
+
+**Implementation task:** [TASK-PA-06E-H1A - Planning Quantity Policy Persistence](../implementation-tasks/TASK-PA-06E-H1A-planning-quantity-policy-persistence.md)
 
 **Parent contract:** [PA-06E - Confirmed Need Review, Adjustment, Revision, and Source Correction](../architecture/pa-06e-confirmed-need-review-adjustment-revision-contract.md)
 
@@ -38,9 +40,9 @@ no fallback for another Unit without an explicit policy
 
 These approved business values do not authorize a production seed. Policy rows still require a separately approved administration path.
 
-The product owner also approved separating whole-platform test-catalog consolidation into the dedicated [PLATFORM-PRE-H1A maintenance task](../implementation-tasks/TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md). That task must merge before the future H1A persistence issue is published. H1A must not modify the 18 historical suites.
+The product owner also approved separating whole-platform test-catalog consolidation into the dedicated [PLATFORM-PRE-H1A maintenance task](../implementation-tasks/TASK-PLATFORM-PRE-H1A-current-test-catalog-consolidation.md). That task merged in PR #148 before H1A implementation began. H1A does not modify the 18 historical suites.
 
-The future H1A SQL task, H1B1, and H1B2 remain separately unapproved.
+Issue #149 authorizes H1A persistence only. H1B1 and H1B2 remain separately unapproved.
 
 ## 2. OPS_SYSTEM_MAP placement
 
@@ -151,13 +153,13 @@ The later error must identify the affected field, exact Unit, effective policy r
 - Activation may schedule a future revision.
 - A future-only revision does not authorize an earlier service date.
 - A revision whose interval ended does not authorize a later service date.
-- An activated revision cannot be backdated to replace a revision already available to a prior preview or confirmation.
-- A successor activation and predecessor retirement occur in one controlled future administration transaction.
+- Activation and retirement are governed by explicit evidence, lifecycle, and interval invariants; the transaction date is not business authority.
+- A successor activation and predecessor retirement may occur in one controlled administration transaction.
 - Closing an open interval is the only allowed post-activation interval mutation: set `effective_to` once on the predecessor to the successor's `effective_from`, transition it to `RETIRED`, and record retirement actor/time.
 - Historical decisions retain their exact bound revision even after that revision is retired.
 - A correction never edits a confirmed quantity, policy step, or historical binding in place.
 
-The approved first-slice activation rule is that a newly activated `effective_from`, and a retirement boundary applied to an already active revision, cannot precede the current Asia/Bangkok service date.
+The architect correction for Issue #149 supersedes the earlier proposed transaction-clock backdating rule. A revision may be activated or retired with a historical or future service-date boundary when its approval, activation or retirement evidence and half-open interval are valid. H1A must not use `current_date`, `now()`, `transaction_timestamp()`, `statement_timestamp()`, `clock_timestamp()`, or Asia/Bangkok "today" to authorize or reject a lifecycle transition. Database acceptance-time defaults for immutable `created_at` fields remain permitted.
 
 ### 4.5 Lifecycle mutability
 
@@ -169,13 +171,13 @@ The approved first-slice activation rule is that a newly activated `effective_fr
 
 Activation requires complete Planning approval and administration evidence. The approving and activating actors may be the same; H1A does not require or seed a two-person workflow.
 
-## 5. Minimum future physical direction
+## 5. Implemented physical direction
 
-This section fixes an implementation direction only. It creates no SQL authority in this documentation task.
+Issue #149 implements this exact private, seedless physical direction.
 
 ### 5.1 Exact relation catalog
 
-The future H1A migration should add exactly two relations in private `atlas_planning`.
+The H1A migration adds exactly two relations in private `atlas_planning`.
 
 #### `atlas_planning.planning_quantity_policies`
 
@@ -210,7 +212,7 @@ The revision contains no JSON rule payload, dimension scope, polymorphic scope i
 
 ### 5.2 Exact constraints and indexes
 
-The future migration should provide:
+The migration provides:
 
 - primary keys on both database-generated identities;
 - unique root `unit_id`;
@@ -227,7 +229,7 @@ The future migration should provide:
 
 Non-overlap must be enforced by bounded deferred integrity logic rather than adding a generic rule engine or a new extension. DRAFT intervals do not authorize resolution, but activation must fail if its interval overlaps any Active/Retired interval on the same exact Unit.
 
-### 5.3 Exact future function and trigger catalog
+### 5.3 Exact function and trigger catalog
 
 The proposed H1A catalog is exactly three private, `atlas_owner`-owned, security-invoker trigger functions with empty search paths:
 
@@ -241,7 +243,7 @@ The proposed trigger catalog is exactly:
 2. one ordinary revision lifecycle/immutability/delete guard on `planning_quantity_policy_revisions`; and
 3. one `DEFERRABLE INITIALLY DEFERRED` revision integrity trigger for contiguous predecessor ownership, activation evidence, half-open non-overlap, and deterministic eligible resolution.
 
-The future implementation issue must stop if executable design proves another function, trigger, relation, or extension is necessary.
+Issue #149 would stop if executable design proved another function, trigger, relation, or extension necessary; none was required.
 
 ### 5.4 Security and exposure
 
@@ -314,12 +316,20 @@ The product owner explicitly accepted on 2026-07-23:
 9. H1A-P09 lifecycle/mutability; and
 10. H1A-P10 fail-closed blocker behavior.
 
-This product-approval gate is satisfied. Before H1A SQL may start, the dedicated PLATFORM-PRE-H1A test-catalog consolidation must be separately authorized, implemented, validated, and merged. The future H1A issue must start from a baseline containing that merged maintenance task and must exclude all 18 historical suites.
+This product-approval gate is satisfied. The dedicated PLATFORM-PRE-H1A test-catalog consolidation was authorized, validated, and merged by PR #148. Issue #149 then authorized H1A from exact baseline `74855287e91cb07151e8d9b21ad0e6d31b57e9da` with all 18 historical suites excluded.
 
 H1A remains seedless and private. Product approval does not authorize a production writer, administration command, hosted execution, H1B1, H1B2, Retool, React, deployment, or production data.
 
 ## 9. Migration and rollback effect
 
-This decision changes documentation only. It creates no migration, PostgreSQL object, role, grant, RLS policy, function, API entry, test, generated type, application code, hosted action, or production data.
+The additive, seedless migration is `20260725204120_pa_06e_h1a_planning_quantity_policy_persistence.sql`. It adds exactly two private relations, three private trigger functions, and three triggers. It adds zero roles, capabilities, runtimes, RLS policies, positive runtime/API grants, `atlas_api` functions, PA-06A entries, views/read models, production writers, or production policy rows.
 
-The future H1A migration is additive and seedless. Before operational use, it may be reverted as an unshipped migration. After an activated policy revision or downstream decision binds a revision, destructive rollback is prohibited. A separately reviewed forward migration must preserve root/revision identities, effective history, and all downstream bindings.
+Before operational use, the migration may be reverted as an unshipped migration. After an activated policy revision or downstream decision binds a revision, destructive rollback is prohibited. A separately reviewed forward migration must preserve root/revision identities, effective history, and all downstream bindings.
+
+## 10. H1A persistence implementation record
+
+The implementation is bounded to the ten files authorized by Issue #149. The ordinary revision guard locks the exact `(planning_quantity_policy_id, unit_id)` parent row with `FOR UPDATE` on both `INSERT` and `UPDATE` before lifecycle validation. This serializes work for the exact Unit root before the deferred final-state integrity trigger evaluates lineage and effectivity.
+
+The three permanent H1A suites retain fixed plans of `56`, `50`, and `44`. The current-platform suite remains `plan(22)` and records the exact post-H1A catalog: 84 ordinary tables, 50 private functions, 59 non-internal Atlas triggers, and 604 unchanged positive target-grant rows. The workflow registers exactly 27 unique suites totaling 1,648 TAP assertions.
+
+H1A remains private and seedless: both relations are owned by `atlas_owner`, RLS-enabled and forced with zero policies, and inaccessible to API, service, and existing runtime roles. Synthetic actors, Units, roots, revisions, `0.01 kg`, and `1` count facts exist only inside rolled-back pgTAP transactions. No hosted Supabase, OPS v1/v2, Retool, React, production data, credential, package, generated-type, or deployment action is part of this implementation.

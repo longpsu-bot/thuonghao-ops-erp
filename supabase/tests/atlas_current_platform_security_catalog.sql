@@ -36,8 +36,8 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 82, 'views', 2),
-  'CAT-02 exact whole-platform table and view totals are 82 and 2'
+  jsonb_build_object('ordinary_tables', 84, 'views', 2),
+  'CAT-02 exact whole-platform table and view totals are 84 and 2'
 );
 
 select is(
@@ -61,9 +61,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 82,
-    'rls_enabled', 82,
-    'rls_forced', 82
+    'authoritative_tables', 84,
+    'rls_enabled', 84,
+    'rls_forced', 84
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -712,6 +712,131 @@ select is(
       join pg_class c on c.oid = p.polrelid
       join pg_namespace n on n.oid = c.relnamespace
       where n.nspname like 'atlas\_%' escape '\'
+    ),
+    private_function_catalog as (
+      select format(
+        '%s|%s(%s)|owner=%s|definer=%s|config=%s',
+        n.nspname,
+        p.proname,
+        pg_get_function_identity_arguments(p.oid),
+        pg_get_userbyid(p.proowner),
+        p.prosecdef,
+        coalesce(p.proconfig::text, '<null>')
+      ) as row_text
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in (
+        'atlas_core',
+        'atlas_admin',
+        'atlas_planning',
+        'atlas_procurement',
+        'atlas_evidence',
+        'atlas_dispatch',
+        'atlas_audit',
+        'atlas_reporting'
+      )
+    ),
+    trigger_catalog as (
+      select format(
+        '%s.%s|%s|enabled=%s|deferrable=%s|initially_deferred=%s|function=%s.%s',
+        n.nspname,
+        c.relname,
+        t.tgname,
+        t.tgenabled,
+        t.tgdeferrable,
+        t.tginitdeferred,
+        pn.nspname,
+        p.proname
+      ) as row_text
+      from pg_trigger t
+      join pg_class c on c.oid = t.tgrelid
+      join pg_namespace n on n.oid = c.relnamespace
+      join pg_proc p on p.oid = t.tgfoid
+      join pg_namespace pn on pn.oid = p.pronamespace
+      where n.nspname like 'atlas\_%' escape '\'
+        and not t.tgisinternal
+    ),
+    target_roles as (
+      select oid, rolname
+      from pg_roles
+      where rolname in (
+        'anon',
+        'authenticated',
+        'service_role',
+        'atlas_command_runtime',
+        'atlas_dispatch_command_runtime',
+        'atlas_evidence_command_runtime',
+        'atlas_planning_command_runtime',
+        'atlas_planning_materialization_runtime',
+        'atlas_procurement_command_runtime',
+        'atlas_read_runtime'
+      )
+    ),
+    positive_target_grant_catalog as (
+      select format(
+        'schema|%s|%s|%s|grantable=%s',
+        n.nspname,
+        r.rolname,
+        a.privilege_type,
+        a.is_grantable
+      ) as row_text
+      from pg_namespace n
+      cross join lateral aclexplode(n.nspacl) a
+      join target_roles r on r.oid = a.grantee
+      where n.nspname like 'atlas\_%' escape '\'
+
+      union all
+
+      select format(
+        'relation|%s.%s|%s|%s|grantable=%s',
+        n.nspname,
+        c.relname,
+        r.rolname,
+        a.privilege_type,
+        a.is_grantable
+      )
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      cross join lateral aclexplode(c.relacl) a
+      join target_roles r on r.oid = a.grantee
+      where n.nspname like 'atlas\_%' escape '\'
+
+      union all
+
+      select format(
+        'column|%s.%s.%s|%s|%s|grantable=%s',
+        n.nspname,
+        c.relname,
+        att.attname,
+        r.rolname,
+        a.privilege_type,
+        a.is_grantable
+      )
+      from pg_attribute att
+      join pg_class c on c.oid = att.attrelid
+      join pg_namespace n on n.oid = c.relnamespace
+      cross join lateral aclexplode(att.attacl) a
+      join target_roles r on r.oid = a.grantee
+      where n.nspname like 'atlas\_%' escape '\'
+        and att.attnum > 0
+        and not att.attisdropped
+
+      union all
+
+      select format(
+        'function|%s.%s(%s)|%s|%s|grantable=%s',
+        n.nspname,
+        p.proname,
+        pg_get_function_identity_arguments(p.oid),
+        r.rolname,
+        a.privilege_type,
+        a.is_grantable
+      )
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      cross join lateral aclexplode(p.proacl) a
+      join target_roles r on r.oid = a.grantee
+      where n.nspname like 'atlas\_%' escape '\'
     )
     select jsonb_build_object(
       'schema_count',
@@ -771,6 +896,22 @@ select is(
       'policy_count', (select count(*) from policy_catalog),
       'policy_catalog_md5',
       (select md5(string_agg(row_text, E'\n' order by row_text)) from policy_catalog),
+      'private_function_count', (select count(*) from private_function_catalog),
+      'private_function_catalog_md5',
+      (
+        select md5(string_agg(row_text, E'\n' order by row_text))
+        from private_function_catalog
+      ),
+      'trigger_count', (select count(*) from trigger_catalog),
+      'trigger_catalog_md5',
+      (select md5(string_agg(row_text, E'\n' order by row_text)) from trigger_catalog),
+      'positive_target_grant_count',
+      (select count(*) from positive_target_grant_catalog),
+      'positive_target_grant_md5',
+      (
+        select md5(string_agg(row_text, E'\n' order by row_text))
+        from positive_target_grant_catalog
+      ),
       'api_function_count',
       (
         select count(*)
@@ -808,17 +949,23 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 9,
-    'table_count', 82,
-    'table_catalog_md5', 'a0008453bf543b86eb2e347c04e5ee2a',
+    'table_count', 84,
+    'table_catalog_md5', '7e6f1843c959a2a4dde29002ae6112a8',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 82,
-    'rls_forced', 82,
+    'rls_enabled', 84,
+    'rls_forced', 84,
     'database_role_count', 8,
     'application_role_count', 0,
     'capability_count', 1,
     'policy_count', 305,
     'policy_catalog_md5', '5361b5d7d902fe4afbd99ac8268352b8',
+    'private_function_count', 50,
+    'private_function_catalog_md5', 'c1a3c5267a5a2ff34aab8e701414fa88',
+    'trigger_count', 59,
+    'trigger_catalog_md5', 'b029c42cfd89549c4ab57c662b851d80',
+    'positive_target_grant_count', 604,
+    'positive_target_grant_md5', 'ad5dd8c4bfa2f9475ff3727aa7e52ee1',
     'api_function_count', 19,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
