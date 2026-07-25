@@ -1,10 +1,16 @@
 # TASK-PA-06E-H1A - Planning Quantity Policy Persistence
 
-**Status:** Product contract approved; future SQL implementation remains unauthorized until the pre-H1A platform-maintenance dependency is merged
+**Status:** Implemented and locally validated under Issue #149; pending draft-PR review and exact-head GitHub Actions
 
 **Preparation issue:** [#145](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/145)
 
-**Preparation baseline:** `5987f1fc9711b7bde094a610e598ff92d71e850d`
+**Implementation issue:** [#149](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/149)
+
+**Authorization:** [Phase 0 inventory](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/149#issuecomment-5079125342) and [architect approval/correction](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/149#issuecomment-5079461520)
+
+**Exact implementation baseline:** `74855287e91cb07151e8d9b21ad0e6d31b57e9da`
+
+**Generated migration:** `supabase/migrations/20260725204120_pa_06e_h1a_planning_quantity_policy_persistence.sql`
 
 **Canonical decision:** [Decision PA-06E-H1A - Planning Quantity Policy](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md)
 
@@ -14,7 +20,7 @@
 
 ## 1. Objective and authorization boundary
 
-Implement one seedless private persistence slice for the approved Planning quantity-policy contract after the dedicated pre-H1A platform-maintenance task is separately authorized, completed, validated, and merged.
+Implement one seedless private persistence slice for the approved Planning quantity-policy contract after the dedicated pre-H1A platform-maintenance task was authorized, completed, validated, and merged by PR #148.
 
 The later implementation may add only:
 
@@ -26,9 +32,9 @@ The later implementation may add only:
 
 It must not modify any of the 18 historical suites owned by the platform-maintenance dependency. It also must not implement policy administration commands, runtime authorization, H1B1 decision rows, H1B2 reads/previews/confirmation, validation, approval, release, CMD-03, Procurement, React, Retool, hosted Supabase, production policy rows, credentials, or deployment.
 
-## 2. Future baseline rule
+## 2. Applied baseline rule
 
-The future implementation issue must name one exact `origin/main` commit before a branch is created. That commit must:
+Issue #149 named exact `origin/main` commit `74855287e91cb07151e8d9b21ad0e6d31b57e9da` before the branch was created. Verification proved that the commit:
 
 1. include `5987f1fc9711b7bde094a610e598ff92d71e850d` as an ancestor;
 2. include the merged product-owner-approved H1A decision record;
@@ -36,9 +42,9 @@ The future implementation issue must name one exact `origin/main` commit before 
 4. include merged H0C/CMD-15 with the exact 19-function application API surface unless a separately approved intervening change updates the current-state catalog;
 5. contain no merged H1B1 or H1B2 implementation;
 6. pass `pnpm ops:workspace`; and
-7. be clean and equal to the freshly fetched `origin/main` head used by the future issue.
+7. was clean and equal to the freshly fetched `origin/main` head used by Issue #149.
 
-The future issue must record that exact SHA. It must not reuse this documentation branch, the platform-maintenance branch, or the merged H0Cb branch. If current `origin/main` contains a policy, Unit, authorization, test-catalog, or API change that conflicts with this blueprint, stop and amend the decision/task documentation before SQL work.
+The implementation branch `backend/pa-06e-h1a-planning-quantity-policy-persistence` starts from that exact SHA. It does not reuse the preparation, platform-maintenance, or merged H0Cb branches.
 
 ## 3. Product approval and platform prerequisite
 
@@ -56,11 +62,11 @@ The product owner approved on 2026-07-23:
 - H1A-P10 fail-closed behavior; and
 - separation of whole-platform test-catalog consolidation into a dedicated pre-H1A maintenance task.
 
-The product-approval gate is satisfied. The future implementation issue must quote the accepted decisions and link this merged decision record.
+The product-approval gate is satisfied. Issue #149 quotes the accepted decisions and links this merged decision record.
 
-The SQL gate is not satisfied until the dedicated platform-maintenance task is separately authorized, merged, and green. The H1A issue must link that merged PR and prove that its branch does not modify any of the 18 historical suites.
+The SQL gate was satisfied when the dedicated platform-maintenance task merged in PR #148. The H1A implementation preserves all 18 historical suites unchanged.
 
-## 4. Exact future business and physical scope
+## 4. Exact business and physical scope
 
 ### 4.1 Business objects
 
@@ -107,7 +113,7 @@ The exact column direction is controlled by the canonical decision:
 - `retired_by_actor_id`
 - `retired_at`
 
-The future issue may refine constraint/index names, but it may not add, remove, or reinterpret a column without an explicit decision amendment.
+Issue #149 fixes the exact constraint and index catalog recorded by its Phase 0 inventory; the implementation adds, removes, or reinterprets no approved column.
 
 ### 4.3 Exact key, constraint, and index direction
 
@@ -132,9 +138,9 @@ The migration must use:
 - one resolution index ordered by exact Unit/equality fields before effective-date range fields; and
 - leading indexes for every operational FK not already covered by a primary/unique key.
 
-Do not add `btree_gist` or another extension merely to implement non-overlap. Use the accepted bounded deferred integrity function unless the future issue separately approves an extension after an impact review.
+The implementation adds no extension. It uses the accepted bounded deferred integrity function for non-overlap.
 
-### 4.4 Exact future function and trigger catalog
+### 4.4 Exact function and trigger catalog
 
 The migration creates exactly three private functions:
 
@@ -155,6 +161,10 @@ The migration creates exactly three triggers:
 1. one ordinary root immutability/delete guard;
 2. one ordinary revision lifecycle/immutability/delete guard; and
 3. one `DEFERRABLE INITIALLY DEFERRED` revision effectivity/integrity trigger.
+
+The ordinary revision guard must first derive the exact parent identity from `NEW` on `INSERT` or `OLD` on `UPDATE`, then lock that exact `(planning_quantity_policy_id, unit_id)` parent row with `FOR UPDATE` before any lifecycle or payload validation. The same serialization invariant applies to both paths.
+
+Lifecycle authorization uses explicit approval/activation/retirement evidence and half-open service-date intervals only. Transaction-clock "today" is not business authority: the guard must not use `current_date`, `now()`, `transaction_timestamp()`, `statement_timestamp()`, `clock_timestamp()`, or Asia/Bangkok current-date derivation to accept or reject activation or retirement. Immutable `created_at` acceptance-time defaults remain allowed.
 
 The deferred trigger owns:
 
@@ -191,15 +201,15 @@ Both relations are private, `atlas_owner` owned, RLS-enabled, and forced-RLS wit
 
 Synthetic Units, actors, policy roots, and revisions may exist only inside independently runnable pgTAP transactions that end in `ROLLBACK`. The migration must contain no `INSERT` into policy relations and must not modify hosted or production data.
 
-## 6. Exact future allowed-file boundary
+## 6. Exact allowed-file boundary
 
-Before implementation, use the Supabase CLI's `migration new` command to create the one generated migration filename. Replace `<generated-timestamp>` below with that exact CLI-created timestamp in the future issue.
+The Supabase CLI generated the one migration filename `20260725204120_pa_06e_h1a_planning_quantity_policy_persistence.sql`.
 
 ### 6.1 H1A implementation and direct verification
 
 Only these new/changed files are allowed for H1A behavior:
 
-1. `supabase/migrations/<generated-timestamp>_pa_06e_h1a_planning_quantity_policy_persistence.sql`
+1. `supabase/migrations/20260725204120_pa_06e_h1a_planning_quantity_policy_persistence.sql`
 2. `supabase/tests/pa_06e_h1a_planning_quantity_policy_structure_security.sql`
 3. `supabase/tests/pa_06e_h1a_planning_quantity_policy_revision_lifecycle.sql`
 4. `supabase/tests/pa_06e_h1a_planning_quantity_policy_effectivity_resolution.sql`
@@ -226,9 +236,9 @@ If any historical suite still requires amendment for H1A, stop. The platform-mai
 
 No other file is allowed without an explicit issue amendment. In particular, do not modify PA-06A, package files, generated types, React/TypeScript, Retool, local project credentials, deployment files, or any earlier migration.
 
-## 7. Mandatory pre-publication repository-wide impact scan
+## 7. Completed pre-publication repository-wide impact scan
 
-Immediately before the future implementation issue is published, scan the then-current repository for every planned catalog delta:
+The Phase 0 inventory scanned the exact baseline repository for every planned catalog delta:
 
 ```text
 relation
@@ -249,11 +259,11 @@ The scan must record:
 - every documentation registry that states an exact catalog count; and
 - whether the planned H1A delta is fully expressible in the already-consolidated current-state suite.
 
-The future issue must authorize every affected file and exact expected current-state delta before coding. Discovery of a historical assertion that still needs amendment is a stop condition, not permission to patch that suite in H1A.
+Issue #149 authorized every affected file and exact expected current-state delta before coding. No historical assertion required amendment.
 
 ## 8. pgTAP decomposition and ownership
 
-Exact `plan(N)` values must be fixed in the future implementation issue after the publication-time impact scan and before code begins.
+The implementation issue fixes `plan(56)`, `plan(50)`, `plan(44)`, and the unchanged canonical `plan(22)`.
 
 ### 8.1 `pa_06e_h1a_planning_quantity_policy_structure_security.sql`
 
@@ -316,7 +326,7 @@ Current platform assertions only:
 
 - exact Atlas runtime-role catalog;
 - exact capability catalog;
-- exact RLS-policy catalog by role/verb/schema as approved at the future head;
+- exact RLS-policy catalog by role/verb/schema at the implementation head;
 - exact `atlas_api` function signatures/count and execute allowlist;
 - exact whole-platform grants and forbidden grants;
 - current private-schema ownership/RLS posture; and
@@ -357,23 +367,23 @@ Do not copy current-state totals into H0A, H0B1, H0C, PA-04, or PA-05 suites. H1
 
 ## 10. Migration ordering and execution boundary
 
-The future migration must:
+The migration:
 
-1. follow every merged migration through H0Cb;
-2. precede H1B1;
-3. be additive and modify no earlier migration;
-4. create the two relations, keys, constraints, indexes, three functions, and three triggers in one transaction;
-5. apply revoke-first privileges and forced RLS in the same migration;
-6. seed no policy, Unit, actor, role, capability, or membership;
-7. leave the physical and documented `atlas_api` count unchanged;
-8. leave CMD-15 behavior, ownership, grants, policies, request/response, tests, and 19-function registry unchanged; and
-9. leave all H0 materialized proposals non-authoritative.
+1. follows every merged migration through H0Cb;
+2. precedes H1B1;
+3. is additive and modifies no earlier migration;
+4. creates the two relations, keys, constraints, indexes, three functions, and three triggers in one transaction;
+5. applies revoke-first privileges and forced RLS in the same migration;
+6. seeds no policy, Unit, actor, role, capability, or membership;
+7. leaves the physical and documented `atlas_api` count unchanged;
+8. leaves CMD-15 behavior, ownership, grants, policies, request/response, tests, and 19-function registry unchanged; and
+9. leaves all H0 materialized proposals non-authoritative.
 
 H1A provides persistence only. It has no production writer. Test fixtures use owner-level test setup inside rolled-back transactions.
 
 ## 11. Validation workflow
 
-The future implementation should run:
+The implementation validation runs:
 
 - `git status --short`;
 - `pnpm ops:workspace`;
@@ -393,6 +403,19 @@ The dedicated current-state suite must already be registered by the merged platf
 
 Do not rerun or weaken unrelated full suites merely to manufacture a local all-green claim. Investigate any focused or CI failure that the bounded change causes.
 
+Local implementation evidence:
+
+- one clean `supabase db reset --local --no-seed` applies all migrations through the generated H1A migration;
+- all 27 workflow-registered suites pass sequentially after that reset, totaling exactly 1,648 assertions;
+- the three H1A suites pass independently at `56/56`, `50/50`, and `44/44`, and the canonical suite passes `22/22`;
+- the separate PA-05D Planning command-family compatibility suite passes `69/69`;
+- `supabase db lint` reports no `atlas_planning` schema error;
+- the local Advisor reports zero H1A error or warning. Its H1A informational results are the two intentional private forced-RLS/no-policy relations, reset-empty unused indexes, and the approved predecessor equality index whose column order prioritizes predecessor traversal while containing all three same-root FK columns;
+- the canonical suite proves the exact `+2` relation, `+3` private-function, `+3` trigger catalog and unchanged role, capability, runtime, policy, API, registry, and 604-row positive-grant posture; and
+- formatting, relative-link, whitespace, exact ten-file, one-new-migration, and 18-prohibited-suite audits pass.
+
+The 19 existing authenticated `SECURITY DEFINER` API-function Advisor warnings are unchanged and outside H1A. H1A adds no API function, executable grant, or Advisor warning.
+
 ## 12. Rollback boundary
 
 Before operational policy data or downstream revision bindings exist, the one unshipped additive migration may be reverted normally.
@@ -405,11 +428,11 @@ After any activated policy revision or H1B1/H1B2 reference exists:
 - revoke unsafe access if necessary; and
 - correct the model through a separately approved forward migration that preserves typed identities and downstream bindings.
 
-No hosted or production rollback is part of H1A. The future PR must state explicitly that it performed no hosted execution and seeded no production policy.
+No hosted or production rollback is part of H1A. The PR states explicitly that it performed no hosted execution and seeded no production policy.
 
 ## 13. Stop conditions
 
-Stop the future implementation and apply the repository's blocked workflow if:
+Stop implementation and apply the repository's blocked workflow if:
 
 1. the implementation conflicts with any approved H1A-P01 through H1A-P10 decision;
 2. the exact `0.01 kg` or `1` step is inferred for a Unit outside its approved exact scope;
@@ -427,11 +450,11 @@ Stop the future implementation and apply the repository's blocked workflow if:
 
 Document the exact contradiction and make no further repository change.
 
-## 14. Definition of done for the future task
+## 14. Definition of done
 
 - Product approval is linked and exact.
 - The PLATFORM-PRE-H1A current test-catalog consolidation is merged and linked.
-- The branch starts from the recorded future baseline.
+- The branch starts from the recorded exact baseline.
 - Exactly two private relations, three private functions, and three triggers are implemented.
 - Exact-Unit scope, positive step, lifecycle, half-open intervals, non-overlap, immutability, and history pass.
 - No role, capability, runtime, policy, API function, registry entry, or production seed is added.
@@ -443,6 +466,10 @@ Document the exact contradiction and make no further repository change.
 - Focused local validation passes and GitHub Actions owns full validation.
 - The PR remains unmerged until independent product, architecture, security, and migration review completes.
 
-## 15. Current documentation effect
+## 15. Implementation effect
 
-This file is a blueprint only. It adds no SQL, migration, PostgreSQL object, test, workflow registration, role, grant, policy, generated type, application code, hosted change, seed, credential, or deployment. Documentation rollback is a normal Git revert.
+The generated additive migration implements exactly two private relations, three private functions, and three triggers. The three new independently runnable suites contribute `56 + 50 + 44 = 150` assertions; the amended canonical suite remains `plan(22)`. The workflow therefore contains 27 unique registered suites and 1,648 TAP assertions.
+
+The revision guard locks the exact parent root on both `INSERT` and `UPDATE` before validation, and lifecycle decisions do not derive authority from the transaction date. H1A adds no role, capability, runtime, RLS policy, positive API/runtime grant, `atlas_api` function, PA-06A entry, view/read model, writer, production policy row, package, generated type, application code, hosted change, credential, or deployment.
+
+Rollback remains additive before operational use. Once an activated revision or downstream binding exists, correction requires a separately reviewed forward migration that preserves stable identity, lineage, interval history, and downstream references.
