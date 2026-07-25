@@ -1,6 +1,6 @@
 # TASK-PLATFORM-PRE-H1A - Current Test-Catalog Consolidation
 
-**Status:** Future separately authorized platform-maintenance task; required dependency before PA-06E-H1A persistence
+**Status:** Implemented and locally validated on Issue #147; pending draft-PR review, exact-head GitHub Actions, and merge before PA-06E-H1A persistence
 
 **Separation decision:** Approved by the product owner on 2026-07-23 in the Issue #145 task direction
 
@@ -196,3 +196,159 @@ The task is done only when:
 - no schema, API, security, production, or hosted state changed;
 - GitHub Actions passes; and
 - the PR is merged before H1A persistence is published.
+
+## 10. Issue #147 implementation record
+
+Issue #147 authorized implementation from exact baseline
+`35c626adc49d5c09102d8591f42100c0ded8b6c1` on branch
+`test/platform-pre-h1a-current-catalog-consolidation`.
+
+The controlling architect amendments are:
+
+1. [Architect amendment and Phase 1 approval](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/147#issuecomment-5056541615) accepted the 60-source-assertion inventory, established the controlling `22 removed = plan(22)` registered relocation rule, approved semantic deduplication of the other 38 unregistered copies, and retained the exact `24 files / 1498 assertions` workflow target.
+2. [Architect amendment 2](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/147#issuecomment-5057050349) corrected PA-05C-H2 from SQL-call counting to 42 emitted TAP results and retained the all-candidate arithmetic of 1,042 before, 60 moved, and 982 remaining.
+3. [Architect amendment 3](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/147#issuecomment-5077705585) superseded the invalid PA-05D immediate re-enable requirement and approved the rollback-scoped invalid-lineage fixture described below.
+
+The implementation creates one transactional current-state suite at fixed
+`plan(22)`, registers it once in the Supabase integration workflow, and removes
+only the 60 approved mutable whole-platform copies from the 18 historical
+suites. No migration or executable database object changes.
+
+### 10.1 Approved historical plans and validation
+
+| Historical suite                                               |        Registered | Post-move plan |     Local result |
+| -------------------------------------------------------------- | ----------------: | -------------: | ---------------: |
+| `pa_04_supplier_direct_slice_1_foundation.sql`                 |                No |             16 |       16/16 PASS |
+| `pa_05b_h1_runtime_role_hardening_test.sql`                    |                No |              1 |         1/1 PASS |
+| `pa_05b_h2_multiline_dispatch_execution.sql`                   |                No |            124 |     124/124 PASS |
+| `pa_05b_h3_successful_trip_closure.sql`                        |                No |             44 |       44/44 PASS |
+| `pa_05c_h2_current_command_timeline_scope.sql`                 |                No |             42 |       42/42 PASS |
+| `pa_05c_h3_evidence_readiness_current_command_context.sql`     |               Yes |             35 |       35/35 PASS |
+| `pa_05d_planning_command_family.sql`                           |                No |             69 |       69/69 PASS |
+| `pa_05e_procurement_command_family.sql`                        |                No |             74 |       74/74 PASS |
+| `pa_05f_dispatch_setup_command_family.sql`                     |                No |             47 |       47/47 PASS |
+| `pa_05g_backend_end_to_end_acceptance.sql`                     |               Yes |             78 |       78/78 PASS |
+| `pa_06e_h0a1_school_customer_location_foundation.sql`          |               Yes |             56 |       56/56 PASS |
+| `pa_06e_h0a2_recipe_bom_immutable_reference_foundation.sql`    |               Yes |             85 |       85/85 PASS |
+| `pa_06e_h0a3a_weekly_menu_persistence_foundation.sql`          |               Yes |            100 |     100/100 PASS |
+| `pa_06e_h0a3b_attendance_structure_security.sql`               |               Yes |             25 |       25/25 PASS |
+| `pa_06e_h0a4b_planning_input_readiness_structure_security.sql` |               Yes |             29 |       29/29 PASS |
+| `pa_06e_h0a5b_need_generation_structure_security.sql`          |               Yes |             43 |       43/43 PASS |
+| `pa_06e_h0b1b_confirmed_need_structure_security_catalog.sql`   |               Yes |             51 |       51/51 PASS |
+| `pa_06e_h0cb_materialization_registry_security_catalog.sql`    |               Yes |             63 |       63/63 PASS |
+| **Total**                                                      | **10 registered** |        **982** | **982/982 PASS** |
+
+The dedicated current-platform suite passes 22/22. All 24 workflow-registered
+suites pass after one clean database reset. Workflow extraction proves 24 unique
+paths, fixed plans in every registered suite, and exactly 1,498 TAP results.
+
+```text
+registered total before relocation                 1498
+- registered historical results moved                22
++ dedicated current-platform results                  22
+                                                    ----
+registered total after relocation                  1498
+
+all 18 historical candidates before relocation     1042
+- mutable whole-platform results moved                60
+                                                    ----
+remaining permanent historical results              982
+```
+
+### 10.2 PA-05D rollback-scoped invalid fixture
+
+Both valid cross-wire roots are built while normal trigger enforcement is
+active. `SET CONSTRAINTS ALL IMMEDIATE` successfully flushes all earlier valid
+deferred events, then normal deferred timing is restored. Non-TAP catalog guards
+prove both exact triggers start enabled; only
+`confirmed_need_lines_h0b1b_guard` is transactionally disabled; and
+`confirmed_need_lines_current_source_consistency` remains enabled, a constraint
+trigger, deferrable, and initially deferred.
+
+The existing two synthetic lineage updates, command requests, error codes,
+assertion labels, and eight zero-write/event/audit assertions are unchanged. A
+non-TAP before/after fingerprint proves the rejected Purchase Handoff command
+does not further mutate `confirmed_need_lines`. No business command runs after
+the final rejection. The existing `finish()` and rollback discard both invalid
+states, all pending deferred events, all fixtures, and the temporary trigger
+state. A post-rollback non-TAP guard and an independent catalog query prove both
+triggers returned to `tgenabled = 'O'`.
+
+The test never alters the deferred consistency trigger, any FK or internal
+constraint trigger, any other H0B1 guard, all triggers, or
+`session_replication_role`. The 69/69 pass therefore preserves the original
+defense-in-depth meaning without a persistent catalog delta.
+
+## 11. Sixty-row semantic coverage matrix
+
+Each source assertion below maps explicitly to equal-or-stronger coverage in
+`atlas_current_platform_security_catalog.sql`. `CAT-*` is the stable assertion
+label in that suite.
+
+|   ID | Source assertion                                                          | Registered | Canonical destination | Equal-or-stronger proof                                                                 |
+| ---: | ------------------------------------------------------------------------- | :--------: | --------------------- | --------------------------------------------------------------------------------------- |
+| M-01 | PA-04 #2 — deferred Warehouse schema is absent                            |     No     | CAT-01                | Exact ordered nine-schema allowlist excludes every deferred schema.                     |
+| M-02 | PA-04 #3 — complete Atlas table total                                     |     No     | CAT-02                | Replaces stale 52 with the exact selected-baseline total of 82 ordinary tables.         |
+| M-03 | PA-04 #4 — complete reporting-view total                                  |     No     | CAT-02                | Exact whole-platform digest retains two views and their catalog fingerprint.            |
+| M-04 | PA-04 #5 — all authoritative tables have enabled and forced RLS           |     No     | CAT-03                | Counts all 82 authoritative tables and separately proves 82 enabled and 82 forced.      |
+| M-05 | PA-04 #6 — API roles have no private-schema usage                         |     No     | CAT-09                | Scans all three API roles across the exact private-schema allowlist.                    |
+| M-06 | PA-04 #7 — API roles have no direct table/view privileges                 |     No     | CAT-10                | Covers every private relation privilege plus sequence privileges.                       |
+| M-07 | PA-04 #8 — complete physical Atlas API count                              |     No     | CAT-14                | Replaces stale 15 with the exact selected-baseline count of 19.                         |
+| M-08 | PA-05B-H1 #1 — runtime roles have no Atlas schema CREATE                  |     No     | CAT-04                | Exact role catalog includes a zero cross-schema runtime CREATE count.                   |
+| M-09 | PA-05B-H1 #2 — retired shared runtime has no relation/sequence privileges |     No     | CAT-11                | Denies schema, relation, sequence, and function privileges across all Atlas schemas.    |
+| M-10 | PA-05B-H1 #3 — read runtime is select-only without sequence mutation      |     No     | CAT-12                | Adds zero schema-CREATE and every sequence privilege to the original non-SELECT denial. |
+| M-11 | PA-05B-H1 #4 — anon and service role execute no Atlas API                 |     No     | CAT-19/CAT-20         | Separate complete-catalog denials prove zero execution for each forbidden role.         |
+| M-12 | PA-05B-H1 #5 — authenticated executes exactly the reviewed API            |     No     | CAT-18                | Exact ordered 19-signature execute allowlist is stronger than a count alone.            |
+| M-13 | PA-05B-H1 #6 — API roles have no private relation/sequence privileges     |     No     | CAT-10                | Scans all private relation verbs and all sequence privileges for all API roles.         |
+| M-14 | PA-05B-H1 #7 — complete least-privilege function-owner mapping            |     No     | CAT-17                | Exact ordered signature-to-owner mapping covers all 19 functions.                       |
+| M-15 | PA-05B-H1 #8 — no API function beyond reviewed surface                    |     No     | CAT-15/CAT-21         | Exact ordered signatures plus an explicit unreviewed-function/overload denial.          |
+| M-16 | PA-05B-H1 #10 — no RLS policy exposes API or retired runtime roles        |     No     | CAT-08                | Scans the exact complete current policy catalog for all four forbidden roles.           |
+| M-17 | PA-05B-H2 #1 — API roles retain no private-schema usage                   |     No     | CAT-09                | Complete three-role by private-schema denial.                                           |
+| M-18 | PA-05B-H2 #2 — only authenticated receives API-schema usage               |     No     | CAT-13                | Exact positive/negative API-schema role allowlist.                                      |
+| M-19 | PA-05B-H2 #3 — API roles have no direct table/view access                 |     No     | CAT-10                | Adds every private relation verb and sequence privilege to the original denial.         |
+| M-20 | PA-05B-H2 #7 — reviewed API surface has 19 functions                      |     No     | CAT-14/CAT-21         | Exact count plus explicit denial of unreviewed functions and overloads.                 |
+| M-21 | PA-05B-H3 #1 — Atlas API contains 19 reviewed functions                   |     No     | CAT-14                | Exact physical function count at the selected baseline.                                 |
+| M-22 | PA-05B-H3 #2 — authenticated executes 19 reviewed functions               |     No     | CAT-18                | Exact ordered signature allowlist is stronger than a count.                             |
+| M-23 | PA-05C-H2 #1 — complete physical API count                                |     No     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+| M-24 | PA-05C-H2 #2 — authenticated executable API count                         |     No     | CAT-18                | Exact ordered 19-signature allowlist.                                                   |
+| M-25 | PA-05C-H2 #3 — anon and service role execute no API                       |     No     | CAT-19/CAT-20         | Independent complete-catalog zero-execute denials.                                      |
+| M-26 | PA-05C-H2 #4 — API roles have no private relation/sequence access         |     No     | CAT-10                | Complete role/relation/verb and role/sequence/privilege scan.                           |
+| M-27 | PA-05C-H3 #1 — reviewed API surface has 19 functions                      |    Yes     | CAT-14                | Exact selected-baseline physical count.                                                 |
+| M-28 | PA-05C-H3 #7 — API roles have no private relation access                  |    Yes     | CAT-10                | Adds sequence posture and every private relation privilege.                             |
+| M-29 | PA-05D #1 — complete physical API count                                   |     No     | CAT-14/CAT-15         | Replaces stale 17 with exact count 19 and ordered signatures.                           |
+| M-30 | PA-05D #10 — authenticated executable API catalog                         |     No     | CAT-18                | Replaces stale 17 with the exact 19-signature allowlist.                                |
+| M-31 | PA-05D #11 — anon and service role execute no API                         |     No     | CAT-19/CAT-20         | Separate complete-catalog zero-execute denials.                                         |
+| M-32 | PA-05D #12 — API roles have no private relation/sequence access           |     No     | CAT-10                | Complete private relation and sequence privilege denial.                                |
+| M-33 | PA-05E #1 — complete physical API count                                   |     No     | CAT-14/CAT-15         | Replaces stale 17 with exact count 19 and ordered signatures.                           |
+| M-34 | PA-05E #8 — API roles have no private relation/sequence access            |     No     | CAT-10                | Complete private relation and sequence privilege denial.                                |
+| M-35 | PA-05E #9 — authenticated executable API catalog                          |     No     | CAT-18                | Replaces stale 17 with the exact 19-signature allowlist.                                |
+| M-36 | PA-05E #10 — anon and service role execute no API                         |     No     | CAT-19/CAT-20         | Separate complete-catalog zero-execute denials.                                         |
+| M-37 | PA-05F #1 — complete physical API count                                   |     No     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+| M-38 | PA-05F #2 — authenticated executes the reviewed API                       |     No     | CAT-18                | Exact ordered signature allowlist.                                                      |
+| M-39 | PA-05F #3 — anon and service role execute no API                          |     No     | CAT-19/CAT-20         | Separate complete-catalog zero-execute denials.                                         |
+| M-40 | PA-05F #9 — API roles have no private relation/sequence access            |     No     | CAT-10                | Complete private relation and sequence privilege denial.                                |
+| M-41 | PA-05G #79 — complete physical API count                                  |    Yes     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+| M-42 | PA-05G #80 — authenticated executes the reviewed API                      |    Yes     | CAT-18                | Exact ordered 19-signature allowlist.                                                   |
+| M-43 | PA-05G #81 — anon and service role execute no API                         |    Yes     | CAT-19/CAT-20         | Separate complete-catalog zero-execute denials.                                         |
+| M-44 | PA-05G #82 — API roles have no private relation/sequence access           |    Yes     | CAT-10                | Complete private relation and sequence privilege denial.                                |
+| M-45 | H0A1 #57 — exact 19-function signature registry                           |    Yes     | CAT-15                | Exact ordered signature catalog retained once.                                          |
+| M-46 | H0A1 #58 — application role catalog is empty                              |    Yes     | CAT-04                | Exact database-role posture plus application-role count zero.                           |
+| M-47 | H0A1 #59 — exact active Planning capability catalog                       |    Yes     | CAT-05                | Exact code, name, domain, and status retained.                                          |
+| M-48 | H0A2 #86 — exact 19-function signature registry                           |    Yes     | CAT-15                | Exact ordered signature catalog retained once.                                          |
+| M-49 | H0A2 #87 — application role catalog is empty                              |    Yes     | CAT-04                | Exact database-role posture plus application-role count zero.                           |
+| M-50 | H0A2 #88 — exact active Planning capability catalog                       |    Yes     | CAT-05                | Exact code, name, domain, and status retained.                                          |
+| M-51 | H0A3a #101 — exact 19-function signature registry                         |    Yes     | CAT-15                | Exact ordered signature catalog retained once.                                          |
+| M-52 | H0A3a #102 — application role catalog is empty                            |    Yes     | CAT-04                | Exact database-role posture plus application-role count zero.                           |
+| M-53 | H0A3a #103 — exact active Planning capability catalog                     |    Yes     | CAT-05                | Exact code, name, domain, and status retained.                                          |
+| M-54 | H0A3b #26 — exact 19-function signature registry                          |    Yes     | CAT-15                | Exact ordered signature catalog retained once.                                          |
+| M-55 | H0A3b #27 — application role catalog is empty                             |    Yes     | CAT-04                | Exact database-role posture plus application-role count zero.                           |
+| M-56 | H0A3b #28 — exact active Planning capability catalog                      |    Yes     | CAT-05                | Exact code, name, domain, and status retained.                                          |
+| M-57 | H0A4b #27 — complete physical API count                                   |    Yes     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+| M-58 | H0A5b #37 — complete physical API count                                   |    Yes     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+| M-59 | H0B1b #49 — complete physical API count                                   |    Yes     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+| M-60 | H0Cb #14 — complete physical API count                                    |    Yes     | CAT-14                | Exact selected-baseline count of 19.                                                    |
+
+The matrix has exactly 60 rows: 22 registered source results and 38
+unregistered historical copies. All unique obligations are covered by the 22
+canonical assertions without filler, weaker checks, business-fixture
+duplication, or executable-platform change.

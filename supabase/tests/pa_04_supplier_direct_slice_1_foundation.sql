@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(23);
+select plan(16);
 
 select is(
   (
@@ -23,105 +23,6 @@ select is(
   ),
   9,
   'PA-04 creates the nine authorized Atlas schemas'
-);
-
-select ok(
-  not exists (select 1 from pg_namespace where nspname = 'atlas_warehouse'),
-  'PA-04 does not create the deferred Warehouse schema'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\'
-      and c.relkind = 'r'
-  ),
-  52,
-  'PA-04 creates only the bounded Slice 1 table set'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname = 'atlas_reporting'
-      and c.relkind = 'v'
-  ),
-  2,
-  'PA-04 creates two private derived verification views'
-);
-
-select ok(
-  not exists (
-    select 1
-    from pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname in (
-      'atlas_core',
-      'atlas_admin',
-      'atlas_planning',
-      'atlas_procurement',
-      'atlas_evidence',
-      'atlas_dispatch',
-      'atlas_audit'
-    )
-      and c.relkind = 'r'
-      and (not c.relrowsecurity or not c.relforcerowsecurity)
-  ),
-  'every authoritative Atlas table has RLS enabled and forced'
-);
-
-select ok(
-  not exists (
-    select 1
-    from unnest(array['anon', 'authenticated', 'service_role']) as api_role(role_name)
-    cross join unnest(
-      array[
-        'atlas_core',
-        'atlas_admin',
-        'atlas_planning',
-        'atlas_procurement',
-        'atlas_evidence',
-        'atlas_dispatch',
-        'atlas_audit',
-        'atlas_reporting'
-      ]
-    ) as atlas_schema(schema_name)
-    where has_schema_privilege(api_role.role_name, atlas_schema.schema_name, 'USAGE')
-  ),
-  'API roles have no usage on private Atlas schemas'
-);
-
-select ok(
-  not exists (
-    select 1
-    from unnest(array['anon', 'authenticated', 'service_role']) as api_role(role_name)
-    cross join pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\'
-      and c.relkind in ('r', 'v', 'm')
-      and (
-        has_table_privilege(api_role.role_name, c.oid, 'SELECT')
-        or has_table_privilege(api_role.role_name, c.oid, 'INSERT')
-        or has_table_privilege(api_role.role_name, c.oid, 'UPDATE')
-        or has_table_privilege(api_role.role_name, c.oid, 'DELETE')
-      )
-  ),
-  'API roles have no direct Atlas table or view privileges'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'atlas_api'
-  ),
-  15,
-  'atlas_api contains only the reviewed PA-05B, PA-05C, PA-05D, and PA-05E entry functions'
 );
 
 select ok(

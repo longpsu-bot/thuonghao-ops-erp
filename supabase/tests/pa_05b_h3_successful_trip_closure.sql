@@ -2,24 +2,12 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select no_plan();
+select plan(44);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
 
--- Public surface and least-privilege ownership.
-select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='atlas_api'),
-  19,
-  'Atlas API contains exactly 19 reviewed functions'
-);
-select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='atlas_api' and has_function_privilege('authenticated',p.oid,'EXECUTE')),
-  19,
-  'authenticated can execute exactly the 19 reviewed Atlas API functions'
-);
+-- Command-family public surface and least-privilege ownership.
 select ok(
   not has_function_privilege('anon','atlas_api.close_successful_trip(jsonb)'::regprocedure,'EXECUTE')
   and not has_function_privilege('service_role','atlas_api.close_successful_trip(jsonb)'::regprocedure,'EXECUTE'),

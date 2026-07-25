@@ -2,68 +2,12 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select no_plan();
+select plan(42);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
 
--- Reviewed function-only surface and private-helper hardening.
-select is(
-  (select count(*)::integer
-   from pg_proc p
-   join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname = 'atlas_api'),
-  19,
-  'atlas_api contains exactly the 19 reviewed functions'
-);
-
-select is(
-  (select count(*)::integer
-   from pg_proc p
-   join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname = 'atlas_api'
-     and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  19,
-  'authenticated executes exactly the 19 reviewed functions'
-);
-
-select ok(
-  not exists (
-    select 1
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    cross join unnest(array['anon', 'service_role']) api_role(role_name)
-    where n.nspname = 'atlas_api'
-      and has_function_privilege(api_role.role_name, p.oid, 'EXECUTE')
-  ),
-  'anon and service_role execute no Atlas API function'
-);
-
-select ok(
-  not exists (
-    select 1
-    from unnest(array['anon', 'authenticated', 'service_role']) api_role(role_name)
-    cross join pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\'
-      and c.relkind in ('r', 'v', 'm', 'S')
-      and (
-        has_table_privilege(api_role.role_name, c.oid, 'SELECT')
-        or has_table_privilege(api_role.role_name, c.oid, 'INSERT')
-        or has_table_privilege(api_role.role_name, c.oid, 'UPDATE')
-        or has_table_privilege(api_role.role_name, c.oid, 'DELETE')
-        or has_table_privilege(api_role.role_name, c.oid, 'TRUNCATE')
-        or has_table_privilege(api_role.role_name, c.oid, 'REFERENCES')
-        or has_table_privilege(api_role.role_name, c.oid, 'TRIGGER')
-        or (c.relkind = 'S' and (
-          has_sequence_privilege(api_role.role_name, c.oid, 'USAGE')
-          or has_sequence_privilege(api_role.role_name, c.oid, 'UPDATE')
-        ))
-      )
-  ),
-  'API roles retain no direct private relation or sequence access'
-);
-
+-- Private-helper hardening and permanent READ-04 behavior.
 select ok(
   exists (
     select 1

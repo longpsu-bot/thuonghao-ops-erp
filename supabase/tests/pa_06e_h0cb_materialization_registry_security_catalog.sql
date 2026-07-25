@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(64);
+select plan(63);
 
 -- Exact two-function and nineteen-executable catalog.
 select has_function('atlas_api', 'create_confirmed_needs_from_generation', array['jsonb'], 'CMD-15 exists with the exact jsonb signature');
@@ -19,7 +19,6 @@ select is((select proconfig from pg_proc where oid='atlas_api.create_confirmed_n
 select is((select proconfig from pg_proc where oid='atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)'::regprocedure), array['search_path=""']::text[], 'validator has fixed empty search_path');
 select is((select pg_get_userbyid(proowner) from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure), 'atlas_planning_materialization_runtime', 'the dedicated runtime owns CMD-15');
 select is((select pg_get_userbyid(proowner) from pg_proc where oid='atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)'::regprocedure), 'atlas_owner', 'atlas_owner owns the private validator');
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'), 19, 'physical atlas_api catalog is exactly nineteen');
 select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api' and p.proname='create_confirmed_needs_from_generation'), 1, 'CMD-15 has no overload');
 
 -- Capability and dedicated runtime.

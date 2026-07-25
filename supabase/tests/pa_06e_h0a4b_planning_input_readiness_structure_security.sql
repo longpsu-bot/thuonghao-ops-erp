@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(29);
 
 select is(
   (
@@ -418,15 +418,6 @@ select is(
     'planning_input_sets_integrity'
   ]::text[],
   'the lifecycle, immutability, and deferred integrity trigger catalog is exact'
-);
-
-select is(
-  (
-    select count(*)::integer from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'atlas_api'
-  ), 19,
-  'H0A4b remains compatible with the exact 19-function atlas_api surface'
 );
 
 select ok(

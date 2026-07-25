@@ -2,31 +2,11 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select no_plan();
+select plan(47);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
 
-select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='atlas_api'),
-  19,
-  'Atlas API contains exactly 19 reviewed functions'
-);
-select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-   where n.nspname='atlas_api' and has_function_privilege('authenticated',p.oid,'EXECUTE')),
-  19,
-  'authenticated can execute exactly the 19 reviewed Atlas API functions'
-);
-select ok(
-  not exists (
-    select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-    cross join unnest(array['anon','service_role']) r(role_name)
-    where n.nspname='atlas_api' and has_function_privilege(r.role_name,p.oid,'EXECUTE')
-  ),
-  'anon and service_role cannot execute any Atlas API function'
-);
 select ok(
   not exists (
     select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
@@ -76,19 +56,6 @@ select ok(
   and not has_table_privilege('atlas_dispatch_command_runtime','atlas_procurement.fulfilment_allocations','INSERT')
   and not has_table_privilege('atlas_dispatch_command_runtime','atlas_evidence.supplier_receiving_evidence','INSERT'),
   'Dispatch runtime can write only the bounded Dispatch setup facts'
-);
-select ok(
-  not exists (
-    select 1 from unnest(array['anon','authenticated','service_role']) x(role_name)
-    cross join pg_class c join pg_namespace n on n.oid=c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\' and c.relkind in ('r','v','m','S')
-      and (has_table_privilege(x.role_name,c.oid,'SELECT')
-        or has_table_privilege(x.role_name,c.oid,'INSERT')
-        or has_table_privilege(x.role_name,c.oid,'UPDATE')
-        or has_table_privilege(x.role_name,c.oid,'DELETE')
-        or (c.relkind='S' and has_sequence_privilege(x.role_name,c.oid,'USAGE')))
-  ),
-  'API roles retain no direct private relation or sequence access'
 );
 select ok(
   (select r.rolname from pg_proc p join pg_roles r on r.oid=p.proowner
