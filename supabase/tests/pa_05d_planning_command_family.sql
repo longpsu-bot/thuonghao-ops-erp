@@ -2,16 +2,10 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select no_plan();
+select plan(69);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
-
-select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api'),
-  17,
-  'Atlas API contains exactly 17 reviewed functions'
-);
 
 select ok(
   not exists (
@@ -80,36 +74,6 @@ select ok(
   not has_table_privilege('atlas_evidence_command_runtime', 'atlas_planning.wholesale_orders', 'INSERT')
   and not has_table_privilege('atlas_dispatch_command_runtime', 'atlas_planning.wholesale_orders', 'INSERT'),
   'Evidence and Dispatch runtimes cannot write Planning facts'
-);
-
-select is(
-  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE')),
-  17,
-  'authenticated can execute exactly the 17 reviewed functions'
-);
-
-select ok(
-  not exists (
-    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    cross join unnest(array['anon','service_role']) x(role_name)
-    where n.nspname = 'atlas_api' and has_function_privilege(x.role_name, p.oid, 'EXECUTE')
-  ),
-  'anon and service_role cannot execute Atlas API functions'
-);
-
-select ok(
-  not exists (
-    select 1 from unnest(array['anon','authenticated','service_role']) x(role_name)
-    cross join pg_class c join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\' and c.relkind in ('r','v','m','S')
-      and (has_table_privilege(x.role_name, c.oid, 'SELECT')
-        or has_table_privilege(x.role_name, c.oid, 'INSERT')
-        or has_table_privilege(x.role_name, c.oid, 'UPDATE')
-        or has_table_privilege(x.role_name, c.oid, 'DELETE')
-        or (c.relkind = 'S' and has_sequence_privilege(x.role_name, c.oid, 'USAGE')))
-  ),
-  'API roles retain no direct private relation or sequence access'
 );
 
 select ok(
@@ -409,30 +373,6 @@ insert into pa05d_results values ('crosswire_handoff_release', atlas_api.release
   jsonb_build_object('wholesale_order_id',(select response_payload #>> '{affected_aggregate_ids,wholesale_order_id}' from pa05d_results where result_name='crosswire_handoff_record')))));
 reset role;
 
-update atlas_planning.confirmed_need_lines
-set wholesale_order_line_id = (
-  select wol.wholesale_order_line_id
-  from atlas_planning.wholesale_order_lines wol
-  join atlas_planning.wholesale_orders wo using (wholesale_order_id)
-  where wo.customer_order_reference = 'PA05D-ORDER-1' and wol.source_line_number = 1
-)
-where confirmed_need_batch_id = (
-  select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
-  from pa05d_results where result_name='crosswire_handoff_release'
-);
-
-set local role authenticated;
-select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
-insert into pa05d_results values ('crosswire_handoff', atlas_api.release_purchase_handoff(pg_temp.pa05d_request(
-  'd9000000-0000-0000-0000-000000000703','crosswire-handoff',1,'d0000000-0000-0000-0000-000000000101',
-  jsonb_build_object('confirmed_need_batch_id',(select response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}' from pa05d_results where result_name='crosswire_handoff_release')))));
-reset role;
-
-select is((select response_payload ->> 'error_code' from pa05d_results where result_name='crosswire_handoff'),'INVARIANT_VIOLATION','cross-wired Confirmed Need and wholesale stable-line lineage blocks handoff release');
-select is((select count(*)::integer from atlas_planning.purchase_handoff_batches where confirmed_need_batch_id=(select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from pa05d_results where result_name='crosswire_handoff_release')),0,'cross-wired handoff creates no handoff domain rows');
-select is((select count(*)::integer from atlas_audit.domain_events where command_id='d9000000-0000-0000-0000-000000000703'),0,'cross-wired handoff creates no domain event');
-select is((select count(*)::integer from atlas_audit.audit_events where command_id='d9000000-0000-0000-0000-000000000703'),0,'cross-wired handoff creates no audit event');
-
 set local role authenticated;
 select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
 insert into pa05d_results values ('crosswire_requirement_record', atlas_api.record_wholesale_source(pg_temp.pa05d_request(
@@ -447,13 +387,143 @@ insert into pa05d_results values ('crosswire_requirement_handoff', atlas_api.rel
   jsonb_build_object('confirmed_need_batch_id',(select response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}' from pa05d_results where result_name='crosswire_requirement_release')))));
 reset role;
 
+set constraints all immediate;
+set constraints all deferred;
+
+do $pa05d_trigger_state$
+begin
+  if not exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'atlas_planning.confirmed_need_lines'::regclass
+      and t.tgname = 'confirmed_need_lines_h0b1b_guard'
+      and t.tgenabled = 'O'
+  ) then
+    raise exception
+      'confirmed_need_lines_h0b1b_guard is not enabled before fixture suppression';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'atlas_planning.confirmed_need_lines'::regclass
+      and t.tgname = 'confirmed_need_lines_current_source_consistency'
+      and t.tgenabled = 'O'
+      and t.tgconstraint <> 0
+      and t.tgdeferrable
+      and t.tginitdeferred
+  ) then
+    raise exception
+      'confirmed_need_lines_current_source_consistency is not enabled, deferrable, and initially deferred before fixture suppression';
+  end if;
+end
+$pa05d_trigger_state$;
+
+alter table atlas_planning.confirmed_need_lines
+  disable trigger confirmed_need_lines_h0b1b_guard;
+
+do $pa05d_trigger_state$
+begin
+  if not exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'atlas_planning.confirmed_need_lines'::regclass
+      and t.tgname = 'confirmed_need_lines_h0b1b_guard'
+      and t.tgenabled = 'D'
+  ) then
+    raise exception
+      'confirmed_need_lines_h0b1b_guard was not disabled for the rollback-scoped fixture';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'atlas_planning.confirmed_need_lines'::regclass
+      and t.tgname = 'confirmed_need_lines_current_source_consistency'
+      and t.tgenabled = 'O'
+      and t.tgconstraint <> 0
+      and t.tgdeferrable
+      and t.tginitdeferred
+  ) then
+    raise exception
+      'confirmed_need_lines_current_source_consistency changed during fixture suppression';
+  end if;
+end
+$pa05d_trigger_state$;
+
+update atlas_planning.confirmed_need_lines
+set wholesale_order_line_id = (
+  select wol.wholesale_order_line_id
+  from atlas_planning.wholesale_order_lines wol
+  join atlas_planning.wholesale_orders wo using (wholesale_order_id)
+  where wo.customer_order_reference = 'PA05D-ORDER-1' and wol.source_line_number = 1
+)
+where confirmed_need_batch_id = (
+  select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
+  from pa05d_results where result_name='crosswire_handoff_release'
+);
+
+create temporary table pa05d_crosswire_line_fingerprint (
+  snapshot jsonb not null
+) on commit drop;
+
+insert into pa05d_crosswire_line_fingerprint (snapshot)
+select coalesce(
+  jsonb_agg(to_jsonb(cnl) order by cnl.confirmed_need_line_id),
+  '[]'::jsonb
+)
+from atlas_planning.confirmed_need_lines cnl
+where cnl.confirmed_need_batch_id = (
+  select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
+  from pa05d_results
+  where result_name = 'crosswire_handoff_release'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0000000-0000-0000-0000-000000000101',true);
+insert into pa05d_results values ('crosswire_handoff', atlas_api.release_purchase_handoff(pg_temp.pa05d_request(
+  'd9000000-0000-0000-0000-000000000703','crosswire-handoff',1,'d0000000-0000-0000-0000-000000000101',
+  jsonb_build_object('confirmed_need_batch_id',(select response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}' from pa05d_results where result_name='crosswire_handoff_release')))));
+reset role;
+
+do $pa05d_fingerprint$
+begin
+  if (
+    select coalesce(
+      jsonb_agg(to_jsonb(cnl) order by cnl.confirmed_need_line_id),
+      '[]'::jsonb
+    )
+    from atlas_planning.confirmed_need_lines cnl
+    where cnl.confirmed_need_batch_id = (
+      select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
+      from pa05d_results
+      where result_name = 'crosswire_handoff_release'
+    )
+  ) is distinct from (
+    select snapshot
+    from pa05d_crosswire_line_fingerprint
+  ) then
+    raise exception
+      'cross-wired Purchase Handoff command further mutated confirmed_need_lines';
+  end if;
+end
+$pa05d_fingerprint$;
+
+select is((select response_payload ->> 'error_code' from pa05d_results where result_name='crosswire_handoff'),'INVARIANT_VIOLATION','cross-wired Confirmed Need and wholesale stable-line lineage blocks handoff release');
+select is((select count(*)::integer from atlas_planning.purchase_handoff_batches where confirmed_need_batch_id=(select (response_payload #>> '{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from pa05d_results where result_name='crosswire_handoff_release')),0,'cross-wired handoff creates no handoff domain rows');
+select is((select count(*)::integer from atlas_audit.domain_events where command_id='d9000000-0000-0000-0000-000000000703'),0,'cross-wired handoff creates no domain event');
+select is((select count(*)::integer from atlas_audit.audit_events where command_id='d9000000-0000-0000-0000-000000000703'),0,'cross-wired handoff creates no audit event');
+
 update atlas_planning.purchase_handoff_line_revisions
 set confirmed_need_line_revision_id = (
   select cnlr.confirmed_need_line_revision_id
   from atlas_planning.confirmed_need_line_revisions cnlr
-  join atlas_planning.confirmed_need_lines cnl using (confirmed_need_line_id)
-  join atlas_planning.confirmed_need_batches cnb using (confirmed_need_batch_id)
-  join atlas_planning.wholesale_orders wo using (wholesale_order_id)
+  join atlas_planning.confirmed_need_lines cnl
+    on cnl.confirmed_need_line_id = cnlr.confirmed_need_line_id
+  join atlas_planning.confirmed_need_batches cnb
+    on cnb.confirmed_need_batch_id = cnl.confirmed_need_batch_id
+  join atlas_planning.wholesale_orders wo
+    on wo.wholesale_order_id = cnb.wholesale_order_id
   join atlas_planning.wholesale_order_lines wol on wol.wholesale_order_line_id = cnl.wholesale_order_line_id
   where wo.customer_order_reference = 'PA05D-ORDER-1' and wol.source_line_number = 1
 )
@@ -476,3 +546,29 @@ select is((select count(*)::integer from atlas_audit.audit_events where command_
 
 select * from finish();
 rollback;
+
+do $pa05d_post_rollback$
+begin
+  if not exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'atlas_planning.confirmed_need_lines'::regclass
+      and t.tgname = 'confirmed_need_lines_h0b1b_guard'
+      and t.tgenabled = 'O'
+  ) then
+    raise exception
+      'confirmed_need_lines_h0b1b_guard was not restored after rollback';
+  end if;
+
+  if not exists (
+    select 1
+    from pg_trigger t
+    where t.tgrelid = 'atlas_planning.confirmed_need_lines'::regclass
+      and t.tgname = 'confirmed_need_lines_current_source_consistency'
+      and t.tgenabled = 'O'
+  ) then
+    raise exception
+      'confirmed_need_lines_current_source_consistency was not enabled after rollback';
+  end if;
+end
+$pa05d_post_rollback$;

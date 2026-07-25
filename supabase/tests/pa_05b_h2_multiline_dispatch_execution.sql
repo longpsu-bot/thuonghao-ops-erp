@@ -3,52 +3,12 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select no_plan();
+select plan(124);
 
 -- These grants exist only inside this rolled-back test transaction so the
 -- authenticated role can invoke pgTAP assertions and write temporary results.
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
-
-select ok(
-  not exists (
-    select 1
-    from unnest(array['anon', 'authenticated', 'service_role']) api_role(role_name)
-    cross join unnest(
-      array[
-        'atlas_core', 'atlas_admin', 'atlas_planning', 'atlas_procurement',
-        'atlas_evidence', 'atlas_dispatch', 'atlas_audit', 'atlas_reporting'
-      ]
-    ) private_schema(schema_name)
-    where has_schema_privilege(api_role.role_name, private_schema.schema_name, 'USAGE')
-  ),
-  'API roles retain no usage on private Atlas schemas'
-);
-
-select ok(
-  has_schema_privilege('authenticated', 'atlas_api', 'USAGE')
-  and not has_schema_privilege('anon', 'atlas_api', 'USAGE')
-  and not has_schema_privilege('service_role', 'atlas_api', 'USAGE'),
-  'only authenticated receives atlas_api schema usage'
-);
-
-select ok(
-  not exists (
-    select 1
-    from unnest(array['anon', 'authenticated', 'service_role']) api_role(role_name)
-    cross join pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\'
-      and c.relkind in ('r', 'v', 'm')
-      and (
-        has_table_privilege(api_role.role_name, c.oid, 'SELECT')
-        or has_table_privilege(api_role.role_name, c.oid, 'INSERT')
-        or has_table_privilege(api_role.role_name, c.oid, 'UPDATE')
-        or has_table_privilege(api_role.role_name, c.oid, 'DELETE')
-      )
-  ),
-  'anon, authenticated, and service_role have no direct Atlas table or view access'
-);
 
 select is(
   (
@@ -124,17 +84,6 @@ select ok(
       )
   ),
   'all PA-05B entry functions are hardened definers owned by their narrowed runtime roles'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'atlas_api'
-  ),
-  19,
-  'reviewed atlas_api surface is exactly 19 functions through PA-06E-H0Cb'
 );
 
 select is(

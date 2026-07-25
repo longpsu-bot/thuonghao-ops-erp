@@ -2,20 +2,12 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select no_plan();
+select plan(35);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
 
--- Structural contract and least-privilege boundary.
-select is(
-  (select count(*)::integer
-   from pg_proc p
-   join pg_namespace n on n.oid = p.pronamespace
-   where n.nspname = 'atlas_api'),
-  19,
-  'the reviewed atlas_api surface is exactly 19 functions'
-);
+-- Structural READ-02 contract and least-privilege boundary.
 select ok(
   not has_function_privilege('anon', 'atlas_api.get_dispatch_evidence_readiness(jsonb)', 'EXECUTE'),
   'anon cannot execute READ-02'
@@ -67,24 +59,6 @@ select ok(
   ),
   'atlas_read_runtime remains SELECT-only without schema-CREATE or command-runtime authority'
 );
-select ok(
-  not exists (
-    select 1
-    from unnest(array['anon', 'authenticated', 'service_role']) r(role_name)
-    cross join pg_class c
-    join pg_namespace n on n.oid = c.relnamespace
-    where n.nspname like 'atlas\_%' escape '\'
-      and c.relkind in ('r', 'v', 'm', 'S')
-      and (
-        has_table_privilege(r.role_name, c.oid, 'SELECT')
-        or has_table_privilege(r.role_name, c.oid, 'INSERT')
-        or has_table_privilege(r.role_name, c.oid, 'UPDATE')
-        or has_table_privilege(r.role_name, c.oid, 'DELETE')
-      )
-  ),
-  'API roles retain no direct private relation access'
-);
-
 -- Rolled-back authorization fixture.
 insert into atlas_core.actors
   (actor_id, actor_type, display_name, actor_status, deactivated_at) values

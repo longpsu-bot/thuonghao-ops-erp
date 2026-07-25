@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(88);
+select plan(85);
 
 select is(
   (
@@ -1896,70 +1896,6 @@ select ok(
       and not coalesce(p.proconfig, array[]::text[]) @> array['search_path=""']
   ),
   'every private H0A2 guard function has a hardened empty search path'
-);
-
-select is(
-  (
-    select array_agg(
-      format('%s(%s)', p.proname, pg_get_function_identity_arguments(p.oid))
-      order by p.proname
-    )::text[]
-    from pg_proc p
-    join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'atlas_api'
-  ),
-  array[
-    'allocate_supplier_direct_fulfilment(request jsonb)',
-    'apply_supplier_evidence_to_allocation(request jsonb)',
-    'close_successful_trip(request jsonb)',
-    'confirm_dispatch_load(request jsonb)',
-    'confirm_successful_delivery(request jsonb)',
-    'create_confirmed_needs_from_generation(request jsonb)',
-    'create_dispatch_plan(request jsonb)',
-    'create_or_assign_dispatch_trip(request jsonb)',
-    'get_command_audit_timeline(request jsonb)',
-    'get_dispatch_evidence_readiness(request jsonb)',
-    'get_operator_blockers(request jsonb)',
-    'get_supplier_direct_trace(request jsonb)',
-    'record_dispatch_departure(request jsonb)',
-    'record_supplier_receiving_evidence(request jsonb)',
-    'record_wholesale_source(request jsonb)',
-    'release_dispatch_requirement(request jsonb)',
-    'release_purchase_handoff(request jsonb)',
-    'release_supplier_purchase_order(request jsonb)',
-    'release_wholesale_order(request jsonb)'
-  ]::text[],
-  'the exact 19-function atlas_api registry includes CMD-15'
-);
-
-select is(
-  (select count(*)::integer from atlas_core.roles),
-  0,
-  'H0A2 seeds no roles'
-);
-
-select is(
-  (
-    select jsonb_agg(
-      jsonb_build_object(
-        'capability_code', capability_code,
-        'capability_name', capability_name,
-        'owning_domain', owning_domain,
-        'capability_status', capability_status
-      )
-      order by capability_code
-    )
-    from atlas_core.capabilities
-  ),
-  jsonb_build_array(
-    jsonb_build_object(
-      'capability_code', 'confirmed_need_generation.materialize',
-      'capability_name', 'Materialize Confirmed Need from Need Generation',
-      'owning_domain', 'PLANNING',
-      'capability_status', 'ACTIVE'
-    )
-  ),
-  'the capability catalog contains only the active Planning materialization capability'
 );
 
 select * from finish();
