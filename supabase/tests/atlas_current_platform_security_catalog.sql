@@ -36,8 +36,8 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 84, 'views', 2),
-  'CAT-02 exact whole-platform table and view totals are 84 and 2'
+  jsonb_build_object('ordinary_tables', 85, 'views', 2),
+  'CAT-02 exact whole-platform table and view totals are 85 and 2'
 );
 
 select is(
@@ -61,9 +61,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 84,
-    'rls_enabled', 84,
-    'rls_forced', 84
+    'authoritative_tables', 85,
+    'rls_enabled', 85,
+    'rls_forced', 85
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -949,21 +949,21 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 9,
-    'table_count', 84,
-    'table_catalog_md5', '7e6f1843c959a2a4dde29002ae6112a8',
+    'table_count', 85,
+    'table_catalog_md5', 'd77e7ae71a8efd10b5f2b28c0c3971e0',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 84,
-    'rls_forced', 84,
+    'rls_enabled', 85,
+    'rls_forced', 85,
     'database_role_count', 8,
     'application_role_count', 0,
     'capability_count', 1,
     'policy_count', 305,
     'policy_catalog_md5', '5361b5d7d902fe4afbd99ac8268352b8',
-    'private_function_count', 50,
-    'private_function_catalog_md5', 'c1a3c5267a5a2ff34aab8e701414fa88',
-    'trigger_count', 59,
-    'trigger_catalog_md5', 'b029c42cfd89549c4ab57c662b851d80',
+    'private_function_count', 53,
+    'private_function_catalog_md5', '58d2b206d2172399ffe6fd14c6954404',
+    'trigger_count', 65,
+    'trigger_catalog_md5', '63a5ad67bf386acd37275b3bce0a544d',
     'positive_target_grant_count', 604,
     'positive_target_grant_md5', 'ad5dd8c4bfa2f9475ff3727aa7e52ee1',
     'api_function_count', 19,
