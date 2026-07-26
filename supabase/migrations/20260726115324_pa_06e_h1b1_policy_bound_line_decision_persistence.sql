@@ -380,6 +380,9 @@ security invoker
 set search_path = ''
 as $$
 declare
+  v_policy_ids uuid[];
+  v_policy_id uuid;
+  v_locked_policy_id uuid;
   v_line_ids uuid[];
   v_line_id uuid;
   v_line atlas_planning.confirmed_need_lines%rowtype;
@@ -398,6 +401,16 @@ begin
     end if;
 
     v_line_ids := array[new.confirmed_need_line_id];
+
+    select array_agg(
+      decision.planning_quantity_policy_id
+      order by decision.planning_quantity_policy_id
+    )
+    into v_policy_ids
+    from atlas_planning.confirmed_need_line_decisions as decision
+    where decision.confirmed_need_line_decision_id
+        = new.current_confirmed_need_line_decision_id
+      and decision.confirmed_need_line_id = new.confirmed_need_line_id;
   elsif tg_table_name = 'confirmed_need_line_revisions' then
     select
       line.source_kind,
@@ -415,13 +428,34 @@ begin
     end if;
 
     v_line_ids := array[new.confirmed_need_line_id];
-  elsif tg_table_name = 'planning_quantity_policy_revisions' then
+
     select array_agg(
-      line.confirmed_need_line_id
-      order by line.confirmed_need_line_id
+      decision.planning_quantity_policy_id
+      order by decision.planning_quantity_policy_id
     )
-    into v_line_ids
+    into v_policy_ids
+    from atlas_planning.confirmed_need_line_decisions as decision
+    where decision.confirmed_need_line_decision_id
+        = v_line.current_confirmed_need_line_decision_id
+      and decision.confirmed_need_line_id = new.confirmed_need_line_id;
+  elsif tg_table_name = 'planning_quantity_policy_revisions' then
+    select
+      array_agg(
+        distinct decision.planning_quantity_policy_id
+        order by decision.planning_quantity_policy_id
+      ),
+      array_agg(
+        line.confirmed_need_line_id
+        order by line.confirmed_need_line_id
+      )
+    into
+      v_policy_ids,
+      v_line_ids
     from atlas_planning.confirmed_need_lines as line
+    join atlas_planning.confirmed_need_line_decisions as decision
+      on decision.confirmed_need_line_decision_id
+        = line.current_confirmed_need_line_decision_id
+      and decision.confirmed_need_line_id = line.confirmed_need_line_id
     where line.source_kind = 'NEED_GENERATION'
       and line.current_confirmed_need_line_decision_id is not null
       and line.controlled_unit_id = new.unit_id;
@@ -431,6 +465,25 @@ begin
     end if;
   else
     v_line_ids := array[new.confirmed_need_line_id];
+
+    select array_agg(
+      distinct decision.planning_quantity_policy_id
+      order by decision.planning_quantity_policy_id
+    )
+    into v_policy_ids
+    from atlas_planning.confirmed_need_line_decisions as decision
+    where decision.confirmed_need_line_id = new.confirmed_need_line_id;
+  end if;
+
+  if v_policy_ids is not null then
+    foreach v_policy_id in array v_policy_ids
+    loop
+      select policy.planning_quantity_policy_id
+      into strict v_locked_policy_id
+      from atlas_planning.planning_quantity_policies as policy
+      where policy.planning_quantity_policy_id = v_policy_id
+      for update;
+    end loop;
   end if;
 
   foreach v_line_id in array v_line_ids
@@ -569,6 +622,12 @@ begin
           = revision.predecessor_revision_id
         and predecessor_revision.confirmed_need_line_id
           = revision.confirmed_need_line_id
+      left join atlas_planning.confirmed_need_line_decisions
+        as predecessor_decision
+        on predecessor_decision.confirmed_need_line_decision_id
+          = decision.predecessor_decision_id
+        and predecessor_decision.confirmed_need_line_id
+          = decision.confirmed_need_line_id
       where decision.confirmed_need_line_id = v_line_id
         and (
           decision.confirmed_need_batch_version > v_batch.version
@@ -615,7 +674,6 @@ begin
               predecessor_revision.confirmed_need_line_revision_id is null
               or revision.revision_number
                 <> predecessor_revision.revision_number + 1
-              or revision.command_id is distinct from decision.command_id
               or decision.proposed_quantity_before
                 is distinct from predecessor_revision.confirmed_quantity
               or decision.confirmed_quantity_after
@@ -737,13 +795,50 @@ begin
                 )
               )
               or (
-                select count(*)
-                from atlas_planning.confirmed_need_line_revisions
-                  as command_revision
-                where command_revision.confirmed_need_line_id
-                    = decision.confirmed_need_line_id
-                  and command_revision.command_id = decision.command_id
-              ) <> 1
+                decision.predecessor_decision_id is not null
+                and decision.confirmed_need_line_revision_id
+                  = predecessor_decision.confirmed_need_line_revision_id
+                and (
+                  predecessor_decision.confirmed_need_line_decision_id is null
+                  or predecessor_decision.decision_kind
+                    <> 'ADJUSTED_QUANTITY_CONFIRMED'
+                  or decision.confirmed_quantity_after
+                    is distinct from predecessor_decision.confirmed_quantity_after
+                  or (
+                    select count(*)
+                    from atlas_planning.confirmed_need_line_revisions
+                      as command_revision
+                    where command_revision.confirmed_need_line_id
+                        = decision.confirmed_need_line_id
+                      and command_revision.command_id = decision.command_id
+                  ) <> 0
+                )
+              )
+              or (
+                (
+                  decision.predecessor_decision_id is null
+                  or decision.confirmed_need_line_revision_id
+                    is distinct from
+                      predecessor_decision.confirmed_need_line_revision_id
+                )
+                and (
+                  revision.command_id is distinct from decision.command_id
+                  or (
+                    predecessor_decision.confirmed_need_line_decision_id
+                      is not null
+                    and revision.predecessor_revision_id is distinct from
+                      predecessor_decision.confirmed_need_line_revision_id
+                  )
+                  or (
+                    select count(*)
+                    from atlas_planning.confirmed_need_line_revisions
+                      as command_revision
+                    where command_revision.confirmed_need_line_id
+                        = decision.confirmed_need_line_id
+                      and command_revision.command_id = decision.command_id
+                  ) <> 1
+                )
+              )
             )
           )
         )

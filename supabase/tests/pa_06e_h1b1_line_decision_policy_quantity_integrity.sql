@@ -442,12 +442,70 @@ update atlas_planning.confirmed_need_line_revisions set is_current=false,revisio
 update atlas_planning.confirmed_need_line_revisions set is_current=true where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000526';
 set local session_replication_role = origin;
 select lives_ok($$select pg_temp.h1b1_policy_decide(p_decision=>'c7200000-0000-0000-0000-000000000829',p_line=>'c7200000-0000-0000-0000-000000000512',p_revision=>'c7200000-0000-0000-0000-000000000526',p_kind=>'ADJUSTED_QUANTITY_CONFIRMED',p_theoretical=>10.234,p_proposed=>10.234,p_after=>10.23,p_ticks=>1023,p_reason=>'PLANNING_STEP_ADJUSTMENT',p_command_ordinal=>29)$$,'H1B1-POL-29 adjusted confirmation and direct successor commit atomically');
-select is((select confirmed_need_line_revision_id from atlas_planning.confirmed_need_line_decisions where confirmed_need_line_decision_id='c7200000-0000-0000-0000-000000000829'),(select confirmed_need_line_revision_id from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_id='c7200000-0000-0000-0000-000000000512' and is_current),'H1B1-POL-30 adjusted decision binds the final current successor');
-select ok((select successor.revision_number=predecessor.revision_number+1 and successor.predecessor_revision_id=predecessor.confirmed_need_line_revision_id from atlas_planning.confirmed_need_line_revisions successor join atlas_planning.confirmed_need_line_revisions predecessor on predecessor.confirmed_need_line_revision_id=successor.predecessor_revision_id where successor.confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000526'),'H1B1-POL-31 successor revision number and predecessor are exact');
-select is((select command_id from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000526'),'c7220000-0000-0000-0000-000000000029'::uuid,'H1B1-POL-32 successor revision uses the decision command');
-select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000526'),10.234::numeric,'H1B1-POL-33 successor preserves the theoretical source total');
-select is((select proposed_quantity_before from atlas_planning.confirmed_need_line_decisions where confirmed_need_line_decision_id='c7200000-0000-0000-0000-000000000829'),(select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000522'),'H1B1-POL-34 proposed-before equals predecessor confirmed quantity');
-select is((select confirmed_quantity_after from atlas_planning.confirmed_need_line_decisions where confirmed_need_line_decision_id='c7200000-0000-0000-0000-000000000829'),(select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000526'),'H1B1-POL-35 confirmed-after equals successor confirmed quantity');
+select ok(
+  (
+    select
+      line.current_confirmed_need_line_decision_id
+        = decision.confirmed_need_line_decision_id
+      and decision.confirmed_need_line_revision_id
+        = successor.confirmed_need_line_revision_id
+      and successor.is_current
+      and successor.revision_number = predecessor.revision_number + 1
+      and successor.predecessor_revision_id
+        = predecessor.confirmed_need_line_revision_id
+    from atlas_planning.confirmed_need_line_decisions as decision
+    join atlas_planning.confirmed_need_lines as line
+      on line.confirmed_need_line_id = decision.confirmed_need_line_id
+    join atlas_planning.confirmed_need_line_revisions as successor
+      on successor.confirmed_need_line_revision_id
+        = decision.confirmed_need_line_revision_id
+    join atlas_planning.confirmed_need_line_revisions as predecessor
+      on predecessor.confirmed_need_line_revision_id
+        = successor.predecessor_revision_id
+    where decision.confirmed_need_line_decision_id
+      = 'c7200000-0000-0000-0000-000000000829'
+  ),
+  'H1B1-POL-30 adjusted decision binds the current direct successor'
+);
+select ok(
+  (
+    select
+      revision.command_id = decision.command_id
+      and (
+        select count(*)
+        from atlas_planning.confirmed_need_line_revisions as command_revision
+        where command_revision.confirmed_need_line_id
+            = decision.confirmed_need_line_id
+          and command_revision.command_id = decision.command_id
+      ) = 1
+    from atlas_planning.confirmed_need_line_decisions as decision
+    join atlas_planning.confirmed_need_line_revisions as revision
+      on revision.confirmed_need_line_revision_id
+        = decision.confirmed_need_line_revision_id
+    where decision.confirmed_need_line_decision_id
+      = 'c7200000-0000-0000-0000-000000000829'
+  ),
+  'H1B1-POL-31 changed quantity uses exactly one command-authored revision'
+);
+select ok(
+  (
+    select
+      successor.theoretical_quantity = 10.234::numeric
+      and decision.proposed_quantity_before
+        = predecessor.confirmed_quantity
+    from atlas_planning.confirmed_need_line_decisions as decision
+    join atlas_planning.confirmed_need_line_revisions as successor
+      on successor.confirmed_need_line_revision_id
+        = decision.confirmed_need_line_revision_id
+    join atlas_planning.confirmed_need_line_revisions as predecessor
+      on predecessor.confirmed_need_line_revision_id
+        = successor.predecessor_revision_id
+    where decision.confirmed_need_line_decision_id
+      = 'c7200000-0000-0000-0000-000000000829'
+  ),
+  'H1B1-POL-32 successor preserves theory and proposal-before evidence'
+);
+select is((select confirmed_quantity_after from atlas_planning.confirmed_need_line_decisions where confirmed_need_line_decision_id='c7200000-0000-0000-0000-000000000829'),(select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000526'),'H1B1-POL-33 confirmed-after equals successor confirmed quantity');
 select ok(
   not exists (
     (select need_generation_run_id,need_generation_run_version,need_generation_release_snapshot_id,need_generation_release_snapshot_line_id,theoretical_need_line_id,source_theoretical_quantity,controlled_contribution_quantity from atlas_planning.confirmed_need_line_revision_contributions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000522'
@@ -458,9 +516,97 @@ select ok(
      except all
      select need_generation_run_id,need_generation_run_version,need_generation_release_snapshot_id,need_generation_release_snapshot_line_id,theoretical_need_line_id,source_theoretical_quantity,controlled_contribution_quantity from atlas_planning.confirmed_need_line_revision_contributions where confirmed_need_line_revision_id='c7200000-0000-0000-0000-000000000522')
   ),
-  'H1B1-POL-36 adjusted successor preserves exact source, release, and contribution membership'
+  'H1B1-POL-34 adjusted successor preserves exact source, release, and contribution membership'
 );
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_id='c7200000-0000-0000-0000-000000000512' and command_id='c7220000-0000-0000-0000-000000000029'),1,'H1B1-POL-37 adjusted command authors exactly one line revision');
+select lives_ok(
+  $$
+    select pg_temp.h1b1_policy_decide(
+      p_decision => 'c7200000-0000-0000-0000-000000000835',
+      p_line => 'c7200000-0000-0000-0000-000000000512',
+      p_revision => 'c7200000-0000-0000-0000-000000000526',
+      p_number => 2,
+      p_predecessor => 'c7200000-0000-0000-0000-000000000829',
+      p_kind => 'ADJUSTED_QUANTITY_CONFIRMED',
+      p_theoretical => 10.234,
+      p_proposed => 10.234,
+      p_after => 10.23,
+      p_ticks => 1023,
+      p_reason => 'OPERATIONAL_QUANTITY_ADJUSTMENT',
+      p_note => 'Corrected adjusted evidence without changing quantity',
+      p_command_ordinal => 35
+    )
+  $$,
+  'H1B1-POL-35 adjusted evidence correction may bind the same revision'
+);
+select ok(
+  (
+    select
+      prior.confirmed_need_line_decision_id
+        = correction.predecessor_decision_id
+      and prior.confirmed_need_line_revision_id
+        = correction.confirmed_need_line_revision_id
+      and correction.decision_number = prior.decision_number + 1
+      and correction.decision_kind = 'ADJUSTED_QUANTITY_CONFIRMED'
+      and correction.reason_code = 'OPERATIONAL_QUANTITY_ADJUSTMENT'
+      and correction.reason_note
+        = 'Corrected adjusted evidence without changing quantity'
+      and row(
+        correction.theoretical_quantity_before,
+        correction.proposed_quantity_before,
+        correction.confirmed_quantity_after,
+        correction.planning_tick_count
+      ) = row(
+        prior.theoretical_quantity_before,
+        prior.proposed_quantity_before,
+        prior.confirmed_quantity_after,
+        prior.planning_tick_count
+      )
+      and line.current_confirmed_need_line_decision_id
+        = correction.confirmed_need_line_decision_id
+      and receipt.outcome = 'COMPLETED'
+      and receipt.actor_id = correction.decided_by_actor_id
+      and not exists (
+        select 1
+        from atlas_planning.confirmed_need_line_revisions as command_revision
+        where command_revision.confirmed_need_line_id
+            = correction.confirmed_need_line_id
+          and command_revision.command_id = correction.command_id
+      )
+    from atlas_planning.confirmed_need_line_decisions as correction
+    join atlas_planning.confirmed_need_line_decisions as prior
+      on prior.confirmed_need_line_decision_id
+        = correction.predecessor_decision_id
+    join atlas_planning.confirmed_need_lines as line
+      on line.confirmed_need_line_id = correction.confirmed_need_line_id
+    join atlas_core.command_receipts as receipt
+      on receipt.command_id = correction.command_id
+    where correction.confirmed_need_line_decision_id
+      = 'c7200000-0000-0000-0000-000000000835'
+  ),
+  'H1B1-POL-36 same-revision correction retains history, evidence, receipt, and advances the pointer'
+);
+select throws_ok(
+  $$
+    select pg_temp.h1b1_policy_decide(
+      p_decision => 'c7200000-0000-0000-0000-000000000837',
+      p_line => 'c7200000-0000-0000-0000-000000000512',
+      p_revision => 'c7200000-0000-0000-0000-000000000526',
+      p_number => 3,
+      p_predecessor => 'c7200000-0000-0000-0000-000000000835',
+      p_kind => 'ADJUSTED_QUANTITY_CONFIRMED',
+      p_theoretical => 10.234,
+      p_proposed => 10.234,
+      p_after => 10.22,
+      p_ticks => 1022,
+      p_reason => 'PLANNING_STEP_ADJUSTMENT',
+      p_note => 'Quantity correction requires a successor revision',
+      p_command_ordinal => 37
+    )
+  $$,
+  '23514',
+  null,
+  'H1B1-POL-37 same-revision adjusted replacement cannot change quantity without a direct successor'
+);
 select throws_ok($$select pg_temp.h1b1_policy_decide(p_decision=>'c7200000-0000-0000-0000-000000000838',p_line=>'c7200000-0000-0000-0000-000000000515',p_revision=>'c7200000-0000-0000-0000-000000000528',p_kind=>'ADJUSTED_QUANTITY_CONFIRMED',p_proposed=>8,p_after=>7.99,p_ticks=>799,p_reason=>'PLANNING_STEP_ADJUSTMENT',p_command_ordinal=>38)$$,'23514',null,'H1B1-POL-38 adjusted decision cannot bind an already-current preexisting revision');
 
 set local session_replication_role = replica;

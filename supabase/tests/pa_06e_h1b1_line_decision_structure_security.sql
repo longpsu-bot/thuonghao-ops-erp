@@ -688,8 +688,34 @@ select ok(
         'pa_06e_h1b1_confirmed_need_line_decision_integrity'
       )
       and prosrc like '%atlas_planning.%'
-  ) = 2,
-  'H1B1-STR-46 all function sources are static and fully schema-qualified'
+  ) = 2
+  and (
+    select
+      prosrc like
+        '%from atlas_planning.planning_quantity_policies as policy%'
+      and prosrc like
+        '%where policy.planning_quantity_policy_id = v_policy_id%for update;%'
+      and prosrc like
+        '%order by decision.planning_quantity_policy_id%'
+      and prosrc like
+        '%order by line.confirmed_need_line_id%'
+      and position(
+        'from atlas_planning.planning_quantity_policies as policy'
+        in prosrc
+      ) < position(
+        'from atlas_planning.confirmed_need_lines as line'
+          || chr(10)
+          || '    where line.confirmed_need_line_id = v_line_id'
+          || chr(10)
+          || '    for update;'
+        in prosrc
+      )
+    from pg_proc
+    where oid =
+      'atlas_planning.pa_06e_h1b1_confirmed_need_line_decision_integrity()'
+        ::regprocedure
+  ),
+  'H1B1-STR-46 static qualified integrity locks the exact policy root before the stable line'
 );
 select is(
   (

@@ -481,6 +481,15 @@ focused suites (`64/48/48`), the canonical `plan(22)` catalog update, and the
 ordinary tables, 53 private functions, 65 non-internal triggers, and 85
 RLS-enabled/forced tables; policy and positive-grant totals remain unchanged.
 
+Independent review of head
+`982fe84e2e56e77356091f7c4600163e06c78d9c` required two bounded integrity
+corrections without changing that catalog. The deferred integrity function now
+locks each affected exact H1A policy root in UUID order before locking affected
+stable Confirmed Need lines in UUID order. It also distinguishes an adjusted
+same-revision evidence correction, which creates no line revision, from an
+adjusted quantity correction, which still requires one command-authored direct
+successor revision.
+
 The implementation adds no role, capability, membership, runtime, RLS policy,
 positive grant, API, PA-06A entry, view, read model, writer, command, event,
 seed, application code, hosted action, credential, package, generated type, or
