@@ -25,6 +25,7 @@ import {
 } from "./connection/supabaseClient";
 import { SupplierEvidenceReadinessWorkbench } from "./evidence/SupplierEvidenceReadinessWorkbench";
 import { createSupplierEvidenceApi } from "./evidence/supplierEvidenceApi";
+import { createMasterDataApi } from "./master-data/masterDataApi";
 
 export function AtlasApp({
   initialPage = "control-board",
@@ -40,6 +41,13 @@ export function AtlasApp({
     () =>
       connection.status === "configured"
         ? createSupplierEvidenceApi(createAtlasRpcTransport(connection.client))
+        : undefined,
+    [connection],
+  );
+  const masterDataApi = useMemo(
+    () =>
+      connection.status === "configured"
+        ? createMasterDataApi(createAtlasRpcTransport(connection.client))
         : undefined,
     [connection],
   );
@@ -62,9 +70,17 @@ export function AtlasApp({
     content = <WarehouseStockReleasePage />;
   if (active === "dispatch-delivery") content = <DispatchDeliveryPage />;
   if (active === "mvp-operations-simulation") content = <MvpMorningChaosPage />;
-  if (active === "customers-schools") content = <SchoolAdminWorkbench />;
-  if (active === "ingredients-units" || active === "suppliers-eligibility")
-    content = <IngredientSupplierAdminWorkbench />;
+  if (active === "customers-schools")
+    content = (
+      <SchoolAdminWorkbench authState={auth.state} api={masterDataApi} />
+    );
+  if (active === "ingredients-units")
+    content = (
+      <IngredientSupplierAdminWorkbench
+        authState={auth.state}
+        api={masterDataApi}
+      />
+    );
   if (active === "recipe-governance") content = <DishRecipeAdminWorkbench />;
 
   return (

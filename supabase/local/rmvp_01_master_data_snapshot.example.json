@@ -1,0 +1,104 @@
+{
+  "source_system": "OPS_LEGACY_EXPLICIT_EXPORT",
+  "snapshot_id": "rmvp-01-example-2026-07-26",
+  "exported_at": "2026-07-26T08:00:00.000Z",
+  "records": {
+    "customers": [
+      {
+        "legacy_id": "customer-school-group-1",
+        "customer_code": "rmvp-school-group-1",
+        "customer_name": "Cụm trường Atlas",
+        "customer_type": "SCHOOL_CATERING",
+        "customer_status": "ACTIVE"
+      }
+    ],
+    "delivery_locations": [
+      {
+        "legacy_id": "location-school-1",
+        "customer_legacy_id": "customer-school-group-1",
+        "location_code": "school-1-main",
+        "location_name": "Cổng giao nhận chính",
+        "address_text": "01 Đường Atlas, Thành phố Hồ Chí Minh",
+        "delivery_instructions": "Giao trước 05:30 tại cổng bếp.",
+        "location_status": "ACTIVE"
+      }
+    ],
+    "school_types": [
+      {
+        "legacy_id": "school-type-primary",
+        "school_type_code": "primary",
+        "school_type_name": "Tiểu học",
+        "school_type_status": "ACTIVE"
+      }
+    ],
+    "schools": [
+      {
+        "legacy_id": "school-atlas-primary",
+        "customer_legacy_id": "customer-school-group-1",
+        "school_code": "atlas-primary",
+        "school_name": "Trường Tiểu học Atlas",
+        "school_type_legacy_id": "school-type-primary",
+        "delivery_location_legacy_id": "location-school-1",
+        "school_status": "ACTIVE",
+        "display_order": 1,
+        "operational_notes": "Hợp đồng suất ăn năm học 2026–2027.",
+        "default_student_portions": 420,
+        "default_teacher_portions": 32
+      }
+    ],
+    "units": [
+      {
+        "legacy_id": "unit-kg",
+        "unit_code": "kg",
+        "unit_name": "Kilôgam",
+        "dimension_code": "MASS",
+        "decimal_scale": 3,
+        "unit_status": "ACTIVE"
+      }
+    ],
+    "ingredients": [
+      {
+        "legacy_id": "ingredient-rice",
+        "ingredient_code": "rice-jasmine",
+        "ingredient_name": "Gạo Jasmine",
+        "ingredient_type": "Lương thực",
+        "shopping_type": "Mua theo kế hoạch",
+        "purchase_unit_legacy_id": "unit-kg",
+        "order_step": 5,
+        "ingredient_status": "ACTIVE"
+      }
+    ],
+    "suppliers": [
+      {
+        "legacy_id": "supplier-minh-tam",
+        "supplier_code": "minh-tam",
+        "supplier_name": "NCC Minh Tâm",
+        "supplier_status": "ACTIVE",
+        "contact_name": "Nguyễn Minh",
+        "contact_phone": "0900000001",
+        "contact_email": "minh.tam@example.invalid"
+      },
+      {
+        "legacy_id": "supplier-an-phu",
+        "supplier_code": "an-phu",
+        "supplier_name": "NCC An Phú",
+        "supplier_status": "ACTIVE",
+        "contact_name": "Trần An",
+        "contact_phone": "0900000002",
+        "contact_email": "an.phu@example.invalid"
+      }
+    ],
+    "supplier_priorities": [
+      {
+        "ingredient_legacy_id": "ingredient-rice",
+        "supplier_legacy_id": "supplier-minh-tam",
+        "priority": 1
+      },
+      {
+        "ingredient_legacy_id": "ingredient-rice",
+        "supplier_legacy_id": "supplier-an-phu",
+        "priority": 2
+      }
+    ]
+  }
+}

@@ -37,18 +37,19 @@ function objectKeys(value: unknown): string[] {
   ]);
 }
 
-function renderAtlasSurface(page: AtlasPageId, accessibleName: string) {
+function renderAtlasSurface(page: AtlasPageId, heading: string) {
   const rendered = render(<AtlasApp initialPage={page} />);
-  expect(screen.getByLabelText(accessibleName)).toBeInTheDocument();
+  expect(
+    screen.getAllByRole("heading", { name: heading }).length,
+  ).toBeGreaterThan(0);
   rendered.unmount();
 }
 
 describe("PD-04 Admin integration conformance", () => {
-  it("exposes three supporting Admin workbenches as one master-data domain", () => {
+  it("exposes one Master Data area with Schools and Ingredients & Suppliers", () => {
     const adminPageIds: AtlasPageId[] = [
       "customers-schools",
       "ingredients-units",
-      "suppliers-eligibility",
       "recipe-governance",
     ];
     const adminPages = atlasPages.filter((page) =>
@@ -58,19 +59,12 @@ describe("PD-04 Admin integration conformance", () => {
       new Set(["Dữ liệu & quản trị"]),
     );
 
-    renderAtlasSurface("customers-schools", "School administration summary");
+    renderAtlasSurface("customers-schools", "Dữ liệu gốc · Trường học");
     renderAtlasSurface(
       "ingredients-units",
-      "Ingredients and suppliers administration summary",
+      "Dữ liệu gốc · Nguyên liệu & Nhà cung cấp",
     );
-    renderAtlasSurface(
-      "suppliers-eligibility",
-      "Ingredients and suppliers administration summary",
-    );
-    renderAtlasSurface(
-      "recipe-governance",
-      "Dishes and recipes administration summary",
-    );
+    renderAtlasSurface("recipe-governance", "Dishes & Recipes Admin Workbench");
   });
 
   it("keeps Dishes & Recipes as one consolidated Atlas workbench", () => {

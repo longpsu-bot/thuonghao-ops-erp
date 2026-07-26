@@ -131,5 +131,49 @@ on conflict (actor_scope_id) do update set
   effective_to = null,
   reason_note = excluded.reason_note;
 
+insert into atlas_core.role_capabilities (
+  role_capability_id,
+  role_id,
+  capability_id,
+  granted_by_actor_id
+)
+select
+  source.role_capability_id,
+  'b6000000-0000-0000-0000-000000000003',
+  capability.capability_id,
+  'b6000000-0000-0000-0000-000000000001'
+from (
+  values
+    ('b6000000-0000-0000-0000-000000000010'::uuid, 'master_data.read'),
+    ('b6000000-0000-0000-0000-000000000011'::uuid, 'master_data.schools.write'),
+    ('b6000000-0000-0000-0000-000000000012'::uuid, 'master_data.ingredients.write'),
+    ('b6000000-0000-0000-0000-000000000013'::uuid, 'master_data.suppliers.write'),
+    ('b6000000-0000-0000-0000-000000000014'::uuid, 'master_data.priorities.write')
+) source(role_capability_id, capability_code)
+join atlas_core.capabilities capability
+  on capability.capability_code = source.capability_code
+on conflict (role_capability_id) do update set
+  role_id = excluded.role_id,
+  capability_id = excluded.capability_id,
+  granted_by_actor_id = excluded.granted_by_actor_id;
+
+insert into atlas_core.actor_scopes (
+  actor_scope_id,
+  actor_id,
+  scope_kind,
+  granted_by_actor_id,
+  reason_note
+) values (
+  'b6000000-0000-0000-0000-000000000015',
+  'b6000000-0000-0000-0000-000000000001',
+  'GLOBAL',
+  'b6000000-0000-0000-0000-000000000001',
+  'Synthetic global scope for connected RMVP-01 master-data acceptance only.'
+)
+on conflict (actor_scope_id) do update set
+  scope_status = 'ACTIVE',
+  effective_to = null,
+  reason_note = excluded.reason_note;
+
 end;
 $pa_06b_identity$;

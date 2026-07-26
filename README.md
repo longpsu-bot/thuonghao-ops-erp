@@ -50,6 +50,19 @@ No Supabase credential or production-data access is required. The PA-04 through 
 
 Before changing code, read `AGENTS.md` and the relevant domain contract.
 
+### RMVP-01 local master data
+
+RMVP-01 uses an independent local Atlas database and an explicit one-way JSON snapshot. It does not connect to or mutate OPS v1/v2, Retool, or a hosted Supabase project.
+
+```bash
+pnpm exec supabase db reset --local
+pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
+pnpm local:auth:provision
+pnpm local:rmvp01:verify
+```
+
+The importer validates source identities and references before target writes, stores typed legacy mappings plus inserted/updated/skipped/rejected counts and source/target reconciliation, and safely replays an identical snapshot. See [`RMVP-01 independent Atlas master data`](docs/architecture/rmvp-01-independent-atlas-master-data.md) for authority-cutover and rollback boundaries.
+
 ## Read first
 
 1. [`AGENTS.md`](AGENTS.md) — repository operating rules and hard boundaries

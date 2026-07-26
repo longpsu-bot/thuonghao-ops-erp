@@ -182,26 +182,23 @@ describe("Atlas operations workbench", () => {
       screen.getByText(/không thay đổi dữ liệu thực tế/),
     ).toBeInTheDocument();
   });
-  it("exposes the command-gated Ingredients & Suppliers Admin workbench", () => {
+  it("exposes the connected Ingredients & Suppliers Master Data workbench", () => {
     render(<AtlasApp initialPage="ingredients-units" />);
     expect(
-      screen.getByLabelText("Ingredients and suppliers administration summary"),
+      screen.getByRole("heading", {
+        name: "Dữ liệu gốc · Nguyên liệu & Nhà cung cấp",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Which suppliers are active and eligible/),
+      screen.getByText(/Đăng nhập để xem và cập nhật dữ liệu chính thức/),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("columnheader", { name: "Ingredient" }),
+      screen.queryByRole("columnheader", { name: "Nguyên liệu" }),
     ).not.toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Review master-data details" }),
-    );
     expect(
-      screen.getByRole("columnheader", { name: "Ingredient" }),
-    ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /cung/ }));
-    expect(
-      screen.getByLabelText("Ingredients and suppliers administration summary"),
+      screen.getByRole("button", {
+        name: "Dữ liệu gốc · Nguyên liệu & NCC",
+      }),
     ).toBeInTheDocument();
   });
   it("keeps the trace drawer static and prototype-only", () => {
