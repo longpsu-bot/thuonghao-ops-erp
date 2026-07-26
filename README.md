@@ -50,6 +50,32 @@ No Supabase credential or production-data access is required. The PA-04 through 
 
 Before changing code, read `AGENTS.md` and the relevant domain contract.
 
+### RMVP-01 local master data
+
+RMVP-01 uses an independent local Atlas database and an explicit one-way JSON snapshot. It does not connect to or mutate OPS v1/v2, Retool, or a hosted Supabase project.
+
+```bash
+pnpm exec supabase db reset --local
+pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
+pnpm local:auth:provision
+pnpm local:rmvp01:verify
+```
+
+The importer validates source identities and references before target writes, stores typed legacy mappings plus inserted/updated/skipped/rejected counts and source/target reconciliation, and safely replays an identical snapshot. See [`RMVP-01 independent Atlas master data`](docs/architecture/rmvp-01-independent-atlas-master-data.md) for authority-cutover and rollback boundaries.
+
+### RMVP-01 UI review export
+
+The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.
+
+Build it only with the explicit review command:
+
+```bash
+pnpm build:review
+node scripts/create-review-launcher.mjs dist "Open Atlas Review.bat" 4173
+```
+
+The normal `pnpm build` does not enable review data and continues to use the authenticated connected adapter. GitHub Actions publishes the review build as the `atlas-ui-review` artifact from the `UI Review Export` workflow.
+
 ## Read first
 
 1. [`AGENTS.md`](AGENTS.md) — repository operating rules and hard boundaries

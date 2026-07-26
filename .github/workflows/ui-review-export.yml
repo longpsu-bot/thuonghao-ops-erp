@@ -48,7 +48,7 @@ jobs:
         run: pnpm test
 
       - name: Build Vite app review
-        run: pnpm build
+        run: pnpm build:review
 
       - name: Add Vite app review launcher
         run: node scripts/create-review-launcher.mjs dist "Open Atlas Review.bat" 4173

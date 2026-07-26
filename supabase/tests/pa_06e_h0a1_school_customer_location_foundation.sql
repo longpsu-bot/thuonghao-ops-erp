@@ -56,7 +56,9 @@ select is(
     'operational_notes',
     'version',
     'created_at',
-    'updated_at'
+    'updated_at',
+    'default_student_portions',
+    'default_teacher_portions'
   ]::text[],
   'schools has only the approved reference fields'
 );
@@ -941,7 +943,7 @@ select is(
         'using', pg_get_expr(policy.polqual, policy.polrelid),
         'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
       )
-      order by policy.polrelid::regclass::text
+      order by policy.polrelid::regclass::text, policy.polname
     )
     from pg_policy policy
     where policy.polrelid in (
@@ -960,6 +962,24 @@ select is(
       'with_check', null
     ),
     jsonb_build_object(
+      'relation', 'atlas_admin.school_types',
+      'name', 'rmvp_01_command_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_master_data_command_runtime'),
+      'using', 'true',
+      'with_check', null
+    ),
+    jsonb_build_object(
+      'relation', 'atlas_admin.school_types',
+      'name', 'rmvp_01_read_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_read_runtime'),
+      'using', 'true',
+      'with_check', null
+    ),
+    jsonb_build_object(
       'relation', 'atlas_admin.schools',
       'name', 'pa_06e_h0cb_materialization_select',
       'command', 'r',
@@ -967,9 +987,36 @@ select is(
       'roles', jsonb_build_array('atlas_planning_materialization_runtime'),
       'using', 'true',
       'with_check', null
+    ),
+    jsonb_build_object(
+      'relation', 'atlas_admin.schools',
+      'name', 'rmvp_01_command_school_update',
+      'command', 'w',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_master_data_command_runtime'),
+      'using', 'true',
+      'with_check', 'true'
+    ),
+    jsonb_build_object(
+      'relation', 'atlas_admin.schools',
+      'name', 'rmvp_01_command_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_master_data_command_runtime'),
+      'using', 'true',
+      'with_check', null
+    ),
+    jsonb_build_object(
+      'relation', 'atlas_admin.schools',
+      'name', 'rmvp_01_read_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_read_runtime'),
+      'using', 'true',
+      'with_check', null
     )
   ),
-  'school tables have exactly the two dedicated-runtime permissive SELECT policies'
+  'school tables have exactly the seven reviewed planning and RMVP-01 runtime policies'
 );
 
 select ok(

@@ -1,17 +1,14 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it } from "vitest";
-import { AtlasApp } from "./AtlasApp";
+import { MvpMorningChaosPage } from "./MvpMorningChaosPage";
 
 afterEach(cleanup);
 
 describe("MVP morning operations simulation page", () => {
   it("shows the complete fixture-backed 02:00–08:00 review surface", () => {
-    render(<AtlasApp initialPage="mvp-operations-simulation" />);
+    render(<MvpMorningChaosPage />);
 
-    expect(
-      screen.getByRole("heading", { name: "MVP Morning Simulation" }),
-    ).toBeInTheDocument();
     expect(screen.getByLabelText("Operating-day summary")).toHaveTextContent(
       "02:00–08:00",
     );

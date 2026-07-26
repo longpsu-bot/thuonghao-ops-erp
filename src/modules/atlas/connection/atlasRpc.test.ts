@@ -48,8 +48,8 @@ function rpcClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 18-function registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(18);
+  it("contains exactly the reviewed 27-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(27);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.record_wholesale_source",
       "atlas_api.release_wholesale_order",
@@ -69,6 +69,15 @@ describe("Atlas RPC transport", () => {
       "atlas_api.get_dispatch_evidence_readiness",
       "atlas_api.get_operator_blockers",
       "atlas_api.get_command_audit_timeline",
+      "atlas_api.get_school_master_data",
+      "atlas_api.get_ingredient_supplier_master_data",
+      "atlas_api.update_school_portion_defaults",
+      "atlas_api.create_ingredient",
+      "atlas_api.update_ingredient",
+      "atlas_api.set_ingredient_lifecycle",
+      "atlas_api.create_supplier",
+      "atlas_api.update_supplier",
+      "atlas_api.replace_ingredient_supplier_priorities",
     ]);
   });
 

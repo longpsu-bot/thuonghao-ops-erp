@@ -19,6 +19,7 @@ select is(
     'atlas_core',
     'atlas_dispatch',
     'atlas_evidence',
+    'atlas_legacy',
     'atlas_planning',
     'atlas_procurement',
     'atlas_reporting'
@@ -36,8 +37,8 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 85, 'views', 2),
-  'CAT-02 exact whole-platform table and view totals are 85 and 2'
+  jsonb_build_object('ordinary_tables', 87, 'views', 2),
+  'CAT-02 exact whole-platform table and view totals are 87 and 2'
 );
 
 select is(
@@ -56,14 +57,15 @@ select is(
       'atlas_procurement',
       'atlas_evidence',
       'atlas_dispatch',
-      'atlas_audit'
+      'atlas_audit',
+      'atlas_legacy'
     )
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 85,
-    'rls_enabled', 85,
-    'rls_forced', 85
+    'authoritative_tables', 87,
+    'rls_enabled', 87,
+    'rls_forced', 87
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -102,6 +104,7 @@ select is(
           'atlas_command_runtime',
           'atlas_dispatch_command_runtime',
           'atlas_evidence_command_runtime',
+          'atlas_master_data_command_runtime',
           'atlas_planning_command_runtime',
           'atlas_planning_materialization_runtime',
           'atlas_procurement_command_runtime',
@@ -120,6 +123,7 @@ select is(
         'atlas_command_runtime|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
         'atlas_dispatch_command_runtime|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
         'atlas_evidence_command_runtime|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
+        'atlas_master_data_command_runtime|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
         'atlas_owner|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
         'atlas_planning_command_runtime|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
         'atlas_planning_materialization_runtime|login=f|inherit=f|super=f|createrole=f|createdb=f|repl=f|bypassrls=f',
@@ -152,9 +156,39 @@ select is(
       'capability_name', 'Materialize Confirmed Need from Need Generation',
       'owning_domain', 'PLANNING',
       'capability_status', 'ACTIVE'
+    ),
+    jsonb_build_object(
+      'capability_code', 'master_data.ingredients.write',
+      'capability_name', 'Maintain Ingredients',
+      'owning_domain', 'ADMIN',
+      'capability_status', 'ACTIVE'
+    ),
+    jsonb_build_object(
+      'capability_code', 'master_data.priorities.write',
+      'capability_name', 'Replace Ingredient Supplier Priorities',
+      'owning_domain', 'ADMIN',
+      'capability_status', 'ACTIVE'
+    ),
+    jsonb_build_object(
+      'capability_code', 'master_data.read',
+      'capability_name', 'Read Master Data',
+      'owning_domain', 'ADMIN',
+      'capability_status', 'ACTIVE'
+    ),
+    jsonb_build_object(
+      'capability_code', 'master_data.schools.write',
+      'capability_name', 'Maintain School Portion Defaults',
+      'owning_domain', 'ADMIN',
+      'capability_status', 'ACTIVE'
+    ),
+    jsonb_build_object(
+      'capability_code', 'master_data.suppliers.write',
+      'capability_name', 'Maintain Suppliers',
+      'owning_domain', 'ADMIN',
+      'capability_status', 'ACTIVE'
     )
   ),
-  'CAT-05 exact capability catalog contains only active Planning materialization'
+  'CAT-05 exact capability catalog includes Planning materialization and RMVP-01 Admin capabilities'
 );
 
 select is(
@@ -173,6 +207,7 @@ select is(
     'atlas_core=atlas_owner',
     'atlas_dispatch=atlas_owner',
     'atlas_evidence=atlas_owner',
+    'atlas_legacy=atlas_owner',
     'atlas_planning=atlas_owner',
     'atlas_procurement=atlas_owner',
     'atlas_reporting=atlas_owner'
@@ -213,10 +248,10 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 305,
-    'md5', '5361b5d7d902fe4afbd99ac8268352b8'
+    'count', 340,
+    'md5', '09a1e0b40fe55e3a4f7c982abc3c1e1f'
   ),
-  'CAT-07 exact 305-policy RLS catalog fingerprint is retained'
+  'CAT-07 exact 340-policy RLS catalog fingerprint is retained'
 );
 
 select ok(
@@ -250,6 +285,7 @@ select ok(
         'atlas_evidence',
         'atlas_dispatch',
         'atlas_audit',
+        'atlas_legacy',
         'atlas_reporting'
       ]
     ) private_schema(schema_name)
@@ -276,6 +312,7 @@ select ok(
       'atlas_evidence',
       'atlas_dispatch',
       'atlas_audit',
+      'atlas_legacy',
       'atlas_reporting'
     )
       and c.relkind in ('r', 'v', 'm')
@@ -302,6 +339,7 @@ select ok(
       'atlas_evidence',
       'atlas_dispatch',
       'atlas_audit',
+      'atlas_legacy',
       'atlas_reporting'
     )
       and c.relkind = 'S'
@@ -419,8 +457,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  19,
-  'CAT-14 physical atlas_api function count is exactly nineteen'
+  28,
+  'CAT-14 physical atlas_api function count is exactly twenty-eight'
 );
 
 select is(
@@ -441,10 +479,14 @@ select is(
     'confirm_successful_delivery(request jsonb)',
     'create_confirmed_needs_from_generation(request jsonb)',
     'create_dispatch_plan(request jsonb)',
+    'create_ingredient(request jsonb)',
     'create_or_assign_dispatch_trip(request jsonb)',
+    'create_supplier(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
     'get_dispatch_evidence_readiness(request jsonb)',
+    'get_ingredient_supplier_master_data(request jsonb)',
     'get_operator_blockers(request jsonb)',
+    'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'record_dispatch_departure(request jsonb)',
     'record_supplier_receiving_evidence(request jsonb)',
@@ -452,9 +494,14 @@ select is(
     'release_dispatch_requirement(request jsonb)',
     'release_purchase_handoff(request jsonb)',
     'release_supplier_purchase_order(request jsonb)',
-    'release_wholesale_order(request jsonb)'
+    'release_wholesale_order(request jsonb)',
+    'replace_ingredient_supplier_priorities(request jsonb)',
+    'set_ingredient_lifecycle(request jsonb)',
+    'update_ingredient(request jsonb)',
+    'update_school_portion_defaults(request jsonb)',
+    'update_supplier(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly nineteen functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly twenty-eight functions'
 );
 
 select is(
@@ -567,10 +614,14 @@ select is(
     'confirm_successful_delivery(request jsonb)=atlas_dispatch_command_runtime',
     'create_confirmed_needs_from_generation(request jsonb)=atlas_planning_materialization_runtime',
     'create_dispatch_plan(request jsonb)=atlas_dispatch_command_runtime',
+    'create_ingredient(request jsonb)=atlas_master_data_command_runtime',
     'create_or_assign_dispatch_trip(request jsonb)=atlas_dispatch_command_runtime',
+    'create_supplier(request jsonb)=atlas_master_data_command_runtime',
     'get_command_audit_timeline(request jsonb)=atlas_read_runtime',
     'get_dispatch_evidence_readiness(request jsonb)=atlas_read_runtime',
+    'get_ingredient_supplier_master_data(request jsonb)=atlas_read_runtime',
     'get_operator_blockers(request jsonb)=atlas_read_runtime',
+    'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
     'record_dispatch_departure(request jsonb)=atlas_dispatch_command_runtime',
     'record_supplier_receiving_evidence(request jsonb)=atlas_evidence_command_runtime',
@@ -578,7 +629,12 @@ select is(
     'release_dispatch_requirement(request jsonb)=atlas_planning_command_runtime',
     'release_purchase_handoff(request jsonb)=atlas_planning_command_runtime',
     'release_supplier_purchase_order(request jsonb)=atlas_procurement_command_runtime',
-    'release_wholesale_order(request jsonb)=atlas_planning_command_runtime'
+    'release_wholesale_order(request jsonb)=atlas_planning_command_runtime',
+    'replace_ingredient_supplier_priorities(request jsonb)=atlas_master_data_command_runtime',
+    'set_ingredient_lifecycle(request jsonb)=atlas_master_data_command_runtime',
+    'update_ingredient(request jsonb)=atlas_master_data_command_runtime',
+    'update_school_portion_defaults(request jsonb)=atlas_master_data_command_runtime',
+    'update_supplier(request jsonb)=atlas_master_data_command_runtime'
   ]::text[],
   'CAT-17 exact API function owner mapping is retained'
 );
@@ -602,10 +658,14 @@ select is(
     'confirm_successful_delivery(request jsonb)',
     'create_confirmed_needs_from_generation(request jsonb)',
     'create_dispatch_plan(request jsonb)',
+    'create_ingredient(request jsonb)',
     'create_or_assign_dispatch_trip(request jsonb)',
+    'create_supplier(request jsonb)',
     'get_command_audit_timeline(request jsonb)',
     'get_dispatch_evidence_readiness(request jsonb)',
+    'get_ingredient_supplier_master_data(request jsonb)',
     'get_operator_blockers(request jsonb)',
+    'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'record_dispatch_departure(request jsonb)',
     'record_supplier_receiving_evidence(request jsonb)',
@@ -613,9 +673,14 @@ select is(
     'release_dispatch_requirement(request jsonb)',
     'release_purchase_handoff(request jsonb)',
     'release_supplier_purchase_order(request jsonb)',
-    'release_wholesale_order(request jsonb)'
+    'release_wholesale_order(request jsonb)',
+    'replace_ingredient_supplier_priorities(request jsonb)',
+    'set_ingredient_lifecycle(request jsonb)',
+    'update_ingredient(request jsonb)',
+    'update_school_portion_defaults(request jsonb)',
+    'update_supplier(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly nineteen functions'
+  'CAT-18 authenticated execute allowlist is exactly twenty-eight functions'
 );
 
 select ok(
@@ -655,10 +720,14 @@ select ok(
           ('confirm_successful_delivery', 'request jsonb'),
           ('create_confirmed_needs_from_generation', 'request jsonb'),
           ('create_dispatch_plan', 'request jsonb'),
+          ('create_ingredient', 'request jsonb'),
           ('create_or_assign_dispatch_trip', 'request jsonb'),
+          ('create_supplier', 'request jsonb'),
           ('get_command_audit_timeline', 'request jsonb'),
           ('get_dispatch_evidence_readiness', 'request jsonb'),
+          ('get_ingredient_supplier_master_data', 'request jsonb'),
           ('get_operator_blockers', 'request jsonb'),
+          ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
           ('record_dispatch_departure', 'request jsonb'),
           ('record_supplier_receiving_evidence', 'request jsonb'),
@@ -666,7 +735,12 @@ select ok(
           ('release_dispatch_requirement', 'request jsonb'),
           ('release_purchase_handoff', 'request jsonb'),
           ('release_supplier_purchase_order', 'request jsonb'),
-          ('release_wholesale_order', 'request jsonb')
+          ('release_wholesale_order', 'request jsonb'),
+          ('replace_ingredient_supplier_priorities', 'request jsonb'),
+          ('set_ingredient_lifecycle', 'request jsonb'),
+          ('update_ingredient', 'request jsonb'),
+          ('update_school_portion_defaults', 'request jsonb'),
+          ('update_supplier', 'request jsonb')
       )
   ),
   'CAT-21 no unreviewed atlas_api function or overload exists'
@@ -733,6 +807,7 @@ select is(
         'atlas_evidence',
         'atlas_dispatch',
         'atlas_audit',
+        'atlas_legacy',
         'atlas_reporting'
       )
     ),
@@ -766,6 +841,7 @@ select is(
         'atlas_command_runtime',
         'atlas_dispatch_command_runtime',
         'atlas_evidence_command_runtime',
+        'atlas_master_data_command_runtime',
         'atlas_planning_command_runtime',
         'atlas_planning_materialization_runtime',
         'atlas_procurement_command_runtime',
@@ -862,8 +938,9 @@ select is(
           'atlas_planning',
           'atlas_procurement',
           'atlas_evidence',
-          'atlas_dispatch',
-          'atlas_audit'
+        'atlas_dispatch',
+        'atlas_audit',
+        'atlas_legacy'
         )
           and c.relkind = 'r'
           and c.relrowsecurity
@@ -879,8 +956,9 @@ select is(
           'atlas_planning',
           'atlas_procurement',
           'atlas_evidence',
-          'atlas_dispatch',
-          'atlas_audit'
+        'atlas_dispatch',
+        'atlas_audit',
+        'atlas_legacy'
         )
           and c.relkind = 'r'
           and c.relforcerowsecurity
@@ -948,28 +1026,28 @@ select is(
     )
   ),
   jsonb_build_object(
-    'schema_count', 9,
-    'table_count', 85,
-    'table_catalog_md5', 'd77e7ae71a8efd10b5f2b28c0c3971e0',
+    'schema_count', 10,
+    'table_count', 87,
+    'table_catalog_md5', '18f27e0ac592e0c15191a4014918829d',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 85,
-    'rls_forced', 85,
-    'database_role_count', 8,
+    'rls_enabled', 87,
+    'rls_forced', 87,
+    'database_role_count', 9,
     'application_role_count', 0,
-    'capability_count', 1,
-    'policy_count', 305,
-    'policy_catalog_md5', '5361b5d7d902fe4afbd99ac8268352b8',
-    'private_function_count', 53,
-    'private_function_catalog_md5', '58d2b206d2172399ffe6fd14c6954404',
+    'capability_count', 6,
+    'policy_count', 340,
+    'policy_catalog_md5', '09a1e0b40fe55e3a4f7c982abc3c1e1f',
+    'private_function_count', 61,
+    'private_function_catalog_md5', '8e5f5a9f4faab4d780f143f352728d7d',
     'trigger_count', 65,
     'trigger_catalog_md5', '63a5ad67bf386acd37275b3bce0a544d',
-    'positive_target_grant_count', 604,
-    'positive_target_grant_md5', 'ad5dd8c4bfa2f9475ff3727aa7e52ee1',
-    'api_function_count', 19,
+    'positive_target_grant_count', 716,
+    'positive_target_grant_md5', '89bf372f3970a4c99ebf79f7f13d2ebb',
+    'api_function_count', 28,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 19,
+    'authenticated_execute_count', 28,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

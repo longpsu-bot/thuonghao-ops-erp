@@ -11,7 +11,6 @@ export type AtlasPageId =
   | "mvp-operations-simulation"
   | "customers-schools"
   | "ingredients-units"
-  | "suppliers-eligibility"
   | "recipe-governance"
   | "prototype-boundary";
 
@@ -127,7 +126,7 @@ export const atlasPages: AtlasPage[] = [
   },
   {
     id: "customers-schools",
-    label: "Khách hàng & Trường học",
+    label: "Dữ liệu gốc · Trường học",
     group: "Dữ liệu & quản trị",
     decision: "Điểm nhận nào hợp lệ?",
     object: "Đơn vị nhận",
@@ -136,21 +135,12 @@ export const atlasPages: AtlasPage[] = [
   },
   {
     id: "ingredients-units",
-    label: "Nguyên liệu & Đơn vị",
+    label: "Dữ liệu gốc · Nguyên liệu & NCC",
     group: "Dữ liệu & quản trị",
     decision: "Nguyên liệu và đơn vị nào được dùng?",
     object: "Nguyên liệu",
     state: "Dữ liệu tham chiếu",
     handoff: "Lập nhu cầu",
-  },
-  {
-    id: "suppliers-eligibility",
-    label: "Nhà cung cấp & Điều kiện cung ứng",
-    group: "Dữ liệu & quản trị",
-    decision: "NCC nào đủ điều kiện cung ứng?",
-    object: "Hồ sơ NCC",
-    state: "Dữ liệu tham chiếu",
-    handoff: "Lập kế hoạch mua hàng",
   },
   {
     id: "recipe-governance",

@@ -15,9 +15,9 @@ export type AtlasAuthState =
   | { status: "session_expired"; safeMessage: string };
 
 const SIGN_IN_FAILURE =
-  "Sign-in failed. Check the local synthetic account and try again.";
+  "Không thể đăng nhập. Vui lòng kiểm tra tài khoản và thử lại.";
 const SESSION_EXPIRED =
-  "The local Auth session is expired or invalid. Sign in again and review before submitting a new command.";
+  "Phiên làm việc đã hết hoặc không còn hợp lệ. Vui lòng đăng nhập lại trước khi tiếp tục.";
 
 function authenticatedState(session: Session): AtlasAuthState {
   return {
@@ -158,9 +158,7 @@ export function useAtlasAuthSession(
     const { error } = await connection.client.auth.signOut({ scope: "local" });
     explicitSignOutRef.current = false;
     if (error) {
-      setSafeAuthError(
-        "Sign-out failed safely. The current session was not replayed.",
-      );
+      setSafeAuthError("Không thể đăng xuất lúc này. Vui lòng thử lại.");
       return false;
     }
     clearConnectionState();
