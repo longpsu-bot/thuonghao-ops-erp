@@ -533,6 +533,9 @@ insert into rmvp02a_results values (
   )
 );
 
+set constraints all immediate;
+set constraints all deferred;
+
 insert into rmvp02a_results values (
   'mutate-validated',
   atlas_api.replace_recipe_draft_composition(
@@ -570,6 +573,9 @@ insert into rmvp02a_results values (
     )
   )
 );
+
+set constraints all immediate;
+set constraints all deferred;
 
 insert into rmvp02a_results values (
   'create-successor',

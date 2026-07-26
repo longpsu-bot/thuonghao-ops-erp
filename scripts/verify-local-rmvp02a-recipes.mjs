@@ -29,7 +29,11 @@ async function invoke(client, name, request) {
     .schema("atlas_api")
     .rpc(name, { request })
     .retry(false);
-  if (error) throw new Error(`RMVP-02A ${name} transport failed safely.`);
+  if (error) {
+    throw new Error(
+      `RMVP-02A ${name} transport failed safely (${error.code ?? "UNKNOWN"}).`,
+    );
+  }
   if (!data || data.success !== true) {
     throw new Error(
       `RMVP-02A ${name} was rejected: ${data?.error_code ?? "UNKNOWN"}.`,

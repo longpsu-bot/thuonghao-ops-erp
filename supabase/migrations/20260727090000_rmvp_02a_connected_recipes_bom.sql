@@ -2680,6 +2680,8 @@ begin
       validated_at = pg_catalog.transaction_timestamp(),
       version = version + 1
   where recipe_version_id = v_recipe_version_id;
+  set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+  set constraints atlas_admin.recipe_versions_integrity_guard deferred;
 
   if v_version.source_evidence ->> 'source_kind' = 'WORKBOOK_IMPORT' then
     insert into atlas_legacy.master_data_mappings (
@@ -2907,6 +2909,8 @@ begin
       released_at = pg_catalog.transaction_timestamp(),
       version = version + 1
   where recipe_version_id = v_recipe_version_id;
+  set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+  set constraints atlas_admin.recipe_versions_integrity_guard deferred;
   return atlas_core.rmvp_02a_finish_success(
     request,
     v_actor_id,
