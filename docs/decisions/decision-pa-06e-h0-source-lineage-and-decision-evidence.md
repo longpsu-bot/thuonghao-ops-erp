@@ -1,12 +1,14 @@
 # Decision PA-06E-H0 — Source Lineage and Decision Evidence
 
-**Status:** Proposed decision set; only inherited rows marked **Approved baseline** are already settled; every H0 physical/API selection remains subject to review
+**Status:** Historical H0 decision record; implemented H0 directions remain authoritative, while exact H1B1 decision-evidence details are superseded by the approved H1B1 registry
 
 **Issue:** [#115](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/115)
 
 **Architecture contract:** [PA-06E-H0 School-Catering Persistence and Materialization](../architecture/pa-06e-h0-school-catering-persistence-and-materialization-contract.md)
 
 **Implementation decomposition:** [TASK-PA-06E-H0](../implementation-tasks/TASK-PA-06E-H0-school-catering-persistence-materialization.md)
+
+**H1B1 superseding decision:** [Decision PA-06E-H1B1 — Policy-Bound Line Decision Evidence](decision-pa-06e-h1b1-policy-bound-line-decision-evidence.md)
 
 ## 1. Context
 
@@ -16,7 +18,7 @@ The merged PA-04/PA-05D physical implementation is narrower. It requires Wholesa
 
 The retained active OPS v1 Purchase Planner provides additional business evidence: its `family_token`, `public.actual_need_overrides` primary/conflict key, and `public.purchase_assignments` grouping all use `service_date + school_id + ingredient_id`. This establishes an operational total family, not an Atlas schema. Atlas must add typed destination, controlled unit, approved scope, immutable revisions, and exact contribution membership.
 
-This record separates inherited approved directions from proposed H0 physical choices and unresolved product/physical decisions. A proposed row is not a migration authorization or a canonical API-registry entry.
+This record separates inherited approved directions from proposed H0 physical choices and unresolved product/physical decisions. A proposed row is not a migration authorization or a canonical API-registry entry. Exact H1B1 decision kind, reason, actor, policy, quantity, predecessor, pointer, command, and future physical details are now governed only by the approved H1B1 registry linked above.
 
 ## 2. Decision records
 
@@ -34,13 +36,13 @@ This record separates inherited approved directions from proposed H0 physical ch
 | PA06EH0-10 | Revision source membership            | Singular theoretical FK; Need Generation grouped result; revision-owned typed membership              | Select Model A: immutable `ConfirmedNeedLineRevisionContribution[]` over exact released Theoretical Need lines                                                     | Smallest boundary that supports many contributions and preserves what Planning reviewed                    | **Proposed H0B1 physical decision**                                        |
 | PA06EH0-11 | Atomic contribution continuity        | Ingredient/name/order key; generic aggregate; explicit predecessor                                    | Use typed stable anchors plus `predecessor_theoretical_need_line_id` for ordinary one-to-one contribution correction                                               | Predecessor explains atomic continuity, not Confirmed Need line identity                                   | **Proposed H0A5 physical decision**                                        |
 | PA06EH0-12 | New/removed/split/merge contributions | Infer from absence; mutate rows; generic graph; explicit typed outcomes                               | New contributions have no predecessor; removal is explicit; H0C fails closed for unresolved zero/removal/split/merge                                               | Prevents silent omission and avoids a generic graph before policy                                          | **Representation proposed; product behavior pending**                      |
-| PA06EH0-13 | Line decision evidence                | Append-only child; revision metadata only; hybrid                                                     | In H1B1, select immutable quantity/membership revision plus append-only decision child                                                                             | Supports changed and unchanged decisions without redundant revisions                                       | **Proposed H1B1 physical decision**                                        |
-| PA06EH0-14 | Current decision integrity            | Derive chain tip; mutable decision; stable-line pointer                                               | H1B1 adds a nullable pointer, composite ownership, and mandatory deferred same-line/current-revision/policy trigger                                                | Provides enforceable current authority and retained history                                                | **Selected constraint direction; exact columns/names pending**             |
-| PA06EH0-15 | Unchanged proposal acceptance         | Infer from approval; identical successor; explicit decision                                           | Append `UNCHANGED_PROPOSAL_ACCEPTED` on the same exact revision/membership/policy                                                                                  | Makes human authority explicit without fake quantity history                                               | **Approved evidence requirement; H1B1 implementation pending**             |
-| PA06EH0-16 | Adjusted confirmation                 | Update Draft; append evidence only; successor plus decision                                           | H1B2 creates one immutable successor revision and `ADJUSTED_QUANTITY_CONFIRMED` decision atomically                                                                | Preserves before/after value, membership, and policy                                                       | **Approved revision direction; implementation pending**                    |
-| PA06EH0-17 | Decision correction                   | Update/delete evidence; append superseding evidence                                                   | Append a full replacement decision, preserve prior row, advance pointer, reject forks                                                                              | Evidence remains auditable                                                                                 | **Proposed H1B1 direction; reason/authority pending**                      |
-| PA06EH0-18 | Logical adjustment read               | Separate duplicate table; infer from audit; derive from decisions                                     | Derive `ConfirmedNeedAdjustment` from adjusted decision rows                                                                                                       | Avoids duplicate authority                                                                                 | **Proposed H1 read-model decision**                                        |
-| PA06EH0-19 | Policy/decision order                 | H0 policy default; decision table before policy; policy first                                         | H0B1/H0C create no decision structure; H1A creates policy; H1B1 creates decisions with mandatory policy FK; H1B2 first writes                                      | Database structure makes a policy-less authoritative decision impossible                                   | **Selected sequencing direction; policy values/owner pending**             |
+| PA06EH0-13 | Line decision evidence                | Append-only child; revision metadata only; hybrid                                                     | In H1B1, select immutable quantity/membership revision plus append-only decision child                                                                             | Supports changed and unchanged decisions without redundant revisions                                       | **Approved by H1B1-P01/P03**                                               |
+| PA06EH0-14 | Current decision integrity            | Derive chain tip; mutable decision; stable-line pointer                                               | H1B1 adds a nullable pointer, composite ownership, and mandatory deferred same-line/current-revision/policy trigger                                                | Provides enforceable current authority and retained history                                                | **Approved by H1B1-P06/P07/P12**                                           |
+| PA06EH0-15 | Unchanged proposal acceptance         | Infer from approval; identical successor; explicit decision                                           | Append `UNCHANGED_PROPOSAL_ACCEPTED` on the same exact revision/membership/policy                                                                                  | Makes human authority explicit without fake quantity history                                               | **Approved by H1B1-P02/P03**                                               |
+| PA06EH0-16 | Adjusted confirmation                 | Update Draft; append evidence only; successor plus decision                                           | H1B2 creates one immutable successor revision and `ADJUSTED_QUANTITY_CONFIRMED` decision atomically                                                                | Preserves before/after value, membership, and policy                                                       | **Approved by H1B1-P02/P03/P05**                                           |
+| PA06EH0-17 | Decision correction                   | Update/delete evidence; append superseding evidence                                                   | Append a full replacement decision, preserve prior row, advance pointer, reject forks                                                                              | Evidence remains auditable                                                                                 | **Approved by H1B1-P06/P08/P11**                                           |
+| PA06EH0-18 | Logical adjustment read               | Separate duplicate table; infer from audit; derive from decisions                                     | Derive `ConfirmedNeedAdjustment` from adjusted decision rows                                                                                                       | Avoids duplicate authority                                                                                 | **Approved direction; H1B2 read model pending**                            |
+| PA06EH0-19 | Policy/decision order                 | H0 policy default; decision table before policy; policy first                                         | H0B1/H0C create no decision structure; H1A creates policy; H1B1 creates decisions with mandatory policy FK; H1B2 first writes                                      | Database structure makes a policy-less authoritative decision impossible                                   | **H1A implemented; H1B1 contract approved**                                |
 | PA06EH0-20 | Initial materialization               | Client grouping; one line per contribution; server operational grouping                               | Server consumes one complete released run, groups by approved identity, and creates one Draft revision plus immutable membership per group                         | Restores calculation-to-review boundary without browser authority                                          | **Parent responsibility approved; API/implementation pending**             |
 | PA06EH0-21 | Corrected materialization             | Ingredient/name matching; contribution-line reuse; complete regroup                                   | Resolve the complete new set, regroup, compare operational identities, create successor revisions/memberships, and move ingredient corrections between lines       | Preserves stable identity and requires fresh review                                                        | **Proposed H0C decision; prior-proposal behavior pending**                 |
 | PA06EH0-22 | Removal/split/merge in H0C            | Partial materialization; silent omission; fail closed                                                 | Reject the whole command until explicit zero/removal/split/merge policy exists                                                                                     | Prevents incomplete current membership                                                                     | **Proposed H0C boundary**                                                  |
@@ -55,6 +57,8 @@ This record separates inherited approved directions from proposed H0 physical ch
 | PA06EH0-31 | Total-equals-contributions            | Trust application sum; epsilon; exact deferred database sum                                           | Mandatory deferred constraint requires revision theoretical total to equal the exact controlled-unit membership sum                                                | Prevents browser/command drift and preserves reproducibility                                               | **Selected physical invariant**                                            |
 | PA06EH0-32 | Parent-contract compatibility         | Treat singular parent field as final; broadly rewrite parents; narrow qualification                   | Add minimal PD-01.8/PA-02 qualification now and require a focused later amendment after grain approval                                                             | Makes the incompatibility explicit without expanding this PR                                               | **Compatibility requirement selected; amendment ownership/timing pending** |
 | PA06EH0-33 | Aggregate boundary                    | Create grouped requirement aggregate; reuse Confirmed Need                                            | Operational grouping remains stable lines/revisions inside the existing Confirmed Need aggregate                                                                   | Avoids a second Planning lifecycle                                                                         | **Approved baseline**                                                      |
+
+Rows PA06EH0-13 through PA06EH0-19 are historical summaries only. The focused H1B1 registry is the sole complete authority for their exact vocabulary, evidence, actor, pointer, and future physical semantics.
 
 ## 3. Selected source design in one view
 
@@ -88,10 +92,11 @@ ConfirmedNeedLineRevision
   exact released-run membership set, and revision predecessor
 
 ConfirmedNeedLineDecision
-→ append-only decision kind, before/after, actor/time, reason,
-  exact source and Planning policy, batch versions, command/receipt/event context
+→ append-only decision kind, before/after, accountable actor/time,
+  governed business reason, exact source and Planning policy,
+  decision-time batch version and command identity
 
-ConfirmedNeedLine.current_decision_id
+ConfirmedNeedLine.current_confirmed_need_line_decision_id
 → absent through H0; added nullable in H1B1;
   exact current authoritative decision after H1B2 confirmation
 ```
@@ -125,9 +130,9 @@ The following remain unresolved and must block affected implementation rather th
 - exact removed-tombstone vocabulary and zero/release policy;
 - split and merge mapping/approval policy;
 - prior-confirmed proposal carry behavior;
-- exact decision reason taxonomy, note thresholds, evidence-correction authority, and separation of duties;
-- Planning policy scope, precedence, owner, approval, effective dates, and production values;
-- exact H1B1 current-decision composite columns/indexes within the selected mandatory policy/pointer-trigger direction;
+- production Planning policy administration and seed rows;
+- H1B2 command/read contracts, safe errors, capability/scope, events, and audit payloads;
+- post-H1B2 rematerialization and current-authority rebinding lifecycle;
 - H0C function/capability/contract version/event/error names and canonical registry treatment;
 - callable actor classes and exact school/date relational scope;
 - runtime-role name, grants, timeouts, maximum contribution/group count, retry rules, and failed-receipt policy;
@@ -138,7 +143,7 @@ The following remain unresolved and must block affected implementation rather th
 
 The proposed design requires multiple bounded prerequisites before H0B1. It preserves current Wholesale rows and commands while separating atomic calculation grain from operational confirmation grain. Typed revision membership and deferred database constraints make the reviewed total reproducible without a new aggregate.
 
-H0C can exist without a production Planning step because it creates proposals only. Decision persistence cannot precede policy: H1A creates policy, H1B1 creates policy-bound evidence constraints, and H1B2 is the first insert capability.
+H0C can exist without a production Planning step because it creates proposals only. H1A now provides policy persistence, the H1B1 contract fixes the policy-bound evidence structure, a future H1B1 migration will add that writerless structure, and H1B2 remains the first insert capability.
 
 ## 8. Security, migration, and rollback effect
 
