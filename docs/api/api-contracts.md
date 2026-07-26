@@ -78,6 +78,10 @@ No business-write command should be implemented without documenting:
 
 ---
 
+## 4A. Implemented connected recipe contract
+
+RMVP-02A implements one shaped Dish/Recipe/BOM workbench read and eleven transactional commands for Dish lifecycle, Recipe-root lifecycle, draft creation, successor correction, full BOM replacement, validation, Planning release, copy, and reviewed workbook import. The exact `RMVP-02A.v1` envelope, permissions, validation, responses, and safe errors are specified in [RMVP-02A Recipe and BOM API contract](rmvp-02a-recipes-bom.md).
+
 ## 5. Contract template
 
 ```md

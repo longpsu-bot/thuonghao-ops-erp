@@ -96,9 +96,12 @@ select is(
     'released_by_actor_id',
     'released_at',
     'locked_by_actor_id',
-    'locked_at'
+    'locked_at',
+    'version',
+    'draft_composition',
+    'source_evidence'
   ]::text[],
-  'recipe_versions has only the approved lifecycle and basis fields'
+  'recipe_versions retains the immutable lifecycle fields plus bounded draft and source evidence'
 );
 
 select is(
@@ -1766,6 +1769,7 @@ select is(
       'atlas_admin.recipe_lines'::regclass,
       'atlas_admin.recipe_line_revisions'::regclass
     )
+      and policy.polname = 'pa_06e_h0cb_materialization_select'
   ),
   (
     select jsonb_agg(
@@ -1789,7 +1793,7 @@ select is(
         ('atlas_admin.recipe_line_revisions')
     ) expected(relation_name)
   ),
-  'H0A2 has exactly five dedicated-runtime permissive SELECT policies'
+  'H0A2 retains exactly five dedicated planning-materialization SELECT policies'
 );
 
 select is(

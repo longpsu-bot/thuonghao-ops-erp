@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { DishRecipeAdminWorkbench } from "../admin/DishRecipeAdminWorkbench";
 import { IngredientSupplierAdminWorkbench } from "../admin/IngredientSupplierAdminWorkbench";
 import { SchoolAdminWorkbench } from "../admin/SchoolAdminWorkbench";
 import { AtlasConnectionPanelView } from "./connection/AtlasConnectionPanel";
@@ -16,6 +17,8 @@ import {
   createMasterDataApi,
   type MasterDataApi,
 } from "./master-data/masterDataApi";
+import { createRecipeApi, type RecipeApi } from "./recipes/recipeApi";
+import { createReviewRecipeApi } from "./recipes/reviewRecipeApi";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
   ATLAS_REVIEW_NOTICE,
@@ -24,7 +27,8 @@ import {
   type AtlasReviewScenario,
 } from "./review/reviewMode";
 
-export type MasterDataPageId = "customers-schools" | "ingredients-units";
+export type MasterDataPageId =
+  "customers-schools" | "ingredients-units" | "recipes";
 
 type AtlasAppProps = {
   initialPage?: MasterDataPageId;
@@ -82,9 +86,16 @@ function AtlasNavigation({
           >
             Nguyên liệu và Nhà cung ứng
           </button>
+          <button
+            type="button"
+            className={active === "recipes" ? "active" : ""}
+            onClick={() => onNavigate("recipes")}
+          >
+            Công thức
+          </button>
         </div>
 
-        {["Công thức", "Kế hoạch nhu cầu", "Thu mua", "Kho"].map((label) => (
+        {["Kế hoạch nhu cầu", "Thu mua", "Kho"].map((label) => (
           <button type="button" className="nav-future" disabled key={label}>
             <span>{label}</span>
             <small>Chưa triển khai</small>
@@ -99,27 +110,46 @@ function MasterDataPage({
   page,
   authState,
   api,
+  recipeApi,
   mode,
 }: {
   page: MasterDataPageId;
   authState: AtlasAuthState;
   api?: MasterDataApi;
+  recipeApi?: RecipeApi;
   mode: "connected" | "review";
 }) {
   const schoolPage = page === "customers-schools";
+  const recipePage = page === "recipes";
   return (
     <main className="atlas-page master-data-page">
       <header className="master-data-page-heading">
-        <span className="page-kicker">Dữ liệu gốc</span>
-        <h1>{schoolPage ? "Trường học" : "Nguyên liệu và Nhà cung ứng"}</h1>
+        <span className="page-kicker">
+          {recipePage ? "Quản trị công thức" : "Dữ liệu gốc"}
+        </span>
+        <h1>
+          {recipePage
+            ? "Công thức"
+            : schoolPage
+              ? "Trường học"
+              : "Nguyên liệu và Nhà cung ứng"}
+        </h1>
         <p>
-          {schoolPage
-            ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
-            : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."}
+          {recipePage
+            ? "Quản lý món ăn, phạm vi công thức chung/theo loại trường, phiên bản BOM bất biến, sao chép và nhập workbook có đối soát."
+            : schoolPage
+              ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
+              : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."}
         </p>
       </header>
 
-      {schoolPage ? (
+      {recipePage ? (
+        <DishRecipeAdminWorkbench
+          authState={authState}
+          api={recipeApi}
+          mode={mode}
+        />
+      ) : schoolPage ? (
         <SchoolAdminWorkbench authState={authState} api={api} mode={mode} />
       ) : (
         <IngredientSupplierAdminWorkbench
@@ -136,6 +166,7 @@ function AtlasShell({
   initialPage,
   authState,
   api,
+  recipeApi,
   mode,
   session,
   reviewScenario,
@@ -144,6 +175,7 @@ function AtlasShell({
   initialPage: MasterDataPageId;
   authState: AtlasAuthState;
   api?: MasterDataApi;
+  recipeApi?: RecipeApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   reviewScenario?: AtlasReviewScenario;
@@ -184,6 +216,7 @@ function AtlasShell({
           page={active}
           authState={authState}
           api={api}
+          recipeApi={recipeApi}
           mode={mode}
         />
       </div>
@@ -194,6 +227,7 @@ function AtlasShell({
 function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
   const [scenario, setScenario] = useState<AtlasReviewScenario>("ready");
   const api = useMemo(() => createReviewMasterDataApi(scenario), [scenario]);
+  const recipeApi = useMemo(() => createReviewRecipeApi(scenario), [scenario]);
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -201,6 +235,7 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
       initialPage={initialPage}
       authState={authState}
       api={api}
+      recipeApi={recipeApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -216,12 +251,20 @@ function ConnectedAtlasApp({
   connection: AtlasSupabaseClientResult;
 }) {
   const auth = useAtlasAuthSession(connection);
-  const api = useMemo(
+  const transport = useMemo(
     () =>
       connection.status === "configured"
-        ? createMasterDataApi(createAtlasRpcTransport(connection.client))
+        ? createAtlasRpcTransport(connection.client)
         : undefined,
     [connection],
+  );
+  const api = useMemo(
+    () => (transport ? createMasterDataApi(transport) : undefined),
+    [transport],
+  );
+  const recipeApi = useMemo(
+    () => (transport ? createRecipeApi(transport) : undefined),
+    [transport],
   );
 
   return (
@@ -229,6 +272,7 @@ function ConnectedAtlasApp({
       initialPage={initialPage}
       authState={auth.state}
       api={api}
+      recipeApi={recipeApi}
       mode="connected"
       session={auth}
     />

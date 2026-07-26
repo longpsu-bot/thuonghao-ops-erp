@@ -915,7 +915,7 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 28,
+    'api_total', 40,
     'seed_rows', 0
   ),
   'H1A-STR-56 zero H1A role, capability, runtime, API, PA-06A, or production-policy row exists'

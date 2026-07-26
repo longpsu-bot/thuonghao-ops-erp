@@ -31,6 +31,15 @@ select is(
     join pg_roles r on r.oid = p.proowner
     where n.nspname = 'atlas_api'
       and r.rolname = 'atlas_master_data_command_runtime'
+      and p.proname in (
+        'create_ingredient',
+        'create_supplier',
+        'replace_ingredient_supplier_priorities',
+        'set_ingredient_lifecycle',
+        'update_ingredient',
+        'update_school_portion_defaults',
+        'update_supplier'
+      )
   ),
   array[
     'create_ingredient',
@@ -41,16 +50,11 @@ select is(
     'update_school_portion_defaults',
     'update_supplier'
   ]::text[],
-  'runtime owns exactly the seven approved master-data writes'
+  'runtime still owns all seven RMVP-01 master-data writes'
 );
 
 select ok(
-  not has_schema_privilege(
-    'atlas_master_data_command_runtime',
-    'atlas_legacy',
-    'USAGE'
-  )
-  and not has_schema_privilege('atlas_read_runtime', 'atlas_legacy', 'USAGE')
+  not has_schema_privilege('atlas_read_runtime', 'atlas_legacy', 'USAGE')
   and not has_function_privilege(
     'atlas_master_data_command_runtime',
     'atlas_legacy.import_master_data_snapshot(jsonb)',
@@ -61,7 +65,7 @@ select ok(
     'atlas_legacy.import_master_data_snapshot(jsonb)',
     'EXECUTE'
   ),
-  'legacy import stays outside authenticated, read, and command runtimes'
+  'the RMVP-01 operator import remains outside authenticated, read, and command runtimes'
 );
 
 select ok(
@@ -72,7 +76,6 @@ select ok(
         'anon',
         'authenticated',
         'service_role',
-        'atlas_master_data_command_runtime',
         'atlas_read_runtime'
       ]
     ) role_name
@@ -86,8 +89,28 @@ select ok(
         'atlas_legacy.master_data_mappings',
         'SELECT,INSERT,UPDATE,DELETE'
       )
+  )
+  and has_table_privilege(
+    'atlas_master_data_command_runtime',
+    'atlas_legacy.import_batches',
+    'SELECT,INSERT,UPDATE'
+  )
+  and not has_table_privilege(
+    'atlas_master_data_command_runtime',
+    'atlas_legacy.import_batches',
+    'DELETE'
+  )
+  and has_table_privilege(
+    'atlas_master_data_command_runtime',
+    'atlas_legacy.master_data_mappings',
+    'SELECT,INSERT,UPDATE'
+  )
+  and not has_table_privilege(
+    'atlas_master_data_command_runtime',
+    'atlas_legacy.master_data_mappings',
+    'DELETE'
   ),
-  'legacy evidence relations are private to the local database operator'
+  'legacy evidence is private from API roles and the command runtime has only bounded recipe-import access'
 );
 
 select ok(
@@ -146,6 +169,15 @@ select is(
         p.oid,
         'EXECUTE'
       )
+      and p.proname in (
+        'create_ingredient',
+        'create_supplier',
+        'replace_ingredient_supplier_priorities',
+        'set_ingredient_lifecycle',
+        'update_ingredient',
+        'update_school_portion_defaults',
+        'update_supplier'
+      )
   ),
   array[
     'create_ingredient',
@@ -156,7 +188,7 @@ select is(
     'update_school_portion_defaults',
     'update_supplier'
   ]::text[],
-  'runtime can execute only its seven reviewed API commands'
+  'runtime can still execute all seven reviewed RMVP-01 API commands'
 );
 
 select ok(
@@ -202,7 +234,6 @@ select ok(
     where namespace.nspname in (
       'atlas_dispatch',
       'atlas_evidence',
-      'atlas_legacy',
       'atlas_planning',
       'atlas_procurement',
       'atlas_reporting'
@@ -214,7 +245,7 @@ select ok(
         'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
       )
   ),
-  'runtime has no Planning, Procurement, Evidence, Dispatch, Reporting, or legacy relation privilege'
+  'runtime has no Planning, Procurement, Evidence, Dispatch, or Reporting relation privilege'
 );
 
 select ok(
@@ -253,6 +284,12 @@ select is(
       where grantee = 'atlas_master_data_command_runtime'
         and table_schema = 'atlas_admin'
         and privilege_type in ('INSERT', 'UPDATE')
+        and table_name in (
+          'ingredients',
+          'schools',
+          'supplier_eligibilities',
+          'suppliers'
+        )
       group by table_name, privilege_type
     ) writable_columns
   ),

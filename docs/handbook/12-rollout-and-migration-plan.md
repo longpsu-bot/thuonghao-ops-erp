@@ -107,6 +107,8 @@ Supabase remains the target backend platform, but table design should follow val
 - calculation-rule candidate review;
 - Vietnamese staff-facing review package.
 
+RMVP-02A implements the local connected Dish/Recipe/BOM slice for this phase. Its OPS v1 workbook path is reviewed, checksum-bound, reference-strict, and draft-only; it is not an authority cutover.
+
 ### Phase 3 — UI and workflow prototype
 
 - React app shell;
@@ -193,6 +195,7 @@ Examples:
 - OPS v1 may continue to own catering menu sync during early rollout.
 - OPS ERP may own wholesale orders from the start.
 - OPS ERP may initially read v1 master data through adapters.
+- A reviewed Recipe workbook may be copied one way into Atlas draft state while OPS v1 remains operational; neither system gains live write-through access to the other.
 
 ---
 
@@ -211,6 +214,7 @@ Examples:
 - daily orders;
 - menu data;
 - recipes and BOM lines;
+- Recipe workbook proposals may be imported earlier only as versioned Atlas drafts with typed reconciliation and explicit later validation/release.
 - actual need overrides;
 - purchase assignments;
 - dispatch records.

@@ -26,7 +26,7 @@ The importer is not in `atlas_api`. Only the local `postgres` database operator 
 - `update_supplier`
 - `replace_ingredient_supplier_priorities`
 
-It has no Atlas schema `CREATE`, no role inheritance, no `atlas_legacy` privilege, and no unrelated domain relation privilege. `atlas_read_runtime` owns the two shaped reads and remains table-`SELECT` only. All API functions are security definers with an empty search path, `PUBLIC` execution is revoked, and only `authenticated` can execute the reviewed entry points. Actor resolution, active capability, and global scope are checked server-side. Writes use expected versions, idempotent receipts, audit events, and domain events.
+It has no Atlas schema `CREATE`, no role inheritance, and no unrelated domain relation privilege. RMVP-02A later grants this same runtime bounded `SELECT`/`INSERT`/`UPDATE` access to the two private `atlas_legacy` evidence relations for transactional reviewed Recipe import; it still cannot execute the RMVP-01 operator snapshot importer or delete legacy evidence. `atlas_read_runtime` owns shaped reads and remains table-`SELECT` only. All API functions are security definers with an empty search path, `PUBLIC` execution is revoked, and only `authenticated` can execute the reviewed entry points. Actor resolution, active capability, and global scope are checked server-side. Writes use expected versions, idempotent receipts, audit events, and domain events.
 
 The retired `atlas_command_runtime` retains zero Atlas privilege. `anon` and `service_role` have no Atlas API execution, while API roles have no private relation access.
 

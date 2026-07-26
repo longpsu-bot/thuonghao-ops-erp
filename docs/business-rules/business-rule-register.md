@@ -32,6 +32,11 @@ This register records approved business rules. Module specifications may refine 
 | BR-026 | The initial herb/condiment model should be generic and configuration-driven, with ingredient-specific exceptions allowed when master-data review proves they are needed. | Approved as architecture direction |
 | BR-027 | No calculation behavior may exist as a hidden or hard-coded magic rule. Every calculation behavior must be represented as an editable or versioned rule, visible to authorized users, traceable in outputs, and explainable during review. | Approved |
 | BR-028 | When an automatic inference rule is applied, the system must record which rule produced the inference and allow authorized users to inspect the rule basis. | Approved |
+| BR-029 | Only a Draft Recipe Version may have its BOM composition replaced; validated, released, and locked composition is immutable. | Approved |
+| BR-030 | A Recipe correction must create a successor version with exact predecessor version and line-revision lineage. | Approved |
+| BR-031 | Removing a previously present Recipe Line requires an explicit removed-line revision; silent omission is not a valid correction. | Approved |
+| BR-032 | Releasing a successor Recipe Version for Planning locks the prior released version without rewriting it. | Approved |
+| BR-033 | A legacy Recipe workbook import may create only reviewed Draft state and must not auto-create missing references, validate, release, or alter the legacy source. | Approved |
 
 Detailed legacy evidence, approved directions, recommendations, and still-pending quantity decisions are separated in the [PA-06D Rounding and Rebalancing Rule Register](pa-06d-rounding-rebalancing-rule-register.md). A PA-06D row is not approved unless its status explicitly says so.
 

@@ -69,6 +69,9 @@ Sensitive actions must require explicit permission and audit:
 - create or edit user roles;
 - change master data;
 - modify recipe versions;
+- validate a recipe version;
+- release a recipe version for Planning;
+- import a reviewed recipe workbook;
 - apply quantity override;
 - apply substitution;
 - approve requirements;
@@ -101,6 +104,8 @@ For MVP, invited staff accounts are preferred.
 Authorization must be checked in backend functions for write actions.
 
 The React frontend may use permission metadata to simplify the UI, but backend validation remains authoritative.
+
+Connected recipe operations separate read, maintenance, validation, Planning release, and import capabilities. The authenticated browser executes only approved RPCs; it receives no private `atlas_admin` or `atlas_legacy` schema access. The command runtime may write only reviewed columns and reconciliation evidence and may not delete history.
 
 ---
 
