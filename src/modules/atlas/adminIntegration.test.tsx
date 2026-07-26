@@ -8,6 +8,7 @@ import {
   type DishRecipeAdminState,
 } from "../admin/dishRecipeAdminDomain";
 import { dishRecipeAdminFixture } from "../admin/dishRecipeAdminFixtures";
+import { DishRecipeAdminWorkbench } from "../admin/DishRecipeAdminWorkbench";
 import {
   DefaultSupplierPolicyReference,
   IngredientSupplierAdminWorkbench as createIngredientSupplierReadModel,
@@ -17,7 +18,7 @@ import {
 import { ingredientSupplierAdminFixture } from "../admin/ingredientSupplierAdminFixtures";
 import { SchoolAdminWorkbench as createSchoolReadModel } from "../admin/schoolAdminDomain";
 import { schoolAdminFixture } from "../admin/schoolAdminFixtures";
-import { AtlasApp } from "./AtlasApp";
+import { AtlasApp, type MasterDataPageId } from "./AtlasApp";
 import { atlasPages, type AtlasPageId } from "./atlasConfig";
 
 afterEach(cleanup);
@@ -37,8 +38,8 @@ function objectKeys(value: unknown): string[] {
   ]);
 }
 
-function renderAtlasSurface(page: AtlasPageId, heading: string) {
-  const rendered = render(<AtlasApp initialPage={page} />);
+function renderAtlasSurface(page: MasterDataPageId, heading: string) {
+  const rendered = render(<AtlasApp initialPage={page} reviewMode />);
   expect(
     screen.getAllByRole("heading", { name: heading }).length,
   ).toBeGreaterThan(0);
@@ -47,24 +48,8 @@ function renderAtlasSurface(page: AtlasPageId, heading: string) {
 
 describe("PD-04 Admin integration conformance", () => {
   it("exposes one Master Data area with Schools and Ingredients & Suppliers", () => {
-    const adminPageIds: AtlasPageId[] = [
-      "customers-schools",
-      "ingredients-units",
-      "recipe-governance",
-    ];
-    const adminPages = atlasPages.filter((page) =>
-      adminPageIds.includes(page.id),
-    );
-    expect(new Set(adminPages.map((page) => page.group))).toEqual(
-      new Set(["Dữ liệu & quản trị"]),
-    );
-
-    renderAtlasSurface("customers-schools", "Dữ liệu gốc · Trường học");
-    renderAtlasSurface(
-      "ingredients-units",
-      "Dữ liệu gốc · Nguyên liệu & Nhà cung cấp",
-    );
-    renderAtlasSurface("recipe-governance", "Dishes & Recipes Admin Workbench");
+    renderAtlasSurface("customers-schools", "Trường học");
+    renderAtlasSurface("ingredients-units", "Nguyên liệu và Nhà cung ứng");
   });
 
   it("keeps Dishes & Recipes as one consolidated Atlas workbench", () => {
@@ -77,7 +62,7 @@ describe("PD-04 Admin integration conformance", () => {
       label: "Dishes & Recipes",
     });
 
-    render(<AtlasApp initialPage="recipe-governance" />);
+    render(<DishRecipeAdminWorkbench />);
     for (const heading of [
       "Versions & lock state",
       "BOM lines",

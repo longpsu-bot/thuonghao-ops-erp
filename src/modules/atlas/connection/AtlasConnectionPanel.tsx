@@ -27,36 +27,39 @@ export function AtlasConnectionPanelView({
   };
 
   return (
-    <section
-      className="atlas-connection"
-      aria-label="Local Supabase connection"
-    >
-      <div className="atlas-connection-heading">
-        <div>
-          <strong>Local Supabase connection foundation</strong>
-          <small>No operator business workflow is connected.</small>
-        </div>
-        <mark>Local · non-production</mark>
-      </div>
-
+    <section className="atlas-session" aria-label="Phiên làm việc Atlas">
       {auth.state.status === "configuration_error" && (
-        <p role="alert">{auth.state.safeMessage}</p>
+        <div className="atlas-session-message" role="alert">
+          <div>
+            <strong>Chưa thể kết nối dữ liệu Atlas</strong>
+            <small>Vui lòng liên hệ bộ phận hỗ trợ trước khi tiếp tục.</small>
+          </div>
+        </div>
       )}
+
       {auth.state.status === "loading" && (
-        <p role="status">Loading local Auth session…</p>
+        <p role="status">Đang kiểm tra phiên làm việc…</p>
       )}
+
       {auth.state.status === "session_expired" && (
-        <div>
-          <p role="alert">{auth.state.safeMessage}</p>
+        <div className="atlas-session-message">
+          <p role="alert">
+            Phiên làm việc đã hết. Vui lòng đăng nhập lại để tiếp tục.
+          </p>
           <button type="button" onClick={() => void auth.signOut()}>
-            Clear expired session
+            Đăng nhập lại
           </button>
         </div>
       )}
+
       {auth.state.status === "unauthenticated" && (
         <form onSubmit={submit}>
+          <div>
+            <strong>Đăng nhập Atlas</strong>
+            <small>Dùng tài khoản vận hành đã được cấp quyền.</small>
+          </div>
           <label>
-            Local email
+            Email
             <input
               type="email"
               autoComplete="username"
@@ -66,7 +69,7 @@ export function AtlasConnectionPanelView({
             />
           </label>
           <label>
-            Local password
+            Mật khẩu
             <input
               type="password"
               autoComplete="current-password"
@@ -75,23 +78,24 @@ export function AtlasConnectionPanelView({
               required
             />
           </label>
-          <button type="submit">Sign in locally</button>
+          <button type="submit">Đăng nhập</button>
         </form>
       )}
+
       {auth.state.status === "authenticated" && (
-        <div className="atlas-connection-identity">
+        <div className="atlas-session-identity">
           <span>
-            Email <b>{auth.state.user.email ?? "Local synthetic user"}</b>
-          </span>
-          <span>
-            Auth subject <code>{auth.state.authSubject}</code>
+            Đang đăng nhập: <b>{auth.state.user.email ?? "Người dùng Atlas"}</b>
           </span>
           <button type="button" onClick={() => void auth.signOut()}>
-            Sign out
+            Đăng xuất
           </button>
         </div>
       )}
-      {auth.safeAuthError && <p role="alert">{auth.safeAuthError}</p>}
+
+      {auth.safeAuthError && (
+        <p role="alert">Không thể đăng nhập. Vui lòng kiểm tra và thử lại.</p>
+      )}
     </section>
   );
 }

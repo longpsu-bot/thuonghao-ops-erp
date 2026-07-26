@@ -134,8 +134,10 @@ describe("connected Ingredients & Suppliers master data", () => {
       />,
     );
     expect(await screen.findByText("Gạo Jasmine")).toBeInTheDocument();
-    expect(screen.getByText("1. NCC Minh Tâm")).toBeInTheDocument();
+    expect(screen.getByText("NCC Minh Tâm")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Nhà cung ứng 2" }));
     expect(screen.getByText("Nguyễn Minh")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Nguyên liệu 1" }));
 
     fireEvent.change(screen.getByLabelText("Trạng thái"), {
       target: { value: "INACTIVE" },
@@ -148,7 +150,7 @@ describe("connected Ingredients & Suppliers master data", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Tạo nguyên liệu" }));
-    fireEvent.click(screen.getByRole("button", { name: "Lưu và đọc lại" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(screen.getByText(/Điền đủ mã, tên/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Mã nguyên liệu"), {
       target: { value: "pumpkin" },
@@ -162,13 +164,13 @@ describe("connected Ingredients & Suppliers master data", () => {
     fireEvent.change(screen.getByLabelText("Loại nguyên liệu"), {
       target: { value: "Rau củ" },
     });
-    fireEvent.change(screen.getByLabelText("Loại mua"), {
+    fireEvent.change(screen.getByLabelText("Cách mua"), {
       target: { value: "Mua theo kế hoạch" },
     });
     fireEvent.change(screen.getByLabelText("Bước đặt hàng"), {
       target: { value: "2" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu và đọc lại" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
     await waitFor(() =>
       expect(connectedApi.createIngredient).toHaveBeenCalledOnce(),
@@ -202,10 +204,10 @@ describe("connected Ingredients & Suppliers master data", () => {
     );
     expect(await screen.findByText("Gạo Jasmine")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Ưu tiên" }));
-    fireEvent.click(screen.getByRole("button", { name: "Thêm NCC" }));
+    fireEvent.click(screen.getByRole("button", { name: "Thêm nhà cung ứng" }));
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Thay thế toàn bộ và đọc lại",
+        name: "Lưu thứ tự ưu tiên",
       }),
     );
     await waitFor(() =>
@@ -242,8 +244,11 @@ describe("connected Ingredients & Suppliers master data", () => {
       />,
     );
     expect(await screen.findByText("NCC Minh Tâm")).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Sửa" }).at(-1)!);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu và đọc lại" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Nhà cung ứng 2" }));
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Xem và sửa" }).at(-1)!,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(
       await screen.findByText("Bạn không có quyền thực hiện thao tác này."),
     ).toBeInTheDocument();

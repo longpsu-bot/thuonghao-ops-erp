@@ -63,6 +63,19 @@ pnpm local:rmvp01:verify
 
 The importer validates source identities and references before target writes, stores typed legacy mappings plus inserted/updated/skipped/rejected counts and source/target reconciliation, and safely replays an identical snapshot. See [`RMVP-01 independent Atlas master data`](docs/architecture/rmvp-01-independent-atlas-master-data.md) for authority-cutover and rollback boundaries.
 
+### RMVP-01 UI review export
+
+The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.
+
+Build it only with the explicit review command:
+
+```bash
+pnpm build:review
+node scripts/create-review-launcher.mjs dist "Open Atlas Review.bat" 4173
+```
+
+The normal `pnpm build` does not enable review data and continues to use the authenticated connected adapter. GitHub Actions publishes the review build as the `atlas-ui-review` artifact from the `UI Review Export` workflow.
+
 ## Read first
 
 1. [`AGENTS.md`](AGENTS.md) — repository operating rules and hard boundaries

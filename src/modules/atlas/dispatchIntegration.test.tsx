@@ -21,7 +21,7 @@ import {
   returnedExceptionResolvedFixture,
   unassignedTripFixture,
 } from "../dispatch/dispatchDeliveryFixtures";
-import { AtlasApp } from "./AtlasApp";
+import { DispatchDeliveryPage } from "./AtlasPages";
 
 afterEach(cleanup);
 
@@ -262,7 +262,7 @@ describe("PD-05 Dispatch integration and operator-workflow review", () => {
   });
 
   it("renders the decision-first Atlas surface and required boundary note", () => {
-    render(<AtlasApp initialPage="dispatch-delivery" />);
+    render(<DispatchDeliveryPage />);
     expect(
       screen.getByLabelText("Dispatch morning decision summary"),
     ).toBeInTheDocument();

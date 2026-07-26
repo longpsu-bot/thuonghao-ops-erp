@@ -91,8 +91,8 @@ function fakeConnection({
 
 afterEach(cleanup);
 
-describe("Atlas local connection panel", () => {
-  it("always labels the environment local and non-production", () => {
+describe("Atlas operator session panel", () => {
+  it("shows an operator-safe connection state without technical setup copy", () => {
     render(
       <AtlasConnectionPanel
         connection={{
@@ -101,10 +101,11 @@ describe("Atlas local connection panel", () => {
         }}
       />,
     );
-    expect(screen.getByText("Local · non-production")).toBeInTheDocument();
     expect(
-      screen.getByText("No operator business workflow is connected."),
+      screen.getByText("Chưa thể kết nối dữ liệu Atlas"),
     ).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("Supabase");
+    expect(document.body.textContent).not.toContain("non-production");
   });
 
   it("renders a safe configuration-error state", () => {
@@ -118,6 +119,9 @@ describe("Atlas local connection panel", () => {
       />,
     );
     expect(screen.getByRole("alert")).toHaveTextContent(
+      "Vui lòng liên hệ bộ phận hỗ trợ",
+    );
+    expect(document.body.textContent).not.toContain(
       "Local Supabase connection settings are missing.",
     );
     expect(document.body.textContent).not.toContain(secret);
@@ -131,7 +135,7 @@ describe("Atlas local connection panel", () => {
     const fake = fakeConnection({ initialPromise });
     render(<AtlasConnectionPanel connection={fake.connection} />);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Loading local Auth session",
+      "Đang kiểm tra phiên làm việc",
     );
   });
 
@@ -139,10 +143,10 @@ describe("Atlas local connection panel", () => {
     const fake = fakeConnection();
     render(<AtlasConnectionPanel connection={fake.connection} />);
     expect(
-      await screen.findByRole("button", { name: "Sign in locally" }),
+      await screen.findByRole("button", { name: "Đăng nhập" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Local email")).toBeInTheDocument();
-    expect(screen.getByLabelText("Local password")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toBeInTheDocument();
+    expect(screen.getByLabelText("Mật khẩu")).toBeInTheDocument();
   });
 
   it("propagates authenticated email and subject from the session", async () => {
@@ -151,7 +155,7 @@ describe("Atlas local connection panel", () => {
     expect(
       await screen.findByText("atlas.operator@local.test"),
     ).toBeInTheDocument();
-    expect(screen.getByText(authSubject)).toBeInTheDocument();
+    expect(screen.queryByText(authSubject)).not.toBeInTheDocument();
     expect(screen.queryByText("local-access-token")).not.toBeInTheDocument();
     expect(screen.queryByText("local-refresh-token")).not.toBeInTheDocument();
   });
@@ -162,27 +166,27 @@ describe("Atlas local connection panel", () => {
       signInError: { message: "raw provider failure with private detail" },
     });
     render(<AtlasConnectionPanel connection={fake.connection} />);
-    await screen.findByRole("button", { name: "Sign in locally" });
-    fireEvent.change(screen.getByLabelText("Local email"), {
+    await screen.findByRole("button", { name: "Đăng nhập" });
+    fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "atlas.operator@local.test" },
     });
-    fireEvent.change(screen.getByLabelText("Local password"), {
+    fireEvent.change(screen.getByLabelText("Mật khẩu"), {
       target: { value: "synthetic-password" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in locally" }));
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Sign-in failed. Check the local synthetic account",
+      "Không thể đăng nhập. Vui lòng kiểm tra",
     );
-    expect(screen.getByLabelText("Local password")).toHaveValue("");
+    expect(screen.getByLabelText("Mật khẩu")).toHaveValue("");
     expect(document.body.textContent).not.toContain("raw provider failure");
   });
 
   it("signs out locally and clears the authenticated identity", async () => {
     const fake = fakeConnection({ initialSession: session() });
     render(<AtlasConnectionPanel connection={fake.connection} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Sign out" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Đăng xuất" }));
     expect(
-      await screen.findByRole("button", { name: "Sign in locally" }),
+      await screen.findByRole("button", { name: "Đăng nhập" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(authSubject)).not.toBeInTheDocument();
     expect(fake.signOut).toHaveBeenCalledWith({ scope: "local" });
@@ -191,8 +195,8 @@ describe("Atlas local connection panel", () => {
   it("clears the password after successful sign-in while retaining the email", async () => {
     const fake = fakeConnection();
     render(<AtlasConnectionPanel connection={fake.connection} />);
-    const emailInput = await screen.findByLabelText("Local email");
-    const passwordInput = screen.getByLabelText("Local password");
+    const emailInput = await screen.findByLabelText("Email");
+    const passwordInput = screen.getByLabelText("Mật khẩu");
 
     fireEvent.change(emailInput, {
       target: { value: "atlas.operator@local.test" },
@@ -200,17 +204,17 @@ describe("Atlas local connection panel", () => {
     fireEvent.change(passwordInput, {
       target: { value: "synthetic-password" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in locally" }));
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
 
-    await screen.findByRole("button", { name: "Sign out" });
+    await screen.findByRole("button", { name: "Đăng xuất" });
     act(() => fake.emit("INITIAL_SESSION", null));
     expect(
-      await screen.findByRole("button", { name: "Sign in locally" }),
+      await screen.findByRole("button", { name: "Đăng nhập" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Local email")).toHaveValue(
+    expect(screen.getByLabelText("Email")).toHaveValue(
       "atlas.operator@local.test",
     );
-    expect(screen.getByLabelText("Local password")).toHaveValue("");
+    expect(screen.getByLabelText("Mật khẩu")).toHaveValue("");
   });
 
   it("renders an expired session and disables the sign-in form", async () => {
@@ -218,23 +222,23 @@ describe("Atlas local connection panel", () => {
     const fake = fakeConnection({ initialSession: expired });
     render(<AtlasConnectionPanel connection={fake.connection} />);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "session is expired or invalid",
+      "Phiên làm việc đã hết",
     );
     expect(
-      screen.queryByRole("button", { name: "Sign in locally" }),
+      screen.queryByRole("button", { name: "Đăng nhập" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Clear expired session" }),
+      screen.getByRole("button", { name: "Đăng nhập lại" }),
     ).toBeInTheDocument();
   });
 
   it("treats an unexpected signed-out event as session expiry", async () => {
     const fake = fakeConnection({ initialSession: session() });
     render(<AtlasConnectionPanel connection={fake.connection} />);
-    await screen.findByText(authSubject);
+    await screen.findByText("atlas.operator@local.test");
     act(() => fake.emit("SIGNED_OUT", null));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "session is expired or invalid",
+      "Phiên làm việc đã hết",
     );
   });
 
@@ -250,19 +254,19 @@ describe("Atlas local connection panel", () => {
   it("does not replay an RPC after clearing expiry and reauthenticating", async () => {
     const fake = fakeConnection({ initialSession: session() });
     render(<AtlasConnectionPanel connection={fake.connection} />);
-    await screen.findByText(authSubject);
+    await screen.findByText("atlas.operator@local.test");
     act(() => fake.emit("SIGNED_OUT", null));
     fireEvent.click(
-      await screen.findByRole("button", { name: "Clear expired session" }),
+      await screen.findByRole("button", { name: "Đăng nhập lại" }),
     );
-    await screen.findByRole("button", { name: "Sign in locally" });
-    fireEvent.change(screen.getByLabelText("Local email"), {
+    await screen.findByRole("button", { name: "Đăng nhập" });
+    fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "atlas.operator@local.test" },
     });
-    fireEvent.change(screen.getByLabelText("Local password"), {
+    fireEvent.change(screen.getByLabelText("Mật khẩu"), {
       target: { value: "synthetic-password" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in locally" }));
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
     await waitFor(() => expect(fake.signInWithPassword).toHaveBeenCalledOnce());
     expect(fake.rpc).not.toHaveBeenCalled();
   });

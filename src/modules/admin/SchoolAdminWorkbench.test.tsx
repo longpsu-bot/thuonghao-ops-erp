@@ -105,11 +105,11 @@ describe("connected School master data", () => {
       target: { value: "atlas" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Sửa số suất" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem và sửa" }));
     fireEvent.change(screen.getByLabelText("Suất học sinh mặc định"), {
       target: { value: "-1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu và đọc lại" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(
       screen.getByText("Số suất mặc định phải là số nguyên không âm."),
     ).toBeInTheDocument();
@@ -121,7 +121,7 @@ describe("connected School master data", () => {
     fireEvent.change(screen.getByLabelText("Suất giáo viên mặc định"), {
       target: { value: "35" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu và đọc lại" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
     await waitFor(() =>
       expect(connectedApi.updateSchoolDefaults).toHaveBeenCalledOnce(),

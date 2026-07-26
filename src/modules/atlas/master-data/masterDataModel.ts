@@ -81,14 +81,14 @@ export function resultMessage(result: AtlasRpcResult) {
       return "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.";
     if (result.error.error_code === "VALIDATION_FAILED")
       return "Dữ liệu chưa hợp lệ. Kiểm tra các trường và thử lại.";
-    return result.error.safe_message;
+    return "Không thể hoàn tất thao tác lúc này. Vui lòng thử lại.";
   }
-  if (result.kind === "success")
-    return (
-      result.response.safe_operator_message ??
-      "Thao tác đã hoàn tất trên dữ liệu chính thức."
-    );
-  return result.diagnostic.safeMessage;
+  if (result.kind === "success") return "Đã cập nhật và tải lại dữ liệu.";
+  if (result.kind === "auth_error")
+    return "Phiên làm việc không còn hợp lệ. Vui lòng đăng nhập lại.";
+  if (result.kind === "transport_error")
+    return "Không thể kết nối để hoàn tất thao tác. Vui lòng thử lại.";
+  return "Không thể hoàn tất thao tác lúc này. Vui lòng thử lại.";
 }
 
 export function commandRequest(

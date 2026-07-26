@@ -37,6 +37,10 @@ type SupplierDraft = {
 };
 
 type PriorityDraft = { supplierId: string; priority: number };
+type LifecycleIntent = {
+  ingredient: IngredientMasterData;
+  status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+} | null;
 
 const emptyIngredient = (): IngredientDraft => ({
   ingredientCode: "",
@@ -55,12 +59,30 @@ const emptySupplier = (): SupplierDraft => ({
   contactEmail: "",
 });
 
+const ingredientStatusLabel = (
+  status: IngredientMasterData["ingredient_status"],
+) =>
+  ({
+    ACTIVE: "Đang dùng",
+    INACTIVE: "Ngừng dùng",
+    ARCHIVED: "Lưu trữ",
+  })[status];
+
+const supplierStatusLabel = (status: SupplierMasterData["supplier_status"]) =>
+  ({
+    ACTIVE: "Đang hợp tác",
+    INACTIVE: "Ngừng hợp tác",
+    SUSPENDED: "Tạm dừng",
+  })[status];
+
 export function IngredientSupplierAdminWorkbench({
   authState,
   api,
+  mode = "connected",
 }: {
   authState: AtlasAuthState;
   api?: MasterDataApi;
+  mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [load, setLoad] = useState<MasterDataLoad>({
@@ -70,7 +92,11 @@ export function IngredientSupplierAdminWorkbench({
     units: [],
   });
   const [query, setQuery] = useState("");
+  const [supplierQuery, setSupplierQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [catalogTab, setCatalogTab] = useState<"ingredients" | "suppliers">(
+    "ingredients",
+  );
   const [ingredientId, setIngredientId] = useState<string | null>(null);
   const [ingredientDraft, setIngredientDraft] =
     useState<IngredientDraft>(emptyIngredient);
@@ -81,6 +107,7 @@ export function IngredientSupplierAdminWorkbench({
     string | null
   >(null);
   const [priorities, setPriorities] = useState<PriorityDraft[]>([]);
+  const [lifecycleIntent, setLifecycleIntent] = useState<LifecycleIntent>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const requestGeneration = useRef(0);
@@ -124,6 +151,7 @@ export function IngredientSupplierAdminWorkbench({
     setIngredientId(null);
     setSupplierId(null);
     setPriorityIngredientId(null);
+    setLifecycleIntent(null);
     if (authSubject) void refresh();
     else
       setLoad({
@@ -152,6 +180,23 @@ export function IngredientSupplierAdminWorkbench({
     );
   }, [load.ingredients, query, statusFilter]);
 
+  const shownSuppliers = useMemo(() => {
+    const normalized = supplierQuery.trim().toLocaleLowerCase("vi");
+    if (!normalized) return load.suppliers;
+    return load.suppliers.filter((supplier) =>
+      [
+        supplier.supplier_name,
+        supplier.supplier_code,
+        supplier.contact_name,
+        supplier.contact_phone,
+        supplier.contact_email,
+      ].some((value) =>
+        (value ?? "").toLocaleLowerCase("vi").includes(normalized),
+      ),
+    );
+  }, [load.suppliers, supplierQuery]);
+  const visibleIngredients = shownIngredients.slice(0, 60);
+
   const editingIngredient = load.ingredients.find(
     (item) => item.ingredient_id === ingredientId,
   );
@@ -163,6 +208,9 @@ export function IngredientSupplierAdminWorkbench({
   );
 
   const editIngredient = (ingredient?: IngredientMasterData) => {
+    setSupplierId(null);
+    setPriorityIngredientId(null);
+    setLifecycleIntent(null);
     setIngredientId(ingredient?.ingredient_id ?? "NEW");
     setIngredientDraft(
       ingredient
@@ -254,9 +302,13 @@ export function IngredientSupplierAdminWorkbench({
     setBusy(false);
     setNotice(resultMessage(result));
     if (result.kind === "success") await refresh();
+    setLifecycleIntent(null);
   };
 
   const editSupplier = (supplier?: SupplierMasterData) => {
+    setIngredientId(null);
+    setPriorityIngredientId(null);
+    setLifecycleIntent(null);
     setSupplierId(supplier?.supplier_id ?? "NEW");
     setSupplierDraft(
       supplier
@@ -314,6 +366,9 @@ export function IngredientSupplierAdminWorkbench({
   };
 
   const editPriorities = (ingredient: IngredientMasterData) => {
+    setIngredientId(null);
+    setSupplierId(null);
+    setLifecycleIntent(null);
     setPriorityIngredientId(ingredient.ingredient_id);
     setPriorities(
       ingredient.supplier_priorities.map((item) => ({
@@ -387,14 +442,14 @@ export function IngredientSupplierAdminWorkbench({
   if (!authSubject) {
     return (
       <Panel
-        title="Dữ liệu gốc · Nguyên liệu & Nhà cung cấp"
-        description="Duy trì nguyên liệu, nhà cung cấp và danh sách ưu tiên theo nguyên liệu."
+        title="Danh mục nguyên liệu và nhà cung ứng"
+        description="Tìm kiếm, duy trì trạng thái và sắp xếp nhà cung ứng ưu tiên."
         status={<Chip tone="warning">Cần đăng nhập</Chip>}
       >
-        <p className="prototype-notice">
+        <p className="operator-notice warning">
           {authState.status === "session_expired"
-            ? authState.safeMessage
-            : "Đăng nhập để xem và cập nhật dữ liệu chính thức."}
+            ? "Phiên làm việc đã hết. Vui lòng đăng nhập lại để tiếp tục."
+            : "Đăng nhập để xem và cập nhật dữ liệu."}
         </p>
       </Panel>
     );
@@ -402,48 +457,98 @@ export function IngredientSupplierAdminWorkbench({
 
   return (
     <Panel
-      title="Dữ liệu gốc · Nguyên liệu & Nhà cung cấp"
-      description="Một nơi để tìm kiếm, tạo, sửa, quản lý vòng đời và thay thế nguyên tử thứ tự ưu tiên nhà cung cấp."
+      title="Danh mục nguyên liệu và nhà cung ứng"
+      description="Tìm kiếm, tạo, sửa, quản lý vòng đời và thứ tự ưu tiên nhà cung ứng."
       status={
         <Chip tone={load.status === "error" ? "danger" : "ok"}>
-          {load.status === "error" ? "Không tải được" : "Đã kết nối Atlas"}
+          {load.status === "error"
+            ? "Không tải được"
+            : mode === "review"
+              ? "Dữ liệu xem thử"
+              : "Đã kết nối"}
         </Chip>
       }
     >
-      <div className="master-data-toolbar">
-        <label className="evidence-field">
-          Tìm nguyên liệu
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Tên, mã, loại nguyên liệu hoặc loại mua"
-          />
-        </label>
-        <label className="evidence-field">
-          Trạng thái
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-          >
-            <option value="ALL">Tất cả</option>
-            <option value="ACTIVE">Đang dùng</option>
-            <option value="INACTIVE">Ngừng dùng</option>
-            <option value="ARCHIVED">Lưu trữ</option>
-          </select>
-        </label>
-        <button type="button" onClick={() => void refresh()}>
-          Tải lại
+      <div className="master-data-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={catalogTab === "ingredients"}
+          className={catalogTab === "ingredients" ? "active" : ""}
+          onClick={() => setCatalogTab("ingredients")}
+        >
+          Nguyên liệu <span>{load.ingredients.length}</span>
         </button>
-        <button type="button" onClick={() => editIngredient()}>
-          Tạo nguyên liệu
-        </button>
-        <button type="button" onClick={() => editSupplier()}>
-          Tạo nhà cung cấp
+        <button
+          type="button"
+          role="tab"
+          aria-selected={catalogTab === "suppliers"}
+          className={catalogTab === "suppliers" ? "active" : ""}
+          onClick={() => setCatalogTab("suppliers")}
+        >
+          Nhà cung ứng <span>{load.suppliers.length}</span>
         </button>
       </div>
+
+      {catalogTab === "ingredients" ? (
+        <div className="master-data-toolbar">
+          <label className="evidence-field">
+            Tìm nguyên liệu
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Tên, mã, loại nguyên liệu hoặc cách mua"
+            />
+          </label>
+          <label className="evidence-field">
+            Trạng thái
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="ALL">Tất cả</option>
+              <option value="ACTIVE">Đang dùng</option>
+              <option value="INACTIVE">Ngừng dùng</option>
+              <option value="ARCHIVED">Lưu trữ</option>
+            </select>
+          </label>
+          <button type="button" onClick={() => void refresh()}>
+            Tải lại
+          </button>
+          <button
+            type="button"
+            className="primary-toolbar-action"
+            onClick={() => editIngredient()}
+          >
+            Tạo nguyên liệu
+          </button>
+        </div>
+      ) : (
+        <div className="master-data-toolbar suppliers-toolbar">
+          <label className="evidence-field">
+            Tìm nhà cung ứng
+            <input
+              value={supplierQuery}
+              onChange={(event) => setSupplierQuery(event.target.value)}
+              placeholder="Tên, mã, người liên hệ, điện thoại hoặc email"
+            />
+          </label>
+          <button type="button" onClick={() => void refresh()}>
+            Tải lại
+          </button>
+          <button
+            type="button"
+            className="primary-toolbar-action"
+            onClick={() => editSupplier()}
+          >
+            Tạo nhà cung ứng
+          </button>
+        </div>
+      )}
+
       {load.status === "loading" && load.ingredients.length === 0 && (
         <p role="status" className="empty">
-          Đang tải nguyên liệu và nhà cung cấp…
+          Đang tải nguyên liệu và nhà cung ứng…
         </p>
       )}
       {load.status === "error" && (
@@ -454,451 +559,598 @@ export function IngredientSupplierAdminWorkbench({
           </button>
         </div>
       )}
-      {load.status === "ready" && load.ingredients.length === 0 && (
-        <p className="empty">Chưa có nguyên liệu trong Atlas.</p>
-      )}
-      {load.ingredients.length > 0 && shownIngredients.length === 0 && (
-        <p className="empty">Không có nguyên liệu phù hợp bộ lọc.</p>
-      )}
-      {shownIngredients.length > 0 && (
+
+      {catalogTab === "ingredients" && load.status === "ready" && (
         <>
-          <h3>Nguyên liệu</h3>
-          <CompactTable
-            headers={[
-              "Nguyên liệu",
-              "Trạng thái",
-              "Đơn vị mua",
-              "Loại / cách mua",
-              "Bước đặt",
-              "Ưu tiên NCC",
-              "Thao tác",
-            ]}
-          >
-            {shownIngredients.map((ingredient) => (
-              <tr key={ingredient.ingredient_id}>
-                <td>
-                  <b>{ingredient.ingredient_name}</b>
-                  <small>{ingredient.ingredient_code}</small>
-                </td>
-                <td>
-                  <Chip
-                    tone={
-                      ingredient.ingredient_status === "ACTIVE"
-                        ? "ok"
-                        : "warning"
-                    }
-                  >
-                    {ingredient.ingredient_status}
-                  </Chip>
-                </td>
-                <td>
-                  {ingredient.purchase_unit_name ?? "Chưa đặt"}
-                  <small>{ingredient.purchase_unit_code}</small>
-                </td>
-                <td>
-                  {ingredient.ingredient_type ?? "Chưa đặt"}
-                  <small>{ingredient.shopping_type ?? "Chưa đặt"}</small>
-                </td>
-                <td>{ingredient.order_step ?? "—"}</td>
-                <td>
-                  {ingredient.supplier_priorities.length
-                    ? ingredient.supplier_priorities
-                        .map(
-                          (item) => `${item.priority}. ${item.supplier_name}`,
-                        )
-                        .join(" · ")
-                    : "Chưa có"}
-                </td>
-                <td>
-                  <div className="master-data-row-actions">
-                    <button
-                      className="inline-action"
-                      type="button"
-                      disabled={ingredient.ingredient_status === "ARCHIVED"}
-                      onClick={() => editIngredient(ingredient)}
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      className="inline-action"
-                      type="button"
-                      disabled={ingredient.ingredient_status !== "ACTIVE"}
-                      onClick={() => editPriorities(ingredient)}
-                    >
-                      Ưu tiên
-                    </button>
-                    {ingredient.ingredient_status === "ACTIVE" ? (
-                      <button
-                        className="inline-action"
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          void changeLifecycle(ingredient, "INACTIVE")
+          {load.ingredients.length === 0 ? (
+            <p className="empty">Chưa có nguyên liệu.</p>
+          ) : shownIngredients.length === 0 ? (
+            <p className="empty">Không có nguyên liệu phù hợp bộ lọc.</p>
+          ) : (
+            <div className="master-data-table-scroll">
+              <CompactTable
+                headers={[
+                  "Nguyên liệu",
+                  "Trạng thái",
+                  "Đơn vị mua",
+                  "Loại / cách mua",
+                  "Bước đặt",
+                  "Ưu tiên nhà cung ứng",
+                  "Thao tác",
+                ]}
+              >
+                {visibleIngredients.map((ingredient) => (
+                  <tr key={ingredient.ingredient_id}>
+                    <td>
+                      <b>{ingredient.ingredient_name}</b>
+                      <small>{ingredient.ingredient_code}</small>
+                    </td>
+                    <td>
+                      <Chip
+                        tone={
+                          ingredient.ingredient_status === "ACTIVE"
+                            ? "ok"
+                            : "warning"
                         }
                       >
-                        Ngừng dùng
-                      </button>
-                    ) : ingredient.ingredient_status === "INACTIVE" ? (
-                      <>
+                        {ingredientStatusLabel(ingredient.ingredient_status)}
+                      </Chip>
+                    </td>
+                    <td>
+                      {ingredient.purchase_unit_name ?? "Chưa đặt"}
+                      <small>{ingredient.purchase_unit_code}</small>
+                    </td>
+                    <td>
+                      {ingredient.ingredient_type ?? "Chưa đặt"}
+                      <small>{ingredient.shopping_type ?? "Chưa đặt"}</small>
+                    </td>
+                    <td>{ingredient.order_step ?? "—"}</td>
+                    <td>
+                      {ingredient.supplier_priorities.length ? (
+                        <ol className="supplier-priority-preview">
+                          {ingredient.supplier_priorities.map((item) => (
+                            <li key={item.supplier_eligibility_id}>
+                              <b>{item.priority}</b>
+                              <span>{item.supplier_name}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        "Chưa có"
+                      )}
+                    </td>
+                    <td>
+                      <div className="master-data-row-actions">
                         <button
                           className="inline-action"
                           type="button"
-                          disabled={busy}
-                          onClick={() =>
-                            void changeLifecycle(ingredient, "ACTIVE")
-                          }
+                          disabled={ingredient.ingredient_status === "ARCHIVED"}
+                          onClick={() => editIngredient(ingredient)}
                         >
-                          Kích hoạt
+                          Sửa
                         </button>
                         <button
                           className="inline-action"
                           type="button"
-                          disabled={busy}
-                          onClick={() =>
-                            void changeLifecycle(ingredient, "ARCHIVED")
-                          }
+                          disabled={ingredient.ingredient_status !== "ACTIVE"}
+                          onClick={() => editPriorities(ingredient)}
                         >
-                          Lưu trữ
+                          Ưu tiên
                         </button>
-                      </>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </CompactTable>
+                        {ingredient.ingredient_status === "ACTIVE" ? (
+                          <button
+                            className="inline-action danger-action"
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              setLifecycleIntent({
+                                ingredient,
+                                status: "INACTIVE",
+                              })
+                            }
+                          >
+                            Ngừng dùng
+                          </button>
+                        ) : ingredient.ingredient_status === "INACTIVE" ? (
+                          <>
+                            <button
+                              className="inline-action"
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                setLifecycleIntent({
+                                  ingredient,
+                                  status: "ACTIVE",
+                                })
+                              }
+                            >
+                              Kích hoạt
+                            </button>
+                            <button
+                              className="inline-action danger-action"
+                              type="button"
+                              disabled={busy}
+                              onClick={() =>
+                                setLifecycleIntent({
+                                  ingredient,
+                                  status: "ARCHIVED",
+                                })
+                              }
+                            >
+                              Lưu trữ
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </CompactTable>
+            </div>
+          )}
         </>
       )}
 
-      <h3>Nhà cung cấp</h3>
-      {load.status === "ready" && load.suppliers.length === 0 ? (
-        <p className="empty">Chưa có nhà cung cấp trong Atlas.</p>
-      ) : (
-        <CompactTable
-          headers={[
-            "Nhà cung cấp",
-            "Trạng thái",
-            "Người liên hệ",
-            "Điện thoại",
-            "Email",
-            "Thao tác",
-          ]}
-        >
-          {load.suppliers.map((supplier) => (
-            <tr key={supplier.supplier_id}>
-              <td>
-                <b>{supplier.supplier_name}</b>
-                <small>{supplier.supplier_code}</small>
-              </td>
-              <td>{supplier.supplier_status}</td>
-              <td>{supplier.contact_name ?? "—"}</td>
-              <td>{supplier.contact_phone ?? "—"}</td>
-              <td>{supplier.contact_email ?? "—"}</td>
-              <td>
-                <button
-                  type="button"
-                  className="inline-action"
-                  onClick={() => editSupplier(supplier)}
-                >
-                  Sửa
-                </button>
-              </td>
-            </tr>
-          ))}
-        </CompactTable>
+      {catalogTab === "suppliers" && load.status === "ready" && (
+        <>
+          {load.suppliers.length === 0 ? (
+            <p className="empty">Chưa có nhà cung ứng.</p>
+          ) : shownSuppliers.length === 0 ? (
+            <p className="empty">Không có nhà cung ứng phù hợp tìm kiếm.</p>
+          ) : (
+            <div className="master-data-table-scroll suppliers-table">
+              <CompactTable
+                headers={[
+                  "Nhà cung ứng",
+                  "Trạng thái",
+                  "Người liên hệ",
+                  "Điện thoại",
+                  "Email",
+                  "Thao tác",
+                ]}
+              >
+                {shownSuppliers.map((supplier) => (
+                  <tr key={supplier.supplier_id}>
+                    <td>
+                      <b>{supplier.supplier_name}</b>
+                      <small>{supplier.supplier_code}</small>
+                    </td>
+                    <td>{supplierStatusLabel(supplier.supplier_status)}</td>
+                    <td>{supplier.contact_name ?? "—"}</td>
+                    <td>{supplier.contact_phone ?? "—"}</td>
+                    <td>{supplier.contact_email ?? "—"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="inline-action"
+                        onClick={() => editSupplier(supplier)}
+                      >
+                        Xem và sửa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </CompactTable>
+            </div>
+          )}
+        </>
       )}
 
       {ingredientId && (
-        <section className="command-review" aria-label="Biểu mẫu nguyên liệu">
-          <h3>
-            {ingredientId === "NEW" ? "Tạo nguyên liệu" : "Sửa nguyên liệu"}
-          </h3>
-          <div className="master-data-form-grid">
-            <label className="evidence-field">
-              Mã nguyên liệu
-              <input
-                disabled={ingredientId !== "NEW"}
-                value={ingredientDraft.ingredientCode}
-                onChange={(event) =>
-                  setIngredientDraft((current) => ({
-                    ...current,
-                    ingredientCode: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Tên nguyên liệu
-              <input
-                value={ingredientDraft.ingredientName}
-                onChange={(event) =>
-                  setIngredientDraft((current) => ({
-                    ...current,
-                    ingredientName: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Đơn vị mua
-              <select
-                value={ingredientDraft.purchaseUnitId}
-                onChange={(event) =>
-                  setIngredientDraft((current) => ({
-                    ...current,
-                    purchaseUnitId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Chọn đơn vị</option>
-                {load.units
-                  .filter((unit) => unit.unit_status === "ACTIVE")
-                  .map((unit) => (
-                    <option key={unit.unit_id} value={unit.unit_id}>
-                      {unit.unit_name} ({unit.unit_code})
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <label className="evidence-field">
-              Loại nguyên liệu
-              <input
-                value={ingredientDraft.ingredientType}
-                onChange={(event) =>
-                  setIngredientDraft((current) => ({
-                    ...current,
-                    ingredientType: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Loại mua
-              <input
-                value={ingredientDraft.shoppingType}
-                onChange={(event) =>
-                  setIngredientDraft((current) => ({
-                    ...current,
-                    shoppingType: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Bước đặt hàng
-              <input
-                type="number"
-                min="0.000001"
-                step="any"
-                value={ingredientDraft.orderStep}
-                onChange={(event) =>
-                  setIngredientDraft((current) => ({
-                    ...current,
-                    orderStep: event.target.value,
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <div className="workbench-actions">
+        <section
+          className="master-data-drawer"
+          aria-label="Biểu mẫu nguyên liệu"
+        >
+          <div className="master-data-detail-heading">
+            <div>
+              <span>Nguyên liệu</span>
+              <h3>
+                {ingredientId === "NEW" ? "Tạo nguyên liệu" : "Sửa nguyên liệu"}
+              </h3>
+            </div>
             <button
               type="button"
-              className="primary"
-              disabled={busy}
-              onClick={() => void saveIngredient()}
+              aria-label="Đóng"
+              onClick={() => setIngredientId(null)}
             >
-              {busy ? "Đang lưu…" : "Lưu và đọc lại"}
+              ×
             </button>
-            <button type="button" onClick={() => setIngredientId(null)}>
-              Hủy
-            </button>
+          </div>
+          <div className="master-data-drawer-body">
+            <div className="master-data-form-grid">
+              <label className="evidence-field">
+                Mã nguyên liệu
+                <input
+                  disabled={ingredientId !== "NEW"}
+                  value={ingredientDraft.ingredientCode}
+                  onChange={(event) =>
+                    setIngredientDraft((current) => ({
+                      ...current,
+                      ingredientCode: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Tên nguyên liệu
+                <input
+                  value={ingredientDraft.ingredientName}
+                  onChange={(event) =>
+                    setIngredientDraft((current) => ({
+                      ...current,
+                      ingredientName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Đơn vị mua
+                <select
+                  value={ingredientDraft.purchaseUnitId}
+                  onChange={(event) =>
+                    setIngredientDraft((current) => ({
+                      ...current,
+                      purchaseUnitId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Chọn đơn vị</option>
+                  {load.units
+                    .filter((unit) => unit.unit_status === "ACTIVE")
+                    .map((unit) => (
+                      <option key={unit.unit_id} value={unit.unit_id}>
+                        {unit.unit_name} ({unit.unit_code})
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label className="evidence-field">
+                Loại nguyên liệu
+                <input
+                  value={ingredientDraft.ingredientType}
+                  onChange={(event) =>
+                    setIngredientDraft((current) => ({
+                      ...current,
+                      ingredientType: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Cách mua
+                <input
+                  value={ingredientDraft.shoppingType}
+                  onChange={(event) =>
+                    setIngredientDraft((current) => ({
+                      ...current,
+                      shoppingType: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Bước đặt hàng
+                <input
+                  type="number"
+                  min="0.000001"
+                  step="any"
+                  value={ingredientDraft.orderStep}
+                  onChange={(event) =>
+                    setIngredientDraft((current) => ({
+                      ...current,
+                      orderStep: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <div className="workbench-actions">
+              <button
+                type="button"
+                className="primary"
+                disabled={busy}
+                onClick={() => void saveIngredient()}
+              >
+                {busy ? "Đang lưu…" : "Lưu thay đổi"}
+              </button>
+              <button type="button" onClick={() => setIngredientId(null)}>
+                Hủy
+              </button>
+            </div>
           </div>
         </section>
       )}
 
       {supplierId && (
-        <section className="command-review" aria-label="Biểu mẫu nhà cung cấp">
-          <h3>
-            {supplierId === "NEW" ? "Tạo nhà cung cấp" : "Sửa nhà cung cấp"}
-          </h3>
-          <div className="master-data-form-grid">
-            <label className="evidence-field">
-              Mã nhà cung cấp
-              <input
-                disabled={supplierId !== "NEW"}
-                value={supplierDraft.supplierCode}
-                onChange={(event) =>
-                  setSupplierDraft((current) => ({
-                    ...current,
-                    supplierCode: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Tên nhà cung cấp
-              <input
-                value={supplierDraft.supplierName}
-                onChange={(event) =>
-                  setSupplierDraft((current) => ({
-                    ...current,
-                    supplierName: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Người liên hệ
-              <input
-                value={supplierDraft.contactName}
-                onChange={(event) =>
-                  setSupplierDraft((current) => ({
-                    ...current,
-                    contactName: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Điện thoại
-              <input
-                value={supplierDraft.contactPhone}
-                onChange={(event) =>
-                  setSupplierDraft((current) => ({
-                    ...current,
-                    contactPhone: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label className="evidence-field">
-              Email
-              <input
-                type="email"
-                value={supplierDraft.contactEmail}
-                onChange={(event) =>
-                  setSupplierDraft((current) => ({
-                    ...current,
-                    contactEmail: event.target.value,
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <div className="workbench-actions">
+        <section
+          className="master-data-drawer"
+          aria-label="Biểu mẫu nhà cung ứng"
+        >
+          <div className="master-data-detail-heading">
+            <div>
+              <span>Nhà cung ứng</span>
+              <h3>
+                {supplierId === "NEW" ? "Tạo nhà cung ứng" : "Sửa nhà cung ứng"}
+              </h3>
+            </div>
             <button
               type="button"
-              className="primary"
-              disabled={busy}
-              onClick={() => void saveSupplier()}
+              aria-label="Đóng"
+              onClick={() => setSupplierId(null)}
             >
-              {busy ? "Đang lưu…" : "Lưu và đọc lại"}
+              ×
             </button>
-            <button type="button" onClick={() => setSupplierId(null)}>
-              Hủy
-            </button>
+          </div>
+          <div className="master-data-drawer-body">
+            <div className="master-data-form-grid">
+              <label className="evidence-field">
+                Mã nhà cung ứng
+                <input
+                  disabled={supplierId !== "NEW"}
+                  value={supplierDraft.supplierCode}
+                  onChange={(event) =>
+                    setSupplierDraft((current) => ({
+                      ...current,
+                      supplierCode: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Tên nhà cung ứng
+                <input
+                  value={supplierDraft.supplierName}
+                  onChange={(event) =>
+                    setSupplierDraft((current) => ({
+                      ...current,
+                      supplierName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Người liên hệ
+                <input
+                  value={supplierDraft.contactName}
+                  onChange={(event) =>
+                    setSupplierDraft((current) => ({
+                      ...current,
+                      contactName: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Điện thoại
+                <input
+                  value={supplierDraft.contactPhone}
+                  onChange={(event) =>
+                    setSupplierDraft((current) => ({
+                      ...current,
+                      contactPhone: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="evidence-field">
+                Email
+                <input
+                  type="email"
+                  value={supplierDraft.contactEmail}
+                  onChange={(event) =>
+                    setSupplierDraft((current) => ({
+                      ...current,
+                      contactEmail: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            <div className="workbench-actions">
+              <button
+                type="button"
+                className="primary"
+                disabled={busy}
+                onClick={() => void saveSupplier()}
+              >
+                {busy ? "Đang lưu…" : "Lưu thay đổi"}
+              </button>
+              <button type="button" onClick={() => setSupplierId(null)}>
+                Hủy
+              </button>
+            </div>
           </div>
         </section>
       )}
 
       {priorityIngredient && (
         <section
-          className="command-review"
-          aria-label="Thay thế ưu tiên nhà cung cấp"
+          className="master-data-drawer priority-drawer"
+          aria-label="Sắp xếp ưu tiên nhà cung ứng"
         >
-          <h3>Ưu tiên NCC · {priorityIngredient.ingredient_name}</h3>
-          {priorities.length === 0 && (
-            <p>Danh sách trống. Lưu để gỡ toàn bộ ưu tiên hiện tại.</p>
-          )}
-          {priorities.map((item, index) => (
-            <div
-              className="master-data-priority-row"
-              key={`${item.supplierId}:${index}`}
+          <div className="master-data-detail-heading">
+            <div>
+              <span>Ưu tiên nhà cung ứng</span>
+              <h3>{priorityIngredient.ingredient_name}</h3>
+            </div>
+            <button
+              type="button"
+              aria-label="Đóng"
+              onClick={() => setPriorityIngredientId(null)}
             >
-              <label className="evidence-field">
-                Nhà cung cấp
-                <select
-                  value={item.supplierId}
-                  onChange={(event) =>
+              ×
+            </button>
+          </div>
+          <div className="master-data-drawer-body">
+            <p className="drawer-guidance">
+              Có thể để trống hoặc chọn tối đa sáu nhà cung ứng. Mỗi nhà cung
+              ứng và mỗi mức ưu tiên từ 1 đến 6 chỉ được dùng một lần.
+            </p>
+            {priorities.length === 0 && (
+              <p className="empty compact-empty">
+                Chưa có nhà cung ứng ưu tiên.
+              </p>
+            )}
+            {priorities.map((item, index) => (
+              <div
+                className="master-data-priority-row"
+                key={`${item.supplierId}:${index}`}
+              >
+                <b className="priority-order">{index + 1}</b>
+                <label className="evidence-field">
+                  Nhà cung ứng
+                  <select
+                    aria-label={`Nhà cung ứng ưu tiên ${index + 1}`}
+                    value={item.supplierId}
+                    onChange={(event) =>
+                      setPriorities((current) =>
+                        current.map((priority, currentIndex) =>
+                          currentIndex === index
+                            ? { ...priority, supplierId: event.target.value }
+                            : priority,
+                        ),
+                      )
+                    }
+                  >
+                    {load.suppliers
+                      .filter(
+                        (supplier) => supplier.supplier_status === "ACTIVE",
+                      )
+                      .map((supplier) => (
+                        <option
+                          key={supplier.supplier_id}
+                          value={supplier.supplier_id}
+                        >
+                          {supplier.supplier_name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label className="evidence-field">
+                  Mức ưu tiên
+                  <input
+                    aria-label={`Mức ưu tiên ${index + 1}`}
+                    type="number"
+                    min="1"
+                    max="6"
+                    step="1"
+                    value={item.priority}
+                    onChange={(event) =>
+                      setPriorities((current) =>
+                        current.map((priority, currentIndex) =>
+                          currentIndex === index
+                            ? {
+                                ...priority,
+                                priority: Number(event.target.value),
+                              }
+                            : priority,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
                     setPriorities((current) =>
-                      current.map((priority, currentIndex) =>
-                        currentIndex === index
-                          ? { ...priority, supplierId: event.target.value }
-                          : priority,
+                      current.filter(
+                        (_, currentIndex) => currentIndex !== index,
                       ),
                     )
                   }
                 >
-                  {load.suppliers
-                    .filter((supplier) => supplier.supplier_status === "ACTIVE")
-                    .map((supplier) => (
-                      <option
-                        key={supplier.supplier_id}
-                        value={supplier.supplier_id}
-                      >
-                        {supplier.supplier_name}
-                      </option>
-                    ))}
-                </select>
-              </label>
-              <label className="evidence-field">
-                Ưu tiên
-                <input
-                  type="number"
-                  min="1"
-                  max="6"
-                  step="1"
-                  value={item.priority}
-                  onChange={(event) =>
-                    setPriorities((current) =>
-                      current.map((priority, currentIndex) =>
-                        currentIndex === index
-                          ? {
-                              ...priority,
-                              priority: Number(event.target.value),
-                            }
-                          : priority,
-                      ),
-                    )
-                  }
-                />
-              </label>
+                  Gỡ
+                </button>
+              </div>
+            ))}
+            <div className="workbench-actions">
               <button
                 type="button"
-                onClick={() =>
-                  setPriorities((current) =>
-                    current.filter((_, currentIndex) => currentIndex !== index),
-                  )
-                }
+                disabled={priorities.length >= 6}
+                onClick={addPriority}
               >
-                Gỡ
+                Thêm nhà cung ứng
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={busy}
+                onClick={() => void savePriorities()}
+              >
+                {busy ? "Đang lưu…" : "Lưu thứ tự ưu tiên"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPriorityIngredientId(null)}
+              >
+                Hủy
               </button>
             </div>
-          ))}
-          <div className="workbench-actions">
-            <button
-              type="button"
-              disabled={priorities.length >= 6}
-              onClick={addPriority}
-            >
-              Thêm NCC
-            </button>
-            <button
-              type="button"
-              className="primary"
-              disabled={busy}
-              onClick={() => void savePriorities()}
-            >
-              {busy ? "Đang lưu…" : "Thay thế toàn bộ và đọc lại"}
-            </button>
-            <button type="button" onClick={() => setPriorityIngredientId(null)}>
-              Hủy
-            </button>
           </div>
         </section>
       )}
+
+      {lifecycleIntent && (
+        <section
+          className="master-data-drawer lifecycle-drawer"
+          aria-label="Xác nhận thay đổi trạng thái"
+        >
+          <div className="master-data-detail-heading">
+            <div>
+              <span>Thay đổi trạng thái</span>
+              <h3>{lifecycleIntent.ingredient.ingredient_name}</h3>
+            </div>
+            <button
+              type="button"
+              aria-label="Đóng"
+              onClick={() => setLifecycleIntent(null)}
+            >
+              ×
+            </button>
+          </div>
+          <div className="master-data-drawer-body">
+            <div className="operator-notice warning">
+              <b>Xác nhận trước khi tiếp tục</b>
+              <p>
+                Trạng thái mới:{" "}
+                <strong>{ingredientStatusLabel(lifecycleIntent.status)}</strong>
+                . Khi ngừng dùng hoặc lưu trữ, danh sách ưu tiên nhà cung ứng
+                của nguyên liệu sẽ được gỡ.
+              </p>
+            </div>
+            <div className="workbench-actions">
+              <button
+                type="button"
+                className="primary"
+                disabled={busy}
+                onClick={() =>
+                  void changeLifecycle(
+                    lifecycleIntent.ingredient,
+                    lifecycleIntent.status,
+                  )
+                }
+              >
+                {busy ? "Đang cập nhật…" : "Xác nhận thay đổi"}
+              </button>
+              <button type="button" onClick={() => setLifecycleIntent(null)}>
+                Hủy
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {notice && (
-        <p className="prototype-notice" role="status">
+        <p
+          className={
+            notice.includes("không") ||
+            notice.includes("thay đổi") ||
+            notice.includes("hết")
+              ? "operator-notice warning"
+              : "operator-notice success"
+          }
+          role="status"
+        >
           {notice}
         </p>
       )}
