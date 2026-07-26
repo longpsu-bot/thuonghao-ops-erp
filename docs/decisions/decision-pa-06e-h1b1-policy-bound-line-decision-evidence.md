@@ -1,6 +1,6 @@
 # Decision PA-06E-H1B1 — Policy-Bound Confirmed Need Line Decision Evidence
 
-**Status:** H1B1-P01 through H1B1-P12 approved by the product owner as corrected on 2026-07-26; H1B1 SQL and H1B2 remain separately unauthorized
+**Status:** H1B1-P01 through H1B1-P12 approved as corrected on 2026-07-26; H1B1 private persistence implemented under Issue #153 and pending independent PR review; H1B2 remains separately unauthorized
 
 **Issue:** [#151](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/151)
 
@@ -12,7 +12,7 @@
 
 **Architecture contract:** [PA-06E-H1B1 — Policy-Bound Confirmed Need Line Decision](../architecture/pa-06e-h1b1-policy-bound-line-decision-contract.md)
 
-**Future persistence task:** [TASK-PA-06E-H1B1 — Policy-Bound Line Decision Persistence](../implementation-tasks/TASK-PA-06E-H1B1-policy-bound-line-decision-persistence.md)
+**Persistence implementation record:** [TASK-PA-06E-H1B1 — Policy-Bound Line Decision Persistence](../implementation-tasks/TASK-PA-06E-H1B1-policy-bound-line-decision-persistence.md)
 
 ## 1. Decision outcome
 
@@ -34,15 +34,15 @@ H1B1 provides private structure only. H1B2 is the first task allowed to append a
 ## 2. OPS_SYSTEM_MAP placement
 
 | Layer               | Approved H1B1 decision                                                                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mission             | Preserve explainable Planning authority without rewriting prior calculated, decision, approval, or downstream evidence.                                                          |
-| Business Capability | Record the exact line quantity Planning accepted or adjusted, the exact policy that governed it, and every later replacement decision.                                            |
-| Business Domain     | Planning owns decision meaning. Source owners own source corrections. Procurement consumes only later approved/released Planning facts.                                           |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mission             | Preserve explainable Planning authority without rewriting prior calculated, decision, approval, or downstream evidence.                                                            |
+| Business Capability | Record the exact line quantity Planning accepted or adjusted, the exact policy that governed it, and every later replacement decision.                                             |
+| Business Domain     | Planning owns decision meaning. Source owners own source corrections. Procurement consumes only later approved/released Planning facts.                                            |
 | Business Object     | Existing Confirmed Need aggregate plus append-only `ConfirmedNeedLineDecision`.                                                                                                    |
-| Business Contract   | This registry and the focused H1B1 architecture contract.                                                                                                                         |
+| Business Contract   | This registry and the focused H1B1 architecture contract.                                                                                                                          |
 | Command / Event     | None in H1B1; future H1B2 owns command, receipt, event, and audit execution.                                                                                                       |
-| Read Model          | None in H1B1; future H1B2 owns authorized review/readback.                                                                                                                        |
-| Application         | None in H1B1.                                                                                                                                                                     |
+| Read Model          | None in H1B1; future H1B2 owns authorized review/readback.                                                                                                                         |
+| Application         | None in H1B1.                                                                                                                                                                      |
 | Technology          | Future one private relation, one nullable line pointer, typed keys, immutable guards, mandatory deferred final-state integrity, forced RLS, zero policies, and no positive grants. |
 
 ## 3. Canonical H1B1 decision registry
@@ -291,7 +291,7 @@ H1B1 creates no command, receipt, event, or audit row. H1B2 owns the transaction
 
 **Future impact:** Ordinary immutability/delete guard and historical-chain tests.
 
-### H1B1-P12 — Future physical and security delta
+### H1B1-P12 — Implemented physical and security delta
 
 **Question:** What is the smallest implementation-ready persistence shape?
 
@@ -299,7 +299,7 @@ H1B1 creates no command, receipt, event, or audit row. H1B2 owns the transaction
 
 **Alternatives:** Multiple decision/reason/correction tables; generic helper framework; command/API implementation in H1B1; one bounded private relation.
 
-**Approved direction:** The future target is:
+**Approved direction:** The implemented target is:
 
 ```text
 +1 private relation: atlas_planning.confirmed_need_line_decisions
@@ -317,7 +317,7 @@ H1B1 adds zero roles, capabilities, memberships, runtimes, policies, positive gr
 
 **Excluded behavior:** No additional relation, reason table, resolver, generic helper, extension, API, runtime grant, production writer, React, Retool, hosted action, or seed.
 
-**Future impact:** One additive migration, bounded pgTAP suites, canonical catalog update, workflow registration, and separately approved review.
+**Implementation impact:** One additive migration, three bounded pgTAP suites, canonical catalog update, workflow registration, and separately approved review.
 
 ## 4. Superseded H0 proposals
 
@@ -336,19 +336,24 @@ Every other H0 source, materialization, correction, zero/removal/split/merge, an
 
 The product owner approved all twelve decisions as corrected on 2026-07-26.
 
-This approval authorizes documentation only. A future H1B1 persistence issue must separately:
+Issue #153 separately authorized H1B1 persistence on the exact approved
+baseline and file boundary. The implementation:
 
-- name one exact `origin/main` baseline;
-- complete a no-edit impact/assertion inventory;
-- fix the exact migration filename and allowed files;
-- verify the proposed columns, keys, functions, triggers, catalog delta, and test plans;
-- preserve H0B1b, H0C/CMD-15, H1A, and PA-05D behavior; and
-- remain writerless, private, seedless, and unmerged until independent review.
+- starts from `473ed0191772d12123f6f6b5ef942c0655f849e5`;
+- uses the CLI-generated
+  `20260726115324_pa_06e_h1b1_policy_bound_line_decision_persistence.sql`;
+- implements exactly one relation, one nullable pointer, three functions, and
+  six triggers;
+- fixes focused plans at `64`, `48`, and `48`;
+- preserves H0B1b, H0C/CMD-15, H1A, and PA-05D behavior; and
+- remains writerless, private, seedless, and unmerged until independent review.
 
 H1B2 remains separately unauthorized.
 
 ## 6. Current effect
 
-This decision changes documentation only. It creates no migration, relation, column, function, trigger, test, workflow registration, role, capability, policy, grant, API, registry entry, read model, command, event, generated type, application code, Retool change, hosted action, production row, seed, credential, package, lockfile, or deployment.
-
-Documentation rollback is a normal Git revert.
+Issue #153 realizes the approved persistence delta and registers the three
+focused suites, producing 30 registered suites / 1,808 TAP assertions. It adds
+zero role, capability, membership, runtime, RLS policy, positive grant, API,
+registry entry, view, read model, writer, command, event, seed, application
+code, hosted action, credential, package, generated type, or deployment.

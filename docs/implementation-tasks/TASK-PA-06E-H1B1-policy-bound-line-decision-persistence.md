@@ -1,6 +1,6 @@
 # TASK-PA-06E-H1B1 — Policy-Bound Confirmed Need Line Decision Persistence
 
-**Status:** Product contract approved; future SQL implementation remains separately unauthorized
+**Status:** Implemented under Issue #153 on the bounded task branch; pending independent PR review, exact-head CI, and merge authorization
 
 **Decision issue:** [#151](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/151)
 
@@ -334,9 +334,9 @@ The scan must identify:
 
 Discovery that an earlier domain suite must be changed is a stop condition unless that exact file is explicitly approved after semantic review. Whole-platform totals belong in the canonical catalog suite only.
 
-## 10. Future allowed-file direction
+## 10. Issue #153 allowed-file boundary
 
-The future implementation issue should authorize only:
+Issue #153 authorizes only:
 
 1. one CLI-generated H1B1 migration;
 2. bounded H1B1 structure/security suite;
@@ -350,13 +350,17 @@ The future implementation issue should authorize only:
 10. `docs/architecture/roadmap.md`; and
 11. `docs/decisions/decision-register.md`.
 
-The exact list, migration filename, object counts, fingerprints, and fixed `plan(N)` values must be approved in the future issue before coding.
+The generated migration is
+`20260726115324_pa_06e_h1b1_policy_bound_line_decision_persistence.sql`.
+The approved counts are one relation, one pointer, three functions, and six
+triggers. The fixed focused plans are `64`, `48`, and `48`.
 
 Do not edit H0B1b, H0C, H1A, PA-05D, PA-06A, React, Retool, package, lockfile, generated-type, credential, or deployment files merely to make implementation convenient.
 
 ## 11. pgTAP ownership
 
-Exact plans remain unset until the complete publication-time assertion inventory is proven.
+The complete Phase 0 assertion inventory fixes the exact plans at `64`, `48`,
+and `48`.
 
 ### 11.1 Structure and security
 
@@ -405,7 +409,7 @@ All fixtures must be synthetic, independently runnable, transactional, and rolle
 
 ## 12. Validation workflow
 
-The future implementation should run:
+The Issue #153 implementation must run:
 
 - exact baseline/worktree verification;
 - `pnpm ops:workspace`;
@@ -456,7 +460,7 @@ Stop the future implementation if:
 
 Document the exact contradiction and make no further repository change.
 
-## 15. Definition of done for the future task
+## 15. Definition of done for Issue #153
 
 - Product approval and canonical registry are linked.
 - The branch starts from the exact approved future baseline.
@@ -469,8 +473,15 @@ Document the exact contradiction and make no further repository change.
 - Focused local validation and exact-head CI pass.
 - The PR remains unmerged until independent product, architecture, security, and migration review completes.
 
-## 16. Current documentation effect
+## 16. Implementation record
 
-This file is a future implementation blueprint only. It adds no migration, relation, column, function, trigger, test, workflow registration, role, capability, policy, grant, API, registry entry, read model, command, event, application code, Retool change, hosted action, production row, seed, credential, package, lockfile, or deployment.
+Issue #153 implements one CLI-generated additive migration, the three fixed
+focused suites (`64/48/48`), the canonical `plan(22)` catalog update, and the
+30-suite / 1,808-TAP workflow registration. The post-change catalog is 85
+ordinary tables, 53 private functions, 65 non-internal triggers, and 85
+RLS-enabled/forced tables; policy and positive-grant totals remain unchanged.
 
-Documentation rollback is a normal Git revert.
+The implementation adds no role, capability, membership, runtime, RLS policy,
+positive grant, API, PA-06A entry, view, read model, writer, command, event,
+seed, application code, hosted action, credential, package, generated type, or
+deployment. H1B2 remains the first authorized writer/read task.

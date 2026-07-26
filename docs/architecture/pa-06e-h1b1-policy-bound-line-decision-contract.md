@@ -1,6 +1,6 @@
 # PA-06E-H1B1 — Policy-Bound Confirmed Need Line Decision Contract
 
-**Status:** Product-approved architecture contract; documentation only; H1B1 persistence and H1B2 commands remain separately unauthorized
+**Status:** Product-approved contract; H1B1 private persistence implemented under Issue #153 and pending independent PR review; H1B2 commands remain separately unauthorized
 
 **Issue:** [#151](https://github.com/longpsu-bot/thuonghao-ops-erp/issues/151)
 
@@ -10,7 +10,7 @@
 
 **Canonical decision registry:** [Decision PA-06E-H1B1 — Policy-Bound Line Decision Evidence](../decisions/decision-pa-06e-h1b1-policy-bound-line-decision-evidence.md)
 
-**Future persistence blueprint:** [TASK-PA-06E-H1B1 — Policy-Bound Line Decision Persistence](../implementation-tasks/TASK-PA-06E-H1B1-policy-bound-line-decision-persistence.md)
+**Persistence implementation record:** [TASK-PA-06E-H1B1 — Policy-Bound Line Decision Persistence](../implementation-tasks/TASK-PA-06E-H1B1-policy-bound-line-decision-persistence.md)
 
 **Parent contracts:** [PA-06E Confirmed Need Review, Adjustment, Revision, and Source Correction](pa-06e-confirmed-need-review-adjustment-revision-contract.md), [PA-06E-H0 School-Catering Persistence and Materialization](pa-06e-h0-school-catering-persistence-and-materialization-contract.md), [Planning Confirmed Need](planning-domain-confirmed-need-contract.md), and [PA-06E-H1A Planning Quantity Policy](../decisions/decision-pa-06e-h1a-planning-quantity-policy.md)
 
@@ -48,13 +48,13 @@ H1B1 provides persistence structure only. It creates no command, writer, read mo
 
 ## 2. OPS_SYSTEM_MAP placement
 
-| Layer               | H1B1 placement                                                                                                                                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mission             | Preserve explainable Planning authority without silently rewriting calculated evidence or downstream commitments.                                                                               |
-| Business Capability | Record which exact operational quantity Planning accepted or adjusted, under which exact Planning policy, and retain every replacement decision.                                                |
-| Business Domain     | Planning owns the decision meaning. Source owners retain source corrections. Procurement consumes only later approved and released Planning facts.                                              |
+| Layer               | H1B1 placement                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Mission             | Preserve explainable Planning authority without silently rewriting calculated evidence or downstream commitments.                                                                                |
+| Business Capability | Record which exact operational quantity Planning accepted or adjusted, under which exact Planning policy, and retain every replacement decision.                                                 |
+| Business Domain     | Planning owns the decision meaning. Source owners retain source corrections. Procurement consumes only later approved and released Planning facts.                                               |
 | Business Object     | Existing Confirmed Need aggregate plus append-only `ConfirmedNeedLineDecision`.                                                                                                                  |
-| Business Contract   | This contract, the canonical H1B1 decision registry, PA-06E, H0B1b/H0C, H1A, PA-01, PA-02, and PA-03.                                                                                           |
+| Business Contract   | This contract, the canonical H1B1 decision registry, PA-06E, H0B1b/H0C, H1A, PA-01, PA-02, and PA-03.                                                                                            |
 | Command / Event     | None in H1B1. Future H1B2 owns preview/confirmation commands, one receipt, one domain event, and one audit event per transactional action.                                                       |
 | Read Model          | None in H1B1. Future H1B2 owns authorized review/readback and derives logical adjustments from adjusted decisions.                                                                               |
 | Application         | None in H1B1. React and Retool remain non-authoritative.                                                                                                                                         |
@@ -350,11 +350,11 @@ The future persistence task should implement exactly the approved meanings throu
 - `confirmed_need_batch_version`
 - `created_at`
 
-The future implementation issue may refine constraint and index names, but it may not add, remove, rename, or reinterpret a business-evidence column without an explicit decision amendment.
+Issue #153 fixed the constraint and index names before implementation. No business-evidence column may be added, removed, renamed, or reinterpreted without an explicit decision amendment.
 
 ### 10.2 Key and constraint direction
 
-The future migration must provide:
+The H1B1 migration provides:
 
 - database-generated UUID decision identity;
 - positive line-local decision number;
@@ -468,18 +468,26 @@ It supersedes only these earlier H0 proposals:
 4. one accountable decision actor replaces any proxy/recording-actor possibility; and
 5. the current-decision pointer cannot be cleared after first authority in this slice.
 
-## 14. Validation ownership for future persistence
+## 14. Validation ownership for H1B1 persistence
 
-The future H1B1 persistence issue must inventory and fix exact pgTAP plans before coding. At minimum, test ownership should be separated into:
+Issue #153 fixed the pgTAP plans before coding. Test ownership is separated into:
 
-1. structure, keys, security, and catalog delta;
-2. append-only chain, reason policy, actor, command, and pointer transitions; and
-3. revision, policy, service-date, and exact quantity/tick integrity.
+1. structure, keys, security, and catalog delta — `plan(64)`;
+2. append-only chain, reason policy, actor, command, and pointer transitions — `plan(48)`; and
+3. revision, policy, service-date, and exact quantity/tick integrity — `plan(48)`.
 
 The canonical current-platform catalog must own mutable whole-platform totals. Historical H0/H1A suites must not be edited merely to absorb current totals.
 
 ## 15. Current effect
 
-This document changes architecture documentation only. It creates no migration, SQL object, test, workflow registration, role, capability, policy, grant, function, API, registry entry, read model, generated type, application code, Retool change, hosted action, production row, seed, credential, package, lockfile, or deployment.
+Issue #153 implements this contract in
+`20260726115324_pa_06e_h1b1_policy_bound_line_decision_persistence.sql`:
+one private relation, one nullable pointer, three private functions, and six
+triggers. The three focused suites provide 160 assertions, and the registered
+workflow is 30 suites / 1,808 TAP assertions.
 
-Documentation rollback is a normal Git revert.
+The implementation remains writerless and seedless. It adds zero role,
+capability, membership, runtime, RLS policy, positive grant, API, PA-06A
+entry, view, read model, command, event, application path, hosted action, or
+deployment. H1B2 remains the first task allowed to append decisions, advance
+the pointer, or expose review, preview, or confirmation.
