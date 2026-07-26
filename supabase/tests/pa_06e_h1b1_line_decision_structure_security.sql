@@ -999,7 +999,7 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 19,
+    'api_total', 28,
     'views', 0
   ),
   'H1B1-STR-61 roles, capabilities, memberships, runtimes, APIs, views, commands, and events have zero H1B1 delta'
