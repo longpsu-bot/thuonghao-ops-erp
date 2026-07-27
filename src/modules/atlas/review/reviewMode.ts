@@ -28,6 +28,24 @@ export type AtlasReviewScenario =
   | "menu_retryable"
   | "menu_stale"
   | "menu_session_lost"
+  | "dish_types_renamed"
+  | "dish_types_reordered"
+  | "dish_types_added"
+  | "dish_types_inactive"
+  | "menu_type_match"
+  | "menu_type_mismatch"
+  | "google_source_configured"
+  | "google_source_missing"
+  | "google_source_unavailable"
+  | "google_fetch_success"
+  | "google_empty_sheet"
+  | "google_sheet_missing"
+  | "google_connector_unavailable"
+  | "google_permission_denied"
+  | "google_retryable"
+  | "google_session_lost"
+  | "google_preview_blockers"
+  | "google_save_success"
   | "attendance_draft"
   | "attendance_imported"
   | "attendance_validated"
@@ -60,6 +78,7 @@ export function createReviewAuthState(
   if (
     scenario === "session_lost" ||
     scenario === "menu_session_lost" ||
+    scenario === "google_session_lost" ||
     scenario === "attendance_session_lost"
   ) {
     return {

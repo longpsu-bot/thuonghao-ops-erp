@@ -26,9 +26,31 @@ export type PlanningDish = {
   dish_id: string;
   dish_code: string;
   dish_name: string;
+  dish_category?: string | null;
+  dish_type_id: string | null;
+  dish_type_code: string | null;
+  dish_type_name: string | null;
   dish_status: "DRAFT" | "ACTIVE" | "INACTIVE";
   display_order: number;
   requires_need_generation: boolean;
+};
+
+export type PlanningDishType = {
+  dish_type_id: string;
+  dish_type_code: string;
+  dish_type_name: string;
+  source_header_aliases: string[];
+  display_order: number;
+  dish_type_status: "ACTIVE" | "INACTIVE";
+  version: number;
+};
+
+export type WeeklyMenuGoogleSource = {
+  weekly_menu_google_source_id: string;
+  source_code: string;
+  source_name: string;
+  source_status: "ACTIVE" | "INACTIVE";
+  display_order: number;
 };
 
 export type MenuLine = {
@@ -121,7 +143,8 @@ export type AttendanceRecord = {
 export type PlanningInputsWorkbenchData = {
   week_start: string;
   week_end: string;
-  menu_slots: { code: string; label: string; display_order: number }[];
+  dish_types: PlanningDishType[];
+  google_sheet_sources: WeeklyMenuGoogleSource[];
   schools: PlanningSchool[];
   dishes: PlanningDish[];
   weekly_menu: WeeklyMenuRecord | null;
@@ -177,7 +200,8 @@ export function planningWorkbenchFromResult(
   if (
     !Array.isArray(workbench.schools) ||
     !Array.isArray(workbench.dishes) ||
-    !Array.isArray(workbench.menu_slots) ||
+    !Array.isArray(workbench.dish_types) ||
+    !Array.isArray(workbench.google_sheet_sources) ||
     !Array.isArray(workbench.default_attendance_preview) ||
     !isRecord(workbench.readiness)
   )

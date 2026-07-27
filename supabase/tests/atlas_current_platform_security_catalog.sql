@@ -37,8 +37,8 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 89, 'views', 2),
-  'CAT-02 exact whole-platform table and view totals are 89 and 2'
+  jsonb_build_object('ordinary_tables', 91, 'views', 2),
+  'CAT-02 exact whole-platform table and view totals are 91 and 2'
 );
 
 select is(
@@ -63,9 +63,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 89,
-    'rls_enabled', 89,
-    'rls_forced', 89
+    'authoritative_tables', 91,
+    'rls_enabled', 91,
+    'rls_forced', 91
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -320,10 +320,10 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 413,
-    'md5', '7ed5607dd457754f66cced1d4152c6c8'
+    'count', 417,
+    'md5', 'aafc8695370902a34d0f5491d051258e'
   ),
-  'CAT-07 exact 413-policy RLS catalog fingerprint is retained'
+  'CAT-07 exact 417-policy RLS catalog fingerprint is retained'
 );
 
 select ok(
@@ -1219,23 +1219,23 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 10,
-    'table_count', 89,
-    'table_catalog_md5', '96e8c43bd3c1604d03c5d64c2f305b17',
+    'table_count', 91,
+    'table_catalog_md5', '419148fcda7cf01d7e7d869205e0c4ee',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 89,
-    'rls_forced', 89,
+    'rls_enabled', 91,
+    'rls_forced', 91,
     'database_role_count', 9,
     'application_role_count', 0,
     'capability_count', 18,
-    'policy_count', 413,
-    'policy_catalog_md5', '7ed5607dd457754f66cced1d4152c6c8',
+    'policy_count', 417,
+    'policy_catalog_md5', 'aafc8695370902a34d0f5491d051258e',
     'private_function_count', 103,
     'private_function_catalog_md5', '54c4cd9482beda4d14105c6d9309b06b',
     'trigger_count', 67,
     'trigger_catalog_md5', '0d5289e26a34a858b2d0c1588fca14f9',
-    'positive_target_grant_count', 1030,
-    'positive_target_grant_md5', 'c4d6351476cb4623e40d1c705d2b63b4',
+    'positive_target_grant_count', 1036,
+    'positive_target_grant_md5', 'ec7ea429971f594441f02a45590e3054',
     'api_function_count', 58,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,

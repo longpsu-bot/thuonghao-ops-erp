@@ -1,6 +1,7 @@
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 import {
+  ATLAS_EDGE_FUNCTIONS,
   ATLAS_RPC_FUNCTIONS,
   createAtlasRpcTransport,
   type AtlasRpcName,
@@ -44,6 +45,25 @@ function rpcClient(
     schema,
     rpc,
     retry,
+  };
+}
+
+function edgeClient(
+  response: { data: unknown; error: unknown },
+  currentSession: Session | null = session(),
+) {
+  const invoke = vi.fn().mockResolvedValue(response);
+  const getSession = vi.fn().mockResolvedValue({
+    data: { session: currentSession },
+    error: null,
+  });
+  return {
+    client: {
+      auth: { getSession },
+      functions: { invoke },
+    } as unknown as SupabaseClient,
+    getSession,
+    invoke,
   };
 }
 
@@ -109,6 +129,12 @@ describe("Atlas RPC transport", () => {
       "atlas_api.approve_attendance",
       "atlas_api.reopen_attendance",
     ]);
+  });
+
+  it("contains exactly one reviewed read-only Edge Function route", () => {
+    expect(ATLAS_EDGE_FUNCTIONS).toEqual({
+      weeklyMenuGoogleSync: "atlas-weekly-menu-google-sync",
+    });
   });
 
   it("rejects an arbitrary RPC name before client invocation", async () => {
@@ -272,5 +298,56 @@ describe("Atlas RPC transport", () => {
       expect(result.diagnostic.code).toBe("SESSION_EXPIRED");
     }
     expect(fake.rpc).not.toHaveBeenCalled();
+  });
+
+  it("invokes the Google adapter with the current bearer token", async () => {
+    const response = {
+      success: true,
+      correlation_id: "correlation-1",
+      rows: [],
+    };
+    const fake = edgeClient({ data: response, error: null });
+    const result = await createAtlasRpcTransport(
+      fake.client,
+    ).invokeEdgeFunction("atlas-weekly-menu-google-sync", {
+      correlation_id: "correlation-1",
+    });
+    expect(result).toEqual({ kind: "success", response });
+    expect(fake.invoke).toHaveBeenCalledWith("atlas-weekly-menu-google-sync", {
+      body: { correlation_id: "correlation-1" },
+      headers: { Authorization: "Bearer local-access-token" },
+    });
+  });
+
+  it("preserves a safe non-2xx Edge response without exposing transport internals", async () => {
+    const context = new Response(
+      JSON.stringify({
+        success: false,
+        error_code: "WEEKLY_SHEET_MISSING",
+        safe_message: "The selected weekly sheet was not found.",
+        retryable: false,
+        correlation_id: "correlation-1",
+        upstream_body: "private Google body",
+      }),
+      { status: 404 },
+    );
+    const fake = edgeClient({
+      data: null,
+      error: { message: "Edge Function returned a non-2xx status", context },
+    });
+    const result = await createAtlasRpcTransport(
+      fake.client,
+    ).invokeEdgeFunction("atlas-weekly-menu-google-sync", {
+      correlation_id: "correlation-1",
+    });
+    expect(result.kind).toBe("backend_error");
+    if (result.kind === "backend_error") {
+      expect(result.error).toMatchObject({
+        error_code: "WEEKLY_SHEET_MISSING",
+        safe_message: "The selected weekly sheet was not found.",
+        retryable: false,
+      });
+      expect(result.error).not.toHaveProperty("upstream_body");
+    }
   });
 });

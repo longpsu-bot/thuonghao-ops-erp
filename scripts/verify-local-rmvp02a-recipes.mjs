@@ -92,8 +92,12 @@ async function main() {
     (item) => item.ingredient_status === "ACTIVE",
   );
   const unit = initial.units.find((item) => item.unit_status === "ACTIVE");
+  const dishType = initial.dish_types.find(
+    (item) => item.dish_type_status === "ACTIVE",
+  );
   assert(ingredient, "RMVP-02A requires one active Ingredient reference.");
   assert(unit, "RMVP-02A requires one active Unit reference.");
+  assert(dishType, "RMVP-02A requires one active Dish Type reference.");
 
   const suffix = crypto.randomUUID().slice(0, 8);
   const created = await invoke(
@@ -103,6 +107,7 @@ async function main() {
       dish_code: `rmvp02a-accept-${suffix}`,
       dish_name: `RMVP-02A Acceptance ${suffix}`,
       dish_category: "Acceptance",
+      dish_type_id: dishType.dish_type_id,
       operational_notes: "Local-only acceptance evidence",
       display_order: 9900,
       requires_need_generation: true,

@@ -3,19 +3,15 @@ import type {
   AttendanceLine,
   MenuLine,
   PlanningDish,
+  PlanningDishType,
   PlanningSchool,
 } from "./planningInputsModel";
 
-type WorkbookCell = CellValue | null;
+export type MatrixCell = CellValue | string | number | boolean | null;
+export type SourceMatrix = MatrixCell[][];
 
-const MENU_COLUMNS = [
-  ["Món canh", "soup"],
-  ["Món mặn", "savory"],
-  ["Món xào", "stir_fry"],
-  ["Tráng miệng", "dessert"],
-  ["Buổi xế", "afternoon_snack"],
-] as const;
-
+const SCHOOL_COLUMNS = ["Tên trường", "Mã trường", "school_code"] as const;
+const DATE_COLUMNS = ["Ngày", "service_date"] as const;
 const ATTENDANCE_COLUMNS = {
   student: ["Số suất học sinh", "Sĩ số học sinh"],
   teacher: ["Số suất giáo viên", "Sĩ số giáo viên"],
@@ -27,40 +23,51 @@ const normalized = (value: unknown) =>
     .trim()
     .toLocaleLowerCase("vi");
 
-function headerIndex(row: WorkbookCell[]) {
-  return new Map(row.map((value, index) => [normalized(value), index]));
+function headerIndex(row: MatrixCell[]) {
+  return new Map(
+    row.flatMap((value, index) => {
+      const key = normalized(value);
+      return key ? [[key, index] as const] : [];
+    }),
+  );
 }
 
-function cell(row: WorkbookCell[], headers: Map<string, number>, name: string) {
-  const index = headers.get(normalized(name));
-  return index === undefined ? "" : String(row[index] ?? "").trim();
+function aliasIndex(headers: Map<string, number>, names: readonly string[]) {
+  for (const name of names) {
+    const index = headers.get(normalized(name));
+    if (index !== undefined) return index;
+  }
+  return undefined;
+}
+
+function cellAt(row: MatrixCell[], index: number | undefined) {
+  return index === undefined
+    ? ""
+    : String(row[index] ?? "")
+        .normalize("NFC")
+        .trim();
 }
 
 function cellAlias(
-  row: WorkbookCell[],
+  row: MatrixCell[],
   headers: Map<string, number>,
   names: readonly string[],
 ) {
-  for (const name of names) {
-    if (headers.has(normalized(name))) return cell(row, headers, name);
-  }
-  return "";
+  return cellAt(row, aliasIndex(headers, names));
 }
 
 function hasAlias(headers: Map<string, number>, names: readonly string[]) {
-  return names.some((name) => headers.has(normalized(name)));
+  return aliasIndex(headers, names) !== undefined;
 }
 
-function headerRowIndex(sheet: WorkbookCell[][]) {
+function headerRowIndex(sheet: SourceMatrix) {
   return sheet.findIndex((row) => {
     const headers = headerIndex(row);
-    return (
-      headers.has(normalized("Tên trường")) && headers.has(normalized("Ngày"))
-    );
+    return hasAlias(headers, SCHOOL_COLUMNS) && hasAlias(headers, DATE_COLUMNS);
   });
 }
 
-function sourceSheet<T extends { data?: WorkbookCell[][] }>(sheets: T[]) {
+function sourceSheet<T extends { data?: SourceMatrix }>(sheets: T[]) {
   return (
     sheets.find((candidate) => headerRowIndex(candidate.data ?? []) >= 0) ??
     sheets[0]
@@ -79,12 +86,12 @@ function reference<T>(
   );
 }
 
-function isoDate(value: WorkbookCell | undefined): string {
+function isoDate(value: MatrixCell | undefined): string {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   const text = String(value ?? "").trim();
   const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
   if (iso) return text;
-  const vi = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text);
+  const vi = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(text);
   if (!vi) return text;
   return `${vi[3]}-${vi[2].padStart(2, "0")}-${vi[1].padStart(2, "0")}`;
 }
@@ -97,11 +104,24 @@ function explicitNumber(value: string) {
   return value.trim() === "" ? Number.NaN : Number(value);
 }
 
-export type MenuWorkbookReview = {
-  fileName: string;
+export type MenuMatrixSource = {
+  sourceName: string;
+  sheetName: string;
+  firstRowNumber?: number;
+};
+
+export type MenuMatrixReview = {
+  sourceName: string;
   rows: MenuLine[];
   browserChecksum: string;
   errors: string[];
+  warnings: string[];
+  sourceRowCount: number;
+  headerRowNumber: number | null;
+};
+
+export type MenuWorkbookReview = MenuMatrixReview & {
+  fileName: string;
 };
 
 export type AttendanceWorkbookReview = {
@@ -136,38 +156,98 @@ export async function browserChecksum(
   ).join("");
 }
 
-export async function parseMenuWorkbook(
-  file: File,
+function dishTypeHeaderIndexes(
+  headers: Map<string, number>,
+  dishTypes: PlanningDishType[],
+  errors: string[],
+  warnings: string[],
+) {
+  const claimed = new Map<number, string>();
+  return dishTypes
+    .filter((dishType) => dishType.dish_type_status === "ACTIVE")
+    .flatMap((dishType) => {
+      const names = [
+        dishType.dish_type_name,
+        dishType.dish_type_code,
+        ...dishType.source_header_aliases,
+      ];
+      const indexes = Array.from(
+        new Set(
+          names.flatMap((name) => {
+            const index = headers.get(normalized(name));
+            return index === undefined ? [] : [index];
+          }),
+        ),
+      );
+      if (indexes.length === 0) {
+        warnings.push(
+          `Không có cột tùy chọn cho loại món: ${dishType.dish_type_name}.`,
+        );
+        return [];
+      }
+      if (indexes.length > 1) {
+        errors.push(
+          `Có nhiều cột cùng ánh xạ tới loại món: ${dishType.dish_type_name}.`,
+        );
+        return [];
+      }
+      const index = indexes[0]!;
+      const otherCode = claimed.get(index);
+      if (otherCode) {
+        errors.push(
+          `Một cột nguồn ánh xạ tới nhiều loại món: ${otherCode}, ${dishType.dish_type_code}.`,
+        );
+        return [];
+      }
+      claimed.set(index, dishType.dish_type_code);
+      return [{ dishType, index }];
+    });
+}
+
+/**
+ * Pure source-adapter parser shared by workbook and Google Sheet matrices.
+ * It resolves only supplied database references and never fabricates slot
+ * identity from column position.
+ */
+export async function parseMenuMatrix(
+  matrix: SourceMatrix,
+  source: MenuMatrixSource,
+  dishTypes: PlanningDishType[],
   schools: PlanningSchool[],
   dishes: PlanningDish[],
-): Promise<MenuWorkbookReview> {
-  const sheets = await readXlsxFile(file);
-  const selectedSheet = sourceSheet(sheets);
-  const sheet = selectedSheet?.data ?? [];
+): Promise<MenuMatrixReview> {
+  const sheet = matrix.map((row) =>
+    row.map((value) =>
+      typeof value === "string" ? value.normalize("NFC") : value,
+    ),
+  );
   const headerOffset = headerRowIndex(sheet);
   const headers = headerIndex(
     headerOffset < 0 ? [] : (sheet[headerOffset] ?? []),
   );
   const errors: string[] = [];
-  if (headerOffset < 0)
+  const warnings: string[] = [];
+  if (headerOffset < 0) {
     errors.push("Không tìm thấy hàng tiêu đề có Tên trường và Ngày.");
-  for (const required of [
-    "Tên trường",
-    "Ngày",
-    ...MENU_COLUMNS.map(([h]) => h),
-  ]) {
-    if (!headers.has(normalized(required)))
-      errors.push(`Thiếu cột bắt buộc: ${required}.`);
   }
+  if (!hasAlias(headers, SCHOOL_COLUMNS))
+    errors.push("Thiếu cột bắt buộc: Tên trường.");
+  if (!hasAlias(headers, DATE_COLUMNS))
+    errors.push("Thiếu cột bắt buộc: Ngày.");
+
+  const typeColumns = dishTypeHeaderIndexes(
+    headers,
+    dishTypes,
+    errors,
+    warnings,
+  );
   const rows: MenuLine[] = [];
-  for (const [offset, source] of sheet
-    .slice(Math.max(headerOffset + 1, 0))
-    .entries()) {
-    if (source.every((value) => normalized(value) === "")) continue;
-    const schoolText = cell(source, headers, "Tên trường");
-    const dateIndex = headers.get(normalized("Ngày"));
+  const dataRows = sheet.slice(Math.max(headerOffset + 1, 0));
+  for (const [offset, sourceRow] of dataRows.entries()) {
+    if (sourceRow.every((value) => normalized(value) === "")) continue;
+    const schoolText = cellAlias(sourceRow, headers, SCHOOL_COLUMNS);
     const serviceDate = isoDate(
-      dateIndex === undefined ? undefined : source[dateIndex],
+      sourceRow[aliasIndex(headers, DATE_COLUMNS) ?? -1],
     );
     const school = reference(
       schoolText,
@@ -175,8 +255,10 @@ export async function parseMenuWorkbook(
       (item) => item.school_code,
       (item) => item.school_name,
     );
-    for (const [header, slot] of MENU_COLUMNS) {
-      const dishText = cell(source, headers, header);
+    const rowNumber =
+      (source.firstRowNumber ?? 1) + Math.max(headerOffset, -1) + offset + 1;
+    for (const { dishType, index } of typeColumns) {
+      const dishText = cellAt(sourceRow, index);
       if (!dishText) continue;
       const dish = reference(
         dishText,
@@ -187,23 +269,50 @@ export async function parseMenuWorkbook(
       rows.push({
         school_id: school?.school_id ?? unresolved("school", schoolText),
         service_date: serviceDate,
-        menu_slot_code: slot,
+        menu_slot_code: dishType.dish_type_code,
         dish_id: dish?.dish_id ?? unresolved("dish", dishText),
-        source_row_reference: `${file.name}:${selectedSheet?.sheet ?? "sheet-1"}:row:${Math.max(headerOffset, -1) + offset + 2}:${header}`,
+        source_row_reference:
+          `${source.sourceName}:${source.sheetName}:row:${rowNumber}:` +
+          dishType.dish_type_code,
       });
     }
   }
   return {
-    fileName: `${file.name} / ${selectedSheet?.sheet ?? "sheet-1"}`.normalize(
-      "NFC",
-    ),
+    sourceName: `${source.sourceName} / ${source.sheetName}`.normalize("NFC"),
     rows,
     browserChecksum: await browserChecksum(
       rows as unknown as Record<string, unknown>[],
       ["school_id", "service_date", "menu_slot_code", "dish_id"],
     ),
     errors,
+    warnings,
+    sourceRowCount: dataRows.filter((row) =>
+      row.some((value) => normalized(value) !== ""),
+    ).length,
+    headerRowNumber:
+      headerOffset < 0 ? null : (source.firstRowNumber ?? 1) + headerOffset,
   };
+}
+
+export async function parseMenuWorkbook(
+  file: File,
+  dishTypes: PlanningDishType[],
+  schools: PlanningSchool[],
+  dishes: PlanningDish[],
+): Promise<MenuWorkbookReview> {
+  const sheets = await readXlsxFile(file);
+  const selectedSheet = sourceSheet(sheets);
+  const parsed = await parseMenuMatrix(
+    selectedSheet?.data ?? [],
+    {
+      sourceName: file.name,
+      sheetName: selectedSheet?.sheet ?? "sheet-1",
+    },
+    dishTypes,
+    schools,
+    dishes,
+  );
+  return { ...parsed, fileName: parsed.sourceName };
 }
 
 export async function parseAttendanceWorkbook(
@@ -220,10 +329,10 @@ export async function parseAttendanceWorkbook(
   const errors: string[] = [];
   if (headerOffset < 0)
     errors.push("Không tìm thấy hàng tiêu đề có Tên trường và Ngày.");
-  for (const required of ["Tên trường", "Ngày"]) {
-    if (!headers.has(normalized(required)))
-      errors.push(`Thiếu cột bắt buộc: ${required}.`);
-  }
+  if (!hasAlias(headers, SCHOOL_COLUMNS))
+    errors.push("Thiếu cột bắt buộc: Tên trường.");
+  if (!hasAlias(headers, DATE_COLUMNS))
+    errors.push("Thiếu cột bắt buộc: Ngày.");
   if (!hasAlias(headers, ATTENDANCE_COLUMNS.student))
     errors.push("Thiếu cột bắt buộc: Số suất học sinh.");
   if (!hasAlias(headers, ATTENDANCE_COLUMNS.teacher))
@@ -233,19 +342,16 @@ export async function parseAttendanceWorkbook(
     .slice(Math.max(headerOffset + 1, 0))
     .entries()) {
     if (source.every((value) => normalized(value) === "")) continue;
-    const schoolText = cell(source, headers, "Tên trường");
+    const schoolText = cellAlias(source, headers, SCHOOL_COLUMNS);
     const school = reference(
       schoolText,
       schools,
       (item) => item.school_code,
       (item) => item.school_name,
     );
-    const dateIndex = headers.get(normalized("Ngày"));
     rows.push({
       school_id: school?.school_id ?? unresolved("school", schoolText),
-      service_date: isoDate(
-        dateIndex === undefined ? undefined : source[dateIndex],
-      ),
+      service_date: isoDate(source[aliasIndex(headers, DATE_COLUMNS) ?? -1]),
       student_portions: explicitNumber(
         cellAlias(source, headers, ATTENDANCE_COLUMNS.student),
       ),

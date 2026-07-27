@@ -26,16 +26,45 @@ const ids = {
   ingredient2: "40000000-0000-4000-8000-000000000002",
   unit: "50000000-0000-4000-8000-000000000001",
   schoolType: "60000000-0000-4000-8000-000000000001",
+  dishTypeSoup: "80000000-0000-4000-8000-000000000001",
+  dishTypeSavory: "80000000-0000-4000-8000-000000000002",
 };
 
 function fixtures(): RecipeWorkbenchData {
   return {
+    dish_types: [
+      {
+        dish_type_id: ids.dishTypeSoup,
+        dish_type_code: "soup",
+        dish_type_name: "Món canh",
+        source_header_aliases: ["Canh"],
+        display_order: 1,
+        dish_type_status: "ACTIVE",
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        dish_type_id: ids.dishTypeSavory,
+        dish_type_code: "savory",
+        dish_type_name: "Món mặn",
+        source_header_aliases: ["Mặn"],
+        display_order: 2,
+        dish_type_status: "ACTIVE",
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      },
+    ],
     dishes: [
       {
         dish_id: ids.dish,
         dish_code: "canh-bi-do-thit-bam",
         dish_name: "Canh bí đỏ thịt bằm",
         dish_category: "Canh",
+        dish_type_id: ids.dishTypeSoup,
+        dish_type_code: "soup",
+        dish_type_name: "Món canh",
         operational_notes: "Món mẫu để xem xét vòng đời công thức.",
         dish_status: "ACTIVE",
         display_order: 10,
@@ -49,6 +78,9 @@ function fixtures(): RecipeWorkbenchData {
         dish_code: "com-trang",
         dish_name: "Cơm trắng",
         dish_category: "Món chính",
+        dish_type_id: ids.dishTypeSavory,
+        dish_type_code: "savory",
+        dish_type_name: "Món mặn",
         operational_notes: null,
         dish_status: "DRAFT",
         display_order: 20,
@@ -204,12 +236,20 @@ export function createReviewRecipeApi(
     createDish: mutate((request) => {
       const code = payloadString(request, "dish_code");
       const name = payloadString(request, "dish_name");
-      if (!code || !name) return false;
+      const dishType = data.dish_types.find(
+        (item) =>
+          item.dish_type_id === payloadString(request, "dish_type_id") &&
+          item.dish_type_status === "ACTIVE",
+      );
+      if (!code || !name || !dishType) return false;
       data.dishes.push({
         dish_id: crypto.randomUUID(),
         dish_code: code,
         dish_name: name,
         dish_category: payloadString(request, "dish_category") || null,
+        dish_type_id: dishType.dish_type_id,
+        dish_type_code: dishType.dish_type_code,
+        dish_type_name: dishType.dish_type_name,
         operational_notes: payloadString(request, "operational_notes") || null,
         dish_status:
           request.payload.dish_status === "ACTIVE" ? "ACTIVE" : "DRAFT",
@@ -227,8 +267,17 @@ export function createReviewRecipeApi(
         (item) => item.dish_id === payloadString(request, "dish_id"),
       );
       if (!dish) return false;
+      const dishType = data.dish_types.find(
+        (item) =>
+          item.dish_type_id === payloadString(request, "dish_type_id") &&
+          item.dish_type_status === "ACTIVE",
+      );
+      if (!dishType) return false;
       dish.dish_name = payloadString(request, "dish_name");
       dish.dish_category = payloadString(request, "dish_category") || null;
+      dish.dish_type_id = dishType.dish_type_id;
+      dish.dish_type_code = dishType.dish_type_code;
+      dish.dish_type_name = dishType.dish_type_name;
       dish.operational_notes =
         payloadString(request, "operational_notes") || null;
       dish.display_order = payloadNumber(request, "display_order");

@@ -13,6 +13,7 @@ import type {
   AttendanceLine,
   AttendanceRecord,
   MenuLine,
+  PlanningDishType,
   PlanningInputsWorkbenchData,
   PlanningIssue,
   WeeklyMenuRecord,
@@ -129,8 +130,18 @@ function fixtures(
           ]
         : scenario === "menu_inactive_refs"
           ? [issue("INACTIVE_DISH", "Món ăn đã ngừng hoạt động.")]
-          : [];
+          : scenario === "menu_type_mismatch" ||
+              scenario === "google_preview_blockers"
+            ? [
+                issue(
+                  "DISH_TYPE_MISMATCH",
+                  "Món ăn không khớp Loại món của cột thực đơn.",
+                ),
+              ]
+            : [];
   const menuRows = scenario === "menu_zero_valid" ? [] : clone(rows.menu);
+  if (scenario === "menu_type_mismatch" && menuRows[0])
+    menuRows[0].dish_id = "review-planning-dish-2";
   const attendanceRows =
     scenario === "attendance_zero"
       ? rows.attendance.map((line) => ({
@@ -184,16 +195,94 @@ function fixtures(
       : [];
   const menuApproved = menuStatus === "APPROVED";
   const attendanceApproved = attendanceStatus === "APPROVED";
+  const dishTypes: PlanningDishType[] = [
+    {
+      dish_type_id: "review-dish-type-soup",
+      dish_type_code: "soup",
+      dish_type_name:
+        scenario === "dish_types_renamed" ? "Canh trong ngày" : "Món canh",
+      source_header_aliases: ["Canh"],
+      display_order: 1,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    },
+    {
+      dish_type_id: "review-dish-type-savory",
+      dish_type_code: "savory",
+      dish_type_name: "Món mặn",
+      source_header_aliases: ["Mặn"],
+      display_order: scenario === "dish_types_reordered" ? 0 : 2,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    },
+    {
+      dish_type_id: "review-dish-type-stir-fry",
+      dish_type_code: "stir_fry",
+      dish_type_name: "Món xào",
+      source_header_aliases: ["Xào"],
+      display_order: 3,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    },
+    {
+      dish_type_id: "review-dish-type-dessert",
+      dish_type_code: "dessert",
+      dish_type_name: "Tráng miệng",
+      source_header_aliases: [],
+      display_order: 4,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    },
+    {
+      dish_type_id: "review-dish-type-snack",
+      dish_type_code: "afternoon_snack",
+      dish_type_name: "Buổi xế",
+      source_header_aliases: ["Bữa xế"],
+      display_order: 5,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    },
+    {
+      dish_type_id: "review-dish-type-beverage",
+      dish_type_code: "beverage",
+      dish_type_name: "Nước",
+      source_header_aliases: ["Đồ uống"],
+      display_order: 6,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    },
+  ];
+  if (scenario === "dish_types_added") {
+    dishTypes.push({
+      dish_type_id: "review-dish-type-salad",
+      dish_type_code: "salad",
+      dish_type_name: "Món trộn",
+      source_header_aliases: ["Salad"],
+      display_order: 7,
+      dish_type_status: "ACTIVE",
+      version: 1,
+    });
+  }
+  const activeDishTypes =
+    scenario === "dish_types_inactive"
+      ? dishTypes.filter((dishType) => dishType.dish_type_code !== "dessert")
+      : dishTypes;
   return {
     week_start: weekStart,
     week_end: end,
-    menu_slots: [
-      { code: "soup", label: "Món canh", display_order: 1 },
-      { code: "savory", label: "Món mặn", display_order: 2 },
-      { code: "stir_fry", label: "Món xào", display_order: 3 },
-      { code: "dessert", label: "Tráng miệng", display_order: 4 },
-      { code: "afternoon_snack", label: "Buổi xế", display_order: 5 },
-    ],
+    dish_types: activeDishTypes,
+    google_sheet_sources:
+      scenario === "google_source_missing"
+        ? []
+        : [
+            {
+              weekly_menu_google_source_id: "review-google-source",
+              source_code: "review-menu",
+              source_name: "Nguồn thực đơn xem thử",
+              source_status: "ACTIVE",
+              display_order: 1,
+            },
+          ],
     schools: [
       {
         school_id: "review-planning-school-1",
@@ -226,22 +315,29 @@ function fixtures(
         default_teacher_portions: 18,
       },
     ],
-    dishes: Array.from({ length: 7 }, (_, index) => ({
-      dish_id: `review-planning-dish-${index + 1}`,
-      dish_code: `MON${String(index + 1).padStart(3, "0")}`,
-      dish_name: [
-        "Canh bí đỏ thịt bằm",
-        "Thịt lợn kho trứng",
-        "Canh rau ngót",
-        "Rau cải xào tỏi",
-        "Dưa hấu",
-        "Sữa chua",
-        "Chuối tiêu",
-      ][index],
-      dish_status: index === 6 ? ("INACTIVE" as const) : ("ACTIVE" as const),
-      display_order: index + 1,
-      requires_need_generation: index < 4,
-    })),
+    dishes: Array.from({ length: 7 }, (_, index) => {
+      const dishType = dishTypes[[0, 1, 0, 2, 3, 5, 4][index] ?? 0];
+      return {
+        dish_id: `review-planning-dish-${index + 1}`,
+        dish_code: `MON${String(index + 1).padStart(3, "0")}`,
+        dish_name: [
+          "Canh bí đỏ thịt bằm",
+          "Thịt lợn kho trứng",
+          "Canh rau ngót",
+          "Rau cải xào tỏi",
+          "Dưa hấu",
+          "Sữa chua",
+          "Chuối tiêu",
+        ][index]!,
+        dish_category: null,
+        dish_type_id: dishType?.dish_type_id ?? null,
+        dish_type_code: dishType?.dish_type_code ?? null,
+        dish_type_name: dishType?.dish_type_name ?? null,
+        dish_status: index === 6 ? ("INACTIVE" as const) : ("ACTIVE" as const),
+        display_order: index + 1,
+        requires_need_generation: index < 4,
+      };
+    }),
     weekly_menu:
       scenario === "empty" || scenario === "menu_empty"
         ? null
@@ -493,6 +589,51 @@ export function createReviewPlanningInputsApi(
             issues,
             can_save: issues.blockers.length === 0,
           },
+        }),
+      );
+    },
+    syncMenuFromGoogle(sourceId, weekStart, correlationId) {
+      if (scenario === "google_source_missing")
+        return Promise.resolve(backendError("GOOGLE_SOURCE_UNAVAILABLE"));
+      if (scenario === "google_source_unavailable")
+        return Promise.resolve(backendError("GOOGLE_SOURCE_UNAVAILABLE"));
+      if (scenario === "google_empty_sheet")
+        return Promise.resolve(backendError("EMPTY_SHEET"));
+      if (scenario === "google_sheet_missing")
+        return Promise.resolve(backendError("WEEKLY_SHEET_MISSING"));
+      if (scenario === "google_connector_unavailable")
+        return Promise.resolve(backendError("CONNECTOR_UNAVAILABLE"));
+      if (scenario === "google_permission_denied")
+        return Promise.resolve(backendError("CAPABILITY_DENIED"));
+      if (scenario === "google_retryable")
+        return Promise.resolve(backendError("GOOGLE_UPSTREAM_RETRYABLE"));
+      if (sourceId !== "review-google-source")
+        return Promise.resolve(backendError("GOOGLE_SOURCE_UNAVAILABLE"));
+      const soupType = current.dish_types.find(
+        (dishType) => dishType.dish_type_code === "soup",
+      );
+      return Promise.resolve(
+        success({
+          source: {
+            source_id: sourceId,
+            source_code: "review-menu",
+            source_name: "Nguồn thực đơn xem thử",
+            sheet_name: `Tuần ${weekStart.split("-").reverse().join("-")}`,
+            range: "'review-week'!A3:Z500",
+          },
+          fetched_at: now,
+          rows: [
+            ["Tên trường", "Ngày", soupType?.dish_type_name ?? "Món canh"],
+            [
+              "TH001",
+              weekStart,
+              scenario === "google_preview_blockers"
+                ? "Món không tồn tại"
+                : "MON001",
+            ],
+          ],
+          warnings: [],
+          correlation_id: correlationId,
         }),
       );
     },

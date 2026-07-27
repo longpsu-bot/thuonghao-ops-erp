@@ -77,7 +77,13 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.reopen_attendance": "reopen_attendance",
 } as const;
 
+export const ATLAS_EDGE_FUNCTIONS = {
+  weeklyMenuGoogleSync: "atlas-weekly-menu-google-sync",
+} as const;
+
 export type AtlasRpcName = keyof typeof ATLAS_RPC_FUNCTIONS;
+export type AtlasEdgeFunctionName =
+  (typeof ATLAS_EDGE_FUNCTIONS)[keyof typeof ATLAS_EDGE_FUNCTIONS];
 export type JsonValue =
   string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 export type AtlasRpcRequest = { [key: string]: JsonValue };
@@ -141,6 +147,12 @@ function isAllowedRpcName(name: string): name is AtlasRpcName {
   return Object.hasOwn(ATLAS_RPC_FUNCTIONS, name);
 }
 
+function isAllowedEdgeFunctionName(
+  name: string,
+): name is AtlasEdgeFunctionName {
+  return Object.values(ATLAS_EDGE_FUNCTIONS).some((value) => value === name);
+}
+
 function requestIdentifier(request: AtlasRpcRequest, key: string) {
   return typeof request[key] === "string" ? request[key] : undefined;
 }
@@ -196,6 +208,18 @@ function safeBackendError(
 function appearsToBeNetworkFailure(error: unknown): boolean {
   if (!isRecord(error) || typeof error.message !== "string") return false;
   return /fetch|network|connection|refused|offline/i.test(error.message);
+}
+
+async function safeEdgeErrorPayload(error: unknown) {
+  if (!isRecord(error)) return null;
+  const context = error.context;
+  if (!(context instanceof Response)) return null;
+  try {
+    const value = await context.clone().json();
+    return isRecord(value) && value.success === false ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 export function createAtlasRpcTransport(client: SupabaseClient) {
@@ -273,6 +297,87 @@ export function createAtlasRpcTransport(client: SupabaseClient) {
         diagnostic: diagnostic(
           "UNEXPECTED_RESPONSE",
           "The local Atlas API returned an unexpected safe response shape.",
+          request,
+        ),
+      };
+    },
+    async invokeEdgeFunction(
+      functionName: AtlasEdgeFunctionName,
+      request: AtlasRpcRequest,
+    ): Promise<AtlasRpcResult> {
+      if (!isAllowedEdgeFunctionName(functionName)) {
+        return {
+          kind: "client_error",
+          diagnostic: diagnostic(
+            "RPC_NOT_ALLOWED",
+            "The requested source adapter is not in the reviewed Atlas registry.",
+            request,
+          ),
+        };
+      }
+      const { data: sessionData, error: sessionError } =
+        await client.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        return {
+          kind: "auth_error",
+          diagnostic: diagnostic(
+            "SESSION_REQUIRED",
+            "An authenticated local Atlas session is required.",
+            request,
+          ),
+        };
+      }
+      if (
+        sessionData.session.expires_at &&
+        sessionData.session.expires_at * 1000 <= Date.now()
+      ) {
+        return {
+          kind: "auth_error",
+          diagnostic: diagnostic(
+            "SESSION_EXPIRED",
+            "The Atlas session expired before the source could be fetched.",
+            request,
+          ),
+        };
+      }
+      const { data, error } = await client.functions.invoke(functionName, {
+        body: request,
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
+      if (isRecord(data) && data.success === true) {
+        return { kind: "success", response: data as AtlasSuccessEnvelope };
+      }
+      if (isRecord(data) && data.success === false) {
+        return { kind: "backend_error", error: safeBackendError(data) };
+      }
+      if (error) {
+        const edgeError = await safeEdgeErrorPayload(error);
+        if (edgeError) {
+          return {
+            kind: "backend_error",
+            error: safeBackendError(edgeError),
+          };
+        }
+        return {
+          kind: "transport_error",
+          diagnostic: diagnostic(
+            appearsToBeNetworkFailure(error)
+              ? "NETWORK_FAILURE"
+              : "RPC_TRANSPORT_FAILURE",
+            appearsToBeNetworkFailure(error)
+              ? "The Google Sheet connector could not be reached."
+              : "The Google Sheet connector failed safely.",
+            request,
+          ),
+        };
+      }
+      return {
+        kind: "transport_error",
+        diagnostic: diagnostic(
+          "UNEXPECTED_RESPONSE",
+          "The Google Sheet connector returned an unexpected safe response shape.",
           request,
         ),
       };

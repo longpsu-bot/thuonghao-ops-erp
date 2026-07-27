@@ -10,10 +10,25 @@ export type DishRecord = {
   dish_code: string;
   dish_name: string;
   dish_category: string | null;
+  dish_type_id: string | null;
+  dish_type_code: string | null;
+  dish_type_name: string | null;
   operational_notes: string | null;
   dish_status: DishStatus;
   display_order: number;
   requires_need_generation: boolean;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DishTypeReference = {
+  dish_type_id: string;
+  dish_type_code: string;
+  dish_type_name: string;
+  source_header_aliases: string[];
+  display_order: number;
+  dish_type_status: "ACTIVE" | "INACTIVE";
   version: number;
   created_at: string;
   updated_at: string;
@@ -85,6 +100,7 @@ export type RecipeUnitReference = {
 };
 
 export type RecipeWorkbenchData = {
+  dish_types: DishTypeReference[];
   dishes: DishRecord[];
   recipes: RecipeRecord[];
   recipe_versions: RecipeVersionRecord[];
@@ -94,6 +110,7 @@ export type RecipeWorkbenchData = {
 };
 
 export const emptyRecipeWorkbench = (): RecipeWorkbenchData => ({
+  dish_types: [],
   dishes: [],
   recipes: [],
   recipe_versions: [],
@@ -122,6 +139,11 @@ export function recipeWorkbenchFromResult(
       ? nested
       : result.response;
   const dishes = responseArray<DishRecord>(result, source, "dishes");
+  const dishTypes = responseArray<DishTypeReference>(
+    result,
+    source,
+    "dish_types",
+  );
   const recipes = responseArray<RecipeRecord>(result, source, "recipes");
   const recipeVersions = responseArray<RecipeVersionRecord>(
     result,
@@ -140,6 +162,7 @@ export function recipeWorkbenchFromResult(
   );
   const units = responseArray<RecipeUnitReference>(result, source, "units");
   if (
+    !dishTypes ||
     !dishes ||
     !recipes ||
     !recipeVersions ||
@@ -149,6 +172,7 @@ export function recipeWorkbenchFromResult(
   )
     return null;
   return {
+    dish_types: dishTypes,
     dishes,
     recipes,
     recipe_versions: recipeVersions,

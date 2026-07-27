@@ -1,11 +1,178 @@
 -- RMVP-03A: connected Weekly Menu and Attendance workbench.
 --
 -- This migration exposes the existing PA-06E-H0A3a/H0A3b persistence through
--- one reviewed Planning read/command boundary. It deliberately creates no
--- competing relation, runtime role, downstream Need Generation mutation, or
--- legacy write path.
+-- one reviewed Planning read/command boundary. It adds the typed Dish Type
+-- catalog and the narrow Google Sheet source configuration used by that
+-- boundary. It deliberately creates no competing Planning object, runtime
+-- role, downstream Need Generation mutation, or legacy write path.
 
 set role atlas_owner;
+
+create table atlas_admin.dish_types (
+  dish_type_id uuid not null default gen_random_uuid(),
+  dish_type_code text not null,
+  dish_type_name text not null,
+  source_header_aliases text[] not null default '{}'::text[],
+  display_order integer not null default 0,
+  dish_type_status text not null default 'ACTIVE',
+  version bigint not null default 1,
+  created_at timestamptz not null default transaction_timestamp(),
+  updated_at timestamptz not null default transaction_timestamp(),
+  constraint dish_types_pkey primary key (dish_type_id),
+  constraint dish_types_code_key unique (dish_type_code),
+  constraint dish_types_code_check check (
+    dish_type_code = lower(btrim(dish_type_code))
+    and dish_type_code ~ '^[a-z][a-z0-9_]*$'
+  ),
+  constraint dish_types_name_check check (btrim(dish_type_name) <> ''),
+  constraint dish_types_aliases_check check (
+    array_position(source_header_aliases, '') is null
+  ),
+  constraint dish_types_display_order_check check (display_order >= 0),
+  constraint dish_types_status_check check (
+    dish_type_status in ('ACTIVE', 'INACTIVE')
+  ),
+  constraint dish_types_version_check check (version > 0),
+  constraint dish_types_timestamps_check check (updated_at >= created_at)
+);
+
+create index dish_types_status_display_order_idx
+  on atlas_admin.dish_types (
+    dish_type_status,
+    display_order,
+    dish_type_code,
+    dish_type_id
+  );
+
+insert into atlas_admin.dish_types (
+  dish_type_id,
+  dish_type_code,
+  dish_type_name,
+  source_header_aliases,
+  display_order
+) values
+  (
+    'd1500000-0000-4000-8000-000000000001',
+    'soup',
+    'Món canh',
+    array['Canh', 'Mon canh', 'Món Canh']::text[],
+    1
+  ),
+  (
+    'd1500000-0000-4000-8000-000000000002',
+    'savory',
+    'Món mặn',
+    array['Mặn', 'Mon man', 'Món Mặn']::text[],
+    2
+  ),
+  (
+    'd1500000-0000-4000-8000-000000000003',
+    'stir_fry',
+    'Món xào',
+    array['Xào', 'Mon xao', 'Món Xào']::text[],
+    3
+  ),
+  (
+    'd1500000-0000-4000-8000-000000000004',
+    'dessert',
+    'Tráng miệng',
+    array['Trang mieng', 'Tráng Miệng']::text[],
+    4
+  ),
+  (
+    'd1500000-0000-4000-8000-000000000005',
+    'afternoon_snack',
+    'Buổi xế',
+    array['Bữa xế', 'Bua xe', 'Buoi xe']::text[],
+    5
+  ),
+  (
+    'd1500000-0000-4000-8000-000000000006',
+    'beverage',
+    'Nước',
+    array['Nuoc', 'Đồ uống', 'Do uong']::text[],
+    6
+  );
+
+alter table atlas_admin.dishes
+  add column dish_type_id uuid,
+  add constraint dishes_dish_type_fkey foreign key (dish_type_id)
+    references atlas_admin.dish_types (dish_type_id) on delete restrict;
+
+create index dishes_dish_type_idx
+  on atlas_admin.dishes (dish_type_id)
+  where dish_type_id is not null;
+
+alter table atlas_planning.weekly_menu_lines
+  add constraint weekly_menu_lines_menu_slot_type_fkey
+    foreign key (menu_slot_code)
+    references atlas_admin.dish_types (dish_type_code)
+    on update restrict
+    on delete restrict;
+
+create index weekly_menu_lines_menu_slot_type_idx
+  on atlas_planning.weekly_menu_lines (menu_slot_code);
+
+create table atlas_planning.weekly_menu_google_sources (
+  weekly_menu_google_source_id uuid not null default gen_random_uuid(),
+  source_code text not null,
+  source_name text not null,
+  spreadsheet_id text not null,
+  sheet_name_pattern text not null,
+  range_a1_template text not null,
+  source_status text not null default 'ACTIVE',
+  display_order integer not null default 0,
+  version bigint not null default 1,
+  created_at timestamptz not null default transaction_timestamp(),
+  updated_at timestamptz not null default transaction_timestamp(),
+  constraint weekly_menu_google_sources_pkey primary key (
+    weekly_menu_google_source_id
+  ),
+  constraint weekly_menu_google_sources_code_key unique (source_code),
+  constraint weekly_menu_google_sources_code_check check (
+    source_code = lower(btrim(source_code))
+    and source_code ~ '^[a-z][a-z0-9_.-]*$'
+  ),
+  constraint weekly_menu_google_sources_name_check check (
+    btrim(source_name) <> ''
+  ),
+  constraint weekly_menu_google_sources_spreadsheet_check check (
+    btrim(spreadsheet_id) <> ''
+  ),
+  constraint weekly_menu_google_sources_sheet_pattern_check check (
+    btrim(sheet_name_pattern) <> ''
+    and position('{DD-MM-YYYY}' in sheet_name_pattern) > 0
+  ),
+  constraint weekly_menu_google_sources_range_check check (
+    btrim(range_a1_template) <> ''
+    and position('{sheet}' in range_a1_template) > 0
+  ),
+  constraint weekly_menu_google_sources_status_check check (
+    source_status in ('ACTIVE', 'INACTIVE')
+  ),
+  constraint weekly_menu_google_sources_display_order_check check (
+    display_order >= 0
+  ),
+  constraint weekly_menu_google_sources_version_check check (version > 0),
+  constraint weekly_menu_google_sources_timestamps_check check (
+    updated_at >= created_at
+  )
+);
+
+create index weekly_menu_google_sources_status_order_idx
+  on atlas_planning.weekly_menu_google_sources (
+    source_status,
+    display_order,
+    source_code,
+    weekly_menu_google_source_id
+  );
+
+alter table atlas_admin.dish_types enable row level security;
+alter table atlas_admin.dish_types force row level security;
+alter table atlas_planning.weekly_menu_google_sources
+  enable row level security;
+alter table atlas_planning.weekly_menu_google_sources
+  force row level security;
 
 reset role;
 
@@ -695,13 +862,24 @@ as $$
         not between week_start and week_start + 6
     union all
     select
-      'BLOCKER', 'INVALID_MENU_SLOT',
-      'Use one of the five supported menu slots.',
+      'BLOCKER', 'UNKNOWN_DISH_TYPE',
+      'A row references a Dish Type that does not exist.',
       row ->> 'source_row_reference'
     from canonical
-    where row ->> 'menu_slot_code' not in (
-      'soup', 'savory', 'stir_fry', 'dessert', 'afternoon_snack'
+    where not exists (
+      select 1
+      from atlas_admin.dish_types dish_type
+      where dish_type.dish_type_code = row ->> 'menu_slot_code'
     )
+    union all
+    select
+      'BLOCKER', 'INACTIVE_DISH_TYPE',
+      'A row references an inactive Dish Type.',
+      row ->> 'source_row_reference'
+    from canonical
+    join atlas_admin.dish_types dish_type
+      on dish_type.dish_type_code = row ->> 'menu_slot_code'
+    where dish_type.dish_type_status <> 'ACTIVE'
     union all
     select
       'BLOCKER', 'INVALID_DISH_ID',
@@ -755,6 +933,28 @@ as $$
       on dish.dish_id =
         atlas_core.pa_05b_safe_uuid(row ->> 'dish_id')
     where dish.dish_status <> 'ACTIVE'
+    union all
+    select
+      'BLOCKER', 'UNMAPPED_DISH_TYPE',
+      'The selected Dish is not mapped to a Dish Type.',
+      row ->> 'source_row_reference'
+    from canonical
+    join atlas_admin.dishes dish
+      on dish.dish_id =
+        atlas_core.pa_05b_safe_uuid(row ->> 'dish_id')
+    where dish.dish_type_id is null
+    union all
+    select
+      'BLOCKER', 'DISH_TYPE_MISMATCH',
+      'The selected Dish does not match the Menu slot Dish Type.',
+      row ->> 'source_row_reference'
+    from canonical
+    join atlas_admin.dishes dish
+      on dish.dish_id =
+        atlas_core.pa_05b_safe_uuid(row ->> 'dish_id')
+    join atlas_admin.dish_types dish_type
+      on dish_type.dish_type_code = row ->> 'menu_slot_code'
+    where dish.dish_type_id is distinct from dish_type.dish_type_id
     union all
     select
       'BLOCKER', 'DUPLICATE_MENU_ASSIGNMENT',
@@ -1354,24 +1554,28 @@ begin
   return pg_catalog.jsonb_build_object(
     'week_start', target_week_start,
     'week_end', target_week_start + 6,
-    'menu_slots', pg_catalog.jsonb_build_array(
-      pg_catalog.jsonb_build_object(
-        'code', 'soup', 'label', 'Món canh', 'display_order', 1
+    'dish_types',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'dish_type_id', dish_type.dish_type_id,
+            'dish_type_code', dish_type.dish_type_code,
+            'dish_type_name', dish_type.dish_type_name,
+            'source_header_aliases', dish_type.source_header_aliases,
+            'display_order', dish_type.display_order,
+            'dish_type_status', dish_type.dish_type_status,
+            'version', dish_type.version
+          )
+          order by
+            dish_type.display_order,
+            dish_type.dish_type_code,
+            dish_type.dish_type_id
+        )
+        from atlas_admin.dish_types dish_type
+        where dish_type.dish_type_status = 'ACTIVE'
       ),
-      pg_catalog.jsonb_build_object(
-        'code', 'savory', 'label', 'Món mặn', 'display_order', 2
-      ),
-      pg_catalog.jsonb_build_object(
-        'code', 'stir_fry', 'label', 'Món xào', 'display_order', 3
-      ),
-      pg_catalog.jsonb_build_object(
-        'code', 'dessert', 'label', 'Tráng miệng',
-        'display_order', 4
-      ),
-      pg_catalog.jsonb_build_object(
-        'code', 'afternoon_snack', 'label', 'Buổi xế',
-        'display_order', 5
-      )
+      '[]'::jsonb
     ),
     'schools',
     coalesce(
@@ -1407,6 +1611,9 @@ begin
             'dish_code', dish.dish_code,
             'dish_name', dish.dish_name,
             'dish_category', dish.dish_category,
+            'dish_type_id', dish.dish_type_id,
+            'dish_type_code', dish_type.dish_type_code,
+            'dish_type_name', dish_type.dish_type_name,
             'dish_status', dish.dish_status,
             'display_order', dish.display_order,
             'requires_need_generation', dish.requires_need_generation
@@ -1417,6 +1624,30 @@ begin
             dish.dish_id
         )
         from atlas_admin.dishes dish
+        left join atlas_admin.dish_types dish_type
+          on dish_type.dish_type_id = dish.dish_type_id
+      ),
+      '[]'::jsonb
+    ),
+    'google_sheet_sources',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'weekly_menu_google_source_id',
+              source.weekly_menu_google_source_id,
+            'source_code', source.source_code,
+            'source_name', source.source_name,
+            'source_status', source.source_status,
+            'display_order', source.display_order
+          )
+          order by
+            source.display_order,
+            source.source_code,
+            source.weekly_menu_google_source_id
+        )
+        from atlas_planning.weekly_menu_google_sources source
+        where source.source_status = 'ACTIVE'
       ),
       '[]'::jsonb
     ),
@@ -1816,6 +2047,8 @@ declare
   v_error jsonb;
   v_context jsonb;
   v_week_start date;
+  v_connector_source_id uuid;
+  v_connector_source jsonb;
 begin
   v_error := atlas_core.rmvp_03a_validate_read_request(request, v_name);
   if v_error is not null then return v_error; end if;
@@ -1828,12 +2061,50 @@ begin
   v_week_start := atlas_core.pa_05d_safe_date(
     request -> 'payload' ->> 'week_start'
   );
+  if request -> 'payload' ? 'google_connector_source_id' then
+    v_connector_source_id := atlas_core.pa_05b_safe_uuid(
+      request -> 'payload' ->> 'google_connector_source_id'
+    );
+    if v_connector_source_id is null then
+      return atlas_core.rmvp_03a_read_error(
+        request,
+        v_name,
+        'INVALID_GOOGLE_SOURCE',
+        'The configured Google Sheet source is invalid.'
+      );
+    end if;
+    select pg_catalog.jsonb_build_object(
+      'weekly_menu_google_source_id',
+        source.weekly_menu_google_source_id,
+      'source_code', source.source_code,
+      'source_name', source.source_name,
+      'spreadsheet_id', source.spreadsheet_id,
+      'sheet_name_pattern', source.sheet_name_pattern,
+      'range_a1_template', source.range_a1_template,
+      'source_status', source.source_status,
+      'display_order', source.display_order,
+      'version', source.version
+    )
+      into v_connector_source
+    from atlas_planning.weekly_menu_google_sources source
+    where source.weekly_menu_google_source_id = v_connector_source_id
+      and source.source_status = 'ACTIVE';
+    if v_connector_source is null then
+      return atlas_core.rmvp_03a_read_error(
+        request,
+        v_name,
+        'GOOGLE_SOURCE_UNAVAILABLE',
+        'The configured Google Sheet source is unavailable.'
+      );
+    end if;
+  end if;
   return pg_catalog.jsonb_build_object(
     'success', true,
     'contract_version', 'RMVP-03A.v1',
     'correlation_id', request ->> 'correlation_id',
     'workbench',
       atlas_core.rmvp_03a_planning_workbench_payload(v_week_start),
+    'google_connector_source', v_connector_source,
     'safe_operator_message',
       'Authorized Weekly Menu and Attendance data returned.'
   );
@@ -3090,6 +3361,7 @@ grant select on
   atlas_core.command_receipts,
   atlas_admin.school_types,
   atlas_admin.schools,
+  atlas_admin.dish_types,
   atlas_admin.dishes,
   atlas_admin.ingredients,
   atlas_admin.units,
@@ -3109,6 +3381,12 @@ grant select on
   atlas_planning.attendance_approval_snapshot_lines
 to atlas_planning_command_runtime;
 
+grant select on atlas_admin.dish_types
+  to atlas_master_data_command_runtime;
+grant insert (dish_type_id), update (dish_type_id)
+  on atlas_admin.dishes
+  to atlas_master_data_command_runtime;
+
 grant insert, update on
   atlas_planning.weekly_menus,
   atlas_planning.weekly_menu_lines,
@@ -3125,6 +3403,9 @@ to atlas_planning_command_runtime;
 
 create policy rmvp_03a_command_school_select
   on atlas_admin.schools
+  for select to atlas_planning_command_runtime using (true);
+create policy rmvp_03a_planning_dish_type_select
+  on atlas_admin.dish_types
   for select to atlas_planning_command_runtime using (true);
 create policy rmvp_03a_command_dish_select
   on atlas_admin.dishes
@@ -3222,6 +3503,7 @@ create policy rmvp_03a_command_attendance_snapshot_line_insert
 
 grant select on
   atlas_admin.schools,
+  atlas_admin.dish_types,
   atlas_admin.dishes,
   atlas_admin.recipes,
   atlas_admin.recipe_versions,
@@ -3232,8 +3514,19 @@ grant select on
   atlas_planning.attendance_batches,
   atlas_planning.attendance_lines,
   atlas_planning.attendance_approval_snapshots,
-  atlas_planning.attendance_approval_snapshot_lines
+  atlas_planning.attendance_approval_snapshot_lines,
+  atlas_planning.weekly_menu_google_sources
 to atlas_read_runtime;
+
+create policy rmvp_03a_admin_dish_type_select
+  on atlas_admin.dish_types
+  for select to atlas_master_data_command_runtime using (true);
+create policy rmvp_03a_read_dish_type_select
+  on atlas_admin.dish_types
+  for select to atlas_read_runtime using (true);
+create policy rmvp_03a_read_google_source_select
+  on atlas_planning.weekly_menu_google_sources
+  for select to atlas_read_runtime using (true);
 
 create policy rmvp_03a_read_weekly_menu_select
   on atlas_planning.weekly_menus
@@ -3498,6 +3791,802 @@ comment on function atlas_api.approve_attendance(jsonb) is
   'RMVP-03A Attendance approval with one immutable exact active-line snapshot.';
 comment on function atlas_api.reopen_attendance(jsonb) is
   'RMVP-03A reasoned Attendance reopen to the next working version while preserving approval history.';
+
+-- Extend the existing RMVP-02A read/command contract in place. Dish Type is
+-- authoritative; dish_category remains transitional descriptive text only.
+set role atlas_owner;
+
+create or replace function atlas_core.rmvp_02a_recipe_workbench_payload()
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select pg_catalog.jsonb_build_object(
+    'dish_types',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'dish_type_id', dish_type.dish_type_id,
+            'dish_type_code', dish_type.dish_type_code,
+            'dish_type_name', dish_type.dish_type_name,
+            'source_header_aliases', dish_type.source_header_aliases,
+            'display_order', dish_type.display_order,
+            'dish_type_status', dish_type.dish_type_status,
+            'version', dish_type.version,
+            'created_at', dish_type.created_at,
+            'updated_at', dish_type.updated_at
+          )
+          order by
+            dish_type.display_order,
+            dish_type.dish_type_code,
+            dish_type.dish_type_id
+        )
+        from atlas_admin.dish_types dish_type
+      ),
+      '[]'::jsonb
+    ),
+    'dishes',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'dish_id', dish.dish_id,
+            'dish_code', dish.dish_code,
+            'dish_name', dish.dish_name,
+            'dish_category', dish.dish_category,
+            'dish_type_id', dish.dish_type_id,
+            'dish_type_code', dish_type.dish_type_code,
+            'dish_type_name', dish_type.dish_type_name,
+            'operational_notes', dish.operational_notes,
+            'dish_status', dish.dish_status,
+            'display_order', dish.display_order,
+            'requires_need_generation', dish.requires_need_generation,
+            'version', dish.version,
+            'created_at', dish.created_at,
+            'updated_at', dish.updated_at
+          )
+          order by dish.display_order, dish.dish_name, dish.dish_id
+        )
+        from atlas_admin.dishes dish
+        left join atlas_admin.dish_types dish_type
+          on dish_type.dish_type_id = dish.dish_type_id
+      ),
+      '[]'::jsonb
+    ),
+    'school_types',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'school_type_id', school_type.school_type_id,
+            'school_type_code', school_type.school_type_code,
+            'school_type_name', school_type.school_type_name,
+            'school_type_status', school_type.school_type_status
+          )
+          order by school_type.school_type_name, school_type.school_type_id
+        )
+        from atlas_admin.school_types school_type
+      ),
+      '[]'::jsonb
+    ),
+    'ingredients',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'ingredient_id', ingredient.ingredient_id,
+            'ingredient_code', ingredient.ingredient_code,
+            'ingredient_name', ingredient.ingredient_name,
+            'ingredient_status', ingredient.ingredient_status
+          )
+          order by ingredient.ingredient_name, ingredient.ingredient_id
+        )
+        from atlas_admin.ingredients ingredient
+      ),
+      '[]'::jsonb
+    ),
+    'units',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'unit_id', unit.unit_id,
+            'unit_code', unit.unit_code,
+            'unit_name', unit.unit_name,
+            'unit_status', unit.unit_status
+          )
+          order by unit.unit_name, unit.unit_id
+        )
+        from atlas_admin.units unit
+      ),
+      '[]'::jsonb
+    ),
+    'recipes',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'recipe_id', recipe.recipe_id,
+            'dish_id', recipe.dish_id,
+            'school_type_id', recipe.school_type_id,
+            'recipe_status', recipe.recipe_status,
+            'version', recipe.version,
+            'created_at', recipe.created_at,
+            'updated_at', recipe.updated_at
+          )
+          order by recipe.dish_id, recipe.school_type_id nulls first,
+            recipe.recipe_id
+        )
+        from atlas_admin.recipes recipe
+      ),
+      '[]'::jsonb
+    ),
+    'recipe_versions',
+    coalesce(
+      (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.jsonb_build_object(
+            'recipe_version_id', version.recipe_version_id,
+            'recipe_id', version.recipe_id,
+            'version_number', version.version_number,
+            'predecessor_recipe_version_id',
+              version.predecessor_recipe_version_id,
+            'basis_portions', version.basis_portions,
+            'recipe_version_status', version.recipe_version_status,
+            'version', version.version,
+            'source_evidence', version.source_evidence,
+            'created_by_actor_id', version.created_by_actor_id,
+            'created_at', version.created_at,
+            'validated_by_actor_id', version.validated_by_actor_id,
+            'validated_at', version.validated_at,
+            'released_by_actor_id', version.released_by_actor_id,
+            'released_at', version.released_at,
+            'locked_by_actor_id', version.locked_by_actor_id,
+            'locked_at', version.locked_at,
+            'composition',
+              atlas_core.rmvp_02a_recipe_version_composition(
+                version.recipe_version_id
+              )
+          )
+          order by version.recipe_id, version.version_number,
+            version.recipe_version_id
+        )
+        from atlas_admin.recipe_versions version
+      ),
+      '[]'::jsonb
+    )
+  );
+$$;
+
+reset role;
+grant atlas_master_data_command_runtime to postgres with set true;
+grant create on schema atlas_api to atlas_master_data_command_runtime;
+set role atlas_master_data_command_runtime;
+
+create or replace function atlas_api.create_dish(request jsonb)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'create_dish';
+  v_payload jsonb := request -> 'payload';
+  v_code text := pg_catalog.lower(
+    pg_catalog.btrim(coalesce(v_payload ->> 'dish_code', ''))
+  );
+  v_dish_name text := pg_catalog.btrim(
+    coalesce(v_payload ->> 'dish_name', '')
+  );
+  v_category text := nullif(
+    pg_catalog.btrim(coalesce(v_payload ->> 'dish_category', '')),
+    ''
+  );
+  v_dish_type_id uuid := atlas_core.pa_05b_safe_uuid(
+    v_payload ->> 'dish_type_id'
+  );
+  v_notes text := nullif(
+    pg_catalog.btrim(coalesce(v_payload ->> 'operational_notes', '')),
+    ''
+  );
+  v_display_order bigint := atlas_core.pa_05b_safe_bigint(
+    v_payload ->> 'display_order'
+  );
+  v_requires boolean;
+  v_prepare jsonb;
+  v_actor_id uuid;
+  v_receipt_id uuid;
+  v_dish_id uuid;
+begin
+  if atlas_core.rmvp_02a_validate_command_request(
+    request,
+    v_name
+  ) is not null then
+    return atlas_core.rmvp_02a_validate_command_request(request, v_name);
+  end if;
+  begin
+    v_requires := (v_payload ->> 'requires_need_generation')::boolean;
+  exception when others then
+    v_requires := null;
+  end;
+  if atlas_core.pa_05b_safe_bigint(request ->> 'expected_version') <> 1
+     or v_code = ''
+     or v_dish_name = ''
+     or v_dish_type_id is null
+     or v_display_order is null
+     or v_display_order < 0
+     or v_display_order > 2147483647
+     or v_requires is null then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'VALIDATION_FAILED',
+      'Dish values are incomplete or invalid.',
+      'ADMIN',
+      v_name,
+      false,
+      pg_catalog.jsonb_build_array(
+        pg_catalog.jsonb_build_object(
+          'field', 'payload.dish_type_id',
+          'message',
+          'A database-backed active Dish Type is required.'
+        )
+      )
+    );
+  end if;
+  v_prepare := atlas_core.rmvp_02a_prepare_command(
+    request,
+    v_name,
+    'master_data.recipes.write',
+    'dish-code:' || v_code
+  );
+  if v_prepare ->> 'status' = 'RETURN' then
+    return v_prepare -> 'response';
+  end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
+  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+  if not exists (
+    select 1
+    from atlas_admin.dish_types dish_type
+    where dish_type.dish_type_id = v_dish_type_id
+      and dish_type.dish_type_status = 'ACTIVE'
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'VALIDATION_FAILED',
+        'The selected Dish Type is unknown or inactive.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  if exists (
+    select 1 from atlas_admin.dishes where dish_code = v_code
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'CONFLICT',
+        'The dish code is already in use.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  insert into atlas_admin.dishes (
+    dish_code,
+    dish_name,
+    dish_category,
+    dish_type_id,
+    operational_notes,
+    dish_status,
+    display_order,
+    requires_need_generation
+  ) values (
+    v_code,
+    v_dish_name,
+    v_category,
+    v_dish_type_id,
+    v_notes,
+    'DRAFT',
+    v_display_order::integer,
+    v_requires
+  )
+  returning dish_id into v_dish_id;
+  return atlas_core.rmvp_02a_finish_success(
+    request,
+    v_actor_id,
+    v_receipt_id,
+    'DishCreated',
+    'Dish',
+    v_dish_id,
+    null,
+    1,
+    null,
+    pg_catalog.jsonb_build_object(
+      'dish_code', v_code,
+      'dish_name', v_dish_name,
+      'dish_status', 'DRAFT',
+      'dish_category', v_category,
+      'dish_type_id', v_dish_type_id,
+      'display_order', v_display_order,
+      'requires_need_generation', v_requires
+    ),
+    'Dish created as a draft.',
+    pg_catalog.jsonb_build_object('dish_id', v_dish_id)
+  );
+exception
+  when unique_violation then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'CONFLICT',
+      'The dish identity is already in use.',
+      'ADMIN',
+      v_name
+    );
+  when others then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'INTERNAL_COMMAND_FAILURE',
+      'The dish could not be created safely.',
+      'ADMIN',
+      v_name
+    );
+end;
+$$;
+
+create or replace function atlas_api.update_dish(request jsonb)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'update_dish';
+  v_payload jsonb := request -> 'payload';
+  v_dish_id uuid := atlas_core.pa_05b_safe_uuid(v_payload ->> 'dish_id');
+  v_code text := pg_catalog.lower(
+    pg_catalog.btrim(coalesce(v_payload ->> 'dish_code', ''))
+  );
+  v_dish_name text := pg_catalog.btrim(
+    coalesce(v_payload ->> 'dish_name', '')
+  );
+  v_category text := nullif(
+    pg_catalog.btrim(coalesce(v_payload ->> 'dish_category', '')),
+    ''
+  );
+  v_dish_type_id uuid := atlas_core.pa_05b_safe_uuid(
+    v_payload ->> 'dish_type_id'
+  );
+  v_notes text := nullif(
+    pg_catalog.btrim(coalesce(v_payload ->> 'operational_notes', '')),
+    ''
+  );
+  v_display_order bigint := atlas_core.pa_05b_safe_bigint(
+    v_payload ->> 'display_order'
+  );
+  v_requires boolean;
+  v_prepare jsonb;
+  v_actor_id uuid;
+  v_receipt_id uuid;
+  v_dish atlas_admin.dishes%rowtype;
+  v_before jsonb;
+  v_after jsonb;
+begin
+  if atlas_core.rmvp_02a_validate_command_request(
+    request,
+    v_name
+  ) is not null then
+    return atlas_core.rmvp_02a_validate_command_request(request, v_name);
+  end if;
+  begin
+    v_requires := (v_payload ->> 'requires_need_generation')::boolean;
+  exception when others then
+    v_requires := null;
+  end;
+  if v_dish_id is null
+     or v_code = ''
+     or v_dish_name = ''
+     or v_dish_type_id is null
+     or v_display_order is null
+     or v_display_order < 0
+     or v_display_order > 2147483647
+     or v_requires is null then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'VALIDATION_FAILED',
+      'Dish values are incomplete or invalid.',
+      'ADMIN',
+      v_name
+    );
+  end if;
+  v_prepare := atlas_core.rmvp_02a_prepare_command(
+    request,
+    v_name,
+    'master_data.recipes.write',
+    'dish:' || v_dish_id::text
+  );
+  if v_prepare ->> 'status' = 'RETURN' then
+    return v_prepare -> 'response';
+  end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
+  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+  select * into v_dish
+  from atlas_admin.dishes
+  where dish_id = v_dish_id
+  for update;
+  if not found then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'NOT_FOUND', 'The dish was not found.', 'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
+  if v_dish.version <> atlas_core.pa_05b_safe_bigint(
+    request ->> 'expected_version'
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'STALE_VERSION',
+        'The dish changed after it was read. Refresh before saving.',
+        'ADMIN',
+        v_name,
+        false,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        v_dish.version
+      ),
+      false
+    );
+  end if;
+  if v_code <> v_dish.dish_code then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'INVARIANT_VIOLATION',
+        'Dish code is a stable identity and cannot be changed.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  if not exists (
+    select 1
+    from atlas_admin.dish_types dish_type
+    where dish_type.dish_type_id = v_dish_type_id
+      and dish_type.dish_type_status = 'ACTIVE'
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'VALIDATION_FAILED',
+        'The selected Dish Type is unknown or inactive.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  if v_dish.dish_status = 'ACTIVE' and exists (
+    select 1
+    from atlas_admin.dishes other_dish
+    where other_dish.dish_id <> v_dish_id
+      and other_dish.dish_status = 'ACTIVE'
+      and pg_catalog.lower(pg_catalog.btrim(other_dish.dish_name))
+        = pg_catalog.lower(v_dish_name)
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'CONFLICT',
+        'An active dish with this normalized name already exists.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  v_before := pg_catalog.jsonb_build_object(
+    'dish_code', v_dish.dish_code,
+    'dish_name', v_dish.dish_name,
+    'dish_category', v_dish.dish_category,
+    'dish_type_id', v_dish.dish_type_id,
+    'operational_notes', v_dish.operational_notes,
+    'display_order', v_dish.display_order,
+    'requires_need_generation', v_dish.requires_need_generation
+  );
+  update atlas_admin.dishes
+  set dish_name = v_dish_name,
+      dish_category = v_category,
+      dish_type_id = v_dish_type_id,
+      operational_notes = v_notes,
+      display_order = v_display_order::integer,
+      requires_need_generation = v_requires,
+      version = version + 1,
+      updated_at = pg_catalog.transaction_timestamp()
+  where dish_id = v_dish_id;
+  v_after := pg_catalog.jsonb_build_object(
+    'dish_code', v_code,
+    'dish_name', v_dish_name,
+    'dish_category', v_category,
+    'dish_type_id', v_dish_type_id,
+    'operational_notes', v_notes,
+    'display_order', v_display_order,
+    'requires_need_generation', v_requires
+  );
+  return atlas_core.rmvp_02a_finish_success(
+    request,
+    v_actor_id,
+    v_receipt_id,
+    'DishUpdated',
+    'Dish',
+    v_dish_id,
+    v_dish.version,
+    v_dish.version + 1,
+    v_before,
+    v_after,
+    'Dish details saved.',
+    pg_catalog.jsonb_build_object('dish_id', v_dish_id)
+  );
+exception
+  when serialization_failure or deadlock_detected then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'RETRYABLE_CONCURRENCY_FAILURE',
+      'The dish could not be locked safely. Retry the exact request.',
+      'ADMIN',
+      v_name,
+      true
+    );
+  when unique_violation then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'CONFLICT',
+      'The active normalized dish name is already in use.',
+      'ADMIN',
+      v_name
+    );
+  when others then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'INTERNAL_COMMAND_FAILURE',
+      'The dish could not be saved safely.',
+      'ADMIN',
+      v_name
+    );
+end;
+$$;
+
+create or replace function atlas_api.set_dish_lifecycle(request jsonb)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'set_dish_lifecycle';
+  v_payload jsonb := request -> 'payload';
+  v_dish_id uuid := atlas_core.pa_05b_safe_uuid(v_payload ->> 'dish_id');
+  v_target_status text := pg_catalog.upper(
+    pg_catalog.btrim(coalesce(v_payload ->> 'dish_status', ''))
+  );
+  v_prepare jsonb;
+  v_actor_id uuid;
+  v_receipt_id uuid;
+  v_dish atlas_admin.dishes%rowtype;
+begin
+  if atlas_core.rmvp_02a_validate_command_request(
+    request,
+    v_name
+  ) is not null then
+    return atlas_core.rmvp_02a_validate_command_request(request, v_name);
+  end if;
+  if v_dish_id is null or v_target_status not in ('ACTIVE', 'INACTIVE') then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'VALIDATION_FAILED',
+      'Dish lifecycle values are invalid.',
+      'ADMIN',
+      v_name
+    );
+  end if;
+  v_prepare := atlas_core.rmvp_02a_prepare_command(
+    request,
+    v_name,
+    'master_data.recipes.write',
+    'dish:' || v_dish_id::text
+  );
+  if v_prepare ->> 'status' = 'RETURN' then
+    return v_prepare -> 'response';
+  end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
+  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+  select * into v_dish
+  from atlas_admin.dishes
+  where dish_id = v_dish_id
+  for update;
+  if not found then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'NOT_FOUND', 'The dish was not found.', 'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
+  if v_dish.version <> atlas_core.pa_05b_safe_bigint(
+    request ->> 'expected_version'
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'STALE_VERSION',
+        'The dish changed after it was read. Refresh before changing status.',
+        'ADMIN',
+        v_name,
+        false,
+        '[]'::jsonb,
+        '[]'::jsonb,
+        v_dish.version
+      ),
+      false
+    );
+  end if;
+  if v_dish.dish_status = v_target_status
+     or not (
+       (v_dish.dish_status = 'DRAFT' and v_target_status = 'ACTIVE')
+       or (v_dish.dish_status = 'ACTIVE' and v_target_status = 'INACTIVE')
+       or (v_dish.dish_status = 'INACTIVE' and v_target_status = 'ACTIVE')
+     ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'INVARIANT_VIOLATION',
+        'The requested dish lifecycle transition is not allowed.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  if v_target_status = 'ACTIVE' and not exists (
+    select 1
+    from atlas_admin.dish_types dish_type
+    where dish_type.dish_type_id = v_dish.dish_type_id
+      and dish_type.dish_type_status = 'ACTIVE'
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'INVARIANT_VIOLATION',
+        'An active database-backed Dish Type is required before activation.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  if v_target_status = 'ACTIVE' and exists (
+    select 1
+    from atlas_admin.dishes other_dish
+    where other_dish.dish_id <> v_dish_id
+      and other_dish.dish_status = 'ACTIVE'
+      and pg_catalog.lower(pg_catalog.btrim(other_dish.dish_name))
+        = pg_catalog.lower(pg_catalog.btrim(v_dish.dish_name))
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request,
+        'CONFLICT',
+        'An active dish with this normalized name already exists.',
+        'ADMIN',
+        v_name
+      ),
+      false
+    );
+  end if;
+  update atlas_admin.dishes
+  set dish_status = v_target_status,
+      version = version + 1,
+      updated_at = pg_catalog.transaction_timestamp()
+  where dish_id = v_dish_id;
+  return atlas_core.rmvp_02a_finish_success(
+    request,
+    v_actor_id,
+    v_receipt_id,
+    case
+      when v_target_status = 'ACTIVE' then 'DishActivated'
+      else 'DishDeactivated'
+    end,
+    'Dish',
+    v_dish_id,
+    v_dish.version,
+    v_dish.version + 1,
+    pg_catalog.jsonb_build_object(
+      'dish_status', v_dish.dish_status,
+      'dish_type_id', v_dish.dish_type_id
+    ),
+    pg_catalog.jsonb_build_object(
+      'dish_status', v_target_status,
+      'dish_type_id', v_dish.dish_type_id
+    ),
+    case
+      when v_target_status = 'ACTIVE' then 'Dish activated.'
+      else 'Dish deactivated; historical references were preserved.'
+    end,
+    pg_catalog.jsonb_build_object('dish_id', v_dish_id)
+  );
+exception
+  when serialization_failure or deadlock_detected then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'RETRYABLE_CONCURRENCY_FAILURE',
+      'The dish could not be locked safely. Retry the exact request.',
+      'ADMIN',
+      v_name,
+      true
+    );
+  when unique_violation then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'CONFLICT',
+      'The active normalized dish name is already in use.',
+      'ADMIN',
+      v_name
+    );
+  when others then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'INTERNAL_COMMAND_FAILURE',
+      'The dish status could not be changed safely.',
+      'ADMIN',
+      v_name
+    );
+end;
+$$;
+
+comment on function atlas_api.create_dish(jsonb) is
+  'RMVP-02A Dish create extended in RMVP-03A to require an active database-backed Dish Type.';
+comment on function atlas_api.update_dish(jsonb) is
+  'RMVP-02A Dish update extended in RMVP-03A with stable code and active Dish Type validation.';
+comment on function atlas_api.set_dish_lifecycle(jsonb) is
+  'RMVP-02A Dish lifecycle extended in RMVP-03A to require an active Dish Type before activation.';
+
+reset role;
+revoke create on schema atlas_api from atlas_master_data_command_runtime;
+revoke atlas_master_data_command_runtime from postgres;
+set role atlas_owner;
+
+comment on table atlas_admin.dish_types is
+  'RMVP-03A authoritative typed Dish classification and Weekly Menu slot catalog; codes are stable and referenced rows cannot be hard-deleted.';
+comment on column atlas_admin.dishes.dish_type_id is
+  'Nullable transition from historical free-text dish_category to authoritative Dish Type identity.';
+comment on table atlas_planning.weekly_menu_google_sources is
+  'RMVP-03A private connector configuration only; contains no Google credential and grants no direct browser access.';
+
+reset role;
 
 comment on schema atlas_api is
   'Function-only Atlas Data API boundary; includes reviewed master-data, Recipe/BOM, effective-adjustment, Weekly Menu, and Attendance commands and reads.';

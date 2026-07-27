@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasAuthState } from "../connection/authSession";
-import type { JsonValue } from "../connection/atlasRpc";
+import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
 import { Chip, CompactTable, Panel } from "../WorkbenchComponents";
 import {
   planningCommandRequest,
@@ -28,11 +28,22 @@ import {
 import {
   parseAttendancePaste,
   parseAttendanceWorkbook,
+  parseMenuMatrix,
   parseMenuWorkbook,
+  type SourceMatrix,
 } from "./planningInputsWorkbook";
 
 type TabId = "menu" | "attendance";
 type LoadState = "idle" | "loading" | "ready" | "error";
+type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
+type GoogleFetchState = {
+  status: "idle" | "fetching" | "success" | "error";
+  sourceName?: string;
+  sheetName?: string;
+  fetchedAt?: string;
+  sourceRowCount?: number;
+  errorCode?: string;
+};
 
 function statusTone(status?: string) {
   if (status === "APPROVED") return "ok" as const;
@@ -52,6 +63,37 @@ function statusLabel(status?: string) {
   return status ? (labels[status] ?? status) : "CHƯA CÓ";
 }
 
+function googleResultMessage(result: AtlasRpcResult) {
+  if (result.kind === "success")
+    return "Đã tải nguồn Google Sheet để xem trước.";
+  if (result.kind === "auth_error")
+    return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
+  if (result.kind === "transport_error")
+    return "Không thể kết nối bộ đồng bộ Google Sheet.";
+  if (result.kind === "client_error")
+    return "Bộ đồng bộ Google Sheet chưa sẵn sàng trong môi trường này.";
+  const messages: Record<string, string> = {
+    CAPABILITY_DENIED: "Bạn không có quyền đọc nguồn Kế hoạch.",
+    GOOGLE_SOURCE_UNAVAILABLE:
+      "Nguồn Google Sheet không tồn tại hoặc đã ngừng hoạt động.",
+    WEEKLY_SHEET_MISSING: "Không tìm thấy trang tính của tuần đã chọn.",
+    EMPTY_SHEET: "Trang tính của tuần đã chọn không có dữ liệu.",
+    GOOGLE_CREDENTIAL_MISSING:
+      "Bộ đồng bộ chưa được cấu hình thông tin xác thực Google.",
+    SPREADSHEET_INACCESSIBLE: "Bộ đồng bộ không thể đọc bảng tính đã cấu hình.",
+    GOOGLE_UPSTREAM_RETRYABLE:
+      "Google Sheets tạm thời không sẵn sàng. Có thể thử lại.",
+    CONNECTOR_UNAVAILABLE: "Bộ đồng bộ Google Sheet hiện không sẵn sàng.",
+  };
+  return messages[result.error.error_code] ?? result.error.safe_message;
+}
+
+function recordValue(value: JsonValue | undefined) {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value
+    : null;
+}
+
 function issueMessage(issue: PlanningIssue) {
   const messages: Record<string, string> = {
     EMPTY_WEEKLY_MENU: "Thực đơn tuần chưa có phân công hợp lệ.",
@@ -64,7 +106,11 @@ function issueMessage(issue: PlanningIssue) {
     INACTIVE_DISH: "Món ăn tham chiếu đã ngừng hoạt động.",
     INVALID_SERVICE_DATE: "Ngày phục vụ không hợp lệ.",
     SERVICE_DATE_OUTSIDE_WEEK: "Ngày phục vụ nằm ngoài tuần đã chọn.",
-    INVALID_MENU_SLOT: "Ô thực đơn không thuộc năm loại được hỗ trợ.",
+    INVALID_MENU_SLOT: "Ô thực đơn không thuộc Loại món được cấu hình.",
+    UNKNOWN_DISH_TYPE: "Loại món của ô thực đơn không tồn tại.",
+    INACTIVE_DISH_TYPE: "Loại món của ô thực đơn đã ngừng hoạt động.",
+    UNMAPPED_DISH_TYPE: "Món ăn chưa được gán Loại món.",
+    DISH_TYPE_MISMATCH: "Món ăn không khớp Loại món của cột thực đơn.",
     DUPLICATE_MENU_ASSIGNMENT: "Trùng trường, ngày và ô thực đơn.",
     DUPLICATE_ATTENDANCE_ASSIGNMENT: "Trùng trường và ngày trong sĩ số.",
     INVALID_STUDENT_PORTIONS:
@@ -287,7 +333,8 @@ function emptyData(weekStart: string): PlanningInputsWorkbenchData {
   return {
     week_start: weekStart,
     week_end: end.toISOString().slice(0, 10),
-    menu_slots: [],
+    dish_types: [],
+    google_sheet_sources: [],
     schools: [],
     dishes: [],
     weekly_menu: null,
@@ -328,8 +375,15 @@ export function PlanningInputsWorkbench({
   const [attendancePreview, setAttendancePreview] =
     useState<PlanningPreview<AttendanceLine> | null>(null);
   const [sourceName, setSourceName] = useState("Chỉnh sửa trực tiếp Atlas");
+  const [menuSourceType, setMenuSourceType] =
+    useState<MenuSourceType>("MANUAL");
   const [browserChecksum, setBrowserChecksum] = useState<string | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [selectedGoogleSourceId, setSelectedGoogleSourceId] = useState("");
+  const [googleFetch, setGoogleFetch] = useState<GoogleFetchState>({
+    status: "idle",
+  });
   const [attendancePaste, setAttendancePaste] = useState("");
   const [reopenNote, setReopenNote] = useState("");
   const [schoolSearch, setSchoolSearch] = useState("");
@@ -346,6 +400,7 @@ export function PlanningInputsWorkbench({
     setAttendancePreview(null);
     setBrowserChecksum(null);
     setImportErrors([]);
+    setImportWarnings([]);
     setDirty(false);
   }, []);
 
@@ -379,6 +434,16 @@ export function PlanningInputsWorkbench({
       setData(emptyData(weekStart));
     }
   }, [authSubject, refresh, weekStart]);
+
+  useEffect(() => {
+    setSelectedGoogleSourceId((current) =>
+      data.google_sheet_sources.some(
+        (source) => source.weekly_menu_google_source_id === current,
+      )
+        ? current
+        : (data.google_sheet_sources[0]?.weekly_menu_google_source_id ?? ""),
+    );
+  }, [data.google_sheet_sources]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -415,6 +480,22 @@ export function PlanningInputsWorkbench({
             left.dish_code.localeCompare(right.dish_code),
         ),
     [data.dishes],
+  );
+  const activeDishTypes = useMemo(
+    () =>
+      data.dish_types
+        .filter((dishType) => dishType.dish_type_status === "ACTIVE")
+        .sort(
+          (left, right) =>
+            left.display_order - right.display_order ||
+            left.dish_type_code.localeCompare(right.dish_type_code) ||
+            left.dish_type_id.localeCompare(right.dish_type_id),
+        ),
+    [data.dish_types],
+  );
+  const unmappedDishes = useMemo(
+    () => activeDishes.filter((dish) => !dish.dish_type_id),
+    [activeDishes],
   );
   const menuKeys = useMemo(() => {
     const search = schoolSearch.trim().toLocaleLowerCase("vi");
@@ -531,7 +612,7 @@ export function PlanningInputsWorkbench({
         "WEEKLY_MENU_DRAFT_SAVE",
         {
           week_start: weekStart,
-          source_type: browserChecksum ? "WORKBOOK_IMPORT" : "MANUAL",
+          source_type: menuSourceType,
           source_name: sourceName,
           source_signature: preview.source_signature,
           expected_source_signature: data.weekly_menu?.source_signature ?? null,
@@ -620,11 +701,83 @@ export function PlanningInputsWorkbench({
 
   const onMenuFile = async (file?: File) => {
     if (!file) return;
-    const review = await parseMenuWorkbook(file, data.schools, data.dishes);
+    const review = await parseMenuWorkbook(
+      file,
+      data.dish_types,
+      data.schools,
+      data.dishes,
+    );
     setMenuRows(review.rows);
     setSourceName(review.fileName);
+    setMenuSourceType("WORKBOOK_IMPORT");
     setBrowserChecksum(review.browserChecksum);
     setImportErrors(review.errors);
+    setImportWarnings(review.warnings);
+    setGoogleFetch({ status: "idle" });
+    setDirty(true);
+    await previewMenu(review.rows);
+  };
+
+  const onGoogleSync = async () => {
+    if (!api || !selectedGoogleSourceId) return;
+    setGoogleFetch({ status: "fetching" });
+    setNotice(null);
+    const result = await api.syncMenuFromGoogle(
+      selectedGoogleSourceId,
+      weekStart,
+      correlationId,
+    );
+    if (result.kind !== "success") {
+      setGoogleFetch({
+        status: "error",
+        errorCode:
+          result.kind === "backend_error"
+            ? result.error.error_code
+            : result.kind === "auth_error"
+              ? result.diagnostic.code
+              : result.diagnostic.code,
+      });
+      setNotice(googleResultMessage(result));
+      return;
+    }
+    const source = recordValue(result.response.source);
+    const matrix = result.response.rows;
+    if (
+      !source ||
+      typeof source.source_name !== "string" ||
+      typeof source.sheet_name !== "string" ||
+      typeof result.response.fetched_at !== "string" ||
+      !Array.isArray(matrix) ||
+      !matrix.every((row) => Array.isArray(row))
+    ) {
+      setGoogleFetch({ status: "error", errorCode: "MALFORMED_RESPONSE" });
+      setNotice("Bộ đồng bộ Google Sheet trả về dữ liệu không hợp lệ.");
+      return;
+    }
+    const review = await parseMenuMatrix(
+      matrix as unknown as SourceMatrix,
+      {
+        sourceName: source.source_name,
+        sheetName: source.sheet_name,
+        firstRowNumber: 3,
+      },
+      data.dish_types,
+      data.schools,
+      data.dishes,
+    );
+    setMenuRows(review.rows);
+    setSourceName(review.sourceName);
+    setMenuSourceType("GOOGLE_SHEET");
+    setBrowserChecksum(review.browserChecksum);
+    setImportErrors(review.errors);
+    setImportWarnings(review.warnings);
+    setGoogleFetch({
+      status: "success",
+      sourceName: source.source_name,
+      sheetName: source.sheet_name,
+      fetchedAt: result.response.fetched_at,
+      sourceRowCount: review.sourceRowCount,
+    });
     setDirty(true);
     await previewMenu(review.rows);
   };
@@ -636,6 +789,7 @@ export function PlanningInputsWorkbench({
     setSourceName(review.fileName);
     setBrowserChecksum(review.browserChecksum);
     setImportErrors(review.errors);
+    setImportWarnings([]);
     setDirty(true);
     await previewAttendance(review.rows);
   };
@@ -646,6 +800,9 @@ export function PlanningInputsWorkbench({
     slot: string,
     dishId: string,
   ) => {
+    setMenuSourceType("MANUAL");
+    setSourceName("Chỉnh sửa trực tiếp Atlas");
+    setGoogleFetch({ status: "idle" });
     setMenuRows((current) => {
       const others = current.filter(
         (line) =>
@@ -826,6 +983,39 @@ export function PlanningInputsWorkbench({
                     }
                   />
                 </label>
+                <label>
+                  Nguồn Google Sheet
+                  <select
+                    aria-label="Nguồn Google Sheet"
+                    value={selectedGoogleSourceId}
+                    onChange={(event) =>
+                      setSelectedGoogleSourceId(event.target.value)
+                    }
+                  >
+                    {data.google_sheet_sources.length === 0 && (
+                      <option value="">Chưa có nguồn cấu hình</option>
+                    )}
+                    {data.google_sheet_sources.map((source) => (
+                      <option
+                        value={source.weekly_menu_google_source_id}
+                        key={source.weekly_menu_google_source_id}
+                      >
+                        {source.source_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void onGoogleSync()}
+                  disabled={
+                    googleFetch.status === "fetching" || !selectedGoogleSourceId
+                  }
+                >
+                  {googleFetch.status === "fetching"
+                    ? "Đang đồng bộ…"
+                    : "Đồng bộ từ Google Sheet"}
+                </button>
                 <button
                   type="button"
                   onClick={() => void previewMenu()}
@@ -846,13 +1036,49 @@ export function PlanningInputsWorkbench({
                     setMenuRows(activeMenuRows(data.weekly_menu));
                     setDirty(false);
                     setMenuPreview(null);
+                    setMenuSourceType("MANUAL");
+                    setSourceName("Chỉnh sửa trực tiếp Atlas");
+                    setGoogleFetch({ status: "idle" });
                   }}
                   disabled={!dirty}
                 >
                   Hủy thay đổi
                 </button>
               </div>
+              {data.google_sheet_sources.length === 0 && (
+                <p className="operator-notice warning">
+                  Chưa cấu hình nguồn Google Sheet.
+                  <br />
+                  Bạn vẫn có thể nhập tệp .xlsx.
+                </p>
+              )}
               <SourceSummary source={data.weekly_menu} />
+              {googleFetch.status === "success" && (
+                <section
+                  className="planning-source-summary"
+                  aria-label="Nguồn Google Sheet vừa tải"
+                >
+                  <span>
+                    Nguồn: <b>{googleFetch.sourceName}</b>
+                  </span>
+                  <span>
+                    Trang tính: <b>{googleFetch.sheetName}</b>
+                  </span>
+                  <span>
+                    Tải lúc:{" "}
+                    <b>
+                      {googleFetch.fetchedAt
+                        ? new Date(googleFetch.fetchedAt).toLocaleString(
+                            "vi-VN",
+                          )
+                        : "—"}
+                    </b>
+                  </span>
+                  <span>
+                    Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
+                  </span>
+                </section>
+              )}
               {browserChecksum && (
                 <p className="planning-checksum">
                   SHA-256 trình duyệt: <code>{browserChecksum}</code>
@@ -863,11 +1089,27 @@ export function PlanningInputsWorkbench({
                   {error}
                 </p>
               ))}
+              {importWarnings.map((warning) => (
+                <p className="operator-notice warning" key={warning}>
+                  {warning}
+                </p>
+              ))}
               <PreviewSummary
                 preview={menuPreview}
                 kind="menu"
                 schools={data.schools}
               />
+              {unmappedDishes.length > 0 && (
+                <p className="operator-notice danger">
+                  Có {unmappedDishes.length} món ăn đang hoạt động chưa được gán
+                  Loại món; các món này không thể phân vào Thực đơn tuần.
+                </p>
+              )}
+              {activeDishTypes.length === 0 && (
+                <p className="operator-notice danger">
+                  Không có Loại món đang hoạt động để tạo cột Thực đơn tuần.
+                </p>
+              )}
               {menuKeys.length === 0 ? (
                 <p className="empty">
                   Không có trường hoạt động phù hợp bộ lọc.
@@ -877,7 +1119,9 @@ export function PlanningInputsWorkbench({
                   <CompactTable
                     headers={[
                       "Trường / ngày",
-                      ...data.menu_slots.map((slot) => slot.label),
+                      ...activeDishTypes.map(
+                        (dishType) => dishType.dish_type_name,
+                      ),
                     ]}
                   >
                     {menuKeys.map((key) => {
@@ -891,23 +1135,36 @@ export function PlanningInputsWorkbench({
                             {school?.school_name ?? schoolId}
                             <small>{viDate(serviceDate)}</small>
                           </th>
-                          {data.menu_slots.map((slot) => {
+                          {activeDishTypes.map((dishType) => {
                             const line = menuRows.find(
                               (item) =>
                                 item.school_id === schoolId &&
                                 item.service_date === serviceDate &&
-                                item.menu_slot_code === slot.code,
+                                item.menu_slot_code === dishType.dish_type_code,
                             );
+                            const matchingDishes = activeDishes.filter(
+                              (dish) =>
+                                dish.dish_type_id === dishType.dish_type_id,
+                            );
+                            const selectedDish = line
+                              ? activeDishes.find(
+                                  (dish) => dish.dish_id === line.dish_id,
+                                )
+                              : undefined;
+                            const selectedMismatch =
+                              selectedDish &&
+                              selectedDish.dish_type_id !==
+                                dishType.dish_type_id;
                             return (
-                              <td key={slot.code}>
+                              <td key={dishType.dish_type_code}>
                                 <select
-                                  aria-label={`${slot.label} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
+                                  aria-label={`${dishType.dish_type_name} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
                                   value={line?.dish_id ?? ""}
                                   onChange={(event) =>
                                     updateMenuCell(
                                       schoolId,
                                       serviceDate,
-                                      slot.code,
+                                      dishType.dish_type_code,
                                       event.target.value,
                                     )
                                   }
@@ -919,7 +1176,16 @@ export function PlanningInputsWorkbench({
                                   }
                                 >
                                   <option value="">—</option>
-                                  {activeDishes.map((dish) => (
+                                  {selectedMismatch && selectedDish && (
+                                    <option
+                                      value={selectedDish.dish_id}
+                                      disabled
+                                    >
+                                      ⚠ {selectedDish.dish_name} — không khớp
+                                      Loại món
+                                    </option>
+                                  )}
+                                  {matchingDishes.map((dish) => (
                                     <option
                                       value={dish.dish_id}
                                       key={dish.dish_id}

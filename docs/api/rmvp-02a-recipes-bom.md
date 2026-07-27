@@ -16,17 +16,17 @@ Successful commands return affected aggregate IDs, the new aggregate version, ev
 
 - Capability: `master_data.recipes.read`
 - Owner: `atlas_read_runtime`
-- Returns a nested `workbench` with Dishes, Recipe roots, Recipe Versions and compositions, active/inactive School Type references, Ingredient references, and Unit references.
+- Returns a nested `workbench` with the Dish Type catalog; Dishes with `dish_type_id`, resolved type code, and resolved type name; Recipe roots; Recipe Versions and compositions; active/inactive School Type references; Ingredient references; and Unit references.
 - It never exposes private relations directly.
 
 ## Dish and Recipe-root commands
 
-| Command                | Capability                  | Expected version | Effect                                                            |
-| ---------------------- | --------------------------- | ---------------: | ----------------------------------------------------------------- |
-| `create_dish`          | `master_data.recipes.write` |              `1` | Creates one `DRAFT` Dish with unique normalized code.             |
-| `update_dish`          | `master_data.recipes.write` |     Dish version | Updates bounded Dish attributes; no delete.                       |
-| `set_dish_lifecycle`   | `master_data.recipes.write` |     Dish version | Applies an allowed Dish lifecycle transition.                     |
-| `set_recipe_lifecycle` | `master_data.recipes.write` |   Recipe version | Activates or inactivates a Recipe root without rewriting history. |
+| Command                | Capability                  | Expected version | Effect                                                                                                      |
+| ---------------------- | --------------------------- | ---------------: | ----------------------------------------------------------------------------------------------------------- |
+| `create_dish`          | `master_data.recipes.write` |              `1` | Creates one `DRAFT` Dish with unique normalized code and active `dish_type_id`.                             |
+| `update_dish`          | `master_data.recipes.write` |     Dish version | Updates bounded Dish attributes and active `dish_type_id`; stable code is immutable and there is no delete. |
+| `set_dish_lifecycle`   | `master_data.recipes.write` |     Dish version | Applies an allowed Dish lifecycle transition.                                                               |
+| `set_recipe_lifecycle` | `master_data.recipes.write` |   Recipe version | Activates or inactivates a Recipe root without rewriting history.                                           |
 
 ## Recipe Version and BOM commands
 
@@ -42,6 +42,8 @@ Successful commands return affected aggregate IDs, the new aggregate version, ev
 Draft replacement accepts at most 500 lines. `PRESENT` requires an active Ingredient, active Unit, and positive exact numeric quantity. `REMOVED` requires the exact predecessor revision, predecessor Ingredient and Unit, and zero quantity. Every previously present predecessor line must be retained or explicitly removed.
 
 Copy accepts only validated, released, or locked materialized source composition. It never copies a mutable draft and never validates or releases the target automatically.
+
+`dish_type_id` is authoritative for Menu eligibility. Create/update rejects an unknown or inactive type. Dish activation also requires an active mapped type. `dish_category` remains optional compatibility text and is never interpreted as the authoritative type.
 
 ## Workbook import command
 

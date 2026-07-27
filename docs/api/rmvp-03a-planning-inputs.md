@@ -19,6 +19,8 @@ The API exposes one shaped read, two non-writing previews, and nine business com
 
 The authenticated JWT subject must equal `requested_by_auth_subject`.
 
+The normal `get_planning_inputs_workbench` payload may contain `week_start`. Its shaped `google_sheet_sources` array exposes only source ID, code, name, status, and order. The server-side connector may additionally send `google_connector_source_id`; after the same subject and capability checks, the response includes the active source's spreadsheet ID, sheet pattern, and range template in `google_connector_source`. Unknown or inactive values fail as `GOOGLE_SOURCE_UNAVAILABLE`. React does not request or receive this technical object directly.
+
 ## Command envelope
 
 ```json
@@ -43,7 +45,7 @@ Commands require exact auth-subject binding, a current actor, the named capabili
 <!-- prettier-ignore -->
 | Function | Capability | Behavior |
 |---|---|---|
-| `get_planning_inputs_workbench(request jsonb)` | `planning.inputs.read` | Returns the explicit week, references, source aggregates, active/invalid lines, issues, command-audit history, approval history, default Attendance preview, and read-only readiness comparison. |
+| `get_planning_inputs_workbench(request jsonb)` | `planning.inputs.read` | Returns the explicit week, active Dish Type catalog, typed Dishes, safe active Google source list, source aggregates, active/invalid lines, issues, command-audit history, approval history, default Attendance preview, and read-only readiness comparison. |
 | `preview_weekly_menu_import(request jsonb)` | `planning.inputs.read` | Canonicalizes Menu rows, calculates SHA-256, and returns blockers/warnings without writing. |
 | `preview_attendance_import(request jsonb)` | `planning.inputs.read` | Canonicalizes Attendance rows, preserves explicit zero, calculates SHA-256, and returns blockers/warnings without writing. |
 | `save_weekly_menu_draft(request jsonb)` | `planning.weekly_menu.write` | Atomically creates or fully replaces one explicit-week working Menu with stable assignment identity. |
@@ -159,6 +161,7 @@ Expected failures include:
 - `INVARIANT_VIOLATION`
 - `NOT_FOUND`
 - `RETRYABLE_CONCURRENCY_FAILURE`
+- `GOOGLE_SOURCE_UNAVAILABLE` for the connector-only source lookup
 
 Transport uncertainty is never treated as success. A retryable failure permits retrying the exact request. A stale version or signature requires authoritative refresh and a new reviewed request.
 
@@ -171,6 +174,43 @@ Transport uncertainty is never treated as success. A retryable failure permits r
 - Forced RLS on private relations
 - No `anon` or `service_role` execution
 - No React service-role credential or direct private-schema query
+
+## Google Sheet Edge adapter
+
+Function: `atlas-weekly-menu-google-sync`
+
+JWT verification is enabled. The function accepts only:
+
+```json
+{
+  "weekly_menu_google_source_id": "uuid",
+  "week_start": "YYYY-MM-DD",
+  "correlation_id": "uuid"
+}
+```
+
+It validates a Monday start, authenticates the bearer session, forwards that bearer token to the existing Planning read API, resolves the active source there, derives `Tuần DD-MM-YYYY` and the configured A1 range, and performs a read-only Google Sheets values request.
+
+Successful response:
+
+```json
+{
+  "success": true,
+  "source": {
+    "source_id": "uuid",
+    "source_code": "text",
+    "source_name": "text",
+    "sheet_name": "Tuần DD-MM-YYYY",
+    "range": "'Tuần DD-MM-YYYY'!A3:Z500"
+  },
+  "fetched_at": "ISO-8601 timestamp",
+  "rows": [],
+  "warnings": [],
+  "correlation_id": "uuid"
+}
+```
+
+Rows are untrusted source matrix rows, not Weekly Menu facts. The function has no database write call. It rejects browser-supplied spreadsheet/range authority and classifies session, capability, source, credential, Google authentication, inaccessible spreadsheet, missing sheet, invalid range, empty sheet, response-size, malformed-response, and retryable upstream failures with bounded safe messages. Google credentials exist only in the server-side `GOOGLE_SERVICE_ACCOUNT_JSON` secret.
 
 ## Non-goals
 

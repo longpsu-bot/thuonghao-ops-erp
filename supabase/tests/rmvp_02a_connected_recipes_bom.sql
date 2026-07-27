@@ -269,6 +269,22 @@ insert into atlas_admin.ingredients (
     1
   );
 
+insert into atlas_admin.dish_types (
+  dish_type_id,
+  dish_type_code,
+  dish_type_name,
+  source_header_aliases,
+  display_order,
+  dish_type_status
+) values (
+  'e2100000-0000-4000-8000-000000000030',
+  'rmvp02a_inactive',
+  'RMVP-02A Inactive Dish Type',
+  array['Inactive fixture']::text[],
+  99,
+  'INACTIVE'
+);
+
 create or replace function pg_temp.rmvp02a_request(
   p_name text,
   p_expected_version bigint,
@@ -376,6 +392,7 @@ insert into rmvp02a_results values (
         'dish_code', 'rmvp02a-soup',
         'dish_name', 'RMVP-02A Pumpkin Soup',
         'dish_category', 'Soup',
+        'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
         'operational_notes', 'Cook on service day',
         'display_order', 1,
         'requires_need_generation', true
@@ -393,7 +410,25 @@ insert into rmvp02a_results values (
       jsonb_build_object(
         'dish_code', 'rmvp02a-target',
         'dish_name', 'RMVP-02A Copy Target',
+        'dish_type_id', 'd1500000-0000-4000-8000-000000000002',
         'display_order', 2,
+        'requires_need_generation', true
+      )
+    )
+  )
+);
+
+insert into rmvp02a_results values (
+  'create-inactive-type-dish',
+  atlas_api.create_dish(
+    pg_temp.rmvp02a_request(
+      'create-inactive-type-dish',
+      1,
+      jsonb_build_object(
+        'dish_code', 'rmvp02a-inactive-type',
+        'dish_name', 'RMVP-02A Inactive Type Dish',
+        'dish_type_id', 'e2100000-0000-4000-8000-000000000030',
+        'display_order', 3,
         'requires_need_generation', true
       )
     )
@@ -418,6 +453,29 @@ insert into rmvp02a_results values (
     )
   )
 );
+
+insert into rmvp02a_results
+select
+  'update-main-to-inactive-type',
+  atlas_api.update_dish(
+    pg_temp.rmvp02a_request(
+      'update-main-to-inactive-type',
+      2,
+      jsonb_build_object(
+        'dish_id',
+          created.response_payload #>> '{affected_aggregate_ids,dish_id}',
+        'dish_code', 'rmvp02a-soup',
+        'dish_name', 'RMVP-02A Pumpkin Soup',
+        'dish_category', 'Soup',
+        'dish_type_id', 'e2100000-0000-4000-8000-000000000030',
+        'operational_notes', 'Cook on service day',
+        'display_order', 1,
+        'requires_need_generation', true
+      )
+    )
+  )
+from rmvp02a_results created
+where created.result_name = 'create-main-dish';
 
 insert into rmvp02a_results values (
   'activate-target-dish',
@@ -793,6 +851,7 @@ insert into rmvp02a_results values (
       jsonb_build_object(
         'dish_code', 'rmvp02a-denied',
         'dish_name', 'Denied Dish',
+        'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
         'display_order', 99,
         'requires_need_generation', true
       ),
@@ -834,6 +893,26 @@ select ok(
     )
   ),
   'the full dish, draft, validate, release, successor, copy, import, and read workflow succeeds'
+);
+
+select is(
+  (
+    select response_payload ->> 'error_code'
+    from rmvp02a_results
+    where result_name = 'create-inactive-type-dish'
+  ),
+  'VALIDATION_FAILED',
+  'Dish creation rejects an inactive database Dish Type'
+);
+
+select is(
+  (
+    select response_payload ->> 'error_code'
+    from rmvp02a_results
+    where result_name = 'update-main-to-inactive-type'
+  ),
+  'VALIDATION_FAILED',
+  'Dish updates reject an inactive database Dish Type'
 );
 
 select is(
@@ -1022,14 +1101,39 @@ select is(
 select ok(
   (
     select jsonb_typeof(response_payload #> '{workbench,dishes}') = 'array'
+      and jsonb_typeof(
+        response_payload #> '{workbench,dish_types}'
+      ) = 'array'
       and jsonb_typeof(response_payload #> '{workbench,recipes}') = 'array'
       and jsonb_typeof(
         response_payload #> '{workbench,recipe_versions}'
       ) = 'array'
+      and jsonb_path_exists(
+        response_payload,
+        '$.workbench.dish_types[*] ? (
+          @.dish_type_code == "soup"
+          && @.dish_type_status == "ACTIVE"
+        )'
+      )
+      and jsonb_path_exists(
+        response_payload,
+        '$.workbench.dish_types[*] ? (
+          @.dish_type_code == "rmvp02a_inactive"
+          && @.dish_type_status == "INACTIVE"
+        )'
+      )
+      and jsonb_path_exists(
+        response_payload,
+        '$.workbench.dishes[*] ? (
+          @.dish_code == "rmvp02a-soup"
+          && @.dish_type_code == "soup"
+          && @.dish_type_name == "Món canh"
+        )'
+      )
     from rmvp02a_results
     where result_name = 'authorized-read'
   ),
-  'authorized read returns the bounded nested workbench contract'
+  'authorized read returns the full Dish Type catalog and resolved Dish references'
 );
 
 select * from finish();

@@ -13,7 +13,7 @@ Customer-, School-, date-, and menu-specific applicability remain future decisio
 
 ## Lifecycle and lineage
 
-A Dish is created as `DRAFT` and can move through `ACTIVE` and `INACTIVE`; it is never deleted by this slice. A Recipe root can be `ACTIVE` or `INACTIVE`.
+A Dish is created as `DRAFT` and can move through `ACTIVE` and `INACTIVE`; it is never deleted by this slice. The RMVP-03A correction extends the same existing Dish commands with authoritative `dish_type_id`. New Dishes and later type changes require an active `atlas_admin.dish_types` row. `dish_category` remains transitional descriptive text and does not drive Menu behavior. Historical Dishes may remain unmapped until reviewed. A Recipe root can be `ACTIVE` or `INACTIVE`.
 
 A Recipe Version follows:
 
@@ -29,7 +29,7 @@ Released or locked facts are not recalculated or rewritten when a Dish, Ingredie
 
 ## Commands, reads, and security
 
-The migration adds one shaped read and eleven commands under `atlas_api`. `atlas_read_runtime` owns the read. The existing `atlas_master_data_command_runtime` owns the commands and receives only the relation, column, function, and RLS privileges required by these operations. No browser role receives private-schema usage or table access.
+The migration adds one shaped read and eleven commands under `atlas_api`. `atlas_read_runtime` owns the read. The existing `atlas_master_data_command_runtime` owns the commands and receives only the relation, column, function, and RLS privileges required by these operations. RMVP-03A replaces the existing Dish functions in place—without duplicate APIs—to return the full Dish Type catalog and resolved Dish Type identifiers, codes, and names, and to validate `dish_type_id`. No browser role receives private-schema usage or table access.
 
 Five backend-checked capabilities separate read, maintenance, validation, planning release, and reviewed import:
 

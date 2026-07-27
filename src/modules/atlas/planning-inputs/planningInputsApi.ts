@@ -1,9 +1,11 @@
 import type {
+  AtlasEdgeFunctionName,
   AtlasRpcName,
   AtlasRpcRequest,
   AtlasRpcResult,
   JsonValue,
 } from "../connection/atlasRpc";
+import { ATLAS_EDGE_FUNCTIONS } from "../connection/atlasRpc";
 
 export const PLANNING_INPUT_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_planning_inputs_workbench",
@@ -36,6 +38,10 @@ export type PlanningCommandRequest = AtlasRpcRequest & {
 export type PlanningRpcInvoker = {
   invoke(
     functionName: AtlasRpcName,
+    request: AtlasRpcRequest,
+  ): Promise<AtlasRpcResult>;
+  invokeEdgeFunction?(
+    functionName: AtlasEdgeFunctionName,
     request: AtlasRpcRequest,
   ): Promise<AtlasRpcResult>;
 };
@@ -130,6 +136,32 @@ export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
           rows,
           source_signature: sourceSignature ?? null,
         }),
+      );
+    },
+    syncMenuFromGoogle(
+      weeklyMenuGoogleSourceId: string,
+      weekStart: string,
+      correlationId: string,
+    ) {
+      const request: AtlasRpcRequest = {
+        weekly_menu_google_source_id: weeklyMenuGoogleSourceId,
+        week_start: weekStart,
+        correlation_id: correlationId,
+      };
+      if (!invoker.invokeEdgeFunction) {
+        return Promise.resolve<AtlasRpcResult>({
+          kind: "client_error",
+          diagnostic: {
+            code: "RPC_NOT_ALLOWED",
+            safeMessage:
+              "The Google Sheet connector is unavailable in this runtime.",
+            correlationId,
+          },
+        });
+      }
+      return invoker.invokeEdgeFunction(
+        ATLAS_EDGE_FUNCTIONS.weeklyMenuGoogleSync,
+        request,
       );
     },
     saveMenu: command("saveMenu"),

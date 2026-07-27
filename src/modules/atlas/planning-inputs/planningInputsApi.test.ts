@@ -80,4 +80,20 @@ describe("RMVP-03A Planning inputs API adapter", () => {
       "atlas_api.reopen_attendance",
     ]);
   });
+
+  it("routes Google fetch through the one reviewed Edge Function without adding an RPC", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const invokeEdgeFunction = vi.fn().mockResolvedValue(success);
+    const api = createPlanningInputsApi({ invoke, invokeEdgeFunction });
+    await api.syncMenuFromGoogle("source-1", "2026-08-03", "correlation-1");
+    expect(invoke).not.toHaveBeenCalled();
+    expect(invokeEdgeFunction).toHaveBeenCalledWith(
+      "atlas-weekly-menu-google-sync",
+      {
+        weekly_menu_google_source_id: "source-1",
+        week_start: "2026-08-03",
+        correlation_id: "correlation-1",
+      },
+    );
+  });
 });

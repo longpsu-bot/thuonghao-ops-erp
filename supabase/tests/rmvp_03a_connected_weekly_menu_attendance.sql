@@ -104,6 +104,155 @@ select ok(
 );
 
 select ok(
+  to_regclass('atlas_admin.dish_types') is not null
+  and to_regclass(
+    'atlas_planning.weekly_menu_google_sources'
+  ) is not null,
+  'Dish Type and Google Sheet source configuration use exactly the two authorized private relations'
+);
+
+select is(
+  (
+    select array_agg(dish_type_code order by dish_type_code)::text[]
+    from atlas_admin.dish_types
+  ),
+  array[
+    'afternoon_snack',
+    'beverage',
+    'dessert',
+    'savory',
+    'soup',
+    'stir_fry'
+  ]::text[],
+  'the six initial Dish Type codes exist in the database seed'
+);
+
+select ok(
+  (
+    select c.relrowsecurity and c.relforcerowsecurity
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'atlas_admin' and c.relname = 'dish_types'
+  )
+  and (
+    select c.relrowsecurity and c.relforcerowsecurity
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'atlas_planning'
+      and c.relname = 'weekly_menu_google_sources'
+  ),
+  'both new private relations have RLS enabled and forced'
+);
+
+select ok(
+  not (
+    select attnotnull
+    from pg_attribute
+    where attrelid = 'atlas_admin.dishes'::regclass
+      and attname = 'dish_type_id'
+      and not attisdropped
+  )
+  and exists (
+    select 1
+    from pg_constraint
+    where conname = 'dishes_dish_type_fkey'
+      and conrelid = 'atlas_admin.dishes'::regclass
+      and confrelid = 'atlas_admin.dish_types'::regclass
+      and confdeltype = 'r'
+  ),
+  'Dish Type migration is nullable for history and restricts deletion of referenced types'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'weekly_menu_lines_menu_slot_type_fkey'
+      and conrelid = 'atlas_planning.weekly_menu_lines'::regclass
+      and confrelid = 'atlas_admin.dish_types'::regclass
+      and confdeltype = 'r'
+      and confupdtype = 'r'
+  ),
+  'Weekly Menu slot identity is bound to stable Dish Type code by an enforceable foreign key'
+);
+
+select ok(
+  not has_table_privilege(
+    'authenticated',
+    'atlas_admin.dish_types',
+    'SELECT'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'atlas_planning.weekly_menu_google_sources',
+    'SELECT'
+  )
+  and not has_table_privilege(
+    'atlas_planning_command_runtime',
+    'atlas_admin.dish_types',
+    'INSERT'
+  )
+  and not has_table_privilege(
+    'atlas_planning_command_runtime',
+    'atlas_admin.dishes',
+    'UPDATE'
+  )
+  and not has_table_privilege(
+    'atlas_master_data_command_runtime',
+    'atlas_planning.weekly_menu_google_sources',
+    'UPDATE'
+  )
+  and not has_table_privilege(
+    'atlas_master_data_command_runtime',
+    'atlas_planning.weekly_menus',
+    'INSERT'
+  ),
+  'browser and runtime grants do not expand Admin or Planning cross-domain writes'
+);
+
+select is(
+  (
+    select jsonb_agg(dish_type_code order by display_order)
+    from atlas_admin.dish_types
+    where dish_type_status = 'ACTIVE'
+  ),
+  '["soup", "savory", "stir_fry", "dessert", "afternoon_snack", "beverage"]'::jsonb,
+  'active Dish Types are stored in database display order'
+);
+
+update atlas_admin.dish_types
+set dish_type_name = 'Nước uống',
+    display_order = 0,
+    version = version + 1,
+    updated_at = transaction_timestamp()
+where dish_type_code = 'beverage';
+
+insert into atlas_admin.dish_types (
+  dish_type_id,
+  dish_type_code,
+  dish_type_name,
+  source_header_aliases,
+  display_order,
+  dish_type_status
+) values
+  (
+    'e3100000-0000-4000-8000-000000000098',
+    'plant_based',
+    'Món thực vật',
+    array['Plant based']::text[],
+    7,
+    'ACTIVE'
+  ),
+  (
+    'e3100000-0000-4000-8000-000000000099',
+    'salad',
+    'Món trộn',
+    array['Salad']::text[],
+    8,
+    'INACTIVE'
+  );
+
+select ok(
   (
     select p.prosecdef
       and pg_catalog.pg_get_userbyid(p.proowner) = 'atlas_read_runtime'
@@ -254,13 +403,14 @@ insert into atlas_admin.schools (
   );
 
 insert into atlas_admin.dishes (
-  dish_id, dish_code, dish_name, dish_status, display_order,
+  dish_id, dish_code, dish_name, dish_type_id, dish_status, display_order,
   requires_need_generation
 ) values
   (
     'e3100000-0000-0000-0000-000000000020',
     'rmvp03a-soup',
     'RMVP-03A Soup',
+    'd1500000-0000-4000-8000-000000000001',
     'ACTIVE',
     1,
     false
@@ -269,9 +419,77 @@ insert into atlas_admin.dishes (
     'e3100000-0000-0000-0000-000000000021',
     'rmvp03a-main',
     'RMVP-03A Main',
+    'd1500000-0000-4000-8000-000000000002',
     'ACTIVE',
     2,
     false
+  ),
+  (
+    'e3100000-0000-0000-0000-000000000022',
+    'rmvp03a-soup-alt',
+    'RMVP-03A Soup Alternative',
+    'd1500000-0000-4000-8000-000000000001',
+    'ACTIVE',
+    3,
+    false
+  ),
+  (
+    'e3100000-0000-0000-0000-000000000023',
+    'rmvp03a-main-alt',
+    'RMVP-03A Main Alternative',
+    'd1500000-0000-4000-8000-000000000002',
+    'ACTIVE',
+    4,
+    false
+  ),
+  (
+    'e3100000-0000-0000-0000-000000000024',
+    'rmvp03a-unmapped-history',
+    'RMVP-03A Unmapped Historical Dish',
+    null,
+    'ACTIVE',
+    5,
+    false
+  ),
+  (
+    'e3100000-0000-0000-0000-000000000025',
+    'rmvp03a-inactive-type',
+    'RMVP-03A Inactive Type Dish',
+    'e3100000-0000-4000-8000-000000000099',
+    'ACTIVE',
+    6,
+    false
+  );
+
+insert into atlas_planning.weekly_menu_google_sources (
+  weekly_menu_google_source_id,
+  source_code,
+  source_name,
+  spreadsheet_id,
+  sheet_name_pattern,
+  range_a1_template,
+  source_status,
+  display_order
+) values
+  (
+    'e3100000-0000-4000-8000-000000000080',
+    'rmvp03a.synthetic.active',
+    'RMVP-03A Synthetic Active Source',
+    'synthetic-spreadsheet-id',
+    'Tuần {DD-MM-YYYY}',
+    '''{sheet}''!A3:Z500',
+    'ACTIVE',
+    1
+  ),
+  (
+    'e3100000-0000-4000-8000-000000000081',
+    'rmvp03a.synthetic.inactive',
+    'RMVP-03A Synthetic Inactive Source',
+    'inactive-synthetic-spreadsheet-id',
+    'Tuần {DD-MM-YYYY}',
+    '''{sheet}''!A3:Z500',
+    'INACTIVE',
+    2
   );
 
 create or replace function pg_temp.rmvp03a_command(
@@ -388,8 +606,10 @@ begin
       select count(*)::integer
       from atlas_planning.weekly_menu_approval_snapshot_lines line
       where line.weekly_menu_version = 2
-        and line.dish_id =
-          'e3100000-0000-0000-0000-000000000021'
+        and line.dish_id in (
+          'e3100000-0000-0000-0000-000000000022',
+          'e3100000-0000-0000-0000-000000000023'
+        )
     );
   elsif p_kind = 'attendance_snapshot_lines' then
     return (
@@ -479,6 +699,103 @@ select set_config(
 );
 
 insert into rmvp03a_results values (
+  'workbench-safe-google-source',
+  atlas_api.get_planning_inputs_workbench(
+    pg_temp.rmvp03a_read(
+      jsonb_build_object('week_start', '2026-08-03')
+    )
+  )
+);
+
+select ok(
+  (
+    select jsonb_array_length(
+      response_payload -> 'workbench' -> 'google_sheet_sources'
+    ) = 1
+      and response_payload -> 'workbench' -> 'google_sheet_sources' -> 0
+        ->> 'source_code' = 'rmvp03a.synthetic.active'
+      and not (
+        response_payload -> 'workbench' -> 'google_sheet_sources' -> 0
+          ? 'spreadsheet_id'
+      )
+    from rmvp03a_results
+    where result_name = 'workbench-safe-google-source'
+  ),
+  'the browser workbench lists only active Google sources without technical identifiers'
+);
+
+select ok(
+  (
+    select response_payload #>> '{workbench,dish_types,0,dish_type_code}'
+        = 'beverage'
+      and response_payload #>> '{workbench,dish_types,0,dish_type_name}'
+        = 'Nước uống'
+      and jsonb_path_exists(
+        response_payload,
+        '$.workbench.dish_types[*] ? (@.dish_type_code == "plant_based")'
+      )
+      and not jsonb_path_exists(
+        response_payload,
+        '$.workbench.dish_types[*] ? (@.dish_type_code == "salad")'
+      )
+    from rmvp03a_results
+    where result_name = 'workbench-safe-google-source'
+  ),
+  'catalog label, order, addition, and inactivation flow dynamically into the Planning workbench'
+);
+
+insert into rmvp03a_results values (
+  'connector-google-source',
+  atlas_api.get_planning_inputs_workbench(
+    pg_temp.rmvp03a_read(
+      jsonb_build_object(
+        'week_start', '2026-08-03',
+        'google_connector_source_id',
+          'e3100000-0000-4000-8000-000000000080'
+      )
+    )
+  )
+);
+
+select ok(
+  (
+    select (response_payload ->> 'success')::boolean
+      and response_payload #>> '{google_connector_source,spreadsheet_id}'
+        = 'synthetic-spreadsheet-id'
+      and response_payload #>> '{google_connector_source,sheet_name_pattern}'
+        = 'Tuần {DD-MM-YYYY}'
+      and response_payload #>> '{google_connector_source,range_a1_template}'
+        = '''{sheet}''!A3:Z500'
+    from rmvp03a_results
+    where result_name = 'connector-google-source'
+  ),
+  'the authorized connector read returns the active source technical metadata'
+);
+
+insert into rmvp03a_results values (
+  'connector-inactive-google-source',
+  atlas_api.get_planning_inputs_workbench(
+    pg_temp.rmvp03a_read(
+      jsonb_build_object(
+        'week_start', '2026-08-03',
+        'google_connector_source_id',
+          'e3100000-0000-4000-8000-000000000081'
+      )
+    )
+  )
+);
+
+select is(
+  (
+    select response_payload ->> 'error_code'
+    from rmvp03a_results
+    where result_name = 'connector-inactive-google-source'
+  ),
+  'GOOGLE_SOURCE_UNAVAILABLE',
+  'the connector fails closed for an inactive configured source'
+);
+
+insert into rmvp03a_results values (
   'menu-preview-a',
   atlas_api.preview_weekly_menu_import(
     pg_temp.rmvp03a_read(
@@ -531,6 +848,127 @@ insert into rmvp03a_results values (
       )
     )
   )
+);
+
+insert into rmvp03a_results values
+  (
+    'menu-preview-type-mismatch',
+    atlas_api.preview_weekly_menu_import(
+      pg_temp.rmvp03a_read(
+        jsonb_build_object(
+          'week_start', '2026-08-03',
+          'rows', jsonb_build_array(
+            jsonb_build_object(
+              'school_id', 'e3100000-0000-0000-0000-000000000010',
+              'service_date', '2026-08-03',
+              'menu_slot_code', 'soup',
+              'dish_id', 'e3100000-0000-0000-0000-000000000021',
+              'source_row_reference', 'mismatch:1'
+            )
+          )
+        )
+      )
+    )
+  ),
+  (
+    'menu-preview-unmapped-dish',
+    atlas_api.preview_weekly_menu_import(
+      pg_temp.rmvp03a_read(
+        jsonb_build_object(
+          'week_start', '2026-08-03',
+          'rows', jsonb_build_array(
+            jsonb_build_object(
+              'school_id', 'e3100000-0000-0000-0000-000000000010',
+              'service_date', '2026-08-03',
+              'menu_slot_code', 'soup',
+              'dish_id', 'e3100000-0000-0000-0000-000000000024',
+              'source_row_reference', 'unmapped:1'
+            )
+          )
+        )
+      )
+    )
+  ),
+  (
+    'menu-preview-inactive-type',
+    atlas_api.preview_weekly_menu_import(
+      pg_temp.rmvp03a_read(
+        jsonb_build_object(
+          'week_start', '2026-08-03',
+          'rows', jsonb_build_array(
+            jsonb_build_object(
+              'school_id', 'e3100000-0000-0000-0000-000000000010',
+              'service_date', '2026-08-03',
+              'menu_slot_code', 'salad',
+              'dish_id', 'e3100000-0000-0000-0000-000000000025',
+              'source_row_reference', 'inactive-type:1'
+            )
+          )
+        )
+      )
+    )
+  );
+
+select ok(
+  (
+    select (response_payload #>> '{preview,can_save}')::boolean
+      and not jsonb_path_exists(
+        response_payload,
+        '$.preview.issues.blockers[*] ? (
+          @.code == "DISH_TYPE_MISMATCH"
+          || @.code == "UNMAPPED_DISH_TYPE"
+          || @.code == "INACTIVE_DISH_TYPE"
+        )'
+      )
+    from rmvp03a_results
+    where result_name = 'menu-preview-a'
+  ),
+  'matching Menu slot and Dish Type preview remains saveable'
+);
+
+select ok(
+  (
+    select jsonb_path_exists(
+      response_payload,
+      '$.preview.issues.blockers[*] ? (@.code == "DISH_TYPE_MISMATCH")'
+    )
+      and not (response_payload #>> '{preview,can_save}')::boolean
+    from rmvp03a_results
+    where result_name = 'menu-preview-type-mismatch'
+  ),
+  'cross-type Dish assignment is a blocking preview issue'
+);
+
+select ok(
+  (
+    select jsonb_path_exists(
+      response_payload,
+      '$.preview.issues.blockers[*] ? (@.code == "UNMAPPED_DISH_TYPE")'
+    )
+      and not (response_payload #>> '{preview,can_save}')::boolean
+    from rmvp03a_results
+    where result_name = 'menu-preview-unmapped-dish'
+  ),
+  'a historical unmapped Dish is visible but blocked from new Menu assignment'
+);
+
+select ok(
+  (
+    select jsonb_path_exists(
+      response_payload,
+      '$.preview.issues.blockers[*] ? (@.code == "INACTIVE_DISH_TYPE")'
+    )
+      and not (response_payload #>> '{preview,can_save}')::boolean
+    from rmvp03a_results
+    where result_name = 'menu-preview-inactive-type'
+  ),
+  'an inactive Dish Type reference remains traceable and blocks save'
+);
+
+select is(
+  pg_temp.rmvp03a_physical_count('all_menu_lines'),
+  0,
+  'all valid and invalid Menu previews are read-only'
 );
 
 select is(
@@ -929,14 +1367,14 @@ insert into rmvp03a_results values (
             'school_id', 'e3100000-0000-0000-0000-000000000010',
             'service_date', '2026-08-03',
             'menu_slot_code', 'soup',
-            'dish_id', 'e3100000-0000-0000-0000-000000000021',
+            'dish_id', 'e3100000-0000-0000-0000-000000000022',
             'source_row_reference', 'correction:2'
           ),
           jsonb_build_object(
             'school_id', 'e3100000-0000-0000-0000-000000000011',
             'service_date', '2026-08-03',
             'menu_slot_code', 'savory',
-            'dish_id', 'e3100000-0000-0000-0000-000000000021',
+            'dish_id', 'e3100000-0000-0000-0000-000000000023',
             'source_row_reference', 'correction:3'
           )
         )
