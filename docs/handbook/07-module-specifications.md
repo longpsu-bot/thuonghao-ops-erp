@@ -98,10 +98,15 @@ Demand records what the customer or school needs. It does not decide which suppl
 - recipe lines;
 - recipe applicability;
 - recipe activation and locking.
+- transactional full-draft BOM replacement;
+- validation, Planning release, and successor correction;
+- traceable recipe copy and reviewed draft-only workbook import.
 
 ### Boundary
 
 Recipes define standard conversion from dish to ingredient. One-time substitutions and operational overrides belong to Adjustments.
+
+The current connected boundary supports only a general Recipe root or one scoped by School Type. More specific applicability and precedence remain Requirement Planning decisions. Import may create draft proposal state but may not validate or release it automatically.
 
 ---
 

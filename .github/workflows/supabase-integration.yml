@@ -15,11 +15,14 @@ on:
       - "scripts/verify-local-pa06c-supplier-evidence.mjs"
       - "scripts/import-local-master-data-snapshot.mjs"
       - "scripts/verify-local-rmvp01-master-data.mjs"
+      - "scripts/verify-local-rmvp02a-recipes.mjs"
       - "src/modules/atlas/connection/**"
       - "src/modules/atlas/evidence/**"
       - "src/modules/atlas/master-data/**"
+      - "src/modules/atlas/recipes/**"
       - "src/modules/admin/SchoolAdminWorkbench.tsx"
       - "src/modules/admin/IngredientSupplierAdminWorkbench.tsx"
+      - "src/modules/admin/DishRecipeAdminWorkbench.tsx"
       - ".env.example"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -38,11 +41,14 @@ on:
       - "scripts/verify-local-pa06c-supplier-evidence.mjs"
       - "scripts/import-local-master-data-snapshot.mjs"
       - "scripts/verify-local-rmvp01-master-data.mjs"
+      - "scripts/verify-local-rmvp02a-recipes.mjs"
       - "src/modules/atlas/connection/**"
       - "src/modules/atlas/evidence/**"
       - "src/modules/atlas/master-data/**"
+      - "src/modules/atlas/recipes/**"
       - "src/modules/admin/SchoolAdminWorkbench.tsx"
       - "src/modules/admin/IngredientSupplierAdminWorkbench.tsx"
+      - "src/modules/admin/DishRecipeAdminWorkbench.tsx"
       - ".env.example"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -110,6 +116,7 @@ jobs:
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_01_atlas_master_data.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_02a_connected_recipes_bom.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_structure_security.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_chain_pointer.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_policy_quantity_integrity.sql --local
@@ -148,6 +155,9 @@ jobs:
           pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
           pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
           pnpm local:rmvp01:verify
+
+      - name: Verify browser-key Recipe successor lineage
+        run: pnpm local:rmvp02a:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()

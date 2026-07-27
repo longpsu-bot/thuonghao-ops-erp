@@ -63,6 +63,17 @@ pnpm local:rmvp01:verify
 
 The importer validates source identities and references before target writes, stores typed legacy mappings plus inserted/updated/skipped/rejected counts and source/target reconciliation, and safely replays an identical snapshot. See [`RMVP-01 independent Atlas master data`](docs/architecture/rmvp-01-independent-atlas-master-data.md) for authority-cutover and rollback boundaries.
 
+### RMVP-02A connected recipes and BOM
+
+RMVP-02A connects the Vietnamese `Công thức` page to the existing private Dish, Recipe, Recipe Version, stable Recipe Line, and immutable Recipe Line Revision foundation. It adds no table or role. Draft BOM replacement, validation, Planning release, successor correction, copy, and narrow reviewed OPS v1 `.xlsx` import are backend-authoritative and audited.
+
+```bash
+pnpm exec supabase test db supabase/tests/rmvp_02a_connected_recipes_bom.sql --local
+pnpm local:rmvp02a:verify
+```
+
+Workbook import creates draft-only state, requires existing active references, records typed legacy reconciliation, and never mutates OPS v1/v2 or Retool. See [`RMVP-02A connected Dishes, Recipes, and BOM`](docs/architecture/rmvp-02a-connected-recipes-bom.md) and the [`RMVP-02A API contract`](docs/api/rmvp-02a-recipes-bom.md).
+
 ### RMVP-01 UI review export
 
 The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.

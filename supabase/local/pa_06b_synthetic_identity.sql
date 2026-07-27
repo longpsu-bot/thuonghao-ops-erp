@@ -148,7 +148,12 @@ from (
     ('b6000000-0000-0000-0000-000000000011'::uuid, 'master_data.schools.write'),
     ('b6000000-0000-0000-0000-000000000012'::uuid, 'master_data.ingredients.write'),
     ('b6000000-0000-0000-0000-000000000013'::uuid, 'master_data.suppliers.write'),
-    ('b6000000-0000-0000-0000-000000000014'::uuid, 'master_data.priorities.write')
+    ('b6000000-0000-0000-0000-000000000014'::uuid, 'master_data.priorities.write'),
+    ('b6000000-0000-0000-0000-000000000016'::uuid, 'master_data.recipes.read'),
+    ('b6000000-0000-0000-0000-000000000017'::uuid, 'master_data.recipes.write'),
+    ('b6000000-0000-0000-0000-000000000018'::uuid, 'master_data.recipes.validate'),
+    ('b6000000-0000-0000-0000-000000000019'::uuid, 'master_data.recipes.release'),
+    ('b6000000-0000-0000-0000-000000000020'::uuid, 'master_data.recipes.import')
 ) source(role_capability_id, capability_code)
 join atlas_core.capabilities capability
   on capability.capability_code = source.capability_code

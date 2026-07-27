@@ -37,7 +37,7 @@ describe("Atlas master-data shell", () => {
     expect(document.body.textContent).not.toContain("Prototype");
   });
 
-  it("shows only the two active RMVP pages and marks later modules unavailable", () => {
+  it("shows the three active RMVP pages and marks later modules unavailable", () => {
     render(<AtlasApp reviewMode />);
 
     const navigation = screen.getByRole("navigation", {
@@ -51,10 +51,12 @@ describe("Atlas master-data shell", () => {
         name: "Nguyên liệu và Nhà cung ứng",
       }),
     ).toBeEnabled();
+    expect(
+      within(navigation).getByRole("button", { name: "Công thức" }),
+    ).toBeEnabled();
 
     for (const label of [
       /^Tổng quan/,
-      /^Công thức/,
       /^Kế hoạch nhu cầu/,
       /^Thu mua/,
       /^Kho/,

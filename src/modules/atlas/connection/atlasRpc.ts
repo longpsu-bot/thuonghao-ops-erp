@@ -35,6 +35,21 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.update_supplier": "update_supplier",
   "atlas_api.replace_ingredient_supplier_priorities":
     "replace_ingredient_supplier_priorities",
+  "atlas_api.get_dish_recipe_workbench": "get_dish_recipe_workbench",
+  "atlas_api.create_dish": "create_dish",
+  "atlas_api.update_dish": "update_dish",
+  "atlas_api.set_dish_lifecycle": "set_dish_lifecycle",
+  "atlas_api.set_recipe_lifecycle": "set_recipe_lifecycle",
+  "atlas_api.create_recipe_draft": "create_recipe_draft",
+  "atlas_api.create_recipe_successor_version":
+    "create_recipe_successor_version",
+  "atlas_api.replace_recipe_draft_composition":
+    "replace_recipe_draft_composition",
+  "atlas_api.validate_recipe_version": "validate_recipe_version",
+  "atlas_api.release_recipe_version_for_planning":
+    "release_recipe_version_for_planning",
+  "atlas_api.copy_recipe_version": "copy_recipe_version",
+  "atlas_api.apply_recipe_import": "apply_recipe_import",
 } as const;
 
 export type AtlasRpcName = keyof typeof ATLAS_RPC_FUNCTIONS;

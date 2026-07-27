@@ -8,7 +8,6 @@ import {
   type DishRecipeAdminState,
 } from "../admin/dishRecipeAdminDomain";
 import { dishRecipeAdminFixture } from "../admin/dishRecipeAdminFixtures";
-import { DishRecipeAdminWorkbench } from "../admin/DishRecipeAdminWorkbench";
 import {
   DefaultSupplierPolicyReference,
   IngredientSupplierAdminWorkbench as createIngredientSupplierReadModel,
@@ -19,7 +18,7 @@ import { ingredientSupplierAdminFixture } from "../admin/ingredientSupplierAdmin
 import { SchoolAdminWorkbench as createSchoolReadModel } from "../admin/schoolAdminDomain";
 import { schoolAdminFixture } from "../admin/schoolAdminFixtures";
 import { AtlasApp, type MasterDataPageId } from "./AtlasApp";
-import { atlasPages, type AtlasPageId } from "./atlasConfig";
+import { atlasPages } from "./atlasConfig";
 
 afterEach(cleanup);
 
@@ -50,6 +49,7 @@ describe("PD-04 Admin integration conformance", () => {
   it("exposes one Master Data area with Schools and Ingredients & Suppliers", () => {
     renderAtlasSurface("customers-schools", "Trường học");
     renderAtlasSurface("ingredients-units", "Nguyên liệu và Nhà cung ứng");
+    renderAtlasSurface("recipes", "Công thức");
   });
 
   it("keeps Dishes & Recipes as one consolidated Atlas workbench", () => {
@@ -62,16 +62,14 @@ describe("PD-04 Admin integration conformance", () => {
       label: "Dishes & Recipes",
     });
 
-    render(<DishRecipeAdminWorkbench />);
-    for (const heading of [
-      "Versions & lock state",
-      "BOM lines",
-      "School-type variants",
-      "Change & review evidence",
-      "Blockers & warnings",
-      "Downstream references & boundary",
+    render(<AtlasApp reviewMode initialPage="recipes" />);
+    for (const tab of [
+      "Món ăn",
+      "Phiên bản & BOM",
+      "Sao chép",
+      "Nhập workbook",
     ])
-      expect(screen.getByText(heading)).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: tab })).toBeInTheDocument();
     expect(screen.queryByText(/Retool layer/i)).not.toBeInTheDocument();
   });
 

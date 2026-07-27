@@ -136,11 +136,15 @@ Example:
 - released documents require correction flow;
 - cancelled documents may not be reused as active documents.
 
+For Recipe Versions, the approved connected lifecycle is `DRAFT → VALIDATED → RELEASED_FOR_PLANNING → LOCKED`. Only drafts are mutable. Corrections create a successor with explicit version and line predecessors; release never rewrites an existing planning composition.
+
 ---
 
 ## 10. Audit rule
 
 Sensitive commands must create audit events in the same backend transaction as the business change.
+
+An atomic collection replacement, such as a draft BOM, must be one command containing the complete reviewed collection. The frontend must not issue per-row table writes.
 
 ---
 

@@ -48,8 +48,8 @@ function rpcClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 27-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(27);
+  it("contains exactly the reviewed 39-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(39);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.record_wholesale_source",
       "atlas_api.release_wholesale_order",
@@ -78,6 +78,18 @@ describe("Atlas RPC transport", () => {
       "atlas_api.create_supplier",
       "atlas_api.update_supplier",
       "atlas_api.replace_ingredient_supplier_priorities",
+      "atlas_api.get_dish_recipe_workbench",
+      "atlas_api.create_dish",
+      "atlas_api.update_dish",
+      "atlas_api.set_dish_lifecycle",
+      "atlas_api.set_recipe_lifecycle",
+      "atlas_api.create_recipe_draft",
+      "atlas_api.create_recipe_successor_version",
+      "atlas_api.replace_recipe_draft_composition",
+      "atlas_api.validate_recipe_version",
+      "atlas_api.release_recipe_version_for_planning",
+      "atlas_api.copy_recipe_version",
+      "atlas_api.apply_recipe_import",
     ]);
   });
 

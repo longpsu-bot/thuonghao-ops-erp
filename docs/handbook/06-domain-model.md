@@ -104,9 +104,13 @@ A definition describing how a dish is converted into ingredient requirements.
 
 A versioned recipe definition applicable during a time period or operational condition.
 
+For the connected RMVP-02A boundary, a Recipe Version is first an editable `DRAFT`. Validation materializes its immutable BOM facts; Planning release makes those facts eligible for downstream use. A later correction is a successor version and never overwrites the validated, released, or locked predecessor.
+
 ### Recipe Line
 
 An ingredient and quantity rule inside a recipe version.
+
+Recipe Line is the stable identity across versions. Each validated version owns an immutable Recipe Line Revision. A removed contribution is an explicit revision linked to its exact predecessor, not an omitted row.
 
 ### Recipe Applicability
 
