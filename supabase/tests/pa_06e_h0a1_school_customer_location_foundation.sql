@@ -1014,9 +1014,18 @@ select is(
       'roles', jsonb_build_array('atlas_read_runtime'),
       'using', 'true',
       'with_check', null
+    ),
+    jsonb_build_object(
+      'relation', 'atlas_admin.schools',
+      'name', 'rmvp_03a_command_school_select',
+      'command', 'r',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_planning_command_runtime'),
+      'using', 'true',
+      'with_check', null
     )
   ),
-  'school tables have exactly the seven reviewed planning and RMVP-01 runtime policies'
+  'school tables have exactly the eight reviewed planning and RMVP runtime policies'
 );
 
 select ok(

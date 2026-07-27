@@ -1768,6 +1768,7 @@ select is(
       'atlas_planning.weekly_menu_approval_snapshots'::regclass,
       'atlas_planning.weekly_menu_approval_snapshot_lines'::regclass
     )
+      and policy.polroles = array['atlas_planning_materialization_runtime'::regrole::oid]
   ),
   (
     select jsonb_agg(
@@ -1790,7 +1791,7 @@ select is(
         ('atlas_planning.weekly_menu_approval_snapshot_lines')
     ) expected(relation_name)
   ),
-  'H0A3a has exactly four dedicated-runtime permissive SELECT policies'
+  'H0A3a retains exactly four materialization-runtime permissive SELECT policies'
 );
 
 select is(
