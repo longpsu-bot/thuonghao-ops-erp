@@ -612,6 +612,432 @@ set current_revision_id =
       ),
     current_revision_number = 1;
 
+-- Temporal-integrity fixtures deliberately retain complete revision chains.
+insert into atlas_admin.recipe_composition_adjustments (
+  recipe_composition_adjustment_id, scope_kind, action_kind, school_id,
+  dish_id, school_type_id, target_ingredient_id, target_recipe_line_id,
+  adjustment_line_id, lifecycle_status, version,
+  created_by_actor_id, updated_by_actor_id
+) values
+  (
+    'b2500000-0000-0000-0000-000000000001',
+    'SYSTEM_DISH',
+    'ADJUST_QUANTITY',
+    null,
+    'b2200000-0000-0000-0000-000000000101',
+    null,
+    null,
+    'b2200000-0000-0000-0000-000000000402',
+    null,
+    'ACTIVE',
+    2,
+    'b2000000-0000-0000-0000-000000000001',
+    'b2000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'b2500000-0000-0000-0000-000000000002',
+    'SCHOOL_DISH',
+    'ADJUST_QUANTITY',
+    'b2100000-0000-0000-0000-000000000120',
+    'b2200000-0000-0000-0000-000000000101',
+    null,
+    null,
+    'b2200000-0000-0000-0000-000000000402',
+    null,
+    'CANCELLED',
+    2,
+    'b2000000-0000-0000-0000-000000000001',
+    'b2000000-0000-0000-0000-000000000001'
+  );
+
+insert into atlas_admin.recipe_composition_adjustment_revisions (
+  recipe_composition_adjustment_revision_id,
+  recipe_composition_adjustment_id,
+  scope_kind,
+  action_kind,
+  revision_number,
+  predecessor_revision_id,
+  revision_status,
+  effective_from,
+  effective_to,
+  substitute_ingredient_id,
+  quantity_per_basis,
+  unit_id,
+  reason_code,
+  reason_note,
+  source_evidence,
+  created_by_actor_id
+) values
+  (
+    'b2510000-0000-0000-0000-000000000001',
+    'b2500000-0000-0000-0000-000000000001',
+    'SYSTEM_DISH',
+    'ADJUST_QUANTITY',
+    1,
+    null,
+    'ACTIVE',
+    date '2026-07-01',
+    null,
+    null,
+    11,
+    null,
+    'TEMPORAL_PREDECESSOR',
+    'Predecessor remains authoritative outside successor periods.',
+    '{"source":"rmvp02b-temporal-test"}'::jsonb,
+    'b2000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'b2510000-0000-0000-0000-000000000002',
+    'b2500000-0000-0000-0000-000000000001',
+    'SYSTEM_DISH',
+    'ADJUST_QUANTITY',
+    2,
+    'b2510000-0000-0000-0000-000000000001',
+    'ACTIVE',
+    date '2026-08-01',
+    date '2026-09-01',
+    null,
+    12,
+    null,
+    'FINITE_SUCCESSOR',
+    'Finite successor temporarily masks the predecessor.',
+    '{"source":"rmvp02b-temporal-test"}'::jsonb,
+    'b2000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'b2510000-0000-0000-0000-000000000003',
+    'b2500000-0000-0000-0000-000000000002',
+    'SCHOOL_DISH',
+    'ADJUST_QUANTITY',
+    1,
+    null,
+    'ACTIVE',
+    date '2026-07-01',
+    null,
+    null,
+    14,
+    null,
+    'DATED_CANCELLATION_PREDECESSOR',
+    'Predecessor remains authoritative before dated cancellation.',
+    '{"source":"rmvp02b-temporal-test"}'::jsonb,
+    'b2000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'b2510000-0000-0000-0000-000000000004',
+    'b2500000-0000-0000-0000-000000000002',
+    'SCHOOL_DISH',
+    'ADJUST_QUANTITY',
+    2,
+    'b2510000-0000-0000-0000-000000000003',
+    'CANCELLED',
+    date '2026-08-15',
+    null,
+    null,
+    null,
+    null,
+    'DATED_CANCELLATION',
+    'Cancellation stops authority from its effective date.',
+    '{"source":"rmvp02b-temporal-test"}'::jsonb,
+    'b2000000-0000-0000-0000-000000000001'
+  );
+
+update atlas_admin.recipe_composition_adjustments
+set current_revision_id =
+      case recipe_composition_adjustment_id
+        when 'b2500000-0000-0000-0000-000000000001'
+          then 'b2510000-0000-0000-0000-000000000002'::uuid
+        else 'b2510000-0000-0000-0000-000000000004'::uuid
+      end,
+    current_revision_number = 2
+where recipe_composition_adjustment_id in (
+  'b2500000-0000-0000-0000-000000000001',
+  'b2500000-0000-0000-0000-000000000002'
+);
+
+select ok(
+  (
+    select not (validation ->> 'valid')::boolean
+      and exists (
+        select 1
+        from jsonb_array_elements(validation -> 'blockers') blocker
+        where blocker ->> 'code' = 'OVERLAPPING_ACTIVE_RULE'
+      )
+    from (
+      select atlas_core.rmvp_02b_validate_proposed_adjustment(
+        jsonb_build_object(
+          'adjustment_id', 'b2520000-0000-0000-0000-000000000001',
+          'revision_id', 'b2530000-0000-0000-0000-000000000001',
+          'scope_kind', 'SYSTEM_DISH',
+          'action_kind', 'ADJUST_QUANTITY',
+          'dish_id', 'b2200000-0000-0000-0000-000000000101',
+          'target_recipe_line_id',
+            'b2200000-0000-0000-0000-000000000402',
+          'quantity_per_basis', 15,
+          'effective_from', '2026-07-10',
+          'effective_to', '2026-07-20',
+          'reason_code', 'OVERLAP_PREDECESSOR',
+          'reason_note', 'Must overlap the historically effective predecessor.'
+        ),
+        date '2026-07-15'
+      ) as validation
+    ) checked
+  ),
+  'overlap validation includes a predecessor before its dated successor'
+);
+
+select ok(
+  (
+    select not (validation ->> 'valid')::boolean
+      and exists (
+        select 1
+        from jsonb_array_elements(validation -> 'blockers') blocker
+        where blocker ->> 'code' = 'OVERLAPPING_ACTIVE_RULE'
+      )
+    from (
+      select atlas_core.rmvp_02b_validate_proposed_adjustment(
+        jsonb_build_object(
+          'adjustment_id', 'b2520000-0000-0000-0000-000000000002',
+          'revision_id', 'b2530000-0000-0000-0000-000000000002',
+          'scope_kind', 'SCHOOL_DISH',
+          'action_kind', 'ADJUST_QUANTITY',
+          'school_id', 'b2100000-0000-0000-0000-000000000120',
+          'dish_id', 'b2200000-0000-0000-0000-000000000101',
+          'target_recipe_line_id',
+            'b2200000-0000-0000-0000-000000000402',
+          'quantity_per_basis', 16,
+          'effective_from', '2026-08-10',
+          'effective_to', '2026-08-12',
+          'reason_code', 'OVERLAP_BEFORE_CANCELLATION',
+          'reason_note', 'Must overlap the predecessor before cancellation.'
+        ),
+        date '2026-08-10'
+      ) as validation
+    ) checked
+  ),
+  'overlap validation includes a predecessor before a dated cancellation'
+);
+
+select ok(
+  (
+    atlas_core.rmvp_02b_validate_proposed_adjustment(
+      jsonb_build_object(
+        'adjustment_id', 'b2520000-0000-0000-0000-000000000003',
+        'revision_id', 'b2530000-0000-0000-0000-000000000003',
+        'scope_kind', 'SCHOOL_DISH',
+        'action_kind', 'ADJUST_QUANTITY',
+        'school_id', 'b2100000-0000-0000-0000-000000000120',
+        'dish_id', 'b2200000-0000-0000-0000-000000000101',
+        'target_recipe_line_id',
+          'b2200000-0000-0000-0000-000000000402',
+        'quantity_per_basis', 17,
+        'effective_from', '2026-08-15',
+        'reason_code', 'AFTER_CANCELLATION',
+        'reason_note', 'Begins exactly when the prior root loses authority.'
+      ),
+      date '2026-08-15'
+    ) ->> 'valid'
+  )::boolean,
+  'a same-target root beginning at cancellation is genuinely non-overlapping'
+);
+
+select ok(
+  (
+    select resolution ->> 'status' = 'BLOCKED'
+      and exists (
+        select 1
+        from jsonb_array_elements(resolution -> 'blockers') blocker
+        where blocker ->> 'code' = 'AMBIGUOUS_SYSTEM_DISH_TARGET'
+      )
+      and not exists (
+        select 1
+        from jsonb_array_elements(resolution -> 'lines') line,
+          jsonb_array_elements(line -> 'applied_adjustment_ids') applied
+      )
+    from (
+      select atlas_core.rmvp_02b_resolve_effective_composition(
+        date '2026-07-15',
+        'b2100000-0000-0000-0000-000000000120',
+        'b2200000-0000-0000-0000-000000000101',
+        jsonb_build_object(
+          'adjustment_id', 'b2520000-0000-0000-0000-000000000004',
+          'revision_id', 'b2530000-0000-0000-0000-000000000004',
+          'revision_number', 1,
+          'scope_kind', 'SYSTEM_DISH',
+          'action_kind', 'REMOVE',
+          'dish_id', 'b2200000-0000-0000-0000-000000000101',
+          'target_recipe_line_id',
+            'b2200000-0000-0000-0000-000000000402',
+          'effective_from', '2026-07-10',
+          'effective_to', '2026-07-20',
+          'reason_code', 'AMBIGUITY_TEST',
+          'reason_note', 'Resolver must fail closed.'
+        )
+      ) as resolution
+    ) resolved
+  ),
+  'same-target SYSTEM_DISH ambiguity blocks before UUID-ordered application'
+);
+
+select ok(
+  (
+    select resolution ->> 'status' = 'BLOCKED'
+      and exists (
+        select 1
+        from jsonb_array_elements(resolution -> 'blockers') blocker
+        where blocker ->> 'code' = 'AMBIGUOUS_SCHOOL_DISH_TARGET'
+      )
+      and not exists (
+        select 1
+        from jsonb_array_elements(resolution -> 'lines') line,
+          jsonb_array_elements(line -> 'applied_adjustment_ids') applied
+      )
+    from (
+      select atlas_core.rmvp_02b_resolve_effective_composition(
+        date '2026-08-10',
+        'b2100000-0000-0000-0000-000000000120',
+        'b2200000-0000-0000-0000-000000000101',
+        jsonb_build_object(
+          'adjustment_id', 'b2520000-0000-0000-0000-000000000005',
+          'revision_id', 'b2530000-0000-0000-0000-000000000005',
+          'revision_number', 1,
+          'scope_kind', 'SCHOOL_DISH',
+          'action_kind', 'REMOVE',
+          'school_id', 'b2100000-0000-0000-0000-000000000120',
+          'dish_id', 'b2200000-0000-0000-0000-000000000101',
+          'target_recipe_line_id',
+            'b2200000-0000-0000-0000-000000000402',
+          'effective_from', '2026-08-10',
+          'effective_to', '2026-08-12',
+          'reason_code', 'AMBIGUITY_TEST',
+          'reason_note', 'Resolver must fail closed.'
+        )
+      ) as resolution
+    ) resolved
+  ),
+  'same-target SCHOOL_DISH ambiguity blocks before UUID-ordered application'
+);
+
+select is(
+  (
+    select string_agg(
+      (line ->> 'final_quantity_per_basis')::numeric::integer::text,
+      ','
+      order by requested_date
+    )
+    from (
+      values
+        (
+          date '2026-08-20',
+          atlas_core.rmvp_02b_resolve_effective_composition(
+            date '2026-08-20',
+            'b2100000-0000-0000-0000-000000000120',
+            'b2200000-0000-0000-0000-000000000101'
+          )
+        ),
+        (
+          date '2026-09-01',
+          atlas_core.rmvp_02b_resolve_effective_composition(
+            date '2026-09-01',
+            'b2100000-0000-0000-0000-000000000120',
+            'b2200000-0000-0000-0000-000000000101'
+          )
+        )
+    ) result(requested_date, resolution),
+      jsonb_array_elements(result.resolution -> 'lines') line
+    where line ->> 'base_recipe_line_id' =
+      'b2200000-0000-0000-0000-000000000402'
+  ),
+  '12,11',
+  'a finite successor masks its predecessor, which resumes at effective_to'
+);
+
+select ok(
+  (
+    select not (validation ->> 'valid')::boolean
+      and exists (
+        select 1
+        from jsonb_array_elements(validation -> 'blockers') blocker
+        where blocker ->> 'code' = 'OVERLAPPING_ACTIVE_RULE'
+      )
+    from (
+      select atlas_core.rmvp_02b_validate_proposed_adjustment(
+        jsonb_build_object(
+          'adjustment_id', 'b2520000-0000-0000-0000-000000000006',
+          'revision_id', 'b2530000-0000-0000-0000-000000000006',
+          'scope_kind', 'SYSTEM_DISH',
+          'action_kind', 'REMOVE',
+          'dish_id', 'b2200000-0000-0000-0000-000000000101',
+          'target_recipe_line_id',
+            'b2200000-0000-0000-0000-000000000402',
+          'effective_from', '2026-09-10',
+          'effective_to', '2026-09-20',
+          'reason_code', 'RESUMED_PREDECESSOR_OVERLAP',
+          'reason_note', 'Must overlap the resumed predecessor.'
+        ),
+        date '2026-09-10'
+      ) as validation
+    ) checked
+  ),
+  'overlap validation includes the predecessor after finite successor expiry'
+);
+
+select ok(
+  (
+    with function_definitions as (
+      select
+        (
+          select pg_get_functiondef(p.oid)
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'atlas_api'
+            and p.proname = 'create_recipe_composition_adjustment'
+        ) as create_definition,
+        (
+          select pg_get_functiondef(p.oid)
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'atlas_api'
+            and p.proname = 'supersede_recipe_composition_adjustment'
+        ) as supersede_definition,
+        pg_get_functiondef(
+          'atlas_core.rmvp_02b_typed_target_lock_key(
+            text, text, uuid, uuid, uuid, uuid, uuid, uuid
+          )'::regprocedure
+        ) as helper_definition
+    )
+    select
+      position('pg_advisory_xact_lock' in create_definition) > 0
+      and position('pg_advisory_xact_lock' in supersede_definition) > 0
+      and position(
+        'atlas_core.rmvp_02b_typed_target_lock_key(' in create_definition
+      ) > 0
+      and position(
+        'atlas_core.rmvp_02b_typed_target_lock_key(' in supersede_definition
+      ) > 0
+      and position(
+        'rmvp_02b_typed_target_lock_key(' in create_definition
+      ) < position(
+        'insert into atlas_admin.recipe_composition_adjustments'
+        in create_definition
+      )
+      and position(
+        'rmvp_02b_typed_target_lock_key(' in supersede_definition
+      ) < position('for update' in supersede_definition)
+      and position('for update' in supersede_definition) < position(
+        'v_validation := atlas_core.rmvp_02b_validate_proposed_adjustment'
+        in supersede_definition
+      )
+      and helper_definition like '%RMVP-02B_TYPED_TARGET_V1%'
+      and helper_definition like '%target_kind%'
+      and helper_definition like '%target_id%'
+      and helper_definition not like '%concat_ws%'
+      and create_definition not like '%concat_ws%'
+      and supersede_definition not like '%concat_ws%'
+    from function_definitions
+  ),
+  'create and supersede share labeled typed-target locking before final validation'
+);
+
 select is(
   (
     atlas_core.rmvp_02b_adjustment_workbench_payload()
@@ -788,7 +1214,7 @@ select is(
 
 select is(
   (
-    select jsonb_array_length(line -> 'lineage')
+    select count(*)::integer
     from jsonb_array_elements(
       atlas_core.rmvp_02b_resolve_effective_composition(
         date '2026-08-01',
@@ -809,7 +1235,9 @@ select is(
           'reason_note', 'Second valid replacement-chain edge.'
         )
       ) -> 'lines'
-    ) line
+    ) line,
+      jsonb_array_elements(line -> 'lineage') lineage
+    where lineage ->> 'scope_kind' = 'SYSTEM_INGREDIENT'
   ),
   2,
   'every hop in a multi-step global replacement chain remains auditable'
@@ -1119,7 +1547,8 @@ select is(
           'effective_from', '2026-07-01',
           'reason_code', 'REMOVAL_TEST',
           'reason_note', 'Explicit removal audit test.'
-        )
+        ),
+        'b2300000-0000-0000-0000-000000000004'
       ) -> 'lines'
     ) line
     where line ->> 'base_recipe_line_id' =
@@ -1213,6 +1642,36 @@ insert into rmvp02b_import_results (
         'school_dish_overrides', '[]'::jsonb
       )
     )
+  ),
+  (
+    'historical-overlap',
+    jsonb_build_object(
+      'source_system', 'OPS_V1_RECIPE_ADJUSTMENTS',
+      'snapshot_id', 'rmvp02b-historical-overlap-export',
+      'exported_at', '2026-07-27T00:00:00Z',
+      'imported_by_actor_id',
+        'b2000000-0000-0000-0000-000000000001',
+      'records', jsonb_build_object(
+        'ingredient_change_orders', '[]'::jsonb,
+        'system_bom_change_orders', jsonb_build_array(
+          jsonb_build_object(
+            'legacy_id', 'ops-v1:system-bom:historical-overlap',
+            'action', 'ADJUST_QUANTITY',
+            'dish_id', 'b2200000-0000-0000-0000-000000000101',
+            'target_recipe_line_id',
+              'b2200000-0000-0000-0000-000000000402',
+            'quantity_per_basis', 18,
+            'effective_from', '2026-07-10',
+            'effective_to', '2026-07-20',
+            'is_active', true,
+            'reason_note',
+              'Must be rejected against predecessor authority.'
+          )
+        ),
+        'school_overrides', '[]'::jsonb,
+        'school_dish_overrides', '[]'::jsonb
+      )
+    )
   );
 
 update rmvp02b_import_results
@@ -1273,6 +1732,25 @@ select ok(
 
 select ok(
   (
+    select response_payload ->> 'status' = 'REJECTED'
+      and exists (
+        select 1
+        from jsonb_array_elements(
+          response_payload -> 'validation_errors'
+        ) validation_error,
+          jsonb_array_elements(
+            validation_error -> 'blockers'
+          ) blocker
+        where blocker ->> 'code' = 'OVERLAPPING_ACTIVE_RULE'
+      )
+    from rmvp02b_import_results
+    where snapshot_name = 'historical-overlap'
+  ),
+  'OPS v1 import validation rejects overlap with derived predecessor authority'
+);
+
+select ok(
+  (
     select root.lifecycle_status = 'ACTIVE'
       and root.legacy_source = 'OPS_V1_SYSTEM_BOM_CHANGE_ORDER'
       and revision.source_evidence #>> '{legacy_record_id}'
@@ -1296,11 +1774,12 @@ select is(
     from atlas_legacy.import_batches
     where snapshot_id in (
       'rmvp02b-valid-explicit-export',
-      'rmvp02b-missing-reference-export'
+      'rmvp02b-missing-reference-export',
+      'rmvp02b-historical-overlap-export'
     )
       and result_payload is not null
   ),
-  2,
+  3,
   'completed and rejected import batches retain durable evidence'
 );
 

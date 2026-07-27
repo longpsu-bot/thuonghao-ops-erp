@@ -66,7 +66,7 @@ Omitted fields must be null. `REPLACE` preserves quantity and Unit unless both a
 - Owner: `atlas_master_data_command_runtime`
 - Expected version: `1`
 - Payload: proposal fields plus required `as_of_date`, `preview_school_id`, and `preview_dish_id`
-- Effect: revalidates the preview context, resolves the hypothetical effective composition, creates one stable root and revision 1, then emits event/audit/readback.
+- Effect: serializes the exact typed target, revalidates the preview context, resolves the hypothetical effective composition, creates one stable root and revision 1, then emits event/audit/readback.
 
 An exact request replay returns the original completed receipt. A reused idempotency key with different content fails closed.
 
@@ -76,7 +76,7 @@ An exact request replay returns the original completed receipt. A reused idempot
 - Owner: `atlas_master_data_command_runtime`
 - Expected version: current root version
 - Required payload: `adjustment_id`, new `revision_id`, exact `predecessor_revision_id`, `effective_from`, optional `effective_to`, action payload, `as_of_date`, `preview_school_id`, `preview_dish_id`
-- Effect: locks the root, verifies the exact current active predecessor, validates and resolves the successor, appends the next revision, and increments the root version.
+- Effect: serializes the exact typed target, then locks the root, verifies the exact current active predecessor, validates and resolves the successor, appends the next revision, and increments the root version.
 
 Scope, action, and stable target identity cannot change. One predecessor can have only one successor.
 

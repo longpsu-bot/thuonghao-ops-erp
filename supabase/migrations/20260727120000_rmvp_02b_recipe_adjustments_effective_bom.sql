@@ -444,6 +444,50 @@ exception when others then
 end;
 $$;
 
+create or replace function atlas_core.rmvp_02b_typed_target_lock_key(
+  target_scope_kind text,
+  target_action_kind text,
+  target_school_id uuid,
+  target_dish_id uuid,
+  target_school_type_id uuid,
+  target_ingredient_id uuid,
+  target_recipe_line_id uuid,
+  target_adjustment_line_id uuid
+)
+returns bigint
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select pg_catalog.hashtextextended(
+    pg_catalog.jsonb_build_object(
+      'contract', 'RMVP-02B_TYPED_TARGET_V1',
+      'scope_kind', target_scope_kind,
+      'school_id', target_school_id,
+      'dish_id', target_dish_id,
+      'school_type_id', target_school_type_id,
+      'target_kind',
+        case
+          when target_scope_kind in ('SYSTEM_INGREDIENT', 'SCHOOL')
+            then 'INGREDIENT'
+          when target_action_kind = 'ADD'
+            then 'ADJUSTMENT_LINE'
+          else 'RECIPE_LINE'
+        end,
+      'target_id',
+        case
+          when target_scope_kind in ('SYSTEM_INGREDIENT', 'SCHOOL')
+            then target_ingredient_id
+          when target_action_kind = 'ADD'
+            then target_adjustment_line_id
+          else target_recipe_line_id
+        end
+    )::text,
+    2002002
+  );
+$$;
+
 create or replace function atlas_core.rmvp_02b_read_error(
   request jsonb,
   read_name text,
@@ -1577,6 +1621,82 @@ begin
     excluded_adjustment_id
   );
 
+  -- Line-scoped layers have no within-layer tie-breaker. Detect corrupted or
+  -- concurrently introduced ambiguity before applying any adjustment.
+  for v_duplicate in
+    select
+      item ->> 'scope_kind' as scope_kind,
+      case
+        when item ->> 'action_kind' = 'ADD'
+          then 'ADJUSTMENT_LINE'
+        else 'RECIPE_LINE'
+      end as target_kind,
+      case
+        when item ->> 'action_kind' = 'ADD'
+          then item ->> 'adjustment_line_id'
+        else item ->> 'target_recipe_line_id'
+      end as target_id,
+      pg_catalog.jsonb_agg(
+        item ->> 'adjustment_id'
+        order by item ->> 'adjustment_id'
+      ) as adjustment_ids
+    from pg_catalog.jsonb_array_elements(v_rules) item
+    where item ->> 'scope_kind' in ('SYSTEM_DISH', 'SCHOOL_DISH')
+    group by
+      item ->> 'scope_kind',
+      case
+        when item ->> 'action_kind' = 'ADD'
+          then 'ADJUSTMENT_LINE'
+        else 'RECIPE_LINE'
+      end,
+      case
+        when item ->> 'action_kind' = 'ADD'
+          then item ->> 'adjustment_line_id'
+        else item ->> 'target_recipe_line_id'
+      end
+    having pg_catalog.count(distinct item ->> 'adjustment_id') > 1
+  loop
+    v_blockers := v_blockers || pg_catalog.jsonb_build_array(
+      pg_catalog.jsonb_build_object(
+        'code',
+          case v_duplicate.scope_kind
+            when 'SYSTEM_DISH' then 'AMBIGUOUS_SYSTEM_DISH_TARGET'
+            else 'AMBIGUOUS_SCHOOL_DISH_TARGET'
+          end,
+        'message',
+          case v_duplicate.scope_kind
+            when 'SYSTEM_DISH'
+              then 'More than one effective SYSTEM_DISH rule targets the same line.'
+            else
+              'More than one effective SCHOOL_DISH rule targets the same line.'
+          end,
+        'target_kind', v_duplicate.target_kind,
+        'target_id', v_duplicate.target_id,
+        'adjustment_ids', v_duplicate.adjustment_ids
+      )
+    );
+  end loop;
+
+  if pg_catalog.jsonb_array_length(v_blockers) > 0 then
+    return pg_catalog.jsonb_build_object(
+      'status', 'BLOCKED',
+      'as_of_date', target_as_of_date,
+      'school_id', target_school_id,
+      'dish_id', target_dish_id,
+      'historical', v_historical,
+      'selected_recipe', pg_catalog.jsonb_build_object(
+        'dish_id', target_dish_id,
+        'recipe_id', v_recipe_id,
+        'recipe_version_id', v_recipe_version_id,
+        'selection_scope', v_recipe_scope,
+        'basis_portions', v_basis_portions
+      ),
+      'lines', v_lines,
+      'warnings', v_warnings,
+      'blockers', v_blockers
+    );
+  end if;
+
   -- SYSTEM_INGREDIENT is the only recursive layer. It resolves to the
   -- deterministic terminal Ingredient and records every hop.
   v_new_lines := '[]'::jsonb;
@@ -2334,34 +2454,73 @@ begin
        or v_effective_to > v_effective_from
      )
      and exists (
+       with active_revision_authority as (
+         select
+           root.recipe_composition_adjustment_id,
+           pg_catalog.datemultirange(
+             pg_catalog.daterange(
+               revision.effective_from,
+               revision.effective_to,
+               '[)'
+             )
+           ) - coalesce(
+             (
+               select pg_catalog.range_agg(
+                 pg_catalog.daterange(
+                   later_revision.effective_from,
+                   later_revision.effective_to,
+                   '[)'
+                 )
+               )
+               from
+                 atlas_admin.recipe_composition_adjustment_revisions
+                   later_revision
+               where later_revision.recipe_composition_adjustment_id =
+                   revision.recipe_composition_adjustment_id
+                 and later_revision.revision_number >
+                   revision.revision_number
+             ),
+             '{}'::datemultirange
+           ) as authoritative_periods
+         from atlas_admin.recipe_composition_adjustments root
+         join atlas_admin.recipe_composition_adjustment_revisions revision
+           on revision.recipe_composition_adjustment_id =
+             root.recipe_composition_adjustment_id
+         where root.recipe_composition_adjustment_id
+             is distinct from replaced_adjustment_id
+           and root.scope_kind = v_scope
+           and root.school_id is not distinct from v_school_id
+           and root.dish_id is not distinct from v_dish_id
+           and root.school_type_id is not distinct from v_school_type_id
+           and revision.revision_status = 'ACTIVE'
+           and (
+             (
+               v_scope in ('SYSTEM_INGREDIENT', 'SCHOOL')
+               and root.target_ingredient_id = v_target_ingredient_id
+             )
+             or (
+               v_scope in ('SYSTEM_DISH', 'SCHOOL_DISH')
+               and v_action = 'ADD'
+               and root.action_kind = 'ADD'
+               and root.adjustment_line_id = v_adjustment_line_id
+             )
+             or (
+               v_scope in ('SYSTEM_DISH', 'SCHOOL_DISH')
+               and v_action <> 'ADD'
+               and root.action_kind <> 'ADD'
+               and root.target_recipe_line_id = v_target_recipe_line_id
+             )
+           )
+       )
        select 1
-       from atlas_admin.recipe_composition_adjustments root
-       join atlas_admin.recipe_composition_adjustment_revisions revision
-         on revision.recipe_composition_adjustment_revision_id =
-           root.current_revision_id
-       where root.lifecycle_status = 'ACTIVE'
-         and root.recipe_composition_adjustment_id
-           is distinct from replaced_adjustment_id
-         and root.scope_kind = v_scope
-         and root.school_id is not distinct from v_school_id
-         and root.dish_id is not distinct from v_dish_id
-         and root.school_type_id is not distinct from v_school_type_id
-         and root.target_ingredient_id
-           is not distinct from v_target_ingredient_id
-         and root.target_recipe_line_id
-           is not distinct from v_target_recipe_line_id
-         and (
-           root.action_kind <> 'ADD'
-           or root.adjustment_line_id is not distinct from v_adjustment_line_id
-         )
-         and pg_catalog.daterange(
-           revision.effective_from,
-           revision.effective_to,
-           '[)'
-         ) && pg_catalog.daterange(
-           v_effective_from,
-           v_effective_to,
-           '[)'
+       from active_revision_authority authority
+       where authority.authoritative_periods &&
+         pg_catalog.datemultirange(
+           pg_catalog.daterange(
+             v_effective_from,
+             v_effective_to,
+             '[)'
+           )
          )
      ) then
     v_blockers := v_blockers || pg_catalog.jsonb_build_array(
@@ -2976,18 +3135,15 @@ begin
   end if;
 
   perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended(
-      pg_catalog.concat_ws(
-        '|',
-        v_scope,
-        v_school_id::text,
-        v_dish_id::text,
-        v_school_type_id::text,
-        v_target_ingredient_id::text,
-        v_target_recipe_line_id::text,
-        v_adjustment_line_id::text
-      ),
-      0
+    atlas_core.rmvp_02b_typed_target_lock_key(
+      v_scope,
+      v_action,
+      v_school_id,
+      v_dish_id,
+      v_school_type_id,
+      v_target_ingredient_id,
+      v_target_recipe_line_id,
+      v_adjustment_line_id
     )
   );
   v_validation := atlas_core.rmvp_02b_validate_proposed_adjustment(
@@ -3203,6 +3359,7 @@ declare
   v_preview_dish_id uuid := atlas_core.pa_05b_safe_uuid(
     v_payload ->> 'preview_dish_id'
   );
+  v_root_snapshot atlas_admin.recipe_composition_adjustments%rowtype;
   v_root atlas_admin.recipe_composition_adjustments%rowtype;
   v_current atlas_admin.recipe_composition_adjustment_revisions%rowtype;
   v_proposal jsonb;
@@ -3247,6 +3404,33 @@ begin
   end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+
+  select * into v_root_snapshot
+  from atlas_admin.recipe_composition_adjustments
+  where recipe_composition_adjustment_id = v_adjustment_id;
+  if not found then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'NOT_FOUND', 'The adjustment was not found.',
+        'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    atlas_core.rmvp_02b_typed_target_lock_key(
+      v_root_snapshot.scope_kind,
+      v_root_snapshot.action_kind,
+      v_root_snapshot.school_id,
+      v_root_snapshot.dish_id,
+      v_root_snapshot.school_type_id,
+      v_root_snapshot.target_ingredient_id,
+      v_root_snapshot.target_recipe_line_id,
+      v_root_snapshot.adjustment_line_id
+    )
+  );
 
   select * into v_root
   from atlas_admin.recipe_composition_adjustments
@@ -4652,6 +4836,9 @@ grant execute on function
     jsonb, uuid, uuid, text, text, uuid, bigint, bigint, jsonb, jsonb
   ),
   atlas_core.rmvp_02b_safe_date(text),
+  atlas_core.rmvp_02b_typed_target_lock_key(
+    text, text, uuid, uuid, uuid, uuid, uuid, uuid
+  ),
   atlas_core.rmvp_02b_validate_command_request(jsonb, text),
   atlas_core.rmvp_02b_prepare_command(jsonb, text, text, text),
   atlas_core.rmvp_02b_adjustment_workbench_payload(),
@@ -4812,6 +4999,9 @@ alter function atlas_core.rmvp_02b_guard_adjustment_history()
   owner to atlas_owner;
 alter function atlas_core.rmvp_02b_safe_date(text)
   owner to atlas_owner;
+alter function atlas_core.rmvp_02b_typed_target_lock_key(
+  text, text, uuid, uuid, uuid, uuid, uuid, uuid
+) owner to atlas_owner;
 alter function atlas_core.rmvp_02b_read_error(
   jsonb, text, text, text, jsonb, jsonb
 ) owner to atlas_owner;
@@ -4866,6 +5056,9 @@ revoke create on schema atlas_api from
 revoke execute on function
   atlas_core.rmvp_02b_guard_adjustment_history(),
   atlas_core.rmvp_02b_safe_date(text),
+  atlas_core.rmvp_02b_typed_target_lock_key(
+    text, text, uuid, uuid, uuid, uuid, uuid, uuid
+  ),
   atlas_core.rmvp_02b_read_error(
     jsonb, text, text, text, jsonb, jsonb
   ),

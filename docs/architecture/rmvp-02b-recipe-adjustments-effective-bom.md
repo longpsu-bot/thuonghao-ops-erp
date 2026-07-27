@@ -58,7 +58,7 @@ ACTIVE → CANCELLED
 
 Every successor has one exact predecessor and a positive next revision number. Branching, update, delete, and root hard deletion are rejected. Revisions record actor, timestamp, reason code, required reason note, source evidence, `effective_from`, and optional half-open `effective_to`.
 
-Supersession and cancellation are date-aware. The resolver chooses the highest revision number applicable on the requested date. A dated successor becomes authoritative from its own period; a dated cancellation stops effect from its cancellation date. Earlier dates continue to resolve the prior immutable revision. No authoritative function uses `CURRENT_DATE`.
+Supersession and cancellation are date-aware. The resolver chooses the highest revision number applicable on the requested date. A dated successor masks its predecessor only during the successor's own half-open period; after a finite successor `effective_to`, the predecessor resumes when its own period still covers the requested date. A dated cancellation stops effect from its cancellation date. Earlier dates continue to resolve the prior immutable revision. Overlap validation derives these same authoritative periods across the complete immutable chain. No authoritative function uses `CURRENT_DATE`.
 
 ## Persistence, security, and API
 
@@ -67,7 +67,7 @@ The single migration adds:
 - two private Admin relations: one stable root and one immutable revision relation;
 - seven adjustment indexes;
 - two immutability triggers;
-- eleven private guard, validation, authorization, read-model, resolver, transformation, and command helpers;
+- twelve private guard, validation, authorization, read-model, resolver, transformation, locking, and command helpers;
 - three reads and three commands in `atlas_api`;
 - one local-only explicit snapshot importer in `atlas_legacy`;
 - seven least-privilege RLS policies over the two forced-RLS relations.
