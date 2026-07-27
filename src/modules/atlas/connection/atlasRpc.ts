@@ -50,6 +50,18 @@ export const ATLAS_RPC_FUNCTIONS = {
     "release_recipe_version_for_planning",
   "atlas_api.copy_recipe_version": "copy_recipe_version",
   "atlas_api.apply_recipe_import": "apply_recipe_import",
+  "atlas_api.get_recipe_adjustment_workbench":
+    "get_recipe_adjustment_workbench",
+  "atlas_api.resolve_effective_recipe_composition":
+    "resolve_effective_recipe_composition",
+  "atlas_api.preview_recipe_composition_adjustment":
+    "preview_recipe_composition_adjustment",
+  "atlas_api.create_recipe_composition_adjustment":
+    "create_recipe_composition_adjustment",
+  "atlas_api.supersede_recipe_composition_adjustment":
+    "supersede_recipe_composition_adjustment",
+  "atlas_api.cancel_recipe_composition_adjustment":
+    "cancel_recipe_composition_adjustment",
 } as const;
 
 export type AtlasRpcName = keyof typeof ATLAS_RPC_FUNCTIONS;

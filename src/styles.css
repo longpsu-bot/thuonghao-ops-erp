@@ -2092,6 +2092,157 @@ tbody tr.selected-row {
   cursor: not-allowed;
   opacity: 0.45;
 }
+.adjustment-context-bar,
+.adjustment-filter-grid,
+.adjustment-period-grid,
+.effective-bom-summary {
+  display: grid;
+  gap: 12px;
+}
+.adjustment-context-bar {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid #dce3df;
+  border-radius: 9px;
+  background: #f7faf8;
+}
+.adjustment-context-bar label,
+.adjustment-filter-grid label,
+.adjustment-period-grid label,
+.adjustment-rule-editor > label {
+  display: grid;
+  gap: 6px;
+  color: #50655d;
+  font-size: 12px;
+  font-weight: 700;
+}
+.adjustment-context-bar input,
+.adjustment-context-bar select,
+.adjustment-filter-grid input,
+.adjustment-filter-grid select,
+.adjustment-period-grid input,
+.adjustment-rule-editor input,
+.adjustment-rule-editor select,
+.adjustment-rule-editor textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #cfdad5;
+  border-radius: 6px;
+  background: #fff;
+  color: #21382f;
+}
+.adjustment-workbench-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+.adjustment-filter-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+.adjustment-rule-list {
+  display: grid;
+  gap: 12px;
+}
+.adjustment-rule-card,
+.adjustment-rule-editor,
+.adjustment-preview-card,
+.effective-bom-comparison > section {
+  padding: 14px;
+  border: 1px solid #dce3df;
+  border-radius: 9px;
+  background: #fff;
+}
+.adjustment-rule-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.adjustment-rule-card header > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+.adjustment-rule-card p,
+.adjustment-rule-card small {
+  margin: 9px 0 0;
+}
+.adjustment-rule-card details,
+.effective-bom-comparison details {
+  margin-top: 10px;
+}
+.adjustment-rule-card summary,
+.effective-bom-comparison summary {
+  cursor: pointer;
+  color: #17604d;
+  font-weight: 700;
+}
+.adjustment-rule-editor {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 12px;
+}
+.adjustment-rule-editor h3,
+.adjustment-preview-card h4,
+.effective-bom-comparison h3 {
+  margin: 0;
+}
+.adjustment-rule-editor textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.adjustment-period-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.adjustment-preview-card {
+  overflow: auto;
+  background: #f7faf8;
+}
+.effective-bom-workbench {
+  display: grid;
+  gap: 16px;
+}
+.effective-bom-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.effective-bom-summary article {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #dce3df;
+  border-radius: 8px;
+  background: #f7faf8;
+}
+.effective-bom-summary span {
+  color: #60736b;
+  font-size: 11px;
+}
+.effective-bom-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.effective-bom-comparison > section {
+  min-width: 0;
+  overflow: auto;
+}
+.effective-bom-comparison code {
+  display: block;
+  margin-top: 7px;
+  color: #60736b;
+  font-size: 10px;
+}
+.removed-effective-line {
+  background: #fff2ef;
+}
+.removed-effective-line > td:nth-child(2) {
+  text-decoration: line-through;
+}
 @media (max-width: 1200px) {
   .planner-controls {
     grid-template-columns: repeat(4, 1fr);
@@ -2123,6 +2274,17 @@ tbody tr.selected-row {
   .recipe-connected-layout,
   .recipe-operation-grid {
     grid-template-columns: 1fr;
+  }
+  .adjustment-context-bar,
+  .adjustment-workbench-layout,
+  .adjustment-filter-grid,
+  .adjustment-period-grid,
+  .effective-bom-summary,
+  .effective-bom-comparison {
+    grid-template-columns: 1fr;
+  }
+  .adjustment-rule-editor {
+    position: static;
   }
   .recipe-selection-panel {
     border-right: 0;

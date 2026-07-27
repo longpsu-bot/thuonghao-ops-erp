@@ -17,6 +17,11 @@ import {
   createMasterDataApi,
   type MasterDataApi,
 } from "./master-data/masterDataApi";
+import {
+  createRecipeAdjustmentApi,
+  type RecipeAdjustmentApi,
+} from "./recipe-adjustments/recipeAdjustmentApi";
+import { createReviewRecipeAdjustmentApi } from "./recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createRecipeApi, type RecipeApi } from "./recipes/recipeApi";
 import { createReviewRecipeApi } from "./recipes/reviewRecipeApi";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
@@ -111,12 +116,14 @@ function MasterDataPage({
   authState,
   api,
   recipeApi,
+  recipeAdjustmentApi,
   mode,
 }: {
   page: MasterDataPageId;
   authState: AtlasAuthState;
   api?: MasterDataApi;
   recipeApi?: RecipeApi;
+  recipeAdjustmentApi?: RecipeAdjustmentApi;
   mode: "connected" | "review";
 }) {
   const schoolPage = page === "customers-schools";
@@ -147,6 +154,7 @@ function MasterDataPage({
         <DishRecipeAdminWorkbench
           authState={authState}
           api={recipeApi}
+          adjustmentApi={recipeAdjustmentApi}
           mode={mode}
         />
       ) : schoolPage ? (
@@ -167,6 +175,7 @@ function AtlasShell({
   authState,
   api,
   recipeApi,
+  recipeAdjustmentApi,
   mode,
   session,
   reviewScenario,
@@ -176,6 +185,7 @@ function AtlasShell({
   authState: AtlasAuthState;
   api?: MasterDataApi;
   recipeApi?: RecipeApi;
+  recipeAdjustmentApi?: RecipeAdjustmentApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   reviewScenario?: AtlasReviewScenario;
@@ -217,6 +227,7 @@ function AtlasShell({
           authState={authState}
           api={api}
           recipeApi={recipeApi}
+          recipeAdjustmentApi={recipeAdjustmentApi}
           mode={mode}
         />
       </div>
@@ -228,6 +239,10 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
   const [scenario, setScenario] = useState<AtlasReviewScenario>("ready");
   const api = useMemo(() => createReviewMasterDataApi(scenario), [scenario]);
   const recipeApi = useMemo(() => createReviewRecipeApi(scenario), [scenario]);
+  const recipeAdjustmentApi = useMemo(
+    () => createReviewRecipeAdjustmentApi(scenario),
+    [scenario],
+  );
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -236,6 +251,7 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
       authState={authState}
       api={api}
       recipeApi={recipeApi}
+      recipeAdjustmentApi={recipeAdjustmentApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -266,6 +282,10 @@ function ConnectedAtlasApp({
     () => (transport ? createRecipeApi(transport) : undefined),
     [transport],
   );
+  const recipeAdjustmentApi = useMemo(
+    () => (transport ? createRecipeAdjustmentApi(transport) : undefined),
+    [transport],
+  );
 
   return (
     <AtlasShell
@@ -273,6 +293,7 @@ function ConnectedAtlasApp({
       authState={auth.state}
       api={api}
       recipeApi={recipeApi}
+      recipeAdjustmentApi={recipeAdjustmentApi}
       mode="connected"
       session={auth}
     />

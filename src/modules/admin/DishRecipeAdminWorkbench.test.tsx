@@ -9,6 +9,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
 import { createReviewRecipeApi } from "../atlas/recipes/reviewRecipeApi";
+import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { DishRecipeAdminWorkbench } from "./DishRecipeAdminWorkbench";
 
 afterEach(() => {
@@ -21,6 +22,7 @@ function renderWorkbench() {
     <DishRecipeAdminWorkbench
       authState={createReviewAuthState("ready")}
       api={createReviewRecipeApi("ready")}
+      adjustmentApi={createReviewRecipeAdjustmentApi("ready")}
       mode="review"
     />,
   );
@@ -38,6 +40,8 @@ describe("connected Dish and Recipe workbench", () => {
     for (const tab of [
       "Món ăn",
       "Phiên bản & BOM",
+      "Quy tắc điều chỉnh",
+      "BOM hiệu lực",
       "Sao chép",
       "Nhập workbook",
     ])

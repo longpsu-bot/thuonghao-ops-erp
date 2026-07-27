@@ -2,6 +2,7 @@
 
 This register records approved business rules. Module specifications may refine implementation details but must not contradict this register.
 
+<!-- prettier-ignore -->
 | ID | Rule | Status |
 |---|---|---|
 | BR-001 | Catering dish demand must resolve through an applicable recipe version before becoming ingredient demand. | Approved |
@@ -37,6 +38,9 @@ This register records approved business rules. Module specifications may refine 
 | BR-031 | Removing a previously present Recipe Line requires an explicit removed-line revision; silent omission is not a valid correction. | Approved |
 | BR-032 | Releasing a successor Recipe Version for Planning locks the prior released version without rewriting it. | Approved |
 | BR-033 | A legacy Recipe workbook import may create only reviewed Draft state and must not auto-create missing references, validate, release, or alter the legacy source. | Approved |
+| BR-034 | Recipe composition adjustment authority is closed to `SYSTEM_INGREDIENT`, `SYSTEM_DISH`, `SCHOOL`, and `SCHOOL_DISH`, with only the action combinations recorded by RMVP-02B. | Approved |
+| BR-035 | Effective Recipe composition applies released base, system Ingredient, system Dish, School, and School-and-Dish layers in that exact order for an explicit date; overlap, ambiguity, cycle, stale target, or duplicate final Ingredient blocks resolution. | Approved |
+| BR-036 | An accepted Recipe composition adjustment is never edited or deleted; correction appends one direct successor or dated cancellation, preserves historical resolution and source audit, and affects no released operational fact retroactively. | Approved |
 
 Detailed legacy evidence, approved directions, recommendations, and still-pending quantity decisions are separated in the [PA-06D Rounding and Rebalancing Rule Register](pa-06d-rounding-rebalancing-rule-register.md). A PA-06D row is not approved unless its status explicitly says so.
 

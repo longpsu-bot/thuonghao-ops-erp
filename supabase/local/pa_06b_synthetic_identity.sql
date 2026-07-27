@@ -153,7 +153,10 @@ from (
     ('b6000000-0000-0000-0000-000000000017'::uuid, 'master_data.recipes.write'),
     ('b6000000-0000-0000-0000-000000000018'::uuid, 'master_data.recipes.validate'),
     ('b6000000-0000-0000-0000-000000000019'::uuid, 'master_data.recipes.release'),
-    ('b6000000-0000-0000-0000-000000000020'::uuid, 'master_data.recipes.import')
+    ('b6000000-0000-0000-0000-000000000020'::uuid, 'master_data.recipes.import'),
+    ('b6000000-0000-0000-0000-000000000021'::uuid, 'master_data.recipe_adjustments.read'),
+    ('b6000000-0000-0000-0000-000000000022'::uuid, 'master_data.recipe_adjustments.write'),
+    ('b6000000-0000-0000-0000-000000000023'::uuid, 'master_data.recipe_adjustments.cancel')
 ) source(role_capability_id, capability_code)
 join atlas_core.capabilities capability
   on capability.capability_code = source.capability_code

@@ -43,6 +43,20 @@ begin
     raise exception 'PA-06B local role and capability assertion failed.';
   end if;
 
+  if (
+    select count(*)
+    from atlas_core.role_capabilities rc
+    join atlas_core.capabilities c on c.capability_id = rc.capability_id
+    where rc.role_id = 'b6000000-0000-0000-0000-000000000003'
+      and c.capability_code in (
+        'master_data.recipe_adjustments.read',
+        'master_data.recipe_adjustments.write',
+        'master_data.recipe_adjustments.cancel'
+      )
+  ) <> 3 then
+    raise exception 'RMVP-02B local Recipe adjustment capabilities assertion failed.';
+  end if;
+
   if not exists (
     select 1
     from atlas_core.actor_role_memberships arm

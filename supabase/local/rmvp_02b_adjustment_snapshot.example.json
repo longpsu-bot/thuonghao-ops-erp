@@ -1,0 +1,12 @@
+{
+  "source_system": "OPS_V1_RECIPE_ADJUSTMENTS",
+  "snapshot_id": "replace-with-export-identity",
+  "exported_at": "2026-07-27T00:00:00Z",
+  "imported_by_actor_id": "b6000000-0000-0000-0000-000000000001",
+  "records": {
+    "ingredient_change_orders": [],
+    "system_bom_change_orders": [],
+    "school_overrides": [],
+    "school_dish_overrides": []
+  }
+}

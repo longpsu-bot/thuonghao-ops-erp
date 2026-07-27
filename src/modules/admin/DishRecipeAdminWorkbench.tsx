@@ -3,6 +3,7 @@ import type { AtlasAuthState } from "../atlas/connection/authSession";
 import type { JsonValue } from "../atlas/connection/atlasRpc";
 import type { RecipeApi } from "../atlas/recipes/recipeApi";
 import { recipeCommandRequest } from "../atlas/recipes/recipeApi";
+import type { RecipeAdjustmentApi } from "../atlas/recipe-adjustments/recipeAdjustmentApi";
 import {
   emptyRecipeWorkbench,
   ingredientLabel,
@@ -19,8 +20,10 @@ import {
   type RecipeWorkbookReview,
 } from "../atlas/recipes/recipeWorkbook";
 import { Chip, CompactTable, Panel } from "../atlas/WorkbenchComponents";
+import { RecipeAdjustmentWorkbench } from "./RecipeAdjustmentWorkbench";
 
-type Tab = "catalog" | "versions" | "copy" | "import";
+type Tab =
+  "catalog" | "versions" | "adjustments" | "effective" | "copy" | "import";
 type LoadState = {
   status: "idle" | "loading" | "ready" | "error";
   data: RecipeWorkbenchData;
@@ -74,10 +77,12 @@ const statusTone = (status: string) => {
 export function DishRecipeAdminWorkbench({
   authState = { status: "unauthenticated" },
   api,
+  adjustmentApi,
   mode = "connected",
 }: {
   authState?: AtlasAuthState;
   api?: RecipeApi;
+  adjustmentApi?: RecipeAdjustmentApi;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -537,6 +542,8 @@ export function DishRecipeAdminWorkbench({
           [
             ["catalog", "Món ăn"],
             ["versions", "Phiên bản & BOM"],
+            ["adjustments", "Quy tắc điều chỉnh"],
+            ["effective", "BOM hiệu lực"],
             ["copy", "Sao chép"],
             ["import", "Nhập workbook"],
           ] as const
@@ -566,6 +573,24 @@ export function DishRecipeAdminWorkbench({
         </p>
       )}
       {notice && <p className="operator-notice">{notice}</p>}
+
+      {tab === "adjustments" && (
+        <RecipeAdjustmentWorkbench
+          authState={authState}
+          api={adjustmentApi}
+          view="rules"
+          mode={mode}
+        />
+      )}
+
+      {tab === "effective" && (
+        <RecipeAdjustmentWorkbench
+          authState={authState}
+          api={adjustmentApi}
+          view="effective"
+          mode={mode}
+        />
+      )}
 
       {tab === "catalog" && (
         <>
