@@ -48,8 +48,8 @@ function rpcClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 45-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(45);
+  it("contains exactly the reviewed 57-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(57);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.record_wholesale_source",
       "atlas_api.release_wholesale_order",
@@ -96,6 +96,18 @@ describe("Atlas RPC transport", () => {
       "atlas_api.create_recipe_composition_adjustment",
       "atlas_api.supersede_recipe_composition_adjustment",
       "atlas_api.cancel_recipe_composition_adjustment",
+      "atlas_api.get_planning_inputs_workbench",
+      "atlas_api.preview_weekly_menu_import",
+      "atlas_api.preview_attendance_import",
+      "atlas_api.save_weekly_menu_draft",
+      "atlas_api.validate_weekly_menu",
+      "atlas_api.approve_weekly_menu",
+      "atlas_api.reopen_weekly_menu",
+      "atlas_api.create_attendance_draft_from_defaults",
+      "atlas_api.save_attendance_draft",
+      "atlas_api.validate_attendance",
+      "atlas_api.approve_attendance",
+      "atlas_api.reopen_attendance",
     ]);
   });
 

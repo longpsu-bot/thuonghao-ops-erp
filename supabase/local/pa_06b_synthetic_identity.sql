@@ -156,7 +156,11 @@ from (
     ('b6000000-0000-0000-0000-000000000020'::uuid, 'master_data.recipes.import'),
     ('b6000000-0000-0000-0000-000000000021'::uuid, 'master_data.recipe_adjustments.read'),
     ('b6000000-0000-0000-0000-000000000022'::uuid, 'master_data.recipe_adjustments.write'),
-    ('b6000000-0000-0000-0000-000000000023'::uuid, 'master_data.recipe_adjustments.cancel')
+    ('b6000000-0000-0000-0000-000000000023'::uuid, 'master_data.recipe_adjustments.cancel'),
+    ('b6000000-0000-0000-0000-000000000024'::uuid, 'planning.inputs.read'),
+    ('b6000000-0000-0000-0000-000000000025'::uuid, 'planning.weekly_menu.write'),
+    ('b6000000-0000-0000-0000-000000000026'::uuid, 'planning.attendance.write'),
+    ('b6000000-0000-0000-0000-000000000027'::uuid, 'planning.inputs.approve')
 ) source(role_capability_id, capability_code)
 join atlas_core.capabilities capability
   on capability.capability_code = source.capability_code
@@ -176,7 +180,7 @@ insert into atlas_core.actor_scopes (
   'b6000000-0000-0000-0000-000000000001',
   'GLOBAL',
   'b6000000-0000-0000-0000-000000000001',
-  'Synthetic global scope for connected RMVP-01 master-data acceptance only.'
+  'Synthetic global scope for connected Atlas acceptance only.'
 )
 on conflict (actor_scope_id) do update set
   scope_status = 'ACTIVE',

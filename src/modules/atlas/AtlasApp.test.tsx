@@ -37,7 +37,7 @@ describe("Atlas master-data shell", () => {
     expect(document.body.textContent).not.toContain("Prototype");
   });
 
-  it("shows the three active RMVP pages and marks later modules unavailable", () => {
+  it("shows the four active RMVP pages and marks later modules unavailable", () => {
     render(<AtlasApp reviewMode />);
 
     const navigation = screen.getByRole("navigation", {
@@ -54,17 +54,174 @@ describe("Atlas master-data shell", () => {
     expect(
       within(navigation).getByRole("button", { name: "Công thức" }),
     ).toBeEnabled();
+    expect(
+      within(navigation).getByRole("button", { name: "Nguồn kế hoạch" }),
+    ).toBeEnabled();
 
-    for (const label of [
-      /^Tổng quan/,
-      /^Kế hoạch nhu cầu/,
-      /^Thu mua/,
-      /^Kho/,
-    ]) {
+    for (const label of [/^Tổng quan/, /^Kế hoạch mua hàng/, /^Kho/]) {
       expect(
         within(navigation).getByRole("button", { name: label }),
       ).toBeDisabled();
     }
+  });
+
+  it("runs the connected review journey for menu and attendance approval", async () => {
+    render(<AtlasApp reviewMode initialPage="planning-inputs" />);
+
+    expect(
+      screen.getByRole("heading", { name: "Nguồn kế hoạch" }),
+    ).toBeInTheDocument();
+    expect(
+      (await screen.findAllByText("Canh bí đỏ thịt bằm")).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole("tab", { name: "Thực đơn tuần" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+
+    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
+      target: { value: "review-planning-dish-3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    expect(
+      await screen.findByText(/Xem trước có thẩm quyền/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ PHÊ DUYỆT")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    expect(
+      screen.getByText(
+        "Tạo từ mặc định theo đúng trường/ngày có thực đơn, nhập workbook hoặc dán hàng loạt; số 0 luôn là giá trị tường minh.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tạo từ sĩ số mặc định" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText("Đã hoàn tất và đọc lại dữ liệu có thẩm quyền."),
+      ).toBeInTheDocument(),
+    );
+    const studentInput = screen.getAllByLabelText(/Suất học sinh ·/)[0];
+    fireEvent.change(studentInput, { target: { value: "421" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    await screen.findByText(/Xem trước có thẩm quyền/);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Hai nguồn đã được phê duyệt"),
+      ).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Thực đơn tuần" }));
+    fireEvent.change(screen.getByLabelText("Lý do mở lại thực đơn"), {
+      target: { value: "Điều chỉnh món ăn đã duyệt." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mở lại" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ MỞ LẠI")).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
+      target: { value: "review-planning-dish-4" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    await screen.findByText(/Xem trước có thẩm quyền/);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ PHÊ DUYỆT")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(screen.getByLabelText("Lý do mở lại sĩ số"), {
+      target: { value: "Điều chỉnh số suất đã duyệt." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mở lại" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ MỞ LẠI")).toBeInTheDocument(),
+    );
+    fireEvent.change(screen.getAllByLabelText(/Suất học sinh ·/)[0], {
+      target: { value: "422" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    await screen.findByText(/Xem trước có thẩm quyền/);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    await waitFor(() =>
+      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Hai nguồn đã được phê duyệt"),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it("renders Planning denial, stale, retryable, and session-loss states safely", async () => {
+    render(<AtlasApp reviewMode initialPage="planning-inputs" />);
+    const scenario = screen.getByLabelText("Tình huống xem thử");
+
+    fireEvent.change(scenario, {
+      target: { value: "menu_permission_denied" },
+    });
+    expect(
+      await screen.findByText("Bạn không có quyền thực hiện thao tác này."),
+    ).toBeInTheDocument();
+
+    fireEvent.change(scenario, { target: { value: "menu_stale" } });
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    expect(
+      await screen.findByText(
+        "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.change(scenario, { target: { value: "menu_retryable" } });
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    expect(
+      await screen.findByText(
+        "Dữ liệu đang được cập nhật. Có thể thử lại đúng yêu cầu.",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.change(scenario, { target: { value: "menu_session_lost" } });
+    expect(
+      await screen.findByText(
+        "Phiên làm việc đã hết. Vui lòng đăng nhập lại để tiếp tục.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("supports the owner school review journey including validation and save", async () => {
