@@ -100,6 +100,9 @@ Goal: maintain the master data required for Atlas MVP launch and OPS v1 replacem
 - ✅ Ingredients & Suppliers management foundation (in-memory prototype)
 - ✅ Dishes & Recipes management foundation (in-memory consolidated workbench)
 - ✅ Admin integration and operator-workflow review
+- ✅ RMVP-01 connected independent Atlas master data
+- ✅ RMVP-02A connected Dish, Recipe Version, and immutable BOM lifecycle
+- ✅ RMVP-02B connected Recipe adjustment rules, authoritative preview, and effective BOM
 
 Admin MVP boundary:
 

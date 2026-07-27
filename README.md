@@ -74,6 +74,20 @@ pnpm local:rmvp02a:verify
 
 Workbook import creates draft-only state, requires existing active references, records typed legacy reconciliation, and never mutates OPS v1/v2 or Retool. See [`RMVP-02A connected Dishes, Recipes, and BOM`](docs/architecture/rmvp-02a-connected-recipes-bom.md) and the [`RMVP-02A API contract`](docs/api/rmvp-02a-recipes-bom.md).
 
+### RMVP-02B Recipe adjustments and effective BOM
+
+RMVP-02B extends the same Vietnamese `Công thức` workbench with one typed adjustment model, backend what-if preview, immutable successor/cancellation lineage, and authoritative explicit-date effective BOM. Fixed precedence is released base Recipe Version, system Ingredient, system Dish, School, then School-and-Dish. Planning facts and released operational history are unchanged.
+
+```bash
+pnpm exec supabase db reset --local
+pnpm exec supabase test db supabase/tests/rmvp_02b_recipe_adjustments_effective_bom.sql --local
+pnpm local:auth:provision
+pnpm local:rmvp02b:verify
+pnpm local:recipe-adjustments:import -- --file supabase/local/rmvp_02b_adjustment_snapshot.example.json
+```
+
+The local-only importer accepts exactly four explicit OPS v1 arrays, calculates the canonical checksum, rejects missing/ambiguous/cyclic references before writes, records reconciliation, and never connects to live OPS v1. The example contains no production data. See [RMVP-02B Recipe adjustments and effective BOM](docs/architecture/rmvp-02b-recipe-adjustments-effective-bom.md) and the [RMVP-02B API contract](docs/api/rmvp-02b-recipe-adjustments-effective-bom.md).
+
 ### RMVP-01 UI review export
 
 The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.

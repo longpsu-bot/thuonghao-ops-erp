@@ -2,6 +2,7 @@
 
 This register records approved project and architecture decisions. Detailed decisions may later be expanded into ADR files under `docs/decisions/adr/`.
 
+<!-- prettier-ignore -->
 | ID    | Decision                                                                                  | Status   | Rationale                                                                                                                                                                                                                                                 |
 | ----- | ----------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | D-001 | Use React and TypeScript as the primary OPS ERP frontend.                                 | Accepted | Provides maintainable custom UI, source control, reusable components, testing, and stronger long-term flexibility than continuing to expand Retool.                                                                                                       |
@@ -25,6 +26,7 @@ This register records approved project and architecture decisions. Detailed deci
 | D-019 | Use UI-led, contract-constrained design before Supabase schema implementation.            | Accepted | Workflow and UI prototypes should expose required states, actions, warnings, and data contracts before database tables and RPCs are finalized. This prevents premature schema design while avoiding UI-only logic that recreates Retool-style complexity. |
 | D-020 | Recipe corrections use successor versions; validated, released, and locked BOM facts are immutable. | Accepted | Preserves exact Recipe Version and Recipe Line Revision lineage for Requirement Planning and audit. |
 | D-021 | OPS v1 Recipe workbook import is checksum-bound, reference-strict, and draft-only. | Accepted | Prevents automatic reference creation, silent authority cutover, and unreviewed Planning release. |
+| D-022 | Recipe composition adjustments use one typed root/revision model and deterministic effective-BOM precedence. | Accepted | Preserves immutable correction lineage while replacing the four legacy Retool layers with one bounded Admin capability; explicit-date resolution applies released base, system Ingredient, system Dish, School, then School-and-Dish authority without rewriting Recipe or operational facts. |
 
 PA-06D approved directions and unresolved product choices are tracked separately in [Decision PA-06D — Quantity Truth and Write Fidelity](decision-pa-06d-quantity-truth-and-write-fidelity.md). Pending PA-06D rows are not accepted project decisions.
 
