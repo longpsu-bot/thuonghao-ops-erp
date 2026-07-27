@@ -12,7 +12,6 @@ import {
   unitLabel,
   type DishRecord,
   type RecipeCompositionLine,
-  type RecipeVersionRecord,
   type RecipeWorkbenchData,
 } from "../atlas/recipes/recipeModel";
 import {
@@ -157,7 +156,6 @@ export function DishRecipeAdminWorkbench({
     );
   }, [dishRecipes]);
 
-  const recipe = load.data.recipes.find((item) => item.recipe_id === recipeId);
   const versions = useMemo(
     () =>
       load.data.recipe_versions
@@ -1145,23 +1143,68 @@ export function DishRecipeAdminWorkbench({
                 (item) => item.recipe_id === targetRecipe?.recipe_id,
               );
               return (
-                <dl className="master-data-detail-list">
-                  <div>
-                    <dt>Dòng nguồn</dt>
-                    <dd>{source?.composition.length ?? 0}</dd>
-                  </div>
-                  <div>
-                    <dt>Phiên bản đích hiện có</dt>
-                    <dd>{targetVersions.length}</dd>
-                  </div>
-                  <div>
-                    <dt>Kết quả</dt>
-                    <dd>
-                      Một bản nháp mới; không ghi đè bản nháp hoặc lịch sử hiện
-                      có.
-                    </dd>
-                  </div>
-                </dl>
+                <>
+                  <dl className="master-data-detail-list">
+                    <div>
+                      <dt>Dòng nguồn</dt>
+                      <dd>{source?.composition.length ?? 0}</dd>
+                    </div>
+                    <div>
+                      <dt>Phiên bản đích hiện có</dt>
+                      <dd>{targetVersions.length}</dd>
+                    </div>
+                    <div>
+                      <dt>Kết quả</dt>
+                      <dd>
+                        Một bản nháp mới; không ghi đè bản nháp hoặc lịch sử
+                        hiện có.
+                      </dd>
+                    </div>
+                  </dl>
+                  <h4>Thành phần công thức nguồn</h4>
+                  {!source ? (
+                    <p className="supporting-copy">
+                      Chọn phiên bản nguồn để xem đầy đủ thành phần sẽ sao chép.
+                    </p>
+                  ) : source.composition.length ? (
+                    <div className="master-data-table-scroll recipe-bom-table">
+                      <CompactTable
+                        headers={[
+                          "Mã dòng",
+                          "Nguyên liệu",
+                          "Định lượng",
+                          "Đơn vị",
+                          "Trạng thái",
+                          "Ghi chú",
+                        ]}
+                      >
+                        {source.composition.map((line) => (
+                          <tr key={line.recipe_line_id}>
+                            <td>{line.line_code ?? "—"}</td>
+                            <td>
+                              {ingredientLabel(
+                                line.ingredient_id,
+                                load.data.ingredients,
+                              )}
+                            </td>
+                            <td>{line.quantity_per_basis}</td>
+                            <td>{unitLabel(line.unit_id, load.data.units)}</td>
+                            <td>
+                              <Chip tone={statusTone(line.line_disposition)}>
+                                {statusLabel[line.line_disposition]}
+                              </Chip>
+                            </td>
+                            <td>{line.operational_note ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </CompactTable>
+                    </div>
+                  ) : (
+                    <p className="supporting-copy">
+                      Phiên bản nguồn không có thành phần để sao chép.
+                    </p>
+                  )}
+                </>
               );
             })()}
             <button

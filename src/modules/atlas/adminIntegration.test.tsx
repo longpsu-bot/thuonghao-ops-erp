@@ -18,7 +18,7 @@ import { ingredientSupplierAdminFixture } from "../admin/ingredientSupplierAdmin
 import { SchoolAdminWorkbench as createSchoolReadModel } from "../admin/schoolAdminDomain";
 import { schoolAdminFixture } from "../admin/schoolAdminFixtures";
 import { AtlasApp, type MasterDataPageId } from "./AtlasApp";
-import { atlasPages, type AtlasPageId } from "./atlasConfig";
+import { atlasPages } from "./atlasConfig";
 
 afterEach(cleanup);
 

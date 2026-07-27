@@ -34,7 +34,12 @@ Deliver one migration and a connected Vietnamese `Công thức` experience for D
 - Validation materializes immutable stable-line revisions once.
 - Planning release is explicit; a successor release locks the prior release.
 - Successors preserve exact version and line predecessors, including explicit removed-line revisions.
-- Copy is previewed and creates a traceable draft only.
+- Copy previews the complete source composition (line, Ingredient, quantity,
+  Unit, disposition, and note) and creates a traceable draft only.
+- The authenticated browser-key acceptance proves initial release, successor
+  stable-line correction, validation, release, prior locking and unchanged
+  composition, exact version/revision lineage, reauthentication, and
+  authoritative readback of both versions.
 - The narrow `.xlsx` parser supports Vietnamese headers and decimal commas, resolves existing references, and calculates canonical SHA-256.
 - Import rejects missing references without partial writes, reconciles typed mappings, creates draft-only state, and replays an identical checksum without duplicate writes.
 - Connected and review-mode UI tests cover operator-critical states and the future-planning boundary.

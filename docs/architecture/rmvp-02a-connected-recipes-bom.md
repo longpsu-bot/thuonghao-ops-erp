@@ -63,7 +63,7 @@ The connected React page supports:
 - initial and successor drafts;
 - complete BOM editing with explicit removal;
 - validation and planning release;
-- traceable copy preview and apply;
+- traceable copy preview of the complete source BOM and apply;
 - workbook review, checksum, errors, counts, and apply.
 
 The normal build requires an authenticated Supabase session and the typed reviewed RPC registry. Review mode uses deterministic browser-only sample data and displays the existing non-persistence notice. It never represents review actions as persisted.

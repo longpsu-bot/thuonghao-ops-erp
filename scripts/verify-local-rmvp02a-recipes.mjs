@@ -8,6 +8,18 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function requireVersion(workbench, recipeVersionId, message) {
+  const version = workbench.recipe_versions.find(
+    (item) => item.recipe_version_id === recipeVersionId,
+  );
+  assert(version, message);
+  return version;
+}
+
+function assertCompositionEqual(actual, expected, message) {
+  assert(JSON.stringify(actual) === JSON.stringify(expected), message);
+}
+
 function commandRequest(subject, expectedVersion, reasonCode, payload) {
   const commandId = crypto.randomUUID();
   return {
@@ -149,34 +161,211 @@ async function main() {
   );
 
   const afterRelease = await readWorkbench(client, subject);
-  const released = afterRelease.recipe_versions.find(
-    (item) => item.recipe_version_id === recipeVersionId,
+  const released = requireVersion(
+    afterRelease,
+    recipeVersionId,
+    "RMVP-02A initial planning release was absent from authoritative readback.",
   );
   assert(
-    released?.recipe_version_status === "RELEASED_FOR_PLANNING" &&
+    released.recipe_version_status === "RELEASED_FOR_PLANNING" &&
       released.composition.length === 1,
     "RMVP-02A release did not read back one authoritative planning composition.",
+  );
+  const initialComposition = structuredClone(released.composition);
+  const initialLine = released.composition[0];
+  assert(
+    initialLine.recipe_line_id && initialLine.recipe_line_revision_id,
+    "RMVP-02A initial validation did not materialize stable line and revision identities.",
+  );
+
+  const successorResult = await invoke(
+    client,
+    "create_recipe_successor_version",
+    commandRequest(
+      subject,
+      released.version,
+      "RMVP02A_ACCEPT_CREATE_SUCCESSOR",
+      { recipe_version_id: recipeVersionId },
+    ),
+  );
+  const successorVersionId =
+    successorResult.affected_aggregate_ids.recipe_version_id;
+  const afterSuccessor = await readWorkbench(client, subject);
+  const successorDraft = requireVersion(
+    afterSuccessor,
+    successorVersionId,
+    "RMVP-02A successor draft was absent from authoritative readback.",
+  );
+  assert(
+    successorDraft.recipe_version_status === "DRAFT" &&
+      successorDraft.predecessor_recipe_version_id === recipeVersionId,
+    "RMVP-02A successor draft did not retain the exact version predecessor.",
+  );
+  assert(
+    successorDraft.composition.length === 1 &&
+      successorDraft.composition[0].recipe_line_id ===
+        initialLine.recipe_line_id &&
+      successorDraft.composition[0].predecessor_recipe_line_revision_id ===
+        initialLine.recipe_line_revision_id,
+    "RMVP-02A successor draft did not retain stable RecipeLine and revision predecessor identity.",
+  );
+
+  const correctedQuantity = 11.25;
+  await invoke(
+    client,
+    "replace_recipe_draft_composition",
+    commandRequest(
+      subject,
+      successorDraft.version,
+      "RMVP02A_ACCEPT_CORRECT_STABLE_LINE",
+      {
+        recipe_version_id: successorVersionId,
+        basis_portions: successorDraft.basis_portions,
+        lines: successorDraft.composition.map((line) => ({
+          recipe_line_id: line.recipe_line_id,
+          predecessor_recipe_line_revision_id:
+            line.predecessor_recipe_line_revision_id,
+          ingredient_id: line.ingredient_id,
+          quantity_per_basis: correctedQuantity,
+          unit_id: line.unit_id,
+          line_disposition: "PRESENT",
+          operational_note: "Acceptance stable-line correction",
+          line_code: line.line_code,
+        })),
+      },
+    ),
+  );
+  const afterCorrection = await readWorkbench(client, subject);
+  const correctedDraft = requireVersion(
+    afterCorrection,
+    successorVersionId,
+    "RMVP-02A corrected successor draft was absent from authoritative readback.",
+  );
+  assert(
+    correctedDraft.recipe_version_status === "DRAFT" &&
+      correctedDraft.composition.length === 1 &&
+      correctedDraft.composition[0].quantity_per_basis === correctedQuantity &&
+      correctedDraft.composition[0].recipe_line_id ===
+        initialLine.recipe_line_id &&
+      correctedDraft.composition[0].predecessor_recipe_line_revision_id ===
+        initialLine.recipe_line_revision_id,
+    "RMVP-02A stable-line correction did not preserve exact draft lineage.",
+  );
+
+  await invoke(
+    client,
+    "validate_recipe_version",
+    commandRequest(
+      subject,
+      correctedDraft.version,
+      "RMVP02A_ACCEPT_VALIDATE_SUCCESSOR",
+      { recipe_version_id: successorVersionId },
+    ),
+  );
+  const afterSuccessorValidation = await readWorkbench(client, subject);
+  const validatedSuccessor = requireVersion(
+    afterSuccessorValidation,
+    successorVersionId,
+    "RMVP-02A validated successor was absent from authoritative readback.",
+  );
+  const validatedSuccessorLine = validatedSuccessor.composition[0];
+  assert(
+    validatedSuccessor.recipe_version_status === "VALIDATED" &&
+      validatedSuccessorLine.recipe_line_id === initialLine.recipe_line_id &&
+      validatedSuccessorLine.predecessor_recipe_line_revision_id ===
+        initialLine.recipe_line_revision_id &&
+      validatedSuccessorLine.recipe_line_revision_id,
+    "RMVP-02A successor validation did not materialize the corrected stable-line revision.",
+  );
+
+  await invoke(
+    client,
+    "release_recipe_version_for_planning",
+    commandRequest(
+      subject,
+      validatedSuccessor.version,
+      "RMVP02A_ACCEPT_RELEASE_SUCCESSOR",
+      { recipe_version_id: successorVersionId },
+    ),
+  );
+  const afterSuccessorRelease = await readWorkbench(client, subject);
+  const lockedPrior = requireVersion(
+    afterSuccessorRelease,
+    recipeVersionId,
+    "RMVP-02A prior release was absent after successor release.",
+  );
+  const releasedSuccessor = requireVersion(
+    afterSuccessorRelease,
+    successorVersionId,
+    "RMVP-02A released successor was absent from authoritative readback.",
+  );
+  assert(
+    lockedPrior.recipe_version_status === "LOCKED",
+    "RMVP-02A successor release did not lock the prior planning release.",
+  );
+  assertCompositionEqual(
+    lockedPrior.composition,
+    initialComposition,
+    "RMVP-02A successor release changed the prior released composition.",
+  );
+  assert(
+    releasedSuccessor.recipe_version_status === "RELEASED_FOR_PLANNING" &&
+      releasedSuccessor.predecessor_recipe_version_id === recipeVersionId &&
+      releasedSuccessor.composition[0].recipe_line_id ===
+        initialLine.recipe_line_id &&
+      releasedSuccessor.composition[0].predecessor_recipe_line_revision_id ===
+        initialLine.recipe_line_revision_id &&
+      releasedSuccessor.composition[0].quantity_per_basis === correctedQuantity,
+    "RMVP-02A successor release did not preserve authoritative version and stable-line lineage.",
   );
 
   const signOut = await client.auth.signOut({ scope: "local" });
   if (signOut.error) throw new Error("RMVP-02A local sign-out failed.");
+  const signedOutSession = await client.auth.getSession();
+  assert(
+    !signedOutSession.error && !signedOutSession.data.session,
+    "RMVP-02A local sign-out did not clear the browser client session.",
+  );
   const signedInAgainSubject = await signIn(client);
   assert(
     signedInAgainSubject === subject,
     "RMVP-02A sign-in restored a different subject.",
   );
   const afterSignIn = await readWorkbench(client, subject);
+  const persistedPrior = requireVersion(
+    afterSignIn,
+    recipeVersionId,
+    "RMVP-02A prior version was absent after sign-out and sign-in.",
+  );
+  const persistedSuccessor = requireVersion(
+    afterSignIn,
+    successorVersionId,
+    "RMVP-02A successor version was absent after sign-out and sign-in.",
+  );
   assert(
-    afterSignIn.recipe_versions.some(
-      (item) =>
-        item.recipe_version_id === recipeVersionId &&
-        item.recipe_version_status === "RELEASED_FOR_PLANNING",
-    ),
-    "RMVP-02A planning release did not persist across sign-out and sign-in.",
+    persistedPrior.recipe_version_status === "LOCKED" &&
+      persistedSuccessor.recipe_version_status === "RELEASED_FOR_PLANNING" &&
+      persistedSuccessor.predecessor_recipe_version_id === recipeVersionId,
+    "RMVP-02A authoritative version lifecycle did not persist across sign-out and sign-in.",
+  );
+  assertCompositionEqual(
+    persistedPrior.composition,
+    initialComposition,
+    "RMVP-02A prior composition changed across sign-out and sign-in.",
+  );
+  assert(
+    persistedSuccessor.composition.length === 1 &&
+      persistedSuccessor.composition[0].recipe_line_id ===
+        initialLine.recipe_line_id &&
+      persistedSuccessor.composition[0].predecessor_recipe_line_revision_id ===
+        initialLine.recipe_line_revision_id &&
+      persistedSuccessor.composition[0].quantity_per_basis ===
+        correctedQuantity,
+    "RMVP-02A successor composition lineage did not read back authoritatively after sign-in.",
   );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified RMVP-02A sign-in, Dish activation, draft BOM, validation, planning release, authoritative refresh, and persisted readback.",
+    "Verified RMVP-02A browser-key sign-in, initial release, successor stable-line correction, validation, release, prior locking and immutability, exact version/revision lineage, reauthentication, and authoritative two-version readback.",
   );
 }
 

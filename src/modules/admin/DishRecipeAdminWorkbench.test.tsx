@@ -83,4 +83,25 @@ describe("connected Dish and Recipe workbench", () => {
       screen.getByText(/chỉ ảnh hưởng tham chiếu Lập nhu cầu trong tương lai/),
     ).toBeInTheDocument();
   });
+
+  it("previews every source composition line before copy", async () => {
+    renderWorkbench();
+    await screen.findAllByText("Canh bí đỏ thịt bằm");
+    fireEvent.click(screen.getByRole("tab", { name: "Sao chép" }));
+    const sourceSelect = screen.getByLabelText(
+      "Phiên bản nguồn",
+    ) as HTMLSelectElement;
+    fireEvent.change(sourceSelect, {
+      target: { value: sourceSelect.options[1].value },
+    });
+    expect(
+      screen.getByRole("heading", {
+        name: "Thành phần công thức nguồn",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Bí đỏ (bi-do)")).toBeInTheDocument();
+    expect(screen.getByText("Thịt heo xay (thit-heo-xay)")).toBeInTheDocument();
+    expect(screen.getAllByText("Kilôgam (kg)")).toHaveLength(2);
+    expect(screen.getAllByText("Có hiệu lực")).toHaveLength(2);
+  });
 });

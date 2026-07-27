@@ -6,7 +6,6 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import type { Session } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../atlas/connection/authSession";
 import type { MasterDataApi } from "../atlas/master-data/masterDataApi";

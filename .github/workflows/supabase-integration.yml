@@ -155,7 +155,9 @@ jobs:
           pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
           pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
           pnpm local:rmvp01:verify
-          pnpm local:rmvp02a:verify
+
+      - name: Verify browser-key Recipe successor lineage
+        run: pnpm local:rmvp02a:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()
