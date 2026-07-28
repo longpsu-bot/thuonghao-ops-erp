@@ -17,10 +17,11 @@ select is(
   array[
     'weekly_menu_approval_snapshot_lines',
     'weekly_menu_approval_snapshots',
+    'weekly_menu_google_sources',
     'weekly_menu_lines',
     'weekly_menus'
   ]::text[],
-  'H0A3a creates exactly the four approved private Weekly Menu relations'
+  'the current Weekly Menu boundary includes the four persistence relations and one RMVP-03A source configuration'
 );
 
 select is(
@@ -583,7 +584,7 @@ select throws_ok(
   $$,
   '23514',
   'new row for relation "weekly_menu_lines" violates check constraint "weekly_menu_lines_menu_slot_code_check"',
-  'menu slot evidence is normalized lowercase and nonblank without a hard-coded catalogue'
+  'menu slot evidence is normalized before the RMVP-03A typed catalog foreign key'
 );
 
 select throws_ok(
@@ -1768,6 +1769,7 @@ select is(
       'atlas_planning.weekly_menu_approval_snapshots'::regclass,
       'atlas_planning.weekly_menu_approval_snapshot_lines'::regclass
     )
+      and policy.polroles = array['atlas_planning_materialization_runtime'::regrole::oid]
   ),
   (
     select jsonb_agg(
@@ -1790,7 +1792,7 @@ select is(
         ('atlas_planning.weekly_menu_approval_snapshot_lines')
     ) expected(relation_name)
   ),
-  'H0A3a has exactly four dedicated-runtime permissive SELECT policies'
+  'H0A3a retains exactly four materialization-runtime permissive SELECT policies'
 );
 
 select is(

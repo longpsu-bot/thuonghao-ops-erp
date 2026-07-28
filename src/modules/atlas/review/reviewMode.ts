@@ -11,7 +11,56 @@ export type AtlasReviewScenario =
   | "permission_denied"
   | "session_lost"
   | "server_error"
-  | "stale";
+  | "stale"
+  | "menu_draft"
+  | "menu_empty"
+  | "menu_validated"
+  | "menu_approved"
+  | "menu_reopened"
+  | "menu_recipe_warning"
+  | "menu_diff_approved"
+  | "menu_replay_success"
+  | "menu_invalid_dates"
+  | "menu_duplicate"
+  | "menu_inactive_refs"
+  | "menu_zero_valid"
+  | "menu_permission_denied"
+  | "menu_retryable"
+  | "menu_stale"
+  | "menu_session_lost"
+  | "dish_types_renamed"
+  | "dish_types_reordered"
+  | "dish_types_added"
+  | "dish_types_inactive"
+  | "menu_type_match"
+  | "menu_type_mismatch"
+  | "google_source_configured"
+  | "google_source_missing"
+  | "google_source_unavailable"
+  | "google_fetch_success"
+  | "google_empty_sheet"
+  | "google_sheet_missing"
+  | "google_connector_unavailable"
+  | "google_permission_denied"
+  | "google_retryable"
+  | "google_session_lost"
+  | "google_preview_blockers"
+  | "google_save_success"
+  | "attendance_draft"
+  | "attendance_imported"
+  | "attendance_validated"
+  | "attendance_approved"
+  | "attendance_reopened"
+  | "attendance_zero"
+  | "attendance_diff_defaults"
+  | "attendance_diff_approved"
+  | "attendance_missing_menu"
+  | "attendance_negative"
+  | "attendance_replay_success"
+  | "attendance_permission_denied"
+  | "attendance_retryable"
+  | "attendance_stale"
+  | "attendance_session_lost";
 
 type ReviewEnvironment = {
   VITE_ATLAS_REVIEW_MODE?: string;
@@ -26,7 +75,12 @@ export function isAtlasReviewMode(
 export function createReviewAuthState(
   scenario: AtlasReviewScenario,
 ): AtlasAuthState {
-  if (scenario === "session_lost") {
+  if (
+    scenario === "session_lost" ||
+    scenario === "menu_session_lost" ||
+    scenario === "google_session_lost" ||
+    scenario === "attendance_session_lost"
+  ) {
     return {
       status: "session_expired",
       safeMessage:

@@ -24,6 +24,12 @@ import {
 import { createReviewRecipeAdjustmentApi } from "./recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createRecipeApi, type RecipeApi } from "./recipes/recipeApi";
 import { createReviewRecipeApi } from "./recipes/reviewRecipeApi";
+import { PlanningInputsWorkbench } from "./planning-inputs/PlanningInputsWorkbench";
+import {
+  createPlanningInputsApi,
+  type PlanningInputsApi,
+} from "./planning-inputs/planningInputsApi";
+import { createReviewPlanningInputsApi } from "./planning-inputs/reviewPlanningInputsApi";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
   ATLAS_REVIEW_NOTICE,
@@ -33,7 +39,7 @@ import {
 } from "./review/reviewMode";
 
 export type MasterDataPageId =
-  "customers-schools" | "ingredients-units" | "recipes";
+  "customers-schools" | "ingredients-units" | "recipes" | "planning-inputs";
 
 type AtlasAppProps = {
   initialPage?: MasterDataPageId;
@@ -53,6 +59,64 @@ const REVIEW_SCENARIOS: {
   { value: "session_lost", label: "Phiên đã hết" },
   { value: "server_error", label: "Lỗi máy chủ" },
   { value: "stale", label: "Xung đột phiên bản" },
+  { value: "menu_draft", label: "Thực đơn · bản nháp" },
+  { value: "menu_empty", label: "Thực đơn · tuần trống" },
+  { value: "menu_validated", label: "Thực đơn · đã xác thực" },
+  { value: "menu_approved", label: "Thực đơn · đã phê duyệt" },
+  { value: "menu_reopened", label: "Thực đơn · đã mở lại" },
+  { value: "menu_recipe_warning", label: "Thực đơn · công thức chưa sẵn sàng" },
+  { value: "menu_diff_approved", label: "Thực đơn · khác lần duyệt" },
+  { value: "menu_replay_success", label: "Thực đơn · lặp lại an toàn" },
+  { value: "menu_invalid_dates", label: "Thực đơn · sai ngày" },
+  { value: "menu_duplicate", label: "Thực đơn · trùng dòng" },
+  { value: "menu_inactive_refs", label: "Thực đơn · tham chiếu ngừng" },
+  { value: "menu_zero_valid", label: "Thực đơn · không có dòng hợp lệ" },
+  { value: "menu_permission_denied", label: "Thực đơn · thiếu quyền" },
+  { value: "menu_retryable", label: "Thực đơn · thử lại được" },
+  { value: "menu_stale", label: "Thực đơn · dữ liệu cũ" },
+  { value: "menu_session_lost", label: "Thực đơn · mất phiên" },
+  { value: "dish_types_renamed", label: "Loại món · đổi tên" },
+  { value: "dish_types_reordered", label: "Loại món · đổi thứ tự" },
+  { value: "dish_types_added", label: "Loại món · thêm cột" },
+  { value: "dish_types_inactive", label: "Loại món · ngừng hoạt động" },
+  { value: "menu_type_match", label: "Thực đơn · đúng Loại món" },
+  { value: "menu_type_mismatch", label: "Thực đơn · sai Loại món" },
+  { value: "google_source_configured", label: "Google Sheet · đã cấu hình" },
+  { value: "google_source_missing", label: "Google Sheet · chưa cấu hình" },
+  {
+    value: "google_source_unavailable",
+    label: "Google Sheet · nguồn ngừng hoạt động",
+  },
+  { value: "google_fetch_success", label: "Google Sheet · tải thành công" },
+  { value: "google_empty_sheet", label: "Google Sheet · trang tuần trống" },
+  { value: "google_sheet_missing", label: "Google Sheet · thiếu trang tuần" },
+  {
+    value: "google_connector_unavailable",
+    label: "Google Sheet · bộ đồng bộ lỗi",
+  },
+  { value: "google_permission_denied", label: "Google Sheet · thiếu quyền" },
+  { value: "google_retryable", label: "Google Sheet · có thể thử lại" },
+  { value: "google_session_lost", label: "Google Sheet · mất phiên" },
+  {
+    value: "google_preview_blockers",
+    label: "Google Sheet · xem trước có lỗi",
+  },
+  { value: "google_save_success", label: "Google Sheet · lưu thành công" },
+  { value: "attendance_draft", label: "Sĩ số · bản nháp" },
+  { value: "attendance_imported", label: "Sĩ số · giá trị đã nhập" },
+  { value: "attendance_validated", label: "Sĩ số · đã xác thực" },
+  { value: "attendance_approved", label: "Sĩ số · đã phê duyệt" },
+  { value: "attendance_reopened", label: "Sĩ số · đã mở lại" },
+  { value: "attendance_zero", label: "Sĩ số · số 0 tường minh" },
+  { value: "attendance_diff_defaults", label: "Sĩ số · khác mặc định" },
+  { value: "attendance_diff_approved", label: "Sĩ số · khác lần duyệt" },
+  { value: "attendance_missing_menu", label: "Sĩ số · thiếu thực đơn" },
+  { value: "attendance_negative", label: "Sĩ số · giá trị âm bị chặn" },
+  { value: "attendance_replay_success", label: "Sĩ số · lặp lại an toàn" },
+  { value: "attendance_permission_denied", label: "Sĩ số · thiếu quyền" },
+  { value: "attendance_retryable", label: "Sĩ số · thử lại được" },
+  { value: "attendance_stale", label: "Sĩ số · dữ liệu cũ" },
+  { value: "attendance_session_lost", label: "Sĩ số · mất phiên" },
 ];
 
 function AtlasNavigation({
@@ -100,7 +164,18 @@ function AtlasNavigation({
           </button>
         </div>
 
-        {["Kế hoạch nhu cầu", "Thu mua", "Kho"].map((label) => (
+        <div className="nav-group">
+          <span>Lập nhu cầu</span>
+          <button
+            type="button"
+            className={active === "planning-inputs" ? "active" : ""}
+            onClick={() => onNavigate("planning-inputs")}
+          >
+            Nguồn kế hoạch
+          </button>
+        </div>
+
+        {["Kế hoạch mua hàng", "Kho"].map((label) => (
           <button type="button" className="nav-future" disabled key={label}>
             <span>{label}</span>
             <small>Chưa triển khai</small>
@@ -117,6 +192,7 @@ function MasterDataPage({
   api,
   recipeApi,
   recipeAdjustmentApi,
+  planningApi,
   mode,
 }: {
   page: MasterDataPageId;
@@ -124,33 +200,49 @@ function MasterDataPage({
   api?: MasterDataApi;
   recipeApi?: RecipeApi;
   recipeAdjustmentApi?: RecipeAdjustmentApi;
+  planningApi?: PlanningInputsApi;
   mode: "connected" | "review";
 }) {
   const schoolPage = page === "customers-schools";
   const recipePage = page === "recipes";
+  const planningPage = page === "planning-inputs";
   return (
     <main className="atlas-page master-data-page">
       <header className="master-data-page-heading">
         <span className="page-kicker">
-          {recipePage ? "Quản trị công thức" : "Dữ liệu gốc"}
+          {planningPage
+            ? "Lập nhu cầu"
+            : recipePage
+              ? "Quản trị công thức"
+              : "Dữ liệu gốc"}
         </span>
         <h1>
-          {recipePage
-            ? "Công thức"
-            : schoolPage
-              ? "Trường học"
-              : "Nguyên liệu và Nhà cung ứng"}
+          {planningPage
+            ? "Nguồn kế hoạch"
+            : recipePage
+              ? "Công thức"
+              : schoolPage
+                ? "Trường học"
+                : "Nguyên liệu và Nhà cung ứng"}
         </h1>
         <p>
-          {recipePage
-            ? "Quản lý món ăn, phạm vi công thức chung/theo loại trường, phiên bản BOM bất biến, sao chép và nhập workbook có đối soát."
-            : schoolPage
-              ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
-              : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."}
+          {planningPage
+            ? "Quản lý thực đơn tuần và sĩ số theo đúng tuần phục vụ, với xem trước, xác thực, phê duyệt và lịch sử bất biến."
+            : recipePage
+              ? "Quản lý món ăn, phạm vi công thức chung/theo loại trường, phiên bản BOM bất biến, sao chép và nhập workbook có đối soát."
+              : schoolPage
+                ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
+                : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."}
         </p>
       </header>
 
-      {recipePage ? (
+      {planningPage ? (
+        <PlanningInputsWorkbench
+          authState={authState}
+          api={planningApi}
+          mode={mode}
+        />
+      ) : recipePage ? (
         <DishRecipeAdminWorkbench
           authState={authState}
           api={recipeApi}
@@ -176,6 +268,7 @@ function AtlasShell({
   api,
   recipeApi,
   recipeAdjustmentApi,
+  planningApi,
   mode,
   session,
   reviewScenario,
@@ -186,6 +279,7 @@ function AtlasShell({
   api?: MasterDataApi;
   recipeApi?: RecipeApi;
   recipeAdjustmentApi?: RecipeAdjustmentApi;
+  planningApi?: PlanningInputsApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   reviewScenario?: AtlasReviewScenario;
@@ -228,6 +322,7 @@ function AtlasShell({
           api={api}
           recipeApi={recipeApi}
           recipeAdjustmentApi={recipeAdjustmentApi}
+          planningApi={planningApi}
           mode={mode}
         />
       </div>
@@ -243,6 +338,10 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
     () => createReviewRecipeAdjustmentApi(scenario),
     [scenario],
   );
+  const planningApi = useMemo(
+    () => createReviewPlanningInputsApi(scenario),
+    [scenario],
+  );
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -252,6 +351,7 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
       api={api}
       recipeApi={recipeApi}
       recipeAdjustmentApi={recipeAdjustmentApi}
+      planningApi={planningApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -286,6 +386,10 @@ function ConnectedAtlasApp({
     () => (transport ? createRecipeAdjustmentApi(transport) : undefined),
     [transport],
   );
+  const planningApi = useMemo(
+    () => (transport ? createPlanningInputsApi(transport) : undefined),
+    [transport],
+  );
 
   return (
     <AtlasShell
@@ -294,6 +398,7 @@ function ConnectedAtlasApp({
       api={api}
       recipeApi={recipeApi}
       recipeAdjustmentApi={recipeAdjustmentApi}
+      planningApi={planningApi}
       mode="connected"
       session={auth}
     />

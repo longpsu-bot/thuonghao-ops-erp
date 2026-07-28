@@ -33,6 +33,7 @@ type DishDraft = {
   code: string;
   name: string;
   category: string;
+  dishTypeId: string;
   notes: string;
   displayOrder: string;
   requiresNeedGeneration: boolean;
@@ -49,6 +50,7 @@ const emptyDishDraft = (): DishDraft => ({
   code: "",
   name: "",
   category: "",
+  dishTypeId: "",
   notes: "",
   displayOrder: "0",
   requiresNeedGeneration: true,
@@ -220,9 +222,12 @@ export function DishRecipeAdminWorkbench({
     const needle = query.trim().toLocaleLowerCase("vi");
     return (
       !needle ||
-      [item.dish_code, item.dish_name, item.dish_category].some((value) =>
-        (value ?? "").toLocaleLowerCase("vi").includes(needle),
-      )
+      [
+        item.dish_code,
+        item.dish_name,
+        item.dish_category,
+        item.dish_type_name,
+      ].some((value) => (value ?? "").toLocaleLowerCase("vi").includes(needle))
     );
   });
 
@@ -234,11 +239,18 @@ export function DishRecipeAdminWorkbench({
             code: selected.dish_code,
             name: selected.dish_name,
             category: selected.dish_category ?? "",
+            dishTypeId: selected.dish_type_id ?? "",
             notes: selected.operational_notes ?? "",
             displayOrder: String(selected.display_order),
             requiresNeedGeneration: selected.requires_need_generation,
           }
-        : emptyDishDraft(),
+        : {
+            ...emptyDishDraft(),
+            dishTypeId:
+              load.data.dish_types.find(
+                (dishType) => dishType.dish_type_status === "ACTIVE",
+              )?.dish_type_id ?? "",
+          },
     );
   };
 
@@ -248,10 +260,13 @@ export function DishRecipeAdminWorkbench({
     if (
       !dishDraft.code.trim() ||
       !dishDraft.name.trim() ||
+      !dishDraft.dishTypeId ||
       !Number.isInteger(displayOrder) ||
       displayOrder < 0
     ) {
-      setNotice("Mã món, tên món và thứ tự hiển thị không âm là bắt buộc.");
+      setNotice(
+        "Mã món, tên món, Loại món và thứ tự hiển thị không âm là bắt buộc.",
+      );
       return;
     }
     const editing = load.data.dishes.find(
@@ -261,6 +276,7 @@ export function DishRecipeAdminWorkbench({
       dish_code: dishDraft.code,
       dish_name: dishDraft.name,
       dish_category: dishDraft.category,
+      dish_type_id: dishDraft.dishTypeId,
       operational_notes: dishDraft.notes,
       display_order: displayOrder,
       requires_need_generation: dishDraft.requiresNeedGeneration,
@@ -618,7 +634,7 @@ export function DishRecipeAdminWorkbench({
           <div className="master-data-workspace with-detail">
             <div className="master-data-table-scroll">
               <CompactTable
-                headers={["Món ăn", "Nhóm", "Trạng thái", "Phạm vi", ""]}
+                headers={["Món ăn", "Loại món", "Trạng thái", "Phạm vi", ""]}
               >
                 {shownDishes.map((item) => (
                   <tr key={item.dish_id}>
@@ -626,7 +642,11 @@ export function DishRecipeAdminWorkbench({
                       <strong>{item.dish_name}</strong>
                       <small>{item.dish_code}</small>
                     </td>
-                    <td>{item.dish_category ?? "—"}</td>
+                    <td>
+                      {item.dish_type_name ?? (
+                        <span className="operator-notice danger">Chưa gán</span>
+                      )}
+                    </td>
                     <td>
                       <Chip tone={statusTone(item.dish_status)}>
                         {statusLabel[item.dish_status]}
@@ -1357,7 +1377,7 @@ export function DishRecipeAdminWorkbench({
               [
                 ["code", "Mã món"],
                 ["name", "Tên món"],
-                ["category", "Nhóm món"],
+                ["category", "Nhóm mô tả (tương thích)"],
                 ["displayOrder", "Thứ tự hiển thị"],
               ] as const
             ).map(([key, label]) => (
@@ -1375,6 +1395,32 @@ export function DishRecipeAdminWorkbench({
                 />
               </label>
             ))}
+            <label className="evidence-field">
+              Loại món
+              <select
+                value={dishDraft.dishTypeId}
+                onChange={(event) =>
+                  setDishDraft((state) => ({
+                    ...state,
+                    dishTypeId: event.target.value,
+                  }))
+                }
+              >
+                <option value="">Chọn Loại món</option>
+                {load.data.dish_types.map((dishType) => (
+                  <option
+                    value={dishType.dish_type_id}
+                    key={dishType.dish_type_id}
+                    disabled={dishType.dish_type_status !== "ACTIVE"}
+                  >
+                    {dishType.dish_type_name} ({dishType.dish_type_code})
+                    {dishType.dish_type_status === "INACTIVE"
+                      ? " — ngừng hoạt động"
+                      : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="evidence-field">
               Ghi chú vận hành
               <textarea

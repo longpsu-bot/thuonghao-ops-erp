@@ -49,9 +49,10 @@ select is(
     'requires_need_generation',
     'version',
     'created_at',
-    'updated_at'
+    'updated_at',
+    'dish_type_id'
   ]::text[],
-  'dishes has only the approved bounded fields'
+  'dishes has the approved bounded fields plus the RMVP-03A typed classification'
 );
 
 select is(

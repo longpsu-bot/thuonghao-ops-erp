@@ -41,6 +41,9 @@ This register records approved business rules. Module specifications may refine 
 | BR-034 | Recipe composition adjustment authority is closed to `SYSTEM_INGREDIENT`, `SYSTEM_DISH`, `SCHOOL`, and `SCHOOL_DISH`, with only the action combinations recorded by RMVP-02B. | Approved |
 | BR-035 | Effective Recipe composition applies released base, system Ingredient, system Dish, School, and School-and-Dish layers in that exact order for an explicit date; overlap, ambiguity, cycle, stale target, or duplicate final Ingredient blocks resolution. | Approved |
 | BR-036 | An accepted Recipe composition adjustment is never edited or deleted; correction appends one direct successor or dated cancellation, preserves historical resolution and source audit, and affects no released operational fact retroactively. | Approved |
+| BR-037 | Weekly Menu and Attendance imports must be previewed and bound to the backend canonical checksum before an atomic full-draft replacement; unresolved references block saving and source-row evidence remains reviewable. | Approved |
+| BR-038 | Weekly Menu School/date/slot assignments and Attendance School/date rows retain stable identity across working replacements; approval captures the exact active rows in an immutable snapshot, and reopen preserves prior approval history while advancing the working version. | Approved |
+| BR-039 | Attendance `0` is a legitimate explicit student or teacher quantity; a blank or invalid value must never be inferred as zero, and default creation must use the selected week and active Weekly Menu School/date coverage rather than an implicit current date. | Approved |
 
 Detailed legacy evidence, approved directions, recommendations, and still-pending quantity decisions are separated in the [PA-06D Rounding and Rebalancing Rule Register](pa-06d-rounding-rebalancing-rule-register.md). A PA-06D row is not approved unless its status explicitly says so.
 

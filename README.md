@@ -88,6 +88,17 @@ pnpm local:recipe-adjustments:import -- --file supabase/local/rmvp_02b_adjustmen
 
 The local-only importer accepts exactly four explicit OPS v1 arrays, calculates the canonical checksum, rejects missing/ambiguous/cyclic references before writes, records reconciliation, and never connects to live OPS v1. The example contains no production data. See [RMVP-02B Recipe adjustments and effective BOM](docs/architecture/rmvp-02b-recipe-adjustments-effective-bom.md) and the [RMVP-02B API contract](docs/api/rmvp-02b-recipe-adjustments-effective-bom.md).
 
+### RMVP-03A connected Weekly Menu and Attendance
+
+RMVP-03A activates the Vietnamese `Nguồn kế hoạch` workbench for one explicit Monday-start week. It connects the existing Weekly Menu and Attendance aggregates, stable rows, exact approval snapshots, and inherited lifecycles without adding a table, trigger, role, module, or downstream write.
+
+```bash
+pnpm exec supabase test db supabase/tests/rmvp_03a_connected_weekly_menu_attendance.sql --local
+pnpm local:rmvp03a:verify
+```
+
+Workbook and tab-paste input is previewed and checksum-bound before saving. Unknown references remain visible blockers, explicit attendance zero is preserved, reasoned reopen retains approval history, and readiness is a read-only comparison of the two current approvals. See [RMVP-03A Connected Weekly Menu and Attendance](docs/architecture/rmvp-03a-connected-weekly-menu-attendance.md) and the [RMVP-03A API contract](docs/api/rmvp-03a-planning-inputs.md).
+
 ### RMVP-01 UI review export
 
 The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.
