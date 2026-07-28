@@ -30,22 +30,39 @@ The task establishes Pantry as a typed Planning-owned source while preserving th
 
 ## 3. Retool and legacy evidence
 
-The reviewed OPS v1 evidence shows an adjacent operational grid pattern with:
+The February Retool JSON export with SHA-256
+`064D74570F1CA06CD95FF2E46D07F372717ED113B7EFD16B68BFFEEE3D51ED3B`
+does not contain the Pantry-labelled objects reviewed for this decision.
+
+The separate Retool export `OPS - Lên đơn, Đặt hàng (1)`, identified by JSON
+SHA-256
+`6F6FF8D025696D375F354A86126661D20C3E9908D6475D40ECB14EE006B4A371`
+and decomposed ZIP SHA-256
+`728611082382E9146C9456910E6D334B9B8135BD1A1BBEAC4D9C3476BB12C18F`,
+contains Pantry-specific internal components, controllers, queries and
+dedicated tab-key logic. Reviewed examples include:
+
+- `ctl_pantry_load`;
+- `tblPantry`;
+- `q_pantry_load`;
+- `q_pantry_ingredients`;
+- `q_pantry_save_upsert`;
+- Pantry tab key `7` and the `not_pantry_tab` result for another selected tab.
+
+That Retool export and the OPS v1 schema evidence establish:
 
 - date-range selection;
 - School and Ingredient selection;
 - quantity and note editing;
 - Unit display derived from Ingredient `purchase_unit`;
 - legacy identity based on `service_date + school_id + ingredient_id`;
-- changed-row bulk-save behavior.
+- changed-row save behavior;
+- Pantry persistence and contribution to the legacy theoretical-needs flow.
 
-Retool export SHA-256:
-
-```text
-064D74570F1CA06CD95FF2E46D07F372717ED113B7EFD16B68BFFEEE3D51ED3B
-```
-
-The retained Retool export does not contain a component or tab labelled Pantry. The evidence is descriptive of adjacent operator interaction, not authoritative for Atlas Pantry identity, lifecycle, add-row behavior or downstream routing.
+Both exports are read-only operational evidence. They do not define Atlas
+Pantry ownership, stable UUID identity, lifecycle, approval snapshots, source
+signatures, Unit authority, deletion semantics, Need Generation, Confirmed
+Need, supplier selection, Warehouse routing or Procurement release.
 
 ## 4. Deliverables
 

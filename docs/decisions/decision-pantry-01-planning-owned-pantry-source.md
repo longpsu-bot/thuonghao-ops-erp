@@ -21,7 +21,7 @@ Atlas already has approved and implemented Weekly Menu, Attendance and direct Wh
 6. Pantry approval does not create Confirmed Need or choose fulfilment. Later bounded amendments bind the approved snapshot to Planning Input evaluation and Need Generation; Procurement later selects supplier, Warehouse, mixed or another approved fulfilment source.
 7. RMVP-03B remains Planning Input Readiness. PANTRY-02 is the later bounded persistence, command, read-model and connected capture/approval task; Pantry readiness and Need Generation amendments remain separate.
 8. PANTRY-02 may propose five private Pantry relations, at most six APIs and at most one new capability while reusing existing Planning runtimes. It adds no runtime role or downstream Planning/Procurement/Warehouse mutation.
-9. OPS v1 and Retool are read-only operational evidence. The retained export does not contain a Pantry-labelled tab, so it cannot define Pantry authority, identity, lifecycle or routing.
+9. OPS v1 and Retool are read-only operational evidence. The February JSON at SHA-256 `064D74570F1CA06CD95FF2E46D07F372717ED113B7EFD16B68BFFEEE3D51ED3B` does not contain the reviewed Pantry-labelled objects; the separate `OPS - Lên đơn, Đặt hàng (1)` export, identified by JSON SHA-256 `6F6FF8D025696D375F354A86126661D20C3E9908D6475D40ECB14EE006B4A371` and decomposed ZIP SHA-256 `728611082382E9146C9456910E6D334B9B8135BD1A1BBEAC4D9C3476BB12C18F`, contains Pantry-specific components, queries and tab-key logic. Neither export defines Atlas authority, identity, lifecycle, Unit authority, approval or routing.
 
 ## Supersession and impact
 

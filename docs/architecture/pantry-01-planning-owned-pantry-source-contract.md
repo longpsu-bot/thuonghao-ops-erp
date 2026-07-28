@@ -391,24 +391,48 @@ The Planning command runtime receives no Admin, Procurement, Warehouse, Evidence
 
 ## 14. OPS v1 evidence and migration boundary
 
-Reviewed OPS v1 Retool and schema evidence shows an adjacent operational grid pattern with:
+The February Retool JSON export with SHA-256
+`064D74570F1CA06CD95FF2E46D07F372717ED113B7EFD16B68BFFEEE3D51ED3B`
+does not contain the Pantry-labelled objects reviewed below.
+
+The separate Retool export `OPS - Lên đơn, Đặt hàng (1)` is identified by:
+
+- JSON SHA-256
+  `6F6FF8D025696D375F354A86126661D20C3E9908D6475D40ECB14EE006B4A371`;
+- decomposed ZIP SHA-256
+  `728611082382E9146C9456910E6D334B9B8135BD1A1BBEAC4D9C3476BB12C18F`.
+
+That separate export contains Pantry-specific internal components,
+controllers, queries and dedicated tab-key logic, including:
+
+- `ctl_pantry_load`;
+- `tblPantry`;
+- `q_pantry_load`;
+- `q_pantry_ingredients`;
+- `q_pantry_save_upsert`;
+- a Pantry tab key of `7`, including a `not_pantry_tab` result when another
+  tab is selected.
+
+Together with OPS v1 schema evidence, the legacy evidence establishes:
 
 - date-range loading;
 - School and Ingredient selection;
 - quantity and note editing;
 - Unit display derived from Ingredient `purchase_unit`;
 - effective identity `service_date + school_id + ingredient_id`;
-- changed-row bulk-save behavior.
+- changed-row save behavior;
+- legacy Pantry persistence and contribution to the theoretical-needs flow.
 
-Retool export evidence SHA-256:
+This legacy UI, query and schema structure is operational evidence only. It
+does not define Atlas Pantry ownership, stable UUID identity, lifecycle,
+approval snapshots, source signatures, Unit authority, deletion semantics,
+Need Generation, Confirmed Need, supplier selection, Warehouse routing,
+Procurement release or other downstream behavior.
 
-```text
-064D74570F1CA06CD95FF2E46D07F372717ED113B7EFD16B68BFFEEE3D51ED3B
-```
-
-The retained export does not contain a component or tab labelled Pantry. It therefore does not establish Pantry-specific authority, identity, lifecycle, add-row behavior, deletion rules or downstream routing.
-
-This evidence establishes adjacent operator interaction only. Atlas must not copy Retool temporary state, client-side Unit maps, destructive deletion, numeric legacy identities, direct theoretical-view coupling, purchase assignments or downstream calculated rows.
+Atlas must not copy Retool temporary state, client-side Unit maps, infer
+deletion behavior, use numeric legacy identities as canonical identity, or
+couple Pantry directly to legacy theoretical-needs, purchase-assignment or
+downstream calculated rows.
 
 A future controlled importer may accept explicit legacy IDs and source references, resolve them to Atlas canonical IDs, preserve the legacy tuple as migration evidence, and reject missing or ambiguous mappings. It may not connect to live OPS v1 during implementation or CI.
 
