@@ -1,9 +1,9 @@
 # TASK-PANTRY-01 — Define Planning-Owned Pantry Source Contract
 
-**Status:** Implemented on documentation branch; pending PR review and merge  
-**Baseline:** `a12099599bb659f8ab754df5bdeb28ce4b0bae14`  
-**Branch:** `docs/pantry-01-planning-source-contract`  
-**Task type:** Documentation and governance only
+- **Status:** Documentation complete; draft PR review pending
+- **Baseline:** `a12099599bb659f8ab754df5bdeb28ce4b0bae14`
+- **Branch:** `docs/pantry-01-planning-source-contract`
+- **Task type:** Documentation and governance only
 
 ## 1. Purpose
 
@@ -15,9 +15,14 @@ The task establishes Pantry as a typed Planning-owned source while preserving th
 
 - `AGENTS.md`
 - `docs/architecture/task-003-source-of-need-contract.md`
+- `docs/architecture/pa-01-atlas-persistence-contract.md`
 - `docs/architecture/pa-02-physical-schema-and-constraint-design.md`
 - `docs/architecture/pa-05d-planning-command-family-contract.md`
 - `docs/architecture/rmvp-03a-connected-weekly-menu-attendance.md`
+- Planning Input Readiness contracts and decisions
+- Need Generation contracts and decisions
+- Confirmed Need identity and contribution-membership contracts
+- Procurement fulfilment-allocation boundary
 - `docs/architecture/roadmap.md`
 - `docs/decisions/decision-register.md`
 - merged RMVP-03A baseline
@@ -25,17 +30,14 @@ The task establishes Pantry as a typed Planning-owned source while preserving th
 
 ## 3. Retool and legacy evidence
 
-The reviewed OPS v1 evidence shows:
+The reviewed OPS v1 evidence shows an adjacent operational grid pattern with:
 
-- a dedicated Pantry tab/controller;
-- date-range gating;
+- date-range selection;
 - School and Ingredient selection;
 - quantity and note editing;
 - Unit display derived from Ingredient `purchase_unit`;
 - legacy identity based on `service_date + school_id + ingredient_id`;
-- bulk upsert for positive quantities;
-- destructive deletion for nonpositive quantities;
-- direct addition to theoretical-needs projections.
+- changed-row bulk-save behavior.
 
 Retool export SHA-256:
 
@@ -43,7 +45,7 @@ Retool export SHA-256:
 064D74570F1CA06CD95FF2E46D07F372717ED113B7EFD16B68BFFEEE3D51ED3B
 ```
 
-This evidence is descriptive, not authoritative for Atlas implementation.
+The retained Retool export does not contain a component or tab labelled Pantry. The evidence is descriptive of adjacent operator interaction, not authoritative for Atlas Pantry identity, lifecycle, add-row behavior or downstream routing.
 
 ## 4. Deliverables
 
@@ -57,6 +59,8 @@ This evidence is descriptive, not authoritative for Atlas implementation.
 - Pantry is a first-class Planning-owned source.
 - Pantry is not a Wholesale Order or Warehouse stock action.
 - Pantry uses typed Supabase references for School, Delivery Location, Ingredient, Unit and Pantry Purpose.
+- The Pantry Unit is the Ingredient's current `purchase_unit_id`, which references the authoritative Unit row; missing or mismatched Unit authority blocks the future command.
+- Pantry Purpose is a typed database catalog whose production codes and seed values remain separately reviewed.
 - One batch covers one Monday-start week.
 - One active stable line exists per batch/date/School/location/Ingredient.
 - Capture lifecycle is `DRAFT → VALIDATED → APPROVED → REOPENED → VALIDATED → APPROVED`.
@@ -93,7 +97,7 @@ Documentation review must confirm:
 
 1. OPS_SYSTEM_MAP placement is explicit.
 2. The aggregate grain and lifecycle are unambiguous.
-3. database-driven React requirements are mandatory.
+3. Database-driven React requirements are mandatory.
 4. exact future persistence/API/capability/runtime bounds are stated.
 5. Planning Input and Need Generation amendments are separately bounded.
 6. supplier-versus-Warehouse routing remains Procurement-owned.
