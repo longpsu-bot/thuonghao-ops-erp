@@ -33,7 +33,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Planning integration and operator-workflow review
 - ✅ RMVP-03A connected Weekly Menu and Attendance — explicit-week preview, checksum-bound draft replacement, stable rows, exact approval snapshots, reasoned reopen/reapproval, and read-only readiness comparison; no downstream Planning write
 - 🟡 PANTRY-01 Planning-owned Pantry source contract — documentation and governance in draft PR #159; explicit `no_additions_confirmed` zero-line snapshots, server-resolved Ingredient purchase Unit, and Pantry kept distinct from Wholesale and Warehouse
-- ⬜ PANTRY-REF-01 mandatory reference-data dependency — approve the initial Pantry Purpose vocabulary and typed reference-readiness criteria before PANTRY-02
+- 🟡 PANTRY-REF-01 mandatory reference-data dependency — [contract](pantry-ref-01-reference-data-contract.md) and [decision](../decisions/decision-pantry-ref-01-reference-data.md) accepted by the Product Owner; draft PR review and merge remain before separately authorized PANTRY-02
 - ⬜ PANTRY-02 bounded Pantry persistence, commands, shaped read, and connected capture/approval UI — unchanged limit of five private Pantry relations, six APIs, one new capability maximum and zero new roles, including runtime roles
 - ⬜ Separately named Pantry readiness amendment — admit exact approved Pantry snapshots, including explicit zero-line snapshots, without renaming RMVP-03B
 - ⬜ Separately named Pantry Need Generation amendment — create direct typed Ingredient contributions without Recipe explosion
