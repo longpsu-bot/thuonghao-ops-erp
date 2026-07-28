@@ -32,9 +32,10 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ Purchase Handoff foundation
 - ✅ Planning integration and operator-workflow review
 - ✅ RMVP-03A connected Weekly Menu and Attendance — explicit-week preview, checksum-bound draft replacement, stable rows, exact approval snapshots, reasoned reopen/reapproval, and read-only readiness comparison; no downstream Planning write
-- 🟡 PANTRY-01 Planning-owned Pantry source contract — documentation and governance in draft PR #159; Pantry remains distinct from Wholesale and Warehouse
-- ⬜ PANTRY-02 bounded Pantry persistence, commands, shaped read, and connected capture/approval UI
-- ⬜ Separately named Pantry readiness amendment — admit exact approved Pantry snapshots without renaming RMVP-03B
+- 🟡 PANTRY-01 Planning-owned Pantry source contract — documentation and governance in draft PR #159; explicit `no_additions_confirmed` zero-line snapshots, server-resolved Ingredient purchase Unit, and Pantry kept distinct from Wholesale and Warehouse
+- ⬜ PANTRY-REF-01 mandatory reference-data dependency — approve the initial Pantry Purpose vocabulary and typed reference-readiness criteria before PANTRY-02
+- ⬜ PANTRY-02 bounded Pantry persistence, commands, shaped read, and connected capture/approval UI — unchanged limit of five private Pantry relations, six APIs, one new capability maximum and zero new roles, including runtime roles
+- ⬜ Separately named Pantry readiness amendment — admit exact approved Pantry snapshots, including explicit zero-line snapshots, without renaming RMVP-03B
 - ⬜ Separately named Pantry Need Generation amendment — create direct typed Ingredient contributions without Recipe explosion
 - 🟡 PA-06D quantity truth, operational precision, rounding, rebalancing, and write-fidelity documentation — [contract](pa-06d-quantity-truth-rounding-rebalancing-contract.md); implementation and unresolved product decisions remain unapproved
 - 🟡 PA-06E Confirmed Need review, adjustment, revision, and source-correction documentation — [contract](pa-06e-confirmed-need-review-adjustment-revision-contract.md) and [decision](../decisions/decision-pa-06e-confirmed-need-source-correction.md); implementation and pending product decisions remain unapproved

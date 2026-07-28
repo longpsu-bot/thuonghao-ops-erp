@@ -18,6 +18,7 @@ The task establishes Pantry as a typed Planning-owned source while preserving th
 - `docs/architecture/pa-01-atlas-persistence-contract.md`
 - `docs/architecture/pa-02-physical-schema-and-constraint-design.md`
 - `docs/architecture/pa-05d-planning-command-family-contract.md`
+- `docs/architecture/rmvp-01-independent-atlas-master-data.md`
 - `docs/architecture/rmvp-03a-connected-weekly-menu-attendance.md`
 - Planning Input Readiness contracts and decisions
 - Need Generation contracts and decisions
@@ -76,17 +77,20 @@ Need, supplier selection, Warehouse routing or Procurement release.
 - Pantry is a first-class Planning-owned source.
 - Pantry is not a Wholesale Order or Warehouse stock action.
 - Pantry uses typed Supabase references for School, Delivery Location, Ingredient, Unit and Pantry Purpose.
-- The Pantry Unit is the Ingredient's current `purchase_unit_id`, which references the authoritative Unit row; missing or mismatched Unit authority blocks the future command.
+- The backend resolves Pantry Unit from the Ingredient's current `purchase_unit_id` and active Unit row; React neither selects nor submits authoritative Unit identity, and missing, inactive or stale Unit authority blocks the future command.
 - Pantry Purpose is a typed database catalog whose production codes and seed values remain separately reviewed.
 - One batch covers one Monday-start week.
 - One active stable line exists per batch/date/School/location/Ingredient.
+- An exact zero-line approval is valid only with `no_additions_confirmed = true`; it records controlled absence and never creates a zero-quantity line.
 - Capture lifecycle is `DRAFT → VALIDATED → APPROVED → REOPENED → VALIDATED → APPROVED`.
-- Approval creates an immutable exact-line snapshot.
+- Approval creates an immutable exact snapshot header and every-and-only active line set, including the valid empty set for an explicit no-additions confirmation.
 - Pantry does not directly create Confirmed Need.
 - A later readiness amendment binds the approved Pantry snapshot directly.
-- A later Need Generation amendment consumes Pantry as a direct Ingredient contribution without Recipe explosion.
+- A later Need Generation amendment consumes positive Pantry lines as direct Ingredient contributions without Recipe explosion and retains a zero-line approval as exact input evidence without fabricating a contribution.
 - Procurement later chooses supplier, Warehouse, mixed or another approved fulfilment source.
 - RMVP-03B remains Planning Input Readiness.
+- PANTRY-REF-01 is the mandatory reference-data dependency before PANTRY-02 and separately approves the initial Pantry Purpose vocabulary and reference-readiness criteria.
+- PANTRY-02 remains limited to exactly five private Pantry relations, at most six APIs, at most one new capability and zero new roles, including runtime roles.
 - React must render business references, rules and allowed actions from authorized Supabase shaped reads rather than permanent TypeScript configuration.
 
 ## 6. Explicit boundaries
@@ -115,15 +119,18 @@ Documentation review must confirm:
 1. OPS_SYSTEM_MAP placement is explicit.
 2. The aggregate grain and lifecycle are unambiguous.
 3. Database-driven React requirements are mandatory.
-4. exact future persistence/API/capability/runtime bounds are stated.
-5. Planning Input and Need Generation amendments are separately bounded.
-6. supplier-versus-Warehouse routing remains Procurement-owned.
-7. the contract does not mutate current persistence or application behavior.
-8. all relative documentation links resolve.
-9. Markdown formatting and diff whitespace checks pass in CI.
+4. explicit `no_additions_confirmed` zero-line approval is distinct from a prohibited zero-quantity line.
+5. Ingredient purchase Unit is resolved server-side and cannot be selected or overridden by React.
+6. PANTRY-REF-01 is a mandatory reference-data dependency.
+7. the five-relation, six-API, one-capability and zero-new-role limits are unchanged.
+8. Planning Input and Need Generation amendments are separately bounded without renaming RMVP-03B.
+9. supplier-versus-Warehouse routing remains Procurement-owned.
+10. the contract does not mutate current persistence or application behavior.
+11. all relative documentation links resolve.
+12. Markdown formatting and diff whitespace checks pass in CI.
 
 ## 8. Next task
 
-After this contract is merged, a separately authorized `PANTRY-02` task may implement the bounded persistence, command/read surface and connected capture/approval UI within the exact limits defined by PANTRY-01.
+After this contract is merged and the separately authorized `PANTRY-REF-01` reference-data dependency is approved, a separately authorized `PANTRY-02` task may implement the bounded persistence, command/read surface and connected capture/approval UI within the exact limits defined by PANTRY-01.
 
 PANTRY-02 must not silently include Planning Input Readiness or Need Generation changes.

@@ -13,6 +13,7 @@ Related authority:
 - [PA-01 Atlas persistence contract](pa-01-atlas-persistence-contract.md)
 - [PA-02 physical schema design](pa-02-physical-schema-and-constraint-design.md)
 - [PA-05D bounded Planning command family](pa-05d-planning-command-family-contract.md)
+- [RMVP-01 independent Atlas master data](rmvp-01-independent-atlas-master-data.md)
 - [Planning Input Readiness contract](planning-domain-input-readiness-contract.md)
 - [Need Generation contract](planning-domain-need-generation-contract.md)
 - [Confirmed Need contract](planning-domain-confirmed-need-contract.md)
@@ -36,6 +37,8 @@ Pantry is not a Wholesale Order, Warehouse stock request, stock adjustment, Reci
 
 The current PA-05D direct-wholesale shortcut remains valid only for Wholesale Orders. No Pantry action may call `record_wholesale_source` or `release_wholesale_order`.
 
+An approved Pantry snapshot may contain zero lines only when the batch explicitly records `no_additions_confirmed = true`. That snapshot is affirmative source evidence that the week has no Pantry additions; it is not a zero-quantity Pantry line. Every persisted Pantry line still requires a positive quantity.
+
 ## 2. OPS_SYSTEM_MAP placement
 
 ```text
@@ -57,6 +60,7 @@ Business Objects
 
 Business Contract
 → Pantry identifies an additional Ingredient quantity for one School, destination and service date
+→ a zero-line approval explicitly confirms that no Pantry additions exist for the week
 → approval makes the exact snapshot eligible for later Planning Input evaluation
 → approval does not select supplier or Warehouse fulfilment
 
@@ -80,6 +84,8 @@ Technology
 ## 3. Business meaning
 
 A Pantry addition is a direct Ingredient need that supplements the planned Menu/Recipe calculation for a School and service date.
+
+A batch with no additions is also a controlled Planning input. The operator must explicitly set `no_additions_confirmed = true`; an empty row set without that confirmation is incomplete and cannot validate or approve. The flag must be `false` whenever one or more active Pantry lines exist.
 
 Pantry purposes belong to a typed Supabase catalog named `atlas_planning.pantry_need_purposes`. PANTRY-01 does not fix final production codes, labels, descriptions, note rules, or seed rows. Those values require separate product review before production use.
 
@@ -123,6 +129,7 @@ Required concepts:
 - optimistic-concurrency version;
 - source type and source name;
 - deterministic source signature;
+- required `no_additions_confirmed` working fact;
 - requesting Actor;
 - authoritative creation/import Actor, method, source evidence and time;
 - latest approval Actor, time and snapshot ID;
@@ -150,7 +157,7 @@ Required current working facts:
 - active Delivery Location ID belonging to the same School/customer context;
 - service date inside the batch week;
 - active Ingredient ID;
-- authoritative Unit ID resolved through
+- authoritative Unit ID resolved server-side through
   `atlas_admin.ingredients.purchase_unit_id → atlas_admin.units.unit_id`;
 - active Pantry Purpose ID;
 - positive requested quantity;
@@ -172,21 +179,25 @@ batch
 
 Multiple requests for the same active grain are consolidated into one reviewed quantity before save. Separate sub-request lineage is deferred until a proven operational need exists.
 
-Unit display text is not identity. React displays the resolved Unit and submits its stable `unit_id`. The backend requires the submitted Unit to equal the Ingredient's current non-null `purchase_unit_id`; a missing, inactive, or different Unit blocks preview, save, validation and approval. PANTRY-01 authorizes no conversion or fallback.
+Unit display text is not identity, and the client does not select or submit Unit authority. Preview and save resolve the Ingredient's current non-null `purchase_unit_id` and active Unit row on the server, persist that resolved `unit_id`, include it in the canonical signature, and return it for display. Validation and approval re-resolve the same chain; a missing or inactive Unit, or a persisted Unit that is stale against the Ingredient's current purchase Unit, blocks the command until authoritative refresh and reviewed save. PANTRY-01 authorizes no conversion, fallback, or caller override.
 
-A quantity, purpose, Unit, note, source reference or source-row correction changes working facts and version without replacing the stable Pantry line ID. Omission invalidates the stable line instead of deleting it.
+A quantity, purpose, note, source reference or source-row correction changes working facts and version without replacing the stable Pantry line ID. A refreshed server-resolved purchase Unit changes the working fact and version without changing stable line identity. Omission invalidates the stable line instead of deleting it.
 
 ### 4.4 Approval snapshot
 
-Approval creates one immutable snapshot header and every-and-only active line snapshot.
+Approval creates one immutable snapshot header and every-and-only active line snapshot rows. The every-and-only line set may be empty only when `no_additions_confirmed = true`.
 
-The snapshot preserves:
+The snapshot header preserves:
 
 - batch ID and approved batch version;
 - approval Actor and timestamp;
 - source signature;
+- exact `no_additions_confirmed` value;
 - line count;
 - blocker/warning issue summary;
+
+Each snapshot line, when present, preserves:
+
 - stable line ID;
 - School and Delivery Location IDs, codes/names and required display snapshots;
 - service date;
@@ -195,6 +206,8 @@ The snapshot preserves:
 - Pantry Purpose ID, code/name and required display snapshot;
 - exact approved quantity;
 - note, source request reference and source-row evidence where present.
+
+A valid zero-line approval snapshot has `line_count = 0`, `no_additions_confirmed = true`, and no snapshot-line rows. It must not fabricate a zero-quantity line, Ingredient, Unit, School, Delivery Location, or Pantry Purpose.
 
 A previous approval snapshot is never updated or deleted. Later master-data or purpose-catalog changes do not rewrite its historical meaning.
 
@@ -218,13 +231,14 @@ Rules:
 - `APPROVED` means the exact snapshot is eligible for Planning Input evaluation.
 - Pantry has no `RELEASED` state in the capture slice.
 - approval is not Procurement release, Warehouse reservation, or supplier commitment.
+- validation and approval require either one or more positive-quantity active lines with `no_additions_confirmed = false`, or zero active lines with `no_additions_confirmed = true`.
 - reopening requires a non-empty reason note and advances the working version.
 - reopening never modifies prior snapshots.
 - once a snapshot has been referenced by a Planning Input evaluation or Need Generation run, all downstream references remain bound to that exact snapshot.
 
 Omitting a prior working line from a complete replacement invalidates the line; it does not physically delete it. Restoring the same grain reuses the stable line ID.
 
-Blank, zero, negative, malformed, unknown, inactive, or mismatched input is rejected or retained as a visible blocker. Atlas never silently converts invalid input to zero.
+For a supplied Pantry line, blank, zero, negative, malformed, unknown, inactive, or stale input is rejected or retained as a visible blocker. Atlas never silently converts invalid line input to zero. A valid explicit zero-line batch uses `no_additions_confirmed`; it does not use a zero quantity.
 
 Pantry source approval is distinct from Planning Input readiness, Need Generation release, Confirmed Need approval, and Purchase Handoff release. Each remains a separately controlled business boundary.
 
@@ -234,14 +248,14 @@ PANTRY-01 authorizes the maximum shape below for later PANTRY-02 design. PANTRY-
 
 The later implementation may expose at most these six functions:
 
-| Function                                     | Capability                | Behavior                                                                                                                                            |
-| -------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `get_pantry_source_workbench(request jsonb)` | `planning.inputs.read`    | Returns the explicit week, Supabase-backed references, current Pantry batch, lines, snapshots, history, issues and backend-derived allowed actions. |
-| `preview_pantry_source(request jsonb)`       | `planning.inputs.read`    | Canonicalizes proposed rows, calculates a deterministic signature and comparison, and performs no write.                                            |
-| `save_pantry_draft(request jsonb)`           | `planning.pantry.write`   | Creates or completely replaces the working draft transactionally while preserving stable line identity.                                             |
-| `validate_pantry(request jsonb)`             | `planning.pantry.write`   | Rechecks current references, units, quantities and lifecycle and moves the working batch to `VALIDATED`.                                            |
-| `approve_pantry(request jsonb)`              | `planning.inputs.approve` | Creates the immutable exact approval snapshot and moves the batch to `APPROVED`.                                                                    |
-| `reopen_pantry(request jsonb)`               | `planning.inputs.approve` | Reasoned reopen preserving every prior approval snapshot.                                                                                           |
+| Function                                     | Capability                | Behavior                                                                                                                                                                  |
+| -------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_pantry_source_workbench(request jsonb)` | `planning.inputs.read`    | Returns the explicit week, Supabase-backed references, current Pantry batch and no-additions fact, lines, snapshots, history, issues and backend-derived allowed actions. |
+| `preview_pantry_source(request jsonb)`       | `planning.inputs.read`    | Canonicalizes proposed rows, resolves Ingredient purchase Units server-side, calculates a deterministic signature and comparison, and performs no write.                  |
+| `save_pantry_draft(request jsonb)`           | `planning.pantry.write`   | Creates or completely replaces the working draft transactionally while preserving stable line identity.                                                                   |
+| `validate_pantry(request jsonb)`             | `planning.pantry.write`   | Rechecks current references, server-resolved Units, quantities, no-additions consistency and lifecycle and moves the working batch to `VALIDATED`.                        |
+| `approve_pantry(request jsonb)`              | `planning.inputs.approve` | Creates the immutable exact approval snapshot and moves the batch to `APPROVED`.                                                                                          |
+| `reopen_pantry(request jsonb)`               | `planning.inputs.approve` | Reasoned reopen preserving every prior approval snapshot.                                                                                                                 |
 
 The later implementation reuses:
 
@@ -255,13 +269,14 @@ It may add at most one capability:
 planning.pantry.write
 ```
 
-It must not add a runtime role.
+It must not add any role, including a runtime role.
 
 ## 7. Preview and save contract
 
 Preview is non-writing and returns:
 
 - normalized week;
+- exact `no_additions_confirmed` value;
 - canonical rows;
 - deterministic source signature;
 - source-row count;
@@ -271,11 +286,15 @@ Preview is non-writing and returns:
 - blockers and warnings;
 - `can_save`.
 
-The canonical signature is independent of row order, harmless whitespace, Vietnamese Unicode representation and source-row labels. It includes exact business identity, quantity, Unit, Purpose and normalized note.
+Proposed row input identifies the Ingredient but contains no caller-authoritative Unit selection. Preview may return the server-resolved Unit for review, and save must re-resolve it rather than trust a client echo.
+
+The canonical signature is independent of row order, harmless whitespace, Vietnamese Unicode representation and source-row labels. It includes `no_additions_confirmed`, exact business identity, quantity, server-resolved Unit, Purpose and normalized note.
 
 Save is one transactional complete replacement. It must:
 
 - verify the preview signature;
+- reject active lines combined with `no_additions_confirmed = true`;
+- reject zero active lines unless `no_additions_confirmed = true`;
 - verify current expected version and expected persisted source signature;
 - lock the batch and stable lines deterministically;
 - create or update current working facts only in editable states;
@@ -294,11 +313,13 @@ Blocking conditions include:
 - unknown or inactive School;
 - unknown, inactive, or wrong Delivery Location;
 - unknown or inactive Ingredient;
-- missing, unknown, inactive, or inconsistent Unit;
+- missing or inactive server-resolved Ingredient purchase Unit;
+- persisted Unit stale against the Ingredient's current purchase Unit;
 - unknown or inactive Pantry Purpose;
-- blank, zero, negative, nonnumeric, or nonfinite quantity;
+- blank, zero, negative, nonnumeric, or nonfinite quantity on a supplied line;
 - duplicate active grain;
-- no active lines;
+- zero active lines without `no_additions_confirmed = true`;
+- one or more active lines while `no_additions_confirmed = true`;
 - stale version or stale source signature;
 - invalid lifecycle transition.
 
@@ -321,6 +342,7 @@ The amendment must preserve:
 - exact period containment;
 - immutable evaluation evidence;
 - direct typed ownership;
+- acceptance of an exact approved zero-line Pantry snapshot as valid source evidence when `no_additions_confirmed = true`;
 - no generic source registry;
 - successor evaluation for correction;
 - explicit invalidation when a currently selected Pantry snapshot is superseded or reopened.
@@ -329,7 +351,7 @@ PANTRY-01 itself changes no Planning Input relation, evaluation, issue, command,
 
 ## 10. Need Generation boundary
 
-A later Need Generation amendment may consume an approved Pantry snapshot line as a direct Ingredient contribution:
+A later Need Generation amendment may consume each positive-quantity approved Pantry snapshot line as a direct Ingredient contribution:
 
 ```text
 Pantry snapshot line
@@ -341,7 +363,9 @@ Pantry snapshot line
 
 Pantry bypasses Recipe explosion because it already identifies the Ingredient. It does not bypass Planning Input evaluation, immutable run input snapshots, validation, release membership or Confirmed Need review.
 
-The later run must retain a direct typed Pantry snapshot-line reference. It must not fabricate a Dish, Recipe, RecipeLine, or generic free-text lineage record.
+For every Pantry contribution, the later run must retain a direct typed Pantry snapshot-line reference. It must not fabricate a Dish, Recipe, RecipeLine, or generic free-text lineage record.
+
+For an exact approved zero-line Pantry snapshot, the later run must retain the approved snapshot as input evidence and create zero Pantry contribution lines. It must not fabricate a zero-quantity Theoretical Need contribution or treat the controlled absence as a missing Pantry source.
 
 PANTRY-01 creates no Confirmed Need and does not amend existing Need Generation relations or commands.
 
@@ -369,13 +393,13 @@ Supabase supplies:
 - Schools;
 - Delivery Locations and School/location relationships;
 - Ingredients;
-- each Ingredient's authoritative `purchase_unit_id` and resolved Unit;
+- each Ingredient's authoritative server-resolved `purchase_unit_id` and active Unit;
 - Pantry Purpose IDs, codes, labels, status and order;
-- current batch, lines, version and status;
+- current batch, lines, version, status and `no_additions_confirmed`;
 - approval snapshots and change history;
 - blockers, warnings and allowed actions.
 
-React may own layout, Vietnamese presentation text, loading state, local draft interaction and accessibility. It must not own permanent business arrays, numeric mappings, Unit mappings, Purpose mappings, lifecycle transitions, readiness rules, warning thresholds or approval eligibility.
+React may own layout, Vietnamese presentation text, loading state, local draft interaction and accessibility. It may display the Unit returned for an Ingredient but must not select, map, submit, or override authoritative Unit identity. It must not own permanent business arrays, numeric mappings, Unit mappings, Purpose mappings, lifecycle transitions, readiness rules, warning thresholds or approval eligibility.
 
 Adding, renaming, reordering, activating or deactivating a Pantry Purpose in Supabase must change the connected UI after authoritative refresh without a React deployment.
 
@@ -442,6 +466,9 @@ A future controlled importer may accept explicit legacy IDs and source reference
 PANTRY-01
 Planning-owned Pantry product and architecture contract
 
+→ PANTRY-REF-01
+mandatory reference-data contract and readiness gate
+
 → PANTRY-02
 bounded persistence, commands, read model and connected capture/approval UI
 
@@ -455,6 +482,8 @@ Need Generation direct Ingredient contribution and typed lineage
 RMVP-03B remains Planning Input Readiness and RMVP-04 remains Need Generation. The later Pantry amendments extend those contracts without renaming or replacing either task.
 
 Direct Ingredient customer-order React connection remains a separate task using the existing PA-05D Wholesale Order aggregate and commands unchanged.
+
+PANTRY-REF-01 must approve the initial Pantry Purpose codes, labels, statuses, display order and note rules, and must define how selectable existing School, Delivery Location, Ingredient and active purchase-Unit references are verified as ready for Pantry. It authorizes no current seed, production-data mutation, new relation, API, capability or role. PANTRY-02 remains limited to the same five Pantry relations, six APIs, one new capability maximum and zero new roles, including runtime roles.
 
 ## 16. Explicit exclusions
 
@@ -479,13 +508,14 @@ PANTRY-01 authorizes no:
 
 PANTRY-02 must not begin until this contract is merged and its implementation contract confirms:
 
-1. exactly five authorized Pantry relations;
-2. one new capability maximum;
-3. six API functions maximum;
-4. zero new runtime roles;
-5. one bounded migration;
-6. database-driven React references and actions;
-7. no direct Confirmed Need, Wholesale, Procurement, Warehouse or Dispatch write;
-8. exact approval snapshots and stable line identity;
-9. local-only synthetic acceptance data;
-10. no hosted or legacy-system mutation.
+1. PANTRY-REF-01 is approved as the mandatory reference-data dependency;
+2. exactly five authorized Pantry relations;
+3. one new capability maximum;
+4. six API functions maximum;
+5. zero new roles, including runtime roles;
+6. one bounded migration;
+7. database-driven React references and actions with server-resolved Ingredient purchase Unit;
+8. no direct Confirmed Need, Wholesale, Procurement, Warehouse or Dispatch write;
+9. exact approval snapshots, including explicit `no_additions_confirmed` zero-line snapshots, and stable line identity;
+10. local-only synthetic acceptance data;
+11. no hosted or legacy-system mutation.
