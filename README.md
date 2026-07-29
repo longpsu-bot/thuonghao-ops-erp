@@ -99,6 +99,17 @@ pnpm local:rmvp03a:verify
 
 Workbook and tab-paste input is previewed and checksum-bound before saving. Unknown references remain visible blockers, explicit attendance zero is preserved, reasoned reopen retains approval history, and readiness is a read-only comparison of the two current approvals. See [RMVP-03A Connected Weekly Menu and Attendance](docs/architecture/rmvp-03a-connected-weekly-menu-attendance.md) and the [RMVP-03A API contract](docs/api/rmvp-03a-planning-inputs.md).
 
+### PANTRY-02 connected Pantry source
+
+PANTRY-02 adds Pantry as the third Planning source tab. Operators select School, Ingredient, Purpose, exact quantity, and evidence; PostgreSQL derives the exact default Delivery Location and Ingredient purchase Unit. Every save requires an authoritative preview and performs a complete stable-line replacement.
+
+```bash
+pnpm exec supabase test db supabase/tests/pantry_02_connected_pantry_source.sql --local
+pnpm local:pantry02:verify
+```
+
+The lifecycle is `DRAFT → VALIDATED → APPROVED → REOPENED → VALIDATED → APPROVED`. Approval preserves exact immutable snapshots, including an explicit zero-additions header with no fabricated line. The production migration seeds no Purpose and writes no readiness, Need Generation, Confirmed Need, handoff, Procurement, Warehouse, Dispatch, or Wholesale fact. See [PANTRY-02 Connected Pantry Source](docs/architecture/pantry-02-connected-pantry-source.md) and the [PANTRY-02 API contract](docs/api/pantry-02-source.md).
+
 ### RMVP-01 UI review export
 
 The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.

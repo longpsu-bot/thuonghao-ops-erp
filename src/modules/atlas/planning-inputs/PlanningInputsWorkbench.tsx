@@ -32,8 +32,10 @@ import {
   parseMenuWorkbook,
   type SourceMatrix,
 } from "./planningInputsWorkbook";
+import { PantryWorkbench } from "./pantry/PantryWorkbench";
+import type { PantryApi } from "./pantry/pantryApi";
 
-type TabId = "menu" | "attendance";
+type TabId = "menu" | "attendance" | "pantry";
 type LoadState = "idle" | "loading" | "ready" | "error";
 type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
@@ -354,10 +356,12 @@ function emptyData(weekStart: string): PlanningInputsWorkbenchData {
 export function PlanningInputsWorkbench({
   authState,
   api,
+  pantryApi,
   mode = "connected",
 }: {
   authState: AtlasAuthState;
   api?: PlanningInputsApi;
+  pantryApi?: PantryApi;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -922,14 +926,23 @@ export function PlanningInputsWorkbench({
             >
               Sĩ số
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "pantry"}
+              className={tab === "pantry" ? "active" : ""}
+              onClick={() => setTab("pantry")}
+            >
+              Pantry
+            </button>
           </div>
 
-          {load === "loading" && (
+          {tab !== "pantry" && load === "loading" && (
             <p role="status" className="empty">
               Đang tải nguồn kế hoạch…
             </p>
           )}
-          {load === "error" && (
+          {tab !== "pantry" && load === "error" && (
             <div role="alert" className="command-outcome danger">
               <p>{notice}</p>
               <button type="button" onClick={() => void refresh()}>
@@ -1492,6 +1505,15 @@ export function PlanningInputsWorkbench({
               <History entries={data.attendance?.approval_history ?? []} />
               <ChangeTimeline entries={data.attendance?.change_history ?? []} />
             </Panel>
+          )}
+
+          {tab === "pantry" && (
+            <PantryWorkbench
+              authState={authState}
+              api={pantryApi}
+              weekStart={weekStart}
+              mode={mode}
+            />
           )}
 
           {notice && load !== "error" && (
