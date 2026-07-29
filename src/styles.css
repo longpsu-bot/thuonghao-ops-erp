@@ -2590,3 +2590,61 @@ tbody tr.selected-row {
     border-bottom: 1px solid #d8ddda;
   }
 }
+
+.pantry-workbench {
+  display: grid;
+  gap: 1rem;
+}
+
+.pantry-toolbar {
+  align-items: end;
+}
+
+.pantry-zero-confirmation {
+  display: flex;
+  max-width: 20rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pantry-zero-confirmation input {
+  width: auto;
+}
+
+.pantry-table {
+  min-width: 1120px;
+}
+
+.pantry-table th,
+.pantry-table td {
+  vertical-align: top;
+}
+
+.pantry-table td[data-derived] {
+  max-width: 12rem;
+  color: #52615a;
+  font-size: 0.88rem;
+}
+
+.pantry-table td[data-derived]::after {
+  display: block;
+  margin-top: 0.2rem;
+  color: #6b7771;
+  content: "Atlas tự suy ra";
+  font-size: 0.72rem;
+}
+
+.pantry-reopen {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid #d8ddda;
+  border-radius: 0.75rem;
+  background: #f6f8f7;
+}
+
+.pantry-reopen label {
+  flex: 1;
+}

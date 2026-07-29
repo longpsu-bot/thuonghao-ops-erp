@@ -68,8 +68,8 @@ function edgeClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 57-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(57);
+  it("contains exactly the reviewed 63-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(63);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.record_wholesale_source",
       "atlas_api.release_wholesale_order",
@@ -128,6 +128,12 @@ describe("Atlas RPC transport", () => {
       "atlas_api.validate_attendance",
       "atlas_api.approve_attendance",
       "atlas_api.reopen_attendance",
+      "atlas_api.get_pantry_source_workbench",
+      "atlas_api.preview_pantry_source",
+      "atlas_api.save_pantry_draft",
+      "atlas_api.validate_pantry",
+      "atlas_api.approve_pantry",
+      "atlas_api.reopen_pantry",
     ]);
   });
 
@@ -141,6 +147,17 @@ describe("Atlas RPC transport", () => {
     const fake = rpcClient({ data: null, error: null });
     const result = await createAtlasRpcTransport(fake.client).invoke(
       "atlas_api.arbitrary" as AtlasRpcName,
+      {},
+    );
+    expect(result.kind).toBe("client_error");
+    expect(fake.getSession).not.toHaveBeenCalled();
+    expect(fake.rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unreviewed Pantry RPC before client invocation", async () => {
+    const fake = rpcClient({ data: null, error: null });
+    const result = await createAtlasRpcTransport(fake.client).invoke(
+      "atlas_api.delete_pantry_draft" as AtlasRpcName,
       {},
     );
     expect(result.kind).toBe("client_error");

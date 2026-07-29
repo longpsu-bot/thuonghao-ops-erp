@@ -75,6 +75,12 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.validate_attendance": "validate_attendance",
   "atlas_api.approve_attendance": "approve_attendance",
   "atlas_api.reopen_attendance": "reopen_attendance",
+  "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
+  "atlas_api.preview_pantry_source": "preview_pantry_source",
+  "atlas_api.save_pantry_draft": "save_pantry_draft",
+  "atlas_api.validate_pantry": "validate_pantry",
+  "atlas_api.approve_pantry": "approve_pantry",
+  "atlas_api.reopen_pantry": "reopen_pantry",
 } as const;
 
 export const ATLAS_EDGE_FUNCTIONS = {

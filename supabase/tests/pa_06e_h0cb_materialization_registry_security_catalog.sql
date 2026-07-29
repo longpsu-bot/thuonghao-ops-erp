@@ -71,7 +71,7 @@ select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=an
 select is((select count(*)::integer from pg_policy p where p.polname like 'pa_06e_h0cb%' and p.polroles && array[(select oid from pg_roles where rolname='authenticated')]), 0, 'H0Cb adds no API-role table policy');
 
 -- Existing runtime isolation and bounded source contract.
-select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_command_runtime'), 13, 'planning command runtime owns exactly four PA-05D and nine RMVP-03A functions');
+select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_command_runtime'), 18, 'planning command runtime owns PA-05D, RMVP-03A, and PANTRY-02 command/integrity functions');
 select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_command_runtime' and table_name in ('need_generation_runs','need_generation_release_snapshots','confirmed_need_line_revision_contributions')), 0, 'PA-05D runtime receives no H0Cb source or membership access');
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%set_config(''lock_timeout'', ''5s'', true)%'), 'CMD-15 fixes the five-second lock timeout');
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%set_config(''statement_timeout'', ''120s'', true)%'), 'CMD-15 fixes the 120-second statement timeout');
