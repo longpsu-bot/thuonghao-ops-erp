@@ -1599,8 +1599,26 @@ where preview.result_name = 'preview-second';
 
 select ok(
   (
+    select response_payload #>>
+      '{workbench,batch,pantry_need_batch_status}' = 'REOPENED'
+      and response_payload #>> '{new_versions,pantry_need_batch_version}'
+        = '6'
+    from pantry02_results
+    where result_name = 'save-second'
+  )
+  and (
+    select response_payload #>>
+      '{workbench,batch,pantry_need_batch_status}' = 'VALIDATED'
+      and response_payload #>> '{new_versions,pantry_need_batch_version}'
+        = '7'
+    from pantry02_results
+    where result_name = 'validate-second'
+  )
+  and (
     select response_payload #>> '{new_versions,pantry_need_batch_version}'
         = '8'
+      and response_payload #>>
+        '{workbench,batch,pantry_need_batch_status}' = 'APPROVED'
       and jsonb_array_length(
         response_payload #> '{workbench,batch,approval_history}'
       ) = 2
@@ -1615,7 +1633,7 @@ select ok(
   )
   and pg_temp.pantry02_physical_count('snapshots') = 2
   and pg_temp.pantry02_physical_count('snapshot_lines') = 2,
-  're-approval creates a later immutable snapshot without mutating the first'
+  'REOPENED correction stays REOPENED v6, validates v7, and reapproves v8 without mutating the first snapshot'
 );
 
 insert into pantry02_results values (

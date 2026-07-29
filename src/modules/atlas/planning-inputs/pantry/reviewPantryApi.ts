@@ -201,6 +201,7 @@ export function createReviewPantryApi(
     request: PantryCommandRequest,
     status: PantryBatch["pantry_need_batch_status"],
     message: string,
+    eventTypeOverride?: string,
   ) => {
     const error = fail();
     if (error) return error;
@@ -211,12 +212,14 @@ export function createReviewPantryApi(
       state.batch.pantry_need_batch_status = status;
       state.batch.version += 1;
       state.batch.updated_at = now;
-      const eventType = {
-        DRAFT: "PantryDraftReplaced",
-        VALIDATED: "PantryValidated",
-        APPROVED: "PantryApproved",
-        REOPENED: "PantryReopened",
-      }[status];
+      const eventType =
+        eventTypeOverride ??
+        {
+          DRAFT: "PantryDraftReplaced",
+          VALIDATED: "PantryValidated",
+          APPROVED: "PantryApproved",
+          REOPENED: "PantryReopened",
+        }[status];
       state.batch.change_history.unshift({
         audit_event_id: `review-pantry-audit-${state.batch.version}`,
         event_type: eventType,
@@ -310,7 +313,16 @@ export function createReviewPantryApi(
       return success({ preview: preview as unknown as JsonValue });
     },
     async save(request) {
-      return command(request, "DRAFT", "Bản nháp Pantry xem thử đã cập nhật.");
+      const editableStatus =
+        state.batch?.pantry_need_batch_status === "REOPENED"
+          ? "REOPENED"
+          : "DRAFT";
+      return command(
+        request,
+        editableStatus,
+        "Bản nháp Pantry xem thử đã cập nhật.",
+        "PantryDraftReplaced",
+      );
     },
     async validate(request) {
       return command(request, "VALIDATED", "Pantry xem thử đã xác thực.");

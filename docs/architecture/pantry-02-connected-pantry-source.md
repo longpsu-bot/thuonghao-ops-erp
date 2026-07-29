@@ -37,7 +37,7 @@ The lifecycle is exactly:
 DRAFT → VALIDATED → APPROVED → REOPENED → VALIDATED → APPROVED
 ```
 
-A material save from `REOPENED` returns the working batch to `DRAFT`. There is no editable transition from `VALIDATED`.
+A material save preserves its editable state: `DRAFT` remains `DRAFT` and `REOPENED` remains `REOPENED`, with one version increment and the bounded draft-created/replaced event as applicable. Validation moves either editable state to `VALIDATED`. There is no `REOPENED → DRAFT` transition and no editable transition from `VALIDATED`.
 
 ### `pantry_need_lines`
 
@@ -104,6 +104,8 @@ The deferred snapshot-integrity trigger is `SECURITY DEFINER` owned by the exist
 
 Pantry is a bounded submodule under `planning-inputs/pantry/` and a thin third tab in `PlanningInputsWorkbench`. The UI shows backend status/version/signature/action flags, active and invalid rows, derived references, Purpose metadata, preview comparison, blockers/warnings, zero confirmation, approval history, and audit history. Editing is disabled when backend `allowed_actions.can_save` is false.
 
+Browser working edits are tracked separately from authoritative readback. Adding, changing, removing, or replacing rows—including explicit zero-additions confirmation—marks the workbench dirty. Preview does not clear that state; validation, approval, and reopen remain unavailable until a successful save or authoritative refresh adopts backend readback. A request-generation guard ignores late reads from a previously selected week and clears prior-week visible working rows while the newer week loads.
+
 Review mode uses the exact connected shape and exact two accepted Purpose fixtures without Supabase or other network access. It remains visibly marked as non-persistent.
 
 ## Migration and rollback
@@ -119,7 +121,7 @@ No hosted deployment or production rollback action is authorized by PANTRY-02.
 - `supabase/tests/pantry_02_connected_pantry_source.sql`: exact `plan(46)`, including forced deferred-constraint checks at positive and zero-line approval boundaries.
 - `supabase/tests/atlas_current_platform_security_catalog.sql`: exact whole-platform counts, owners, functions, grants, policies, triggers, and digests.
 - `pnpm local:pantry02:verify`: loopback-guarded browser-key lifecycle through stable correction, positive approval, reopen, zero-line successor approval, exact event/audit evidence, and physical downstream non-mutation.
-- Focused TypeScript tests cover the six-function registry/adapter, envelopes, response handling, dynamic Purpose metadata, derived reference display, zero confirmation, preview gating, backend action flags, lifecycle, history, and safe error states.
+- Focused TypeScript tests cover the six-function registry/adapter, envelopes, response handling, dynamic Purpose metadata, derived reference display, zero confirmation, dirty preview/save gating, stale-week response isolation, backend action flags, lifecycle, history, and safe error states.
 
 ## Exclusions
 

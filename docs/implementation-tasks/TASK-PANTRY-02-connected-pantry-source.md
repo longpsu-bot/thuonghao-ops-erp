@@ -37,7 +37,7 @@ Implement the approved Planning-owned Pantry source from manual capture through 
   - 1,094 positive target grants;
   - 64 exact `authenticated` API executions;
   - zero `anon` or `service_role` API executions.
-- Focused registry/API/component suite passes 26 assertions.
+- Focused registry/API/component suite passes 28 tests.
 - TypeScript project typecheck passes.
 - Loopback browser-key acceptance reaches:
 
@@ -47,12 +47,13 @@ DRAFT v1
 → VALIDATED v3
 → APPROVED v4 with one-line snapshot
 → REOPENED v5
-→ zero-additions DRAFT v6 with prior line INVALID
+→ zero-additions REOPENED v6 with prior line INVALID
 → VALIDATED v7
 → APPROVED v8 with zero-line successor snapshot
 ```
 
-- Local physical assertions prove two immutable snapshots, one preserved historical snapshot line, eight domain events, eight audit events, and no downstream Planning or fulfilment mutation.
+- Local physical assertions prove the version 6 `PantryDraftReplaced` event/audit retain `REOPENED`, two immutable snapshots, one preserved historical snapshot line, eight domain events, eight audit events, and no downstream Planning or fulfilment mutation.
+- Focused UI evidence proves dirty edits cannot validate before authoritative save/readback and late responses from an earlier selected week cannot replace the current week.
 
 ## Security review
 

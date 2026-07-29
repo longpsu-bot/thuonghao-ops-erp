@@ -3571,6 +3571,7 @@ begin
   if version_before is not null then
     update atlas_planning.pantry_need_batches target_batch
     set
+      pantry_need_batch_status = target_batch.pantry_need_batch_status,
       source_signature = derived_signature,
       no_additions_confirmed = no_additions,
       version = target_batch.version + 1,

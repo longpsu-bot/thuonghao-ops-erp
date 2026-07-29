@@ -95,6 +95,29 @@ begin
       'PANTRY-02 local material actions lack exact event or audit evidence';
   end if;
 
+  if not exists (
+    select 1
+    from atlas_audit.domain_events event
+    where event.aggregate_type = 'PantryNeedBatch'
+      and event.aggregate_id = target_batch.pantry_need_batch_id
+      and event.event_type = 'PantryDraftReplaced'
+      and event.aggregate_version = 6
+      and event.payload_summary ->> 'status' = 'REOPENED'
+  )
+    or not exists (
+      select 1
+      from atlas_audit.audit_events audit
+      where audit.aggregate_type = 'PantryNeedBatch'
+        and audit.aggregate_id = target_batch.pantry_need_batch_id
+        and audit.event_type = 'PantryDraftReplaced'
+        and audit.aggregate_version_after = 6
+        and audit.after_summary ->> 'status' = 'REOPENED'
+    )
+  then
+    raise exception
+      'PANTRY-02 local version 6 correction did not preserve REOPENED status';
+  end if;
+
   select
     (select count(*) from atlas_planning.planning_input_sets)
     + (select count(*) from atlas_planning.need_generation_runs)

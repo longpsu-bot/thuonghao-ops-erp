@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { JsonValue } from "../../connection/atlasRpc";
 import { Chip, Panel } from "../../WorkbenchComponents";
@@ -104,8 +104,10 @@ export function PantryWorkbench({
   const [preview, setPreview] =
     useState<ReturnType<typeof pantryPreviewFromResult>>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [reopenReason, setReopenReason] = useState("");
+  const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -114,10 +116,12 @@ export function PantryWorkbench({
     setRows(pantryRowsFromBatch(workbench.batch));
     setNoAdditions(workbench.batch?.no_additions_confirmed ?? false);
     setPreview(null);
+    setDirty(false);
   }, []);
 
   const refresh = useCallback(async () => {
     if (!api || !authSubject) return;
+    const request = ++generation.current;
     setLoad("loading");
     setNotice(null);
     const result = await api.getWorkbench(
@@ -125,6 +129,7 @@ export function PantryWorkbench({
       correlationId,
       weekStart,
     );
+    if (request !== generation.current) return;
     const workbench = pantryWorkbenchFromResult(result);
     if (!workbench) {
       setLoad("error");
@@ -136,12 +141,16 @@ export function PantryWorkbench({
   }, [api, authSubject, correlationId, weekStart, adopt]);
 
   useEffect(() => {
+    generation.current += 1;
+    setData(emptyWorkbench(weekStart));
+    setRows([]);
+    setNoAdditions(false);
+    setPreview(null);
+    setDirty(false);
+    setReopenReason("");
     if (authSubject) void refresh();
     else {
       setLoad("idle");
-      setData(emptyWorkbench(weekStart));
-      setRows([]);
-      setPreview(null);
     }
   }, [authSubject, refresh, weekStart]);
 
@@ -158,6 +167,7 @@ export function PantryWorkbench({
   const markEdited = (next: PantryDraftRow[]) => {
     setRows(next);
     setPreview(null);
+    setDirty(true);
   };
 
   const addRow = () => {
@@ -243,7 +253,7 @@ export function PantryWorkbench({
   };
 
   const lifecycle = async (action: "validate" | "approve" | "reopen") => {
-    if (!api || !authSubject || !data.batch) return;
+    if (!api || !authSubject || !data.batch || dirty) return;
     await runCommand(
       api[action],
       pantryCommandRequest(
@@ -348,6 +358,7 @@ export function PantryWorkbench({
                 setNoAdditions(checked);
                 if (checked) setRows([]);
                 setPreview(null);
+                setDirty(true);
               }}
             />
             Xác nhận tuần này không có bổ sung
@@ -371,18 +382,24 @@ export function PantryWorkbench({
           <button
             type="button"
             onClick={() => void lifecycle("validate")}
-            disabled={saving || !data.allowed_actions.can_validate}
+            disabled={saving || dirty || !data.allowed_actions.can_validate}
           >
             Xác thực
           </button>
           <button
             type="button"
             onClick={() => void lifecycle("approve")}
-            disabled={saving || !data.allowed_actions.can_approve}
+            disabled={saving || dirty || !data.allowed_actions.can_approve}
           >
             Phê duyệt
           </button>
         </div>
+
+        {dirty && (
+          <p className="operator-notice warning" role="status">
+            Có thay đổi chưa lưu. Hãy xem trước và lưu trước khi xác thực.
+          </p>
+        )}
 
         {rows.length === 0 ? (
           <p className="empty">
@@ -622,6 +639,7 @@ export function PantryWorkbench({
               onClick={() => void lifecycle("reopen")}
               disabled={
                 saving ||
+                dirty ||
                 !data.allowed_actions.can_reopen ||
                 reopenReason.trim().length === 0
               }

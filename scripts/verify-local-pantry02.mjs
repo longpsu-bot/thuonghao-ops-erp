@@ -275,7 +275,7 @@ async function main() {
   );
 
   const zeroPreview = await preview(client, subject, weekStart, true, []);
-  const zeroDraft = await invoke(
+  const zeroReopened = await invoke(
     client,
     "save_pantry_draft",
     commandRequest(subject, 5, "PANTRY02_LOCAL_ZERO", {
@@ -287,13 +287,14 @@ async function main() {
     }),
   );
   assert(
-    zeroDraft.workbench.batch.version === 6 &&
-      zeroDraft.workbench.batch.no_additions_confirmed === true &&
-      zeroDraft.workbench.batch.active_lines.length === 0 &&
-      zeroDraft.workbench.batch.invalid_lines.some(
+    zeroReopened.workbench.batch.pantry_need_batch_status === "REOPENED" &&
+      zeroReopened.workbench.batch.version === 6 &&
+      zeroReopened.workbench.batch.no_additions_confirmed === true &&
+      zeroReopened.workbench.batch.active_lines.length === 0 &&
+      zeroReopened.workbench.batch.invalid_lines.some(
         (line) => line.pantry_need_line_id === stableLineId,
       ),
-    "PANTRY-02 explicit zero successor did not invalidate the stable line.",
+    "PANTRY-02 explicit zero successor did not remain REOPENED or invalidate the stable line.",
   );
 
   await invoke(
@@ -335,7 +336,7 @@ async function main() {
   installLocalFile("../supabase/local/pantry_02_acceptance_assertion.sql");
   await client.auth.signOut({ scope: "local" });
   console.log(
-    `Verified PANTRY-02 browser-key read/preview/stable replacement/validate/positive approval/reopen/zero successor approval, exact snapshots, events/audits, and no downstream mutation for ${weekStart}.`,
+    `Verified PANTRY-02 browser-key read/preview/stable replacement/validate/positive approval/reopen/REOPENED correction/zero successor approval, exact snapshots, events/audits, and no downstream mutation for ${weekStart}.`,
   );
 }
 
