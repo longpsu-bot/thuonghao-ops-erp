@@ -23,7 +23,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 
 - ✅ Weekly Menu contract and foundation
 - ✅ Attendance contract and foundation
-- ✅ Planning Input Readiness contract and foundation
+- 🟡 RMVP-03B Planning Input Readiness — the existing exact-period root, immutable evaluation/issues, and closed lifecycle remain implemented; the accepted Pantry-binding amendment is pending PANTRY-RDY-02 persistence
 - ✅ Need Generation contract
 - ✅ Need Generation foundation
 - ✅ Confirmed Need contract
@@ -34,9 +34,10 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ RMVP-03A connected Weekly Menu and Attendance — explicit-week preview, checksum-bound draft replacement, stable rows, exact approval snapshots, reasoned reopen/reapproval, and read-only readiness comparison; no downstream Planning write
 - ✅ PANTRY-01 Planning-owned Pantry source contract — merged by PR #159 as `dd1c20d13af98cd7804436c54e469f5856d06326`; defines explicit `no_additions_confirmed` zero-line snapshots, server-resolved Ingredient purchase Unit, immutable approval snapshots, and separation from Wholesale, Warehouse and fulfilment routing
 - ✅ PANTRY-REF-01 mandatory reference-data dependency — merged by PR #160 on baseline `63c53f3326a6667c1de7004ebda4f24491d06afc`; [contract](pantry-ref-01-reference-data-contract.md) and [decision](../decisions/decision-pantry-ref-01-reference-data.md)
-- 🟡 PANTRY-02 connected Pantry source — implemented with exactly five private relations, six APIs, one capability, zero roles/scope kinds, server-derived Location/Unit, stable complete replacement, exact positive/zero approval snapshots, and a connected Vietnamese Pantry tab; [architecture](pantry-02-connected-pantry-source.md), [API](../api/pantry-02-source.md), and [implementation record](../implementation-tasks/TASK-PANTRY-02-connected-pantry-source.md); draft PR review and exact-head CI remain
-- ⬜ Separately named Pantry readiness amendment — admit exact approved Pantry snapshots, including explicit zero-line snapshots, without renaming RMVP-03B
-- ⬜ Separately named Pantry Need Generation amendment — create direct typed Ingredient contributions without Recipe explosion
+- ✅ PANTRY-02 connected Pantry source — merged through PR #161 at `fbcb0016245028f8e845fe79a1d568e92166ce52` with exactly five private relations, six APIs, one capability, zero roles/scope kinds, server-derived Location/Unit, stable complete replacement, exact positive/zero approval snapshots, and a connected Vietnamese Pantry tab; [architecture](pantry-02-connected-pantry-source.md), [API](../api/pantry-02-source.md), and [implementation record](../implementation-tasks/TASK-PANTRY-02-connected-pantry-source.md)
+- 🟡 PANTRY-RDY-01 Pantry readiness-binding amendment — Product Owner-approved on 2026-07-29 and pending draft-PR review and merge; requires exact current approved Weekly Menu, Attendance, and Pantry snapshots for new readiness/request decisions, including explicit zero-line Pantry evidence, without renaming RMVP-03B; [amendment](pantry-rdy-01-planning-input-readiness-amendment.md), [decision](../decisions/decision-pantry-rdy-01-planning-input-readiness.md), and [task](../implementation-tasks/TASK-PANTRY-RDY-01-readiness-binding-contract.md)
+- ⬜ PANTRY-RDY-02 readiness persistence amendment — not started; limited to one migration, zero new relations/APIs/capabilities/roles/scope kinds/policies/source triggers, and in-place updates to the three canonical readiness pgTAP suites
+- ⬜ Separate Pantry Need Generation amendment — not started; direct typed Ingredient contributions without Recipe explosion remain unauthorized
 - 🟡 PA-06D quantity truth, operational precision, rounding, rebalancing, and write-fidelity documentation — [contract](pa-06d-quantity-truth-rounding-rebalancing-contract.md); implementation and unresolved product decisions remain unapproved
 - 🟡 PA-06E Confirmed Need review, adjustment, revision, and source-correction documentation — [contract](pa-06e-confirmed-need-review-adjustment-revision-contract.md) and [decision](../decisions/decision-pa-06e-confirmed-need-source-correction.md); implementation and pending product decisions remain unapproved
 - ✅ PA-06E-H0C/CMD-15 Confirmed Need materialization — merged by PR #144 on exact baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`; [decision](../decisions/decision-pa-06e-h0c-materialization-command-contract.md) and [implementation record](../implementation-tasks/TASK-PA-06E-H0Cb-confirmed-need-materialization-command.md)
@@ -54,7 +55,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 Planning completion boundary:
 
 ```text
-Weekly Menu / Attendance / Other controlled sources
+Weekly Menu / Attendance / Pantry / Other controlled sources
 → Planning Input Readiness
 → Need Generation
 → Confirmed Need
