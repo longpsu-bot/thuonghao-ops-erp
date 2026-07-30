@@ -11,7 +11,7 @@
 
 H0A3a and H0A3b provide immutable Weekly Menu and Attendance approval snapshots. PANTRY-02 now also provides immutable exact Pantry approval snapshots, including explicit zero-line approval evidence. Planning Input Readiness therefore requires three source families for new readiness and request decisions.
 
-The original H0A4 decisions closed root grain, lifecycle, evaluation history, warning, and handoff ambiguity before H0A4b persistence. PANTRY-RDY-01 amends only source binding and related readiness, containment, issue, and request-eligibility rules. It does not authorize the later Pantry persistence amendment.
+The original H0A4 decisions closed root grain, lifecycle, evaluation history, warning, and handoff ambiguity before H0A4b persistence. PANTRY-RDY-01 amends only target source binding and related readiness, containment, issue, and request-eligibility rules. It does not authorize the later Pantry persistence amendment or claim that the accepted target contract is already enforced at runtime.
 
 ## Decision
 
@@ -95,9 +95,17 @@ H0A4 persists immutable visible warnings only. It introduces no acknowledgement 
 
 ### 9. Historical compatibility
 
-Historical readiness evaluations created before PANTRY-RDY-02 remain immutable and may retain null Pantry binding fields. They remain valid historical evidence but cannot authorize a new Need Generation request after the Pantry readiness amendment.
+Historical readiness evaluations created before PANTRY-RDY-02 remain immutable and may retain null Pantry binding fields.
 
-A current Planning Input Set relying on such an evaluation must be explicitly invalidated and re-evaluated with one exact approved Pantry snapshot. No historical Pantry binding may be fabricated or backfilled.
+Once PANTRY-RDY-02 becomes executable database authority, those evaluations remain valid historical evidence but cannot authorize a new Need Generation request.
+
+For a current root:
+
+- `READY` or `NEED_GENERATION_REQUESTED` must be explicitly invalidated before a successor evaluation can bind Pantry;
+- `NOT_READY` may be re-evaluated directly to its next evaluation version with Pantry evidence; and
+- `INVALIDATED` may be re-evaluated directly with Pantry evidence.
+
+No historical Pantry binding may be fabricated or backfilled.
 
 ## Alternatives considered
 
@@ -120,13 +128,17 @@ A current Planning Input Set relying on such an evaluation must be explicitly in
 
 ## Existing H0A4b and future PANTRY-RDY-02 boundary
 
+PANTRY-RDY-01 is accepted target business and architecture authority. Its Pantry binding and request requirements become executable database authority only after the separately reviewed PANTRY-RDY-02 persistence amendment is merged.
+
 H0A4b implemented three independently runnable pgTAP suites with exclusive invariant ownership:
 
 1. `pa_06e_h0a4b_planning_input_readiness_structure_security.sql` — structure and security;
 2. `pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql` — evaluation and source-snapshot integrity; and
 3. `pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql` — lifecycle, issues, and invalidation.
 
-PANTRY-RDY-01 changes none of them. A later PANTRY-RDY-02 may add one migration and must update those same three suites in place. It adds no relation, public API, capability, role or runtime role, scope kind, policy, automatic source trigger, fourth readiness relation, or fourth overlapping readiness test suite.
+The currently merged H0A4b schema and guards physically support only Weekly Menu and Attendance. PANTRY-RDY-02 is required before PostgreSQL enforces Pantry for new `READY` evaluations and Need Generation requests. Merging PANTRY-RDY-01 does not claim that runtime enforcement already exists.
+
+PANTRY-RDY-01 changes none of the H0A4b suites. A later PANTRY-RDY-02 may add one migration and must update those same three suites in place. It adds no relation, public API, capability, role or runtime role, scope kind, policy, automatic source trigger, fourth readiness relation, or fourth overlapping readiness test suite.
 
 ## Excluded authority
 

@@ -58,15 +58,35 @@ stable exact-period root, immutable evaluation versions and issues, closed
 lifecycle, warning acknowledgement deferral, and evidence-only handoff remain
 unchanged.
 
+PANTRY-RDY-01 approves the target three-source business and architecture
+contract. The currently merged H0A4b schema and guards still physically support
+Weekly Menu and Attendance only. PANTRY-RDY-02 is required before PostgreSQL
+enforces Pantry for new `READY` evaluations and Need Generation requests;
+merging PANTRY-RDY-01 does not claim that runtime enforcement already exists.
+
 ## Historical compatibility
 
 Pre-PANTRY-RDY-02 evaluations remain immutable and may retain null Pantry
-binding fields. They remain historical evidence but cannot authorize a new
-Need Generation request after the amendment. A current root relying on that
-evidence must be explicitly invalidated and re-evaluated with one exact
-approved Pantry snapshot. No historical binding is backfilled or fabricated.
+binding fields.
+
+Once PANTRY-RDY-02 becomes executable database authority, those evaluations
+remain historical evidence but cannot authorize a new Need Generation request.
+
+For a current root:
+
+- `READY` or `NEED_GENERATION_REQUESTED` must be explicitly invalidated before
+  a successor evaluation can bind Pantry;
+- `NOT_READY` may be re-evaluated directly to its next evaluation version with
+  Pantry evidence; and
+- `INVALIDATED` may be re-evaluated directly with Pantry evidence.
+
+No historical binding is backfilled or fabricated.
 
 ## Future PANTRY-RDY-02 boundary
+
+PANTRY-RDY-01 is accepted target authority. Its Pantry binding and request
+requirements become executable database authority only after the separately
+reviewed PANTRY-RDY-02 persistence amendment is merged.
 
 The later implementation is limited to one migration, zero new relations, zero
 public APIs, zero capabilities, zero roles or runtime roles, zero scope kinds,
@@ -104,6 +124,9 @@ No eighth file is authorized.
 - exact seven-file documentation-only scope validation: PASS;
 - canonical registry and registry-uniqueness validation: PASS;
 - stale two-source-authority search: PASS;
+- historical-lifecycle compatibility search: PASS;
+- target-authority versus runtime-enforcement search: PASS;
+- zero-line terminology search: PASS;
 - decision-register entry uniqueness validation: PASS; and
 - roadmap status validation: PASS.
 

@@ -15,8 +15,8 @@ It preserves the stable exact-period Planning Input Set root, immutable
 evaluation history, closed lifecycle, and evidence-only handoff boundary.
 
 Missing Pantry evidence is blocking. It is never interpreted as no additions.
-An approved explicit zero-line Pantry snapshot is positive controlled evidence
-that no additions were requested for its week.
+An approved explicit zero-line Pantry snapshot is explicit controlled-absence
+evidence that no additions were requested for its week.
 
 This amendment creates no calculation or downstream operational fact.
 
@@ -128,12 +128,21 @@ evaluated period is not contained.
 ## 7. Historical compatibility
 
 Readiness evaluations created before PANTRY-RDY-02 remain immutable and may
-retain null Pantry binding fields. They remain valid historical evidence, but
-after this amendment they cannot authorize a new Need Generation request.
+retain null Pantry binding fields.
 
-A current Planning Input Set relying on a pre-amendment evaluation must be
-explicitly invalidated and re-evaluated with one exact approved Pantry
-snapshot. No historical Pantry binding may be fabricated or backfilled.
+Once PANTRY-RDY-02 becomes executable database authority, those evaluations
+remain valid historical evidence but cannot authorize a new Need Generation
+request.
+
+For a current root:
+
+- `READY` or `NEED_GENERATION_REQUESTED` must be explicitly invalidated before
+  a successor evaluation can bind Pantry;
+- `NOT_READY` may be re-evaluated directly to its next evaluation version with
+  Pantry evidence; and
+- `INVALIDATED` may be re-evaluated directly with Pantry evidence.
+
+No historical Pantry binding may be fabricated or backfilled.
 
 ## 8. No downstream calculation
 
@@ -153,10 +162,19 @@ decision.
 
 ## 9. Future PANTRY-RDY-02 implementation boundary
 
-This document authorizes no implementation. A later separately authorized
+PANTRY-RDY-01 is accepted target business and architecture authority. Its
+Pantry binding and request requirements become executable database authority
+only after the separately reviewed PANTRY-RDY-02 persistence amendment is
+merged. Merging this documentation does not claim that runtime enforcement
+already exists.
+
+The currently merged H0A4b schema and guards physically support only Weekly
+Menu and Attendance. PANTRY-RDY-02 is required before PostgreSQL enforces
+Pantry for new `READY` evaluations and Need Generation requests.
+
 PANTRY-RDY-02 is limited to one migration and must add zero relations, public
-APIs, capabilities, roles or runtime roles, scope kinds, policies, and
-automatic source triggers.
+APIs, capabilities, roles or runtime roles, scope kinds, policies, and automatic
+source triggers.
 
 Its expected physical delta is:
 

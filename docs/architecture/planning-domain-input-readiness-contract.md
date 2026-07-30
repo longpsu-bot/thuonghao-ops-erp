@@ -186,9 +186,17 @@ Future authorized Need Generation behavior may consume the exact current immutab
 
 ### 6.1 Historical compatibility
 
-Historical readiness evaluations created before PANTRY-RDY-02 remain immutable and may retain null Pantry binding fields. They remain valid historical evidence, but after the Pantry readiness amendment they cannot authorize a new Need Generation request.
+Historical readiness evaluations created before PANTRY-RDY-02 remain immutable and may retain null Pantry binding fields.
 
-A current Planning Input Set relying on such an evaluation must be explicitly invalidated and re-evaluated with one exact approved Pantry snapshot. No historical Pantry binding may be fabricated or backfilled.
+Once PANTRY-RDY-02 becomes executable database authority, those evaluations remain valid historical evidence but cannot authorize a new Need Generation request.
+
+For a current root:
+
+- `READY` or `NEED_GENERATION_REQUESTED` must be explicitly invalidated before a successor evaluation can bind Pantry;
+- `NOT_READY` may be re-evaluated directly to its next evaluation version with Pantry evidence; and
+- `INVALIDATED` may be re-evaluated directly with Pantry evidence.
+
+No historical Pantry binding may be fabricated or backfilled.
 
 ## 7. Read behavior and decision-first UX
 
@@ -202,11 +210,15 @@ The retained OPS v1 evidence records a Weekly Menu week/date-range selector, a s
 
 ## 9. Existing H0A4b persistence and future PANTRY-RDY-02
 
+PANTRY-RDY-01 is accepted target business and architecture authority. Its Pantry binding and request requirements become executable database authority only after the separately reviewed PANTRY-RDY-02 persistence amendment is merged. Merging PANTRY-RDY-01 does not claim that runtime enforcement already exists.
+
 H0A4b implemented the accepted two-source persistence foundation in migration `20260720135755_pa_06e_h0a4b_planning_input_readiness_persistence.sql` with three canonical independently runnable pgTAP suites:
 
 1. **Structure and security** — file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_structure_security.sql`. Owns relation/column/constraint presence, positive and unique version structure, direct typed FK structure, private-schema posture, RLS/grants, and absence of unintended runtime write access.
 2. **Evaluation and source-snapshot integrity** — file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql`. Owns the unique exact-period root grain, one-or-zero typed binding per source family, exact snapshot/root/version ownership, period containment, `READY` binding requirements, rejection of multi-snapshot coverage, and current-evaluation pointer ownership.
 3. **Lifecycle, issues, and invalidation** — file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql`. Owns the complete transition matrix, evaluation-version advancement rules, request/invalidation version preservation, immutable evaluation/issue history, blocking/warning classifications, request gate, explicit invalidation behavior, re-evaluation after invalidation, and absence of automatic cross-domain triggers.
+
+The currently merged H0A4b schema and guards physically support only Weekly Menu and Attendance. PANTRY-RDY-02 is required before PostgreSQL enforces Pantry for new `READY` evaluations and Need Generation requests.
 
 PANTRY-RDY-01 modifies none of those files. A separately authorized PANTRY-RDY-02 may add one migration and must update these three suites in place. It may add no relation, public API, capability, role or runtime role, scope kind, policy, automatic source trigger, fourth readiness relation, or fourth overlapping readiness suite. The detailed maximum delta is recorded in the [PANTRY-RDY-01 amendment](pantry-rdy-01-planning-input-readiness-amendment.md).
 
