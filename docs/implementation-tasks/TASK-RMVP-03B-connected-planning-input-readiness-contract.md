@@ -1,18 +1,18 @@
 # TASK-RMVP-03B — Connected Planning Input Readiness Contract
 
-- **Status:** Documentation draft completed; proposed decisions await Product
-  Owner approval
+- **Status:** Accepted — implementation not started
+- **Product Owner approval:** 31/07/2026
 - **Baseline:** `70c380f49c148a1207574aabc5aefcb44cf30074`
 - **Branch:** `docs/rmvp-03b-connected-readiness-contract`
 - **Scope:** Documentation and product-decision work only
-- **Canonical proposed decision:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
-- **Canonical proposed API registry:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
+- **Canonical accepted decision:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
+- **Canonical accepted API registry:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
 - **Connected architecture:** [RMVP-03B Connected Planning Input Readiness](../architecture/rmvp-03b-connected-planning-input-readiness.md)
 
 ## Objective
 
-Close the proposed Command/Event and Read Model authority for the existing
-Planning Input Readiness business object before any API or React
+Close and record the accepted Command/Event and Read Model authority for the
+existing Planning Input Readiness business object before any API or React
 implementation.
 
 The contract must answer:
@@ -67,12 +67,12 @@ Updated:
 9. `docs/implementation-tasks/TASK-PANTRY-RDY-02-readiness-persistence.md`
 
 No API index is modified. `docs/api/api-contracts.md` and the implemented
-PA-06A registry remain outside this exact boundary because the RMVP-03B
-surface is proposed, not implemented.
+PA-06A registry remain outside this exact boundary because the accepted
+RMVP-03B surface is not implemented.
 
 ## Contract outcome
 
-The documentation proposes:
+The accepted documentation defines:
 
 - exact inclusive period selection with Monday week as convenience only;
 - exact-period root resolution without School/customer split;
@@ -93,13 +93,14 @@ The documentation proposes:
 - one fourth `Sẵn sàng đầu vào` tab inside `Nguồn kế hoạch`; and
 - immutable historical/null-Pantry and downstream non-mutation boundaries.
 
-The complete proposed product registry exists only in the decision document.
-The complete proposed function registry exists only in the API document.
+The complete accepted product registry exists only in the decision document.
+The complete accepted function registry exists only in the API document.
 
 ## Future implementation ceiling
 
-Product Owner approval would permit planning, not implementation by this task.
-A later separately authorized implementation may propose at most:
+Product Owner approval on 31/07/2026 establishes planning authority, not
+implementation authorization by this task. A later separately authorized
+implementation is bounded to at most:
 
 - one migration;
 - four `atlas_api` functions;
@@ -119,13 +120,14 @@ downstream operational object.
 
 ## Acceptance criteria
 
-- The new decision status is exactly `Proposed — awaiting Product Owner
-approval`.
+- The new decision status is `Accepted`, with Product Owner approval recorded
+  as 31/07/2026.
 - R3B-P01 through R3B-P12 exist completely only in the new decision document.
 - The four-function canonical API registry exists completely only in the new
   API document.
-- The proposal chooses a dedicated readiness read and identifies the existing
-  RMVP-03A comparison as non-authoritative for Planning Input Set lifecycle.
+- The accepted contract chooses a dedicated readiness read and identifies the
+  existing RMVP-03A comparison as non-authoritative for Planning Input Set
+  lifecycle.
 - Exact source triples, currentness, containment, zero-additions evidence,
   concurrency, receipts, events, audit, failures, and readback are documented.
 - The exact five-case candidate matrix is deterministic: zero is `MISSING`,
@@ -154,7 +156,8 @@ approval`.
   contribution.
 - PANTRY-RDY-02 status is corrected to merged through PR #163 at
   `70c380f49c148a1207574aabc5aefcb44cf30074`.
-- D-026 remains unchanged and no D-027 is added.
+- D-026 remains unchanged and D-027 records the accepted R3B-P01 through
+  R3B-P12 connected-readiness boundary.
 - Exactly nine Markdown files change.
 - `pnpm ops:workspace`, `pnpm format`, and `git diff --check` pass.
 
@@ -180,7 +183,7 @@ No existing database test is modified.
 
 ## Security review
 
-The proposal:
+The accepted contract:
 
 - preserves private-schema isolation and forced RLS;
 - accepts no browser actor ID, status, issue, count, or source-currentness
@@ -210,5 +213,6 @@ OPS v1/v2, Retool, Need Generation behavior, Pantry contribution, Recipe/BOM
 calculation, Theoretical Need, Confirmed Need, Purchase Handoff, Procurement,
 Warehouse, Dispatch, or Wholesale state.
 
-It does not create an issue, mark a PR ready, merge, or claim Product Owner
-approval.
+It records Product Owner approval and may be published through the guarded PR
+workflow. It does not create an implementation issue or authorize
+implementation after merge.

@@ -1,16 +1,17 @@
 # RMVP-03B — Connected Planning Input Readiness
 
-- **Status:** Proposed — awaiting Product Owner approval
+- **Status:** Accepted
+- **Product Owner approval:** 31/07/2026
 - **Domain:** Planning
 - **Business owner:** Tổ Kế hoạch
 - **Contract version:** `RMVP-03B.v1`
-- **Canonical proposed decisions:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
-- **Canonical proposed API registry:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
+- **Canonical accepted decisions:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
+- **Canonical accepted API registry:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
 - **Parent contract:** [PD-01.4 Planning Domain Input Readiness](planning-domain-input-readiness-contract.md)
 
 ## 1. Outcome
 
-RMVP-03B proposes the connected command, event, read-model, API, and Vietnamese
+RMVP-03B defines the accepted connected command, event, read-model, API, and Vietnamese
 operator-UX contract for the Planning Input Readiness object that already
 exists in private PostgreSQL persistence.
 
@@ -23,9 +24,10 @@ Weekly Menu, Attendance, and Pantry approval evidence, creates an immutable
 readiness evaluation, controls the closed lifecycle, and returns authoritative
 readback. React coordinates selection and presentation only.
 
-This proposal creates no executable authority. Product Owner approval and a
-separate bounded implementation task are required before any migration,
-function, capability, grant, adapter, React component, or test may be changed.
+Product Owner approval on 31/07/2026 establishes Product and Architecture
+authority only. It creates no executable authority. A separate bounded
+implementation task is required before any migration, function, capability,
+grant, adapter, React component, or test may be changed.
 
 ## 2. OPS_SYSTEM_MAP placement
 
@@ -53,7 +55,7 @@ operating stage and not a parallel application.
 | Existing RMVP-03A readiness shape            | `get_planning_inputs_workbench` exposes a read-only two-source approval comparison for one Monday week. It is not the persisted Planning Input Set read and cannot authorize RMVP-03B actions.                                                              |
 | Existing Planning Inputs and Pantry APIs     | RMVP-03A exposes one source workbench, two previews, and nine source commands. PANTRY-02 exposes a separate Pantry workbench, preview, and four source commands. Neither reads or writes Planning Input Set persistence.                                    |
 | Available Planning capabilities              | `planning.inputs.read`, `planning.weekly_menu.write`, `planning.attendance.write`, `planning.pantry.write`, and `planning.inputs.approve` exist. No readiness-write capability exists.                                                                      |
-| Runtime roles                                | `atlas_read_runtime` owns connected shaped reads. `atlas_planning_command_runtime` owns connected Planning source commands. No new runtime is required by the proposal.                                                                                     |
+| Runtime roles                                | `atlas_read_runtime` owns connected shaped reads. `atlas_planning_command_runtime` owns connected Planning source commands. No new runtime is authorized by the accepted boundary.                                                                          |
 | Receipt, event, audit, and actor conventions | Existing commands resolve the authenticated subject to an active Actor, authorize capability plus `GLOBAL` scope, create one durable command receipt, emit one domain event and one audit event in the same transaction, and return authoritative readback. |
 | React boundary                               | `PlanningInputsWorkbench` owns the shared week selector and the `Thực đơn tuần`, `Sĩ số`, and `Pantry` tabs. Pantry is a bounded submodule inside the same workbench.                                                                                       |
 | Historical null-Pantry behavior              | Pre-PANTRY evaluations may retain a null Pantry family as immutable history. They cannot authorize a new Need Generation request.                                                                                                                           |
@@ -65,7 +67,7 @@ equality, and a mutable root version, and is not imported by the connected
 Planning Inputs workbench. A future implementation must follow the approved
 documents and merged persistence instead of reusing those prototype semantics.
 
-## 4. Ambiguities closed by the proposal
+## 4. Ambiguities closed by the accepted decisions
 
 The authority review found no contradiction among approved documents,
 migrations, and tests. It did expose choices that had deliberately been left
@@ -81,13 +83,13 @@ open:
 - how request/invalidation history is shown without adding fields or envelopes
   to the Planning Input Set.
 
-The complete proposed answers exist only in the
+The complete accepted answers exist only in the
 [R3B-P01 through R3B-P12 registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md).
 
 The repository also contains `docs/api/api-contracts.md` and the implemented
 PA-06A application-facing registry. Neither is in this task's nine-file
-boundary. Because RMVP-03B remains proposed and changes no implemented
-function surface, those indexes are intentionally unchanged. A later approved
+boundary. Because RMVP-03B acceptance changes no implemented function surface,
+those indexes are intentionally unchanged. A later separately authorized
 implementation task must reconcile implemented-registry indexing within its
 own authorized file scope.
 
@@ -95,7 +97,7 @@ own authorized file scope.
 
 ### 5.1 One dedicated authoritative read
 
-The proposal adds one dedicated shaped readiness workbench read rather than
+The accepted architecture adds one dedicated shaped readiness workbench read rather than
 extending `get_planning_inputs_workbench`.
 
 This separation is necessary because:
@@ -323,7 +325,7 @@ credentials are never operator messages.
 
 ## 9. Security and future implementation ceiling
 
-The proposed implementation ceiling is:
+The accepted future implementation ceiling is:
 
 - at most one migration;
 - exactly one shaped read plus at most three commands, for at most four
@@ -341,7 +343,8 @@ The proposed implementation ceiling is:
   to browser roles; and
 - integration into the existing Planning Inputs module.
 
-This ceiling is a proposal, not implementation authorization.
+This ceiling is binding Product and Architecture authority, not implementation
+authorization.
 
 ## 10. Historical and downstream boundary
 

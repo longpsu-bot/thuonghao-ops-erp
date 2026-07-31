@@ -1,6 +1,6 @@
 # PD-01.4 — Planning Domain Input Readiness Contract
 
-**Status:** Contract v0.5; three-source persistence merged through PANTRY-RDY-02, with the connected RMVP-03B command/API/UX contract proposed and awaiting Product Owner approval
+**Status:** Contract v0.6; three-source persistence merged through PANTRY-RDY-02, with the connected RMVP-03B command/API/UX contract accepted by the Product Owner on 31/07/2026 and implementation not started
 **Domain:** Planning
 **Business owner:** Tổ Kế hoạch
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
@@ -252,9 +252,8 @@ generated type, React behavior, package, hosted Supabase/Retool state,
 production data, or Need Generation behavior.
 
 Command names, command parameters, authorization, actor attribution, reason
-taxonomy, events, safe errors, API contracts, and command/UI implementation
-remain separately approved work. RMVP-03B now proposes those connected
-decisions in [RMVP-03B Connected Planning Input Readiness](rmvp-03b-connected-planning-input-readiness.md)
-and its [canonical proposed decision registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md).
-The proposal is awaiting Product Owner approval and authorizes no
-implementation.
+taxonomy, events, safe errors, API contracts, and operator UX are accepted
+through [RMVP-03B Connected Planning Input Readiness](rmvp-03b-connected-planning-input-readiness.md)
+and its [canonical accepted decision registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md),
+approved on 31/07/2026 and registered as D-027. Implementation remains not
+started and requires a separate bounded task.

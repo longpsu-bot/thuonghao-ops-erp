@@ -23,7 +23,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 
 - ✅ Weekly Menu contract and foundation
 - ✅ Attendance contract and foundation
-- 🟡 RMVP-03B Planning Input Readiness — the exact-period root, immutable evaluation/issues, closed lifecycle, and three-source Pantry binding are merged; the connected command/event, read-model, API, and Vietnamese UX [architecture](rmvp-03b-connected-planning-input-readiness.md), [proposed decision registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md), [API contract](../api/rmvp-03b-planning-input-readiness.md), and [task record](../implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-contract.md) await Product Owner approval and authorize no implementation
+- 🟡 RMVP-03B Planning Input Readiness — the exact-period root, immutable evaluation/issues, closed lifecycle, and three-source Pantry binding are merged; the connected command/event, read-model, API, and Vietnamese UX [architecture](rmvp-03b-connected-planning-input-readiness.md), [accepted decision registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md), [API contract](../api/rmvp-03b-planning-input-readiness.md), and [task record](../implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-contract.md) were approved by the Product Owner on 31/07/2026 and registered as D-027; implementation remains not started and requires a separate bounded task
 - ✅ Need Generation contract
 - ✅ Need Generation foundation
 - ✅ Confirmed Need contract

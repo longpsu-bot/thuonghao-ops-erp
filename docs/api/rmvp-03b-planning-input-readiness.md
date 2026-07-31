@@ -1,14 +1,15 @@
 # RMVP-03B Planning Input Readiness API Contract
 
-- **Status:** Proposed — awaiting Product Owner approval
+- **Status:** Accepted
+- **Product Owner approval:** 31/07/2026
 - **Contract version:** `RMVP-03B.v1`
 - **Domain:** Planning
-- **Canonical proposed decisions:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
+- **Canonical accepted decisions:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
 - **Connected architecture:** [RMVP-03B Connected Planning Input Readiness](../architecture/rmvp-03b-connected-planning-input-readiness.md)
 
 ## 1. Boundary
 
-This is the sole canonical proposed function registry for connected Planning
+This is the sole canonical accepted function registry for connected Planning
 Input Readiness.
 
 The closed surface contains one shaped read and three transactional commands:
@@ -20,8 +21,9 @@ atlas_api.request_planning_input_need_generation(request jsonb)
 atlas_api.invalidate_planning_input_readiness(request jsonb)
 ```
 
-No function exists until a later approved implementation merges. This contract
-does not modify the implemented PA-06A registry or the API Contracts Catalogue.
+No function exists until a later separately authorized implementation merges.
+This accepted contract does not modify the implemented PA-06A registry or the
+API Contracts Catalogue.
 
 ## 2. Common envelopes
 
@@ -158,7 +160,7 @@ operator selection.
 ### 3.2 `atlas_api.evaluate_planning_input_readiness(request jsonb)`
 
 - **Contract version:** `RMVP-03B.v1`
-- **Required capability:** proposed `planning.input_readiness.write`
+- **Required capability:** accepted future `planning.input_readiness.write`
 - **Scope:** existing active `GLOBAL` scope
 - **Request payload:**
 
@@ -219,7 +221,7 @@ or ambiguous non-null candidate, fails without creating an evaluation.
 ### 3.3 `atlas_api.request_planning_input_need_generation(request jsonb)`
 
 - **Contract version:** `RMVP-03B.v1`
-- **Required capability:** proposed `planning.input_readiness.write`
+- **Required capability:** accepted future `planning.input_readiness.write`
 - **Scope:** existing active `GLOBAL` scope
 - **Request payload:**
 
@@ -274,7 +276,7 @@ evaluation and revalidates all three stored bindings under lock.
 ### 3.4 `atlas_api.invalidate_planning_input_readiness(request jsonb)`
 
 - **Contract version:** `RMVP-03B.v1`
-- **Required capability:** proposed `planning.input_readiness.write`
+- **Required capability:** accepted future `planning.input_readiness.write`
 - **Scope:** existing active `GLOBAL` scope
 - **Request payload:**
 
@@ -577,7 +579,7 @@ Future implementation must preserve:
 - existing forced RLS and least-privilege policies;
 - existing Actor resolution and exact auth-subject binding;
 - existing `GLOBAL` scope; and
-- one proposed readiness-write capability at most.
+- one accepted future readiness-write capability at most.
 
 React must use a typed adapter and must not contain service-role credentials,
 direct private-schema queries, readiness calculation, issue calculation, or
@@ -585,7 +587,7 @@ lifecycle authority.
 
 ## 8. Explicit non-goals
 
-The proposed functions do not:
+The contracted future functions do not:
 
 - alter RMVP-03A or PANTRY-02 source lifecycles;
 - create an automatic source trigger;

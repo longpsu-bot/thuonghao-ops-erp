@@ -1,7 +1,7 @@
 # Decision RMVP-03B — Connected Planning Input Readiness
 
-- **Status:** Proposed — awaiting Product Owner approval
-- **Date:** 2026-07-31
+- **Status:** Accepted
+- **Product Owner approval:** 31/07/2026
 - **Owner:** Product Owner
 - **Domain:** Planning
 - **Contract version:** `RMVP-03B.v1`
@@ -9,7 +9,7 @@
   decisions only
 - **Parent authority:** [PD-01.4 Planning Domain Input Readiness](../architecture/planning-domain-input-readiness-contract.md)
 - **Connected architecture:** [RMVP-03B Connected Planning Input Readiness](../architecture/rmvp-03b-connected-planning-input-readiness.md)
-- **Canonical proposed API registry:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
+- **Canonical accepted API registry:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
 
 ## Context
 
@@ -27,12 +27,13 @@ is lower-authority evidence and conflicts with the merged three-source
 persistence in source shape, period semantics, and version ownership. It must
 not govern the connected implementation.
 
-The following registry closes the remaining proposed product and architecture
-choices. It does not authorize implementation or claim Product Owner approval.
+The Product Owner approved the following registry on 31/07/2026 as Product and
+Architecture authority. Acceptance does not authorize implementation.
 
-## Canonical proposed decision registry
+## Canonical accepted decision registry
 
-This is the sole complete canonical registry for R3B-P01 through R3B-P12.
+This is the sole complete canonical accepted registry for R3B-P01 through
+R3B-P12.
 
 ### R3B-P01 — Operator selector and root resolution
 
@@ -227,7 +228,7 @@ closed.
 
 ### R3B-P06 — Closed function registry
 
-The proposed public surface is closed to:
+The accepted future public surface is closed to:
 
 1. `atlas_api.get_planning_input_readiness_workbench(request jsonb)`;
 2. `atlas_api.evaluate_planning_input_readiness(request jsonb)`;
@@ -244,7 +245,7 @@ comparison and must not compete with or authorize this lifecycle.
 The complete function details exist only in the
 [canonical RMVP-03B API registry](../api/rmvp-03b-planning-input-readiness.md).
 No fifth function, preview function, generic transition function, per-source
-readiness read, or competing authoritative readiness read is proposed.
+readiness read, or competing authoritative readiness read is authorized.
 
 ### R3B-P07 — Capability and scope model
 
@@ -264,10 +265,10 @@ The capability controls evaluation, request, and invalidation as one bounded
 Planning readiness-write authority. Lifecycle and reason rules continue to
 limit what an authorized actor may do.
 
-The proposal adds zero roles, runtime roles, scope kinds, or delegated-actor
-models. All four functions require the existing active `GLOBAL` Planning
-scope. The shaped read uses `atlas_read_runtime`; commands use
-`atlas_planning_command_runtime`.
+The accepted ceiling adds zero roles, runtime roles, scope kinds, or
+delegated-actor models. All four future functions require the existing active
+`GLOBAL` Planning scope. The shaped read uses `atlas_read_runtime`; commands
+use `atlas_planning_command_runtime`.
 
 UI visibility and `allowed_actions` are not authorization. Every command
 resolves the active Actor and repeats capability and scope checks.
@@ -382,7 +383,7 @@ Every accepted command creates or replays one shared
 command ID, correlation ID, idempotency key, request hash, receipt status,
 event envelope, audit envelope, reason, or actor history.
 
-The exact proposed domain event names are:
+The exact accepted domain event names are:
 
 | Event                                  | Aggregate          | Required payload summary                                                                                                                                          |
 | -------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -408,7 +409,7 @@ Each command writes one matching audit event in the same transaction with:
 - transaction occurrence time.
 
 The read model derives request and invalidation history from these shared
-events/audits. No new history relation or duplicate root fields are proposed.
+events/audits. No new history relation or duplicate root fields are authorized.
 
 ### R3B-P10 — Read model
 
@@ -590,8 +591,8 @@ The separate Pantry Need Generation amendment remains not started.
 
 ## Future implementation ceiling
 
-If all proposed decisions are approved, a later bounded implementation may
-propose no more than:
+The accepted decisions bind any later separately authorized implementation to
+no more than:
 
 - one migration;
 - four `atlas_api` functions;
@@ -610,14 +611,16 @@ This ceiling does not itself authorize any implementation.
 
 ## Decision and registration boundary
 
-R3B-P01 through R3B-P12 remain proposed until the Product Owner explicitly
-approves them. This decision:
+The Product Owner approved R3B-P01 through R3B-P12 on 31/07/2026. This
+decision:
 
-- is not Accepted;
-- does not add D-027;
+- is Accepted and registered as D-027;
 - does not modify D-026;
-- does not authorize an issue, migration, API, capability, grant, React
-  change, hosted action, PR-ready state, or merge; and
+- establishes Product and Architecture authority plus the bounded future
+  implementation ceiling;
+- does not authorize an implementation issue, migration, API, capability,
+  grant, React change, hosted action, or downstream behavior without a
+  separate bounded implementation task; and
 - does not change the accepted PANTRY-RDY-01 or PANTRY-RDY-02 semantics.
 
 The documentation-only rollback is a normal Git revert and has no schema,
