@@ -1,12 +1,14 @@
 # Decision PANTRY-RDY-01 — Pantry Binding for Planning Input Readiness
 
-- **Status:** Accepted
+- **Status:** Accepted; persistence implemented by PANTRY-RDY-02 on the bounded
+  task branch, pending review and merge
 - **Decision date:** 2026-07-29
 - **Owner:** Product Owner
 - **Scope:** Documentation and product-decision amendment only
 - **Detailed amendment:** [PANTRY-RDY-01 Planning Input Readiness Amendment](../architecture/pantry-rdy-01-planning-input-readiness-amendment.md)
 - **Parent architecture:** [PD-01.4 Planning Domain Input Readiness Contract](../architecture/planning-domain-input-readiness-contract.md)
 - **Parent decision:** [Decision PA-06E-H0A4 — Planning Input Readiness](decision-pa-06e-h0a4-planning-input-readiness.md)
+- **Persistence decision:** [Decision PANTRY-RDY-02](decision-pantry-rdy-02-readiness-persistence.md)
 
 ## Context
 
@@ -130,9 +132,8 @@ Pantry Need Generation remains a separate later amendment.
 Historical readiness evaluations created before PANTRY-RDY-02 remain immutable
 and may retain null Pantry binding fields.
 
-Once PANTRY-RDY-02 becomes executable database authority, those evaluations
-remain valid historical evidence but cannot authorize a new Need Generation
-request.
+PANTRY-RDY-02 makes this rule executable: those evaluations remain valid
+historical evidence but cannot authorize a new Need Generation request.
 
 For a current root:
 
@@ -162,19 +163,13 @@ and decision. It preserves:
 The existing H0A4b persistence migration, tests, and implementation record are
 not modified by this decision.
 
-## Future PANTRY-RDY-02 maximum boundary
+## PANTRY-RDY-02 persistence outcome
 
-PANTRY-RDY-01 is accepted target business and architecture authority. Its
-Pantry binding and request requirements become executable database authority
-only after the separately reviewed PANTRY-RDY-02 persistence amendment is
-merged.
+PANTRY-RDY-01 remains the accepted target business and architecture authority.
+PANTRY-RDY-02 implements its persistence boundary in one migration, pending
+review and merge.
 
-The currently merged H0A4b schema and guards physically support only Weekly
-Menu and Attendance. PANTRY-RDY-02 is required before PostgreSQL enforces
-Pantry for new `READY` evaluations and Need Generation requests. Merging
-PANTRY-RDY-01 does not claim that runtime enforcement already exists.
-
-PANTRY-RDY-02 may implement at most:
+PANTRY-RDY-02 implements exactly:
 
 - one migration;
 - zero new relations;
@@ -185,7 +180,7 @@ PANTRY-RDY-02 may implement at most:
 - zero policies; and
 - zero automatic source triggers.
 
-Expected physical changes are limited to:
+Its physical changes are limited to:
 
 - three nullable Pantry binding columns on
   `atlas_planning.planning_input_evaluations`;
@@ -194,11 +189,12 @@ Expected physical changes are limited to:
 - one supporting Pantry snapshot unique constraint when required;
 - one leading binding index;
 - issue-code and `input_type` extensions;
-- amendments to the existing readiness guards; and
+- replacements of the existing request and integrity guards; and
 - in-place updates to the three existing canonical readiness pgTAP suites.
 
-PANTRY-RDY-02 must not create a fourth readiness relation or a fourth
-overlapping readiness test suite.
+It creates no fourth readiness relation or fourth overlapping readiness test
+suite. The exact implementation and rollback record is
+[Decision PANTRY-RDY-02](decision-pantry-rdy-02-readiness-persistence.md).
 
 ## Excluded authority
 

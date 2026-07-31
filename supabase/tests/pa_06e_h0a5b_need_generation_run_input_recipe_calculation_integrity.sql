@@ -222,6 +222,42 @@ set attendance_status = 'APPROVED',
     latest_approval_snapshot_id = 'b5100000-0000-0000-0000-000000000320'
 where attendance_batch_id = 'b5100000-0000-0000-0000-000000000300';
 
+insert into atlas_planning.pantry_need_batches (
+  pantry_need_batch_id, week_start, source_signature,
+  no_additions_confirmed, requesting_actor_id
+) values (
+  'b5100000-0000-0000-0000-000000000330',
+  date '2026-11-02', repeat('f', 64), true,
+  'b5100000-0000-0000-0000-000000000001'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'VALIDATED',
+    version = 2,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b5100000-0000-0000-0000-000000000330';
+
+insert into atlas_planning.pantry_need_approval_snapshots (
+  pantry_need_approval_snapshot_id, pantry_need_batch_id,
+  approved_batch_version, approved_by_actor_id, approved_at,
+  source_signature, no_additions_confirmed, line_count
+) values (
+  'b5100000-0000-0000-0000-000000000332',
+  'b5100000-0000-0000-0000-000000000330', 3,
+  'b5100000-0000-0000-0000-000000000002',
+  timestamptz '2026-11-01 09:07:00+07',
+  repeat('f', 64), true, 0
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'APPROVED',
+    version = 3,
+    latest_approved_by_actor_id = 'b5100000-0000-0000-0000-000000000002',
+    latest_approved_at = timestamptz '2026-11-01 09:07:00+07',
+    latest_approval_snapshot_id = 'b5100000-0000-0000-0000-000000000332',
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b5100000-0000-0000-0000-000000000330';
+
 set constraints all immediate;
 set constraints all deferred;
 
@@ -239,6 +275,8 @@ insert into atlas_planning.planning_input_evaluations (
   evaluation_result, weekly_menu_id, weekly_menu_version,
   weekly_menu_approval_snapshot_id, attendance_batch_id,
   attendance_version, attendance_approval_snapshot_id,
+  pantry_need_batch_id, pantry_need_batch_version,
+  pantry_need_approval_snapshot_id,
   blocking_issue_count, warning_count, evaluated_by_actor_id, evaluated_at
 ) values (
   'b5100000-0000-0000-0000-000000000401',
@@ -246,7 +284,9 @@ insert into atlas_planning.planning_input_evaluations (
   'b5100000-0000-0000-0000-000000000200', 1,
   'b5100000-0000-0000-0000-000000000220',
   'b5100000-0000-0000-0000-000000000300', 1,
-  'b5100000-0000-0000-0000-000000000320', 0, 0,
+  'b5100000-0000-0000-0000-000000000320',
+  'b5100000-0000-0000-0000-000000000330', 3,
+  'b5100000-0000-0000-0000-000000000332', 0, 0,
   'b5100000-0000-0000-0000-000000000001',
   timestamptz '2026-11-01 09:10:00+07'
 );

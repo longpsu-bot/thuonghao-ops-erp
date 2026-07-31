@@ -62,13 +62,20 @@ values ('b5200000-0000-0000-0000-000000000320', 'b5200000-0000-0000-0000-0000000
 insert into atlas_planning.attendance_approval_snapshot_lines (attendance_approval_snapshot_line_id, attendance_approval_snapshot_id, attendance_batch_id, attendance_version, attendance_line_id, school_id, service_date, student_portions, teacher_portions)
 values ('b5200000-0000-0000-0000-000000000321', 'b5200000-0000-0000-0000-000000000320', 'b5200000-0000-0000-0000-000000000300', 1, 'b5200000-0000-0000-0000-000000000310', 'b5200000-0000-0000-0000-000000000120', date '2026-12-07', 90, 10);
 update atlas_planning.attendance_batches set attendance_status = 'APPROVED', latest_approved_by_actor_id = 'b5200000-0000-0000-0000-000000000002', latest_approved_at = timestamptz '2026-12-01 08:05:00+07', latest_approval_snapshot_id = 'b5200000-0000-0000-0000-000000000320' where attendance_batch_id = 'b5200000-0000-0000-0000-000000000300';
+
+insert into atlas_planning.pantry_need_batches (pantry_need_batch_id, week_start, source_signature, no_additions_confirmed, requesting_actor_id)
+values ('b5200000-0000-0000-0000-000000000330', date '2026-12-07', repeat('f', 64), true, 'b5200000-0000-0000-0000-000000000001');
+update atlas_planning.pantry_need_batches set pantry_need_batch_status = 'VALIDATED', version = 2, updated_at = updated_at + interval '1 second' where pantry_need_batch_id = 'b5200000-0000-0000-0000-000000000330';
+insert into atlas_planning.pantry_need_approval_snapshots (pantry_need_approval_snapshot_id, pantry_need_batch_id, approved_batch_version, approved_by_actor_id, approved_at, source_signature, no_additions_confirmed, line_count)
+values ('b5200000-0000-0000-0000-000000000332', 'b5200000-0000-0000-0000-000000000330', 3, 'b5200000-0000-0000-0000-000000000002', timestamptz '2026-12-01 08:07:00+07', repeat('f', 64), true, 0);
+update atlas_planning.pantry_need_batches set pantry_need_batch_status = 'APPROVED', version = 3, latest_approved_by_actor_id = 'b5200000-0000-0000-0000-000000000002', latest_approved_at = timestamptz '2026-12-01 08:07:00+07', latest_approval_snapshot_id = 'b5200000-0000-0000-0000-000000000332', updated_at = updated_at + interval '1 second' where pantry_need_batch_id = 'b5200000-0000-0000-0000-000000000330';
 set constraints all immediate;
 set constraints all deferred;
 
 insert into atlas_planning.planning_input_sets (planning_input_set_id, period_start, period_end, readiness_status, current_evaluation_id)
 values ('b5200000-0000-0000-0000-000000000400', date '2026-12-07', date '2026-12-07', 'READY', 'b5200000-0000-0000-0000-000000000401');
-insert into atlas_planning.planning_input_evaluations (planning_input_evaluation_id, planning_input_set_id, evaluation_version, evaluation_result, weekly_menu_id, weekly_menu_version, weekly_menu_approval_snapshot_id, attendance_batch_id, attendance_version, attendance_approval_snapshot_id, blocking_issue_count, warning_count, evaluated_by_actor_id, evaluated_at)
-values ('b5200000-0000-0000-0000-000000000401', 'b5200000-0000-0000-0000-000000000400', 1, 'READY', 'b5200000-0000-0000-0000-000000000200', 1, 'b5200000-0000-0000-0000-000000000220', 'b5200000-0000-0000-0000-000000000300', 1, 'b5200000-0000-0000-0000-000000000320', 0, 0, 'b5200000-0000-0000-0000-000000000001', timestamptz '2026-12-01 08:10:00+07');
+insert into atlas_planning.planning_input_evaluations (planning_input_evaluation_id, planning_input_set_id, evaluation_version, evaluation_result, weekly_menu_id, weekly_menu_version, weekly_menu_approval_snapshot_id, attendance_batch_id, attendance_version, attendance_approval_snapshot_id, pantry_need_batch_id, pantry_need_batch_version, pantry_need_approval_snapshot_id, blocking_issue_count, warning_count, evaluated_by_actor_id, evaluated_at)
+values ('b5200000-0000-0000-0000-000000000401', 'b5200000-0000-0000-0000-000000000400', 1, 'READY', 'b5200000-0000-0000-0000-000000000200', 1, 'b5200000-0000-0000-0000-000000000220', 'b5200000-0000-0000-0000-000000000300', 1, 'b5200000-0000-0000-0000-000000000320', 'b5200000-0000-0000-0000-000000000330', 3, 'b5200000-0000-0000-0000-000000000332', 0, 0, 'b5200000-0000-0000-0000-000000000001', timestamptz '2026-12-01 08:10:00+07');
 set constraints all immediate;
 set constraints all deferred;
 update atlas_planning.planning_input_sets set readiness_status = 'NEED_GENERATION_REQUESTED', updated_at = updated_at + interval '1 second' where planning_input_set_id = 'b5200000-0000-0000-0000-000000000400';
