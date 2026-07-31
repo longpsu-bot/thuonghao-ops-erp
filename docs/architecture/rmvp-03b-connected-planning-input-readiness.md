@@ -118,11 +118,20 @@ The backend-shaped read returns every current approved source candidate that
 overlaps the selected period, its exact typed root/version/snapshot identity,
 coverage classification, approval evidence, and current/stale state.
 
-When exactly one candidate exists for a source, the backend may select it
-explicitly in the response. When more than one exists, the response is
-`AMBIGUOUS` and no candidate is silently preferred. Operator selection causes
-another shaped read with that exact candidate triple; only that read can
-return an enabled Evaluate action.
+For each source family, selection is deterministic:
+
+| Current candidate evidence                                       | `selection_state` | `selected`                                   |
+| ---------------------------------------------------------------- | ----------------- | -------------------------------------------- |
+| Zero current approved overlapping candidates                     | `MISSING`         | Null                                         |
+| Exactly one candidate                                            | `SELECTED`        | That exact candidate, selected automatically |
+| Multiple candidates and no valid supplied selection              | `AMBIGUOUS`       | Null                                         |
+| Multiple candidates and one exact current supplied candidate     | `SELECTED`        | That supplied candidate                      |
+| A well-formed supplied prior-read candidate is no longer current | `STALE`           | The stale prior selection for display only   |
+
+`AMBIGUOUS` and `STALE` disable evaluation. Exactly one candidate requires no
+operator click. When multiple candidates exist, operator selection causes
+another shaped read with that exact candidate triple; only a resulting
+`SELECTED` state can return an enabled Evaluate action.
 
 A missing family remains null and is evaluated as a backend-authored blocker.
 A changed, stale, ownership-mismatched, or no-longer-read-returned candidate
@@ -142,6 +151,18 @@ Each accepted command uses the existing receipt, event, and audit relations.
 Request and invalidation history are projected from those shared relations;
 they are not duplicated in the Planning Input Set.
 
+The request command derives all three source triples from the exact expected
+current immutable evaluation. React does not repeat them. The backend loads
+that evaluation and revalidates its Menu, Attendance, and Pantry bindings
+under lock before recording the handoff.
+
+`NEED_GENERATION_REQUEST_WITHDRAWN` is permitted only while no
+`atlas_planning.need_generation_runs` row exists with the exact
+`planning_input_set_id` and exact current `planning_input_evaluation_id`. Any
+such row consumes the handoff regardless of run status. A consumed handoff fails as
+`NEED_GENERATION_HANDOFF_ALREADY_CONSUMED`; readiness invalidation never
+updates, invalidates, supersedes, or deletes the run.
+
 ## 6. Decision-first read model
 
 The workbench must return:
@@ -155,13 +176,36 @@ The workbench must return:
 - Pantry positive-line evidence or explicit zero-additions evidence;
 - blockers before warnings;
 - backend-derived `allowed_actions` and disabled reasons;
-- immutable evaluation history with complete source bindings and issues;
-- request and invalidation history from shared event/audit evidence; and
+- one bounded combined history of immutable evaluations and request/invalidation
+  events, with complete source bindings and issues where applicable;
+- `history_next_cursor` and `history_has_more`; and
 - explicit historical null-Pantry labeling.
 
 The read is a shaped projection, not an authorization cache. Every command
 resolves actor/capability/scope again, locks authoritative rows, and revalidates
 all expectations.
+
+The optional history selector is:
+
+```json
+{
+  "history_limit": 25,
+  "history_cursor": "opaque backend cursor or null"
+}
+```
+
+`history_limit` defaults to `25`, has minimum `1` and maximum `50`, and fails
+validation outside that range. History uses one combined `history_items`
+timeline ordered by backend-owned `(occurred_at DESC, history_kind_rank ASC,
+history_item_id DESC)`, where the fixed kind rank is Evaluation, Need
+Generation request, then invalidation. The first page establishes an immutable
+high-water tuple; an opaque cursor binds the exact period, that high-water
+tuple, and the last returned tuple. The same read returns later pages without
+duplication or silent omission. React cannot author or decode the cursor.
+
+Current root, current evaluation, current source evidence, issues, decision,
+and `allowed_actions` are always returned independently of historical
+pagination.
 
 ## 7. Vietnamese operator UX
 
@@ -192,7 +236,9 @@ Below it are three evidence cards:
 
 Each card shows approval state, source period, exact approved version,
 snapshot reference, coverage, current/stale state, and approval actor/time.
-Candidate choice is shown only from the backend-shaped candidate list.
+Exactly one candidate is selected automatically. Candidate choice is shown
+only when multiple backend-shaped candidates exist; `AMBIGUOUS` and `STALE`
+keep Evaluate disabled until a refreshed read returns `SELECTED`.
 
 Pantry uses one of these explicit labels:
 
@@ -225,6 +271,11 @@ Buttons are disabled only from backend `allowed_actions`. React may require the
 operator to choose a backend-returned candidate or enter a required reason
 note, but it must not independently infer lifecycle eligibility.
 
+`Yêu cầu tạo nhu cầu` submits the set ID, exact period, and command-envelope
+expectations only. It neither asks the operator for source bindings nor repeats
+them from browser state; the backend derives them from the expected immutable
+evaluation.
+
 ### 7.4 Refresh, stale, and uncertainty behavior
 
 - Period or candidate changes cause a new authoritative read.
@@ -237,9 +288,13 @@ note, but it must not independently infer lifecycle eligibility.
   retains the same command and idempotency identities for an exact replay or
   refreshes the authoritative read before any later action.
 
-The history drawer is `Lịch sử đánh giá`. Historical evaluations show their
-exact result, source evidence, issues, evaluator, and time. A null-Pantry
-historical evaluation displays:
+The history drawer is `Lịch sử đánh giá`. It loads up to the backend-returned
+limit and uses the same readiness read plus opaque
+`history_next_cursor` to load more when `history_has_more` is true. Combined
+history items show historical evaluations and request/invalidation events in
+backend order. Historical evaluations show their exact result, source
+evidence, issues, evaluator, and time. A null-Pantry historical evaluation
+displays:
 
 > `Đánh giá lịch sử trước khi yêu cầu Pantry — không có liên kết Pantry; không
 dùng để yêu cầu tạo nhu cầu.`
@@ -258,6 +313,7 @@ Future implementation uses bounded Vietnamese messages:
 | Invalid lifecycle                  | `Trạng thái hiện tại không cho phép thao tác này. Hãy tải lại.`                                           |
 | Capability denied                  | `Bạn không có quyền thực hiện thao tác này.`                                                              |
 | Required invalidation note missing | `Hãy nhập lý do cụ thể trước khi vô hiệu hóa.`                                                            |
+| Need Generation handoff consumed   | `Yêu cầu tạo nhu cầu đã được tiếp nhận thành lần chạy. Không thể rút lại bằng thao tác này.`              |
 | Retryable concurrency              | `Dữ liệu đang được cập nhật. Có thể thử lại đúng yêu cầu.`                                                |
 | Transport uncertainty              | `Chưa thể xác nhận thao tác đã hoàn tất. Không tiếp tục bước sau; hãy thử lại đúng yêu cầu hoặc tải lại.` |
 | Session expired                    | `Phiên làm việc đã hết. Vui lòng đăng nhập lại.`                                                          |
@@ -303,6 +359,10 @@ RMVP-03B preserves:
   Supabase, or production data.
 
 The separate Pantry Need Generation amendment remains not started.
+
+If a Need Generation run already exists for the exact set and evaluation,
+readiness invalidation neither changes that run nor treats its later status as
+unconsumed.
 
 ## 11. Migration and rollback effect
 

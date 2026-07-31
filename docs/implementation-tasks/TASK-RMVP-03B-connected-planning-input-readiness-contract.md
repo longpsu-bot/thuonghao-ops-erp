@@ -76,11 +76,15 @@ The documentation proposes:
 
 - exact inclusive period selection with Monday week as convenience only;
 - exact-period root resolution without School/customer split;
-- explicit typed candidate triples from one backend-shaped read;
+- deterministic zero/one/multiple/stale candidate selection from one
+  backend-shaped read, with automatic selection of an exact single candidate;
 - one transactional evaluation command;
-- one handoff-only Need Generation request command;
+- one handoff-only Need Generation request command that derives source triples
+  from the expected immutable evaluation;
 - one explicitly reasoned invalidation command;
+- consumed-handoff protection for withdrawal without Need Generation mutation;
 - one dedicated authoritative readiness workbench read;
+- bounded combined history with one opaque-cursor pagination scheme;
 - one new readiness-write capability at most;
 - existing `GLOBAL` scope and Planning/read runtimes;
 - exact concurrency through root status plus current evaluation ID/version;
@@ -124,9 +128,26 @@ approval`.
   RMVP-03A comparison as non-authoritative for Planning Input Set lifecycle.
 - Exact source triples, currentness, containment, zero-additions evidence,
   concurrency, receipts, events, audit, failures, and readback are documented.
+- The exact five-case candidate matrix is deterministic: zero is `MISSING`,
+  exactly one is automatically `SELECTED`, unresolved multiple is
+  `AMBIGUOUS`, an exact current supplied choice is `SELECTED`, and a
+  no-longer-current prior choice is `STALE`; `AMBIGUOUS` and `STALE` disable
+  evaluation.
 - The invalidation taxonomy is closed and note requirements are exact.
+- `NEED_GENERATION_REQUEST_WITHDRAWN` requires proof that no Need Generation
+  run exists for the exact `planning_input_set_id` and current
+  `planning_input_evaluation_id`, regardless of run status; consumed handoff
+  fails as `NEED_GENERATION_HANDOFF_ALREADY_CONSUMED` and invalidation mutates
+  no run.
+- The one read defaults `history_limit` to `25`, enforces range `1..50`, uses
+  one backend-authored opaque `history_cursor` over a deterministic combined
+  history, returns `history_next_cursor`/`history_has_more`, and always returns
+  current decision state independently.
+- The request payload contains only set ID and exact period; source triples are
+  loaded from the expected immutable evaluation and revalidated under lock.
 - Vietnamese UX is blocker-first, history-aware, stale-safe, and driven by
-  backend `allowed_actions`.
+  backend `allowed_actions`; exactly one candidate needs no redundant click
+  and additional history pages use the same read.
 - Historical null-Pantry evaluations remain immutable and cannot authorize a
   new request.
 - Request remains a handoff marker and creates no Need Generation run or
@@ -150,7 +171,10 @@ git diff --check
 The canonical API contract assigns future test ownership for read shape,
 authorization, transactional evaluation, source currentness, lifecycle,
 reasons, receipts/events/audits, historical behavior, replay/concurrency,
-adapter behavior, Vietnamese UX, and physical downstream non-mutation.
+adapter behavior, Vietnamese UX, and physical downstream non-mutation. It
+specifically assigns pgTAP coverage for unconsumed withdrawal, rejection after
+any exact-set/evaluation run including invalidated or released runs, and zero
+Need Generation mutation by readiness invalidation.
 
 No existing database test is modified.
 

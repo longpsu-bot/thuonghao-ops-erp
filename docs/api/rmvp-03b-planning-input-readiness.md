@@ -39,14 +39,22 @@ does not modify the implemented PA-06A registry or the API Contracts Catalogue.
       "weekly_menu": "complete typed triple or null",
       "attendance": "complete typed triple or null",
       "pantry": "complete typed triple or null"
-    }
+    },
+    "history_limit": 25,
+    "history_cursor": "opaque backend cursor or null"
   }
 }
 ```
 
 `source_selection` is optional on the first read. If supplied, each member must
 be a complete candidate triple returned by an authoritative prior read for the
-same exact period. The read writes no state.
+same exact period.
+
+`history_limit` is optional, defaults to `25`, has minimum `1` and maximum
+`50`, and fails validation outside that range. `history_cursor` is optional
+and null for the first history page; a non-null value must be the opaque
+backend-authored cursor from a prior response for the same exact period. The
+read writes no state.
 
 ### 2.2 Command envelope
 
@@ -109,7 +117,7 @@ not command input authority.
 - **Required capability:** existing `planning.inputs.read`
 - **Scope:** existing active `GLOBAL` scope
 - **Request selector:** exact inclusive `period_start`, `period_end`, and
-  optional exact `source_selection`
+  optional exact `source_selection`, `history_limit`, and `history_cursor`
 - **Authoritative aggregate:** read-only projection of the exact-period
   Planning Input Set when present; explicit root absence otherwise
 - **Exact IDs and versions consumed:** optional selected Weekly Menu,
@@ -124,18 +132,28 @@ not command input authority.
 - **Audit:** none
 - **Safe failures:** malformed/invalid period, auth-subject mismatch,
   authentication/actor failure, capability denial, scope denial, malformed or
-  foreign-period selection, ownership-mismatched selection, and bounded
-  internal read failure
+  foreign-period selection, ownership-mismatched selection, invalid history
+  limit, malformed/foreign-period history cursor, and bounded internal read
+  failure
 - **Test ownership:** future RMVP-03B pgTAP read/security/shape assertions;
   readiness adapter/model tests; connected workbench period, candidate,
-  action, history, stale, and safe-message tests
+  action, bounded combined-history ordering, cursor/high-water pagination,
+  history-limit validation, stale, and safe-message tests
 
 The read returns all current approved overlapping candidates in deterministic
-order. It does not silently select among multiple candidates. A supplied
-candidate is selected only when it is one of the exact currently returned
-candidates for the same period. A well-formed typed candidate from a prior read
-that is no longer current is returned as `STALE`, cannot enable an action, and
-is not authoritative current evidence.
+order and applies this exact matrix per source family:
+
+| Current candidate evidence                                       | `selection_state` | `selected`                                   |
+| ---------------------------------------------------------------- | ----------------- | -------------------------------------------- |
+| Zero current approved overlapping candidates                     | `MISSING`         | Null                                         |
+| Exactly one candidate                                            | `SELECTED`        | That exact candidate, selected automatically |
+| Multiple candidates without one valid supplied selection         | `AMBIGUOUS`       | Null                                         |
+| Multiple candidates with one exact supplied current candidate    | `SELECTED`        | That supplied candidate                      |
+| A well-formed supplied prior-read candidate is no longer current | `STALE`           | The stale prior selection for display only   |
+
+The read does not silently choose among multiple current candidates.
+`AMBIGUOUS` and `STALE` disable evaluation. Exactly one candidate requires no
+operator selection.
 
 ### 3.2 `atlas_api.evaluate_planning_input_readiness(request jsonb)`
 
@@ -209,12 +227,7 @@ or ambiguous non-null candidate, fails without creating an evaluation.
 {
   "planning_input_set_id": "uuid",
   "period_start": "YYYY-MM-DD",
-  "period_end": "YYYY-MM-DD",
-  "current_source_bindings": {
-    "weekly_menu": "complete typed triple",
-    "attendance": "complete typed triple",
-    "pantry": "complete typed triple"
-  }
+  "period_end": "YYYY-MM-DD"
 }
 ```
 
@@ -223,8 +236,8 @@ or ambiguous non-null candidate, fails without creating an evaluation.
 - **Authoritative aggregate:** the exact Planning Input Set
 - **Exact IDs and versions consumed:** set ID and exact period; expected root
   status `READY`; exact current evaluation ID/version; all three exact
-  current-evaluation source triples; current source status/version/latest
-  approval and containment evidence
+  immutable source triples loaded from that expected current evaluation;
+  current source status/version/latest approval and containment evidence
 - **Response/readback:** standard command success with set ID, retained
   evaluation ID/version, `new_versions.current_evaluation_version` unchanged,
   event/audit IDs, handoff-only safe message, and complete authoritative
@@ -236,10 +249,11 @@ or ambiguous non-null candidate, fails without creating an evaluation.
   receipt expected version is the expected current evaluation version; exact
   replay returns the original response
 - **Event:** one `PlanningInputNeedGenerationRequested` domain event on
-  `PlanningInputSet`
+  `PlanningInputSet`, carrying the backend-derived evaluation bindings
 - **Audit:** one same-name Planning audit event containing
   `READY -> NEED_GENERATION_REQUESTED`, retained evaluation/source evidence,
-  Actor, command/correlation IDs, fixed reason, source interface, and time
+  backend-derived source triples, Actor, command/correlation IDs, fixed reason,
+  source interface, and time
 - **Safe failures:** common failures; root/period mismatch;
   `STALE_ROOT_STATE`; `STALE_CURRENT_EVALUATION`;
   `CURRENT_EVALUATION_NOT_READY`; `CURRENT_EVALUATION_HAS_BLOCKERS`;
@@ -247,12 +261,15 @@ or ambiguous non-null candidate, fails without creating an evaluation.
   `INVALID_LIFECYCLE_STATE`; `IDEMPOTENCY_CONFLICT`;
   `RETRYABLE_CONCURRENCY_FAILURE`; invariant/internal failure
 - **Test ownership:** future RMVP-03B pgTAP exact handoff transition,
-  three-source revalidation, null-Pantry rejection, unchanged evaluation,
-  receipt/event/audit, replay/concurrency, and physical no-Need-Generation/no-
-  downstream-write assertions; adapter and UX request/uncertainty tests
+  minimal payload and backend-derived three-source revalidation, null-Pantry
+  rejection, unchanged evaluation, receipt/event/audit, replay/concurrency,
+  and physical no-Need-Generation/no-downstream-write assertions; adapter and
+  UX request/uncertainty tests
 
 The function does not create or call a Need Generation command. It creates no
-run, contribution, calculation, or downstream fact.
+run, contribution, calculation, or downstream fact. The browser does not
+repeat source triples; the command loads the exact expected immutable
+evaluation and revalidates all three stored bindings under lock.
 
 ### 3.4 `atlas_api.invalidate_planning_input_readiness(request jsonb)`
 
@@ -276,7 +293,9 @@ run, contribution, calculation, or downstream fact.
 - **Exact IDs and versions consumed:** set ID and exact period; expected
   `READY` or `NEED_GENERATION_REQUESTED`; exact current evaluation ID/version;
   current evaluation bindings and current source evidence when reason is
-  `UPSTREAM_SOURCE_CHANGED`
+  `UPSTREAM_SOURCE_CHANGED`; and Need Generation run existence for the exact
+  `planning_input_set_id`/`planning_input_evaluation_id` when reason is
+  `NEED_GENERATION_REQUEST_WITHDRAWN`
 - **Response/readback:** standard command success with set ID, retained
   evaluation ID/version, unchanged
   `new_versions.current_evaluation_version`, event/audit IDs, safe message, and
@@ -296,20 +315,29 @@ run, contribution, calculation, or downstream fact.
   `STALE_ROOT_STATE`; `STALE_CURRENT_EVALUATION`;
   `INVALID_LIFECYCLE_STATE`; `INVALID_INVALIDATION_REASON`;
   `INVALIDATION_REASON_MISMATCH`; `REASON_NOTE_REQUIRED`;
+  `NEED_GENERATION_HANDOFF_ALREADY_CONSUMED`;
   `IDEMPOTENCY_CONFLICT`; `RETRYABLE_CONCURRENCY_FAILURE`;
   invariant/internal failure
 - **Test ownership:** future RMVP-03B pgTAP two allowed transitions,
   `NOT_READY` rejection, closed reasons, conditional notes, source-change
-  proof, retained evidence, receipt/event/audit, replay/concurrency, and no
-  downstream mutation assertions; adapter and UX reason/history tests
+  proof, successful unconsumed withdrawal, rejection after a generated run,
+  rejection after an invalidated or released run, retained evidence,
+  receipt/event/audit, replay/concurrency, zero Need Generation mutation by
+  readiness invalidation, and no downstream mutation assertions; adapter and
+  UX reason/history tests
 
 Reason rules are:
 
-| Reason                              | Allowed state                                                                                                              | Note                               |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
-| `UPSTREAM_SOURCE_CHANGED`           | `READY` or `NEED_GENERATION_REQUESTED`, only when backend comparison proves at least one bound source is no longer current | Null or nonblank normalized text   |
-| `PLANNING_REVIEW_CORRECTION`        | `READY` or `NEED_GENERATION_REQUESTED`                                                                                     | Mandatory nonblank normalized text |
-| `NEED_GENERATION_REQUEST_WITHDRAWN` | `NEED_GENERATION_REQUESTED` only                                                                                           | Mandatory nonblank normalized text |
+| Reason                              | Allowed state                                                                                                                                                                                                        | Note                               |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `UPSTREAM_SOURCE_CHANGED`           | `READY` or `NEED_GENERATION_REQUESTED`, only when backend comparison proves at least one bound source is no longer current                                                                                           | Null or nonblank normalized text   |
+| `PLANNING_REVIEW_CORRECTION`        | `READY` or `NEED_GENERATION_REQUESTED`                                                                                                                                                                               | Mandatory nonblank normalized text |
+| `NEED_GENERATION_REQUEST_WITHDRAWN` | `NEED_GENERATION_REQUESTED` only, and only when no `atlas_planning.need_generation_runs` row exists for the exact `planning_input_set_id` and exact current `planning_input_evaluation_id`, regardless of run status | Mandatory nonblank normalized text |
+
+When a matching run exists, withdrawal fails with
+`NEED_GENERATION_HANDOFF_ALREADY_CONSUMED`. The invalidation command never
+updates, invalidates, supersedes, or deletes that run. Other permitted reasons
+retain their own conditions and also create no Need Generation mutation.
 
 ## 4. Authoritative workbench response
 
@@ -375,9 +403,9 @@ The workbench shape is:
     "invalidation_reason_codes": [],
     "disabled_reasons": []
   },
-  "evaluation_history": [],
-  "request_history": [],
-  "invalidation_history": []
+  "history_items": [],
+  "history_next_cursor": "opaque cursor or null",
+  "history_has_more": false
 }
 ```
 
@@ -415,9 +443,12 @@ candidate.
 Each issue includes exact immutable issue ID, severity, code, safe message,
 input type, School context, and service date where present.
 
-Each evaluation-history entry includes the full immutable evaluation summary,
-all three historical binding families including null Pantry when historical,
-and every owned issue. Null-Pantry history includes:
+`history_items` is one combined immutable timeline. Each item has
+`history_kind = EVALUATION|NEED_GENERATION_REQUEST|INVALIDATION`,
+`occurred_at`, and a typed immutable `history_item_id`. Evaluation entries
+include the full immutable evaluation summary, all three historical binding
+families including null Pantry when historical, and every owned issue.
+Null-Pantry history includes:
 
 ```json
 {
@@ -426,10 +457,25 @@ and every owned issue. Null-Pantry history includes:
 }
 ```
 
-Request and invalidation histories are shaped from shared domain/audit events
-and include event/audit IDs, command/correlation IDs, resolved actor display,
+Request and invalidation items are shaped from shared domain/audit events and
+include event/audit IDs, command/correlation IDs, resolved actor display,
 occurred time, prior/next status, retained evaluation ID/version, reason code,
 and safe reason note. Raw receipt hashes and internal payloads are not exposed.
+
+The backend orders the combined timeline by
+`(occurred_at DESC, history_kind_rank ASC, history_item_id DESC)`, with fixed
+kind rank Evaluation, Need Generation request, then invalidation. The first
+page establishes a high-water tuple. An opaque cursor binds the exact period,
+that high-water tuple, and the last returned tuple. The next page uses keyset
+continuation within that high-water boundary. `history_limit` limits the
+combined item count, not each history kind separately.
+`history_has_more = true` requires a non-null `history_next_cursor`; the final
+page returns false and null. No item is silently omitted without this
+metadata.
+
+Current root, current evaluation, current source evidence, current issues,
+decision, and `allowed_actions` are returned independently of history
+pagination.
 
 ## 5. Success and idempotency
 
@@ -502,6 +548,7 @@ Common errors include:
 - `STALE_SOURCE_CANDIDATE`
 - `SOURCE_CANDIDATE_OWNERSHIP_MISMATCH`
 - `INVALID_LIFECYCLE_STATE`
+- `NEED_GENERATION_HANDOFF_ALREADY_CONSUMED`
 - `IDEMPOTENCY_CONFLICT`
 - `RETRYABLE_CONCURRENCY_FAILURE`
 - `INVARIANT_VIOLATION`

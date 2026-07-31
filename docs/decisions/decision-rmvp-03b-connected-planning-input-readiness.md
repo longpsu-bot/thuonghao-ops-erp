@@ -78,12 +78,21 @@ source period and typed IDs. Each candidate contains:
 - coverage classification; and
 - source-current/stale classification.
 
-If exactly one candidate exists, the backend may return it as the explicit
-selection. If multiple candidates exist, selection state is `AMBIGUOUS`; the
-backend does not choose by approval time, row order, UUID, or “latest row
-wins.” The operator may select one candidate from that backend-returned list,
-then the client re-reads using that exact triple so the backend can return new
-`allowed_actions`.
+For each source family, the backend applies exactly this matrix:
+
+| Current candidate evidence                                       | `selection_state` | `selected`                                   |
+| ---------------------------------------------------------------- | ----------------- | -------------------------------------------- |
+| Zero current approved overlapping candidates                     | `MISSING`         | Null                                         |
+| Exactly one candidate                                            | `SELECTED`        | That exact candidate, selected automatically |
+| Multiple candidates without one valid supplied selection         | `AMBIGUOUS`       | Null                                         |
+| Multiple candidates with one exact supplied current candidate    | `SELECTED`        | That supplied candidate                      |
+| A well-formed supplied prior-read candidate is no longer current | `STALE`           | The stale prior selection for display only   |
+
+The backend does not choose among multiple candidates by approval time, row
+order, UUID, or “latest row wins.” The operator may select one candidate from
+the backend-returned multiple-candidate list, then the client re-reads using
+that exact triple so the backend can return new `allowed_actions`. Exactly one
+candidate requires no redundant operator selection.
 
 If no candidate exists, the family is null and evaluation may create the
 corresponding missing-source blocker. Null is accepted only when the backend's
@@ -118,6 +127,7 @@ ownership-mismatched selection is rejected. A well-formed prior-read selection
 that is no longer current is returned by the shaped read as `STALE`, with all
 actions fail-closed until refresh. A stale or ambiguous selection submitted to
 the evaluation command fails without creating or advancing an evaluation.
+`AMBIGUOUS` and `STALE` always disable evaluation.
 React cannot submit generic source types, status strings, issues, counts,
 hashes, or JSON-only lineage.
 
@@ -159,15 +169,16 @@ One command performs only:
 READY -> NEED_GENERATION_REQUESTED
 ```
 
-It locks the exact root and current evaluation, validates exact expected
-status/evaluation ID/version, requires the evaluation result `READY` and zero
-blockers, revalidates the exact evaluation-bound Weekly Menu, Attendance, and
-Pantry root/version/snapshot triples as current approved evidence, retains the
-same evaluation ID/version, updates the root status, and writes one receipt,
-one handoff domain event, and one audit event.
+It locks the exact root and expected current evaluation, validates exact
+expected status/evaluation ID/version, requires the evaluation result `READY`
+and zero blockers, derives the exact Weekly Menu, Attendance, and Pantry
+root/version/snapshot triples from that immutable evaluation, revalidates those
+backend-derived bindings as current approved evidence, retains the same
+evaluation ID/version, updates the root status, and writes one receipt, one
+handoff domain event, and one audit event.
 
-The request carries all three exact source triples as expectations copied from
-the authoritative readback. Any difference fails closed and requires refresh.
+The browser does not repeat source triples in the request. Any evaluation or
+source-currentness difference fails closed and requires refresh.
 
 The command creates no Need Generation run, run attempt, input snapshot,
 Recipe/BOM resolution, theoretical line, Pantry contribution, or downstream
@@ -187,15 +198,22 @@ NEED_GENERATION_REQUESTED -> INVALIDATED
 
 The closed invalidation reason taxonomy is:
 
-| Reason code                         | Permitted current state                | Backend condition                                                                                                          | Reason note                                |
-| ----------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `UPSTREAM_SOURCE_CHANGED`           | `READY` or `NEED_GENERATION_REQUESTED` | At least one evaluation-bound Menu, Attendance, or Pantry approval is no longer the exact current approved source evidence | Optional; null or nonblank normalized text |
-| `PLANNING_REVIEW_CORRECTION`        | `READY` or `NEED_GENERATION_REQUESTED` | Accountable operator requests a new readiness decision while current source evidence may still be current                  | Mandatory nonblank normalized text         |
-| `NEED_GENERATION_REQUEST_WITHDRAWN` | `NEED_GENERATION_REQUESTED` only       | Planning withdraws the handoff marker before any RMVP-03B-created downstream work, of which there is none                  | Mandatory nonblank normalized text         |
+| Reason code                         | Permitted current state                | Backend condition                                                                                                                                                    | Reason note                                |
+| ----------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `UPSTREAM_SOURCE_CHANGED`           | `READY` or `NEED_GENERATION_REQUESTED` | At least one evaluation-bound Menu, Attendance, or Pantry approval is no longer the exact current approved source evidence                                           | Optional; null or nonblank normalized text |
+| `PLANNING_REVIEW_CORRECTION`        | `READY` or `NEED_GENERATION_REQUESTED` | Accountable operator requests a new readiness decision while current source evidence may still be current                                                            | Mandatory nonblank normalized text         |
+| `NEED_GENERATION_REQUEST_WITHDRAWN` | `NEED_GENERATION_REQUESTED` only       | No `atlas_planning.need_generation_runs` row exists for the exact `planning_input_set_id` and exact current `planning_input_evaluation_id`, regardless of run status | Mandatory nonblank normalized text         |
 
 No `OTHER` reason exists. A reason code used outside its permitted state or
 without its backend condition fails as `INVALIDATION_REASON_MISMATCH`.
 Whitespace-only mandatory notes fail as `REASON_NOTE_REQUIRED`.
+
+Any Need Generation run for the exact set and evaluation means the handoff was
+consumed, including a run later invalidated or released. Withdrawal then fails
+closed as `NEED_GENERATION_HANDOFF_ALREADY_CONSUMED`. The invalidation command
+does not update, invalidate, supersede, or delete that run. Other invalidation
+reasons remain available only under their independently defined conditions and
+also create no Need Generation mutation.
 
 The backend resolves the accountable Actor from the authenticated subject and
 uses transaction time as authoritative occurrence time. The request timestamp
@@ -303,14 +321,14 @@ Request payload is:
 {
   "planning_input_set_id": "uuid",
   "period_start": "YYYY-MM-DD",
-  "period_end": "YYYY-MM-DD",
-  "current_source_bindings": {
-    "weekly_menu": "complete typed triple",
-    "attendance": "complete typed triple",
-    "pantry": "complete typed triple"
-  }
+  "period_end": "YYYY-MM-DD"
 }
 ```
+
+The request command consumes expected root status `READY`, expected current
+evaluation ID/version, and the exact immutable source triples stored on that
+evaluation. It loads and revalidates those triples under lock; the browser
+supplies no duplicate source-binding claim.
 
 Invalidation payload is:
 
@@ -366,11 +384,11 @@ event envelope, audit envelope, reason, or actor history.
 
 The exact proposed domain event names are:
 
-| Event                                  | Aggregate          | Required payload summary                                                                                                                                         |
-| -------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PlanningInputReadinessEvaluated`      | `PlanningInputSet` | Set ID, exact period, prior/next root status, evaluation ID/version/result, all present typed source triples, blocking/warning counts                            |
-| `PlanningInputNeedGenerationRequested` | `PlanningInputSet` | Set ID, exact period, `READY -> NEED_GENERATION_REQUESTED`, retained evaluation ID/version, all three exact source triples                                       |
-| `PlanningInputReadinessInvalidated`    | `PlanningInputSet` | Set ID, exact period, prior status, `INVALIDATED`, retained evaluation ID/version, invalidation reason code, backend-detected stale source types when applicable |
+| Event                                  | Aggregate          | Required payload summary                                                                                                                                          |
+| -------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PlanningInputReadinessEvaluated`      | `PlanningInputSet` | Set ID, exact period, prior/next root status, evaluation ID/version/result, all present typed source triples, blocking/warning counts                             |
+| `PlanningInputNeedGenerationRequested` | `PlanningInputSet` | Set ID, exact period, `READY -> NEED_GENERATION_REQUESTED`, retained evaluation ID/version, all three exact source triples derived from that immutable evaluation |
+| `PlanningInputReadinessInvalidated`    | `PlanningInputSet` | Set ID, exact period, prior status, `INVALIDATED`, retained evaluation ID/version, invalidation reason code, backend-detected stale source types when applicable  |
 
 `PlanningInputSet` has no aggregate version. Domain-event
 `aggregate_version` and audit `aggregate_version_before/after` therefore remain
@@ -407,9 +425,9 @@ events/audits. No new history relation or duplicate root fields are proposed.
    context;
 8. backend `allowed_actions`, action-specific disabled reasons, and permitted
    invalidation reason codes;
-9. every immutable evaluation in descending version order with exact bindings
-   and complete issues;
-10. request and invalidation history from shared event/audit evidence; and
+9. one bounded combined history of immutable evaluations and request and
+   invalidation events;
+10. exact history pagination metadata; and
 11. explicit historical null-Pantry classification.
 
 The top-level decision is one of:
@@ -436,6 +454,37 @@ kind is `POSITIVE_LINES`, `EXPLICIT_ZERO_LINES`, or `MISSING`.
 
 Source currency is calculated against current source roots and latest approval
 pointers at read time. It does not rewrite historical evaluation evidence.
+
+The optional read selector contains `history_limit` and `history_cursor`.
+`history_limit` defaults to `25`, has minimum `1` and maximum `50`, and fails
+validation outside that range. `history_cursor` is null for the first page or
+an opaque backend-authored cursor from the preceding response.
+
+```json
+{
+  "history_limit": 25,
+  "history_cursor": "opaque backend cursor or null"
+}
+```
+
+The response contains one `history_items` collection plus:
+
+```json
+{
+  "history_next_cursor": "opaque cursor or null",
+  "history_has_more": false
+}
+```
+
+History uses the total backend-owned order
+`(occurred_at DESC, history_kind_rank ASC, history_item_id DESC)`. Fixed kind
+rank is Evaluation, Need Generation request, then invalidation. The first page
+establishes a high-water tuple; the opaque cursor binds the exact period, that
+high-water tuple, and the last returned tuple. This pages all three immutable
+history kinds without duplicates, ambiguous cross-collection offsets, or
+silent omission. Current root, current evaluation, current source evidence,
+issues, decision, and `allowed_actions` are returned independently of
+historical pagination.
 
 `allowed_actions` contains only backend-derived:
 
@@ -464,14 +513,16 @@ It contains:
 - inclusive `Từ ngày` and `Đến ngày` selectors;
 - a `Dùng cả tuần đang chọn` convenience;
 - three cards named `Thực đơn tuần`, `Sĩ số`, and `Pantry`;
-- backend-returned candidate selection when a source is ambiguous;
+- automatic backend selection when exactly one candidate exists;
+- backend-returned candidate selection only when a source has multiple
+  candidates;
 - current readiness status;
 - blocker-first `Lỗi chặn`;
 - separate `Cảnh báo không chặn` with no acknowledgement control;
 - Evaluate, Request, and Invalidate actions;
 - authoritative refresh and stale-state handling;
-- a `Lịch sử đánh giá` drawer/panel;
-- request and invalidation history;
+- a paginated `Lịch sử đánh giá` drawer/panel using the same read and opaque
+  cursor for combined evaluation/request/invalidation history;
 - explicit Pantry label
   `Đã xác nhận không có bổ sung Pantry — 0 dòng`; and
 - explicit historical null-Pantry labeling.
@@ -494,6 +545,8 @@ React must not:
 - select `READY`/`NOT_READY`;
 - author issue codes, severity, messages, or counts;
 - infer source approval, currentness, coverage, or zero-additions evidence;
+- repeat source triples in the Need Generation request; the backend derives
+  them from the expected immutable evaluation;
 - choose a hidden latest source;
 - select a lifecycle transition;
 - treat visibility as authorization; or
