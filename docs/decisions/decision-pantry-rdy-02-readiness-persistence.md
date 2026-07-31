@@ -1,7 +1,7 @@
 # Decision PANTRY-RDY-02 — Pantry-Bound Readiness Persistence
 
-- **Status:** Implemented and locally validated on the bounded task branch;
-  pending draft-PR review and merge
+- **Status:** Merged through PR #163 as
+  `70c380f49c148a1207574aabc5aefcb44cf30074`
 - **Decision date:** 2026-07-31
 - **Owner:** Planning
 - **Governing decision:** D-026

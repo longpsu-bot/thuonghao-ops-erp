@@ -1,6 +1,6 @@
 # PD-01.4 — Planning Domain Input Readiness Contract
 
-**Status:** Contract v0.4; three-source persistence implemented by PANTRY-RDY-02 on the bounded task branch, pending review and merge
+**Status:** Contract v0.6; three-source persistence merged through PANTRY-RDY-02, with the connected RMVP-03B command/API/UX contract accepted by the Product Owner on 31/07/2026 and implementation not started
 **Domain:** Planning
 **Business owner:** Tổ Kế hoạch
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
@@ -188,7 +188,7 @@ Future authorized Need Generation behavior may consume the exact current immutab
 
 Historical readiness evaluations created before PANTRY-RDY-02 remain immutable and may retain null Pantry binding fields.
 
-Once PANTRY-RDY-02 becomes executable database authority, those evaluations remain valid historical evidence but cannot authorize a new Need Generation request.
+Under the merged PANTRY-RDY-02 executable database authority, those evaluations remain valid historical evidence but cannot authorize a new Need Generation request.
 
 For a current root:
 
@@ -212,8 +212,8 @@ The retained OPS v1 evidence records a Weekly Menu week/date-range selector, a s
 
 PANTRY-RDY-01 remains the accepted business and architecture authority.
 PANTRY-RDY-02 implements that authority in migration
-`20260730231951_pantry_rdy_02_readiness_persistence.sql`, pending review and
-merge.
+`20260730231951_pantry_rdy_02_readiness_persistence.sql`, merged through PR
+#163 as `70c380f49c148a1207574aabc5aefcb44cf30074`.
 
 H0A4b implemented the original two-source persistence foundation in migration
 `20260720135755_pa_06e_h0a4b_planning_input_readiness_persistence.sql`.
@@ -252,5 +252,8 @@ generated type, React behavior, package, hosted Supabase/Retool state,
 production data, or Need Generation behavior.
 
 Command names, command parameters, authorization, actor attribution, reason
-taxonomy, events, safe errors, API contracts, and command/UI implementation
-remain separately approved work.
+taxonomy, events, safe errors, API contracts, and operator UX are accepted
+through [RMVP-03B Connected Planning Input Readiness](rmvp-03b-connected-planning-input-readiness.md)
+and its [canonical accepted decision registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md),
+approved on 31/07/2026 and registered as D-027. Implementation remains not
+started and requires a separate bounded task.
