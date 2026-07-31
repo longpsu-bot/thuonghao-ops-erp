@@ -1,7 +1,7 @@
 # TASK-PANTRY-RDY-02 — Pantry-Bound Readiness Persistence
 
-- **Status:** Implemented and locally validated on the task branch; pending
-  draft-PR review and merge
+- **Status:** Merged through PR #163 as
+  `70c380f49c148a1207574aabc5aefcb44cf30074`
 - **Approved baseline:** `9e3f7d6afce1d66757c939645f8d45f99210f20b`
 - **Branch:** `backend/pantry-rdy-02-readiness-persistence`
 - **Migration:**
