@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(45);
+select plan(59);
 
 insert into atlas_core.actors (actor_id, actor_type, display_name) values
   ('b4000000-0000-0000-0000-000000000001', 'HUMAN', 'H0A4b evaluator'),
@@ -64,6 +64,33 @@ insert into atlas_admin.dishes (
 ) values (
   'b4000000-0000-0000-0000-000000000130',
   'pa06e-h0a4b-integrity-dish', 'H0A4b integrity dish', 'ACTIVE', 10
+);
+
+insert into atlas_admin.units (
+  unit_id, unit_code, unit_name, dimension_code, decimal_scale
+) values (
+  'b4000000-0000-0000-0000-000000000140',
+  'pa06e-h0a4b-integrity-kg', 'H0A4b integrity kilogram', 'MASS', 6
+);
+
+insert into atlas_admin.ingredients (
+  ingredient_id, ingredient_code, ingredient_name, ingredient_group,
+  purchase_unit_id, ingredient_type, shopping_type, order_step
+) values (
+  'b4000000-0000-0000-0000-000000000150',
+  'pa06e-h0a4b-integrity-rice', 'H0A4b integrity rice', 'Food',
+  'b4000000-0000-0000-0000-000000000140',
+  'Food', 'Planned', 1
+);
+
+insert into atlas_planning.pantry_need_purposes (
+  pantry_need_purpose_id, purpose_code, purpose_name_vi,
+  purpose_description, note_rule, purpose_status, display_order
+) values (
+  'b4000000-0000-0000-0000-000000000160',
+  'h0a4b_integrity_supplement', 'H0A4b supplement',
+  'Deterministic Pantry readiness integrity fixture.',
+  'REQUIRED', 'ACTIVE', 10
 );
 
 insert into atlas_planning.weekly_menus (
@@ -240,6 +267,93 @@ set attendance_status = 'APPROVED',
     latest_approval_snapshot_id = 'b4000000-0000-0000-0000-000000000320'
 where attendance_batch_id = 'b4000000-0000-0000-0000-000000000300';
 
+insert into atlas_planning.pantry_need_batches (
+  pantry_need_batch_id, week_start, source_signature,
+  no_additions_confirmed, requesting_actor_id
+) values (
+  'b4000000-0000-0000-0000-000000000230',
+  date '2026-09-07', repeat('a', 64), false,
+  'b4000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_planning.pantry_need_lines (
+  pantry_need_line_id, pantry_need_batch_id, service_date, school_id,
+  delivery_location_id, ingredient_id, unit_id, pantry_need_purpose_id,
+  requested_quantity, note, source_request_reference,
+  source_row_reference, updated_by_actor_id
+) values (
+  'b4000000-0000-0000-0000-000000000231',
+  'b4000000-0000-0000-0000-000000000230',
+  date '2026-09-10',
+  'b4000000-0000-0000-0000-000000000120',
+  'b4000000-0000-0000-0000-000000000101',
+  'b4000000-0000-0000-0000-000000000150',
+  'b4000000-0000-0000-0000-000000000140',
+  'b4000000-0000-0000-0000-000000000160',
+  2.500000, 'Positive Pantry readiness evidence',
+  'H0A4b request', 'H0A4b row 1',
+  'b4000000-0000-0000-0000-000000000001'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'VALIDATED',
+    version = 2,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000230';
+
+insert into atlas_planning.pantry_need_approval_snapshots (
+  pantry_need_approval_snapshot_id, pantry_need_batch_id,
+  approved_batch_version, approved_by_actor_id, approved_at,
+  source_signature, no_additions_confirmed, line_count
+) values (
+  'b4000000-0000-0000-0000-000000000232',
+  'b4000000-0000-0000-0000-000000000230', 3,
+  'b4000000-0000-0000-0000-000000000002',
+  timestamptz '2026-09-06 09:10:00+07',
+  repeat('a', 64), false, 1
+);
+
+insert into atlas_planning.pantry_need_approval_snapshot_lines (
+  pantry_need_approval_snapshot_id, pantry_need_line_id, service_date,
+  school_id, school_code_snapshot, school_name_snapshot,
+  delivery_location_id, delivery_location_code_snapshot,
+  delivery_location_name_snapshot, delivery_location_address_snapshot,
+  ingredient_id, ingredient_code_snapshot, ingredient_name_snapshot,
+  unit_id, unit_code_snapshot, unit_name_snapshot,
+  pantry_need_purpose_id, purpose_code_snapshot, purpose_name_snapshot,
+  purpose_description_snapshot, purpose_note_rule_snapshot,
+  requested_quantity, note, source_request_reference, source_row_reference
+) values (
+  'b4000000-0000-0000-0000-000000000232',
+  'b4000000-0000-0000-0000-000000000231',
+  date '2026-09-10',
+  'b4000000-0000-0000-0000-000000000120',
+  'pa06e-h0a4b-integrity-school-a', 'H0A4b School A',
+  'b4000000-0000-0000-0000-000000000101',
+  'pa06e-h0a4b-integrity-location', 'H0A4b integrity location',
+  'Local-only test address',
+  'b4000000-0000-0000-0000-000000000150',
+  'pa06e-h0a4b-integrity-rice', 'H0A4b integrity rice',
+  'b4000000-0000-0000-0000-000000000140',
+  'pa06e-h0a4b-integrity-kg', 'H0A4b integrity kilogram',
+  'b4000000-0000-0000-0000-000000000160',
+  'h0a4b_integrity_supplement', 'H0A4b supplement',
+  'Deterministic Pantry readiness integrity fixture.', 'REQUIRED',
+  2.500000, 'Positive Pantry readiness evidence',
+  'H0A4b request', 'H0A4b row 1'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'APPROVED',
+    version = 3,
+    latest_approved_by_actor_id =
+      'b4000000-0000-0000-0000-000000000002',
+    latest_approved_at = timestamptz '2026-09-06 09:10:00+07',
+    latest_approval_snapshot_id =
+      'b4000000-0000-0000-0000-000000000232',
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000230';
+
 -- Empty alternate snapshots let this suite isolate ownership and period rules
 -- without creating warning observations owned by Suite 3.
 insert into atlas_planning.weekly_menus (
@@ -304,6 +418,44 @@ set attendance_status = 'APPROVED',
     latest_approval_snapshot_id = 'b4000000-0000-0000-0000-000000000370'
 where attendance_batch_id = 'b4000000-0000-0000-0000-000000000350';
 
+insert into atlas_planning.pantry_need_batches (
+  pantry_need_batch_id, week_start, source_signature,
+  no_additions_confirmed, requesting_actor_id
+) values (
+  'b4000000-0000-0000-0000-000000000380',
+  date '2026-09-14', repeat('b', 64), true,
+  'b4000000-0000-0000-0000-000000000001'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'VALIDATED',
+    version = 2,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000380';
+
+insert into atlas_planning.pantry_need_approval_snapshots (
+  pantry_need_approval_snapshot_id, pantry_need_batch_id,
+  approved_batch_version, approved_by_actor_id, approved_at,
+  source_signature, no_additions_confirmed, line_count
+) values (
+  'b4000000-0000-0000-0000-000000000382',
+  'b4000000-0000-0000-0000-000000000380', 3,
+  'b4000000-0000-0000-0000-000000000002',
+  timestamptz '2026-09-13 09:10:00+07',
+  repeat('b', 64), true, 0
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'APPROVED',
+    version = 3,
+    latest_approved_by_actor_id =
+      'b4000000-0000-0000-0000-000000000002',
+    latest_approved_at = timestamptz '2026-09-13 09:10:00+07',
+    latest_approval_snapshot_id =
+      'b4000000-0000-0000-0000-000000000382',
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000380';
+
 set constraints all immediate;
 set constraints all deferred;
 
@@ -317,7 +469,8 @@ create function pg_temp.h0a4b_make_evaluation(
   p_attendance_bound boolean,
   p_blocking_count integer,
   p_warning_count integer,
-  p_issues jsonb
+  p_issues jsonb,
+  p_pantry_bound boolean default true
 ) returns void
 language plpgsql
 as $$
@@ -334,7 +487,9 @@ begin
     evaluation_result, weekly_menu_id, weekly_menu_version,
     weekly_menu_approval_snapshot_id, attendance_batch_id,
     attendance_version, attendance_approval_snapshot_id,
-    blocking_issue_count, warning_count, evaluated_by_actor_id
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
   ) values (
     p_evaluation_id, p_set_id, 1, p_result,
     case when p_weekly_bound then 'b4000000-0000-0000-0000-000000000200'::uuid end,
@@ -343,6 +498,9 @@ begin
     case when p_attendance_bound then 'b4000000-0000-0000-0000-000000000300'::uuid end,
     case when p_attendance_bound then 1 end,
     case when p_attendance_bound then 'b4000000-0000-0000-0000-000000000320'::uuid end,
+    case when p_pantry_bound then 'b4000000-0000-0000-0000-000000000230'::uuid end,
+    case when p_pantry_bound then 3 end,
+    case when p_pantry_bound then 'b4000000-0000-0000-0000-000000000232'::uuid end,
     p_blocking_count, p_warning_count,
     'b4000000-0000-0000-0000-000000000001'
   );
@@ -385,14 +543,119 @@ begin
     evaluation_result, weekly_menu_id, weekly_menu_version,
     weekly_menu_approval_snapshot_id, attendance_batch_id,
     attendance_version, attendance_approval_snapshot_id,
-    blocking_issue_count, warning_count, evaluated_by_actor_id
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
   ) values (
     p_evaluation_id, p_set_id, 1, p_result,
     'b4000000-0000-0000-0000-000000000250', 1,
     'b4000000-0000-0000-0000-000000000270',
     'b4000000-0000-0000-0000-000000000350', 1,
     'b4000000-0000-0000-0000-000000000370',
+    'b4000000-0000-0000-0000-000000000380', 3,
+    'b4000000-0000-0000-0000-000000000382',
     0, 0, 'b4000000-0000-0000-0000-000000000001'
+  );
+end;
+$$;
+
+create function pg_temp.h0a4b_make_alternate_pantry_evaluation(
+  p_set_id uuid,
+  p_evaluation_id uuid,
+  p_result text,
+  p_blocking_count integer,
+  p_issues jsonb,
+  p_period_start date,
+  p_period_end date
+) returns void
+language plpgsql
+as $$
+begin
+  insert into atlas_planning.planning_input_sets (
+    planning_input_set_id, period_start, period_end, readiness_status,
+    current_evaluation_id
+  ) values (
+    p_set_id, p_period_start, p_period_end, p_result, p_evaluation_id
+  );
+
+  insert into atlas_planning.planning_input_evaluations (
+    planning_input_evaluation_id, planning_input_set_id, evaluation_version,
+    evaluation_result, weekly_menu_id, weekly_menu_version,
+    weekly_menu_approval_snapshot_id, attendance_batch_id,
+    attendance_version, attendance_approval_snapshot_id,
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
+  ) values (
+    p_evaluation_id, p_set_id, 1, p_result,
+    'b4000000-0000-0000-0000-000000000200', 1,
+    'b4000000-0000-0000-0000-000000000220',
+    'b4000000-0000-0000-0000-000000000300', 1,
+    'b4000000-0000-0000-0000-000000000320',
+    'b4000000-0000-0000-0000-000000000380', 3,
+    'b4000000-0000-0000-0000-000000000382',
+    p_blocking_count, 0,
+    'b4000000-0000-0000-0000-000000000001'
+  );
+
+  insert into atlas_planning.planning_input_evaluation_issues (
+    planning_input_readiness_issue_id, planning_input_evaluation_id,
+    planning_input_set_id, evaluation_version, severity, issue_code,
+    message, input_type
+  )
+  select
+    issue.issue_id, p_evaluation_id, p_set_id, 1, issue.severity,
+    issue.issue_code, issue.message, issue.input_type
+  from jsonb_to_recordset(p_issues) as issue(
+    issue_id uuid, severity text, issue_code text, message text,
+    input_type text
+  );
+end;
+$$;
+
+create function pg_temp.h0a4b_make_stale_zero_pantry_evaluation(
+  p_set_id uuid,
+  p_evaluation_id uuid,
+  p_issue_id uuid,
+  p_issue_code text,
+  p_period date
+) returns void
+language plpgsql
+as $$
+begin
+  insert into atlas_planning.planning_input_sets (
+    planning_input_set_id, period_start, period_end, readiness_status,
+    current_evaluation_id
+  ) values (
+    p_set_id, p_period, p_period, 'NOT_READY', p_evaluation_id
+  );
+
+  insert into atlas_planning.planning_input_evaluations (
+    planning_input_evaluation_id, planning_input_set_id, evaluation_version,
+    evaluation_result, weekly_menu_id, weekly_menu_version,
+    weekly_menu_approval_snapshot_id, attendance_batch_id,
+    attendance_version, attendance_approval_snapshot_id,
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
+  ) values (
+    p_evaluation_id, p_set_id, 1, 'NOT_READY',
+    'b4000000-0000-0000-0000-000000000250', 1,
+    'b4000000-0000-0000-0000-000000000270',
+    'b4000000-0000-0000-0000-000000000350', 1,
+    'b4000000-0000-0000-0000-000000000370',
+    'b4000000-0000-0000-0000-000000000380', 3,
+    'b4000000-0000-0000-0000-000000000382',
+    1, 0, 'b4000000-0000-0000-0000-000000000001'
+  );
+
+  insert into atlas_planning.planning_input_evaluation_issues (
+    planning_input_readiness_issue_id, planning_input_evaluation_id,
+    planning_input_set_id, evaluation_version, severity, issue_code,
+    message, input_type
+  ) values (
+    p_issue_id, p_evaluation_id, p_set_id, 1, 'BLOCKING', p_issue_code,
+    'Pantry approval is no longer current', 'PANTRY'
   );
 end;
 $$;
@@ -407,7 +670,7 @@ select lives_ok(
     set constraints all immediate;
     set constraints all deferred
   $$,
-  'READY commits with both exact current source snapshots and zero blockers'
+  'READY commits with all three exact current source snapshots and zero blockers'
 );
 
 select is(
@@ -424,13 +687,53 @@ select is(
   (
     select row(
       weekly_menu_id, weekly_menu_version, weekly_menu_approval_snapshot_id,
-      attendance_batch_id, attendance_version, attendance_approval_snapshot_id
+      attendance_batch_id, attendance_version, attendance_approval_snapshot_id,
+      pantry_need_batch_id, pantry_need_batch_version,
+      pantry_need_approval_snapshot_id
     )::text
     from atlas_planning.planning_input_evaluations
     where planning_input_evaluation_id = 'b4000000-0000-0000-0000-000000000401'
   ),
-  '(b4000000-0000-0000-0000-000000000200,1,b4000000-0000-0000-0000-000000000220,b4000000-0000-0000-0000-000000000300,1,b4000000-0000-0000-0000-000000000320)',
-  'the evaluation preserves both exact root/version/snapshot triples'
+  '(b4000000-0000-0000-0000-000000000200,1,b4000000-0000-0000-0000-000000000220,b4000000-0000-0000-0000-000000000300,1,b4000000-0000-0000-0000-000000000320,b4000000-0000-0000-0000-000000000230,3,b4000000-0000-0000-0000-000000000232)',
+  'the evaluation preserves all three exact root/version/snapshot triples'
+);
+
+select is(
+  (
+    select row(
+      snapshot.no_additions_confirmed,
+      snapshot.line_count,
+      count(line.pantry_need_line_id)
+    )::text
+    from atlas_planning.pantry_need_approval_snapshots snapshot
+    left join atlas_planning.pantry_need_approval_snapshot_lines line
+      on line.pantry_need_approval_snapshot_id =
+        snapshot.pantry_need_approval_snapshot_id
+    where snapshot.pantry_need_approval_snapshot_id =
+      'b4000000-0000-0000-0000-000000000232'
+    group by snapshot.no_additions_confirmed, snapshot.line_count
+  ),
+  '(f,1,1)',
+  'positive-line Pantry approval evidence is accepted without content inspection'
+);
+
+select is(
+  (
+    select row(
+      snapshot.no_additions_confirmed,
+      snapshot.line_count,
+      count(line.pantry_need_line_id)
+    )::text
+    from atlas_planning.pantry_need_approval_snapshots snapshot
+    left join atlas_planning.pantry_need_approval_snapshot_lines line
+      on line.pantry_need_approval_snapshot_id =
+        snapshot.pantry_need_approval_snapshot_id
+    where snapshot.pantry_need_approval_snapshot_id =
+      'b4000000-0000-0000-0000-000000000382'
+    group by snapshot.no_additions_confirmed, snapshot.line_count
+  ),
+  '(t,0,0)',
+  'explicit zero-line Pantry approval is valid controlled-absence evidence'
 );
 
 select throws_ok(
@@ -507,6 +810,58 @@ select throws_ok(
   $$,
   '23514', null,
   'Attendance source columns are all-null or all-populated'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.planning_input_sets (
+      planning_input_set_id, period_start, period_end, readiness_status,
+      current_evaluation_id
+    ) values (
+      'b4000000-0000-0000-0000-000000000490',
+      date '2026-09-10', date '2026-09-11', 'NOT_READY',
+      'b4000000-0000-0000-0000-000000000491'
+    );
+    insert into atlas_planning.planning_input_evaluations (
+      planning_input_evaluation_id, planning_input_set_id, evaluation_version,
+      evaluation_result, pantry_need_batch_id, pantry_need_batch_version,
+      blocking_issue_count, warning_count, evaluated_by_actor_id
+    ) values (
+      'b4000000-0000-0000-0000-000000000491',
+      'b4000000-0000-0000-0000-000000000490', 1, 'NOT_READY',
+      'b4000000-0000-0000-0000-000000000230', 3, 1, 0,
+      'b4000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23514', null,
+  'Pantry source columns are all-null or all-populated'
+);
+
+select throws_ok(
+  $$
+    insert into atlas_planning.planning_input_sets (
+      planning_input_set_id, period_start, period_end, readiness_status,
+      current_evaluation_id
+    ) values (
+      'b4000000-0000-0000-0000-000000000492',
+      date '2026-09-10', date '2026-09-11', 'NOT_READY',
+      'b4000000-0000-0000-0000-000000000493'
+    );
+    insert into atlas_planning.planning_input_evaluations (
+      planning_input_evaluation_id, planning_input_set_id, evaluation_version,
+      evaluation_result, pantry_need_batch_id, pantry_need_batch_version,
+      pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+      evaluated_by_actor_id
+    ) values (
+      'b4000000-0000-0000-0000-000000000493',
+      'b4000000-0000-0000-0000-000000000492', 1, 'NOT_READY',
+      'b4000000-0000-0000-0000-000000000230', 3,
+      'b4000000-0000-0000-0000-000000009999', 1, 0,
+      'b4000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23503', null,
+  'a Pantry snapshot binding must resolve as one exact owned triple'
 );
 
 select throws_ok(
@@ -716,6 +1071,20 @@ select throws_ok(
 select throws_ok(
   $$
     select pg_temp.h0a4b_make_evaluation(
+      'b4000000-0000-0000-0000-000000000494',
+      'b4000000-0000-0000-0000-000000000495',
+      date '2026-09-11', date '2026-09-11',
+      'READY', true, true, 0, 0, '[]', false
+    );
+    set constraints all immediate
+  $$,
+  '23514', null,
+  'READY rejects a missing Pantry approval snapshot'
+);
+
+select throws_ok(
+  $$
+    select pg_temp.h0a4b_make_evaluation(
       'b4000000-0000-0000-0000-000000000432',
       'b4000000-0000-0000-0000-000000000433',
       date '2026-09-13', date '2026-09-14', 'READY', true, true, 0, 0, '[]'
@@ -723,7 +1092,51 @@ select throws_ok(
     set constraints all immediate
   $$,
   '23514', null,
-  'READY requires both upstream periods to contain the evaluated period'
+  'READY requires all three source periods to contain the evaluated period'
+);
+
+select throws_ok(
+  $$
+    select pg_temp.h0a4b_make_alternate_pantry_evaluation(
+      'b4000000-0000-0000-0000-000000000502',
+      'b4000000-0000-0000-0000-000000000503',
+      'READY', 0, '[]',
+      date '2026-09-11', date '2026-09-13'
+    );
+    set constraints all immediate
+  $$,
+  '23514', null,
+  'READY requires Pantry to wholly contain the evaluated period'
+);
+
+select lives_ok(
+  $test$
+    select pg_temp.h0a4b_make_alternate_pantry_evaluation(
+      'b4000000-0000-0000-0000-000000000504',
+      'b4000000-0000-0000-0000-000000000505',
+      'NOT_READY', 1,
+      '[{"issue_id":"b4000000-0000-0000-0000-000000000506","severity":"BLOCKING","issue_code":"PANTRY_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD","message":"Pantry week does not cover the evaluated day","input_type":"PANTRY"}]',
+      date '2026-09-10', date '2026-09-13'
+    );
+    set constraints all immediate;
+    set constraints all deferred
+  $test$,
+  'NOT_READY accepts insufficient Pantry coverage with its exact blocker'
+);
+
+select throws_ok(
+  $test$
+    select pg_temp.h0a4b_make_alternate_pantry_evaluation(
+      'b4000000-0000-0000-0000-000000000507',
+      'b4000000-0000-0000-0000-000000000508',
+      'NOT_READY', 1,
+      '[{"issue_id":"b4000000-0000-0000-0000-000000000509","severity":"BLOCKING","issue_code":"STALE_OR_MISMATCHED_SNAPSHOT_BINDING","message":"wrong Pantry coverage blocker","input_type":"PANTRY"}]',
+      date '2026-09-12', date '2026-09-13'
+    );
+    set constraints all immediate
+  $test$,
+  '23514', null,
+  'insufficient Pantry coverage rejects a nonmatching blocker'
 );
 
 select throws_ok(
@@ -765,6 +1178,38 @@ select is(
   ),
   '(NOT_READY,2,0)',
   'the accepted NOT_READY evaluation count evidence matches its issue set'
+);
+
+select lives_ok(
+  $test$
+    select pg_temp.h0a4b_make_evaluation(
+      'b4000000-0000-0000-0000-000000000496',
+      'b4000000-0000-0000-0000-000000000497',
+      date '2026-09-10', date '2026-09-12',
+      'NOT_READY', true, true, 1, 0,
+      '[{"issue_id":"b4000000-0000-0000-0000-000000000498","severity":"BLOCKING","issue_code":"MISSING_PANTRY_APPROVAL_SNAPSHOT","message":"pantry missing","input_type":"PANTRY"}]',
+      false
+    );
+    set constraints all immediate;
+    set constraints all deferred
+  $test$,
+  'NOT_READY accepts missing Pantry only with its exact blocker'
+);
+
+select throws_ok(
+  $test$
+    select pg_temp.h0a4b_make_evaluation(
+      'b4000000-0000-0000-0000-000000000499',
+      'b4000000-0000-0000-0000-000000000500',
+      date '2026-09-12', date '2026-09-13',
+      'NOT_READY', true, true, 1, 0,
+      '[{"issue_id":"b4000000-0000-0000-0000-000000000501","severity":"BLOCKING","issue_code":"SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH","message":"wrong Pantry blocker","input_type":"PANTRY"}]',
+      false
+    );
+    set constraints all immediate
+  $test$,
+  '23514', null,
+  'missing Pantry evidence rejects a nonmatching blocker'
 );
 
 select throws_ok(
@@ -835,7 +1280,7 @@ select lives_ok(
     set constraints all immediate;
     set constraints all deferred
   $$,
-  'READY accepts equality containment by both exact current source periods'
+  'READY accepts equality containment by all three exact current source periods'
 );
 
 select lives_ok(
@@ -848,7 +1293,7 @@ select lives_ok(
     set constraints all immediate;
     set constraints all deferred
   $$,
-  'READY accepts a proper subset wholly contained by both source periods'
+  'READY accepts a proper subset wholly contained by all three source periods'
 );
 
 select throws_ok(
@@ -962,7 +1407,7 @@ select throws_ok(
     )
   $$,
   '23514', null,
-  'issue input type is optional but limited to the two approved source families'
+  'issue input type is optional but limited to the three approved source families'
 );
 
 select throws_ok(
@@ -1037,6 +1482,18 @@ select throws_ok(
   $$,
   '23514', 'planning input evaluations are immutable and nondeletable',
   'evaluation rows are immutable'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.planning_input_evaluations
+    set pantry_need_approval_snapshot_id =
+      'b4000000-0000-0000-0000-000000000382'
+    where planning_input_evaluation_id =
+      'b4000000-0000-0000-0000-000000000401'
+  $$,
+  '23514', 'planning input evaluations are immutable and nondeletable',
+  'historical Pantry bindings cannot be rewritten'
 );
 
 select throws_ok(
@@ -1121,6 +1578,90 @@ select lives_ok(
     set constraints all deferred
   $test$,
   'a stale exact source binding commits only with its matching blocker'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'REOPENED',
+    version = 4,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000380';
+set constraints all immediate;
+set constraints all deferred;
+
+select lives_ok(
+  $test$
+    select pg_temp.h0a4b_make_stale_zero_pantry_evaluation(
+      'b4000000-0000-0000-0000-000000000510',
+      'b4000000-0000-0000-0000-000000000511',
+      'b4000000-0000-0000-0000-000000000512',
+      'STALE_OR_MISMATCHED_SNAPSHOT_BINDING',
+      date '2026-09-16'
+    );
+    set constraints all immediate;
+    set constraints all deferred
+  $test$,
+  'reopened Pantry evidence is NOT_READY only with the stale-binding blocker'
+);
+
+select throws_ok(
+  $test$
+    select pg_temp.h0a4b_make_stale_zero_pantry_evaluation(
+      'b4000000-0000-0000-0000-000000000513',
+      'b4000000-0000-0000-0000-000000000514',
+      'b4000000-0000-0000-0000-000000000515',
+      'SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH',
+      date '2026-09-17'
+    );
+    set constraints all immediate
+  $test$,
+  '23514', null,
+  'reopened Pantry evidence rejects a nonmatching blocker'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'VALIDATED',
+    version = 5,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000380';
+
+insert into atlas_planning.pantry_need_approval_snapshots (
+  pantry_need_approval_snapshot_id, pantry_need_batch_id,
+  approved_batch_version, approved_by_actor_id, approved_at,
+  source_signature, no_additions_confirmed, line_count
+) values (
+  'b4000000-0000-0000-0000-000000000384',
+  'b4000000-0000-0000-0000-000000000380', 6,
+  'b4000000-0000-0000-0000-000000000002',
+  timestamptz '2026-09-13 10:10:00+07',
+  repeat('b', 64), true, 0
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'APPROVED',
+    version = 6,
+    latest_approved_by_actor_id =
+      'b4000000-0000-0000-0000-000000000002',
+    latest_approved_at = timestamptz '2026-09-13 10:10:00+07',
+    latest_approval_snapshot_id =
+      'b4000000-0000-0000-0000-000000000384',
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'b4000000-0000-0000-0000-000000000380';
+set constraints all immediate;
+set constraints all deferred;
+
+select lives_ok(
+  $test$
+    select pg_temp.h0a4b_make_stale_zero_pantry_evaluation(
+      'b4000000-0000-0000-0000-000000000516',
+      'b4000000-0000-0000-0000-000000000517',
+      'b4000000-0000-0000-0000-000000000518',
+      'STALE_OR_MISMATCHED_SNAPSHOT_BINDING',
+      date '2026-09-18'
+    );
+    set constraints all immediate;
+    set constraints all deferred
+  $test$,
+  'superseded Pantry evidence remains owned history but requires a stale blocker'
 );
 
 select * from finish();

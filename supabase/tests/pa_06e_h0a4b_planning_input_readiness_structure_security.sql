@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(29);
+select plan(36);
 
 select is(
   (
@@ -49,9 +49,52 @@ select is(
     'weekly_menu_version', 'weekly_menu_approval_snapshot_id',
     'attendance_batch_id', 'attendance_version',
     'attendance_approval_snapshot_id', 'blocking_issue_count',
-    'warning_count', 'evaluated_by_actor_id', 'evaluated_at'
+    'warning_count', 'evaluated_by_actor_id', 'evaluated_at',
+    'pantry_need_batch_id', 'pantry_need_batch_version',
+    'pantry_need_approval_snapshot_id'
   ]::text[],
-  'planning_input_evaluations has only exact source, count, and actor evidence'
+  'planning_input_evaluations has only exact source, count, actor, and Pantry evidence'
+);
+
+select is(
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'column', a.attname,
+        'nullable', not a.attnotnull,
+        'default', pg_get_expr(d.adbin, d.adrelid)
+      )
+      order by a.attnum
+    )
+    from pg_attribute a
+    left join pg_attrdef d
+      on d.adrelid = a.attrelid and d.adnum = a.attnum
+    where a.attrelid =
+        'atlas_planning.planning_input_evaluations'::regclass
+      and a.attname in (
+        'pantry_need_batch_id',
+        'pantry_need_batch_version',
+        'pantry_need_approval_snapshot_id'
+      )
+  ),
+  jsonb_build_array(
+    jsonb_build_object(
+      'column', 'pantry_need_batch_id',
+      'nullable', true,
+      'default', null
+    ),
+    jsonb_build_object(
+      'column', 'pantry_need_batch_version',
+      'nullable', true,
+      'default', null
+    ),
+    jsonb_build_object(
+      'column', 'pantry_need_approval_snapshot_id',
+      'nullable', true,
+      'default', null
+    )
+  ),
+  'the three Pantry binding columns are nullable and default-free'
 );
 
 select is(
@@ -138,10 +181,96 @@ select is(
   array[
     'planning_input_evaluations_actor_fkey',
     'planning_input_evaluations_attendance_snapshot_fkey',
+    'planning_input_evaluations_pantry_snapshot_fkey',
     'planning_input_evaluations_set_fkey',
     'planning_input_evaluations_weekly_menu_snapshot_fkey'
   ]::text[],
-  'evaluations have only the root, actor, and two typed snapshot foreign keys'
+  'evaluations have only the root, actor, and three typed snapshot foreign keys'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint con
+    where con.conrelid =
+        'atlas_planning.planning_input_evaluations'::regclass
+      and con.conname = 'planning_input_evaluations_pantry_family_check'
+      and con.contype = 'c'
+      and pg_get_constraintdef(con.oid) like
+        '%pantry_need_batch_id IS NULL%'
+      and pg_get_constraintdef(con.oid) like
+        '%pantry_need_batch_version IS NULL%'
+      and pg_get_constraintdef(con.oid) like
+        '%pantry_need_approval_snapshot_id IS NULL%'
+      and pg_get_constraintdef(con.oid) like
+        '%pantry_need_batch_id IS NOT NULL%'
+      and pg_get_constraintdef(con.oid) like
+        '%pantry_need_batch_version > 0%'
+      and pg_get_constraintdef(con.oid) like
+        '%pantry_need_approval_snapshot_id IS NOT NULL%'
+  ),
+  'the Pantry family is all-null or all-present with a positive version'
+);
+
+select is(
+  (
+    select pg_get_constraintdef(con.oid)
+    from pg_constraint con
+    where con.conrelid =
+        'atlas_planning.pantry_need_approval_snapshots'::regclass
+      and con.conname =
+        'pantry_need_approval_snapshots_readiness_ownership_key'
+  ),
+  'UNIQUE (pantry_need_approval_snapshot_id, pantry_need_batch_id, approved_batch_version)',
+  'Pantry snapshots expose the exact readiness ownership triple'
+);
+
+select is(
+  (
+    select pg_get_constraintdef(con.oid)
+    from pg_constraint con
+    where con.conrelid =
+        'atlas_planning.planning_input_evaluations'::regclass
+      and con.conname = 'planning_input_evaluations_pantry_snapshot_fkey'
+  ),
+  'FOREIGN KEY (pantry_need_approval_snapshot_id, pantry_need_batch_id, pantry_need_batch_version) REFERENCES atlas_planning.pantry_need_approval_snapshots(pantry_need_approval_snapshot_id, pantry_need_batch_id, approved_batch_version) ON DELETE RESTRICT',
+  'evaluations bind the exact Pantry snapshot, batch, and approved version'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'columns',
+      (
+        select jsonb_agg(a.attname order by key_column.ordinality)
+        from unnest(idx.indkey::smallint[]) with ordinality
+          as key_column(attnum, ordinality)
+        join pg_attribute a
+          on a.attrelid = idx.indrelid
+          and a.attnum = key_column.attnum
+        where key_column.ordinality <= idx.indnkeyatts
+      ),
+      'predicate',
+      pg_get_expr(idx.indpred, idx.indrelid)
+    )
+    from pg_index idx
+    join pg_class index_relation on index_relation.oid = idx.indexrelid
+    where index_relation.relname =
+      'planning_input_evaluations_pantry_snapshot_idx'
+      and idx.indrelid =
+        'atlas_planning.planning_input_evaluations'::regclass
+  ),
+  jsonb_build_object(
+    'columns',
+    jsonb_build_array(
+      'pantry_need_approval_snapshot_id',
+      'pantry_need_batch_id',
+      'pantry_need_batch_version'
+    ),
+    'predicate',
+    '(pantry_need_approval_snapshot_id IS NOT NULL)'
+  ),
+  'the Pantry binding index leads with the exact evaluation-side FK order'
 );
 
 select is(
@@ -165,8 +294,8 @@ select is(
       'atlas_planning.planning_input_evaluation_issues'::regclass
     ) and con.contype = 'f' and con.confdeltype = 'r'
   ),
-  7,
-  'all seven operational H0A4b foreign keys use ON DELETE RESTRICT'
+  8,
+  'all eight operational readiness foreign keys use ON DELETE RESTRICT'
 );
 
 select ok(
@@ -220,9 +349,11 @@ select is(
     from unnest(array[
       'MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT',
       'MISSING_ATTENDANCE_APPROVAL_SNAPSHOT',
+      'MISSING_PANTRY_APPROVAL_SNAPSHOT',
       'SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH',
       'WEEKLY_MENU_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD',
       'ATTENDANCE_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD',
+      'PANTRY_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD',
       'STALE_OR_MISMATCHED_SNAPSHOT_BINDING',
       'REQUEST_WITHOUT_CURRENT_READY_EVALUATION',
       'MENU_SCHOOL_DATE_WITHOUT_ATTENDANCE',
@@ -236,8 +367,8 @@ select is(
         and con.conname = 'planning_input_evaluation_issues_code_check'
     ) like '%' || code.value || '%'
   ),
-  10,
-  'the issue-code catalog contains all and only the ten approved codes'
+  12,
+  'the issue-code catalog contains all and only the twelve approved codes'
 );
 
 select ok(
@@ -418,6 +549,38 @@ select is(
     'planning_input_sets_integrity'
   ]::text[],
   'the lifecycle, immutability, and deferred integrity trigger catalog is exact'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from pg_trigger t
+    join pg_proc p on p.oid = t.tgfoid
+    where t.tgrelid in (
+      'atlas_planning.weekly_menus'::regclass,
+      'atlas_planning.weekly_menu_approval_snapshots'::regclass,
+      'atlas_planning.attendance_batches'::regclass,
+      'atlas_planning.attendance_approval_snapshots'::regclass,
+      'atlas_planning.pantry_need_batches'::regclass,
+      'atlas_planning.pantry_need_approval_snapshots'::regclass
+    )
+      and not t.tgisinternal
+      and p.proname like 'pa_06e_h0a4b%'
+  ),
+  0,
+  'readiness adds no trigger to Weekly Menu, Attendance, or Pantry sources'
+);
+
+select is(
+  jsonb_build_object(
+    'sets', (select count(*) from atlas_planning.planning_input_sets),
+    'evaluations',
+    (select count(*) from atlas_planning.planning_input_evaluations),
+    'issues',
+    (select count(*) from atlas_planning.planning_input_evaluation_issues)
+  ),
+  jsonb_build_object('sets', 0, 'evaluations', 0, 'issues', 0),
+  'PANTRY-RDY-02 seeds and backfills no readiness row'
 );
 
 select ok(

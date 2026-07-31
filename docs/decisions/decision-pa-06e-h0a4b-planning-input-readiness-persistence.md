@@ -1,12 +1,15 @@
 # Decision PA-06E-H0A4b — Planning Input Readiness Persistence
 
-**Status:** Accepted for the bounded Issue #127 persistence foundation
+**Status:** Accepted Issue #127 foundation; Pantry binding amended by
+PANTRY-RDY-02 on the bounded task branch, pending review and merge
 
 **Date:** 2026-07-20
 
 **Owner:** Planning
 
 **Controlling design:** [Decision PA-06E-H0A4 — Planning Input Readiness](decision-pa-06e-h0a4-planning-input-readiness.md)
+
+**Persistence amendment:** [Decision PANTRY-RDY-02 — Pantry-Bound Readiness Persistence](decision-pantry-rdy-02-readiness-persistence.md)
 
 ## Decision
 
@@ -35,8 +38,31 @@ Request revalidates the current READY evaluation against both exact current sour
 
 The three relations and four private guard functions are `atlas_owner` owned. All relations have enabled and forced RLS with zero policies. `PUBLIC`, `anon`, `authenticated`, and `service_role` have no new relation, sequence, or private-function privilege. The guards use empty search paths and are invoker-security. The established 18-function `atlas_api` surface and fail-closed default privileges remain unchanged.
 
-H0A4b adds no command, read API, authorization vocabulary, reason/event/audit/receipt contract, runtime role, generated type, UI, seed, hosted action, or downstream calculation. Those remain separately authorized work.
+H0A4b and PANTRY-RDY-02 add no command, read API, authorization vocabulary,
+reason/event/audit/receipt contract, runtime role, generated type, UI, seed,
+hosted action, or downstream calculation. Those remain separately authorized
+work.
+
+## PANTRY-RDY-02 amendment
+
+PANTRY-RDY-02 preserves all three H0A4b relations, the stable root grain,
+immutable sequential evaluation/issue history, and the closed lifecycle. It
+adds the exact nullable Pantry batch/version/snapshot family, typed composite
+ownership, and fail-closed current-approval/period checks for every new
+`READY` evaluation and Need Generation request.
+
+The request and deferred integrity guards are replaced in place. The evaluation
+and issue guards, all six readiness triggers, the three existing
+materialization SELECT policies, and every role/API/capability/grant boundary
+remain unchanged. Historical evaluations are not backfilled and may retain
+null Pantry fields, but cannot authorize a new request.
+
+The canonical readiness suite plans change from `29/45/48` to `36/59/57`, or
+from 122 to 152 focused assertions, without adding a suite.
 
 ## Migration and rollback effect
 
-The migration is additive and seeds no row. Before operational use it may be reverted as an unshipped migration. After use, immutable readiness and source history must be preserved; any correction is a reviewed forward migration, not deletion or rewrite.
+Both migrations are additive and seed no row. Before operational use an
+unshipped amendment may be reverted through a local rebuild. After use,
+immutable readiness and source history must be preserved; any correction is a
+reviewed forward migration, not deletion or rewrite.

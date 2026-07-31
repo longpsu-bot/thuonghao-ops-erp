@@ -3,7 +3,54 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(48);
+select plan(57);
+
+select is(
+  jsonb_build_object(
+    'issue_codes',
+    (
+      select count(*)::integer
+      from unnest(array[
+        'MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT',
+        'MISSING_ATTENDANCE_APPROVAL_SNAPSHOT',
+        'MISSING_PANTRY_APPROVAL_SNAPSHOT',
+        'SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH',
+        'WEEKLY_MENU_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD',
+        'ATTENDANCE_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD',
+        'PANTRY_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD',
+        'STALE_OR_MISMATCHED_SNAPSHOT_BINDING',
+        'REQUEST_WITHOUT_CURRENT_READY_EVALUATION',
+        'MENU_SCHOOL_DATE_WITHOUT_ATTENDANCE',
+        'ATTENDANCE_SCHOOL_DATE_WITHOUT_MENU',
+        'ZERO_ATTENDANCE_FOR_PLANNED_MENU'
+      ]) expected(issue_code)
+      where (
+        select pg_get_constraintdef(con.oid)
+        from pg_constraint con
+        where con.conrelid =
+            'atlas_planning.planning_input_evaluation_issues'::regclass
+          and con.conname =
+            'planning_input_evaluation_issues_code_check'
+      ) like '%' || expected.issue_code || '%'
+    ),
+    'input_types',
+    (
+      select count(*)::integer
+      from unnest(array['WEEKLY_MENU', 'ATTENDANCE', 'PANTRY'])
+        expected(input_type)
+      where (
+        select pg_get_constraintdef(con.oid)
+        from pg_constraint con
+        where con.conrelid =
+            'atlas_planning.planning_input_evaluation_issues'::regclass
+          and con.conname =
+            'planning_input_evaluation_issues_input_type_check'
+      ) like '%' || expected.input_type || '%'
+    )
+  ),
+  jsonb_build_object('issue_codes', 12, 'input_types', 3),
+  'the lifecycle issue catalog includes exactly the Pantry additions'
+);
 
 insert into atlas_core.actors (actor_id, actor_type, display_name) values
   ('c4000000-0000-0000-0000-000000000001', 'HUMAN', 'H0A4b lifecycle evaluator'),
@@ -226,6 +273,44 @@ set attendance_status = 'APPROVED',
     latest_approval_snapshot_id = 'c4000000-0000-0000-0000-000000000320'
 where attendance_batch_id = 'c4000000-0000-0000-0000-000000000300';
 
+insert into atlas_planning.pantry_need_batches (
+  pantry_need_batch_id, week_start, source_signature,
+  no_additions_confirmed, requesting_actor_id
+) values (
+  'c4000000-0000-0000-0000-000000000330',
+  date '2026-10-05', repeat('c', 64), true,
+  'c4000000-0000-0000-0000-000000000001'
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'VALIDATED',
+    version = 2,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'c4000000-0000-0000-0000-000000000330';
+
+insert into atlas_planning.pantry_need_approval_snapshots (
+  pantry_need_approval_snapshot_id, pantry_need_batch_id,
+  approved_batch_version, approved_by_actor_id, approved_at,
+  source_signature, no_additions_confirmed, line_count
+) values (
+  'c4000000-0000-0000-0000-000000000332',
+  'c4000000-0000-0000-0000-000000000330', 3,
+  'c4000000-0000-0000-0000-000000000002',
+  timestamptz '2026-10-04 09:10:00+07',
+  repeat('c', 64), true, 0
+);
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'APPROVED',
+    version = 3,
+    latest_approved_by_actor_id =
+      'c4000000-0000-0000-0000-000000000002',
+    latest_approved_at = timestamptz '2026-10-04 09:10:00+07',
+    latest_approval_snapshot_id =
+      'c4000000-0000-0000-0000-000000000332',
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'c4000000-0000-0000-0000-000000000330';
+
 set constraints all immediate;
 set constraints all deferred;
 
@@ -238,7 +323,8 @@ create function pg_temp.h0a4b_create_first(
   p_weekly_bound boolean,
   p_attendance_bound boolean,
   p_blocking_count integer,
-  p_issues jsonb
+  p_issues jsonb,
+  p_pantry_bound boolean default true
 ) returns void
 language plpgsql
 as $$
@@ -255,7 +341,9 @@ begin
     evaluation_result, weekly_menu_id, weekly_menu_version,
     weekly_menu_approval_snapshot_id, attendance_batch_id,
     attendance_version, attendance_approval_snapshot_id,
-    blocking_issue_count, warning_count, evaluated_by_actor_id
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
   ) values (
     p_evaluation_id, p_set_id, 1, p_result,
     case when p_weekly_bound then 'c4000000-0000-0000-0000-000000000200'::uuid end,
@@ -264,6 +352,9 @@ begin
     case when p_attendance_bound then 'c4000000-0000-0000-0000-000000000300'::uuid end,
     case when p_attendance_bound then 1 end,
     case when p_attendance_bound then 'c4000000-0000-0000-0000-000000000320'::uuid end,
+    case when p_pantry_bound then 'c4000000-0000-0000-0000-000000000330'::uuid end,
+    case when p_pantry_bound then 3 end,
+    case when p_pantry_bound then 'c4000000-0000-0000-0000-000000000332'::uuid end,
     p_blocking_count, 0, 'c4000000-0000-0000-0000-000000000001'
   );
 
@@ -288,7 +379,8 @@ create function pg_temp.h0a4b_add_successor(
   p_weekly_bound boolean,
   p_attendance_bound boolean,
   p_blocking_count integer,
-  p_issues jsonb
+  p_issues jsonb,
+  p_pantry_bound boolean default true
 ) returns void
 language plpgsql
 as $$
@@ -298,7 +390,9 @@ begin
     evaluation_result, weekly_menu_id, weekly_menu_version,
     weekly_menu_approval_snapshot_id, attendance_batch_id,
     attendance_version, attendance_approval_snapshot_id,
-    blocking_issue_count, warning_count, evaluated_by_actor_id
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
   ) values (
     p_evaluation_id, p_set_id, p_version, p_result,
     case when p_weekly_bound then 'c4000000-0000-0000-0000-000000000200'::uuid end,
@@ -307,6 +401,9 @@ begin
     case when p_attendance_bound then 'c4000000-0000-0000-0000-000000000300'::uuid end,
     case when p_attendance_bound then 1 end,
     case when p_attendance_bound then 'c4000000-0000-0000-0000-000000000320'::uuid end,
+    case when p_pantry_bound then 'c4000000-0000-0000-0000-000000000330'::uuid end,
+    case when p_pantry_bound then 3 end,
+    case when p_pantry_bound then 'c4000000-0000-0000-0000-000000000332'::uuid end,
     p_blocking_count, 0, 'c4000000-0000-0000-0000-000000000001'
   );
 
@@ -350,13 +447,17 @@ begin
     evaluation_result, weekly_menu_id, weekly_menu_version,
     weekly_menu_approval_snapshot_id, attendance_batch_id,
     attendance_version, attendance_approval_snapshot_id,
-    blocking_issue_count, warning_count, evaluated_by_actor_id
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+    evaluated_by_actor_id
   ) values (
     p_evaluation_id, p_set_id, 1, 'READY',
     'c4000000-0000-0000-0000-000000000200', 1,
     'c4000000-0000-0000-0000-000000000220',
     'c4000000-0000-0000-0000-000000000300', 1,
     'c4000000-0000-0000-0000-000000000320',
+    'c4000000-0000-0000-0000-000000000330', 3,
+    'c4000000-0000-0000-0000-000000000332',
     0, p_warning_count, 'c4000000-0000-0000-0000-000000000001'
   );
 
@@ -480,6 +581,12 @@ select is(
   ),
   '(NEED_GENERATION_REQUESTED,c4000000-0000-0000-0000-000000000402)',
   'request preserves the exact current READY evaluation'
+);
+
+select is(
+  (select count(*)::integer from atlas_planning.need_generation_runs),
+  0,
+  'request handoff creates no Need Generation run or downstream fact'
 );
 
 select throws_ok(
@@ -778,6 +885,149 @@ select lives_ok(
     set constraints all deferred
   $test$,
   'READY permits warnings when every and only source observation is persisted'
+);
+
+savepoint pantry_reopen_behavior;
+
+update atlas_planning.pantry_need_batches
+set pantry_need_batch_status = 'REOPENED',
+    version = 4,
+    updated_at = updated_at + interval '1 second'
+where pantry_need_batch_id = 'c4000000-0000-0000-0000-000000000330';
+set constraints all immediate;
+set constraints all deferred;
+
+select is(
+  (
+    select readiness_status
+    from atlas_planning.planning_input_sets
+    where planning_input_set_id = 'c4000000-0000-0000-0000-000000000420'
+  ),
+  'READY',
+  'Pantry reopen does not automatically invalidate readiness history'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.planning_input_sets
+    set readiness_status = 'NEED_GENERATION_REQUESTED'
+    where planning_input_set_id = 'c4000000-0000-0000-0000-000000000420'
+  $$,
+  '23514', null,
+  'request revalidates and rejects reopened Pantry evidence'
+);
+
+rollback to savepoint pantry_reopen_behavior;
+set constraints all deferred;
+
+set session_replication_role = replica;
+
+insert into atlas_planning.planning_input_sets (
+  planning_input_set_id, period_start, period_end, readiness_status,
+  current_evaluation_id
+) values (
+  'c4000000-0000-0000-0000-000000000600',
+  date '2026-10-10', date '2026-10-10', 'READY',
+  'c4000000-0000-0000-0000-000000000601'
+);
+
+insert into atlas_planning.planning_input_evaluations (
+  planning_input_evaluation_id, planning_input_set_id, evaluation_version,
+  evaluation_result, weekly_menu_id, weekly_menu_version,
+  weekly_menu_approval_snapshot_id, attendance_batch_id,
+  attendance_version, attendance_approval_snapshot_id,
+  blocking_issue_count, warning_count, evaluated_by_actor_id
+) values (
+  'c4000000-0000-0000-0000-000000000601',
+  'c4000000-0000-0000-0000-000000000600', 1, 'READY',
+  'c4000000-0000-0000-0000-000000000200', 1,
+  'c4000000-0000-0000-0000-000000000220',
+  'c4000000-0000-0000-0000-000000000300', 1,
+  'c4000000-0000-0000-0000-000000000320',
+  0, 0, 'c4000000-0000-0000-0000-000000000001'
+);
+
+set session_replication_role = origin;
+
+select is(
+  (
+    select row(
+      evaluation_result,
+      pantry_need_batch_id,
+      pantry_need_batch_version,
+      pantry_need_approval_snapshot_id
+    )::text
+    from atlas_planning.planning_input_evaluations
+    where planning_input_evaluation_id =
+      'c4000000-0000-0000-0000-000000000601'
+  ),
+  '(READY,,,)',
+  'a pre-PANTRY-RDY-02 null-Pantry evaluation remains queryable'
+);
+
+select throws_ok(
+  $$
+    update atlas_planning.planning_input_sets
+    set readiness_status = 'NEED_GENERATION_REQUESTED'
+    where planning_input_set_id = 'c4000000-0000-0000-0000-000000000600'
+  $$,
+  '23514', null,
+  'a historical null-Pantry READY evaluation cannot authorize a new request'
+);
+
+select lives_ok(
+  $$
+    update atlas_planning.planning_input_sets
+    set readiness_status = 'INVALIDATED',
+        updated_at = updated_at + interval '1 second'
+    where planning_input_set_id = 'c4000000-0000-0000-0000-000000000600';
+    set constraints all immediate;
+    set constraints all deferred
+  $$,
+  'historical null-Pantry READY evidence remains explicitly invalidatable'
+);
+
+select lives_ok(
+  $$
+    select pg_temp.h0a4b_add_successor(
+      'c4000000-0000-0000-0000-000000000600',
+      'c4000000-0000-0000-0000-000000000602', 2,
+      'READY', true, true, 0, '[]'
+    );
+    set constraints all immediate;
+    set constraints all deferred
+  $$,
+  'the invalidated historical root accepts a Pantry-bound READY successor'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'historical_pantry_is_null',
+      historical.pantry_need_batch_id is null
+        and historical.pantry_need_batch_version is null
+        and historical.pantry_need_approval_snapshot_id is null,
+      'current_version', current_evaluation.evaluation_version,
+      'current_pantry_snapshot',
+      current_evaluation.pantry_need_approval_snapshot_id
+    )
+    from atlas_planning.planning_input_sets input_set
+    join atlas_planning.planning_input_evaluations historical
+      on historical.planning_input_evaluation_id =
+        'c4000000-0000-0000-0000-000000000601'
+    join atlas_planning.planning_input_evaluations current_evaluation
+      on current_evaluation.planning_input_evaluation_id =
+        input_set.current_evaluation_id
+    where input_set.planning_input_set_id =
+      'c4000000-0000-0000-0000-000000000600'
+  ),
+  jsonb_build_object(
+    'historical_pantry_is_null', true,
+    'current_version', 2,
+    'current_pantry_snapshot',
+    'c4000000-0000-0000-0000-000000000332'::uuid
+  ),
+  'successor evaluation preserves null-Pantry history and binds current Pantry'
 );
 
 update atlas_planning.weekly_menus

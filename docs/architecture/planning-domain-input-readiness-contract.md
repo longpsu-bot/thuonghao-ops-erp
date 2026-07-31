@@ -1,6 +1,6 @@
 # PD-01.4 — Planning Domain Input Readiness Contract
 
-**Status:** Contract v0.3; H0A4a/H0A4b baseline amended by accepted PANTRY-RDY-01, Pantry persistence deferred to PANTRY-RDY-02
+**Status:** Contract v0.4; three-source persistence implemented by PANTRY-RDY-02 on the bounded task branch, pending review and merge
 **Domain:** Planning
 **Business owner:** Tổ Kế hoạch
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
@@ -208,22 +208,49 @@ The primary question is: **Can Planning request Need Generation for this exact p
 
 The retained OPS v1 evidence records a Weekly Menu week/date-range selector, a separate Attendance date picker, an Attendance XLSX path that can represent one service date, legacy public writes, and hidden downstream rebalance reactions. It does not show a controlled combined readiness object. Atlas preserves the useful business facts—explicit period selection, source visibility, and handoff—while rejecting public writes, implicit rebalance, mutable source inference, and Retool page structure as authority. This qualitative review used retained repository/Issue evidence only; H0A4a did not inspect or change hosted Retool or Supabase state.
 
-## 9. Existing H0A4b persistence and future PANTRY-RDY-02
+## 9. H0A4b persistence amended by PANTRY-RDY-02
 
-PANTRY-RDY-01 is accepted target business and architecture authority. Its Pantry binding and request requirements become executable database authority only after the separately reviewed PANTRY-RDY-02 persistence amendment is merged. Merging PANTRY-RDY-01 does not claim that runtime enforcement already exists.
+PANTRY-RDY-01 remains the accepted business and architecture authority.
+PANTRY-RDY-02 implements that authority in migration
+`20260730231951_pantry_rdy_02_readiness_persistence.sql`, pending review and
+merge.
 
-H0A4b implemented the accepted two-source persistence foundation in migration `20260720135755_pa_06e_h0a4b_planning_input_readiness_persistence.sql` with three canonical independently runnable pgTAP suites:
+H0A4b implemented the original two-source persistence foundation in migration
+`20260720135755_pa_06e_h0a4b_planning_input_readiness_persistence.sql`.
+PANTRY-RDY-02 adds the three nullable Pantry columns, exact all-null-or-present
+constraint, typed snapshot ownership unique/FK, leading index, issue
+extensions, and in-place request/integrity guard amendments without adding a
+relation, function, trigger, API, role, capability, policy, grant, seed, or
+backfill.
 
-1. **Structure and security** — file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_structure_security.sql`. Owns relation/column/constraint presence, positive and unique version structure, direct typed FK structure, private-schema posture, RLS/grants, and absence of unintended runtime write access.
-2. **Evaluation and source-snapshot integrity** — file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql`. Owns the unique exact-period root grain, one-or-zero typed binding per source family, exact snapshot/root/version ownership, period containment, `READY` binding requirements, rejection of multi-snapshot coverage, and current-evaluation pointer ownership.
-3. **Lifecycle, issues, and invalidation** — file `supabase/tests/pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql`. Owns the complete transition matrix, evaluation-version advancement rules, request/invalidation version preservation, immutable evaluation/issue history, blocking/warning classifications, request gate, explicit invalidation behavior, re-evaluation after invalidation, and absence of automatic cross-domain triggers.
+The same three canonical independently runnable pgTAP suites remain the sole
+readiness suites:
 
-The currently merged H0A4b schema and guards physically support only Weekly Menu and Attendance. PANTRY-RDY-02 is required before PostgreSQL enforces Pantry for new `READY` evaluations and Need Generation requests.
+1. **Structure and security** — `plan(36)` in
+   `supabase/tests/pa_06e_h0a4b_planning_input_readiness_structure_security.sql`.
+   It owns schema, constraints, ownership FK/index, object and security posture,
+   no source trigger, and zero seed/backfill.
+2. **Evaluation and source-snapshot integrity** — `plan(59)` in
+   `supabase/tests/pa_06e_h0a4b_planning_input_readiness_evaluation_source_snapshot_integrity.sql`.
+   It owns all three source families, current approval, positive/zero Pantry
+   evidence, containment, `READY`/`NOT_READY` completeness, and immutable
+   history.
+3. **Lifecycle, issues, and invalidation** — `plan(57)` in
+   `supabase/tests/pa_06e_h0a4b_planning_input_readiness_lifecycle_issues_invalidation.sql`.
+   It owns issue vocabulary, unchanged warnings, request behavior, lifecycle,
+   null-Pantry history, explicit invalidation, no automatic source mutation,
+   and no downstream write.
 
-PANTRY-RDY-01 modifies none of those files. A separately authorized PANTRY-RDY-02 may add one migration and must update these three suites in place. It may add no relation, public API, capability, role or runtime role, scope kind, policy, automatic source trigger, fourth readiness relation, or fourth overlapping readiness suite. The detailed maximum delta is recorded in the [PANTRY-RDY-01 amendment](pantry-rdy-01-planning-input-readiness-amendment.md).
+The focused total is 152 assertions. The detailed implementation record is
+[TASK-PANTRY-RDY-02](../implementation-tasks/TASK-PANTRY-RDY-02-readiness-persistence.md).
 
-## 10. Documentation amendment boundary
+## 10. Implementation boundary
 
-PANTRY-RDY-01 changes documentation only. It adds no migration, schema object, SQL, RPC, trigger, function, event, API registry entry, RLS policy, grant, runtime role, generated type, React behavior, package, hosted Supabase/Retool state, production data, or Need Generation behavior.
+PANTRY-RDY-02 changes private persistence enforcement only. It creates no
+command, RPC, event, API registry entry, RLS policy, grant, runtime role,
+generated type, React behavior, package, hosted Supabase/Retool state,
+production data, or Need Generation behavior.
 
-Command names, command parameters, authorization, actor attribution, reason taxonomy, events, safe errors, API contracts, and implementation remain separately approved work.
+Command names, command parameters, authorization, actor attribution, reason
+taxonomy, events, safe errors, API contracts, and command/UI implementation
+remain separately approved work.
