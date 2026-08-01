@@ -65,6 +65,35 @@ describe("Atlas master-data shell", () => {
     }
   });
 
+  it("adds one fourth readiness tab without adding a navigation item", async () => {
+    render(<AtlasApp reviewMode initialPage="planning-inputs" />);
+
+    const navigation = screen.getByRole("navigation", {
+      name: "Điều hướng Atlas",
+    });
+    expect(within(navigation).getAllByRole("button")).toHaveLength(7);
+    expect(
+      within(navigation).queryByRole("button", { name: "Sẵn sàng đầu vào" }),
+    ).not.toBeInTheDocument();
+
+    const tabs = await screen.findAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "Thực đơn tuần",
+      "Sĩ số",
+      "Pantry",
+      "Sẵn sàng đầu vào",
+    ]);
+    expect(
+      screen.getByText(/không phải quyết định sẵn sàng có thẩm quyền/i),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }));
+    expect(
+      await screen.findByText(/Kỳ có thẩm quyền \(bao gồm cả hai ngày\)/),
+    ).toBeVisible();
+    expect(screen.getByText("CHƯA ĐÁNH GIÁ")).toBeVisible();
+  });
+
   it("runs the connected review journey for menu and attendance approval", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
@@ -128,7 +157,7 @@ describe("Atlas master-data shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
     await waitFor(() =>
       expect(
-        screen.getByText("Hai nguồn đã được phê duyệt"),
+        screen.getByText("Hai nguồn tham chiếu đã được phê duyệt"),
       ).toBeInTheDocument(),
     );
 
@@ -182,7 +211,7 @@ describe("Atlas master-data shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
     await waitFor(() =>
       expect(
-        screen.getByText("Hai nguồn đã được phê duyệt"),
+        screen.getByText("Hai nguồn tham chiếu đã được phê duyệt"),
       ).toBeInTheDocument(),
     );
   }, 15_000);

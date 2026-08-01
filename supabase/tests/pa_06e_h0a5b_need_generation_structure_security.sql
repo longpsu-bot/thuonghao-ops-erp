@@ -166,6 +166,7 @@ select is(
 );
 
 select is(
+  jsonb_build_array(
   (
     select jsonb_agg(
       jsonb_build_object(
@@ -197,7 +198,79 @@ select is(
       'atlas_planning.need_generation_release_snapshot_lines'::regclass,
       'atlas_planning.need_generation_release_snapshot_issues'::regclass
     )
+      and policy.polname = 'pa_06e_h0cb_materialization_select'
+      and policy.polroles = array[
+        (select oid from pg_roles where rolname = 'atlas_planning_materialization_runtime')
+      ]::oid[]
   ),
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polname
+    )
+    from pg_policy policy
+    where policy.polrelid = 'atlas_planning.need_generation_runs'::regclass
+      and policy.polname in (
+        'rmvp_03b_command_runs_select',
+        'rmvp_03b_read_runs_select'
+      )
+  ),
+  (
+    select count(*)::integer
+    from pg_policy policy
+    where policy.polrelid in (
+      'atlas_planning.need_generation_calculation_contracts'::regclass,
+      'atlas_planning.need_generation_calculation_contract_revisions'::regclass,
+      'atlas_planning.need_generation_runs'::regclass,
+      'atlas_planning.need_generation_input_snapshots'::regclass,
+      'atlas_planning.need_generation_recipe_selections'::regclass,
+      'atlas_planning.need_generation_recipe_line_uses'::regclass,
+      'atlas_planning.theoretical_need_lines'::regclass,
+      'atlas_planning.need_generation_issues'::regclass,
+      'atlas_planning.need_generation_release_snapshots'::regclass,
+      'atlas_planning.need_generation_release_snapshot_lines'::regclass,
+      'atlas_planning.need_generation_release_snapshot_issues'::regclass
+    )
+      and not (
+        (
+          policy.polname = 'pa_06e_h0cb_materialization_select'
+          and policy.polroles = array[
+            (select oid from pg_roles where rolname = 'atlas_planning_materialization_runtime')
+          ]::oid[]
+        )
+        or (
+          policy.polrelid = 'atlas_planning.need_generation_runs'::regclass
+          and (
+            (
+              policy.polname = 'rmvp_03b_command_runs_select'
+              and policy.polroles = array[
+                (select oid from pg_roles where rolname = 'atlas_planning_command_runtime')
+              ]::oid[]
+            )
+            or (
+              policy.polname = 'rmvp_03b_read_runs_select'
+              and policy.polroles = array[
+                (select oid from pg_roles where rolname = 'atlas_read_runtime')
+              ]::oid[]
+            )
+          )
+        )
+      )
+  )
+  ),
+  jsonb_build_array(
   (
     select jsonb_agg(
       jsonb_build_object(
@@ -226,7 +299,28 @@ select is(
         ('atlas_planning.need_generation_release_snapshot_issues')
     ) expected(relation_name)
   ),
-  'H0A5b has exactly eleven dedicated-runtime permissive SELECT policies'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', 'atlas_planning.need_generation_runs',
+        'name', expected.policy_name,
+        'command', 'r',
+        'permissive', true,
+        'roles', jsonb_build_array(expected.role_name),
+        'using', 'true',
+        'with_check', null
+      )
+      order by expected.policy_name
+    )
+    from (
+      values
+        ('rmvp_03b_command_runs_select', 'atlas_planning_command_runtime'),
+        ('rmvp_03b_read_runs_select', 'atlas_read_runtime')
+    ) expected(policy_name, role_name)
+  ),
+  0
+  ),
+  'H0A5b retains exactly eleven historical materialization policies and recognizes only the two exact RMVP-03B consumed-handoff SELECT policies'
 );
 
 select is(

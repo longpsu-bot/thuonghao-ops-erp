@@ -34,8 +34,10 @@ import {
 } from "./planningInputsWorkbook";
 import { PantryWorkbench } from "./pantry/PantryWorkbench";
 import type { PantryApi } from "./pantry/pantryApi";
+import { PlanningInputReadinessWorkbench } from "./readiness/PlanningInputReadinessWorkbench";
+import type { PlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
 
-type TabId = "menu" | "attendance" | "pantry";
+type TabId = "menu" | "attendance" | "pantry" | "readiness";
 type LoadState = "idle" | "loading" | "ready" | "error";
 type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
@@ -357,11 +359,13 @@ export function PlanningInputsWorkbench({
   authState,
   api,
   pantryApi,
+  readinessApi,
   mode = "connected",
 }: {
   authState: AtlasAuthState;
   api?: PlanningInputsApi;
   pantryApi?: PantryApi;
+  readinessApi?: PlanningInputReadinessApi;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -890,11 +894,12 @@ export function PlanningInputsWorkbench({
             <div>
               <strong>
                 {data.readiness.ready
-                  ? "Hai nguồn đã được phê duyệt"
-                  : "Nguồn kế hoạch chưa sẵn sàng"}
+                  ? "Hai nguồn tham chiếu đã được phê duyệt"
+                  : "Hai nguồn tham chiếu chưa cùng được phê duyệt"}
               </strong>
               <small>
-                So sánh chỉ đọc; chưa tạo nhu cầu hay dữ liệu đầu ra.
+                Tham chiếu hai nguồn, không phải quyết định sẵn sàng có thẩm
+                quyền. Xem tab Sẵn sàng đầu vào để quyết định theo ba nguồn.
               </small>
             </div>
             <Chip tone={data.readiness.weekly_menu_approved ? "ok" : "warning"}>
@@ -935,14 +940,23 @@ export function PlanningInputsWorkbench({
             >
               Pantry
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "readiness"}
+              className={tab === "readiness" ? "active" : ""}
+              onClick={() => setTab("readiness")}
+            >
+              Sẵn sàng đầu vào
+            </button>
           </div>
 
-          {tab !== "pantry" && load === "loading" && (
+          {(tab === "menu" || tab === "attendance") && load === "loading" && (
             <p role="status" className="empty">
               Đang tải nguồn kế hoạch…
             </p>
           )}
-          {tab !== "pantry" && load === "error" && (
+          {(tab === "menu" || tab === "attendance") && load === "error" && (
             <div role="alert" className="command-outcome danger">
               <p>{notice}</p>
               <button type="button" onClick={() => void refresh()}>
@@ -1512,6 +1526,16 @@ export function PlanningInputsWorkbench({
               authState={authState}
               api={pantryApi}
               weekStart={weekStart}
+              mode={mode}
+            />
+          )}
+
+          {tab === "readiness" && (
+            <PlanningInputReadinessWorkbench
+              authState={authState}
+              api={readinessApi}
+              selectedWeekStart={weekStart}
+              selectedWeekEnd={data.week_end}
               mode={mode}
             />
           )}

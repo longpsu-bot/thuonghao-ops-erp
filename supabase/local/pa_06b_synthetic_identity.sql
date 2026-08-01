@@ -161,7 +161,8 @@ from (
     ('b6000000-0000-0000-0000-000000000025'::uuid, 'planning.weekly_menu.write'),
     ('b6000000-0000-0000-0000-000000000026'::uuid, 'planning.attendance.write'),
     ('b6000000-0000-0000-0000-000000000027'::uuid, 'planning.inputs.approve'),
-    ('b6000000-0000-0000-0000-000000000028'::uuid, 'planning.pantry.write')
+    ('b6000000-0000-0000-0000-000000000028'::uuid, 'planning.pantry.write'),
+    ('b6000000-0000-0000-0000-000000000029'::uuid, 'planning.input_readiness.write')
 ) source(role_capability_id, capability_code)
 join atlas_core.capabilities capability
   on capability.capability_code = source.capability_code

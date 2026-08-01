@@ -1,6 +1,6 @@
 # TASK-RMVP-03B — Connected Planning Input Readiness Contract
 
-- **Status:** Accepted — implementation not started
+- **Status:** Accepted contract complete; implementation tracked separately
 - **Product Owner approval:** 31/07/2026
 - **Baseline:** `70c380f49c148a1207574aabc5aefcb44cf30074`
 - **Branch:** `docs/rmvp-03b-connected-readiness-contract`
@@ -216,3 +216,11 @@ Warehouse, Dispatch, or Wholesale state.
 It records Product Owner approval and may be published through the guarded PR
 workflow. It does not create an implementation issue or authorize
 implementation after merge.
+
+## Authorized implementation follow-up
+
+The Product Owner later authorized the separate RMVP-03B-02 implementation on
+exact baseline `ba949ff1e0641f0439ff4eb3eea43cd623d14959`. That authorization
+does not reclassify this historical documentation-only task or change R3B-P01
+through R3B-P12. Implementation evidence and status are maintained in
+[TASK-RMVP-03B Connected Planning Input Readiness Implementation](TASK-RMVP-03B-connected-planning-input-readiness-implementation.md).

@@ -59,6 +59,19 @@ begin
 
   if not exists (
     select 1
+    from atlas_core.role_capabilities rc
+    join atlas_core.capabilities c on c.capability_id = rc.capability_id
+    where rc.role_capability_id = 'b6000000-0000-0000-0000-000000000029'
+      and rc.role_id = 'b6000000-0000-0000-0000-000000000003'
+      and c.capability_code = 'planning.input_readiness.write'
+      and c.owning_domain = 'PLANNING'
+      and c.capability_status = 'ACTIVE'
+  ) then
+    raise exception 'RMVP-03B local readiness-write capability assertion failed.';
+  end if;
+
+  if not exists (
+    select 1
     from atlas_core.actor_role_memberships arm
     where arm.actor_role_membership_id = 'b6000000-0000-0000-0000-000000000006'
       and arm.actor_id = 'b6000000-0000-0000-0000-000000000001'

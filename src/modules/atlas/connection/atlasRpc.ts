@@ -75,6 +75,14 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.validate_attendance": "validate_attendance",
   "atlas_api.approve_attendance": "approve_attendance",
   "atlas_api.reopen_attendance": "reopen_attendance",
+  "atlas_api.get_planning_input_readiness_workbench":
+    "get_planning_input_readiness_workbench",
+  "atlas_api.evaluate_planning_input_readiness":
+    "evaluate_planning_input_readiness",
+  "atlas_api.request_planning_input_need_generation":
+    "request_planning_input_need_generation",
+  "atlas_api.invalidate_planning_input_readiness":
+    "invalidate_planning_input_readiness",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry_draft": "save_pantry_draft",

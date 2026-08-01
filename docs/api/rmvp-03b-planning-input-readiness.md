@@ -1,6 +1,6 @@
 # RMVP-03B Planning Input Readiness API Contract
 
-- **Status:** Accepted
+- **Status:** Implemented on draft PR; pending independent review and merge
 - **Product Owner approval:** 31/07/2026
 - **Contract version:** `RMVP-03B.v1`
 - **Domain:** Planning
@@ -567,7 +567,7 @@ credentials, or stack traces.
 
 ## 7. Security contract
 
-Future implementation must preserve:
+The implementation preserves:
 
 - `authenticated` execution only on the four reviewed functions;
 - no `anon` or `service_role` execution;
@@ -599,3 +599,22 @@ The contracted future functions do not:
 - mutate Procurement, Warehouse, Dispatch, Wholesale, OPS v1/v2, Retool,
   hosted Supabase, or production data; or
 - authorize implementation merely by appearing in this document.
+
+## 9. Implementation, migration, and rollback effect
+
+The authorized implementation is migration
+`20260731212845_rmvp_03b_connected_planning_input_readiness.sql`. It implements
+the exact four-function registry and one unbound write capability, reuses the
+existing read and Planning command runtimes, and adds no relation, view, role,
+scope kind, lifecycle state, automatic source trigger, production seed, or
+downstream mutation.
+
+The focused pgTAP suite has exactly 84 assertions. The current platform remains
+96 tables, 2 views, 68 physical APIs, 20 capabilities, and 9 Atlas database
+roles. The connected React adapter registers exactly the same four functions,
+bringing the browser registry to 67; five focused frontend files pass 47 tests
+covering envelopes, authoritative modeling, lifecycle UX, pagination, retry
+uncertainty, fourth-tab integration, and the unchanged navigation boundary.
+Operational rollback must preserve immutable evaluations, issues, receipts,
+events, and audits; after deployment, disablement is forward-only by revoking
+the four entry points rather than deleting historical evidence.
