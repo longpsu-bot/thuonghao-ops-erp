@@ -5,7 +5,7 @@
 - **Exact baseline:** `ba949ff1e0641f0439ff4eb3eea43cd623d14959`
 - **Branch:** `codex/rmvp-03b-connected-readiness`
 - **Migration:** `20260731212845_rmvp_03b_connected_planning_input_readiness.sql`
-- **Authorized manifest:** exactly 27 paths
+- **Authorized manifest:** exactly 32 paths
 - **Accepted authority:** [Decision RMVP-03B](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md)
 - **API contract:** [RMVP-03B Planning Input Readiness API](../api/rmvp-03b-planning-input-readiness.md)
 - **Architecture:** [RMVP-03B Connected Planning Input Readiness](../architecture/rmvp-03b-connected-planning-input-readiness.md)
@@ -49,8 +49,9 @@ Migration delta:
 - exactly four `atlas_api` functions and no overloads;
 - exactly one capability, `planning.input_readiness.write`, with no production
   application-role binding;
-- 20 bounded `atlas_core.rmvp_03b_*` `SECURITY INVOKER` helpers with an empty
-  search path;
+- 19 bounded `atlas_core.rmvp_03b_*` `SECURITY INVOKER` helpers plus one
+  fixed-search-path `SECURITY DEFINER` shaped workbench/history helper owned by
+  `atlas_read_runtime`;
 - 12 RLS policies over existing relations;
 - least-privilege runtime grants, including read-only Need Generation evidence;
 - zero relations, views, roles, runtime roles, scope kinds, lifecycle states,
@@ -106,7 +107,13 @@ RMVP-03B uses bounded request validation and hashing helpers instead of
 changing the shared PA-05B helper semantics. Exact replay returns the stored
 response and identifiers; changed reuse fails as `IDEMPOTENCY_CONFLICT`.
 Evaluation supports the accepted absent-root expectation and exact current
-evaluation concurrency.
+evaluation concurrency. After locking submitted non-null roots, Evaluation
+repeats the null-source invariant against a second authoritative evidence
+read: every null submission must still be exactly `MISSING`. A transition to
+`AMBIGUOUS` returns `AMBIGUOUS_SOURCE_CANDIDATE`; `SELECTED` or `STALE` returns
+`STALE_SOURCE_CANDIDATE`. The caught concurrency signal rolls back the command
+subtransaction before returning, so no root, evaluation, receipt, event, or
+audit survives the failure.
 
 Request performs only `READY` to `NEED_GENERATION_REQUESTED` and derives all
 source bindings from the immutable current evaluation. Invalidation performs
@@ -141,6 +148,6 @@ back by mutating hosted systems.
 
 ## Open work and risks
 
-- Complete independent exact-head product, architecture, security, and CI
-  review on the draft pull request.
+- Re-run exact-head CI and obtain fresh independent review of the two blocking
+  corrections reported against `8ba3f525d9d5199df022c93d795766efbb52ea9b`.
 - Keep the pull request in draft and do not merge it as part of this task.

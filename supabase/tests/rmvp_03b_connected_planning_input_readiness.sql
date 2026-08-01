@@ -286,6 +286,108 @@ select is((select response from r3b_responses where name='evaluate-a-replay'),(s
 -- 57
 select is((select jsonb_build_object('receipts',(select count(*) from atlas_core.command_receipts where command_id='d3500000-0000-0000-0000-000000000001'),'events',(select count(*) from atlas_audit.domain_events where command_id='d3500000-0000-0000-0000-000000000001'),'audits',(select count(*) from atlas_audit.audit_events where command_id='d3500000-0000-0000-0000-000000000001'))),jsonb_build_object('receipts',1,'events',1,'audits',1),'R3B-57 replay creates no duplicate side effect');
 
+do $test$
+declare
+  v_definition text;
+begin
+  select pg_get_functiondef(
+    'atlas_core.rmvp_03b_source_evidence(text,date,date,jsonb)'::regprocedure
+  ) into v_definition;
+  execute replace(
+    v_definition,
+    'CREATE OR REPLACE FUNCTION atlas_core.rmvp_03b_source_evidence',
+    'CREATE FUNCTION atlas_core.rmvp_03b_source_evidence_concurrency_base'
+  );
+end
+$test$;
+
+create or replace function atlas_core.rmvp_03b_source_evidence(
+  source_kind text,
+  p_period_start date,
+  p_period_end date,
+  supplied jsonb default null
+)
+returns jsonb
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+declare
+  v_evidence jsonb;
+  v_pantry_call integer;
+  v_transition text;
+begin
+  v_evidence := atlas_core.rmvp_03b_source_evidence_concurrency_base(
+    source_kind, p_period_start, p_period_end, supplied
+  );
+  if source_kind <> 'PANTRY' or supplied is not null then
+    return v_evidence;
+  end if;
+  v_pantry_call := coalesce(
+    pg_catalog.current_setting('rmvp03b_test.pantry_call', true), '0'
+  )::integer + 1;
+  perform pg_catalog.set_config(
+    'rmvp03b_test.pantry_call', v_pantry_call::text, true
+  );
+  v_transition := pg_catalog.current_setting(
+    'rmvp03b_test.null_source_transition', true
+  );
+  if v_pantry_call = 2 and v_transition in ('SELECTED', 'AMBIGUOUS', 'STALE') then
+    return v_evidence || pg_catalog.jsonb_build_object(
+      'selection_state', v_transition,
+      'safe_message', 'Simulated post-lock source transition.'
+    );
+  end if;
+  return v_evidence;
+end;
+$$;
+
+insert into r3b_requests values
+  ('missing-to-selected',pg_temp.r3b_command(
+    'd3500000-0000-0000-0000-000000000099','missing-to-selected','ABSENT',null,null,
+    'READINESS_EVALUATION_REQUESTED',null,
+    jsonb_build_object('period_start','2026-12-07','period_end','2026-12-13','source_candidates',jsonb_build_object('weekly_menu',null,'attendance',null,'pantry',null))
+  )),
+  ('missing-to-ambiguous',pg_temp.r3b_command(
+    'd3500000-0000-0000-0000-000000000098','missing-to-ambiguous','ABSENT',null,null,
+    'READINESS_EVALUATION_REQUESTED',null,
+    jsonb_build_object('period_start','2026-12-14','period_end','2026-12-20','source_candidates',jsonb_build_object('weekly_menu',null,'attendance',null,'pantry',null))
+  )),
+  ('missing-to-stale',pg_temp.r3b_command(
+    'd3500000-0000-0000-0000-000000000097','missing-to-stale','ABSENT',null,null,
+    'READINESS_EVALUATION_REQUESTED',null,
+    jsonb_build_object('period_start','2026-12-21','period_end','2026-12-27','source_candidates',jsonb_build_object('weekly_menu',null,'attendance',null,'pantry',null))
+  ));
+
+set local role authenticated;
+select set_config('rmvp03b_test.pantry_call','0',true);
+select set_config('rmvp03b_test.null_source_transition','SELECTED',true);
+insert into r3b_responses select 'missing-to-selected',atlas_api.evaluate_planning_input_readiness(request) from r3b_requests where name='missing-to-selected';
+select set_config('rmvp03b_test.pantry_call','0',true);
+select set_config('rmvp03b_test.null_source_transition','AMBIGUOUS',true);
+insert into r3b_responses select 'missing-to-ambiguous',atlas_api.evaluate_planning_input_readiness(request) from r3b_requests where name='missing-to-ambiguous';
+select set_config('rmvp03b_test.pantry_call','0',true);
+select set_config('rmvp03b_test.null_source_transition','STALE',true);
+insert into r3b_responses select 'missing-to-stale',atlas_api.evaluate_planning_input_readiness(request) from r3b_requests where name='missing-to-stale';
+reset role;
+
+do $test$
+declare
+  v_definition text;
+begin
+  select pg_get_functiondef(
+    'atlas_core.rmvp_03b_source_evidence_concurrency_base(text,date,date,jsonb)'::regprocedure
+  ) into v_definition;
+  execute replace(
+    v_definition,
+    'CREATE OR REPLACE FUNCTION atlas_core.rmvp_03b_source_evidence_concurrency_base',
+    'CREATE OR REPLACE FUNCTION atlas_core.rmvp_03b_source_evidence'
+  );
+end
+$test$;
+drop function atlas_core.rmvp_03b_source_evidence_concurrency_base(text,date,date,jsonb);
+
 set local role authenticated;
 insert into r3b_responses values ('conflict',atlas_api.evaluate_planning_input_readiness(pg_temp.r3b_command('d3500000-0000-0000-0000-000000000001','changed-intent','ABSENT',null,null,'READINESS_EVALUATION_REQUESTED',null,jsonb_build_object('period_start','2026-11-02','period_end','2026-11-08','source_candidates',jsonb_build_object('weekly_menu',null,'attendance',null,'pantry',null)))));
 insert into r3b_responses values ('stale-absent',atlas_api.evaluate_planning_input_readiness(pg_temp.r3b_command('d3500000-0000-0000-0000-000000000002','stale-absent','ABSENT',null,null,'READINESS_EVALUATION_REQUESTED',null,(select request->'payload' from r3b_requests where name='evaluate-a'))));
@@ -293,7 +395,33 @@ reset role;
 -- 58
 select is((select response->>'error_code' from r3b_responses where name='conflict'),'IDEMPOTENCY_CONFLICT','R3B-58 changed command identity reuse conflicts');
 -- 59
-select is((select response->>'error_code' from r3b_responses where name='stale-absent'),'STALE_ROOT_STATE','R3B-59 absent-root expectation becomes stale after creation');
+select is(
+  jsonb_build_object(
+    'stale_absent_error', (select response->>'error_code' from r3b_responses where name='stale-absent'),
+    'null_source_transition_errors', (
+      select jsonb_object_agg(name, response->>'error_code' order by name)
+      from r3b_responses
+      where name in ('missing-to-selected','missing-to-ambiguous','missing-to-stale')
+    ),
+    'retained_effects', jsonb_build_object(
+      'roots', (select count(*) from atlas_planning.planning_input_sets where period_start between '2026-12-07' and '2026-12-21'),
+      'evaluations', (select count(*) from atlas_planning.planning_input_evaluations evaluation join atlas_planning.planning_input_sets input_set using (planning_input_set_id) where input_set.period_start between '2026-12-07' and '2026-12-21'),
+      'receipts', (select count(*) from atlas_core.command_receipts where command_id in ('d3500000-0000-0000-0000-000000000097','d3500000-0000-0000-0000-000000000098','d3500000-0000-0000-0000-000000000099')),
+      'events', (select count(*) from atlas_audit.domain_events where command_id in ('d3500000-0000-0000-0000-000000000097','d3500000-0000-0000-0000-000000000098','d3500000-0000-0000-0000-000000000099')),
+      'audits', (select count(*) from atlas_audit.audit_events where command_id in ('d3500000-0000-0000-0000-000000000097','d3500000-0000-0000-0000-000000000098','d3500000-0000-0000-0000-000000000099'))
+    )
+  ),
+  jsonb_build_object(
+    'stale_absent_error', 'STALE_ROOT_STATE',
+    'null_source_transition_errors', jsonb_build_object(
+      'missing-to-ambiguous', 'AMBIGUOUS_SOURCE_CANDIDATE',
+      'missing-to-selected', 'STALE_SOURCE_CANDIDATE',
+      'missing-to-stale', 'STALE_SOURCE_CANDIDATE'
+    ),
+    'retained_effects', jsonb_build_object('roots',0,'evaluations',0,'receipts',0,'events',0,'audits',0)
+  ),
+  'R3B-59 stale root and post-lock null-source transitions fail with exact shaped errors and retain no root, evaluation, receipt, event, or audit'
+);
 
 insert into r3b_requests
 select 'request-a',pg_temp.r3b_command(

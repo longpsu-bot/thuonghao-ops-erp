@@ -2002,6 +2002,28 @@ begin
   v_weekly := atlas_core.rmvp_03b_source_evidence('WEEKLY_MENU', v_start, v_end, v_weekly_input);
   v_attendance := atlas_core.rmvp_03b_source_evidence('ATTENDANCE', v_start, v_end, v_attendance_input);
   v_pantry := atlas_core.rmvp_03b_source_evidence('PANTRY', v_start, v_end, v_pantry_input);
+  if (v_weekly_input is null and v_weekly ->> 'selection_state' <> 'MISSING')
+    or (v_attendance_input is null and v_attendance ->> 'selection_state' <> 'MISSING')
+    or (v_pantry_input is null and v_pantry ->> 'selection_state' <> 'MISSING')
+  then
+    if (v_weekly_input is null and v_weekly ->> 'selection_state' = 'AMBIGUOUS')
+      or (v_attendance_input is null and v_attendance ->> 'selection_state' = 'AMBIGUOUS')
+      or (v_pantry_input is null and v_pantry ->> 'selection_state' = 'AMBIGUOUS')
+    then
+      v_error := atlas_core.rmvp_03b_error(
+        request, v_name, 'AMBIGUOUS_SOURCE_CANDIDATE',
+        'A source submitted as missing became ambiguous before evaluation completed.'
+      );
+      raise sqlstate 'R3B01' using
+        message = 'RMVP-03B null source became ambiguous after the authoritative re-read';
+    end if;
+    v_error := atlas_core.rmvp_03b_error(
+      request, v_name, 'STALE_SOURCE_CANDIDATE',
+      'A source submitted as missing became available or stale before evaluation completed.'
+    );
+    raise sqlstate 'R3B02' using
+      message = 'RMVP-03B null source changed after the authoritative re-read';
+  end if;
   if (v_weekly_input is not null and v_weekly ->> 'selection_state' <> 'SELECTED')
     or (v_attendance_input is not null and v_attendance ->> 'selection_state' <> 'SELECTED')
     or (v_pantry_input is not null and v_pantry ->> 'selection_state' <> 'SELECTED')
@@ -2093,7 +2115,9 @@ begin
       else 'Readiness evaluated: blocking issues must be resolved first.' end,
     v_selection
   );
-exception when serialization_failure or deadlock_detected then
+exception when sqlstate 'R3B01' or sqlstate 'R3B02' then
+  return v_error;
+when serialization_failure or deadlock_detected then
   return atlas_core.rmvp_03b_error(
     request, v_name, 'RETRYABLE_CONCURRENCY_FAILURE',
     'Readiness data is being updated. Retry the exact unchanged request.',
