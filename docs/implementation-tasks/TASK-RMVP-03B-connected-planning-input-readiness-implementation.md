@@ -1,6 +1,6 @@
 # TASK-RMVP-03B-02 — Implement Connected Planning Input Readiness
 
-- **Status:** Local implementation complete on the bounded branch; final validation and draft PR pending
+- **Status:** Implemented on draft PR; pending independent review and merge
 - **Product Owner authorization:** 01/08/2026
 - **Exact baseline:** `ba949ff1e0641f0439ff4eb3eea43cd623d14959`
 - **Branch:** `codex/rmvp-03b-connected-readiness`
@@ -141,9 +141,6 @@ back by mutating hosted systems.
 
 ## Open work and risks
 
-- Complete the review build, formatting, whitespace, and final scope audit.
-- Publish one draft pull request for independent exact-head product,
-  architecture, security, and CI review. Do not mark it ready or merge it.
-
-Until the draft pull request exists, this record must not claim the approved
-pre-merge status phrase or imply that the implementation is merged.
+- Complete independent exact-head product, architecture, security, and CI
+  review on the draft pull request.
+- Keep the pull request in draft and do not merge it as part of this task.

@@ -1,6 +1,6 @@
 # PD-01.4 — Planning Domain Input Readiness Contract
 
-**Status:** Contract v0.7; three-source persistence merged through PANTRY-RDY-02, with the connected RMVP-03B command/API/UX contract accepted by the Product Owner on 31/07/2026 and its database/API and connected React implementation completed on the bounded RMVP-03B-02 branch; final validation and draft-PR review remain pending
+**Status:** Implemented on draft PR; pending independent review and merge
 **Domain:** Planning
 **Business owner:** Tổ Kế hoạch
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture

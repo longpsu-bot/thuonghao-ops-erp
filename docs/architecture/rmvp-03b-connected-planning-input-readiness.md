@@ -1,6 +1,6 @@
 # RMVP-03B — Connected Planning Input Readiness
 
-- **Status:** Accepted; database/API and connected React implementation completed on bounded branch, final validation and draft-PR review pending
+- **Status:** Implemented on draft PR; pending independent review and merge
 - **Product Owner approval:** 31/07/2026
 - **Domain:** Planning
 - **Business owner:** Tổ Kế hoạch

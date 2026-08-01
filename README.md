@@ -118,7 +118,7 @@ RMVP-03B implements one exact-period, three-source readiness workbench read and 
 pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
 ```
 
-The Need Generation request is a handoff marker only: it creates no run or quantity. Invalidation retains immutable evaluations and never mutates an existing run. The database/API checkpoint and connected React fourth tab are implemented on the bounded branch; final validation and independent draft-PR review remain pending. The browser registry is exactly 67 functions, and the five focused frontend files pass 47 tests. See [RMVP-03B Connected Planning Input Readiness](docs/architecture/rmvp-03b-connected-planning-input-readiness.md), the [RMVP-03B API contract](docs/api/rmvp-03b-planning-input-readiness.md), and the [implementation record](docs/implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-implementation.md).
+The Need Generation request is a handoff marker only: it creates no run or quantity. Invalidation retains immutable evaluations and never mutates an existing run. Implemented on draft PR; pending independent review and merge. The browser registry is exactly 67 functions, and the five focused frontend files pass 47 tests. See [RMVP-03B Connected Planning Input Readiness](docs/architecture/rmvp-03b-connected-planning-input-readiness.md), the [RMVP-03B API contract](docs/api/rmvp-03b-planning-input-readiness.md), and the [implementation record](docs/implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-implementation.md).
 
 ### RMVP-01 UI review export
 

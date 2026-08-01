@@ -1,6 +1,6 @@
 # RMVP-03B Planning Input Readiness API Contract
 
-- **Status:** Accepted; database/API and connected React implementation completed on bounded branch, final validation and draft-PR review pending
+- **Status:** Implemented on draft PR; pending independent review and merge
 - **Product Owner approval:** 31/07/2026
 - **Contract version:** `RMVP-03B.v1`
 - **Domain:** Planning
