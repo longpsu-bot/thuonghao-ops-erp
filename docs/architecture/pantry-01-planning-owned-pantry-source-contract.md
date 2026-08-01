@@ -351,7 +351,7 @@ PANTRY-01 itself changes no Planning Input relation, evaluation, issue, command,
 
 ## 10. Need Generation boundary
 
-A later Need Generation amendment may consume each positive-quantity approved Pantry snapshot line as a direct Ingredient contribution:
+PANTRY-NG-01 now approves the product and architecture direction for each positive-quantity approved Pantry snapshot line to become a direct Ingredient contribution:
 
 ```text
 Pantry snapshot line
@@ -363,11 +363,15 @@ Pantry snapshot line
 
 Pantry bypasses Recipe explosion because it already identifies the Ingredient. It does not bypass Planning Input evaluation, immutable run input snapshots, validation, release membership or Confirmed Need review.
 
-For every Pantry contribution, the later run must retain a direct typed Pantry snapshot-line reference. It must not fabricate a Dish, Recipe, RecipeLine, or generic free-text lineage record.
+The canonical authorities are the [PANTRY-NG-01 direct-ingredient amendment](pantry-ng-01-need-generation-direct-ingredient-amendment.md) and the [PNG-P01 through PNG-P12 decision registry](../decisions/decision-pantry-ng-01-need-generation-direct-ingredient.md). They require one combined Need Generation run and closed `RECIPE_DERIVED` / `PANTRY_DIRECT` atomic contribution families.
+
+For every active Pantry contribution, the later run must retain a direct typed Pantry snapshot-line reference and exact stable Pantry-line lineage. It must not fabricate a Dish, Recipe, RecipeLine, Recipe calculation or generic free-text lineage record.
 
 For an exact approved zero-line Pantry snapshot, the later run must retain the approved snapshot as input evidence and create zero Pantry contribution lines. It must not fabricate a zero-quantity Theoretical Need contribution or treat the controlled absence as a missing Pantry source.
 
-PANTRY-01 creates no Confirmed Need and does not amend existing Need Generation relations or commands.
+PANTRY-NG-01 is contract and decision authority only. Implementation has not started and requires a separately bounded task. PANTRY-01 capture, validation, approval, zero-line and snapshot behavior remains unchanged; PANTRY-NG-01 does not expand PANTRY-02.
+
+PANTRY-01 creates no Confirmed Need, and PANTRY-NG-01 implements no Need Generation relation, command, API or UI change.
 
 ## 11. Procurement, Warehouse and Dispatch boundary
 
@@ -475,8 +479,11 @@ bounded persistence, commands, read model and connected capture/approval UI
 → separately named Pantry readiness amendment
 exact approved Pantry snapshot admitted to Planning Input evaluation
 
-→ separately named Pantry Need Generation amendment
-Need Generation direct Ingredient contribution and typed lineage
+→ PANTRY-NG-01
+accepted direct Ingredient contribution and typed-lineage contract
+
+→ separately bounded Pantry Need Generation implementation
+future persistence, pgTAP, command/read and application scope
 ```
 
 RMVP-03B remains Planning Input Readiness and RMVP-04 remains Need Generation. The later Pantry amendments extend those contracts without renaming or replacing either task.

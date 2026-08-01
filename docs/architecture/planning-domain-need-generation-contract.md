@@ -1,6 +1,6 @@
 # PD-01.6 — Planning Domain Need Generation Contract
 
-**Status:** MVP contract v0.3; H0A5a decisions accepted and H0A5b private persistence implemented under Issue #131, pending independent governance review
+**Status:** MVP contract v0.4; H0A5b Recipe-derived persistence implemented and PANTRY-NG-01 direct-contribution direction accepted; Pantry implementation not started
 
 **Domain:** Planning
 
@@ -10,6 +10,10 @@
 
 **Decision:** [Decision PA-06E-H0A5 — Need Generation Run and Theoretical Lineage](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md)
 
+**Pantry amendment:** [PANTRY-NG-01 — Need Generation Direct Ingredient Amendment](pantry-ng-01-need-generation-direct-ingredient-amendment.md)
+
+**Pantry decision:** [Decision PANTRY-NG-01](../decisions/decision-pantry-ng-01-need-generation-direct-ingredient.md)
+
 ## 1. Purpose
 
 Need Generation converts one exact requested Planning input set into immutable, atomic theoretical ingredient contributions for later Planning confirmation.
@@ -17,21 +21,21 @@ Need Generation converts one exact requested Planning input set into immutable, 
 ```text
 one exact Planning Input Set
 + its exact current READY evaluation
-+ exact immutable Menu and Attendance evidence
++ exact immutable Menu, Attendance and Pantry evidence
 + exact eligible Recipe evidence
 + one approved fixed calculation-contract revision
 = one controlled Need Generation run
-+ atomic Theoretical Need contributions
++ atomic RECIPE_DERIVED and PANTRY_DIRECT Theoretical Need contributions
 + one immutable release snapshot when released
 ```
 
-Planning Input Readiness answers whether exact approved Menu and Attendance evidence is controlled and compatible. Need Generation answers which exact theoretical ingredient contributions result from that evidence. Confirmed Need remains the later Planning approval gate.
+Planning Input Readiness answers whether exact approved Menu, Attendance and Pantry evidence is controlled and compatible. Need Generation answers which exact theoretical ingredient contributions result from that evidence. Recipe-derived contributions use the unchanged fixed Recipe calculation. Pantry-direct contributions copy exact approved Ingredient quantities without Recipe explosion. Confirmed Need remains the later Planning approval gate.
 
 Need Generation does not confirm demand, group operational requirements, assign suppliers, rebalance Purchase Assignments, create purchase orders, mutate Warehouse stock, create Dispatch documents, edit Recipe/BOM data, perform QA/Production, or create Finance records.
 
 ## 2. Ownership and authoritative objects
 
-Planning owns the run, run input snapshot, Theoretical Need lines, Need Generation issues, and release snapshot. Admin and Recipe retain ownership of every referenced School, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision, Ingredient, and Unit.
+Planning owns the run, run input snapshot, Theoretical Need lines, Need Generation issues, release snapshot and referenced Pantry evidence. Admin and Recipe retain ownership of every referenced School, Delivery Location, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision, Ingredient, and Unit.
 
 ### 2.1 NeedGenerationRun
 
@@ -49,12 +53,13 @@ Every run owns one immutable input-snapshot header and bounded typed use relatio
 - exact Planning Input Evaluation and positive evaluation version;
 - exact Weekly Menu approval snapshot/root/version inherited from that evaluation;
 - exact Attendance approval snapshot/root/version inherited from that evaluation;
+- exact Pantry approval snapshot/batch/version inherited from that evaluation, including a valid zero-line snapshot;
 - one mandatory exact calculation-contract revision;
 - exact selected Recipes and RecipeVersions;
 - exact stable RecipeLines and RecipeLineRevisions used; and
 - each exact future conversion revision actually used.
 
-The merged H0A4b root has no `planningInputSetVersion`, and the exact evaluation ID/version replaces the prototype's generic `readinessSnapshotId`. Composite typed ownership must prevent substitution of either readiness-bound source snapshot.
+The merged H0A4b root has no `planningInputSetVersion`, and the exact evaluation ID/version replaces the prototype's generic `readinessSnapshotId`. Composite typed ownership must prevent substitution of any readiness-bound source snapshot. The Pantry family is exactly `pantry_need_batch_id`, `pantry_need_batch_version`, and `pantry_need_approval_snapshot_id`; every member is mandatory on a new Need Generation input snapshot.
 
 Recipe selection evidence records exact typed IDs, including the Menu snapshot line, stable Menu line, School, SchoolType used when present, Dish, selected Recipe, and selected RecipeVersion. Composition-use evidence records each stable RecipeLine and exact RecipeLineRevision.
 
@@ -68,7 +73,14 @@ It is not a generic formula engine, expression language, caller-supplied express
 
 ### 2.4 TheoreticalNeedLine
 
-One line is one immutable atomic contribution for the exact combination of:
+Every line has one closed contribution source family:
+
+```text
+RECIPE_DERIVED
+PANTRY_DIRECT
+```
+
+For `RECIPE_DERIVED`, one line remains one immutable atomic contribution for the exact combination of:
 
 ```text
 run
@@ -84,9 +96,23 @@ run
 
 The line also retains the stable Weekly Menu and Attendance line anchors carried by the exact snapshot lines. Its opaque UUID is not derived from source strings. The complete atomic anchor is unique within the run with null conversion treated deterministically.
 
-Lines are not aggregated by Ingredient, School/date, Menu line, Recipe, or RecipeLine. H0B1 may later group several released contributions inside one Confirmed Need line revision, but H0A5 performs no grouping or confirmation.
+For `PANTRY_DIRECT`, one positive approved Pantry snapshot line creates one immutable `ACTIVE` atomic contribution for:
 
-The line disposition is exactly `ACTIVE` or `REMOVED`. Quantity uses exact PostgreSQL `numeric(20,6)` in the exact source Unit.
+```text
+run
++ exact Pantry approval snapshot
++ exact Pantry approval-snapshot line
++ stable Pantry line
++ exact School and Delivery Location
++ exact service date
++ exact Ingredient and approved Unit
+```
+
+An active Pantry-direct line has no Menu, Attendance, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision or Recipe calculation-contract provenance. A valid Pantry-direct `REMOVED` line retains the successor Pantry snapshot header and stable Pantry line but has no fabricated current snapshot-line row. Strict conditional family checks must keep both lineage families mutually exclusive without weakening any existing Recipe-derived invariant.
+
+Lines are not aggregated by Ingredient, School/date, Delivery Location, Unit, Pantry Purpose, Menu line, Recipe or RecipeLine. H0B1 may later group several released contributions inside one Confirmed Need line revision, but H0A5 performs no grouping or confirmation.
+
+The line disposition is exactly `ACTIVE` or `REMOVED`. Quantity uses exact PostgreSQL `numeric(20,6)` in the exact source Unit. Pantry Purpose and approved source evidence remain reachable through the exact typed Pantry snapshot-line lineage and are never caller-authored identity.
 
 ### 2.5 NeedGenerationIssue
 
@@ -109,12 +135,12 @@ Generation requires all of the following to remain true in one transaction:
 - Planning Input Set root status is `NEED_GENERATION_REQUESTED`, not merely `READY`;
 - the root's current pointer equals the exact expected evaluation;
 - the immutable evaluation result is `READY` with zero blockers;
-- its exact Menu and Attendance source families are both populated;
-- both upstream root versions and latest approval snapshots still equal the evaluation bindings;
+- its exact Menu, Attendance and Pantry source families are populated, including the Pantry header for valid controlled absence;
+- all three upstream root versions and latest approval snapshots still equal the evaluation bindings;
 - upstream statuses remain allowed by H0A4b; and
-- both source periods still contain the exact evaluated period.
+- all three source periods still contain the exact evaluated period.
 
-`READY` is a readiness result, not the Need Generation entry state. A rejected precondition cannot create a partial run or incomplete input snapshot. H0A5 never edits the root, evaluation, bindings, or issues.
+`READY` is a readiness result, not the Need Generation entry state. A rejected precondition cannot create a partial run or incomplete input snapshot. H0A5 never edits the root, evaluation, bindings, or issues. The Pantry triple remains mandatory even when its approved snapshot contains zero lines.
 
 ## 4. Fixed MVP formula and numeric contract
 
@@ -142,6 +168,21 @@ Rules:
 8. Zero portions create one warning-bearing `ACTIVE` zero line per otherwise valid `PRESENT` RecipeLineRevision. Zero is not omission or removal.
 
 No Planning or purchase rounding, purchase-unit normalization, supplier rule, yield, allowance, waste, or generic formula engine is introduced. React and Retool are not authoritative calculators.
+
+### 4.1 Pantry direct quantity pass-through
+
+The fixed Recipe formula above remains unchanged and applies only to `RECIPE_DERIVED`.
+
+For one active `PANTRY_DIRECT` contribution:
+
+```text
+theoretical_quantity
+= exact Pantry approval-snapshot-line requested_quantity
+```
+
+The Unit, Ingredient, School, Delivery Location and service date equal the exact approved Pantry snapshot-line facts. PostgreSQL copies the strictly positive quantity exactly into `numeric(20,6)`. Pantry direct contribution performs no Attendance arithmetic, Recipe calculation, conversion, rounding, yield, waste, supplier rule, Warehouse rule or client arithmetic, and it does not claim that the Recipe calculation-contract revision produced the quantity.
+
+One positive Pantry snapshot line produces exactly one active contribution. A valid approved zero-line Pantry snapshot remains input-header evidence, produces no Pantry contribution or placeholder and is not an issue. A run may still contain Recipe-derived contributions.
 
 ## 5. Recipe selection
 
@@ -181,6 +222,8 @@ Calculation-contract revision is mandatory for every run. Conversion-rule revisi
 
 ## 7. Typed source and correction lineage
 
+### 7.1 Recipe-derived lineage
+
 Mandatory cardinality-one source anchors are direct typed columns on the atomic line, supported by bounded typed run-use relations. A generic one-ID source registry is rejected.
 
 Across directly linked successor runs, predecessor continuity requires the same stable Weekly Menu line, stable Attendance line, stable RecipeLine, Planning Input Set, and period. Exact snapshot lines, RecipeVersion/Revision, Ingredient, Unit, and quantity may change because those are correction facts.
@@ -211,15 +254,23 @@ Only the exact typed direct run chain, Planning Input Set, period, stable Recipe
 
 A later separately approved decision may add explicit reintroduction support only after defining whether `REMOVED → ACTIVE` is one-to-one correction identity, exact predecessor ownership, release membership, issue and lifecycle effects, H0B1 contribution interpretation, and focused migration and pgTAP changes. H0A5a does not authorize that extension.
 
+### 7.2 Pantry-direct lineage
+
+Across directly linked successor runs for the same Planning Input Set and immutable period, the same stable `PantryNeedLine` has exactly one compatible Pantry-direct predecessor. Quantity, Purpose, note, source reference, server-resolved Unit and exact snapshot-line facts may change while the stable Pantry line preserves continuity. A genuinely new stable Pantry line creates one `ACTIVE` contribution without a predecessor.
+
+A stable Pantry line that was active in the predecessor but is omitted from the successor approved snapshot creates exactly one zero `REMOVED` contribution. It binds the same stable Pantry line, one predecessor and the successor Pantry approval snapshot as controlled absence; it does not fabricate a current snapshot-line row. Every prior active Pantry contribution requires one compatible active or removed successor. Silent omission, fork, split, merge, cross-period/input-set or unrelated-line wiring is blocking.
+
+`REMOVED → ACTIVE` reintroduction of the same stable Pantry line is unsupported in the first slice. The existing `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` blocker applies, no active line is admitted as new or given an inferred predecessor, and validation/release remain prohibited pending invalidation and separate approval.
+
 ## 8. Issue classification
 
 The exact closed catalog and severity are defined in [Decision PA-06E-H0A5](../decisions/decision-pa-06e-h0a5-need-generation-lineage.md#28-closed-issue-and-rejection-catalog).
 
-The catalog contains exactly 35 codes. At minimum it classifies exact readiness entry/currentness, missing Attendance, missing/ambiguous/incomplete Recipe, invalid basis/revision/reference, conversion, calculation, typed trace, duplicate atomic anchor, predecessor/fork/split/merge/omission/removal, unsupported reintroduction after removal, zero active quantity, and every release membership failure.
+The current Recipe-only H0A5 catalog contains exactly 35 design classifications, of which H0A5b persists the 31 post-entry codes. PANTRY-NG-01 preserves that catalog and adds only three Pantry-specific blocking codes: `MISSING_PANTRY_INPUT_BINDING`, `INVALID_PANTRY_SNAPSHOT_MEMBERSHIP`, and `PANTRY_APPROVED_QUANTITY_UNIT_MISMATCH`. Exact conditions and reuse mappings are canonical in [PNG-P10](../decisions/decision-pantry-ng-01-need-generation-direct-ingredient.md#png-p10--closed-issue-and-validation-effects).
 
-`UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` is `BLOCKING` exactly when a directly linked successor Need Generation run selects a `PRESENT` RecipeLineRevision for a stable RecipeLine whose corresponding theoretical contribution in the direct predecessor run was `REMOVED`.
+`UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` remains `BLOCKING` for Recipe-derived reintroduction and also applies when a directly linked Pantry successor reintroduces the same stable Pantry line after a removed contribution.
 
-All stale-input, eligibility, factor/result, lineage, predecessor, removal, unsupported reintroduction, split/merge, and release failures are `BLOCKING`. `ZERO_ACTIVE_THEORETICAL_QUANTITY` is the sole H0A5 `WARNING`. Warnings alone do not block validation or release.
+All stale-input, eligibility, factor/result, lineage, predecessor, removal, unsupported reintroduction, split/merge, Pantry input/membership/quantity/Unit and release failures are `BLOCKING`. `ZERO_ACTIVE_THEORETICAL_QUANTITY` remains the sole Recipe-derived H0A5 `WARNING`; it does not authorize zero Pantry lines. Pantry adds no warning. Warnings alone do not block validation or release.
 
 ## 9. Closed lifecycle
 
@@ -244,7 +295,7 @@ RELEASED_FOR_CONFIRMATION → INVALIDATED
 
 Generation creates version 1. Each valid transition increments exactly once. Release binds the resulting released run version. All other transitions, same-state mutation, direct resurrection, and nonterminal predecessor progression are rejected.
 
-Validation requires the current terminal run, zero blockers, and complete calculation, source, predecessor, and count evidence. Release requires `VALIDATED`, zero blockers, and one every-and-only immutable release snapshot. Release does not create Confirmed Need.
+Validation requires the current terminal run, zero blockers, and complete every-and-only calculation, typed source, predecessor and count evidence across both contribution families. Release requires `VALIDATED`, zero blockers, and one every-and-only immutable release snapshot. Release does not create Confirmed Need.
 
 Invalidation preserves all evidence and does not automatically create a successor. Recalculation creates a new run after invalidation. Menu, Attendance, readiness, Recipe, Dish, Ingredient, Unit, calculation-contract, or future conversion changes do not rewrite or automatically invalidate a run.
 
@@ -252,9 +303,9 @@ Actual operations/commands, actor authorization, reasons, events, receipts, safe
 
 ## 10. Release and downstream boundary
 
-Release membership includes every-and-only immutable run line and proves exact quantity, Unit, disposition, predecessor, calculation revision, optional conversion revision, and typed source facts. Release issue membership proves the exact summary. Release facts are immutable after creation and remain retained after invalidation or successor generation.
+Release membership includes every-and-only immutable Recipe-derived and Pantry-direct run line and proves exact contribution family, quantity, Unit, disposition, predecessor and typed source facts. Recipe-derived members retain calculation and optional conversion revisions. Pantry-direct members retain exact Pantry snapshot/stable-line lineage, exact current snapshot line when active, and exact School, Delivery Location, service date and Ingredient. Release issue membership proves the exact combined summary. Release facts are immutable after creation and remain retained after invalidation or successor generation.
 
-Confirmed Need remains a later Planning-owned aggregate and approval gate. H0B1 may group multiple released atomic contributions inside an operational line revision. H0A5 performs no grouping, review, adjustment, approval, or release to Procurement.
+Confirmed Need remains a later Planning-owned aggregate and approval gate. Existing materialization may consume both families through the existing `NEED_GENERATION` source kind and may group multiple released atomic contributions only through immutable membership and exact totals when the complete operational identity matches. A Pantry-direct member contributes its exact Pantry Delivery Location; materialization must not silently substitute the School's current default. H0A5 performs no grouping, review, adjustment, approval, or release to Procurement.
 
 Procurement cannot edit or consume unreleased theoretical lines as approved demand. Purchase Assignment rebalance is downstream Procurement behavior and is not part of Need Generation.
 
@@ -266,7 +317,11 @@ The TypeScript prototype remains a non-authoritative UI/domain demonstration. H0
 
 ## 12. H0A5b persistence and tests
 
-H0A5a creates no SQL. A later H0A5b issue must define exact physical names and exact `plan(N)` counts before coding for four independently runnable, exclusive invariant families:
+H0A5b currently implements the Recipe-derived persistence model in migration `20260721070121_pa_06e_h0a5b_need_generation_persistence.sql`. Its four independently runnable pgTAP suites remain the current Recipe-only authority for structure/security, run/input/Recipe/calculation, theoretical-line/source/predecessor/release, and lifecycle/issues/invalidation/history.
+
+PANTRY-NG-01 changes documentation only. Current H0A5b SQL has no contribution-family discriminator, no Pantry input triple and Recipe-mandatory theoretical-line columns. It therefore remains Recipe-only until a separately authorized migration and focused pgTAP amendment merge.
+
+That later implementation task must define exact physical names and exact `plan(N)` counts before coding for exclusive invariant families covering:
 
 1. H0A5 structure/security;
 2. H0A5 run/input/recipe/calculation integrity;
@@ -279,6 +334,6 @@ Only the H0A5 theoretical-line/source/predecessor/release integrity suite owns a
 
 ## 13. Scope and migration effect
 
-This H0A5a amendment changes documentation only. It creates no migration, SQL, pgTAP, workflow, function, RPC, role, capability, policy, event, reason, receipt, API/read model, generated type, React behavior, package, Retool change, OPS v1 change, hosted Supabase action, production data, credential, deployment, Confirmed Need, Procurement, Warehouse, Dispatch, QA, Production, or Finance behavior.
+PANTRY-NG-01 changes documentation only. It creates no migration, SQL, pgTAP, workflow, function, RPC, role, capability, policy, event, reason, receipt, API/read model, generated type, React behavior, package, Retool change, OPS v1 change, hosted Supabase action, production data, credential, deployment, Confirmed Need, Procurement, Warehouse, Dispatch, QA, Production, or Finance behavior.
 
-Documentation rollback is a normal Git revert. H0A5b and every command/runtime/downstream task require separate authorization.
+Documentation rollback is a normal Git revert. The Pantry persistence amendment and every command/runtime/application/downstream change require separate authorization.
