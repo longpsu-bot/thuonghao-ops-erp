@@ -439,6 +439,7 @@ select is(
       'atlas_planning.planning_input_evaluations'::regclass,
       'atlas_planning.planning_input_evaluation_issues'::regclass
     )
+      and policy.polname = 'pa_06e_h0cb_materialization_select'
   ),
   (
     select jsonb_agg(
@@ -591,10 +592,25 @@ select ok(
 
 select is(
   (
-    select count(*)::integer from atlas_core.capabilities
+    select jsonb_agg(
+      jsonb_build_object(
+        'capability_code', capability_code,
+        'capability_status', capability_status,
+        'owning_domain', owning_domain
+      )
+      order by capability_code
+    )
+    from atlas_core.capabilities
     where capability_code like 'planning.input_readiness.%'
-  ), 0,
-  'H0A4b adds no capability or seed vocabulary'
+  ),
+  jsonb_build_array(
+    jsonb_build_object(
+      'capability_code', 'planning.input_readiness.write',
+      'capability_status', 'ACTIVE',
+      'owning_domain', 'PLANNING'
+    )
+  ),
+  'readiness capability vocabulary is exactly the active Planning-owned RMVP-03B write capability'
 );
 
 select is(

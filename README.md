@@ -110,6 +110,16 @@ pnpm local:pantry02:verify
 
 The lifecycle is `DRAFT → VALIDATED → APPROVED → REOPENED → VALIDATED → APPROVED`. Approval preserves exact immutable snapshots, including an explicit zero-additions header with no fabricated line. The production migration seeds no Purpose and writes no readiness, Need Generation, Confirmed Need, handoff, Procurement, Warehouse, Dispatch, or Wholesale fact. See [PANTRY-02 Connected Pantry Source](docs/architecture/pantry-02-connected-pantry-source.md) and the [PANTRY-02 API contract](docs/api/pantry-02-source.md).
 
+### RMVP-03B connected Planning Input Readiness
+
+RMVP-03B implements one exact-period, three-source readiness workbench read and three transactional commands over the existing immutable Planning Input Set persistence. PostgreSQL owns candidate selection, issue derivation, lifecycle authority, idempotency, source-currentness checks, combined history pagination, events, and audit evidence.
+
+```bash
+pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
+```
+
+The Need Generation request is a handoff marker only: it creates no run or quantity. Invalidation retains immutable evaluations and never mutates an existing run. The database/API checkpoint and connected React fourth tab are implemented on the bounded branch; final validation and independent draft-PR review remain pending. The browser registry is exactly 67 functions, and the five focused frontend files pass 47 tests. See [RMVP-03B Connected Planning Input Readiness](docs/architecture/rmvp-03b-connected-planning-input-readiness.md), the [RMVP-03B API contract](docs/api/rmvp-03b-planning-input-readiness.md), and the [implementation record](docs/implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-implementation.md).
+
 ### RMVP-01 UI review export
 
 The downloadable UI review is a separate, deterministic browser-only mode for owner acceptance. It contains 33 sample schools, 180 sample ingredients, and 24 sample suppliers; it requires no credentials, makes no Supabase calls, and never writes data outside the current browser session. The persistent notice `Chế độ xem thử giao diện — dữ liệu không được lưu` distinguishes this mode from the connected application.

@@ -1,6 +1,6 @@
 # PD-01.4 — Planning Domain Input Readiness Contract
 
-**Status:** Contract v0.6; three-source persistence merged through PANTRY-RDY-02, with the connected RMVP-03B command/API/UX contract accepted by the Product Owner on 31/07/2026 and implementation not started
+**Status:** Contract v0.7; three-source persistence merged through PANTRY-RDY-02, with the connected RMVP-03B command/API/UX contract accepted by the Product Owner on 31/07/2026 and its database/API and connected React implementation completed on the bounded RMVP-03B-02 branch; final validation and draft-PR review remain pending
 **Domain:** Planning
 **Business owner:** Tổ Kế hoạch
 **Parent architecture:** ARCH-001 — OPS ERP Business Architecture
@@ -244,6 +244,23 @@ readiness suites:
 The focused total is 152 assertions. The detailed implementation record is
 [TASK-PANTRY-RDY-02](../implementation-tasks/TASK-PANTRY-RDY-02-readiness-persistence.md).
 
+### 9.1 RMVP-03B connected command and read implementation
+
+RMVP-03B-02 implements the accepted connected database authority without
+changing the persistence contract above. Migration
+`20260731212845_rmvp_03b_connected_planning_input_readiness.sql` adds exactly
+four authenticated `atlas_api` functions: one authoritative workbench read,
+evaluation, Need Generation request handoff, and explicit invalidation. It
+adds one unbound `planning.input_readiness.write` capability, bounded private
+helpers, least-privilege grants, and RLS policies over existing relations.
+
+The implementation adds no relation, view, role, runtime role, scope kind,
+lifecycle state, or trigger. Request remains a handoff marker only, and every
+RMVP-03B path leaves Need Generation and all downstream operational facts
+unchanged. The focused API/security suite owns 84 assertions in addition to
+the unchanged persistence plans `36/59/57`. See the
+[bounded implementation record](../implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-implementation.md).
+
 ## 10. Implementation boundary
 
 PANTRY-RDY-02 changes private persistence enforcement only. It creates no
@@ -255,5 +272,7 @@ Command names, command parameters, authorization, actor attribution, reason
 taxonomy, events, safe errors, API contracts, and operator UX are accepted
 through [RMVP-03B Connected Planning Input Readiness](rmvp-03b-connected-planning-input-readiness.md)
 and its [canonical accepted decision registry](../decisions/decision-rmvp-03b-connected-planning-input-readiness.md),
-approved on 31/07/2026 and registered as D-027. Implementation remains not
-started and requires a separate bounded task.
+approved on 31/07/2026 and registered as D-027. The separately authorized
+RMVP-03B-02 task implements the database/API authority and connected React
+fourth tab on its bounded branch; final validation and independent review
+remain pending.

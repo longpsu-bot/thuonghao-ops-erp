@@ -1,6 +1,6 @@
 # RMVP-03B — Connected Planning Input Readiness
 
-- **Status:** Accepted
+- **Status:** Accepted; database/API and connected React implementation completed on bounded branch, final validation and draft-PR review pending
 - **Product Owner approval:** 31/07/2026
 - **Domain:** Planning
 - **Business owner:** Tổ Kế hoạch
@@ -24,10 +24,9 @@ Weekly Menu, Attendance, and Pantry approval evidence, creates an immutable
 readiness evaluation, controls the closed lifecycle, and returns authoritative
 readback. React coordinates selection and presentation only.
 
-Product Owner approval on 31/07/2026 establishes Product and Architecture
-authority only. It creates no executable authority. A separate bounded
-implementation task is required before any migration, function, capability,
-grant, adapter, React component, or test may be changed.
+Product Owner approval on 31/07/2026 established Product and Architecture
+authority. The separately authorized bounded implementation is recorded in
+[TASK-RMVP-03B implementation](../implementation-tasks/TASK-RMVP-03B-connected-planning-input-readiness-implementation.md).
 
 ## 2. OPS_SYSTEM_MAP placement
 
@@ -346,6 +345,14 @@ The accepted future implementation ceiling is:
 This ceiling is binding Product and Architecture authority, not implementation
 authorization.
 
+The separately authorized RMVP-03B-02 implementation realizes this ceiling in
+one connected `readiness/` submodule and one fourth Planning Inputs tab. The
+existing two-source comparison is labelled non-authoritative, action
+eligibility remains backend-derived, exact retry requests are preserved
+without automatic retry, and opaque history cursors are appended without
+client decoding. The browser registry is exactly 67 functions and the five
+focused frontend files pass 47 tests.
+
 ## 10. Historical and downstream boundary
 
 RMVP-03B preserves:
@@ -369,9 +376,12 @@ unconsumed.
 
 ## 11. Migration and rollback effect
 
-This documentation task has no schema, data, grant, application, deployment,
-or operational rollback effect. It is reverted through normal Git history.
+The bounded implementation adds one forward-only migration with one capability,
+twenty private helpers, four `atlas_api` functions, twelve RLS policies, and
+the minimum runtime grants. It adds no relation, view, role, scope kind,
+lifecycle state, or trigger, and performs no production seed or backfill.
 
-A later approved implementation must state its own additive migration and
-forward-only rollback effects while preserving immutable readiness, receipt,
-event, and audit history.
+Rollback is a normal Git revert before deployment. After deployment, the safe
+operational rollback is a forward migration that revokes the four API entry
+points while preserving immutable readiness evaluations, receipts, events, and
+audits; those historical rows must not be deleted or rewritten.

@@ -88,6 +88,10 @@ PANTRY-02 implements exactly six reviewed APIs for one Planning-owned manual Pan
 
 The planned generic `adjustments_add_pantry_need` item below is not the PANTRY-02 implementation command and remains unimplemented.
 
+## 4C. Implemented connected Planning Input Readiness contract
+
+RMVP-03B implements exactly four reviewed APIs: one shaped exact-period readiness workbench read, one immutable evaluation command, one handoff-only Need Generation request, and one reasoned invalidation command. The surface adds one unbound write capability, reuses existing Planning runtimes and `GLOBAL` scope, and creates no relation, view, role, source trigger, lifecycle state, Need Generation run, or downstream fact. The exact `RMVP-03B.v1` envelopes, candidate matrix, history cursor, receipts, events, audit evidence, safe errors, and non-mutation rules are specified in [RMVP-03B Planning Input Readiness API Contract](rmvp-03b-planning-input-readiness.md).
+
 ## 5. Contract template
 
 ```md
