@@ -96,7 +96,7 @@ run
 
 The line also retains the stable Weekly Menu and Attendance line anchors carried by the exact snapshot lines. Its opaque UUID is not derived from source strings. The complete atomic anchor is unique within the run with null conversion treated deterministically.
 
-For `PANTRY_DIRECT`, one positive approved Pantry snapshot line creates one immutable `ACTIVE` atomic contribution for:
+For `PANTRY_DIRECT`, every-and-only positive approved Pantry snapshot line whose `service_date` is between the exact run `period_start` and `period_end`, inclusive, creates one immutable `ACTIVE` atomic contribution for:
 
 ```text
 run
@@ -140,7 +140,7 @@ Generation requires all of the following to remain true in one transaction:
 - upstream statuses remain allowed by H0A4b; and
 - all three source periods still contain the exact evaluated period.
 
-`READY` is a readiness result, not the Need Generation entry state. A rejected precondition cannot create a partial run or incomplete input snapshot. H0A5 never edits the root, evaluation, bindings, or issues. The Pantry triple remains mandatory even when its approved snapshot contains zero lines.
+`READY` is a readiness result, not the Need Generation entry state. A rejected precondition cannot create a partial run or incomplete input snapshot. H0A5 never edits the root, evaluation, bindings, or issues. The Pantry triple remains mandatory when its approved snapshot contains zero lines and when a positive approved snapshot contains zero positive lines inside the exact run period.
 
 ## 4. Fixed MVP formula and numeric contract
 
@@ -182,7 +182,9 @@ theoretical_quantity
 
 The Unit, Ingredient, School, Delivery Location and service date equal the exact approved Pantry snapshot-line facts. PostgreSQL copies the strictly positive quantity exactly into `numeric(20,6)`. Pantry direct contribution performs no Attendance arithmetic, Recipe calculation, conversion, rounding, yield, waste, supplier rule, Warehouse rule or client arithmetic, and it does not claim that the Recipe calculation-contract revision produced the quantity.
 
-One positive Pantry snapshot line produces exactly one active contribution. A valid approved zero-line Pantry snapshot remains input-header evidence, produces no Pantry contribution or placeholder and is not an issue. A run may still contain Recipe-derived contributions.
+Every positive Pantry snapshot line inside the exact inclusive run period produces exactly one active contribution. Positive lines outside that period remain historical source evidence through the bound Pantry snapshot header but create no theoretical line or Need Generation issue for the run, do not increment `generated_line_count` and are not release members.
+
+A valid approved zero-line Pantry snapshot remains input-header evidence, produces no Pantry contribution or placeholder and is not an issue. Separately, an approved snapshot may contain positive lines but zero positive lines inside the exact run period; this valid period-filtered case retains the same exact header, is neither missing Pantry nor an explicit zero-line snapshot, and creates zero active Pantry contributions from the out-of-period lines. Absent an in-period predecessor obligation, it creates zero Pantry-direct theoretical lines; only required in-period `REMOVED` successor evidence under section 7.2 may still exist. A run may still contain Recipe-derived contributions.
 
 ## 5. Recipe selection
 
@@ -256,9 +258,11 @@ A later separately approved decision may add explicit reintroduction support onl
 
 ### 7.2 Pantry-direct lineage
 
-Across directly linked successor runs for the same Planning Input Set and immutable period, the same stable `PantryNeedLine` has exactly one compatible Pantry-direct predecessor. Quantity, Purpose, note, source reference, server-resolved Unit and exact snapshot-line facts may change while the stable Pantry line preserves continuity. A genuinely new stable Pantry line creates one `ACTIVE` contribution without a predecessor.
+Across directly linked successor runs for the same Planning Input Set and immutable exact period, predecessor and removal membership includes only stable Pantry lines represented by positive approved snapshot lines whose `service_date` is inside that period. The same in-period stable `PantryNeedLine` has exactly one compatible Pantry-direct predecessor. Quantity, Purpose, note, source reference, server-resolved Unit and exact snapshot-line facts may change while the stable Pantry line preserves continuity. A genuinely new stable Pantry line in the successor's in-period approved-line set creates one `ACTIVE` contribution without a predecessor.
 
-A stable Pantry line that was active in the predecessor but is omitted from the successor approved snapshot creates exactly one zero `REMOVED` contribution. It binds the same stable Pantry line, one predecessor and the successor Pantry approval snapshot as controlled absence; it does not fabricate a current snapshot-line row. Every prior active Pantry contribution requires one compatible active or removed successor. Silent omission, fork, split, merge, cross-period/input-set or unrelated-line wiring is blocking.
+A stable Pantry line that was active inside the exact period in the predecessor but is omitted from the successor's in-period approved-line set creates exactly one zero `REMOVED` contribution. It binds the same stable Pantry line, one predecessor and the successor Pantry approval snapshot as controlled absence; it does not fabricate a current snapshot-line row. Every prior active Pantry contribution inside that immutable run-period scope requires one compatible active or removed successor. Silent omission, fork, split, merge, cross-period/input-set or unrelated-line wiring inside the scope is blocking.
+
+Positive snapshot lines outside the exact immutable run period do not participate in predecessor or removal completeness. They are not omissions, do not require predecessors, create neither `ACTIVE` nor `REMOVED` successors and do not trigger silent-omission or removal issues.
 
 `REMOVED → ACTIVE` reintroduction of the same stable Pantry line is unsupported in the first slice. The existing `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` blocker applies, no active line is admitted as new or given an inferred predecessor, and validation/release remain prohibited pending invalidation and separate approval.
 

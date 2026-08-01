@@ -26,17 +26,17 @@ The complete decisions are canonical only in [PNG-P01 through PNG-P12](../decisi
 
 ## 2. OPS_SYSTEM_MAP placement
 
-| Layer               | PANTRY-NG-01 placement                                                                                                                                                                                                                  |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mission             | Capture every operational Ingredient need before purchasing.                                                                                                                                                                            |
-| Business capability | Convert approved Planning inputs into controlled theoretical demand.                                                                                                                                                                    |
-| Business domain     | Planning.                                                                                                                                                                                                                               |
-| Business objects    | `PantryNeedApprovalSnapshot`, `PantryNeedApprovalSnapshotLine`, `NeedGenerationRun`, `NeedGenerationInputSnapshot`, `TheoreticalNeedLine`, `NeedGenerationIssue`, `NeedGenerationReleaseSnapshot`.                                      |
-| Business contract   | Each approved positive Pantry line contributes its exact Ingredient quantity; an approved zero-line Pantry snapshot proves controlled absence; Pantry bypasses Recipe explosion but not readiness, generation, release or confirmation. |
-| Command/event       | Not implemented in PANTRY-NG-01.                                                                                                                                                                                                        |
-| Read model          | Not implemented in PANTRY-NG-01.                                                                                                                                                                                                        |
-| Application         | No React or Retool change.                                                                                                                                                                                                              |
-| Technology          | Future bounded PostgreSQL amendment defined as a ceiling only; no executable change.                                                                                                                                                    |
+| Layer               | PANTRY-NG-01 placement                                                                                                                                                                                                                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mission             | Capture every operational Ingredient need before purchasing.                                                                                                                                                                                                                           |
+| Business capability | Convert approved Planning inputs into controlled theoretical demand.                                                                                                                                                                                                                   |
+| Business domain     | Planning.                                                                                                                                                                                                                                                                              |
+| Business objects    | `PantryNeedApprovalSnapshot`, `PantryNeedApprovalSnapshotLine`, `NeedGenerationRun`, `NeedGenerationInputSnapshot`, `TheoreticalNeedLine`, `NeedGenerationIssue`, `NeedGenerationReleaseSnapshot`.                                                                                     |
+| Business contract   | Each approved positive Pantry line inside the exact inclusive run period contributes its exact Ingredient quantity; explicit zero-line and valid zero-in-period cases retain header evidence; Pantry bypasses Recipe explosion but not readiness, generation, release or confirmation. |
+| Command/event       | Not implemented in PANTRY-NG-01.                                                                                                                                                                                                                                                       |
+| Read model          | Not implemented in PANTRY-NG-01.                                                                                                                                                                                                                                                       |
+| Application         | No React or Retool change.                                                                                                                                                                                                                                                             |
+| Technology          | Future bounded PostgreSQL amendment defined as a ceiling only; no executable change.                                                                                                                                                                                                   |
 
 This placement prevents legacy query structure or UI behavior from defining Planning identity, calculation or lifecycle authority.
 
@@ -57,7 +57,7 @@ PantryNeedBatch at exact approved version
 → zero or more exact PantryNeedApprovalSnapshotLine rows
 → exact Pantry triple on the current READY evaluation
 → the same exact Pantry triple on NeedGenerationInputSnapshot
-→ one PANTRY_DIRECT atomic contribution per positive snapshot line
+→ one PANTRY_DIRECT atomic contribution per positive snapshot line inside the exact inclusive run period
 → combined Need Generation validation and release
 → contribution-based Confirmed Need materialization and later review
 ```
@@ -74,7 +74,7 @@ pantry_need_batch_version
 pantry_need_approval_snapshot_id
 ```
 
-The triple equals the current readiness evaluation exactly. Generation must recheck current batch status, version, latest approval pointer, week containment, typed snapshot ownership and header invariants in the same authoritative transaction. The header remains mandatory for a valid zero-line snapshot.
+The triple equals the current readiness evaluation exactly. Generation must recheck current batch status, version, latest approval pointer, week containment, typed snapshot ownership and header invariants in the same authoritative transaction. The header remains mandatory for both an explicit zero-line snapshot and a positive snapshot with zero positive lines inside the exact run period.
 
 No generic source registry, polymorphic type/ID pair, JSON payload, source token or caller-authored label can replace the typed triple.
 
@@ -89,7 +89,7 @@ The families are mutually exclusive and share the existing run, line disposition
 
 ## 7. Quantity, Unit and positive-line behavior
 
-For each positive approved Pantry snapshot line:
+For every-and-only positive approved Pantry snapshot line whose `service_date` is between the exact run `period_start` and `period_end`, inclusive:
 
 ```text
 one approved Pantry snapshot line
@@ -104,21 +104,27 @@ theoretical Unit
 
 School, Delivery Location, service date and Ingredient also equal the exact approved line. Pantry Purpose and supporting evidence remain reachable through the typed snapshot-line reference.
 
+Positive approved Pantry snapshot lines outside the exact period remain historical source evidence through the bound Pantry snapshot header. They create no theoretical line or Need Generation issue for the run, do not increment `generated_line_count` and are not release members.
+
 There is no Attendance multiplication, Recipe basis division, Recipe explosion, yield, waste, conversion, rounding, supplier/warehouse rule or client arithmetic. Pantry lines are never grouped inside Need Generation, including when they share Ingredient, School, location, date, Unit or Purpose.
 
 Recipe-derived and Pantry-direct contributions may coexist with identical later operational identity; they remain distinct atomic facts.
 
-## 8. Explicit zero-line behavior
+## 8. Zero-contribution Pantry header behavior
 
 A Pantry snapshot is controlled zero-line evidence only when `line_count = 0`, `no_additions_confirmed = true` and no snapshot-line row exists.
 
 Need Generation retains that exact header, produces no Pantry-direct line and raises no missing-source or controlled-absence issue. It creates no zero placeholder and invents no Ingredient, Unit, School, location or Purpose. Recipe-derived contributions may still make the combined run nonempty.
 
+An approved Pantry snapshot that contains positive lines but zero positive lines inside the exact inclusive run period is also valid. It is period-filtered membership, not missing Pantry and not the explicit zero-line form. Need Generation retains the exact header and creates zero `ACTIVE` Pantry-direct contributions from the out-of-period lines, with no placeholder, issue, count increment or release member. Absent an in-period predecessor obligation, it creates zero Pantry-direct theoretical lines; only required in-period `REMOVED` successor evidence under the next section may still exist.
+
 ## 9. Predecessor, removal and reintroduction behavior
 
-Stable `PantryNeedLine` identity carries continuity across directly linked runs for the same input set and period. The same stable line has one predecessor even when quantity, Unit, Purpose, note or source reference changes. A genuinely new stable line has no predecessor.
+Stable `PantryNeedLine` identity carries continuity across directly linked runs for the same input set and immutable exact period. Predecessor and removal membership includes only stable Pantry lines represented by positive approved snapshot lines whose `service_date` is inside that period. The same in-period stable line has one predecessor even when quantity, Unit, Purpose, note or source reference changes. A genuinely new in-period stable line has no predecessor.
 
-Omission of a formerly active stable Pantry line from the successor approved snapshot is explicit removal: create one exact-zero `REMOVED` contribution with one predecessor, the same stable Pantry line and the successor Pantry snapshot header as controlled absence. It has no fabricated current snapshot-line row. Every prior active Pantry contribution requires one active or removed successor; silent omission, fork, split, merge or cross-chain wiring is blocking.
+Omission of a formerly active in-period stable Pantry line from the successor's in-period approved-line set is explicit removal: create one exact-zero `REMOVED` contribution with one predecessor, the same stable Pantry line and the successor Pantry snapshot header as controlled absence. It has no fabricated current snapshot-line row. Every prior active Pantry contribution inside that immutable run-period scope requires one active or removed successor; silent omission, fork, split, merge or cross-chain wiring inside the scope is blocking.
+
+Positive snapshot lines outside the exact immutable run period do not participate in predecessor or removal completeness. They are not omissions, do not require predecessors, create neither `ACTIVE` nor `REMOVED` successors and do not trigger silent-omission or removal issues.
 
 Reintroduction after `REMOVED` is unsupported in the first slice. It uses the existing `UNSUPPORTED_REINTRODUCTION_AFTER_REMOVAL` blocker, remains unreleasable and requires invalidation plus a separately approved extension.
 

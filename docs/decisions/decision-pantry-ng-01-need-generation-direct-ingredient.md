@@ -24,9 +24,9 @@ This document is the sole complete registry for `PNG-P01` through `PNG-P12`. Oth
 | PNG-P03 | Bind the exact Pantry batch, version and approval snapshot on every new run input snapshot.                  |
 | PNG-P04 | Extend the existing atomic theoretical-line relation with mutually exclusive typed lineage families.         |
 | PNG-P05 | Copy the exact approved Pantry quantity and Unit without Recipe calculation, conversion or rounding.         |
-| PNG-P06 | Preserve one atomic contribution per positive approved Pantry snapshot line without aggregation.             |
-| PNG-P07 | Retain a valid zero-line Pantry header as evidence and create no Pantry contribution.                        |
-| PNG-P08 | Preserve stable Pantry-line predecessor, correction and explicit removal lineage across successor runs.      |
+| PNG-P06 | Generate one unaggregated atomic contribution per positive in-period approved Pantry snapshot line.          |
+| PNG-P07 | Retain Pantry header evidence when explicit zero-line or no positive line is in the exact run period.        |
+| PNG-P08 | Scope stable Pantry-line predecessor, correction and removal completeness to exact in-period membership.     |
 | PNG-P09 | Block first-slice reintroduction of a stable Pantry line after `REMOVED`.                                    |
 | PNG-P10 | Reuse precise H0A5 issues and add only three exact Pantry-specific blockers.                                 |
 | PNG-P11 | Keep one release boundary and preserve compatibility with contribution-based Confirmed Need materialization. |
@@ -110,7 +110,7 @@ Each active source line and contribution is strictly positive. Zero and negative
 
 ### PNG-P06 — Atomicity and coexistence
 
-One positive approved Pantry snapshot line produces exactly one `ACTIVE` atomic Pantry-direct theoretical contribution. Its source anchor is:
+Every-and-only positive approved Pantry snapshot line whose `service_date` is between the exact run `period_start` and `period_end`, inclusive, produces exactly one `ACTIVE` atomic Pantry-direct theoretical contribution. Its source anchor is:
 
 ```text
 Need Generation run
@@ -118,9 +118,11 @@ Need Generation run
 + exact Pantry approval-snapshot line
 ```
 
-Need Generation does not aggregate Pantry contributions by Ingredient, School, Delivery Location, service date, Unit or Pantry Purpose. Recipe-derived and Pantry-direct contributions that later share one downstream operational identity remain separate atomic facts. Later Confirmed Need materialization may group them only through immutable contribution membership.
+Positive approved Pantry snapshot lines outside that exact period remain historical source evidence through the bound Pantry snapshot header. They create no theoretical line or Need Generation issue for the run, do not increment `generated_line_count` and are not release members.
 
-### PNG-P07 — Explicit zero-line Pantry behavior
+Need Generation does not aggregate eligible Pantry contributions by Ingredient, School, Delivery Location, service date, Unit or Pantry Purpose. Recipe-derived and Pantry-direct contributions that later share one downstream operational identity remain separate atomic facts. Later Confirmed Need materialization may group them only through immutable contribution membership.
+
+### PNG-P07 — Zero-contribution Pantry header behavior
 
 A valid approved zero-line Pantry snapshot requires all of:
 
@@ -132,20 +134,24 @@ no Pantry approval-snapshot-line rows
 
 Need Generation retains the exact Pantry header in `NeedGenerationInputSnapshot` and creates zero Pantry-direct theoretical lines. It creates no zero-quantity placeholder and fabricates no Ingredient, Unit, School, Delivery Location or Purpose. Controlled absence is neither missing Pantry nor a Need Generation issue.
 
-The run may still contain Recipe-derived contributions. The exact Pantry header remains part of immutable run and release explainability.
+Separately, an approved Pantry snapshot may contain positive lines while containing zero positive lines inside the exact inclusive run period. This is valid period-filtered membership, not a missing Pantry source and not the explicit zero-line form above. Need Generation retains the same exact header and creates zero `ACTIVE` Pantry-direct contributions from those out-of-period lines, with no placeholder, issue, `generated_line_count` increment or release member.
+
+Absent an in-period predecessor obligation, either valid zero-contribution case creates zero Pantry-direct theoretical lines. If a directly linked predecessor has an active in-period Pantry line, only the exact `REMOVED` successor evidence required by `PNG-P08` may still be created; an out-of-period line never creates that obligation. The run may still contain Recipe-derived contributions. The exact Pantry header remains part of immutable run and release explainability.
 
 ### PNG-P08 — Successor and predecessor lineage
 
-Across directly linked successor Need Generation runs for the same Planning Input Set and immutable period:
+Across directly linked successor Need Generation runs for the same Planning Input Set and immutable period, predecessor and removal membership is limited to stable Pantry lines represented by positive approved snapshot lines whose `service_date` is inside that exact inclusive period:
 
-1. The same stable `PantryNeedLine` appearing in the successor approved snapshot has exactly one compatible predecessor Pantry-direct contribution.
+1. The same stable `PantryNeedLine` appearing in the successor's in-period approved-line set has exactly one compatible predecessor Pantry-direct contribution.
 2. Quantity, Purpose, note, source reference or server-resolved Unit corrections may change the current facts while preserving the stable Pantry line identity and predecessor chain.
-3. A genuinely new stable Pantry line creates one `ACTIVE` contribution without a predecessor.
-4. A stable Pantry line that was active in the direct predecessor but is omitted from the successor approved snapshot creates exactly one `REMOVED` zero contribution. It has exactly one predecessor, retains the same stable Pantry line, uses the successor Pantry approval snapshot as controlled absence evidence and has no fabricated current snapshot-line row.
+3. A genuinely new stable Pantry line in the successor's in-period approved-line set creates one `ACTIVE` contribution without a predecessor.
+4. A stable Pantry line that was active inside the exact period in the direct predecessor but is omitted from the successor's in-period approved-line set creates exactly one `REMOVED` zero contribution. It has exactly one predecessor, retains the same stable Pantry line, uses the successor Pantry approval snapshot as controlled absence evidence and has no fabricated current snapshot-line row.
 5. A predecessor cannot fork, split, merge, cross a Planning Input Set, cross a period or attach to an unrelated stable Pantry line.
-6. Every prior active Pantry-direct contribution has exactly one compatible active or removed successor. Silent omission is blocking.
+6. Every prior active Pantry-direct contribution inside that immutable run-period scope has exactly one compatible active or removed successor. Silent omission inside that scope is blocking.
 
 The exact current snapshot-line fact is required for `ACTIVE` and absent for the valid `REMOVED` form. The successor snapshot header and stable line provide the typed removal evidence.
+
+Positive snapshot lines outside the exact immutable run period do not participate in predecessor or removal completeness. They are not omissions, do not require predecessors, create neither `ACTIVE` nor `REMOVED` successors and do not trigger silent-omission or removal issues.
 
 ### PNG-P09 — Reintroduction boundary
 
