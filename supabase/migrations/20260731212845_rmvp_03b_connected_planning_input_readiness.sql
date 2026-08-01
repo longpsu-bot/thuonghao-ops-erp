@@ -1268,7 +1268,7 @@ create function atlas_core.rmvp_03b_workbench_payload(
 returns jsonb
 language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $$
 declare
@@ -2527,11 +2527,6 @@ to atlas_planning_command_runtime;
 grant update on atlas_planning.planning_input_sets
 to atlas_planning_command_runtime;
 
-grant select on
-  atlas_audit.domain_events,
-  atlas_audit.audit_events
-to atlas_planning_command_runtime;
-
 create policy rmvp_03b_read_input_sets_select
 on atlas_planning.planning_input_sets
 for select to atlas_read_runtime using (true);
@@ -2633,8 +2628,6 @@ grant execute on function
   atlas_core.rmvp_03b_calculate_issues(date, date, jsonb, jsonb, jsonb),
   atlas_core.rmvp_03b_bindings_current(uuid, date, date),
   atlas_core.rmvp_03b_stale_source_types(uuid, date, date),
-  atlas_core.rmvp_03b_all_history_items(uuid),
-  atlas_core.rmvp_03b_history_page(uuid, date, date, integer, text),
   atlas_core.rmvp_03b_workbench_payload(date, date, jsonb, integer, text),
   atlas_core.rmvp_03b_begin_receipt(jsonb, uuid, text, text),
   atlas_core.rmvp_03b_prepare_command(jsonb, text, text),
@@ -2652,6 +2645,12 @@ reset role;
 
 grant atlas_planning_command_runtime, atlas_read_runtime
 to postgres with set true;
+grant create on schema atlas_core to atlas_read_runtime;
+alter function atlas_core.rmvp_03b_workbench_payload(
+  date, date, jsonb, integer, text
+)
+owner to atlas_read_runtime;
+revoke create on schema atlas_core from atlas_read_runtime;
 grant create on schema atlas_api
 to atlas_planning_command_runtime, atlas_read_runtime;
 
@@ -2689,3 +2688,5 @@ comment on function atlas_api.request_planning_input_need_generation(jsonb)
 is 'RMVP-03B handoff-only READY to NEED_GENERATION_REQUESTED command; creates no Need Generation run or quantity.';
 comment on function atlas_api.invalidate_planning_input_readiness(jsonb)
 is 'RMVP-03B reasoned readiness invalidation retaining immutable evaluation/source evidence and never mutating a Need Generation run.';
+
+revoke atlas_planning_command_runtime, atlas_read_runtime from postgres;

@@ -71,8 +71,125 @@ select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=an
 select is((select count(*)::integer from pg_policy p where p.polname like 'pa_06e_h0cb%' and p.polroles && array[(select oid from pg_roles where rolname='authenticated')]), 0, 'H0Cb adds no API-role table policy');
 
 -- Existing runtime isolation and bounded source contract.
-select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_command_runtime'), 18, 'planning command runtime owns PA-05D, RMVP-03A, and PANTRY-02 command/integrity functions');
-select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_command_runtime' and table_name in ('need_generation_runs','need_generation_release_snapshots','confirmed_need_line_revision_contributions')), 0, 'PA-05D runtime receives no H0Cb source or membership access');
+select is(
+  jsonb_build_object(
+    'historical_functions', (
+      select array_agg(
+        format('%s.%s(%s)', n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
+        order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)
+      )::text[]
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where pg_get_userbyid(p.proowner) = 'atlas_planning_command_runtime'
+        and not (
+          n.nspname = 'atlas_api'
+          and p.proname in (
+            'evaluate_planning_input_readiness',
+            'invalidate_planning_input_readiness',
+            'request_planning_input_need_generation'
+          )
+        )
+    ),
+    'rmvp_03b_command_functions', (
+      select array_agg(
+        format('%s.%s(%s)', n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
+        order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)
+      )::text[]
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where pg_get_userbyid(p.proowner) = 'atlas_planning_command_runtime'
+        and n.nspname = 'atlas_api'
+        and p.proname in (
+          'evaluate_planning_input_readiness',
+          'invalidate_planning_input_readiness',
+          'request_planning_input_need_generation'
+        )
+    )
+  ),
+  jsonb_build_object(
+    'historical_functions', array[
+      'atlas_api.approve_attendance(request jsonb)',
+      'atlas_api.approve_pantry(request jsonb)',
+      'atlas_api.approve_weekly_menu(request jsonb)',
+      'atlas_api.create_attendance_draft_from_defaults(request jsonb)',
+      'atlas_api.record_wholesale_source(request jsonb)',
+      'atlas_api.release_dispatch_requirement(request jsonb)',
+      'atlas_api.release_purchase_handoff(request jsonb)',
+      'atlas_api.release_wholesale_order(request jsonb)',
+      'atlas_api.reopen_attendance(request jsonb)',
+      'atlas_api.reopen_pantry(request jsonb)',
+      'atlas_api.reopen_weekly_menu(request jsonb)',
+      'atlas_api.save_attendance_draft(request jsonb)',
+      'atlas_api.save_pantry_draft(request jsonb)',
+      'atlas_api.save_weekly_menu_draft(request jsonb)',
+      'atlas_api.validate_attendance(request jsonb)',
+      'atlas_api.validate_pantry(request jsonb)',
+      'atlas_api.validate_weekly_menu(request jsonb)',
+      'atlas_planning.pantry_02_snapshot_integrity_guard()'
+    ]::text[],
+    'rmvp_03b_command_functions', array[
+      'atlas_api.evaluate_planning_input_readiness(request jsonb)',
+      'atlas_api.invalidate_planning_input_readiness(request jsonb)',
+      'atlas_api.request_planning_input_need_generation(request jsonb)'
+    ]::text[]
+  ),
+  'planning command runtime retains the exact historical function set plus exactly three RMVP-03B command functions'
+);
+select is(
+  jsonb_build_object(
+    'need_generation_grants', (
+      select array_agg(
+        format('%s|%s', table_name, privilege_type)
+        order by table_name, privilege_type
+      )::text[]
+      from information_schema.role_table_grants
+      where grantee = 'atlas_planning_command_runtime'
+        and table_schema = 'atlas_planning'
+        and table_name in (
+          'need_generation_calculation_contracts',
+          'need_generation_calculation_contract_revisions',
+          'need_generation_runs',
+          'need_generation_input_snapshots',
+          'need_generation_recipe_selections',
+          'need_generation_recipe_line_uses',
+          'theoretical_need_lines',
+          'need_generation_issues',
+          'need_generation_release_snapshots',
+          'need_generation_release_snapshot_lines',
+          'need_generation_release_snapshot_issues'
+        )
+    ),
+    'rmvp_03b_downstream_relation_reference_count', (
+      select count(*)::integer
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where (
+        (n.nspname = 'atlas_core' and p.proname like 'rmvp_03b_%')
+        or (
+          n.nspname = 'atlas_api'
+          and p.proname in (
+            'evaluate_planning_input_readiness',
+            'get_planning_input_readiness_workbench',
+            'invalidate_planning_input_readiness',
+            'request_planning_input_need_generation'
+          )
+        )
+      )
+        and (
+          pg_get_functiondef(p.oid) like '%atlas_planning.confirmed_need%'
+          or pg_get_functiondef(p.oid) like '%atlas_planning.purchase_handoff%'
+          or pg_get_functiondef(p.oid) like '%atlas_procurement.%'
+          or pg_get_functiondef(p.oid) like '%atlas_evidence.%'
+          or pg_get_functiondef(p.oid) like '%atlas_dispatch.%'
+        )
+    )
+  ),
+  jsonb_build_object(
+    'need_generation_grants', array['need_generation_runs|SELECT']::text[],
+    'rmvp_03b_downstream_relation_reference_count', 0
+  ),
+  'planning command runtime has only exact consumed-run SELECT and RMVP-03B references no Confirmed Need, Purchase Handoff, or downstream relation'
+);
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%set_config(''lock_timeout'', ''5s'', true)%'), 'CMD-15 fixes the five-second lock timeout');
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%set_config(''statement_timeout'', ''120s'', true)%'), 'CMD-15 fixes the 120-second statement timeout');
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%created_confirmed_need_line_count%','%reused_confirmed_need_line_count%','%retired_confirmed_need_line_count%','%created_line_revision_count%','%created_revision_contribution_count%','%current_line_revision_count%','%superseded_line_revision_count%'])), 'CMD-15 contains exactly the seven named bounded count fields');

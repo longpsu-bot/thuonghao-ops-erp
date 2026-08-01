@@ -901,6 +901,19 @@ select is(
       join pg_namespace as n on n.oid = p.pronamespace
       where n.nspname = 'atlas_api'
     ),
+    'rmvp_03b_api_names',
+    (
+      select array_agg(p.proname order by p.proname)::text[]
+      from pg_proc as p
+      join pg_namespace as n on n.oid = p.pronamespace
+      where n.nspname = 'atlas_api'
+        and p.proname in (
+          'evaluate_planning_input_readiness',
+          'get_planning_input_readiness_workbench',
+          'invalidate_planning_input_readiness',
+          'request_planning_input_need_generation'
+        )
+    ),
     'seed_rows',
     (
       select
@@ -915,10 +928,16 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 64,
+    'api_total', 68,
+    'rmvp_03b_api_names', array[
+      'evaluate_planning_input_readiness',
+      'get_planning_input_readiness_workbench',
+      'invalidate_planning_input_readiness',
+      'request_planning_input_need_generation'
+    ]::text[],
     'seed_rows', 0
   ),
-  'H1A-STR-56 zero H1A role, capability, runtime, API, PA-06A, or production-policy row exists'
+  'H1A-STR-56 H1A has zero role, capability, runtime, API, or seed delta while the current API catalog includes exactly the four approved RMVP-03B APIs'
 );
 
 select * from finish();

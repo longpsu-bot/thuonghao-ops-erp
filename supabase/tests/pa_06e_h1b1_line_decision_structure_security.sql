@@ -985,6 +985,18 @@ select is(
       from pg_proc
       where pronamespace = 'atlas_api'::regnamespace
     ),
+    'rmvp_03b_api_names',
+    (
+      select array_agg(proname order by proname)::text[]
+      from pg_proc
+      where pronamespace = 'atlas_api'::regnamespace
+        and proname in (
+          'evaluate_planning_input_readiness',
+          'get_planning_input_readiness_workbench',
+          'invalidate_planning_input_readiness',
+          'request_planning_input_need_generation'
+        )
+    ),
     'views',
     (
       select count(*)
@@ -999,10 +1011,16 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 64,
+    'api_total', 68,
+    'rmvp_03b_api_names', array[
+      'evaluate_planning_input_readiness',
+      'get_planning_input_readiness_workbench',
+      'invalidate_planning_input_readiness',
+      'request_planning_input_need_generation'
+    ]::text[],
     'views', 0
   ),
-  'H1B1-STR-61 roles, capabilities, memberships, runtimes, APIs, views, commands, and events have zero H1B1 delta'
+  'H1B1-STR-61 H1B1 has zero role, capability, API, or view delta while the current API catalog includes exactly the four approved RMVP-03B APIs'
 );
 select ok(
   not exists (
