@@ -351,7 +351,7 @@ PANTRY-01 itself changes no Planning Input relation, evaluation, issue, command,
 
 ## 10. Need Generation boundary
 
-PANTRY-NG-01 now approves the product and architecture direction for each positive-quantity approved Pantry snapshot line to become a direct Ingredient contribution:
+Every-and-only positive approved Pantry snapshot line whose service date falls inside the exact inclusive Need Generation run period becomes a direct Ingredient contribution:
 
 ```text
 Pantry snapshot line
@@ -360,6 +360,8 @@ Pantry snapshot line
 → approved Unit
 → Theoretical Need contribution
 ```
+
+Positive out-of-period lines remain evidence through the bound Pantry snapshot header but create no contribution. A positive snapshot with zero in-period lines is distinct from an explicit `no_additions_confirmed` zero-line snapshot.
 
 Pantry bypasses Recipe explosion because it already identifies the Ingredient. It does not bypass Planning Input evaluation, immutable run input snapshots, validation, release membership or Confirmed Need review.
 
