@@ -357,6 +357,8 @@ begin
     planning_input_set_id, planning_input_evaluation_id, evaluation_version,
     weekly_menu_id, weekly_menu_version, weekly_menu_approval_snapshot_id,
     attendance_batch_id, attendance_version, attendance_approval_snapshot_id,
+    pantry_need_batch_id, pantry_need_batch_version,
+    pantry_need_approval_snapshot_id,
     need_generation_calculation_contract_id,
     need_generation_calculation_contract_revision_id,
     calculation_contract_revision_number, captured_at
@@ -369,6 +371,8 @@ begin
     'b5100000-0000-0000-0000-000000000220',
     'b5100000-0000-0000-0000-000000000300', 1,
     'b5100000-0000-0000-0000-000000000320',
+    'b5100000-0000-0000-0000-000000000330', 3,
+    'b5100000-0000-0000-0000-000000000332',
     'b5100000-0000-0000-0000-000000000700',
     'b5100000-0000-0000-0000-000000000701', 1,
     timestamptz '2026-11-01 09:30:00+07'
@@ -549,6 +553,8 @@ insert into atlas_planning.need_generation_input_snapshots (
   planning_input_set_id, planning_input_evaluation_id, evaluation_version,
   weekly_menu_id, weekly_menu_version, weekly_menu_approval_snapshot_id,
   attendance_batch_id, attendance_version, attendance_approval_snapshot_id,
+  pantry_need_batch_id, pantry_need_batch_version,
+  pantry_need_approval_snapshot_id,
   need_generation_calculation_contract_id,
   need_generation_calculation_contract_revision_id,
   calculation_contract_revision_number, captured_at
@@ -561,6 +567,8 @@ insert into atlas_planning.need_generation_input_snapshots (
   'b5100000-0000-0000-0000-000000000220',
   'b5100000-0000-0000-0000-000000000300', 1,
   'b5100000-0000-0000-0000-000000000320',
+  'b5100000-0000-0000-0000-000000000330', 3,
+  'b5100000-0000-0000-0000-000000000332',
   'b5100000-0000-0000-0000-000000000700',
   'b5100000-0000-0000-0000-000000000701', 1,
   timestamptz '2026-11-01 10:00:00+07'

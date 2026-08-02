@@ -151,6 +151,7 @@ jobs:
           pnpm exec supabase test db supabase/tests/pa_06e_h0cb_initial_materialization.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0cb_corrected_materialization_history.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0cb_errors_authorization_concurrency.sql --local
+          pnpm exec supabase test db supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql --local
           pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
           pnpm exec supabase test db supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql --local
           pnpm local:auth:provision

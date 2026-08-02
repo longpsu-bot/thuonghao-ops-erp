@@ -546,7 +546,9 @@ select is(
       'RELEASE_MEMBERSHIP_MISSING', 'RELEASE_MEMBERSHIP_EXTRA',
       'RELEASE_MEMBERSHIP_ALTERED', 'RELEASE_MEMBERSHIP_DUPLICATED',
       'RELEASE_MEMBERSHIP_CROSS_RUN', 'RELEASE_MEMBERSHIP_WRONG_VERSION',
-      'RELEASE_ISSUE_SUMMARY_MISMATCH'
+      'RELEASE_ISSUE_SUMMARY_MISMATCH', 'MISSING_PANTRY_INPUT_BINDING',
+      'INVALID_PANTRY_SNAPSHOT_MEMBERSHIP',
+      'PANTRY_APPROVED_QUANTITY_UNIT_MISMATCH'
     ]) code(value)
     where (
       select pg_get_constraintdef(con.oid)
@@ -555,8 +557,8 @@ select is(
         and con.conname = 'need_generation_issues_code_check'
     ) like '%' || code.value || '%'
   ),
-  31,
-  'the persisted issue catalog contains exactly the thirty-one post-entry codes'
+  34,
+  'the persisted issue catalog contains exactly the thirty-four post-entry codes'
 );
 
 select ok(

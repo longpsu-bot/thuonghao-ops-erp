@@ -218,7 +218,7 @@ select is((select response_payload from h0cb_initial_results where result_name='
 select is((select response_payload->>'error_code' from h0cb_initial_results where result_name='changed'),'IDEMPOTENCY_CONFLICT','changed command reuse conflicts');
 select is((select response_payload->>'retryable' from h0cb_initial_results where result_name='changed'),'false','changed reuse is nonretryable');
 select is((select count(*)::integer from atlas_planning.confirmed_need_batches where source_kind='NEED_GENERATION'),1,'replay creates no second batch');
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions),2,'replay creates no second revision set');
+select is((select row((select count(*)::integer from atlas_planning.confirmed_need_line_revisions), count(*) filter (where contribution_family='RECIPE_DERIVED')::integer)::text from atlas_planning.theoretical_need_lines where need_generation_run_id='cb100000-0000-0000-0000-000000000100'),'(2,3)','replay creates no second revision set and the historical fixture defaults exactly to Recipe-derived');
 select is((select count(*)::integer from atlas_audit.domain_events where event_type='ConfirmedNeedsCreated'),1,'replay emits no duplicate event');
 select is((select count(*)::integer from atlas_audit.audit_events where event_type='ConfirmedNeedsCreated'),1,'conflict emits no audit event');
 
