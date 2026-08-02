@@ -332,7 +332,7 @@ select is((select count(*)::integer from (values
  ('SOURCE_REMOVAL_POLICY_REQUIRED'),('SOURCE_SPLIT_MERGE_POLICY_REQUIRED'),('REOPEN_REQUIRED'),
  ('DOWNSTREAM_CORRECTION_REQUIRED'),('MATERIALIZATION_LIMIT_EXCEEDED')) required(code)
  where pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%'||code||'%'),15,'all fifteen H0C-specific safe codes are reachable');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%unit_id <> old_contribution.source_unit_id%'),'Unit conversion is rejected as unsupported mapping');
+select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%unit_id <> old_contribution.source_unit_id%','%PANTRY_DIRECT%','%theoretical.delivery_location_id%'])),'Unit conversion remains rejected while Pantry uses its immutable theoretical destination');
 select ok(exists(select 1 from pg_constraint where conrelid='atlas_planning.confirmed_need_line_revision_contributions'::regclass and conname='confirmed_need_line_revision_contributions_unit_check'),'membership enforces source Unit equals controlled Unit');
 select isnt(has_column_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_line_revision_contributions','controlled_unit_id','UPDATE'),true,'runtime cannot rewrite controlled contribution Unit');
 select isnt(has_table_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_line_revision_contributions','DELETE'),true,'runtime cannot delete membership');
