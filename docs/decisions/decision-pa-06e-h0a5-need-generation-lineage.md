@@ -12,6 +12,12 @@
 
 **Parent architecture:** [PA-06E-H0 School-Catering Persistence and Materialization](../architecture/pa-06e-h0-school-catering-persistence-and-materialization-contract.md)
 
+## PANTRY-NG-01 bounded amendment notice
+
+D-028 and [Decision PANTRY-NG-01](decision-pantry-ng-01-need-generation-direct-ingredient.md) add `PANTRY_DIRECT` beside the original Recipe-derived family in one closed atomic contribution classification. The original H0A5 Recipe-derived run, Recipe selection, calculation, Unit, predecessor, issue, lifecycle and release decisions remain valid and become the `RECIPE_DERIVED` branch; no generic source registry, polymorphic owner pair or generic calculation engine is introduced.
+
+PANTRY-NG-01 is product and architecture authority only. The merged H0A5b persistence remains Recipe-only until a separately authorized migration and focused pgTAP amendment merge. The complete Pantry decisions exist only in `PNG-P01` through `PNG-P12`; this notice does not duplicate that registry.
+
 ## 1. Context and governing method
 
 H0A2 supplies stable Recipe and RecipeLine identities, immutable RecipeVersion and RecipeLineRevision evidence, the fixed `PROPORTIONAL_PER_BASIS` calculation kind, and explicit `REMOVED` recipe-line successors. H0A3a and H0A3b supply immutable Weekly Menu and Attendance approval snapshots and stable source-line identities. H0A4b supplies one stable exact-period Planning Input Set, one exact current immutable evaluation, and direct typed Weekly Menu and Attendance snapshot bindings.

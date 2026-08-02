@@ -6,6 +6,8 @@
 **Related UI baseline:** TASK-002G Atlas source-of-need workflow  
 **Decision addendum:** `docs/architecture/task-003-source-of-need-contract-decisions.md`
 
+> **Current authority notice:** TASK-003 is retained historical business-design evidence. Its generic `source_refs`, provisional commands such as `createPantryNeed`, and illustrative TypeScript/JSON shapes are not Atlas physical persistence or API authority. Pantry Need Generation now uses direct typed relational lineage under [PANTRY-NG-01](pantry-ng-01-need-generation-direct-ingredient-amendment.md), its [canonical decision registry](../decisions/decision-pantry-ng-01-need-generation-direct-ingredient.md), and the current H0A5 contracts. Those authorities supersede conflicting generic Pantry lineage while TASK-003 continues to provide source-of-need and Confirmed Need business context.
+
 ## 1. Purpose
 
 TASK-003 defines the backend/domain contract for the source-of-need layer behind Atlas.
@@ -244,12 +246,7 @@ type ConfirmedNeed = {
   final_qty: number;
   variance_qty: number;
 
-  status:
-    | "draft"
-    | "needs_review"
-    | "confirmed"
-    | "reopened"
-    | "cancelled";
+  status: "draft" | "needs_review" | "confirmed" | "reopened" | "cancelled";
 
   reason_code?: string;
   reason?: string;
@@ -398,13 +395,13 @@ cancelled
 
 State meaning:
 
-| State          | Meaning                                                                        |
-| -------------- | ------------------------------------------------------------------------------ |
-| `draft`        | Source exists but is not ready for purchasing.                                 |
+| State          | Meaning                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| `draft`        | Source exists but is not ready for purchasing.                                           |
 | `needs_review` | Missing attendance, unknown dish, missing recipe/BOM, missing quantity, or manual issue. |
-| `confirmed`    | Official quantity is approved for purchasing.                                  |
-| `reopened`     | Previously confirmed demand line is being corrected.                           |
-| `cancelled`    | Need is no longer valid and must not be purchased.                             |
+| `confirmed`    | Official quantity is approved for purchasing.                                            |
+| `reopened`     | Previously confirmed demand line is being corrected.                                     |
+| `cancelled`    | Need is no longer valid and must not be purchased.                                       |
 
 State rules:
 
@@ -419,17 +416,17 @@ State rules:
 Initial backend commands:
 
 ```ts
-syncWeeklyMenuSource(payload)
-upsertAttendanceSource(payload)
-createDirectIngredientRequest(payload)
-createPantryNeed(payload)
+syncWeeklyMenuSource(payload);
+upsertAttendanceSource(payload);
+createDirectIngredientRequest(payload);
+createPantryNeed(payload);
 
-previewCalculatedNeeds(params)
+previewCalculatedNeeds(params);
 
-upsertActualNeedOverride(payload)
-confirmNeed(payload)
-reopenConfirmedNeed(payload)
-cancelConfirmedNeed(payload)
+upsertActualNeedOverride(payload);
+confirmNeed(payload);
+reopenConfirmedNeed(payload);
+cancelConfirmedNeed(payload);
 ```
 
 Boundary rule:
@@ -442,17 +439,17 @@ No purchase allocation should be created from a non-confirmed need.
 
 ### Command Responsibility
 
-| Command                           | Responsibility                                                              |
-| --------------------------------- | --------------------------------------------------------------------------- |
-| `syncWeeklyMenuSource`            | Imports or synchronizes menu source facts.                                  |
-| `upsertAttendanceSource`          | Creates or updates attendance / portion source facts.                       |
-| `createDirectIngredientRequest`   | Creates a direct ingredient request that can become a confirmed need.       |
-| `createPantryNeed`                | Creates Planning-owned pantry/internal ingredient needs for confirmation.   |
-| `previewCalculatedNeeds`          | Shows calculated needs before confirmation; must not authorize purchasing.  |
-| `upsertActualNeedOverride`        | Applies quantity correction with traceability and tiered reason policy.     |
-| `confirmNeed`                     | Approves final quantity for purchasing or fulfilment routing.               |
-| `reopenConfirmedNeed`             | Reopens a confirmed demand line for correction.                             |
-| `cancelConfirmedNeed`             | Cancels a need that is no longer valid.                                     |
+| Command                         | Responsibility                                                             |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| `syncWeeklyMenuSource`          | Imports or synchronizes menu source facts.                                 |
+| `upsertAttendanceSource`        | Creates or updates attendance / portion source facts.                      |
+| `createDirectIngredientRequest` | Creates a direct ingredient request that can become a confirmed need.      |
+| `createPantryNeed`              | Creates Planning-owned pantry/internal ingredient needs for confirmation.  |
+| `previewCalculatedNeeds`        | Shows calculated needs before confirmation; must not authorize purchasing. |
+| `upsertActualNeedOverride`      | Applies quantity correction with traceability and tiered reason policy.    |
+| `confirmNeed`                   | Approves final quantity for purchasing or fulfilment routing.              |
+| `reopenConfirmedNeed`           | Reopens a confirmed demand line for correction.                            |
+| `cancelConfirmedNeed`           | Cancels a need that is no longer valid.                                    |
 
 ## 9. Event Contracts
 
@@ -530,11 +527,11 @@ v_receiving_exception_queue
 
 Read-model responsibilities:
 
-| Read model                     | Responsibility                                                        |
-| ------------------------------ | --------------------------------------------------------------------- |
-| `v_planning_sources_queue`     | Shows source rows, source status, owner, blocker, and readiness.      |
-| `v_confirmed_needs_workbench`  | Shows calculated, actual, variance, final quantity, status, and gate. |
-| `v_need_lineage_explainer`     | Explains where a need came from and what changed.                     |
+| Read model                    | Responsibility                                                        |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `v_planning_sources_queue`    | Shows source rows, source status, owner, blocker, and readiness.      |
+| `v_confirmed_needs_workbench` | Shows calculated, actual, variance, final quantity, status, and gate. |
+| `v_need_lineage_explainer`    | Explains where a need came from and what changed.                     |
 
 ## 11. Supabase Reuse and Gap Map
 
