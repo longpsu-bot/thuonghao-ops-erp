@@ -1773,8 +1773,6 @@ begin
             then theoretical.delivery_location_id
           when theoretical.predecessor_theoretical_need_line_id is not null
             then predecessor_contribution.delivery_location_id
-          when revision.is_current
-            then school.default_delivery_location_id
           else revision.delivery_location_id
         end
       )
@@ -1818,8 +1816,6 @@ begin
           from atlas_planning.need_generation_release_snapshot_lines snapshot_line
           join atlas_planning.theoretical_need_lines theoretical
             on theoretical.theoretical_need_line_id = snapshot_line.theoretical_need_line_id
-          join atlas_admin.schools school
-            on school.school_id = theoretical.school_id
           left join lateral (
             select prior_contribution.delivery_location_id
             from atlas_planning.confirmed_need_line_revision_contributions prior_contribution
@@ -1842,8 +1838,6 @@ begin
                 then theoretical.delivery_location_id
               when theoretical.predecessor_theoretical_need_line_id is not null
                 then predecessor_contribution.delivery_location_id
-              when revision.is_current
-                then school.default_delivery_location_id
               else revision.delivery_location_id
             end
             and not exists (
