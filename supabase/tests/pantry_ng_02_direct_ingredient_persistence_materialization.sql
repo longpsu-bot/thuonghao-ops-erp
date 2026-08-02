@@ -109,19 +109,19 @@ select is((select count(*)::integer from pg_trigger t join pg_class c on c.oid=t
 -- 51
 select is((select count(*)::integer from unnest(array['MISSING_PANTRY_INPUT_BINDING','INVALID_PANTRY_SNAPSHOT_MEMBERSHIP','PANTRY_APPROVED_QUANTITY_UNIT_MISMATCH'])),3,'PNG02-051 issue delta is exactly thirty-one to thirty-four');
 -- 52
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname,p.proname) in (('atlas_planning','pa_06e_h0a5b_need_generation_integrity_guard'),('atlas_api','create_confirmed_needs_from_generation'))),2,'PNG02-052 exactly two existing function identities remain');
+select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where (n.nspname,p.proname) in (('atlas_planning','pa_06e_h0a5b_need_generation_integrity_guard'),('atlas_planning','pa_06e_h0b1b_confirmed_need_revision_membership_total'),('atlas_api','create_confirmed_needs_from_generation'))),3,'PNG02-052 exactly three existing function identities remain');
 -- 53
 select has_function('atlas_api','create_confirmed_needs_from_generation',array['jsonb'],'PNG02-053 CMD-15 signature is unchanged');
 -- 54
 select has_function('atlas_planning','pa_06e_h0a5b_need_generation_integrity_guard',array[]::text[],'PNG02-054 H0A5 guard signature is unchanged');
 -- 55
-select is((select row(pg_get_userbyid((select proowner from pg_proc where oid='atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure)),pg_get_userbyid((select proowner from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure)))::text),'(atlas_owner,atlas_planning_materialization_runtime)','PNG02-055 both function owners are unchanged');
+select has_function('atlas_planning','pa_06e_h0b1b_confirmed_need_revision_membership_total',array[]::text[],'PNG02-055 H0B1b membership guard signature is unchanged');
 -- 56
-select is((select row((select prosecdef from pg_proc where oid='atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure),(select prosecdef from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure))::text),'(f,t)','PNG02-056 invoker and definer modes are unchanged');
+select is((select row(pg_get_userbyid((select proowner from pg_proc where oid='atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure)),pg_get_userbyid((select proowner from pg_proc where oid='atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()'::regprocedure)),pg_get_userbyid((select proowner from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure)))::text),'(atlas_owner,atlas_owner,atlas_planning_materialization_runtime)','PNG02-056 all three function owners are unchanged');
 -- 57
-select is((select jsonb_build_array(to_jsonb((select proconfig from pg_proc where oid='atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure)),to_jsonb((select proconfig from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure)))),jsonb_build_array(to_jsonb(array['search_path=""']::text[]),to_jsonb(array['search_path=""']::text[])),'PNG02-057 both replacement bodies retain empty search paths');
+select is((select jsonb_agg(jsonb_build_object('definer',prosecdef,'search_path',proconfig) order by oid::regprocedure::text) from pg_proc where oid in ('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure,'atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()'::regprocedure,'atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure)),jsonb_build_array(jsonb_build_object('definer',true,'search_path',array['search_path=""']::text[]),jsonb_build_object('definer',false,'search_path',array['search_path=""']::text[]),jsonb_build_object('definer',false,'search_path',array['search_path=""']::text[])),'PNG02-057 all three replacement bodies retain exact security modes and empty search paths');
 -- 58
-select is((select count(*)::integer from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where not t.tgisinternal and t.tgfoid='atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure and n.nspname<>'atlas_planning'),0,'PNG02-058 no H0A5 integrity trigger is added to a source table');
+select is((select count(*)::integer from pg_trigger where not tgisinternal and tgfoid='atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()'::regprocedure),2,'PNG02-058 H0B1b membership guard keeps exactly its two existing trigger attachments');
 
 -- Complete future Pantry binding and source currentness (59-68).
 set local session_replication_role = replica;
@@ -273,49 +273,121 @@ select ok((select pg_get_constraintdef(oid) like '%UNSUPPORTED_MERGE%' from pg_c
 -- 123
 select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure) like '%removed Pantry-line reintroduction creates no line and requires the exact blocker%'),'PNG02-123 Pantry reintroduction remains blocked');
 
--- Recipe regression and CMD-15 compatibility (124-144).
+-- Real mixed Recipe/Pantry destination regression and CMD-15 compatibility (124-144).
+-- Source arrangement is replica-only; the real command and all target guards run normally.
+set local session_replication_role = replica;
+
+insert into atlas_core.actors(actor_id,actor_type,display_name)
+values('d0210000-0000-0000-0000-000000000001','HUMAN','PNG02 mixed-location planner');
+insert into atlas_core.actor_auth_subjects(actor_id,auth_subject_id)
+values('d0210000-0000-0000-0000-000000000001','d0210000-0000-0000-0000-000000000002');
+insert into atlas_core.roles(role_id,role_code,role_name)
+values('d0210000-0000-0000-0000-000000000003','png02.mixed.location.planner','PNG02 mixed-location planner');
+insert into atlas_core.role_capabilities(role_id,capability_id)
+select 'd0210000-0000-0000-0000-000000000003',capability_id from atlas_core.capabilities where capability_code='confirmed_need_generation.materialize';
+insert into atlas_core.actor_role_memberships(actor_id,role_id)
+values('d0210000-0000-0000-0000-000000000001','d0210000-0000-0000-0000-000000000003');
+insert into atlas_core.actor_scopes(actor_id,scope_kind)
+values('d0210000-0000-0000-0000-000000000001','GLOBAL');
+
+insert into atlas_admin.customers(customer_id,customer_code,customer_name,customer_type)
+values('d0210000-0000-0000-0000-000000000010','png02-mixed-customer','PNG02 mixed customer','SCHOOL_CATERING');
+insert into atlas_admin.delivery_locations(delivery_location_id,customer_id,location_code,location_name,address_text) values
+ ('d0210000-0000-0000-0000-000000000011','d0210000-0000-0000-0000-000000000010','png02-default-location','PNG02 default location','Local fixture'),
+ ('d0210000-0000-0000-0000-000000000012','d0210000-0000-0000-0000-000000000010','png02-pantry-location','PNG02 Pantry location','Local fixture');
+insert into atlas_admin.school_types(school_type_id,school_type_code,school_type_name)
+values('d0210000-0000-0000-0000-000000000013','png02-mixed-type','PNG02 mixed type');
+insert into atlas_admin.schools(school_id,customer_id,school_code,school_name,school_type_id,default_delivery_location_id)
+values('d0210000-0000-0000-0000-000000000014','d0210000-0000-0000-0000-000000000010','png02-mixed-school','PNG02 mixed school','d0210000-0000-0000-0000-000000000013','d0210000-0000-0000-0000-000000000011');
+insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
+values('d0210000-0000-0000-0000-000000000015','png02-mixed-kg','PNG02 mixed kilogram','mass');
+insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name)
+values('d0210000-0000-0000-0000-000000000016','png02-mixed-rice','PNG02 mixed rice');
+
+insert into atlas_planning.need_generation_runs(need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,period_start,period_end,attempt_ordinal,input_snapshot_id,run_status,version,generated_line_count,blocking_issue_count,warning_count,generated_by_actor_id,generated_at,validated_by_actor_id,validated_at,released_by_actor_id,released_at,updated_at)
+values('d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000101','d0210000-0000-0000-0000-000000000102',1,date '2026-08-03',date '2026-08-03',1,'d0210000-0000-0000-0000-000000000103','RELEASED_FOR_CONFIRMATION',1,2,0,0,'d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:00:00+07','d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:01:00+07','d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:02:00+07',timestamptz '2026-08-03 08:02:00+07');
+insert into atlas_planning.need_generation_input_snapshots(need_generation_input_snapshot_id,need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,weekly_menu_id,weekly_menu_version,weekly_menu_approval_snapshot_id,attendance_batch_id,attendance_version,attendance_approval_snapshot_id,need_generation_calculation_contract_id,need_generation_calculation_contract_revision_id,calculation_contract_revision_number,captured_at,pantry_need_batch_id,pantry_need_batch_version,pantry_need_approval_snapshot_id)
+values('d0210000-0000-0000-0000-000000000103','d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000101','d0210000-0000-0000-0000-000000000102',1,'d0210000-0000-0000-0000-000000000104',1,'d0210000-0000-0000-0000-000000000105','d0210000-0000-0000-0000-000000000106',1,'d0210000-0000-0000-0000-000000000107','d0210000-0000-0000-0000-000000000108','d0210000-0000-0000-0000-000000000109',1,timestamptz '2026-08-03 08:00:00+07','d0210000-0000-0000-0000-000000000180',1,'d0210000-0000-0000-0000-000000000181');
+insert into atlas_planning.need_generation_recipe_selections(need_generation_recipe_selection_id,need_generation_input_snapshot_id,need_generation_run_id,weekly_menu_approval_snapshot_line_id,weekly_menu_approval_snapshot_id,weekly_menu_id,weekly_menu_version,weekly_menu_line_id,school_id,dish_id,recipe_id,recipe_version_id,recipe_version_number,selection_scope,selected_at)
+values('d0210000-0000-0000-0000-000000000110','d0210000-0000-0000-0000-000000000103','d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000111','d0210000-0000-0000-0000-000000000105','d0210000-0000-0000-0000-000000000104',1,'d0210000-0000-0000-0000-000000000112','d0210000-0000-0000-0000-000000000014','d0210000-0000-0000-0000-000000000113','d0210000-0000-0000-0000-000000000114','d0210000-0000-0000-0000-000000000115',1,'GENERAL',timestamptz '2026-08-03 08:00:00+07');
+insert into atlas_planning.need_generation_recipe_line_uses(need_generation_recipe_line_use_id,need_generation_input_snapshot_id,need_generation_run_id,need_generation_recipe_selection_id,recipe_id,recipe_version_id,recipe_line_id,recipe_line_revision_id,captured_at)
+values('d0210000-0000-0000-0000-000000000116','d0210000-0000-0000-0000-000000000103','d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000110','d0210000-0000-0000-0000-000000000114','d0210000-0000-0000-0000-000000000115','d0210000-0000-0000-0000-000000000117','d0210000-0000-0000-0000-000000000118',timestamptz '2026-08-03 08:00:00+07');
+
+insert into atlas_planning.theoretical_need_lines(theoretical_need_line_id,need_generation_run_id,need_generation_input_snapshot_id,need_generation_recipe_selection_id,need_generation_recipe_line_use_id,weekly_menu_approval_snapshot_line_id,weekly_menu_approval_snapshot_id,weekly_menu_id,weekly_menu_version,weekly_menu_line_id,attendance_approval_snapshot_line_id,attendance_approval_snapshot_id,attendance_batch_id,attendance_version,attendance_line_id,school_id,service_date,dish_id,recipe_id,recipe_version_id,recipe_line_id,recipe_line_revision_id,ingredient_id,unit_id,need_generation_calculation_contract_id,need_generation_calculation_contract_revision_id,calculation_contract_revision_number,line_disposition,theoretical_quantity,created_at,contribution_family)
+values('d0210000-0000-0000-0000-000000000120','d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000103','d0210000-0000-0000-0000-000000000110','d0210000-0000-0000-0000-000000000116','d0210000-0000-0000-0000-000000000111','d0210000-0000-0000-0000-000000000105','d0210000-0000-0000-0000-000000000104',1,'d0210000-0000-0000-0000-000000000112','d0210000-0000-0000-0000-000000000119','d0210000-0000-0000-0000-000000000107','d0210000-0000-0000-0000-000000000106',1,'d0210000-0000-0000-0000-00000000011a','d0210000-0000-0000-0000-000000000014',date '2026-08-03','d0210000-0000-0000-0000-000000000113','d0210000-0000-0000-0000-000000000114','d0210000-0000-0000-0000-000000000115','d0210000-0000-0000-0000-000000000117','d0210000-0000-0000-0000-000000000118','d0210000-0000-0000-0000-000000000016','d0210000-0000-0000-0000-000000000015','d0210000-0000-0000-0000-000000000108','d0210000-0000-0000-0000-000000000109',1,'ACTIVE',5,timestamptz '2026-08-03 08:00:00+07','RECIPE_DERIVED');
+insert into atlas_planning.theoretical_need_lines(theoretical_need_line_id,need_generation_run_id,need_generation_input_snapshot_id,school_id,service_date,ingredient_id,unit_id,line_disposition,theoretical_quantity,created_at,contribution_family,delivery_location_id,pantry_need_batch_id,pantry_need_batch_version,pantry_need_approval_snapshot_id,pantry_need_line_id,pantry_active_snapshot_member_line_id)
+values('d0210000-0000-0000-0000-000000000121','d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000103','d0210000-0000-0000-0000-000000000014',date '2026-08-03','d0210000-0000-0000-0000-000000000016','d0210000-0000-0000-0000-000000000015','ACTIVE',7,timestamptz '2026-08-03 08:00:00+07','PANTRY_DIRECT','d0210000-0000-0000-0000-000000000012','d0210000-0000-0000-0000-000000000180',1,'d0210000-0000-0000-0000-000000000181','d0210000-0000-0000-0000-000000000182','d0210000-0000-0000-0000-000000000182');
+insert into atlas_planning.need_generation_release_snapshots(need_generation_release_snapshot_id,need_generation_run_id,released_run_version,need_generation_input_snapshot_id,released_by_actor_id,released_at,generated_line_count,active_line_count,removed_line_count,blocking_issue_count,warning_count)
+values('d0210000-0000-0000-0000-000000000190','d0210000-0000-0000-0000-000000000100',1,'d0210000-0000-0000-0000-000000000103','d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:02:00+07',2,2,0,0,0);
+insert into atlas_planning.need_generation_release_snapshot_lines(need_generation_release_snapshot_line_id,need_generation_release_snapshot_id,need_generation_run_id,released_run_version,theoretical_need_line_id) values
+ ('d0210000-0000-0000-0000-000000000191','d0210000-0000-0000-0000-000000000190','d0210000-0000-0000-0000-000000000100',1,'d0210000-0000-0000-0000-000000000120'),
+ ('d0210000-0000-0000-0000-000000000192','d0210000-0000-0000-0000-000000000190','d0210000-0000-0000-0000-000000000100',1,'d0210000-0000-0000-0000-000000000121');
+
+set local session_replication_role = origin;
+
+create temporary table png02_mixed_result(response_payload jsonb not null);
+grant select,insert on png02_mixed_result to authenticated;
+create function pg_temp.png02_mixed_request()
+returns jsonb language sql stable set search_path='' as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version','PA-06E-H0C.v1','command_id','d0210000-0000-0000-0000-000000000900'::uuid,
+    'correlation_id','d0210000-0000-0000-0000-000000000901'::uuid,'idempotency_key','png02-mixed-location',
+    'expected_version',1,'requested_by_auth_subject','d0210000-0000-0000-0000-000000000002'::uuid,
+    'requested_at',pg_catalog.transaction_timestamp(),'reason_code','PNG02_MIXED_LOCATION_TEST',
+    'reason_note','Real mixed Recipe and Pantry destination regression','payload',pg_catalog.jsonb_build_object(
+      'need_generation_run_id','d0210000-0000-0000-0000-000000000100'::uuid,
+      'need_generation_run_version',1,'confirmed_need_batch_id',null
+    )
+  )
+$$;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','d0210000-0000-0000-0000-000000000002',true);
+insert into png02_mixed_result values(atlas_api.create_confirmed_needs_from_generation(pg_temp.png02_mixed_request()));
+reset role;
+
 -- 124
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%contribution_family = ''RECIPE_DERIVED''%'),'PNG02-124 CMD-15 retains explicit Recipe lineage validation');
+select is((select response_payload->>'success' from png02_mixed_result),'true','PNG02-124 real mixed-location CMD-15 succeeds');
 -- 125
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%contribution_family = ''PANTRY_DIRECT''%'),'PNG02-125 CMD-15 supports Pantry direct contributions');
+select is((select response_payload->>'idempotency_status' from png02_mixed_result),'COMPLETED','PNG02-125 real mixed-location command commits');
 -- 126
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%case%when theoretical.contribution_family = ''PANTRY_DIRECT''%'),'PNG02-126 mixed releases use one family-aware grouping expression');
+select is((select count(*)::integer from atlas_planning.confirmed_need_lines where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),2,'PNG02-126 mixed destinations create exactly two stable lines');
 -- 127
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%then theoretical.delivery_location_id%'),'PNG02-127 Pantry initial destination is immutable theoretical location');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and is_current),2,'PNG02-127 mixed destinations create exactly two current revisions');
 -- 128
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%old_contribution.delivery_location_id%school.default_delivery_location_id%'),'PNG02-128 Recipe correction preserves prior immutable destination');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),2,'PNG02-128 both released contributions have membership');
 -- 129
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%group by theoretical.service_date, school.customer_id, theoretical.school_id%','%theoretical.ingredient_id, theoretical.unit_id%'])),'PNG02-129 complete operational identity remains date customer School location Ingredient Unit');
+select is((select array_agg(delivery_location_id order by delivery_location_id)::uuid[] from atlas_planning.confirmed_need_lines where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),array['d0210000-0000-0000-0000-000000000011'::uuid,'d0210000-0000-0000-0000-000000000012'::uuid],'PNG02-129 stable lines retain default and Pantry destinations separately');
 -- 130
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%need_generation_release_snapshot_line_id,%theoretical_need_line_id%'),'PNG02-130 one immutable contribution row remains per released theoretical line');
+select is((select array_agg(theoretical.contribution_family order by theoretical.theoretical_need_line_id)::text[] from atlas_planning.confirmed_need_line_revisions revision join atlas_planning.confirmed_need_line_revision_contributions contribution using(confirmed_need_line_revision_id) join atlas_planning.theoretical_need_lines theoretical using(theoretical_need_line_id) where revision.confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and revision.delivery_location_id='d0210000-0000-0000-0000-000000000011'),array['RECIPE_DERIVED']::text[],'PNG02-130 default-location revision contains only Recipe membership');
 -- 131
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%sum(theoretical.theoretical_quantity)%'),'PNG02-131 PostgreSQL numeric sum remains authoritative');
+select is((select array_agg(theoretical.contribution_family order by theoretical.theoretical_need_line_id)::text[] from atlas_planning.confirmed_need_line_revisions revision join atlas_planning.confirmed_need_line_revision_contributions contribution using(confirmed_need_line_revision_id) join atlas_planning.theoretical_need_lines theoretical using(theoretical_need_line_id) where revision.confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and revision.delivery_location_id='d0210000-0000-0000-0000-000000000012'),array['PANTRY_DIRECT']::text[],'PNG02-131 Pantry-location revision contains only Pantry membership');
 -- 132
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like '%successor.theoretical_quantity <> old_contribution.source_theoretical_quantity%'),'PNG02-132 Pantry quantity correction is accepted');
+select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and delivery_location_id='d0210000-0000-0000-0000-000000000011'),5::numeric,'PNG02-132 Recipe revision equals only its exact contribution');
 -- 133
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like all(array['%pantry_need_purposes%','%source_request_reference%','%source_row_reference%'])),'PNG02-133 Pantry metadata correction requires no CMD-15 source read');
+select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and delivery_location_id='d0210000-0000-0000-0000-000000000012'),7::numeric,'PNG02-133 Pantry revision equals only its exact contribution');
 -- 134
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%Add only genuinely absent stable identities%'),'PNG02-134 genuinely new Pantry operational group can create a line');
+select is((select array_agg(theoretical_quantity order by theoretical_quantity)::numeric[] from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),array[5::numeric,7::numeric],'PNG02-134 different-location quantities are never cross-added');
 -- 135
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%successor.contribution_family = ''PANTRY_DIRECT''%successor.line_disposition = ''REMOVED''%'),'PNG02-135 exact Pantry removed successor is accepted');
+select is((select count(*)::integer from atlas_planning.need_generation_release_snapshot_lines release_line where release_line.need_generation_release_snapshot_id='d0210000-0000-0000-0000-000000000190' and (select count(*) from atlas_planning.confirmed_need_line_revision_contributions contribution join atlas_planning.confirmed_need_line_revisions revision using(confirmed_need_line_revision_id) where contribution.need_generation_release_snapshot_line_id=release_line.need_generation_release_snapshot_line_id and revision.is_current)=1),2,'PNG02-135 every released theoretical line has exactly one current membership');
 -- 136
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%and theoretical.line_disposition = ''ACTIVE''%sum(theoretical.theoretical_quantity)%'),'PNG02-136 group-remaining revision uses only active successors');
+select is((select count(*)::integer from (select contribution.theoretical_need_line_id from atlas_planning.confirmed_need_line_revision_contributions contribution join atlas_planning.confirmed_need_line_revisions revision using(confirmed_need_line_revision_id) where contribution.confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and revision.is_current group by contribution.theoretical_need_line_id having count(distinct revision.confirmed_need_line_revision_id)>1) duplicated),0,'PNG02-136 no theoretical line belongs to two current revisions');
 -- 137
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%v_active_count = 0%v_initial%PANTRY_DIRECT%REMOVED%'),'PNG02-137 correction may retire the last Pantry-only group');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions contribution join atlas_planning.confirmed_need_line_revisions revision using(confirmed_need_line_revision_id) join atlas_planning.theoretical_need_lines theoretical using(theoretical_need_line_id) join atlas_admin.schools school on school.school_id=theoretical.school_id where contribution.confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and contribution.delivery_location_id is distinct from case when theoretical.contribution_family='PANTRY_DIRECT' then theoretical.delivery_location_id else school.default_delivery_location_id end),0,'PNG02-137 every membership uses its exact family-aware destination');
 -- 138
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like '%values (%0,%''DRAFT''%'),'PNG02-138 full retirement creates no zero current revision');
+select is((select (response_payload#>>'{result_counts,created_confirmed_need_line_count}')::integer from png02_mixed_result),(select count(*)::integer from atlas_planning.confirmed_need_lines where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),'PNG02-138 response created-line count agrees with committed facts');
 -- 139
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%successor.unit_id <> old_contribution.source_unit_id%','%SOURCE_SPLIT_MERGE_POLICY_REQUIRED%'])),'PNG02-139 Pantry Unit correction retains existing no-conversion rejection');
+select is((select (response_payload#>>'{result_counts,created_line_revision_count}')::integer from png02_mixed_result),(select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),'PNG02-139 response revision count agrees with committed facts');
 -- 140
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like '%INVALID_PREDECESSOR%'),'PNG02-140 CMD-15 invents no error for upstream-unreleasable fixed-anchor changes');
+select is((select (response_payload#>>'{result_counts,created_revision_contribution_count}')::integer from png02_mixed_result),(select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result)),'PNG02-140 response contribution count agrees with committed facts');
 -- 141
-select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure) like all(array['%predecessor.service_date <> line.service_date%','%predecessor.school_id <> line.school_id%','%predecessor.delivery_location_id <> line.delivery_location_id%','%predecessor.ingredient_id <> line.ingredient_id%'])),'PNG02-141 all four fixed Pantry anchors block before CMD-15');
+select is((select (response_payload#>>'{result_counts,current_line_revision_count}')::integer from png02_mixed_result),(select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from png02_mixed_result) and is_current),'PNG02-141 response current-revision count agrees with committed facts');
 -- 142
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like all(array['%atlas_planning.pantry_need_batches%','%atlas_planning.pantry_need_lines%','%atlas_planning.pantry_need_approval_snapshots%','%atlas_planning.pantry_need_approval_snapshot_lines%'])),'PNG02-142 CMD-15 reads no Pantry base table');
+select is((select jsonb_build_array(response_payload#>>'{result_counts,reused_confirmed_need_line_count}',response_payload#>>'{result_counts,retired_confirmed_need_line_count}',response_payload#>>'{result_counts,superseded_line_revision_count}') from png02_mixed_result),jsonb_build_array('0','0','0'),'PNG02-142 initial mixed command reports no reused retired or superseded facts');
 -- 143
-select is((select jsonb_build_object('signature',oid::regprocedure::text,'owner',pg_get_userbyid(proowner),'definer',prosecdef,'search_path',proconfig,'contract',(pg_get_functiondef(oid) like '%atlas_core.pa_06e_h0cb_validate_materialization_request(request)%' and pg_get_functiondef('atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)'::regprocedure) like '%PA-06E-H0C.v1%'),'capability',(select count(*) from atlas_core.capabilities where capability_code='confirmed_need_generation.materialize')) from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure),jsonb_build_object('signature','atlas_api.create_confirmed_needs_from_generation(jsonb)','owner','atlas_planning_materialization_runtime','definer',true,'search_path',array['search_path=""']::text[],'contract',true,'capability',1),'PNG02-143 command signature runtime security contract and capability remain exact');
+select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()'::regprocedure) like all(array['%theoretical.contribution_family = ''PANTRY_DIRECT''%','%then theoretical.delivery_location_id%','%then predecessor_contribution.delivery_location_id%','%then school.default_delivery_location_id%'])) and (select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like all(array['%atlas_planning.pantry_need_batches%','%atlas_planning.pantry_need_lines%','%atlas_planning.pantry_need_approval_snapshots%','%atlas_planning.pantry_need_approval_snapshot_lines%'])),'PNG02-143 H0B1b is destination-aware while CMD-15 reads no Pantry base table');
 -- 144
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%exception%','%when others then%','%pa_05b_finish_command%','%INTERNAL_COMMAND_FAILURE%'])),'PNG02-144 CMD-15 retains atomic rollback and safe failure boundary');
+select is((select jsonb_build_object('signature',oid::regprocedure::text,'owner',pg_get_userbyid(proowner),'definer',prosecdef,'search_path',proconfig,'contract',(pg_get_functiondef(oid) like '%atlas_core.pa_06e_h0cb_validate_materialization_request(request)%' and pg_get_functiondef('atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)'::regprocedure) like '%PA-06E-H0C.v1%'),'capability',(select count(*) from atlas_core.capabilities where capability_code='confirmed_need_generation.materialize')) from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure),jsonb_build_object('signature','atlas_api.create_confirmed_needs_from_generation(jsonb)','owner','atlas_planning_materialization_runtime','definer',true,'search_path',array['search_path=""']::text[],'contract',true,'capability',1),'PNG02-144 command signature runtime security contract and capability remain exact');
 
 select * from finish();
 rollback;

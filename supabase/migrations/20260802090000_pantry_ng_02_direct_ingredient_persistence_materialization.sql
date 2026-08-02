@@ -1672,6 +1672,215 @@ begin
   return new;
 end;
 $$;
+
+create or replace function atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_batch_id uuid;
+  v_source_kind text;
+  v_current_snapshot_id uuid;
+begin
+  v_batch_id := new.confirmed_need_batch_id;
+
+  select batch.source_kind, batch.current_need_generation_release_snapshot_id
+  into strict v_source_kind, v_current_snapshot_id
+  from atlas_planning.confirmed_need_batches batch
+  where batch.confirmed_need_batch_id = v_batch_id;
+
+  if v_source_kind = 'WHOLESALE' then
+    if exists (
+      select 1
+      from atlas_planning.confirmed_need_line_revision_contributions contribution
+      where contribution.confirmed_need_batch_id = v_batch_id
+    ) then
+      raise exception using errcode = '23514', message = 'Wholesale Confirmed Need revisions cannot have contributions';
+    end if;
+    return null;
+  end if;
+
+  if exists (
+    select 1
+    from atlas_planning.confirmed_need_line_revisions revision
+    where revision.confirmed_need_batch_id = v_batch_id
+      and revision.source_kind = 'NEED_GENERATION'
+      and not exists (
+        select 1
+        from atlas_planning.confirmed_need_line_revision_contributions contribution
+        where contribution.confirmed_need_line_revision_id = revision.confirmed_need_line_revision_id
+      )
+  ) then
+    raise exception using errcode = '23514', message = 'Every Need Generation revision requires nonempty contribution membership';
+  end if;
+
+  if exists (
+    select 1
+    from atlas_planning.confirmed_need_line_revision_contributions contribution
+    join atlas_planning.confirmed_need_line_revisions revision
+      on revision.confirmed_need_line_revision_id = contribution.confirmed_need_line_revision_id
+    join atlas_planning.confirmed_need_lines line
+      on line.confirmed_need_line_id = revision.confirmed_need_line_id
+    join atlas_planning.need_generation_release_snapshot_lines snapshot_line
+      on snapshot_line.need_generation_release_snapshot_line_id = contribution.need_generation_release_snapshot_line_id
+    join atlas_planning.theoretical_need_lines theoretical
+      on theoretical.theoretical_need_line_id = contribution.theoretical_need_line_id
+    join atlas_admin.schools school
+      on school.school_id = contribution.school_id
+    left join lateral (
+      select prior_contribution.delivery_location_id
+      from atlas_planning.confirmed_need_line_revision_contributions prior_contribution
+      where prior_contribution.confirmed_need_batch_id = v_batch_id
+        and prior_contribution.theoretical_need_line_id = theoretical.predecessor_theoretical_need_line_id
+      order by prior_contribution.created_at,
+               prior_contribution.confirmed_need_line_revision_contribution_id
+      limit 1
+    ) predecessor_contribution
+      on theoretical.contribution_family = 'RECIPE_DERIVED'
+     and theoretical.predecessor_theoretical_need_line_id is not null
+    where contribution.confirmed_need_batch_id = v_batch_id
+      and (
+        revision.source_kind <> 'NEED_GENERATION'
+        or contribution.confirmed_need_batch_id <> revision.confirmed_need_batch_id
+        or contribution.confirmed_need_line_id <> revision.confirmed_need_line_id
+        or contribution.need_generation_run_id <> revision.need_generation_run_id
+        or contribution.need_generation_run_version <> revision.need_generation_run_version
+        or contribution.need_generation_release_snapshot_id <> revision.need_generation_release_snapshot_id
+        or snapshot_line.need_generation_release_snapshot_id <> revision.need_generation_release_snapshot_id
+        or snapshot_line.need_generation_run_id <> revision.need_generation_run_id
+        or snapshot_line.released_run_version <> revision.need_generation_run_version
+        or snapshot_line.theoretical_need_line_id <> theoretical.theoretical_need_line_id
+        or theoretical.need_generation_run_id <> revision.need_generation_run_id
+        or theoretical.line_disposition <> 'ACTIVE'
+        or theoretical.service_date <> line.service_date
+        or theoretical.school_id <> line.school_id
+        or theoretical.ingredient_id <> line.ingredient_id
+        or theoretical.unit_id <> line.controlled_unit_id
+        or theoretical.theoretical_quantity <> contribution.source_theoretical_quantity
+        or contribution.service_date <> line.service_date
+        or contribution.customer_id <> line.customer_id
+        or contribution.school_id <> line.school_id
+        or contribution.delivery_location_id <> line.delivery_location_id
+        or contribution.ingredient_id <> line.ingredient_id
+        or contribution.source_unit_id <> line.controlled_unit_id
+        or contribution.controlled_unit_id <> line.controlled_unit_id
+        or contribution.controlled_contribution_quantity <> contribution.source_theoretical_quantity
+        or school.customer_id <> line.customer_id
+        or contribution.delivery_location_id is distinct from case
+          when theoretical.contribution_family = 'PANTRY_DIRECT'
+            then theoretical.delivery_location_id
+          when theoretical.predecessor_theoretical_need_line_id is not null
+            then predecessor_contribution.delivery_location_id
+          when revision.is_current
+            then school.default_delivery_location_id
+          else revision.delivery_location_id
+        end
+      )
+  ) then
+    raise exception using errcode = '23514', message = 'Need Generation contribution facts are not exact active release facts';
+  end if;
+
+  if exists (
+    select 1
+    from atlas_planning.confirmed_need_line_revisions revision
+    where revision.confirmed_need_batch_id = v_batch_id
+      and revision.source_kind = 'NEED_GENERATION'
+      and (
+        revision.theoretical_quantity is distinct from (
+          select sum(contribution.controlled_contribution_quantity)
+          from atlas_planning.confirmed_need_line_revision_contributions contribution
+          where contribution.confirmed_need_line_revision_id = revision.confirmed_need_line_revision_id
+        )
+        or exists (
+          select 1
+          from atlas_planning.need_generation_release_snapshot_lines snapshot_line
+          join atlas_planning.theoretical_need_lines theoretical
+            on theoretical.theoretical_need_line_id = snapshot_line.theoretical_need_line_id
+          where snapshot_line.need_generation_release_snapshot_id = revision.need_generation_release_snapshot_id
+            and theoretical.line_disposition = 'ACTIVE'
+            and theoretical.contribution_family = 'RECIPE_DERIVED'
+            and theoretical.predecessor_theoretical_need_line_id is not null
+            and theoretical.service_date = revision.service_date
+            and theoretical.school_id = revision.school_id
+            and theoretical.ingredient_id = revision.ingredient_id
+            and theoretical.unit_id = revision.unit_id
+            and not exists (
+              select 1
+              from atlas_planning.confirmed_need_line_revision_contributions predecessor_contribution
+              where predecessor_contribution.confirmed_need_batch_id = v_batch_id
+                and predecessor_contribution.theoretical_need_line_id = theoretical.predecessor_theoretical_need_line_id
+            )
+        )
+        or exists (
+          select 1
+          from atlas_planning.need_generation_release_snapshot_lines snapshot_line
+          join atlas_planning.theoretical_need_lines theoretical
+            on theoretical.theoretical_need_line_id = snapshot_line.theoretical_need_line_id
+          join atlas_admin.schools school
+            on school.school_id = theoretical.school_id
+          left join lateral (
+            select prior_contribution.delivery_location_id
+            from atlas_planning.confirmed_need_line_revision_contributions prior_contribution
+            where prior_contribution.confirmed_need_batch_id = v_batch_id
+              and prior_contribution.theoretical_need_line_id = theoretical.predecessor_theoretical_need_line_id
+            order by prior_contribution.created_at,
+                     prior_contribution.confirmed_need_line_revision_contribution_id
+            limit 1
+          ) predecessor_contribution
+            on theoretical.contribution_family = 'RECIPE_DERIVED'
+           and theoretical.predecessor_theoretical_need_line_id is not null
+          where snapshot_line.need_generation_release_snapshot_id = revision.need_generation_release_snapshot_id
+            and theoretical.line_disposition = 'ACTIVE'
+            and theoretical.service_date = revision.service_date
+            and theoretical.school_id = revision.school_id
+            and theoretical.ingredient_id = revision.ingredient_id
+            and theoretical.unit_id = revision.unit_id
+            and revision.delivery_location_id is not distinct from case
+              when theoretical.contribution_family = 'PANTRY_DIRECT'
+                then theoretical.delivery_location_id
+              when theoretical.predecessor_theoretical_need_line_id is not null
+                then predecessor_contribution.delivery_location_id
+              when revision.is_current
+                then school.default_delivery_location_id
+              else revision.delivery_location_id
+            end
+            and not exists (
+              select 1
+              from atlas_planning.confirmed_need_line_revision_contributions contribution
+              where contribution.confirmed_need_line_revision_id = revision.confirmed_need_line_revision_id
+                and contribution.theoretical_need_line_id = theoretical.theoretical_need_line_id
+            )
+        )
+      )
+  ) then
+    raise exception using errcode = '23514', message = 'Need Generation revision membership is incomplete or its total is inexact';
+  end if;
+
+  if exists (
+    select snapshot_line.theoretical_need_line_id
+    from atlas_planning.need_generation_release_snapshot_lines snapshot_line
+    join atlas_planning.theoretical_need_lines theoretical
+      on theoretical.theoretical_need_line_id = snapshot_line.theoretical_need_line_id
+    left join atlas_planning.confirmed_need_line_revision_contributions contribution
+      on contribution.need_generation_release_snapshot_line_id = snapshot_line.need_generation_release_snapshot_line_id
+    left join atlas_planning.confirmed_need_line_revisions revision
+      on revision.confirmed_need_line_revision_id = contribution.confirmed_need_line_revision_id
+      and revision.confirmed_need_batch_id = v_batch_id
+      and revision.is_current
+    where snapshot_line.need_generation_release_snapshot_id = v_current_snapshot_id
+      and theoretical.line_disposition = 'ACTIVE'
+    group by snapshot_line.theoretical_need_line_id
+    having count(revision.confirmed_need_line_revision_id) <> 1
+  ) then
+    raise exception using errcode = '23514', message = 'Current Need Generation revisions must exactly partition the active release';
+  end if;
+
+  return null;
+end;
+$$;
+
 grant atlas_planning_materialization_runtime to postgres with set true;
 grant create on schema atlas_api to atlas_planning_materialization_runtime;
 set role atlas_planning_materialization_runtime;
@@ -1829,10 +2038,9 @@ begin
               and scope.delivery_location_id = case
                 when theoretical.contribution_family = 'PANTRY_DIRECT'
                   then theoretical.delivery_location_id
-                else coalesce(
-                  old_contribution.delivery_location_id,
-                  school.default_delivery_location_id
-                )
+                when old_contribution.delivery_location_id is not null
+                  then old_contribution.delivery_location_id
+                else school.default_delivery_location_id
               end
             )
           )
@@ -2108,10 +2316,9 @@ begin
       on location.delivery_location_id = case
         when theoretical.contribution_family = 'PANTRY_DIRECT'
           then theoretical.delivery_location_id
-        else coalesce(
-          old_contribution.delivery_location_id,
-          school.default_delivery_location_id
-        )
+        when old_contribution.delivery_location_id is not null
+          then old_contribution.delivery_location_id
+        else school.default_delivery_location_id
       end
      and location.customer_id = school.customer_id
     left join atlas_admin.ingredients ingredient on ingredient.ingredient_id = theoretical.ingredient_id
@@ -2151,7 +2358,9 @@ begin
            case
              when theoretical.contribution_family = 'PANTRY_DIRECT'
                then theoretical.delivery_location_id
-             else coalesce(old_contribution.delivery_location_id, school.default_delivery_location_id)
+             when old_contribution.delivery_location_id is not null
+               then old_contribution.delivery_location_id
+             else school.default_delivery_location_id
            end delivery_location_id,
            theoretical.ingredient_id, theoretical.unit_id
     from atlas_planning.need_generation_release_snapshot_lines release_line
@@ -2173,7 +2382,9 @@ begin
              case
                when theoretical.contribution_family = 'PANTRY_DIRECT'
                  then theoretical.delivery_location_id
-               else coalesce(old_contribution.delivery_location_id, school.default_delivery_location_id)
+               when old_contribution.delivery_location_id is not null
+                 then old_contribution.delivery_location_id
+               else school.default_delivery_location_id
              end,
              theoretical.ingredient_id, theoretical.unit_id
   ) grouped;
@@ -2327,10 +2538,12 @@ begin
      and theoretical.line_disposition = 'ACTIVE'
      and theoretical.service_date = target_line.service_date
      and theoretical.school_id = target_line.school_id
+    join atlas_admin.schools school
+      on school.school_id = theoretical.school_id
      and target_line.delivery_location_id = case
        when theoretical.contribution_family = 'PANTRY_DIRECT'
          then theoretical.delivery_location_id
-       else target_line.delivery_location_id
+       else school.default_delivery_location_id
      end
      and theoretical.ingredient_id = target_line.ingredient_id
      and theoretical.unit_id = target_line.controlled_unit_id
@@ -2382,6 +2595,8 @@ begin
     join atlas_planning.theoretical_need_lines theoretical
       on theoretical.theoretical_need_line_id = release_line.theoretical_need_line_id
      and theoretical.line_disposition = 'ACTIVE'
+    join atlas_admin.schools school
+      on school.school_id = theoretical.school_id
     join atlas_planning.confirmed_need_lines target_line
       on target_line.confirmed_need_batch_id = v_batch_id
      and target_line.source_kind = 'NEED_GENERATION'
@@ -2390,7 +2605,7 @@ begin
      and target_line.delivery_location_id = case
        when theoretical.contribution_family = 'PANTRY_DIRECT'
          then theoretical.delivery_location_id
-       else target_line.delivery_location_id
+       else school.default_delivery_location_id
      end
      and target_line.ingredient_id = theoretical.ingredient_id
      and target_line.controlled_unit_id = theoretical.unit_id
@@ -2650,7 +2865,9 @@ begin
              case
                when theoretical.contribution_family = 'PANTRY_DIRECT'
                  then theoretical.delivery_location_id
-               else coalesce(old_contribution.delivery_location_id, school.default_delivery_location_id)
+               when old_contribution.delivery_location_id is not null
+                 then old_contribution.delivery_location_id
+               else school.default_delivery_location_id
              end delivery_location_id,
              theoretical.ingredient_id, theoretical.unit_id
       from atlas_planning.need_generation_release_snapshot_lines release_line
@@ -2666,7 +2883,9 @@ begin
                case
                  when theoretical.contribution_family = 'PANTRY_DIRECT'
                    then theoretical.delivery_location_id
-                 else coalesce(old_contribution.delivery_location_id, school.default_delivery_location_id)
+                 when old_contribution.delivery_location_id is not null
+                   then old_contribution.delivery_location_id
+                 else school.default_delivery_location_id
                end,
                theoretical.ingredient_id, theoretical.unit_id
     ) grouped
@@ -2740,7 +2959,9 @@ begin
              case
                when theoretical.contribution_family = 'PANTRY_DIRECT'
                  then theoretical.delivery_location_id
-               else coalesce(old_contribution.delivery_location_id, school.default_delivery_location_id)
+               when old_contribution.delivery_location_id is not null
+                 then old_contribution.delivery_location_id
+               else school.default_delivery_location_id
              end delivery_location_id,
              theoretical.ingredient_id, theoretical.unit_id,
              sum(theoretical.theoretical_quantity) theoretical_total
@@ -2757,7 +2978,9 @@ begin
                case
                  when theoretical.contribution_family = 'PANTRY_DIRECT'
                    then theoretical.delivery_location_id
-                 else coalesce(old_contribution.delivery_location_id, school.default_delivery_location_id)
+                 when old_contribution.delivery_location_id is not null
+                   then old_contribution.delivery_location_id
+                 else school.default_delivery_location_id
                end,
                theoretical.ingredient_id, theoretical.unit_id
     ) grouped
@@ -2831,10 +3054,9 @@ begin
      and target_line.delivery_location_id = case
        when theoretical.contribution_family = 'PANTRY_DIRECT'
          then theoretical.delivery_location_id
-       else coalesce(
-         old_contribution.delivery_location_id,
-         school.default_delivery_location_id
-       )
+       when old_contribution.delivery_location_id is not null
+         then old_contribution.delivery_location_id
+       else school.default_delivery_location_id
      end
      and target_line.ingredient_id = theoretical.ingredient_id
      and target_line.controlled_unit_id = theoretical.unit_id

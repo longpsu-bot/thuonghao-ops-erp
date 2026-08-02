@@ -8,6 +8,8 @@ GitHub Actions is the authoritative Supabase validation environment. The correct
 
 The continuation from published head `39e1110843baad10a18842b20cca4ba810aa653a` expands the authorized manifest from fourteen to sixteen paths solely to correct two legacy H0B1b fixture helpers. Each helper now repeats the complete Pantry triple already owned by its Planning Input Evaluation. The production migration and integrity guard are unchanged: post-migration snapshots still cannot commit with missing or partial Pantry binding.
 
+Independent review at published head `daf82adf3d31fa99f4b4b2691e306dd1a3da117f` found that the initial CMD-15 revision and contribution joins used a tautological Recipe destination branch. The same review found that the existing H0B1b every-and-only membership guard grouped released contributions without their effective Delivery Location. The forward PANTRY-NG-02 migration now corrects both existing function bodies in place, while preserving the exact sixteen-path manifest and every object/security ceiling.
+
 ## Bounded implementation
 
 The implementation follows D-028 and PNG-P01 through PNG-P12. It adds one forward-only migration:
@@ -22,10 +24,11 @@ It alters only these existing relations:
 
 Column arithmetic is exactly `3 + 7 + 3 = 13`. Named-constraint arithmetic is exactly `+15 / -4`: input snapshot `+2`, theoretical line `+7 / -2`, and issue `+6 / -2`. Physical-index arithmetic is exactly `+12 / -2`: input snapshot `+1`, theoretical line `+7 / -1`, and issue `+4 / -1`.
 
-Exactly two existing function bodies are replaced without changing identity, signature, owner, security mode, search path, grants, policy, runtime, capability, or contract version:
+Exactly three existing function bodies are replaced without changing identity, signature, owner, security mode, search path, grants, policy, runtime, capability, or contract version:
 
 1. `atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()`
-2. `atlas_api.create_confirmed_needs_from_generation(jsonb)`
+2. `atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()`
+3. `atlas_api.create_confirmed_needs_from_generation(jsonb)`
 
 The object and security delta is zero for tables, views, APIs, private functions, capabilities, database roles, runtime roles, policies, positive grants, ordinary triggers, constraint triggers, upstream/source triggers, lifecycle states, scope kinds, and sequences. CMD-15 continues to use `PA-06E-H0C.v1`, capability `confirmed_need_generation.materialize`, and runtime `atlas_planning_materialization_runtime`. It reads no Pantry base relation.
 
@@ -43,7 +46,9 @@ A compatible Pantry predecessor fixes stable Pantry line, Planning Input Set, ex
 
 ## CMD-15 compatibility
 
-Recipe initial materialization still uses the School current default Delivery Location. Recipe correction retains the prior immutable contribution location. Pantry uses `theoretical_need_lines.delivery_location_id` for validation, scope, grouping, stable-line creation, revision grouping, contribution mapping, and correction.
+Recipe initial materialization uses the School current default Delivery Location in stable-line creation, validation, group counting, revision grouping, and contribution mapping. Pantry uses `theoretical_need_lines.delivery_location_id` at every one of those boundaries. Recipe correction retains the prior immutable contribution location. No Recipe contribution can join a Pantry-location line merely because date, School, Ingredient, and Unit match.
+
+The replaced H0B1b membership guard derives the per-revision effective destination by source family: Pantry uses the theoretical line's exact destination; an initial or genuinely new Recipe contribution uses the revision's captured current School default; and a Recipe successor uses its predecessor's immutable contribution destination. It retains nonempty every-and-only membership, exact totals, immutable membership, active-release partition completeness, and exactly-once current membership while rejecting cross-destination assignment, omission, and duplication.
 
 Initial Recipe-only, Pantry-only, and mixed releases group by exact date, Customer, School, Delivery Location, Ingredient, and Unit while retaining one immutable contribution row per theoretical line. Pantry quantity/metadata corrections, new lines, partial group removals, and retirement of the final active Pantry group use existing Confirmed Need history. Recipe removal remains unchanged. No zero current revision is created for a retired group.
 
@@ -55,11 +60,11 @@ Protected plans remain exactly:
 - H0Cb: `63 / 80 / 104 / 112`
 - corrected H0B1b fixtures: `68 / 80`
 
-The new focused suite is `supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql` at exact `plan(144)`. Its arithmetic is `58 + 10 + 9 + 11 + 12 + 23 + 21 = 144`. Workflow registration produces the authoritative target of 36 pgTAP files and 2,178 assertions.
+The new focused suite is `supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql` at exact `plan(144)`. Its arithmetic is `58 + 10 + 9 + 11 + 12 + 23 + 21 = 144`. The final 21 assertions now execute real CMD-15 transactional coverage for one Recipe and one Pantry contribution with the same date, School, Customer, Ingredient, and Unit but different destinations. They prove two separate stable lines and revisions, family-exact memberships, separate quantities, exactly-once partitioning, and response-count agreement. The H0B1b contribution suite remains exact `plan(80)` and now exercises both rejected cross-family destination assignments. Workflow registration produces the authoritative target of 36 pgTAP files and 2,178 assertions.
 
-Local validation is limited to migration/static SQL inspection, exact manifest and plan arithmetic, formatting/whitespace checks, `pnpm ops:workspace`, forbidden-delta searches, and at most one narrow smoke reproduction. GitHub Supabase Integration owns the fresh seedless reset, all registered suites, synthetic identities, and browser-key checks. Frontend CI, UI Review Export, and Qodana remain required exact-head checks.
+Local validation covers migration/static SQL inspection, exact manifest and plan arithmetic, formatting/whitespace checks, `pnpm ops:workspace`, forbidden-delta searches, and the three narrow database suites affected by the correction. GitHub Supabase Integration still owns the authoritative fresh seedless reset, all registered suites, synthetic identities, and browser-key checks. Frontend CI, UI Review Export, and Qodana remain required exact-head checks.
 
-The one local migration smoke replayed the fresh migration chain successfully through `20260802090000`; after migration application, local startup stopped because the Kong health endpoint was unavailable. No pgTAP catalog was run locally. The post-migration service-health failure is an environment result, not a claim of test success, and GitHub remains authoritative.
+For the mixed-location correction, the complete local migration chain applied successfully through `20260802090000` on PostgreSQL 17.6. Kong remained unhealthy, so the documented `--ignore-health-check` startup mode was used solely to keep the local database available. The real focused suite passed `144/144`, the destination-aware H0B1b contribution suite passed `80/80`, and the existing Recipe-only H0Cb initial-materialization suite passed `80/80`. Local database advisors reported only six pre-existing multiple-permissive-policy performance warnings and no new security finding. The local stack was then stopped without deleting its backed-up volume.
 
 GitHub Supabase Integration run `30745638419` completed the fresh seedless reset, all migrations, all 36 registered pgTAP files, the two corrected H0B1b suites at exact plans `68` and `80`, the focused suite at exact `plan(144)`, the remaining backend acceptance suites, synthetic identities, and browser-key checks. The accepted assertion-ownership ledger remains exactly `2,034 + 144 = 2,178`. The same successful pg_prove run emitted 2,239 runtime subtests because the three pre-existing `no_plan()` suites dynamically expand to 127 assertions, 61 more than the accepted ledger convention; no unrelated suite or plan was changed to conceal that distinction.
 
