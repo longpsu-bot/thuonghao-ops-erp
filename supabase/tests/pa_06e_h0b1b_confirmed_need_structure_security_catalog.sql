@@ -55,6 +55,7 @@ select is(
     )
     from pg_policy policy
     where policy.polrelid = 'atlas_planning.confirmed_need_line_revision_contributions'::regclass
+      and policy.polname <> 'rmvp_04_need_generation_select'
   ),
   jsonb_build_object(
     'pa_06e_h0cb_contribution_insert', jsonb_build_object(

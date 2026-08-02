@@ -243,6 +243,7 @@ select is(
       'atlas_planning.need_generation_release_snapshot_lines'::regclass,
       'atlas_planning.need_generation_release_snapshot_issues'::regclass
     )
+      and policy.polname not like 'rmvp_04_need_generation_%'
       and not (
         (
           policy.polname = 'pa_06e_h0cb_materialization_select'
@@ -606,13 +607,13 @@ select is(
 
 select is(
   (
-    select count(*)::integer
+    select array_agg(capability_code order by capability_code)::text[]
     from atlas_core.capabilities
     where capability_code like 'need_generation.%'
        or capability_code like 'planning.need_generation.%'
   ),
-  0,
-  'H0A5b adds no runtime capability or capability seed'
+  array['planning.need_generation.write']::text[],
+  'Need Generation exposes only the exact RMVP-04 write capability'
 );
 
 select is(

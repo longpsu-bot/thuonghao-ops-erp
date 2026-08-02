@@ -928,7 +928,7 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 68,
+    'api_total', 73,
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
       'get_planning_input_readiness_workbench',

@@ -65,7 +65,7 @@ describe("Atlas master-data shell", () => {
     }
   });
 
-  it("adds one fourth readiness tab without adding a navigation item", async () => {
+  it("adds the fifth Need Generation tab without adding a navigation item", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
     const navigation = screen.getByRole("navigation", {
@@ -82,6 +82,7 @@ describe("Atlas master-data shell", () => {
       "Sĩ số",
       "Pantry",
       "Sẵn sàng đầu vào",
+      "Tạo nhu cầu",
     ]);
     expect(
       screen.getByText(/không phải quyết định sẵn sàng có thẩm quyền/i),

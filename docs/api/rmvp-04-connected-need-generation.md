@@ -1,0 +1,236 @@
+# RMVP-04 Connected Need Generation API Contract
+
+**Status:** Implemented on a draft branch; exact-head GitHub validation and merge pending
+
+**Contract version:** `RMVP-04.v1`
+
+**Owning domain:** Planning
+
+**Capability:** `planning.need_generation.write` for writes; existing `planning.inputs.read` for the read
+**Runtime:** `atlas_need_generation_runtime` (`NOLOGIN NOINHERIT`)
+
+## 1. Boundary
+
+RMVP-04 converts one exact current `NEED_GENERATION_REQUESTED` Planning Input Set into immutable atomic theoretical Ingredient contributions, validates them, releases them, and exposes the existing CMD-15 materialization boundary.
+
+```text
+approved Weekly Menu
++ approved Attendance
++ approved Pantry evidence
+→ READY Planning Input Evaluation
+→ NEED_GENERATION_REQUESTED
+→ generated atomic Recipe and Pantry contributions
+→ validated run
+→ immutable release snapshot
+→ existing CMD-15 Confirmed Need materialization
+```
+
+The backend chooses source evidence, Recipe/version/line revisions, the fixed calculation-contract revision, identifiers, quantities, predecessor lineage, issues, and release membership. The browser cannot author or edit those facts.
+
+This contract adds no table, view, lifecycle state, source trigger, sequence, generic registry, formula engine, Procurement record, Purchase Handoff, Warehouse record, or Dispatch record. It does not change `PA-06E-H0C.v1` or CMD-15 semantics.
+
+## 2. Public surface
+
+Exactly five functions use `jsonb → jsonb`:
+
+1. `atlas_api.get_need_generation_workbench(request jsonb)`
+2. `atlas_api.create_need_generation_run(request jsonb)`
+3. `atlas_api.validate_need_generation_run(request jsonb)`
+4. `atlas_api.release_need_generation_run(request jsonb)`
+5. `atlas_api.invalidate_need_generation_run(request jsonb)`
+
+All are fixed-search-path security definers owned by `atlas_need_generation_runtime`. Execute is revoked from `PUBLIC`, `anon`, and `service_role`, then granted only to `authenticated`.
+
+## 3. Common authorization
+
+Every call requires:
+
+- an authenticated human Actor mapped from the JWT subject;
+- exact equality between the JWT subject and `requested_by_auth_subject`;
+- an active role membership and active capability;
+- active `GLOBAL` scope for v1.
+
+The read requires `planning.inputs.read`. The four RMVP-04 writes require `planning.need_generation.write`. UI visibility is not authorization.
+
+## 4. Read envelope
+
+```json
+{
+  "contract_version": "RMVP-04.v1",
+  "requested_by_auth_subject": "uuid",
+  "correlation_id": "uuid",
+  "payload": {
+    "period_start": "YYYY-MM-DD",
+    "period_end": "YYYY-MM-DD",
+    "need_generation_run_id": "uuid or null",
+    "filters": {
+      "service_date": "YYYY-MM-DD or null",
+      "school_id": "uuid or null",
+      "ingredient_id": "uuid or null",
+      "contribution_family": "RECIPE_DERIVED|PANTRY_DIRECT|null"
+    },
+    "group_offset": 0,
+    "group_limit": 100,
+    "detail_group": {
+      "service_date": "YYYY-MM-DD",
+      "school_id": "uuid",
+      "delivery_location_id": "uuid",
+      "ingredient_id": "uuid",
+      "unit_id": "uuid"
+    }
+  }
+}
+```
+
+`filters` and `detail_group` are optional. Offset defaults to `0`; limit defaults to `100` and must be `1..250`. A supplied run must belong to the exact period and Planning Input Set. The read creates no state.
+
+### 4.1 Workbench response
+
+On success the response contains `success`, `contract_version`, `correlation_id`, and one `workbench` object with:
+
+- exact period;
+- Planning Input Set identity/status;
+- current evaluation identity/version/result;
+- exact Menu, Attendance, and Pantry source summaries;
+- terminal run and selected historical run;
+- run status/version/counts/timestamps;
+- blocking issues before warnings;
+- grouped requirements;
+- optional atomic detail;
+- run history;
+- Confirmed Need materialization state;
+- backend-derived allowed actions and disabled reasons;
+- pagination metadata.
+
+Grouped rows use the complete identity:
+
+```text
+service_date
+customer_id
+school_id
+delivery_location_id
+ingredient_id
+unit_id
+```
+
+They return names plus `total_theoretical_quantity`, `recipe_derived_quantity`, `pantry_direct_quantity`, active/removed contribution counts, and warning count. Recipe contributions use the School default location for a newly generated run and retained immutable destination evidence where historical materialization provides it. Pantry contributions always use the exact Pantry Delivery Location. Different Delivery Locations or Units never merge.
+
+Atomic detail exposes only safe contribution family, theoretical quantity, Unit, disposition, Dish/Recipe display evidence or Pantry Purpose/source reference, and warning references.
+
+Materialization returns `confirmed_need_batch_id`, `confirmed_need_batch_version`, `confirmed_need_status`, and `materialization_mode` (`INITIAL`, `CORRECTION`, or `NONE`).
+
+## 5. Write envelope
+
+```json
+{
+  "contract_version": "RMVP-04.v1",
+  "command_id": "uuid",
+  "correlation_id": "uuid",
+  "idempotency_key": "nonblank text",
+  "expected_version": 1,
+  "requested_by_auth_subject": "uuid",
+  "requested_at": "ISO-8601 timestamp",
+  "reason_code": "closed command-specific code",
+  "reason_note": "text or null",
+  "payload": {}
+}
+```
+
+For create, `expected_version` is the exact current Planning Input Evaluation version. For validate, release, and invalidate, it is the exact current Need Generation run version.
+
+Every successful write creates one command receipt, one domain event, and one audit event. Exact replay returns the stored response without another side effect. Reusing a command identity with changed intent returns `IDEMPOTENCY_CONFLICT`. Writes are never automatically retried by the application.
+
+## 6. Create run
+
+### Request
+
+```json
+{
+  "reason_code": "NEED_GENERATION_CREATED",
+  "reason_note": null,
+  "payload": {
+    "planning_input_set_id": "uuid",
+    "planning_input_evaluation_id": "uuid",
+    "period_start": "YYYY-MM-DD",
+    "period_end": "YYYY-MM-DD"
+  }
+}
+```
+
+The root must be exactly `NEED_GENERATION_REQUESTED`; the supplied evaluation must be the current `READY` evaluation with zero blockers and the exact expected evaluation version. Its Menu, Attendance, and Pantry approval triples must still be current and cover the requested period. The backend locks those roots deterministically and selects the current approved calculation contract.
+
+Initial creation is attempt `1`, has no predecessor, and starts `GENERATED` version `1`. Creation after an invalidated terminal run uses the next ordinal and direct predecessor. One noninvalidated terminal run blocks another create.
+
+The transaction writes the existing run, input snapshot, Recipe selections, Recipe-line uses, atomic Recipe contributions, atomic Pantry contributions, predecessor/removal evidence, every-and-only issue rows, and exact counts. It commits all evidence or none. Recipe quantity remains:
+
+```text
+(student_portions + teacher_portions)
+× quantity_per_basis
+÷ basis_portions
+→ fixed PostgreSQL numeric coercion from the bound calculation revision
+```
+
+Pantry quantity is the exact approved `requested_quantity`; it is never Recipe-exploded. Event: `NeedGenerationCreated`.
+
+## 7. Validate run
+
+Payload is `{ "need_generation_run_id": "uuid" }`; reason is `NEED_GENERATION_VALIDATED` with null note.
+
+Only the exact terminal `GENERATED` run at the expected version can validate. Blocking issue count must be zero; warnings are allowed. Existing H0A5 integrity must still prove exact counts and typed lineage. The command changes only the run to `VALIDATED`, increments its version once, and records Actor/time. Event: `NeedGenerationValidated`.
+
+## 8. Release run
+
+Payload is `{ "need_generation_run_id": "uuid" }`; reason is `NEED_GENERATION_RELEASED` with null note.
+
+Only the exact terminal `VALIDATED` run at the expected version and with zero blockers can release. The command creates one existing immutable release snapshot with every-and-only theoretical-line membership and complete issue membership, changes the run to `RELEASED_FOR_CONFIRMATION`, increments its version once, and records Actor/time. Event: `NeedGenerationReleased`.
+
+The sole warning, `ZERO_ACTIVE_THEORETICAL_QUANTITY`, does not block validation or release. Existing CMD-15 still rejects an active zero-quantity contribution under its approved v1 contract, so the workbench returns `allowed_actions.materialize = false` with a correction reason for such a released run. The operator must correct approved source evidence, invalidate the run, and generate a successor before materialization.
+
+## 9. Invalidate run
+
+Payload is `{ "need_generation_run_id": "uuid" }`. Allowed reasons are `UPSTREAM_SOURCE_CHANGED` and `PLANNING_CORRECTION`; a nonblank note is mandatory.
+
+Only the exact terminal run at the expected version can invalidate. `GENERATED` and `VALIDATED` are allowed. `RELEASED_FOR_CONFIRMATION` is allowed only while downstream remains safely correctable: no released Purchase Handoff or later commitment exists, and any linked Confirmed Need remains correction-permitted (`DRAFT_REVIEW` or `REOPENED`). Otherwise the command returns `DOWNSTREAM_CORRECTION_REQUIRED`.
+
+Invalidation preserves every line, issue, release membership, event, audit, and Confirmed Need history. It changes only the run to `INVALIDATED`, increments its version once, and records Actor/time/reason. Event: `NeedGenerationInvalidated`.
+
+## 10. CMD-15 connection
+
+RMVP-04 does not add a materialization command. The application invokes existing `atlas_api.create_confirmed_needs_from_generation(jsonb)` with `PA-06E-H0C.v1`.
+
+Initial payload:
+
+```json
+{
+  "need_generation_run_id": "uuid",
+  "need_generation_run_version": 3,
+  "confirmed_need_batch_id": null
+}
+```
+
+Correction supplies the exact existing batch ID returned by the workbench. CMD-15 retains its capability, runtime, receipts, events, audit, safe errors, operational grouping, and immutable contribution membership. The workbench is refreshed after it returns.
+
+## 11. Success and failure behavior
+
+Write success follows the Atlas command envelope and includes affected aggregate IDs, new run version, event/audit IDs, safe operator message, and authoritative workbench readback. Release additionally returns the release snapshot ID.
+
+RMVP-04 uses common Atlas validation, authentication, authorization, stale-version, idempotency, and concurrency errors. Its narrow domain failures are:
+
+- `READINESS_NOT_REQUESTED`
+- `CURRENT_EVALUATION_NOT_READY`
+- `STALE_SOURCE_BINDING`
+- `NEED_GENERATION_RUN_ALREADY_ACTIVE`
+- `NEED_GENERATION_RUN_NOT_FOUND`
+- `NEED_GENERATION_RUN_NOT_TERMINAL`
+- `NEED_GENERATION_RUN_NOT_GENERATED`
+- `NEED_GENERATION_RUN_NOT_VALIDATED`
+- `NEED_GENERATION_HAS_BLOCKERS`
+- `DOWNSTREAM_CORRECTION_REQUIRED`
+
+Failures contain safe operator messages and no SQL, policy, role, private payload, or credential detail.
+
+## 12. Verification
+
+`supabase/tests/rmvp_04_connected_need_generation.sql` executes one real mixed journey from approved Menu/Attendance/Pantry through readiness, request, creation, grouped Recipe/Pantry evidence, warning completeness, validation, release, CMD-15 quantities/destinations/membership, replay/conflict, authorization failures, invalidation, and direct successor lineage.
+
+`scripts/verify-local-rmvp04-need-generation.mjs` is registered only in GitHub's disposable local-Supabase workflow. It uses a signed-in synthetic human and the browser key for every API call through authoritative readback. Local development does not start/reset Supabase or run pgTAP.

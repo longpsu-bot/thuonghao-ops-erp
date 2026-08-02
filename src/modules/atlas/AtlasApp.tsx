@@ -40,6 +40,11 @@ import {
   type PlanningInputReadinessApi,
 } from "./planning-inputs/readiness/planningInputReadinessApi";
 import { createReviewPlanningInputReadinessApi } from "./planning-inputs/readiness/reviewPlanningInputReadinessApi";
+import {
+  createNeedGenerationApi,
+  type NeedGenerationApi,
+} from "./planning-inputs/need-generation/needGenerationApi";
+import { createReviewNeedGenerationApi } from "./planning-inputs/need-generation/reviewNeedGenerationApi";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
   ATLAS_REVIEW_NOTICE,
@@ -205,6 +210,7 @@ function MasterDataPage({
   planningApi,
   pantryApi,
   readinessApi,
+  needGenerationApi,
   mode,
 }: {
   page: MasterDataPageId;
@@ -215,6 +221,7 @@ function MasterDataPage({
   planningApi?: PlanningInputsApi;
   pantryApi?: PantryApi;
   readinessApi?: PlanningInputReadinessApi;
+  needGenerationApi?: NeedGenerationApi;
   mode: "connected" | "review";
 }) {
   const schoolPage = page === "customers-schools";
@@ -256,6 +263,7 @@ function MasterDataPage({
           api={planningApi}
           pantryApi={pantryApi}
           readinessApi={readinessApi}
+          needGenerationApi={needGenerationApi}
           mode={mode}
         />
       ) : recipePage ? (
@@ -287,6 +295,7 @@ function AtlasShell({
   planningApi,
   pantryApi,
   readinessApi,
+  needGenerationApi,
   mode,
   session,
   reviewScenario,
@@ -300,6 +309,7 @@ function AtlasShell({
   planningApi?: PlanningInputsApi;
   pantryApi?: PantryApi;
   readinessApi?: PlanningInputReadinessApi;
+  needGenerationApi?: NeedGenerationApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   reviewScenario?: AtlasReviewScenario;
@@ -345,6 +355,7 @@ function AtlasShell({
           planningApi={planningApi}
           pantryApi={pantryApi}
           readinessApi={readinessApi}
+          needGenerationApi={needGenerationApi}
           mode={mode}
         />
       </div>
@@ -369,6 +380,10 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
     () => createReviewPlanningInputReadinessApi(scenario),
     [scenario],
   );
+  const needGenerationApi = useMemo(
+    () => createReviewNeedGenerationApi(scenario),
+    [scenario],
+  );
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -381,6 +396,7 @@ function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
       planningApi={planningApi}
       pantryApi={pantryApi}
       readinessApi={readinessApi}
+      needGenerationApi={needGenerationApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -427,6 +443,10 @@ function ConnectedAtlasApp({
     () => (transport ? createPlanningInputReadinessApi(transport) : undefined),
     [transport],
   );
+  const needGenerationApi = useMemo(
+    () => (transport ? createNeedGenerationApi(transport) : undefined),
+    [transport],
+  );
 
   return (
     <AtlasShell
@@ -438,6 +458,7 @@ function ConnectedAtlasApp({
       planningApi={planningApi}
       pantryApi={pantryApi}
       readinessApi={readinessApi}
+      needGenerationApi={needGenerationApi}
       mode="connected"
       session={auth}
     />

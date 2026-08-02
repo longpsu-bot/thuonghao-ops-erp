@@ -162,7 +162,9 @@ from (
     ('b6000000-0000-0000-0000-000000000026'::uuid, 'planning.attendance.write'),
     ('b6000000-0000-0000-0000-000000000027'::uuid, 'planning.inputs.approve'),
     ('b6000000-0000-0000-0000-000000000028'::uuid, 'planning.pantry.write'),
-    ('b6000000-0000-0000-0000-000000000029'::uuid, 'planning.input_readiness.write')
+    ('b6000000-0000-0000-0000-000000000029'::uuid, 'planning.input_readiness.write'),
+    ('b6000000-0000-0000-0000-000000000030'::uuid, 'planning.need_generation.write'),
+    ('b6000000-0000-0000-0000-000000000031'::uuid, 'confirmed_need_generation.materialize')
 ) source(role_capability_id, capability_code)
 join atlas_core.capabilities capability
   on capability.capability_code = source.capability_code

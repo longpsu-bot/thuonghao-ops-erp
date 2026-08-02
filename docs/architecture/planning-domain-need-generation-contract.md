@@ -1,6 +1,6 @@
 # PD-01.6 — Planning Domain Need Generation Contract
 
-**Status:** MVP contract v0.4; H0A5b Recipe-derived persistence implemented and PANTRY-NG-01 direct-contribution direction accepted; Pantry implementation not started
+**Status:** MVP contract v0.5; H0A5b and PANTRY-NG-02 persistence merged; RMVP-04 connected command/read/application implementation is in draft review
 
 **Domain:** Planning
 

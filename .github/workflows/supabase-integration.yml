@@ -17,6 +17,7 @@ on:
       - "scripts/verify-local-rmvp01-master-data.mjs"
       - "scripts/verify-local-rmvp02a-recipes.mjs"
       - "scripts/verify-local-rmvp03a-planning-inputs.mjs"
+      - "scripts/verify-local-rmvp04-need-generation.mjs"
       - "src/modules/atlas/connection/**"
       - "src/modules/atlas/evidence/**"
       - "src/modules/atlas/master-data/**"
@@ -45,6 +46,7 @@ on:
       - "scripts/verify-local-rmvp01-master-data.mjs"
       - "scripts/verify-local-rmvp02a-recipes.mjs"
       - "scripts/verify-local-rmvp03a-planning-inputs.mjs"
+      - "scripts/verify-local-rmvp04-need-generation.mjs"
       - "src/modules/atlas/connection/**"
       - "src/modules/atlas/evidence/**"
       - "src/modules/atlas/master-data/**"
@@ -152,6 +154,7 @@ jobs:
           pnpm exec supabase test db supabase/tests/pa_06e_h0cb_corrected_materialization_history.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0cb_errors_authorization_concurrency.sql --local
           pnpm exec supabase test db supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_04_connected_need_generation.sql --local
           pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
           pnpm exec supabase test db supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql --local
           pnpm local:auth:provision
@@ -171,6 +174,9 @@ jobs:
 
       - name: Verify browser-key Planning inputs
         run: pnpm local:rmvp03a:verify
+
+      - name: Verify browser-key Connected Need Generation
+        run: pnpm local:rmvp04:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()
