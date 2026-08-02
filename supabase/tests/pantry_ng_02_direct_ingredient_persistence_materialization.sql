@@ -103,9 +103,9 @@ select is((select count(*)::integer from pg_policy),445,'PNG02-047 policy count 
 -- 48
 select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and table_name like 'pantry_need_%'),0,'PNG02-048 materialization runtime gains zero Pantry base-table grants');
 -- 49
-select is((select count(*)::integer from pg_trigger where not tgisinternal and tgconstraint=0),41,'PNG02-049 ordinary trigger count remains exact');
+select is((select count(*)::integer from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where not t.tgisinternal and t.tgconstraint=0 and n.nspname like 'atlas\_%' escape '\'),41,'PNG02-049 ordinary trigger count remains exact');
 -- 50
-select is((select count(*)::integer from pg_trigger where not tgisinternal and tgconstraint<>0),34,'PNG02-050 deferred constraint-trigger count remains exact');
+select is((select count(*)::integer from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace where not t.tgisinternal and t.tgconstraint<>0 and n.nspname like 'atlas\_%' escape '\'),34,'PNG02-050 deferred constraint-trigger count remains exact');
 -- 51
 select is((select count(*)::integer from unnest(array['MISSING_PANTRY_INPUT_BINDING','INVALID_PANTRY_SNAPSHOT_MEMBERSHIP','PANTRY_APPROVED_QUANTITY_UNIT_MISMATCH'])),3,'PNG02-051 issue delta is exactly thirty-one to thirty-four');
 -- 52
@@ -245,11 +245,11 @@ select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0a5b_need_generatio
 -- 109
 select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure) not like '%predecessor.theoretical_quantity <> line.theoretical_quantity%'),'PNG02-109 requested quantity may change across Pantry predecessor');
 -- 110
-select ok((select count(*)::integer from pg_attribute where attrelid='atlas_planning.theoretical_need_lines'::regclass and attname like '%purpose%'),0,'PNG02-110 Pantry Purpose may change without becoming a predecessor anchor');
+select is((select count(*)::integer from pg_attribute where attrelid='atlas_planning.theoretical_need_lines'::regclass and attname like '%purpose%'),0,'PNG02-110 Pantry Purpose may change without becoming a predecessor anchor');
 -- 111
-select ok((select count(*)::integer from pg_attribute where attrelid='atlas_planning.theoretical_need_lines'::regclass and attname='note'),0,'PNG02-111 Pantry note may change without becoming a predecessor anchor');
+select is((select count(*)::integer from pg_attribute where attrelid='atlas_planning.theoretical_need_lines'::regclass and attname='note'),0,'PNG02-111 Pantry note may change without becoming a predecessor anchor');
 -- 112
-select ok((select count(*)::integer from pg_attribute where attrelid='atlas_planning.theoretical_need_lines'::regclass and attname in ('source_request_reference','source_row_reference')),0,'PNG02-112 source reference group may change without becoming a predecessor anchor');
+select is((select count(*)::integer from pg_attribute where attrelid='atlas_planning.theoretical_need_lines'::regclass and attname in ('source_request_reference','source_row_reference')),0,'PNG02-112 source reference group may change without becoming a predecessor anchor');
 -- 113
 select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()'::regprocedure) not like '%predecessor.unit_id <> line.unit_id%'),'PNG02-113 Unit may retain its Need Generation predecessor');
 -- 114
@@ -313,7 +313,7 @@ select ok((select pg_get_functiondef('atlas_planning.pa_06e_h0a5b_need_generatio
 -- 142
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like all(array['%atlas_planning.pantry_need_batches%','%atlas_planning.pantry_need_lines%','%atlas_planning.pantry_need_approval_snapshots%','%atlas_planning.pantry_need_approval_snapshot_lines%'])),'PNG02-142 CMD-15 reads no Pantry base table');
 -- 143
-select is((select jsonb_build_object('signature',oid::regprocedure::text,'owner',pg_get_userbyid(proowner),'definer',prosecdef,'search_path',proconfig,'contract',(pg_get_functiondef(oid) like '%PA-06E-H0C.v1%'),'capability',(select count(*) from atlas_core.capabilities where capability_code='confirmed_need_generation.materialize')) from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure),jsonb_build_object('signature','atlas_api.create_confirmed_needs_from_generation(jsonb)','owner','atlas_planning_materialization_runtime','definer',true,'search_path',array['search_path=""']::text[],'contract',true,'capability',1),'PNG02-143 command signature runtime security contract and capability remain exact');
+select is((select jsonb_build_object('signature',oid::regprocedure::text,'owner',pg_get_userbyid(proowner),'definer',prosecdef,'search_path',proconfig,'contract',(pg_get_functiondef(oid) like '%atlas_core.pa_06e_h0cb_validate_materialization_request(request)%' and pg_get_functiondef('atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)'::regprocedure) like '%PA-06E-H0C.v1%'),'capability',(select count(*) from atlas_core.capabilities where capability_code='confirmed_need_generation.materialize')) from pg_proc where oid='atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure),jsonb_build_object('signature','atlas_api.create_confirmed_needs_from_generation(jsonb)','owner','atlas_planning_materialization_runtime','definer',true,'search_path',array['search_path=""']::text[],'contract',true,'capability',1),'PNG02-143 command signature runtime security contract and capability remain exact');
 -- 144
 select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%exception%','%when others then%','%pa_05b_finish_command%','%INTERNAL_COMMAND_FAILURE%'])),'PNG02-144 CMD-15 retains atomic rollback and safe failure boundary');
 

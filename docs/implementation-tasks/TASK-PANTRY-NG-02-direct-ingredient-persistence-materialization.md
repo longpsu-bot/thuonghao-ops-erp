@@ -4,7 +4,9 @@
 
 Implemented on branch `codex/pantry-ng-02-direct-ingredient-persistence-materialization` from exact baseline `249361bc0c4005e2c9a05e7b84a8468dd0ec4956`. The immutable implementation head is reported by the draft PR and final task handoff; embedding the SHA in the commit that defines that SHA would be self-referential.
 
-GitHub Actions is the authoritative Supabase validation environment. Do not treat this record as a claim that exact-head CI passed until the draft PR reports the completed workflow results.
+GitHub Actions is the authoritative Supabase validation environment. The correction code head `111cfd1d4f3c1645ad220e7adef4139c84606f17` passed Supabase Integration, Frontend CI, UI Review Export, and Qodana on draft PR #167. The immutable final documentation-bearing head and its repeated exact-head results are reported by the draft PR and final task handoff.
+
+The continuation from published head `39e1110843baad10a18842b20cca4ba810aa653a` expands the authorized manifest from fourteen to sixteen paths solely to correct two legacy H0B1b fixture helpers. Each helper now repeats the complete Pantry triple already owned by its Planning Input Evaluation. The production migration and integrity guard are unchanged: post-migration snapshots still cannot commit with missing or partial Pantry binding.
 
 ## Bounded implementation
 
@@ -51,6 +53,7 @@ Protected plans remain exactly:
 
 - H0A5b: `43 / 60 / 76 / 64`
 - H0Cb: `63 / 80 / 104 / 112`
+- corrected H0B1b fixtures: `68 / 80`
 
 The new focused suite is `supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql` at exact `plan(144)`. Its arithmetic is `58 + 10 + 9 + 11 + 12 + 23 + 21 = 144`. Workflow registration produces the authoritative target of 36 pgTAP files and 2,178 assertions.
 
@@ -58,7 +61,9 @@ Local validation is limited to migration/static SQL inspection, exact manifest a
 
 The one local migration smoke replayed the fresh migration chain successfully through `20260802090000`; after migration application, local startup stopped because the Kong health endpoint was unavailable. No pgTAP catalog was run locally. The post-migration service-health failure is an environment result, not a claim of test success, and GitHub remains authoritative.
 
-## Exact fourteen-path manifest
+GitHub Supabase Integration run `30745638419` completed the fresh seedless reset, all migrations, all 36 registered pgTAP files, the two corrected H0B1b suites at exact plans `68` and `80`, the focused suite at exact `plan(144)`, the remaining backend acceptance suites, synthetic identities, and browser-key checks. The accepted assertion-ownership ledger remains exactly `2,034 + 144 = 2,178`. The same successful pg_prove run emitted 2,239 runtime subtests because the three pre-existing `no_plan()` suites dynamically expand to 127 assertions, 61 more than the accepted ledger convention; no unrelated suite or plan was changed to conceal that distinction.
+
+## Exact sixteen-path manifest
 
 1. `supabase/migrations/20260802090000_pantry_ng_02_direct_ingredient_persistence_materialization.sql`
 2. `supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql`
@@ -74,6 +79,8 @@ The one local migration smoke replayed the fresh migration chain successfully th
 12. `docs/implementation-tasks/TASK-PANTRY-NG-02-direct-ingredient-persistence-materialization.md`
 13. `docs/decisions/decision-register.md`
 14. `docs/architecture/roadmap.md`
+15. `supabase/tests/pa_06e_h0b1b_school_catering_identity_current_source.sql`
+16. `supabase/tests/pa_06e_h0b1b_contribution_membership_total_partition_history.sql`
 
 ## Exclusions and remaining boundary
 
