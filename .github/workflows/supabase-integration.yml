@@ -134,27 +134,13 @@ jobs:
         run: |
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h1a_planning_quantity_policy_structure_security.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h1a_planning_quantity_policy_revision_lifecycle.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h1a_planning_quantity_policy_effectivity_resolution.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_structure_security.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_chain_pointer.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_policy_quantity_integrity.sql --local
-          pnpm exec supabase test db supabase/tests/rmvp_04_connected_need_generation.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_05_connected_confirmed_need_review.sql --local
 
-      - name: Provision synthetic browser-key prerequisites
-        run: |
-          pnpm local:auth:provision
-          pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
-          pnpm local:rmvp02a:verify
-          pnpm local:rmvp02a:verify
-          pnpm local:rmvp03a:verify
+      - name: Provision deterministic RMVP-05 browser identity
+        run: pnpm local:auth:provision
 
-      - name: Verify browser-key Connected Need Generation
-        run: |
-          pnpm local:rmvp04:verify
-          pnpm local:rmvp05:verify
+      - name: Verify short browser-key Confirmed Need review
+        run: pnpm local:rmvp05:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()
@@ -313,7 +299,9 @@ jobs:
           pnpm local:rmvp03a:verify
           pnpm local:pantry02:verify
 
-      - name: Verify browser-key Connected Need Generation
+      - name: Verify browser-key upstream-to-Confirmed Need journey
+        env:
+          RMVP05_BROWSER_SOURCE: rmvp04
         run: |
           pnpm local:rmvp04:verify
           pnpm local:rmvp05:verify

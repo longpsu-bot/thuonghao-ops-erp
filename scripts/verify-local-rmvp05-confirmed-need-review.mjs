@@ -7,6 +7,8 @@ import {
 
 const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
+const deterministicBatchId = "b6500000-0000-0000-0000-000000000050";
+const browserSource = process.env.RMVP05_BROWSER_SOURCE ?? "fixture";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -145,7 +147,13 @@ function draftLine(line, quantity, reasonCode, reasonNote) {
 }
 
 async function main() {
+  assert(
+    browserSource === "fixture" || browserSource === "rmvp04",
+    "RMVP-05 browser source must be fixture or rmvp04.",
+  );
   const { apiUrl, browserKey } = readLocalSupabaseStatus();
+  installLocalFixture("../supabase/local/rmvp_05_browser_fixture.sql");
+
   const client = createClient(apiUrl, browserKey, {
     db: { schema: "atlas_api" },
     auth: {
@@ -161,9 +169,10 @@ async function main() {
     "RMVP-05 local acceptance sign-in failed.",
   );
   const subject = signIn.session.user.id;
-  const batchId = await findMaterializedBatch(client, subject);
-
-  installLocalFixture("../supabase/local/rmvp_05_browser_fixture.sql");
+  const batchId =
+    browserSource === "rmvp04"
+      ? await findMaterializedBatch(client, subject)
+      : deterministicBatchId;
 
   const initial = await invokeSuccess(
     client,
@@ -253,88 +262,109 @@ async function main() {
     "get_confirmed_need_review",
     reviewRequest(subject, batchId),
   );
-  const replacementTarget = afterMixed.workbench.lines.find(
+  const unchangedReadback = afterMixed.workbench.lines.find(
     (line) =>
       line.confirmed_need_line_id === selected[0].confirmed_need_line_id,
   );
-  assert(
-    replacementTarget?.decision_history.length === 1,
-    "RMVP-05 readback did not expose the first immutable decision.",
-  );
-
-  const missingNoteLine = draftLine(
-    replacementTarget,
-    replacementTarget.proposed_confirmed_quantity,
-    "PROPOSAL_ACCEPTED",
-    null,
-  );
-  const missingNote = await invokeSuccess(
-    client,
-    "preview_confirmed_need_confirmation",
-    previewRequest(subject, batchId, 2, [missingNoteLine]),
-  );
-  assert(
-    missingNote.preview.success === false &&
-      missingNote.preview.error_code === "REASON_NOTE_REQUIRED",
-    "RMVP-05 replacement preview did not require correction evidence.",
-  );
-
-  const replacementLine = {
-    ...missingNoteLine,
-    reason_note: "GitHub-only corrected confirmation evidence",
-  };
-  const replacementPreview = await invokeSuccess(
-    client,
-    "preview_confirmed_need_confirmation",
-    previewRequest(subject, batchId, 2, [replacementLine]),
-  );
-  assert(
-    replacementPreview.preview.success === true &&
-      replacementPreview.preview.warnings.some(
-        (warning) => warning.code === "DECISION_REPLACEMENT",
-      ),
-    "RMVP-05 governed replacement preview was not accepted with a warning.",
-  );
-
-  const replacementCommand = confirmationCommand(
-    subject,
-    2,
-    replacementPreview.preview.preview_hash,
-    [replacementLine],
-  );
-  replacementCommand.payload.confirmed_need_batch_id = batchId;
-  const replacement = await invokeSuccess(
-    client,
-    "confirm_need_quantities",
-    replacementCommand,
-  );
-  assert(
-    replacement.new_batch_version === 3 &&
-      replacement.created_successor_revision_ids.length === 0 &&
-      replacement.created_decision_ids.length === 1,
-    "RMVP-05 replacement did not append only decision evidence.",
-  );
-
-  const finalRead = await invokeSuccess(
-    client,
-    "get_confirmed_need_review",
-    reviewRequest(subject, batchId),
-  );
-  const finalTarget = finalRead.workbench.lines.find(
+  const adjustedReadback = afterMixed.workbench.lines.find(
     (line) =>
-      line.confirmed_need_line_id === replacementTarget.confirmed_need_line_id,
+      line.confirmed_need_line_id === selected[1].confirmed_need_line_id,
   );
   assert(
-    finalRead.workbench.batch_version === 3 &&
-      finalTarget?.decision_history.length === 2 &&
-      finalTarget.decision_history[0].predecessor_decision_id ===
-        finalTarget.decision_history[1].decision_id,
-    "RMVP-05 final readback did not preserve the two-decision predecessor chain.",
+    afterMixed.workbench.batch_version === 2 &&
+      afterMixed.workbench.line_counts.total ===
+        initial.workbench.line_counts.total &&
+      afterMixed.workbench.line_counts.unreviewed ===
+        initial.workbench.line_counts.total - 2 &&
+      afterMixed.workbench.line_counts.confirmed === 2 &&
+      afterMixed.workbench.line_counts.adjusted === 1 &&
+      unchangedReadback?.confirmed_quantity_after ===
+        mixedLines[0].proposed_confirmed_quantity &&
+      unchangedReadback.decision_history.length === 1 &&
+      adjustedReadback?.confirmed_quantity_after ===
+        mixedLines[1].proposed_confirmed_quantity &&
+      adjustedReadback.decision_history.length === 1,
+    "RMVP-05 authoritative readback did not preserve the exact mixed decision result.",
   );
+
+  if (browserSource === "rmvp04") {
+    const missingNoteLine = draftLine(
+      unchangedReadback,
+      unchangedReadback.proposed_confirmed_quantity,
+      "PROPOSAL_ACCEPTED",
+      null,
+    );
+    const missingNote = await invokeSuccess(
+      client,
+      "preview_confirmed_need_confirmation",
+      previewRequest(subject, batchId, 2, [missingNoteLine]),
+    );
+    assert(
+      missingNote.preview.success === false &&
+        missingNote.preview.error_code === "REASON_NOTE_REQUIRED",
+      "RMVP-05 replacement preview did not require correction evidence.",
+    );
+
+    const replacementLine = {
+      ...missingNoteLine,
+      reason_note: "GitHub-only corrected confirmation evidence",
+    };
+    const replacementPreview = await invokeSuccess(
+      client,
+      "preview_confirmed_need_confirmation",
+      previewRequest(subject, batchId, 2, [replacementLine]),
+    );
+    assert(
+      replacementPreview.preview.success === true &&
+        replacementPreview.preview.warnings.some(
+          (warning) => warning.code === "DECISION_REPLACEMENT",
+        ),
+      "RMVP-05 governed replacement preview was not accepted with a warning.",
+    );
+
+    const replacementCommand = confirmationCommand(
+      subject,
+      2,
+      replacementPreview.preview.preview_hash,
+      [replacementLine],
+    );
+    replacementCommand.payload.confirmed_need_batch_id = batchId;
+    const replacement = await invokeSuccess(
+      client,
+      "confirm_need_quantities",
+      replacementCommand,
+    );
+    assert(
+      replacement.new_batch_version === 3 &&
+        replacement.created_successor_revision_ids.length === 0 &&
+        replacement.created_decision_ids.length === 1,
+      "RMVP-05 replacement did not append only decision evidence.",
+    );
+
+    const finalRead = await invokeSuccess(
+      client,
+      "get_confirmed_need_review",
+      reviewRequest(subject, batchId),
+    );
+    const finalTarget = finalRead.workbench.lines.find(
+      (line) =>
+        line.confirmed_need_line_id ===
+        unchangedReadback.confirmed_need_line_id,
+    );
+    assert(
+      finalRead.workbench.batch_version === 3 &&
+        finalTarget?.decision_history.length === 2 &&
+        finalTarget.decision_history[0].predecessor_decision_id ===
+          finalTarget.decision_history[1].decision_id,
+      "RMVP-05 final readback did not preserve the two-decision predecessor chain.",
+    );
+  }
 
   await client.auth.signOut({ scope: "local" });
   console.log(
-    `Verified RMVP-05 browser-key exact read/preview/mixed confirm/replay/replacement/readback for batch ${batchId}.`,
+    browserSource === "rmvp04"
+      ? `Verified full upstream RMVP-05 read/preview/confirm/replay/replacement/readback for batch ${batchId}.`
+      : `Verified short RMVP-05 fixture read/preview/confirm/replay/readback for batch ${batchId}.`,
   );
 }
 

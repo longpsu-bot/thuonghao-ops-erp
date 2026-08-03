@@ -56,7 +56,7 @@ The focused pgTAP suite has actual `plan(37)` and begins with one real RMVP-04-g
 
 Focused Vitest covers sixth-tab/handoff integration, theoretical/proposed/confirmed distinction, decimal strings, local edits, reason/note rules, preview and edit invalidation, mixed confirmation, blockers-first rendering, stale refresh, exact retry and review mode.
 
-GitHub's draft smoke remains intentionally bounded: fresh seedless reset, platform catalog, all three H1A suites, all three H1B1 suites, RMVP-04, RMVP-05, then the disposable browser-key prerequisite and connected RMVP-04 → CMD-15 → RMVP-05 journey. Full integration retains every registered pgTAP and browser-key journey.
+GitHub's draft smoke is intentionally bounded to a fresh seedless reset, the 22-assertion platform catalog, the 37-assertion RMVP-05 focused suite, deterministic disposable RMVP-05 identity/evidence, and a short browser-key review → mixed preview → confirmation → replay → authoritative readback journey. It does not run standalone H1A, H1B1 or RMVP-04 workloads. Full integration retains every registered pgTAP and browser-key journey, including the complete RMVP-04 readiness/generation/release → CMD-15 materialization → RMVP-05 review/preview/confirmation/readback chain.
 
 Local development does not start/reset Supabase or run pgTAP. Local checks are workspace verification, formatting, typecheck, focused frontend tests, static SQL/security inspection, `git diff --check`, and manifest review.
 
