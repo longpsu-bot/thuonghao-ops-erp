@@ -47,6 +47,8 @@ Creation accepts only Planning Input Set/evaluation/period identifiers. The brow
 
 Recipe contributions use exact approved Menu and Attendance snapshot rows, eligible released Recipe evidence, stable RecipeLine revisions, and the fixed proportional formula. Pantry contributions copy the approved direct Ingredient quantity, Unit, School, date, Delivery Location, Purpose/source lineage, and stable Pantry line. Both remain atomic. Read-model aggregation groups only by date, Customer, School, Delivery Location, Ingredient, and Unit.
 
+Recipe selection is cardinality-exact within the approved precedence tiers. One eligible School-Type Recipe is selected even when a general Recipe exists. More than one eligible School-Type Recipe produces one `AMBIGUOUS_ELIGIBLE_RECIPE` blocker and does not evaluate the general tier for selection. When the typed tier is empty, exactly one eligible general Recipe is selected; more than one produces the same blocker. When both tiers are empty, the existing `MISSING_ELIGIBLE_RECIPE` blocker remains authoritative. An ambiguous Menu snapshot line creates no Recipe selection, Recipe-line use, or `RECIPE_DERIVED` theoretical line, while unrelated valid Recipe and Pantry lines in the same run continue to generate.
+
 ## Lifecycle and correction
 
 Initial creation starts attempt `1`, `GENERATED`, version `1`. Validate and release each increment exactly once. Release creates immutable line and issue membership. Invalidation preserves all evidence and is allowed after release only while no released Purchase Handoff/later commitment exists and linked Confirmed Need remains `DRAFT_REVIEW` or `REOPENED`. A later create binds the direct invalidated predecessor and advances the attempt ordinal.
@@ -80,6 +82,8 @@ The focused pgTAP suite uses its actual assertion count and executes real approv
 9. released-run invalidation and a direct successor with preserved history.
 10. in-runtime H0A4B deferred-integrity flushing before PostgREST commit.
 11. in-runtime CMD-15/H0B1 deferred-integrity flushing before PostgREST commit.
+12. exact typed-tier ambiguity with a general candidate ignored, one typed blocker, no ambiguous Recipe lineage, unaffected Recipe/Pantry generation, and blocked validation.
+13. exact general-tier ambiguity when no typed candidate exists, with the same blocker, lineage, unaffected-generation, and validation guarantees.
 
 Focused frontend tests cover fifth-tab integration, exact period, readiness-not-requested state, happy-path actions, issue ordering, grouped quantities and destination separation, filters/pagination, atomic detail, disabled reasons, exact retry, stale refresh, and review mode.
 
@@ -89,7 +93,7 @@ The GitHub-only browser-key script uses the disposable local synthetic identity 
 
 Local validation is limited to workspace verification, formatting, TypeScript, focused frontend tests, static SQL/surface inspection, `git diff --check`, and exact manifest review. No local Supabase start/reset, pgTAP, full frontend suite, hosted deployment, or hosted mutation is authorized.
 
-GitHub owns the fresh seedless database reset, all registered pgTAP suites, synthetic identity checks, browser-key acceptance, Frontend CI, UI Review Export, and Qodana. Exact-head outcomes are recorded in the draft PR and final handoff.
+GitHub owns Supabase integration. Draft pull-request opens, synchronizations, and reopens run the bounded `Supabase Smoke`: fresh seedless reset, platform catalog, RMVP-03B, PANTRY-NG-02, RMVP-04, one existing CMD-15 initial-materialization suite, synthetic identity provisioning and only the prerequisites needed for the RMVP-04 browser-key journey. This is fast defect feedback, not full certification. `ready_for_review`, later non-draft synchronizations, manual dispatches, and pushes to `main` run `Supabase Full Integration`, preserving every registered catalog, synthetic, and browser-key journey. Frontend CI, UI Review Export, and Qodana remain independently required. Exact-head outcomes are recorded in the draft PR and final handoff.
 
 ## Deferred boundary
 

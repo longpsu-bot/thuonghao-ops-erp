@@ -1621,26 +1621,54 @@ begin
       dish.dish_status, dish.requires_need_generation,
       recipe.recipe_id, recipe.recipe_version_id,
       recipe.recipe_version_number, recipe.basis_portions,
-      recipe.selection_scope
+      recipe.selection_scope, recipe.typed_eligible_count,
+      recipe.general_eligible_count
     from atlas_planning.weekly_menu_approval_snapshot_lines as menu_line
     join atlas_admin.schools as school on school.school_id = menu_line.school_id
     join atlas_admin.dishes as dish on dish.dish_id = menu_line.dish_id
     left join lateral (
-      select candidate.recipe_id, version.recipe_version_id,
-        version.version_number as recipe_version_number,
-        version.basis_portions,
-        case when candidate.school_type_id is null
-          then 'GENERAL' else 'SCHOOL_TYPE' end as selection_scope
-      from atlas_admin.recipes as candidate
-      join atlas_admin.recipe_versions as version
-        on version.recipe_id = candidate.recipe_id
-       and version.recipe_version_status = 'RELEASED_FOR_PLANNING'
-      where candidate.dish_id = menu_line.dish_id
-        and candidate.recipe_status = 'ACTIVE'
-        and (candidate.school_type_id = school.school_type_id
-          or candidate.school_type_id is null)
-      order by (candidate.school_type_id is not null) desc
-      limit 1
+      with eligible as materialized (
+        select candidate.recipe_id, candidate.school_type_id,
+          version.recipe_version_id,
+          version.version_number as recipe_version_number,
+          version.basis_portions
+        from atlas_admin.recipes as candidate
+        join atlas_admin.recipe_versions as version
+          on version.recipe_id = candidate.recipe_id
+         and version.recipe_version_status = 'RELEASED_FOR_PLANNING'
+        where candidate.dish_id = menu_line.dish_id
+          and candidate.recipe_status = 'ACTIVE'
+          and (candidate.school_type_id = school.school_type_id
+            or candidate.school_type_id is null)
+      ), candidate_counts as (
+        select
+          count(*) filter (
+            where eligible.school_type_id = school.school_type_id
+          ) as typed_eligible_count,
+          count(*) filter (
+            where eligible.school_type_id is null
+          ) as general_eligible_count
+        from eligible
+      )
+      select selected.recipe_id, selected.recipe_version_id,
+        selected.recipe_version_number, selected.basis_portions,
+        case when selected.school_type_id is null
+          then 'GENERAL' else 'SCHOOL_TYPE' end as selection_scope,
+        candidate_counts.typed_eligible_count,
+        candidate_counts.general_eligible_count
+      from candidate_counts
+      left join lateral (
+        select eligible.*
+        from eligible
+        where (
+          candidate_counts.typed_eligible_count = 1
+          and eligible.school_type_id = school.school_type_id
+        ) or (
+          candidate_counts.typed_eligible_count = 0
+          and candidate_counts.general_eligible_count = 1
+          and eligible.school_type_id is null
+        )
+      ) as selected on true
     ) as recipe on true
     where menu_line.weekly_menu_approval_snapshot_id =
       v_evaluation.weekly_menu_approval_snapshot_id
@@ -1662,6 +1690,24 @@ begin
       continue;
     end if;
     if not v_menu.requires_need_generation then
+      continue;
+    end if;
+    if v_menu.typed_eligible_count > 1
+      or (
+        v_menu.typed_eligible_count = 0
+        and v_menu.general_eligible_count > 1
+      )
+    then
+      v_issues := v_issues || pg_catalog.jsonb_build_array(
+        pg_catalog.jsonb_build_object(
+          'id', gen_random_uuid(), 'severity', 'BLOCKING',
+          'code', 'AMBIGUOUS_ELIGIBLE_RECIPE',
+          'message', 'More than one released active Recipe is eligible in the selected tier for this Menu line.',
+          'menu_snapshot_line_id', v_menu.weekly_menu_approval_snapshot_line_id,
+          'school_id', v_menu.school_id, 'service_date', v_menu.service_date,
+          'dish_id', v_menu.dish_id
+        )
+      );
       continue;
     end if;
     if v_menu.recipe_id is null then

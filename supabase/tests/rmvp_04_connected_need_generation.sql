@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(48);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
@@ -145,6 +145,12 @@ select is(
   jsonb_build_object('tables', 96, 'views', 2, 'rmvp04_triggers', 0),
   'RMVP04-10 the slice adds no relation, view, or source trigger'
 );
+
+-- H0A2 normally prevents duplicate active Recipe roots in either scope. The
+-- rolled-back test transaction relaxes only those indexes so RMVP-04's
+-- required defensive behavior can be proven against ambiguous source facts.
+drop index atlas_admin.recipes_active_general_dish_key;
+drop index atlas_admin.recipes_active_typed_dish_school_type_key;
 
 create function pg_temp.rmvp04_read(
   p_run_id uuid default null,
@@ -303,47 +309,86 @@ insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram', 'mass');
 insert into atlas_admin.ingredients (ingredient_id, ingredient_code, ingredient_name)
 values ('e4100000-0000-0000-0000-000000000007', 'rmvp04-rice', 'RMVP-04 rice');
-insert into atlas_admin.dishes (dish_id, dish_code, dish_name, dish_status, display_order, requires_need_generation)
-values ('e4100000-0000-0000-0000-000000000008', 'rmvp04-dish', 'RMVP-04 dish', 'ACTIVE', 10, true);
-insert into atlas_admin.recipes (recipe_id, dish_id, recipe_status)
-values ('e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000008', 'ACTIVE');
+insert into atlas_admin.dishes (dish_id, dish_code, dish_name, dish_status, display_order, requires_need_generation) values
+  ('e4100000-0000-0000-0000-000000000008', 'rmvp04-dish', 'RMVP-04 dish', 'ACTIVE', 10, true),
+  ('e4600000-0000-0000-0000-000000000001', 'rmvp04-typed-ambiguous', 'RMVP-04 typed ambiguity dish', 'ACTIVE', 20, true),
+  ('e4700000-0000-0000-0000-000000000001', 'rmvp04-general-ambiguous', 'RMVP-04 general ambiguity dish', 'ACTIVE', 30, true);
+insert into atlas_admin.recipes (recipe_id, dish_id, school_type_id, recipe_status) values
+  ('e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000008', null, 'ACTIVE'),
+  ('e4600000-0000-0000-0000-000000000002', 'e4600000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000004', 'ACTIVE'),
+  ('e4600000-0000-0000-0000-000000000003', 'e4600000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000004', 'ACTIVE'),
+  ('e4600000-0000-0000-0000-000000000004', 'e4600000-0000-0000-0000-000000000001', null, 'ACTIVE'),
+  ('e4700000-0000-0000-0000-000000000002', 'e4700000-0000-0000-0000-000000000001', null, 'ACTIVE'),
+  ('e4700000-0000-0000-0000-000000000003', 'e4700000-0000-0000-0000-000000000001', null, 'ACTIVE');
 insert into atlas_admin.recipe_versions (recipe_version_id, recipe_id, version_number, basis_portions, recipe_version_status, created_by_actor_id, validated_by_actor_id, validated_at, released_by_actor_id, released_at)
-values ('e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000009', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07');
+values
+  ('e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000009', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07'),
+  ('e4600000-0000-0000-0000-000000000005', 'e4600000-0000-0000-0000-000000000002', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07'),
+  ('e4600000-0000-0000-0000-000000000006', 'e4600000-0000-0000-0000-000000000003', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07'),
+  ('e4600000-0000-0000-0000-000000000007', 'e4600000-0000-0000-0000-000000000004', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07'),
+  ('e4700000-0000-0000-0000-000000000005', 'e4700000-0000-0000-0000-000000000002', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07'),
+  ('e4700000-0000-0000-0000-000000000006', 'e4700000-0000-0000-0000-000000000003', 1, 100, 'RELEASED_FOR_PLANNING', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:00:00+07', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 08:05:00+07');
 insert into atlas_admin.recipe_lines (recipe_line_id, recipe_id, line_code)
-values ('e4100000-0000-0000-0000-000000000011', 'e4100000-0000-0000-0000-000000000009', 'rice');
+values
+  ('e4100000-0000-0000-0000-000000000011', 'e4100000-0000-0000-0000-000000000009', 'rice'),
+  ('e4600000-0000-0000-0000-000000000008', 'e4600000-0000-0000-0000-000000000002', 'rice'),
+  ('e4600000-0000-0000-0000-000000000009', 'e4600000-0000-0000-0000-000000000003', 'rice'),
+  ('e4600000-0000-0000-0000-000000000010', 'e4600000-0000-0000-0000-000000000004', 'rice'),
+  ('e4700000-0000-0000-0000-000000000008', 'e4700000-0000-0000-0000-000000000002', 'rice'),
+  ('e4700000-0000-0000-0000-000000000009', 'e4700000-0000-0000-0000-000000000003', 'rice');
 insert into atlas_admin.recipe_line_revisions (recipe_line_revision_id, recipe_id, recipe_version_id, recipe_line_id, line_revision_number, ingredient_id, quantity_per_basis, unit_id, created_by_actor_id)
-values ('e4100000-0000-0000-0000-000000000012', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000011', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001');
+values
+  ('e4100000-0000-0000-0000-000000000012', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000011', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000011', 'e4600000-0000-0000-0000-000000000002', 'e4600000-0000-0000-0000-000000000005', 'e4600000-0000-0000-0000-000000000008', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000012', 'e4600000-0000-0000-0000-000000000003', 'e4600000-0000-0000-0000-000000000006', 'e4600000-0000-0000-0000-000000000009', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000013', 'e4600000-0000-0000-0000-000000000004', 'e4600000-0000-0000-0000-000000000007', 'e4600000-0000-0000-0000-000000000010', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000011', 'e4700000-0000-0000-0000-000000000002', 'e4700000-0000-0000-0000-000000000005', 'e4700000-0000-0000-0000-000000000008', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000012', 'e4700000-0000-0000-0000-000000000003', 'e4700000-0000-0000-0000-000000000006', 'e4700000-0000-0000-0000-000000000009', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001');
 
 insert into atlas_planning.weekly_menus (weekly_menu_id, week_start, week_end, source_type, source_name, source_signature, row_count, imported_by_actor_id, weekly_menu_status, latest_approved_by_actor_id, latest_approved_at, latest_approval_snapshot_id)
-values ('e4200000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-04 menu', 'rmvp04-menu-signature', 2, 'e4000000-0000-0000-0000-000000000001', 'APPROVED', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:00:00+07', 'e4200000-0000-0000-0000-000000000002');
+values ('e4200000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-04 menu', 'rmvp04-menu-signature', 6, 'e4000000-0000-0000-0000-000000000001', 'APPROVED', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:00:00+07', 'e4200000-0000-0000-0000-000000000002');
 insert into atlas_planning.weekly_menu_lines (weekly_menu_line_id, weekly_menu_id, school_id, service_date, menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id) values
   ('e4200000-0000-0000-0000-000000000003', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-02', 'savory', 'e4100000-0000-0000-0000-000000000008', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
-  ('e4200000-0000-0000-0000-000000000004', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 'savory', 'e4100000-0000-0000-0000-000000000008', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001');
+  ('e4200000-0000-0000-0000-000000000004', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 'savory', 'e4100000-0000-0000-0000-000000000008', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000020', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 'savory', 'e4600000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000021', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 'soup', 'e4100000-0000-0000-0000-000000000008', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000020', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 'savory', 'e4700000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000021', 'e4200000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 'soup', 'e4100000-0000-0000-0000-000000000008', 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001');
 insert into atlas_planning.weekly_menu_approval_snapshots (weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version, approved_by_actor_id, approved_at)
 values ('e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:00:00+07');
 insert into atlas_planning.weekly_menu_approval_snapshot_lines (weekly_menu_approval_snapshot_line_id, weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version, weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id) values
   ('e4200000-0000-0000-0000-000000000005', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4200000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000005', '2026-11-02', 'savory', 'e4100000-0000-0000-0000-000000000008'),
-  ('e4200000-0000-0000-0000-000000000006', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4200000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 'savory', 'e4100000-0000-0000-0000-000000000008');
+  ('e4200000-0000-0000-0000-000000000006', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4200000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 'savory', 'e4100000-0000-0000-0000-000000000008'),
+  ('e4600000-0000-0000-0000-000000000022', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4600000-0000-0000-0000-000000000020', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 'savory', 'e4600000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000023', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4600000-0000-0000-0000-000000000021', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 'soup', 'e4100000-0000-0000-0000-000000000008'),
+  ('e4700000-0000-0000-0000-000000000022', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4700000-0000-0000-0000-000000000020', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 'savory', 'e4700000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000023', 'e4200000-0000-0000-0000-000000000002', 'e4200000-0000-0000-0000-000000000001', 1, 'e4700000-0000-0000-0000-000000000021', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 'soup', 'e4100000-0000-0000-0000-000000000008');
 
 insert into atlas_planning.attendance_batches (attendance_batch_id, period_start, period_end, source_type, source_name, source_signature, row_count, imported_by_actor_id, attendance_status, latest_approved_by_actor_id, latest_approved_at, latest_approval_snapshot_id)
-values ('e4300000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-04 attendance', 'rmvp04-attendance-signature', 2, 'e4000000-0000-0000-0000-000000000001', 'APPROVED', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:05:00+07', 'e4300000-0000-0000-0000-000000000002');
+values ('e4300000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-04 attendance', 'rmvp04-attendance-signature', 4, 'e4000000-0000-0000-0000-000000000001', 'APPROVED', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:05:00+07', 'e4300000-0000-0000-0000-000000000002');
 insert into atlas_planning.attendance_lines (attendance_line_id, attendance_batch_id, school_id, service_date, student_portions, teacher_portions, created_by_actor_id, updated_by_actor_id) values
   ('e4300000-0000-0000-0000-000000000003', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-02', 15, 5, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
-  ('e4300000-0000-0000-0000-000000000004', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 0, 0, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001');
+  ('e4300000-0000-0000-0000-000000000004', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 0, 0, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000030', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 10, 2, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000030', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 10, 2, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001');
 insert into atlas_planning.attendance_approval_snapshots (attendance_approval_snapshot_id, attendance_batch_id, attendance_version, approved_by_actor_id, approved_at)
 values ('e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:05:00+07');
 insert into atlas_planning.attendance_approval_snapshot_lines (attendance_approval_snapshot_line_id, attendance_approval_snapshot_id, attendance_batch_id, attendance_version, attendance_line_id, school_id, service_date, student_portions, teacher_portions) values
   ('e4300000-0000-0000-0000-000000000005', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4300000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000005', '2026-11-02', 15, 5),
-  ('e4300000-0000-0000-0000-000000000006', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4300000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 0, 0);
+  ('e4300000-0000-0000-0000-000000000006', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4300000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 0, 0),
+  ('e4600000-0000-0000-0000-000000000031', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4600000-0000-0000-0000-000000000030', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 10, 2),
+  ('e4700000-0000-0000-0000-000000000031', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4700000-0000-0000-0000-000000000030', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 10, 2);
 
 insert into atlas_planning.pantry_need_purposes (pantry_need_purpose_id, purpose_code, purpose_name_vi, purpose_description, note_rule, purpose_status, display_order)
 values ('e4400000-0000-0000-0000-000000000001', 'rmvp04_supplement', 'Bổ sung RMVP-04', 'Synthetic connected Need Generation fixture.', 'OPTIONAL', 'ACTIVE', 10);
 insert into atlas_planning.pantry_need_batches (pantry_need_batch_id, week_start, source_signature, no_additions_confirmed, requesting_actor_id, pantry_need_batch_status, latest_approved_by_actor_id, latest_approved_at, latest_approval_snapshot_id)
 values ('e4400000-0000-0000-0000-000000000002', '2026-11-02', repeat('e', 64), false, 'e4000000-0000-0000-0000-000000000001', 'APPROVED', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:07:00+07', 'e4400000-0000-0000-0000-000000000003');
-insert into atlas_planning.pantry_need_lines (pantry_need_line_id, pantry_need_batch_id, service_date, school_id, delivery_location_id, ingredient_id, unit_id, pantry_need_purpose_id, requested_quantity, note, source_request_reference, source_row_reference, updated_by_actor_id)
-values ('e4400000-0000-0000-0000-000000000004', 'e4400000-0000-0000-0000-000000000002', '2026-11-02', 'e4100000-0000-0000-0000-000000000005', 'e4100000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000007', 'e4100000-0000-0000-0000-000000000006', 'e4400000-0000-0000-0000-000000000001', 2, 'Separate Pantry delivery', 'RMVP04', '1', 'e4000000-0000-0000-0000-000000000001');
+insert into atlas_planning.pantry_need_lines (pantry_need_line_id, pantry_need_batch_id, service_date, school_id, delivery_location_id, ingredient_id, unit_id, pantry_need_purpose_id, requested_quantity, note, source_request_reference, source_row_reference, updated_by_actor_id) values
+  ('e4400000-0000-0000-0000-000000000004', 'e4400000-0000-0000-0000-000000000002', '2026-11-02', 'e4100000-0000-0000-0000-000000000005', 'e4100000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000007', 'e4100000-0000-0000-0000-000000000006', 'e4400000-0000-0000-0000-000000000001', 2, 'Separate Pantry delivery', 'RMVP04', '1', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4600000-0000-0000-0000-000000000040', 'e4400000-0000-0000-0000-000000000002', '2026-11-04', 'e4100000-0000-0000-0000-000000000005', 'e4100000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000007', 'e4100000-0000-0000-0000-000000000006', 'e4400000-0000-0000-0000-000000000001', 3, 'Typed ambiguity Pantry line', 'RMVP04-TYPED', '1', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4700000-0000-0000-0000-000000000040', 'e4400000-0000-0000-0000-000000000002', '2026-11-05', 'e4100000-0000-0000-0000-000000000005', 'e4100000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000007', 'e4100000-0000-0000-0000-000000000006', 'e4400000-0000-0000-0000-000000000001', 4, 'General ambiguity Pantry line', 'RMVP04-GENERAL', '1', 'e4000000-0000-0000-0000-000000000001');
 insert into atlas_planning.pantry_need_approval_snapshots (pantry_need_approval_snapshot_id, pantry_need_batch_id, approved_batch_version, approved_by_actor_id, approved_at, source_signature, no_additions_confirmed, line_count)
-values ('e4400000-0000-0000-0000-000000000003', 'e4400000-0000-0000-0000-000000000002', 1, 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:07:00+07', repeat('e', 64), false, 1);
+values ('e4400000-0000-0000-0000-000000000003', 'e4400000-0000-0000-0000-000000000002', 1, 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:07:00+07', repeat('e', 64), false, 3);
 /* Replaced below with the relation's composite snapshot/member identity.
 insert into atlas_planning.pantry_need_approval_snapshot_lines (pantry_need_approval_snapshot_line_id, pantry_need_approval_snapshot_id, pantry_need_line_id, service_date, school_id, school_code_snapshot, school_name_snapshot, delivery_location_id, delivery_location_code_snapshot, delivery_location_name_snapshot, delivery_location_address_snapshot, ingredient_id, ingredient_code_snapshot, ingredient_name_snapshot, unit_id, unit_code_snapshot, unit_name_snapshot, pantry_need_purpose_id, purpose_code_snapshot, purpose_name_snapshot, purpose_description_snapshot, purpose_note_rule_snapshot, note, source_request_reference, source_row_reference, requested_quantity)
 values ('e4400000-0000-0000-0000-000000000005', 'e4400000-0000-0000-0000-000000000003', 'e4400000-0000-0000-0000-000000000004', '2026-11-02', 'e4100000-0000-0000-000000000005', 'rmvp04-school', 'RMVP-04 School', 'e4100000-0000-0000-0000-000000000003', 'rmvp04-pantry', 'RMVP-04 Pantry Store', 'Fixture pantry', 'e4100000-0000-0000-0000-000000000007', 'rmvp04-rice', 'RMVP-04 rice', 'e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram', 'e4400000-0000-0000-0000-000000000001', 'rmvp04_supplement', 'Bổ sung RMVP-04', 'Synthetic connected Need Generation fixture.', 'OPTIONAL', 'Separate Pantry delivery', 'RMVP04', '1', 2);
@@ -402,6 +447,88 @@ insert into atlas_planning.pantry_need_approval_snapshot_lines (
   '1',
   2
 );
+
+insert into atlas_planning.pantry_need_approval_snapshot_lines (
+  pantry_need_approval_snapshot_id,
+  pantry_need_line_id,
+  service_date,
+  school_id,
+  school_code_snapshot,
+  school_name_snapshot,
+  delivery_location_id,
+  delivery_location_code_snapshot,
+  delivery_location_name_snapshot,
+  delivery_location_address_snapshot,
+  ingredient_id,
+  ingredient_code_snapshot,
+  ingredient_name_snapshot,
+  unit_id,
+  unit_code_snapshot,
+  unit_name_snapshot,
+  pantry_need_purpose_id,
+  purpose_code_snapshot,
+  purpose_name_snapshot,
+  purpose_description_snapshot,
+  purpose_note_rule_snapshot,
+  note,
+  source_request_reference,
+  source_row_reference,
+  requested_quantity
+) values
+  (
+    'e4400000-0000-0000-0000-000000000003',
+    'e4600000-0000-0000-0000-000000000040',
+    '2026-11-04',
+    'e4100000-0000-0000-0000-000000000005',
+    'rmvp04-school',
+    'RMVP-04 School',
+    'e4100000-0000-0000-0000-000000000003',
+    'rmvp04-pantry',
+    'RMVP-04 Pantry Store',
+    'Fixture pantry',
+    'e4100000-0000-0000-0000-000000000007',
+    'rmvp04-rice',
+    'RMVP-04 rice',
+    'e4100000-0000-0000-0000-000000000006',
+    'rmvp04-kg',
+    'RMVP-04 kilogram',
+    'e4400000-0000-0000-0000-000000000001',
+    'rmvp04_supplement',
+    'Bá»• sung RMVP-04',
+    'Synthetic connected Need Generation fixture.',
+    'OPTIONAL',
+    'Typed ambiguity Pantry line',
+    'RMVP04-TYPED',
+    '1',
+    3
+  ),
+  (
+    'e4400000-0000-0000-0000-000000000003',
+    'e4700000-0000-0000-0000-000000000040',
+    '2026-11-05',
+    'e4100000-0000-0000-0000-000000000005',
+    'rmvp04-school',
+    'RMVP-04 School',
+    'e4100000-0000-0000-0000-000000000003',
+    'rmvp04-pantry',
+    'RMVP-04 Pantry Store',
+    'Fixture pantry',
+    'e4100000-0000-0000-0000-000000000007',
+    'rmvp04-rice',
+    'RMVP-04 rice',
+    'e4100000-0000-0000-0000-000000000006',
+    'rmvp04-kg',
+    'RMVP-04 kilogram',
+    'e4400000-0000-0000-0000-000000000001',
+    'rmvp04_supplement',
+    'Bá»• sung RMVP-04',
+    'Synthetic connected Need Generation fixture.',
+    'OPTIONAL',
+    'General ambiguity Pantry line',
+    'RMVP04-GENERAL',
+    '1',
+    4
+  );
 
 insert into atlas_planning.need_generation_calculation_contracts (need_generation_calculation_contract_id, contract_code, current_revision_id, version, created_at, updated_at)
 values ('e4400000-0000-0000-0000-000000000010', 'school_catering_proportional_per_basis', 'e4400000-0000-0000-0000-000000000011', 1, '2026-11-01 07:00:00+07', '2026-11-01 07:00:00+07');
@@ -997,6 +1124,407 @@ select is(
   'RMVP04-36 workbench returns the complete warning and the CMD-15 correction boundary'
 );
 
+-- Two isolated runs prove that the chosen Recipe tier must contain exactly
+-- one candidate. Each period also retains one valid Recipe contribution and
+-- one Pantry contribution while the ambiguous Menu line produces no lineage.
+insert into rmvp04_requests values (
+  'typed-ambiguity-evaluate',
+  pg_temp.rmvp04_readiness_command(
+    'e4800000-0000-0000-0000-000000000001',
+    'rmvp04-typed-ambiguity-evaluate',
+    'ABSENT',
+    null,
+    null,
+    'READINESS_EVALUATION_REQUESTED',
+    jsonb_build_object(
+      'period_start', '2026-11-04',
+      'period_end', '2026-11-04',
+      'source_candidates', jsonb_build_object(
+        'weekly_menu', jsonb_build_object('weekly_menu_id', 'e4200000-0000-0000-0000-000000000001', 'weekly_menu_version', 1, 'weekly_menu_approval_snapshot_id', 'e4200000-0000-0000-0000-000000000002'),
+        'attendance', jsonb_build_object('attendance_batch_id', 'e4300000-0000-0000-0000-000000000001', 'attendance_version', 1, 'attendance_approval_snapshot_id', 'e4300000-0000-0000-0000-000000000002'),
+        'pantry', jsonb_build_object('pantry_need_batch_id', 'e4400000-0000-0000-0000-000000000002', 'pantry_need_batch_version', 1, 'pantry_need_approval_snapshot_id', 'e4400000-0000-0000-0000-000000000003')
+      )
+    )
+  )
+);
+set local role authenticated;
+insert into rmvp04_responses
+select 'typed-ambiguity-evaluate', atlas_api.evaluate_planning_input_readiness(request)
+from rmvp04_requests where request_name = 'typed-ambiguity-evaluate';
+reset role;
+
+insert into rmvp04_requests
+select
+  'typed-ambiguity-request',
+  pg_temp.rmvp04_readiness_command(
+    'e4800000-0000-0000-0000-000000000002',
+    'rmvp04-typed-ambiguity-request',
+    'READY',
+    (response->'affected_aggregate_ids'->>'planning_input_evaluation_id')::uuid,
+    (response->'new_versions'->>'current_evaluation_version')::bigint,
+    'NEED_GENERATION_HANDOFF_REQUESTED',
+    jsonb_build_object(
+      'planning_input_set_id', response->'affected_aggregate_ids'->>'planning_input_set_id',
+      'period_start', '2026-11-04',
+      'period_end', '2026-11-04'
+    )
+  )
+from rmvp04_responses where response_name = 'typed-ambiguity-evaluate';
+set local role authenticated;
+insert into rmvp04_responses
+select 'typed-ambiguity-request', atlas_api.request_planning_input_need_generation(request)
+from rmvp04_requests where request_name = 'typed-ambiguity-request';
+reset role;
+
+insert into rmvp04_requests
+select
+  'typed-ambiguity-create',
+  pg_temp.rmvp04_command(
+    'e4800000-0000-0000-0000-000000000003',
+    'rmvp04-typed-ambiguity-create',
+    (evaluation.response->'new_versions'->>'current_evaluation_version')::bigint,
+    'NEED_GENERATION_CREATED',
+    null,
+    jsonb_build_object(
+      'planning_input_set_id', requested.response->'affected_aggregate_ids'->>'planning_input_set_id',
+      'planning_input_evaluation_id', evaluation.response->'affected_aggregate_ids'->>'planning_input_evaluation_id',
+      'period_start', '2026-11-04',
+      'period_end', '2026-11-04'
+    )
+  )
+from rmvp04_responses evaluation
+cross join rmvp04_responses requested
+where evaluation.response_name = 'typed-ambiguity-evaluate'
+  and requested.response_name = 'typed-ambiguity-request';
+set local role authenticated;
+insert into rmvp04_responses
+select 'typed-ambiguity-create', atlas_api.create_need_generation_run(request)
+from rmvp04_requests where request_name = 'typed-ambiguity-create';
+reset role;
+
+select ok(
+  (
+    select response->>'success' = 'true'
+      and response->'authoritative_readback'->'selected_run'->>'status' = 'GENERATED'
+      and response->'authoritative_readback'->'selected_run'->>'blocking_issue_count' = '1'
+    from rmvp04_responses where response_name = 'typed-ambiguity-create'
+  ),
+  'RMVP04-37 typed-tier ambiguity still creates one GENERATED run'
+);
+select is(
+  (
+    select jsonb_build_object(
+      'run_blockers', run.blocking_issue_count,
+      'issues', (
+        select jsonb_agg(
+          jsonb_build_object(
+            'severity', issue.severity,
+            'code', issue.issue_code,
+            'menu_snapshot_line_id', issue.weekly_menu_approval_snapshot_line_id,
+            'school_id', issue.school_id,
+            'service_date', issue.service_date,
+            'dish_id', issue.dish_id
+          ) order by issue.need_generation_issue_id
+        )
+        from atlas_planning.need_generation_issues issue
+        where issue.need_generation_run_id = run.need_generation_run_id
+      )
+    )
+    from atlas_planning.need_generation_runs run
+    where run.need_generation_run_id = (
+      select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+      from rmvp04_responses where response_name = 'typed-ambiguity-create'
+    )
+  ),
+  jsonb_build_object(
+    'run_blockers', 1,
+    'issues', jsonb_build_array(jsonb_build_object(
+      'severity', 'BLOCKING',
+      'code', 'AMBIGUOUS_ELIGIBLE_RECIPE',
+      'menu_snapshot_line_id', 'e4600000-0000-0000-0000-000000000022',
+      'school_id', 'e4100000-0000-0000-0000-000000000005',
+      'service_date', '2026-11-04',
+      'dish_id', 'e4600000-0000-0000-0000-000000000001'
+    ))
+  ),
+  'RMVP04-38 typed-tier ambiguity persists exactly one fully typed blocker'
+);
+select is(
+  (
+    select jsonb_build_object(
+      'ambiguous_selections', (
+        select count(*) from atlas_planning.need_generation_recipe_selections selection
+        where selection.need_generation_run_id = run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = 'e4600000-0000-0000-0000-000000000022'
+      ),
+      'ambiguous_uses', (
+        select count(*)
+        from atlas_planning.need_generation_recipe_line_uses line_use
+        join atlas_planning.need_generation_recipe_selections selection
+          using (need_generation_recipe_selection_id)
+        where line_use.need_generation_run_id = run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = 'e4600000-0000-0000-0000-000000000022'
+      ),
+      'ambiguous_lines', (
+        select count(*) from atlas_planning.theoretical_need_lines line
+        where line.need_generation_run_id = run.need_generation_run_id
+          and line.weekly_menu_approval_snapshot_line_id = 'e4600000-0000-0000-0000-000000000022'
+      ),
+      'valid_selections', (
+        select count(*) from atlas_planning.need_generation_recipe_selections selection
+        where selection.need_generation_run_id = run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = 'e4600000-0000-0000-0000-000000000023'
+      ),
+      'recipe_lines', (
+        select count(*) from atlas_planning.theoretical_need_lines line
+        where line.need_generation_run_id = run.need_generation_run_id
+          and line.contribution_family = 'RECIPE_DERIVED'
+      ),
+      'pantry_lines', (
+        select count(*) from atlas_planning.theoretical_need_lines line
+        where line.need_generation_run_id = run.need_generation_run_id
+          and line.contribution_family = 'PANTRY_DIRECT'
+      )
+    )
+    from atlas_planning.need_generation_runs run
+    where run.need_generation_run_id = (
+      select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+      from rmvp04_responses where response_name = 'typed-ambiguity-create'
+    )
+  ),
+  jsonb_build_object(
+    'ambiguous_selections', 0,
+    'ambiguous_uses', 0,
+    'ambiguous_lines', 0,
+    'valid_selections', 1,
+    'recipe_lines', 1,
+    'pantry_lines', 1
+  ),
+  'RMVP04-39 typed-tier ambiguity emits no Recipe lineage while valid Recipe and Pantry lines generate'
+);
+
+insert into rmvp04_requests
+select 'typed-ambiguity-validate', pg_temp.rmvp04_command(
+  'e4800000-0000-0000-0000-000000000004',
+  'rmvp04-typed-ambiguity-validate',
+  1,
+  'NEED_GENERATION_VALIDATED',
+  null,
+  jsonb_build_object(
+    'need_generation_run_id', response->'affected_aggregate_ids'->>'need_generation_run_id'
+  )
+)
+from rmvp04_responses where response_name = 'typed-ambiguity-create';
+set local role authenticated;
+insert into rmvp04_responses
+select 'typed-ambiguity-validate', atlas_api.validate_need_generation_run(request)
+from rmvp04_requests where request_name = 'typed-ambiguity-validate';
+reset role;
+select is(
+  (select response->>'error_code' from rmvp04_responses where response_name = 'typed-ambiguity-validate'),
+  'NEED_GENERATION_HAS_BLOCKERS',
+  'RMVP04-40 typed-tier ambiguous run cannot validate'
+);
+
+insert into rmvp04_requests values (
+  'general-ambiguity-evaluate',
+  pg_temp.rmvp04_readiness_command(
+    'e4800000-0000-0000-0000-000000000011',
+    'rmvp04-general-ambiguity-evaluate',
+    'ABSENT',
+    null,
+    null,
+    'READINESS_EVALUATION_REQUESTED',
+    jsonb_build_object(
+      'period_start', '2026-11-05',
+      'period_end', '2026-11-05',
+      'source_candidates', jsonb_build_object(
+        'weekly_menu', jsonb_build_object('weekly_menu_id', 'e4200000-0000-0000-0000-000000000001', 'weekly_menu_version', 1, 'weekly_menu_approval_snapshot_id', 'e4200000-0000-0000-0000-000000000002'),
+        'attendance', jsonb_build_object('attendance_batch_id', 'e4300000-0000-0000-0000-000000000001', 'attendance_version', 1, 'attendance_approval_snapshot_id', 'e4300000-0000-0000-0000-000000000002'),
+        'pantry', jsonb_build_object('pantry_need_batch_id', 'e4400000-0000-0000-0000-000000000002', 'pantry_need_batch_version', 1, 'pantry_need_approval_snapshot_id', 'e4400000-0000-0000-0000-000000000003')
+      )
+    )
+  )
+);
+set local role authenticated;
+insert into rmvp04_responses
+select 'general-ambiguity-evaluate', atlas_api.evaluate_planning_input_readiness(request)
+from rmvp04_requests where request_name = 'general-ambiguity-evaluate';
+reset role;
+
+insert into rmvp04_requests
+select
+  'general-ambiguity-request',
+  pg_temp.rmvp04_readiness_command(
+    'e4800000-0000-0000-0000-000000000012',
+    'rmvp04-general-ambiguity-request',
+    'READY',
+    (response->'affected_aggregate_ids'->>'planning_input_evaluation_id')::uuid,
+    (response->'new_versions'->>'current_evaluation_version')::bigint,
+    'NEED_GENERATION_HANDOFF_REQUESTED',
+    jsonb_build_object(
+      'planning_input_set_id', response->'affected_aggregate_ids'->>'planning_input_set_id',
+      'period_start', '2026-11-05',
+      'period_end', '2026-11-05'
+    )
+  )
+from rmvp04_responses where response_name = 'general-ambiguity-evaluate';
+set local role authenticated;
+insert into rmvp04_responses
+select 'general-ambiguity-request', atlas_api.request_planning_input_need_generation(request)
+from rmvp04_requests where request_name = 'general-ambiguity-request';
+reset role;
+
+insert into rmvp04_requests
+select
+  'general-ambiguity-create',
+  pg_temp.rmvp04_command(
+    'e4800000-0000-0000-0000-000000000013',
+    'rmvp04-general-ambiguity-create',
+    (evaluation.response->'new_versions'->>'current_evaluation_version')::bigint,
+    'NEED_GENERATION_CREATED',
+    null,
+    jsonb_build_object(
+      'planning_input_set_id', requested.response->'affected_aggregate_ids'->>'planning_input_set_id',
+      'planning_input_evaluation_id', evaluation.response->'affected_aggregate_ids'->>'planning_input_evaluation_id',
+      'period_start', '2026-11-05',
+      'period_end', '2026-11-05'
+    )
+  )
+from rmvp04_responses evaluation
+cross join rmvp04_responses requested
+where evaluation.response_name = 'general-ambiguity-evaluate'
+  and requested.response_name = 'general-ambiguity-request';
+set local role authenticated;
+insert into rmvp04_responses
+select 'general-ambiguity-create', atlas_api.create_need_generation_run(request)
+from rmvp04_requests where request_name = 'general-ambiguity-create';
+reset role;
+
+select ok(
+  (
+    select response->>'success' = 'true'
+      and response->'authoritative_readback'->'selected_run'->>'status' = 'GENERATED'
+      and response->'authoritative_readback'->'selected_run'->>'blocking_issue_count' = '1'
+    from rmvp04_responses where response_name = 'general-ambiguity-create'
+  ),
+  'RMVP04-41 general-tier ambiguity still creates one GENERATED run'
+);
+select is(
+  (
+    select jsonb_build_object(
+      'run_blockers', run.blocking_issue_count,
+      'issues', (
+        select jsonb_agg(
+          jsonb_build_object(
+            'severity', issue.severity,
+            'code', issue.issue_code,
+            'menu_snapshot_line_id', issue.weekly_menu_approval_snapshot_line_id,
+            'school_id', issue.school_id,
+            'service_date', issue.service_date,
+            'dish_id', issue.dish_id
+          ) order by issue.need_generation_issue_id
+        )
+        from atlas_planning.need_generation_issues issue
+        where issue.need_generation_run_id = run.need_generation_run_id
+      )
+    )
+    from atlas_planning.need_generation_runs run
+    where run.need_generation_run_id = (
+      select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+      from rmvp04_responses where response_name = 'general-ambiguity-create'
+    )
+  ),
+  jsonb_build_object(
+    'run_blockers', 1,
+    'issues', jsonb_build_array(jsonb_build_object(
+      'severity', 'BLOCKING',
+      'code', 'AMBIGUOUS_ELIGIBLE_RECIPE',
+      'menu_snapshot_line_id', 'e4700000-0000-0000-0000-000000000022',
+      'school_id', 'e4100000-0000-0000-0000-000000000005',
+      'service_date', '2026-11-05',
+      'dish_id', 'e4700000-0000-0000-0000-000000000001'
+    ))
+  ),
+  'RMVP04-42 general-tier ambiguity persists exactly one fully typed blocker'
+);
+select is(
+  (
+    select jsonb_build_object(
+      'ambiguous_selections', (
+        select count(*) from atlas_planning.need_generation_recipe_selections selection
+        where selection.need_generation_run_id = run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = 'e4700000-0000-0000-0000-000000000022'
+      ),
+      'ambiguous_uses', (
+        select count(*)
+        from atlas_planning.need_generation_recipe_line_uses line_use
+        join atlas_planning.need_generation_recipe_selections selection
+          using (need_generation_recipe_selection_id)
+        where line_use.need_generation_run_id = run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = 'e4700000-0000-0000-0000-000000000022'
+      ),
+      'ambiguous_lines', (
+        select count(*) from atlas_planning.theoretical_need_lines line
+        where line.need_generation_run_id = run.need_generation_run_id
+          and line.weekly_menu_approval_snapshot_line_id = 'e4700000-0000-0000-0000-000000000022'
+      ),
+      'valid_selections', (
+        select count(*) from atlas_planning.need_generation_recipe_selections selection
+        where selection.need_generation_run_id = run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = 'e4700000-0000-0000-0000-000000000023'
+      ),
+      'recipe_lines', (
+        select count(*) from atlas_planning.theoretical_need_lines line
+        where line.need_generation_run_id = run.need_generation_run_id
+          and line.contribution_family = 'RECIPE_DERIVED'
+      ),
+      'pantry_lines', (
+        select count(*) from atlas_planning.theoretical_need_lines line
+        where line.need_generation_run_id = run.need_generation_run_id
+          and line.contribution_family = 'PANTRY_DIRECT'
+      )
+    )
+    from atlas_planning.need_generation_runs run
+    where run.need_generation_run_id = (
+      select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+      from rmvp04_responses where response_name = 'general-ambiguity-create'
+    )
+  ),
+  jsonb_build_object(
+    'ambiguous_selections', 0,
+    'ambiguous_uses', 0,
+    'ambiguous_lines', 0,
+    'valid_selections', 1,
+    'recipe_lines', 1,
+    'pantry_lines', 1
+  ),
+  'RMVP04-43 general-tier ambiguity emits no Recipe lineage while valid Recipe and Pantry lines generate'
+);
+
+insert into rmvp04_requests
+select 'general-ambiguity-validate', pg_temp.rmvp04_command(
+  'e4800000-0000-0000-0000-000000000014',
+  'rmvp04-general-ambiguity-validate',
+  1,
+  'NEED_GENERATION_VALIDATED',
+  null,
+  jsonb_build_object(
+    'need_generation_run_id', response->'affected_aggregate_ids'->>'need_generation_run_id'
+  )
+)
+from rmvp04_responses where response_name = 'general-ambiguity-create';
+set local role authenticated;
+insert into rmvp04_responses
+select 'general-ambiguity-validate', atlas_api.validate_need_generation_run(request)
+from rmvp04_requests where request_name = 'general-ambiguity-validate';
+reset role;
+select is(
+  (select response->>'error_code' from rmvp04_responses where response_name = 'general-ambiguity-validate'),
+  'NEED_GENERATION_HAS_BLOCKERS',
+  'RMVP04-44 general-tier ambiguous run cannot validate'
+);
+
 create temporary table rmvp04_access_results (
   role_name text primary key,
   call_denied boolean not null
@@ -1029,8 +1557,8 @@ end;
 $$;
 reset role;
 
-select ok((select call_denied from rmvp04_access_results where role_name = 'anon'), 'RMVP04-37 an anonymous API call is rejected by PostgreSQL');
-select ok((select call_denied from rmvp04_access_results where role_name = 'service_role'), 'RMVP04-38 a service-role API call is rejected by PostgreSQL');
+select ok((select call_denied from rmvp04_access_results where role_name = 'anon'), 'RMVP04-45 an anonymous API call is rejected by PostgreSQL');
+select ok((select call_denied from rmvp04_access_results where role_name = 'service_role'), 'RMVP04-46 a service-role API call is rejected by PostgreSQL');
 select ok(
   lower(pg_get_functiondef(
     'atlas_core.rmvp_03b_finish_success(jsonb,uuid,uuid,text,uuid,uuid,bigint,jsonb,jsonb,text,jsonb)'::regprocedure
@@ -1038,7 +1566,7 @@ select ok(
   and lower(pg_get_functiondef(
     'atlas_core.rmvp_03b_finish_success(jsonb,uuid,uuid,text,uuid,uuid,bigint,jsonb,jsonb,text,jsonb)'::regprocedure
   )) like '%set constraints all deferred;%',
-  'RMVP04-39 readiness commands flush deferred H0A4B integrity inside the bounded runtime'
+  'RMVP04-47 readiness commands flush deferred H0A4B integrity inside the bounded runtime'
 );
 select ok(
   lower(pg_get_functiondef(
@@ -1047,7 +1575,7 @@ select ok(
   and lower(pg_get_functiondef(
     'atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure
   )) like '%set constraints all deferred;%',
-  'RMVP04-40 CMD-15 flushes deferred Confirmed Need integrity inside its bounded runtime'
+  'RMVP04-48 CMD-15 flushes deferred Confirmed Need integrity inside its bounded runtime'
 );
 
 select * from finish();
