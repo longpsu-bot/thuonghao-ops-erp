@@ -9,6 +9,8 @@ const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
 const deterministicBatchId = "b6500000-0000-0000-0000-000000000050";
 const browserSource = process.env.RMVP05_BROWSER_SOURCE ?? "fixture";
+const postgrestSchemaCacheMaxAttempts = 6;
+const postgrestSchemaCacheRetryDelayMs = 1_500;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -51,17 +53,35 @@ function confirmationCommand(subject, version, previewHash, lines) {
 }
 
 async function invoke(client, name, request) {
-  const { data, error } = await client
-    .schema("atlas_api")
-    .rpc(name, { request })
-    .retry(false);
-  if (error) {
-    throw new Error(
-      `RMVP-05 ${name} transport failed safely (${error.code ?? "UNKNOWN"}: ${error.message ?? "no message"}).`,
+  const rpcArguments = { request };
+  for (
+    let attempt = 1;
+    attempt <= postgrestSchemaCacheMaxAttempts;
+    attempt += 1
+  ) {
+    const { data, error } = await client
+      .schema("atlas_api")
+      .rpc(name, rpcArguments)
+      .retry(false);
+    if (!error) {
+      assert(data, `RMVP-05 ${name} returned no envelope.`);
+      return data;
+    }
+    if (
+      error.code !== "PGRST002" ||
+      attempt === postgrestSchemaCacheMaxAttempts
+    ) {
+      throw new Error(
+        `RMVP-05 ${name} transport failed safely (${error.code ?? "UNKNOWN"}: ${error.message ?? "no message"}).`,
+      );
+    }
+    console.warn(
+      `RMVP-05 ${name} is waiting for the PostgREST schema cache (PGRST002); retry ${attempt + 1}/${postgrestSchemaCacheMaxAttempts} in ${postgrestSchemaCacheRetryDelayMs}ms.`,
+    );
+    await new Promise((resolve) =>
+      setTimeout(resolve, postgrestSchemaCacheRetryDelayMs),
     );
   }
-  assert(data, `RMVP-05 ${name} returned no envelope.`);
-  return data;
 }
 
 async function invokeSuccess(client, name, request) {
