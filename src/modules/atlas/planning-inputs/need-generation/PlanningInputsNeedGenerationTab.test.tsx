@@ -24,7 +24,7 @@ describe("Planning Inputs fifth tab", () => {
       />,
     );
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(5);
+    expect(tabs).toHaveLength(6);
     expect(tabs[4]).toHaveTextContent("Tạo nhu cầu");
     fireEvent.click(tabs[4]!);
     expect(

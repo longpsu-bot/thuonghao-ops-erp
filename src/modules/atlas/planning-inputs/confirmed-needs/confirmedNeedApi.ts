@@ -1,0 +1,164 @@
+import type {
+  AtlasRpcName,
+  AtlasRpcRequest,
+  AtlasRpcResult,
+} from "../../connection/atlasRpc";
+import type { ConfirmedNeedDraftLine } from "./confirmedNeedModel";
+
+export const CONFIRMED_NEED_RPC_FUNCTIONS = {
+  getReview: "atlas_api.get_confirmed_need_review",
+  preview: "atlas_api.preview_confirmed_need_confirmation",
+  confirm: "atlas_api.confirm_need_quantities",
+} as const satisfies Record<string, AtlasRpcName>;
+
+export type ConfirmedNeedFilters = {
+  service_date: string | null;
+  school_id: string | null;
+  delivery_location_id: string | null;
+  ingredient_id: string | null;
+  decision_state: "UNREVIEWED" | "CONFIRMED" | null;
+};
+
+export type ConfirmedNeedLineRequest = {
+  confirmed_need_line_id: string;
+  expected_current_revision_id: string;
+  expected_current_decision_id: string | null;
+  proposed_confirmed_quantity: string;
+  reason_code: ConfirmedNeedDraftLine["reason_code"];
+  reason_note: string | null;
+};
+
+export type ConfirmedNeedPreviewRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-05.v1";
+  requested_by_auth_subject: string;
+  correlation_id: string;
+  payload: {
+    confirmed_need_batch_id: string;
+    expected_batch_version: number;
+    lines: ConfirmedNeedLineRequest[];
+  };
+};
+
+export type ConfirmedNeedCommandRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-05.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "CONFIRMED_NEED_QUANTITIES_CONFIRMED";
+  reason_note: null;
+  payload: {
+    confirmed_need_batch_id: string;
+    preview_hash: string;
+    lines: ConfirmedNeedLineRequest[];
+  };
+};
+
+export type ConfirmedNeedRpcInvoker = {
+  invoke(
+    functionName: AtlasRpcName,
+    request: AtlasRpcRequest,
+  ): Promise<AtlasRpcResult>;
+};
+
+export function confirmedNeedReadRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  filters: ConfirmedNeedFilters,
+  lineOffset = 0,
+  lineLimit = 100,
+): AtlasRpcRequest {
+  return {
+    contract_version: "RMVP-05.v1",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      confirmed_need_batch_id: batchId,
+      filters,
+      line_offset: lineOffset,
+      line_limit: lineLimit,
+    },
+  };
+}
+
+export function confirmedNeedPreviewRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  lines: ConfirmedNeedLineRequest[],
+): ConfirmedNeedPreviewRequest {
+  return {
+    contract_version: "RMVP-05.v1",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      confirmed_need_batch_id: batchId,
+      expected_batch_version: expectedVersion,
+      lines,
+    },
+  };
+}
+
+export function confirmedNeedCommandRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  previewHash: string,
+  lines: ConfirmedNeedLineRequest[],
+): ConfirmedNeedCommandRequest {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-05.v1",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `confirmed-need-quantities:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "CONFIRMED_NEED_QUANTITIES_CONFIRMED",
+    reason_note: null,
+    payload: {
+      confirmed_need_batch_id: batchId,
+      preview_hash: previewHash,
+      lines,
+    },
+  };
+}
+
+export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
+  return {
+    getReview(
+      authSubject: string,
+      correlationId: string,
+      batchId: string,
+      filters: ConfirmedNeedFilters,
+      lineOffset = 0,
+      lineLimit = 100,
+    ) {
+      return invoker.invoke(
+        CONFIRMED_NEED_RPC_FUNCTIONS.getReview,
+        confirmedNeedReadRequest(
+          authSubject,
+          correlationId,
+          batchId,
+          filters,
+          lineOffset,
+          lineLimit,
+        ),
+      );
+    },
+    preview(request: ConfirmedNeedPreviewRequest) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.preview, request);
+    },
+    confirm(request: ConfirmedNeedCommandRequest) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.confirm, request);
+    },
+  };
+}
+
+export type ConfirmedNeedApi = ReturnType<typeof createConfirmedNeedApi>;

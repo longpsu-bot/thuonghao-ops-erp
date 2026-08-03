@@ -1,0 +1,199 @@
+import "@testing-library/jest-dom/vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { AtlasAuthState } from "../../connection/authSession";
+import type { AtlasRpcResult } from "../../connection/atlasRpc";
+import { ConfirmedNeedReviewWorkbench } from "./ConfirmedNeedReviewWorkbench";
+import { createReviewConfirmedNeedApi } from "./reviewConfirmedNeedApi";
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
+const authState = {
+  status: "authenticated",
+  authSubject: "review-only-atlas-operator",
+  user: { id: "review-only-atlas-operator" },
+  session: { user: { id: "review-only-atlas-operator" } },
+} as unknown as AtlasAuthState;
+
+const batchId = "c4500000-0000-0000-0000-000000000001";
+
+function renderReview(api = createReviewConfirmedNeedApi("ready")) {
+  return render(
+    <ConfirmedNeedReviewWorkbench
+      authState={authState}
+      api={api}
+      initialBatchId={batchId}
+      mode="review"
+    />,
+  );
+}
+
+async function prepareMixedPreview(
+  api = createReviewConfirmedNeedApi("ready"),
+) {
+  renderReview(api);
+  const carrot = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+  fireEvent.change(carrot, { target: { value: "5.250000" } });
+  fireEvent.change(screen.getByLabelText("Lý do Cà rốt"), {
+    target: { value: "PLANNING_STEP_ADJUSTMENT" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Xem trước xác nhận" }));
+  await screen.findByLabelText("Bản xem trước xác nhận");
+  return api;
+}
+
+describe("RMVP-05 Confirmed Need review workbench", () => {
+  it("loads an explicit batch and distinguishes theoretical, proposed and authoritative quantities", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const getReview = vi.spyOn(api, "getReview");
+    renderReview(api);
+    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(
+      screen
+        .getAllByRole("cell")
+        .filter((cell) => cell.textContent?.includes("10,25")),
+    ).toHaveLength(2);
+    expect(screen.getAllByText(/Chưa có quyết định/)).toHaveLength(2);
+    expect(getReview).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      batchId,
+      expect.anything(),
+    );
+  });
+
+  it("preserves exact decimal strings, applies local rules and invalidates preview after edits", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const preview = vi.spyOn(api, "preview");
+    await prepareMixedPreview(api);
+    expect(preview.mock.calls[0]?.[0].payload.lines[1]).toHaveProperty(
+      "proposed_confirmed_quantity",
+      "5.250000",
+    );
+    expect(screen.getByText(/21 bước × 0.250000/)).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Cà rốt"), {
+      target: { value: "5.500000" },
+    });
+    expect(
+      screen.queryByLabelText("Bản xem trước xác nhận"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("requires governed reasons and notes before preview", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const preview = vi.spyOn(api, "preview");
+    renderReview(api);
+    const carrot = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+    fireEvent.change(carrot, { target: { value: "5.250000" } });
+    fireEvent.change(screen.getByLabelText("Lý do Cà rốt"), {
+      target: { value: "OTHER" },
+    });
+    expect(screen.getByText("Lý do này cần ghi chú.")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước xác nhận" }));
+    expect(preview).not.toHaveBeenCalled();
+  });
+
+  it("confirms mixed unchanged and adjusted lines and renders authoritative readback", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const confirm = vi.spyOn(api, "confirm");
+    await prepareMixedPreview(api);
+    fireEvent.click(
+      screen.getByLabelText(
+        "Tôi xác nhận đúng bản xem trước có thẩm quyền này",
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận số lượng" }));
+    await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByText("ADJUSTED_QUANTITY_CONFIRMED"),
+    ).toBeVisible();
+    expect(screen.getByText("UNCHANGED_PROPOSAL_ACCEPTED")).toBeVisible();
+  });
+
+  it("renders blockers before warnings", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const original = api.getReview.bind(api);
+    api.getReview = vi.fn(async (...args: Parameters<typeof original>) => {
+      const result = await original(...args);
+      if (result.kind === "success") {
+        const workbench = result.response.workbench as Record<string, unknown>;
+        workbench.blockers = [
+          { code: "BLOCK", message: "Lỗi chặn từ backend" },
+        ];
+        workbench.warnings = [{ code: "WARN", message: "Cảnh báo từ backend" }];
+      }
+      return result;
+    });
+    renderReview(api);
+    const blocker = await screen.findByText("Lỗi chặn từ backend");
+    const warning = screen.getByText("Cảnh báo từ backend");
+    expect(
+      blocker.compareDocumentPosition(warning) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("refreshes stale preview state while retaining local Draft values", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const getReview = vi.spyOn(api, "getReview");
+    api.preview = vi.fn().mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "STALE_CONFIRMED_NEED_BATCH",
+        safe_message: "stale",
+      },
+    } satisfies AtlasRpcResult);
+    renderReview(api);
+    const quantity = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+    fireEvent.change(quantity, { target: { value: "5.250000" } });
+    fireEvent.change(screen.getByLabelText("Lý do Cà rốt"), {
+      target: { value: "PLANNING_STEP_ADJUSTMENT" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước xác nhận" }));
+    await waitFor(() => expect(getReview.mock.calls.length).toBeGreaterThan(1));
+    expect(screen.getByLabelText("Số lượng xác nhận Cà rốt")).toHaveValue(
+      "5.250000",
+    );
+  });
+
+  it("never retries automatically and reuses the exact uncertain command on demand", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const original = api.confirm.bind(api);
+    const confirm = vi
+      .fn()
+      .mockResolvedValueOnce({
+        kind: "transport_error",
+        diagnostic: {
+          code: "NETWORK_FAILURE",
+          safeMessage: "Chưa chắc chắn",
+        },
+      } satisfies AtlasRpcResult)
+      .mockImplementation(original);
+    api.confirm = confirm;
+    await prepareMixedPreview(api);
+    fireEvent.click(
+      screen.getByLabelText(
+        "Tôi xác nhận đúng bản xem trước có thẩm quyền này",
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận số lượng" }));
+    const retry = await screen.findByRole("button", {
+      name: "Gửi lại đúng lệnh chưa chắc chắn",
+    });
+    expect(confirm).toHaveBeenCalledOnce();
+    const exact = confirm.mock.calls[0]?.[0];
+    fireEvent.click(retry);
+    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(2));
+    expect(confirm.mock.calls[1]?.[0]).toBe(exact);
+  });
+});

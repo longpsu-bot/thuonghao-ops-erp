@@ -164,7 +164,10 @@ from (
     ('b6000000-0000-0000-0000-000000000028'::uuid, 'planning.pantry.write'),
     ('b6000000-0000-0000-0000-000000000029'::uuid, 'planning.input_readiness.write'),
     ('b6000000-0000-0000-0000-000000000030'::uuid, 'planning.need_generation.write'),
-    ('b6000000-0000-0000-0000-000000000031'::uuid, 'confirmed_need_generation.materialize')
+    ('b6000000-0000-0000-0000-000000000031'::uuid, 'confirmed_need_generation.materialize'),
+    ('b6000000-0000-0000-0000-000000000032'::uuid, 'confirmed_need_review.read'),
+    ('b6000000-0000-0000-0000-000000000033'::uuid, 'confirmed_need_quantities.preview'),
+    ('b6000000-0000-0000-0000-000000000034'::uuid, 'confirmed_need_quantities.confirm')
 ) source(role_capability_id, capability_code)
 join atlas_core.capabilities capability
   on capability.capability_code = source.capability_code

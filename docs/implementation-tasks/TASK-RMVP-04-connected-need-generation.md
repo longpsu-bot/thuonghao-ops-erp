@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented on branch `codex/rmvp-04-connected-need-generation` from exact merged PANTRY-NG-02 baseline `4cc9bddb8f77c962d2c557affee5a7d3f58e75e2`. The change remains draft and unmerged until exact-head GitHub validation and product/architecture review complete.
+Merged through PR #168 at exact squash commit `d497c8921d64fb555baea8e207a27f63925934a7`. The implementation originated on branch `codex/rmvp-04-connected-need-generation` from PANTRY-NG-02 baseline `4cc9bddb8f77c962d2c557affee5a7d3f58e75e2`.
 
 ## Outcome
 
@@ -93,8 +93,8 @@ The GitHub-only browser-key script uses the disposable local synthetic identity 
 
 Local validation is limited to workspace verification, formatting, TypeScript, focused frontend tests, static SQL/surface inspection, `git diff --check`, and exact manifest review. No local Supabase start/reset, pgTAP, full frontend suite, hosted deployment, or hosted mutation is authorized.
 
-GitHub owns Supabase integration. Draft pull-request opens, synchronizations, and reopens run the bounded `Supabase Smoke`: fresh seedless reset, platform catalog, RMVP-03B, PANTRY-NG-02, RMVP-04, one existing CMD-15 initial-materialization suite, synthetic identity provisioning and only the prerequisites needed for the RMVP-04 browser-key journey. This is fast defect feedback, not full certification. `ready_for_review`, later non-draft synchronizations, manual dispatches, and pushes to `main` run `Supabase Full Integration`, preserving every registered catalog, synthetic, and browser-key journey. Frontend CI, UI Review Export, and Qodana remain independently required. Exact-head outcomes are recorded in the draft PR and final handoff.
+GitHub owns Supabase integration. As extended by RMVP-05, draft pull-request opens, synchronizations, and reopens run the bounded `Supabase Smoke`: fresh seedless reset, platform catalog, the three H1A suites, the three H1B1 suites, RMVP-04, RMVP-05, synthetic browser prerequisites, and the connected RMVP-04 → CMD-15 → RMVP-05 browser journey. This remains fast defect feedback, not full certification. `ready_for_review`, later non-draft synchronizations, manual dispatches, and pushes to `main` run `Supabase Full Integration`, preserving every registered catalog, synthetic, and browser-key journey. Frontend CI, UI Review Export, and Qodana remain independently required.
 
 ## Deferred boundary
 
-RMVP-04 stops at released Need Generation and existing CMD-15 Draft Review materialization. Planning confirmation decisions, supplier assignment, Purchase Handoff release, Procurement, Warehouse, Dispatch, hosted Supabase, Retool, production data, credentials, and deployment remain unchanged and separately authorized.
+RMVP-04 stops at released Need Generation and existing CMD-15 Draft Review materialization. The separately authorized [RMVP-05](TASK-RMVP-05-connected-confirmed-need-review.md) draft implements Planning quantity confirmation without changing RMVP-04. Supplier assignment, Purchase Handoff release, Procurement, Warehouse, Dispatch, hosted Supabase, Retool, production data, credentials, and deployment remain unchanged and separately authorized.

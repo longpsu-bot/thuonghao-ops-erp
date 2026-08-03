@@ -705,6 +705,7 @@ select is(
           'authenticated',
           'service_role',
           'atlas_command_runtime',
+          'atlas_confirmed_need_review_runtime',
           'atlas_dispatch_command_runtime',
           'atlas_evidence_command_runtime',
           'atlas_planning_command_runtime',
@@ -823,23 +824,17 @@ select is(
       'atlas_planning.planning_quantity_policy_revisions'::regclass
     )
   ),
-  0,
-  'H1A-STR-53 H1A relations have zero RLS policies'
+  3,
+  'H1A-STR-53 both H1A relations have RMVP-05 read policies and the root has its runtime-only lock policy'
 );
 select is(
-  (
-    select count(*)::integer
-    from pg_class as c
-    cross join lateral aclexplode(
-      coalesce(c.relacl, acldefault('r', c.relowner))
-    ) as privilege
-    left join pg_roles as role on role.oid = privilege.grantee
-    where c.oid in (
-      'atlas_planning.planning_quantity_policies'::regclass,
-      'atlas_planning.planning_quantity_policy_revisions'::regclass
-    )
-      and (
-        privilege.grantee = 0
+  (select jsonb_build_object(
+    'rmvp_05_runtime_select', count(*) filter (
+      where role.rolname = 'atlas_confirmed_need_review_runtime'
+        and privilege.privilege_type = 'SELECT'
+    ),
+    'other_browser_or_runtime', count(*) filter (
+      where privilege.grantee = 0
         or role.rolname in (
           'anon',
           'authenticated',
@@ -852,10 +847,23 @@ select is(
           'atlas_procurement_command_runtime',
           'atlas_read_runtime'
         )
-      )
+    )
+  )
+    from pg_class as c
+    cross join lateral aclexplode(
+      coalesce(c.relacl, acldefault('r', c.relowner))
+    ) as privilege
+    left join pg_roles as role on role.oid = privilege.grantee
+    where c.oid in (
+      'atlas_planning.planning_quantity_policies'::regclass,
+      'atlas_planning.planning_quantity_policy_revisions'::regclass
+    )
   ),
-  0,
-  'H1A-STR-54 H1A relations have zero PUBLIC, API, service, or runtime privilege'
+  jsonb_build_object(
+    'rmvp_05_runtime_select', 2,
+    'other_browser_or_runtime', 0
+  ),
+  'H1A-STR-54 only the dedicated RMVP-05 runtime has exact SELECT on both H1A relations'
 );
 select ok(
   to_regclass('public.planning_quantity_policies') is null
@@ -928,7 +936,7 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 73,
+    'api_total', 76,
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
       'get_planning_input_readiness_workbench',
@@ -937,7 +945,7 @@ select is(
     ]::text[],
     'seed_rows', 0
   ),
-  'H1A-STR-56 H1A has zero role, capability, runtime, API, or seed delta while the current API catalog includes exactly the four approved RMVP-03B APIs'
+  'H1A-STR-56 H1A retains no own role, capability, API, or seed while the current RMVP-05 API catalog retains the four approved RMVP-03B APIs'
 );
 
 select * from finish();

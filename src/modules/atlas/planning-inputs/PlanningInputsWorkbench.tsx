@@ -38,8 +38,16 @@ import { PlanningInputReadinessWorkbench } from "./readiness/PlanningInputReadin
 import type { PlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
 import { NeedGenerationWorkbench } from "./need-generation/NeedGenerationWorkbench";
 import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
+import { ConfirmedNeedReviewWorkbench } from "./confirmed-needs/ConfirmedNeedReviewWorkbench";
+import type { ConfirmedNeedApi } from "./confirmed-needs/confirmedNeedApi";
 
-type TabId = "menu" | "attendance" | "pantry" | "readiness" | "need-generation";
+type TabId =
+  | "menu"
+  | "attendance"
+  | "pantry"
+  | "readiness"
+  | "need-generation"
+  | "confirmed-needs";
 type LoadState = "idle" | "loading" | "ready" | "error";
 type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
@@ -363,6 +371,7 @@ export function PlanningInputsWorkbench({
   pantryApi,
   readinessApi,
   needGenerationApi,
+  confirmedNeedApi,
   mode = "connected",
 }: {
   authState: AtlasAuthState;
@@ -370,11 +379,15 @@ export function PlanningInputsWorkbench({
   pantryApi?: PantryApi;
   readinessApi?: PlanningInputReadinessApi;
   needGenerationApi?: NeedGenerationApi;
+  confirmedNeedApi?: ConfirmedNeedApi;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [tab, setTab] = useState<TabId>("menu");
+  const [confirmedNeedBatchId, setConfirmedNeedBatchId] = useState<
+    string | null
+  >(null);
   const [load, setLoad] = useState<LoadState>("idle");
   const [data, setData] = useState(() => emptyData(weekStart));
   const [notice, setNotice] = useState<string | null>(null);
@@ -961,6 +974,15 @@ export function PlanningInputsWorkbench({
               onClick={() => setTab("need-generation")}
             >
               Tạo nhu cầu
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "confirmed-needs"}
+              className={tab === "confirmed-needs" ? "active" : ""}
+              onClick={() => setTab("confirmed-needs")}
+            >
+              Xác nhận nhu cầu
             </button>
           </div>
 
@@ -1553,6 +1575,15 @@ export function PlanningInputsWorkbench({
             />
           )}
 
+          {tab === "confirmed-needs" && (
+            <ConfirmedNeedReviewWorkbench
+              authState={authState}
+              api={confirmedNeedApi}
+              initialBatchId={confirmedNeedBatchId}
+              mode={mode}
+            />
+          )}
+
           {tab === "need-generation" && (
             <NeedGenerationWorkbench
               authState={authState}
@@ -1560,6 +1591,10 @@ export function PlanningInputsWorkbench({
               selectedWeekStart={weekStart}
               selectedWeekEnd={data.week_end}
               mode={mode}
+              onConfirmedNeedMaterialized={(nextBatchId: string) => {
+                setConfirmedNeedBatchId(nextBatchId);
+                setTab("confirmed-needs");
+              }}
             />
           )}
 

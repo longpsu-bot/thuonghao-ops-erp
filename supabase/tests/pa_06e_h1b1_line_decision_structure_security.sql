@@ -735,6 +735,7 @@ select is(
           'authenticated',
           'service_role',
           'atlas_command_runtime',
+          'atlas_confirmed_need_review_runtime',
           'atlas_dispatch_command_runtime',
           'atlas_evidence_command_runtime',
           'atlas_planning_command_runtime',
@@ -893,8 +894,8 @@ select is(
     where polrelid
       = 'atlas_planning.confirmed_need_line_decisions'::regclass
   ),
-  0,
-  'H1B1-STR-58 the new relation has zero RLS policies'
+  2,
+  'H1B1-STR-58 the decision relation has exact RMVP-05 read and insert policies'
 );
 select ok(
   not exists (
@@ -946,8 +947,21 @@ select ok(
           'atlas_read_runtime'
         )
       )
+  )
+  and
+  (
+    select count(*) = 2
+    from pg_class as c
+    cross join lateral aclexplode(
+      coalesce(c.relacl, acldefault('r', c.relowner))
+    ) as privilege
+    join pg_roles as role on role.oid = privilege.grantee
+    where c.oid
+        = 'atlas_planning.confirmed_need_line_decisions'::regclass
+      and role.rolname = 'atlas_confirmed_need_review_runtime'
+      and privilege.privilege_type in ('SELECT', 'INSERT')
   ),
-  'H1B1-STR-59 the relation and functions expose zero positive PUBLIC, API, service, or runtime ACLs'
+  'H1B1-STR-59 only the dedicated RMVP-05 runtime receives exact SELECT and INSERT while decision functions remain private'
 );
 select ok(
   to_regclass('public.confirmed_need_line_decisions') is null
@@ -1011,7 +1025,7 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 73,
+    'api_total', 76,
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
       'get_planning_input_readiness_workbench',
@@ -1020,7 +1034,7 @@ select is(
     ]::text[],
     'views', 0
   ),
-  'H1B1-STR-61 H1B1 has zero role, capability, API, or view delta while the current API catalog includes exactly the four approved RMVP-03B APIs'
+  'H1B1-STR-61 H1B1 retains no own role, capability, API, or view while the current RMVP-05 API catalog retains the four approved RMVP-03B APIs'
 );
 select ok(
   not exists (
