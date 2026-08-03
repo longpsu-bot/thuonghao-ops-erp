@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -25,6 +26,14 @@ const authState = {
 } as unknown as AtlasAuthState;
 
 const batchId = "c4500000-0000-0000-0000-000000000001";
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
 
 function renderReview(api = createReviewConfirmedNeedApi("ready")) {
   return render(
@@ -88,6 +97,92 @@ describe("RMVP-05 Confirmed Need review workbench", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("discards a late preview after the operator edits the active Draft", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const originalPreview = api.preview.bind(api);
+    const pending = deferred<AtlasRpcResult>();
+    api.preview = vi.fn(() => pending.promise);
+    renderReview(api);
+    const quantity = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+    fireEvent.change(quantity, { target: { value: "5.250000" } });
+    fireEvent.change(screen.getByLabelText("Lý do Cà rốt"), {
+      target: { value: "PLANNING_STEP_ADJUSTMENT" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước xác nhận" }));
+    await waitFor(() => expect(api.preview).toHaveBeenCalledOnce());
+    const request = vi.mocked(api.preview).mock.calls[0]![0];
+
+    fireEvent.change(quantity, { target: { value: "5.500000" } });
+    await act(async () => {
+      pending.resolve(await originalPreview(request));
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Xem trước xác nhận" }),
+      ).not.toBeDisabled(),
+    );
+    expect(quantity).toHaveValue("5.500000");
+    expect(
+      screen.queryByLabelText("Bản xem trước xác nhận"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Xác nhận số lượng" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("discards a late preview after the active review is reloaded", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const originalGetReview = api.getReview.bind(api);
+    const originalPreview = api.preview.bind(api);
+    const pending = deferred<AtlasRpcResult>();
+    let readCount = 0;
+    api.getReview = vi.fn(
+      async (...args: Parameters<typeof originalGetReview>) => {
+        const result = await originalGetReview(...args);
+        readCount += 1;
+        if (readCount > 1 && result.kind === "success") {
+          const workbench = result.response.workbench as unknown as {
+            batch_version: number;
+          };
+          workbench.batch_version = 2;
+        }
+        return result;
+      },
+    );
+    api.preview = vi.fn(() => pending.promise);
+    renderReview(api);
+    const quantity = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+    fireEvent.change(quantity, { target: { value: "5.250000" } });
+    fireEvent.change(screen.getByLabelText("Lý do Cà rốt"), {
+      target: { value: "PLANNING_STEP_ADJUSTMENT" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước xác nhận" }));
+    await waitFor(() => expect(api.preview).toHaveBeenCalledOnce());
+    const request = vi.mocked(api.preview).mock.calls[0]![0];
+
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    await waitFor(() => expect(api.getReview).toHaveBeenCalledTimes(2));
+    expect(
+      screen.getByText("Phiên bản", { exact: false }).querySelector("b"),
+    ).toHaveTextContent("2");
+    await act(async () => {
+      pending.resolve(await originalPreview(request));
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Xem trước xác nhận" }),
+      ).not.toBeDisabled(),
+    );
+    expect(
+      screen.queryByLabelText("Bản xem trước xác nhận"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Phiên bản", { exact: false }).querySelector("b"),
+    ).toHaveTextContent("2");
+  });
+
   it("requires governed reasons and notes before preview", async () => {
     const api = createReviewConfirmedNeedApi("ready");
     const preview = vi.spyOn(api, "preview");
@@ -117,6 +212,46 @@ describe("RMVP-05 Confirmed Need review workbench", () => {
       await screen.findByText("ADJUSTED_QUANTITY_CONFIRMED"),
     ).toBeVisible();
     expect(screen.getByText("UNCHANGED_PROPOSAL_ACCEPTED")).toBeVisible();
+  });
+
+  it("discards late confirmation readback after a newer Draft edit", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const originalConfirm = api.confirm.bind(api);
+    const pending = deferred<AtlasRpcResult>();
+    await prepareMixedPreview(api);
+    api.confirm = vi.fn(() => pending.promise);
+    fireEvent.click(
+      screen.getByLabelText(
+        "Tôi xác nhận đúng bản xem trước có thẩm quyền này",
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận số lượng" }));
+    await waitFor(() => expect(api.confirm).toHaveBeenCalledOnce());
+    const request = vi.mocked(api.confirm).mock.calls[0]![0];
+
+    const quantity = screen.getByLabelText("Số lượng xác nhận Cà rốt");
+    fireEvent.change(quantity, { target: { value: "5.500000" } });
+    await act(async () => {
+      pending.resolve(await originalConfirm(request));
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Xem trước xác nhận" }),
+      ).not.toBeDisabled(),
+    );
+    expect(quantity).toHaveValue("5.500000");
+    expect(
+      screen.queryByLabelText("Bản xem trước xác nhận"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("ADJUSTED_QUANTITY_CONFIRMED"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Gửi lại đúng lệnh chưa chắc chắn",
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders blockers before warnings", async () => {

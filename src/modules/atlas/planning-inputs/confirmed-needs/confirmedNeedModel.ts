@@ -42,7 +42,12 @@ export type ConfirmedNeedLine = {
   school: { id: string; name: string };
   delivery_location: { id: string; name: string };
   ingredient: { id: string; name: string };
-  controlled_unit: { id: string; code: string; name: string };
+  controlled_unit: {
+    id: string;
+    code: string;
+    name: string;
+    status: "ACTIVE" | "INACTIVE";
+  };
   theoretical_quantity: string;
   proposed_confirmed_quantity: string;
   current_decision_id: string | null;
@@ -107,6 +112,8 @@ export type ConfirmedNeedPreviewLine = {
   current_revision_number: number;
   current_decision_id?: string;
   current_decision_number?: number;
+  controlled_unit_id: string;
+  controlled_unit_status: "ACTIVE" | "INACTIVE";
   theoretical_quantity_before: string;
   proposed_quantity_before: string;
   confirmed_quantity_after: string;

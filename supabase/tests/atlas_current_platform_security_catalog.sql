@@ -352,6 +352,11 @@ select is(
       join pg_class c on c.oid = p.polrelid
       join pg_namespace n on n.oid = c.relnamespace
       where n.nspname like 'atlas\_%' escape '\'
+        and not (
+          n.nspname = 'atlas_admin'
+          and c.relname = 'units'
+          and p.polname = 'rmvp_05_unit_lock'
+        )
     )
     select jsonb_build_object(
       'count', count(*),
@@ -363,7 +368,7 @@ select is(
     'count', 555,
     'md5', '6c67009370d176a732ef7f3d80066487'
   ),
-  'CAT-07 exact 555-policy RLS catalog fingerprint includes RMVP-05 least-privilege policies'
+  'CAT-07 exact pre-existing 555-policy RLS catalog fingerprint remains unchanged beside the isolated RMVP-05 Unit lock policy'
 );
 
 select ok(
@@ -1090,6 +1095,11 @@ select is(
       join pg_class c on c.oid = p.polrelid
       join pg_namespace n on n.oid = c.relnamespace
       where n.nspname like 'atlas\_%' escape '\'
+        and not (
+          n.nspname = 'atlas_admin'
+          and c.relname = 'units'
+          and p.polname = 'rmvp_05_unit_lock'
+        )
     ),
     private_function_catalog as (
       select format(
@@ -1202,6 +1212,14 @@ select is(
       where n.nspname like 'atlas\_%' escape '\'
         and att.attnum > 0
         and not att.attisdropped
+        and not (
+          n.nspname = 'atlas_admin'
+          and c.relname = 'units'
+          and att.attname = 'unit_id'
+          and r.rolname = 'atlas_confirmed_need_review_runtime'
+          and a.privilege_type = 'UPDATE'
+          and not a.is_grantable
+        )
 
       union all
 
@@ -1280,6 +1298,22 @@ select is(
       'policy_count', (select count(*) from policy_catalog),
       'policy_catalog_md5',
       (select md5(string_agg(row_text, E'\n' order by row_text)) from policy_catalog),
+      'rmvp_05_unit_lock_policy_count',
+      (
+        select count(*)
+        from pg_policy p
+        join pg_class c on c.oid = p.polrelid
+        join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'atlas_admin'
+          and c.relname = 'units'
+          and p.polname = 'rmvp_05_unit_lock'
+          and p.polcmd = 'w'
+          and p.polpermissive
+          and pg_get_expr(p.polqual, p.polrelid) = 'true'
+          and pg_get_expr(p.polwithcheck, p.polrelid) = 'false'
+          and cardinality(p.polroles) = 1
+          and 'atlas_confirmed_need_review_runtime'::regrole::oid = any(p.polroles)
+      ),
       'private_function_count', (select count(*) from private_function_catalog),
       'private_function_catalog_md5',
       (
@@ -1295,6 +1329,21 @@ select is(
       (
         select md5(string_agg(row_text, E'\n' order by row_text))
         from positive_target_grant_catalog
+      ),
+      'rmvp_05_unit_lock_grant_count',
+      (
+        select count(*)
+        from pg_attribute att
+        join pg_class c on c.oid = att.attrelid
+        join pg_namespace n on n.oid = c.relnamespace
+        cross join lateral aclexplode(att.attacl) a
+        join pg_roles r on r.oid = a.grantee
+        where n.nspname = 'atlas_admin'
+          and c.relname = 'units'
+          and att.attname = 'unit_id'
+          and r.rolname = 'atlas_confirmed_need_review_runtime'
+          and a.privilege_type = 'UPDATE'
+          and not a.is_grantable
       ),
       'api_function_count',
       (
@@ -1344,12 +1393,14 @@ select is(
     'capability_count', 24,
     'policy_count', 555,
     'policy_catalog_md5', '6c67009370d176a732ef7f3d80066487',
+    'rmvp_05_unit_lock_policy_count', 1,
     'private_function_count', 163,
     'private_function_catalog_md5', '81f6054eb5d0308028dcd947d44825c8',
     'trigger_count', 75,
     'trigger_catalog_md5', 'ab947193584e2a2c482f0c7abe6e35fb',
     'positive_target_grant_count', 1328,
     'positive_target_grant_md5', '33184d6b6dbc69804fc4930f843413b1',
+    'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 76,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,

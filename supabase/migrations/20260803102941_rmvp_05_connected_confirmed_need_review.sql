@@ -533,6 +533,7 @@ as $$
       ingredient.ingredient_name,
       unit.unit_code,
       unit.unit_name,
+      unit.unit_status,
       decision.confirmed_need_line_decision_id,
       decision.decision_number,
       decision.decision_kind,
@@ -627,6 +628,7 @@ as $$
       count(*) filter (where confirmed_need_line_decision_id is not null)::integer as confirmed_count,
       count(*) filter (where decision_kind = 'ADJUSTED_QUANTITY_CONFIRMED')::integer as adjusted_count,
       count(*) filter (where source_stale)::integer as source_stale_count,
+      count(*) filter (where unit_status <> 'ACTIVE')::integer as inactive_unit_count,
       count(*) filter (where policy_count <> 1)::integer as policy_blocker_count
     from current_lines
   )
@@ -664,6 +666,11 @@ as $$
               'code', 'STALE_CONFIRMED_NEED_LINE',
               'message', 'One or more current lines no longer match the exact released source.'
             )) else '[]'::jsonb end)
+          || (case when c.inactive_unit_count > 0
+            then pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+              'code', 'UNIT_INACTIVE',
+              'message', 'One or more controlled Units are inactive.'
+            )) else '[]'::jsonb end)
           || (case when c.policy_blocker_count > 0
             then pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
               'code', 'MISSING_OR_AMBIGUOUS_PLANNING_QUANTITY_POLICY',
@@ -672,21 +679,25 @@ as $$
         'warnings', '[]'::jsonb,
         'allowed_actions', pg_catalog.jsonb_build_object(
           'preview_confirmation', b.batch_status in ('DRAFT_REVIEW', 'REOPENED')
-            and c.line_count > 0 and c.source_stale_count = 0 and c.policy_blocker_count = 0,
+            and c.line_count > 0 and c.source_stale_count = 0
+            and c.inactive_unit_count = 0 and c.policy_blocker_count = 0,
           'confirm_quantities', b.batch_status in ('DRAFT_REVIEW', 'REOPENED')
-            and c.line_count > 0 and c.source_stale_count = 0 and c.policy_blocker_count = 0
+            and c.line_count > 0 and c.source_stale_count = 0
+            and c.inactive_unit_count = 0 and c.policy_blocker_count = 0
         ),
         'disabled_reasons', pg_catalog.jsonb_build_object(
           'preview_confirmation', case
             when b.batch_status not in ('DRAFT_REVIEW', 'REOPENED') then 'Batch is not reviewable.'
             when c.line_count = 0 then 'Batch contains no current operational line.'
             when c.source_stale_count > 0 then 'Refresh stale source evidence.'
+            when c.inactive_unit_count > 0 then 'Reactivate the controlled Unit before preview.'
             when c.policy_blocker_count > 0 then 'Resolve missing or ambiguous Planning quantity policy.'
             else null end,
           'confirm_quantities', case
             when b.batch_status not in ('DRAFT_REVIEW', 'REOPENED') then 'Batch is not reviewable.'
             when c.line_count = 0 then 'Batch contains no current operational line.'
             when c.source_stale_count > 0 then 'Refresh stale source evidence.'
+            when c.inactive_unit_count > 0 then 'Reactivate the controlled Unit before confirmation.'
             when c.policy_blocker_count > 0 then 'Resolve missing or ambiguous Planning quantity policy.'
             else null end
         ),
@@ -707,7 +718,12 @@ as $$
               'school', pg_catalog.jsonb_build_object('id', line.school_id, 'name', line.school_name),
               'delivery_location', pg_catalog.jsonb_build_object('id', line.delivery_location_id, 'name', line.delivery_location_name),
               'ingredient', pg_catalog.jsonb_build_object('id', line.ingredient_id, 'name', line.ingredient_name),
-              'controlled_unit', pg_catalog.jsonb_build_object('id', line.controlled_unit_id, 'code', line.unit_code, 'name', line.unit_name),
+              'controlled_unit', pg_catalog.jsonb_build_object(
+                'id', line.controlled_unit_id,
+                'code', line.unit_code,
+                'name', line.unit_name,
+                'status', line.unit_status
+              ),
               'theoretical_quantity', line.theoretical_quantity::text,
               'proposed_confirmed_quantity', line.proposed_confirmed_quantity::text,
               'current_decision_id', line.confirmed_need_line_decision_id,
@@ -728,6 +744,10 @@ as $$
               'blockers',
                 (case when line.source_stale then pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
                   'code', 'STALE_CONFIRMED_NEED_LINE', 'message', 'The current line source is stale.'
+                )) else '[]'::jsonb end)
+                || (case when line.unit_status <> 'ACTIVE' then pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+                  'code', 'UNIT_INACTIVE',
+                  'message', 'The controlled Unit is inactive.'
                 )) else '[]'::jsonb end)
                 || (case when line.policy_count = 0 then pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
                   'code', 'MISSING_PLANNING_QUANTITY_POLICY', 'message', 'No effective Planning quantity policy exists.'
@@ -787,6 +807,7 @@ declare
   v_decision atlas_planning.confirmed_need_line_decisions%rowtype;
   v_policy_count integer;
   v_policy atlas_planning.planning_quantity_policy_revisions%rowtype;
+  v_unit_status text;
   v_quantity_text text;
   v_quantity numeric(20, 6);
   v_tick_count numeric(20, 0);
@@ -870,6 +891,18 @@ begin
       ));
       v_blockers := v_blockers || v_line_blockers;
       continue;
+    end if;
+
+    select u.unit_status into strict v_unit_status
+    from atlas_admin.units u
+    where u.unit_id = v_line.controlled_unit_id;
+    if v_unit_status <> 'ACTIVE' then
+      v_line_blockers := v_line_blockers || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+        'code', 'UNIT_INACTIVE',
+        'field', 'controlled_unit_id',
+        'unit_id', v_line.controlled_unit_id,
+        'message', 'The controlled Unit is inactive.'
+      ));
     end if;
 
     select * into strict v_revision
@@ -1037,6 +1070,8 @@ begin
         'current_revision_number', v_revision.revision_number,
         'current_decision_id', v_line.current_confirmed_need_line_decision_id,
         'current_decision_number', v_decision.decision_number,
+        'controlled_unit_id', v_line.controlled_unit_id,
+        'controlled_unit_status', v_unit_status,
         'theoretical_quantity_before', v_revision.theoretical_quantity::text,
         'proposed_quantity_before', v_revision.confirmed_quantity::text,
         'confirmed_quantity_after', v_quantity::text,
@@ -1256,6 +1291,7 @@ declare
   v_preview_line jsonb;
   v_line atlas_planning.confirmed_need_lines%rowtype;
   v_revision atlas_planning.confirmed_need_line_revisions%rowtype;
+  v_unit_id uuid;
   v_new_revision_id uuid;
   v_new_decision_id uuid;
   v_next_version bigint;
@@ -1309,6 +1345,28 @@ begin
   where l.confirmed_need_batch_id = v_batch_id
   order by l.confirmed_need_line_id
   for update of l;
+
+  -- Unit status is changed by ordinary UPDATE / ON CONFLICT DO UPDATE, which
+  -- takes FOR NO KEY UPDATE or FOR UPDATE. Ordered FOR SHARE locks conflict
+  -- with both. PostgreSQL requires UPDATE on at least one selected column for
+  -- a locking SELECT, so the runtime receives only update(unit_id), never
+  -- update(unit_status), plus a lock-only UPDATE policy whose check is false.
+  for v_unit_id in
+    select distinct l.controlled_unit_id
+    from atlas_planning.confirmed_need_lines l
+    join pg_catalog.jsonb_array_elements(v_payload -> 'lines') item
+      on l.confirmed_need_line_id = atlas_core.pa_05b_safe_uuid(
+        item ->> 'confirmed_need_line_id'
+      )
+    where l.confirmed_need_batch_id = v_batch_id
+      and l.source_kind = 'NEED_GENERATION'
+    order by l.controlled_unit_id
+  loop
+    perform u.unit_id
+    from atlas_admin.units u
+    where u.unit_id = v_unit_id
+    for share;
+  end loop;
 
   v_preview := atlas_core.rmvp_05_canonical_preview(
     v_batch_id,
@@ -1638,6 +1696,12 @@ to atlas_confirmed_need_review_runtime;
 grant update (revision_status, is_current)
 on atlas_planning.confirmed_need_line_revisions
 to atlas_confirmed_need_review_runtime;
+-- PostgreSQL requires UPDATE on at least one selected column for SELECT FOR
+-- SHARE. The immutable primary-key column is the narrow lock-only grant;
+-- unit_status remains non-updatable and the lock policy below rejects writes.
+grant update (unit_id)
+on atlas_admin.units
+to atlas_confirmed_need_review_runtime;
 -- The existing deferred H1B1 guard takes a policy-root row lock with
 -- SELECT FOR UPDATE. A single-column grant authorizes that lock without
 -- granting the runtime authority to change policy business attributes.
@@ -1706,6 +1770,11 @@ with check (source_kind = 'NEED_GENERATION');
 create policy rmvp_05_revision_update
 on atlas_planning.confirmed_need_line_revisions for update to atlas_confirmed_need_review_runtime
 using (source_kind = 'NEED_GENERATION') with check (source_kind = 'NEED_GENERATION');
+-- A locking SELECT applies the UPDATE policy USING expression. WITH CHECK
+-- false permits the lock to see rows while rejecting every actual Unit write.
+create policy rmvp_05_unit_lock
+on atlas_admin.units for update to atlas_confirmed_need_review_runtime
+using (true) with check (false);
 create policy rmvp_05_policy_root_lock
 on atlas_planning.planning_quantity_policies for update to atlas_confirmed_need_review_runtime
 using (true) with check (true);

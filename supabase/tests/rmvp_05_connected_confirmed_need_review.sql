@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(41);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
@@ -522,6 +522,165 @@ select is(
   'RMVP05-16 preview performs no authoritative or receipt write'
 );
 
+create function pg_temp.rmvp05_business_state()
+returns jsonb language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object(
+    'decisions',
+      (select count(*) from atlas_planning.confirmed_need_line_decisions),
+    'revisions',
+      (select count(*) from atlas_planning.confirmed_need_line_revisions
+       where confirmed_need_batch_id = (select batch_id from pg_temp.rmvp05_context)),
+    'contributions',
+      (select count(*)
+       from atlas_planning.confirmed_need_line_revision_contributions c
+       join atlas_planning.confirmed_need_line_revisions r using (confirmed_need_line_revision_id)
+       where r.confirmed_need_batch_id = (select batch_id from pg_temp.rmvp05_context)),
+    'current_pointer_hash',
+      (select md5(coalesce(string_agg(format(
+         '%s|%s|%s', l.confirmed_need_line_id,
+         l.current_confirmed_need_line_decision_id,
+         r.confirmed_need_line_revision_id
+       ), E'\n' order by l.confirmed_need_line_id), ''))
+       from atlas_planning.confirmed_need_lines l
+       join atlas_planning.confirmed_need_line_revisions r
+         on r.confirmed_need_line_id = l.confirmed_need_line_id and r.is_current
+       where l.confirmed_need_batch_id = (select batch_id from pg_temp.rmvp05_context)),
+    'membership_hash',
+      (select md5(coalesce(string_agg(format(
+         '%s|%s|%s|%s|%s|%s|%s|%s',
+         c.confirmed_need_line_revision_contribution_id,
+         c.confirmed_need_line_revision_id,
+         c.need_generation_release_snapshot_line_id,
+         c.theoretical_need_line_id,
+         c.source_theoretical_quantity,
+         c.controlled_contribution_quantity,
+         c.source_unit_id,
+         c.controlled_unit_id
+       ), E'\n' order by c.confirmed_need_line_revision_contribution_id), ''))
+       from atlas_planning.confirmed_need_line_revision_contributions c
+       join atlas_planning.confirmed_need_line_revisions r using (confirmed_need_line_revision_id)
+       where r.confirmed_need_batch_id = (select batch_id from pg_temp.rmvp05_context)),
+    'version',
+      (select version from atlas_planning.confirmed_need_batches
+       where confirmed_need_batch_id = (select batch_id from pg_temp.rmvp05_context))
+  );
+$$;
+
+create temporary table rmvp05_before_inactive as
+select pg_temp.rmvp05_business_state() as state;
+
+update atlas_admin.units
+set unit_status = 'INACTIVE'
+where unit_id = 'f5100000-0000-0000-0000-000000000005';
+
+set local role authenticated;
+insert into rmvp05_responses
+select 'read-inactive-unit', atlas_api.get_confirmed_need_review(
+  pg_temp.rmvp05_read((select batch_id from rmvp05_context))
+);
+reset role;
+select ok(
+  (select response->>'success' = 'true'
+    and response->'workbench'->'allowed_actions'->>'preview_confirmation' = 'false'
+    and response->'workbench'->'allowed_actions'->>'confirm_quantities' = 'false'
+    and response->'workbench'->'blockers' @> '[{"code":"UNIT_INACTIVE"}]'::jsonb
+    and response->'workbench'->'lines'->0->'blockers' @> '[{"code":"UNIT_INACTIVE"}]'::jsonb
+    and response->'workbench'->'lines'->0->'controlled_unit'->>'status' = 'INACTIVE'
+   from rmvp05_responses where response_name = 'read-inactive-unit'),
+  'RMVP05-17 review exposes inactive Unit authority and disables both actions'
+);
+
+set local role authenticated;
+insert into rmvp05_responses
+select 'preview-inactive-unit', atlas_api.preview_confirmed_need_confirmation(
+  pg_temp.rmvp05_preview(1, request)
+)
+from rmvp05_requests where request_name = 'mixed-lines';
+reset role;
+select ok(
+  (select response->'preview'->>'error_code' = 'UNIT_INACTIVE'
+    and response->'preview'->>'preview_hash' is null
+    and response->'preview'->'ordered_preview_lines'->0->>'controlled_unit_id'
+      = 'f5100000-0000-0000-0000-000000000005'
+    and response->'preview'->'ordered_preview_lines'->0->>'controlled_unit_status'
+      = 'INACTIVE'
+   from rmvp05_responses where response_name = 'preview-inactive-unit')
+  and pg_temp.rmvp05_business_state()
+    = (select state from rmvp05_before_inactive),
+  'RMVP05-18 inactive Unit blocks authoritative preview with exact Unit evidence and no business write'
+);
+
+insert into rmvp05_requests
+select 'confirm-inactive-unit', pg_temp.rmvp05_confirm(
+  'f5000000-0000-0000-0000-000000000044',
+  'rmvp05-confirm-inactive-unit',
+  1,
+  response->'preview'->>'preview_hash',
+  (select request from rmvp05_requests where request_name = 'mixed-lines')
+)
+from rmvp05_responses where response_name = 'preview-mixed';
+set local role authenticated;
+insert into rmvp05_responses
+select 'confirm-inactive-unit', atlas_api.confirm_need_quantities(request)
+from rmvp05_requests where request_name = 'confirm-inactive-unit';
+reset role;
+select ok(
+  (select response->>'error_code' = 'UNIT_INACTIVE'
+   from rmvp05_responses where response_name = 'confirm-inactive-unit')
+  and pg_temp.rmvp05_business_state()
+    = (select state from rmvp05_before_inactive),
+  'RMVP05-19 deactivation after valid preview rejects confirmation before any decision, revision, pointer, membership, or version write'
+);
+
+select ok(
+  (select position('for update of l' in definition) > 0
+    and position('for v_unit_id in' in definition)
+      > position('for update of l' in definition)
+    and position('for share;' in definition)
+      > position('for v_unit_id in' in definition)
+    and position('v_preview := atlas_core.rmvp_05_canonical_preview' in definition)
+      > position('for share;' in definition)
+    and position('update atlas_planning.confirmed_need_line_revisions' in definition)
+      > position('v_preview := atlas_core.rmvp_05_canonical_preview' in definition)
+   from (select lower(pg_get_functiondef(
+     'atlas_api.confirm_need_quantities(jsonb)'::regprocedure
+   )) as definition) function_definition)
+  and not has_table_privilege(
+    'atlas_confirmed_need_review_runtime',
+    'atlas_admin.units',
+    'UPDATE'
+  )
+  and has_column_privilege(
+    'atlas_confirmed_need_review_runtime',
+    'atlas_admin.units',
+    'unit_id',
+    'UPDATE'
+  )
+  and not has_column_privilege(
+    'atlas_confirmed_need_review_runtime',
+    'atlas_admin.units',
+    'unit_status',
+    'UPDATE'
+  )
+  and exists (
+    select 1
+    from pg_policy policy
+    where policy.polrelid = 'atlas_admin.units'::regclass
+      and policy.polname = 'rmvp_05_unit_lock'
+      and policy.polcmd = 'w'
+      and policy.polpermissive
+      and pg_get_expr(policy.polqual, policy.polrelid) = 'true'
+      and pg_get_expr(policy.polwithcheck, policy.polrelid) = 'false'
+      and cardinality(policy.polroles) = 1
+      and 'atlas_confirmed_need_review_runtime'::regrole::oid = any(policy.polroles)
+  ),
+  'RMVP05-20 confirmation locks selected Units FOR SHARE before canonical recheck and business writes with only a lock-column grant and write-denying policy'
+);
+
+update atlas_admin.units
+set unit_status = 'ACTIVE'
+where unit_id = 'f5100000-0000-0000-0000-000000000005';
+
 insert into rmvp05_requests
 select 'confirm-mixed', pg_temp.rmvp05_confirm(
   'f5000000-0000-0000-0000-000000000041', 'rmvp05-confirm-mixed', 1,
@@ -536,49 +695,49 @@ select is(
     'unchanged', response->>'unchanged_accepted_line_count', 'adjusted', response->>'adjusted_line_count'
   ) from rmvp05_responses where response_name = 'confirm-mixed'),
   jsonb_build_object('success', 'true', 'version', '2', 'unchanged', '1', 'adjusted', '1'),
-  'RMVP05-17 mixed confirmation succeeds and advances the batch once'
+  'RMVP05-21 mixed confirmation succeeds and advances the batch once'
 );
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context) and revision_number = 1 and is_current), 1, 'RMVP05-18 unchanged acceptance creates no successor revision');
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context) and revision_number = 2 and is_current and confirmed_quantity = 3.25), 1, 'RMVP05-19 adjustment creates exactly one current successor revision');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context) and revision_number = 1 and is_current), 1, 'RMVP05-22 unchanged acceptance creates no successor revision');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context) and revision_number = 2 and is_current and confirmed_quantity = 3.25), 1, 'RMVP05-23 adjustment creates exactly one current successor revision');
 select is(
   (select jsonb_build_object('members', count(*), 'source_total', sum(source_theoretical_quantity), 'controlled_total', sum(controlled_contribution_quantity))
    from atlas_planning.confirmed_need_line_revision_contributions c
    join atlas_planning.confirmed_need_line_revisions r using (confirmed_need_line_revision_id)
    where r.confirmed_need_batch_id = (select batch_id from rmvp05_context) and r.revision_number = 2),
   jsonb_build_object('members', 1, 'source_total', 3.000000, 'controlled_total', 3.000000),
-  'RMVP05-20 adjusted successor preserves the exact source membership without recalculation'
+  'RMVP05-24 adjusted successor preserves the exact source membership without recalculation'
 );
 select is(
   (select jsonb_object_agg(decision_kind, count order by decision_kind) from (
     select decision_kind, count(*)::integer as count from atlas_planning.confirmed_need_line_decisions group by decision_kind
   ) kinds),
   jsonb_build_object('ADJUSTED_QUANTITY_CONFIRMED', 1, 'UNCHANGED_PROPOSAL_ACCEPTED', 1),
-  'RMVP05-21 both H1B1 decision kinds and current pointers are persisted'
+  'RMVP05-25 both H1B1 decision kinds and current pointers are persisted'
 );
 select ok(
   (select count(*) = 2 from atlas_planning.confirmed_need_lines where current_confirmed_need_line_decision_id is not null)
   and (select count(*) = 1 from atlas_audit.domain_events where command_id = 'f5000000-0000-0000-0000-000000000041')
   and (select count(*) = 1 from atlas_audit.audit_events where command_id = 'f5000000-0000-0000-0000-000000000041')
   and (select count(*) = 1 from atlas_core.command_receipts where command_id = 'f5000000-0000-0000-0000-000000000041' and outcome = 'COMPLETED'),
-  'RMVP05-22 pointers, event, audit, and completed receipt commit atomically'
+  'RMVP05-26 pointers, event, audit, and completed receipt commit atomically'
 );
 
 set local role authenticated;
 insert into rmvp05_responses select 'confirm-replay', atlas_api.confirm_need_quantities(request) from rmvp05_requests where request_name = 'confirm-mixed';
 reset role;
-select is((select response from rmvp05_responses where response_name = 'confirm-replay'), (select response from rmvp05_responses where response_name = 'confirm-mixed'), 'RMVP05-23 exact replay returns the immutable original response');
+select is((select response from rmvp05_responses where response_name = 'confirm-replay'), (select response from rmvp05_responses where response_name = 'confirm-mixed'), 'RMVP05-27 exact replay returns the immutable original response');
 select ok(
   (select count(*) = 2 from atlas_planning.confirmed_need_line_decisions)
   and (select count(*) = 3 from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context))
   and (select version = 2 from atlas_planning.confirmed_need_batches where confirmed_need_batch_id = (select batch_id from rmvp05_context)),
-  'RMVP05-24 exact replay creates no duplicate business evidence'
+  'RMVP05-28 exact replay creates no duplicate business evidence'
 );
 set local role authenticated;
 insert into rmvp05_responses
 select 'confirm-conflict', atlas_api.confirm_need_quantities(request || jsonb_build_object('idempotency_key', 'rmvp05-confirm-changed'))
 from rmvp05_requests where request_name = 'confirm-mixed';
 reset role;
-select is((select response->>'error_code' from rmvp05_responses where response_name = 'confirm-conflict'), 'IDEMPOTENCY_CONFLICT', 'RMVP05-25 changed idempotency reuse fails');
+select is((select response->>'error_code' from rmvp05_responses where response_name = 'confirm-conflict'), 'IDEMPOTENCY_CONFLICT', 'RMVP05-29 changed idempotency reuse fails');
 
 set local role authenticated;
 insert into rmvp05_responses
@@ -592,7 +751,7 @@ select ok(
   (select response->>'error_code' = 'STALE_CONFIRMED_NEED_BATCH' from rmvp05_responses where response_name = 'confirm-stale')
   and (select count(*) = 2 from atlas_planning.confirmed_need_line_decisions)
   and (select version = 2 from atlas_planning.confirmed_need_batches where confirmed_need_batch_id = (select batch_id from rmvp05_context)),
-  'RMVP05-26 stale preview fails without a business write'
+  'RMVP05-30 stale preview fails without a business write'
 );
 
 set local role authenticated;
@@ -601,8 +760,8 @@ insert into rmvp05_responses select 'capability-denied', atlas_api.get_confirmed
 select set_config('request.jwt.claim.sub', 'f5000000-0000-0000-0000-000000000103', true);
 insert into rmvp05_responses select 'scope-denied', atlas_api.get_confirmed_need_review(pg_temp.rmvp05_read((select batch_id from rmvp05_context), 'f5000000-0000-0000-0000-000000000103'));
 reset role;
-select is((select response->>'error_code' from rmvp05_responses where response_name = 'capability-denied'), 'CAPABILITY_DENIED', 'RMVP05-27 capability-free human call fails');
-select is((select response->>'error_code' from rmvp05_responses where response_name = 'scope-denied'), 'SCOPE_DENIED', 'RMVP05-28 wrong-scope human call fails');
+select is((select response->>'error_code' from rmvp05_responses where response_name = 'capability-denied'), 'CAPABILITY_DENIED', 'RMVP05-31 capability-free human call fails');
+select is((select response->>'error_code' from rmvp05_responses where response_name = 'scope-denied'), 'SCOPE_DENIED', 'RMVP05-32 wrong-scope human call fails');
 create temporary table rmvp05_access_results (role_name text primary key, call_denied boolean not null);
 grant insert, select on rmvp05_access_results to anon, service_role;
 set local role anon;
@@ -625,20 +784,20 @@ do $$ begin
   end;
 end $$;
 reset role;
-select ok((select call_denied from rmvp05_access_results where role_name = 'anon'), 'RMVP05-29 anon execute is revoked');
-select ok((select call_denied from rmvp05_access_results where role_name = 'service_role'), 'RMVP05-30 service-role execute is revoked');
+select ok((select call_denied from rmvp05_access_results where role_name = 'anon'), 'RMVP05-33 anon execute is revoked');
+select ok((select call_denied from rmvp05_access_results where role_name = 'service_role'), 'RMVP05-34 service-role execute is revoked');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f5000000-0000-0000-0000-000000000101', true);
 insert into rmvp05_responses select 'replacement-note-missing', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(2, pg_temp.rmvp05_single_line(1)));
 insert into rmvp05_responses select 'replacement-preview', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(2, pg_temp.rmvp05_single_line(1, null, 'PROPOSAL_ACCEPTED', 'Confirmed against corrected evidence')));
 reset role;
-select is((select response->'preview'->>'error_code' from rmvp05_responses where response_name = 'replacement-note-missing'), 'REASON_NOTE_REQUIRED', 'RMVP05-31 replacement decision requires a nonblank correction note');
+select is((select response->'preview'->>'error_code' from rmvp05_responses where response_name = 'replacement-note-missing'), 'REASON_NOTE_REQUIRED', 'RMVP05-35 replacement decision requires a nonblank correction note');
 select ok(
   (select response->'preview'->>'success' = 'true'
     and response->'preview'->'warnings' @> '[{"code":"DECISION_REPLACEMENT"}]'::jsonb
    from rmvp05_responses where response_name = 'replacement-preview'),
-  'RMVP05-32 valid replacement preview warns that immutable history will grow'
+  'RMVP05-36 valid replacement preview warns that immutable history will grow'
 );
 insert into rmvp05_requests
 select 'replacement-confirm', pg_temp.rmvp05_confirm(
@@ -648,11 +807,11 @@ select 'replacement-confirm', pg_temp.rmvp05_confirm(
 set local role authenticated;
 insert into rmvp05_responses select 'replacement-confirm', atlas_api.confirm_need_quantities(request) from rmvp05_requests where request_name = 'replacement-confirm';
 reset role;
-select ok((select response->>'success' = 'true' and response->>'new_batch_version' = '3' from rmvp05_responses where response_name = 'replacement-confirm'), 'RMVP05-33 replacement confirmation advances the batch once');
+select ok((select response->>'success' = 'true' and response->>'new_batch_version' = '3' from rmvp05_responses where response_name = 'replacement-confirm'), 'RMVP05-37 replacement confirmation advances the batch once');
 select ok(
   (select count(*) = 1 from atlas_planning.confirmed_need_line_decisions where decision_number = 2 and predecessor_decision_id is not null and confirmed_need_batch_version = 3)
   and (select count(*) = 3 from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context)),
-  'RMVP05-34 replacement appends predecessor-linked history without a quantity successor'
+  'RMVP05-38 replacement appends predecessor-linked history without a quantity successor'
 );
 
 set local role authenticated;
@@ -671,7 +830,7 @@ select is(
     jsonb_build_object('theoretical', '3.000000', 'proposal', '3.250000', 'confirmed', '3.250000', 'history', 1),
     jsonb_build_object('theoretical', '2.000000', 'proposal', '2.000000', 'confirmed', '2.000000', 'history', 2)
   ),
-  'RMVP05-35 readback preserves exact decimal strings and complete decision history'
+  'RMVP05-39 readback preserves exact decimal strings and complete decision history'
 );
 select is(
   (select jsonb_build_object(
@@ -682,13 +841,13 @@ select is(
     'version', response->'workbench'->>'batch_version'
   ) from rmvp05_responses where response_name = 'read-final'),
   jsonb_build_object('total', '2', 'unreviewed', '0', 'confirmed', '2', 'adjusted', '1', 'version', '3'),
-  'RMVP05-36 authoritative counts and version reflect current decisions'
+  'RMVP05-40 authoritative counts and version reflect current decisions'
 );
 select ok(
   (select response->'workbench'->'allowed_actions'->>'preview_confirmation' = 'true'
     and jsonb_array_length(response->'workbench'->'blockers') = 0
    from rmvp05_responses where response_name = 'read-final'),
-  'RMVP05-37 review remains available for governed replacement decisions'
+  'RMVP05-41 review remains available for governed replacement decisions'
 );
 
 select * from finish();

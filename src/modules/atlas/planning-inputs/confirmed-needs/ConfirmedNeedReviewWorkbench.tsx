@@ -137,29 +137,39 @@ export function ConfirmedNeedReviewWorkbench({
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const generation = useRef(0);
+  const intentGeneration = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
-  const adopt = useCallback((next: ConfirmedNeedWorkbenchData) => {
-    setWorkbench(next);
-    setDrafts((current) =>
-      Object.fromEntries(
-        next.lines.map((line) => [
-          line.confirmed_need_line_id,
-          current[line.confirmed_need_line_id] ?? initialDraft(line),
-        ]),
-      ),
-    );
+  const invalidateIntent = useCallback(() => {
+    const nextGeneration = ++intentGeneration.current;
     setPreview(null);
     setPreviewLines([]);
     setConfirmAcknowledged(false);
+    setPendingCommand(null);
+    return nextGeneration;
   }, []);
+
+  const adopt = useCallback(
+    (next: ConfirmedNeedWorkbenchData) => {
+      invalidateIntent();
+      setWorkbench(next);
+      setDrafts((current) =>
+        Object.fromEntries(
+          next.lines.map((line) => [
+            line.confirmed_need_line_id,
+            current[line.confirmed_need_line_id] ?? initialDraft(line),
+          ]),
+        ),
+      );
+    },
+    [invalidateIntent],
+  );
 
   const loadReview = useCallback(
     async (requestedBatchId = batchId) => {
       if (!api || !authSubject || !requestedBatchId) return false;
-      const requestGeneration = ++generation.current;
+      const requestGeneration = invalidateIntent();
       setLoading(true);
       setNotice(null);
       const result = await api.getReview(
@@ -168,7 +178,10 @@ export function ConfirmedNeedReviewWorkbench({
         requestedBatchId,
         emptyFilters,
       );
-      if (requestGeneration !== generation.current) return false;
+      if (requestGeneration !== intentGeneration.current) {
+        setLoading(false);
+        return false;
+      }
       setLoading(false);
       const next = confirmedNeedWorkbenchFromResult(result);
       if (!next) {
@@ -180,7 +193,7 @@ export function ConfirmedNeedReviewWorkbench({
       adopt(next);
       return true;
     },
-    [api, authSubject, batchId, correlationId, adopt],
+    [api, authSubject, batchId, correlationId, adopt, invalidateIntent],
   );
 
   useEffect(() => {
@@ -213,14 +226,11 @@ export function ConfirmedNeedReviewWorkbench({
     lineId: string,
     patch: Partial<ConfirmedNeedDraftLine>,
   ) => {
+    invalidateIntent();
     setDrafts((current) => ({
       ...current,
       [lineId]: { ...current[lineId], ...patch },
     }));
-    setPreview(null);
-    setPreviewLines([]);
-    setConfirmAcknowledged(false);
-    setPendingCommand(null);
   };
 
   const setDecisionMode = (line: ConfirmedNeedLine, adjusted: boolean) => {
@@ -238,6 +248,7 @@ export function ConfirmedNeedReviewWorkbench({
       setNotice(localErrors[0]?.message ?? "Bản nháp chưa hợp lệ.");
       return;
     }
+    const requestGeneration = invalidateIntent();
     setBusy(true);
     setNotice(null);
     const result = await api.preview(
@@ -249,18 +260,24 @@ export function ConfirmedNeedReviewWorkbench({
         selected,
       ),
     );
+    if (requestGeneration !== intentGeneration.current) {
+      setBusy(false);
+      return;
+    }
     setBusy(false);
     const next = confirmedNeedPreviewFromResult(result);
     if (!next) {
-      setNotice(confirmedNeedResultMessage(result));
-      if (confirmedNeedResultIsStale(result)) await loadReview();
+      const message = confirmedNeedResultMessage(result);
+      if (confirmedNeedResultIsStale(result)) {
+        if (await loadReview()) setNotice(message);
+      } else setNotice(message);
       return;
     }
     if (!next.success && confirmedNeedPreviewIsStale(next)) {
-      await loadReview();
-      setNotice(
-        "Dữ liệu đã thay đổi; đã làm mới bằng chứng có thẩm quyền và giữ bản nháp tương thích.",
-      );
+      if (await loadReview())
+        setNotice(
+          "Dữ liệu đã thay đổi; đã làm mới bằng chứng có thẩm quyền và giữ bản nháp tương thích.",
+        );
       return;
     }
     setPreview(next);
@@ -277,9 +294,14 @@ export function ConfirmedNeedReviewWorkbench({
   const executeCommand = useCallback(
     async (request: ConfirmedNeedCommandRequest) => {
       if (!api) return;
+      const requestGeneration = intentGeneration.current;
       setBusy(true);
       setNotice(null);
       const result: AtlasRpcResult = await api.confirm(request);
+      if (requestGeneration !== intentGeneration.current) {
+        setBusy(false);
+        return;
+      }
       setBusy(false);
       if (confirmedNeedResultAllowsExactRetry(result)) {
         setPendingCommand(request);
@@ -288,18 +310,19 @@ export function ConfirmedNeedReviewWorkbench({
       }
       setPendingCommand(null);
       if (confirmedNeedResultIsStale(result)) {
-        setNotice(confirmedNeedResultMessage(result));
-        await loadReview();
+        const message = confirmedNeedResultMessage(result);
+        if (await loadReview()) setNotice(message);
         return;
       }
       if (result.kind !== "success") {
         setNotice(confirmedNeedResultMessage(result));
         return;
       }
+      const message = confirmedNeedResultMessage(result);
       const readback = confirmedNeedReadbackFromResult(result);
       if (readback) adopt(readback);
-      else await loadReview();
-      setNotice(confirmedNeedResultMessage(result));
+      else if (!(await loadReview())) return;
+      setNotice(message);
     },
     [adopt, api, loadReview],
   );
@@ -341,7 +364,10 @@ export function ConfirmedNeedReviewWorkbench({
           <input
             aria-label="Mã lô Confirmed Need"
             value={batchIdDraft}
-            onChange={(event) => setBatchIdDraft(event.target.value.trim())}
+            onChange={(event) => {
+              invalidateIntent();
+              setBatchIdDraft(event.target.value.trim());
+            }}
             placeholder="UUID"
           />
         </label>

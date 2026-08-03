@@ -67,11 +67,11 @@ Every call requires exact equality between the JWT subject and `requested_by_aut
 
 The `workbench` contains batch identity, `NEED_GENERATION` source kind, lifecycle status and version, exact Need Generation run/version/release snapshot, service period, total/unreviewed/confirmed/adjusted counts, blockers before warnings, backend-derived allowed actions and disabled reasons, pagination, current lines, and returned-line decision history.
 
-Each line contains its stable line ID, current revision ID/number, service date, Customer, School, Delivery Location, Ingredient, controlled Unit, theoretical quantity, proposed confirmed quantity, current decision identity/number/kind, authoritative confirmed quantity after, exact eligible policy root/revision/number/step/status/effective interval, source membership count, stale flag, blockers, warnings, and newest-first immutable decision history.
+Each line contains its stable line ID, current revision ID/number, service date, Customer, School, Delivery Location, Ingredient, controlled Unit identity/code/name/current status, theoretical quantity, proposed confirmed quantity, current decision identity/number/kind, authoritative confirmed quantity after, exact eligible policy root/revision/number/step/status/effective interval, source membership count, stale flag, blockers, warnings, and newest-first immutable decision history.
 
 Quantities and Planning steps are returned as exact decimal strings. A proposal is not authoritative confirmation until the stable line's current-decision pointer identifies an H1B1 decision.
 
-Review and confirmation are allowed only for `DRAFT_REVIEW` or `REOPENED` batches with current released-source bindings, nonempty current memberships, and exactly one effective policy per line.
+Review and confirmation are allowed only for `DRAFT_REVIEW` or `REOPENED` batches with current released-source bindings, nonempty current memberships, an `ACTIVE` controlled Unit, and exactly one effective policy per line.
 
 ## 4. Write-free preview
 
@@ -133,7 +133,7 @@ Every replacement decision requires a nonblank correction note and binds the exa
 
 ### 4.3 Response and hash
 
-The nested `preview` returns success/error code, batch and expected/actual version, deterministically ordered lines, current bindings, theoretical/proposal/confirmed quantities, derived kind, normalized reason/note, exact policy evidence, whole tick count, successor requirement, membership count and hash, line and aggregate blockers/warnings, a SHA-256 preview hash, and `write_certainty = NO_WRITE`.
+The nested `preview` returns success/error code, batch and expected/actual version, deterministically ordered lines, current bindings, controlled Unit identity/current status, theoretical/proposal/confirmed quantities, derived kind, normalized reason/note, exact policy evidence, whole tick count, successor requirement, membership count and hash, line and aggregate blockers/warnings, a SHA-256 preview hash, and `write_certainty = NO_WRITE`.
 
 The hash binds the contract, batch/version, ordered authoritative bindings, exact quantity outcome, policy, tick, and source-membership evidence. Any material change makes a later command preview differ.
 
@@ -164,7 +164,7 @@ The line payload is identical to the preview selection. The browser cannot autho
 
 ### 5.2 Transaction
 
-The command starts or replays the standard receipt, locks the batch and selected stable lines in UUID order, reruns the same canonical preview over current revisions, decisions, memberships and policies, and requires both current expected version and exact preview-hash equality.
+The command starts or replays the standard receipt, locks the batch and selected stable lines in UUID order, locks every selected controlled Unit in UUID order with `FOR SHARE`, and reruns the same canonical preview over current Unit status, revisions, decisions, memberships and policies. `FOR SHARE` conflicts with the repository's ordinary Unit-status update path. PostgreSQL requires `UPDATE` on at least one selected column and applies an UPDATE `USING` policy for a locking read, so the contained runtime receives only `update(unit_id)` on Unit plus a lock-only policy with `USING (true)` and `WITH CHECK (false)`; it never receives `update(unit_status)`, and actual Unit writes fail RLS. Confirmation requires every Unit to remain `ACTIVE`, the current expected version, and exact preview-hash equality before any Confirmed Need business write.
 
 For each adjusted line it supersedes only permitted current-revision metadata, creates one direct current successor with the confirmed quantity, and copies the prior revision's exact contribution memberships without recalculation. An unchanged line keeps its current revision. The transaction appends one complete H1B1 decision per selected line, advances every current-decision pointer, increments the batch version exactly once without changing `DRAFT_REVIEW`/`REOPENED`, emits one `ConfirmedNeedQuantitiesConfirmed` domain event, writes one audit event, completes one receipt, flushes deferred integrity guards, and returns authoritative review readback. It commits all effects or none.
 
@@ -181,6 +181,7 @@ Common Atlas validation, authentication, capability, scope, stale-version, idemp
 - `STALE_CONFIRMED_NEED_BATCH`
 - `STALE_CONFIRMED_NEED_LINE`
 - `STALE_CONFIRMED_NEED_DECISION`
+- `UNIT_INACTIVE`
 - `MISSING_PLANNING_QUANTITY_POLICY`
 - `AMBIGUOUS_PLANNING_QUANTITY_POLICY`
 - `QUANTITY_NOT_REPRESENTABLE`
@@ -192,6 +193,6 @@ Safe failures report write certainty, whether the local Draft may be preserved, 
 
 ## 7. Verification
 
-`supabase/tests/rmvp_05_connected_confirmed_need_review.sql` uses a real RMVP-04-created, validated and released multi-line run and actual CMD-15 materialization. Its exact `plan(37)` covers shaped read, missing/ambiguous policy fail-closed behavior, exact step/precision preview, preview non-mutation, mixed unchanged/adjusted confirmation, revision and membership behavior, decisions and pointers, version/event/audit/receipt atomicity, replay/conflict, stale failure, authorization denials, and predecessor-linked replacement history.
+`supabase/tests/rmvp_05_connected_confirmed_need_review.sql` uses a real RMVP-04-created, validated and released multi-line run and actual CMD-15 materialization. Its exact `plan(41)` covers shaped read, missing/ambiguous policy fail-closed behavior, inactive-Unit review/preview/confirmation rejection, ordered lock/recheck structure, exact step/precision preview, preview non-mutation, mixed unchanged/adjusted confirmation, revision and membership behavior, decisions and pointers, version/event/audit/receipt atomicity, replay/conflict, stale failure, authorization denials, and predecessor-linked replacement history.
 
 `scripts/verify-local-rmvp05-confirmed-need-review.mjs` is GitHub-only. Draft smoke uses its deterministic disposable RMVP-05 batch for short browser-key review, mixed exact preview, confirmation, exact replay, and authoritative decision readback without calling RMVP-04. Full integration selects its upstream mode after the real RMVP-04/CMD-15 browser journey and additionally verifies correction-note enforcement and replacement confirmation.
