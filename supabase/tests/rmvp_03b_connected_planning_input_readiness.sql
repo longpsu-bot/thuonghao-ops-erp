@@ -31,11 +31,11 @@ select ok((select bool_and(not has_function_privilege('authenticated', p.oid, 'E
 -- 11
 select is((select jsonb_build_object('tables', count(*) filter (where c.relkind='r'), 'views', count(*) filter (where c.relkind in ('v','m'))) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname like 'atlas\_%' escape '\'), jsonb_build_object('tables',96,'views',2), 'R3B-11 no relation or view was added');
 -- 12
-select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%' escape '\'), 9, 'R3B-12 no database role was added');
+select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%' escape '\'), 10, 'R3B-12 current catalogue includes the later dedicated Need Generation runtime');
 -- 13
-select is((select count(*)::integer from atlas_core.capabilities), 20, 'R3B-13 capability catalog delta is exactly plus one');
+select is((select count(*)::integer from atlas_core.capabilities), 21, 'R3B-13 current catalogue includes the later Need Generation capability');
 -- 14
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'), 68, 'R3B-14 physical API delta is exactly plus four');
+select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'), 73, 'R3B-14 current catalogue includes the later five RMVP-04 APIs');
 -- 15
 select is((select count(*)::integer from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace where p.polname like 'rmvp_03b_%'), 12, 'R3B-15 exactly twelve bounded RLS policies were added');
 -- 16

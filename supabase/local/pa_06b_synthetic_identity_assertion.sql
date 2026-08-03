@@ -70,6 +70,24 @@ begin
     raise exception 'RMVP-03B local readiness-write capability assertion failed.';
   end if;
 
+  if (
+    select count(*)
+    from atlas_core.role_capabilities rc
+    join atlas_core.capabilities c on c.capability_id = rc.capability_id
+    where rc.role_id = 'b6000000-0000-0000-0000-000000000003'
+      and rc.role_capability_id in (
+        'b6000000-0000-0000-0000-000000000030',
+        'b6000000-0000-0000-0000-000000000031'
+      )
+      and c.capability_code in (
+        'planning.need_generation.write',
+        'confirmed_need_generation.materialize'
+      )
+      and c.capability_status = 'ACTIVE'
+  ) <> 2 then
+    raise exception 'RMVP-04 local Need Generation capabilities assertion failed.';
+  end if;
+
   if not exists (
     select 1
     from atlas_core.actor_role_memberships arm

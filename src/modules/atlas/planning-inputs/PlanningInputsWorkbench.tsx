@@ -36,8 +36,10 @@ import { PantryWorkbench } from "./pantry/PantryWorkbench";
 import type { PantryApi } from "./pantry/pantryApi";
 import { PlanningInputReadinessWorkbench } from "./readiness/PlanningInputReadinessWorkbench";
 import type { PlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
+import { NeedGenerationWorkbench } from "./need-generation/NeedGenerationWorkbench";
+import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
 
-type TabId = "menu" | "attendance" | "pantry" | "readiness";
+type TabId = "menu" | "attendance" | "pantry" | "readiness" | "need-generation";
 type LoadState = "idle" | "loading" | "ready" | "error";
 type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
@@ -360,12 +362,14 @@ export function PlanningInputsWorkbench({
   api,
   pantryApi,
   readinessApi,
+  needGenerationApi,
   mode = "connected",
 }: {
   authState: AtlasAuthState;
   api?: PlanningInputsApi;
   pantryApi?: PantryApi;
   readinessApi?: PlanningInputReadinessApi;
+  needGenerationApi?: NeedGenerationApi;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -948,6 +952,15 @@ export function PlanningInputsWorkbench({
               onClick={() => setTab("readiness")}
             >
               Sẵn sàng đầu vào
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "need-generation"}
+              className={tab === "need-generation" ? "active" : ""}
+              onClick={() => setTab("need-generation")}
+            >
+              Tạo nhu cầu
             </button>
           </div>
 
@@ -1534,6 +1547,16 @@ export function PlanningInputsWorkbench({
             <PlanningInputReadinessWorkbench
               authState={authState}
               api={readinessApi}
+              selectedWeekStart={weekStart}
+              selectedWeekEnd={data.week_end}
+              mode={mode}
+            />
+          )}
+
+          {tab === "need-generation" && (
+            <NeedGenerationWorkbench
+              authState={authState}
+              api={needGenerationApi}
               selectedWeekStart={weekStart}
               selectedWeekEnd={data.week_end}
               mode={mode}

@@ -2918,3 +2918,75 @@ tbody tr.selected-row {
 .pantry-reopen label {
   flex: 1;
 }
+.need-generation-period,
+.need-generation-filters,
+.need-generation-actions,
+.need-generation-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.need-generation-period label,
+.need-generation-filters label {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 10rem;
+}
+
+.need-generation-readiness,
+.need-generation-run-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.need-generation-readiness > div,
+.need-generation-run-summary > div,
+.need-generation-materialization {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface-soft);
+}
+
+.need-generation-readiness span,
+.need-generation-run-summary span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.need-generation-actions input {
+  min-width: min(24rem, 100%);
+}
+
+.need-generation-materialization {
+  margin: 1rem 0;
+}
+
+.need-generation-pagination {
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.need-generation-detail {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+}
+
+.need-generation-detail li {
+  margin: 0.45rem 0;
+}
+
+.need-generation-detail small {
+  display: block;
+  color: var(--text-muted);
+}

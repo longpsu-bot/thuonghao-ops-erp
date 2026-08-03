@@ -92,6 +92,10 @@ The planned generic `adjustments_add_pantry_need` item below is not the PANTRY-0
 
 RMVP-03B implements exactly four reviewed APIs: one shaped exact-period readiness workbench read, one immutable evaluation command, one handoff-only Need Generation request, and one reasoned invalidation command. The surface adds one unbound write capability, reuses existing Planning runtimes and `GLOBAL` scope, and creates no relation, view, role, source trigger, lifecycle state, Need Generation run, or downstream fact. The exact `RMVP-03B.v1` envelopes, candidate matrix, history cursor, receipts, events, audit evidence, safe errors, and non-mutation rules are specified in [RMVP-03B Planning Input Readiness API Contract](rmvp-03b-planning-input-readiness.md).
 
+## 4D. Connected Need Generation contract in draft review
+
+RMVP-04 implements exactly five reviewed APIs: one shaped exact-period Need Generation workbench read plus transactional create, validate, release, and invalidate commands. It adds capability `planning.need_generation.write`, dedicated runtime `atlas_need_generation_runtime`, and no relation, view, lifecycle state, source trigger, sequence, or downstream operational record. Confirmed Need creation continues through existing CMD-15. The exact `RMVP-04.v1` envelopes, backend-authoritative calculation and grouping rules, security, actions, safe errors, and materialization connection are specified in [RMVP-04 Connected Need Generation API Contract](rmvp-04-connected-need-generation.md).
+
 ## 5. Contract template
 
 ```md

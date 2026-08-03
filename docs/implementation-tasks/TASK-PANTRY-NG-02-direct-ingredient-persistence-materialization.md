@@ -2,9 +2,9 @@
 
 ## Status
 
-Implemented on branch `codex/pantry-ng-02-direct-ingredient-persistence-materialization` from exact baseline `249361bc0c4005e2c9a05e7b84a8468dd0ec4956`. The immutable implementation head is reported by the draft PR and final task handoff; embedding the SHA in the commit that defines that SHA would be self-referential.
+Merged through PR #167 at `4cc9bddb8f77c962d2c557affee5a7d3f58e75e2`. The implementation branch started from exact baseline `249361bc0c4005e2c9a05e7b84a8468dd0ec4956`.
 
-GitHub Actions is the authoritative Supabase validation environment. Published head `4ead25e2a0066458562c02ab9052aa33d4508365` passed Supabase Integration, Frontend CI, UI Review Export, and Qodana on draft PR #167. The immutable captured-destination correction head and its repeated exact-head results are reported by the draft PR and final task handoff.
+GitHub Actions was the authoritative Supabase validation environment. Published head `4ead25e2a0066458562c02ab9052aa33d4508365` and the final captured-destination correction passed Supabase Integration, Frontend CI, UI Review Export, and Qodana before PR #167 merged.
 
 The continuation from published head `39e1110843baad10a18842b20cca4ba810aa653a` expands the authorized manifest from fourteen to sixteen paths solely to correct two legacy H0B1b fixture helpers. Each helper now repeats the complete Pantry triple already owned by its Planning Input Evaluation. The production migration and integrity guard are unchanged: post-migration snapshots still cannot commit with missing or partial Pantry binding.
 

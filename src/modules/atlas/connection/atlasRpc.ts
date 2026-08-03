@@ -83,6 +83,13 @@ export const ATLAS_RPC_FUNCTIONS = {
     "request_planning_input_need_generation",
   "atlas_api.invalidate_planning_input_readiness":
     "invalidate_planning_input_readiness",
+  "atlas_api.get_need_generation_workbench": "get_need_generation_workbench",
+  "atlas_api.create_need_generation_run": "create_need_generation_run",
+  "atlas_api.validate_need_generation_run": "validate_need_generation_run",
+  "atlas_api.release_need_generation_run": "release_need_generation_run",
+  "atlas_api.invalidate_need_generation_run": "invalidate_need_generation_run",
+  "atlas_api.create_confirmed_needs_from_generation":
+    "create_confirmed_needs_from_generation",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry_draft": "save_pantry_draft",
