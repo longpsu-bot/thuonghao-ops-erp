@@ -1,5 +1,7 @@
 do $$
 begin
+  drop table if exists extensions.pantry_02_downstream_baseline;
+
   insert into atlas_admin.ingredients (
     ingredient_id,
     ingredient_code,
