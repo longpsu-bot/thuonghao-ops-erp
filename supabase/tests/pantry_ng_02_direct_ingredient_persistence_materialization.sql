@@ -89,17 +89,17 @@ select is((select count(*)::integer from pg_class c join pg_namespace n on n.oid
 -- 41
 select is((select count(*)::integer from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname like 'atlas\_%' escape '\' and c.relkind in ('v','m')),2,'PNG02-041 view count remains exact');
 -- 42
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'),73,'PNG02-042 current physical API count includes RMVP-04');
+select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'),76,'PNG02-042 current physical API count includes the three RMVP-05 APIs');
 -- 43
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname like 'atlas\_%' escape '\' and n.nspname<>'atlas_api'),155,'PNG02-043 current private function count includes RMVP-04 helpers');
+select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname like 'atlas\_%' escape '\' and n.nspname<>'atlas_api'),163,'PNG02-043 current private function count includes the eight RMVP-05 helpers');
 -- 44
-select is((select count(*)::integer from atlas_core.capabilities),21,'PNG02-044 current capability count includes RMVP-04');
+select is((select count(*)::integer from atlas_core.capabilities),24,'PNG02-044 current capability count includes the three RMVP-05 capabilities');
 -- 45
-select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%' escape '\'),10,'PNG02-045 current Atlas database-role count includes RMVP-04');
+select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%' escape '\'),11,'PNG02-045 current Atlas database-role count includes the RMVP-05 runtime');
 -- 46
-select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%\_runtime' escape '\'),9,'PNG02-046 current runtime-role count includes RMVP-04');
+select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%\_runtime' escape '\'),10,'PNG02-046 current runtime-role count includes the RMVP-05 runtime');
 -- 47
-select is((select count(*)::integer from pg_policy),518,'PNG02-047 current policy count includes bounded RMVP-04 runtime access and source locks');
+select is((select count(*)::integer from pg_policy),556,'PNG02-047 current policy count includes the thirty-eight bounded RMVP-05 policies');
 -- 48
 select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and table_name like 'pantry_need_%'),0,'PNG02-048 materialization runtime gains zero Pantry base-table grants');
 -- 49

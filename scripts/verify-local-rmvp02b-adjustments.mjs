@@ -203,6 +203,15 @@ async function main() {
   });
   const subject = await signIn(client);
   const suffix = crypto.randomUUID().slice(0, 8);
+  const recipeSetup = await invoke(
+    client,
+    "get_dish_recipe_workbench",
+    readRequest(subject, "RMVP-02A.v1", {}),
+  );
+  const dishType = recipeSetup.workbench.dish_types.find(
+    (item) => item.dish_type_status === "ACTIVE",
+  );
+  assert(dishType, "RMVP-02B requires one active Dish Type reference.");
 
   const createdDish = await invoke(
     client,
@@ -211,6 +220,7 @@ async function main() {
       dish_code: `rmvp02b-accept-${suffix}`,
       dish_name: `RMVP-02B Acceptance ${suffix}`,
       dish_category: "Acceptance",
+      dish_type_id: dishType.dish_type_id,
       operational_notes: "Local browser-key acceptance fixture",
       display_order: 7000 + Number.parseInt(suffix.slice(0, 3), 16),
       requires_need_generation: true,

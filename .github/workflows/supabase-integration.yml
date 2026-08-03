@@ -23,6 +23,7 @@ on:
       - "scripts/verify-local-rmvp02a-recipes.mjs"
       - "scripts/verify-local-rmvp03a-planning-inputs.mjs"
       - "scripts/verify-local-rmvp04-need-generation.mjs"
+      - "scripts/verify-local-rmvp05-confirmed-need-review.mjs"
       - "src/modules/atlas/connection/**"
       - "src/modules/atlas/evidence/**"
       - "src/modules/atlas/master-data/**"
@@ -52,6 +53,7 @@ on:
       - "scripts/verify-local-rmvp02a-recipes.mjs"
       - "scripts/verify-local-rmvp03a-planning-inputs.mjs"
       - "scripts/verify-local-rmvp04-need-generation.mjs"
+      - "scripts/verify-local-rmvp05-confirmed-need-review.mjs"
       - "src/modules/atlas/connection/**"
       - "src/modules/atlas/evidence/**"
       - "src/modules/atlas/master-data/**"
@@ -132,21 +134,13 @@ jobs:
         run: |
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
-          pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
-          pnpm exec supabase test db supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql --local
-          pnpm exec supabase test db supabase/tests/rmvp_04_connected_need_generation.sql --local
-          pnpm exec supabase test db supabase/tests/pa_06e_h0cb_initial_materialization.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_05_connected_confirmed_need_review.sql --local
 
-      - name: Provision synthetic browser-key prerequisites
-        run: |
-          pnpm local:auth:provision
-          pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
-          pnpm local:rmvp02a:verify
-          pnpm local:rmvp02a:verify
-          pnpm local:rmvp03a:verify
+      - name: Provision deterministic RMVP-05 browser identity
+        run: pnpm local:auth:provision
 
-      - name: Verify browser-key Connected Need Generation
-        run: pnpm local:rmvp04:verify
+      - name: Verify short browser-key Confirmed Need review
+        run: pnpm local:rmvp05:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()
@@ -240,8 +234,19 @@ jobs:
         run: |
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
+          pnpm exec supabase test db supabase/tests/pa_04_supplier_direct_slice_1_foundation.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05b_h1_runtime_role_hardening_test.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05b_h2_multiline_dispatch_execution.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05b_h3_successful_trip_closure.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05b_supplier_direct_command_subset.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05c_authorized_read_api_wrappers.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05c_h2_current_command_timeline_scope.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05d_planning_command_family.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05e_procurement_command_family.sql --local
+          pnpm exec supabase test db supabase/tests/pa_05f_dispatch_setup_command_family.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_01_atlas_master_data.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_02a_connected_recipes_bom.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_02b_recipe_adjustments_effective_bom.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_03a_connected_weekly_menu_attendance.sql --local
           pnpm exec supabase test db supabase/tests/pantry_02_connected_pantry_source.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h1b1_line_decision_structure_security.sql --local
@@ -274,28 +279,32 @@ jobs:
           pnpm exec supabase test db supabase/tests/pa_06e_h0cb_errors_authorization_concurrency.sql --local
           pnpm exec supabase test db supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_04_connected_need_generation.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_05_connected_confirmed_need_review.sql --local
           pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
           pnpm exec supabase test db supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql --local
           pnpm local:auth:provision
-          pnpm local:auth:provision
           pnpm local:connection:verify
           pnpm local:pa06c:provision
-          pnpm local:pa06c:provision
           pnpm local:pa06c:verify
-          pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
           pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
           pnpm local:rmvp01:verify
 
       - name: Verify browser-key Recipe successor lineage
         run: |
           pnpm local:rmvp02a:verify
-          pnpm local:rmvp02a:verify
+          pnpm local:rmvp02b:verify
 
       - name: Verify browser-key Planning inputs
-        run: pnpm local:rmvp03a:verify
+        run: |
+          pnpm local:rmvp03a:verify
+          pnpm local:pantry02:verify
 
-      - name: Verify browser-key Connected Need Generation
-        run: pnpm local:rmvp04:verify
+      - name: Verify browser-key upstream-to-Confirmed Need journey
+        env:
+          RMVP05_BROWSER_SOURCE: rmvp04
+        run: |
+          pnpm local:rmvp04:verify
+          pnpm local:rmvp05:verify
 
       - name: Capture bounded failure diagnostics
         if: failure()

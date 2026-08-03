@@ -268,6 +268,22 @@ select is(
             )
           )
         )
+        or (
+          policy.polrelid in (
+            'atlas_planning.need_generation_runs'::regclass,
+            'atlas_planning.need_generation_release_snapshots'::regclass,
+            'atlas_planning.need_generation_release_snapshot_lines'::regclass,
+            'atlas_planning.theoretical_need_lines'::regclass
+          )
+          and policy.polname = 'rmvp_05_confirmed_need_select'
+          and policy.polcmd = 'r'
+          and policy.polpermissive
+          and policy.polroles = array[
+            (select oid from pg_roles where rolname = 'atlas_confirmed_need_review_runtime')
+          ]::oid[]
+          and pg_get_expr(policy.polqual, policy.polrelid) = 'true'
+          and policy.polwithcheck is null
+        )
       )
   )
   ),
@@ -321,7 +337,7 @@ select is(
   ),
   0
   ),
-  'H0A5b retains exactly eleven historical materialization policies and recognizes only the two exact RMVP-03B consumed-handoff SELECT policies'
+  'H0A5b retains eleven materialization policies and recognizes the exact RMVP-03B and RMVP-05 consumed-handoff SELECT policies'
 );
 
 select is(

@@ -90,6 +90,10 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.invalidate_need_generation_run": "invalidate_need_generation_run",
   "atlas_api.create_confirmed_needs_from_generation":
     "create_confirmed_needs_from_generation",
+  "atlas_api.get_confirmed_need_review": "get_confirmed_need_review",
+  "atlas_api.preview_confirmed_need_confirmation":
+    "preview_confirmed_need_confirmation",
+  "atlas_api.confirm_need_quantities": "confirm_need_quantities",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry_draft": "save_pantry_draft",

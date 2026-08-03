@@ -114,11 +114,13 @@ export function NeedGenerationWorkbench({
   api,
   selectedWeekStart,
   selectedWeekEnd,
+  onConfirmedNeedMaterialized,
 }: {
   authState: AtlasAuthState;
   api?: NeedGenerationApi;
   selectedWeekStart: string;
   selectedWeekEnd: string;
+  onConfirmedNeedMaterialized?: (confirmedNeedBatchId: string) => void;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -284,9 +286,17 @@ export function NeedGenerationWorkbench({
       if (readback) setWorkbench(readback);
       else await loadWorkbench();
       setNotice(needGenerationResultMessage(result));
+      if (intent.operation === "materialize") {
+        const aggregates = result.response.affected_aggregate_ids;
+        const confirmedNeedBatchId =
+          aggregates?.confirmed_need_batch_id ??
+          readback?.materialization.confirmed_need_batch_id;
+        if (typeof confirmedNeedBatchId === "string")
+          onConfirmedNeedMaterialized?.(confirmedNeedBatchId);
+      }
       if (intent.operation === "invalidate") setInvalidationNote("");
     },
-    [api, loadWorkbench],
+    [api, loadWorkbench, onConfirmedNeedMaterialized],
   );
 
   const beginAction = (operation: Operation) => {

@@ -7,6 +7,7 @@ import {
 
 const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
+const rmvp05PantryIngredientId = "b6400000-0000-0000-0000-000000000050";
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -378,12 +379,16 @@ async function main() {
       line.line_disposition === "PRESENT" && line.quantity_per_basis > 0,
   );
   assert(recipeLine, "RMVP-04 released Recipe contains no positive line.");
+  assert(
+    recipeLine.ingredient_id !== rmvp05PantryIngredientId,
+    "RMVP-04 recipe and RMVP-05 browser pantry fixtures must use distinct Ingredients.",
+  );
   const pantry = await approvePositivePantry(
     client,
     subject,
     approvedPlanning.weekStart,
     menuLine.school_id,
-    recipeLine.ingredient_id,
+    rmvp05PantryIngredientId,
   );
   const periodStart = menuLine.service_date;
   const periodEnd = menuLine.service_date;

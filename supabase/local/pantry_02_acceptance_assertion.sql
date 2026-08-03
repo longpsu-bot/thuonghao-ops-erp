@@ -4,7 +4,8 @@
 do $pantry_02_acceptance$
 declare
   target_batch atlas_planning.pantry_need_batches%rowtype;
-  downstream_count bigint;
+  downstream_before jsonb;
+  downstream_after jsonb;
 begin
   select batch.*
     into target_batch
@@ -118,21 +119,31 @@ begin
       'PANTRY-02 local version 6 correction did not preserve REOPENED status';
   end if;
 
-  select
-    (select count(*) from atlas_planning.planning_input_sets)
-    + (select count(*) from atlas_planning.need_generation_runs)
-    + (select count(*) from atlas_planning.confirmed_need_batches)
-    + (select count(*) from atlas_planning.purchase_handoff_batches)
-    + (select count(*) from atlas_planning.wholesale_orders)
-    + (select count(*) from atlas_procurement.fulfilment_allocations)
-    + (select count(*) from atlas_procurement.purchase_orders)
-    + (select count(*) from atlas_evidence.supplier_receiving_evidence)
-    + (select count(*) from atlas_dispatch.dispatch_plans)
-    into downstream_count;
+  select baseline.downstream_counts
+    into downstream_before
+  from extensions.pantry_02_downstream_baseline baseline
+  where baseline.singleton;
 
-  if downstream_count <> 0 then
+  downstream_after := jsonb_build_object(
+    'planning_input_sets', (select count(*) from atlas_planning.planning_input_sets),
+    'need_generation_runs', (select count(*) from atlas_planning.need_generation_runs),
+    'confirmed_need_batches', (select count(*) from atlas_planning.confirmed_need_batches),
+    'purchase_handoff_batches', (select count(*) from atlas_planning.purchase_handoff_batches),
+    'wholesale_orders', (select count(*) from atlas_planning.wholesale_orders),
+    'fulfilment_allocations', (select count(*) from atlas_procurement.fulfilment_allocations),
+    'purchase_orders', (select count(*) from atlas_procurement.purchase_orders),
+    'supplier_receiving_evidence', (select count(*) from atlas_evidence.supplier_receiving_evidence),
+    'dispatch_plans', (select count(*) from atlas_dispatch.dispatch_plans)
+  );
+
+  if downstream_before is null
+    or downstream_after is distinct from downstream_before
+  then
     raise exception
       'PANTRY-02 local lifecycle unexpectedly mutated a downstream object';
   end if;
+
+  execute 'drop table extensions.pantry_02_downstream_baseline';
+
 end
 $pantry_02_acceptance$;

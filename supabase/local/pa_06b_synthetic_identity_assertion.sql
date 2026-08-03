@@ -88,6 +88,26 @@ begin
     raise exception 'RMVP-04 local Need Generation capabilities assertion failed.';
   end if;
 
+  if (
+    select count(*)
+    from atlas_core.role_capabilities rc
+    join atlas_core.capabilities c on c.capability_id = rc.capability_id
+    where rc.role_id = 'b6000000-0000-0000-0000-000000000003'
+      and rc.role_capability_id in (
+        'b6000000-0000-0000-0000-000000000032',
+        'b6000000-0000-0000-0000-000000000033',
+        'b6000000-0000-0000-0000-000000000034'
+      )
+      and c.capability_code in (
+        'confirmed_need_review.read',
+        'confirmed_need_quantities.preview',
+        'confirmed_need_quantities.confirm'
+      )
+      and c.capability_status = 'ACTIVE'
+  ) <> 3 then
+    raise exception 'RMVP-05 local Confirmed Need review capabilities assertion failed.';
+  end if;
+
   if not exists (
     select 1
     from atlas_core.actor_role_memberships arm
