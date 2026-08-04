@@ -228,6 +228,33 @@ select is(
       )
   ),
   (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text, policy.polname
+    )
+    from pg_policy policy
+    where policy.polrelid in (
+      'atlas_planning.need_generation_issues'::regclass,
+      'atlas_planning.need_generation_release_snapshot_issues'::regclass,
+      'atlas_planning.need_generation_runs'::regclass,
+      'atlas_planning.need_generation_release_snapshots'::regclass,
+      'atlas_planning.need_generation_release_snapshot_lines'::regclass
+    )
+      and policy.polname like 'rmvp_06_need_generation_%'
+  ),
+  (
     select count(*)::integer
     from pg_policy policy
     where policy.polrelid in (
@@ -284,6 +311,48 @@ select is(
           and pg_get_expr(policy.polqual, policy.polrelid) = 'true'
           and policy.polwithcheck is null
         )
+        or (
+          policy.polcmd = 'r'
+          and policy.polpermissive
+          and policy.polroles = array[
+            (select oid from pg_roles where rolname = 'atlas_confirmed_need_review_runtime')
+          ]::oid[]
+          and pg_get_expr(policy.polqual, policy.polrelid) = 'true'
+          and policy.polwithcheck is null
+          and (
+            (
+              policy.polrelid = 'atlas_planning.need_generation_issues'::regclass
+              and policy.polname = 'rmvp_06_need_generation_issue_select'
+            )
+            or (
+              policy.polrelid = 'atlas_planning.need_generation_release_snapshot_issues'::regclass
+              and policy.polname = 'rmvp_06_need_generation_release_issue_select'
+            )
+          )
+        )
+        or (
+          policy.polcmd = 'w'
+          and policy.polpermissive
+          and policy.polroles = array[
+            (select oid from pg_roles where rolname = 'atlas_confirmed_need_review_runtime')
+          ]::oid[]
+          and pg_get_expr(policy.polqual, policy.polrelid) = 'true'
+          and pg_get_expr(policy.polwithcheck, policy.polrelid) = 'false'
+          and (
+            (
+              policy.polrelid = 'atlas_planning.need_generation_runs'::regclass
+              and policy.polname = 'rmvp_06_need_generation_run_lock'
+            )
+            or (
+              policy.polrelid = 'atlas_planning.need_generation_release_snapshots'::regclass
+              and policy.polname = 'rmvp_06_need_generation_release_lock'
+            )
+            or (
+              policy.polrelid = 'atlas_planning.need_generation_release_snapshot_lines'::regclass
+              and policy.polname = 'rmvp_06_need_generation_release_line_lock'
+            )
+          )
+        )
       )
   )
   ),
@@ -335,9 +404,56 @@ select is(
         ('rmvp_03b_read_runs_select', 'atlas_read_runtime')
     ) expected(policy_name, role_name)
   ),
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', expected.relation_name,
+        'name', expected.policy_name,
+        'command', expected.command,
+        'permissive', true,
+        'roles', jsonb_build_array('atlas_confirmed_need_review_runtime'),
+        'using', 'true',
+        'with_check', expected.with_check
+      )
+      order by expected.relation_name, expected.policy_name
+    )
+    from (
+      values
+        (
+          'atlas_planning.need_generation_issues',
+          'rmvp_06_need_generation_issue_select',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.need_generation_release_snapshot_issues',
+          'rmvp_06_need_generation_release_issue_select',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.need_generation_runs',
+          'rmvp_06_need_generation_run_lock',
+          'w',
+          'false'
+        ),
+        (
+          'atlas_planning.need_generation_release_snapshots',
+          'rmvp_06_need_generation_release_lock',
+          'w',
+          'false'
+        ),
+        (
+          'atlas_planning.need_generation_release_snapshot_lines',
+          'rmvp_06_need_generation_release_line_lock',
+          'w',
+          'false'
+        )
+    ) expected(relation_name, policy_name, command, with_check)
+  ),
   0
   ),
-  'H0A5b retains eleven materialization policies and recognizes the exact RMVP-03B and RMVP-05 consumed-handoff SELECT policies'
+  'H0A5b retains the exact materialization, RMVP-03B, RMVP-05, and RMVP-06 policy catalogs with zero unknown policies'
 );
 
 select is(
