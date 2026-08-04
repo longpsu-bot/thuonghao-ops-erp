@@ -566,9 +566,10 @@ select is(
     'confirmed_need_line_decisions_line_decision_number_key',
     'confirmed_need_line_decisions_line_id_decision_id_key',
     'confirmed_need_line_decisions_line_predecessor_key',
-    'confirmed_need_line_decisions_pkey'
+    'confirmed_need_line_decisions_pkey',
+    'confirmed_need_line_decisions_validation_owner_key'
   ]::text[],
-  'H1B1-STR-36 PK and four exact unique constraints own exactly five constraint indexes'
+  'H1B1-STR-36 PK and five exact unique constraints own exactly six constraint indexes'
 );
 select ok(
   (
@@ -628,8 +629,8 @@ select is(
     where indrelid
       = 'atlas_planning.confirmed_need_line_decisions'::regclass
   ),
-  9,
-  'H1B1-STR-42 chain, predecessor, and command unique indexes cover required paths without a redundant chain index'
+  10,
+  'H1B1-STR-42 the accepted validation-owner index plus chain, predecessor, and command indexes total ten without a redundant decision-chain index'
 );
 
 select is(
@@ -999,6 +1000,13 @@ select is(
       from pg_proc
       where pronamespace = 'atlas_api'::regnamespace
     ),
+    'rmvp_06_api_names',
+    (
+      select array_agg(proname order by proname)::text[]
+      from pg_proc
+      where pronamespace = 'atlas_api'::regnamespace
+        and proname = 'validate_confirmed_needs'
+    ),
     'rmvp_03b_api_names',
     (
       select array_agg(proname order by proname)::text[]
@@ -1025,7 +1033,10 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 76,
+    'api_total', 77,
+    'rmvp_06_api_names', array[
+      'validate_confirmed_needs'
+    ]::text[],
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
       'get_planning_input_readiness_workbench',
@@ -1034,7 +1045,7 @@ select is(
     ]::text[],
     'views', 0
   ),
-  'H1B1-STR-61 H1B1 retains no own role, capability, API, or view while the current RMVP-05 API catalog retains the four approved RMVP-03B APIs'
+  'H1B1-STR-61 H1B1 retains no own role, capability, API, or view while the current RMVP-06 API catalog retains its exact command and the four approved RMVP-03B APIs'
 );
 select ok(
   not exists (
