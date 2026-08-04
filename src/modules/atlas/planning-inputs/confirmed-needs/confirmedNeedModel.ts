@@ -3,6 +3,72 @@ import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
 export type ConfirmedNeedIssue = {
   code: string;
   message: string;
+  issue_id?: string;
+  validation_line_id?: string | null;
+  confirmed_need_line_id?: string | null;
+  severity?: "BLOCKING" | "WARNING";
+  sort_position?: number;
+};
+
+export const confirmedNeedValidationBlockingCodes = [
+  "NO_CURRENT_LINES",
+  "CURRENT_LINE_SET_INVALID",
+  "CURRENT_REVISION_MISSING",
+  "CURRENT_REVISION_AMBIGUOUS",
+  "CURRENT_DECISION_MISSING",
+  "CURRENT_DECISION_AMBIGUOUS",
+  "DECISION_REVISION_MISMATCH",
+  "SOURCE_RELEASE_NOT_CURRENT",
+  "CONTRIBUTION_MEMBERSHIP_INVALID",
+  "THEORETICAL_TOTAL_MISMATCH",
+  "CONTROLLED_UNIT_INACTIVE",
+  "PLANNING_POLICY_MISSING",
+  "PLANNING_POLICY_AMBIGUOUS",
+  "PLANNING_POLICY_NOT_ELIGIBLE",
+  "DECISION_POLICY_MISMATCH",
+  "CONFIRMED_QUANTITY_INVALID",
+  "ADJUSTMENT_REASON_INCOMPLETE",
+  "SOURCE_BLOCKER_PRESENT",
+  "CURRENT_FACTS_CHANGED",
+] as const;
+
+export const confirmedNeedValidationWarningCodes = [
+  "ZERO_CONFIRMED_QUANTITY",
+  "UPSTREAM_WARNING_RETAINED",
+] as const;
+
+export type ConfirmedNeedValidationIssue = Omit<
+  ConfirmedNeedIssue,
+  "code" | "severity"
+> &
+  (
+    | {
+        code: (typeof confirmedNeedValidationBlockingCodes)[number];
+        severity: "BLOCKING";
+      }
+    | {
+        code: (typeof confirmedNeedValidationWarningCodes)[number];
+        severity: "WARNING";
+      }
+  );
+
+export type ConfirmedNeedValidationSummary = {
+  latest_attempt_id: string | null;
+  latest_attempt_number: number | null;
+  latest_outcome: "VALIDATED" | "BLOCKED" | null;
+  evaluated_version: number | null;
+  resulting_version: number | null;
+  evaluated_actor: { id: string; name: string } | null;
+  evaluated_at: string | null;
+  validated_actor: { id: string; name: string } | null;
+  validated_at: string | null;
+  validation_fingerprint: string | null;
+  blocking_count: number;
+  warning_count: number;
+  grouped_issues: {
+    blocking: ConfirmedNeedValidationIssue[];
+    warnings: ConfirmedNeedValidationIssue[];
+  };
 };
 
 export type ConfirmedNeedDraftLine = {
@@ -67,6 +133,10 @@ export type ConfirmedNeedLine = {
   source_stale: boolean;
   blockers: ConfirmedNeedIssue[];
   warnings: ConfirmedNeedIssue[];
+  validation_issues: {
+    blocking: ConfirmedNeedValidationIssue[];
+    warnings: ConfirmedNeedValidationIssue[];
+  };
   decision_history: ConfirmedNeedDecisionHistory[];
 };
 
@@ -75,6 +145,11 @@ export type ConfirmedNeedWorkbenchData = {
   source_kind: "NEED_GENERATION";
   batch_status: string;
   batch_version: number;
+  authoritative_batch_status: string;
+  editing_allowed: boolean;
+  validation_allowed: boolean;
+  validation_disabled_reason: string | null;
+  validation: ConfirmedNeedValidationSummary;
   need_generation_source: {
     run_id: string;
     run_version: number;

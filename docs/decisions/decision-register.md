@@ -76,6 +76,8 @@ The sole canonical H1B1-P01 through H1B1-P12 registry is [Decision PA-06E-H1B1 â
 
 RMVP-05 is the connected H1 implementation merged through PR #169 at `9ddc6030c85cc3c076ab74ee0bd1af4f123dcae7`. It adds the bounded `RMVP-05.v1` shaped review, write-free canonical preview, and idempotent quantity-confirmation command over existing H0B1/H1A/H1B1 evidence, plus one sixth internal Planning Inputs tab. Its sole exact registry is [RMVP-05 Connected Confirmed Need Review](../api/rmvp-05-connected-confirmed-need-review.md), with delivery evidence in [TASK-RMVP-05](../implementation-tasks/TASK-RMVP-05-connected-confirmed-need-review.md). Approval, release, CMD-03, downstream domains, hosted Supabase, Retool, production policy data, credentials, and deployment remain separately unauthorized.
 
+RMVP-06B implements accepted D-030 on bounded draft branch `codex/rmvp-06b-connected-confirmed-need-validation` from baseline `2ac4775af957070225916da3912c61df30ae4395`. It retains the complete approved registry of 19 blocking codes and two warnings, including distinct zero-cardinality `MISSING` and greater-than-one `AMBIGUOUS` codes for current revisions, current decisions, and eligible Planning policies. Its exact callable contract is [RMVP-06 Connected Confirmed Need Validation](../api/rmvp-06-connected-confirmed-need-validation.md), with delivery evidence in [TASK-RMVP-06B](../implementation-tasks/TASK-RMVP-06B-connected-confirmed-need-validation.md). Exact-head validation, product/architecture review, and merge remain pending; D-030's approval, release, reopen, CMD-03, downstream, production-binding, hosted, Retool, credential, and deployment exclusions remain unchanged.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

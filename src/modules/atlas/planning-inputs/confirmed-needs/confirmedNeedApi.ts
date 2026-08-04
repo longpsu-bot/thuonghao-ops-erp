@@ -9,6 +9,7 @@ export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   getReview: "atlas_api.get_confirmed_need_review",
   preview: "atlas_api.preview_confirmed_need_confirmation",
   confirm: "atlas_api.confirm_need_quantities",
+  validate: "atlas_api.validate_confirmed_needs",
 } as const satisfies Record<string, AtlasRpcName>;
 
 export type ConfirmedNeedFilters = {
@@ -54,6 +55,19 @@ export type ConfirmedNeedCommandRequest = AtlasRpcRequest & {
     preview_hash: string;
     lines: ConfirmedNeedLineRequest[];
   };
+};
+
+export type ConfirmedNeedValidationRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-06.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "BATCH_VALIDATION_REQUESTED";
+  reason_note: string | null;
+  payload: { confirmed_need_batch_id: string };
 };
 
 export type ConfirmedNeedRpcInvoker = {
@@ -130,6 +144,28 @@ export function confirmedNeedCommandRequest(
   };
 }
 
+export function confirmedNeedValidationRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  reasonNote: string | null = null,
+): ConfirmedNeedValidationRequest {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-06.v1",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `confirmed-need-validation:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "BATCH_VALIDATION_REQUESTED",
+    reason_note: reasonNote?.trim() || null,
+    payload: { confirmed_need_batch_id: batchId },
+  };
+}
+
 export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   return {
     getReview(
@@ -157,6 +193,9 @@ export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
     },
     confirm(request: ConfirmedNeedCommandRequest) {
       return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.confirm, request);
+    },
+    validate(request: ConfirmedNeedValidationRequest) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.validate, request);
     },
   };
 }

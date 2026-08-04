@@ -60,6 +60,16 @@ async function prepareMixedPreview(
   return api;
 }
 
+async function confirmFixture(api = createReviewConfirmedNeedApi("ready")) {
+  await prepareMixedPreview(api);
+  fireEvent.click(
+    screen.getByLabelText("Tôi xác nhận đúng bản xem trước có thẩm quyền này"),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận số lượng" }));
+  await screen.findByText("ADJUSTED_QUANTITY_CONFIRMED");
+  return api;
+}
+
 describe("RMVP-05 Confirmed Need review workbench", () => {
   it("loads an explicit batch and distinguishes theoretical, proposed and authoritative quantities", async () => {
     const api = createReviewConfirmedNeedApi("ready");
@@ -330,5 +340,167 @@ describe("RMVP-05 Confirmed Need review workbench", () => {
     fireEvent.click(retry);
     await waitFor(() => expect(confirm).toHaveBeenCalledTimes(2));
     expect(confirm.mock.calls[1]?.[0]).toBe(exact);
+  });
+
+  it("persists and renders a blocked complete-batch validation with line markers", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const validate = vi.spyOn(api, "validate");
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await waitFor(() => expect(validate).toHaveBeenCalledOnce());
+    expect(
+      await screen.findAllByText("Chưa đạt điều kiện kiểm tra"),
+    ).not.toHaveLength(0);
+    expect(screen.getAllByText(/chưa có quyết định hiện hành/)).toHaveLength(4);
+    const blocker = screen.getAllByText(/chưa có quyết định hiện hành/)[0]!;
+    const warning = screen.getAllByText(
+      "Cảnh báo thượng nguồn được giữ lại.",
+    )[0]!;
+    expect(
+      blocker.compareDocumentPosition(warning) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Kiểm tra toàn bộ" }),
+    ).not.toBeDisabled();
+    expect(
+      screen.getByLabelText("Số lượng xác nhận Cà rốt"),
+    ).not.toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Xem trước xác nhận" }),
+    ).not.toBeDisabled();
+  });
+
+  it("validates a fully confirmed batch and switches the review to read-only", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    await confirmFixture(api);
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    expect(await screen.findByText("Đã kiểm tra")).toBeVisible();
+    expect(
+      screen.getAllByText("Đã kiểm tra; chờ phê duyệt").length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("button", { name: "Kiểm tra toàn bộ" }),
+    ).toBeDisabled();
+    expect(screen.getByLabelText("Số lượng xác nhận Cà rốt")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Xem trước xác nhận" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText("Lô đã được kiểm tra; chờ phê duyệt."),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /phê duyệt/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /phát hành|bàn giao/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders warning-only successful validation without treating it as blocking", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    await confirmFixture(api);
+    const original = api.validate.bind(api);
+    api.validate = vi.fn(async (request) => {
+      const result = await original(request);
+      if (result.kind === "success") {
+        const readback = result.response.authoritative_readback as unknown as {
+          validation: {
+            warning_count: number;
+            grouped_issues: { warnings: unknown[] };
+          };
+        };
+        readback.validation.warning_count = 1;
+        readback.validation.grouped_issues.warnings = [
+          {
+            code: "ZERO_CONFIRMED_QUANTITY",
+            message: "Số lượng đã xác nhận bằng không.",
+            severity: "WARNING",
+            sort_position: 1,
+          },
+        ];
+      }
+      return result;
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    expect(
+      await screen.findByText("Số lượng đã xác nhận bằng không."),
+    ).toBeVisible();
+    expect(screen.getByText("Đã kiểm tra")).toBeVisible();
+    expect(screen.queryByText("Vấn đề cần xử lý (1)")).not.toBeInTheDocument();
+  });
+
+  it("discards a late validation response after the active batch is reloaded", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const getReview = vi.spyOn(api, "getReview");
+    const original = api.validate.bind(api);
+    const pending = deferred<AtlasRpcResult>();
+    api.validate = vi.fn(() => pending.promise);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await waitFor(() => expect(api.validate).toHaveBeenCalledOnce());
+    const request = vi.mocked(api.validate).mock.calls[0]![0];
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    await waitFor(() => expect(getReview).toHaveBeenCalledTimes(2));
+    await act(async () => pending.resolve(await original(request)));
+    expect(screen.getByText("Chưa kiểm tra")).toBeVisible();
+    expect(
+      screen.queryByText("Chưa đạt điều kiện kiểm tra"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("discards a late validation response after a batch change", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const original = api.validate.bind(api);
+    const pending = deferred<AtlasRpcResult>();
+    api.validate = vi.fn(() => pending.promise);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await waitFor(() => expect(api.validate).toHaveBeenCalledOnce());
+    const request = vi.mocked(api.validate).mock.calls[0]![0];
+    fireEvent.change(screen.getByLabelText("Mã lô Confirmed Need"), {
+      target: { value: "c4500000-0000-0000-0000-000000000099" },
+    });
+    await act(async () => pending.resolve(await original(request)));
+    expect(screen.getByText("Chưa kiểm tra")).toBeVisible();
+  });
+
+  it("discards a late validation response after a newer operator intent", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const original = api.validate.bind(api);
+    const pending = deferred<AtlasRpcResult>();
+    api.validate = vi.fn(() => pending.promise);
+    renderReview(api);
+    const quantity = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await waitFor(() => expect(api.validate).toHaveBeenCalledOnce());
+    const request = vi.mocked(api.validate).mock.calls[0]![0];
+    fireEvent.change(quantity, { target: { value: "5.250000" } });
+    await act(async () => pending.resolve(await original(request)));
+    expect(quantity).toHaveValue("5.250000");
+    expect(screen.getByText("Chưa kiểm tra")).toBeVisible();
+  });
+
+  it("does not automatically retry a validation authorization failure", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    api.validate = vi.fn().mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "CAPABILITY_DENIED",
+        safe_message: "Không có quyền kiểm tra lô.",
+        retryable: false,
+      },
+    } satisfies AtlasRpcResult);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    expect(
+      await screen.findByText("Không có quyền kiểm tra lô."),
+    ).toBeVisible();
+    expect(api.validate).toHaveBeenCalledOnce();
   });
 });

@@ -37,8 +37,8 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 96, 'views', 2),
-  'CAT-02 exact whole-platform table and view totals are 96 and 2'
+  jsonb_build_object('ordinary_tables', 99, 'views', 2),
+  'CAT-02 exact whole-platform table and view totals are 99 and 2'
 );
 
 select is(
@@ -63,9 +63,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 96,
-    'rls_enabled', 96,
-    'rls_forced', 96
+    'authoritative_tables', 99,
+    'rls_enabled', 99,
+    'rls_forced', 99
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -176,6 +176,12 @@ select is(
     jsonb_build_object(
       'capability_code', 'confirmed_need_review.read',
       'capability_name', 'Read Confirmed Need review',
+      'owning_domain', 'PLANNING',
+      'capability_status', 'ACTIVE'
+    ),
+    jsonb_build_object(
+      'capability_code', 'confirmed_need_validation.validate',
+      'capability_name', 'Validate complete Confirmed Need batch',
       'owning_domain', 'PLANNING',
       'capability_status', 'ACTIVE'
     ),
@@ -300,7 +306,7 @@ select is(
       'capability_status', 'ACTIVE'
     )
   ),
-  'CAT-05 exact capability catalog includes RMVP-05 Confirmed Need capabilities'
+  'CAT-05 exact capability catalog includes the RMVP-06 validation capability'
 );
 
 select is(
@@ -365,10 +371,10 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 555,
-    'md5', '6c67009370d176a732ef7f3d80066487'
+    'count', 567,
+    'md5', 'e92b83b9efffb6674c04bf3ef86cff04'
   ),
-  'CAT-07 exact pre-existing 555-policy RLS catalog fingerprint remains unchanged beside the isolated RMVP-05 Unit lock policy'
+  'CAT-07 exact 567-policy RLS catalog includes the bounded RMVP-06 policies beside the isolated RMVP-05 Unit lock policy'
 );
 
 select ok(
@@ -574,8 +580,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  76,
-  'CAT-14 physical atlas_api function count is exactly seventy-six'
+  77,
+  'CAT-14 physical atlas_api function count is exactly seventy-seven'
 );
 
 select is(
@@ -661,12 +667,13 @@ select is(
     'update_school_portion_defaults(request jsonb)',
     'update_supplier(request jsonb)',
     'validate_attendance(request jsonb)',
+    'validate_confirmed_needs(request jsonb)',
     'validate_need_generation_run(request jsonb)',
     'validate_pantry(request jsonb)',
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly seventy-six functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly seventy-seven functions'
 );
 
 select is(
@@ -844,6 +851,7 @@ select is(
     'update_school_portion_defaults(request jsonb)=atlas_master_data_command_runtime',
     'update_supplier(request jsonb)=atlas_master_data_command_runtime',
     'validate_attendance(request jsonb)=atlas_planning_command_runtime',
+    'validate_confirmed_needs(request jsonb)=atlas_confirmed_need_review_runtime',
     'validate_need_generation_run(request jsonb)=atlas_need_generation_runtime',
     'validate_pantry(request jsonb)=atlas_planning_command_runtime',
     'validate_recipe_version(request jsonb)=atlas_master_data_command_runtime',
@@ -936,12 +944,13 @@ select is(
     'update_school_portion_defaults(request jsonb)',
     'update_supplier(request jsonb)',
     'validate_attendance(request jsonb)',
+    'validate_confirmed_needs(request jsonb)',
     'validate_need_generation_run(request jsonb)',
     'validate_pantry(request jsonb)',
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly seventy-six functions'
+  'CAT-18 authenticated execute allowlist is exactly seventy-seven functions'
 );
 
 select ok(
@@ -1046,6 +1055,7 @@ select ok(
           ('update_school_portion_defaults', 'request jsonb'),
           ('update_supplier', 'request jsonb'),
           ('validate_attendance', 'request jsonb'),
+          ('validate_confirmed_needs', 'request jsonb'),
           ('validate_need_generation_run', 'request jsonb'),
           ('validate_pantry', 'request jsonb'),
           ('validate_recipe_version', 'request jsonb'),
@@ -1382,29 +1392,29 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 10,
-    'table_count', 96,
-    'table_catalog_md5', 'c25fd07866fc549e261c19c2a22f10a8',
+    'table_count', 99,
+    'table_catalog_md5', '271ab5d566bc1481a55034e1408fd18c',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 96,
-    'rls_forced', 96,
+    'rls_enabled', 99,
+    'rls_forced', 99,
     'database_role_count', 11,
     'application_role_count', 0,
-    'capability_count', 24,
-    'policy_count', 555,
-    'policy_catalog_md5', '6c67009370d176a732ef7f3d80066487',
+    'capability_count', 25,
+    'policy_count', 567,
+    'policy_catalog_md5', 'e92b83b9efffb6674c04bf3ef86cff04',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 163,
-    'private_function_catalog_md5', '81f6054eb5d0308028dcd947d44825c8',
-    'trigger_count', 75,
-    'trigger_catalog_md5', 'ab947193584e2a2c482f0c7abe6e35fb',
-    'positive_target_grant_count', 1328,
-    'positive_target_grant_md5', '33184d6b6dbc69804fc4930f843413b1',
+    'private_function_count', 171,
+    'private_function_catalog_md5', '2bae61436945a009df3346fa0c87cada',
+    'trigger_count', 82,
+    'trigger_catalog_md5', 'caf1fd4cd31734dc7c71d8490c022b21',
+    'positive_target_grant_count', 1352,
+    'positive_target_grant_md5', '01677c3f0b715f8fc283a1d51c79c913',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 76,
+    'api_function_count', 77,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 76,
+    'authenticated_execute_count', 77,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),
