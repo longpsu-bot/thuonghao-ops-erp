@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import {
+  confirmedNeedApprovalRequest,
   confirmedNeedCommandRequest,
   confirmedNeedPreviewRequest,
   confirmedNeedReadRequest,
+  confirmedNeedReleaseRequest,
   confirmedNeedValidationRequest,
   createConfirmedNeedApi,
 } from "./confirmedNeedApi";
@@ -123,7 +125,48 @@ describe("RMVP-05 API adapter", () => {
     );
   });
 
-  it("routes the three RMVP-05 APIs and the RMVP-06 validation API", async () => {
+  it("builds the two exact closed RMVP-07 lifecycle envelopes", () => {
+    const approval = confirmedNeedApprovalRequest(
+      "subject",
+      "correlation-approval",
+      "batch-1",
+      3,
+      "  ca sáng  ",
+    );
+    expect(approval).toMatchObject({
+      contract_version: "RMVP-07.v1",
+      correlation_id: "correlation-approval",
+      expected_version: 3,
+      requested_by_auth_subject: "subject",
+      reason_code: "CONFIRMED_NEED_APPROVAL_REQUESTED",
+      reason_note: "ca sáng",
+      payload: { confirmed_need_batch_id: "batch-1" },
+    });
+    expect(approval.idempotency_key).toBe(
+      `confirmed-need-approval:${approval.command_id}`,
+    );
+
+    const release = confirmedNeedReleaseRequest(
+      "subject",
+      "correlation-release",
+      "batch-1",
+      4,
+    );
+    expect(release).toMatchObject({
+      contract_version: "RMVP-07.v1",
+      correlation_id: "correlation-release",
+      expected_version: 4,
+      requested_by_auth_subject: "subject",
+      reason_code: "CONFIRMED_NEED_RELEASE_REQUESTED",
+      reason_note: null,
+      payload: { confirmed_need_batch_id: "batch-1" },
+    });
+    expect(release.idempotency_key).toBe(
+      `confirmed-need-release:${release.command_id}`,
+    );
+  });
+
+  it("routes the RMVP-05, RMVP-06, and two RMVP-07 APIs", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createConfirmedNeedApi({ invoke });
     await api.getReview("subject", "correlation", "batch-1", {
@@ -154,11 +197,19 @@ describe("RMVP-05 API adapter", () => {
     await api.validate(
       confirmedNeedValidationRequest("subject", "correlation", "batch-1", 1),
     );
+    await api.approve(
+      confirmedNeedApprovalRequest("subject", "correlation", "batch-1", 2),
+    );
+    await api.release(
+      confirmedNeedReleaseRequest("subject", "correlation", "batch-1", 3),
+    );
     expect(invoke.mock.calls.map(([name]) => name)).toEqual([
       "atlas_api.get_confirmed_need_review",
       "atlas_api.preview_confirmed_need_confirmation",
       "atlas_api.confirm_need_quantities",
       "atlas_api.validate_confirmed_needs",
+      "atlas_api.approve_confirmed_needs",
+      "atlas_api.release_confirmed_needs_for_purchase_handoff",
     ]);
   });
 });

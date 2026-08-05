@@ -166,8 +166,8 @@ select is(
    where namespace.nspname = 'atlas_planning'
      and relation.relname like 'confirmed_need_validation_%'
      and policy.polroles = array['atlas_confirmed_need_review_runtime'::regrole::oid]),
-  6,
-  'RMVP06-S07 evidence has exact runtime select/insert policies only'
+  9,
+  'RMVP06-S07 evidence has exact runtime select/insert/immutability-lock policies'
 );
 select ok(
   not exists (

@@ -152,19 +152,30 @@ select is(
           'confirmed_need_validation_issues',
           'confirmed_need_validation_lines'
         )
+    ),
+    'rmvp07_release_relations', (
+      select array_agg(format('%I.%I', n.nspname, c.relname) order by n.nspname, c.relname)::text[]
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'atlas_planning'
+        and c.relkind = 'r'
+        and c.relname = 'confirmed_need_releases'
     )
   ),
   jsonb_build_object(
-    'tables', 99,
+    'tables', 100,
     'views', 2,
     'rmvp04_triggers', 0,
     'rmvp06_validation_relations', array[
       'atlas_planning.confirmed_need_validation_attempts',
       'atlas_planning.confirmed_need_validation_issues',
       'atlas_planning.confirmed_need_validation_lines'
+    ]::text[],
+    'rmvp07_release_relations', array[
+      'atlas_planning.confirmed_need_releases'
     ]::text[]
   ),
-  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes exactly the three approved RMVP-06 validation evidence relations'
+  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes the exact RMVP-06/07 evidence relations'
 );
 
 -- H0A2 normally prevents duplicate active Recipe roots in either scope. The

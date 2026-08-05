@@ -10,6 +10,8 @@ export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   preview: "atlas_api.preview_confirmed_need_confirmation",
   confirm: "atlas_api.confirm_need_quantities",
   validate: "atlas_api.validate_confirmed_needs",
+  approve: "atlas_api.approve_confirmed_needs",
+  release: "atlas_api.release_confirmed_needs_for_purchase_handoff",
 } as const satisfies Record<string, AtlasRpcName>;
 
 export type ConfirmedNeedFilters = {
@@ -66,6 +68,32 @@ export type ConfirmedNeedValidationRequest = AtlasRpcRequest & {
   requested_by_auth_subject: string;
   requested_at: string;
   reason_code: "BATCH_VALIDATION_REQUESTED";
+  reason_note: string | null;
+  payload: { confirmed_need_batch_id: string };
+};
+
+export type ConfirmedNeedApprovalRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-07.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "CONFIRMED_NEED_APPROVAL_REQUESTED";
+  reason_note: string | null;
+  payload: { confirmed_need_batch_id: string };
+};
+
+export type ConfirmedNeedReleaseRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-07.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "CONFIRMED_NEED_RELEASE_REQUESTED";
   reason_note: string | null;
   payload: { confirmed_need_batch_id: string };
 };
@@ -166,6 +194,65 @@ export function confirmedNeedValidationRequest(
   };
 }
 
+function confirmedNeedLifecycleRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  kind: "approval" | "release",
+  reasonNote: string | null,
+): ConfirmedNeedApprovalRequest | ConfirmedNeedReleaseRequest {
+  const commandId = crypto.randomUUID();
+  const base = {
+    contract_version: "RMVP-07.v1" as const,
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `confirmed-need-${kind}:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_note: reasonNote?.trim() || null,
+    payload: { confirmed_need_batch_id: batchId },
+  };
+  return kind === "approval"
+    ? { ...base, reason_code: "CONFIRMED_NEED_APPROVAL_REQUESTED" }
+    : { ...base, reason_code: "CONFIRMED_NEED_RELEASE_REQUESTED" };
+}
+
+export function confirmedNeedApprovalRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  reasonNote: string | null = null,
+): ConfirmedNeedApprovalRequest {
+  return confirmedNeedLifecycleRequest(
+    authSubject,
+    correlationId,
+    batchId,
+    expectedVersion,
+    "approval",
+    reasonNote,
+  ) as ConfirmedNeedApprovalRequest;
+}
+
+export function confirmedNeedReleaseRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  reasonNote: string | null = null,
+): ConfirmedNeedReleaseRequest {
+  return confirmedNeedLifecycleRequest(
+    authSubject,
+    correlationId,
+    batchId,
+    expectedVersion,
+    "release",
+    reasonNote,
+  ) as ConfirmedNeedReleaseRequest;
+}
+
 export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   return {
     getReview(
@@ -196,6 +283,12 @@ export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
     },
     validate(request: ConfirmedNeedValidationRequest) {
       return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.validate, request);
+    },
+    approve(request: ConfirmedNeedApprovalRequest) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.approve, request);
+    },
+    release(request: ConfirmedNeedReleaseRequest) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.release, request);
     },
   };
 }

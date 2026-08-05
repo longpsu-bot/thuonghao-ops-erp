@@ -972,6 +972,17 @@ select is(
       where n.nspname = 'atlas_api'
         and p.proname = 'validate_confirmed_needs'
     ),
+    'rmvp_07_api_names',
+    (
+      select array_agg(p.proname order by p.proname)::text[]
+      from pg_proc as p
+      join pg_namespace as n on n.oid = p.pronamespace
+      where n.nspname = 'atlas_api'
+        and p.proname in (
+          'approve_confirmed_needs',
+          'release_confirmed_needs_for_purchase_handoff'
+        )
+    ),
     'rmvp_03b_api_names',
     (
       select array_agg(p.proname order by p.proname)::text[]
@@ -999,9 +1010,13 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 77,
+    'api_total', 79,
     'rmvp_06_api_names', array[
       'validate_confirmed_needs'
+    ]::text[],
+    'rmvp_07_api_names', array[
+      'approve_confirmed_needs',
+      'release_confirmed_needs_for_purchase_handoff'
     ]::text[],
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
@@ -1011,7 +1026,7 @@ select is(
     ]::text[],
     'seed_rows', 0
   ),
-  'H1A-STR-56 H1A retains no own role, capability, API, or seed while the current RMVP-06 API catalog retains its exact command and the four approved RMVP-03B APIs'
+  'H1A-STR-56 H1A retains no own role, capability, API, or seed while the current RMVP-07/RMVP-06/RMVP-03B API catalog stays exact'
 );
 
 select * from finish();
