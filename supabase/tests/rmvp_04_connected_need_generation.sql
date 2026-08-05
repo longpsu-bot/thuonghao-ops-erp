@@ -140,10 +140,31 @@ select is(
   jsonb_build_object(
     'tables', (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname like 'atlas\_%' escape '\' and c.relkind = 'r'),
     'views', (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname like 'atlas\_%' escape '\' and c.relkind in ('v', 'm')),
-    'rmvp04_triggers', (select count(*) from pg_trigger where not tgisinternal and tgname like 'rmvp_04_%')
+    'rmvp04_triggers', (select count(*) from pg_trigger where not tgisinternal and tgname like 'rmvp_04_%'),
+    'rmvp06_validation_relations', (
+      select array_agg(format('%I.%I', n.nspname, c.relname) order by n.nspname, c.relname)::text[]
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'atlas_planning'
+        and c.relkind = 'r'
+        and c.relname in (
+          'confirmed_need_validation_attempts',
+          'confirmed_need_validation_issues',
+          'confirmed_need_validation_lines'
+        )
+    )
   ),
-  jsonb_build_object('tables', 96, 'views', 2, 'rmvp04_triggers', 0),
-  'RMVP04-10 the slice adds no relation, view, or source trigger'
+  jsonb_build_object(
+    'tables', 99,
+    'views', 2,
+    'rmvp04_triggers', 0,
+    'rmvp06_validation_relations', array[
+      'atlas_planning.confirmed_need_validation_attempts',
+      'atlas_planning.confirmed_need_validation_issues',
+      'atlas_planning.confirmed_need_validation_lines'
+    ]::text[]
+  ),
+  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes exactly the three approved RMVP-06 validation evidence relations'
 );
 
 -- H0A2 normally prevents duplicate active Recipe roots in either scope. The
