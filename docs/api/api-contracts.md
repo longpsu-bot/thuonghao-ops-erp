@@ -96,9 +96,13 @@ RMVP-03B implements exactly four reviewed APIs: one shaped exact-period readines
 
 RMVP-04 implements exactly five reviewed APIs: one shaped exact-period Need Generation workbench read plus transactional create, validate, release, and invalidate commands. It adds capability `planning.need_generation.write`, dedicated runtime `atlas_need_generation_runtime`, and no relation, view, lifecycle state, source trigger, sequence, or downstream operational record. Confirmed Need creation continues through existing CMD-15. The exact `RMVP-04.v1` envelopes, backend-authoritative calculation and grouping rules, security, actions, safe errors, and materialization connection are specified in [RMVP-04 Connected Need Generation API Contract](rmvp-04-connected-need-generation.md).
 
-## 4E. Connected Confirmed Need review contract in draft review
+## 4E. Implemented connected Confirmed Need review contract
 
 RMVP-05 implements exactly three reviewed APIs: one shaped current Confirmed Need review, one authoritative write-free preview, and one transactional exact quantity-confirmation command. It adds three unbound capabilities and dedicated runtime `atlas_confirmed_need_review_runtime`, while reusing H0B1/H1A/H1B1 and receipt/event/audit persistence with no new business relation, view, lifecycle state, scope kind, sequence, trigger, downstream fact, or production policy seed. The sole exact `RMVP-05.v1` registry is [RMVP-05 Connected Confirmed Need Review API Contract](rmvp-05-connected-confirmed-need-review.md).
+
+## 4F. Implemented connected Confirmed Need validation contract
+
+RMVP-06 implements exactly one new command, `atlas_api.validate_confirmed_needs(jsonb)`, over the existing additive RMVP-05 review. It adds one unbound capability, reuses `atlas_confirmed_need_review_runtime`, persists append-only complete-batch attempts/line observations/issues, commits governed `BLOCKED` evidence without lifecycle/version mutation, and advances a zero-blocker batch exactly once to `VALIDATED`. The exact `RMVP-06.v1` envelope, complete 19-blocker and two-warning registry, cardinality rules, persistence, read shaping, security, and verification are specified in [RMVP-06 Connected Confirmed Need Validation API Contract](rmvp-06-connected-confirmed-need-validation.md).
 
 ## 5. Contract template
 

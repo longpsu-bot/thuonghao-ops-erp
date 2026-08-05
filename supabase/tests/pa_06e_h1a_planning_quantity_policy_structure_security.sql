@@ -817,15 +817,70 @@ select is(
 );
 select is(
   (
-    select count(*)::integer
-    from pg_policy
-    where polrelid in (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', policy.polrelid::regclass::text,
+        'name', policy.polname,
+        'command', policy.polcmd,
+        'permissive', policy.polpermissive,
+        'roles', (
+          select jsonb_agg(role.rolname order by role.rolname)
+          from unnest(policy.polroles) policy_role(role_oid)
+          left join pg_roles role on role.oid = policy_role.role_oid
+        ),
+        'using', pg_get_expr(policy.polqual, policy.polrelid),
+        'with_check', pg_get_expr(policy.polwithcheck, policy.polrelid)
+      )
+      order by policy.polrelid::regclass::text, policy.polname
+    )
+    from pg_policy policy
+    where policy.polrelid in (
       'atlas_planning.planning_quantity_policies'::regclass,
       'atlas_planning.planning_quantity_policy_revisions'::regclass
     )
   ),
-  3,
-  'H1A-STR-53 both H1A relations have RMVP-05 read policies and the root has its runtime-only lock policy'
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'relation', expected.relation_name,
+        'name', expected.policy_name,
+        'command', expected.command,
+        'permissive', true,
+        'roles', jsonb_build_array('atlas_confirmed_need_review_runtime'),
+        'using', 'true',
+        'with_check', expected.with_check
+      )
+      order by expected.relation_name, expected.policy_name
+    )
+    from (
+      values
+        (
+          'atlas_planning.planning_quantity_policies',
+          'rmvp_05_confirmed_need_select',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.planning_quantity_policies',
+          'rmvp_05_policy_root_lock',
+          'w',
+          'true'
+        ),
+        (
+          'atlas_planning.planning_quantity_policy_revisions',
+          'rmvp_05_confirmed_need_select',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.planning_quantity_policy_revisions',
+          'rmvp_06_policy_revision_lock',
+          'w',
+          'false'
+        )
+    ) expected(relation_name, policy_name, command, with_check)
+  ),
+  'H1A-STR-53 exact four-policy catalog includes the RMVP-06 revision lock and no unknown policy'
 );
 select is(
   (select jsonb_build_object(
@@ -909,6 +964,14 @@ select is(
       join pg_namespace as n on n.oid = p.pronamespace
       where n.nspname = 'atlas_api'
     ),
+    'rmvp_06_api_names',
+    (
+      select array_agg(p.proname order by p.proname)::text[]
+      from pg_proc as p
+      join pg_namespace as n on n.oid = p.pronamespace
+      where n.nspname = 'atlas_api'
+        and p.proname = 'validate_confirmed_needs'
+    ),
     'rmvp_03b_api_names',
     (
       select array_agg(p.proname order by p.proname)::text[]
@@ -936,7 +999,10 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 76,
+    'api_total', 77,
+    'rmvp_06_api_names', array[
+      'validate_confirmed_needs'
+    ]::text[],
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
       'get_planning_input_readiness_workbench',
@@ -945,7 +1011,7 @@ select is(
     ]::text[],
     'seed_rows', 0
   ),
-  'H1A-STR-56 H1A retains no own role, capability, API, or seed while the current RMVP-05 API catalog retains the four approved RMVP-03B APIs'
+  'H1A-STR-56 H1A retains no own role, capability, API, or seed while the current RMVP-06 API catalog retains its exact command and the four approved RMVP-03B APIs'
 );
 
 select * from finish();

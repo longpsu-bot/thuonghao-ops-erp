@@ -29,13 +29,13 @@ select is((select jsonb_build_object('helper_count',count(*),'atlas_owner_invoke
 -- 10
 select ok((select bool_and(not has_function_privilege('authenticated', p.oid, 'EXECUTE') and not has_function_privilege('anon', p.oid, 'EXECUTE') and not has_function_privilege('service_role', p.oid, 'EXECUTE')) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_core' and p.proname like 'rmvp_03b_%'), 'R3B-10 private helpers are browser-inaccessible');
 -- 11
-select is((select jsonb_build_object('tables', count(*) filter (where c.relkind='r'), 'views', count(*) filter (where c.relkind in ('v','m'))) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname like 'atlas\_%' escape '\'), jsonb_build_object('tables',96,'views',2), 'R3B-11 no relation or view was added');
+select is((select jsonb_build_object('tables', count(*) filter (where c.relkind='r'), 'views', count(*) filter (where c.relkind in ('v','m')), 'rmvp_06_relations', array_agg(c.relname order by c.relname) filter (where c.relkind='r' and n.nspname='atlas_planning' and c.relname like 'confirmed_need_validation_%')) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname like 'atlas\_%' escape '\'), jsonb_build_object('tables',99,'views',2,'rmvp_06_relations',array['confirmed_need_validation_attempts','confirmed_need_validation_issues','confirmed_need_validation_lines']::text[]), 'R3B-11 RMVP-03B itself owns no new relation or view; the current Atlas catalog is exactly 99 tables and 2 views including the three RMVP-06 validation evidence relations');
 -- 12
 select is((select count(*)::integer from pg_roles where rolname like 'atlas\_%' escape '\'), 11, 'R3B-12 current catalogue includes the dedicated RMVP-05 Confirmed Need review runtime');
 -- 13
-select is((select count(*)::integer from atlas_core.capabilities), 24, 'R3B-13 current catalogue includes the three RMVP-05 Confirmed Need capabilities');
+select is((select jsonb_build_object('capabilities',count(*),'rmvp_06_capabilities',array_agg(capability_code order by capability_code) filter (where capability_code like 'confirmed_need_validation.%')) from atlas_core.capabilities), jsonb_build_object('capabilities',25,'rmvp_06_capabilities',array['confirmed_need_validation.validate']::text[]), 'R3B-13 current catalogue includes exactly the one RMVP-06 Confirmed Need validation capability');
 -- 14
-select is((select count(*)::integer from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'), 76, 'R3B-14 current catalogue includes the three RMVP-05 Confirmed Need APIs');
+select is((select jsonb_build_object('apis',count(*),'rmvp_06_apis',array_agg(p.proname order by p.proname) filter (where p.proname='validate_confirmed_needs')) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='atlas_api'), jsonb_build_object('apis',77,'rmvp_06_apis',array['validate_confirmed_needs']::text[]), 'R3B-14 current catalogue includes the RMVP-06 validation API while the exact four RMVP-03B API identities remain asserted separately');
 -- 15
 select is((select count(*)::integer from pg_policy p join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace where p.polname like 'rmvp_03b_%'), 12, 'R3B-15 exactly twelve bounded RLS policies were added');
 -- 16

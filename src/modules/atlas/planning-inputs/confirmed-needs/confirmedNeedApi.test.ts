@@ -4,9 +4,14 @@ import {
   confirmedNeedCommandRequest,
   confirmedNeedPreviewRequest,
   confirmedNeedReadRequest,
+  confirmedNeedValidationRequest,
   createConfirmedNeedApi,
 } from "./confirmedNeedApi";
-import { exactDecimalEqual } from "./confirmedNeedModel";
+import {
+  confirmedNeedValidationBlockingCodes,
+  confirmedNeedValidationWarningCodes,
+  exactDecimalEqual,
+} from "./confirmedNeedModel";
 
 const success: AtlasRpcResult = {
   kind: "success",
@@ -96,7 +101,29 @@ describe("RMVP-05 API adapter", () => {
     expect(exactDecimalEqual("1e1", "10.000000")).toBe(false);
   });
 
-  it("routes exactly the three RMVP-05 public APIs", async () => {
+  it("builds the exact RMVP-06 complete-batch validation envelope", () => {
+    const request = confirmedNeedValidationRequest(
+      "subject",
+      "correlation",
+      "batch-1",
+      7,
+      "  kiểm tra cuối ca  ",
+    );
+    expect(request).toMatchObject({
+      contract_version: "RMVP-06.v1",
+      correlation_id: "correlation",
+      expected_version: 7,
+      requested_by_auth_subject: "subject",
+      reason_code: "BATCH_VALIDATION_REQUESTED",
+      reason_note: "kiểm tra cuối ca",
+      payload: { confirmed_need_batch_id: "batch-1" },
+    });
+    expect(request.idempotency_key).toBe(
+      `confirmed-need-validation:${request.command_id}`,
+    );
+  });
+
+  it("routes the three RMVP-05 APIs and the RMVP-06 validation API", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createConfirmedNeedApi({ invoke });
     await api.getReview("subject", "correlation", "batch-1", {
@@ -124,10 +151,44 @@ describe("RMVP-05 API adapter", () => {
         [],
       ),
     );
+    await api.validate(
+      confirmedNeedValidationRequest("subject", "correlation", "batch-1", 1),
+    );
     expect(invoke.mock.calls.map(([name]) => name)).toEqual([
       "atlas_api.get_confirmed_need_review",
       "atlas_api.preview_confirmed_need_confirmation",
       "atlas_api.confirm_need_quantities",
+      "atlas_api.validate_confirmed_needs",
+    ]);
+  });
+});
+
+describe("RMVP-06 validation registry", () => {
+  it("exposes the complete approved 19 blocking and two warning codes in canonical order", () => {
+    expect(confirmedNeedValidationBlockingCodes).toEqual([
+      "NO_CURRENT_LINES",
+      "CURRENT_LINE_SET_INVALID",
+      "CURRENT_REVISION_MISSING",
+      "CURRENT_REVISION_AMBIGUOUS",
+      "CURRENT_DECISION_MISSING",
+      "CURRENT_DECISION_AMBIGUOUS",
+      "DECISION_REVISION_MISMATCH",
+      "SOURCE_RELEASE_NOT_CURRENT",
+      "CONTRIBUTION_MEMBERSHIP_INVALID",
+      "THEORETICAL_TOTAL_MISMATCH",
+      "CONTROLLED_UNIT_INACTIVE",
+      "PLANNING_POLICY_MISSING",
+      "PLANNING_POLICY_AMBIGUOUS",
+      "PLANNING_POLICY_NOT_ELIGIBLE",
+      "DECISION_POLICY_MISMATCH",
+      "CONFIRMED_QUANTITY_INVALID",
+      "ADJUSTMENT_REASON_INCOMPLETE",
+      "SOURCE_BLOCKER_PRESENT",
+      "CURRENT_FACTS_CHANGED",
+    ]);
+    expect(confirmedNeedValidationWarningCodes).toEqual([
+      "ZERO_CONFIRMED_QUANTITY",
+      "UPSTREAM_WARNING_RETAINED",
     ]);
   });
 });

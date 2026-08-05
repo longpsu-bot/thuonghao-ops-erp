@@ -5,6 +5,7 @@ import { Chip, CompactTable, Panel } from "../../WorkbenchComponents";
 import {
   confirmedNeedCommandRequest,
   confirmedNeedPreviewRequest,
+  confirmedNeedValidationRequest,
   type ConfirmedNeedApi,
   type ConfirmedNeedCommandRequest,
   type ConfirmedNeedFilters,
@@ -348,6 +349,42 @@ export function ConfirmedNeedReviewWorkbench({
     void executeCommand(request);
   };
 
+  const validateBatch = async () => {
+    if (!api || !authSubject || !workbench?.validation_allowed) return;
+    const requestGeneration = invalidateIntent();
+    const request = confirmedNeedValidationRequest(
+      authSubject,
+      correlationId,
+      workbench.confirmed_need_batch_id,
+      workbench.batch_version,
+    );
+    setBusy(true);
+    setNotice(null);
+    const result = await api.validate(request);
+    if (requestGeneration !== intentGeneration.current) {
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    if (confirmedNeedResultIsStale(result)) {
+      const message = confirmedNeedResultMessage(result);
+      if (await loadReview()) setNotice(message);
+      return;
+    }
+    if (result.kind !== "success") {
+      setNotice(confirmedNeedResultMessage(result));
+      return;
+    }
+    const readback = confirmedNeedReadbackFromResult(result);
+    if (readback) adopt(readback);
+    else if (!(await loadReview())) return;
+    setNotice(
+      result.response.validation_status === "VALIDATED"
+        ? "Đã kiểm tra; chờ phê duyệt"
+        : "Chưa đạt điều kiện kiểm tra",
+    );
+  };
+
   return (
     <Panel
       title="Xác nhận nhu cầu"
@@ -405,8 +442,53 @@ export function ConfirmedNeedReviewWorkbench({
             <span>
               Đã điều chỉnh <b>{workbench.line_counts.adjusted}</b>
             </span>
+            <span>
+              Kiểm tra gần nhất{" "}
+              <b>
+                {workbench.validation.latest_outcome === "VALIDATED"
+                  ? "Đã kiểm tra"
+                  : workbench.validation.latest_outcome === "BLOCKED"
+                    ? "Chưa đạt điều kiện kiểm tra"
+                    : "Chưa kiểm tra"}
+              </b>
+            </span>
+            {workbench.validation.evaluated_actor && (
+              <span>
+                Người kiểm tra{" "}
+                <b>{workbench.validation.evaluated_actor.name}</b>
+              </span>
+            )}
+            {workbench.validation.evaluated_at && (
+              <span>
+                Thời điểm{" "}
+                <b>
+                  {new Date(workbench.validation.evaluated_at).toLocaleString(
+                    "vi-VN",
+                  )}
+                </b>
+              </span>
+            )}
+            <span>
+              Vấn đề cần xử lý <b>{workbench.validation.blocking_count}</b>
+            </span>
+            <span>
+              Cảnh báo <b>{workbench.validation.warning_count}</b>
+            </span>
           </section>
 
+          {workbench.validation.latest_outcome === "VALIDATED" && (
+            <p role="status">Đã kiểm tra; chờ phê duyệt</p>
+          )}
+          {issueList(
+            "Vấn đề cần xử lý",
+            workbench.validation.grouped_issues.blocking,
+            "danger",
+          )}
+          {issueList(
+            "Cảnh báo",
+            workbench.validation.grouped_issues.warnings,
+            "warning",
+          )}
           {issueList("Lỗi chặn", workbench.blockers, "danger")}
           {issueList("Cảnh báo", workbench.warnings, "warning")}
 
@@ -435,6 +517,7 @@ export function ConfirmedNeedReviewWorkbench({
                         type="checkbox"
                         aria-label={`Chọn ${line.ingredient.name}`}
                         checked={draft.selected}
+                        disabled={!workbench.editing_allowed}
                         onChange={(event) =>
                           editDraft(line.confirmed_need_line_id, {
                             selected: event.target.checked,
@@ -473,12 +556,14 @@ export function ConfirmedNeedReviewWorkbench({
                       <div className="planning-lifecycle-actions">
                         <button
                           type="button"
+                          disabled={!workbench.editing_allowed}
                           onClick={() => setDecisionMode(line, false)}
                         >
                           Chấp nhận đề xuất
                         </button>
                         <button
                           type="button"
+                          disabled={!workbench.editing_allowed}
                           onClick={() => setDecisionMode(line, true)}
                         >
                           Điều chỉnh số lượng
@@ -488,6 +573,7 @@ export function ConfirmedNeedReviewWorkbench({
                         aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
                         inputMode="decimal"
                         value={draft.exact_quantity}
+                        disabled={!workbench.editing_allowed}
                         onChange={(event) =>
                           editDraft(line.confirmed_need_line_id, {
                             exact_quantity: event.target.value,
@@ -497,6 +583,7 @@ export function ConfirmedNeedReviewWorkbench({
                       <select
                         aria-label={`Lý do ${line.ingredient.name}`}
                         value={draft.reason_code}
+                        disabled={!workbench.editing_allowed}
                         onChange={(event) =>
                           editDraft(line.confirmed_need_line_id, {
                             reason_code: event.target
@@ -518,6 +605,7 @@ export function ConfirmedNeedReviewWorkbench({
                       <input
                         aria-label={`Ghi chú ${line.ingredient.name}`}
                         value={draft.reason_note}
+                        disabled={!workbench.editing_allowed}
                         onChange={(event) =>
                           editDraft(line.confirmed_need_line_id, {
                             reason_note: event.target.value,
@@ -530,6 +618,16 @@ export function ConfirmedNeedReviewWorkbench({
                         issueList("Lỗi dòng", line.blockers, "danger")}
                       {line.warnings.length > 0 &&
                         issueList("Cảnh báo dòng", line.warnings, "warning")}
+                      {issueList(
+                        "Vấn đề cần xử lý",
+                        line.validation_issues.blocking,
+                        "danger",
+                      )}
+                      {issueList(
+                        "Cảnh báo",
+                        line.validation_issues.warnings,
+                        "warning",
+                      )}
                       {line.decision_history.length > 0 && (
                         <details>
                           <summary>
@@ -565,7 +663,8 @@ export function ConfirmedNeedReviewWorkbench({
                 busy ||
                 selected.length === 0 ||
                 localErrors.length > 0 ||
-                !workbench.allowed_actions.preview_confirmation
+                !workbench.allowed_actions.preview_confirmation ||
+                !workbench.editing_allowed
               }
               title={
                 workbench.disabled_reasons.preview_confirmation ?? undefined
@@ -574,6 +673,21 @@ export function ConfirmedNeedReviewWorkbench({
             >
               Xem trước xác nhận
             </button>
+          </div>
+
+          <div className="planning-lifecycle-actions">
+            <button
+              type="button"
+              disabled={busy || !workbench.validation_allowed}
+              title={workbench.validation_disabled_reason ?? undefined}
+              onClick={() => void validateBatch()}
+            >
+              Kiểm tra toàn bộ
+            </button>
+            {!workbench.validation_allowed &&
+              workbench.validation_disabled_reason && (
+                <small>{workbench.validation_disabled_reason}</small>
+              )}
           </div>
 
           {preview && (
@@ -604,7 +718,8 @@ export function ConfirmedNeedReviewWorkbench({
                     disabled={
                       busy ||
                       !confirmAcknowledged ||
-                      !workbench.allowed_actions.confirm_quantities
+                      !workbench.allowed_actions.confirm_quantities ||
+                      !workbench.editing_allowed
                     }
                     title={
                       workbench.disabled_reasons.confirm_quantities ?? undefined

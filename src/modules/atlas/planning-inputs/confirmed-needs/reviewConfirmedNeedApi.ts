@@ -4,7 +4,10 @@ import type {
   ConfirmedNeedApi,
   ConfirmedNeedCommandRequest,
 } from "./confirmedNeedApi";
-import type { ConfirmedNeedWorkbenchData } from "./confirmedNeedModel";
+import type {
+  ConfirmedNeedValidationIssue,
+  ConfirmedNeedWorkbenchData,
+} from "./confirmedNeedModel";
 
 const batchId = "c4500000-0000-0000-0000-000000000001";
 const revisionOne = "c4510000-0000-0000-0000-000000000001";
@@ -16,6 +19,25 @@ function fixture(): ConfirmedNeedWorkbenchData {
     source_kind: "NEED_GENERATION",
     batch_status: "DRAFT_REVIEW",
     batch_version: 1,
+    authoritative_batch_status: "DRAFT_REVIEW",
+    editing_allowed: true,
+    validation_allowed: true,
+    validation_disabled_reason: null,
+    validation: {
+      latest_attempt_id: null,
+      latest_attempt_number: null,
+      latest_outcome: null,
+      evaluated_version: null,
+      resulting_version: null,
+      evaluated_actor: null,
+      evaluated_at: null,
+      validated_actor: null,
+      validated_at: null,
+      validation_fingerprint: null,
+      blocking_count: 0,
+      warning_count: 0,
+      grouped_issues: { blocking: [], warnings: [] },
+    },
     need_generation_source: {
       run_id: "c4100000-0000-0000-0000-000000000001",
       run_version: 3,
@@ -81,6 +103,7 @@ function fixture(): ConfirmedNeedWorkbenchData {
         source_stale: false,
         blockers: [],
         warnings: [],
+        validation_issues: { blocking: [], warnings: [] },
         decision_history: [],
       },
       {
@@ -129,6 +152,7 @@ function fixture(): ConfirmedNeedWorkbenchData {
         source_stale: false,
         blockers: [],
         warnings: [],
+        validation_issues: { blocking: [], warnings: [] },
         decision_history: [],
       },
     ],
@@ -268,6 +292,100 @@ export function createReviewConfirmedNeedApi(
         command_id: request.command_id,
         safe_operator_message:
           "Đã xác nhận số lượng với bằng chứng quyết định bất biến.",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async validate(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      const blockers: ConfirmedNeedValidationIssue[] = state.lines.flatMap(
+        (line) =>
+          line.current_decision_id
+            ? []
+            : [
+                {
+                  code: "CURRENT_DECISION_MISSING",
+                  message: `Dòng ${line.confirmed_need_line_id} chưa có quyết định hiện hành.`,
+                  confirmed_need_line_id: line.confirmed_need_line_id,
+                  severity: "BLOCKING" as const,
+                  sort_position: 1,
+                },
+              ],
+      );
+      const outcome = blockers.length ? "BLOCKED" : "VALIDATED";
+      const warnings: ConfirmedNeedValidationIssue[] = blockers.length
+        ? [
+            {
+              code: "UPSTREAM_WARNING_RETAINED",
+              message: "Cảnh báo thượng nguồn được giữ lại.",
+              confirmed_need_line_id: state.lines[0]!.confirmed_need_line_id,
+              severity: "WARNING" as const,
+              sort_position: blockers.length + 1,
+            },
+          ]
+        : [];
+      const attemptId = crypto.randomUUID();
+      const at = new Date().toISOString();
+      const nextVersion =
+        outcome === "VALIDATED" ? state.batch_version + 1 : state.batch_version;
+      state = {
+        ...state,
+        batch_status:
+          outcome === "VALIDATED" ? "VALIDATED" : state.batch_status,
+        authoritative_batch_status:
+          outcome === "VALIDATED" ? "VALIDATED" : state.batch_status,
+        batch_version: nextVersion,
+        editing_allowed: outcome !== "VALIDATED",
+        validation_allowed: outcome !== "VALIDATED",
+        validation_disabled_reason:
+          outcome === "VALIDATED"
+            ? "Lô đã được kiểm tra; chờ phê duyệt."
+            : null,
+        validation: {
+          latest_attempt_id: attemptId,
+          latest_attempt_number: 1,
+          latest_outcome: outcome,
+          evaluated_version: request.expected_version,
+          resulting_version: nextVersion,
+          evaluated_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          evaluated_at: at,
+          validated_actor:
+            outcome === "VALIDATED"
+              ? { id: "review-only-atlas-operator", name: "Lan" }
+              : null,
+          validated_at: outcome === "VALIDATED" ? at : null,
+          validation_fingerprint: "b".repeat(64),
+          blocking_count: blockers.length,
+          warning_count: warnings.length,
+          grouped_issues: { blocking: blockers, warnings },
+        },
+        lines: state.lines.map((line) => ({
+          ...line,
+          validation_issues: {
+            blocking: blockers.filter(
+              (issue) =>
+                issue.confirmed_need_line_id === line.confirmed_need_line_id,
+            ),
+            warnings: warnings.filter(
+              (issue) =>
+                issue.confirmed_need_line_id === line.confirmed_need_line_id,
+            ),
+          },
+        })),
+      };
+      const result = success({
+        contract_version: "RMVP-06.v1",
+        command_id: request.command_id,
+        validation_status: outcome,
+        validation_attempt_id: attemptId,
+        blocking_issue_count: blockers.length,
+        warning_count: warnings.length,
+        safe_operator_message:
+          outcome === "VALIDATED"
+            ? "Đã kiểm tra; chờ phê duyệt"
+            : "Chưa đạt điều kiện kiểm tra",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));
