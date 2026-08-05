@@ -2,11 +2,13 @@
 
 ## Status
 
-Implemented on branch `codex/rmvp-06b-connected-confirmed-need-validation` from accepted baseline `2ac4775af957070225916da3912c61df30ae4395`. The change remains draft and unmerged until exact-head GitHub validation and product/architecture review complete.
+Implemented from accepted baseline `2ac4775af957070225916da3912c61df30ae4395` and merged through PR #171 at `c4d7970399f6b1c147700925f03e84efdafb0747` after exact-head GitHub validation and product/architecture review.
 
 ## Outcome
 
 The accepted RMVP-06A contract is implemented as one complete-batch `NEED_GENERATION` validation boundary. Both governed outcomes persist immutable evidence. `BLOCKED` retains working lifecycle/version; `VALIDATED` advances exactly once and makes the review read-only while awaiting separately authorized approval.
+
+The persisted `validation_fingerprint` remains an immutable attempt snapshot containing evaluated lifecycle/version context. It is not a lifecycle-neutral fingerprint and is not a valid direct recomputation target after later approval or release; RMVP-07 defines that later comparison separately without changing RMVP-06 evidence.
 
 The implementation uses all 19 accepted blocking codes and both accepted warnings. It keeps the four corrected cardinality codes distinct: `CURRENT_REVISION_AMBIGUOUS`, `CURRENT_DECISION_AMBIGUOUS`, `PLANNING_POLICY_MISSING`, and `PLANNING_POLICY_AMBIGUOUS`.
 
@@ -36,7 +38,7 @@ Review-mode fixtures model both missing-decision `BLOCKED` and complete `VALIDAT
 - focused Atlas RPC/API/workbench Vitest passes;
 - CI installs bounded SQL prerequisites for pgTAP, resets afterward to prevent fixture leakage, and runs short plus full upstream browser journeys.
 
-GitHub Actions remains the owner of the routine frozen install, formatting, typecheck, complete frontend tests, build, and diff-whitespace checks.
+GitHub Actions completed the routine frozen install, formatting, typecheck, complete frontend tests, build, and diff-whitespace checks for the merged change.
 
 ## Security and rollback
 
