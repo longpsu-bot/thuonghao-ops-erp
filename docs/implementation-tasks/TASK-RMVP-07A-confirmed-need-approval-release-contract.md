@@ -29,6 +29,10 @@ This task defines:
 - this implementation handoff
 - RMVP-06 merged-state and RMVP-07A status update in `docs/architecture/roadmap.md`
 - accepted D-031 registration in `docs/decisions/decision-register.md`
+- merged-state correction in `docs/api/rmvp-06-connected-confirmed-need-validation.md`
+- merged-state correction in `docs/implementation-tasks/TASK-RMVP-06B-connected-confirmed-need-validation.md`
+
+The exact RMVP-07A documentation manifest is therefore seven Markdown files.
 
 ## 3. Accepted future implementation boundary
 
@@ -70,9 +74,10 @@ Both are active and unbound. No production Actor or role binding is allowed in t
 
 - reuse `confirmed_need_approval_snapshots`;
 - reuse `confirmed_need_snapshot_lines`;
-- add the exact successful-validation-attempt binding to the approval snapshot;
+- add source-qualified approval-snapshot ownership;
+- add the exact successful-validation-attempt binding and lifecycle-neutral `validated_fact_fingerprint` to `NEED_GENERATION` approval snapshots;
 - add the minimum current approval/release pointers to `confirmed_need_batches`;
-- add exactly one new private relation: `confirmed_need_releases`;
+- add exactly one new private relation: `confirmed_need_releases`, constrained to `source_kind = NEED_GENERATION` through typed composite ownership;
 - add only required restrictive FKs, unique constraints, check constraints, indexes, forced-RLS policies, immutable guards and deferred integrity guards;
 - add zero views, materialized views, sequences or generic registries.
 
@@ -89,7 +94,7 @@ Approval:
 
 ```text
 exact current successful validation
-+ unchanged canonical facts
++ equal lifecycle-neutral RMVP-07 validated-fact projection
 + complete current line set
 → immutable approval snapshot
 → APPROVED
@@ -99,12 +104,28 @@ Release:
 
 ```text
 exact current approval snapshot
-+ unchanged approval-bound facts
++ current lifecycle-neutral projection equal to the fingerprint accepted by approval
 → immutable Confirmed Need release record
 → RELEASED_FOR_PURCHASE_HANDOFF
 ```
 
 Neither command creates Purchase Handoff or downstream facts.
+
+The implementation must preserve this exact alternative-family rule:
+
+```text
+WHOLESALE approval snapshot
+→ validation-attempt binding NULL
+→ validated_fact_fingerprint NULL
+→ no RMVP-07 current approval/release pointer required
+→ no RMVP-07 release record required or permitted
+→ existing PA-05D atomic version-1 behavior remains valid
+
+NEED_GENERATION approval snapshot
+→ validation-attempt binding and validated_fact_fingerprint non-NULL
+→ current approval pointer required in APPROVED and RELEASED states
+→ RMVP-07 release record and current release pointer required in RELEASED_FOR_PURCHASE_HANDOFF
+```
 
 ## 4. Required transaction semantics
 
@@ -116,12 +137,14 @@ Both future commands must:
 4. reject `WHOLESALE` for the first connected slice;
 5. lock the batch and dependent facts in deterministic order;
 6. enforce optimistic concurrency through `expected_version`;
-7. recompute and compare canonical validation/approval fingerprints;
-8. fail closed on changed source, policy, decision, Unit, quantity or membership facts;
+7. preserve the RMVP-06 attempt fingerprint as immutable lifecycle-bound history and never recompute it after lifecycle advancement;
+8. reconstruct/recompute `RMVP-07-VALIDATED-FACTS.v1`, compare the lifecycle-neutral fingerprints, and fail closed on changed source, policy, decision, Unit, quantity, tick, membership, blocker or warning facts;
 9. increment the batch version exactly once on success;
 10. change only controlled lifecycle metadata on included line revisions;
 11. persist receipt, domain event and audit atomically; and
-12. return authoritative additive workbench readback.
+12. return the exact frozen success/failure fields and authoritative additive workbench readback.
+
+Approval accepts only `reason_code = CONFIRMED_NEED_APPROVAL_REQUESTED`; release accepts only `reason_code = CONFIRMED_NEED_RELEASE_REQUESTED`. `reason_note` is null or trimmed 1–500 characters. Exact replay returns the byte-for-byte stored response and creates no alternate replay shape.
 
 No automatic frontend retry is allowed after an unknown mutation outcome.
 
@@ -135,7 +158,8 @@ Approval must prove:
 - observed line count equals the complete current stable-line count;
 - each line has exactly one current revision and decision;
 - validation bindings still match current revision, policy, Unit, source release, quantity and planning ticks;
-- current canonical fingerprint matches validation evidence;
+- lifecycle-neutral current projection matches the projection reconstructed from validation evidence;
+- approval stores the exact `validated_fact_fingerprint`, while the RMVP-06 attempt fingerprint remains unchanged and audit-only;
 - snapshot includes every-and-only one line per current stable line;
 - snapshot line binds exact revision and approved quantity; and
 - no approval or snapshot line is editable or deletable.
@@ -150,7 +174,7 @@ Release must prove:
 - approval snapshot is bound to the exact successful validation attempt;
 - snapshot membership is complete;
 - every snapshot line still names the exact current `APPROVED` revision and quantity;
-- approval-bound canonical facts remain unchanged;
+- approval-bound lifecycle-neutral facts remain unchanged;
 - one immutable release record is created for that snapshot; and
 - no Purchase Handoff, Procurement, Warehouse or Dispatch relation changes.
 
@@ -169,6 +193,7 @@ Minimum database coverage:
 - exact revokes;
 - two exact capabilities and zero production bindings;
 - one exact release relation;
+- source-qualified snapshot/release ownership and the exact WHOLESALE/NEED_GENERATION alternative-family constraints;
 - forced RLS and direct browser denial;
 - exact role/runtime/view/state/scope ceilings; and
 - current platform-catalog reconciliation.
@@ -181,7 +206,9 @@ Minimum database coverage:
 - stale expected version;
 - missing/failed/noncurrent validation;
 - incomplete validation evidence;
-- changed fingerprint;
+- changed lifecycle-neutral projection;
+- explicit proof that the RMVP-06 attempt fingerprint is not the approval/release recomputation target;
+- exact lifecycle-neutral projection/fingerprint storage;
 - successful complete approval;
 - exact snapshot and snapshot lines;
 - exact validation-attempt binding;
@@ -212,7 +239,7 @@ Minimum database coverage:
 - RMVP-05 remains exact and additive;
 - RMVP-06 remains exact and additive;
 - H1B1 decision evidence remains immutable;
-- direct-wholesale PA-05D tests remain unchanged;
+- direct-wholesale PA-05D tests remain unchanged and prove its approval snapshot has null validation binding/fingerprint, null RMVP-07 pointers and no RMVP-07 release row;
 - CMD-15 materialization remains unchanged; and
 - all registered suites pass after a fresh seedless reset.
 
@@ -227,6 +254,8 @@ Minimum frontend/browser coverage:
 - late-response suppression;
 - unknown-outcome refresh-before-retry; and
 - complete RMVP-04 → CMD-15 → RMVP-05 → RMVP-06 → RMVP-07 journey.
+
+The implementation must also prove the exact request reason/note rules, approval/release response fields, byte-for-byte replay shape, additive read field names/types, both closed machine-readable disabled-code registries and their first-match precedence.
 
 ## 8. Required changed-path discipline for RMVP-07B
 
@@ -276,6 +305,7 @@ RMVP-07A is documentation only. Review is limited to:
 - approval/release state and snapshot consistency;
 - implementation ceiling and exclusions;
 - roadmap and decision-register consistency;
+- exact seven-file Markdown manifest, including both corrected RMVP-06 merged-status files;
 - relative document links;
 - Markdown formatting and diff whitespace; and
 - unchanged hosted Supabase and Retool boundaries.

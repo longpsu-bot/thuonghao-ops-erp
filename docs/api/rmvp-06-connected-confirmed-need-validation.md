@@ -1,6 +1,6 @@
 # RMVP-06 Connected Confirmed Need Validation API Contract
 
-**Status:** Implemented on the bounded RMVP-06B branch; exact-head GitHub validation and merge pending
+**Status:** Merged through PR #171 at `c4d7970399f6b1c147700925f03e84efdafb0747`
 
 **Contract version:** `RMVP-06.v1`
 
@@ -104,6 +104,8 @@ Private forced-RLS relations are:
 - `confirmed_need_validation_issues`: ordered attempt/batch or line issue evidence constrained to the 19 blockers and two warnings.
 
 All three are immutable and undeletable. Deferred guards require exact line and issue counts, successful pointer/status/version agreement, and complete successful observations. Composite foreign keys bind observations to the exact stable line, revision, decision, policy revision, and released source snapshot.
+
+`validation_fingerprint` is the immutable RMVP-06 attempt fingerprint. Its canonical input includes `evaluated_batch_version` and `prior_batch_status`, so it is not a lifecycle-neutral value and must not be described as directly recomputable after approval or release advances the batch. The accepted RMVP-07 contract defines a separately named lifecycle-neutral validated-fact projection for those later comparisons; RMVP-06 evidence is not rewritten.
 
 `get_confirmed_need_review` remains `RMVP-05.v1` and receives additive fields: authoritative status, editing/validation allowances and disabled reason, latest attempt/outcome/versions/fingerprint/Actor/timestamps/counts, grouped blockers/warnings, and per-line validation markers. After success, editing, preview, confirmation, and repeat validation are read-only; the exact disabled reason is `Lô đã được kiểm tra; chờ phê duyệt.`
 
