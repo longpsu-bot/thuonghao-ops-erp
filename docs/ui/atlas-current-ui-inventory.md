@@ -1,6 +1,8 @@
 # Atlas Current UI Inventory
 
-**Status:** Proposed ATLAS-ACT-01A inventory
+**Status:** Accepted ATLAS-ACT-01A inventory
+
+**Accepted on:** 06/08/2026
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
