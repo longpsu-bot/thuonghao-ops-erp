@@ -4,16 +4,15 @@
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
-**Owning mission:** replace OPS v1 safely with a transferable Atlas operating system without exposing unfinished workflows to production operations
+**Owning mission:** replace OPS v1 safely with a maintainable, transferable Atlas operating system without exposing unfinished workflows to production operations
 
-**Business capabilities:** activate a controlled Atlas staging environment; standardize the current Atlas operator experience; certify the connected Admin and Planning path before further capability expansion
+**Business capabilities:** activate a controlled Atlas staging environment; standardize the current Atlas operator experience; certify the connected Admin and Planning path before further business-capability expansion
 
 **Related authority:**
 
 - [PA-06A Environment and Deployment Contract](pa-06a-environment-deployment-contract.md)
 - [PA-06A Application Connection Contract](pa-06a-application-connection-contract.md)
 - [TASK-PA-06B Local Supabase Application Connection Foundation](../implementation-tasks/TASK-PA-06B-local-supabase-connection-foundation.md)
-- [Atlas Operations Workbench Requirements](../ui/atlas-workbench-requirements.md)
 - [Atlas UI Quality Standard](../ui/atlas-ui-quality-standard.md)
 - [Atlas Current UI Inventory](../ui/atlas-current-ui-inventory.md)
 - [ATLAS-ACT-01 decision registry](../decisions/decision-atlas-act-01-hosted-staging-ui-consolidation.md)
@@ -39,7 +38,7 @@ The hosted topology is fixed as:
 
 ```text
 existing OPS project qnthofvccilhnefdcxnz
-→ continues to serve OPS v1 / OPS v2 and Retool
+→ continues serving OPS v1 / OPS v2 and Retool
 → receives no Atlas migration, Atlas Auth binding or Atlas frontend connection
 
 new separate Atlas staging project
@@ -51,13 +50,13 @@ future Atlas production project
 → remains a later separately approved target
 ```
 
-Supabase Branching is not required for the first staging activation. A long-lived separate staging project is the bounded default. Preview branches may be considered later only after cost, lifecycle and cleanup ownership are approved.
+A long-lived separate project is the bounded default for the first staging activation. Supabase preview branches are not required for this phase.
 
 ## 2. Evidence reviewed on 06/08/2026
 
 ### 2.1 Hosted OPS Supabase
 
-The live project was inspected read-only:
+The live project was inspected read-only immediately before this contract was finalized.
 
 | Evidence | Observed value |
 | --- | --- |
@@ -69,32 +68,43 @@ The live project was inspected read-only:
 | Atlas API schema | absent |
 | `atlas_confirmed_need_review_runtime` | absent |
 | Atlas API function count | `0` |
-| Tracked application schemas | `public`, `ops_v2` |
-| Application tables | `47` |
-| Application functions | `108` |
-| Deployed Edge Functions | `0` |
+| Legacy application schemas | `public`, `ops_v2` |
+| Legacy application tables | `55` total (`46` public, `9` ops_v2) |
+| Legacy views/materialized views | `43` total (`29` public, `14` ops_v2) |
+| Legacy functions | `105` total (`90` public, `15` ops_v2) |
+| RLS-enabled legacy tables | `16` public, `0` ops_v2 |
+| Forced-RLS legacy tables | `0` public, `0` ops_v2 |
+| Active Edge Functions | `8` |
 
-Schema evidence:
+Observed active Edge Function slugs:
 
-| Schema | Tables | Views | RLS-enabled tables | Forced-RLS tables |
-| --- | ---: | ---: | ---: | ---: |
-| `public` | 15 | 4 | 10 | 0 |
-| `ops_v2` | 28 | 5 | 23 | 0 |
+```text
+upsert-daily-order
+update-order-dishes
+save-assignments
+upsert_actual_need_overrides
+delete-assignments
+sync-dishes-to-gsheet
+ops_dishes_sync_gsheet
+qa-po-dispatch-email
+```
 
-This evidence confirms that the project is a legacy production boundary, not an empty Atlas target.
+These counts are time-stamped inventory evidence, not Atlas schema authority. They confirm that the project is an active legacy production boundary rather than an empty Atlas target.
 
 ### 2.2 Retool evidence
 
-The retained production exports were inspected as operational evidence:
+The retained production exports were inspected as operational and usability evidence:
 
 | Export | SHA-256 |
 | --- | --- |
-| `OPS - Admin (in production).json` | `2387036816926e7a41003ab6f93b41ed5db6baf1c5a29bb4cf3f830e75625487` |
-| `OPS - Công thức.json` | `3576f3b4d4e4b1565440502438999de1407bb76469ea1954e6d59b6b0170ba08` |
-| `OPS - Nguyên liệu và Nhà cung ứng.json` | `32e390ff73c7b43a4053aa933e58871b966d7f8baa2db9ad10ac9d4a1122a10c` |
+| `OPS - Admin (in production).json` | `a6d74ca01f7942687e8639ffef73dba5a89c6bcbf653f9454011cec551549350` |
+| `OPS - Công thức.json` | `b38c86ac3b1fed985f6bc07d91c0708cf5aacccc682434ba2498960d1da1b809` |
+| `OPS - Nguyên liệu và Nhà cung ứng.json` | `2fb973cbd6a3900252aa9037a1d4d197551bccc93db60e36512d97f27d903648` |
 | `OPS - Lên đơn, Đặt hàng (1).json` | `6f6ff8d025696d375f354a86126661d20c3e9908d6475d40ecb14ee006b4a371` |
 
-The apps contain substantial component state, direct SQL/RPC orchestration and `ops_v2` dependencies. They are business-behaviour and operator-density evidence. They are not Atlas UI, authorization or persistence authority.
+The apps demonstrate the operational need for dense tables, date/period selectors, inline editing, clear save/refresh actions, fast exception access and Vietnamese task language. They also contain substantial direct SQL/RPC, `ops_v2` and component-state orchestration.
+
+Retool therefore informs ergonomics and operator expectations. It is not Atlas persistence, authorization, transaction or component authority.
 
 No Retool app is changed by this contract.
 
@@ -102,70 +112,76 @@ No Retool app is changed by this contract.
 
 The reviewed baseline contains:
 
-- complete local Atlas migrations and registered acceptance suites;
-- a local-only browser-safe Supabase connection foundation;
+- the complete local Atlas migration history and registered acceptance suites;
+- a local-only browser-safe Supabase/Auth connection foundation;
 - connected Admin and Planning workbenches through Confirmed Need release;
 - Storybook and UI Review Export;
-- one broad shared component module and a large common stylesheet;
-- multiple substantial module-specific workbenches with repeated state and presentation patterns;
-- no approved hosted Atlas project, production bindings or staging data package.
+- an existing shared component module and broad common stylesheet;
+- repeated state, evidence, action and responsive-table patterns across module workbenches;
+- no approved hosted Atlas project, production binding or staging data package.
 
 ## 3. OPS_SYSTEM_MAP placement
 
 | Layer | ATLAS-ACT-01 placement |
 | --- | --- |
-| Mission | Make the implemented Atlas path reviewable by real operators without risking OPS v1 production continuity. |
+| Mission | Make the implemented Atlas path reviewable by real operators without risking OPS v1 continuity. |
 | Business capability | Hosted staging activation; operator-experience standardization; staging rehearsal and certification. |
 | Business domain | Cross-domain platform capability supporting Admin and Planning first. No business-domain ownership moves. |
 | Business object | Environment identity, deployment release, staging Actor/capability assignment, rehearsal dataset, UI component contract and workbench acceptance record. |
 | Business contract | This contract, PA-06A environment/connection authority, existing domain/API contracts and the UI quality standard. |
-| Command/event | No new business command or event. Deployment and UI work must preserve existing command contracts. |
+| Command/event | No new business command or event. Deployment and UI work preserve existing command contracts. |
 | Read model | Existing read APIs only. UI consolidation may reshape presentation but not backend responses. |
 | Application | Existing Atlas shell and connected workbenches, reviewed in staging. |
-| Technology | Separate Supabase project, pinned repository migrations, protected GitHub Environment, browser-safe configuration, React/TypeScript/CSS/Storybook and existing CI. |
+| Technology | Separate Supabase project, repository migrations, protected GitHub Environment, browser-safe configuration, React/TypeScript/CSS/Storybook and existing CI. |
 
 ## 4. Environment model
 
 ### 4.1 Local
 
-Local remains the implementation and deterministic acceptance environment.
+Local remains the implementation and deterministic acceptance environment:
 
 - repository-pinned Supabase CLI and migrations;
 - disposable synthetic Auth users and data;
 - all registered pgTAP suites;
 - browser-key acceptance journeys;
-- no production or staging credential required;
+- no hosted credential requirement;
 - complete reset before and after fixture-driven verification.
 
 ### 4.2 Atlas staging
 
 Atlas staging is one separate long-lived hosted Supabase project.
 
-Its purpose is shared authenticated review and rehearsal, not production operations.
+Purpose:
+
+- shared authenticated review;
+- migration rehearsal;
+- RLS/Auth verification;
+- operator acceptance of existing connected capabilities;
+- no production operations.
 
 Allowed content:
 
-- the exact repository migration history;
+- exact repository migration history;
 - staging-only Auth identities;
-- Atlas Actor mappings, roles, capabilities and scopes approved for rehearsal;
+- reviewed Atlas Actor mappings, roles, capabilities and scopes;
 - approved master/reference data;
 - approved Planning policy revisions;
 - deterministic synthetic or explicitly approved masked rehearsal records;
 - no live OPS v1 operational records by default.
 
-The project must use an approved region and project name. Project creation is a cost-incurring external action and requires an explicit cost confirmation immediately before creation.
+Project creation is a cost-incurring external action. Current cost and organization must be retrieved and explicitly confirmed immediately before creation.
 
 ### 4.3 Atlas production
 
 Production remains unselected and unauthorized.
 
-ATLAS-ACT-01 does not create it, select a region, define cutover data, assign production Actors or migrate legacy operational facts.
+This phase does not create it, choose its region, assign production Actors, migrate legacy data or define cutover.
 
 ### 4.4 Live OPS v1
 
 The existing OPS project and Retool applications continue unchanged.
 
-Atlas staging must not:
+Atlas staging tooling must not:
 
 - use project reference `qnthofvccilhnefdcxnz`;
 - apply Atlas migrations to that project;
@@ -176,9 +192,7 @@ Atlas staging must not:
 
 ## 5. Environment identity and browser configuration
 
-The application environment is explicit and visible.
-
-Future ATLAS-ACT-01B repository readiness uses exactly:
+Future repository staging readiness uses exactly:
 
 ```text
 VITE_ATLAS_ENVIRONMENT
@@ -186,7 +200,7 @@ VITE_SUPABASE_URL
 VITE_SUPABASE_PUBLISHABLE_KEY
 ```
 
-Allowed environment values are initially:
+Initially allowed environment values:
 
 ```text
 local
@@ -202,9 +216,9 @@ Rules:
 - embedded URL credentials are rejected;
 - missing or malformed values prevent client initialization;
 - rejected values are not echoed;
-- service-role, secret, management, database and JWT credentials are prohibited from browser variables;
+- browser code receives no service-role, secret, management, database or JWT credential;
 - the active environment is visibly labeled in the Atlas shell;
-- the existing Supabase Auth subject remains the only browser authority for `requested_by_auth_subject`.
+- the Supabase Auth subject remains the only browser authority for `requested_by_auth_subject`.
 
 ## 6. Protected GitHub environment contract
 
@@ -232,7 +246,7 @@ ATLAS_STAGING_DB_PASSWORD
 ATLAS_STAGING_TEST_PASSWORD
 ```
 
-Repository workflows may map these protected names to the exact environment variables expected by the pinned Supabase CLI. No value is committed, printed or uploaded as an artifact.
+Repositories contain names only, never values.
 
 The deployment safety check must:
 
@@ -240,17 +254,15 @@ The deployment safety check must:
 2. require explicit manual dispatch initially;
 3. require the target project reference to equal the approved Atlas staging reference;
 4. explicitly reject `qnthofvccilhnefdcxnz`;
-5. run complete local integration acceptance before a hosted action;
-6. stop before deployment if migration history, worktree or target identity is inconsistent;
-7. redact access tokens, passwords, connection strings, JWTs and keys from diagnostics.
+5. run complete local integration acceptance before hosted action;
+6. stop if migration history, checkout or target identity is inconsistent;
+7. redact tokens, passwords, connection strings, JWTs and keys.
 
-## 7. Migration and Data API contract
+## 7. Migration, Data API and rollback contract
 
-Repository migrations remain the sole schema authority.
+Repository migrations remain the sole Atlas schema authority. Manual Dashboard DDL is prohibited.
 
-The initial staging project is created empty enough for the complete Atlas migration chain to be applied in order. Manual Dashboard DDL is prohibited.
-
-Deployment is forward-only:
+Initial deployment sequence:
 
 ```text
 reviewed repository main
@@ -261,40 +273,34 @@ reviewed repository main
 → authenticated staging acceptance
 ```
 
-A failed deployed migration is corrected by a reviewed forward migration. Deleting migration history or manually rewriting committed evidence is not an ordinary rollback.
+A failed deployed migration is corrected by a reviewed forward migration. Migration history and committed evidence are not deleted or rewritten as an ordinary rollback.
 
-For new Supabase projects, Data API exposure and grants must be verified explicitly. Atlas keeps:
+The new project must verify:
 
-- `atlas_api` as the reviewed browser-callable schema;
-- private domain schemas inaccessible to browser roles;
-- explicit function execute grants and revokes;
-- forced RLS and revoke-first private relations;
-- no browser table access as a substitute for missing APIs.
+- `atlas_api` is the intended browser-callable schema;
+- private Atlas schemas are unavailable to browser roles;
+- function execute grants and revokes match repository authority;
+- forced RLS and revoke-first private relations are preserved;
+- direct browser table access is not added to close a missing read.
 
-## 8. Staging seed packages
+## 8. Staging data packages
 
 Staging activation separates four governed packages:
 
 1. **Identity package** — staging Auth users, Actor mappings, roles, capabilities and scopes.
-2. **Reference package** — approved units, customers/schools, locations, ingredients, suppliers, dishes and other required master data.
-3. **Policy package** — approved Planning policy roots and revisions required for connected journeys.
-4. **Rehearsal package** — synthetic or approved masked transactional scenarios used for operator acceptance.
+2. **Reference package** — approved Units, Schools/customers, locations, Ingredients, suppliers, dishes and other required master data.
+3. **Policy package** — approved Planning policy roots and revisions.
+4. **Rehearsal package** — synthetic or explicitly approved masked transactional scenarios.
 
-No package is hidden inside frontend code or automatic global local seed behavior.
+No package is hidden inside frontend code or automatic global local seeds.
 
-Every package must be:
-
-- version-controlled or generated from a reviewed source;
-- idempotent or explicitly single-use;
-- environment-qualified;
-- safe to report without exposing credentials or personal data;
-- independently removable or replaceable in staging where history permits.
+Each package must be version-controlled or generated from a reviewed source, environment-qualified, safe to report and idempotent or explicitly single-use.
 
 Production data migration is outside ATLAS-ACT-01.
 
 ## 9. Hosted acceptance gate
 
-Atlas staging is accepted only when all of the following pass:
+Atlas staging is accepted only when all required evidence passes.
 
 ### Platform and security
 
@@ -304,8 +310,8 @@ Atlas staging is accepted only when all of the following pass:
 - expected schemas, relations, functions, roles, policies and grants match repository authority;
 - `atlas_api` is exposed as intended;
 - private relations remain unavailable to `anon` and `authenticated`;
-- management credentials are absent from browser bundles and logs;
-- no object exists in the live OPS project because of this activation.
+- management credentials are absent from browser bundles, logs and artifacts;
+- the live OPS project has no Atlas object because of the activation.
 
 ### Auth and authorization
 
@@ -336,70 +342,79 @@ It must also demonstrate blockers, stale versions, inactive references, denied c
 
 ## 10. UI consolidation decision
 
-The UI work is a quality program over existing capabilities, not a redesign of business ownership.
+The UI program improves existing capabilities; it does not redesign business ownership.
 
-The target remains a compact daily operations workbench. OPS v1 is a behavioural reference, not a visual template.
+Atlas remains a compact daily operations workbench. OPS v1 is a workflow-density reference, not a visual template.
 
-The first UI architecture rules are:
+Rules:
 
-- no new external UI framework or design-system dependency in the first pass;
+- add no external UI framework or design-system dependency in the first pass;
 - consolidate reusable local React components and CSS tokens;
-- preserve existing API calls, backend authority and lifecycle behavior;
-- represent one authoritative current state, with history separately visible;
+- preserve API calls, backend authority and lifecycle behavior;
+- show one authoritative current state with history separate;
 - use backend-provided eligibility and safe messages;
-- keep dense operational tables inside bounded responsive containers;
+- keep dense tables inside bounded responsive containers;
 - improve keyboard, focus, semantics, contrast and narrow-screen behavior;
 - use Vietnamese operator language consistently;
-- certify work through Storybook, component tests and UI Review Export.
+- certify through Storybook, component tests and UI Review Export.
 
 The canonical details are in [Atlas UI Quality Standard](../ui/atlas-ui-quality-standard.md).
 
 ## 11. UI implementation sequence
 
-UI changes are divided into small implementation slices:
-
 1. **UI-QUALITY-01 — Shared shell and primitives**
-   - tokens, page/workbench header, panels, notices, action groups, status chips, forms, dialogs, empty/loading/error/read-only states, evidence summary, timeline and responsive table wrapper;
-   - Atlas shell and one representative Planning wrapper prove the primitives;
+   - tokens, workbench headers, panels, notices, action groups, status chips, form shells, dialogs, operational states, evidence summaries, timeline and responsive table wrapper;
+   - shell plus one representative Planning wrapper prove the primitives;
    - no full module migration.
 2. **UI-QUALITY-02 — Planning Inputs and Confirmed Need**
    - Weekly Menu, Attendance, Pantry, Readiness, Need Generation and Confirmed Need;
    - preserve connected backend behavior.
 3. **UI-QUALITY-03 — Admin master data**
    - Schools, Ingredients/Suppliers and Dishes/Recipes.
-4. **UI-QUALITY-04 — Other existing operational prototypes**
+4. **UI-QUALITY-04 — Other existing prototypes**
    - Procurement, Warehouse, Dispatch and Evidence presentation only.
 5. **UI-QUALITY-05 — Cross-module certification**
-   - accessibility, responsive behavior, operator rehearsal, copy consistency and remaining visual debt.
+   - accessibility, responsive review, language consistency and operator walkthrough.
 
-Each slice must have an exact changed-path manifest and no business migration/API delta.
+Each slice uses an exact changed-path manifest and has zero business migration/API delta.
 
 ## 12. Phase gate before downstream expansion
 
 CMD-03 architecture may resume only after:
 
 - ATLAS-ACT-01B repository staging readiness is merged;
-- the separate Atlas staging project is created and migration acceptance passes;
-- approved staging identities and data packages are installed;
+- the separate Atlas staging project exists and migration acceptance passes;
+- approved staging identity/reference/policy/rehearsal packages are installed;
 - UI-QUALITY-01 and UI-QUALITY-02 are merged;
-- the Admin-to-Confirmed-Need-release staging rehearsal passes;
-- open security or operator blockers are classified and accepted.
+- the Admin-to-Confirmed-Need-release rehearsal passes;
+- material security and operator blockers are resolved or explicitly accepted.
 
-This gate may be amended by an explicit Product/Architecture decision, not by implementation convenience.
+The gate may be amended only by an explicit Product/Architecture decision.
 
-## 13. Explicit exclusions
+## 13. Authorized follow-on packages
+
+After this architecture is independently accepted and merged, separate authorization is required for:
+
+- [ATLAS-ACT-01B — Hosted Staging Repository Readiness](../implementation-tasks/TASK-ATLAS-ACT-01B-hosted-staging-readiness.md);
+- external Atlas staging project creation and activation after current-cost confirmation;
+- [UI-QUALITY-01 — Shared Shell and Primitives](../implementation-tasks/TASK-UI-QUALITY-01-shared-shell-primitives.md);
+- later UI-QUALITY-02/03/04/05 handoffs derived from the accepted standard and preceding implementation evidence.
+
+ATLAS-ACT-01B and UI-QUALITY-01 may proceed in either order after acceptance, but remain separate PRs.
+
+## 14. Explicit exclusions
 
 ATLAS-ACT-01A creates no executable resource. It excludes:
 
 - Supabase project or branch creation;
-- migration deployment;
-- hosted project linking;
+- cost confirmation;
+- migration deployment or hosted linking;
 - hosted Auth users or capability bindings;
-- production data or masked-data extraction;
-- Retool changes;
-- OPS v1 or OPS v2 changes;
+- production or masked-data extraction;
+- Retool, OPS v1 or OPS v2 changes;
 - Edge Function deployment;
 - production Atlas selection or cutover;
+- React/CSS implementation;
 - CMD-03 or Purchase Handoff creation;
 - supplier allocation or purchase orders;
 - Procurement, Warehouse or Dispatch business mutation;
@@ -407,12 +422,15 @@ ATLAS-ACT-01A creates no executable resource. It excludes:
 - a new UI framework;
 - generic workflow, task, notification or case-management infrastructure.
 
-## 14. Authorized follow-on packages
+## 15. Acceptance procedure
 
-After this architecture is accepted and merged, separate authorization is required for:
+The documentation PR remains draft until independent Product/Architecture review confirms:
 
-- [ATLAS-ACT-01B — Hosted Staging Repository Readiness](../implementation-tasks/TASK-ATLAS-ACT-01B-hosted-staging-readiness.md);
-- external Atlas staging project creation and migration activation after cost confirmation;
-- [UI-QUALITY-01 — Shared Shell and Primitives](../implementation-tasks/TASK-UI-QUALITY-01-shared-shell-primitives.md);
-- later UI-QUALITY module slices;
-- staging identity, reference, policy and rehearsal-data packages.
+- the separate-project topology and live OPS denylist;
+- the environment, protected-name and deployment boundaries;
+- staging data-package ownership;
+- UI standard and sequencing;
+- measurable CMD-03 resume gate;
+- internal document consistency and factual evidence.
+
+After acceptance, the roadmap and decision register are synchronized on the accepted exact head before merge or in a bounded acceptance correction.
