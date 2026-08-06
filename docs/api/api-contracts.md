@@ -104,6 +104,10 @@ RMVP-05 implements exactly three reviewed APIs: one shaped current Confirmed Nee
 
 RMVP-06 implements exactly one new command, `atlas_api.validate_confirmed_needs(jsonb)`, over the existing additive RMVP-05 review. It adds one unbound capability, reuses `atlas_confirmed_need_review_runtime`, persists append-only complete-batch attempts/line observations/issues, commits governed `BLOCKED` evidence without lifecycle/version mutation, and advances a zero-blocker batch exactly once to `VALIDATED`. The exact `RMVP-06.v1` envelope, complete 19-blocker and two-warning registry, cardinality rules, persistence, read shaping, security, and verification are specified in [RMVP-06 Connected Confirmed Need Validation API Contract](rmvp-06-connected-confirmed-need-validation.md).
 
+## 4G. Implemented connected Confirmed Need approval and release contract
+
+RMVP-07 implements exactly two separate complete-batch commands, `atlas_api.approve_confirmed_needs(jsonb)` and `atlas_api.release_confirmed_needs_for_purchase_handoff(jsonb)`, over the existing additive RMVP-05 review. It adds two unbound capabilities, reuses `atlas_confirmed_need_review_runtime`, binds approval to the exact immutable RMVP-06 success through the lifecycle-neutral `RMVP-07-VALIDATED-FACTS.v1` fingerprint, and persists one immutable Planning release for later CMD-03 use. Release creates no Purchase Handoff or downstream fact. The exact `RMVP-07.v1` envelopes, response/replay contracts, persistence, WHOLESALE compatibility, read shaping, security, and verification are specified in [RMVP-07 Connected Confirmed Need Approval and Release API Contract](rmvp-07-connected-confirmed-need-approval-release.md).
+
 ## 5. Contract template
 
 ```md

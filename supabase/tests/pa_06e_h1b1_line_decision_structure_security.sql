@@ -895,8 +895,8 @@ select is(
     where polrelid
       = 'atlas_planning.confirmed_need_line_decisions'::regclass
   ),
-  2,
-  'H1B1-STR-58 the decision relation has exact RMVP-05 read and insert policies'
+  3,
+  'H1B1-STR-58 the decision relation has exact RMVP-05 read/insert and RMVP-07 immutability-lock policies'
 );
 select ok(
   not exists (
@@ -1007,6 +1007,16 @@ select is(
       where pronamespace = 'atlas_api'::regnamespace
         and proname = 'validate_confirmed_needs'
     ),
+    'rmvp_07_api_names',
+    (
+      select array_agg(proname order by proname)::text[]
+      from pg_proc
+      where pronamespace = 'atlas_api'::regnamespace
+        and proname in (
+          'approve_confirmed_needs',
+          'release_confirmed_needs_for_purchase_handoff'
+        )
+    ),
     'rmvp_03b_api_names',
     (
       select array_agg(proname order by proname)::text[]
@@ -1033,9 +1043,13 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 77,
+    'api_total', 79,
     'rmvp_06_api_names', array[
       'validate_confirmed_needs'
+    ]::text[],
+    'rmvp_07_api_names', array[
+      'approve_confirmed_needs',
+      'release_confirmed_needs_for_purchase_handoff'
     ]::text[],
     'rmvp_03b_api_names', array[
       'evaluate_planning_input_readiness',
@@ -1045,7 +1059,7 @@ select is(
     ]::text[],
     'views', 0
   ),
-  'H1B1-STR-61 H1B1 retains no own role, capability, API, or view while the current RMVP-06 API catalog retains its exact command and the four approved RMVP-03B APIs'
+  'H1B1-STR-61 H1B1 retains no own object while the current RMVP-07/RMVP-06/RMVP-03B API catalog stays exact'
 );
 select ok(
   not exists (

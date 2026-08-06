@@ -95,6 +95,9 @@ export const ATLAS_RPC_FUNCTIONS = {
     "preview_confirmed_need_confirmation",
   "atlas_api.confirm_need_quantities": "confirm_need_quantities",
   "atlas_api.validate_confirmed_needs": "validate_confirmed_needs",
+  "atlas_api.approve_confirmed_needs": "approve_confirmed_needs",
+  "atlas_api.release_confirmed_needs_for_purchase_handoff":
+    "release_confirmed_needs_for_purchase_handoff",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry_draft": "save_pantry_draft",

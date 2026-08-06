@@ -71,6 +71,42 @@ export type ConfirmedNeedValidationSummary = {
   };
 };
 
+export type ConfirmedNeedLifecycleActor = { id: string; name: string };
+
+export type ConfirmedNeedApprovalSummary = {
+  current_snapshot_id: string | null;
+  approved_version: number | null;
+  source_validated_version: number | null;
+  validation_attempt_id: string | null;
+  validation_attempt_fingerprint: string | null;
+  validated_fact_fingerprint: string | null;
+  approved_actor: ConfirmedNeedLifecycleActor | null;
+  approved_at: string | null;
+  line_count: number;
+  warning_count: number;
+};
+
+export type ConfirmedNeedReleaseSummary = {
+  current_release_id: string | null;
+  approval_snapshot_id: string | null;
+  source_approved_version: number | null;
+  resulting_released_version: number | null;
+  released_actor: ConfirmedNeedLifecycleActor | null;
+  released_at: string | null;
+};
+
+export type ConfirmedNeedLifecycleHistoryItem = {
+  evidence_kind: "VALIDATION" | "APPROVAL" | "RELEASE";
+  evidence_id: string;
+  outcome: string;
+  source_version: number;
+  resulting_version: number;
+  actor: ConfirmedNeedLifecycleActor;
+  occurred_at: string;
+  reason_code: string;
+  warning_count: number;
+};
+
 export type ConfirmedNeedDraftLine = {
   selected: boolean;
   exact_quantity: string;
@@ -167,11 +203,24 @@ export type ConfirmedNeedWorkbenchData = {
   allowed_actions: {
     preview_confirmation: boolean;
     confirm_quantities: boolean;
+    approve_confirmed_needs: boolean;
+    release_confirmed_needs_for_purchase_handoff: boolean;
+  };
+  disabled_reason_codes: {
+    approve_confirmed_needs: string | null;
+    release_confirmed_needs_for_purchase_handoff: string | null;
   };
   disabled_reasons: {
     preview_confirmation: string | null;
     confirm_quantities: string | null;
+    approve_confirmed_needs: string | null;
+    release_confirmed_needs_for_purchase_handoff: string | null;
   };
+  approval: ConfirmedNeedApprovalSummary;
+  release: ConfirmedNeedReleaseSummary;
+  facts_changed_since_validation: boolean | null;
+  facts_changed_since_approval: boolean | null;
+  lifecycle_history: ConfirmedNeedLifecycleHistoryItem[];
   pagination: {
     offset: number;
     limit: number;
@@ -282,6 +331,13 @@ export function confirmedNeedResultIsStale(result: AtlasRpcResult) {
 }
 
 export function confirmedNeedResultAllowsExactRetry(result: AtlasRpcResult) {
+  return (
+    result.kind === "transport_error" ||
+    (result.kind === "backend_error" && result.error.retryable === true)
+  );
+}
+
+export function confirmedNeedLifecycleRequiresRefresh(result: AtlasRpcResult) {
   return (
     result.kind === "transport_error" ||
     (result.kind === "backend_error" && result.error.retryable === true)

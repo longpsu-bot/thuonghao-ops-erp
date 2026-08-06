@@ -85,9 +85,16 @@ select is(
       'roles', jsonb_build_array('atlas_confirmed_need_review_runtime'),
       'using', null,
       'with_check', 'true'
+    ),
+    'rmvp_07_contribution_lock', jsonb_build_object(
+      'command', 'w',
+      'permissive', true,
+      'roles', jsonb_build_array('atlas_confirmed_need_review_runtime'),
+      'using', 'true',
+      'with_check', 'false'
     )
   ),
-  'contribution membership has exactly the four dedicated-runtime permissive policies'
+  'contribution membership has exactly the five dedicated-runtime permissive policies including the RMVP-07 immutability lock'
 );
 select is(
   (

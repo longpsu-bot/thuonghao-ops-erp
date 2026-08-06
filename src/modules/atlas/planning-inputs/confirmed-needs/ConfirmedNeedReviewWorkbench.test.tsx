@@ -26,6 +26,18 @@ const authState = {
 } as unknown as AtlasAuthState;
 
 const batchId = "c4500000-0000-0000-0000-000000000001";
+const lifecycleMessages = [
+  "Đã kiểm tra; chờ phê duyệt",
+  "Đã phê duyệt; chờ phát hành",
+  "Đã phát hành sang bước lên đơn",
+];
+
+function expectOnlyLifecycleMessage(expected: string) {
+  const displayed = lifecycleMessages.flatMap((message) =>
+    screen.queryAllByText(message).map(() => message),
+  );
+  expect(displayed).toEqual([expected]);
+}
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -391,8 +403,8 @@ describe("RMVP-05 Confirmed Need review workbench", () => {
       screen.getByText("Lô đã được kiểm tra; chờ phê duyệt."),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: /phê duyệt/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: /phát hành|bàn giao/i }),
     ).not.toBeInTheDocument();
@@ -429,6 +441,114 @@ describe("RMVP-05 Confirmed Need review workbench", () => {
     ).toBeVisible();
     expect(screen.getByText("Đã kiểm tra")).toBeVisible();
     expect(screen.queryByText("Vấn đề cần xử lý (1)")).not.toBeInTheDocument();
+  });
+
+  it("approves and separately releases the authoritative batch with lifecycle evidence", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const approve = vi.spyOn(api, "approve");
+    const release = vi.spyOn(api, "release");
+    await confirmFixture(api);
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    );
+    expect(
+      screen.getByText(
+        "Phê duyệt toàn bộ tập dữ liệu đã kiểm tra chính xác này?",
+      ),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phê duyệt" }));
+    await waitFor(() => expect(approve).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByText("Đã phê duyệt; chờ phát hành"),
+    ).toBeVisible();
+    expect(screen.getAllByText("Lan").length).toBeGreaterThan(0);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Phát hành sang bước lên đơn",
+      }),
+    );
+    expect(
+      screen.getByText(/không chọn nhà cung cấp và không tạo đơn mua hàng/),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phát hành" }));
+    await waitFor(() => expect(release).toHaveBeenCalledOnce());
+    expect(
+      await screen.findByText("Đã phát hành sang bước lên đơn"),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/Lịch sử kiểm tra, phê duyệt và phát hành/),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Phát hành sang bước lên đơn" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows exactly one current lifecycle message for each authoritative lifecycle state", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    await confirmFixture(api);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await screen.findByRole("button", { name: "Phê duyệt lô nhu cầu" });
+    expectOnlyLifecycleMessage("Đã kiểm tra; chờ phê duyệt");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phê duyệt" }));
+    await screen.findByRole("button", {
+      name: "Phát hành sang bước lên đơn",
+    });
+    expectOnlyLifecycleMessage("Đã phê duyệt; chờ phát hành");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Phát hành sang bước lên đơn",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phát hành" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", {
+          name: "Phát hành sang bước lên đơn",
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    expectOnlyLifecycleMessage("Đã phát hành sang bước lên đơn");
+  });
+
+  it("requires an authoritative refresh after an unknown approval outcome", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    await confirmFixture(api);
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await screen.findByRole("button", { name: "Phê duyệt lô nhu cầu" });
+    api.approve = vi.fn().mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: {
+        code: "NETWORK_FAILURE",
+        safeMessage: "Chưa chắc chắn lệnh phê duyệt đã hoàn tất.",
+      },
+    } satisfies AtlasRpcResult);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phê duyệt" }));
+    expect(
+      await screen.findByText(/Cần làm mới dữ liệu có thẩm quyền/),
+    ).toBeVisible();
+    expect(api.approve).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    expect(
+      await screen.findByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    ).toBeVisible();
+    expect(api.approve).toHaveBeenCalledOnce();
   });
 
   it("discards a late validation response after the active batch is reloaded", async () => {

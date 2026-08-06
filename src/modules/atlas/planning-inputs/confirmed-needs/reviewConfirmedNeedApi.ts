@@ -50,11 +50,44 @@ function fixture(): ConfirmedNeedWorkbenchData {
     allowed_actions: {
       preview_confirmation: true,
       confirm_quantities: true,
+      approve_confirmed_needs: false,
+      release_confirmed_needs_for_purchase_handoff: false,
+    },
+    disabled_reason_codes: {
+      approve_confirmed_needs: "APPROVAL_BATCH_NOT_VALIDATED",
+      release_confirmed_needs_for_purchase_handoff:
+        "RELEASE_BATCH_NOT_APPROVED",
     },
     disabled_reasons: {
       preview_confirmation: null,
       confirm_quantities: null,
+      approve_confirmed_needs: "Lô nhu cầu chưa ở trạng thái đã kiểm tra.",
+      release_confirmed_needs_for_purchase_handoff:
+        "Lô nhu cầu chưa được phê duyệt.",
     },
+    approval: {
+      current_snapshot_id: null,
+      approved_version: null,
+      source_validated_version: null,
+      validation_attempt_id: null,
+      validation_attempt_fingerprint: null,
+      validated_fact_fingerprint: null,
+      approved_actor: null,
+      approved_at: null,
+      line_count: 0,
+      warning_count: 0,
+    },
+    release: {
+      current_release_id: null,
+      approval_snapshot_id: null,
+      source_approved_version: null,
+      resulting_released_version: null,
+      released_actor: null,
+      released_at: null,
+    },
+    facts_changed_since_validation: null,
+    facts_changed_since_approval: null,
+    lifecycle_history: [],
     pagination: { offset: 0, limit: 100, total_lines: 2, has_more: false },
     lines: [
       {
@@ -361,6 +394,41 @@ export function createReviewConfirmedNeedApi(
           warning_count: warnings.length,
           grouped_issues: { blocking: blockers, warnings },
         },
+        allowed_actions: {
+          ...state.allowed_actions,
+          approve_confirmed_needs: outcome === "VALIDATED",
+          release_confirmed_needs_for_purchase_handoff: false,
+        },
+        disabled_reason_codes: {
+          approve_confirmed_needs:
+            outcome === "VALIDATED" ? null : "APPROVAL_BATCH_NOT_VALIDATED",
+          release_confirmed_needs_for_purchase_handoff:
+            "RELEASE_BATCH_NOT_APPROVED",
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          approve_confirmed_needs:
+            outcome === "VALIDATED"
+              ? null
+              : "Lô nhu cầu chưa ở trạng thái đã kiểm tra.",
+          release_confirmed_needs_for_purchase_handoff:
+            "Lô nhu cầu chưa được phê duyệt.",
+        },
+        facts_changed_since_validation: false,
+        lifecycle_history: [
+          {
+            evidence_kind: "VALIDATION",
+            evidence_id: attemptId,
+            outcome,
+            source_version: request.expected_version,
+            resulting_version: nextVersion,
+            actor: { id: "review-only-atlas-operator", name: "Lan" },
+            occurred_at: at,
+            reason_code: "BATCH_VALIDATION_REQUESTED",
+            warning_count: warnings.length,
+          },
+          ...state.lifecycle_history,
+        ],
         lines: state.lines.map((line) => ({
           ...line,
           validation_issues: {
@@ -386,6 +454,130 @@ export function createReviewConfirmedNeedApi(
           outcome === "VALIDATED"
             ? "Đã kiểm tra; chờ phê duyệt"
             : "Chưa đạt điều kiện kiểm tra",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async approve(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      const snapshotId = crypto.randomUUID();
+      const at = new Date().toISOString();
+      const priorVersion = state.batch_version;
+      state = {
+        ...state,
+        batch_status: "APPROVED",
+        authoritative_batch_status: "APPROVED",
+        batch_version: priorVersion + 1,
+        allowed_actions: {
+          ...state.allowed_actions,
+          approve_confirmed_needs: false,
+          release_confirmed_needs_for_purchase_handoff: true,
+        },
+        disabled_reason_codes: {
+          approve_confirmed_needs: "APPROVAL_ALREADY_COMPLETED",
+          release_confirmed_needs_for_purchase_handoff: null,
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          approve_confirmed_needs: "Lô nhu cầu đã được phê duyệt.",
+          release_confirmed_needs_for_purchase_handoff: null,
+        },
+        approval: {
+          current_snapshot_id: snapshotId,
+          approved_version: priorVersion + 1,
+          source_validated_version: priorVersion,
+          validation_attempt_id: state.validation.latest_attempt_id,
+          validation_attempt_fingerprint:
+            state.validation.validation_fingerprint,
+          validated_fact_fingerprint: "c".repeat(64),
+          approved_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          approved_at: at,
+          line_count: state.line_counts.total,
+          warning_count: state.validation.warning_count,
+        },
+        facts_changed_since_approval: false,
+        lifecycle_history: [
+          {
+            evidence_kind: "APPROVAL",
+            evidence_id: snapshotId,
+            outcome: "APPROVED",
+            source_version: priorVersion,
+            resulting_version: priorVersion + 1,
+            actor: { id: "review-only-atlas-operator", name: "Lan" },
+            occurred_at: at,
+            reason_code: "CONFIRMED_NEED_APPROVAL_REQUESTED",
+            warning_count: state.validation.warning_count,
+          },
+          ...state.lifecycle_history,
+        ],
+      };
+      const result = success({
+        contract_version: "RMVP-07.v1",
+        command_name: "approve_confirmed_needs",
+        command_id: request.command_id,
+        safe_operator_message: "Đã phê duyệt lô nhu cầu; đang chờ phát hành.",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async release(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      const releaseId = crypto.randomUUID();
+      const at = new Date().toISOString();
+      const priorVersion = state.batch_version;
+      state = {
+        ...state,
+        batch_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+        authoritative_batch_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+        batch_version: priorVersion + 1,
+        allowed_actions: {
+          ...state.allowed_actions,
+          approve_confirmed_needs: false,
+          release_confirmed_needs_for_purchase_handoff: false,
+        },
+        disabled_reason_codes: {
+          approve_confirmed_needs: "APPROVAL_ALREADY_COMPLETED",
+          release_confirmed_needs_for_purchase_handoff:
+            "RELEASE_ALREADY_COMPLETED",
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          approve_confirmed_needs: "Lô nhu cầu đã được phê duyệt.",
+          release_confirmed_needs_for_purchase_handoff:
+            "Lô nhu cầu đã được phát hành.",
+        },
+        release: {
+          current_release_id: releaseId,
+          approval_snapshot_id: state.approval.current_snapshot_id,
+          source_approved_version: priorVersion,
+          resulting_released_version: priorVersion + 1,
+          released_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          released_at: at,
+        },
+        lifecycle_history: [
+          {
+            evidence_kind: "RELEASE",
+            evidence_id: releaseId,
+            outcome: "RELEASED_FOR_PURCHASE_HANDOFF",
+            source_version: priorVersion,
+            resulting_version: priorVersion + 1,
+            actor: { id: "review-only-atlas-operator", name: "Lan" },
+            occurred_at: at,
+            reason_code: "CONFIRMED_NEED_RELEASE_REQUESTED",
+            warning_count: state.approval.warning_count,
+          },
+          ...state.lifecycle_history,
+        ],
+      };
+      const result = success({
+        contract_version: "RMVP-07.v1",
+        command_name: "release_confirmed_needs_for_purchase_handoff",
+        command_id: request.command_id,
+        safe_operator_message: "Đã phát hành lô nhu cầu sang bước lên đơn.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));

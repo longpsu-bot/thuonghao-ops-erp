@@ -3,15 +3,20 @@ import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { Chip, CompactTable, Panel } from "../../WorkbenchComponents";
 import {
+  confirmedNeedApprovalRequest,
   confirmedNeedCommandRequest,
   confirmedNeedPreviewRequest,
+  confirmedNeedReleaseRequest,
   confirmedNeedValidationRequest,
   type ConfirmedNeedApi,
+  type ConfirmedNeedApprovalRequest,
   type ConfirmedNeedCommandRequest,
   type ConfirmedNeedFilters,
   type ConfirmedNeedLineRequest,
+  type ConfirmedNeedReleaseRequest,
 } from "./confirmedNeedApi";
 import {
+  confirmedNeedLifecycleRequiresRefresh,
   confirmedNeedPreviewFromResult,
   confirmedNeedPreviewIsStale,
   confirmedNeedReadbackFromResult,
@@ -39,6 +44,19 @@ const emptyFilters: ConfirmedNeedFilters = {
 function viDate(value: string) {
   const [year, month, day] = value.slice(0, 10).split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function currentLifecycleMessage(status: string) {
+  switch (status) {
+    case "VALIDATED":
+      return "Đã kiểm tra; chờ phê duyệt";
+    case "APPROVED":
+      return "Đã phê duyệt; chờ phát hành";
+    case "RELEASED_FOR_PURCHASE_HANDOFF":
+      return "Đã phát hành sang bước lên đơn";
+    default:
+      return null;
+  }
 }
 
 function issueList(
@@ -138,6 +156,11 @@ export function ConfirmedNeedReviewWorkbench({
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [lifecycleConfirmation, setLifecycleConfirmation] = useState<
+    "approval" | "release" | null
+  >(null);
+  const [lifecycleRefreshRequired, setLifecycleRefreshRequired] =
+    useState(false);
   const intentGeneration = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
@@ -148,6 +171,7 @@ export function ConfirmedNeedReviewWorkbench({
     setPreviewLines([]);
     setConfirmAcknowledged(false);
     setPendingCommand(null);
+    setLifecycleConfirmation(null);
     return nextGeneration;
   }, []);
 
@@ -191,6 +215,7 @@ export function ConfirmedNeedReviewWorkbench({
       }
       setBatchId(requestedBatchId);
       setBatchIdDraft(requestedBatchId);
+      setLifecycleRefreshRequired(false);
       adopt(next);
       return true;
     },
@@ -380,10 +405,75 @@ export function ConfirmedNeedReviewWorkbench({
     else if (!(await loadReview())) return;
     setNotice(
       result.response.validation_status === "VALIDATED"
-        ? "Đã kiểm tra; chờ phê duyệt"
+        ? null
         : "Chưa đạt điều kiện kiểm tra",
     );
   };
+
+  const beginLifecycleConfirmation = (kind: "approval" | "release") => {
+    invalidateIntent();
+    setLifecycleConfirmation(kind);
+    setNotice(null);
+  };
+
+  const executeLifecycleCommand = async (
+    request: ConfirmedNeedApprovalRequest | ConfirmedNeedReleaseRequest,
+    kind: "approval" | "release",
+  ) => {
+    if (!api) return;
+    const requestGeneration = intentGeneration.current;
+    setBusy(true);
+    setNotice(null);
+    const result =
+      kind === "approval"
+        ? await api.approve(request as ConfirmedNeedApprovalRequest)
+        : await api.release(request as ConfirmedNeedReleaseRequest);
+    if (requestGeneration !== intentGeneration.current) {
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    setLifecycleConfirmation(null);
+    if (confirmedNeedLifecycleRequiresRefresh(result)) {
+      setLifecycleRefreshRequired(true);
+      setNotice(
+        `${confirmedNeedResultMessage(result)} Cần làm mới dữ liệu có thẩm quyền trước khi thử lại thủ công.`,
+      );
+      return;
+    }
+    if (result.kind !== "success") {
+      setNotice(confirmedNeedResultMessage(result));
+      return;
+    }
+    const message = confirmedNeedResultMessage(result);
+    const readback = confirmedNeedReadbackFromResult(result);
+    if (readback) adopt(readback);
+    else if (!(await loadReview())) return;
+    setNotice(message);
+  };
+
+  const confirmLifecycle = () => {
+    if (!authSubject || !workbench || !lifecycleConfirmation) return;
+    const request =
+      lifecycleConfirmation === "approval"
+        ? confirmedNeedApprovalRequest(
+            authSubject,
+            correlationId,
+            workbench.confirmed_need_batch_id,
+            workbench.batch_version,
+          )
+        : confirmedNeedReleaseRequest(
+            authSubject,
+            correlationId,
+            workbench.confirmed_need_batch_id,
+            workbench.batch_version,
+          );
+    void executeLifecycleCommand(request, lifecycleConfirmation);
+  };
+
+  const lifecycleMessage = workbench
+    ? currentLifecycleMessage(workbench.authoritative_batch_status)
+    : null;
 
   return (
     <Panel
@@ -476,9 +566,51 @@ export function ConfirmedNeedReviewWorkbench({
             </span>
           </section>
 
-          {workbench.validation.latest_outcome === "VALIDATED" && (
-            <p role="status">Đã kiểm tra; chờ phê duyệt</p>
+          {lifecycleMessage && <p role="status">{lifecycleMessage}</p>}
+
+          {(workbench.approval.approved_actor ||
+            workbench.release.released_actor) && (
+            <section
+              className="need-generation-summary"
+              aria-label="Bằng chứng phê duyệt và phát hành"
+            >
+              {workbench.approval.approved_actor && (
+                <span>
+                  Người phê duyệt{" "}
+                  <b>{workbench.approval.approved_actor.name}</b>
+                </span>
+              )}
+              {workbench.approval.approved_at && (
+                <span>
+                  Thời điểm phê duyệt{" "}
+                  <b>
+                    {new Date(workbench.approval.approved_at).toLocaleString(
+                      "vi-VN",
+                    )}
+                  </b>
+                </span>
+              )}
+              <span>
+                Cảnh báo được giữ lại <b>{workbench.approval.warning_count}</b>
+              </span>
+              {workbench.release.released_actor && (
+                <span>
+                  Người phát hành <b>{workbench.release.released_actor.name}</b>
+                </span>
+              )}
+              {workbench.release.released_at && (
+                <span>
+                  Thời điểm phát hành{" "}
+                  <b>
+                    {new Date(workbench.release.released_at).toLocaleString(
+                      "vi-VN",
+                    )}
+                  </b>
+                </span>
+              )}
+            </section>
           )}
+
           {issueList(
             "Vấn đề cần xử lý",
             workbench.validation.grouped_issues.blocking,
@@ -689,6 +821,110 @@ export function ConfirmedNeedReviewWorkbench({
                 <small>{workbench.validation_disabled_reason}</small>
               )}
           </div>
+
+          <div
+            className="planning-lifecycle-actions"
+            aria-label="Phê duyệt và phát hành lô nhu cầu"
+          >
+            {!lifecycleRefreshRequired &&
+              workbench.allowed_actions.approve_confirmed_needs && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => beginLifecycleConfirmation("approval")}
+                >
+                  Phê duyệt lô nhu cầu
+                </button>
+              )}
+            {!lifecycleRefreshRequired &&
+              workbench.allowed_actions
+                .release_confirmed_needs_for_purchase_handoff && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => beginLifecycleConfirmation("release")}
+                >
+                  Phát hành sang bước lên đơn
+                </button>
+              )}
+            {lifecycleRefreshRequired && (
+              <small>
+                Kết quả ghi chưa chắc chắn. Hãy làm mới dữ liệu trước khi tạo
+                lệnh mới.
+              </small>
+            )}
+            {!workbench.allowed_actions.approve_confirmed_needs &&
+              workbench.disabled_reason_codes.approve_confirmed_needs &&
+              workbench.disabled_reasons.approve_confirmed_needs && (
+                <small
+                  data-disabled-reason={
+                    workbench.disabled_reason_codes.approve_confirmed_needs
+                  }
+                >
+                  {workbench.disabled_reasons.approve_confirmed_needs}
+                </small>
+              )}
+            {!workbench.allowed_actions
+              .release_confirmed_needs_for_purchase_handoff &&
+              workbench.disabled_reason_codes
+                .release_confirmed_needs_for_purchase_handoff &&
+              workbench.disabled_reasons
+                .release_confirmed_needs_for_purchase_handoff && (
+                <small
+                  data-disabled-reason={
+                    workbench.disabled_reason_codes
+                      .release_confirmed_needs_for_purchase_handoff
+                  }
+                >
+                  {
+                    workbench.disabled_reasons
+                      .release_confirmed_needs_for_purchase_handoff
+                  }
+                </small>
+              )}
+          </div>
+
+          {lifecycleConfirmation && (
+            <section aria-label="Xác nhận vòng đời lô nhu cầu">
+              <p>
+                {lifecycleConfirmation === "approval"
+                  ? "Phê duyệt toàn bộ tập dữ liệu đã kiểm tra chính xác này?"
+                  : "Phát hành bản phê duyệt này sang bước lên đơn? Hành động này không chọn nhà cung cấp và không tạo đơn mua hàng."}
+              </p>
+              <button type="button" disabled={busy} onClick={confirmLifecycle}>
+                {lifecycleConfirmation === "approval"
+                  ? "Xác nhận phê duyệt"
+                  : "Xác nhận phát hành"}
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setLifecycleConfirmation(null)}
+              >
+                Hủy
+              </button>
+            </section>
+          )}
+
+          {workbench.lifecycle_history.length > 0 && (
+            <details>
+              <summary>
+                Lịch sử kiểm tra, phê duyệt và phát hành (
+                {workbench.lifecycle_history.length})
+              </summary>
+              <ol>
+                {workbench.lifecycle_history.map((item) => (
+                  <li key={`${item.evidence_kind}:${item.evidence_id}`}>
+                    <b>{item.evidence_kind}</b> · {item.outcome} · phiên bản{" "}
+                    {item.source_version} → {item.resulting_version} ·{" "}
+                    {item.actor.name} ·{" "}
+                    {new Date(item.occurred_at).toLocaleString("vi-VN")} ·{" "}
+                    {item.reason_code} · cảnh báo {item.warning_count}
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
 
           {preview && (
             <section aria-label="Bản xem trước xác nhận">
