@@ -1,6 +1,8 @@
 # Decision ATLAS-ACT-01 — Hosted Staging and Connected-UI Consolidation
 
-**Status:** Proposed for Product/Architecture review
+**Status:** Accepted
+
+**Accepted on:** 06/08/2026
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
@@ -10,7 +12,7 @@
 
 ## 1. Context
 
-Atlas now has a connected local Admin and Planning path through Confirmed Need release. The next possible business slice is CMD-03/Purchase Handoff, but the Product Owner has selected a stabilization gate first:
+Atlas now has a connected local Admin and Planning path through Confirmed Need release. The next possible business slice is CMD-03/Purchase Handoff, but the Product Owner selected a stabilization gate first:
 
 ```text
 separate hosted staging
@@ -21,9 +23,9 @@ before downstream purchasing expansion
 
 The live OPS project remains the production OPS v1/v2 and Retool boundary. It has no Atlas schema, runtime or API and must not become the Atlas staging target.
 
-## 2. Proposed decisions
+## 2. Accepted decisions
 
-| ID | Decision | Direction | Rationale |
+| ID | Decision | Accepted direction | Rationale |
 | --- | --- | --- | --- |
 | ACT-P01 | Delivery sequence | Pause CMD-03 until staging and connected UI acceptance complete. | Prevents adding another handoff before the implemented path is usable and supportable. |
 | ACT-P02 | Staging topology | Use one separate long-lived Atlas staging Supabase project. | It is the simplest durable shared environment and isolates Atlas from live OPS. |
@@ -64,7 +66,7 @@ The live OPS project remains the production OPS v1/v2 and Retool boundary. It ha
 
 ## 4. Non-decisions
 
-This proposal does not decide:
+This decision does not select:
 
 - current Supabase price or billing organization;
 - final staging project name or region;
@@ -73,13 +75,13 @@ This proposal does not decide:
 - whether masked OPS data will later be approved;
 - deployment of any Edge Function;
 - CMD-03, Purchase Handoff or Procurement behavior;
-- adoption of a third-party UI framework.
+- a third-party UI framework.
 
-## 5. Acceptance procedure
+## 5. Authorized follow-on boundary
 
-These decisions become accepted only after review of the exact documentation head. Once accepted:
+After this documentation package merges:
 
-- register the decision as the next D-number in `decision-register.md`;
-- update `docs/architecture/roadmap.md` with the stabilization gate;
-- authorize only the bounded ATLAS-ACT-01B and UI-QUALITY-01 handoffs;
-- keep actual project creation subject to a separate current-cost confirmation.
+- ATLAS-ACT-01B may prepare repository staging configuration and guarded deployment tooling without hosted mutation;
+- UI-QUALITY-01 may implement the shared shell and only proven shared primitives;
+- staging project creation still requires the Supabase organization, current price and explicit confirmation;
+- CMD-03 remains blocked until the accepted staging/UI/rehearsal gate is complete.
