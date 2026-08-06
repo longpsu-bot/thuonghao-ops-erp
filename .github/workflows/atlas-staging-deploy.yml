@@ -1,0 +1,63 @@
+name: Atlas Staging Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full commit SHA already certified on main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+jobs:
+  deploy-atlas-staging:
+    name: Guarded Atlas staging deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+      VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+      ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+      ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+      SUPABASE_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out the requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Fetch main for ancestry verification
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run non-mutating protected preflight
+        run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --preflight
+
+      - name: Deploy repository migrations and run read-only platform verification
+        run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}"

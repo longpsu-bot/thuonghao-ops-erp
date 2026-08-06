@@ -78,7 +78,11 @@ function fakeConnection({
     schema: vi.fn(() => ({ rpc })),
   } as unknown as SupabaseClient;
   return {
-    connection: { status: "configured" as const, client },
+    connection: {
+      status: "configured" as const,
+      client,
+      environmentLabel: "Local · non-production" as const,
+    },
     emit(event: AuthChangeEvent, nextSession: Session | null) {
       callback?.(event, nextSession);
     },
@@ -92,6 +96,32 @@ function fakeConnection({
 afterEach(cleanup);
 
 describe("Atlas operator session panel", () => {
+  it("shows the local non-production environment before sign-in", async () => {
+    const fake = fakeConnection();
+    render(<AtlasConnectionPanel connection={fake.connection} />);
+    expect(screen.getByText("Local · non-production")).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Đăng nhập" });
+  });
+
+  it("shows staging without exposing connection values", async () => {
+    const fake = fakeConnection();
+    render(
+      <AtlasConnectionPanel
+        connection={{
+          ...fake.connection,
+          environmentLabel: "Atlas staging · non-production",
+        }}
+      />,
+    );
+    expect(
+      screen.getByText("Atlas staging · non-production"),
+    ).toBeInTheDocument();
+    expect(document.body.textContent).not.toContain("supabase.co");
+    expect(document.body.textContent).not.toContain("qnthofvccilhnefdcxnz");
+    expect(document.body.textContent).not.toContain("sb_publishable_");
+    await screen.findByRole("button", { name: "Đăng nhập" });
+  });
+
   it("shows an operator-safe connection state without technical setup copy", () => {
     render(
       <AtlasConnectionPanel
@@ -105,7 +135,9 @@ describe("Atlas operator session panel", () => {
       screen.getByText("Chưa thể kết nối dữ liệu Atlas"),
     ).toBeInTheDocument();
     expect(document.body.textContent).not.toContain("Supabase");
-    expect(document.body.textContent).not.toContain("non-production");
+    expect(document.body.textContent).toContain(
+      "Atlas · lỗi cấu hình · non-production",
+    );
   });
 
   it("renders a safe configuration-error state", () => {

@@ -18,9 +18,16 @@ describe("PA-06B browser-source security boundary", () => {
     evidenceWorkbenchSource,
   ].join("\n");
 
-  it("contains no browser service-role variable or hosted project reference", () => {
+  it("contains no browser service-role variable", () => {
     expect(browserSource).not.toMatch(/VITE_SUPABASE_SERVICE_ROLE_KEY/);
-    expect(browserSource).not.toMatch(/qnthofvccilhnefdcxnz/);
+    expect(clientSource).not.toMatch(/service_role|sb_secret_/);
+  });
+
+  it("keeps the live OPS reference only in the fail-closed environment guard", () => {
+    expect(environmentSource.match(/qnthofvccilhnefdcxnz/g)).toHaveLength(1);
+    expect(
+      [clientSource, authSource, rpcSource, panelSource].join("\n"),
+    ).not.toMatch(/qnthofvccilhnefdcxnz/);
   });
 
   it("contains no direct private or legacy table operation", () => {

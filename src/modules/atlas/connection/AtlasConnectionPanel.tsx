@@ -10,8 +10,10 @@ import {
 
 export function AtlasConnectionPanelView({
   auth,
+  environmentLabel,
 }: {
   auth: AtlasAuthSessionController;
+  environmentLabel: string;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +30,9 @@ export function AtlasConnectionPanelView({
 
   return (
     <section className="atlas-session" aria-label="Phiên làm việc Atlas">
+      <div className="atlas-environment-label" aria-label="Môi trường Atlas">
+        <strong>{environmentLabel}</strong>
+      </div>
       {auth.state.status === "configuration_error" && (
         <div className="atlas-session-message" role="alert">
           <div>
@@ -106,5 +111,14 @@ export function AtlasConnectionPanel({
   connection?: AtlasSupabaseClientResult;
 }) {
   const auth = useAtlasAuthSession(connection);
-  return <AtlasConnectionPanelView auth={auth} />;
+  return (
+    <AtlasConnectionPanelView
+      auth={auth}
+      environmentLabel={
+        connection.status === "configured"
+          ? connection.environmentLabel
+          : "Atlas · lỗi cấu hình · non-production"
+      }
+    />
+  );
 }

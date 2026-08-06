@@ -1,11 +1,16 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   readAtlasBrowserEnvironment,
+  type AtlasBrowserEnvironment,
   type AtlasEnvironmentResult,
 } from "./environment";
 
 export type AtlasSupabaseClientResult =
-  | { status: "configured"; client: SupabaseClient }
+  | {
+      status: "configured";
+      client: SupabaseClient;
+      environmentLabel: AtlasBrowserEnvironment["environmentLabel"];
+    }
   | { status: "configuration_error"; safeMessage: string };
 
 type SupabaseCreateClientOptions = NonNullable<
@@ -47,6 +52,7 @@ export function createAtlasSupabaseClient(
       environment.config.publishableKey,
       ATLAS_SUPABASE_CLIENT_OPTIONS,
     ),
+    environmentLabel: environment.config.environmentLabel,
   };
 }
 
