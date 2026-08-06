@@ -1,4 +1,4 @@
-# TASK-UI-QUALITY-01 — Shared Shell and Primitives
+# TASK-UI-QUALITY-01 — Shared Shell and Proven Primitives
 
 **Status:** Proposed implementation handoff; not authorized until ATLAS-ACT-01A is accepted and merged
 
@@ -8,195 +8,147 @@
 
 **Inventory:** [Atlas Current UI Inventory](../ui/atlas-current-ui-inventory.md)
 
-**Architecture:** [ATLAS-ACT-01 Hosted Staging and UI Consolidation Contract](../architecture/atlas-act-01-hosted-staging-ui-consolidation-contract.md)
-
 ## 1. Objective
 
-Create a small, reusable local UI foundation for the existing Atlas application without redesigning business workflows or migrating every module in one PR.
+Create a small reusable UI foundation for the existing Atlas application without redesigning workflows or building a speculative design system.
 
-The task standardizes shell hierarchy, semantic tokens and shared operational state components, then proves them in:
+The task standardizes semantic tokens, shell hierarchy and only the shared presentation patterns already repeated in current connected surfaces. It proves them in:
 
 - the Atlas application shell; and
-- one representative Planning Inputs wrapper or non-destructive shell-level surface.
+- one representative Planning Inputs wrapper.
 
-It does not perform the full Planning module polish; that belongs to UI-QUALITY-02.
+Full Planning and Admin polish remain UI-QUALITY-02 and UI-QUALITY-03.
 
 ## 2. Implementation ceiling
 
-UI-QUALITY-01 may add or revise only:
+This task may change only:
 
-- local CSS variables and shared component styles;
-- reusable React presentational components;
-- Storybook stories;
-- shared component and shell tests;
-- the Atlas shell and one representative Planning wrapper to prove adoption;
-- UI quality implementation documentation.
+- local CSS variables and shared styles;
+- existing shared React presentation components;
+- focused stories/fixtures and tests;
+- the Atlas shell;
+- the outer shell of one representative Planning surface;
+- UI implementation documentation.
 
 It adds:
 
 ```text
-zero database migrations
-zero API functions
-zero capabilities
-zero roles or scopes
-zero lifecycle states
-zero business events
+zero migrations
+zero APIs
+zero capabilities, roles or scopes
+zero lifecycle states or business events
 zero business read-model fields
 zero dependencies
 ```
 
-## 3. Required primitives
+## 3. Two-use rule
 
-Implement the smallest coherent set supported by the reviewed codebase:
+A shared abstraction may be created only when:
 
-```text
-WorkbenchHeader
-SectionPanel or normalized Panel
-StatusChip or normalized Chip
-NoticeBanner
-ActionGroup
-FormField shell
-ConfirmationDialog
-ResponsiveTable wrapper
-EvidenceSummary
-LifecycleTimeline
-LoadingState
-EmptyState
-ReadOnlyState
-ErrorState
-```
+- at least two connected current surfaces need the same semantic behavior; or
+- it is a shell-level primitive used by the application frame.
 
-Reuse or evolve existing `WorkbenchComponents.tsx` rather than creating parallel duplicate component families.
+Do not prebuild components for future Procurement, Warehouse, Dispatch or hypothetical screens.
 
-A component may remain private to the shared module until a second real use demonstrates a broader public API.
+Reuse or evolve `WorkbenchComponents.tsx` rather than creating a parallel component family.
 
-## 4. CSS foundation
+## 4. Candidate foundation
 
-Define semantic local custom properties for:
+The exact implementation prompt must inspect current usage and select the smallest coherent subset from:
 
-- type scale;
-- spacing scale;
-- control heights;
-- radii;
-- borders/dividers;
-- surfaces/elevation;
-- focus outline;
-- text and muted text;
+- `WorkbenchHeader`;
+- `Panel`/`SectionPanel`;
+- `StatusChip`;
+- `NoticeBanner` or one `OperationalState` with variants;
+- `ActionGroup`;
+- `ConfirmationDialog`;
+- `ResponsiveTable` wrapper;
+- `EvidenceSummary`;
+- `LifecycleTimeline` only if at least two current consumers adopt it.
+
+Loading, empty, blocking, stale, unknown-outcome, read-only and access-denied states should normally be variants of one operational-state component rather than separate component families.
+
+The PR must explain why every introduced primitive has current consumers.
+
+## 5. CSS foundation
+
+Define only the semantic custom properties required by the selected components:
+
+- type and spacing scale;
+- control heights and radii;
+- borders, surfaces and focus outline;
+- text, muted and disabled text;
 - information, success, warning, blocking and unknown-outcome semantics;
-- table header/row/selection;
-- responsive content width and breakpoints.
+- table header, row and selection states;
+- content width and breakpoints.
 
 Do not introduce a CSS framework, CSS-in-JS runtime, utility framework or design-system package.
 
-Do not rewrite the full stylesheet. Organize the minimum component/tokens sections needed for the accepted primitives and prove that existing unrelated modules remain visually and behaviorally stable.
+Do not rewrite the entire stylesheet. Add clear token/component sections and preserve unrelated modules.
 
-## 5. Shell behavior
+## 6. Shell proof
 
-The Atlas shell must consistently show:
+The Atlas shell should consistently present:
 
 - application identity;
-- current environment label;
-- current authenticated/connection state where already available;
+- current environment/prototype label using existing authorized configuration;
+- connection/auth state where already available;
 - primary navigation;
-- page/workbench title hierarchy;
-- prototype/staging notice where required by current configuration;
-- access-denied and system-state presentation through shared states.
+- page/workbench hierarchy;
+- access-denied and configuration/system states through shared presentation.
 
-UI-QUALITY-01 must not add hosted configuration or staging deployment behavior. When ATLAS-ACT-01B is not yet merged, environment presentation may use the existing configuration state or a fixture-safe label without adding new environment variables.
+This task does not add hosted configuration or deployment behavior.
 
-## 6. Representative Planning proof
+## 7. Planning proof
 
-Migrate only the outer shell/presentation of one representative Planning surface, preferably `PlanningInputsWorkbench`, to prove:
+Adopt the selected foundation only in the outer `PlanningInputsWorkbench` shell or another non-destructive Planning wrapper.
 
-- standard workbench header;
-- section/panel spacing;
+Prove:
+
+- standard header and context;
+- section spacing;
 - action grouping;
 - status/notice treatment;
-- bounded responsive container;
+- bounded responsive layout;
 - keyboard/focus behavior.
 
 Do not rewrite child Weekly Menu, Attendance, Pantry, Readiness, Need Generation or Confirmed Need modules in this PR.
 
-Do not change tab ownership, API calls, state transitions, business labels or command behavior.
+Do not change tabs, API calls, local draft semantics, lifecycle transitions, business labels or command behavior.
 
-## 7. State component requirements
+## 8. Dialog and table proof
 
-Shared state components must distinguish:
+If `ConfirmationDialog` is selected, prove:
 
-```text
-loading
-no object selected
-no records
-legitimate zero-line state
-warning
-blocking
-stale
-unknown write outcome
-read-only
-access denied
-configuration error
-transport error
-```
+- semantic labeling;
+- focus entry and return;
+- Escape/cancel before submission;
+- disabled confirm while busy;
+- no command on open;
+- long Vietnamese consequence text.
 
-The shared component API must allow domain-safe text supplied by the caller. It must not invent a global backend error registry or expose raw diagnostics.
+If `ResponsiveTable` is selected, prove:
 
-Unknown write outcome must never present an automatic retry action.
-
-## 8. Dialog and focus requirements
-
-`ConfirmationDialog` must prove:
-
-- semantic dialog labeling;
-- focus entry;
-- tab containment or equivalent safe keyboard behavior;
-- Escape/cancel behavior before submission;
-- focus return to the invoking control;
-- disabled confirmation while busy;
-- no command on dialog open;
-- long Vietnamese consequence text support.
-
-Do not convert existing working inline confirmations across all modules in this slice. Provide the primitive and use it only in the representative proof if behavior can remain exact.
-
-## 9. Responsive table requirements
-
-The wrapper must prove at minimum:
-
-- semantic table remains intact;
-- horizontal scroll is contained;
-- focus and selected row are visible;
-- sticky identity columns do not cover content;
-- narrow container state works;
-- loading/empty states are not fake data rows;
-- no page-wide horizontal overflow at 360 px.
+- semantic table headers;
+- contained horizontal scroll;
+- visible focus/selection;
+- narrow container behavior;
+- no fake loading/empty rows;
+- no page-wide overflow at 360 px.
 
 Do not adopt a third-party grid or virtualizer.
 
-## 10. Storybook requirements
+## 9. Stories and tests
 
-Provide stories for shared primitives covering:
+Create stories/fixtures only for introduced components and their real variants, including long Vietnamese text and a narrow container.
 
-- default;
-- long Vietnamese text;
-- disabled/read-only;
-- warning/blocking/unknown outcome;
-- narrow container;
-- dense table;
-- dialog open/focus state;
-- evidence summary and lifecycle history.
-
-Stories use synthetic data only.
-
-## 11. Test requirements
-
-Focused tests must cover:
+Focused tests cover:
 
 - semantic headings and labels;
 - one authoritative current status;
 - action hierarchy and disabled reason;
 - unknown-outcome refresh language without retry;
-- dialog focus/cancel/confirm behavior;
-- table wrapper semantics;
-- environment/prototype label behavior already authorized by the current connection contract;
+- selected dialog/table behavior;
 - shell navigation regression;
 - no business RPC or request-shape change;
 - no service credential or private-table access.
@@ -209,16 +161,16 @@ pnpm format
 pnpm typecheck
 pnpm test
 pnpm build
-Storybook build
-UI Review Export workflow
+Storybook build where configured
+UI Review Export
 git diff --check
 ```
 
-No Supabase migration or pgTAP change is expected. Existing Supabase Integration must remain green if triggered by shared connection or shell paths.
+No Supabase migration or pgTAP change is expected.
 
-## 12. Visual review requirements
+## 10. Visual and accessibility review
 
-Review the Atlas shell and representative Planning wrapper at:
+Review the shell and representative Planning wrapper at:
 
 ```text
 360 px
@@ -228,69 +180,63 @@ Review the Atlas shell and representative Planning wrapper at:
 
 Record:
 
-- hierarchy;
-- overflow;
-- action visibility;
-- focus behavior;
-- table containment;
+- hierarchy and overflow;
+- primary action visibility;
+- keyboard order and visible focus;
+- selected dialog/table behavior;
 - long Vietnamese text;
-- light/dark system behavior only if already supported;
 - accepted remaining debt.
 
-Do not claim module-wide polish from the representative proof.
+Do not claim module-wide polish from this representative proof.
 
-## 13. Expected changed-path boundary
+## 11. Expected path boundary
 
-The implementation prompt must publish an exact manifest before editing.
+The implementation prompt must freeze an exact manifest before editing.
 
 Expected categories:
 
 - `src/modules/atlas/WorkbenchComponents.tsx` and focused tests/stories;
 - `src/modules/atlas/AtlasApp.tsx` and focused tests;
-- the outer `PlanningInputsWorkbench` shell and focused tests only;
-- `src/styles.css` or narrowly approved local shared CSS files;
-- Storybook stories/config only where required;
-- UI implementation record;
-- roadmap status after merge.
+- outer `PlanningInputsWorkbench` shell and focused tests;
+- `src/styles.css` or narrowly approved shared CSS files;
+- Storybook files required by selected components;
+- UI implementation record and roadmap status.
 
 Do not touch:
 
 - business migrations or pgTAP catalogs;
-- business API adapters/request contracts;
-- module-specific backend logic;
-- Confirmed Need command behavior;
-- Procurement, Warehouse or Dispatch business logic;
+- API adapters/request contracts;
+- child workbench business logic;
+- Procurement, Warehouse or Dispatch modules;
 - accepted architecture/decision files;
-- Retool or OPS v1/v2;
-- dependencies or lockfile unless an unexplained existing formatter change must be reverted rather than accepted.
+- Retool, production data or dependencies.
 
-## 14. Completion report
+## 12. Completion report
 
-The draft PR must report:
+Report:
 
 - exact baseline, branch, commit and PR;
 - exact changed-path manifest;
-- token and primitive inventory;
+- selected tokens and primitives with current consumers;
 - shell and representative adoption;
-- Storybook story inventory;
+- story/fixture inventory;
 - focused/full test and build results;
-- responsive review notes at three widths;
-- keyboard/focus review;
+- responsive and keyboard/focus notes;
 - UI Review Export status;
 - explicit zero business migration/API/contract/dependency delta;
-- deferred UI-QUALITY-02 work.
+- deferred UI-QUALITY-02 and UI-QUALITY-03 work.
 
-## 15. Explicit exclusions
+## 13. Explicit exclusions
 
 UI-QUALITY-01 must not:
 
 - create or connect hosted Supabase;
-- add environment deployment tooling;
-- add a UI framework, table library, global state library or CSS runtime;
+- add deployment tooling;
+- add a UI framework, grid, global state library or CSS runtime;
+- build unused primitives;
 - redesign all Planning tabs;
-- change business labels already accepted by domain/API contracts unless correcting a documented inconsistency;
-- change allowed actions or disabled codes;
-- change command confirmation scope;
+- change backend eligibility, disabled codes or confirmations;
 - add automatic retry;
+- polish unconnected downstream prototypes;
 - add CMD-03, Purchase Handoff, supplier allocation or purchase orders;
-- modify Retool, production data, credentials or deployment resources.
+- modify Retool, credentials or deployment resources.
