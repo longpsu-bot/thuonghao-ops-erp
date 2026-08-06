@@ -17,6 +17,30 @@
 - ✅ Atlas Vision
 - ✅ Contract-first and bounded-PR workflow
 
+## ATLAS-ACT-01 — Hosted Staging and Connected-UI Stabilization
+
+Goal: prove the connected Atlas Admin and Planning path in one separate hosted staging environment and make the current operator experience coherent before adding Purchase Handoff.
+
+- ✅ ATLAS-ACT-01A hosted staging and connected-UI architecture — accepted on 06/08/2026; [architecture](atlas-act-01-hosted-staging-ui-consolidation-contract.md), [decision](../decisions/decision-atlas-act-01-hosted-staging-ui-consolidation.md), [UI standard](../ui/atlas-ui-quality-standard.md), [current UI inventory](../ui/atlas-current-ui-inventory.md), and [task record](../implementation-tasks/TASK-ATLAS-ACT-01A-hosted-staging-ui-architecture.md)
+- ⬜ ATLAS-ACT-01B repository staging readiness — explicit local/staging configuration, live OPS denylist, protected manual deployment, exact-head CI reuse, hosted verification and runbook; creates no hosted project during implementation
+- ⬜ Separate Atlas staging project — current Supabase cost and organization confirmation required immediately before creation; existing OPS project `qnthofvccilhnefdcxnz` is forbidden as a target
+- ⬜ UI-QUALITY-01 shared shell and proven primitives — no new dependencies or business behavior
+- ⬜ UI-QUALITY-02 connected Planning consolidation — Weekly Menu through Confirmed Need release
+- ⬜ UI-QUALITY-03 connected Admin consolidation — Schools, Ingredients/Suppliers and Dishes/Recipes
+- ⬜ Hosted operator/security rehearsal — Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
+- ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
+
+Stabilization sequence:
+
+```text
+exact-head local certification
+→ repository staging readiness
+→ separate cost-confirmed Atlas staging
+→ connected Planning and Admin UI consolidation
+→ hosted operator/security rehearsal
+→ explicit Product/Architecture decision on CMD-03
+```
+
 ## PD-01 — Planning
 
 Goal: transform controlled customer and internal inputs into approved demand released to Procurement.
@@ -43,7 +67,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ RMVP-06A Confirmed Need complete-batch validation contract — accepted through PR #170 with one future validation API, one unbound capability, runtime reuse, append-only attempts/observations/issues, blocked-outcome evidence, successful `VALIDATED` transition, and a bounded RMVP-06B handoff; [architecture](rmvp-06-confirmed-need-validation-contract.md), [decision](../decisions/decision-rmvp-06-confirmed-need-validation.md), and [task](../implementation-tasks/TASK-RMVP-06A-confirmed-need-validation-contract.md)
 - ✅ RMVP-06B connected Confirmed Need validation — merged through PR #171 at `c4d7970399f6b1c147700925f03e84efdafb0747` with one command, three immutable evidence relations, the complete 19-blocker/two-warning registry, additive read-only validation UI, 65 focused pgTAP assertions, all registered database suites, and complete browser verification; [API](../api/rmvp-06-connected-confirmed-need-validation.md) and [implementation record](../implementation-tasks/TASK-RMVP-06B-connected-confirmed-need-validation.md). Approval, release, reopen, CMD-03, downstream domains, hosted deployment, production capability binding, and Retool remain excluded.
 - ✅ RMVP-07A Confirmed Need approval and release architecture — accepted on baseline `c4d7970399f6b1c147700925f03e84efdafb0747`; defines separate full-batch approval and release commands, two unbound capabilities, immutable RMVP-06 attempt-fingerprint history, a distinct lifecycle-neutral validated-fact projection for approval/release, source-qualified WHOLESALE compatibility, reuse of existing approval snapshots, one future `NEED_GENERATION` release relation, exact command/read/disabled-reason surfaces, additive Vietnamese workbench behavior, and a bounded RMVP-07B handoff; [architecture](rmvp-07-confirmed-need-approval-release-contract.md), [decision](../decisions/decision-rmvp-07-confirmed-need-approval-release.md), and [task](../implementation-tasks/TASK-RMVP-07A-confirmed-need-approval-release-contract.md)
-- ✅ RMVP-07B connected Confirmed Need approval and release implementation — implemented on exact baseline `c871a8f08867377e921ced865c258040107d6628` with separate complete-batch approval and release commands, two unbound capabilities, exact RMVP-06 evidence binding, lifecycle-neutral drift protection, immutable approval/release evidence, WHOLESALE compatibility, and additive Vietnamese workbench actions; [API](../api/rmvp-07-connected-confirmed-need-approval-release.md) and [implementation record](../implementation-tasks/TASK-RMVP-07B-connected-confirmed-need-approval-release.md). Reopen, CMD-03, Purchase Handoff creation, downstream domains, hosted deployment, production bindings, and Retool remain excluded.
+- ✅ RMVP-07B connected Confirmed Need approval and release implementation — merged through PR #173 at `f3197bb5a7b571378a41ae5056a73a84ad57d583` with separate complete-batch approval and release commands, two unbound capabilities, exact RMVP-06 evidence binding, lifecycle-neutral drift protection, immutable approval/release evidence, WHOLESALE compatibility, additive Vietnamese workbench actions and complete exact-head certification; [API](../api/rmvp-07-connected-confirmed-need-approval-release.md) and [implementation record](../implementation-tasks/TASK-RMVP-07B-connected-confirmed-need-approval-release.md). Reopen, CMD-03, Purchase Handoff creation, downstream domains, hosted deployment, production bindings, and Retool remain excluded.
 - 🟡 PA-06D quantity truth, operational precision, rounding, rebalancing, and write-fidelity documentation — [contract](pa-06d-quantity-truth-rounding-rebalancing-contract.md); implementation and unresolved product decisions remain unapproved
 - 🟡 PA-06E Confirmed Need review, adjustment, revision, and source-correction documentation — [contract](pa-06e-confirmed-need-review-adjustment-revision-contract.md) and [decision](../decisions/decision-pa-06e-confirmed-need-source-correction.md); implementation and pending product decisions remain unapproved
 - ✅ PA-06E-H0C/CMD-15 Confirmed Need materialization — merged by PR #144 on exact baseline `5987f1fc9711b7bde094a610e598ff92d71e850d`; [decision](../decisions/decision-pa-06e-h0c-materialization-command-contract.md) and [implementation record](../implementation-tasks/TASK-PA-06E-H0Cb-confirmed-need-materialization-command.md)
@@ -53,7 +77,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ PA-06E-H1B1A policy-bound line-decision contract — H1B1-P01 through H1B1-P12 approved as corrected on 2026-07-26; [architecture contract](pa-06e-h1b1-policy-bound-line-decision-contract.md) and [canonical decision registry](../decisions/decision-pa-06e-h1b1-policy-bound-line-decision-evidence.md)
 - ✅ PA-06E-H1B1 policy-bound line-decision persistence — merged before RMVP-05 with one private relation, one nullable pointer, three private functions, six triggers, and no writer/API/runtime grant; [implementation record](../implementation-tasks/TASK-PA-06E-H1B1-policy-bound-line-decision-persistence.md)
 - ✅ PA-06E-H1B2 authorized review/preview/confirmation — implemented and merged through RMVP-05; [exact API](../api/rmvp-05-connected-confirmed-need-review.md)
-- ⬜ Hosted Supabase action for this path — unapproved
+- ⬜ Hosted Supabase action for this path — governed by accepted ATLAS-ACT-01; separate staging only, explicit current-cost confirmation required
 - ⬜ Retool change for this path — unapproved
 - ⬜ Production Planning policy seed — unapproved
 - ✅ React connection through RMVP-07B — the existing sixth Planning Inputs tab includes complete-batch validation, backend-authorized approval and release, separate confirmations, Actor/time/warning evidence, lifecycle history, late-response guards, and authoritative refresh behavior
