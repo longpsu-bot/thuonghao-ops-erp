@@ -17,29 +17,6 @@ export const ATLAS_STAGING_SECRET_NAMES = Object.freeze([
   "ATLAS_STAGING_TEST_PASSWORD",
 ]);
 
-export const ATLAS_CATALOG_FINGERPRINT = Object.freeze({
-  schemas: 10,
-  tables: 100,
-  policies: 582,
-  apiFunctions: 79,
-  authenticatedExecutions: 79,
-  anonymousExecutions: 0,
-});
-
-export const ATLAS_RUNTIME_ROLES = Object.freeze([
-  "atlas_owner",
-  "atlas_command_runtime",
-  "atlas_confirmed_need_review_runtime",
-  "atlas_dispatch_command_runtime",
-  "atlas_evidence_command_runtime",
-  "atlas_master_data_command_runtime",
-  "atlas_need_generation_runtime",
-  "atlas_planning_command_runtime",
-  "atlas_planning_materialization_runtime",
-  "atlas_procurement_command_runtime",
-  "atlas_read_runtime",
-]);
-
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const PROJECT_REF = /^[a-z0-9]{20}$/;
 
@@ -148,6 +125,66 @@ export function validateAtlasStagingProtectedValues(environment) {
     databasePassword: environment.ATLAS_STAGING_DB_PASSWORD,
     testPassword: environment.ATLAS_STAGING_TEST_PASSWORD,
   };
+}
+
+async function readPostgrestConfiguration(target, fetchImpl) {
+  const response = await fetchImpl(
+    `https://api.supabase.com/v1/projects/${target.projectRef}/postgrest`,
+    {
+      headers: {
+        Authorization: `Bearer ${target.accessToken}`,
+        Accept: "application/json",
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new Error("The protected Data API configuration is unavailable.");
+  }
+  const configuration = await response.json();
+  if (typeof configuration?.db_schema !== "string") {
+    throw new Error("The protected Data API configuration is malformed.");
+  }
+  return configuration;
+}
+
+export async function verifyAtlasApiExposure(target, fetchImpl = fetch) {
+  const configuration = await readPostgrestConfiguration(target, fetchImpl);
+  const schemas = configuration.db_schema
+    .split(",")
+    .map((schema) => schema.trim())
+    .filter(Boolean);
+  if (!schemas.includes("atlas_api")) {
+    throw new Error("The atlas_api schema is not exposed by the Data API.");
+  }
+  return schemas;
+}
+
+export async function ensureAtlasApiExposure(target, fetchImpl = fetch) {
+  const configuration = await readPostgrestConfiguration(target, fetchImpl);
+  const schemas = configuration.db_schema
+    .split(",")
+    .map((schema) => schema.trim())
+    .filter(Boolean);
+  if (schemas.includes("atlas_api")) return schemas;
+
+  const updatedSchemas = [...schemas, "atlas_api"];
+  const response = await fetchImpl(
+    `https://api.supabase.com/v1/projects/${target.projectRef}/postgrest`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${target.accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ db_schema: updatedSchemas.join(",") }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error("The protected atlas_api exposure update failed safely.");
+  }
+  await verifyAtlasApiExposure(target, fetchImpl);
+  return updatedSchemas;
 }
 
 export function defaultCommandRunner(command, args, options = {}) {

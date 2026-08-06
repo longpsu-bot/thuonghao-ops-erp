@@ -111,7 +111,9 @@ Provide one bounded staging deployment command or script that:
 - uses repository migration history as sole schema authority;
 - uses only flags supported by the pinned Supabase CLI;
 - applies migrations in order and stops on first failure;
-- verifies migration history and safe Atlas catalog fingerprints afterward;
+- reads complete hosted migration versions from `supabase_migrations.schema_migrations` as marked JSON evidence and requires exact equality with repository authority;
+- preserves existing Data API schemas, adds `atlas_api` through a guarded Management API configuration update when absent, and verifies the resulting exposure;
+- verifies exact Atlas schema, API signature/owner/security/grant, database-role, and CAT-22 policy-digest authority afterward; counts remain diagnostic only;
 - creates no data unless a separately approved package is explicitly invoked.
 
 After hosted deployment, rollback is a reviewed forward corrective migration.
@@ -124,11 +126,10 @@ Minimum checks:
 
 - target is not the live OPS project;
 - project API is reachable;
-- migration history matches the deployed repository commit;
-- `atlas_api` and exact API/catalog fingerprints match authority;
-- expected Atlas runtime roles exist;
-- private tables remain unavailable to browser roles;
-- `anon` cannot execute authenticated APIs;
+- complete hosted migration history matches the deployed repository commit with no local-only, remote-only, duplicate, or malformed version;
+- Data API configuration exposes `atlas_api`, and a live RPC reaches it;
+- exact schema names, all API signatures and owners, security mode, empty search path, grants, database-role posture, and the CAT-22 policy digest match approved pgTAP authority;
+- `anon` reaches the API surface but receives only the expected `42501` authorization denial; schema exposure, missing-function, schema-cache, and transport failures do not pass;
 - a staging user can sign in when protected test credentials are supplied;
 - the Auth subject maps to the expected staging Actor;
 - one approved non-destructive read succeeds;

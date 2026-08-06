@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   defaultCommandRunner,
+  ensureAtlasApiExposure,
   redactAtlasStagingDiagnostic,
   requireExactCommitSha,
   validateAtlasStagingProtectedValues,
@@ -63,7 +64,10 @@ export function inspectPinnedSupabaseCli({
     },
     { args: ["db", "push", "--help"], flags: ["--db-url", "--dry-run"] },
     { args: ["migration", "list", "--help"], flags: ["--db-url"] },
-    { args: ["db", "query", "--help"], flags: ["--db-url"] },
+    {
+      args: ["db", "query", "--help"],
+      flags: ["--db-url", "--output", "--agent"],
+    },
   ];
   for (const item of requiredHelp) {
     const output = commandSuccess(runCommand, cliPath(), item.args, options);
@@ -84,6 +88,7 @@ export function planAtlasStagingDeployment(environment = process.env) {
       "supabase",
       "link <protected-staging-ref>",
       "then db push --linked --yes",
+      "then preserve exposed schemas and add atlas_api through the Management API",
     ],
     repositoryMigrationsOnly: true,
     installsDataPackages: false,
@@ -156,6 +161,7 @@ export async function deployAtlasStaging({
     { cwd, env: commandEnvironment },
     protectedValues,
   );
+  await ensureAtlasApiExposure(plan.target, fetchImpl);
   await verifyHosted({
     environment,
     cwd,

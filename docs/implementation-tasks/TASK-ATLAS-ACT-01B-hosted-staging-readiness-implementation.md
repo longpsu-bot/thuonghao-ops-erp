@@ -10,7 +10,7 @@
 
 This implementation prepares the repository for a future separately created Atlas staging Supabase project. It creates, links, seeds, deploys to, or mutates no hosted project during implementation. It adds no business capability and changes no migration, pgTAP catalog, business API, lifecycle, Retool resource, OPS v1/v2 resource, Edge Function, or downstream module.
 
-The accepted ATLAS-ACT-01 contract, D-032 decision, PA-06 environment/connection contracts, merged migrations/tests, and existing React connection behavior were inspected before editing. Repository-pinned Supabase CLI `2.109.1` help confirmed the implemented `link --project-ref --password`, `db push --linked --password`, `migration list --linked --password`, and read-only `db query --linked` surfaces.
+The accepted ATLAS-ACT-01 contract, D-032 decision, PA-06 environment/connection contracts, merged migrations/tests, and existing React connection behavior were inspected before editing. Repository-pinned Supabase CLI `2.109.1` help confirmed the implemented `link --project-ref --password`, `db push --linked --password`, and read-only `db query --linked --output json --agent no` surfaces.
 
 ## Exact changed-path manifest
 
@@ -46,8 +46,10 @@ docs/implementation-tasks/TASK-ATLAS-ACT-01B-hosted-staging-readiness-implementa
 - Invalid configuration creates no Supabase client. The existing no-retry client, Auth-session, late-response, RPC registry, and backend-authorization boundaries remain unchanged.
 - The connected shell shows only `Local · non-production`, `Atlas staging · non-production`, or a safe non-production configuration-error label.
 - One staging-specific shared script contract owns protected names, live-OPS denial, target validation, redaction, and exact-head GitHub evidence verification.
-- Deployment uses ordered repository migrations only, installs no data package, and deploys no Edge Function.
-- The default verifier is read-only and performs platform, catalog/security, Auth/Actor, approved-read, and sign-out checks. The first-deployment path invokes its platform-only phase before separately reviewed data packages exist.
+- Deployment uses ordered repository migrations only, installs no data package, and deploys no Edge Function. Its guarded Management API step preserves existing Data API schemas, adds `atlas_api` only when absent, and verifies the resulting configuration.
+- The verifier reads the complete hosted migration set directly from `supabase_migrations.schema_migrations` as marked JSON evidence and rejects local-only, remote-only, duplicate, malformed, or incomplete history.
+- Catalog verification derives exact schema names, database-role posture, all API signatures and owners, and the CAT-22 policy digest from the approved current-platform pgTAP authority. It additionally verifies every API function's security-definer/empty-search-path posture and exact browser-role grants.
+- The default verifier is otherwise read-only and performs a live anonymous Data API probe that passes only on the expected `42501` authorization denial, followed by Auth/Actor, approved-read, and sign-out checks. The first-deployment path invokes its platform-only phase before separately reviewed data packages exist.
 - One `workflow_dispatch` workflow uses protected environment `atlas-staging`, built-in `GITHUB_TOKEN`, frozen install, minimal read permissions, exact SHA checkout, exact-head certification reuse, and no local Supabase startup or duplicate full suite.
 
 ## Security and rollback

@@ -5,9 +5,11 @@ import {
   ATLAS_STAGING_SECRET_NAMES,
   ATLAS_STAGING_VARIABLE_NAMES,
   LIVE_OPS_PROJECT_DENYLIST,
+  ensureAtlasApiExposure,
   redactAtlasStagingDiagnostic,
   validateAtlasStagingProtectedValues,
   validateAtlasStagingTarget,
+  verifyAtlasApiExposure,
   verifyExactHeadCertification,
 } from "./atlas-staging-contract.mjs";
 import {
@@ -15,7 +17,13 @@ import {
   planAtlasStagingDeployment,
 } from "./deploy-atlas-staging.mjs";
 import {
+  assertAnonymousAuthorizationDenial,
+  assertExactMigrationHistory,
+  catalogVerificationSql,
+  migrationVersionsFromFilenames,
+  parseMigrationHistoryEvidence,
   planAtlasStagingVerification,
+  readCatalogAuthority,
   verifyAtlasStaging,
 } from "./verify-atlas-staging.mjs";
 
@@ -238,5 +246,144 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).not.toContain("supabase start");
     expect(workflow).not.toContain("Supabase Full Integration");
     expect(workflow).not.toMatch(/production/i);
+  });
+});
+
+describe("Atlas staging hosted evidence", () => {
+  it("preserves existing exposed schemas and adds atlas_api exactly once", async () => {
+    let schemas = "public,graphql_public";
+    const fetchImpl = vi.fn(async (_url, options = {}) => {
+      if (options.method === "PATCH") {
+        schemas = JSON.parse(options.body).db_schema;
+        return {
+          ok: true,
+          async json() {
+            return {};
+          },
+        };
+      }
+      return {
+        ok: true,
+        async json() {
+          return { db_schema: schemas };
+        },
+      };
+    });
+    const target = validateAtlasStagingProtectedValues(environment());
+
+    await expect(ensureAtlasApiExposure(target, fetchImpl)).resolves.toEqual([
+      "public",
+      "graphql_public",
+      "atlas_api",
+    ]);
+    await expect(verifyAtlasApiExposure(target, fetchImpl)).resolves.toContain(
+      "atlas_api",
+    );
+    await ensureAtlasApiExposure(target, fetchImpl);
+
+    expect(
+      fetchImpl.mock.calls.filter(([, options]) => options?.method === "PATCH"),
+    ).toHaveLength(1);
+    expect(schemas).toBe("public,graphql_public,atlas_api");
+  });
+
+  it("rejects missing atlas_api exposure", async () => {
+    const target = validateAtlasStagingProtectedValues(environment());
+    await expect(
+      verifyAtlasApiExposure(target, async () => ({
+        ok: true,
+        async json() {
+          return { db_schema: "public,graphql_public" };
+        },
+      })),
+    ).rejects.toThrow(/not exposed/i);
+  });
+
+  it("parses marked machine-readable migration evidence", () => {
+    const versions = ["20260101000000", "20260102000000"];
+    const output = JSON.stringify({
+      result: `ATLAS_MIGRATION_HISTORY=${JSON.stringify({ versions, row_count: 2 })}`,
+    });
+    expect(parseMigrationHistoryEvidence(output)).toEqual({
+      versions,
+      row_count: 2,
+    });
+    expect(() =>
+      parseMigrationHistoryEvidence(
+        "Local          │ Remote         │ Time\n20260101000000 │ 20260101000000 │ now",
+      ),
+    ).toThrow(/JSON output/i);
+  });
+
+  it.each([
+    [
+      ["20260101000000"],
+      { versions: ["20260101000000", "20260102000000"], row_count: 2 },
+    ],
+    [
+      ["20260101000000", "20260102000000"],
+      { versions: ["20260101000000"], row_count: 1 },
+    ],
+    [
+      ["20260101000000"],
+      { versions: ["20260101000000", "20260101000000"], row_count: 2 },
+    ],
+    [["20260101000000"], { versions: ["bad-version"], row_count: 1 }],
+    [["20260101000000"], { versions: ["20260101000000"], row_count: 2 }],
+  ])(
+    "rejects remote-only, local-only, duplicate, malformed, or incomplete migration evidence",
+    (local, remote) => {
+      expect(() => assertExactMigrationHistory(local, remote)).toThrow();
+    },
+  );
+
+  it("rejects malformed and duplicate repository migration filenames", () => {
+    expect(() => migrationVersionsFromFilenames(["bad.sql"])).toThrow(
+      /malformed/i,
+    );
+    expect(() =>
+      migrationVersionsFromFilenames([
+        "20260101000000_one.sql",
+        "20260101000000_two.sql",
+      ]),
+    ).toThrow(/duplicated/i);
+  });
+
+  it("loads exact catalog identity authority and CAT-22 policy digest", () => {
+    const authority = readCatalogAuthority();
+    expect(authority.schemas).toHaveLength(10);
+    expect(authority.databaseRoles).toHaveLength(11);
+    expect(authority.apiSignatures).toHaveLength(79);
+    expect(authority.apiOwners).toHaveLength(79);
+    expect(authority.policyCount).toBe(582);
+    expect(authority.policyDigest).toBe("f5a7dd4123445b4099936166f2e3547d");
+    const sql = catalogVerificationSql(authority);
+    expect(sql).toContain("ATLAS_API_SIGNATURE_MISMATCH");
+    expect(sql).toContain("ATLAS_API_OWNER_MISMATCH");
+    expect(sql).toContain(
+      "p.proconfig is distinct from array['search_path=\"\"']",
+    );
+    expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
+    expect(sql).not.toContain("ATLAS_API_FINGERPRINT_MISMATCH");
+  });
+
+  it("accepts only the expected anonymous authorization denial", () => {
+    expect(() =>
+      assertAnonymousAuthorizationDenial({
+        code: "42501",
+        message: "permission denied for schema atlas_api",
+      }),
+    ).not.toThrow();
+    for (const error of [
+      undefined,
+      { code: "PGRST106", message: "schema not exposed" },
+      { code: "PGRST202", message: "function missing" },
+      { code: "PGRST002", message: "schema cache unavailable" },
+      { message: "Failed to fetch" },
+    ]) {
+      expect(() => assertAnonymousAuthorizationDenial(error)).toThrow(
+        /expected authorization denial/i,
+      );
+    }
   });
 });
