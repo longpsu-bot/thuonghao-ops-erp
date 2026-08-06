@@ -4,36 +4,33 @@
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
-**Purpose:** identify current connected surfaces, reusable foundations and bounded UI-quality slices without redefining business behavior
+**Purpose:** identify the connected surfaces that should be stabilized before CMD-03 without redefining business behavior or polishing prototypes that will change later.
 
 ## 1. Evidence basis
 
 This inventory uses:
 
-- current repository structure and component tests;
-- [Atlas Operations Workbench Requirements](atlas-workbench-requirements.md);
-- [UI Catalogue](ui-catalogue.md);
+- current repository components and tests;
 - merged Admin and Planning implementation records;
-- UI Review Export and Storybook capability;
+- Storybook and UI Review Export;
 - retained Retool exports as workflow-density evidence only.
 
-It is not a pixel-level visual audit. That occurs during each implementation slice through Storybook, UI Review Export and operator review.
+It is not a pixel-level audit. Each implementation slice publishes its own before/after findings and review evidence.
 
-## 2. Current application foundation
+## 2. Shared application foundation
 
-| Area | Current evidence | Assessment |
+| Area | Current evidence | Direction |
 | --- | --- | --- |
-| App shell and navigation | `src/modules/atlas/AtlasApp.tsx` and related tests | Functional shell exists; environment, page hierarchy and cross-module action language need consolidation. |
-| Connection/Auth | `src/modules/atlas/connection/` | Strong local-only Auth/RPC safety boundary; staging environment identity remains unimplemented. |
-| Shared components | `src/modules/atlas/WorkbenchComponents.tsx` | Useful compact primitives exist, but the surface is too small for the repeated state, dialog, evidence, timeline and responsive-table needs now present. |
-| Global styling | `src/styles.css` | Broad styling exists in one large shared file; semantic tokens and component contracts are not yet explicit. |
-| Storybook | repository Storybook configuration and stories | Available quality mechanism; shared operational states require fuller story coverage. |
-| UI Review Export | GitHub workflow | Established visual-review artifact; should become a required gate for every quality slice. |
-| Test foundation | module component tests and full Vitest | Strong behavior regression foundation; accessibility/responsive assertions need expansion. |
+| Shell/navigation | `src/modules/atlas/AtlasApp.tsx` | Keep structure; standardize hierarchy, environment label and state presentation. |
+| Connection/Auth | `src/modules/atlas/connection/` | Preserve safety boundary; staging identity remains ATLAS-ACT-01B work. |
+| Shared components | `src/modules/atlas/WorkbenchComponents.tsx` | Reuse and extend only where two connected surfaces share a pattern. |
+| Styling | `src/styles.css` | Add semantic tokens and bounded component sections; do not rewrite CSS architecture. |
+| Storybook/UI export | repository configuration and workflow | Use for repeatable visual review. |
+| Tests | module component tests and Vitest | Preserve behavior; add focused accessibility and state tests where changed. |
 
-## 3. Current workbench groups
+## 3. Connected Planning scope
 
-### 3.1 Planning Inputs shell
+### Planning Inputs shell
 
 Primary path:
 
@@ -41,23 +38,9 @@ Primary path:
 src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx
 ```
 
-Responsibilities:
+It composes the complete current Planning journey and is the first representative consumer of shared shell/state patterns.
 
-- period/context selection;
-- connected Planning tabs;
-- shared Planning navigation and status context;
-- composition of Weekly Menu, Attendance, Pantry, Readiness, Need Generation and Confirmed Need.
-
-Quality observations:
-
-- highest-value shell for current operators;
-- repeated controls and status presentation across child tabs;
-- must preserve exact tab-level APIs and late-response protections;
-- should be migrated after shared primitives are proven.
-
-Priority: **UI-QUALITY-02 / highest**.
-
-### 3.2 Weekly Menu and Attendance
+### Weekly Menu and Attendance
 
 Primary paths:
 
@@ -66,302 +49,198 @@ src/modules/atlas/planning-inputs/weekly-menu/
 src/modules/atlas/planning-inputs/attendance/
 ```
 
-Current strengths:
+Quality priorities:
 
-- explicit period and approval lifecycle;
-- connected backend authority;
-- deterministic tests;
-- source readiness visibility.
+- consistent period controls and approval evidence;
+- clear draft versus approved state;
+- shared loading, empty, stale and read-only treatment;
+- bounded tables on narrow screens.
 
-Quality needs:
+### Pantry
 
-- aligned form/control layout;
-- shared approval/history treatment;
-- consistent empty, warning, stale and read-only language;
-- table behavior at narrow widths;
-- clearer draft-versus-approved evidence.
-
-Priority: **UI-QUALITY-02**.
-
-### 3.3 Pantry
-
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/planning-inputs/pantry/
 ```
 
-Current strengths:
+Quality priorities:
 
-- first-class Planning source;
-- explicit zero-line approval behavior;
-- backend-resolved references and Unit;
-- connected Vietnamese workbench.
+- distinguish approved zero-line evidence from empty or missing data;
+- align line editing, issues and lifecycle evidence with other Planning tabs;
+- improve purpose/reference presentation without changing reference authority.
 
-Quality needs:
+### Planning Input Readiness
 
-- clearer purpose/reference fields;
-- consistent line editing and issue presentation;
-- approved zero-line state distinct from empty/missing;
-- evidence summary and lifecycle history using shared primitives.
-
-Priority: **UI-QUALITY-02**.
-
-### 3.4 Planning Input Readiness
-
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/planning-inputs/readiness/
 ```
 
-Current strengths:
+Quality priorities:
 
-- exact source bindings;
-- blocker/warning classification;
-- evaluate/request/invalidate controls;
-- backend-derived authority.
-
-Quality needs:
-
-- exception-first hierarchy;
+- exception-first blocker/warning hierarchy;
 - concise source-binding summary;
-- reduced visual competition between history, issues and actions;
-- standardized disabled-action reasons;
-- responsive source cards/table.
+- reduced competition among issues, history and actions;
+- consistent disabled-action reasons.
 
-Priority: **UI-QUALITY-02**.
+### Need Generation
 
-### 3.5 Need Generation
-
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/planning-inputs/need-generation/
 ```
 
-Current strengths:
+Quality priorities:
 
-- complete exact-period connected journey;
-- create, validate, release and invalidate behavior;
-- exact lineage and CMD-15 materialization visibility.
+- one current lifecycle treatment;
+- clear separation of run facts, issues and materialization evidence;
+- bounded dense group/line tables;
+- shared action and confirmation presentation.
 
-Quality needs:
+### Confirmed Need
 
-- one current run/lifecycle treatment;
-- clearer distinction between run facts, issues and materialization evidence;
-- shared action group and confirmation dialog;
-- evidence/timeline consolidation;
-- dense group/line tables inside bounded responsive wrappers.
-
-Priority: **UI-QUALITY-02**.
-
-### 3.6 Confirmed Need
-
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/planning-inputs/confirmed-needs/
 ```
 
-Current strengths:
+This is the reference implementation for backend-authorized lifecycle behavior through validation, approval and release.
 
-- review and quantity confirmation;
-- complete-batch validation;
-- separate approval and release;
-- exact current-state message;
-- backend-derived actions and disabled reasons;
-- Actor/time/warning evidence;
-- lifecycle history;
-- late-response and refresh-before-retry behavior.
+Quality priorities:
 
-Quality needs:
+- reuse shared current-state, notice, action and evidence patterns;
+- improve line density and row evidence detail;
+- retain exact disabled reasons, late-response protection and refresh-before-retry behavior;
+- certify narrow-screen use.
 
-- normalize current status, notices, action group and confirmation dialogs as shared primitives;
-- improve line-table density and row evidence detail;
-- translate technical lifecycle-history kinds for primary display while retaining codes;
-- align issue ordering and read-only presentation with other Planning tabs;
-- certify narrow-screen behavior.
+Planning delivery priority: **UI-QUALITY-02**.
 
-Priority: **UI-QUALITY-02 / reference implementation for authoritative lifecycle behavior**.
+## 4. Connected Admin scope
 
-## 4. Admin workbenches
+### Schools
 
-### 4.1 Schools
-
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/admin/schools/
 ```
 
-Quality needs:
+Quality priorities:
 
-- shared master-data list/detail shell;
-- consistent create/edit/read-only modes;
-- field-level validation and notices;
-- responsive list/detail behavior;
-- reference/effective-state presentation.
+- consistent list/detail shell;
+- clear create/edit/read-only modes;
+- field validation and effective-state presentation;
+- responsive list/detail behavior.
 
-Priority: **UI-QUALITY-03**.
+### Ingredients and Suppliers
 
-### 4.2 Ingredients and Suppliers
-
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/admin/ingredients-suppliers/
 ```
 
-Quality needs:
+Quality priorities:
 
-- clearer separation of Ingredient, Supplier and relationship data without creating separate applications;
-- dense relationship tables with stable identity columns;
-- consistent active/inactive status and validation;
-- shared dialog and evidence treatment.
+- clearly separate Ingredient, Supplier and relationship information within one workbench;
+- preserve dense relationship tables and stable identity fields;
+- align active/inactive state, validation and confirmations.
 
-Priority: **UI-QUALITY-03**.
+This UI scope does not authorize supplier allocation or purchase-order behavior.
 
-### 4.3 Dishes and Recipes
+### Dishes and Recipes
 
-Primary paths:
+Primary path:
 
 ```text
 src/modules/atlas/admin/dishes-recipes/
 ```
 
-Current architectural direction:
+Quality priorities:
 
-- one consolidated workbench;
-- immutable Recipe Version/BOM lineage;
-- adjustment/effective-BOM behavior;
-- draft import and successor correction.
-
-Quality needs:
-
-- stronger hierarchy between Dish, Recipe Version, BOM, adjustment and effective result;
-- reduced visual overload from multiple related states;
+- stronger hierarchy among Dish, Recipe Version, BOM, adjustment and effective result;
 - consistent version/snapshot evidence;
-- bounded tables and detail drawers/panels;
-- clearer primary action for the current lifecycle state.
+- bounded detail and table regions;
+- clear primary action for the current lifecycle state.
 
-Priority: **UI-QUALITY-03 / high complexity**.
+Admin delivery priority: **UI-QUALITY-03**.
 
-## 5. Other existing operational prototypes
+## 5. Explicitly deferred UI scope
 
-Current repository modules include Procurement, Warehouse, Dispatch, Evidence and cross-domain traces/queues.
+Procurement, Warehouse, Dispatch and other unconnected prototypes are not part of the pre-CMD-03 polish gate.
 
-These surfaces are important for future MVP completion, but they do not yet own the next quality priority because the currently connected rehearsal gate stops at Confirmed Need release.
+They remain useful architecture and workflow evidence, but polishing them now would create rework before their backend contracts are connected. Their UI quality work should accompany later connected slices.
 
-Quality work here must remain presentation-only until their connected backend slices are separately authorized.
+## 6. Cross-cutting strengths to preserve
 
-Priority: **UI-QUALITY-04**.
-
-## 6. Cross-cutting strengths
-
-The current UI already has several important foundations worth preserving:
-
-- React + TypeScript module boundaries;
-- connected RPC adapter and Auth subject authority;
-- backend-safe result shaping;
+- React and TypeScript module boundaries;
+- backend-safe RPC shaping;
+- Supabase Auth subject authority;
 - no automatic write retry;
 - substantial component-test coverage;
-- Vietnamese operator labels;
-- exception and lifecycle concepts visible in the workbenches;
-- Storybook and exportable review artifacts;
-- module-level late-response protection in connected flows.
+- Vietnamese task labels;
+- visible exception and lifecycle concepts;
+- Storybook and UI Review Export;
+- late-response protection in connected flows.
 
-The UI quality program should consolidate these strengths rather than replace the application structure.
+The quality program consolidates these strengths rather than replacing the application structure.
 
 ## 7. Cross-cutting debt
 
-### 7.1 Component duplication
+Repeated current patterns include:
 
-Repeated patterns appear across module workbenches:
-
-- title/context/action headers;
-- notices and safe error messages;
-- lifecycle/status text;
-- disabled-action reasons;
-- confirmation sections/dialogs;
+- workbench header/context/action layout;
+- notices and operational states;
+- current lifecycle and disabled reasons;
+- confirmations;
 - Actor/time/version evidence;
-- issue lists;
-- loading/empty/read-only states;
-- history lists;
-- responsive table wrappers.
+- issue and history lists;
+- responsive table containment.
 
-These patterns need shared local components and semantic CSS tokens.
+A pattern becomes shared only when at least two connected surfaces need the same semantic behavior. Large workbench files may extract presentation components or local hooks only when business behavior and API boundaries remain unchanged.
 
-### 7.2 Large module components
-
-Several workbenches combine transport orchestration, local draft management, lifecycle handling and substantial rendering in one file.
-
-UI quality work may extract presentation components and hooks only when:
-
-- business behavior remains unchanged;
-- the changed-path boundary is explicit;
-- existing tests remain authoritative;
-- extraction is local to the quality slice;
-- no generic state-management framework is added.
-
-### 7.3 Global stylesheet concentration
-
-A large common stylesheet contains much of the application presentation. The first quality slice should introduce semantic variables and component sections without forcing a full CSS architecture rewrite.
-
-Splitting CSS files is allowed only where it improves ownership and build clarity without changing runtime dependencies.
-
-### 7.4 State-language inconsistency
-
-Connected modules have evolved at different times. Loading, disabled, stale, blocked, read-only and successful messages may differ in hierarchy and wording.
-
-The UI standard establishes one cross-module state vocabulary while preserving backend-safe messages and domain-specific labels.
-
-### 7.5 Responsive and accessibility evidence
-
-Current behavior tests are strong, but systematic evidence at `360`, `768` and `1280` pixels, keyboard traversal, dialog focus, live regions and semantic table behavior is incomplete.
-
-These become explicit quality gates.
+The large common stylesheet should gain semantic variables and clear component sections, not be replaced by a new styling system.
 
 ## 8. Retool comparison boundary
 
-Retool evidence shows operational density, query orchestration and the range of workflows currently performed. It should inform:
+Retool informs:
 
-- which fields operators need visible;
-- which exceptions need fast access;
-- which source and document links matter;
-- where current manual work is concentrated.
+- operational field density;
+- important filters and selectors;
+- exception visibility;
+- explicit save/refresh actions;
+- familiar Vietnamese task wording.
 
-It must not be copied as:
+Retool must not be copied as:
 
-- page structure;
-- component hierarchy;
-- JavaScript state model;
-- direct SQL from the browser;
+- direct browser SQL;
+- component-state business authority;
+- page/component hierarchy;
 - authorization design;
 - visual styling.
 
-## 9. Proposed UI sequence
+## 9. Delivery sequence
 
 | Slice | Scope | Proof point |
 | --- | --- | --- |
-| UI-QUALITY-01 | Shared shell, tokens and primitives | Atlas shell plus one representative Planning wrapper use the primitives with no business delta. |
-| UI-QUALITY-02 | Planning Inputs and Confirmed Need | Complete connected Planning journey has consistent states, actions, tables, evidence and responsive behavior. |
-| UI-QUALITY-03 | Admin master data | Schools, Ingredients/Suppliers and Dishes/Recipes share a consistent master-data workbench pattern. |
-| UI-QUALITY-04 | Other operational prototypes | Procurement, Warehouse, Dispatch and Evidence presentation aligns without adding connected authority. |
-| UI-QUALITY-05 | Cross-module certification | Accessibility, responsive review, language consistency and operator walkthrough close remaining debt. |
+| UI-QUALITY-01 | Shell, semantic tokens and proven shared primitives | Shell plus one Planning wrapper adopt the foundation with zero business delta. |
+| UI-QUALITY-02 | Connected Planning | Complete Planning journey has consistent states, actions, evidence and responsive behavior. |
+| UI-QUALITY-03 | Connected Admin | Schools, Ingredients/Suppliers and Dishes/Recipes use a consistent master-data pattern. |
+| Staging rehearsal | Cross-module acceptance | Real Auth/security and operator journey pass through Confirmed Need release. |
 
-## 10. Acceptance inventory output
-
-Each quality slice must publish:
+## 10. Required output from each UI slice
 
 - exact surfaces reviewed;
 - before/after issue inventory;
-- changed-path manifest;
+- exact changed-path manifest;
 - shared components introduced or reused;
-- behavior tests retained or added;
-- Storybook stories;
-- UI Review Export result;
-- responsive review notes;
+- focused and regression tests;
+- Storybook/UI Review Export result where applicable;
+- review notes at 360/768/1280 pixels;
 - keyboard/focus/accessibility result;
 - explicit zero business migration/API/contract delta;
-- deferred issues and next slice ownership.
+- deferred issues and ownership.
