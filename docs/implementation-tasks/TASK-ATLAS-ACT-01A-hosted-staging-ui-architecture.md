@@ -1,6 +1,8 @@
 # TASK-ATLAS-ACT-01A — Hosted Staging and Connected-UI Architecture
 
-**Status:** Proposed documentation package; executable work and external activation not started
+**Status:** Complete and accepted; executable work and external activation not started
+
+**Accepted on:** 06/08/2026
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
@@ -81,7 +83,7 @@ OPS - Lên đơn, Đặt hàng (1).json
 
 Retool supports the need for dense operational tables, fast filters, explicit save/refresh actions, visible exceptions and concise Vietnamese language. It remains usability evidence only; direct SQL and UI-owned business logic are not copied.
 
-## 3. Exact draft manifest
+## 3. Exact documentation manifest
 
 ```text
 docs/architecture/atlas-act-01-hosted-staging-ui-consolidation-contract.md
@@ -91,11 +93,13 @@ docs/ui/atlas-current-ui-inventory.md
 docs/implementation-tasks/TASK-ATLAS-ACT-01A-hosted-staging-ui-architecture.md
 docs/implementation-tasks/TASK-ATLAS-ACT-01B-hosted-staging-readiness.md
 docs/implementation-tasks/TASK-UI-QUALITY-01-shared-shell-primitives.md
+docs/architecture/roadmap.md
+docs/decisions/decision-register.md
 ```
 
-The draft does not yet modify `roadmap.md` or `decision-register.md`. Those central authority files are synchronized only after independent review accepts the exact architecture head.
+The first seven files hold the architecture and handoffs. The roadmap and decision register synchronize accepted D-032 and the stabilization sequence.
 
-## 4. Proposed decisions
+## 4. Accepted decisions
 
 1. pause CMD-03 until staging and connected UI acceptance;
 2. use one separate long-lived Atlas staging project;
@@ -116,14 +120,6 @@ The draft does not yet modify `roadmap.md` or `decision-register.md`. Those cent
 
 ## 5. Follow-on gates
 
-### Gate A — Independent architecture acceptance
-
-- review the exact documentation head;
-- correct material findings only;
-- register the decision as the next D-number;
-- update the roadmap;
-- merge the documentation package.
-
 ### Gate B — Repository staging readiness
 
 Implement [TASK-ATLAS-ACT-01B](TASK-ATLAS-ACT-01B-hosted-staging-readiness.md) through Codex from the exact post-architecture `main` SHA.
@@ -136,7 +132,7 @@ Implement [TASK-UI-QUALITY-01](TASK-UI-QUALITY-01-shared-shell-primitives.md) as
 
 It adds semantic tokens and only proven shared primitives, then adopts them in the shell and one Planning wrapper. It changes no business API, lifecycle, migration or dependency.
 
-ATLAS-ACT-01B and UI-QUALITY-01 may proceed in either order after Gate A.
+ATLAS-ACT-01B and UI-QUALITY-01 may proceed in either order.
 
 ### Gate D — External staging activation
 
@@ -162,11 +158,11 @@ Unconnected downstream prototypes remain deferred.
 
 Run the Admin-to-Confirmed-Need-release journey plus blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios. Resolve material findings, record accepted residual risk and then decide whether CMD-03 may resume.
 
-## 6. Completion criteria
+## 6. Completion evidence
 
-ATLAS-ACT-01A is ready for acceptance when:
+ATLAS-ACT-01A is complete because:
 
-- the seven documents are internally consistent;
+- the architecture, decision, UI standard, inventory and handoffs are internally consistent;
 - separate staging and live OPS denial are explicit;
 - environment and credential names are minimal;
 - deployment reuses exact-head certification;
@@ -174,9 +170,8 @@ ATLAS-ACT-01A is ready for acceptance when:
 - UI scope is limited to connected Admin and Planning;
 - shared abstraction follows the two-use rule;
 - CMD-03 resume criteria are measurable;
-- documentation CI passes.
-
-After independent acceptance, roadmap and decision-register synchronization complete the architecture merge.
+- central authority is synchronized;
+- the package remains documentation-only.
 
 ## 7. Validation ownership
 
