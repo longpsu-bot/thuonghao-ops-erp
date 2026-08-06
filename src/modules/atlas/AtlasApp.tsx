@@ -307,6 +307,7 @@ function AtlasShell({
   confirmedNeedApi,
   mode,
   session,
+  connection,
   reviewScenario,
   onReviewScenarioChange,
 }: {
@@ -322,6 +323,7 @@ function AtlasShell({
   confirmedNeedApi?: ConfirmedNeedApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
+  connection?: AtlasSupabaseClientResult;
   reviewScenario?: AtlasReviewScenario;
   onReviewScenarioChange?: (scenario: AtlasReviewScenario) => void;
 }) {
@@ -353,7 +355,17 @@ function AtlasShell({
             </label>
           </header>
         ) : (
-          session && <AtlasConnectionPanelView auth={session} />
+          session &&
+          connection && (
+            <AtlasConnectionPanelView
+              auth={session}
+              environmentLabel={
+                connection.status === "configured"
+                  ? connection.environmentLabel
+                  : "Atlas · lỗi cấu hình · non-production"
+              }
+            />
+          )
         )}
         <MasterDataPage
           key={`${mode}:${reviewScenario ?? "connected"}`}
@@ -482,6 +494,7 @@ function ConnectedAtlasApp({
       confirmedNeedApi={confirmedNeedApi}
       mode="connected"
       session={auth}
+      connection={connection}
     />
   );
 }

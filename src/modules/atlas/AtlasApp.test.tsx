@@ -514,6 +514,9 @@ describe("Atlas master-data shell", () => {
       screen.getByText("Chưa thể kết nối dữ liệu Atlas"),
     ).toBeInTheDocument();
     expect(
+      screen.getByText("Atlas · lỗi cấu hình · non-production"),
+    ).toBeInTheDocument();
+    expect(
       screen.queryByText("Trường Tiểu học Nguyễn Du"),
     ).not.toBeInTheDocument();
   });
