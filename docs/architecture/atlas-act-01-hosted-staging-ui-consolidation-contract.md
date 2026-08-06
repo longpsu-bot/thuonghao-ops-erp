@@ -1,6 +1,8 @@
 # ATLAS-ACT-01 — Hosted Staging and Connected-UI Consolidation Contract
 
-**Status:** Proposed architecture contract; documentation only
+**Status:** Accepted architecture contract; documentation only
+
+**Accepted on:** 06/08/2026
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
@@ -297,7 +299,7 @@ The gate may be changed only through an explicit Product/Architecture decision.
 
 ## 12. Authorized follow-on packages
 
-After this contract is independently accepted and merged:
+After this contract is merged:
 
 - [ATLAS-ACT-01B — Hosted Staging Repository Readiness](../implementation-tasks/TASK-ATLAS-ACT-01B-hosted-staging-readiness.md) may prepare repository configuration and guarded workflows without hosted mutation;
 - external staging creation remains subject to current-cost confirmation;
