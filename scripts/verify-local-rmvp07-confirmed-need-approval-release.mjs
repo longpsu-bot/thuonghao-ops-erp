@@ -224,13 +224,14 @@ function downstreamState() {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
       const output = runPinnedSupabase(
-        ["db", "query", "--local", "--output-format", "json", sql],
+        ["db", "query", "--local", "--agent", "no", "--output", "json", sql],
         {
           encoding: "utf8",
           stdio: ["ignore", "pipe", "inherit"],
         },
       );
-      const state = JSON.parse(output).rows?.[0]?.downstream_state;
+      const rows = JSON.parse(output);
+      const state = Array.isArray(rows) ? rows[0]?.downstream_state : null;
       assert(
         state && typeof state === "object" && !Array.isArray(state),
         "RMVP-07 downstream-state query returned no object.",
