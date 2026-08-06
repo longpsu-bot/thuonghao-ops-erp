@@ -1,6 +1,8 @@
 # Atlas UI Quality Standard
 
-**Status:** Proposed cross-module UI contract
+**Status:** Accepted cross-module UI contract
+
+**Accepted on:** 06/08/2026
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
