@@ -223,10 +223,13 @@ function downstreamState() {
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
-      const output = runPinnedSupabase(["db", "query", "--local", sql], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "inherit"],
-      });
+      const output = runPinnedSupabase(
+        ["db", "query", "--local", "--output-format", "json", sql],
+        {
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "inherit"],
+        },
+      );
       const state = JSON.parse(output).rows?.[0]?.downstream_state;
       assert(
         state && typeof state === "object" && !Array.isArray(state),

@@ -26,6 +26,18 @@ const authState = {
 } as unknown as AtlasAuthState;
 
 const batchId = "c4500000-0000-0000-0000-000000000001";
+const lifecycleMessages = [
+  "Đã kiểm tra; chờ phê duyệt",
+  "Đã phê duyệt; chờ phát hành",
+  "Đã phát hành sang bước lên đơn",
+];
+
+function expectOnlyLifecycleMessage(expected: string) {
+  const displayed = lifecycleMessages.flatMap((message) =>
+    screen.queryAllByText(message).map(() => message),
+  );
+  expect(displayed).toEqual([expected]);
+}
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -472,6 +484,39 @@ describe("RMVP-05 Confirmed Need review workbench", () => {
     expect(
       screen.queryByRole("button", { name: "Phát hành sang bước lên đơn" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows exactly one current lifecycle message for each authoritative lifecycle state", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    await confirmFixture(api);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra toàn bộ" }));
+    await screen.findByRole("button", { name: "Phê duyệt lô nhu cầu" });
+    expectOnlyLifecycleMessage("Đã kiểm tra; chờ phê duyệt");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Phê duyệt lô nhu cầu" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phê duyệt" }));
+    await screen.findByRole("button", {
+      name: "Phát hành sang bước lên đơn",
+    });
+    expectOnlyLifecycleMessage("Đã phê duyệt; chờ phát hành");
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Phát hành sang bước lên đơn",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận phát hành" }));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", {
+          name: "Phát hành sang bước lên đơn",
+        }),
+      ).not.toBeInTheDocument(),
+    );
+    expectOnlyLifecycleMessage("Đã phát hành sang bước lên đơn");
   });
 
   it("requires an authoritative refresh after an unknown approval outcome", async () => {

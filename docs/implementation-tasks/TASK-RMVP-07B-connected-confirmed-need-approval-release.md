@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented on branch `codex/rmvp-07b-connected-confirmed-need-approval-release` from exact accepted baseline `c871a8f08867377e921ced865c258040107d6628`. Local validation is recorded below; draft pull-request validation remains authoritative for the routine full frontend gate.
+Implemented on branch `codex/rmvp-07b-connected-confirmed-need-approval-release` from exact accepted baseline `c871a8f08867377e921ced865c258040107d6628`. A narrow review correction follows published head `e2caf77ede00563d0eab4d66aa56e8ff968f11b2`; draft pull-request validation remains authoritative.
 
 ## Outcome
 
@@ -65,7 +65,7 @@ A fresh seedless reset proved eight historical exact-current-catalog expectation
 
 ## Application and local fixture
 
-The existing sixth Vietnamese Planning Inputs tab registers both commands and displays only backend-authorized actions:
+The existing sixth Vietnamese Planning Inputs tab registers both commands and displays only backend-authorized actions. Its current lifecycle message is mutually exclusive and comes from `authoritative_batch_status`, so immutable successful validation history cannot remain presented as the current state after approval or release:
 
 ```text
 Phê duyệt lô nhu cầu
@@ -85,6 +85,8 @@ The two security-definer APIs retain an empty search path and are executable onl
 PA-05D WHOLESALE remains the accepted alternative family: it may be released at version 1, its approval snapshot uses `source_kind = WHOLESALE` with null validation binding/fingerprint, it requires neither RMVP-07 pointer nor release row, and its existing Purchase Handoff/downstream behavior is unchanged.
 
 ## Verification record
+
+Published head `e2caf77ede00563d0eab4d66aa56e8ff968f11b2` passed Frontend CI, UI Review Export and Qodana, but GitHub Supabase Smoke failed while the RMVP-07 browser verifier parsed the CLI's Unicode table output as JSON. Supabase Full Integration was therefore skipped at that exact head. The review correction makes `db query` request the pinned CLI's deterministic JSON output explicitly and adds a focused three-state lifecycle-message regression test. The correction must remain draft until new-head Supabase Smoke passes; ready-state Full Integration must then pass before merge review.
 
 Completed locally:
 

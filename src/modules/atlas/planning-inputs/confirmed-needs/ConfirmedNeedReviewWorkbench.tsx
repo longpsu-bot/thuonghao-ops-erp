@@ -46,6 +46,19 @@ function viDate(value: string) {
   return year && month && day ? `${day}/${month}/${year}` : value;
 }
 
+function currentLifecycleMessage(status: string) {
+  switch (status) {
+    case "VALIDATED":
+      return "Đã kiểm tra; chờ phê duyệt";
+    case "APPROVED":
+      return "Đã phê duyệt; chờ phát hành";
+    case "RELEASED_FOR_PURCHASE_HANDOFF":
+      return "Đã phát hành sang bước lên đơn";
+    default:
+      return null;
+  }
+}
+
 function issueList(
   title: string,
   items: ConfirmedNeedIssue[],
@@ -392,7 +405,7 @@ export function ConfirmedNeedReviewWorkbench({
     else if (!(await loadReview())) return;
     setNotice(
       result.response.validation_status === "VALIDATED"
-        ? "Đã kiểm tra; chờ phê duyệt"
+        ? null
         : "Chưa đạt điều kiện kiểm tra",
     );
   };
@@ -457,6 +470,10 @@ export function ConfirmedNeedReviewWorkbench({
           );
     void executeLifecycleCommand(request, lifecycleConfirmation);
   };
+
+  const lifecycleMessage = workbench
+    ? currentLifecycleMessage(workbench.authoritative_batch_status)
+    : null;
 
   return (
     <Panel
@@ -549,13 +566,7 @@ export function ConfirmedNeedReviewWorkbench({
             </span>
           </section>
 
-          {workbench.approval.current_snapshot_id &&
-            !workbench.release.current_release_id && (
-              <p role="status">Đã phê duyệt; chờ phát hành</p>
-            )}
-          {workbench.release.current_release_id && (
-            <p role="status">Đã phát hành sang bước lên đơn</p>
-          )}
+          {lifecycleMessage && <p role="status">{lifecycleMessage}</p>}
 
           {(workbench.approval.approved_actor ||
             workbench.release.released_actor) && (
@@ -600,9 +611,6 @@ export function ConfirmedNeedReviewWorkbench({
             </section>
           )}
 
-          {workbench.validation.latest_outcome === "VALIDATED" && (
-            <p role="status">Đã kiểm tra; chờ phê duyệt</p>
-          )}
           {issueList(
             "Vấn đề cần xử lý",
             workbench.validation.grouped_issues.blocking,
