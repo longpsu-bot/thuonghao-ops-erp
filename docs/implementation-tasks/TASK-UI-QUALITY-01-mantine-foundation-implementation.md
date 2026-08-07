@@ -36,7 +36,9 @@ src/theme.ts
 
 ## Dependency boundary and setup
 
-Runtime dependencies are exactly `@mantine/core@9.2.2` and `@mantine/hooks@9.2.2`. Official Vite/PostCSS support is exactly `postcss@8.5.26`, `postcss-preset-mantine@1.18.0` and `postcss-simple-vars@7.0.1`. All are direct, exact-pinned versions. No other Mantine package, icon package, grid, UI framework, state library or CSS runtime was added.
+Runtime dependencies are exactly `@mantine/core@9.2.2` and `@mantine/hooks@9.2.2`. Official Vite/PostCSS support is exactly `postcss@8.5.25`, `postcss-preset-mantine@1.18.0` and `postcss-simple-vars@7.0.1`. All are direct, exact-pinned versions. No other Mantine package, icon package, grid, UI framework, state library or CSS runtime was added.
+
+The initial draft PR pinned `postcss@8.5.26`, but every install-based workflow rejected that release under the repository's 24-hour package-age policy before application validation began. With explicit Product Owner approval, the task baseline was corrected to exact `postcss@8.5.25`; this is an intentional policy-compatible pin and will not automatically return to `8.5.26`. No unrelated dependency changed.
 
 `src/main.tsx` loads Mantine core styles before Atlas styles and establishes one `MantineProvider`. Storybook uses the same provider and `atlasTheme`. `postcss.config.cjs` follows Mantine's official Vite breakpoint-variable setup.
 
