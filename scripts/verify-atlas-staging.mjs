@@ -158,6 +158,8 @@ export function catalogVerificationSql(authority) {
 declare
   actual text[];
   private_grants bigint;
+  normal_policy_count bigint;
+  isolated_policy_count bigint;
   policy_digest text;
 begin
   select array_agg(nspname order by nspname)::text[] into actual from pg_namespace where nspname like 'atlas\\_%' escape '\\';
@@ -191,11 +193,29 @@ begin
   end if;
   select count(*) into private_grants from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('atlas_core','atlas_admin','atlas_planning','atlas_procurement','atlas_evidence','atlas_dispatch','atlas_audit','atlas_reporting','atlas_legacy') and c.relkind in ('r','p','v','m','S') and (has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE') or has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE') or has_table_privilege('service_role', c.oid, 'SELECT,INSERT,UPDATE,DELETE'));
   if private_grants <> 0 then raise exception 'ATLAS_PRIVATE_RELATION_EXPOSURE'; end if;
-  if (select count(*) from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname like 'atlas\\_%' escape '\\') <> ${authority.policyCount} then
+  with normal_policy_catalog as (
+    select format('%s|%s|%s|%s|%s|%s|%s|%s', n.nspname, c.relname, p.polname, p.polpermissive, p.polcmd, array(select coalesce((select rolname from pg_roles where oid = role_oid), 'PUBLIC') from unnest(p.polroles) role_oid order by 1)::text, coalesce(pg_get_expr(p.polqual, p.polrelid), '<null>'), coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '<null>')) as row_text
+    from pg_policy p
+    join pg_class c on c.oid = p.polrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname like 'atlas\\_%' escape '\\'
+      and not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')
+  )
+  select count(*), md5(string_agg(row_text, E'\\n' order by row_text))
+  into normal_policy_count, policy_digest
+  from normal_policy_catalog;
+  if normal_policy_count <> ${authority.policyCount} then
     raise exception 'ATLAS_POLICY_COUNT_MISMATCH';
   end if;
-  select md5(string_agg(row_text, E'\\n' order by row_text)) into policy_digest from (select format('%s|%s|%s|%s|%s|%s|%s|%s', n.nspname, c.relname, p.polname, p.polpermissive, p.polcmd, array(select coalesce((select rolname from pg_roles where oid = role_oid), 'PUBLIC') from unnest(p.polroles) role_oid order by 1)::text, coalesce(pg_get_expr(p.polqual, p.polrelid), '<null>'), coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '<null>')) as row_text from pg_policy p join pg_class c on c.oid = p.polrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname like 'atlas\\_%' escape '\\' and not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')) catalog;
   if policy_digest is distinct from '${authority.policyDigest}' then raise exception 'ATLAS_POLICY_DIGEST_MISMATCH'; end if;
+  select count(*) into isolated_policy_count
+  from pg_policy p
+  join pg_class c on c.oid = p.polrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  where n.nspname = 'atlas_admin'
+    and c.relname = 'units'
+    and p.polname = 'rmvp_05_unit_lock';
+  if isolated_policy_count <> 1 then raise exception 'ATLAS_ISOLATED_POLICY_MISMATCH'; end if;
 end $$;`;
 }
 

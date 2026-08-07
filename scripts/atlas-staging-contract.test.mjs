@@ -357,13 +357,57 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.apiOwners).toHaveLength(79);
     expect(authority.policyCount).toBe(582);
     expect(authority.policyDigest).toBe("f5a7dd4123445b4099936166f2e3547d");
+  });
+
+  it("uses one normal CAT-22 policy catalog for both count and digest", () => {
+    const authority = readCatalogAuthority();
     const sql = catalogVerificationSql(authority);
+    const normalCatalog = sql.match(
+      /with normal_policy_catalog as \(([\s\S]*?)\)\s*select count\(\*\), md5\(string_agg\(row_text,[\s\S]*?from normal_policy_catalog;/,
+    );
+    expect(normalCatalog).not.toBeNull();
+    expect(normalCatalog?.[1]).toContain(
+      "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
+    );
+    expect(sql).toContain("normal_policy_count <> 582");
+    expect(sql).not.toContain("if (select count(*) from pg_policy");
+    expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
+    expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
+  });
+
+  it("requires exactly one isolated RMVP-05 Unit lock policy", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toMatch(
+      /where n\.nspname = 'atlas_admin'\s+and c\.relname = 'units'\s+and p\.polname = 'rmvp_05_unit_lock';/,
+    );
+    expect(sql).toContain("isolated_policy_count <> 1");
+    expect(sql).toContain("ATLAS_ISOLATED_POLICY_MISMATCH");
+  });
+
+  it.each([
+    [582, 1, true],
+    [582, 0, false],
+    [582, 2, false],
+    [581, 1, false],
+    [583, 1, false],
+  ])(
+    "models %i normal and %i isolated policies as accepted=%s",
+    (normalPolicyCount, isolatedPolicyCount, accepted) => {
+      const authority = readCatalogAuthority();
+      expect(
+        normalPolicyCount === authority.policyCount &&
+          isolatedPolicyCount === 1,
+      ).toBe(accepted);
+    },
+  );
+
+  it("retains the unrelated fail-closed catalog checks", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
     expect(sql).toContain("ATLAS_API_SIGNATURE_MISMATCH");
     expect(sql).toContain("ATLAS_API_OWNER_MISMATCH");
     expect(sql).toContain(
       "p.proconfig is distinct from array['search_path=\"\"']",
     );
-    expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
     expect(sql).not.toContain("ATLAS_API_FINGERPRINT_MISMATCH");
   });
 
