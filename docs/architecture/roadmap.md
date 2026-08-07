@@ -21,15 +21,16 @@
 
 Goal: prove the connected Atlas Admin and Planning path in one separate hosted staging environment and make the current operator experience coherent before adding Purchase Handoff.
 
-- ✅ ATLAS-ACT-01A hosted staging and connected-UI architecture — accepted on 06/08/2026; [architecture](atlas-act-01-hosted-staging-ui-consolidation-contract.md), [decision](../decisions/decision-atlas-act-01-hosted-staging-ui-consolidation.md), [UI standard](../ui/atlas-ui-quality-standard.md), [current UI inventory](../ui/atlas-current-ui-inventory.md), and [task record](../implementation-tasks/TASK-ATLAS-ACT-01A-hosted-staging-ui-architecture.md)
-- ✅ ATLAS-ACT-01B repository staging readiness — complete through PR #175, merged at `9b9f8af3609507876d69a55cc529e9bd17aa56db`; staging-verifier correction complete through PR #176, merged at `844b4640df28f666736f018b8ef81d63fb78d2be`
-- ✅ Separate Atlas staging project — project `rnzxmxiiqgtdevzregff` exists and protected deployment succeeded at `844b4640df28f666736f018b8ef81d63fb78d2be`; existing OPS project `qnthofvccilhnefdcxnz` remains forbidden as a target
-- ✅ D-033 Mantine 9 UI component foundation — accepted for connected Atlas presentation; Atlas retains business semantics and authority
-- 🟡 UI-QUALITY-01 Mantine foundation, shared shell and proven primitives — implementation in progress on the bounded branch with no business behavior change
-- ⬜ UI-QUALITY-02 connected Planning consolidation — Weekly Menu through Confirmed Need release
-- ⬜ UI-QUALITY-03 connected Admin consolidation — Schools, Ingredients/Suppliers and Dishes/Recipes
-- ⬜ Hosted operator/security rehearsal — Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
-- ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
+- [x] ATLAS-ACT-01A hosted staging and connected-UI architecture — accepted on 06/08/2026; [architecture](atlas-act-01-hosted-staging-ui-consolidation-contract.md), [decision](../decisions/decision-atlas-act-01-hosted-staging-ui-consolidation.md), [UI standard](../ui/atlas-ui-quality-standard.md), [current UI inventory](../ui/atlas-current-ui-inventory.md), and [task record](../implementation-tasks/TASK-ATLAS-ACT-01A-hosted-staging-ui-architecture.md)
+- [x] ATLAS-ACT-01B repository staging readiness — complete through PR #175, merged at `9b9f8af3609507876d69a55cc529e9bd17aa56db`; staging-verifier correction complete through PR #176, merged at `844b4640df28f666736f018b8ef81d63fb78d2be`
+- [x] Separate Atlas staging project — project `rnzxmxiiqgtdevzregff` exists and protected deployment succeeded at `844b4640df28f666736f018b8ef81d63fb78d2be`; existing OPS project `qnthofvccilhnefdcxnz` remains forbidden as a target
+- [x] D-033 Mantine 9 UI component foundation — accepted for connected Atlas presentation; Atlas retains business semantics and authority
+- [x] UI-QUALITY-01 Mantine foundation, shared shell and proven primitives — completed on exact baseline `c98d044f3b880cca02fb8cb95f7c2ebcd0246f78` (PR #177)
+- [> ] UI-THEME-01 Atlas corporate catering visual identity — implemented on this bounded branch (`codex/ui-theme-01-corporate-catering`)
+- [ ] UI-QUALITY-02 connected Planning consolidation — not started until UI-THEME-01 is reviewed and accepted
+- [ ] UI-QUALITY-03 connected Admin consolidation — not started
+- [ ] Hosted operator/security rehearsal — not started
+- [ ] CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
 
 Stabilization sequence:
 

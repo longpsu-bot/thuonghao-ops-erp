@@ -228,6 +228,19 @@ Each UI-quality PR must publish:
 | Scope | No unapproved backend or business behavior changed. |
 | Verification | Tests, build and visual review pass. |
 
+## 13. Canonical Atlas Corporate Catering Visual Identity
+
+- professional institutional-catering identity over consumer, eco, delivery or banking aesthetics;
+- ink-navy as primary brand anchor for shell, primary actions, and command hierarchy;
+- warm-stone (`#F4F1EB`) as the default workspace and ivory/white (`#FFFFFF`, `#F8F6F2`) for primary working surfaces;
+- burnished copper (`#B66A3C` and `#A35B35`) for restrained accents, active navigation and selection;
+- success remains semantic green (`#31745B`) only for success/status semantics;
+- warning and blocking outcomes use amber/orange and red families as semantic warnings or errors;
+- information uses restrained blue;
+- muted hierarchy through typography, spacing, borders, and focused component treatment;
+- operational tables and work areas prioritized over decorative cards and card-heavy dashboards;
+- anti-generic-AI-dashboard behavior: dense command/workflow rows, compact controls, low decoration, and accessible spacing.
+
 ## 12. Prohibited shortcuts
 
 UI quality work must not:

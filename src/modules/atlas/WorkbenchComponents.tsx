@@ -76,7 +76,7 @@ const operationalStatePresentation: Record<
     label: "Kết quả chưa xác định",
     urgent: false,
   },
-  "read-only": { color: "atlasGold", label: "Chỉ xem", urgent: false },
+  "read-only": { color: "blue", label: "Chỉ xem", urgent: false },
   "access-denied": {
     color: "red",
     label: "Không có quyền truy cập",
