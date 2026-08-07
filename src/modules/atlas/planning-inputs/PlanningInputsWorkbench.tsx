@@ -1,7 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
+import { Box, Button, MantineProvider, Paper } from "@mantine/core";
+import { atlasTheme } from "../../../theme";
 import type { AtlasAuthState } from "../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
-import { Chip, CompactTable, Panel } from "../WorkbenchComponents";
+import {
+  Chip,
+  CompactTable,
+  OperationalState,
+  Panel,
+  WorkbenchHeader,
+} from "../WorkbenchComponents";
 import {
   planningCommandRequest,
   type PlanningCommandRequest,
@@ -365,7 +380,7 @@ function emptyData(weekStart: string): PlanningInputsWorkbenchData {
   };
 }
 
-export function PlanningInputsWorkbench({
+export function PlanningInputsWorkbenchView({
   authState,
   api,
   pantryApi,
@@ -880,7 +895,13 @@ export function PlanningInputsWorkbench({
 
   return (
     <div className="planning-inputs-workbench">
-      <section className="planning-context-bar">
+      <WorkbenchHeader
+        eyebrow="Nguồn đầu vào"
+        title="Điều hành nguồn kế hoạch theo tuần"
+        context="Chọn tuần phục vụ, theo dõi tình trạng nguồn và làm việc trong từng khu vực nghiệp vụ bên dưới."
+        headingLevel={2}
+      />
+      <Paper component="section" className="planning-context-bar" withBorder>
         <label>
           Tuần phục vụ
           <input
@@ -895,16 +916,25 @@ export function PlanningInputsWorkbench({
             {viDate(data.week_start)} – {viDate(data.week_end)}
           </b>
         </div>
-        <button type="button" onClick={() => void refresh()} disabled={saving}>
+        <Button type="button" onClick={() => void refresh()} disabled={saving}>
           Tải lại có thẩm quyền
-        </button>
-      </section>
+        </Button>
+      </Paper>
 
       {!authSubject ? (
-        <p className="operator-notice warning">{authMessage}</p>
+        <OperationalState
+          variant={
+            authState.status === "session_expired"
+              ? "read-only"
+              : "access-denied"
+          }
+          title={authMessage}
+        />
       ) : (
         <>
-          <section
+          <Paper
+            component="section"
+            withBorder
             className={`planning-readiness ${data.readiness.ready ? "ready" : ""}`}
             aria-label="Tình trạng sẵn sàng nguồn kế hoạch"
           >
@@ -927,77 +957,83 @@ export function PlanningInputsWorkbench({
               Sĩ số{" "}
               {data.readiness.attendance_approved ? "đã duyệt" : "chưa duyệt"}
             </Chip>
-          </section>
+          </Paper>
 
-          <div className="planning-tabs" role="tablist">
-            <button
+          <Box className="planning-tabs" role="tablist">
+            <Button
               type="button"
               role="tab"
+              variant="subtle"
               aria-selected={tab === "menu"}
               className={tab === "menu" ? "active" : ""}
               onClick={() => setTab("menu")}
             >
               Thực đơn tuần
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               role="tab"
+              variant="subtle"
               aria-selected={tab === "attendance"}
               className={tab === "attendance" ? "active" : ""}
               onClick={() => setTab("attendance")}
             >
               Sĩ số
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               role="tab"
+              variant="subtle"
               aria-selected={tab === "pantry"}
               className={tab === "pantry" ? "active" : ""}
               onClick={() => setTab("pantry")}
             >
               Pantry
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               role="tab"
+              variant="subtle"
               aria-selected={tab === "readiness"}
               className={tab === "readiness" ? "active" : ""}
               onClick={() => setTab("readiness")}
             >
               Sẵn sàng đầu vào
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               role="tab"
+              variant="subtle"
               aria-selected={tab === "need-generation"}
               className={tab === "need-generation" ? "active" : ""}
               onClick={() => setTab("need-generation")}
             >
               Tạo nhu cầu
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               role="tab"
+              variant="subtle"
               aria-selected={tab === "confirmed-needs"}
               className={tab === "confirmed-needs" ? "active" : ""}
               onClick={() => setTab("confirmed-needs")}
             >
               Xác nhận nhu cầu
-            </button>
-          </div>
+            </Button>
+          </Box>
 
           {(tab === "menu" || tab === "attendance") && load === "loading" && (
-            <p role="status" className="empty">
-              Đang tải nguồn kế hoạch…
-            </p>
+            <OperationalState
+              variant="information"
+              title="Đang tải nguồn kế hoạch…"
+            />
           )}
           {(tab === "menu" || tab === "attendance") && load === "error" && (
-            <div role="alert" className="command-outcome danger">
-              <p>{notice}</p>
-              <button type="button" onClick={() => void refresh()}>
-                Thử tải lại
-              </button>
-            </div>
+            <OperationalState
+              variant="system-error"
+              title={notice ?? "Không thể tải nguồn kế hoạch."}
+              onAuthoritativeRefresh={() => void refresh()}
+            />
           )}
 
           {tab === "menu" && load !== "error" && (
@@ -1614,5 +1650,19 @@ export function PlanningInputsWorkbench({
         </>
       )}
     </div>
+  );
+}
+
+export function PlanningInputsWorkbench(
+  props: ComponentProps<typeof PlanningInputsWorkbenchView>,
+) {
+  return (
+    <MantineProvider
+      theme={atlasTheme}
+      forceColorScheme="light"
+      env={import.meta.env.MODE === "test" ? "test" : "default"}
+    >
+      <PlanningInputsWorkbenchView {...props} />
+    </MantineProvider>
   );
 }

@@ -38,7 +38,7 @@ zero APIs
 zero capabilities, roles or scopes
 zero lifecycle states or business events
 zero business read-model fields
-zero dependencies
+only the D-033-approved Mantine foundation dependencies: `@mantine/core`, `@mantine/hooks`, and required official Vite/PostCSS build support
 ```
 
 ## 3. Two-use rule
@@ -82,7 +82,7 @@ Define only the semantic custom properties required by the selected components:
 - table header, row and selection states;
 - content width and breakpoints.
 
-Do not introduce a CSS framework, CSS-in-JS runtime, utility framework or design-system package.
+D-033 supersedes the previous no-UI-framework restriction only for the exact bounded Mantine 9 foundation (`@mantine/core`, `@mantine/hooks`) and its required official Vite/PostCSS build support. Do not introduce another CSS framework, CSS-in-JS runtime, utility framework or design-system package.
 
 Do not rewrite the entire stylesheet. Add clear token/component sections and preserve unrelated modules.
 
@@ -232,7 +232,7 @@ UI-QUALITY-01 must not:
 
 - create or connect hosted Supabase;
 - add deployment tooling;
-- add a UI framework, grid, global state library or CSS runtime;
+- add another UI framework, grid, global state library or CSS runtime beyond the exact D-033-approved Mantine foundation;
 - build unused primitives;
 - redesign all Planning tabs;
 - change backend eligibility, disabled codes or confirmations;

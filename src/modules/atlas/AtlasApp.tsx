@@ -1,4 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import {
+  AppShell,
+  Box,
+  Burger,
+  Divider,
+  Group,
+  MantineProvider,
+  NativeSelect,
+  NavLink,
+  Stack,
+  Text,
+} from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { atlasTheme } from "../../theme";
 import { DishRecipeAdminWorkbench } from "../admin/DishRecipeAdminWorkbench";
 import { IngredientSupplierAdminWorkbench } from "../admin/IngredientSupplierAdminWorkbench";
 import { SchoolAdminWorkbench } from "../admin/SchoolAdminWorkbench";
@@ -24,7 +38,7 @@ import {
 import { createReviewRecipeAdjustmentApi } from "./recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createRecipeApi, type RecipeApi } from "./recipes/recipeApi";
 import { createReviewRecipeApi } from "./recipes/reviewRecipeApi";
-import { PlanningInputsWorkbench } from "./planning-inputs/PlanningInputsWorkbench";
+import { PlanningInputsWorkbenchView as PlanningInputsWorkbench } from "./planning-inputs/PlanningInputsWorkbench";
 import {
   createPlanningInputsApi,
   type PlanningInputsApi,
@@ -50,6 +64,7 @@ import {
   type ConfirmedNeedApi,
 } from "./planning-inputs/confirmed-needs/confirmedNeedApi";
 import { createReviewConfirmedNeedApi } from "./planning-inputs/confirmed-needs/reviewConfirmedNeedApi";
+import { OperationalState, WorkbenchHeader } from "./WorkbenchComponents";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
   ATLAS_REVIEW_NOTICE,
@@ -142,67 +157,80 @@ const REVIEW_SCENARIOS: {
 function AtlasNavigation({
   active,
   onNavigate,
+  onNavigateComplete,
 }: {
   active: MasterDataPageId;
   onNavigate: (page: MasterDataPageId) => void;
+  onNavigateComplete?: () => void;
 }) {
+  const navigate = (page: MasterDataPageId) => {
+    onNavigate(page);
+    onNavigateComplete?.();
+  };
+
   return (
-    <aside className="atlas-sidebar">
-      <div className="atlas-brand">
-        <span>OPS ERP</span>
-        <strong>Atlas</strong>
-        <small>Điều hành suất ăn học đường</small>
-      </div>
-      <nav aria-label="Điều hướng Atlas">
-        <button type="button" className="nav-future" disabled>
-          <span>Tổng quan</span>
-          <small>Chưa triển khai</small>
-        </button>
+    <Stack className="atlas-sidebar" component="aside" gap={0}>
+      <Stack className="atlas-brand" gap={2}>
+        <Text component="span">OPS ERP</Text>
+        <Text component="strong">Atlas</Text>
+        <Text component="small">Điều hành suất ăn học đường</Text>
+      </Stack>
+      <Stack component="nav" aria-label="Điều hướng Atlas" gap={4}>
+        <NavLink
+          renderRoot={(props) => <button {...props} type="button" disabled />}
+          label="Tổng quan"
+          description="Chưa triển khai"
+          disabled
+        />
 
-        <div className="nav-group">
-          <span>Dữ liệu gốc</span>
-          <button
+        <Stack className="nav-group" gap={3}>
+          <Text component="span">Dữ liệu gốc</Text>
+          <NavLink
+            component="button"
             type="button"
-            className={active === "customers-schools" ? "active" : ""}
-            onClick={() => onNavigate("customers-schools")}
-          >
-            Trường học
-          </button>
-          <button
+            label="Trường học"
+            active={active === "customers-schools"}
+            onClick={() => navigate("customers-schools")}
+          />
+          <NavLink
+            component="button"
             type="button"
-            className={active === "ingredients-units" ? "active" : ""}
-            onClick={() => onNavigate("ingredients-units")}
-          >
-            Nguyên liệu và Nhà cung ứng
-          </button>
-          <button
+            label="Nguyên liệu và Nhà cung ứng"
+            active={active === "ingredients-units"}
+            onClick={() => navigate("ingredients-units")}
+          />
+          <NavLink
+            component="button"
             type="button"
-            className={active === "recipes" ? "active" : ""}
-            onClick={() => onNavigate("recipes")}
-          >
-            Công thức
-          </button>
-        </div>
+            label="Công thức"
+            active={active === "recipes"}
+            onClick={() => navigate("recipes")}
+          />
+        </Stack>
 
-        <div className="nav-group">
-          <span>Lập nhu cầu</span>
-          <button
+        <Divider className="atlas-nav-divider" />
+        <Stack className="nav-group" gap={3}>
+          <Text component="span">Lập nhu cầu</Text>
+          <NavLink
+            component="button"
             type="button"
-            className={active === "planning-inputs" ? "active" : ""}
-            onClick={() => onNavigate("planning-inputs")}
-          >
-            Nguồn kế hoạch
-          </button>
-        </div>
+            label="Nguồn kế hoạch"
+            active={active === "planning-inputs"}
+            onClick={() => navigate("planning-inputs")}
+          />
+        </Stack>
 
         {["Kế hoạch mua hàng", "Kho"].map((label) => (
-          <button type="button" className="nav-future" disabled key={label}>
-            <span>{label}</span>
-            <small>Chưa triển khai</small>
-          </button>
+          <NavLink
+            renderRoot={(props) => <button {...props} type="button" disabled />}
+            label={label}
+            description="Chưa triển khai"
+            disabled
+            key={label}
+          />
         ))}
-      </nav>
-    </aside>
+      </Stack>
+    </Stack>
   );
 }
 
@@ -236,33 +264,33 @@ function MasterDataPage({
   const planningPage = page === "planning-inputs";
   return (
     <main className="atlas-page master-data-page">
-      <header className="master-data-page-heading">
-        <span className="page-kicker">
-          {planningPage
+      <WorkbenchHeader
+        eyebrow={
+          planningPage
             ? "Lập nhu cầu"
             : recipePage
               ? "Quản trị công thức"
-              : "Dữ liệu gốc"}
-        </span>
-        <h1>
-          {planningPage
+              : "Dữ liệu gốc"
+        }
+        title={
+          planningPage
             ? "Nguồn kế hoạch"
             : recipePage
               ? "Công thức"
               : schoolPage
                 ? "Trường học"
-                : "Nguyên liệu và Nhà cung ứng"}
-        </h1>
-        <p>
-          {planningPage
+                : "Nguyên liệu và Nhà cung ứng"
+        }
+        context={
+          planningPage
             ? "Quản lý thực đơn tuần và sĩ số theo đúng tuần phục vụ, với xem trước, xác thực, phê duyệt và lịch sử bất biến."
             : recipePage
               ? "Quản lý món ăn, phạm vi công thức chung/theo loại trường, phiên bản BOM bất biến, sao chép và nhập workbook có đối soát."
               : schoolPage
                 ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
-                : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."}
-        </p>
-      </header>
+                : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."
+        }
+      />
 
       {planningPage ? (
         <PlanningInputsWorkbench
@@ -328,32 +356,73 @@ function AtlasShell({
   onReviewScenarioChange?: (scenario: AtlasReviewScenario) => void;
 }) {
   const [active, setActive] = useState<MasterDataPageId>(initialPage);
+  const [mobileNavigationOpened, mobileNavigation] = useDisclosure(false);
+  const mobileNavigationButtonRef = useRef<HTMLButtonElement>(null);
+
+  const completeNavigation = () => {
+    if (!mobileNavigationOpened) return;
+
+    mobileNavigation.close();
+    mobileNavigationButtonRef.current?.focus();
+  };
 
   return (
-    <div className="atlas-shell">
-      <AtlasNavigation active={active} onNavigate={setActive} />
-      <div className="atlas-content">
+    <AppShell
+      className="atlas-shell"
+      header={{ height: { base: 56, sm: 0 } }}
+      navbar={{
+        width: 252,
+        breakpoint: "sm",
+        collapsed: { mobile: !mobileNavigationOpened },
+      }}
+      padding={0}
+      withBorder={false}
+    >
+      <AppShell.Header className="atlas-mobile-header" hiddenFrom="sm">
+        <Group h="100%" px="md" justify="space-between">
+          <Box className="atlas-mobile-brand">
+            <Text component="span">OPS ERP</Text>
+            <Text component="strong">Atlas</Text>
+          </Box>
+          <Burger
+            ref={mobileNavigationButtonRef}
+            opened={mobileNavigationOpened}
+            onClick={mobileNavigation.toggle}
+            aria-label={
+              mobileNavigationOpened
+                ? "Đóng điều hướng Atlas"
+                : "Mở điều hướng Atlas"
+            }
+          />
+        </Group>
+      </AppShell.Header>
+      <AppShell.Navbar className="atlas-navbar">
+        <AtlasNavigation
+          active={active}
+          onNavigate={setActive}
+          onNavigateComplete={completeNavigation}
+        />
+      </AppShell.Navbar>
+      <AppShell.Main className="atlas-content">
         {mode === "review" ? (
-          <header className="atlas-review-bar">
-            <strong role="status">{ATLAS_REVIEW_NOTICE}</strong>
-            <label>
-              Tình huống xem thử
-              <select
-                value={reviewScenario}
-                onChange={(event) =>
-                  onReviewScenarioChange?.(
-                    event.target.value as AtlasReviewScenario,
-                  )
-                }
-              >
-                {REVIEW_SCENARIOS.map((scenario) => (
-                  <option key={scenario.value} value={scenario.value}>
-                    {scenario.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </header>
+          <Box component="header" className="atlas-review-bar">
+            <OperationalState
+              variant="read-only"
+              title={ATLAS_REVIEW_NOTICE}
+              compact
+            />
+            <NativeSelect
+              className="atlas-review-scenario"
+              label="Tình huống xem thử"
+              value={reviewScenario}
+              data={REVIEW_SCENARIOS}
+              onChange={(event) =>
+                onReviewScenarioChange?.(
+                  event.currentTarget.value as AtlasReviewScenario,
+                )
+              }
+            />
+          </Box>
         ) : (
           session &&
           connection && (
@@ -381,8 +450,8 @@ function AtlasShell({
           confirmedNeedApi={confirmedNeedApi}
           mode={mode}
         />
-      </div>
-    </div>
+      </AppShell.Main>
+    </AppShell>
   );
 }
 
@@ -499,7 +568,7 @@ function ConnectedAtlasApp({
   );
 }
 
-export function AtlasApp({
+export function AtlasAppView({
   initialPage = "customers-schools",
   reviewMode = isAtlasReviewMode(),
   connection,
@@ -512,5 +581,17 @@ export function AtlasApp({
       initialPage={initialPage}
       connection={connection ?? connectionFactory()}
     />
+  );
+}
+
+export function AtlasApp(props: AtlasAppProps) {
+  return (
+    <MantineProvider
+      theme={atlasTheme}
+      forceColorScheme="light"
+      env={import.meta.env.MODE === "test" ? "test" : "default"}
+    >
+      <AtlasAppView {...props} />
+    </MantineProvider>
   );
 }
