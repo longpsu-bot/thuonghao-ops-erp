@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
   fireEvent,
-  render,
+  render as testingLibraryRender,
   screen,
   waitFor,
   within,
@@ -10,6 +10,25 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasApp } from "./AtlasApp";
 import { ATLAS_REVIEW_NOTICE } from "./review/reviewMode";
+import type { ReactNode } from "react";
+
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+function render(children: ReactNode) {
+  return testingLibraryRender(children);
+}
 
 afterEach(cleanup);
 
@@ -65,8 +84,33 @@ describe("Atlas master-data shell", () => {
     }
   });
 
+  it("returns focus to the mobile navigation control after navigation", () => {
+    render(<AtlasApp reviewMode />);
+
+    const openNavigation = screen.getByRole("button", {
+      name: "Mở điều hướng Atlas",
+    });
+    fireEvent.click(openNavigation);
+    fireEvent.click(screen.getByRole("button", { name: "Nguồn kế hoạch" }));
+
+    expect(
+      screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
+    ).toHaveFocus();
+  });
+
   it("adds the sixth Confirmed Need tab without adding a navigation item", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Nguồn kế hoạch" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Điều hành nguồn kế hoạch theo tuần",
+      }),
+    ).toBeVisible();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
 
     const navigation = screen.getByRole("navigation", {
       name: "Điều hướng Atlas",

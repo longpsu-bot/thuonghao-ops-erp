@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { AtlasApp } from "./AtlasApp";
+import { AtlasAppView as AtlasApp } from "./AtlasApp";
 
 const meta = {
   title: "Atlas/Dữ liệu gốc",
@@ -30,6 +30,14 @@ export const IngredientsAndSuppliers: Story = {
   name: "Nguyên liệu và Nhà cung ứng",
   args: {
     initialPage: "ingredients-units",
+    reviewMode: true,
+  },
+};
+
+export const PlanningInputs: Story = {
+  name: "Nguồn kế hoạch · Mantine shell proof",
+  args: {
+    initialPage: "planning-inputs",
     reviewMode: true,
   },
 };

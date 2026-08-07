@@ -22,9 +22,10 @@
 Goal: prove the connected Atlas Admin and Planning path in one separate hosted staging environment and make the current operator experience coherent before adding Purchase Handoff.
 
 - ✅ ATLAS-ACT-01A hosted staging and connected-UI architecture — accepted on 06/08/2026; [architecture](atlas-act-01-hosted-staging-ui-consolidation-contract.md), [decision](../decisions/decision-atlas-act-01-hosted-staging-ui-consolidation.md), [UI standard](../ui/atlas-ui-quality-standard.md), [current UI inventory](../ui/atlas-current-ui-inventory.md), and [task record](../implementation-tasks/TASK-ATLAS-ACT-01A-hosted-staging-ui-architecture.md)
-- 🟡 ATLAS-ACT-01B repository staging readiness — implemented on bounded branch with explicit local/staging configuration, live OPS denylist, protected manual deployment, exact-head CI reuse, read-only hosted verification and runbook; pending review/merge and creates no hosted project during implementation
-- ⬜ Separate Atlas staging project — current Supabase cost and organization confirmation required immediately before creation; existing OPS project `qnthofvccilhnefdcxnz` is forbidden as a target
-- ⬜ UI-QUALITY-01 shared shell and proven primitives — no new dependencies or business behavior
+- ✅ ATLAS-ACT-01B repository staging readiness — complete through PR #175, merged at `9b9f8af3609507876d69a55cc529e9bd17aa56db`; staging-verifier correction complete through PR #176, merged at `844b4640df28f666736f018b8ef81d63fb78d2be`
+- ✅ Separate Atlas staging project — project `rnzxmxiiqgtdevzregff` exists and protected deployment succeeded at `844b4640df28f666736f018b8ef81d63fb78d2be`; existing OPS project `qnthofvccilhnefdcxnz` remains forbidden as a target
+- ✅ D-033 Mantine 9 UI component foundation — accepted for connected Atlas presentation; Atlas retains business semantics and authority
+- 🟡 UI-QUALITY-01 Mantine foundation, shared shell and proven primitives — implementation in progress on the bounded branch with no business behavior change
 - ⬜ UI-QUALITY-02 connected Planning consolidation — Weekly Menu through Confirmed Need release
 - ⬜ UI-QUALITY-03 connected Admin consolidation — Schools, Ingredients/Suppliers and Dishes/Recipes
 - ⬜ Hosted operator/security rehearsal — Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios

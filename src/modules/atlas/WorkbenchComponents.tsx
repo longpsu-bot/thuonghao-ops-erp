@@ -1,5 +1,147 @@
 import { useState, type ReactNode } from "react";
+import { Alert, Button, Group, Stack, Text, Title } from "@mantine/core";
 import type { AtlasPage } from "./atlasConfig";
+
+type HeadingLevel = 1 | 2 | 3;
+
+export function WorkbenchHeader({
+  eyebrow,
+  title,
+  context,
+  status,
+  actions,
+  headingLevel = 1,
+}: {
+  eyebrow?: string;
+  title: string;
+  context?: ReactNode;
+  status?: ReactNode;
+  actions?: ReactNode;
+  headingLevel?: HeadingLevel;
+}) {
+  return (
+    <Group
+      component="header"
+      className="workbench-header"
+      align="flex-start"
+      justify="space-between"
+      gap="lg"
+      wrap="wrap"
+    >
+      <Stack className="workbench-header-copy" gap={4}>
+        {eyebrow && (
+          <Text className="workbench-header-eyebrow" component="span">
+            {eyebrow}
+          </Text>
+        )}
+        <Title order={headingLevel}>{title}</Title>
+        {context && (
+          <Text className="workbench-header-context" component="div">
+            {context}
+          </Text>
+        )}
+      </Stack>
+      {(status || actions) && (
+        <Stack className="workbench-header-aside" gap="xs" align="flex-end">
+          {status}
+          {actions && (
+            <Group className="workbench-header-actions" gap="xs">
+              {actions}
+            </Group>
+          )}
+        </Stack>
+      )}
+    </Group>
+  );
+}
+
+type OperationalStateVariant =
+  | "information"
+  | "warning"
+  | "blocking"
+  | "unknown-outcome"
+  | "read-only"
+  | "access-denied"
+  | "system-error";
+
+const operationalStatePresentation: Record<
+  OperationalStateVariant,
+  { color: string; label: string; urgent: boolean }
+> = {
+  information: { color: "blue", label: "Thông tin", urgent: false },
+  warning: { color: "yellow", label: "Cần chú ý", urgent: false },
+  blocking: { color: "red", label: "Đang bị chặn", urgent: true },
+  "unknown-outcome": {
+    color: "violet",
+    label: "Kết quả chưa xác định",
+    urgent: false,
+  },
+  "read-only": { color: "atlasGold", label: "Chỉ xem", urgent: false },
+  "access-denied": {
+    color: "red",
+    label: "Không có quyền truy cập",
+    urgent: true,
+  },
+  "system-error": { color: "red", label: "Lỗi hệ thống", urgent: true },
+};
+
+export function OperationalState({
+  variant,
+  title,
+  children,
+  onAuthoritativeRefresh,
+  compact = false,
+}: {
+  variant: OperationalStateVariant;
+  title: string;
+  children?: ReactNode;
+  onAuthoritativeRefresh?: () => void;
+  compact?: boolean;
+}) {
+  const presentation = operationalStatePresentation[variant];
+
+  return (
+    <Alert
+      className={`operational-state ${variant}${compact ? " compact" : ""}`}
+      color={presentation.color}
+      variant="light"
+      radius="sm"
+      role={presentation.urgent ? "alert" : "status"}
+      aria-live={presentation.urgent ? "assertive" : "polite"}
+      aria-atomic="true"
+      title={
+        <Stack gap={2}>
+          <Text className="operational-state-label" component="span">
+            {presentation.label}
+          </Text>
+          <Text component="strong" fw={700}>
+            {title}
+          </Text>
+        </Stack>
+      }
+    >
+      {children && <div>{children}</div>}
+      {variant === "unknown-outcome" && (
+        <Text component="p" mt={4}>
+          Chưa thể xác nhận thao tác đã thành công hay thất bại. Không tự động
+          gửi lại thao tác. Hãy tải lại dữ liệu có thẩm quyền trước khi quyết
+          định bước tiếp theo.
+        </Text>
+      )}
+      {onAuthoritativeRefresh && (
+        <Button
+          type="button"
+          variant="outline"
+          color={presentation.color}
+          mt="sm"
+          onClick={onAuthoritativeRefresh}
+        >
+          Tải lại dữ liệu có thẩm quyền
+        </Button>
+      )}
+    </Alert>
+  );
+}
 
 export function Chip({
   children,
