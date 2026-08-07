@@ -12,6 +12,10 @@ on:
     paths:
       - ".github/workflows/supabase-integration.yml"
       - "supabase/**"
+      - "scripts/atlas-staging-contract.mjs"
+      - "scripts/atlas-staging-contract.test.mjs"
+      - "scripts/deploy-atlas-staging.mjs"
+      - "scripts/verify-atlas-staging.mjs"
       - "scripts/local-supabase-status.mjs"
       - "scripts/local-supabase-status.test.mjs"
       - "scripts/provision-local-atlas-identity.mjs"
@@ -44,6 +48,10 @@ on:
     paths:
       - ".github/workflows/supabase-integration.yml"
       - "supabase/**"
+      - "scripts/atlas-staging-contract.mjs"
+      - "scripts/atlas-staging-contract.test.mjs"
+      - "scripts/deploy-atlas-staging.mjs"
+      - "scripts/verify-atlas-staging.mjs"
       - "scripts/local-supabase-status.mjs"
       - "scripts/local-supabase-status.test.mjs"
       - "scripts/provision-local-atlas-identity.mjs"

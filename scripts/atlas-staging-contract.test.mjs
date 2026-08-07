@@ -247,6 +247,39 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).not.toContain("Supabase Full Integration");
     expect(workflow).not.toMatch(/production/i);
   });
+
+  it("classifies every Atlas staging boundary script for Supabase certification", () => {
+    const workflow = readFileSync(
+      ".github/workflows/supabase-integration.yml",
+      "utf8",
+    );
+    const pullRequestPaths = workflow.slice(
+      workflow.indexOf("  pull_request:"),
+      workflow.indexOf("\n  push:"),
+    );
+    const pushPaths = workflow.slice(
+      workflow.indexOf("  push:"),
+      workflow.indexOf("\n  workflow_dispatch:"),
+    );
+    const stagingBoundaryPaths = [
+      "scripts/atlas-staging-contract.mjs",
+      "scripts/atlas-staging-contract.test.mjs",
+      "scripts/deploy-atlas-staging.mjs",
+      "scripts/verify-atlas-staging.mjs",
+    ];
+
+    for (const eventPaths of [pullRequestPaths, pushPaths]) {
+      const classifiedPaths = eventPaths
+        .split(/\r?\n/)
+        .map((line) => /^\s+- "([^"]+)"$/.exec(line)?.[1])
+        .filter(Boolean);
+      for (const path of stagingBoundaryPaths) {
+        expect(classifiedPaths.filter((value) => value === path)).toHaveLength(
+          1,
+        );
+      }
+    }
+  });
 });
 
 describe("Atlas staging hosted evidence", () => {
