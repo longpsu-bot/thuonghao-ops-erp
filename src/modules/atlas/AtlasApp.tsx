@@ -12,6 +12,13 @@ import {
   Text,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import {
+  ClipboardText,
+  Database,
+  House,
+  ShoppingCart,
+  Warehouse,
+} from "@phosphor-icons/react";
 import { atlasTheme } from "../../theme";
 import { DishRecipeAdminWorkbench } from "../admin/DishRecipeAdminWorkbench";
 import { IngredientSupplierAdminWorkbench } from "../admin/IngredientSupplierAdminWorkbench";
@@ -78,6 +85,7 @@ export type MasterDataPageId =
 
 type AtlasAppProps = {
   initialPage?: MasterDataPageId;
+  initialReviewScenario?: AtlasReviewScenario;
   reviewMode?: boolean;
   connection?: AtlasSupabaseClientResult;
   connectionFactory?: () => AtlasSupabaseClientResult;
@@ -179,12 +187,16 @@ function AtlasNavigation({
         <NavLink
           renderRoot={(props) => <button {...props} type="button" disabled />}
           label="Tổng quan"
+          leftSection={<House aria-hidden="true" size={19} weight="regular" />}
           description="Chưa triển khai"
           disabled
         />
 
         <Stack className="nav-group" gap={3}>
-          <Text component="span">Dữ liệu gốc</Text>
+          <Group className="nav-group-label" gap={8}>
+            <Database aria-hidden="true" size={16} weight="regular" />
+            <Text component="span">Dữ liệu gốc</Text>
+          </Group>
           <NavLink
             component="button"
             type="button"
@@ -210,7 +222,10 @@ function AtlasNavigation({
 
         <Divider className="atlas-nav-divider" />
         <Stack className="nav-group" gap={3}>
-          <Text component="span">Lập nhu cầu</Text>
+          <Group className="nav-group-label" gap={8}>
+            <ClipboardText aria-hidden="true" size={16} weight="regular" />
+            <Text component="span">Lập nhu cầu</Text>
+          </Group>
           <NavLink
             component="button"
             type="button"
@@ -220,15 +235,24 @@ function AtlasNavigation({
           />
         </Stack>
 
-        {["Kế hoạch mua hàng", "Kho"].map((label) => (
-          <NavLink
-            renderRoot={(props) => <button {...props} type="button" disabled />}
-            label={label}
-            description="Chưa triển khai"
-            disabled
-            key={label}
-          />
-        ))}
+        <NavLink
+          renderRoot={(props) => <button {...props} type="button" disabled />}
+          label="Kế hoạch mua hàng"
+          description="Chưa triển khai"
+          leftSection={
+            <ShoppingCart aria-hidden="true" size={19} weight="regular" />
+          }
+          disabled
+        />
+        <NavLink
+          renderRoot={(props) => <button {...props} type="button" disabled />}
+          label="Kho"
+          description="Chưa triển khai"
+          leftSection={
+            <Warehouse aria-hidden="true" size={19} weight="regular" />
+          }
+          disabled
+        />
       </Stack>
     </Stack>
   );
@@ -369,16 +393,16 @@ function AtlasShell({
   return (
     <AppShell
       className="atlas-shell"
-      header={{ height: { base: 56, sm: 0 } }}
+      header={{ height: { base: 56, md: 0 } }}
       navbar={{
         width: 252,
-        breakpoint: "sm",
+        breakpoint: "md",
         collapsed: { mobile: !mobileNavigationOpened },
       }}
       padding={0}
       withBorder={false}
     >
-      <AppShell.Header className="atlas-mobile-header" hiddenFrom="sm">
+      <AppShell.Header className="atlas-mobile-header" hiddenFrom="md">
         <Group h="100%" px="md" justify="space-between">
           <Box className="atlas-mobile-brand">
             <Text component="span">OPS ERP</Text>
@@ -455,8 +479,16 @@ function AtlasShell({
   );
 }
 
-function ReviewAtlasApp({ initialPage }: { initialPage: MasterDataPageId }) {
-  const [scenario, setScenario] = useState<AtlasReviewScenario>("ready");
+function ReviewAtlasApp({
+  initialPage,
+  initialReviewScenario,
+}: {
+  initialPage: MasterDataPageId;
+  initialReviewScenario: AtlasReviewScenario;
+}) {
+  const [scenario, setScenario] = useState<AtlasReviewScenario>(
+    initialReviewScenario,
+  );
   const api = useMemo(() => createReviewMasterDataApi(scenario), [scenario]);
   const recipeApi = useMemo(() => createReviewRecipeApi(scenario), [scenario]);
   const recipeAdjustmentApi = useMemo(
@@ -570,11 +602,18 @@ function ConnectedAtlasApp({
 
 export function AtlasAppView({
   initialPage = "customers-schools",
+  initialReviewScenario = "ready",
   reviewMode = isAtlasReviewMode(),
   connection,
   connectionFactory = getAtlasSupabaseClient,
 }: AtlasAppProps) {
-  if (reviewMode) return <ReviewAtlasApp initialPage={initialPage} />;
+  if (reviewMode)
+    return (
+      <ReviewAtlasApp
+        initialPage={initialPage}
+        initialReviewScenario={initialReviewScenario}
+      />
+    );
 
   return (
     <ConnectedAtlasApp

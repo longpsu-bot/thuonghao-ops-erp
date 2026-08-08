@@ -63,7 +63,19 @@ environment/prototype notice where applicable
 → secondary/support actions
 ```
 
-## 4. Shared component rule
+## 4. Atlas Modern Operations visual architecture
+
+D-034 defines Atlas as modern, calm, layered, precise and professional B2B operations software for institutional catering. Every connected page preserves four distinct levels: dark ink-navy navigation, clean white/light global header, warm-stone workspace and a white rounded operational workbench with a subtle border and restrained elevation.
+
+Operational pages are table-first. The primary workbench dominates the available area and uses tabs, toolbar rows, dividers, compact internal surfaces and bounded evidence detail instead of nested decorative cards. Cards are signals only for backend-supported completeness, attention, blocking or a critical decision total; zero to three is the normal target and zero is valid. Do not add trading-dashboard statistics, decorative deltas, trend arrows or a KPI wall.
+
+Controls use an approximately 6 px radius; summary/attention surfaces and primary workbenches use approximately 8–10 px. Elevation stays low except for true overlays. Navy expresses structure and primary interaction authority; copper is a restrained brand/active cue; green is success only; amber/orange is warning; red is blocking or destructive; blue is information/focus; ordinary UI remains predominantly neutral. Typography retains Inter, Segoe UI and Arial with compact 32–36 px controls and readable Vietnamese density.
+
+Use only regular-outline Phosphor icons from `@phosphor-icons/react`, normally 18–20 px for top-level navigation, 16–18 px for actions and 14–16 px inline. Icons inherit color, support scanning, do not replace navigation/action text and require accessible naming when used alone. No unofficial or generated Thượng Hảo logo is permitted.
+
+At 360 px, 768 px and 1280 px, preserve navigation → page context → attention → workbench → action priority without page-wide mobile overflow or cardifying dense tables. Verify focus on white, warm workspace, dark/selected navigation and navy actions; use a light dark-surface focus color where required. Status includes text and, where helpful, icon plus semantic color. Warning text uses a dark accessible shade, copper is not used for small low-contrast text, and reduced motion, semantic headings, labels and keyboard order remain mandatory.
+
+## 5. Shared component rule
 
 Do not prebuild a catalogue of components merely because one might be useful later.
 
@@ -83,7 +95,7 @@ Loading, empty, blocking, stale, unknown-outcome, read-only and access-denied pr
 
 Reuse or evolve the existing shared module. Do not create parallel primitive families.
 
-## 5. State presentation
+## 6. State presentation
 
 ### Loading
 
@@ -116,7 +128,7 @@ The UI states that completion is uncertain, disables further mutation and requir
 
 Read-only state explains whether editing is unavailable because of lifecycle, capability, stale/unknown outcome, archived history or missing prerequisite. It must not look like a broken form.
 
-## 6. Actions and confirmation
+## 7. Actions and confirmation
 
 Action labels use a specific verb and business object or consequence.
 
@@ -137,7 +149,7 @@ Rules:
 - focus enters and returns from dialogs correctly;
 - consequence text states when a likely downstream action does **not** occur.
 
-## 7. Tables and operational density
+## 8. Tables and operational density
 
 Tables should order information as:
 
@@ -162,7 +174,7 @@ Requirements:
 
 Do not add a third-party grid or virtualizer in this phase.
 
-## 8. Language, date and quantity
+## 9. Language, date and quantity
 
 - Operator UI is Vietnamese.
 - User-facing dates use `dd/mm/yyyy`.
@@ -172,7 +184,7 @@ Do not add a third-party grid or virtualizer in this phase.
 - Zero, missing and unavailable are distinct.
 - Values and Unit remain visually adjacent.
 
-## 9. Responsive and accessibility acceptance
+## 10. Responsive and accessibility acceptance
 
 Review widths:
 
@@ -197,7 +209,7 @@ Acceptance requires:
 
 Automated checks support but do not replace keyboard review.
 
-## 10. Review evidence
+## 11. Review evidence
 
 Shared primitives need focused stories or fixtures for the states they actually support, including long Vietnamese text and narrow containers.
 
@@ -213,22 +225,22 @@ Each UI-quality PR must publish:
 - keyboard/focus review;
 - explicit zero business migration/API/contract delta.
 
-## 11. Certification scorecard
+## 12. Certification scorecard
 
-| Dimension | Acceptance |
-| --- | --- |
-| Current state | Exactly one authoritative current-state treatment. |
-| Action authority | Backend-provided eligibility and disabled reason. |
+| Dimension          | Acceptance                                                                   |
+| ------------------ | ---------------------------------------------------------------------------- |
+| Current state      | Exactly one authoritative current-state treatment.                           |
+| Action authority   | Backend-provided eligibility and disabled reason.                            |
 | Operational states | Loading, empty, blocker, warning, stale, unknown and read-only are explicit. |
-| Actions | Primary/secondary/destructive hierarchy is consistent. |
-| Tables | Bounded, semantic and legible at reviewed widths. |
-| Language | Vietnamese labels, dates and domain terms are consistent. |
-| Accessibility | Keyboard, focus, labels, semantics and contrast pass review. |
-| Evidence | Actor, time, version and history are presented consistently. |
-| Scope | No unapproved backend or business behavior changed. |
-| Verification | Tests, build and visual review pass. |
+| Actions            | Primary/secondary/destructive hierarchy is consistent.                       |
+| Tables             | Bounded, semantic and legible at reviewed widths.                            |
+| Language           | Vietnamese labels, dates and domain terms are consistent.                    |
+| Accessibility      | Keyboard, focus, labels, semantics and contrast pass review.                 |
+| Evidence           | Actor, time, version and history are presented consistently.                 |
+| Scope              | No unapproved backend or business behavior changed.                          |
+| Verification       | Tests, build and visual review pass.                                         |
 
-## 12. Prohibited shortcuts
+## 13. Prohibited shortcuts
 
 UI quality work must not:
 
