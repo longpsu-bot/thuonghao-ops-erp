@@ -268,7 +268,10 @@ export function mondayOf(date: Date) {
   const result = new Date(date);
   const day = result.getDay();
   result.setDate(result.getDate() - (day === 0 ? 6 : day - 1));
-  return result.toISOString().slice(0, 10);
+  const year = result.getFullYear();
+  const month = String(result.getMonth() + 1).padStart(2, "0");
+  const localDate = String(result.getDate()).padStart(2, "0");
+  return `${year}-${month}-${localDate}`;
 }
 
 export function viDate(value: string) {

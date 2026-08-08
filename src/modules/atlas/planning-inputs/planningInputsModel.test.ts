@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../connection/atlasRpc";
 import {
   mondayOf,
@@ -8,8 +8,31 @@ import {
 } from "./planningInputsModel";
 
 describe("Planning input model", () => {
-  it("formats an explicit Monday service week and Vietnamese dates", () => {
-    expect(mondayOf(new Date("2026-08-06T10:00:00Z"))).toBe("2026-08-03");
+  beforeAll(() => {
+    vi.stubEnv("TZ", "Asia/Ho_Chi_Minh");
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("maps an ordinary local weekday to its Monday", () => {
+    expect(mondayOf(new Date(2026, 7, 6, 10))).toBe("2026-08-03");
+  });
+
+  it("maps local Sunday back to the preceding Monday", () => {
+    expect(mondayOf(new Date(2026, 7, 9, 12))).toBe("2026-08-03");
+  });
+
+  it("preserves an early-morning local Monday across UTC rollover", () => {
+    expect(mondayOf(new Date(2026, 7, 9, 0, 30))).toBe("2026-08-03");
+  });
+
+  it("returns a zero-padded YYYY-MM-DD date", () => {
+    expect(mondayOf(new Date(2026, 0, 7, 10))).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("formats Vietnamese dates", () => {
     expect(viDate("2026-08-03")).toBe("03/08/2026");
   });
 
