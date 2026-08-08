@@ -71,6 +71,14 @@ describe("PANTRY-02 workbench", () => {
       "0.000001",
     );
     expect(screen.getByLabelText("Ghi chú dòng 1")).toBeRequired();
+    expect(screen.getByLabelText("Nhập và lưu Pantry")).toBeVisible();
+    expect(screen.getByLabelText("Thao tác vòng đời Pantry")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
+    ).toHaveAccessibleName("Xem trước có thẩm quyền");
+    expect(
+      screen.getByRole("button", { name: "Lưu bản nháp" }),
+    ).toHaveAccessibleName("Lưu bản nháp");
     expect(
       screen
         .getAllByRole("option")
@@ -151,9 +159,9 @@ describe("PANTRY-02 workbench", () => {
     expect(
       screen.queryByRole("combobox", { name: "Trường dòng 1" }),
     ).toBeNull();
-    expect(
-      screen.getByText(/Đã chọn xác nhận không có bổ sung/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Đã chọn xác nhận không có bổ sung/)).toHaveClass(
+      "pantry-zero-state",
+    );
     expect(validate).toBeDisabled();
     const save = screen.getByRole("button", { name: "Lưu bản nháp" });
     expect(save).toBeDisabled();

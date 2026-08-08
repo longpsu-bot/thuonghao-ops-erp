@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { JsonValue } from "../../connection/atlasRpc";
 import { Chip, Panel } from "../../WorkbenchComponents";
@@ -288,7 +289,10 @@ export function PantryWorkbench({
         </p>
       )}
       {notice && (
-        <p className="operator-notice" role="status">
+        <p
+          className={`operator-notice${load === "error" ? " danger" : ""}`}
+          role={load === "error" ? "alert" : "status"}
+        >
           {notice}
         </p>
       )}
@@ -308,101 +312,89 @@ export function PantryWorkbench({
           </Chip>
         }
       >
-        <section className="planning-source-summary" aria-label="Nguồn Pantry">
-          <span>
-            Tuần:{" "}
-            <b>
-              {dateVi(data.week_start)} – {dateVi(data.week_end)}
-            </b>
-          </span>
-          <span>
-            Nguồn: <b>{data.source_method.source_name}</b>
-          </span>
-          <span>
-            Phiên bản: <b>{data.batch?.version ?? "—"}</b>
-          </span>
-          <span>
-            Chữ ký: <code>{data.batch?.source_signature ?? "—"}</code>
-          </span>
-        </section>
-
         <PantryIssues
           title="Lỗi danh mục"
           issues={data.catalog_issues.blockers}
           tone="danger"
         />
-
-        <div className="planning-toolbar pantry-toolbar">
-          <button
-            type="button"
-            onClick={addRow}
-            disabled={saving || noAdditions || !data.allowed_actions.can_save}
-          >
-            Thêm dòng Pantry
-          </button>
-          <label className="pantry-zero-confirmation">
-            <input
-              type="checkbox"
-              checked={noAdditions}
-              disabled={saving || !data.allowed_actions.can_save}
-              onChange={(event) => {
-                const checked = event.target.checked;
-                if (
-                  checked &&
-                  rows.length > 0 &&
-                  !window.confirm(
-                    "Xác nhận không có bổ sung sẽ loại mọi dòng đang nhập?",
-                  )
-                )
-                  return;
-                setNoAdditions(checked);
-                if (checked) setRows([]);
-                setPreview(null);
-                setDirty(true);
-              }}
-            />
-            Xác nhận tuần này không có bổ sung
-          </label>
-          <button
-            type="button"
-            onClick={() => void previewRows()}
-            disabled={saving || !data.allowed_actions.can_preview}
-          >
-            Xem trước có thẩm quyền
-          </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={
-              saving || !data.allowed_actions.can_save || !preview?.can_save
-            }
-          >
-            Lưu bản nháp
-          </button>
-          <button
-            type="button"
-            onClick={() => void lifecycle("validate")}
-            disabled={saving || dirty || !data.allowed_actions.can_validate}
-          >
-            Xác thực
-          </button>
-          <button
-            type="button"
-            onClick={() => void lifecycle("approve")}
-            disabled={saving || dirty || !data.allowed_actions.can_approve}
-          >
-            Phê duyệt
-          </button>
-        </div>
+        <PantryIssues
+          title="Cảnh báo danh mục"
+          issues={data.catalog_issues.warnings}
+          tone="warning"
+        />
 
         {dirty && (
-          <p className="operator-notice warning" role="status">
+          <p className="planning-dirty-notice" role="status">
             Có thay đổi chưa lưu. Hãy xem trước và lưu trước khi xác thực.
           </p>
         )}
 
+        <div
+          className="planning-workbench-toolbar pantry-toolbar"
+          aria-label="Nhập và lưu Pantry"
+        >
+          <div className="planning-toolbar-group pantry-entry-actions">
+            <span className="planning-toolbar-label">Nội dung bổ sung</span>
+            <button
+              type="button"
+              className="secondary"
+              onClick={addRow}
+              disabled={saving || noAdditions || !data.allowed_actions.can_save}
+            >
+              <Plus size={17} aria-hidden="true" />
+              Thêm dòng Pantry
+            </button>
+            <label className="pantry-zero-confirmation">
+              <input
+                type="checkbox"
+                checked={noAdditions}
+                disabled={saving || !data.allowed_actions.can_save}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  if (
+                    checked &&
+                    rows.length > 0 &&
+                    !window.confirm(
+                      "Xác nhận không có bổ sung sẽ loại mọi dòng đang nhập?",
+                    )
+                  )
+                    return;
+                  setNoAdditions(checked);
+                  if (checked) setRows([]);
+                  setPreview(null);
+                  setDirty(true);
+                }}
+              />
+              Xác nhận tuần này không có bổ sung
+            </label>
+          </div>
+          <div className="planning-toolbar-group planning-local-actions">
+            <span className="planning-toolbar-label">Bản nháp cục bộ</span>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => void previewRows()}
+              disabled={saving || !data.allowed_actions.can_preview}
+            >
+              <Eye size={17} aria-hidden="true" />
+              Xem trước có thẩm quyền
+            </button>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => void save()}
+              disabled={
+                saving || !data.allowed_actions.can_save || !preview?.can_save
+              }
+            >
+              <FloppyDisk size={17} aria-hidden="true" />
+              Lưu bản nháp
+            </button>
+          </div>
+        </div>
+
         {rows.length === 0 ? (
-          <p className="empty">
+          <p className={`empty${noAdditions ? " pantry-zero-state" : ""}`}>
             {noAdditions
               ? "Đã chọn xác nhận không có bổ sung; hãy xem trước trước khi lưu."
               : "Chưa có dòng Pantry."}
@@ -597,6 +589,30 @@ export function PantryWorkbench({
           </div>
         )}
 
+        <details className="planning-evidence">
+          <summary>Bằng chứng nguồn Pantry</summary>
+          <section
+            className="planning-source-summary planning-source-summary-inline"
+            aria-label="Nguồn Pantry"
+          >
+            <span>
+              Tuần:{" "}
+              <b>
+                {dateVi(data.week_start)} – {dateVi(data.week_end)}
+              </b>
+            </span>
+            <span>
+              Nguồn: <b>{data.source_method.source_name}</b>
+            </span>
+            <span>
+              Phiên bản: <b>{data.batch?.version ?? "—"}</b>
+            </span>
+            <span>
+              Chữ ký: <code>{data.batch?.source_signature ?? "—"}</code>
+            </span>
+          </section>
+        </details>
+
         {preview && (
           <section
             className="planning-preview-summary"
@@ -622,30 +638,6 @@ export function PantryWorkbench({
               issues={preview.issues.warnings}
               tone="warning"
             />
-          </section>
-        )}
-
-        {data.batch?.pantry_need_batch_status === "APPROVED" && (
-          <section className="pantry-reopen">
-            <label>
-              Lý do mở lại
-              <textarea
-                value={reopenReason}
-                onChange={(event) => setReopenReason(event.target.value)}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => void lifecycle("reopen")}
-              disabled={
-                saving ||
-                dirty ||
-                !data.allowed_actions.can_reopen ||
-                reopenReason.trim().length === 0
-              }
-            >
-              Mở lại
-            </button>
           </section>
         )}
 
@@ -695,6 +687,52 @@ export function PantryWorkbench({
             ))}
           </ul>
         </details>
+        <div
+          className="planning-lifecycle-actions pantry-lifecycle-actions"
+          aria-label="Thao tác vòng đời Pantry"
+        >
+          <span className="planning-action-heading">Quyết định vòng đời</span>
+          <button
+            type="button"
+            className="primary"
+            onClick={() => void lifecycle("validate")}
+            disabled={saving || dirty || !data.allowed_actions.can_validate}
+          >
+            Xác thực
+          </button>
+          <button
+            type="button"
+            className="commitment"
+            onClick={() => void lifecycle("approve")}
+            disabled={saving || dirty || !data.allowed_actions.can_approve}
+          >
+            Phê duyệt
+          </button>
+          {data.batch?.pantry_need_batch_status === "APPROVED" && (
+            <section className="pantry-reopen">
+              <label>
+                Lý do mở lại
+                <textarea
+                  value={reopenReason}
+                  onChange={(event) => setReopenReason(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => void lifecycle("reopen")}
+                disabled={
+                  saving ||
+                  dirty ||
+                  !data.allowed_actions.can_reopen ||
+                  reopenReason.trim().length === 0
+                }
+              >
+                Mở lại
+              </button>
+            </section>
+          )}
+        </div>
       </Panel>
     </div>
   );

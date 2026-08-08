@@ -7,6 +7,13 @@ import {
   type ComponentProps,
 } from "react";
 import { Box, Button, MantineProvider, Paper } from "@mantine/core";
+import {
+  ArrowClockwise,
+  CloudArrowDown,
+  Eye,
+  FloppyDisk,
+  UploadSimple,
+} from "@phosphor-icons/react";
 import { atlasTheme } from "../../../theme";
 import type { AtlasAuthState } from "../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
@@ -208,30 +215,36 @@ function SourceSummary({
   if (!source) return null;
   const latest = source.approval_history[0];
   return (
-    <section className="planning-source-summary" aria-label="Bằng chứng nguồn">
-      <div>
-        <span>Nguồn</span>
-        <b>{source.source_name}</b>
-      </div>
-      <div>
-        <span>Chữ ký nguồn</span>
-        <code>{source.source_signature}</code>
-      </div>
-      <div>
-        <span>Phiên bản / dòng</span>
-        <b>
-          {source.version} / {source.row_count}
-        </b>
-      </div>
-      <div>
-        <span>Phê duyệt gần nhất</span>
-        <b>
-          {latest
-            ? `${latest.approved_by_display_name} · ${new Date(latest.approved_at).toLocaleString("vi-VN")}`
-            : "Chưa có"}
-        </b>
-      </div>
-    </section>
+    <details className="planning-evidence">
+      <summary>Bằng chứng nguồn hiện tại</summary>
+      <section
+        className="planning-source-summary"
+        aria-label="Bằng chứng nguồn"
+      >
+        <div>
+          <span>Nguồn</span>
+          <b>{source.source_name}</b>
+        </div>
+        <div>
+          <span>Chữ ký nguồn</span>
+          <code>{source.source_signature}</code>
+        </div>
+        <div>
+          <span>Phiên bản / dòng</span>
+          <b>
+            {source.version} / {source.row_count}
+          </b>
+        </div>
+        <div>
+          <span>Phê duyệt gần nhất</span>
+          <b>
+            {latest
+              ? `${latest.approved_by_display_name} · ${new Date(latest.approved_at).toLocaleString("vi-VN")}`
+              : "Chưa có"}
+          </b>
+        </div>
+      </section>
+    </details>
   );
 }
 
@@ -898,7 +911,7 @@ export function PlanningInputsWorkbenchView({
       <WorkbenchHeader
         eyebrow="Nguồn đầu vào"
         title="Điều hành nguồn kế hoạch theo tuần"
-        context="Chọn tuần phục vụ, theo dõi tình trạng nguồn và làm việc trong từng khu vực nghiệp vụ bên dưới."
+        context="Chọn tuần phục vụ và làm việc theo từng nguồn nghiệp vụ."
         headingLevel={2}
       />
       <Paper component="section" className="planning-context-bar" withBorder>
@@ -916,7 +929,13 @@ export function PlanningInputsWorkbenchView({
             {viDate(data.week_start)} – {viDate(data.week_end)}
           </b>
         </div>
-        <Button type="button" onClick={() => void refresh()} disabled={saving}>
+        <Button
+          type="button"
+          variant="outline"
+          leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
+          onClick={() => void refresh()}
+          disabled={saving}
+        >
           Tải lại có thẩm quyền
         </Button>
       </Paper>
@@ -959,7 +978,11 @@ export function PlanningInputsWorkbenchView({
             </Chip>
           </Paper>
 
-          <Box className="planning-tabs" role="tablist">
+          <Box
+            className="planning-tabs"
+            role="tablist"
+            aria-label="Quy trình Lập nhu cầu"
+          >
             <Button
               type="button"
               role="tab"
@@ -1046,102 +1069,158 @@ export function PlanningInputsWorkbenchView({
                 </Chip>
               }
             >
-              <div className="planning-toolbar">
-                <label>
-                  Tìm trường
-                  <input
-                    type="search"
-                    value={schoolSearch}
-                    onChange={(event) => setSchoolSearch(event.target.value)}
-                    placeholder="Mã hoặc tên trường"
-                  />
-                </label>
-                <label>
-                  Ngày phục vụ
-                  <select
-                    value={serviceDateFilter}
-                    onChange={(event) =>
-                      setServiceDateFilter(event.target.value)
+              {dirty && (
+                <p className="planning-dirty-notice" role="status">
+                  Có thay đổi chưa lưu trong nguồn đang làm việc.
+                </p>
+              )}
+              {importErrors.map((error) => (
+                <p className="operator-notice danger" key={error}>
+                  {error}
+                </p>
+              ))}
+              <Issues
+                title="Lỗi chặn"
+                issues={
+                  menuPreview?.issues.blockers ??
+                  data.weekly_menu?.issues.blockers ??
+                  []
+                }
+                tone="danger"
+              />
+              <Issues
+                title="Cảnh báo"
+                issues={[
+                  ...(menuPreview?.issues.warnings ??
+                    data.weekly_menu?.issues.warnings ??
+                    []),
+                  ...importWarnings.map((warning) => ({
+                    code: warning,
+                    message: warning,
+                    source_row_reference: null,
+                  })),
+                ]}
+                tone="warning"
+              />
+              <div
+                className="planning-workbench-toolbar"
+                aria-label="Bộ lọc, nguồn và thao tác thực đơn"
+              >
+                <div className="planning-toolbar-group planning-filter-group">
+                  <span className="planning-toolbar-label">Phạm vi lưới</span>
+                  <label>
+                    Tìm trường
+                    <input
+                      type="search"
+                      value={schoolSearch}
+                      onChange={(event) => setSchoolSearch(event.target.value)}
+                      placeholder="Mã hoặc tên trường"
+                    />
+                  </label>
+                  <label>
+                    Ngày phục vụ
+                    <select
+                      value={serviceDateFilter}
+                      onChange={(event) =>
+                        setServiceDateFilter(event.target.value)
+                      }
+                    >
+                      {serviceDates.map((date) => (
+                        <option value={date} key={date}>
+                          {viDate(date)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="planning-toolbar-group planning-source-group">
+                  <span className="planning-toolbar-label">Nạp nguồn</span>
+                  <label className="file-action">
+                    <UploadSimple size={17} aria-hidden="true" />
+                    Chọn workbook
+                    <input
+                      type="file"
+                      accept=".xlsx"
+                      onChange={(event) =>
+                        void onMenuFile(event.target.files?.[0])
+                      }
+                    />
+                  </label>
+                  <label>
+                    Nguồn Google Sheet
+                    <select
+                      aria-label="Nguồn Google Sheet"
+                      value={selectedGoogleSourceId}
+                      onChange={(event) =>
+                        setSelectedGoogleSourceId(event.target.value)
+                      }
+                    >
+                      {data.google_sheet_sources.length === 0 && (
+                        <option value="">Chưa có nguồn cấu hình</option>
+                      )}
+                      {data.google_sheet_sources.map((source) => (
+                        <option
+                          value={source.weekly_menu_google_source_id}
+                          key={source.weekly_menu_google_source_id}
+                        >
+                          {source.source_name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void onGoogleSync()}
+                    disabled={
+                      googleFetch.status === "fetching" ||
+                      !selectedGoogleSourceId
                     }
                   >
-                    {serviceDates.map((date) => (
-                      <option value={date} key={date}>
-                        {viDate(date)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="file-action">
-                  Chọn workbook thực đơn
-                  <input
-                    type="file"
-                    accept=".xlsx"
-                    onChange={(event) =>
-                      void onMenuFile(event.target.files?.[0])
-                    }
-                  />
-                </label>
-                <label>
-                  Nguồn Google Sheet
-                  <select
-                    aria-label="Nguồn Google Sheet"
-                    value={selectedGoogleSourceId}
-                    onChange={(event) =>
-                      setSelectedGoogleSourceId(event.target.value)
-                    }
+                    <CloudArrowDown size={17} aria-hidden="true" />
+                    {googleFetch.status === "fetching"
+                      ? "Đang đồng bộ…"
+                      : "Đồng bộ từ Google Sheet"}
+                  </button>
+                </div>
+                <div className="planning-toolbar-group planning-local-actions">
+                  <span className="planning-toolbar-label">
+                    Bản nháp cục bộ
+                  </span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void previewMenu()}
+                    disabled={saving || !menuRows.length}
                   >
-                    {data.google_sheet_sources.length === 0 && (
-                      <option value="">Chưa có nguồn cấu hình</option>
-                    )}
-                    {data.google_sheet_sources.map((source) => (
-                      <option
-                        value={source.weekly_menu_google_source_id}
-                        key={source.weekly_menu_google_source_id}
-                      >
-                        {source.source_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void onGoogleSync()}
-                  disabled={
-                    googleFetch.status === "fetching" || !selectedGoogleSourceId
-                  }
-                >
-                  {googleFetch.status === "fetching"
-                    ? "Đang đồng bộ…"
-                    : "Đồng bộ từ Google Sheet"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void previewMenu()}
-                  disabled={saving || !menuRows.length}
-                >
-                  Xem trước
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void saveMenu()}
-                  disabled={saving || !menuRows.length}
-                >
-                  Lưu bản nháp
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuRows(activeMenuRows(data.weekly_menu));
-                    setDirty(false);
-                    setMenuPreview(null);
-                    setMenuSourceType("MANUAL");
-                    setSourceName("Chỉnh sửa trực tiếp Atlas");
-                    setGoogleFetch({ status: "idle" });
-                  }}
-                  disabled={!dirty}
-                >
-                  Hủy thay đổi
-                </button>
+                    <Eye size={17} aria-hidden="true" />
+                    Xem trước
+                  </button>
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => void saveMenu()}
+                    disabled={saving || !menuRows.length}
+                  >
+                    <FloppyDisk size={17} aria-hidden="true" />
+                    Lưu bản nháp
+                  </button>
+                  <button
+                    type="button"
+                    className="quiet"
+                    onClick={() => {
+                      setMenuRows(activeMenuRows(data.weekly_menu));
+                      setDirty(false);
+                      setMenuPreview(null);
+                      setMenuSourceType("MANUAL");
+                      setSourceName("Chỉnh sửa trực tiếp Atlas");
+                      setGoogleFetch({ status: "idle" });
+                    }}
+                    disabled={!dirty}
+                  >
+                    Hủy thay đổi
+                  </button>
+                </div>
               </div>
               {data.google_sheet_sources.length === 0 && (
                 <p className="operator-notice warning">
@@ -1150,53 +1229,6 @@ export function PlanningInputsWorkbenchView({
                   Bạn vẫn có thể nhập tệp .xlsx.
                 </p>
               )}
-              <SourceSummary source={data.weekly_menu} />
-              {googleFetch.status === "success" && (
-                <section
-                  className="planning-source-summary"
-                  aria-label="Nguồn Google Sheet vừa tải"
-                >
-                  <span>
-                    Nguồn: <b>{googleFetch.sourceName}</b>
-                  </span>
-                  <span>
-                    Trang tính: <b>{googleFetch.sheetName}</b>
-                  </span>
-                  <span>
-                    Tải lúc:{" "}
-                    <b>
-                      {googleFetch.fetchedAt
-                        ? new Date(googleFetch.fetchedAt).toLocaleString(
-                            "vi-VN",
-                          )
-                        : "—"}
-                    </b>
-                  </span>
-                  <span>
-                    Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
-                  </span>
-                </section>
-              )}
-              {browserChecksum && (
-                <p className="planning-checksum">
-                  SHA-256 trình duyệt: <code>{browserChecksum}</code>
-                </p>
-              )}
-              {importErrors.map((error) => (
-                <p className="operator-notice danger" key={error}>
-                  {error}
-                </p>
-              ))}
-              {importWarnings.map((warning) => (
-                <p className="operator-notice warning" key={warning}>
-                  {warning}
-                </p>
-              ))}
-              <PreviewSummary
-                preview={menuPreview}
-                kind="menu"
-                schools={data.schools}
-              />
               {unmappedDishes.length > 0 && (
                 <p className="operator-notice danger">
                   Có {unmappedDishes.length} món ăn đang hoạt động chưa được gán
@@ -1301,27 +1333,62 @@ export function PlanningInputsWorkbenchView({
                   </CompactTable>
                 </div>
               )}
-              <Issues
-                title="Lỗi chặn"
-                issues={
-                  menuPreview?.issues.blockers ??
-                  data.weekly_menu?.issues.blockers ??
-                  []
-                }
-                tone="danger"
-              />
-              <Issues
-                title="Cảnh báo"
-                issues={
-                  menuPreview?.issues.warnings ??
-                  data.weekly_menu?.issues.warnings ??
-                  []
-                }
-                tone="warning"
-              />
-              <div className="planning-lifecycle-actions">
+              <div className="planning-support-region">
+                <SourceSummary source={data.weekly_menu} />
+                {googleFetch.status === "success" && (
+                  <details className="planning-evidence">
+                    <summary>Bằng chứng Google Sheet vừa tải</summary>
+                    <section
+                      className="planning-source-summary planning-source-summary-inline"
+                      aria-label="Nguồn Google Sheet vừa tải"
+                    >
+                      <span>
+                        Nguồn: <b>{googleFetch.sourceName}</b>
+                      </span>
+                      <span>
+                        Trang tính: <b>{googleFetch.sheetName}</b>
+                      </span>
+                      <span>
+                        Tải lúc:{" "}
+                        <b>
+                          {googleFetch.fetchedAt
+                            ? new Date(googleFetch.fetchedAt).toLocaleString(
+                                "vi-VN",
+                              )
+                            : "—"}
+                        </b>
+                      </span>
+                      <span>
+                        Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
+                      </span>
+                    </section>
+                  </details>
+                )}
+                {browserChecksum && (
+                  <p className="planning-checksum">
+                    SHA-256 trình duyệt: <code>{browserChecksum}</code>
+                  </p>
+                )}
+                <PreviewSummary
+                  preview={menuPreview}
+                  kind="menu"
+                  schools={data.schools}
+                />
+                <History entries={data.weekly_menu?.approval_history ?? []} />
+                <ChangeTimeline
+                  entries={data.weekly_menu?.change_history ?? []}
+                />
+              </div>
+              <div
+                className="planning-lifecycle-actions"
+                aria-label="Thao tác vòng đời thực đơn"
+              >
+                <span className="planning-action-heading">
+                  Quyết định vòng đời
+                </span>
                 <button
                   type="button"
+                  className="primary"
                   disabled={
                     saving || data.weekly_menu?.weekly_menu_status !== "DRAFT"
                   }
@@ -1331,6 +1398,7 @@ export function PlanningInputsWorkbenchView({
                 </button>
                 <button
                   type="button"
+                  className="commitment"
                   disabled={
                     saving ||
                     data.weekly_menu?.weekly_menu_status !== "VALIDATED"
@@ -1351,6 +1419,7 @@ export function PlanningInputsWorkbenchView({
                     />
                     <button
                       type="button"
+                      className="secondary"
                       disabled={saving || !reopenNote.trim()}
                       onClick={() => void menuAction("reopenMenu")}
                     >
@@ -1359,10 +1428,6 @@ export function PlanningInputsWorkbenchView({
                   </>
                 )}
               </div>
-              <History entries={data.weekly_menu?.approval_history ?? []} />
-              <ChangeTimeline
-                entries={data.weekly_menu?.change_history ?? []}
-              />
             </Panel>
           )}
 
@@ -1376,45 +1441,80 @@ export function PlanningInputsWorkbenchView({
                 </Chip>
               }
             >
-              <div className="planning-toolbar">
-                <button
-                  type="button"
-                  onClick={() => void createDefaults()}
-                  disabled={saving}
-                >
-                  Tạo từ sĩ số mặc định
-                </button>
-                <label className="file-action">
-                  Chọn workbook sĩ số
-                  <input
-                    type="file"
-                    accept=".xlsx"
-                    onChange={(event) =>
-                      void onAttendanceFile(event.target.files?.[0])
-                    }
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void previewAttendance()}
-                  disabled={saving || !attendanceRows.length}
-                >
-                  Xem trước
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void saveAttendance()}
-                  disabled={saving || !attendanceRows.length}
-                >
-                  Lưu bản nháp
-                </button>
-              </div>
-              <SourceSummary source={data.attendance} />
-              {browserChecksum && (
-                <p className="planning-checksum">
-                  SHA-256 trình duyệt: <code>{browserChecksum}</code>
+              {dirty && (
+                <p className="planning-dirty-notice" role="status">
+                  Có thay đổi chưa lưu trong nguồn đang làm việc.
                 </p>
               )}
+              <Issues
+                title="Lỗi chặn"
+                issues={
+                  attendancePreview?.issues.blockers ??
+                  data.attendance?.issues.blockers ??
+                  []
+                }
+                tone="danger"
+              />
+              <Issues
+                title="Cảnh báo"
+                issues={[
+                  ...(attendancePreview?.issues.warnings ??
+                    data.attendance?.issues.warnings ??
+                    []),
+                  ...data.readiness.warnings,
+                ]}
+                tone="warning"
+              />
+              <div
+                className="planning-workbench-toolbar attendance-toolbar"
+                aria-label="Nguồn và thao tác sĩ số"
+              >
+                <div className="planning-toolbar-group planning-source-group">
+                  <span className="planning-toolbar-label">Nạp nguồn</span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void createDefaults()}
+                    disabled={saving}
+                  >
+                    Tạo từ sĩ số mặc định
+                  </button>
+                  <label className="file-action">
+                    <UploadSimple size={17} aria-hidden="true" />
+                    Chọn workbook
+                    <input
+                      type="file"
+                      accept=".xlsx"
+                      onChange={(event) =>
+                        void onAttendanceFile(event.target.files?.[0])
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="planning-toolbar-group planning-local-actions">
+                  <span className="planning-toolbar-label">
+                    Bản nháp cục bộ
+                  </span>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void previewAttendance()}
+                    disabled={saving || !attendanceRows.length}
+                  >
+                    <Eye size={17} aria-hidden="true" />
+                    Xem trước
+                  </button>
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => void saveAttendance()}
+                    disabled={saving || !attendanceRows.length}
+                  >
+                    <FloppyDisk size={17} aria-hidden="true" />
+                    Lưu bản nháp
+                  </button>
+                </div>
+              </div>
               <details className="attendance-paste">
                 <summary>Dán hàng loạt từ bảng tính</summary>
                 <p>Thứ tự cột: trường, ngày, suất học sinh, suất giáo viên.</p>
@@ -1516,11 +1616,6 @@ export function PlanningInputsWorkbenchView({
                   </CompactTable>
                 </div>
               )}
-              <PreviewSummary
-                preview={attendancePreview}
-                kind="attendance"
-                schools={data.schools}
-              />
               {attendanceRows.length > 0 && (
                 <p className="planning-attendance-totals">
                   Tổng: <b>{attendanceTotals.students}</b> suất học sinh ·{" "}
@@ -1529,28 +1624,33 @@ export function PlanningInputsWorkbenchView({
                   suất
                 </p>
               )}
-              <Issues
-                title="Lỗi chặn"
-                issues={
-                  attendancePreview?.issues.blockers ??
-                  data.attendance?.issues.blockers ??
-                  []
-                }
-                tone="danger"
-              />
-              <Issues
-                title="Cảnh báo"
-                issues={[
-                  ...(attendancePreview?.issues.warnings ??
-                    data.attendance?.issues.warnings ??
-                    []),
-                  ...data.readiness.warnings,
-                ]}
-                tone="warning"
-              />
-              <div className="planning-lifecycle-actions">
+              <div className="planning-support-region">
+                <SourceSummary source={data.attendance} />
+                {browserChecksum && (
+                  <p className="planning-checksum">
+                    SHA-256 trình duyệt: <code>{browserChecksum}</code>
+                  </p>
+                )}
+                <PreviewSummary
+                  preview={attendancePreview}
+                  kind="attendance"
+                  schools={data.schools}
+                />
+                <History entries={data.attendance?.approval_history ?? []} />
+                <ChangeTimeline
+                  entries={data.attendance?.change_history ?? []}
+                />
+              </div>
+              <div
+                className="planning-lifecycle-actions"
+                aria-label="Thao tác vòng đời sĩ số"
+              >
+                <span className="planning-action-heading">
+                  Quyết định vòng đời
+                </span>
                 <button
                   type="button"
+                  className="primary"
                   disabled={
                     saving || data.attendance?.attendance_status !== "DRAFT"
                   }
@@ -1560,6 +1660,7 @@ export function PlanningInputsWorkbenchView({
                 </button>
                 <button
                   type="button"
+                  className="commitment"
                   disabled={
                     saving || data.attendance?.attendance_status !== "VALIDATED"
                   }
@@ -1579,6 +1680,7 @@ export function PlanningInputsWorkbenchView({
                     />
                     <button
                       type="button"
+                      className="secondary"
                       disabled={saving || !reopenNote.trim()}
                       onClick={() => void attendanceAction("reopenAttendance")}
                     >
@@ -1587,8 +1689,6 @@ export function PlanningInputsWorkbenchView({
                   </>
                 )}
               </div>
-              <History entries={data.attendance?.approval_history ?? []} />
-              <ChangeTimeline entries={data.attendance?.change_history ?? []} />
             </Panel>
           )}
 
