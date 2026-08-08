@@ -12,6 +12,10 @@
 
 **Attendance alignment correction head:** `f53bc1d9ea6196e03c9fce1507dac195eae0d52f`
 
+**Reviewed PR head before workflow-safety correction:** `f3fbf46e764cfb28088f90f51a1587488434d09a`
+
+**Planning-source workflow-safety correction head:** `87919be9b26088767f4070c5a76663f6193e67cb`
+
 **Decision authority:** D-033 and [D-034 — Atlas Modern Operations UI Visual Architecture](../decisions/decision-atlas-modern-operations-ui-visual-architecture.md)
 
 ## Exact changed-path manifest
@@ -51,9 +55,11 @@ After, catalog blockers and warnings lead; dirty state is compact and explicit; 
 
 ## Action hierarchy
 
-Each local draft area presents `Lưu bản nháp` as the primary local action. Preview, import/sync, defaults, add-row, cancel and reopen remain visually secondary. Validate/approve/reopen are separated from source and draft controls; commitment-producing actions retain explicit Vietnamese text. Eligibility, sequencing and command calls are unchanged.
+Each local draft area presents `Lưu bản nháp` as the primary local action only while local changes exist. Preview, import/sync, defaults, add-row, cancel and reopen remain visually secondary. Validate/approve/reopen are separated from source and draft controls; commitment-producing actions retain explicit Vietnamese text. Backend eligibility, sequencing and command calls are unchanged.
 
-Rendered lifecycle review covered the actual enabled states. Weekly Menu and Attendance expose preview/save for draft editing, validate for a saved draft, approve for a validated source, and a reason-gated reopen control after approval. Pantry enforces dirty draft → authoritative preview → save → validate → approve → reason-gated reopen; explicit no-additions follows the same preview/save gate. The retained Weekly Menu and Attendance eligibility allows the strong local save and validate actions to be enabled together in `DRAFT`; their separate labelled regions keep editing and lifecycle intent understandable, but the simultaneous emphasis is recorded as deferred product debt below.
+Rendered lifecycle review covered the actual enabled states. In dirty Weekly Menu and Attendance drafts, save is actionable and validate is unavailable; after save or local cancel, save becomes unavailable and validate becomes the primary lifecycle action allowed by the existing saved `DRAFT`. Attendance and Pantry now expose `Hủy thay đổi`, which restores their currently loaded authoritative rows and clears only local working state. Pantry retains dirty draft → authoritative preview → save → validate → approve → reason-gated reopen; explicit no-additions follows the same dirty protection and preview/save gate.
+
+All six Planning destination buttons use one guarded tab-change handler. Rejected discard confirmation leaves the current tab and local edit intact; confirmed discard clears only the current source's local state before navigation; clean navigation does not prompt. The week-change and existing `beforeunload` guards now include parent-reported Pantry dirty state.
 
 ## Cards and metrics
 
@@ -65,31 +71,31 @@ Existing `@phosphor-icons/react@2.1.10` regular-outline icons are reused only fo
 
 ## Responsive findings
 
-- **1280 px:** the four D-034 shell/workspace/workbench layers remain distinct; source and local-action groups are compact; Weekly Menu, Attendance and Pantry tables dominate their scrolled work surfaces; Attendance quantity columns 3–5 are right-aligned, Pantry Delivery Location/Ingredient/Unit are normally aligned, and Pantry quantity remains right-aligned; zero cards were added; document overflow is 0 px.
-- **768 px:** week context remains one compact row, blockers precede ordinary controls, the six workflow destinations retain bounded horizontal scrolling, toolbars wrap by semantic group, and tables retain local scrolling. Attendance row identity remains sticky while its numeric columns stay right-aligned; Pantry columns 3–5 remain non-numeric and its quantity stays right-aligned; document overflow is 0 px.
-- **360 px:** context, attention, toolbar groups, work surface, evidence and lifecycle controls retain that operator order. The six Planning destinations remain text-labelled in a bounded horizontal tab strip; actions stack without becoming a repeated card feed; blockers remain above controls; Menu and Attendance row identity stays sticky during local table scrolling; Pantry no-additions remains a labelled valid-evidence state; document overflow is 0 px. The resulting distance to the table and Pantry row-identity limitation are recorded as bounded debt below.
+- **1280 px:** the four D-034 shell/workspace/workbench layers remain distinct; source and local-action groups are compact; Weekly Menu, Attendance and Pantry tables dominate their scrolled work surfaces; the dirty notice remains a compact 33 px text signal; dirty Menu/Attendance show enabled save with disabled validate; Pantry remains preview-gated; document overflow is 0 px.
+- **768 px:** week context remains one compact row, blockers precede ordinary controls, the six workflow destinations retain bounded horizontal scrolling, toolbars wrap by semantic group, and tables retain local scrolling. The dirty notice remains 33 px high, cancellation remains in the local draft group, and save/validate hierarchy remains unambiguous; document overflow is 0 px.
+- **360 px:** context, attention, toolbar groups, work surface, evidence and lifecycle controls retain that operator order. The six destinations remain visible Vietnamese text in a bounded horizontal tab strip; the dirty notice wraps to a restrained 51 px rather than becoming an alarm card; local actions stack in editing order; disabled lifecycle actions remain visibly subordinate; no KPI/card UI was added; document overflow is 0 px. The accepted pre-table distance and Pantry row-identity limitation remain bounded debt below.
 
 Tables intentionally retain bounded local horizontal scrolling at all narrow widths. Toolbars reorganize by semantic group and lifecycle actions stack by priority on mobile.
 
 ## Accessibility findings
 
-Semantic headings, table headers, labels and tab roles remain. The six workflow destinations have a named tablist. Toolbar and lifecycle regions have accessible labels; focus-visible outlines cover new controls and table-row focus; dirty notices remain polite status messages; blocked Pantry load is an explicit alert; issue status includes text and not color alone; decorative icons are hidden from assistive technology; and long Vietnamese labels wrap without converting business actions to icon-only controls. Keyboard review confirmed a visible approximately 3 px blue focus outline on the blocked Pantry retry action. Reduced-motion behavior remains inherited from the accepted D-034 shell.
+Semantic headings, table headers, labels and tab roles remain. The six workflow destinations have a named tablist and retain visible Vietnamese text. Toolbar and lifecycle regions have accessible labels; focus-visible outlines cover controls and table-row focus; dirty state is announced with text; disabled validation is visible beside the lifecycle heading; cancel remains a text-labelled business action; and no icon-only command was introduced. Rejected tab/week confirmations preserve selection, values and a sensible focused control. Browser/page exit uses the existing native `beforeunload` pattern without custom browser text. Keyboard review confirmed the existing approximately 3 px blue focus treatment on the new local-action path.
 
 ## Tests and validation
 
 Focused tests added/updated:
 
-- `PlanningInputsWorkbench.test.tsx`: all six destinations, source-workbench selection, lifecycle regions, dirty-state visibility, text-labelled business actions and preview/save gating.
-- `PantryWorkbench.test.tsx`: toolbar/lifecycle presentation, text-labelled icon-supported actions and explicit no-additions presentation distinct from ordinary empty data, while retaining existing authority, lifecycle and late-response coverage.
+- `PlanningInputsWorkbench.test.tsx`: all six destinations; dirty Menu save/validate hierarchy; rejected dirty tab navigation with preserved edit; clean navigation without confirmation; clean saved-draft validation; Attendance local cancel; parent-visible Pantry dirty state; Pantry tab/week rejection; Pantry-backed `beforeunload`; and explicit no-additions protection.
+- `PantryWorkbench.test.tsx`: dirty callback transitions, unmount cleanup, authoritative local cancel, preview/save/validate gating, explicit no-additions presentation, backend-derived fields and unchanged lifecycle/late-response behavior.
 
 Validation result:
 
 - `pnpm ops:workspace` — passed on the canonical checkout and required branch.
 - `pnpm format` — passed.
 - `pnpm typecheck` — passed.
-- Focused Planning source suites — 2 files / 10 tests passed.
+- Focused Planning source suites — 2 files / 16 tests passed.
 - Focused Atlas shell regression after restoring the exact Google sync label — 1 file / 13 tests passed.
-- `pnpm test` — 70 files / 445 tests passed.
+- `pnpm test` — 70 files / 451 tests passed.
 - `pnpm build` — passed with the existing non-blocking large-chunk advisory.
 - `pnpm build:review` — passed with the existing non-blocking large-chunk advisory.
 - `pnpm build-storybook` — passed with existing non-blocking plugin-timing and large-chunk advisories.
@@ -97,9 +103,9 @@ Validation result:
 
 ## UI Review Export
 
-Existing Atlas review stories expose Weekly Menu normal/warning/blocker, Attendance editable/warning, Pantry rows/no-additions/access-blocked and mobile Planning source states. Actual rendered review was repeated at 360, 768 and 1280 px against the local review adapter after the Attendance alignment correction. It confirmed the required column alignment, no page overflow, unchanged controls and lifecycle behavior, blocker-first ordering, subordinate evidence/history and no browser console warnings or errors.
+Existing Atlas review stories expose Weekly Menu normal/warning/blocker, Attendance editable/warning, Pantry rows/no-additions/access-blocked and mobile Planning source states. Actual rendered review was repeated at 360, 768 and 1280 px against the local review adapter after the workflow-safety correction. It confirmed explicit dirty state, rejected discard preservation, clean navigation without a prompt, authoritative local cancel, save/validate gating, Pantry preview/save/lifecycle authority, no page overflow, unchanged D-034 layering and no browser console warnings or errors.
 
-On reviewed implementation head `27fe55ab160aeed1b173a943fe9b6cb826d771d2`, draft PR #180 reported:
+On pre-correction head `f3fbf46e764cfb28088f90f51a1587488434d09a`, draft PR #180 reported:
 
 - **Frontend CI / Format, typecheck, test, build:** passed.
 - **UI Review Export / Build UI review artifact:** passed.
@@ -109,25 +115,29 @@ On reviewed implementation head `27fe55ab160aeed1b173a943fe9b6cb826d771d2`, draf
 
 ## Product/UI gate review
 
-**PRODUCT / WORKFLOW VERDICT: PASS WITH DEBT**
+**ARCHITECTURE / AUTHORITY: PASS**
 
-Each surface immediately identifies the week, source and authoritative status; current blockers/warnings precede source/editing controls; the table is followed by evidence/history and a distinct lifecycle decision region. Weekly Menu, Attendance and Pantry preserve the accepted business sequence. Debt: in Weekly Menu and Attendance `DRAFT`, unchanged backend/UI eligibility can leave `Lưu bản nháp` and `Xác thực` simultaneously enabled with strong styling, including after a local edit. Their labelled, vertically separated regions and dirty-state notice make the legitimate editing path clear enough for this bounded alignment amendment; changing eligibility or action styling was not one of the two authorized findings.
+The correction is confined to Application-layer local working state. Pantry reports a presentation-only dirty boolean to its parent; its business rows, authority, allowed actions and commands remain in `PantryWorkbench`. No state was moved globally and no backend contract, payload, lifecycle, permission or calculation changed.
 
-**LAYOUT VERDICT: PASS WITH DEBT**
+**PRODUCT / WORKFLOW: PASS**
+
+Each surface immediately identifies the week, source, authoritative status and local dirty state. Dirty Menu/Attendance validation is unavailable because it would act on the previously saved backend version; save or cancel clears local dirty state before validation becomes available. Pantry dirty state survives at the parent safety boundary, and tab, week and browser/page exit paths no longer silently discard it. Confirmed discard remains explicit and local only. The accepted business sequence is preserved.
+
+**LAYOUT: PASS WITH DEBT**
 
 Tables remain the dominant operational surfaces where rows exist; filters/source acquisition are compact; lifecycle controls are separated; evidence is subordinate and discoverable; no KPI/card structure was added. Debt: at 360 px, the required context, readiness, exceptions and source controls place the table below the initial viewport, especially for Weekly Menu, so the operator must scroll before row work. This follows the required information sequence and does not hide any action; shortening it requires a broader responsive composition decision outside this correction.
 
-**VISUAL DESIGN VERDICT: PASS**
+**VISUAL DESIGN: PASS**
 
 The dark navigation, white header, warm workspace and white workbench layers remain distinct; radius, elevation, density and typography follow D-034; copper is limited to active cues; semantic colors carry text; existing Phosphor icons support visible Vietnamese labels; and the result does not drift into dashboard cards, BI, Retool or old ERP styling.
 
-**ACCESSIBILITY / USABILITY VERDICT: PASS WITH DEBT**
+**ACCESSIBILITY / USABILITY: PASS WITH DEBT**
 
 Semantic headings, labels, table headers, named tabs, visible focus, text-plus-color status and local scrolling remain intact, and the alignment correction restores the semantic distinction between Pantry descriptive and numeric cells. Debt: Pantry's first columns are not sticky, so horizontal scrolling at 360/768 px can move school identity off-screen; Weekly Menu and Attendance preserve row identity with sticky row headers. This is pre-existing table structure, not introduced by the correction, and changing it would require a broader Pantry table redesign.
 
-**IMPLEMENTATION VERDICT: PASS**
+**IMPLEMENTATION: PASS**
 
-The correction adds one Attendance-specific semantic hook, changes only selector scope, preserves Pantry quantity alignment and introduces no data, column, model, calculation, API, lifecycle, permission or behavior change. Required local validation and rendered review passed.
+The correction adds a minimal optional Pantry dirty callback, bounded local reset helpers, one guarded tab handler, combined week/beforeunload protection and UI-only dirty gating. Focused and full regression suites, builds and rendered workflow review pass. No API/model/workbook/Supabase/Retool/dependency file changed.
 
 ## Exact deltas and exclusions
 
@@ -142,6 +152,6 @@ The correction adds one Attendance-specific semantic hook, changes only selector
 
 ## Deferred debt
 
-The three exact non-blocking product debts are the simultaneous strong save/validate eligibility in Weekly Menu and Attendance drafts, the long pre-table path on 360 px, and non-sticky Pantry row identity during narrow horizontal scrolling. None was introduced by this correction, and addressing them would exceed the instruction to fix exactly the Attendance alignment and implementation-record findings.
+The only accepted non-blocking product debts are the long pre-table path on 360 px and non-sticky Pantry row identity during narrow horizontal scrolling. Neither was introduced by this correction, and both were explicitly permitted to remain. The previous simultaneous save/validate and silent-unsaved-state findings are corrected and are not deferred debt.
 
 UI-QUALITY-02B Planning Input Readiness and Need Generation remain not started. UI-QUALITY-02C Confirmed Need remains not started. Their child workbenches were not materially modified. UI-QUALITY-03, hosted rehearsal and CMD-03 remain not started/deferred as recorded in the roadmap.
