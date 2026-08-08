@@ -421,6 +421,7 @@ export function PlanningInputsWorkbenchView({
   const [notice, setNotice] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pantryDirty, setPantryDirty] = useState(false);
+  const [readinessSelectionDirty, setReadinessSelectionDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [menuRows, setMenuRows] = useState<MenuLine[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceLine[]>([]);
@@ -500,11 +501,11 @@ export function PlanningInputsWorkbenchView({
   }, [data.google_sheet_sources]);
 
   useEffect(() => {
-    if (!dirty && !pantryDirty) return;
+    if (!dirty && !pantryDirty && !readinessSelectionDirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, pantryDirty]);
+  }, [dirty, pantryDirty, readinessSelectionDirty]);
 
   const discardMenuChanges = () => {
     setMenuRows(activeMenuRows(data.weekly_menu));
@@ -532,14 +533,17 @@ export function PlanningInputsWorkbenchView({
   const currentSourceDirty =
     tab === "pantry"
       ? pantryDirty
-      : tab === "menu" || tab === "attendance"
-        ? dirty
-        : false;
+      : tab === "readiness"
+        ? readinessSelectionDirty
+        : tab === "menu" || tab === "attendance"
+          ? dirty
+          : false;
 
   const discardCurrentSourceChanges = () => {
     if (tab === "menu") discardMenuChanges();
     if (tab === "attendance") discardAttendanceChanges();
     if (tab === "pantry") setPantryDirty(false);
+    if (tab === "readiness") setReadinessSelectionDirty(false);
   };
 
   const changeTab = (next: TabId) => {
@@ -557,11 +561,12 @@ export function PlanningInputsWorkbenchView({
 
   const changeWeek = (next: string) => {
     if (
-      (dirty || pantryDirty) &&
+      (dirty || pantryDirty || readinessSelectionDirty) &&
       !window.confirm("Bỏ các thay đổi chưa lưu để chuyển tuần?")
     )
       return;
-    if (dirty || pantryDirty) discardCurrentSourceChanges();
+    if (dirty || pantryDirty || readinessSelectionDirty)
+      discardCurrentSourceChanges();
     setWeekStart(next);
     setServiceDateFilter(next);
   };
@@ -1768,6 +1773,7 @@ export function PlanningInputsWorkbenchView({
               selectedWeekStart={weekStart}
               selectedWeekEnd={data.week_end}
               mode={mode}
+              onLocalSelectionDirtyChange={setReadinessSelectionDirty}
             />
           )}
 
