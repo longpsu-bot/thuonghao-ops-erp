@@ -420,6 +420,7 @@ export function PlanningInputsWorkbenchView({
   const [data, setData] = useState(() => emptyData(weekStart));
   const [notice, setNotice] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [pantryDirty, setPantryDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [menuRows, setMenuRows] = useState<MenuLine[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceLine[]>([]);
@@ -499,15 +500,68 @@ export function PlanningInputsWorkbenchView({
   }, [data.google_sheet_sources]);
 
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty && !pantryDirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  }, [dirty, pantryDirty]);
+
+  const discardMenuChanges = () => {
+    setMenuRows(activeMenuRows(data.weekly_menu));
+    setMenuPreview(null);
+    setMenuSourceType("MANUAL");
+    setSourceName("Chỉnh sửa trực tiếp Atlas");
+    setBrowserChecksum(null);
+    setImportErrors([]);
+    setImportWarnings([]);
+    setGoogleFetch({ status: "idle" });
+    setDirty(false);
+  };
+
+  const discardAttendanceChanges = () => {
+    setAttendanceRows(activeAttendanceRows(data.attendance));
+    setAttendancePreview(null);
+    setAttendancePaste("");
+    setSourceName("Chỉnh sửa trực tiếp Atlas");
+    setBrowserChecksum(null);
+    setImportErrors([]);
+    setImportWarnings([]);
+    setDirty(false);
+  };
+
+  const currentSourceDirty =
+    tab === "pantry"
+      ? pantryDirty
+      : tab === "menu" || tab === "attendance"
+        ? dirty
+        : false;
+
+  const discardCurrentSourceChanges = () => {
+    if (tab === "menu") discardMenuChanges();
+    if (tab === "attendance") discardAttendanceChanges();
+    if (tab === "pantry") setPantryDirty(false);
+  };
+
+  const changeTab = (next: TabId) => {
+    if (next === tab) return;
+    if (
+      currentSourceDirty &&
+      !window.confirm(
+        "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
+      )
+    )
+      return;
+    if (currentSourceDirty) discardCurrentSourceChanges();
+    setTab(next);
+  };
 
   const changeWeek = (next: string) => {
-    if (dirty && !window.confirm("Bỏ các thay đổi chưa lưu để chuyển tuần?"))
+    if (
+      (dirty || pantryDirty) &&
+      !window.confirm("Bỏ các thay đổi chưa lưu để chuyển tuần?")
+    )
       return;
+    if (dirty || pantryDirty) discardCurrentSourceChanges();
     setWeekStart(next);
     setServiceDateFilter(next);
   };
@@ -701,7 +755,7 @@ export function PlanningInputsWorkbenchView({
   const menuAction = async (
     action: "validateMenu" | "approveMenu" | "reopenMenu",
   ) => {
-    if (!api || !authSubject || !data.weekly_menu) return;
+    if (!api || !authSubject || !data.weekly_menu || dirty) return;
     await runCommand(
       api[action],
       planningCommandRequest(
@@ -718,7 +772,7 @@ export function PlanningInputsWorkbenchView({
   const attendanceAction = async (
     action: "validateAttendance" | "approveAttendance" | "reopenAttendance",
   ) => {
-    if (!api || !authSubject || !data.attendance) return;
+    if (!api || !authSubject || !data.attendance || dirty) return;
     await runCommand(
       api[action],
       planningCommandRequest(
@@ -989,7 +1043,7 @@ export function PlanningInputsWorkbenchView({
               variant="subtle"
               aria-selected={tab === "menu"}
               className={tab === "menu" ? "active" : ""}
-              onClick={() => setTab("menu")}
+              onClick={() => changeTab("menu")}
             >
               Thực đơn tuần
             </Button>
@@ -999,7 +1053,7 @@ export function PlanningInputsWorkbenchView({
               variant="subtle"
               aria-selected={tab === "attendance"}
               className={tab === "attendance" ? "active" : ""}
-              onClick={() => setTab("attendance")}
+              onClick={() => changeTab("attendance")}
             >
               Sĩ số
             </Button>
@@ -1009,7 +1063,7 @@ export function PlanningInputsWorkbenchView({
               variant="subtle"
               aria-selected={tab === "pantry"}
               className={tab === "pantry" ? "active" : ""}
-              onClick={() => setTab("pantry")}
+              onClick={() => changeTab("pantry")}
             >
               Pantry
             </Button>
@@ -1019,7 +1073,7 @@ export function PlanningInputsWorkbenchView({
               variant="subtle"
               aria-selected={tab === "readiness"}
               className={tab === "readiness" ? "active" : ""}
-              onClick={() => setTab("readiness")}
+              onClick={() => changeTab("readiness")}
             >
               Sẵn sàng đầu vào
             </Button>
@@ -1029,7 +1083,7 @@ export function PlanningInputsWorkbenchView({
               variant="subtle"
               aria-selected={tab === "need-generation"}
               className={tab === "need-generation" ? "active" : ""}
-              onClick={() => setTab("need-generation")}
+              onClick={() => changeTab("need-generation")}
             >
               Tạo nhu cầu
             </Button>
@@ -1039,7 +1093,7 @@ export function PlanningInputsWorkbenchView({
               variant="subtle"
               aria-selected={tab === "confirmed-needs"}
               className={tab === "confirmed-needs" ? "active" : ""}
-              onClick={() => setTab("confirmed-needs")}
+              onClick={() => changeTab("confirmed-needs")}
             >
               Xác nhận nhu cầu
             </Button>
@@ -1200,7 +1254,7 @@ export function PlanningInputsWorkbenchView({
                     type="button"
                     className="primary"
                     onClick={() => void saveMenu()}
-                    disabled={saving || !menuRows.length}
+                    disabled={saving || !dirty || !menuRows.length}
                   >
                     <FloppyDisk size={17} aria-hidden="true" />
                     Lưu bản nháp
@@ -1208,14 +1262,7 @@ export function PlanningInputsWorkbenchView({
                   <button
                     type="button"
                     className="quiet"
-                    onClick={() => {
-                      setMenuRows(activeMenuRows(data.weekly_menu));
-                      setDirty(false);
-                      setMenuPreview(null);
-                      setMenuSourceType("MANUAL");
-                      setSourceName("Chỉnh sửa trực tiếp Atlas");
-                      setGoogleFetch({ status: "idle" });
-                    }}
+                    onClick={discardMenuChanges}
                     disabled={!dirty}
                   >
                     Hủy thay đổi
@@ -1390,7 +1437,9 @@ export function PlanningInputsWorkbenchView({
                   type="button"
                   className="primary"
                   disabled={
-                    saving || data.weekly_menu?.weekly_menu_status !== "DRAFT"
+                    saving ||
+                    dirty ||
+                    data.weekly_menu?.weekly_menu_status !== "DRAFT"
                   }
                   onClick={() => void menuAction("validateMenu")}
                 >
@@ -1508,10 +1557,18 @@ export function PlanningInputsWorkbenchView({
                     type="button"
                     className="primary"
                     onClick={() => void saveAttendance()}
-                    disabled={saving || !attendanceRows.length}
+                    disabled={saving || !dirty || !attendanceRows.length}
                   >
                     <FloppyDisk size={17} aria-hidden="true" />
                     Lưu bản nháp
+                  </button>
+                  <button
+                    type="button"
+                    className="quiet"
+                    onClick={discardAttendanceChanges}
+                    disabled={!dirty}
+                  >
+                    Hủy thay đổi
                   </button>
                 </div>
               </div>
@@ -1652,7 +1709,9 @@ export function PlanningInputsWorkbenchView({
                   type="button"
                   className="primary"
                   disabled={
-                    saving || data.attendance?.attendance_status !== "DRAFT"
+                    saving ||
+                    dirty ||
+                    data.attendance?.attendance_status !== "DRAFT"
                   }
                   onClick={() => void attendanceAction("validateAttendance")}
                 >
@@ -1698,6 +1757,7 @@ export function PlanningInputsWorkbenchView({
               api={pantryApi}
               weekStart={weekStart}
               mode={mode}
+              onDirtyChange={setPantryDirty}
             />
           )}
 

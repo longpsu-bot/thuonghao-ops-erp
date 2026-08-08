@@ -91,11 +91,13 @@ export function PantryWorkbench({
   api,
   weekStart,
   mode = "connected",
+  onDirtyChange,
 }: {
   authState: AtlasAuthState;
   api?: PantryApi;
   weekStart: string;
   mode?: "connected" | "review";
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [load, setLoad] = useState<LoadState>("idle");
@@ -155,6 +157,17 @@ export function PantryWorkbench({
     }
   }, [authSubject, refresh, weekStart]);
 
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  useEffect(
+    () => () => {
+      onDirtyChange?.(false);
+    },
+    [onDirtyChange],
+  );
+
   const purposes = useMemo(
     () =>
       [...data.purposes].sort(
@@ -169,6 +182,13 @@ export function PantryWorkbench({
     setRows(next);
     setPreview(null);
     setDirty(true);
+  };
+
+  const discardLocalChanges = () => {
+    setRows(pantryRowsFromBatch(data.batch));
+    setNoAdditions(data.batch?.no_additions_confirmed ?? false);
+    setPreview(null);
+    setDirty(false);
   };
 
   const addRow = () => {
@@ -384,11 +404,22 @@ export function PantryWorkbench({
               className="primary"
               onClick={() => void save()}
               disabled={
-                saving || !data.allowed_actions.can_save || !preview?.can_save
+                saving ||
+                !dirty ||
+                !data.allowed_actions.can_save ||
+                !preview?.can_save
               }
             >
               <FloppyDisk size={17} aria-hidden="true" />
               Lưu bản nháp
+            </button>
+            <button
+              type="button"
+              className="quiet"
+              onClick={discardLocalChanges}
+              disabled={!dirty}
+            >
+              Hủy thay đổi
             </button>
           </div>
         </div>

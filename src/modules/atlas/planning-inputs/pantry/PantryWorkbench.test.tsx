@@ -138,6 +138,34 @@ describe("PANTRY-02 workbench", () => {
     expect(screen.getByRole("button", { name: "Phê duyệt" })).toBeDisabled();
   });
 
+  it("reports dirty transitions and cancels back to the authoritative batch", async () => {
+    const onDirtyChange = vi.fn();
+    const { unmount } = render(
+      <PantryWorkbench
+        authState={authState}
+        api={createReviewPantryApi("ready")}
+        weekStart="2026-08-03"
+        onDirtyChange={onDirtyChange}
+      />,
+    );
+
+    const quantity = await screen.findByLabelText("Số lượng dòng 1");
+    const originalValue = quantity.getAttribute("value");
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(false));
+
+    fireEvent.change(quantity, { target: { value: "3.25" } });
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(true));
+    expect(screen.getByRole("button", { name: "Hủy thay đổi" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Hủy thay đổi" }));
+    expect(quantity).toHaveAttribute("value", originalValue);
+    expect(screen.getByRole("button", { name: "Lưu bản nháp" })).toBeDisabled();
+    await waitFor(() => expect(onDirtyChange).toHaveBeenLastCalledWith(false));
+
+    unmount();
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+  });
+
   it("uses explicit no-additions confirmation and still requires preview", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     render(

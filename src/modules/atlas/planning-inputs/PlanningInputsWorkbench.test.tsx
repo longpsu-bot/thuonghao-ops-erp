@@ -6,13 +6,16 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../connection/authSession";
 import { PlanningInputsWorkbench } from "./PlanningInputsWorkbench";
 import { createReviewPlanningInputsApi } from "./reviewPlanningInputsApi";
 import { createReviewPantryApi } from "./pantry/reviewPantryApi";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const authState = {
   status: "authenticated",
@@ -72,10 +75,12 @@ describe("UI-QUALITY-02A Planning source presentation", () => {
     expect(screen.getByLabelText("Thao tác vòng đời Pantry")).toBeVisible();
   });
 
-  it("keeps dirty state explicit and every business action text-labelled", async () => {
+  it("protects a dirty Weekly Menu edit and makes save the next action", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     renderWorkbench();
 
-    fireEvent.change((await screen.findAllByLabelText(/Món canh ·/))[0], {
+    const menuCell = (await screen.findAllByLabelText(/Món canh ·/))[0];
+    fireEvent.change(menuCell, {
       target: { value: "review-planning-dish-3" },
     });
 
@@ -85,12 +90,138 @@ describe("UI-QUALITY-02A Planning source presentation", () => {
     for (const name of ["Xem trước", "Lưu bản nháp", "Hủy thay đổi"]) {
       expect(screen.getByRole("button", { name })).toHaveAccessibleName(name);
     }
+    expect(screen.getByRole("button", { name: "Lưu bản nháp" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Xác thực" })).toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    expect(confirm).toHaveBeenCalledWith(
+      "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
+    );
+    expect(screen.getByRole("tab", { name: "Thực đơn tuần" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(menuCell).toHaveValue("review-planning-dish-3");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
     await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Lưu bản nháp" }),
-      ).toBeEnabled(),
+      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
+    );
+    expect(screen.getByRole("button", { name: "Lưu bản nháp" })).toBeDisabled();
+    expect(
+      screen.queryByText("Có thay đổi chưa lưu trong nguồn đang làm việc."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps Validate available for a clean saved Weekly Menu draft", async () => {
+    const confirm = vi.spyOn(window, "confirm");
+    renderWorkbench();
+
+    await screen.findAllByLabelText(/Món canh ·/);
+    expect(screen.getByRole("button", { name: "Lưu bản nháp" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    expect(
+      await screen.findByLabelText("Nguồn và thao tác sĩ số"),
+    ).toBeVisible();
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it("cancels Attendance edits back to the authoritative loaded values", async () => {
+    renderWorkbench();
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+
+    const quantity = (await screen.findAllByLabelText(/Suất học sinh ·/))[0];
+    const originalValue = quantity.getAttribute("value");
+    fireEvent.change(quantity, { target: { value: "421" } });
+
+    expect(quantity).toHaveValue(421);
+    expect(screen.getByRole("button", { name: "Lưu bản nháp" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Xác thực" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Hủy thay đổi" }));
+
+    expect(quantity).toHaveAttribute("value", originalValue);
+    expect(screen.getByRole("button", { name: "Lưu bản nháp" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled();
+    expect(
+      screen.queryByText("Có thay đổi chưa lưu trong nguồn đang làm việc."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps a dirty Pantry edit mounted when tab discard is rejected", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench();
+    fireEvent.click(screen.getByRole("tab", { name: "Pantry" }));
+
+    const quantity = await screen.findByLabelText("Số lượng dòng 1");
+    fireEvent.change(quantity, { target: { value: "3.25" } });
+
+    await waitFor(() => {
+      const event = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    });
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
+    );
+    expect(screen.getByRole("tab", { name: "Pantry" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByLabelText("Số lượng dòng 1")).toHaveValue(3.25);
+  });
+
+  it("keeps the selected week and Pantry edit when week discard is rejected", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench();
+    fireEvent.click(screen.getByRole("tab", { name: "Pantry" }));
+
+    const quantity = await screen.findByLabelText("Số lượng dòng 1");
+    fireEvent.change(quantity, { target: { value: "4.5" } });
+    const week = screen.getByLabelText("Tuần phục vụ");
+    const originalWeek = week.getAttribute("value");
+    fireEvent.change(week, { target: { value: "2026-08-10" } });
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Bỏ các thay đổi chưa lưu để chuyển tuần?",
+    );
+    expect(week).toHaveAttribute("value", originalWeek);
+    expect(screen.getByLabelText("Số lượng dòng 1")).toHaveValue(4.5);
+  });
+
+  it("protects explicit Pantry no-additions as unsaved local work", async () => {
+    const confirm = vi
+      .spyOn(window, "confirm")
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false);
+    renderWorkbench();
+    fireEvent.click(screen.getByRole("tab", { name: "Pantry" }));
+
+    await screen.findByLabelText("Số lượng dòng 1");
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Xác nhận tuần này không có bổ sung",
+      }),
+    );
+    expect(screen.getByText(/Đã chọn xác nhận không có bổ sung/)).toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+
+    expect(screen.getByRole("tab", { name: "Pantry" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Xác nhận tuần này không có bổ sung",
+      }),
+    ).toBeChecked();
+    expect(confirm).toHaveBeenLastCalledWith(
+      "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
     );
   });
 });
