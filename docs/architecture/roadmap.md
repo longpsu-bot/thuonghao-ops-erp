@@ -25,10 +25,11 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ ATLAS-ACT-01B repository staging readiness — complete through PR #175, merged at `9b9f8af3609507876d69a55cc529e9bd17aa56db`; staging-verifier correction complete through PR #176, merged at `844b4640df28f666736f018b8ef81d63fb78d2be`
 - ✅ Separate Atlas staging project — project `rnzxmxiiqgtdevzregff` exists and protected deployment succeeded at `844b4640df28f666736f018b8ef81d63fb78d2be`; existing OPS project `qnthofvccilhnefdcxnz` remains forbidden as a target
 - ✅ D-033 Mantine 9 UI component foundation — accepted for connected Atlas presentation; Atlas retains business semantics and authority
-- 🟡 UI-QUALITY-01 Mantine foundation, shared shell and proven primitives — implementation in progress on the bounded branch with no business behavior change
-- ⬜ UI-QUALITY-02 connected Planning consolidation — Weekly Menu through Confirmed Need release
-- ⬜ UI-QUALITY-03 connected Admin consolidation — Schools, Ingredients/Suppliers and Dishes/Recipes
-- ⬜ Hosted operator/security rehearsal — Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
+- ✅ UI-QUALITY-01 Mantine foundation, shared shell and proven primitives — complete through PR #177 at `c98d044f3b880cca02fb8cb95f7c2ebcd0246f78`, with no business behavior change
+- 🟡 D-034 / UI-VISUAL-01 Atlas Modern Operations visual foundation — current bounded visual-architecture work
+- ⬜ UI-QUALITY-02 connected Planning consolidation — not started until UI-VISUAL-01 is reviewed and accepted
+- ⬜ UI-QUALITY-03 connected Admin consolidation — not started
+- ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
 - ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
 
 Stabilization sequence:

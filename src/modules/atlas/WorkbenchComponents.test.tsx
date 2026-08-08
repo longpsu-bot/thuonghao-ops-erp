@@ -70,6 +70,21 @@ describe("Mantine-backed Atlas presentation", () => {
     expect(alert).toHaveTextContent(guidance);
   });
 
+  it("presents read-only information without warning semantics", () => {
+    renderWithTheme(
+      <OperationalState
+        variant="read-only"
+        title="Bản xem thử không thay đổi dữ liệu vận hành"
+      />,
+    );
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveClass("read-only");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveTextContent("Chỉ xem");
+    expect(status).not.toHaveTextContent("Cần chú ý");
+  });
+
   it("requires authoritative refresh after an unknown outcome without retry", () => {
     const refresh = vi.fn();
     renderWithTheme(

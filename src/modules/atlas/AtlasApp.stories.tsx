@@ -34,10 +34,65 @@ export const IngredientsAndSuppliers: Story = {
   },
 };
 
-export const PlanningInputs: Story = {
-  name: "Nguồn kế hoạch · Mantine shell proof",
+export const ModernOperationsShell: Story = {
+  name: "Nền tảng Modern Operations · Kế hoạch",
   args: {
     initialPage: "planning-inputs",
     reviewMode: true,
+  },
+};
+
+export const LongNavigationLabels: Story = {
+  name: "Nhãn điều hướng tiếng Việt dài · Quản trị",
+  args: {
+    initialPage: "ingredients-units",
+    reviewMode: true,
+  },
+};
+
+export const SuccessState: Story = {
+  name: "Trạng thái thành công",
+  args: {
+    initialPage: "planning-inputs",
+    initialReviewScenario: "menu_approved",
+    reviewMode: true,
+  },
+};
+
+export const WarningState: Story = {
+  name: "Trạng thái cảnh báo",
+  args: {
+    initialPage: "planning-inputs",
+    initialReviewScenario: "menu_recipe_warning",
+    reviewMode: true,
+  },
+};
+
+export const BlockingState: Story = {
+  name: "Trạng thái chặn / lỗi",
+  args: {
+    initialPage: "planning-inputs",
+    initialReviewScenario: "menu_duplicate",
+    reviewMode: true,
+  },
+};
+
+export const ReadOnlyInformationState: Story = {
+  name: "Trạng thái chỉ xem / thông tin",
+  args: {
+    initialPage: "planning-inputs",
+    initialReviewScenario: "ready",
+    reviewMode: true,
+  },
+};
+
+export const MobileShell: Story = {
+  name: "Vỏ ứng dụng di động · 360 px",
+  args: {
+    initialPage: "planning-inputs",
+    reviewMode: true,
+  },
+  parameters: {
+    viewport: { defaultViewport: "mobile1" },
   },
 };
