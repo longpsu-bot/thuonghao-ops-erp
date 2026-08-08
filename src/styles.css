@@ -201,13 +201,15 @@ body {
   gap: 3px;
 }
 .atlas-session small {
-  color: #6d7974;
+  color: var(--atlas-text-muted);
 }
 .atlas-session input {
   min-width: 175px;
   padding: 7px 8px;
-  border: 1px solid #bdcbc5;
+  border: 1px solid var(--atlas-border);
   border-radius: 5px;
+  background: var(--atlas-surface);
+  color: var(--atlas-text);
 }
 .atlas-session button {
   padding: 8px 11px;
@@ -217,12 +219,16 @@ body {
   color: #fff;
   font-weight: 700;
 }
+.atlas-session button:focus-visible,
+.atlas-connection button:focus-visible {
+  outline-color: var(--atlas-focus-dark);
+}
 .atlas-connection {
   margin: 14px 32px 0;
   padding: 12px 14px;
-  border: 1px solid #c7d8d1;
-  background: #f4f8f6;
-  color: #284137;
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-surface);
+  color: var(--atlas-text);
   font-size: 11px;
 }
 .atlas-connection-heading,
@@ -244,12 +250,12 @@ body {
   gap: 4px;
 }
 .atlas-connection-heading small {
-  color: #617069;
+  color: var(--atlas-text-muted);
 }
 .atlas-connection mark {
   padding: 4px 7px;
-  background: #fff0d7;
-  color: #7a500f;
+  background: #fff8e8;
+  color: var(--atlas-warning-text);
   font-weight: 800;
 }
 .atlas-connection form,
@@ -259,23 +265,25 @@ body {
 .atlas-connection input {
   min-width: 190px;
   padding: 6px 8px;
-  border: 1px solid #aec4bc;
+  border: 1px solid var(--atlas-border);
   border-radius: 4px;
+  background: var(--atlas-surface);
+  color: var(--atlas-text);
 }
 .atlas-connection button {
   padding: 7px 10px;
-  border: 1px solid #17604d;
+  border: 1px solid var(--atlas-primary);
   border-radius: 4px;
-  background: #17604d;
+  background: var(--atlas-primary);
   color: #fff;
   font-weight: 700;
 }
 .atlas-connection code {
-  color: #315247;
+  color: var(--atlas-text-muted);
   font-size: 10px;
 }
 .atlas-connection [role="alert"] {
-  color: #8b2020;
+  color: var(--atlas-danger);
   font-weight: 700;
 }
 .atlas-topbar {
@@ -3172,7 +3180,6 @@ tbody tr.selected-row {
 }
 
 .master-data-toolbar button.primary-toolbar-action,
-.atlas-connection button,
 .workbench-actions button.primary,
 .planning-toolbar button,
 .planning-lifecycle-actions button,
@@ -3190,7 +3197,6 @@ tbody tr.selected-row {
 }
 
 .master-data-toolbar button.primary-toolbar-action:focus-visible,
-.atlas-connection button:focus-visible,
 .workbench-actions button.primary:focus-visible,
 .planning-toolbar button:focus-visible,
 .planning-lifecycle-actions button:focus-visible,
@@ -3279,9 +3285,12 @@ tbody tr.selected-row {
   color: var(--atlas-info);
 }
 
-.operational-state.warning .operational-state-label,
-.operational-state.read-only .operational-state-label {
+.operational-state.warning .operational-state-label {
   color: var(--atlas-warning-text);
+}
+
+.operational-state.read-only .operational-state-label {
+  color: var(--atlas-info);
 }
 
 .planning-readiness,

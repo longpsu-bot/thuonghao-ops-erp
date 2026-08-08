@@ -81,7 +81,7 @@ export const ReadOnlyInformationState: Story = {
   name: "Trạng thái chỉ xem / thông tin",
   args: {
     initialPage: "planning-inputs",
-    initialReviewScenario: "permission_denied",
+    initialReviewScenario: "ready",
     reviewMode: true,
   },
 };
