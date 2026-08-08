@@ -7,7 +7,7 @@ import { NeedGenerationWorkbench } from "./planning-inputs/need-generation/NeedG
 import { createReviewNeedGenerationApi } from "./planning-inputs/need-generation/reviewNeedGenerationApi";
 
 const meta = {
-  title: "Atlas/Dữ liệu gốc",
+  title: "Atlas/Planning workflow",
   component: AtlasApp,
   parameters: {
     layout: "fullscreen",
@@ -105,6 +105,11 @@ export const MobileShell: Story = {
 async function selectPlanningTab(canvasElement: HTMLElement, name: string) {
   const canvas = within(canvasElement);
   await userEvent.click(await canvas.findByRole("tab", { name }));
+  canvasElement.ownerDocument.defaultView?.scrollTo(0, 0);
+}
+
+function returnToTop(canvasElement: HTMLElement) {
+  canvasElement.ownerDocument.defaultView?.scrollTo(0, 0);
 }
 
 async function runNeedGenerationTo(
@@ -116,18 +121,28 @@ async function runNeedGenerationTo(
   await userEvent.click(
     await canvas.findByRole("button", { name: "Tạo nhu cầu" }),
   );
-  if (target === "generated") return;
+  if (target === "generated") {
+    returnToTop(canvasElement);
+    return;
+  }
   await userEvent.click(
     await canvas.findByRole("button", { name: "Kiểm tra nhu cầu" }),
   );
-  if (target === "validated") return;
+  if (target === "validated") {
+    returnToTop(canvasElement);
+    return;
+  }
   await userEvent.click(
     await canvas.findByRole("button", { name: "Phát hành nhu cầu" }),
   );
-  if (target === "released") return;
+  if (target === "released") {
+    returnToTop(canvasElement);
+    return;
+  }
   await userEvent.click(
     await canvas.findByRole("button", { name: "Tạo nhu cầu xác nhận" }),
   );
+  returnToTop(canvasElement);
 }
 
 function NeedGenerationEvidenceStory({
@@ -298,6 +313,7 @@ export const ReadinessReady: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Đánh giá mức sẵn sàng" }),
     );
+    returnToTop(canvasElement);
   },
 };
 
@@ -314,6 +330,7 @@ export const ReadinessBlocked: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Đánh giá mức sẵn sàng" }),
     );
+    returnToTop(canvasElement);
   },
 };
 
@@ -357,6 +374,7 @@ export const ReadinessRequested: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Yêu cầu tạo nhu cầu" }),
     );
+    returnToTop(canvasElement);
   },
 };
 
@@ -405,6 +423,7 @@ export const NeedGenerationGeneratedWithBlockers: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Tạo nhu cầu" }),
     );
+    returnToTop(canvasElement);
   },
 };
 

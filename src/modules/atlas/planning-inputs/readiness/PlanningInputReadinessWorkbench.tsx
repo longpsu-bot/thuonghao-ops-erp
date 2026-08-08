@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
-import { Chip, Panel } from "../../WorkbenchComponents";
+import { Chip } from "../../WorkbenchComponents";
 import {
   planningInputReadinessCommandRequest,
   type PlanningInputReadinessApi,
@@ -23,7 +23,6 @@ import {
   planningInputReadinessWorkbenchFromResult,
   readinessCandidateKey,
   readinessCandidateTriple,
-  readinessDecisionLabel,
   readinessExpectation,
   readinessResultAllowsExactRetry,
   readinessResultIsStale,
@@ -108,7 +107,7 @@ function SourceCard({
     >
       <header>
         <div>
-          <span>Nguồn bằng chứng</span>
+          <span>Nguồn đầu vào</span>
           <h3>{label}</h3>
         </div>
         <Chip
@@ -158,7 +157,7 @@ function SourceCard({
       {selected ? (
         <dl>
           <div>
-            <dt>Kỳ nguồn</dt>
+            <dt>Kỳ dữ liệu</dt>
             <dd>
               {viDate(selected.source_period.period_start)} –{" "}
               {viDate(selected.source_period.period_end)}
@@ -169,25 +168,12 @@ function SourceCard({
             <dd>v{sourceVersion(source, selected)}</dd>
           </div>
           <div>
-            <dt>Phê duyệt</dt>
-            <dd>
-              {selected.approved_by_display_name} ·{" "}
-              {new Date(selected.approved_at).toLocaleString("vi-VN")}
-            </dd>
-          </div>
-          <div>
-            <dt>Hiện hành / phủ kỳ</dt>
+            <dt>Trạng thái</dt>
             <dd>
               {selected.source_current ? "Hiện hành" : "Không hiện hành"} ·{" "}
               {selected.coverage === "COVERS" ? "Đủ kỳ" : "Không đủ kỳ"}
             </dd>
           </div>
-          {source !== "pantry" && (
-            <div>
-              <dt>Số dòng</dt>
-              <dd>{selected.line_count}</dd>
-            </div>
-          )}
         </dl>
       ) : (
         evidence.selection_state !== "AMBIGUOUS" && (
@@ -203,7 +189,20 @@ function SourceCard({
 
       {selected && (
         <details className="readiness-source-audit">
-          <summary>Định danh bằng chứng</summary>
+          <summary>Chi tiết bằng chứng</summary>
+          <dl>
+            <div>
+              <dt>Người phê duyệt</dt>
+              <dd>
+                {selected.approved_by_display_name} ·{" "}
+                {new Date(selected.approved_at).toLocaleString("vi-VN")}
+              </dd>
+            </div>
+            <div>
+              <dt>Số dòng</dt>
+              <dd>{selected.line_count}</dd>
+            </div>
+          </dl>
           <code>{sourceSnapshotId(source, selected)}</code>
         </details>
       )}
@@ -283,6 +282,10 @@ export function PlanningInputReadinessWorkbench({
   );
   const generation = useRef(0);
   const commandGeneration = useRef(0);
+  const outerWeek = useRef({
+    start: selectedWeekStart,
+    end: selectedWeekEnd,
+  });
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -335,6 +338,28 @@ export function PlanningInputReadinessWorkbench({
       commandGeneration.current += 1;
     };
   }, [loadWorkbench]);
+
+  useEffect(() => {
+    if (
+      outerWeek.current.start === selectedWeekStart &&
+      outerWeek.current.end === selectedWeekEnd
+    )
+      return;
+    outerWeek.current = { start: selectedWeekStart, end: selectedWeekEnd };
+    generation.current += 1;
+    commandGeneration.current += 1;
+    setBusy(false);
+    setSelectionTouched(false);
+    setPendingCommand(null);
+    setWorkbench(null);
+    setNotice(null);
+    setInvalidationReason("");
+    setInvalidationNote("");
+    setDraftStart(selectedWeekStart);
+    setDraftEnd(selectedWeekEnd);
+    setPeriodStart(selectedWeekStart);
+    setPeriodEnd(selectedWeekEnd);
+  }, [selectedWeekEnd, selectedWeekStart]);
 
   useEffect(() => {
     onLocalSelectionDirtyChange?.(selectionTouched);
@@ -479,6 +504,19 @@ export function PlanningInputReadinessWorkbench({
     () => (workbench ? readinessSourceSelection(workbench) : undefined),
     [workbench],
   );
+  const forwardActions = workbench
+    ? [
+        workbench.allowed_actions.can_evaluate ? "evaluate" : null,
+        workbench.allowed_actions.can_request_need_generation
+          ? "requestNeedGeneration"
+          : null,
+      ].filter((operation): operation is "evaluate" | "requestNeedGeneration" =>
+        Boolean(operation),
+      )
+    : [];
+  const activeForwardAction =
+    forwardActions.length === 1 ? forwardActions[0] : null;
+  const unexpectedForwardActions = forwardActions.length > 1;
 
   if (!authSubject)
     return (
@@ -491,49 +529,51 @@ export function PlanningInputReadinessWorkbench({
     <section className="planning-input-readiness-workbench">
       <header className="readiness-question">
         <div>
-          <span>Quyết định trước khi chuyển bước</span>
-          <h2>Có thể yêu cầu tạo nhu cầu cho giai đoạn này không?</h2>
+          <span>Tuần đang xử lý</span>
+          <h2>
+            {viDate(periodStart)} – {viDate(periodEnd)}
+          </h2>
         </div>
-        <p>
-          Kỳ có thẩm quyền (bao gồm cả hai ngày): <b>{viDate(periodStart)}</b> –{" "}
-          <b>{viDate(periodEnd)}</b>
-        </p>
+        <p>Bao gồm cả ngày bắt đầu và ngày kết thúc.</p>
       </header>
 
-      <section className="readiness-period-controls" aria-label="Kỳ đánh giá">
-        <label>
-          Từ ngày
-          <input
-            type="date"
-            value={draftStart}
-            onChange={(event) => setDraftStart(event.target.value)}
-          />
-        </label>
-        <label>
-          Đến ngày
-          <input
-            type="date"
-            value={draftEnd}
-            onChange={(event) => setDraftEnd(event.target.value)}
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() => applyPeriod(draftStart, draftEnd)}
-          disabled={busy}
-        >
-          <ArrowClockwise aria-hidden="true" size={16} weight="bold" />
-          Đọc đúng kỳ
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => applyPeriod(selectedWeekStart, selectedWeekEnd)}
-          disabled={busy}
-        >
-          Dùng cả tuần đang chọn
-        </button>
-      </section>
+      <details className="readiness-period-disclosure">
+        <summary>Đổi phạm vi đánh giá</summary>
+        <section className="readiness-period-controls" aria-label="Kỳ đánh giá">
+          <label>
+            Từ ngày
+            <input
+              type="date"
+              value={draftStart}
+              onChange={(event) => setDraftStart(event.target.value)}
+            />
+          </label>
+          <label>
+            Đến ngày
+            <input
+              type="date"
+              value={draftEnd}
+              onChange={(event) => setDraftEnd(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => applyPeriod(draftStart, draftEnd)}
+            disabled={busy}
+          >
+            <ArrowClockwise aria-hidden="true" size={16} />
+            Xem phạm vi này
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => applyPeriod(selectedWeekStart, selectedWeekEnd)}
+            disabled={busy}
+          >
+            Dùng cả tuần đang chọn
+          </button>
+        </section>
+      </details>
 
       {loading && !workbench && (
         <p role="status">Đang đọc trạng thái sẵn sàng…</p>
@@ -543,34 +583,40 @@ export function PlanningInputReadinessWorkbench({
         <>
           <section
             className={`readiness-decision ${workbench.decision.toLowerCase()}`}
-            aria-label="Kết luận sẵn sàng có thẩm quyền"
+            aria-label="Kết quả kiểm tra đầu vào"
           >
             <div>
-              <span>Kết luận có thẩm quyền</span>
-              <strong>{readinessDecisionLabel(workbench.decision)}</strong>
+              <span>Kết quả hiện tại</span>
+              <strong>
+                {workbench.decision === "READY" ||
+                workbench.decision === "NEED_GENERATION_REQUESTED"
+                  ? "Đầu vào đã sẵn sàng"
+                  : workbench.decision === "NOT_EVALUATED"
+                    ? "Chưa kiểm tra đầu vào"
+                    : "Cần xử lý đầu vào"}
+              </strong>
               <small>
                 {workbench.allowed_actions.can_request_need_generation
-                  ? "Ba nguồn đã đủ điều kiện để chuyển sang yêu cầu tạo nhu cầu."
+                  ? "Thực đơn, Sĩ số và Pantry đã đủ điều kiện."
                   : workbench.allowed_actions.can_evaluate
-                    ? "Bước hợp lệ tiếp theo là đánh giá ba nguồn bằng chứng."
-                    : "Xem lý do bị chặn và bằng chứng nguồn trước khi tiếp tục."}
+                    ? "Kiểm tra ba nguồn để biết có thể tạo nhu cầu hay chưa."
+                    : workbench.decision === "NEED_GENERATION_REQUESTED"
+                      ? "Đầu vào đã được chuyển sang bước tạo nhu cầu."
+                      : "Xem vấn đề cần xử lý trước khi tiếp tục."}
               </small>
             </div>
-            {workbench.allowed_actions.disabled_reasons.length > 0 && (
-              <ul>
-                {workbench.allowed_actions.disabled_reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            )}
             {workbench.root ? (
               <details className="readiness-root-audit">
-                <summary>Định danh Planning Input Set</summary>
+                <summary>Chi tiết kỹ thuật</summary>
                 <code>{workbench.root.planning_input_set_id}</code>
+                {workbench.current_evaluation && (
+                  <code>
+                    {workbench.current_evaluation.planning_input_evaluation_id}{" "}
+                    · v{workbench.current_evaluation.evaluation_version}
+                  </code>
+                )}
               </details>
-            ) : (
-              <small>Chưa có Planning Input Set cho đúng kỳ này.</small>
-            )}
+            ) : null}
           </section>
 
           <div className="readiness-source-grid">
@@ -597,57 +643,72 @@ export function PlanningInputReadinessWorkbench({
             items={currentIssues?.warnings ?? []}
           />
 
-          <Panel
-            title="Bước hợp lệ tiếp theo"
-            description="PostgreSQL quyết định thao tác nào được phép; lý do bị chặn luôn hiển thị bên dưới."
+          <section
+            className="readiness-next-action"
+            aria-label="Việc cần làm tiếp theo"
           >
+            <div>
+              <span>Việc cần làm tiếp theo</span>
+              <h3>
+                {activeForwardAction === "evaluate"
+                  ? "Kiểm tra đầu vào"
+                  : activeForwardAction === "requestNeedGeneration"
+                    ? "Chuyển sang tạo nhu cầu"
+                    : "Chưa thể tiếp tục"}
+              </h3>
+            </div>
             <div className="readiness-forward-actions">
-              <button
-                type="button"
-                className={
-                  workbench.allowed_actions.can_evaluate
-                    ? "primary-forward"
-                    : "secondary-forward"
-                }
-                onClick={evaluate}
-                disabled={busy || !workbench.allowed_actions.can_evaluate}
-              >
-                <Checks aria-hidden="true" size={18} weight="bold" />
-                Đánh giá mức sẵn sàng
-              </button>
-              <button
-                type="button"
-                className={
-                  workbench.allowed_actions.can_request_need_generation
-                    ? "primary-forward"
-                    : "secondary-forward"
-                }
-                onClick={requestNeedGeneration}
-                disabled={
-                  busy || !workbench.allowed_actions.can_request_need_generation
-                }
-              >
-                <Lightning aria-hidden="true" size={18} weight="fill" />
-                Yêu cầu tạo nhu cầu
-              </button>
+              {activeForwardAction === "evaluate" && (
+                <button
+                  type="button"
+                  className="primary-forward"
+                  onClick={evaluate}
+                  disabled={busy}
+                >
+                  <Checks aria-hidden="true" size={18} />
+                  Đánh giá mức sẵn sàng
+                </button>
+              )}
+              {activeForwardAction === "requestNeedGeneration" && (
+                <button
+                  type="button"
+                  className="primary-forward"
+                  onClick={requestNeedGeneration}
+                  disabled={busy}
+                >
+                  <Lightning aria-hidden="true" size={18} />
+                  Yêu cầu tạo nhu cầu
+                </button>
+              )}
             </div>
 
-            {workbench.allowed_actions.disabled_reasons.length > 0 && (
-              <div className="readiness-action-reasons" aria-live="polite">
-                <b>Vì sao chưa thể tiếp tục</b>
-                <ul>
-                  {workbench.allowed_actions.disabled_reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
-              </div>
+            {!activeForwardAction &&
+              !unexpectedForwardActions &&
+              workbench.allowed_actions.disabled_reasons.length > 0 && (
+                <div className="readiness-action-reasons" aria-live="polite">
+                  <b>Cần xử lý trước khi tiếp tục</b>
+                  <ul>
+                    {Array.from(
+                      new Set(workbench.allowed_actions.disabled_reasons),
+                    ).map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+            {unexpectedForwardActions && (
+              <p className="operator-notice warning" role="alert">
+                Hệ thống trả về nhiều thao tác tiếp theo cùng lúc. Hãy tải lại
+                trước khi tiếp tục.
+              </p>
             )}
 
             {workbench.allowed_actions.can_invalidate && (
               <details className="readiness-correction">
                 <summary>
-                  <Wrench aria-hidden="true" size={17} weight="bold" />
-                  Điều chỉnh hoặc vô hiệu hóa kết quả
+                  <Wrench aria-hidden="true" size={17} />
+                  Thao tác khác
                 </summary>
                 <p>
                   Chỉ dùng khi cần sửa quyết định đã có; thao tác này không thay
@@ -700,16 +761,12 @@ export function PlanningInputReadinessWorkbench({
                 </div>
               </details>
             )}
-          </Panel>
+          </section>
 
           <details className="readiness-history">
             <summary>
               <span>
-                <ClockCounterClockwise
-                  aria-hidden="true"
-                  size={18}
-                  weight="bold"
-                />
+                <ClockCounterClockwise aria-hidden="true" size={18} />
                 Lịch sử đánh giá
               </span>
               <small>{workbench.history_items.length} mục đã tải</small>
@@ -774,10 +831,13 @@ export function PlanningInputReadinessWorkbench({
         >
           <b>
             {pendingCommand.uncertain
-              ? "Chưa xác định kết quả lệnh"
+              ? "Kết quả chưa xác định. Hệ thống chưa tự gửi lại."
               : "Có thể thử lại đúng yêu cầu"}
           </b>
-          <small>Mã lệnh: {pendingCommand.request.command_id}</small>
+          <details>
+            <summary>Chi tiết kỹ thuật</summary>
+            <small>Mã lệnh: {pendingCommand.request.command_id}</small>
+          </details>
           {pendingCommand.retryable && (
             <button
               type="button"

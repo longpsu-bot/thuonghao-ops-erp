@@ -28,7 +28,8 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ UI-QUALITY-01 Mantine foundation, shared shell and proven primitives — complete through PR #177 at `c98d044f3b880cca02fb8cb95f7c2ebcd0246f78`, with no business behavior change
 - ✅ D-034 / UI-VISUAL-01 Atlas Modern Operations visual foundation — complete through PR #179 at `bf0a1af28f689bfb4a81f6b6db96b298006c1794`
 - ✅ UI-QUALITY-02A Planning source workbenches — complete through PR #180 at `4a585f980464e4367a0b23ea6184ecf10fd70003` for Weekly Menu, Attendance and Pantry
-- 🟡 UI-QUALITY-02B Planning Input Readiness and Need Generation — current bounded connected-UI implementation
+- ✅ D-035 Atlas Workflow-First Operator UX — accepted Application presentation authority; happy path first, progressive disclosure and one backend-authorized next action
+- 🟡 UI-QUALITY-02B Planning Input Readiness and Need Generation — current bounded workflow-first correction on draft PR #181
 - ⬜ UI-QUALITY-02C Confirmed Need — not started
 - ⬜ UI-QUALITY-03 connected Admin consolidation — not started
 - ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios

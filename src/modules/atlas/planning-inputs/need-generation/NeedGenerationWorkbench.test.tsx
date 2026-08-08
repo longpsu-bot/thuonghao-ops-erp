@@ -60,6 +60,10 @@ describe("RMVP-04 connected workbench", () => {
       name: "Tạo nhu cầu",
     });
     expect(createAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/chưa đặt mua hàng/)).not.toBeInTheDocument();
     fireEvent.click(createAction);
     expect(
       await screen.findByRole("heading", {
@@ -77,12 +81,21 @@ describe("RMVP-04 connected workbench", () => {
       name: "Kiểm tra nhu cầu",
     });
     expect(validateAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Phát hành nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu xác nhận" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(validateAction);
     await waitFor(() => expect(validate).toHaveBeenCalledOnce());
     const releaseAction = screen.getByRole("button", {
       name: "Phát hành nhu cầu",
     });
     expect(releaseAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(releaseAction);
     await waitFor(() => expect(release).toHaveBeenCalledOnce());
     const materializeAction = screen.getByRole("button", {
@@ -90,11 +103,15 @@ describe("RMVP-04 connected workbench", () => {
     });
     expect(materializeAction).toHaveClass("primary-forward");
     expect(
-      screen.getByText(/Không tạo Bàn giao mua hàng, không chọn nhà cung cấp/),
+      screen.getByText(/chưa đặt mua hàng và chưa chọn nhà cung cấp/),
     ).toBeVisible();
     fireEvent.click(materializeAction);
     await waitFor(() => expect(materialize).toHaveBeenCalledOnce());
-    expect(await screen.findByText(/DRAFT_REVIEW/)).toBeVisible();
+    const boundary = await screen.findByText("Kết quả của thao tác");
+    const boundarySection = boundary.closest("section");
+    if (!boundarySection) throw new Error("Missing materialization boundary.");
+    fireEvent.click(within(boundarySection).getByText("Chi tiết kỹ thuật"));
+    expect(within(boundarySection).getByText(/DRAFT_REVIEW/)).toBeVisible();
     expect(onMaterialized).toHaveBeenCalledWith(
       "c4500000-0000-0000-0000-000000000001",
     );
@@ -129,17 +146,18 @@ describe("RMVP-04 connected workbench", () => {
     renderReview(api);
 
     expect(
-      await screen.findByText(/Hãy quay lại Sẵn sàng đầu vào/),
+      await screen.findByRole("heading", { name: "Chưa thể tạo nhu cầu" }),
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText("Tạo nhu cầu", { selector: "[aria-disabled='true']" }),
+      screen.getByRole("heading", { name: "Chưa thể tạo nhu cầu" }),
     ).toBeVisible();
     expect(
-      screen.getAllByText("Chưa ghi nhận yêu cầu tạo nhu cầu.")[0],
+      screen.getByText("Chưa ghi nhận yêu cầu tạo nhu cầu."),
     ).toBeVisible();
+    expect(screen.queryByText("Kiểm tra nhu cầu")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: "Nhu cầu nguyên liệu đã tạo" }),
     ).not.toBeInTheDocument();
@@ -150,13 +168,14 @@ describe("RMVP-04 connected workbench", () => {
     const getWorkbench = vi.spyOn(api, "getWorkbench");
     renderReview(api);
     await screen.findByText("ĐÃ YÊU CẦU TẠO NHU CẦU");
+    fireEvent.click(screen.getByText("Đổi phạm vi xem"));
     fireEvent.change(screen.getByLabelText("Từ ngày tạo nhu cầu"), {
       target: { value: "2026-08-04" },
     });
     fireEvent.change(screen.getByLabelText("Đến ngày tạo nhu cầu"), {
       target: { value: "2026-08-08" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem kỳ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem phạm vi này" }));
     await waitFor(() =>
       expect(getWorkbench).toHaveBeenCalledWith(
         expect.anything(),
@@ -192,7 +211,7 @@ describe("RMVP-04 connected workbench", () => {
     );
     fireEvent.click(screen.getAllByRole("button", { name: "Xem 1" })[0]!);
     expect(
-      await screen.findByText("Chi tiết đóng góp nguyên tử"),
+      await screen.findByText("Chi tiết hình thành số lượng"),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Trang trước" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Trang sau" })).toBeDisabled();
@@ -259,7 +278,7 @@ describe("RMVP-04 connected workbench", () => {
     expect(
       screen.getByRole("heading", { name: "Nhu cầu nguyên liệu đã tạo" }),
     ).toBeVisible();
-    expect(screen.getByText("Vô hiệu hóa để điều chỉnh")).toBeVisible();
+    expect(screen.getByText("Thao tác khác")).toBeVisible();
   });
 
   it("never retries automatically and reuses the exact immutable request on demand", async () => {

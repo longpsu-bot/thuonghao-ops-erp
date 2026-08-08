@@ -39,6 +39,10 @@ A usable workbench must make these answers obvious:
 
 ## 3. Minimal visual foundation
 
+### Workflow-first operator UX
+
+[D-035](../decisions/decision-atlas-workflow-first-operator-ux.md) requires the normal workbench to lead with period, current state, attention, main work and one backend-authorized next action. Future lifecycle controls, technical identities and audit evidence must not compete with the happy path; they appear contextually or through progressive disclosure. Every normal state must pass the five-second and first-time-operator comprehension tests without requiring architecture vocabulary.
+
 UI-QUALITY-01 should define semantic CSS custom properties for:
 
 - a small type scale;

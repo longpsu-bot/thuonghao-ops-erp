@@ -369,12 +369,16 @@ function ChangeTimeline({ entries }: { entries: ChangeHistory[] }) {
   );
 }
 
-function emptyData(weekStart: string): PlanningInputsWorkbenchData {
+function weekEndOf(weekStart: string) {
   const end = new Date(`${weekStart}T00:00:00Z`);
   end.setUTCDate(end.getUTCDate() + 6);
+  return end.toISOString().slice(0, 10);
+}
+
+function emptyData(weekStart: string): PlanningInputsWorkbenchData {
   return {
     week_start: weekStart,
-    week_end: end.toISOString().slice(0, 10),
+    week_end: weekEndOf(weekStart),
     dish_types: [],
     google_sheet_sources: [],
     schools: [],
@@ -446,6 +450,7 @@ export function PlanningInputsWorkbenchView({
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const selectedWeekEnd = weekEndOf(weekStart);
 
   const adopt = useCallback((workbench: PlanningInputsWorkbenchData) => {
     setData(workbench);
@@ -564,11 +569,12 @@ export function PlanningInputsWorkbenchView({
       (dirty || pantryDirty || readinessSelectionDirty) &&
       !window.confirm("Bỏ các thay đổi chưa lưu để chuyển tuần?")
     )
-      return;
+      return false;
     if (dirty || pantryDirty || readinessSelectionDirty)
       discardCurrentSourceChanges();
     setWeekStart(next);
     setServiceDateFilter(next);
+    return true;
   };
 
   const activeSchools = useMemo(
@@ -979,7 +985,11 @@ export function PlanningInputsWorkbenchView({
           <input
             type="date"
             value={weekStart}
-            onChange={(event) => changeWeek(event.target.value)}
+            onChange={(event) => {
+              if (!changeWeek(event.target.value)) {
+                event.currentTarget.value = weekStart;
+              }
+            }}
           />
         </label>
         <div>
@@ -1010,32 +1020,40 @@ export function PlanningInputsWorkbenchView({
         />
       ) : (
         <>
-          <Paper
-            component="section"
-            withBorder
-            className={`planning-readiness ${data.readiness.ready ? "ready" : ""}`}
-            aria-label="Tình trạng sẵn sàng nguồn kế hoạch"
-          >
-            <div>
-              <strong>
-                {data.readiness.ready
-                  ? "Hai nguồn tham chiếu đã được phê duyệt"
-                  : "Hai nguồn tham chiếu chưa cùng được phê duyệt"}
-              </strong>
-              <small>
-                Tham chiếu hai nguồn, không phải quyết định sẵn sàng có thẩm
-                quyền. Xem tab Sẵn sàng đầu vào để quyết định theo ba nguồn.
-              </small>
-            </div>
-            <Chip tone={data.readiness.weekly_menu_approved ? "ok" : "warning"}>
-              Thực đơn{" "}
-              {data.readiness.weekly_menu_approved ? "đã duyệt" : "chưa duyệt"}
-            </Chip>
-            <Chip tone={data.readiness.attendance_approved ? "ok" : "warning"}>
-              Sĩ số{" "}
-              {data.readiness.attendance_approved ? "đã duyệt" : "chưa duyệt"}
-            </Chip>
-          </Paper>
+          {(tab === "menu" || tab === "attendance" || tab === "pantry") && (
+            <Paper
+              component="section"
+              withBorder
+              className={`planning-readiness ${data.readiness.ready ? "ready" : ""}`}
+              aria-label="Tình trạng sẵn sàng nguồn kế hoạch"
+            >
+              <div>
+                <strong>
+                  {data.readiness.ready
+                    ? "Hai nguồn tham chiếu đã được phê duyệt"
+                    : "Hai nguồn tham chiếu chưa cùng được phê duyệt"}
+                </strong>
+                <small>
+                  Tham chiếu hai nguồn, không phải quyết định sẵn sàng có thẩm
+                  quyền. Xem tab Sẵn sàng đầu vào để quyết định theo ba nguồn.
+                </small>
+              </div>
+              <Chip
+                tone={data.readiness.weekly_menu_approved ? "ok" : "warning"}
+              >
+                Thực đơn{" "}
+                {data.readiness.weekly_menu_approved
+                  ? "đã duyệt"
+                  : "chưa duyệt"}
+              </Chip>
+              <Chip
+                tone={data.readiness.attendance_approved ? "ok" : "warning"}
+              >
+                Sĩ số{" "}
+                {data.readiness.attendance_approved ? "đã duyệt" : "chưa duyệt"}
+              </Chip>
+            </Paper>
+          )}
 
           <Box
             className="planning-tabs"
@@ -1771,7 +1789,7 @@ export function PlanningInputsWorkbenchView({
               authState={authState}
               api={readinessApi}
               selectedWeekStart={weekStart}
-              selectedWeekEnd={data.week_end}
+              selectedWeekEnd={selectedWeekEnd}
               mode={mode}
               onLocalSelectionDirtyChange={setReadinessSelectionDirty}
             />
@@ -1791,7 +1809,7 @@ export function PlanningInputsWorkbenchView({
               authState={authState}
               api={needGenerationApi}
               selectedWeekStart={weekStart}
-              selectedWeekEnd={data.week_end}
+              selectedWeekEnd={selectedWeekEnd}
               mode={mode}
               onConfirmedNeedMaterialized={(nextBatchId: string) => {
                 setConfirmedNeedBatchId(nextBatchId);

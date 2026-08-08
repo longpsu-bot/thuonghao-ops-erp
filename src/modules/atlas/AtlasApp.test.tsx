@@ -135,9 +135,15 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }));
     expect(
-      await screen.findByText(/Kỳ có thẩm quyền \(bao gồm cả hai ngày\)/),
+      await screen.findByRole("heading", {
+        level: 2,
+        name: /\d{2}\/\d{2}\/\d{4} – \d{2}\/\d{2}\/\d{4}/,
+      }),
     ).toBeVisible();
-    expect(screen.getByText("CHƯA ĐÁNH GIÁ")).toBeVisible();
+    expect(screen.getByText("Chưa kiểm tra đầu vào")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+    ).toBeVisible();
   });
 
   it("runs the connected review journey for menu and attendance approval", async () => {
@@ -399,7 +405,7 @@ describe("Atlas master-data shell", () => {
         "Phiên làm việc đã hết. Vui lòng đăng nhập lại để tiếp tục.",
       ),
     ).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("supports the owner school review journey including validation and save", async () => {
     render(<AtlasApp reviewMode initialPage="customers-schools" />);

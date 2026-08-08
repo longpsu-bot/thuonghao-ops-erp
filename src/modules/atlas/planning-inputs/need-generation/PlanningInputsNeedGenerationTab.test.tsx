@@ -28,7 +28,8 @@ describe("Planning Inputs fifth tab", () => {
     expect(tabs[4]).toHaveTextContent("Tạo nhu cầu");
     fireEvent.click(tabs[4]!);
     expect(
-      await screen.findByText(/mọi số lượng do backend quyết định/),
+      await screen.findByRole("heading", { name: "Sẵn sàng tạo nhu cầu" }),
     ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
   });
 });

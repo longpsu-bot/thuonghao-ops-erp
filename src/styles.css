@@ -3470,6 +3470,11 @@ tbody tr.selected-row {
 }
 
 /* UI-QUALITY-02B — Planning readiness and Need Generation */
+.atlas-content,
+.atlas-page {
+  min-width: 0;
+}
+
 .planning-input-readiness-workbench,
 .need-generation-requirements {
   min-width: 0;
@@ -3539,10 +3544,26 @@ tbody tr.selected-row {
   background: var(--atlas-surface-soft);
 }
 
+.readiness-period-disclosure,
+.need-generation-period-disclosure {
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.readiness-period-disclosure > summary,
+.need-generation-period-disclosure > summary,
+.need-generation-support-detail > summary {
+  width: fit-content;
+  min-height: 34px;
+  cursor: pointer;
+  color: var(--atlas-primary);
+  font-weight: 700;
+}
+
 .readiness-period-controls button,
 .readiness-forward-actions button,
 .need-generation-period button,
-.need-generation-action-step button,
+.need-generation-active-action button,
 .need-generation-filters button,
 .need-generation-invalidation-form button,
 .need-generation-table-scroll button,
@@ -3605,37 +3626,22 @@ tbody tr.selected-row {
 }
 
 .readiness-forward-actions button,
-.need-generation-action-step button {
+.need-generation-active-action button {
   padding: 9px 13px;
   border: 1px solid #aeb6c0;
   border-radius: 6px;
   font-weight: 800;
 }
 
-.need-generation-disabled-action {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px 13px;
-  border: 1px solid var(--atlas-border);
-  border-radius: 6px;
-  background: #f1f2f2;
-  color: var(--atlas-text-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .readiness-forward-actions .primary-forward,
-.need-generation-action-step .primary-forward {
+.need-generation-active-action .primary-forward {
   border-color: var(--atlas-primary);
   background: var(--atlas-primary);
   color: #fff;
 }
 
 .readiness-forward-actions .secondary-forward,
-.need-generation-action-step .secondary-forward {
+.need-generation-active-action .secondary-forward {
   background: var(--atlas-surface);
   color: var(--atlas-primary);
 }
@@ -3652,6 +3658,34 @@ tbody tr.selected-row {
 .readiness-action-reasons ul {
   margin: 4px 0 0;
   padding-left: 18px;
+}
+
+.readiness-next-action,
+.need-generation-forward {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface-soft);
+}
+
+.readiness-next-action > div:first-child {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.readiness-next-action > div:first-child > span {
+  color: var(--atlas-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.readiness-next-action h3 {
+  margin: 0;
+  color: var(--atlas-text);
 }
 
 .readiness-correction,
@@ -3711,7 +3745,7 @@ tbody tr.selected-row {
 }
 
 .need-generation-period {
-  margin-bottom: 12px;
+  margin: 4px 0 12px;
   padding: 10px 12px;
   border-block: 1px solid var(--atlas-border);
   background: var(--atlas-surface-soft);
@@ -3724,6 +3758,26 @@ tbody tr.selected-row {
   border: 1px solid var(--atlas-border);
   border-radius: 8px;
   background: var(--atlas-surface-soft);
+}
+
+.need-generation-readiness > small {
+  display: block;
+  margin-top: 5px;
+  color: var(--atlas-text-muted);
+}
+
+.need-generation-support-detail {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--atlas-border);
+}
+
+.need-generation-support-detail code {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
 }
 
 .need-generation-readiness header,
@@ -3770,84 +3824,19 @@ tbody tr.selected-row {
   font-weight: 700;
 }
 
-.need-generation-run-summary {
+.need-generation-active-action {
   display: flex;
-  align-items: stretch;
-  gap: 16px;
-  margin: 12px 0;
-  padding: 12px 14px;
-  border-block: 1px solid var(--atlas-border);
-  background: var(--atlas-surface);
-}
-
-.need-generation-run-summary header {
-  min-width: 230px;
-  justify-content: flex-start;
-}
-
-.need-generation-run-summary dl {
-  flex: 1;
-  margin: 0;
-  border-top: 0;
-  border-left: 1px solid var(--atlas-border);
-  padding-left: 16px;
-}
-
-.need-generation-forward {
-  margin: 16px 0;
-  padding: 14px;
-  border: 1px solid var(--atlas-border);
-  border-radius: 8px;
-  background: var(--atlas-surface-soft);
-}
-
-.need-generation-action-sequence {
-  margin-top: 10px;
-  border-top: 1px solid var(--atlas-border);
-}
-
-.need-generation-action-step {
-  display: grid;
-  grid-template-columns: 28px minmax(180px, 1fr) minmax(190px, auto);
   align-items: center;
-  gap: 10px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--atlas-border);
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 10px;
 }
 
-.need-generation-action-step:last-child {
-  border-bottom: 0;
-}
-
-.need-generation-action-step.active {
-  box-shadow: inset 3px 0 var(--atlas-accent);
-}
-
-.need-generation-action-step > div {
-  display: grid;
-  gap: 2px;
-}
-
-.need-generation-action-step small {
+.need-generation-active-action p,
+.need-generation-blocked-reason {
+  margin: 0;
   color: var(--atlas-text-muted);
-}
-
-.need-generation-step-number {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border: 1px solid var(--atlas-border);
-  border-radius: 50%;
-  color: var(--atlas-text-muted);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.need-generation-action-step.active .need-generation-step-number {
-  border-color: var(--atlas-accent);
-  background: #fbf3ed;
-  color: var(--atlas-accent-text);
+  font-size: 12px;
 }
 
 .need-generation-requirements {
@@ -3976,6 +3965,12 @@ tbody tr.selected-row {
   overflow-wrap: anywhere;
 }
 
+.need-generation-materialization-boundary > details {
+  grid-column: 1 / -1;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+}
+
 @media (min-width: 48em) and (max-width: 61.25em) {
   .readiness-source-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3983,11 +3978,26 @@ tbody tr.selected-row {
 }
 
 @media (max-width: 47.99em) {
+  .atlas-review-bar .operational-state,
+  .planning-inputs-workbench,
+  .planning-input-readiness-workbench,
+  .readiness-period-controls,
+  .readiness-source-card,
+  .workbench-header-copy {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .atlas-review-bar .operational-state,
+  .workbench-header-copy,
+  .readiness-question,
+  .readiness-source-card {
+    overflow-wrap: anywhere;
+  }
+
   .readiness-question,
   .readiness-decision,
   .need-generation-readiness header,
-  .need-generation-run-summary,
-  .need-generation-run-summary header,
   .need-generation-forward header,
   .need-generation-requirements-heading {
     align-items: stretch;
@@ -4008,7 +4018,7 @@ tbody tr.selected-row {
   .need-generation-period button,
   .need-generation-filters label,
   .need-generation-filters button,
-  .need-generation-action-step button,
+  .need-generation-active-action button,
   .need-generation-invalidation-form label,
   .need-generation-invalidation-form button {
     width: 100%;
@@ -4018,7 +4028,7 @@ tbody tr.selected-row {
   .readiness-period-controls button,
   .readiness-forward-actions button,
   .need-generation-period button,
-  .need-generation-action-step button,
+  .need-generation-active-action button,
   .need-generation-filters button,
   .need-generation-invalidation-form button {
     min-height: 44px;
@@ -4028,31 +4038,23 @@ tbody tr.selected-row {
     min-width: 0;
   }
 
+  .readiness-period-controls input,
+  .readiness-invalidation-form input,
+  .readiness-invalidation-form select,
+  .readiness-source-card select {
+    width: 100%;
+    min-width: 0;
+  }
+
   .need-generation-readiness dl,
   .need-generation-run-summary dl {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
 
-  .need-generation-run-summary dl {
-    border-top: 1px solid var(--atlas-border);
-    border-left: 0;
-    padding-top: 6px;
-    padding-left: 0;
-  }
-
-  .need-generation-action-step {
-    grid-template-columns: 28px minmax(0, 1fr);
-  }
-
-  .need-generation-action-step button {
-    grid-column: 1 / -1;
-  }
-
-  .need-generation-disabled-action {
-    grid-column: 1 / -1;
-    width: 100%;
-    min-height: 44px;
+  .need-generation-active-action {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .need-generation-materialization-boundary {
@@ -4060,6 +4062,10 @@ tbody tr.selected-row {
   }
 
   .need-generation-materialization-boundary small {
+    grid-column: auto;
+  }
+
+  .need-generation-materialization-boundary > details {
     grid-column: auto;
   }
 }

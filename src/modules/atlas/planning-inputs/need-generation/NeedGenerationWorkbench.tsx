@@ -49,17 +49,17 @@ const forwardSequence = [
 const forwardCopy = {
   create: {
     label: "Tạo nhu cầu",
-    description: "Tạo một lần chạy từ đúng bộ đầu vào đã được yêu cầu.",
+    description: "Tạo nhu cầu nguyên liệu từ bộ đầu vào đã sẵn sàng.",
     Icon: Lightning,
   },
   validate: {
     label: "Kiểm tra nhu cầu",
-    description: "Xác nhận lần chạy không còn lỗi chặn trước khi phát hành.",
+    description: "Xác nhận kết quả không còn lỗi chặn trước khi phát hành.",
     Icon: CheckCircle,
   },
   release: {
     label: "Phát hành nhu cầu",
-    description: "Khóa ảnh chụp các đóng góp để chuyển sang xác nhận.",
+    description: "Chốt kết quả đã kiểm tra để chuyển sang xác nhận nhu cầu.",
     Icon: SealCheck,
   },
   materialize: {
@@ -100,6 +100,36 @@ function statusTone(status?: string | null) {
     return "ok" as const;
   if (status === "INVALIDATED") return "danger" as const;
   return "warning" as const;
+}
+
+function workflowStatus(workbench: NeedGenerationWorkbenchData) {
+  const run = workbench.selected_run;
+  if (!run)
+    return workbench.planning_input_set?.readiness_status ===
+      "NEED_GENERATION_REQUESTED"
+      ? "Sẵn sàng tạo nhu cầu"
+      : "Chưa thể tạo nhu cầu";
+  if (run.status === "GENERATED")
+    return run.blocking_issue_count > 0
+      ? "Đã tạo — cần xử lý lỗi chặn"
+      : "Đã tạo — cần kiểm tra";
+  if (run.status === "VALIDATED") return "Đã kiểm tra — có thể phát hành";
+  if (run.status === "RELEASED_FOR_CONFIRMATION")
+    return workbench.materialization.confirmed_need_batch_id
+      ? "Đã chuyển sang Xác nhận nhu cầu"
+      : "Đã phát hành — có thể tạo nhu cầu xác nhận";
+  if (run.status === "INVALIDATED")
+    return "Đã vô hiệu hóa — cần tạo lại khi đủ điều kiện";
+  return statusLabel(run.status);
+}
+
+function expectedOperation(workbench: NeedGenerationWorkbenchData) {
+  const status = workbench.selected_run?.status;
+  if (!status || status === "INVALIDATED") return "create" as const;
+  if (status === "GENERATED") return "validate" as const;
+  if (status === "VALIDATED") return "release" as const;
+  if (status === "RELEASED_FOR_CONFIRMATION") return "materialize" as const;
+  return null;
 }
 
 function IssueList({
@@ -389,119 +419,116 @@ export function NeedGenerationWorkbench({
       );
     }
     const intent = { operation, request };
-    setPending(intent);
     void execute(intent);
   };
 
-  const activeForwardAction = workbench
-    ? forwardSequence.find((operation) => workbench.allowed_actions[operation])
-    : undefined;
+  const allowedForwardActions = workbench
+    ? forwardSequence.filter(
+        (operation) => workbench.allowed_actions[operation],
+      )
+    : [];
+  const activeForwardAction =
+    allowedForwardActions.length === 1 ? allowedForwardActions[0] : null;
+  const unexpectedForwardActions = allowedForwardActions.length > 1;
+  const expectedBlockedAction = workbench ? expectedOperation(workbench) : null;
+  const expectedDisabledReason =
+    workbench && expectedBlockedAction
+      ? workbench.disabled_reasons[expectedBlockedAction]
+      : null;
 
   const forwardActions = (
     <section
       className="need-generation-forward"
-      aria-label="Bước vòng đời tiếp theo"
+      aria-label="Việc cần làm tiếp theo"
     >
       <header>
-        <span>Bước hợp lệ tiếp theo</span>
+        <span>Việc cần làm tiếp theo</span>
         <h3>
           {activeForwardAction
             ? forwardCopy[activeForwardAction].label
-            : "Chưa có thao tác chuyển bước"}
+            : "Chưa thể tiếp tục"}
         </h3>
       </header>
-      <div className="need-generation-action-sequence">
-        {forwardSequence.map((operation, index) => {
-          const { label, description, Icon } = forwardCopy[operation];
-          const allowed = workbench?.allowed_actions[operation] ?? false;
-          const disabledReason = workbench?.disabled_reasons[operation];
+      {activeForwardAction &&
+        (() => {
+          const { label, description, Icon } = forwardCopy[activeForwardAction];
           return (
-            <div
-              className={`need-generation-action-step ${
-                activeForwardAction === operation ? "active" : ""
-              }`}
-              key={operation}
-            >
-              <span className="need-generation-step-number">{index + 1}</span>
-              <div>
-                <b>{label}</b>
-                <small id={`need-generation-action-${operation}`}>
-                  {allowed ? description : disabledReason}
-                </small>
-              </div>
-              {allowed ? (
-                <button
-                  type="button"
-                  className="primary-forward"
-                  disabled={busy}
-                  aria-describedby={`need-generation-action-${operation}`}
-                  onClick={() => beginAction(operation)}
-                >
-                  <Icon aria-hidden="true" size={18} weight="bold" />
-                  {label}
-                </button>
-              ) : (
-                <span
-                  className="need-generation-disabled-action"
-                  aria-disabled="true"
-                  aria-describedby={`need-generation-action-${operation}`}
-                >
-                  <Icon aria-hidden="true" size={18} weight="bold" />
-                  {label}
-                </span>
-              )}
+            <div className="need-generation-active-action">
+              <p id={`need-generation-action-${activeForwardAction}`}>
+                {description}
+              </p>
+              <button
+                type="button"
+                className="primary-forward"
+                disabled={busy}
+                aria-describedby={`need-generation-action-${activeForwardAction}`}
+                onClick={() => beginAction(activeForwardAction)}
+              >
+                <Icon aria-hidden="true" size={18} />
+                {label}
+              </button>
             </div>
           );
-        })}
-      </div>
+        })()}
+      {!activeForwardAction &&
+        !unexpectedForwardActions &&
+        expectedDisabledReason && (
+          <p className="need-generation-blocked-reason">
+            {expectedDisabledReason}
+          </p>
+        )}
+      {unexpectedForwardActions && (
+        <p className="operator-notice warning" role="alert">
+          Hệ thống trả về nhiều thao tác tiếp theo cùng lúc. Hãy tải lại trước
+          khi tiếp tục.
+        </p>
+      )}
     </section>
   );
 
   return (
     <Panel
       title="Tạo nhu cầu"
-      description="Tạo nhu cầu nguyên liệu từ đúng Thực đơn, Sĩ số và Pantry đã được đánh giá; mọi số lượng do backend quyết định."
-      status={
-        <Chip tone={statusTone(workbench?.selected_run?.status)}>
-          {statusLabel(workbench?.selected_run?.status)}
-        </Chip>
-      }
+      description="Rà soát nhu cầu nguyên liệu và thực hiện đúng việc tiếp theo."
     >
       <p className="need-generation-context">
-        Kỳ đang xem, bao gồm cả hai ngày: <b>{viDate(periodStart)}</b> –{" "}
+        Tuần đang xử lý: <b>{viDate(periodStart)}</b> –{" "}
         <b>{viDate(periodEnd)}</b>
       </p>
-      <div className="need-generation-period">
-        <label>
-          Từ ngày
-          <input
-            aria-label="Từ ngày tạo nhu cầu"
-            type="date"
-            value={draftStart}
-            onChange={(event) => setDraftStart(event.target.value)}
-          />
-        </label>
-        <label>
-          Đến ngày
-          <input
-            aria-label="Đến ngày tạo nhu cầu"
-            type="date"
-            value={draftEnd}
-            onChange={(event) => setDraftEnd(event.target.value)}
-          />
-        </label>
-        <button type="button" disabled={loading} onClick={applyPeriod}>
-          Xem kỳ
-        </button>
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() => void loadWorkbench()}
-        >
-          <ArrowClockwise aria-hidden="true" size={16} weight="bold" />
-          Tải lại
-        </button>
-      </div>
+      <details className="need-generation-period-disclosure">
+        <summary>Đổi phạm vi xem</summary>
+        <div className="need-generation-period">
+          <label>
+            Từ ngày
+            <input
+              aria-label="Từ ngày tạo nhu cầu"
+              type="date"
+              value={draftStart}
+              onChange={(event) => setDraftStart(event.target.value)}
+            />
+          </label>
+          <label>
+            Đến ngày
+            <input
+              aria-label="Đến ngày tạo nhu cầu"
+              type="date"
+              value={draftEnd}
+              onChange={(event) => setDraftEnd(event.target.value)}
+            />
+          </label>
+          <button type="button" disabled={loading} onClick={applyPeriod}>
+            Xem phạm vi này
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void loadWorkbench()}
+          >
+            <ArrowClockwise aria-hidden="true" size={16} />
+            Tải lại
+          </button>
+        </div>
+      </details>
 
       {loading && <p role="status">Đang tải nhu cầu có thẩm quyền…</p>}
       {notice && (
@@ -520,91 +547,91 @@ export function NeedGenerationWorkbench({
         <>
           <section
             className="need-generation-readiness"
-            aria-label="Sẵn sàng đầu vào"
+            aria-label="Trạng thái hiện tại"
           >
             <header>
               <div>
-                <span>Bằng chứng bàn giao</span>
-                <h3>Sẵn sàng đầu vào</h3>
+                <span>Trạng thái hiện tại</span>
+                <h3>{workflowStatus(workbench)}</h3>
               </div>
               <Chip
                 tone={statusTone(
-                  workbench.planning_input_set?.readiness_status,
+                  workbench.selected_run?.status ??
+                    workbench.planning_input_set?.readiness_status,
                 )}
               >
-                {statusLabel(workbench.planning_input_set?.readiness_status)}
+                {statusLabel(
+                  workbench.selected_run?.status ??
+                    workbench.planning_input_set?.readiness_status,
+                )}
               </Chip>
             </header>
-            <dl>
-              <div>
-                <dt>Đánh giá</dt>
-                <dd>
-                  {workbench.current_evaluation
-                    ? `${statusLabel(workbench.current_evaluation.evaluation_result)} · v${workbench.current_evaluation.evaluation_version}`
-                    : "Chưa có"}
-                </dd>
-              </div>
-              {(["weekly_menu", "attendance", "pantry"] as const).map(
-                (source) => (
-                  <div key={source}>
-                    <dt>
-                      {source === "weekly_menu"
-                        ? "Thực đơn"
-                        : source === "attendance"
-                          ? "Sĩ số"
-                          : "Pantry"}
-                    </dt>
-                    <dd>
-                      v
-                      {String(
-                        workbench.source_evidence[source]?.version ?? "—",
-                      )}
-                      {" · "}
-                      {String(
-                        workbench.source_evidence[source]?.line_count ?? 0,
-                      )}{" "}
-                      dòng
-                    </dd>
-                  </div>
-                ),
-              )}
-            </dl>
-          </section>
-
-          {workbench.planning_input_set?.readiness_status !==
-            "NEED_GENERATION_REQUESTED" && (
-            <p className="operator-notice warning">
-              Hãy quay lại Sẵn sàng đầu vào, đánh giá ba nguồn và chọn yêu cầu
-              tạo nhu cầu.
-            </p>
-          )}
-
-          {workbench.selected_run && (
-            <section className="need-generation-run-summary">
-              <header>
-                <span>Lần chạy đang rà soát</span>
-                <h3>Lần #{workbench.selected_run.attempt_ordinal}</h3>
-                <Chip tone={statusTone(workbench.selected_run.status)}>
-                  {statusLabel(workbench.selected_run.status)} · v
-                  {workbench.selected_run.version}
-                </Chip>
-              </header>
+            <small>
+              {workbench.selected_run
+                ? `Lần tạo #${workbench.selected_run.attempt_ordinal}`
+                : workbench.planning_input_set?.readiness_status ===
+                    "NEED_GENERATION_REQUESTED"
+                  ? "Đầu vào đã được bàn giao để tạo nhu cầu."
+                  : "Cần hoàn tất kiểm tra đầu vào trước."}
+            </small>
+            <details className="need-generation-support-detail">
+              <summary>Chi tiết đầu vào và lần tạo</summary>
               <dl>
                 <div>
-                  <dt>Dòng nguyên tử</dt>
-                  <dd>{workbench.selected_run.generated_line_count}</dd>
+                  <dt>Đánh giá đầu vào</dt>
+                  <dd>
+                    {workbench.current_evaluation
+                      ? `${statusLabel(workbench.current_evaluation.evaluation_result)} · v${workbench.current_evaluation.evaluation_version}`
+                      : "Chưa có"}
+                  </dd>
                 </div>
-                <div>
-                  <dt>Lỗi chặn</dt>
-                  <dd>{workbench.selected_run.blocking_issue_count}</dd>
-                </div>
-                <div>
-                  <dt>Cảnh báo</dt>
-                  <dd>{workbench.selected_run.warning_count}</dd>
-                </div>
+                {(["weekly_menu", "attendance", "pantry"] as const).map(
+                  (source) => (
+                    <div key={source}>
+                      <dt>
+                        {source === "weekly_menu"
+                          ? "Thực đơn"
+                          : source === "attendance"
+                            ? "Sĩ số"
+                            : "Pantry"}
+                      </dt>
+                      <dd>
+                        v
+                        {String(
+                          workbench.source_evidence[source]?.version ?? "—",
+                        )}{" "}
+                        ·{" "}
+                        {String(
+                          workbench.source_evidence[source]?.line_count ?? 0,
+                        )}{" "}
+                        dòng
+                      </dd>
+                    </div>
+                  ),
+                )}
+                {workbench.selected_run && (
+                  <div>
+                    <dt>Thông tin hỗ trợ</dt>
+                    <dd>
+                      Phiên bản {workbench.selected_run.version} ·{" "}
+                      {workbench.selected_run.generated_line_count} dòng chi
+                      tiết
+                    </dd>
+                  </div>
+                )}
               </dl>
-            </section>
-          )}
+              {workbench.planning_input_set && (
+                <code>
+                  {workbench.planning_input_set.planning_input_set_id}
+                </code>
+              )}
+              {workbench.current_evaluation && (
+                <code>
+                  {workbench.current_evaluation.planning_input_evaluation_id}
+                </code>
+              )}
+            </details>
+          </section>
 
           <IssueList
             title="Lỗi chặn"
@@ -619,26 +646,6 @@ export function NeedGenerationWorkbench({
 
           {!workbench.selected_run && forwardActions}
 
-          {pending && !workbench.selected_run && (
-            <section
-              className="command-outcome warning"
-              aria-label="Yêu cầu đang chờ xác minh"
-            >
-              <b>Chưa tự động gửi lại thao tác</b>
-              <span>
-                Yêu cầu {pending.operation} đang được giữ nguyên. Chỉ gửi lại
-                khi người vận hành chủ động xác nhận.
-              </span>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void execute(pending)}
-              >
-                Thử lại đúng yêu cầu
-              </button>
-            </section>
-          )}
-
           {workbench.selected_run && (
             <section
               className="need-generation-requirements"
@@ -651,10 +658,7 @@ export function NeedGenerationWorkbench({
                     Nhu cầu nguyên liệu đã tạo
                   </h3>
                 </div>
-                <small>
-                  {workbench.pagination.total_groups} nhóm theo đúng kết quả
-                  backend
-                </small>
+                <small>{workbench.pagination.total_groups} nhóm nhu cầu</small>
               </header>
 
               <div
@@ -781,7 +785,7 @@ export function NeedGenerationWorkbench({
                             void loadWorkbench({ nextDetail: identity });
                           }}
                         >
-                          <Eye aria-hidden="true" size={16} weight="bold" />
+                          <Eye aria-hidden="true" size={16} />
                           Xem{" "}
                           {group.active_contribution_count +
                             group.removed_contribution_count}
@@ -824,7 +828,7 @@ export function NeedGenerationWorkbench({
 
               {detailGroup && (
                 <details open className="need-generation-detail">
-                  <summary>Chi tiết đóng góp nguyên tử</summary>
+                  <summary>Chi tiết hình thành số lượng</summary>
                   <ul>
                     {workbench.atomic_detail.map((item) => (
                       <li key={item.theoretical_need_line_id}>
@@ -852,8 +856,8 @@ export function NeedGenerationWorkbench({
               {workbench.allowed_actions.invalidate && (
                 <details className="need-generation-correction">
                   <summary>
-                    <Wrench aria-hidden="true" size={17} weight="bold" />
-                    Vô hiệu hóa để điều chỉnh
+                    <Wrench aria-hidden="true" size={17} />
+                    Thao tác khác
                   </summary>
                   <p>
                     Đây là đường sửa sai, không phải bước tiến bình thường. Mọi
@@ -905,35 +909,38 @@ export function NeedGenerationWorkbench({
                 </details>
               )}
 
-              <section className="need-generation-materialization-boundary">
-                <div>
-                  <span>Ranh giới của bước cuối</span>
-                  <h3>Tạo nhu cầu xác nhận</h3>
-                </div>
-                <p>
-                  Tạo hoặc cập nhật đối tượng Xác nhận nhu cầu để tiếp tục rà
-                  soát. Không tạo Bàn giao mua hàng, không chọn nhà cung cấp,
-                  không tạo đơn mua hàng và không thay đổi Kho hay Giao nhận.
-                </p>
-                <small>
-                  Hiện tại:{" "}
-                  {workbench.materialization.confirmed_need_status ??
-                    "chưa tạo"}
-                  {workbench.materialization.confirmed_need_batch_id
-                    ? ` · ${workbench.materialization.confirmed_need_batch_id}`
-                    : ""}
-                </small>
-              </section>
+              {(activeForwardAction === "materialize" ||
+                Boolean(workbench.materialization.confirmed_need_batch_id)) && (
+                <section className="need-generation-materialization-boundary">
+                  <div>
+                    <span>Kết quả của thao tác</span>
+                    <h3>Tạo nhu cầu xác nhận</h3>
+                  </div>
+                  <p>
+                    Chuyển kết quả đã phát hành sang bước Xác nhận nhu cầu. Bước
+                    này chưa đặt mua hàng và chưa chọn nhà cung cấp.
+                  </p>
+                  {workbench.materialization.confirmed_need_batch_id && (
+                    <details>
+                      <summary>Chi tiết kỹ thuật</summary>
+                      <small>
+                        {workbench.materialization.confirmed_need_status ??
+                          "Đã tạo"}{" "}
+                        · {workbench.materialization.confirmed_need_batch_id}
+                      </small>
+                    </details>
+                  )}
+                </section>
+              )}
 
               {pending && (
                 <section
                   className="command-outcome warning"
                   aria-label="Yêu cầu đang chờ xác minh"
                 >
-                  <b>Chưa tự động gửi lại thao tác</b>
+                  <b>Kết quả chưa xác định. Hệ thống chưa tự gửi lại.</b>
                   <span>
-                    Yêu cầu {pending.operation} đang được giữ nguyên. Chỉ gửi
-                    lại khi người vận hành chủ động xác nhận.
+                    Hãy kiểm tra trạng thái hoặc chủ động thử lại đúng yêu cầu.
                   </span>
                   <button
                     type="button"
@@ -944,6 +951,25 @@ export function NeedGenerationWorkbench({
                   </button>
                 </section>
               )}
+            </section>
+          )}
+
+          {pending && !workbench.selected_run && (
+            <section
+              className="command-outcome warning"
+              aria-label="Yêu cầu đang chờ xác minh"
+            >
+              <b>Kết quả chưa xác định. Hệ thống chưa tự gửi lại.</b>
+              <span>
+                Hãy kiểm tra trạng thái hoặc chủ động thử lại đúng yêu cầu.
+              </span>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void execute(pending)}
+              >
+                Thử lại đúng yêu cầu
+              </button>
             </section>
           )}
 
