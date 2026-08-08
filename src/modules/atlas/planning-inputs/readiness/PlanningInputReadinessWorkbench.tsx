@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowClockwise,
+  Checks,
+  ClockCounterClockwise,
+  Lightning,
+  Wrench,
+} from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
-import { Chip, Panel } from "../../WorkbenchComponents";
+import { Chip } from "../../WorkbenchComponents";
 import {
   planningInputReadinessCommandRequest,
   type PlanningInputReadinessApi,
@@ -16,7 +23,6 @@ import {
   planningInputReadinessWorkbenchFromResult,
   readinessCandidateKey,
   readinessCandidateTriple,
-  readinessDecisionLabel,
   readinessExpectation,
   readinessResultAllowsExactRetry,
   readinessResultIsStale,
@@ -65,6 +71,17 @@ function sourceVersion(source: ReadinessSourceKind, item: ReadinessCandidate) {
       : item.pantry_need_batch_version;
 }
 
+function sourceSnapshotId(
+  source: ReadinessSourceKind,
+  item: ReadinessCandidate,
+) {
+  return source === "weekly_menu"
+    ? item.weekly_menu_approval_snapshot_id
+    : source === "attendance"
+      ? item.attendance_approval_snapshot_id
+      : item.pantry_need_approval_snapshot_id;
+}
+
 function candidateLabel(source: ReadinessSourceKind, item: ReadinessCandidate) {
   return `${viDate(item.source_period.period_start)}–${viDate(item.source_period.period_end)} · phiên bản ${sourceVersion(source, item)} · ${item.approved_by_display_name}`;
 }
@@ -90,7 +107,7 @@ function SourceCard({
     >
       <header>
         <div>
-          <span>Nguồn bằng chứng</span>
+          <span>Nguồn đầu vào</span>
           <h3>{label}</h3>
         </div>
         <Chip
@@ -140,32 +157,23 @@ function SourceCard({
       {selected ? (
         <dl>
           <div>
-            <dt>Kỳ nguồn</dt>
+            <dt>Kỳ dữ liệu</dt>
             <dd>
               {viDate(selected.source_period.period_start)} –{" "}
               {viDate(selected.source_period.period_end)}
             </dd>
           </div>
           <div>
-            <dt>Phê duyệt</dt>
-            <dd>
-              {selected.approved_by_display_name} ·{" "}
-              {new Date(selected.approved_at).toLocaleString("vi-VN")}
-            </dd>
+            <dt>Phiên bản phê duyệt</dt>
+            <dd>v{sourceVersion(source, selected)}</dd>
           </div>
           <div>
-            <dt>Hiện hành / phủ kỳ</dt>
+            <dt>Trạng thái</dt>
             <dd>
               {selected.source_current ? "Hiện hành" : "Không hiện hành"} ·{" "}
               {selected.coverage === "COVERS" ? "Đủ kỳ" : "Không đủ kỳ"}
             </dd>
           </div>
-          {source !== "pantry" && (
-            <div>
-              <dt>Số dòng</dt>
-              <dd>{selected.line_count}</dd>
-            </div>
-          )}
         </dl>
       ) : (
         evidence.selection_state !== "AMBIGUOUS" && (
@@ -177,6 +185,26 @@ function SourceCard({
         <p className="readiness-pantry-evidence">
           {pantryReadinessEvidenceLabel(evidence)}
         </p>
+      )}
+
+      {selected && (
+        <details className="readiness-source-audit">
+          <summary>Chi tiết bằng chứng</summary>
+          <dl>
+            <div>
+              <dt>Người phê duyệt</dt>
+              <dd>
+                {selected.approved_by_display_name} ·{" "}
+                {new Date(selected.approved_at).toLocaleString("vi-VN")}
+              </dd>
+            </div>
+            <div>
+              <dt>Số dòng</dt>
+              <dd>{selected.line_count}</dd>
+            </div>
+          </dl>
+          <code>{sourceSnapshotId(source, selected)}</code>
+        </details>
       )}
     </article>
   );
@@ -225,6 +253,7 @@ export function PlanningInputReadinessWorkbench({
   selectedWeekEnd,
   historyLimit = 25,
   confirmDiscard = (message) => window.confirm(message),
+  onLocalSelectionDirtyChange,
 }: {
   authState: AtlasAuthState;
   api?: PlanningInputReadinessApi;
@@ -233,6 +262,7 @@ export function PlanningInputReadinessWorkbench({
   mode?: "connected" | "review";
   historyLimit?: number;
   confirmDiscard?: (message: string) => boolean;
+  onLocalSelectionDirtyChange?: (dirty: boolean) => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [periodStart, setPeriodStart] = useState(selectedWeekStart);
@@ -252,6 +282,10 @@ export function PlanningInputReadinessWorkbench({
   );
   const generation = useRef(0);
   const commandGeneration = useRef(0);
+  const outerWeek = useRef({
+    start: selectedWeekStart,
+    end: selectedWeekEnd,
+  });
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -304,6 +338,33 @@ export function PlanningInputReadinessWorkbench({
       commandGeneration.current += 1;
     };
   }, [loadWorkbench]);
+
+  useEffect(() => {
+    if (
+      outerWeek.current.start === selectedWeekStart &&
+      outerWeek.current.end === selectedWeekEnd
+    )
+      return;
+    outerWeek.current = { start: selectedWeekStart, end: selectedWeekEnd };
+    generation.current += 1;
+    commandGeneration.current += 1;
+    setBusy(false);
+    setSelectionTouched(false);
+    setPendingCommand(null);
+    setWorkbench(null);
+    setNotice(null);
+    setInvalidationReason("");
+    setInvalidationNote("");
+    setDraftStart(selectedWeekStart);
+    setDraftEnd(selectedWeekEnd);
+    setPeriodStart(selectedWeekStart);
+    setPeriodEnd(selectedWeekEnd);
+  }, [selectedWeekEnd, selectedWeekStart]);
+
+  useEffect(() => {
+    onLocalSelectionDirtyChange?.(selectionTouched);
+    return () => onLocalSelectionDirtyChange?.(false);
+  }, [onLocalSelectionDirtyChange, selectionTouched]);
 
   const applyPeriod = (nextStart: string, nextEnd: string) => {
     if (!nextStart || !nextEnd || nextEnd < nextStart) {
@@ -443,6 +504,19 @@ export function PlanningInputReadinessWorkbench({
     () => (workbench ? readinessSourceSelection(workbench) : undefined),
     [workbench],
   );
+  const forwardActions = workbench
+    ? [
+        workbench.allowed_actions.can_evaluate ? "evaluate" : null,
+        workbench.allowed_actions.can_request_need_generation
+          ? "requestNeedGeneration"
+          : null,
+      ].filter((operation): operation is "evaluate" | "requestNeedGeneration" =>
+        Boolean(operation),
+      )
+    : [];
+  const activeForwardAction =
+    forwardActions.length === 1 ? forwardActions[0] : null;
+  const unexpectedForwardActions = forwardActions.length > 1;
 
   if (!authSubject)
     return (
@@ -453,43 +527,53 @@ export function PlanningInputReadinessWorkbench({
 
   return (
     <section className="planning-input-readiness-workbench">
-      <section className="readiness-period-controls" aria-label="Kỳ đánh giá">
-        <label>
-          Từ ngày
-          <input
-            type="date"
-            value={draftStart}
-            onChange={(event) => setDraftStart(event.target.value)}
-          />
-        </label>
-        <label>
-          Đến ngày
-          <input
-            type="date"
-            value={draftEnd}
-            onChange={(event) => setDraftEnd(event.target.value)}
-          />
-        </label>
-        <button
-          type="button"
-          onClick={() => applyPeriod(draftStart, draftEnd)}
-          disabled={busy}
-        >
-          Đọc đúng kỳ
-        </button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => applyPeriod(selectedWeekStart, selectedWeekEnd)}
-          disabled={busy}
-        >
-          Dùng cả tuần đang chọn
-        </button>
-        <p>
-          Kỳ có thẩm quyền (bao gồm cả hai ngày): <b>{viDate(periodStart)}</b> –{" "}
-          <b>{viDate(periodEnd)}</b>
-        </p>
-      </section>
+      <header className="readiness-question">
+        <div>
+          <span>Tuần đang xử lý</span>
+          <h2>
+            {viDate(periodStart)} – {viDate(periodEnd)}
+          </h2>
+        </div>
+        <p>Bao gồm cả ngày bắt đầu và ngày kết thúc.</p>
+      </header>
+
+      <details className="readiness-period-disclosure">
+        <summary>Đổi phạm vi đánh giá</summary>
+        <section className="readiness-period-controls" aria-label="Kỳ đánh giá">
+          <label>
+            Từ ngày
+            <input
+              type="date"
+              value={draftStart}
+              onChange={(event) => setDraftStart(event.target.value)}
+            />
+          </label>
+          <label>
+            Đến ngày
+            <input
+              type="date"
+              value={draftEnd}
+              onChange={(event) => setDraftEnd(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => applyPeriod(draftStart, draftEnd)}
+            disabled={busy}
+          >
+            <ArrowClockwise aria-hidden="true" size={16} />
+            Xem phạm vi này
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => applyPeriod(selectedWeekStart, selectedWeekEnd)}
+            disabled={busy}
+          >
+            Dùng cả tuần đang chọn
+          </button>
+        </section>
+      </details>
 
       {loading && !workbench && (
         <p role="status">Đang đọc trạng thái sẵn sàng…</p>
@@ -499,23 +583,40 @@ export function PlanningInputReadinessWorkbench({
         <>
           <section
             className={`readiness-decision ${workbench.decision.toLowerCase()}`}
+            aria-label="Kết quả kiểm tra đầu vào"
           >
             <div>
-              <span>Quyết định có thẩm quyền</span>
-              <strong>{readinessDecisionLabel(workbench.decision)}</strong>
+              <span>Kết quả hiện tại</span>
+              <strong>
+                {workbench.decision === "READY" ||
+                workbench.decision === "NEED_GENERATION_REQUESTED"
+                  ? "Đầu vào đã sẵn sàng"
+                  : workbench.decision === "NOT_EVALUATED"
+                    ? "Chưa kiểm tra đầu vào"
+                    : "Cần xử lý đầu vào"}
+              </strong>
               <small>
-                {workbench.root
-                  ? `Planning Input Set ${workbench.root.planning_input_set_id}`
-                  : "Chưa có Planning Input Set cho đúng kỳ này."}
+                {workbench.allowed_actions.can_request_need_generation
+                  ? "Thực đơn, Sĩ số và Pantry đã đủ điều kiện."
+                  : workbench.allowed_actions.can_evaluate
+                    ? "Kiểm tra ba nguồn để biết có thể tạo nhu cầu hay chưa."
+                    : workbench.decision === "NEED_GENERATION_REQUESTED"
+                      ? "Đầu vào đã được chuyển sang bước tạo nhu cầu."
+                      : "Xem vấn đề cần xử lý trước khi tiếp tục."}
               </small>
             </div>
-            {workbench.allowed_actions.disabled_reasons.length > 0 && (
-              <ul>
-                {workbench.allowed_actions.disabled_reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            )}
+            {workbench.root ? (
+              <details className="readiness-root-audit">
+                <summary>Chi tiết kỹ thuật</summary>
+                <code>{workbench.root.planning_input_set_id}</code>
+                {workbench.current_evaluation && (
+                  <code>
+                    {workbench.current_evaluation.planning_input_evaluation_id}{" "}
+                    · v{workbench.current_evaluation.evaluation_version}
+                  </code>
+                )}
+              </details>
+            ) : null}
           </section>
 
           <div className="readiness-source-grid">
@@ -542,133 +643,184 @@ export function PlanningInputReadinessWorkbench({
             items={currentIssues?.warnings ?? []}
           />
 
-          <Panel
-            title="Thao tác vòng đời"
-            description="Nút thao tác và lý do khả dụng do PostgreSQL quyết định."
+          <section
+            className="readiness-next-action"
+            aria-label="Việc cần làm tiếp theo"
           >
-            <div className="readiness-actions">
-              <button
-                type="button"
-                onClick={evaluate}
-                disabled={busy || !workbench.allowed_actions.can_evaluate}
-              >
-                Đánh giá sẵn sàng
-              </button>
-              <button
-                type="button"
-                onClick={requestNeedGeneration}
-                disabled={
-                  busy || !workbench.allowed_actions.can_request_need_generation
-                }
-              >
-                Yêu cầu tạo nhu cầu
-              </button>
+            <div>
+              <span>Việc cần làm tiếp theo</span>
+              <h3>
+                {activeForwardAction === "evaluate"
+                  ? "Kiểm tra đầu vào"
+                  : activeForwardAction === "requestNeedGeneration"
+                    ? "Chuyển sang tạo nhu cầu"
+                    : "Chưa thể tiếp tục"}
+              </h3>
             </div>
-
-            {workbench.allowed_actions.can_invalidate && (
-              <div className="readiness-invalidation-form">
-                <label>
-                  Lý do vô hiệu
-                  <select
-                    value={invalidationReason}
-                    onChange={(event) => {
-                      setInvalidationReason(event.target.value);
-                      setInvalidationNote("");
-                    }}
-                  >
-                    {workbench.allowed_actions.invalidation_reason_codes.map(
-                      (reason) => (
-                        <option key={reason} value={reason}>
-                          {reason}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
-                <label>
-                  Ghi chú vô hiệu
-                  <input
-                    value={invalidationNote}
-                    onChange={(event) =>
-                      setInvalidationNote(event.target.value)
-                    }
-                    required={invalidationReasonRequiresNote(
-                      invalidationReason,
-                    )}
-                    placeholder={
-                      invalidationReasonRequiresNote(invalidationReason)
-                        ? "Bắt buộc"
-                        : "Không bắt buộc"
-                    }
-                  />
-                </label>
+            <div className="readiness-forward-actions">
+              {activeForwardAction === "evaluate" && (
                 <button
                   type="button"
-                  onClick={invalidate}
-                  disabled={busy || !canSubmitInvalidation}
+                  className="primary-forward"
+                  onClick={evaluate}
+                  disabled={busy}
                 >
-                  Vô hiệu trạng thái
+                  <Checks aria-hidden="true" size={18} />
+                  Đánh giá mức sẵn sàng
                 </button>
-              </div>
-            )}
-          </Panel>
+              )}
+              {activeForwardAction === "requestNeedGeneration" && (
+                <button
+                  type="button"
+                  className="primary-forward"
+                  onClick={requestNeedGeneration}
+                  disabled={busy}
+                >
+                  <Lightning aria-hidden="true" size={18} />
+                  Yêu cầu tạo nhu cầu
+                </button>
+              )}
+            </div>
 
-          <section className="readiness-history" aria-label="Lịch sử sẵn sàng">
-            <header>
-              <div>
-                <span>Lịch sử bất biến</span>
-                <h3>Đánh giá, yêu cầu và vô hiệu</h3>
-              </div>
-              <small>{workbench.history_items.length} mục đã tải</small>
-            </header>
-            {workbench.history_items.length === 0 ? (
-              <p>Chưa có lịch sử cho kỳ này.</p>
-            ) : (
-              <ol>
-                {workbench.history_items.map((item) => {
-                  const pantryMessage = historicalPantryMessage(item);
-                  return (
-                    <li key={`${item.history_kind}:${item.history_item_id}`}>
-                      <b>
-                        {item.history_kind === "EVALUATION"
-                          ? `Đánh giá phiên bản ${item.evaluation?.evaluation_version ?? "—"}`
-                          : item.history_kind === "NEED_GENERATION_REQUEST"
-                            ? "Yêu cầu tạo nhu cầu"
-                            : "Vô hiệu trạng thái"}
-                      </b>
-                      <span>
-                        {new Date(item.occurred_at).toLocaleString("vi-VN")}
-                        {item.actor_display_name
-                          ? ` · ${item.actor_display_name}`
-                          : ""}
-                      </span>
-                      {item.reason_note && <small>{item.reason_note}</small>}
-                      {pantryMessage && (
-                        <small className="historical-pantry-warning">
-                          {pantryMessage}
-                        </small>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
+            {!activeForwardAction &&
+              !unexpectedForwardActions &&
+              workbench.allowed_actions.disabled_reasons.length > 0 && (
+                <div className="readiness-action-reasons" aria-live="polite">
+                  <b>Cần xử lý trước khi tiếp tục</b>
+                  <ul>
+                    {Array.from(
+                      new Set(workbench.allowed_actions.disabled_reasons),
+                    ).map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+            {unexpectedForwardActions && (
+              <p className="operator-notice warning" role="alert">
+                Hệ thống trả về nhiều thao tác tiếp theo cùng lúc. Hãy tải lại
+                trước khi tiếp tục.
+              </p>
             )}
-            {workbench.history_has_more && workbench.history_next_cursor && (
-              <button
-                type="button"
-                onClick={() =>
-                  void loadWorkbench({
-                    sourceSelection: currentSelection,
-                    cursor: workbench.history_next_cursor,
-                    append: true,
-                  })
-                }
-                disabled={loading || busy}
-              >
-                Tải thêm lịch sử
-              </button>
+
+            {workbench.allowed_actions.can_invalidate && (
+              <details className="readiness-correction">
+                <summary>
+                  <Wrench aria-hidden="true" size={17} />
+                  Thao tác khác
+                </summary>
+                <p>
+                  Chỉ dùng khi cần sửa quyết định đã có; thao tác này không thay
+                  đổi dữ liệu nguồn hay lần chạy tạo nhu cầu đã tồn tại.
+                </p>
+                <div className="readiness-invalidation-form">
+                  <label>
+                    Lý do vô hiệu
+                    <select
+                      value={invalidationReason}
+                      onChange={(event) => {
+                        setInvalidationReason(event.target.value);
+                        setInvalidationNote("");
+                      }}
+                    >
+                      {workbench.allowed_actions.invalidation_reason_codes.map(
+                        (reason) => (
+                          <option key={reason} value={reason}>
+                            {reason}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </label>
+                  <label>
+                    Ghi chú vô hiệu
+                    <input
+                      value={invalidationNote}
+                      onChange={(event) =>
+                        setInvalidationNote(event.target.value)
+                      }
+                      required={invalidationReasonRequiresNote(
+                        invalidationReason,
+                      )}
+                      placeholder={
+                        invalidationReasonRequiresNote(invalidationReason)
+                          ? "Bắt buộc"
+                          : "Không bắt buộc"
+                      }
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="destructive-secondary"
+                    onClick={invalidate}
+                    disabled={busy || !canSubmitInvalidation}
+                  >
+                    Vô hiệu hóa kết quả sẵn sàng
+                  </button>
+                </div>
+              </details>
             )}
           </section>
+
+          <details className="readiness-history">
+            <summary>
+              <span>
+                <ClockCounterClockwise aria-hidden="true" size={18} />
+                Lịch sử đánh giá
+              </span>
+              <small>{workbench.history_items.length} mục đã tải</small>
+            </summary>
+            <section aria-label="Lịch sử sẵn sàng">
+              {workbench.history_items.length === 0 ? (
+                <p>Chưa có lịch sử cho kỳ này.</p>
+              ) : (
+                <ol>
+                  {workbench.history_items.map((item) => {
+                    const pantryMessage = historicalPantryMessage(item);
+                    return (
+                      <li key={`${item.history_kind}:${item.history_item_id}`}>
+                        <b>
+                          {item.history_kind === "EVALUATION"
+                            ? `Đánh giá phiên bản ${item.evaluation?.evaluation_version ?? "—"}`
+                            : item.history_kind === "NEED_GENERATION_REQUEST"
+                              ? "Yêu cầu tạo nhu cầu"
+                              : "Vô hiệu trạng thái"}
+                        </b>
+                        <span>
+                          {new Date(item.occurred_at).toLocaleString("vi-VN")}
+                          {item.actor_display_name
+                            ? ` · ${item.actor_display_name}`
+                            : ""}
+                        </span>
+                        {item.reason_note && <small>{item.reason_note}</small>}
+                        {pantryMessage && (
+                          <small className="historical-pantry-warning">
+                            {pantryMessage}
+                          </small>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+              {workbench.history_has_more && workbench.history_next_cursor && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void loadWorkbench({
+                      sourceSelection: currentSelection,
+                      cursor: workbench.history_next_cursor,
+                      append: true,
+                    })
+                  }
+                  disabled={loading || busy}
+                >
+                  Tải thêm lịch sử
+                </button>
+              )}
+            </section>
+          </details>
         </>
       )}
 
@@ -679,10 +831,13 @@ export function PlanningInputReadinessWorkbench({
         >
           <b>
             {pendingCommand.uncertain
-              ? "Chưa xác định kết quả lệnh"
+              ? "Kết quả chưa xác định. Hệ thống chưa tự gửi lại."
               : "Có thể thử lại đúng yêu cầu"}
           </b>
-          <small>Mã lệnh: {pendingCommand.request.command_id}</small>
+          <details>
+            <summary>Chi tiết kỹ thuật</summary>
+            <small>Mã lệnh: {pendingCommand.request.command_id}</small>
+          </details>
           {pendingCommand.retryable && (
             <button
               type="button"

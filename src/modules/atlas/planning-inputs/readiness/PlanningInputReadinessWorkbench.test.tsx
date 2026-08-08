@@ -87,26 +87,42 @@ describe("RMVP-03B connected workbench", () => {
     );
 
     expect(
-      await screen.findByText(/Kỳ có thẩm quyền \(bao gồm cả hai ngày\)/),
-    ).toHaveTextContent("03/08/2026 – 09/08/2026");
+      screen.getByRole("heading", { name: "03/08/2026 – 09/08/2026" }),
+    ).toBeVisible();
+    expect(
+      await screen.findByText("Bao gồm cả ngày bắt đầu và ngày kết thúc."),
+    ).toBeVisible();
     expect(
       screen.getByRole("heading", { name: "Thực đơn tuần" }),
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: "Sĩ số" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Pantry" })).toBeVisible();
     expect(screen.getByText("12 dòng Pantry đã phê duyệt.")).toBeVisible();
+    expect(screen.getAllByRole("article")).toHaveLength(3);
     expect(
       screen.queryByRole("combobox", { name: /Chọn bằng chứng/ }),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Đánh giá sẵn sàng" }));
-    await screen.findByText("SẴN SÀNG");
+    const evaluateAction = screen.getByRole("button", {
+      name: "Đánh giá mức sẵn sàng",
+    });
+    expect(evaluateAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Yêu cầu tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(evaluateAction);
+    await screen.findByText("Đầu vào đã sẵn sàng");
     expect(evaluate).toHaveBeenCalledOnce();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Yêu cầu tạo nhu cầu" }),
-    );
-    await screen.findByText("ĐÃ YÊU CẦU TẠO NHU CẦU");
+    const requestAction = screen.getByRole("button", {
+      name: "Yêu cầu tạo nhu cầu",
+    });
+    expect(requestAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(requestAction);
+    await screen.findByText("Đầu vào đã được chuyển sang bước tạo nhu cầu.");
     expect(request).toHaveBeenCalledOnce();
     const payload = request.mock.calls[0]?.[0].payload;
     expect(payload).toEqual({
@@ -116,14 +132,25 @@ describe("RMVP-03B connected workbench", () => {
     });
     expect(payload).not.toHaveProperty("source_candidates");
 
+    const technicalDetail = screen.getByText("Chi tiết kỹ thuật");
+    expect(technicalDetail.closest("details")).not.toHaveAttribute("open");
+    expect(
+      screen.getByText("b6100000-0000-0000-0000-000000000001"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Thao tác khác"));
     const note = screen.getByRole("textbox", { name: "Ghi chú vô hiệu" });
     expect(note).toBeRequired();
     expect(
-      screen.getByRole("button", { name: "Vô hiệu trạng thái" }),
+      screen.getByRole("button", {
+        name: "Vô hiệu hóa kết quả sẵn sàng",
+      }),
     ).toBeDisabled();
     fireEvent.change(note, { target: { value: "Điều chỉnh theo rà soát." } });
     expect(
-      screen.getByRole("button", { name: "Vô hiệu trạng thái" }),
+      screen.getByRole("button", {
+        name: "Vô hiệu hóa kết quả sẵn sàng",
+      }),
     ).toBeEnabled();
   });
 
@@ -145,29 +172,68 @@ describe("RMVP-03B connected workbench", () => {
       name: "Chọn bằng chứng Thực đơn tuần",
     });
     expect(
-      screen.getByRole("button", { name: "Đánh giá sẵn sàng" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+    ).not.toBeInTheDocument();
     const option = Array.from(selector.querySelectorAll("option"))[1];
     if (!option) throw new Error("Missing ambiguous candidate option.");
     fireEvent.change(selector, { target: { value: option.value } });
     await waitFor(() => expect(getWorkbench).toHaveBeenCalledTimes(2));
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Đánh giá sẵn sàng" }),
+        screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
       ).toBeEnabled(),
     );
 
+    fireEvent.click(screen.getByText("Đổi phạm vi đánh giá"));
     fireEvent.change(screen.getByLabelText("Từ ngày"), {
       target: { value: "2026-08-10" },
     });
     fireEvent.change(screen.getByLabelText("Đến ngày"), {
       target: { value: "2026-08-16" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Đọc đúng kỳ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem phạm vi này" }));
     expect(confirmDiscard).toHaveBeenCalledOnce();
     expect(screen.getByLabelText("Từ ngày")).toHaveValue("2026-08-10");
-    expect(screen.getByText(/Kỳ có thẩm quyền/)).toHaveTextContent(
-      "03/08/2026",
+    expect(
+      screen.getByRole("heading", { name: "03/08/2026 – 09/08/2026" }),
+    ).toBeVisible();
+  });
+
+  it("adopts a clean outer Planning week change and rereads that exact period", async () => {
+    const api = createReviewPlanningInputReadinessApi("ready");
+    const getWorkbench = vi.spyOn(api, "getWorkbench");
+    const view = render(
+      <PlanningInputReadinessWorkbench
+        authState={authState}
+        api={api}
+        selectedWeekStart="2026-08-03"
+        selectedWeekEnd="2026-08-09"
+      />,
+    );
+    await screen.findByRole("heading", { name: "03/08/2026 – 09/08/2026" });
+
+    view.rerender(
+      <PlanningInputReadinessWorkbench
+        authState={authState}
+        api={api}
+        selectedWeekStart="2026-08-10"
+        selectedWeekEnd="2026-08-16"
+      />,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "10/08/2026 – 16/08/2026" }),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(getWorkbench).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        "2026-08-10",
+        "2026-08-16",
+        undefined,
+        25,
+        null,
+      ),
     );
   });
 
@@ -182,8 +248,8 @@ describe("RMVP-03B connected workbench", () => {
     );
     await screen.findByText("ĐÃ CŨ");
     expect(
-      screen.getByRole("button", { name: "Đánh giá sẵn sàng" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+    ).not.toBeInTheDocument();
     stale.unmount();
 
     const zero = render(
@@ -287,7 +353,7 @@ describe("RMVP-03B connected workbench", () => {
       />,
     );
     fireEvent.click(
-      await screen.findByRole("button", { name: "Đánh giá sẵn sàng" }),
+      await screen.findByRole("button", { name: "Đánh giá mức sẵn sàng" }),
     );
     const retry = await screen.findByRole("button", {
       name: "Gửi lại đúng yêu cầu",
@@ -295,7 +361,7 @@ describe("RMVP-03B connected workbench", () => {
     expect(evaluate).toHaveBeenCalledOnce();
     const originalRequest = evaluate.mock.calls[0]?.[0];
     fireEvent.click(retry);
-    await screen.findByText("SẴN SÀNG");
+    await screen.findByText("Đầu vào đã sẵn sàng");
     expect(evaluate).toHaveBeenCalledTimes(2);
     expect(evaluate.mock.calls[1]?.[0]).toBe(originalRequest);
   });
@@ -315,9 +381,13 @@ describe("RMVP-03B connected workbench", () => {
       />,
     );
     fireEvent.click(
-      await screen.findByRole("button", { name: "Đánh giá sẵn sàng" }),
+      await screen.findByRole("button", { name: "Đánh giá mức sẵn sàng" }),
     );
-    expect(await screen.findByText("Chưa xác định kết quả lệnh")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "Kết quả chưa xác định. Hệ thống chưa tự gửi lại.",
+      ),
+    ).toBeVisible();
     expect(evaluate).toHaveBeenCalledOnce();
     expect(
       screen.queryByRole("button", { name: "Gửi lại đúng yêu cầu" }),
@@ -389,9 +459,8 @@ describe("RMVP-03B connected workbench", () => {
         historyLimit={1}
       />,
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Tải thêm lịch sử" }),
-    );
+    fireEvent.click(await screen.findByText("Lịch sử đánh giá"));
+    fireEvent.click(screen.getByRole("button", { name: "Tải thêm lịch sử" }));
     expect(
       await screen.findByText(
         /Đánh giá lịch sử trước khi Pantry được ràng buộc/,
@@ -427,17 +496,20 @@ describe("RMVP-03B connected workbench", () => {
         selectedWeekEnd="2026-08-09"
       />,
     );
+    fireEvent.click(screen.getByText("Đổi phạm vi đánh giá"));
     fireEvent.change(screen.getByLabelText("Từ ngày"), {
       target: { value: "2026-08-10" },
     });
     fireEvent.change(screen.getByLabelText("Đến ngày"), {
       target: { value: "2026-08-16" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Đọc đúng kỳ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem phạm vi này" }));
     newPending.resolve(success(newValue));
-    await screen.findByText("SẴN SÀNG");
+    await screen.findByText("Đầu vào đã sẵn sàng");
     oldPending.resolve(success(oldValue));
-    await waitFor(() => expect(screen.getByText("SẴN SÀNG")).toBeVisible());
-    expect(screen.queryByText("ĐÃ VÔ HIỆU")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Đầu vào đã sẵn sàng")).toBeVisible(),
+    );
+    expect(screen.queryByText("Cần xử lý đầu vào")).not.toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
@@ -30,13 +31,17 @@ const authState = {
   },
 } as unknown as AtlasAuthState;
 
-function renderReview(api = createReviewNeedGenerationApi("ready")) {
+function renderReview(
+  api = createReviewNeedGenerationApi("ready"),
+  onConfirmedNeedMaterialized?: (batchId: string) => void,
+) {
   return render(
     <NeedGenerationWorkbench
       authState={authState}
       api={api}
       selectedWeekStart="2026-08-03"
       selectedWeekEnd="2026-08-09"
+      onConfirmedNeedMaterialized={onConfirmedNeedMaterialized}
     />,
   );
 }
@@ -48,24 +53,114 @@ describe("RMVP-04 connected workbench", () => {
     const validate = vi.spyOn(api, "validate");
     const release = vi.spyOn(api, "release");
     const materialize = vi.spyOn(api, "materialize");
-    renderReview(api);
+    const onMaterialized = vi.fn();
+    renderReview(api, onMaterialized);
 
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+    const createAction = await screen.findByRole("button", {
+      name: "Tạo nhu cầu",
+    });
+    expect(createAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/chưa đặt mua hàng/)).not.toBeInTheDocument();
+    fireEvent.click(createAction);
+    expect(
+      await screen.findByRole("heading", {
+        name: "Nhu cầu nguyên liệu đã tạo",
+      }),
+    ).toBeVisible();
     expect(await screen.findByText("Bếp Trường Atlas A")).toBeVisible();
     expect(screen.getByText("Kho phụ Trường Atlas A")).toBeVisible();
-    expect(screen.getAllByText("12,5")).toHaveLength(2);
-    expect(screen.getAllByText("2")).toHaveLength(2);
+    const table = screen.getByRole("table");
+    expect(within(table).getAllByText("12,5")).toHaveLength(2);
+    expect(within(table).getAllByText("2")).toHaveLength(2);
     expect(create).toHaveBeenCalledOnce();
 
-    fireEvent.click(screen.getByRole("button", { name: "Kiểm tra nhu cầu" }));
+    const validateAction = screen.getByRole("button", {
+      name: "Kiểm tra nhu cầu",
+    });
+    expect(validateAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Phát hành nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu xác nhận" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(validateAction);
     await waitFor(() => expect(validate).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole("button", { name: "Phát hành nhu cầu" }));
+    const releaseAction = screen.getByRole("button", {
+      name: "Phát hành nhu cầu",
+    });
+    expect(releaseAction).toHaveClass("primary-forward");
+    expect(
+      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(releaseAction);
     await waitFor(() => expect(release).toHaveBeenCalledOnce());
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tạo nhu cầu xác nhận" }),
-    );
+    const materializeAction = screen.getByRole("button", {
+      name: "Tạo nhu cầu xác nhận",
+    });
+    expect(materializeAction).toHaveClass("primary-forward");
+    expect(
+      screen.getByText(/chưa đặt mua hàng và chưa chọn nhà cung cấp/),
+    ).toBeVisible();
+    fireEvent.click(materializeAction);
     await waitFor(() => expect(materialize).toHaveBeenCalledOnce());
-    expect(await screen.findByText(/DRAFT_REVIEW/)).toBeVisible();
+    const boundary = await screen.findByText("Kết quả của thao tác");
+    const boundarySection = boundary.closest("section");
+    if (!boundarySection) throw new Error("Missing materialization boundary.");
+    fireEvent.click(within(boundarySection).getByText("Chi tiết kỹ thuật"));
+    expect(within(boundarySection).getByText(/DRAFT_REVIEW/)).toBeVisible();
+    expect(onMaterialized).toHaveBeenCalledWith(
+      "c4500000-0000-0000-0000-000000000001",
+    );
+  });
+
+  it("shows a handoff-not-requested state without implying that a run exists", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const original = api.getWorkbench.bind(api);
+    api.getWorkbench = vi.fn(async (...args: Parameters<typeof original>) => {
+      const result = await original(...args);
+      if (result.kind === "success") {
+        const value = result.response.workbench as Record<string, unknown>;
+        const root = value.planning_input_set as Record<string, unknown>;
+        root.readiness_status = "READY";
+        value.allowed_actions = {
+          create: false,
+          validate: false,
+          release: false,
+          materialize: false,
+          invalidate: false,
+        };
+        value.disabled_reasons = {
+          create: "Chưa ghi nhận yêu cầu tạo nhu cầu.",
+          validate: "Tạo nhu cầu trước.",
+          release: "Kiểm tra nhu cầu trước.",
+          materialize: "Phát hành nhu cầu trước.",
+          invalidate: "Chưa có lần tạo nhu cầu.",
+        };
+      }
+      return result;
+    });
+    renderReview(api);
+
+    expect(
+      await screen.findByRole("heading", { name: "Chưa thể tạo nhu cầu" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Chưa thể tạo nhu cầu" }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Chưa ghi nhận yêu cầu tạo nhu cầu."),
+    ).toBeVisible();
+    expect(screen.queryByText("Kiểm tra nhu cầu")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Nhu cầu nguyên liệu đã tạo" }),
+    ).not.toBeInTheDocument();
   });
 
   it("selects an exact period, filters, paginates and drills into atomic detail", async () => {
@@ -73,13 +168,14 @@ describe("RMVP-04 connected workbench", () => {
     const getWorkbench = vi.spyOn(api, "getWorkbench");
     renderReview(api);
     await screen.findByText("ĐÃ YÊU CẦU TẠO NHU CẦU");
+    fireEvent.click(screen.getByText("Đổi phạm vi xem"));
     fireEvent.change(screen.getByLabelText("Từ ngày tạo nhu cầu"), {
       target: { value: "2026-08-04" },
     });
     fireEvent.change(screen.getByLabelText("Đến ngày tạo nhu cầu"), {
       target: { value: "2026-08-08" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem kỳ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem phạm vi này" }));
     await waitFor(() =>
       expect(getWorkbench).toHaveBeenCalledWith(
         expect.anything(),
@@ -93,8 +189,10 @@ describe("RMVP-04 connected workbench", () => {
         null,
       ),
     );
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
-    fireEvent.change(screen.getByLabelText("Nguồn"), {
+    const createAction = screen.getByRole("button", { name: "Tạo nhu cầu" });
+    await waitFor(() => expect(createAction).toBeEnabled());
+    fireEvent.click(createAction);
+    fireEvent.change(await screen.findByLabelText("Nguồn"), {
       target: { value: "PANTRY_DIRECT" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Lọc" }));
@@ -113,7 +211,7 @@ describe("RMVP-04 connected workbench", () => {
     );
     fireEvent.click(screen.getAllByRole("button", { name: "Xem 1" })[0]!);
     expect(
-      await screen.findByText("Chi tiết đóng góp nguyên tử"),
+      await screen.findByText("Chi tiết hình thành số lượng"),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Trang trước" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Trang sau" })).toBeDisabled();
@@ -121,21 +219,14 @@ describe("RMVP-04 connected workbench", () => {
 
   it("renders blockers before warnings and exposes backend disabled reasons", async () => {
     const api = createReviewNeedGenerationApi("ready");
-    const original = api.getWorkbench.bind(api);
-    api.getWorkbench = vi.fn(async (...args: Parameters<typeof original>) => {
-      const result = await original(
-        args[0],
-        args[1],
-        args[2],
-        args[3],
-        args[4],
-        args[5],
-        args[6],
-        args[7],
-        args[8],
-      );
+    const originalCreate = api.create.bind(api);
+    api.create = vi.fn(async (...args: Parameters<typeof originalCreate>) => {
+      const result = await originalCreate(...args);
       if (result.kind === "success") {
-        const value = result.response.workbench as Record<string, unknown>;
+        const value = result.response.authoritative_readback as Record<
+          string,
+          unknown
+        >;
         value.blocking_issues = [
           {
             need_generation_issue_id: "blocker",
@@ -150,10 +241,28 @@ describe("RMVP-04 connected workbench", () => {
             message: "Cảnh báo từ backend",
           },
         ];
+        const run = value.selected_run as Record<string, unknown>;
+        run.blocking_issue_count = 1;
+        run.warning_count = 1;
+        value.allowed_actions = {
+          create: false,
+          validate: false,
+          release: false,
+          materialize: false,
+          invalidate: true,
+        };
+        value.disabled_reasons = {
+          create: "Đã có lần tạo nhu cầu đang hoạt động.",
+          validate: "Cần xử lý lỗi chặn trước khi kiểm tra.",
+          release: "Kiểm tra nhu cầu trước.",
+          materialize: "Phát hành nhu cầu trước.",
+          invalidate: null,
+        };
       }
       return result;
     });
     renderReview(api);
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
     const blocker = await screen.findByText("Lỗi chặn từ backend");
     const warning = screen.getByText("Cảnh báo từ backend");
     expect(
@@ -161,8 +270,15 @@ describe("RMVP-04 connected workbench", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Kiểm tra nhu cầu" }),
-    ).toHaveAttribute("title", "Tạo nhu cầu trước.");
+      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Cần xử lý lỗi chặn trước khi kiểm tra."),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Nhu cầu nguyên liệu đã tạo" }),
+    ).toBeVisible();
+    expect(screen.getByText("Thao tác khác")).toBeVisible();
   });
 
   it("never retries automatically and reuses the exact immutable request on demand", async () => {

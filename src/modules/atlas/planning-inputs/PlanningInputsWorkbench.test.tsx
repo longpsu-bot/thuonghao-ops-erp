@@ -11,6 +11,7 @@ import type { AtlasAuthState } from "../connection/authSession";
 import { PlanningInputsWorkbench } from "./PlanningInputsWorkbench";
 import { createReviewPlanningInputsApi } from "./reviewPlanningInputsApi";
 import { createReviewPantryApi } from "./pantry/reviewPantryApi";
+import { createReviewPlanningInputReadinessApi } from "./readiness/reviewPlanningInputReadinessApi";
 
 afterEach(() => {
   cleanup();
@@ -30,12 +31,16 @@ const authState = {
   },
 } as unknown as AtlasAuthState;
 
-function renderWorkbench(scenario = "ready" as const) {
+function renderWorkbench(
+  scenario: Parameters<typeof createReviewPlanningInputsApi>[0] = "ready",
+  readinessApi = createReviewPlanningInputReadinessApi(scenario),
+) {
   return render(
     <PlanningInputsWorkbench
       authState={authState}
       api={createReviewPlanningInputsApi(scenario)}
       pantryApi={createReviewPantryApi(scenario)}
+      readinessApi={readinessApi}
       mode="review"
     />,
   );
@@ -223,5 +228,120 @@ describe("UI-QUALITY-02A Planning source presentation", () => {
     expect(confirm).toHaveBeenLastCalledWith(
       "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
     );
+  });
+
+  it("keeps an unevaluated Readiness candidate selection when tab discard is rejected", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench("menu_duplicate");
+    fireEvent.click(screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }));
+    expect(
+      screen.queryByLabelText("Tình trạng sẵn sàng nguồn kế hoạch"),
+    ).not.toBeInTheDocument();
+
+    const selector = await screen.findByRole("combobox", {
+      name: "Chọn bằng chứng Thực đơn tuần",
+    });
+    const option = Array.from(selector.querySelectorAll("option"))[1];
+    if (!option) throw new Error("Missing ambiguous readiness candidate.");
+    fireEvent.change(selector, { target: { value: option.value } });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+      ).toBeEnabled(),
+    );
+
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tạo nhu cầu" }));
+    expect(confirm).toHaveBeenCalledWith(
+      "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
+    );
+    expect(
+      screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+    ).toBeEnabled();
+  });
+
+  it("keeps the dirty Readiness selection and week when outer week discard is rejected", async () => {
+    const readinessApi =
+      createReviewPlanningInputReadinessApi("menu_duplicate");
+    const getWorkbench = vi.spyOn(readinessApi, "getWorkbench");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench("menu_duplicate", readinessApi);
+    fireEvent.click(screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }));
+
+    const selector = await screen.findByRole("combobox", {
+      name: "Chọn bằng chứng Thực đơn tuần",
+    });
+    const option = Array.from(selector.querySelectorAll("option"))[1];
+    if (!option) throw new Error("Missing ambiguous readiness candidate.");
+    fireEvent.change(selector, { target: { value: option.value } });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+      ).toBeEnabled(),
+    );
+
+    const weekInput = screen.getByLabelText("Tuần phục vụ");
+    const originalWeek = (weekInput as HTMLInputElement).value;
+    fireEvent.change(weekInput, {
+      target: { value: "2026-08-10" },
+    });
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Bỏ các thay đổi chưa lưu để chuyển tuần?",
+    );
+    expect(weekInput).toHaveValue(originalWeek);
+    expect(
+      screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+    ).toBeEnabled();
+    expect(getWorkbench).toHaveBeenCalledTimes(2);
+  });
+
+  it("discards the dirty Readiness selection once and adopts a confirmed outer week", async () => {
+    const readinessApi =
+      createReviewPlanningInputReadinessApi("menu_duplicate");
+    const getWorkbench = vi.spyOn(readinessApi, "getWorkbench");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWorkbench("menu_duplicate", readinessApi);
+    fireEvent.click(screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }));
+
+    const selector = await screen.findByRole("combobox", {
+      name: "Chọn bằng chứng Thực đơn tuần",
+    });
+    const option = Array.from(selector.querySelectorAll("option"))[1];
+    if (!option) throw new Error("Missing ambiguous readiness candidate.");
+    fireEvent.change(selector, { target: { value: option.value } });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
+      ).toBeEnabled(),
+    );
+
+    fireEvent.change(screen.getByLabelText("Tuần phục vụ"), {
+      target: { value: "2026-08-10" },
+    });
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Tuần phục vụ")).toHaveValue("2026-08-10");
+    expect(
+      await screen.findByRole("heading", { name: "10/08/2026 – 16/08/2026" }),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(getWorkbench).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        "2026-08-10",
+        "2026-08-16",
+        undefined,
+        25,
+        null,
+      ),
+    );
+    expect(confirm).toHaveBeenCalledTimes(1);
   });
 });
