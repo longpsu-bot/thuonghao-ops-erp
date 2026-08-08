@@ -1,10 +1,12 @@
 # UI-VISUAL-01 — Atlas Modern Operations Visual Foundation
 
-**Status:** Implemented, rendered-reviewed and locally validated on bounded branch; draft PR pending
+**Status:** Implemented, rendered-reviewed and locally validated; draft PR #179 is open
 
 **Exact baseline and starting head:** `c98d044f3b880cca02fb8cb95f7c2ebcd0246f78`
 
 **Branch:** `codex/ui-visual-01-modern-operations-foundation`
+
+**Current reviewed implementation head before this documentation-only certification amendment:** `f6d80bc6bc493ffc0353c7172ede189ffe690b18`
 
 **Decision authority:** [D-034 — Atlas Modern Operations UI Visual Architecture](../decisions/decision-atlas-modern-operations-ui-visual-architecture.md)
 
@@ -22,12 +24,13 @@ package.json
 pnpm-lock.yaml
 src/modules/atlas/AtlasApp.stories.tsx
 src/modules/atlas/AtlasApp.tsx
+src/modules/atlas/WorkbenchComponents.test.tsx
 src/modules/atlas/WorkbenchComponents.tsx
 src/styles.css
 src/theme.ts
 ```
 
-`WorkbenchComponents.tsx` is the one optional narrow shared-presentation path: its read-only state now consumes the approved `atlasAmber` theme family instead of the superseded `atlasGold` key. No component behavior changed.
+`WorkbenchComponents.tsx` and its focused test are the optional narrow shared-presentation paths. The review amendment presents read-only as restrained information blue instead of warning amber while retaining the `Chỉ xem` label, non-urgent semantics and existing behavior. The Storybook evidence now uses the genuine read-only review shell rather than access denial.
 
 ## Dependency delta
 
@@ -108,8 +111,8 @@ Accessibility review confirms explicit text for every reviewed state, decorative
 - `pnpm ops:workspace` — passed on the canonical checkout and bounded branch.
 - `pnpm format` — passed.
 - `pnpm typecheck` — passed.
-- `pnpm test` — 69 files / 442 tests passed. Two earlier collection-only timeouts were traced to CPU contention from local visual-review servers; the exact required command passed after those local servers were stopped.
-- Focused Atlas shell/shared presentation — 16/16 tests passed.
+- `pnpm test` — 69 files / 443 tests passed. Two earlier collection-only timeouts were traced to CPU contention from local visual-review servers; the exact required command passed after those local servers were stopped.
+- Focused Atlas shell/shared presentation — 17/17 tests passed.
 - `pnpm build` — passed; existing non-blocking large-chunk advisory retained.
 - `pnpm build:review` — passed; existing non-blocking large-chunk advisory retained.
 - `pnpm build-storybook` — passed; existing non-blocking plugin-timing and large-chunk advisories retained.
