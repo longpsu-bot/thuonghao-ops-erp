@@ -1543,7 +1543,7 @@ export function PlanningInputsWorkbenchView({
               {attendanceRows.length === 0 ? (
                 <p className="empty">Chưa có dòng sĩ số cho tuần này.</p>
               ) : (
-                <div className="planning-grid-scroll">
+                <div className="planning-grid-scroll attendance-grid-scroll">
                   <CompactTable
                     headers={[
                       "Trường",

@@ -3654,15 +3654,15 @@ tbody tr.selected-row {
   margin-bottom: 12px;
 }
 
-.planning-grid-scroll .compact-table td:nth-child(3),
-.planning-grid-scroll .compact-table td:nth-child(4),
-.planning-grid-scroll .compact-table td:nth-child(5) {
+.attendance-grid-scroll .compact-table td:nth-child(3),
+.attendance-grid-scroll .compact-table td:nth-child(4),
+.attendance-grid-scroll .compact-table td:nth-child(5) {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.planning-grid-scroll .compact-table td:nth-child(3) input,
-.planning-grid-scroll .compact-table td:nth-child(4) input,
+.attendance-grid-scroll .compact-table td:nth-child(3) input,
+.attendance-grid-scroll .compact-table td:nth-child(4) input,
 .pantry-table td:nth-child(7) input {
   text-align: right;
 }
