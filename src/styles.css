@@ -3275,6 +3275,7 @@ tbody tr.selected-row {
 .badge.blocking,
 .ready-blocked,
 .planning-issues.danger,
+.operator-notice.danger,
 .command-outcome.danger {
   background: var(--atlas-danger-soft);
   color: var(--atlas-danger);
@@ -3465,5 +3466,412 @@ tbody tr.selected-row {
 
   .planning-context-bar input {
     width: 100%;
+  }
+}
+
+/* UI-QUALITY-02A — Planning source workbenches */
+.planning-inputs-workbench .work-panel {
+  min-width: 0;
+  padding: 16px;
+}
+
+.planning-tabs {
+  padding-inline: 4px;
+  background: var(--atlas-surface-soft);
+}
+
+.planning-tabs button {
+  min-height: 42px;
+  color: var(--atlas-text-muted);
+  font-weight: 700;
+}
+
+.planning-toolbar-group .pantry-zero-confirmation input {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+}
+
+.planning-workbench-toolbar {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.35fr) auto;
+  gap: 0;
+  margin: 14px 0;
+  border-block: 1px solid var(--atlas-border);
+  background: var(--atlas-surface-soft);
+}
+
+.planning-toolbar-group {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  padding: 12px;
+  border-right: 1px solid var(--atlas-border);
+}
+
+.planning-toolbar-group:last-child {
+  border-right: 0;
+}
+
+.planning-toolbar-label {
+  flex-basis: 100%;
+  color: var(--atlas-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.planning-toolbar-group label:not(.file-action) {
+  display: grid;
+  min-width: 150px;
+  flex: 1 1 150px;
+  gap: 4px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.planning-toolbar-group input,
+.planning-toolbar-group select {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid #bfc5cc;
+  border-radius: 6px;
+  background: var(--atlas-surface);
+}
+
+.planning-workbench-toolbar button,
+.planning-lifecycle-actions button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid #aeb6c0;
+  border-radius: 6px;
+  background: var(--atlas-surface);
+  color: var(--atlas-primary);
+  font-weight: 700;
+}
+
+.planning-workbench-toolbar button.primary,
+.planning-lifecycle-actions button.primary,
+.planning-lifecycle-actions button.commitment {
+  border-color: var(--atlas-primary);
+  background: var(--atlas-primary);
+  color: #fff;
+}
+
+.planning-workbench-toolbar button.quiet {
+  border-color: transparent;
+  background: transparent;
+}
+
+.planning-workbench-toolbar button:disabled,
+.planning-lifecycle-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.planning-workbench-toolbar button:focus-visible,
+.planning-lifecycle-actions button:focus-visible,
+.file-action:focus-within {
+  outline: 3px solid var(--atlas-focus-light);
+  outline-offset: 2px;
+}
+
+.planning-local-actions {
+  align-content: end;
+}
+
+.file-action {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-block: 7px;
+  background: var(--atlas-surface);
+}
+
+.planning-dirty-notice {
+  margin: 8px 0;
+  padding: 7px 10px;
+  border-left: 3px solid var(--atlas-warning-accent);
+  background: #fffaf0;
+  color: var(--atlas-warning-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.planning-grid-scroll {
+  max-height: min(58vh, 660px);
+  margin-top: 12px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface);
+  scrollbar-gutter: stable;
+}
+
+.planning-grid-scroll .compact-table {
+  margin: 0;
+}
+
+.planning-grid-scroll tbody tr:focus-within {
+  background: #f7f3ee;
+  box-shadow: inset 3px 0 var(--atlas-accent);
+}
+
+.planning-grid-scroll select:focus-visible,
+.planning-grid-scroll input:focus-visible {
+  outline: 3px solid var(--atlas-focus-light);
+  outline-offset: 1px;
+}
+
+.attendance-toolbar {
+  grid-template-columns: minmax(340px, 1fr) auto;
+}
+
+.attendance-toolbar .planning-source-group {
+  border-right: 1px solid var(--atlas-border);
+}
+
+.attendance-toolbar .planning-local-actions {
+  border-right: 0;
+}
+
+.attendance-toolbar + .attendance-paste {
+  margin-top: -2px;
+  margin-bottom: 12px;
+}
+
+.attendance-grid-scroll .compact-table td:nth-child(3),
+.attendance-grid-scroll .compact-table td:nth-child(4),
+.attendance-grid-scroll .compact-table td:nth-child(5) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.attendance-grid-scroll .compact-table td:nth-child(3) input,
+.attendance-grid-scroll .compact-table td:nth-child(4) input,
+.pantry-table td:nth-child(7) input {
+  text-align: right;
+}
+
+.planning-support-region {
+  margin-top: 14px;
+  padding-top: 2px;
+  border-top: 1px solid var(--atlas-border);
+}
+
+.planning-evidence,
+.pantry-workbench .work-panel > details {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 7px;
+  background: var(--atlas-surface-soft);
+}
+
+.planning-evidence summary,
+.pantry-workbench .work-panel > details summary {
+  cursor: pointer;
+  color: var(--atlas-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.planning-evidence .planning-source-summary {
+  margin: 10px 0 0;
+}
+
+.planning-source-summary-inline {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0;
+}
+
+.planning-source-summary-inline > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.planning-source-summary-inline code {
+  overflow-wrap: anywhere;
+}
+
+.planning-action-heading {
+  margin-right: auto;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.planning-lifecycle-actions {
+  min-height: 52px;
+}
+
+.pantry-toolbar {
+  grid-template-columns: minmax(460px, 1fr) auto;
+  align-items: stretch;
+}
+
+.pantry-entry-actions {
+  align-items: center;
+}
+
+.pantry-entry-actions .planning-toolbar-label {
+  align-self: end;
+}
+
+.pantry-zero-confirmation {
+  min-height: 34px;
+  max-width: none;
+  padding: 6px 9px;
+  border: 1px solid #d2a951;
+  border-radius: 6px;
+  background: #fff8e8;
+  color: var(--atlas-warning-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pantry-zero-state {
+  border: 1px solid #9ebfae;
+  border-radius: 7px;
+  background: var(--atlas-success-soft);
+  color: var(--atlas-success);
+  font-weight: 700;
+}
+
+.pantry-lifecycle-actions {
+  align-items: center;
+}
+
+.pantry-reopen {
+  min-width: min(100%, 430px);
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pantry-reopen textarea {
+  min-height: 34px;
+  resize: vertical;
+}
+
+@media (max-width: 79.99em) {
+  .planning-workbench-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .planning-local-actions {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--atlas-border);
+    border-right: 0;
+  }
+
+  .attendance-toolbar,
+  .pantry-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .attendance-toolbar .planning-local-actions,
+  .pantry-toolbar .planning-local-actions {
+    grid-column: auto;
+    border-top: 0;
+  }
+}
+
+@media (max-width: 75em) {
+  .planning-context-bar {
+    display: grid;
+    grid-template-columns: minmax(170px, 0.8fr) minmax(190px, 1fr) auto;
+    align-items: end;
+  }
+
+  .planning-readiness {
+    align-items: center;
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 47.99em) {
+  .planning-context-bar {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .planning-inputs-workbench .work-panel {
+    padding: 12px;
+  }
+
+  .planning-tabs button {
+    min-height: 44px;
+    padding-inline: 13px;
+  }
+
+  .planning-workbench-toolbar,
+  .attendance-toolbar,
+  .pantry-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planning-toolbar-group,
+  .attendance-toolbar .planning-source-group,
+  .attendance-toolbar .planning-local-actions,
+  .pantry-toolbar .planning-local-actions {
+    grid-column: auto;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--atlas-border);
+  }
+
+  .planning-toolbar-group:last-child {
+    border-bottom: 0;
+  }
+
+  .planning-toolbar-group label:not(.file-action),
+  .planning-toolbar-group button,
+  .planning-toolbar-group .file-action {
+    width: 100%;
+  }
+
+  .planning-source-summary,
+  .planning-source-summary-inline {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planning-lifecycle-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planning-lifecycle-actions input,
+  .planning-lifecycle-actions button,
+  .pantry-reopen {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .planning-action-heading {
+    margin-right: 0;
+  }
+
+  .pantry-reopen {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
