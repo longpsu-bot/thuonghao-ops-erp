@@ -3369,11 +3369,21 @@ declare
 begin
   v_response := atlas_core.planning_contract_01_materialize_confirmed_needs(request);
 
-  -- Preserve the historical CMD-15 bounded-integrity contract at the public
-  -- boundary while delegating the materialization algorithm to the private
-  -- helper used by the atomic Planning completion command.
-  set constraints all immediate;
-  set constraints all deferred;
+  set constraints
+    atlas_planning.confirmed_need_batches_current_source_consistency,
+    atlas_planning.confirmed_need_lines_current_source_consistency,
+    atlas_planning.confirmed_need_line_revisions_current_source_consistency,
+    atlas_planning.confirmed_need_line_revisions_membership_total,
+    atlas_planning.confirmed_need_line_revision_contributions_membership_total
+  immediate;
+
+  set constraints
+    atlas_planning.confirmed_need_batches_current_source_consistency,
+    atlas_planning.confirmed_need_lines_current_source_consistency,
+    atlas_planning.confirmed_need_line_revisions_current_source_consistency,
+    atlas_planning.confirmed_need_line_revisions_membership_total,
+    atlas_planning.confirmed_need_line_revision_contributions_membership_total
+  deferred;
 
   return v_response;
 end;

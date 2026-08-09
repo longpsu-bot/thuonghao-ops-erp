@@ -1601,13 +1601,24 @@ select ok(
   'RMVP04-47 readiness commands flush deferred H0A4B integrity inside the bounded runtime'
 );
 select ok(
-  lower(pg_get_functiondef(
-    'atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure
-  )) like '%set constraints all immediate;%'
-  and lower(pg_get_functiondef(
-    'atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure
-  )) like '%set constraints all deferred;%',
-  'RMVP04-48 CMD-15 flushes deferred Confirmed Need integrity inside its bounded runtime'
+  (
+    select wrapper_definition like '%set constraints atlas_planning.confirmed_need_batches_current_source_consistency, atlas_planning.confirmed_need_lines_current_source_consistency, atlas_planning.confirmed_need_line_revisions_current_source_consistency, atlas_planning.confirmed_need_line_revisions_membership_total, atlas_planning.confirmed_need_line_revision_contributions_membership_total immediate;%'
+      and wrapper_definition like '%set constraints atlas_planning.confirmed_need_batches_current_source_consistency, atlas_planning.confirmed_need_lines_current_source_consistency, atlas_planning.confirmed_need_line_revisions_current_source_consistency, atlas_planning.confirmed_need_line_revisions_membership_total, atlas_planning.confirmed_need_line_revision_contributions_membership_total deferred;%'
+      and wrapper_definition not like '%set constraints all immediate;%'
+      and wrapper_definition not like '%set constraints all deferred;%'
+      and regexp_count(wrapper_definition, 'set constraints') = 2
+    from (
+      select regexp_replace(
+        lower(pg_get_functiondef(
+          'atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure
+        )),
+        '[[:space:]]+',
+        ' ',
+        'g'
+      ) as wrapper_definition
+    ) wrapper
+  ),
+  'RMVP04-48 CMD-15 flushes exactly the five deferred H0B1 Confirmed Need integrity constraints inside its bounded runtime'
 );
 
 select * from finish();

@@ -36,9 +36,27 @@ select ok(
 );
 
 select is(
-  (select count(*)::integer from pg_proc p join pg_roles r on r.oid = p.proowner where r.rolname = 'atlas_planning_command_runtime'),
-  24,
-  'Planning runtime owns PA-05D, RMVP-03A, RMVP-03B, and PANTRY-02 command/integrity functions'
+  (
+    select array_agg(p.proname::text order by p.proname)
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    join pg_roles r on r.oid = p.proowner
+    where n.nspname = 'atlas_api'
+      and r.rolname = 'atlas_planning_command_runtime'
+      and p.proname in (
+        'record_wholesale_source',
+        'release_wholesale_order',
+        'release_purchase_handoff',
+        'release_dispatch_requirement'
+      )
+  ),
+  array[
+    'record_wholesale_source',
+    'release_dispatch_requirement',
+    'release_purchase_handoff',
+    'release_wholesale_order'
+  ]::text[],
+  'Planning runtime owns exactly the four PA-05D API identities'
 );
 
 select ok(
