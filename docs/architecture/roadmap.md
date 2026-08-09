@@ -29,8 +29,11 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ D-034 / UI-VISUAL-01 Atlas Modern Operations visual foundation — complete through PR #179 at `bf0a1af28f689bfb4a81f6b6db96b298006c1794`
 - ✅ UI-QUALITY-02A Planning source workbenches — complete through PR #180 at `4a585f980464e4367a0b23ea6184ecf10fd70003` for Weekly Menu, Attendance and Pantry
 - ✅ D-035 Atlas Workflow-First Operator UX — accepted Application presentation authority; happy path first, progressive disclosure and one backend-authorized next action
-- 🟡 UI-QUALITY-02B Planning Input Readiness and Need Generation — current bounded workflow-first correction on draft PR #181
-- ⬜ UI-QUALITY-02C Confirmed Need — not started
+- ✅ UI-QUALITY-02B Planning Input Readiness and Need Generation — complete on `main` at `5e2955b6798d9310b10bf6b0bcafda701ed45992`; presentation-only workflow reset now awaits the D-036 contract correction
+- 🟡 D-036 Planning workflow simplification — current architecture correction; consequential source Save, automatic Readiness, atomic Need Generation/materialization and the Confirmed Need human commitment boundary are documented before further Planning UX work
+- ⬜ PLANNING-CONTRACT-01 — next required backend contract/version/migration task implementing D-036 before Application changes
+- ⬜ UI-QUALITY-02A-UX — waiting for D-036 implementation implications; deliver as the combined `UI-QUALITY-02AB-UX` source, Readiness and Need Generation alignment only after PLANNING-CONTRACT-01
+- ↘️ UI-QUALITY-02C Confirmed Need — deferred until source completion and Need Generation workflow semantics are stable
 - ⬜ UI-QUALITY-03 connected Admin consolidation — not started
 - ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
 - ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
@@ -44,6 +47,16 @@ exact-head local certification
 → connected Planning and Admin UI consolidation
 → hosted operator/security rehearsal
 → explicit Product/Architecture decision on CMD-03
+```
+
+Planning workflow-correction sequence:
+
+```text
+D-036
+→ PLANNING-CONTRACT-01
+→ UI-QUALITY-02AB-UX
+→ UI-QUALITY-02C
+→ PLANNING-UX-01
 ```
 
 ## PD-01 — Planning
@@ -87,13 +100,13 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ⬜ Production Planning policy seed — unapproved
 - ✅ React connection through RMVP-07B — the existing sixth Planning Inputs tab includes complete-batch validation, backend-authorized approval and release, separate confirmations, Actor/time/warning evidence, lifecycle history, late-response guards, and authoritative refresh behavior
 
-Planning completion boundary:
+Planning completion boundary after the pending D-036 implementation:
 
 ```text
-Weekly Menu / Attendance / Pantry / Other controlled sources
-→ Planning Input Readiness
-→ Need Generation
-→ Confirmed Need
+Weekly Menu / Attendance / Pantry consequential Save
+→ automatic Planning Input preflight
+→ atomic Need Generation release and Confirmed Need materialization
+→ Confirmed Need human review, completion and release
 → Purchase Handoff released to Procurement
 ```
 
