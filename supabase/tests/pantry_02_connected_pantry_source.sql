@@ -39,10 +39,11 @@ select is(
     'get_pantry_source_workbench',
     'preview_pantry_source',
     'reopen_pantry',
+    'save_pantry',
     'save_pantry_draft',
     'validate_pantry'
   ]::text[],
-  'PANTRY-02 exposes exactly the six reviewed APIs'
+  'PANTRY-02 exposes exactly the seven reviewed APIs after additive D-036'
 );
 
 select is(

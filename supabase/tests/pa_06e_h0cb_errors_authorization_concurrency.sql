@@ -320,19 +320,19 @@ select is((select current_need_generation_run_id from atlas_planning.confirmed_n
 select is((select count(*)::integer from atlas_core.command_receipts where command_id in ('cb300000-0000-0000-0000-000000008201','cb300000-0000-0000-0000-000000008202','cb300000-0000-0000-0000-000000008203')),0,'pre-receipt source failures leave no receipt');
 
 -- Exact safe-code, conversion, concurrency, and forbidden-write catalog (83-112).
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%SOURCE_LINEAGE_INCOMPLETE%'),'source-lineage safe error is implemented');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%SOURCE_MAPPING_INCOMPLETE%'),'source-mapping safe error is implemented');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%CONTRIBUTION_MEMBERSHIP_INVALID%'),'membership safe error is implemented');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%SOURCE_REMOVAL_POLICY_REQUIRED%'),'removal policy error is implemented');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%SOURCE_SPLIT_MERGE_POLICY_REQUIRED%'),'split/merge policy error is implemented');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%SOURCE_LINEAGE_INCOMPLETE%'),'source-lineage safe error is implemented');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%SOURCE_MAPPING_INCOMPLETE%'),'source-mapping safe error is implemented');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%CONTRIBUTION_MEMBERSHIP_INVALID%'),'membership safe error is implemented');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%SOURCE_REMOVAL_POLICY_REQUIRED%'),'removal policy error is implemented');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%SOURCE_SPLIT_MERGE_POLICY_REQUIRED%'),'split/merge policy error is implemented');
 select is((select count(*)::integer from (values
  ('GENERATION_NOT_RELEASED'),('SOURCE_LINEAGE_INCOMPLETE'),('SOURCE_REVISION_STALE'),('SOURCE_MAPPING_INCOMPLETE'),
  ('SOURCE_SUCCESSOR_AMBIGUOUS'),('OPERATIONAL_IDENTITY_UNAPPROVED'),('CONTRIBUTION_MEMBERSHIP_INVALID'),
  ('CONTRIBUTION_TOTAL_MISMATCH'),('EMPTY_ACTIVE_RELEASE'),('ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED'),
  ('SOURCE_REMOVAL_POLICY_REQUIRED'),('SOURCE_SPLIT_MERGE_POLICY_REQUIRED'),('REOPEN_REQUIRED'),
  ('DOWNSTREAM_CORRECTION_REQUIRED'),('MATERIALIZATION_LIMIT_EXCEEDED')) required(code)
- where pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%'||code||'%'),15,'all fifteen H0C-specific safe codes are reachable');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%unit_id <> old_contribution.source_unit_id%','%PANTRY_DIRECT%','%theoretical.delivery_location_id%'])),'Unit conversion remains rejected while Pantry uses its immutable theoretical destination');
+ where pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%'||code||'%'),15,'all fifteen H0C-specific safe codes are reachable');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like all(array['%unit_id <> old_contribution.source_unit_id%','%PANTRY_DIRECT%','%theoretical.delivery_location_id%'])),'Unit conversion remains rejected while Pantry uses its immutable theoretical destination');
 select ok(exists(select 1 from pg_constraint where conrelid='atlas_planning.confirmed_need_line_revision_contributions'::regclass and conname='confirmed_need_line_revision_contributions_unit_check'),'membership enforces source Unit equals controlled Unit');
 select isnt(has_column_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_line_revision_contributions','controlled_unit_id','UPDATE'),true,'runtime cannot rewrite controlled contribution Unit');
 select isnt(has_table_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_line_revision_contributions','DELETE'),true,'runtime cannot delete membership');
@@ -341,15 +341,15 @@ select ok(exists(select 1 from pg_index where indexrelid='atlas_planning.theoret
 select ok(exists(select 1 from pg_index where indexrelid='atlas_planning.confirmed_need_batches_origin_release_key'::regclass and indisunique),'concurrent initial materialization is uniquely fenced');
 select ok(exists(select 1 from pg_index where indexrelid='atlas_planning.confirmed_need_lines_operational_identity_key'::regclass and indisunique),'concurrent stable identity creation is uniquely fenced');
 select ok(exists(select 1 from pg_index where indexrelid='atlas_planning.confirmed_need_line_revisions_current_key'::regclass and indisunique),'concurrent current revision creation is uniquely fenced');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%for update%'),'command uses row locks');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%order by source_run.need_generation_run_id for update%'),'source-run lock order is deterministic');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%order by target_revision.confirmed_need_line_revision_id for update%'),'revision lock order is deterministic');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%lock_not_available%'),'lock timeout is classified retryable');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%query_canceled%'),'statement timeout is classified retryable');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%serialization_failure%'),'serialization failure is classified retryable');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%deadlock_detected%'),'deadlock is classified retryable');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like '%LOOP%'),'command has no internal retry loop');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%RETRYABLE_CONCURRENCY_FAILURE%'),'retryable response requires exact-request retry');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%for update%'),'command uses row locks');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%order by source_run.need_generation_run_id for update%'),'source-run lock order is deterministic');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%order by target_revision.confirmed_need_line_revision_id for update%'),'revision lock order is deterministic');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%lock_not_available%'),'lock timeout is classified retryable');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%query_canceled%'),'statement timeout is classified retryable');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%serialization_failure%'),'serialization failure is classified retryable');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%deadlock_detected%'),'deadlock is classified retryable');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) not like '%LOOP%'),'command has no internal retry loop');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%RETRYABLE_CONCURRENCY_FAILURE%'),'retryable response requires exact-request retry');
 select isnt(has_table_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_approval_snapshots','INSERT'),true,'runtime cannot approve Confirmed Need');
 select isnt(has_table_privilege('atlas_planning_materialization_runtime','atlas_planning.purchase_handoff_batches','SELECT'),true,'runtime cannot read Purchase Handoff');
 select isnt(has_table_privilege('atlas_planning_materialization_runtime','atlas_planning.purchase_handoff_batches','INSERT'),true,'runtime cannot write Purchase Handoff');

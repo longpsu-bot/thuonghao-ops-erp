@@ -215,3 +215,16 @@ Rows are untrusted source matrix rows, not Weekly Menu facts. The function has n
 ## Non-goals
 
 The contract does not implement RMVP-03B Planning Input Readiness, start RMVP-04 Need Generation, create Confirmed Need, release Purchase Handoff, perform Purchase Planning, receive Warehouse stock, connect hosted Supabase, or mutate OPS v1/v2/Retool.
+
+## Additive consequential Save contract (`RMVP-03A.v2`)
+
+PLANNING-CONTRACT-01 adds two normal completion commands without redefining any `RMVP-03A.v1` entry point:
+
+| Function                                    | Capability                   | Consequential behavior                                                                                                                                                                                                                       |
+| ------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `atlas_api.save_weekly_menu(request jsonb)` | `planning.weekly_menu.write` | Canonicalizes and completely replaces the working Menu, validates it, creates its immutable every-and-only approval snapshot, establishes that snapshot as current, and returns Planning preflight/currentness in one transaction.           |
+| `atlas_api.save_attendance(request jsonb)`  | `planning.attendance.write`  | Canonicalizes and completely replaces explicit Attendance rows, including zero portions, validates them, creates the immutable completed snapshot, establishes it as current, and returns Planning preflight/currentness in one transaction. |
+
+Both use the existing Atlas command envelope with `contract_version: "RMVP-03A.v2"`, one top-level receipt, exact replay, changed-reuse conflict, expected aggregate version, and expected/source signature checks. Their payloads retain the corresponding v1 Save fields. A material Save returns `COMPLETED`; identical already-completed content returns `NO_CHANGE`. Historical snapshots and stable line identities are retained.
+
+The backend may compose the established v1 implementation internally, but a browser invokes only the one consequential Save. It must not chain Save Draft, Validate, and Approve. Existing v1 functions and grants remain callable during the UI coexistence window. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).

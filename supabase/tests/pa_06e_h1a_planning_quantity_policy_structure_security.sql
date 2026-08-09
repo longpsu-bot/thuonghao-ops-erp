@@ -957,13 +957,6 @@ select is(
       where n.nspname = 'atlas_api'
         and p.proname like '%planning_quantity_polic%'
     ),
-    'api_total',
-    (
-      select count(*)
-      from pg_proc as p
-      join pg_namespace as n on n.oid = p.pronamespace
-      where n.nspname = 'atlas_api'
-    ),
     'rmvp_06_api_names',
     (
       select array_agg(p.proname order by p.proname)::text[]
@@ -1010,7 +1003,6 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 79,
     'rmvp_06_api_names', array[
       'validate_confirmed_needs'
     ]::text[],
@@ -1026,7 +1018,7 @@ select is(
     ]::text[],
     'seed_rows', 0
   ),
-  'H1A-STR-56 H1A retains no own role, capability, API, or seed while the current RMVP-07/RMVP-06/RMVP-03B API catalog stays exact'
+  'H1A-STR-56 H1A retains no own role, capability, API, or seed while exact RMVP-07/RMVP-06/RMVP-03B API identities remain'
 );
 
 select * from finish();

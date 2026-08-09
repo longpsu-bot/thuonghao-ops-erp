@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import {
   createPantryApi,
+  pantryCompletionRequest,
   pantryCommandRequest,
   pantryReadRequest,
 } from "./pantryApi";
@@ -75,6 +76,27 @@ describe("PANTRY-02 API adapter", () => {
       "atlas_api.approve_pantry",
       "atlas_api.reopen_pantry",
     ]);
+  });
+
+  it("builds PANTRY-02.v2 and routes consequential Save without lifecycle chaining", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createPantryApi({ invoke });
+    const request = pantryCompletionRequest("subject", "correlation", 4, {
+      week_start: "2026-08-03",
+      no_additions_confirmed: false,
+      source_signature: "a".repeat(64),
+      expected_source_signature: "b".repeat(64),
+      rows: [],
+    });
+
+    await api.saveCompleted(request);
+
+    expect(request).toMatchObject({
+      contract_version: "PANTRY-02.v2",
+      expected_version: 4,
+      reason_code: "PANTRY_SAVED",
+    });
+    expect(invoke.mock.calls).toEqual([["atlas_api.save_pantry", request]]);
   });
 
   it("parses only authoritative success payloads and preserves safe errors", () => {

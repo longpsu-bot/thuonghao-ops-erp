@@ -994,12 +994,6 @@ select is(
       where pronamespace = 'atlas_api'::regnamespace
         and proname like '%decision%'
     ),
-    'api_total',
-    (
-      select count(*)
-      from pg_proc
-      where pronamespace = 'atlas_api'::regnamespace
-    ),
     'rmvp_06_api_names',
     (
       select array_agg(proname order by proname)::text[]
@@ -1043,7 +1037,6 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 79,
     'rmvp_06_api_names', array[
       'validate_confirmed_needs'
     ]::text[],
@@ -1059,7 +1052,7 @@ select is(
     ]::text[],
     'views', 0
   ),
-  'H1B1-STR-61 H1B1 retains no own object while the current RMVP-07/RMVP-06/RMVP-03B API catalog stays exact'
+  'H1B1-STR-61 H1B1 retains no own object while exact RMVP-07/RMVP-06/RMVP-03B API identities remain'
 );
 select ok(
   not exists (

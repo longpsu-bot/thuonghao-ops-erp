@@ -65,18 +65,21 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.get_planning_inputs_workbench": "get_planning_inputs_workbench",
   "atlas_api.preview_weekly_menu_import": "preview_weekly_menu_import",
   "atlas_api.preview_attendance_import": "preview_attendance_import",
+  "atlas_api.save_weekly_menu": "save_weekly_menu",
   "atlas_api.save_weekly_menu_draft": "save_weekly_menu_draft",
   "atlas_api.validate_weekly_menu": "validate_weekly_menu",
   "atlas_api.approve_weekly_menu": "approve_weekly_menu",
   "atlas_api.reopen_weekly_menu": "reopen_weekly_menu",
   "atlas_api.create_attendance_draft_from_defaults":
     "create_attendance_draft_from_defaults",
+  "atlas_api.save_attendance": "save_attendance",
   "atlas_api.save_attendance_draft": "save_attendance_draft",
   "atlas_api.validate_attendance": "validate_attendance",
   "atlas_api.approve_attendance": "approve_attendance",
   "atlas_api.reopen_attendance": "reopen_attendance",
   "atlas_api.get_planning_input_readiness_workbench":
     "get_planning_input_readiness_workbench",
+  "atlas_api.get_planning_input_preflight": "get_planning_input_preflight",
   "atlas_api.evaluate_planning_input_readiness":
     "evaluate_planning_input_readiness",
   "atlas_api.request_planning_input_need_generation":
@@ -84,6 +87,7 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.invalidate_planning_input_readiness":
     "invalidate_planning_input_readiness",
   "atlas_api.get_need_generation_workbench": "get_need_generation_workbench",
+  "atlas_api.execute_need_generation": "execute_need_generation",
   "atlas_api.create_need_generation_run": "create_need_generation_run",
   "atlas_api.validate_need_generation_run": "validate_need_generation_run",
   "atlas_api.release_need_generation_run": "release_need_generation_run",
@@ -100,6 +104,7 @@ export const ATLAS_RPC_FUNCTIONS = {
     "release_confirmed_needs_for_purchase_handoff",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
+  "atlas_api.save_pantry": "save_pantry",
   "atlas_api.save_pantry_draft": "save_pantry_draft",
   "atlas_api.validate_pantry": "validate_pantry",
   "atlas_api.approve_pantry": "approve_pantry",

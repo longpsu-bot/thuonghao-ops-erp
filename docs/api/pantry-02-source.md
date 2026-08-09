@@ -132,3 +132,11 @@ Exact command replay returns the stored durable response. Reusing the same idemp
 All functions have empty `search_path`, exact qualification, revoked default/public execution, and exact `authenticated` grants. `anon` and `service_role` have no execution. Browser roles have no private relation privileges.
 
 The functions do not call `record_wholesale_source`, `release_wholesale_order`, or any generic demand/source engine. Approval writes no readiness, Need Generation, Confirmed Need, Purchase Handoff, Procurement, Warehouse, Dispatch, or Wholesale object.
+
+## Additive consequential Save contract (`PANTRY-02.v2`)
+
+PLANNING-CONTRACT-01 adds `atlas_api.save_pantry(request jsonb)`. It requires the existing `planning.pantry.write` capability and the `PANTRY-02.v2` command envelope. Its payload is the complete v1 Pantry Save payload: `week_start`, `no_additions_confirmed`, authoritative preview signature, expected persisted signature, and raw operator rows.
+
+One transaction performs complete replacement, server derivation of Delivery Location and Unit, all Purpose/reference/blocker validation, stable-line handling, deterministic validation, immutable every-and-only approval snapshot creation, and current snapshot establishment. The browser cannot author Location, Unit, Purpose status, lifecycle, readiness, currentness, or routing. The response contains the authoritative Pantry workbench, automatic Planning preflight, and `CURRENT`, `OUTDATED`, or `NOT_GENERATED` downstream currentness as applicable.
+
+Exact replay returns the original durable response, changed reuse conflicts, stale version/signature requires refresh and a new intent, and already-completed identical content returns `NO_CHANGE`. Prior positive and explicit-zero snapshots remain immutable. The six v1 APIs remain exact and callable for the connected UI coexistence window; their behavior and assertions are not weakened. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).

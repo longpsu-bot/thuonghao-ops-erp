@@ -68,8 +68,8 @@ function edgeClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 79-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(79);
+  it("contains exactly the reviewed 84-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(84);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.record_wholesale_source",
       "atlas_api.release_wholesale_order",
@@ -119,20 +119,24 @@ describe("Atlas RPC transport", () => {
       "atlas_api.get_planning_inputs_workbench",
       "atlas_api.preview_weekly_menu_import",
       "atlas_api.preview_attendance_import",
+      "atlas_api.save_weekly_menu",
       "atlas_api.save_weekly_menu_draft",
       "atlas_api.validate_weekly_menu",
       "atlas_api.approve_weekly_menu",
       "atlas_api.reopen_weekly_menu",
       "atlas_api.create_attendance_draft_from_defaults",
+      "atlas_api.save_attendance",
       "atlas_api.save_attendance_draft",
       "atlas_api.validate_attendance",
       "atlas_api.approve_attendance",
       "atlas_api.reopen_attendance",
       "atlas_api.get_planning_input_readiness_workbench",
+      "atlas_api.get_planning_input_preflight",
       "atlas_api.evaluate_planning_input_readiness",
       "atlas_api.request_planning_input_need_generation",
       "atlas_api.invalidate_planning_input_readiness",
       "atlas_api.get_need_generation_workbench",
+      "atlas_api.execute_need_generation",
       "atlas_api.create_need_generation_run",
       "atlas_api.validate_need_generation_run",
       "atlas_api.release_need_generation_run",
@@ -146,6 +150,7 @@ describe("Atlas RPC transport", () => {
       "atlas_api.release_confirmed_needs_for_purchase_handoff",
       "atlas_api.get_pantry_source_workbench",
       "atlas_api.preview_pantry_source",
+      "atlas_api.save_pantry",
       "atlas_api.save_pantry_draft",
       "atlas_api.validate_pantry",
       "atlas_api.approve_pantry",
