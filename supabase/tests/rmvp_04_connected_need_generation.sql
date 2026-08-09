@@ -1602,10 +1602,14 @@ select ok(
 );
 select ok(
   (
-    select wrapper_definition like '%set constraints atlas_planning.confirmed_need_batches_current_source_consistency, atlas_planning.confirmed_need_lines_current_source_consistency, atlas_planning.confirmed_need_line_revisions_current_source_consistency, atlas_planning.confirmed_need_line_revisions_membership_total, atlas_planning.confirmed_need_line_revision_contributions_membership_total immediate;%'
-      and wrapper_definition like '%set constraints atlas_planning.confirmed_need_batches_current_source_consistency, atlas_planning.confirmed_need_lines_current_source_consistency, atlas_planning.confirmed_need_line_revisions_current_source_consistency, atlas_planning.confirmed_need_line_revisions_membership_total, atlas_planning.confirmed_need_line_revision_contributions_membership_total deferred;%'
+    select wrapper_definition like '%set constraints atlas_planning.confirmed_need_batches_current_source_consistency, atlas_planning.confirmed_need_lines_current_source_consistency, atlas_planning.confirmed_need_line_revisions_current_source_consistency, atlas_planning.confirmed_need_line_revisions_membership_total, atlas_planning.confirmed_need_line_revision_contributions_membership_total, atlas_planning.confirmed_need_lines_h1b1_decision_integrity, atlas_planning.confirmed_need_line_revisions_h1b1_decision_integrity, atlas_planning.confirmed_need_batches_validation_integrity immediate;%'
+      and wrapper_definition like '%set constraints atlas_planning.confirmed_need_batches_current_source_consistency, atlas_planning.confirmed_need_lines_current_source_consistency, atlas_planning.confirmed_need_line_revisions_current_source_consistency, atlas_planning.confirmed_need_line_revisions_membership_total, atlas_planning.confirmed_need_line_revision_contributions_membership_total, atlas_planning.confirmed_need_lines_h1b1_decision_integrity, atlas_planning.confirmed_need_line_revisions_h1b1_decision_integrity, atlas_planning.confirmed_need_batches_validation_integrity deferred;%'
       and wrapper_definition not like '%set constraints all immediate;%'
       and wrapper_definition not like '%set constraints all deferred;%'
+      and wrapper_definition not like '%confirmed_need_batches_rmvp07_integrity%'
+      and wrapper_definition not like '%confirmed_need_approval_snapshots_rmvp07_integrity%'
+      and wrapper_definition not like '%confirmed_need_snapshot_lines_rmvp07_integrity%'
+      and wrapper_definition not like '%confirmed_need_releases_rmvp07_integrity%'
       and regexp_count(wrapper_definition, 'set constraints') = 2
     from (
       select regexp_replace(
@@ -1618,7 +1622,7 @@ select ok(
       ) as wrapper_definition
     ) wrapper
   ),
-  'RMVP04-48 CMD-15 flushes exactly the five deferred H0B1 Confirmed Need integrity constraints inside its bounded runtime'
+  'RMVP04-48 CMD-15 flushes exactly eight queued H0B1/H1B1/RMVP-06 constraints and excludes RMVP-07 inside its bounded runtime'
 );
 
 select * from finish();

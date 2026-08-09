@@ -3374,7 +3374,10 @@ begin
     atlas_planning.confirmed_need_lines_current_source_consistency,
     atlas_planning.confirmed_need_line_revisions_current_source_consistency,
     atlas_planning.confirmed_need_line_revisions_membership_total,
-    atlas_planning.confirmed_need_line_revision_contributions_membership_total
+    atlas_planning.confirmed_need_line_revision_contributions_membership_total,
+    atlas_planning.confirmed_need_lines_h1b1_decision_integrity,
+    atlas_planning.confirmed_need_line_revisions_h1b1_decision_integrity,
+    atlas_planning.confirmed_need_batches_validation_integrity
   immediate;
 
   set constraints
@@ -3382,7 +3385,10 @@ begin
     atlas_planning.confirmed_need_lines_current_source_consistency,
     atlas_planning.confirmed_need_line_revisions_current_source_consistency,
     atlas_planning.confirmed_need_line_revisions_membership_total,
-    atlas_planning.confirmed_need_line_revision_contributions_membership_total
+    atlas_planning.confirmed_need_line_revision_contributions_membership_total,
+    atlas_planning.confirmed_need_lines_h1b1_decision_integrity,
+    atlas_planning.confirmed_need_line_revisions_h1b1_decision_integrity,
+    atlas_planning.confirmed_need_batches_validation_integrity
   deferred;
 
   return v_response;
