@@ -1043,7 +1043,7 @@ select is(
     'roles', 0,
     'capabilities', 0,
     'api_functions', 0,
-    'api_total', 79,
+    'api_total', 84,
     'rmvp_06_api_names', array[
       'validate_confirmed_needs'
     ]::text[],
