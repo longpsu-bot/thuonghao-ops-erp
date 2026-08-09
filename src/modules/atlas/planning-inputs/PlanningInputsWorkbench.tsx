@@ -25,9 +25,9 @@ import {
   WorkbenchHeader,
 } from "../WorkbenchComponents";
 import {
-  planningCommandRequest,
-  type PlanningCommandRequest,
+  attendanceCompletionRequest,
   type PlanningInputsApi,
+  weeklyMenuCompletionRequest,
 } from "./planningInputsApi";
 import {
   activeAttendanceRows,
@@ -56,20 +56,14 @@ import {
 } from "./planningInputsWorkbook";
 import { PantryWorkbench } from "./pantry/PantryWorkbench";
 import type { PantryApi } from "./pantry/pantryApi";
-import { PlanningInputReadinessWorkbench } from "./readiness/PlanningInputReadinessWorkbench";
-import type { PlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
+import { createPlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
 import { NeedGenerationWorkbench } from "./need-generation/NeedGenerationWorkbench";
 import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
 import { ConfirmedNeedReviewWorkbench } from "./confirmed-needs/ConfirmedNeedReviewWorkbench";
 import type { ConfirmedNeedApi } from "./confirmed-needs/confirmedNeedApi";
 
 type TabId =
-  | "menu"
-  | "attendance"
-  | "pantry"
-  | "readiness"
-  | "need-generation"
-  | "confirmed-needs";
+  "menu" | "attendance" | "pantry" | "need-generation" | "confirmed-needs";
 type LoadState = "idle" | "loading" | "ready" | "error";
 type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
@@ -82,19 +76,26 @@ type GoogleFetchState = {
 };
 
 function statusTone(status?: string) {
-  if (status === "APPROVED") return "ok" as const;
+  if (
+    [
+      "APPROVED",
+      "NEED_GENERATION_REQUESTED",
+      "USED_FOR_NEED_GENERATION",
+    ].includes(status ?? "")
+  )
+    return "ok" as const;
   if (status === "VALIDATED") return "neutral" as const;
   return "warning" as const;
 }
 
 function statusLabel(status?: string) {
   const labels: Record<string, string> = {
-    DRAFT: "BẢN NHÁP",
-    VALIDATED: "ĐÃ XÁC THỰC",
-    APPROVED: "ĐÃ PHÊ DUYỆT",
-    REOPENED: "ĐÃ MỞ LẠI",
-    NEED_GENERATION_REQUESTED: "ĐÃ CHUYỂN TIẾP",
-    USED_FOR_NEED_GENERATION: "ĐÃ ĐƯỢC SỬ DỤNG",
+    DRAFT: "CHƯA LƯU HOÀN TẤT",
+    VALIDATED: "CẦN LƯU HOÀN TẤT",
+    APPROVED: "ĐÃ LƯU",
+    REOPENED: "ĐANG CHỈNH SỬA",
+    NEED_GENERATION_REQUESTED: "ĐÃ LƯU",
+    USED_FOR_NEED_GENERATION: "ĐÃ LƯU",
   };
   return status ? (labels[status] ?? status) : "CHƯA CÓ";
 }
@@ -409,7 +410,10 @@ export function PlanningInputsWorkbenchView({
   authState: AtlasAuthState;
   api?: PlanningInputsApi;
   pantryApi?: PantryApi;
-  readinessApi?: PlanningInputReadinessApi;
+  readinessApi?: Pick<
+    ReturnType<typeof createPlanningInputReadinessApi>,
+    "preflight"
+  >;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
   mode?: "connected" | "review";
@@ -423,9 +427,13 @@ export function PlanningInputsWorkbenchView({
   const [load, setLoad] = useState<LoadState>("idle");
   const [data, setData] = useState(() => emptyData(weekStart));
   const [notice, setNotice] = useState<string | null>(null);
+  const [sourceOutcome, setSourceOutcome] = useState<{
+    message: string;
+    currentness: string | null;
+  } | null>(null);
+  const [refreshRequired, setRefreshRequired] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [pantryDirty, setPantryDirty] = useState(false);
-  const [readinessSelectionDirty, setReadinessSelectionDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [menuRows, setMenuRows] = useState<MenuLine[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceLine[]>([]);
@@ -444,7 +452,6 @@ export function PlanningInputsWorkbenchView({
     status: "idle",
   });
   const [attendancePaste, setAttendancePaste] = useState("");
-  const [reopenNote, setReopenNote] = useState("");
   const [schoolSearch, setSchoolSearch] = useState("");
   const [serviceDateFilter, setServiceDateFilter] = useState(weekStart);
   const generation = useRef(0);
@@ -483,6 +490,8 @@ export function PlanningInputsWorkbenchView({
     }
     setLoad("ready");
     adopt(workbench);
+    setRefreshRequired(false);
+    setSourceOutcome(null);
     return true;
   }, [api, authSubject, correlationId, weekStart, adopt]);
 
@@ -506,11 +515,11 @@ export function PlanningInputsWorkbenchView({
   }, [data.google_sheet_sources]);
 
   useEffect(() => {
-    if (!dirty && !pantryDirty && !readinessSelectionDirty) return;
+    if (!dirty && !pantryDirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, pantryDirty, readinessSelectionDirty]);
+  }, [dirty, pantryDirty]);
 
   const discardMenuChanges = () => {
     setMenuRows(activeMenuRows(data.weekly_menu));
@@ -538,17 +547,14 @@ export function PlanningInputsWorkbenchView({
   const currentSourceDirty =
     tab === "pantry"
       ? pantryDirty
-      : tab === "readiness"
-        ? readinessSelectionDirty
-        : tab === "menu" || tab === "attendance"
-          ? dirty
-          : false;
+      : tab === "menu" || tab === "attendance"
+        ? dirty
+        : false;
 
   const discardCurrentSourceChanges = () => {
     if (tab === "menu") discardMenuChanges();
     if (tab === "attendance") discardAttendanceChanges();
     if (tab === "pantry") setPantryDirty(false);
-    if (tab === "readiness") setReadinessSelectionDirty(false);
   };
 
   const changeTab = (next: TabId) => {
@@ -566,12 +572,11 @@ export function PlanningInputsWorkbenchView({
 
   const changeWeek = (next: string) => {
     if (
-      (dirty || pantryDirty || readinessSelectionDirty) &&
+      (dirty || pantryDirty) &&
       !window.confirm("Bỏ các thay đổi chưa lưu để chuyển tuần?")
     )
       return false;
-    if (dirty || pantryDirty || readinessSelectionDirty)
-      discardCurrentSourceChanges();
+    if (dirty || pantryDirty) discardCurrentSourceChanges();
     setWeekStart(next);
     setServiceDateFilter(next);
     return true;
@@ -665,23 +670,37 @@ export function PlanningInputsWorkbenchView({
     [attendanceRows],
   );
 
-  const runCommand = async (
-    invoke: (
-      request: PlanningCommandRequest,
-    ) => ReturnType<PlanningInputsApi["saveMenu"]>,
-    request: PlanningCommandRequest,
-  ) => {
+  const runCompletion = async (invoke: () => Promise<AtlasRpcResult>) => {
     setSaving(true);
     setNotice(null);
-    const result = await invoke(request);
+    setSourceOutcome(null);
+    const result = await invoke();
     setSaving(false);
-    setNotice(planningResultMessage(result));
+    const message = planningResultMessage(result);
+    const currentness =
+      result.kind === "success" &&
+      typeof result.response.downstream_currentness === "string"
+        ? result.response.downstream_currentness
+        : null;
+    setSourceOutcome({ message, currentness });
+    if (
+      result.kind === "transport_error" ||
+      (result.kind === "backend_error" &&
+        ["STALE_VERSION", "STALE_SOURCE_SIGNATURE"].includes(
+          result.error.error_code,
+        ))
+    ) {
+      setRefreshRequired(true);
+      return false;
+    }
     const readback = planningReadbackFromResult(result);
     if (readback) {
       adopt(readback);
       setLoad("ready");
+      setRefreshRequired(false);
       return true;
     }
+    if (result.kind === "success") setRefreshRequired(true);
     return false;
   };
 
@@ -718,103 +737,53 @@ export function PlanningInputsWorkbenchView({
   };
 
   const saveMenu = async () => {
-    if (!api || !authSubject) return;
+    if (!api || !authSubject || refreshRequired) return;
     const preview = menuPreview ?? (await previewMenu());
     if (!preview?.can_save) return;
-    await runCommand(
-      api.saveMenu,
-      planningCommandRequest(
-        authSubject,
-        correlationId,
-        data.weekly_menu?.version ?? 1,
-        "WEEKLY_MENU_DRAFT_SAVE",
-        {
-          week_start: weekStart,
-          source_type: menuSourceType,
-          source_name: sourceName,
-          source_signature: preview.source_signature,
-          expected_source_signature: data.weekly_menu?.source_signature ?? null,
-          rows: preview.canonical_rows as unknown as JsonValue[],
-        },
-      ),
+    const request = weeklyMenuCompletionRequest(
+      authSubject,
+      correlationId,
+      data.weekly_menu?.version ?? 1,
+      {
+        week_start: weekStart,
+        source_type: menuSourceType,
+        source_name: sourceName,
+        source_signature: preview.source_signature,
+        expected_source_signature: data.weekly_menu?.source_signature ?? null,
+        rows: preview.canonical_rows as unknown as JsonValue[],
+      },
     );
+    await runCompletion(() => api.saveCompletedMenu(request));
   };
 
   const saveAttendance = async () => {
-    if (!api || !authSubject) return;
+    if (!api || !authSubject || refreshRequired) return;
     const preview = attendancePreview ?? (await previewAttendance());
     if (!preview?.can_save) return;
-    await runCommand(
-      api.saveAttendance,
-      planningCommandRequest(
-        authSubject,
-        correlationId,
-        data.attendance?.version ?? 1,
-        "ATTENDANCE_DRAFT_SAVE",
-        {
-          week_start: weekStart,
-          source_type: browserChecksum ? "WORKBOOK_IMPORT" : "MANUAL",
-          source_name: sourceName,
-          source_signature: preview.source_signature,
-          expected_source_signature: data.attendance?.source_signature ?? null,
-          rows: preview.canonical_rows as unknown as JsonValue[],
-        },
-      ),
+    const request = attendanceCompletionRequest(
+      authSubject,
+      correlationId,
+      data.attendance?.version ?? 1,
+      {
+        week_start: weekStart,
+        source_type: browserChecksum ? "WORKBOOK_IMPORT" : "MANUAL",
+        source_name: sourceName,
+        source_signature: preview.source_signature,
+        expected_source_signature: data.attendance?.source_signature ?? null,
+        rows: preview.canonical_rows as unknown as JsonValue[],
+      },
     );
-  };
-
-  const menuAction = async (
-    action: "validateMenu" | "approveMenu" | "reopenMenu",
-  ) => {
-    if (!api || !authSubject || !data.weekly_menu || dirty) return;
-    await runCommand(
-      api[action],
-      planningCommandRequest(
-        authSubject,
-        correlationId,
-        data.weekly_menu.version,
-        `WEEKLY_MENU_${action.toUpperCase()}`,
-        { week_start: weekStart },
-        action === "reopenMenu" ? reopenNote : null,
-      ),
-    );
-  };
-
-  const attendanceAction = async (
-    action: "validateAttendance" | "approveAttendance" | "reopenAttendance",
-  ) => {
-    if (!api || !authSubject || !data.attendance || dirty) return;
-    await runCommand(
-      api[action],
-      planningCommandRequest(
-        authSubject,
-        correlationId,
-        data.attendance.version,
-        `ATTENDANCE_${action.toUpperCase()}`,
-        { week_start: weekStart },
-        action === "reopenAttendance" ? reopenNote : null,
-      ),
-    );
+    await runCompletion(() => api.saveCompletedAttendance(request));
   };
 
   const createDefaults = async () => {
-    if (!api || !authSubject) return;
-    const preview = await previewAttendance(data.default_attendance_preview);
-    if (!preview?.can_save) return;
-    await runCommand(
-      api.createAttendanceDefaults,
-      planningCommandRequest(
-        authSubject,
-        correlationId,
-        data.attendance?.version ?? 1,
-        "ATTENDANCE_CREATE_DEFAULTS",
-        {
-          week_start: weekStart,
-          source_signature: preview.source_signature,
-          expected_source_signature: data.attendance?.source_signature ?? null,
-        },
-      ),
-    );
+    const rows = data.default_attendance_preview;
+    setAttendanceRows(rows);
+    setAttendancePreview(null);
+    setSourceName("Mặc định theo Thực đơn tuần");
+    setBrowserChecksum(null);
+    setDirty(true);
+    await previewAttendance(rows);
   };
 
   const onMenuFile = async (file?: File) => {
@@ -1020,41 +989,6 @@ export function PlanningInputsWorkbenchView({
         />
       ) : (
         <>
-          {(tab === "menu" || tab === "attendance" || tab === "pantry") && (
-            <Paper
-              component="section"
-              withBorder
-              className={`planning-readiness ${data.readiness.ready ? "ready" : ""}`}
-              aria-label="Tình trạng sẵn sàng nguồn kế hoạch"
-            >
-              <div>
-                <strong>
-                  {data.readiness.ready
-                    ? "Hai nguồn tham chiếu đã được phê duyệt"
-                    : "Hai nguồn tham chiếu chưa cùng được phê duyệt"}
-                </strong>
-                <small>
-                  Tham chiếu hai nguồn, không phải quyết định sẵn sàng có thẩm
-                  quyền. Xem tab Sẵn sàng đầu vào để quyết định theo ba nguồn.
-                </small>
-              </div>
-              <Chip
-                tone={data.readiness.weekly_menu_approved ? "ok" : "warning"}
-              >
-                Thực đơn{" "}
-                {data.readiness.weekly_menu_approved
-                  ? "đã duyệt"
-                  : "chưa duyệt"}
-              </Chip>
-              <Chip
-                tone={data.readiness.attendance_approved ? "ok" : "warning"}
-              >
-                Sĩ số{" "}
-                {data.readiness.attendance_approved ? "đã duyệt" : "chưa duyệt"}
-              </Chip>
-            </Paper>
-          )}
-
           <Box
             className="planning-tabs"
             role="tablist"
@@ -1094,16 +1028,6 @@ export function PlanningInputsWorkbenchView({
               type="button"
               role="tab"
               variant="subtle"
-              aria-selected={tab === "readiness"}
-              className={tab === "readiness" ? "active" : ""}
-              onClick={() => changeTab("readiness")}
-            >
-              Sẵn sàng đầu vào
-            </Button>
-            <Button
-              type="button"
-              role="tab"
-              variant="subtle"
               aria-selected={tab === "need-generation"}
               className={tab === "need-generation" ? "active" : ""}
               onClick={() => changeTab("need-generation")}
@@ -1121,6 +1045,26 @@ export function PlanningInputsWorkbenchView({
               Xác nhận nhu cầu
             </Button>
           </Box>
+
+          {(tab === "menu" || tab === "attendance") && sourceOutcome && (
+            <p
+              className={`operator-notice${
+                sourceOutcome.currentness === "OUTDATED" ? " warning" : ""
+              }`}
+              role={refreshRequired ? "alert" : "status"}
+            >
+              {sourceOutcome.message}
+              {sourceOutcome.currentness === "OUTDATED" && (
+                <strong> Nhu cầu cần cập nhật.</strong>
+              )}
+              {refreshRequired && (
+                <span>
+                  {" "}
+                  Cần tải lại dữ liệu có thẩm quyền trước khi ghi tiếp.
+                </span>
+              )}
+            </p>
+          )}
 
           {(tab === "menu" || tab === "attendance") && load === "loading" && (
             <OperationalState
@@ -1277,10 +1221,12 @@ export function PlanningInputsWorkbenchView({
                     type="button"
                     className="primary"
                     onClick={() => void saveMenu()}
-                    disabled={saving || !dirty || !menuRows.length}
+                    disabled={
+                      saving || refreshRequired || !dirty || !menuRows.length
+                    }
                   >
                     <FloppyDisk size={17} aria-hidden="true" />
-                    Lưu bản nháp
+                    Lưu thực đơn
                   </button>
                   <button
                     type="button"
@@ -1368,12 +1314,7 @@ export function PlanningInputsWorkbenchView({
                                       event.target.value,
                                     )
                                   }
-                                  disabled={
-                                    !["DRAFT", "REOPENED"].includes(
-                                      data.weekly_menu?.weekly_menu_status ??
-                                        "DRAFT",
-                                    )
-                                  }
+                                  disabled={saving || refreshRequired}
                                 >
                                   <option value="">—</option>
                                   {selectedMismatch && selectedDish && (
@@ -1449,57 +1390,6 @@ export function PlanningInputsWorkbenchView({
                   entries={data.weekly_menu?.change_history ?? []}
                 />
               </div>
-              <div
-                className="planning-lifecycle-actions"
-                aria-label="Thao tác vòng đời thực đơn"
-              >
-                <span className="planning-action-heading">
-                  Quyết định vòng đời
-                </span>
-                <button
-                  type="button"
-                  className="primary"
-                  disabled={
-                    saving ||
-                    dirty ||
-                    data.weekly_menu?.weekly_menu_status !== "DRAFT"
-                  }
-                  onClick={() => void menuAction("validateMenu")}
-                >
-                  Xác thực
-                </button>
-                <button
-                  type="button"
-                  className="commitment"
-                  disabled={
-                    saving ||
-                    data.weekly_menu?.weekly_menu_status !== "VALIDATED"
-                  }
-                  onClick={() => void menuAction("approveMenu")}
-                >
-                  Phê duyệt
-                </button>
-                {["APPROVED", "NEED_GENERATION_REQUESTED"].includes(
-                  data.weekly_menu?.weekly_menu_status ?? "",
-                ) && (
-                  <>
-                    <input
-                      aria-label="Lý do mở lại thực đơn"
-                      value={reopenNote}
-                      onChange={(event) => setReopenNote(event.target.value)}
-                      placeholder="Lý do bắt buộc"
-                    />
-                    <button
-                      type="button"
-                      className="secondary"
-                      disabled={saving || !reopenNote.trim()}
-                      onClick={() => void menuAction("reopenMenu")}
-                    >
-                      Mở lại
-                    </button>
-                  </>
-                )}
-              </div>
             </Panel>
           )}
 
@@ -1533,7 +1423,6 @@ export function PlanningInputsWorkbenchView({
                   ...(attendancePreview?.issues.warnings ??
                     data.attendance?.issues.warnings ??
                     []),
-                  ...data.readiness.warnings,
                 ]}
                 tone="warning"
               />
@@ -1580,10 +1469,15 @@ export function PlanningInputsWorkbenchView({
                     type="button"
                     className="primary"
                     onClick={() => void saveAttendance()}
-                    disabled={saving || !dirty || !attendanceRows.length}
+                    disabled={
+                      saving ||
+                      refreshRequired ||
+                      !dirty ||
+                      !attendanceRows.length
+                    }
                   >
                     <FloppyDisk size={17} aria-hidden="true" />
-                    Lưu bản nháp
+                    Lưu số suất ăn
                   </button>
                   <button
                     type="button"
@@ -1637,9 +1531,7 @@ export function PlanningInputsWorkbenchView({
                       const school = data.schools.find(
                         (item) => item.school_id === line.school_id,
                       );
-                      const editable = ["DRAFT", "REOPENED"].includes(
-                        data.attendance?.attendance_status ?? "DRAFT",
-                      );
+                      const editable = !saving && !refreshRequired;
                       return (
                         <tr key={`${line.school_id}:${line.service_date}`}>
                           <th>{school?.school_name ?? line.school_id}</th>
@@ -1721,56 +1613,6 @@ export function PlanningInputsWorkbenchView({
                   entries={data.attendance?.change_history ?? []}
                 />
               </div>
-              <div
-                className="planning-lifecycle-actions"
-                aria-label="Thao tác vòng đời sĩ số"
-              >
-                <span className="planning-action-heading">
-                  Quyết định vòng đời
-                </span>
-                <button
-                  type="button"
-                  className="primary"
-                  disabled={
-                    saving ||
-                    dirty ||
-                    data.attendance?.attendance_status !== "DRAFT"
-                  }
-                  onClick={() => void attendanceAction("validateAttendance")}
-                >
-                  Xác thực
-                </button>
-                <button
-                  type="button"
-                  className="commitment"
-                  disabled={
-                    saving || data.attendance?.attendance_status !== "VALIDATED"
-                  }
-                  onClick={() => void attendanceAction("approveAttendance")}
-                >
-                  Phê duyệt
-                </button>
-                {["APPROVED", "USED_FOR_NEED_GENERATION"].includes(
-                  data.attendance?.attendance_status ?? "",
-                ) && (
-                  <>
-                    <input
-                      aria-label="Lý do mở lại sĩ số"
-                      value={reopenNote}
-                      onChange={(event) => setReopenNote(event.target.value)}
-                      placeholder="Lý do bắt buộc"
-                    />
-                    <button
-                      type="button"
-                      className="secondary"
-                      disabled={saving || !reopenNote.trim()}
-                      onClick={() => void attendanceAction("reopenAttendance")}
-                    >
-                      Mở lại
-                    </button>
-                  </>
-                )}
-              </div>
             </Panel>
           )}
 
@@ -1781,17 +1623,6 @@ export function PlanningInputsWorkbenchView({
               weekStart={weekStart}
               mode={mode}
               onDirtyChange={setPantryDirty}
-            />
-          )}
-
-          {tab === "readiness" && (
-            <PlanningInputReadinessWorkbench
-              authState={authState}
-              api={readinessApi}
-              selectedWeekStart={weekStart}
-              selectedWeekEnd={selectedWeekEnd}
-              mode={mode}
-              onLocalSelectionDirtyChange={setReadinessSelectionDirty}
             />
           )}
 
@@ -1808,6 +1639,7 @@ export function PlanningInputsWorkbenchView({
             <NeedGenerationWorkbench
               authState={authState}
               api={needGenerationApi}
+              preflightApi={readinessApi}
               selectedWeekStart={weekStart}
               selectedWeekEnd={selectedWeekEnd}
               mode={mode}

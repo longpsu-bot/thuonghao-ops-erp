@@ -288,7 +288,4 @@ export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
   };
 }
 
-export type PlanningInputsApi = Omit<
-  ReturnType<typeof createPlanningInputsApi>,
-  "saveCompletedMenu" | "saveCompletedAttendance"
->;
+export type PlanningInputsApi = ReturnType<typeof createPlanningInputsApi>;

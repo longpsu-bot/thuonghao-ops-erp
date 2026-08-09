@@ -6,8 +6,11 @@ import type {
 } from "../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../review/reviewMode";
 import type {
+  AttendanceCompletionPayload,
+  PlanningCompletionCommandRequest,
   PlanningCommandRequest,
   PlanningInputsApi,
+  WeeklyMenuCompletionPayload,
 } from "./planningInputsApi";
 import type {
   AttendanceLine,
@@ -504,6 +507,32 @@ export function createReviewPlanningInputsApi(
     callback();
     return Promise.resolve(response());
   };
+  const mutateCompletion = (
+    request:
+      | PlanningCompletionCommandRequest<WeeklyMenuCompletionPayload>
+      | PlanningCompletionCommandRequest<AttendanceCompletionPayload>,
+    callback: () => void,
+  ): Promise<AtlasRpcResult> => {
+    const blocked = scenarioError(scenario, true);
+    if (blocked) return Promise.resolve(blocked);
+    if (!request.payload.week_start)
+      return Promise.resolve(backendError("VALIDATION_FAILED"));
+    callback();
+    return Promise.resolve(
+      success({
+        authoritative_readback: {
+          planning_inputs: clone(current) as unknown as JsonValue,
+          preflight: {
+            downstream_currentness: "NOT_GENERATED",
+          },
+        },
+        downstream_currentness: "NOT_GENERATED",
+        idempotency_status: "COMPLETED",
+        safe_operator_message:
+          "Đã lưu. Phiên bản này đang được sử dụng cho Kế hoạch.",
+      }),
+    );
+  };
 
   return {
     getWorkbench(_authSubject, _correlationId, weekStart) {
@@ -637,6 +666,18 @@ export function createReviewPlanningInputsApi(
         }),
       );
     },
+    saveCompletedMenu(request) {
+      return mutateCompletion(request, () => {
+        if (!current.weekly_menu) return;
+        current.weekly_menu.weekly_menu_status = "APPROVED";
+        current.weekly_menu.lines = clone(
+          request.payload.rows as unknown as MenuLine[],
+        );
+        current.weekly_menu.source_signature = request.payload.source_signature;
+        current.readiness.weekly_menu_approved = true;
+        current.readiness.ready = current.readiness.attendance_approved;
+      });
+    },
     saveMenu(request) {
       return mutate(request, () => {
         if (!current.weekly_menu) return;
@@ -678,6 +719,18 @@ export function createReviewPlanningInputsApi(
           current.attendance.attendance_status = "DRAFT";
           current.attendance.lines = clone(current.default_attendance_preview);
         }
+      });
+    },
+    saveCompletedAttendance(request) {
+      return mutateCompletion(request, () => {
+        if (!current.attendance) return;
+        current.attendance.attendance_status = "APPROVED";
+        current.attendance.lines = clone(
+          request.payload.rows as unknown as AttendanceLine[],
+        );
+        current.attendance.source_signature = request.payload.source_signature;
+        current.readiness.attendance_approved = true;
+        current.readiness.ready = current.readiness.weekly_menu_approved;
       });
     },
     saveAttendance(request) {

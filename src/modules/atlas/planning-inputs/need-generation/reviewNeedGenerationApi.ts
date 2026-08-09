@@ -9,6 +9,7 @@ import type {
   ConfirmedNeedMaterializationRequest,
   NeedGenerationApi,
   NeedGenerationCommandRequest,
+  NeedGenerationExecutionRequest,
 } from "./needGenerationApi";
 import type { NeedGenerationWorkbenchData } from "./needGenerationModel";
 
@@ -193,7 +194,10 @@ function generated(state: NeedGenerationWorkbenchData) {
 }
 
 function commandResult(
-  request: NeedGenerationCommandRequest | ConfirmedNeedMaterializationRequest,
+  request:
+    | NeedGenerationCommandRequest
+    | NeedGenerationExecutionRequest
+    | ConfirmedNeedMaterializationRequest,
   state: NeedGenerationWorkbenchData,
 ): AtlasRpcResult {
   return success({
@@ -226,7 +230,10 @@ export function createReviewNeedGenerationApi(
   };
 
   const withReceipt = (
-    request: NeedGenerationCommandRequest | ConfirmedNeedMaterializationRequest,
+    request:
+      | NeedGenerationCommandRequest
+      | NeedGenerationExecutionRequest
+      | ConfirmedNeedMaterializationRequest,
     mutate: () => void,
   ) => {
     const prior = receipts.get(request.command_id);
@@ -240,6 +247,77 @@ export function createReviewNeedGenerationApi(
   };
 
   return {
+    async execute(request) {
+      const failed = failure();
+      if (failed) return failed;
+      const prior = receipts.get(request.command_id);
+      if (prior) return clone(prior);
+      state = generated(state);
+      if (state.selected_run) {
+        state.selected_run = {
+          ...state.selected_run,
+          status: "RELEASED_FOR_CONFIRMATION",
+          version: 3,
+          validated_at: "2026-08-02T02:06:00.000Z",
+          released_at: "2026-08-02T02:07:00.000Z",
+          release_snapshot_id: "c4400000-0000-0000-0000-000000000001",
+        };
+        state.run_history = [state.selected_run];
+      }
+      state.materialization = {
+        confirmed_need_batch_id: "c4500000-0000-0000-0000-000000000001",
+        confirmed_need_batch_version: 1,
+        confirmed_need_status: "DRAFT_REVIEW",
+        materialization_mode: "NONE",
+      };
+      state.allowed_actions = {
+        create: false,
+        validate: false,
+        release: false,
+        materialize: false,
+        invalidate: false,
+      };
+      const result = success({
+        contract_version: "RMVP-04.v2",
+        command_id: request.command_id,
+        correlation_id: request.correlation_id,
+        idempotency_status: "COMPLETED",
+        affected_aggregate_ids: {
+          need_generation_run_id:
+            state.selected_run?.need_generation_run_id ?? null,
+          confirmed_need_batch_id:
+            state.materialization.confirmed_need_batch_id,
+        },
+        downstream_currentness: "CURRENT",
+        safe_operator_message:
+          "Đã tạo nhu cầu và Phiếu nhu cầu xác nhận trong một giao dịch.",
+        authoritative_readback: {
+          preflight: {
+            period_start: request.payload.period_start,
+            period_end: request.payload.period_end,
+            readiness_state: "READY",
+            source_evidence: clone(state.source_evidence),
+            issues: [],
+            blocking_issue_count: 0,
+            downstream_currentness: "CURRENT",
+            current_need: {
+              need_generation_run_id:
+                state.selected_run?.need_generation_run_id ?? null,
+              need_generation_run_version: state.selected_run?.version ?? null,
+              confirmed_need_batch_id:
+                state.materialization.confirmed_need_batch_id,
+              confirmed_need_batch_version:
+                state.materialization.confirmed_need_batch_version,
+              confirmed_need_batch_status:
+                state.materialization.confirmed_need_status,
+            },
+          },
+          need_generation: clone(state) as unknown as JsonValue,
+        },
+      });
+      receipts.set(request.command_id, clone(result));
+      return result;
+    },
     async getWorkbench(
       _subject,
       correlationId,

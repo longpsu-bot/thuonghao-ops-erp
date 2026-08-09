@@ -56,10 +56,7 @@ import {
   type PantryApi,
 } from "./planning-inputs/pantry/pantryApi";
 import { createReviewPantryApi } from "./planning-inputs/pantry/reviewPantryApi";
-import {
-  createPlanningInputReadinessApi,
-  type PlanningInputReadinessApi,
-} from "./planning-inputs/readiness/planningInputReadinessApi";
+import { createPlanningInputReadinessApi } from "./planning-inputs/readiness/planningInputReadinessApi";
 import { createReviewPlanningInputReadinessApi } from "./planning-inputs/readiness/reviewPlanningInputReadinessApi";
 import {
   createNeedGenerationApi,
@@ -278,7 +275,7 @@ function MasterDataPage({
   recipeAdjustmentApi?: RecipeAdjustmentApi;
   planningApi?: PlanningInputsApi;
   pantryApi?: PantryApi;
-  readinessApi?: PlanningInputReadinessApi;
+  readinessApi?: ReturnType<typeof createPlanningInputReadinessApi>;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
   mode: "connected" | "review";
@@ -307,7 +304,7 @@ function MasterDataPage({
         }
         context={
           planningPage
-            ? "Quản lý thực đơn tuần và sĩ số theo đúng tuần phục vụ, với xem trước, xác thực, phê duyệt và lịch sử bất biến."
+            ? "Lưu hoàn tất ba nguồn theo tuần, kiểm tra sẵn sàng tự động và tạo nhu cầu bằng một thao tác có thẩm quyền."
             : recipePage
               ? "Quản lý món ăn, phạm vi công thức chung/theo loại trường, phiên bản BOM bất biến, sao chép và nhập workbook có đối soát."
               : schoolPage
@@ -370,7 +367,7 @@ function AtlasShell({
   recipeAdjustmentApi?: RecipeAdjustmentApi;
   planningApi?: PlanningInputsApi;
   pantryApi?: PantryApi;
-  readinessApi?: PlanningInputReadinessApi;
+  readinessApi?: ReturnType<typeof createPlanningInputReadinessApi>;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
   mode: "connected" | "review";
