@@ -42,7 +42,7 @@ export type WeeklyMenuCompletionPayload = Record<string, JsonValue> & {
   source_type: string;
   source_name: string;
   source_signature: string;
-  expected_source_signature: string;
+  expected_source_signature: string | null;
   rows: JsonValue[];
 };
 
@@ -51,7 +51,7 @@ export type AttendanceCompletionPayload = Record<string, JsonValue> & {
   source_type: string;
   source_name: string;
   source_signature: string;
-  expected_source_signature: string;
+  expected_source_signature: string | null;
   rows: JsonValue[];
 };
 

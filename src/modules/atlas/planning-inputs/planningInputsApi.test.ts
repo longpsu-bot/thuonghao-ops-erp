@@ -91,7 +91,7 @@ describe("RMVP-03A Planning inputs API adapter", () => {
       source_type: "MANUAL",
       source_name: "Atlas",
       source_signature: "a".repeat(64),
-      expected_source_signature: "b".repeat(64),
+      expected_source_signature: null,
       rows: [],
     });
     const attendance = attendanceCompletionRequest(
@@ -103,7 +103,7 @@ describe("RMVP-03A Planning inputs API adapter", () => {
         source_type: "MANUAL",
         source_name: "Atlas",
         source_signature: "c".repeat(64),
-        expected_source_signature: "d".repeat(64),
+        expected_source_signature: null,
         rows: [],
       },
     );
@@ -115,11 +115,13 @@ describe("RMVP-03A Planning inputs API adapter", () => {
       contract_version: "RMVP-03A.v2",
       expected_version: 3,
       reason_code: "WEEKLY_MENU_SAVED",
+      payload: { expected_source_signature: null },
     });
     expect(attendance).toMatchObject({
       contract_version: "RMVP-03A.v2",
       expected_version: 2,
       reason_code: "ATTENDANCE_SAVED",
+      payload: { expected_source_signature: null },
     });
     expect(invoke.mock.calls).toEqual([
       ["atlas_api.save_weekly_menu", menu],
