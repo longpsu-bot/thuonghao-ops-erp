@@ -37,7 +37,7 @@ select ok(
 
 select is(
   (select count(*)::integer from pg_proc p join pg_roles r on r.oid = p.proowner where r.rolname = 'atlas_planning_command_runtime'),
-  21,
+  24,
   'Planning runtime owns PA-05D, RMVP-03A, RMVP-03B, and PANTRY-02 command/integrity functions'
 );
 
