@@ -16,7 +16,8 @@ deterministic system work.
 
 No accepted current business requirement requires a different person to
 validate or approve Weekly Menu, Attendance, or Pantry after the responsible
-operator completes the input.
+operator completes the input. This supports lifecycle simplification only; it
+does not justify consolidating authorization across the three source families.
 
 ## Decision
 
@@ -35,6 +36,11 @@ snapshot and lineage evidence required downstream, record receipt/event/audit
 evidence, and return authoritative readback. Separate normal **Validate** and
 **Approve** clicks are removed from the future operator contract unless a later
 approved business requirement proves a distinct human decision or approver.
+
+One normal human completion action exists per source, but authorization remains
+independently scopeable by source unless a separately approved role/capability
+decision explicitly consolidates it. One current Planning operator performing
+all three tasks does not require one shared capability.
 
 Planning Input Readiness remains backend authority and immutable diagnostic
 evidence, but not a normal operator lifecycle. The backend automatically derives
@@ -69,9 +75,11 @@ lineage and obey the existing downstream correction boundary.
   ambiguity resolution, blockers, and support evidence remain contextual detail.
 - The separate `Sẵn sàng đầu vào` primary destination should be retired after
   contract implementation and UI cutover, not before.
-- Source-specific write capabilities and `planning.inputs.approve` are replaced
-  in the normal input-completion path by one simpler Planning-input completion
-  capability when the same operator owns completion. Readiness write authority
+- Source approval authority through `planning.inputs.approve` is removed from
+  normal completion, while Weekly Menu, Attendance, and Pantry completion remain
+  independently authorizable. `PLANNING-CONTRACT-01` decides under least
+  privilege whether to reuse the existing source-specific write capability
+  codes or introduce source-specific successor codes. Readiness write authority
   and CMD-15 materialization cease to be independent operator capabilities.
 - Need Generation retains one operator execution capability; its deterministic
   substeps become backend-internal.

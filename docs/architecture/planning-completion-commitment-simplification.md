@@ -160,26 +160,34 @@ later task introduces explicit versioned contracts and forward migrations.
 
 ## Capability and role implications
 
-No accepted current business requirement requires different operators for
-Weekly Menu write, Attendance write, Pantry write, and input approval. The
-future normal capability model is therefore:
+One normal human completion action exists per source, but operator-lifecycle
+simplicity does not collapse authorization granularity. Weekly Menu,
+Attendance, and Pantry completion remain independently scopeable under least
+privilege unless a separately approved role/capability decision explicitly
+consolidates them. One current Planning operator performing all three tasks is
+not evidence that the three sources require one shared capability.
+
+The preferred minimum-change capability direction is:
 
 <!-- prettier-ignore -->
 | Current capability | Proposed meaning after cutover |
 | --- | --- |
 | `planning.inputs.read` | Retain for source workbenches, automatic preflight, blockers, history, and currentness. |
-| `planning.weekly_menu.write` | Supersede in normal role bindings with one `planning.inputs.complete` capability. |
-| `planning.attendance.write` | Supersede in normal role bindings with one `planning.inputs.complete` capability. |
-| `planning.pantry.write` | Supersede in normal role bindings with one `planning.inputs.complete` capability. |
+| `planning.weekly_menu.write` | Retain for consequential Weekly Menu completion unless `PLANNING-CONTRACT-01` proves a source-specific successor such as `planning.weekly_menu.complete` is materially useful. |
+| `planning.attendance.write` | Retain for consequential Attendance completion unless `PLANNING-CONTRACT-01` proves a source-specific successor such as `planning.attendance.complete` is materially useful. |
+| `planning.pantry.write` | Retain for consequential Pantry completion unless `PLANNING-CONTRACT-01` proves a source-specific successor such as `planning.pantry.complete` is materially useful. |
 | `planning.inputs.approve` | Unnecessary for normal source completion; retire from these source commands after migration. |
-| `planning.input_readiness.write` | Unnecessary as an operator capability; readiness evaluation/currentness becomes backend-owned. |
-| `planning.need_generation.write` | Replace with one `planning.need_generation.execute` capability authorizing **Tạo/Cập nhật nhu cầu**, not lifecycle administration. |
-| `confirmed_need_generation.materialize` | Remove from normal application-role assignment; retain only the minimum internal runtime privilege needed by the composite generation transaction, then retire the independent public command grant. |
+| `planning.input_readiness.write` | Retire from the normal operator role; readiness evaluation/currentness becomes backend-owned. |
+| `planning.need_generation.write` | Evaluate migration to one `planning.need_generation.execute` capability authorizing **Tạo/Cập nhật nhu cầu**, not lifecycle administration. |
+| `confirmed_need_generation.materialize` | Internal-only after composite generation cutover; remove it from normal application-role assignment and retire the independent public command grant. |
 | Confirmed Need review/confirmation/approval/release capabilities | Unchanged by D-036 because they govern the first real human review and commitment boundary. |
 
 `PLANNING-CONTRACT-01` must define the exact capability codes and transition
-plan. It must not bind new capabilities to production roles merely because the
-metadata exists.
+plan under least privilege. Existing source-specific write codes are the
+preferred minimum-change option; source-specific successor codes are justified
+only when contract and security analysis proves a rename materially useful.
+It must not pre-authorize one shared `planning.inputs.complete` capability or
+bind new capabilities to production roles merely because the metadata exists.
 
 ## Atomic transaction boundaries
 
@@ -187,7 +195,7 @@ metadata exists.
 
 Each source family has one independently atomic Save transaction. It must:
 
-1. authorize the actor and exact completion capability;
+1. authorize the actor and exact source-specific completion capability;
 2. acquire or replay one idempotency receipt and enforce expected version and
    checksum/current-source concurrency;
 3. canonicalize and deterministically validate all submitted facts and current
@@ -302,8 +310,9 @@ receives no service-role credential and no direct private-relation access.
    do not backfill Pantry/source bindings or rewrite their results;
 5. do not auto-release pre-cutover `GENERATED` or `VALIDATED` runs; classify them
    for audited invalidation/support recovery or restart under the new command;
-6. cut application-role capability bindings and public execute grants so only
-   one normal command surface owns writes at a time;
+6. cut application-role capability bindings and public execute grants per
+   source so only its consequential completion command owns normal writes at a
+   time, without collapsing source authorization;
 7. move old lifecycle APIs to unbound compatibility/support status, then revoke
    normal public execution only after the new path and rollback procedure are
    proven; and
