@@ -234,3 +234,19 @@ Failures contain safe operator messages and no SQL, policy, role, private payloa
 `supabase/tests/rmvp_04_connected_need_generation.sql` executes one real mixed journey from approved Menu/Attendance/Pantry through readiness, request, creation, grouped Recipe/Pantry evidence, warning completeness, validation, release, CMD-15 quantities/destinations/membership, replay/conflict, authorization failures, invalidation, and direct successor lineage.
 
 `scripts/verify-local-rmvp04-need-generation.mjs` is registered only in GitHub's disposable local-Supabase workflow. It uses a signed-in synthetic human and the browser key for every API call through authoritative readback. Local development does not start/reset Supabase or run pgTAP.
+
+## 13. Additive atomic execution (`RMVP-04.v2`)
+
+PLANNING-CONTRACT-01 adds one public command:
+
+```text
+atlas_api.execute_need_generation(request jsonb)
+```
+
+It reuses `planning.need_generation.write`, `atlas_need_generation_runtime`, existing source/readiness/Need Generation persistence, and the existing H0C grouping and correction algorithm. Its `RMVP-04.v2` payload contains only `period_start`, `period_end`, and `expected_current_need_generation_run_id`; the command envelope carries the expected current run version (`1` with a null run for initial generation).
+
+One transaction locks and rereads completed sources, derives preflight, automatically records/reuses the exact readiness evaluation and handoff facts, creates the run, validates deterministic integrity, releases immutable theoretical membership, and internally materializes or corrects Confirmed Need. There is one top-level command receipt and one authoritative response. The browser must not chain v1 readiness, create, validate, release, or CMD-15 writes.
+
+When current immutable source triples already match the current Need input snapshot, exact execution returns `NO_CHANGE`. A source successor makes the prior Need `OUTDATED`. A reviewed update invalidates the safely correctable terminal run, creates its direct successor, preserves all source/run/release history, and rematerializes only an H0C-permitted `DRAFT_REVIEW`/`REOPENED` Confirmed Need. Approved, released, or downstream-committed facts retain the established safe correction blocker.
+
+The private materialization helper is shared by this command and the unchanged public `PA-06E-H0C.v1` wrapper; the algorithm is not duplicated. All five `RMVP-04.v1` functions and the public CMD-15 wrapper remain callable during coexistence. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).

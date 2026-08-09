@@ -3,7 +3,7 @@
 **Status:** Proposed documentation contract; pending review
 **Baseline:** `59640c33ec3eb759c28659991a751261cdb352ab`
 **Scope:** Application contract and operator workflow planning only
-**Canonical API registry:** This document is the sole PA-06A source for the exact 19-function application-facing registry.
+**Canonical API registry:** Section 6 retains the original 19-function PA-06A supplier-direct registry; later additive family registries are indexed here and defined by their approved API contracts.
 
 ## 1. Decision
 
@@ -70,16 +70,16 @@ The phrase “five-page prototype” is imprecise. The active requirements docum
 
 ## 3. OPS_SYSTEM_MAP application capability map
 
-| Mission | Business capability | Domain | Business object | Registry entries | Operator workflow | Application workbench |
-|---|---|---|---|---|---|---|
-| Convert an accepted wholesale source into authoritative released demand | Record and release wholesale demand | Planning | Wholesale Order, Confirmed Need Batch | CMD-01, CMD-02 | Capture exact customer demand, then release it | Planning Source & Release |
-| Convert an exact released school-catering calculation into Draft operational demand | Materialize complete Need Generation membership | Planning | Need Generation Run, Confirmed Need Batch, stable lines and immutable revisions | CMD-15 | Group the complete released calculation for Planning review without approving or releasing it | Requirement Planning |
-| Hand released demand to Procurement and delivery planning | Release Purchase Handoff and Dispatch Requirement | Planning | Purchase Handoff, Dispatch Requirement | CMD-03, CMD-04 | Verify released lineage and issue downstream Planning contracts | Planning Source & Release |
-| Commit exact released demand to suppliers | Allocate supplier-direct fulfilment and release supplier POs | Procurement | Fulfilment Allocation, Purchase Order | CMD-05, CMD-06 | Assign all requirement lines exactly and release supplier commitments | Procurement Commitment |
-| Prove physical supplier fulfilment | Record and apply supplier Evidence | Evidence | Supplier Receiving Evidence, Evidence Application | CMD-07, CMD-08, READ-02, READ-03 | Record a supplier document, apply exact quantities, inspect readiness | Supplier Evidence & Readiness |
-| Prepare evidence-gated transport | Create a Dispatch Plan and assigned Trip/Stops | Dispatch | Dispatch Plan, Trip, Stop | CMD-09, CMD-10, READ-02, READ-03 | Admit fully evidenced obligations and assign exact stops | Dispatch Setup |
-| Execute and close successful transport | Load, depart, deliver, and close | Dispatch | Dispatch Load, Trip, Stop, Delivery Confirmation | CMD-11 through CMD-14, READ-01 through READ-04 | Reconcile physical quantities and complete the trip | Dispatch Execution |
-| Explain authoritative outcomes | Trace, readiness, blockers, and audit | Reporting / Audit | Authorized projections over accepted aggregates | READ-01 through READ-04 | Explain source, quantity, state, command outcome, and actor evidence | Trace & Audit panel |
+| Mission                                                                             | Business capability                                          | Domain            | Business object                                                                 | Registry entries                               | Operator workflow                                                                             | Application workbench         |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------- |
+| Convert an accepted wholesale source into authoritative released demand             | Record and release wholesale demand                          | Planning          | Wholesale Order, Confirmed Need Batch                                           | CMD-01, CMD-02                                 | Capture exact customer demand, then release it                                                | Planning Source & Release     |
+| Convert an exact released school-catering calculation into Draft operational demand | Materialize complete Need Generation membership              | Planning          | Need Generation Run, Confirmed Need Batch, stable lines and immutable revisions | CMD-15                                         | Group the complete released calculation for Planning review without approving or releasing it | Requirement Planning          |
+| Hand released demand to Procurement and delivery planning                           | Release Purchase Handoff and Dispatch Requirement            | Planning          | Purchase Handoff, Dispatch Requirement                                          | CMD-03, CMD-04                                 | Verify released lineage and issue downstream Planning contracts                               | Planning Source & Release     |
+| Commit exact released demand to suppliers                                           | Allocate supplier-direct fulfilment and release supplier POs | Procurement       | Fulfilment Allocation, Purchase Order                                           | CMD-05, CMD-06                                 | Assign all requirement lines exactly and release supplier commitments                         | Procurement Commitment        |
+| Prove physical supplier fulfilment                                                  | Record and apply supplier Evidence                           | Evidence          | Supplier Receiving Evidence, Evidence Application                               | CMD-07, CMD-08, READ-02, READ-03               | Record a supplier document, apply exact quantities, inspect readiness                         | Supplier Evidence & Readiness |
+| Prepare evidence-gated transport                                                    | Create a Dispatch Plan and assigned Trip/Stops               | Dispatch          | Dispatch Plan, Trip, Stop                                                       | CMD-09, CMD-10, READ-02, READ-03               | Admit fully evidenced obligations and assign exact stops                                      | Dispatch Setup                |
+| Execute and close successful transport                                              | Load, depart, deliver, and close                             | Dispatch          | Dispatch Load, Trip, Stop, Delivery Confirmation                                | CMD-11 through CMD-14, READ-01 through READ-04 | Reconcile physical quantities and complete the trip                                           | Dispatch Execution            |
+| Explain authoritative outcomes                                                      | Trace, readiness, blockers, and audit                        | Reporting / Audit | Authorized projections over accepted aggregates                                 | READ-01 through READ-04                        | Explain source, quantity, state, command outcome, and actor evidence                          | Trace & Audit panel           |
 
 ## 4. AGENTS.md three-stage baseline reconciliation
 
@@ -186,6 +186,7 @@ Reads are bounded, authorized, shaped, read-only projections. They create no rec
 No other PA-06A document may restate these exact payloads, selectors, affected-ID keys, version keys, or command semantics. Other documents reference the stable IDs below.
 
 <a id="cmd-01"></a>
+
 ### CMD-01 — `atlas_api.record_wholesale_source(jsonb)`
 
 - **Contract version:** `PA-05D.v1`
@@ -223,6 +224,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-02 after reviewing the recorded Draft and carrying version 1.
 
 <a id="cmd-02"></a>
+
 ### CMD-02 — `atlas_api.release_wholesale_order(jsonb)`
 
 - **Contract version:** `PA-05D.v1`
@@ -242,6 +244,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-03 using the returned Confirmed Need Batch ID and version 1.
 
 <a id="cmd-03"></a>
+
 ### CMD-03 — `atlas_api.release_purchase_handoff(jsonb)`
 
 - **Contract version:** `PA-05D.v1`
@@ -261,6 +264,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-04 using the returned Handoff revision ID and Handoff root version 1.
 
 <a id="cmd-04"></a>
+
 ### CMD-04 — `atlas_api.release_dispatch_requirement(jsonb)`
 
 - **Contract version:** `PA-05D.v1`
@@ -280,6 +284,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-05 using the returned requirement revision, exact line revisions, and requirement version 1.
 
 <a id="cmd-05"></a>
+
 ### CMD-05 — `atlas_api.allocate_supplier_direct_fulfilment(jsonb)`
 
 - **Contract version:** `PA-05E.v1`
@@ -314,6 +319,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-06 once for each supplier represented by the returned allocation revision.
 
 <a id="cmd-06"></a>
+
 ### CMD-06 — `atlas_api.release_supplier_purchase_order(jsonb)`
 
 - **Contract version:** `PA-05E.v1`
@@ -333,6 +339,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-07 for each returned PO line when physical supplier evidence exists.
 
 <a id="cmd-07"></a>
+
 ### CMD-07 — `atlas_api.record_supplier_receiving_evidence(jsonb)`
 
 - **Contract version:** `PA-05B.v1`
@@ -365,6 +372,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-08 using the returned Evidence ID and an exact allocation-line revision.
 
 <a id="cmd-08"></a>
+
 ### CMD-08 — `atlas_api.apply_supplier_evidence_to_allocation(jsonb)`
 
 - **Contract version:** `PA-05B.v1`
@@ -395,6 +403,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** repeat CMD-07/CMD-08 as needed, then use READ-02. CMD-09 is permitted only after every selected line is fully and currently evidenced.
 
 <a id="cmd-09"></a>
+
 ### CMD-09 — `atlas_api.create_dispatch_plan(jsonb)`
 
 - **Contract version:** `PA-05F.v1`
@@ -430,6 +439,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-10 using the returned Plan ID and Plan version 1.
 
 <a id="cmd-10"></a>
+
 ### CMD-10 — `atlas_api.create_or_assign_dispatch_trip(jsonb)`
 
 - **Contract version:** `PA-05F.v1`
@@ -466,6 +476,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-11 for each assigned Stop after physical load review.
 
 <a id="cmd-11"></a>
+
 ### CMD-11 — `atlas_api.confirm_dispatch_load(jsonb)`
 
 - **Contract version:** `PA-05B-H2.v1`
@@ -511,6 +522,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-11 for other Stops; CMD-12 only when every Trip Stop is fully loaded.
 
 <a id="cmd-12"></a>
+
 ### CMD-12 — `atlas_api.record_dispatch_departure(jsonb)`
 
 - **Contract version:** `PA-05B-H2.v1`
@@ -530,6 +542,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** CMD-13 per Stop after destination receipt.
 
 <a id="cmd-13"></a>
+
 ### CMD-13 — `atlas_api.confirm_successful_delivery(jsonb)`
 
 - **Contract version:** `PA-05B-H2.v1`
@@ -569,6 +582,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** repeat CMD-13 for remaining Stops; CMD-14 only when the Trip is fully `DELIVERED`.
 
 <a id="cmd-14"></a>
+
 ### CMD-14 — `atlas_api.close_successful_trip(jsonb)`
 
 - **Contract version:** `PA-05B-H3.v1`
@@ -588,6 +602,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** no further successful-path write is defined; use READ-01 and READ-04 for review.
 
 <a id="cmd-15"></a>
+
 ### CMD-15 — `atlas_api.create_confirmed_needs_from_generation(jsonb)`
 
 - **Contract version:** `PA-06E-H0C.v1`
@@ -608,6 +623,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** review the Draft Confirmed Need through a separately approved read/decision surface; CMD-15 itself authorizes no validation, approval, release, or downstream action.
 
 <a id="read-01"></a>
+
 ### READ-01 — `atlas_api.get_supplier_direct_trace(jsonb)`
 
 - **Contract version:** `PA-05B.v1`
@@ -627,6 +643,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** open READ-04 for authoritative command/audit history; no write is authorized by the read itself.
 
 <a id="read-02"></a>
+
 ### READ-02 — `atlas_api.get_dispatch_evidence_readiness(jsonb)`
 
 - **Contract version:** `PA-05C.v1`
@@ -646,6 +663,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** operator reviews readiness and the exact current command context; the application may create a new candidate CMD-07/CMD-08 intent from the matching lineage after review. The read never authorizes the command. See `docs/architecture/pa-05c-h3-evidence-readiness-current-command-context.md`.
 
 <a id="read-03"></a>
+
 ### READ-03 — `atlas_api.get_operator_blockers(jsonb)`
 
 - **Contract version:** `PA-05C.v1`
@@ -665,6 +683,7 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 - **Next permitted operator action:** navigate to a known-context detail workbench or escalate to the suggested owning team; this is not a global queue API.
 
 <a id="read-04"></a>
+
 ### READ-04 — `atlas_api.get_command_audit_timeline(jsonb)`
 
 - **Contract version:** `PA-05C.v1`
@@ -685,26 +704,26 @@ No other PA-06A document may restate these exact payloads, selectors, affected-I
 
 ## 7. Explicit client ownership matrix
 
-| Concern | Client coordination owner | Required behavior | Business authority that remains server-side |
-|---|---|---|---|
-| Authentication session | Authentication boundary | Subscribe to session state, expose signed-in/signed-out/expired state, stop submission after expiry | Valid subject, active actor, capability, scope |
-| Requested authenticated subject | API invocation boundary, derived from active session | Copy the session subject into `requested_by_auth_subject`; never accept an arbitrary actor ID as a substitute | Subject-to-actor resolution and mismatch rejection |
-| `command_id` | Immutable command intent | Generate once per submit intent with browser UUID support; preserve for exact retry | Receipt uniqueness and replay/conflict classification |
-| `correlation_id` | Visible operator journey/workbench context | Generate or inherit one journey ID across related commands; show it in outcome/history | Relational authorization and event scope |
-| `idempotency_key` | Immutable command intent | Generate once, persist with the unsent/in-flight request, never reuse after an edit | Scoped uniqueness, request hash, replay/conflict result |
-| `expected_version` | Authoritative workbench state | Store only a version returned by a command or approved read/context; never infer a changed version | Optimistic check, locking, current version |
-| `requested_at` | Immutable command intent | Capture once when intent is finalized; preserve on exact retry | Non-future validation and receipt timing |
-| `reason_code` | Action form/confirmation | Require an operator-facing reason vocabulary selected for the approved workflow | Whether a reason is accepted by the contract |
-| `reason_note` | Action form/confirmation | Include the field on every command; preserve `null` versus text | Audit persistence and allowlisting |
-| Exact retry | API invocation boundary | Re-send the byte-equivalent logical request after a retryable result or uncertain transport outcome | Whether the request is replay, conflict, or still in progress |
-| Stale-state refresh | Workbench refresh coordinator | Preserve draft; use an approved read if it can reload the authoritative context; otherwise stop and report the read gap | Current aggregate details and next valid transition |
-| Retryable-concurrency recovery | Outcome coordinator | Offer “Retry same request”; do not change payload, version, IDs, or timestamp | Transaction retryability |
-| Response version propagation | Authoritative workbench state | Replace carried versions immediately from `new_versions`; preserve unchanged guarded versions exactly | Version increment and aggregate mutation |
-| Post-command refresh | Workbench refresh coordinator | Refresh only through READ-01 through READ-04 when an approved selector is available | Read authorization and data shaping |
-| Warnings and blockers | Safe outcome model | Render verbatim safe messages and structured items; do not reinterpret as permissions | Business meaning, severity, lifecycle |
-| Session expiry | Authentication boundary | Disable submit; preserve a local draft if safe; require reauthentication and a new review before a new intent | Session validity and actor resolution |
-| Unauthorized recovery | Authentication/outcome boundary | Distinguish signed-out, inactive subject/actor, and capability denial; do not offer a bypass | Capability enforcement |
-| Scope-denied recovery | Outcome boundary | Show the bounded denial and stop; do not broaden the selector or fall back to direct tables | Customer/location/Trip scope |
+| Concern                         | Client coordination owner                            | Required behavior                                                                                                       | Business authority that remains server-side                   |
+| ------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Authentication session          | Authentication boundary                              | Subscribe to session state, expose signed-in/signed-out/expired state, stop submission after expiry                     | Valid subject, active actor, capability, scope                |
+| Requested authenticated subject | API invocation boundary, derived from active session | Copy the session subject into `requested_by_auth_subject`; never accept an arbitrary actor ID as a substitute           | Subject-to-actor resolution and mismatch rejection            |
+| `command_id`                    | Immutable command intent                             | Generate once per submit intent with browser UUID support; preserve for exact retry                                     | Receipt uniqueness and replay/conflict classification         |
+| `correlation_id`                | Visible operator journey/workbench context           | Generate or inherit one journey ID across related commands; show it in outcome/history                                  | Relational authorization and event scope                      |
+| `idempotency_key`               | Immutable command intent                             | Generate once, persist with the unsent/in-flight request, never reuse after an edit                                     | Scoped uniqueness, request hash, replay/conflict result       |
+| `expected_version`              | Authoritative workbench state                        | Store only a version returned by a command or approved read/context; never infer a changed version                      | Optimistic check, locking, current version                    |
+| `requested_at`                  | Immutable command intent                             | Capture once when intent is finalized; preserve on exact retry                                                          | Non-future validation and receipt timing                      |
+| `reason_code`                   | Action form/confirmation                             | Require an operator-facing reason vocabulary selected for the approved workflow                                         | Whether a reason is accepted by the contract                  |
+| `reason_note`                   | Action form/confirmation                             | Include the field on every command; preserve `null` versus text                                                         | Audit persistence and allowlisting                            |
+| Exact retry                     | API invocation boundary                              | Re-send the byte-equivalent logical request after a retryable result or uncertain transport outcome                     | Whether the request is replay, conflict, or still in progress |
+| Stale-state refresh             | Workbench refresh coordinator                        | Preserve draft; use an approved read if it can reload the authoritative context; otherwise stop and report the read gap | Current aggregate details and next valid transition           |
+| Retryable-concurrency recovery  | Outcome coordinator                                  | Offer “Retry same request”; do not change payload, version, IDs, or timestamp                                           | Transaction retryability                                      |
+| Response version propagation    | Authoritative workbench state                        | Replace carried versions immediately from `new_versions`; preserve unchanged guarded versions exactly                   | Version increment and aggregate mutation                      |
+| Post-command refresh            | Workbench refresh coordinator                        | Refresh only through READ-01 through READ-04 when an approved selector is available                                     | Read authorization and data shaping                           |
+| Warnings and blockers           | Safe outcome model                                   | Render verbatim safe messages and structured items; do not reinterpret as permissions                                   | Business meaning, severity, lifecycle                         |
+| Session expiry                  | Authentication boundary                              | Disable submit; preserve a local draft if safe; require reauthentication and a new review before a new intent           | Session validity and actor resolution                         |
+| Unauthorized recovery           | Authentication/outcome boundary                      | Distinguish signed-out, inactive subject/actor, and capability denial; do not offer a bypass                            | Capability enforcement                                        |
+| Scope-denied recovery           | Outcome boundary                                     | Show the bounded denial and stop; do not broaden the selector or fall back to direct tables                             | Customer/location/Trip scope                                  |
 
 ### 7.1 Stale state rule
 
@@ -749,12 +768,12 @@ Every later implementation construct must pass the five-question simplicity gate
 
 Ratings are relative within the accepted supplier-direct scope. “Read sufficiency” means production operator entry without private-table access.
 
-| Candidate | Operator value | Backend completeness | Current read sufficiency | Fixture dependence without new read | Commands | Screens | Stale/retry complexity | Auth complexity | Implementation effort | Rollback risk | Training value |
-|---|---|---|---|---|---:|---:|---|---|---|---|---|
-| Wholesale Source Recording & Release | Medium: captures new wholesale demand | High for creation/release | Low: no approved customer/location/item discovery or source detail reload | High | 2 | 1 | Medium | Medium | Medium | Low | High for command identity and release |
-| Supplier Allocation & PO Release | High for buyers | High | Low: no released-requirement queue, supplier picker, or allocation detail read | High | 2 | 1 | Medium–high | Medium | Medium–high | Medium | High for versions and supplier grouping |
-| Supplier Evidence & Readiness | High for Evidence and Dispatch operators | High | Medium only after PO/allocation IDs are known; READ-02/03/04 are strong afterward | High | 2 plus 2–3 reads | 1–2 | Medium | Medium | Medium | Low–medium | Very high for command/read integration and blockers |
-| Dispatch Load through Closure | Very high operational value | High | Low at entry: no execution queue or complete Trip detail read | High | 4 | 2 | High | High | High | Medium | High but too broad for a first UI PR |
+| Candidate                            | Operator value                           | Backend completeness      | Current read sufficiency                                                          | Fixture dependence without new read |         Commands | Screens | Stale/retry complexity | Auth complexity | Implementation effort | Rollback risk | Training value                                      |
+| ------------------------------------ | ---------------------------------------- | ------------------------- | --------------------------------------------------------------------------------- | ----------------------------------- | ---------------: | ------: | ---------------------- | --------------- | --------------------- | ------------- | --------------------------------------------------- |
+| Wholesale Source Recording & Release | Medium: captures new wholesale demand    | High for creation/release | Low: no approved customer/location/item discovery or source detail reload         | High                                |                2 |       1 | Medium                 | Medium          | Medium                | Low           | High for command identity and release               |
+| Supplier Allocation & PO Release     | High for buyers                          | High                      | Low: no released-requirement queue, supplier picker, or allocation detail read    | High                                |                2 |       1 | Medium–high            | Medium          | Medium–high           | Medium        | High for versions and supplier grouping             |
+| Supplier Evidence & Readiness        | High for Evidence and Dispatch operators | High                      | Medium only after PO/allocation IDs are known; READ-02/03/04 are strong afterward | High                                | 2 plus 2–3 reads |     1–2 | Medium                 | Medium          | Medium                | Low–medium    | Very high for command/read integration and blockers |
+| Dispatch Load through Closure        | Very high operational value              | High                      | Low at entry: no execution queue or complete Trip detail read                     | High                                |                4 |       2 | High                   | High            | High                  | Medium        | High but too broad for a first UI PR                |
 
 ### 9.1 Decision
 
@@ -793,3 +812,19 @@ PA-06A intentionally defers:
 - returns, exceptions, cancellation, reopening, or mixed fulfilment;
 - Warehouse, school-catering workflow beyond CMD-15 Draft materialization, Finance, Production/QA, HR, payroll, fleet, GPS, fuel, and route optimization;
 - any change to Issue #105 or the live OPS v1 project.
+
+## 11. PLANNING-CONTRACT-01 additive application boundary
+
+The executable browser RPC registry contains 84 reviewed `atlas_api` identities after PLANNING-CONTRACT-01. The five additive entries are exactly:
+
+```text
+save_weekly_menu
+save_attendance
+save_pantry
+get_planning_input_preflight
+execute_need_generation
+```
+
+They use `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2`. The first three each require their existing source-specific write capability; preflight uses `planning.inputs.read`; atomic execution uses `planning.need_generation.write`. No shared source-completion capability or browser service-role authority exists.
+
+During coexistence, all v1 RPC identities remain registered because the current connected UI still uses them. Typed adapters expose each new operation as one RPC invocation with write retry disabled. No current component calls the new functions; UI-QUALITY-02AB-UX owns the later reviewed cutover from public lifecycle chains. The exact cross-family boundary is [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md), and the executable allowlist remains `src/modules/atlas/connection/atlasRpc.ts`.

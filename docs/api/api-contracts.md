@@ -108,6 +108,10 @@ RMVP-06 implements exactly one new command, `atlas_api.validate_confirmed_needs(
 
 RMVP-07 implements exactly two separate complete-batch commands, `atlas_api.approve_confirmed_needs(jsonb)` and `atlas_api.release_confirmed_needs_for_purchase_handoff(jsonb)`, over the existing additive RMVP-05 review. It adds two unbound capabilities, reuses `atlas_confirmed_need_review_runtime`, binds approval to the exact immutable RMVP-06 success through the lifecycle-neutral `RMVP-07-VALIDATED-FACTS.v1` fingerprint, and persists one immutable Planning release for later CMD-03 use. Release creates no Purchase Handoff or downstream fact. The exact `RMVP-07.v1` envelopes, response/replay contracts, persistence, WHOLESALE compatibility, read shaping, security, and verification are specified in [RMVP-07 Connected Confirmed Need Approval and Release API Contract](rmvp-07-connected-confirmed-need-approval-release.md).
 
+## 4H. Additive atomic Planning completion contracts
+
+PLANNING-CONTRACT-01 implements D-036 with five additive APIs: consequential Weekly Menu, Attendance, and Pantry Saves; automatic Planning preflight; and one atomic Need Generation/materialization command. The versions are `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2`. Existing v1 APIs remain callable during UI coexistence. The canonical cross-family implementation, security, persistence, correction, compatibility, and retirement record is [PLANNING-CONTRACT-01 Atomic Planning completion boundaries](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md); family payload detail remains in the four existing API documents.
+
 ## 5. Contract template
 
 ```md

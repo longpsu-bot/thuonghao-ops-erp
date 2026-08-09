@@ -618,3 +618,17 @@ uncertainty, fourth-tab integration, and the unchanged navigation boundary.
 Operational rollback must preserve immutable evaluations, issues, receipts,
 events, and audits; after deployment, disablement is forward-only by revoking
 the four entry points rather than deleting historical evidence.
+
+## 10. Additive automatic preflight (`RMVP-03B.v2`)
+
+PLANNING-CONTRACT-01 adds one read-only function:
+
+```text
+atlas_api.get_planning_input_preflight(request jsonb)
+```
+
+It uses the `RMVP-03B.v2` read envelope, `planning.inputs.read`, the existing read runtime, and an exact inclusive `period_start`/`period_end`. Optional `source_candidates` are comparison evidence only; the browser cannot author selection, readiness, issues, or currentness.
+
+The backend discovers current completed Weekly Menu, Attendance, and Pantry snapshots, returns typed `MISSING`, `AMBIGUOUS`, `STALE`, or selected evidence and the complete deterministic issue set, and derives `READY`/`BLOCKED`. It compares the selected immutable source triples with the current Need Generation input snapshot to return `CURRENT`, `OUTDATED`, or `NOT_GENERATED`. The read creates no root, evaluation, issue, lifecycle transition, receipt, event, or audit.
+
+The four `RMVP-03B.v1` identities and their historical evaluation/issue behavior remain exact and callable during coexistence. Normal v2 execution no longer requires the browser to call evaluate or request-handoff commands. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).

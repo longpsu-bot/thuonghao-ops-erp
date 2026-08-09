@@ -6,6 +6,7 @@ import type {
 } from "../../connection/atlasRpc";
 
 export const PLANNING_INPUT_READINESS_RPC_FUNCTIONS = {
+  preflight: "atlas_api.get_planning_input_preflight",
   getWorkbench: "atlas_api.get_planning_input_readiness_workbench",
   evaluate: "atlas_api.evaluate_planning_input_readiness",
   requestNeedGeneration: "atlas_api.request_planning_input_need_generation",
@@ -70,6 +71,25 @@ export function planningInputReadinessReadRequest(
   };
 }
 
+export function planningInputPreflightRequest(
+  authSubject: string,
+  correlationId: string,
+  periodStart: string,
+  periodEnd: string,
+  sourceCandidates?: Record<string, JsonValue>,
+): AtlasRpcRequest {
+  return {
+    contract_version: "RMVP-03B.v2",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      period_start: periodStart,
+      period_end: periodEnd,
+      ...(sourceCandidates ? { source_candidates: sourceCandidates } : {}),
+    },
+  };
+}
+
 export function planningInputReadinessCommandRequest(
   authSubject: string,
   correlationId: string,
@@ -100,6 +120,24 @@ export function createPlanningInputReadinessApi(
   invoker: PlanningInputReadinessRpcInvoker,
 ) {
   return {
+    preflight(
+      authSubject: string,
+      correlationId: string,
+      periodStart: string,
+      periodEnd: string,
+      sourceCandidates?: Record<string, JsonValue>,
+    ) {
+      return invoker.invoke(
+        PLANNING_INPUT_READINESS_RPC_FUNCTIONS.preflight,
+        planningInputPreflightRequest(
+          authSubject,
+          correlationId,
+          periodStart,
+          periodEnd,
+          sourceCandidates,
+        ),
+      );
+    },
     getWorkbench(
       authSubject: string,
       correlationId: string,
@@ -143,6 +181,7 @@ export function createPlanningInputReadinessApi(
   };
 }
 
-export type PlanningInputReadinessApi = ReturnType<
-  typeof createPlanningInputReadinessApi
+export type PlanningInputReadinessApi = Omit<
+  ReturnType<typeof createPlanningInputReadinessApi>,
+  "preflight"
 >;

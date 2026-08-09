@@ -8,6 +8,7 @@ import type {
 export const PANTRY_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_pantry_source_workbench",
   preview: "atlas_api.preview_pantry_source",
+  saveCompleted: "atlas_api.save_pantry",
   save: "atlas_api.save_pantry_draft",
   validate: "atlas_api.validate_pantry",
   approve: "atlas_api.approve_pantry",
@@ -32,6 +33,27 @@ export type PantryCommandRequest = AtlasRpcRequest & {
   reason_code: string;
   reason_note: string | null;
   payload: Record<string, JsonValue>;
+};
+
+export type PantryCompletionPayload = Record<string, JsonValue> & {
+  week_start: string;
+  no_additions_confirmed: boolean;
+  source_signature: string;
+  expected_source_signature: string | null;
+  rows: JsonValue[];
+};
+
+export type PantryCompletionCommandRequest = AtlasRpcRequest & {
+  contract_version: "PANTRY-02.v2";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "PANTRY_SAVED";
+  reason_note: string | null;
+  payload: PantryCompletionPayload;
 };
 
 export function pantryReadRequest(
@@ -70,6 +92,28 @@ export function pantryCommandRequest(
   };
 }
 
+export function pantryCompletionRequest(
+  authSubject: string,
+  correlationId: string,
+  expectedVersion: number,
+  payload: PantryCompletionPayload,
+  reasonNote: string | null = "Lưu và hoàn tất Nhu cầu bổ sung.",
+): PantryCompletionCommandRequest {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "PANTRY-02.v2",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `pantry_saved:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "PANTRY_SAVED",
+    reason_note: reasonNote,
+    payload,
+  };
+}
+
 export function createPantryApi(invoker: PantryRpcInvoker) {
   return {
     getWorkbench(
@@ -102,6 +146,9 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
         }),
       );
     },
+    saveCompleted(request: PantryCompletionCommandRequest) {
+      return invoker.invoke(PANTRY_RPC_FUNCTIONS.saveCompleted, request);
+    },
     save(request: PantryCommandRequest) {
       return invoker.invoke(PANTRY_RPC_FUNCTIONS.save, request);
     },
@@ -117,4 +164,7 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
   };
 }
 
-export type PantryApi = ReturnType<typeof createPantryApi>;
+export type PantryApi = Omit<
+  ReturnType<typeof createPantryApi>,
+  "saveCompleted"
+>;

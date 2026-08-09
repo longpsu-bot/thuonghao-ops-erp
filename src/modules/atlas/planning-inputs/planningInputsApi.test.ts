@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../connection/atlasRpc";
 import {
+  attendanceCompletionRequest,
   createPlanningInputsApi,
   planningCommandRequest,
   planningReadRequest,
+  weeklyMenuCompletionRequest,
 } from "./planningInputsApi";
 
 const success: AtlasRpcResult = {
@@ -78,6 +80,50 @@ describe("RMVP-03A Planning inputs API adapter", () => {
       "atlas_api.validate_attendance",
       "atlas_api.approve_attendance",
       "atlas_api.reopen_attendance",
+    ]);
+  });
+
+  it("builds and routes each RMVP-03A.v2 source completion as one RPC", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createPlanningInputsApi({ invoke });
+    const menu = weeklyMenuCompletionRequest("subject", "correlation", 3, {
+      week_start: "2026-08-03",
+      source_type: "MANUAL",
+      source_name: "Atlas",
+      source_signature: "a".repeat(64),
+      expected_source_signature: "b".repeat(64),
+      rows: [],
+    });
+    const attendance = attendanceCompletionRequest(
+      "subject",
+      "correlation",
+      2,
+      {
+        week_start: "2026-08-03",
+        source_type: "MANUAL",
+        source_name: "Atlas",
+        source_signature: "c".repeat(64),
+        expected_source_signature: "d".repeat(64),
+        rows: [],
+      },
+    );
+
+    await api.saveCompletedMenu(menu);
+    await api.saveCompletedAttendance(attendance);
+
+    expect(menu).toMatchObject({
+      contract_version: "RMVP-03A.v2",
+      expected_version: 3,
+      reason_code: "WEEKLY_MENU_SAVED",
+    });
+    expect(attendance).toMatchObject({
+      contract_version: "RMVP-03A.v2",
+      expected_version: 2,
+      reason_code: "ATTENDANCE_SAVED",
+    });
+    expect(invoke.mock.calls).toEqual([
+      ["atlas_api.save_weekly_menu", menu],
+      ["atlas_api.save_attendance", attendance],
     ]);
   });
 

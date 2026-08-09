@@ -7,6 +7,7 @@ import type {
 
 export const NEED_GENERATION_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_need_generation_workbench",
+  execute: "atlas_api.execute_need_generation",
   create: "atlas_api.create_need_generation_run",
   validate: "atlas_api.validate_need_generation_run",
   release: "atlas_api.release_need_generation_run",
@@ -40,6 +41,23 @@ export type NeedGenerationCommandRequest = AtlasRpcRequest & {
   reason_code: string;
   reason_note: string | null;
   payload: Record<string, JsonValue>;
+};
+
+export type NeedGenerationExecutionRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-04.v2";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "NEED_GENERATION_EXECUTED";
+  reason_note: string | null;
+  payload: {
+    period_start: string;
+    period_end: string;
+    expected_current_need_generation_run_id: string | null;
+  };
 };
 
 export type ConfirmedNeedMaterializationRequest = AtlasRpcRequest & {
@@ -116,6 +134,35 @@ export function needGenerationCommandRequest(
   };
 }
 
+export function needGenerationExecutionRequest(
+  authSubject: string,
+  correlationId: string,
+  expectedVersion: number,
+  periodStart: string,
+  periodEnd: string,
+  expectedCurrentRunId: string | null,
+  reasonNote:
+    string | null = "Tạo hoặc cập nhật nhu cầu từ dữ liệu nguồn hiện tại.",
+): NeedGenerationExecutionRequest {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-04.v2",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `need_generation_executed:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "NEED_GENERATION_EXECUTED",
+    reason_note: reasonNote,
+    payload: {
+      period_start: periodStart,
+      period_end: periodEnd,
+      expected_current_need_generation_run_id: expectedCurrentRunId,
+    },
+  };
+}
+
 export function confirmedNeedMaterializationRequest(
   authSubject: string,
   correlationId: string,
@@ -145,6 +192,9 @@ export function confirmedNeedMaterializationRequest(
 
 export function createNeedGenerationApi(invoker: NeedGenerationRpcInvoker) {
   return {
+    execute(request: NeedGenerationExecutionRequest) {
+      return invoker.invoke(NEED_GENERATION_RPC_FUNCTIONS.execute, request);
+    },
     getWorkbench(
       authSubject: string,
       correlationId: string,
@@ -189,4 +239,7 @@ export function createNeedGenerationApi(invoker: NeedGenerationRpcInvoker) {
   };
 }
 
-export type NeedGenerationApi = ReturnType<typeof createNeedGenerationApi>;
+export type NeedGenerationApi = Omit<
+  ReturnType<typeof createNeedGenerationApi>,
+  "execute"
+>;

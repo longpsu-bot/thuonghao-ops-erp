@@ -27,8 +27,20 @@ select is((select owning_domain||':'||capability_status from atlas_core.capabili
 select ok(exists(select 1 from pg_roles where rolname='atlas_planning_materialization_runtime'), 'dedicated runtime exists');
 select isnt((select rolcanlogin from pg_roles where rolname='atlas_planning_materialization_runtime'), true, 'runtime is NOLOGIN');
 select isnt((select rolinherit from pg_roles where rolname='atlas_planning_materialization_runtime'), true, 'runtime is NOINHERIT');
-select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_materialization_runtime'), 1, 'runtime owns exactly one function');
-select is((select n.nspname||'.'||p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where pg_get_userbyid(p.proowner)='atlas_planning_materialization_runtime'), 'atlas_api.create_confirmed_needs_from_generation', 'runtime owns only CMD-15');
+select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_materialization_runtime'), 2, 'runtime owns exactly the public CMD-15 wrapper and its private shared algorithm');
+select is(
+  (
+    select array_agg(n.nspname||'.'||p.proname order by n.nspname, p.proname)::text[]
+    from pg_proc p
+    join pg_namespace n on n.oid=p.pronamespace
+    where pg_get_userbyid(p.proowner)='atlas_planning_materialization_runtime'
+  ),
+  array[
+    'atlas_api.create_confirmed_needs_from_generation',
+    'atlas_core.planning_contract_01_materialize_confirmed_needs'
+  ]::text[],
+  'runtime owns exactly CMD-15 and the private PLANNING-CONTRACT-01 materialization helper'
+);
 select is((select count(*)::integer from pg_auth_members m join pg_roles r on r.oid=m.member where r.rolname='atlas_planning_materialization_runtime'), 0, 'runtime is not a member of another role');
 select is((select count(*)::integer from pg_auth_members m join pg_roles r on r.oid=m.roleid join pg_roles member on member.oid=m.member where r.rolname='atlas_planning_materialization_runtime' and member.rolname='postgres' and m.admin_option and not m.inherit_option and not m.set_option), 1, 'only the standard non-inheriting postgres ownership administration link remains');
 select is((select count(*)::integer from information_schema.usage_privileges where grantee='atlas_planning_materialization_runtime' and privilege_type='CREATE'), 0, 'runtime has no schema CREATE');
@@ -42,7 +54,7 @@ select isnt(has_function_privilege('public','atlas_api.create_confirmed_needs_fr
 select isnt(has_function_privilege('public','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), true, 'PUBLIC cannot execute the validator');
 select is((select count(*)::integer from (values('anon'),('authenticated'),('service_role')) roles(role_name) where has_function_privilege(role_name,'atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE')), 0, 'API roles cannot execute the validator');
 select ok(has_function_privilege('atlas_planning_materialization_runtime','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), 'runtime may invoke the validator');
-select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 11, 'runtime has exactly the eleven practical function executes');
+select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 16, 'runtime has exactly the sixteen practical function executes after the accepted shared-algorithm contract');
 select is((select count(*)::integer from pg_namespace n where n.nspname in ('atlas_core','atlas_admin','atlas_planning','atlas_audit','atlas_api') and has_schema_privilege('atlas_planning_materialization_runtime',n.oid,'USAGE')), 5, 'runtime has usage on exactly five Atlas schemas');
 
 -- Practical minimum relation privileges.
@@ -119,8 +131,11 @@ select is(
       'atlas_api.reopen_attendance(request jsonb)',
       'atlas_api.reopen_pantry(request jsonb)',
       'atlas_api.reopen_weekly_menu(request jsonb)',
+      'atlas_api.save_attendance(request jsonb)',
       'atlas_api.save_attendance_draft(request jsonb)',
+      'atlas_api.save_pantry(request jsonb)',
       'atlas_api.save_pantry_draft(request jsonb)',
+      'atlas_api.save_weekly_menu(request jsonb)',
       'atlas_api.save_weekly_menu_draft(request jsonb)',
       'atlas_api.validate_attendance(request jsonb)',
       'atlas_api.validate_pantry(request jsonb)',
@@ -133,7 +148,7 @@ select is(
       'atlas_api.request_planning_input_need_generation(request jsonb)'
     ]::text[]
   ),
-  'planning command runtime retains the exact historical function set plus exactly three RMVP-03B command functions'
+  'planning command runtime retains the exact historical function set, the three accepted source-completion APIs, and exactly three RMVP-03B command functions'
 );
 select is(
   jsonb_build_object(
@@ -190,12 +205,12 @@ select is(
   ),
   'planning command runtime has only exact consumed-run SELECT and RMVP-03B references no Confirmed Need, Purchase Handoff, or downstream relation'
 );
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%set_config(''lock_timeout'', ''5s'', true)%'), 'CMD-15 fixes the five-second lock timeout');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like '%set_config(''statement_timeout'', ''120s'', true)%'), 'CMD-15 fixes the 120-second statement timeout');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) like all(array['%created_confirmed_need_line_count%','%reused_confirmed_need_line_count%','%retired_confirmed_need_line_count%','%created_line_revision_count%','%created_revision_contribution_count%','%current_line_revision_count%','%superseded_line_revision_count%'])), 'CMD-15 contains exactly the seven named bounded count fields');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%set_config(''lock_timeout'', ''5s'', true)%'), 'the delegated CMD-15 algorithm fixes the five-second lock timeout');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%set_config(''statement_timeout'', ''120s'', true)%'), 'the delegated CMD-15 algorithm fixes the 120-second statement timeout');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like all(array['%created_confirmed_need_line_count%','%reused_confirmed_need_line_count%','%retired_confirmed_need_line_count%','%created_line_revision_count%','%created_revision_contribution_count%','%current_line_revision_count%','%superseded_line_revision_count%'])), 'the delegated CMD-15 algorithm contains exactly the seven named bounded count fields');
 select ok((select pg_get_functiondef('atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)'::regprocedure) like '%PA-06E-H0C.v1%'), 'validator owns the accepted H0C contract version');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like '%LOOP%' and pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like all(array['%atlas_planning.pantry_need_batches%','%atlas_planning.pantry_need_lines%','%atlas_planning.pantry_need_approval_snapshots%','%atlas_planning.pantry_need_approval_snapshot_lines%'])), 'CMD-15 has no retry loop and no direct Pantry base-table read');
-select ok((select pg_get_functiondef('atlas_api.create_confirmed_needs_from_generation(jsonb)'::regprocedure) not like '%confirmed_need_line_ids%'), 'bounded response exposes no generated line-ID array');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) not like '%LOOP%' and pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) not like all(array['%atlas_planning.pantry_need_batches%','%atlas_planning.pantry_need_lines%','%atlas_planning.pantry_need_approval_snapshots%','%atlas_planning.pantry_need_approval_snapshot_lines%'])), 'the delegated CMD-15 algorithm has no retry loop and no direct Pantry base-table read');
+select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) not like '%confirmed_need_line_ids%'), 'the delegated bounded response exposes no generated line-ID array');
 
 select * from finish();
 rollback;

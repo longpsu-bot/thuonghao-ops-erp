@@ -11,11 +11,13 @@ export const PLANNING_INPUT_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_planning_inputs_workbench",
   previewMenu: "atlas_api.preview_weekly_menu_import",
   previewAttendance: "atlas_api.preview_attendance_import",
+  saveCompletedMenu: "atlas_api.save_weekly_menu",
   saveMenu: "atlas_api.save_weekly_menu_draft",
   validateMenu: "atlas_api.validate_weekly_menu",
   approveMenu: "atlas_api.approve_weekly_menu",
   reopenMenu: "atlas_api.reopen_weekly_menu",
   createAttendanceDefaults: "atlas_api.create_attendance_draft_from_defaults",
+  saveCompletedAttendance: "atlas_api.save_attendance",
   saveAttendance: "atlas_api.save_attendance_draft",
   validateAttendance: "atlas_api.validate_attendance",
   approveAttendance: "atlas_api.approve_attendance",
@@ -33,6 +35,39 @@ export type PlanningCommandRequest = AtlasRpcRequest & {
   reason_code: string;
   reason_note: string | null;
   payload: Record<string, JsonValue>;
+};
+
+export type WeeklyMenuCompletionPayload = Record<string, JsonValue> & {
+  week_start: string;
+  source_type: string;
+  source_name: string;
+  source_signature: string;
+  expected_source_signature: string;
+  rows: JsonValue[];
+};
+
+export type AttendanceCompletionPayload = Record<string, JsonValue> & {
+  week_start: string;
+  source_type: string;
+  source_name: string;
+  source_signature: string;
+  expected_source_signature: string;
+  rows: JsonValue[];
+};
+
+export type PlanningCompletionCommandRequest<
+  Payload extends Record<string, JsonValue>,
+> = AtlasRpcRequest & {
+  contract_version: "RMVP-03A.v2";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: string;
+  reason_note: string | null;
+  payload: Payload;
 };
 
 export type PlanningRpcInvoker = {
@@ -82,12 +117,73 @@ export function planningCommandRequest(
   };
 }
 
+function planningCompletionRequest<Payload extends Record<string, JsonValue>>(
+  authSubject: string,
+  correlationId: string,
+  expectedVersion: number,
+  reasonCode: string,
+  payload: Payload,
+  reasonNote: string | null,
+): PlanningCompletionCommandRequest<Payload> {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-03A.v2",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `${reasonCode.toLowerCase()}:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: reasonCode,
+    reason_note: reasonNote,
+    payload,
+  };
+}
+
+export function weeklyMenuCompletionRequest(
+  authSubject: string,
+  correlationId: string,
+  expectedVersion: number,
+  payload: WeeklyMenuCompletionPayload,
+  reasonNote: string | null = "Lưu và hoàn tất Thực đơn tuần.",
+) {
+  return planningCompletionRequest(
+    authSubject,
+    correlationId,
+    expectedVersion,
+    "WEEKLY_MENU_SAVED",
+    payload,
+    reasonNote,
+  );
+}
+
+export function attendanceCompletionRequest(
+  authSubject: string,
+  correlationId: string,
+  expectedVersion: number,
+  payload: AttendanceCompletionPayload,
+  reasonNote: string | null = "Lưu và hoàn tất Số suất ăn.",
+) {
+  return planningCompletionRequest(
+    authSubject,
+    correlationId,
+    expectedVersion,
+    "ATTENDANCE_SAVED",
+    payload,
+    reasonNote,
+  );
+}
+
 export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
   const command =
     (
       name: Exclude<
         keyof typeof PLANNING_INPUT_RPC_FUNCTIONS,
-        "getWorkbench" | "previewMenu" | "previewAttendance"
+        | "getWorkbench"
+        | "previewMenu"
+        | "previewAttendance"
+        | "saveCompletedMenu"
+        | "saveCompletedAttendance"
       >,
     ) =>
     (request: PlanningCommandRequest) =>
@@ -164,6 +260,22 @@ export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
         request,
       );
     },
+    saveCompletedMenu(
+      request: PlanningCompletionCommandRequest<WeeklyMenuCompletionPayload>,
+    ) {
+      return invoker.invoke(
+        PLANNING_INPUT_RPC_FUNCTIONS.saveCompletedMenu,
+        request,
+      );
+    },
+    saveCompletedAttendance(
+      request: PlanningCompletionCommandRequest<AttendanceCompletionPayload>,
+    ) {
+      return invoker.invoke(
+        PLANNING_INPUT_RPC_FUNCTIONS.saveCompletedAttendance,
+        request,
+      );
+    },
     saveMenu: command("saveMenu"),
     validateMenu: command("validateMenu"),
     approveMenu: command("approveMenu"),
@@ -176,4 +288,7 @@ export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
   };
 }
 
-export type PlanningInputsApi = ReturnType<typeof createPlanningInputsApi>;
+export type PlanningInputsApi = Omit<
+  ReturnType<typeof createPlanningInputsApi>,
+  "saveCompletedMenu" | "saveCompletedAttendance"
+>;

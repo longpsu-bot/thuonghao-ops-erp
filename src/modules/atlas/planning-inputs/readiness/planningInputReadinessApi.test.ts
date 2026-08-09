@@ -4,6 +4,7 @@ import {
   createPlanningInputReadinessApi,
   planningInputReadinessCommandRequest,
   planningInputReadinessReadRequest,
+  planningInputPreflightRequest,
 } from "./planningInputReadinessApi";
 
 const success: AtlasRpcResult = {
@@ -12,6 +13,40 @@ const success: AtlasRpcResult = {
 };
 
 describe("RMVP-03B API adapter", () => {
+  it("builds the automatic RMVP-03B.v2 preflight without lifecycle authority", async () => {
+    const request = planningInputPreflightRequest(
+      "subject-1",
+      "correlation-1",
+      "2026-08-03",
+      "2026-08-09",
+    );
+    expect(request).toEqual({
+      contract_version: "RMVP-03B.v2",
+      requested_by_auth_subject: "subject-1",
+      correlation_id: "correlation-1",
+      payload: {
+        period_start: "2026-08-03",
+        period_end: "2026-08-09",
+      },
+    });
+    expect(request).not.toHaveProperty("command_id");
+    expect(request.payload).not.toHaveProperty("readiness_status");
+
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createPlanningInputReadinessApi({ invoke });
+    await api.preflight(
+      "subject-1",
+      "correlation-1",
+      "2026-08-03",
+      "2026-08-09",
+    );
+    expect(invoke).toHaveBeenCalledOnce();
+    expect(invoke).toHaveBeenCalledWith(
+      "atlas_api.get_planning_input_preflight",
+      request,
+    );
+  });
+
   it("builds the exact read envelope without decoding the history cursor", () => {
     const selection = {
       weekly_menu: {
@@ -79,7 +114,7 @@ describe("RMVP-03B API adapter", () => {
     });
   });
 
-  it("routes exactly the four reviewed APIs and preserves an exact retry request", async () => {
+  it("routes exactly the four v1 APIs and preserves an exact retry request", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPlanningInputReadinessApi({ invoke });
     await api.getWorkbench(
