@@ -32,8 +32,9 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ UI-QUALITY-02B Planning Input Readiness and Need Generation — complete on `main` at `5e2955b6798d9310b10bf6b0bcafda701ed45992`; its presentation-only workflow reset is now superseded at the command boundary by merged D-036 and PLANNING-CONTRACT-01
 - ✅ D-036 Planning workflow simplification — complete through PR #183 at `eae396b104347d5accaffdb373997904248cbad7`; consequential source Save, automatic Readiness, atomic Need Generation/materialization and the Confirmed Need human commitment boundary are accepted
 - ✅ PLANNING-CONTRACT-01 atomic Planning completion boundaries — complete through PR #184 at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`; additive v2 source Saves, automatic preflight and atomic Need Generation/H0C materialization are merged while v1 remains callable during Application cutover
-- 🟡 UI-QUALITY-02AB-UX — active in draft PR #185; under root review and not yet accepted/merged. The draft cuts Weekly Menu, Attendance, Pantry, Readiness and Need Generation over to the merged v2 workflow without redesigning Confirmed Need.
-- ↘️ UI-QUALITY-02C Confirmed Need — deferred until the upstream v2 Planning Application cutover is stable
+- ✅ UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`; cuts Weekly Menu, Attendance, Pantry, Readiness and Need Generation over to the merged v2 workflow without redesigning Confirmed Need
+- 🟡 UI-QUALITY-02C-A Confirmed Need workflow and XLSX definition — current docs-only task; [canonical handoff](../implementation-tasks/TASK-UI-QUALITY-02C-confirmed-need-workflow-xlsx.md)
+- ⬜ UI-QUALITY-02C-B Confirmed Need workflow and XLSX round-trip — next implementation; current RMVP-05/06/07 backend contracts are sufficient and no backend prerequisite is required
 - ⬜ UI-QUALITY-03 connected Admin consolidation — not started
 - ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
 - ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
@@ -55,7 +56,8 @@ Planning workflow-correction sequence:
 D-036
 → PLANNING-CONTRACT-01
 → UI-QUALITY-02AB-UX
-→ UI-QUALITY-02C
+→ UI-QUALITY-02C-A
+→ UI-QUALITY-02C-B
 → PLANNING-UX-01
 ```
 
