@@ -164,7 +164,4 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
   };
 }
 
-export type PantryApi = Omit<
-  ReturnType<typeof createPantryApi>,
-  "saveCompleted"
->;
+export type PantryApi = ReturnType<typeof createPantryApi>;

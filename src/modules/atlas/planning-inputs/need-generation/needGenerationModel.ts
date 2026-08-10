@@ -138,9 +138,11 @@ export function needGenerationWorkbenchFromResult(result: AtlasRpcResult) {
 }
 
 export function needGenerationReadbackFromResult(result: AtlasRpcResult) {
-  return result.kind === "success"
-    ? parseWorkbench(result.response.authoritative_readback)
-    : null;
+  if (result.kind !== "success") return null;
+  const readback = record(result.response.authoritative_readback);
+  return parseWorkbench(
+    readback?.need_generation ?? result.response.authoritative_readback,
+  );
 }
 
 export function needGenerationResultAllowsExactRetry(result: AtlasRpcResult) {
@@ -169,7 +171,7 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Chưa xác định kết quả lệnh. Atlas không tự gửi lại; có thể thử lại đúng yêu cầu đã giữ nguyên.";
+    return "Chưa xác định kết quả lệnh. Atlas không tự gửi lại; hãy tải lại dữ liệu có thẩm quyền trước khi thực hiện hành động khác.";
   if (result.kind === "client_error")
     return "Ứng dụng đã chặn yêu cầu ngoài danh mục Need Generation.";
   const messages: Record<string, string> = {

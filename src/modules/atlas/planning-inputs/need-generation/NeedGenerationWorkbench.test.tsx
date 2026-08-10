@@ -5,11 +5,10 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
-import type { AtlasRpcResult } from "../../connection/atlasRpc";
+import { createReviewPlanningInputReadinessApi } from "../readiness/reviewPlanningInputReadinessApi";
 import { NeedGenerationWorkbench } from "./NeedGenerationWorkbench";
 import { createReviewNeedGenerationApi } from "./reviewNeedGenerationApi";
 
@@ -22,305 +21,259 @@ const authState = {
   status: "authenticated",
   authSubject: "review-only-atlas-operator",
   user: { id: "review-only-atlas-operator" },
-  session: {
-    access_token: "review",
-    refresh_token: "review",
-    expires_in: 3600,
-    token_type: "bearer",
-    user: { id: "review-only-atlas-operator" },
-  },
+  session: { user: { id: "review-only-atlas-operator" } },
 } as unknown as AtlasAuthState;
 
-function renderReview(
+function renderWorkbench(
   api = createReviewNeedGenerationApi("ready"),
-  onConfirmedNeedMaterialized?: (batchId: string) => void,
+  preflightApi = createReviewPlanningInputReadinessApi("ready"),
+  onConfirmedNeedMaterialized = vi.fn(),
 ) {
-  return render(
+  render(
     <NeedGenerationWorkbench
       authState={authState}
       api={api}
+      preflightApi={preflightApi}
       selectedWeekStart="2026-08-03"
       selectedWeekEnd="2026-08-09"
       onConfirmedNeedMaterialized={onConfirmedNeedMaterialized}
     />,
   );
+  return { api, preflightApi, onConfirmedNeedMaterialized };
 }
 
-describe("RMVP-04 connected workbench", () => {
-  it("runs create, validate, release and existing CMD-15 with separated Recipe/Pantry groups", async () => {
+async function makePreflightCurrentness(
+  currentness: "CURRENT" | "OUTDATED" | "NOT_GENERATED",
+) {
+  const api = createReviewPlanningInputReadinessApi("ready");
+  const original = api.preflight;
+  vi.spyOn(api, "preflight").mockImplementation(async (...args) => {
+    const result = await original(...args);
+    if (result.kind === "success" && result.response.preflight) {
+      const preflight = result.response.preflight as Record<string, unknown>;
+      preflight.downstream_currentness = currentness;
+      preflight.current_need =
+        currentness === "NOT_GENERATED"
+          ? null
+          : {
+              need_generation_run_id: "current-run",
+              need_generation_run_version: 3,
+              confirmed_need_batch_id: "current-batch",
+              confirmed_need_batch_version: 1,
+              confirmed_need_batch_status: "DRAFT_REVIEW",
+            };
+    }
+    return result;
+  });
+  return api;
+}
+
+describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", () => {
+  it("loads preflight automatically and executes exactly one v2 write", async () => {
     const api = createReviewNeedGenerationApi("ready");
+    const preflightApi = createReviewPlanningInputReadinessApi("ready");
+    const preflight = vi.spyOn(preflightApi, "preflight");
+    const execute = vi.spyOn(api, "execute");
     const create = vi.spyOn(api, "create");
     const validate = vi.spyOn(api, "validate");
     const release = vi.spyOn(api, "release");
     const materialize = vi.spyOn(api, "materialize");
-    const onMaterialized = vi.fn();
-    renderReview(api, onMaterialized);
+    renderWorkbench(api, preflightApi);
 
-    const createAction = await screen.findByRole("button", {
-      name: "Tạo nhu cầu",
-    });
-    expect(createAction).toHaveClass("primary-forward");
     expect(
-      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+      await screen.findByText("Đầu vào đã sẵn sàng tạo nhu cầu"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("SẴN SÀNG")).toBeInTheDocument();
+    expect(screen.queryByText("READY")).not.toBeInTheDocument();
+    expect(preflight).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: /Đánh giá mức sẵn sàng/ }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByText(/chưa đặt mua hàng/)).not.toBeInTheDocument();
-    fireEvent.click(createAction);
     expect(
-      await screen.findByRole("heading", {
-        name: "Nhu cầu nguyên liệu đã tạo",
-      }),
-    ).toBeVisible();
-    expect(await screen.findByText("Bếp Trường Atlas A")).toBeVisible();
-    expect(screen.getByText("Kho phụ Trường Atlas A")).toBeVisible();
-    const table = screen.getByRole("table");
-    expect(within(table).getAllByText("12,5")).toHaveLength(2);
-    expect(within(table).getAllByText("2")).toHaveLength(2);
-    expect(create).toHaveBeenCalledOnce();
+      screen.queryByRole("button", { name: /Yêu cầu tạo nhu cầu/ }),
+    ).not.toBeInTheDocument();
 
-    const validateAction = screen.getByRole("button", {
-      name: "Kiểm tra nhu cầu",
-    });
-    expect(validateAction).toHaveClass("primary-forward");
+    fireEvent.click(screen.getByRole("button", { name: "Tạo nhu cầu" }));
+    await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
+    expect(execute.mock.calls[0]?.[0].contract_version).toBe("RMVP-04.v2");
+    expect(create).not.toHaveBeenCalled();
+    expect(validate).not.toHaveBeenCalled();
+    expect(release).not.toHaveBeenCalled();
+    expect(materialize).not.toHaveBeenCalled();
     expect(
-      screen.queryByRole("button", { name: "Phát hành nhu cầu" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Tạo nhu cầu xác nhận" }),
-    ).not.toBeInTheDocument();
-    fireEvent.click(validateAction);
-    await waitFor(() => expect(validate).toHaveBeenCalledOnce());
-    const releaseAction = screen.getByRole("button", {
-      name: "Phát hành nhu cầu",
-    });
-    expect(releaseAction).toHaveClass("primary-forward");
-    expect(
-      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
-    ).not.toBeInTheDocument();
-    fireEvent.click(releaseAction);
-    await waitFor(() => expect(release).toHaveBeenCalledOnce());
-    const materializeAction = screen.getByRole("button", {
-      name: "Tạo nhu cầu xác nhận",
-    });
-    expect(materializeAction).toHaveClass("primary-forward");
-    expect(
-      screen.getByText(/chưa đặt mua hàng và chưa chọn nhà cung cấp/),
-    ).toBeVisible();
-    fireEvent.click(materializeAction);
-    await waitFor(() => expect(materialize).toHaveBeenCalledOnce());
-    const boundary = await screen.findByText("Kết quả của thao tác");
-    const boundarySection = boundary.closest("section");
-    if (!boundarySection) throw new Error("Missing materialization boundary.");
-    fireEvent.click(within(boundarySection).getByText("Chi tiết kỹ thuật"));
-    expect(within(boundarySection).getByText(/DRAFT_REVIEW/)).toBeVisible();
-    expect(onMaterialized).toHaveBeenCalledWith(
-      "c4500000-0000-0000-0000-000000000001",
-    );
+      await screen.findByText("Nhu cầu đang hiện hành"),
+    ).toBeInTheDocument();
   });
 
-  it("shows a handoff-not-requested state without implying that a run exists", async () => {
+  it("shows blocked sources in plain Vietnamese and prevents execution", async () => {
     const api = createReviewNeedGenerationApi("ready");
-    const original = api.getWorkbench.bind(api);
-    api.getWorkbench = vi.fn(async (...args: Parameters<typeof original>) => {
-      const result = await original(...args);
-      if (result.kind === "success") {
-        const value = result.response.workbench as Record<string, unknown>;
-        const root = value.planning_input_set as Record<string, unknown>;
-        root.readiness_status = "READY";
-        value.allowed_actions = {
-          create: false,
-          validate: false,
-          release: false,
-          materialize: false,
-          invalidate: false,
-        };
-        value.disabled_reasons = {
-          create: "Chưa ghi nhận yêu cầu tạo nhu cầu.",
-          validate: "Tạo nhu cầu trước.",
-          release: "Kiểm tra nhu cầu trước.",
-          materialize: "Phát hành nhu cầu trước.",
-          invalidate: "Chưa có lần tạo nhu cầu.",
-        };
-      }
-      return result;
-    });
-    renderReview(api);
+    const execute = vi.spyOn(api, "execute");
+    renderWorkbench(api, createReviewPlanningInputReadinessApi("empty"));
 
+    expect(await screen.findByText("Đầu vào đang bị chặn")).toBeInTheDocument();
+    expect(screen.getByText("CẦN XỬ LÝ")).toBeInTheDocument();
+    expect(screen.getAllByText("CHƯA CÓ")).toHaveLength(3);
+    for (const rawToken of [
+      "READY",
+      "BLOCKED",
+      "MISSING",
+      "AMBIGUOUS",
+      "STALE",
+    ])
+      expect(screen.queryByText(rawToken)).not.toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "Chưa thể tạo nhu cầu" }),
-    ).toBeVisible();
+      screen.queryByText("Không có bằng chứng đã phê duyệt giao với kỳ."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Lỗi chặn (3)")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Chưa thể tạo nhu cầu" }),
-    ).toBeVisible();
-    expect(
-      screen.getByText("Chưa ghi nhận yêu cầu tạo nhu cầu."),
-    ).toBeVisible();
-    expect(screen.queryByText("Kiểm tra nhu cầu")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { name: "Nhu cầu nguyên liệu đã tạo" }),
-    ).not.toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
   });
 
-  it("selects an exact period, filters, paginates and drills into atomic detail", async () => {
-    const api = createReviewNeedGenerationApi("ready");
-    const getWorkbench = vi.spyOn(api, "getWorkbench");
-    renderReview(api);
-    await screen.findByText("ĐÃ YÊU CẦU TẠO NHU CẦU");
-    fireEvent.click(screen.getByText("Đổi phạm vi xem"));
-    fireEvent.change(screen.getByLabelText("Từ ngày tạo nhu cầu"), {
-      target: { value: "2026-08-04" },
-    });
-    fireEvent.change(screen.getByLabelText("Đến ngày tạo nhu cầu"), {
-      target: { value: "2026-08-08" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Xem phạm vi này" }));
-    await waitFor(() =>
-      expect(getWorkbench).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        "2026-08-04",
-        "2026-08-08",
-        null,
-        expect.anything(),
-        0,
-        100,
-        null,
-      ),
-    );
-    const createAction = screen.getByRole("button", { name: "Tạo nhu cầu" });
-    await waitFor(() => expect(createAction).toBeEnabled());
-    fireEvent.click(createAction);
-    fireEvent.change(await screen.findByLabelText("Nguồn"), {
-      target: { value: "PANTRY_DIRECT" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Lọc" }));
-    await waitFor(() =>
-      expect(getWorkbench).toHaveBeenLastCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        null,
-        expect.objectContaining({ contribution_family: "PANTRY_DIRECT" }),
-        0,
-        100,
-        null,
-      ),
-    );
-    fireEvent.click(screen.getAllByRole("button", { name: "Xem 1" })[0]!);
-    expect(
-      await screen.findByText("Chi tiết hình thành số lượng"),
-    ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Trang trước" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Trang sau" })).toBeDisabled();
-  });
-
-  it("renders blockers before warnings and exposes backend disabled reasons", async () => {
-    const api = createReviewNeedGenerationApi("ready");
-    const originalCreate = api.create.bind(api);
-    api.create = vi.fn(async (...args: Parameters<typeof originalCreate>) => {
-      const result = await originalCreate(...args);
-      if (result.kind === "success") {
-        const value = result.response.authoritative_readback as Record<
-          string,
-          unknown
-        >;
-        value.blocking_issues = [
+  it("maps known preflight issues and keeps raw backend sentences hidden", async () => {
+    const preflightApi = createReviewPlanningInputReadinessApi("ready");
+    const original = preflightApi.preflight;
+    vi.spyOn(preflightApi, "preflight").mockImplementation(async (...args) => {
+      const result = await original(...args);
+      if (result.kind === "success" && result.response.preflight) {
+        const preflight = result.response.preflight as Record<string, unknown>;
+        preflight.readiness_state = "BLOCKED";
+        preflight.blocking_issue_count = 1;
+        preflight.issues = [
           {
-            need_generation_issue_id: "blocker",
-            issue_code: "MISSING_ELIGIBLE_RECIPE",
-            message: "Lỗi chặn từ backend",
+            severity: "WARNING",
+            issue_code: "ZERO_ATTENDANCE_FOR_PLANNED_MENU",
+            message: "Zero attendance for planned menu.",
+            input_type: null,
+            school_id: null,
+            service_date: null,
+          },
+          {
+            severity: "BLOCKING",
+            issue_code: "MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT",
+            message: "No approved Weekly Menu snapshot intersects the period.",
+            input_type: null,
+            school_id: null,
+            service_date: null,
           },
         ];
-        value.warnings = [
-          {
-            need_generation_issue_id: "warning",
-            issue_code: "ZERO_ACTIVE_THEORETICAL_QUANTITY",
-            message: "Cảnh báo từ backend",
-          },
-        ];
-        const run = value.selected_run as Record<string, unknown>;
-        run.blocking_issue_count = 1;
-        run.warning_count = 1;
-        value.allowed_actions = {
-          create: false,
-          validate: false,
-          release: false,
-          materialize: false,
-          invalidate: true,
-        };
-        value.disabled_reasons = {
-          create: "Đã có lần tạo nhu cầu đang hoạt động.",
-          validate: "Cần xử lý lỗi chặn trước khi kiểm tra.",
-          release: "Kiểm tra nhu cầu trước.",
-          materialize: "Phát hành nhu cầu trước.",
-          invalidate: null,
-        };
       }
       return result;
     });
-    renderReview(api);
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
-    const blocker = await screen.findByText("Lỗi chặn từ backend");
-    const warning = screen.getByText("Cảnh báo từ backend");
+    renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
+
+    const blocker = await screen.findByText(
+      "Chưa có thực đơn tuần đã lưu phù hợp với kỳ này.",
+    );
+    const warning = screen.getByText(
+      "Thực đơn đã có nhưng tổng số suất ăn của trường và ngày này bằng 0.",
+    );
+    expect(
+      screen.queryByText(
+        "No approved Weekly Menu snapshot intersects the period.",
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Zero attendance for planned menu."),
+    ).not.toBeInTheDocument();
     expect(
       blocker.compareDocumentPosition(warning) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("maps ambiguous and stale source evidence without exposing backend messages", async () => {
+    const preflightApi = createReviewPlanningInputReadinessApi("ready");
+    const original = preflightApi.preflight;
+    vi.spyOn(preflightApi, "preflight").mockImplementation(async (...args) => {
+      const result = await original(...args);
+      if (result.kind === "success" && result.response.preflight) {
+        const preflight = result.response.preflight as Record<string, unknown>;
+        const sources = preflight.source_evidence as Record<
+          string,
+          Record<string, unknown>
+        >;
+        preflight.readiness_state = "BLOCKED";
+        sources.attendance!.selection_state = "AMBIGUOUS";
+        sources.attendance!.safe_message =
+          "Multiple approved candidates found.";
+        sources.pantry!.selection_state = "STALE";
+        sources.pantry!.safe_message = "Selected snapshot is stale.";
+      }
+      return result;
+    });
+    renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
+
+    expect(await screen.findByText("CẦN TẢI LẠI")).toBeInTheDocument();
+    expect(screen.getAllByText("CẦN XỬ LÝ").length).toBeGreaterThan(0);
     expect(
-      screen.queryByRole("button", { name: "Kiểm tra nhu cầu" }),
+      screen.getByText(
+        "Có nhiều bản dữ liệu phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Multiple approved candidates found."),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByText("Cần xử lý lỗi chặn trước khi kiểm tra."),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("heading", { name: "Nhu cầu nguyên liệu đã tạo" }),
-    ).toBeVisible();
-    expect(screen.getByText("Thao tác khác")).toBeVisible();
+      screen.queryByText("Selected snapshot is stale."),
+    ).not.toBeInTheDocument();
   });
 
-  it("never retries automatically and reuses the exact immutable request on demand", async () => {
-    const base = createReviewNeedGenerationApi("ready");
-    const original = base.create.bind(base);
-    const create = vi
-      .fn()
-      .mockResolvedValueOnce({
-        kind: "transport_error",
-        diagnostic: { code: "NETWORK_FAILURE", safeMessage: "safe" },
-      } satisfies AtlasRpcResult)
-      .mockImplementation(original);
-    const api = { ...base, create };
-    renderReview(api);
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
-    const retry = await screen.findByRole("button", {
-      name: "Thử lại đúng yêu cầu",
+  it("uses Cập nhật nhu cầu for backend OUTDATED state", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    renderWorkbench(api, await makePreflightCurrentness("OUTDATED"));
+
+    expect(await screen.findByText("Nhu cầu cần cập nhật")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cập nhật nhu cầu" }));
+    await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
+    expect(execute.mock.calls[0]?.[0].payload).toMatchObject({
+      expected_current_need_generation_run_id: "current-run",
     });
-    expect(create).toHaveBeenCalledOnce();
-    const exactRequest = create.mock.calls[0]?.[0];
-    fireEvent.click(retry);
-    await screen.findByText("Bếp Trường Atlas A");
-    expect(create).toHaveBeenCalledTimes(2);
-    expect(create.mock.calls[1]?.[0]).toBe(exactRequest);
   });
 
-  it("clears stale eligibility and refreshes authoritative state", async () => {
-    const base = createReviewNeedGenerationApi("ready");
-    const getWorkbench = vi.spyOn(base, "getWorkbench");
-    base.create = vi.fn().mockResolvedValue({
-      kind: "backend_error",
-      error: {
-        success: false,
-        error_code: "STALE_SOURCE_BINDING",
-        safe_message: "stale",
-      },
-    } satisfies AtlasRpcResult);
-    renderReview(base);
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
-    await waitFor(() =>
-      expect(getWorkbench.mock.calls.length).toBeGreaterThan(1),
+  it("shows CURRENT without a misleading generation action", async () => {
+    const onOpen = vi.fn();
+    renderWorkbench(
+      createReviewNeedGenerationApi("ready"),
+      await makePreflightCurrentness("CURRENT"),
+      onOpen,
     );
-    expect(screen.queryByText("Bếp Trường Atlas A")).not.toBeInTheDocument();
+
+    expect(
+      await screen.findByText("Nhu cầu đang hiện hành"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở Xác nhận nhu cầu" }),
+    );
+    expect(onOpen).toHaveBeenCalledWith("current-batch");
+  });
+
+  it("does not retry an unknown write and requires authoritative refresh", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute").mockResolvedValue({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Mất kết nối" },
+    });
+    renderWorkbench(api, createReviewPlanningInputReadinessApi("ready"));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+    await screen.findByText(/Không thể ghi tiếp cho đến khi/);
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tải lại có thẩm quyền" }),
+    ).toBeEnabled();
   });
 });

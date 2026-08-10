@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
-import type { JsonValue } from "../../connection/atlasRpc";
+import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
+import { planningSourceSaveOutcome } from "../planningInputsModel";
 import { Chip, Panel } from "../../WorkbenchComponents";
-import {
-  pantryCommandRequest,
-  type PantryApi,
-  type PantryCommandRequest,
-} from "./pantryApi";
+import { pantryCompletionRequest, type PantryApi } from "./pantryApi";
 import {
   pantryPreviewFromResult,
   pantryReadbackFromResult,
@@ -55,6 +52,16 @@ function statusTone(status?: string) {
   if (status === "APPROVED") return "ok" as const;
   if (status === "VALIDATED") return "neutral" as const;
   return "warning" as const;
+}
+
+function statusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    DRAFT: "CHƯA LƯU HOÀN TẤT",
+    VALIDATED: "CẦN LƯU HOÀN TẤT",
+    APPROVED: "ĐÃ LƯU",
+    REOPENED: "ĐANG CHỈNH SỬA",
+  };
+  return status ? (labels[status] ?? status) : "CHƯA CÓ";
 }
 
 function PantryIssues({
@@ -107,9 +114,10 @@ export function PantryWorkbench({
   const [preview, setPreview] =
     useState<ReturnType<typeof pantryPreviewFromResult>>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [consequence, setConsequence] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [reopenReason, setReopenReason] = useState("");
+  const [refreshRequired, setRefreshRequired] = useState(false);
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
@@ -141,6 +149,8 @@ export function PantryWorkbench({
     }
     setLoad("ready");
     adopt(workbench);
+    setRefreshRequired(false);
+    setConsequence(null);
   }, [api, authSubject, correlationId, weekStart, adopt]);
 
   useEffect(() => {
@@ -150,7 +160,8 @@ export function PantryWorkbench({
     setNoAdditions(false);
     setPreview(null);
     setDirty(false);
-    setReopenReason("");
+    setRefreshRequired(false);
+    setConsequence(null);
     if (authSubject) void refresh();
     else {
       setLoad("idle");
@@ -238,58 +249,64 @@ export function PantryWorkbench({
     setNotice(pantryResultMessage(result));
   };
 
-  const runCommand = async (
-    invoke: (request: PantryCommandRequest) => ReturnType<PantryApi["save"]>,
-    request: PantryCommandRequest,
-  ) => {
+  const runCompletion = async (invoke: () => Promise<AtlasRpcResult>) => {
     setSaving(true);
-    const result = await invoke(request);
+    setNotice(null);
+    setConsequence(null);
+    const result = await invoke();
     setSaving(false);
-    setNotice(pantryResultMessage(result));
+    const currentness =
+      result.kind === "success" &&
+      typeof result.response.downstream_currentness === "string"
+        ? result.response.downstream_currentness
+        : null;
+    const outcome =
+      currentness === "CURRENT" ||
+      currentness === "OUTDATED" ||
+      currentness === "NOT_GENERATED"
+        ? planningSourceSaveOutcome("pantry", currentness)
+        : null;
+    setNotice(outcome?.savedMessage ?? pantryResultMessage(result));
+    setConsequence(outcome?.consequenceMessage ?? null);
+    if (
+      result.kind === "transport_error" ||
+      (result.kind === "backend_error" &&
+        ["STALE_VERSION", "STALE_SOURCE_SIGNATURE"].includes(
+          result.error.error_code,
+        ))
+    ) {
+      setRefreshRequired(true);
+      return;
+    }
     const workbench = pantryReadbackFromResult(result);
     if (workbench) {
       setLoad("ready");
       adopt(workbench);
+      setRefreshRequired(false);
+    } else if (result.kind === "success") {
+      setRefreshRequired(true);
     }
   };
 
   const save = async () => {
-    if (!api || !authSubject || !preview?.can_save) return;
-    await runCommand(
-      api.save,
-      pantryCommandRequest(
-        authSubject,
-        correlationId,
-        data.batch?.version ?? 1,
-        "PANTRY_DRAFT_SAVE",
-        {
-          week_start: weekStart,
-          no_additions_confirmed: noAdditions,
-          source_signature: preview.source_signature,
-          expected_source_signature: data.batch?.source_signature ?? null,
-          rows: rows as unknown as JsonValue[],
-        },
-      ),
+    if (!api || !authSubject || !preview?.can_save || refreshRequired) return;
+    const request = pantryCompletionRequest(
+      authSubject,
+      correlationId,
+      data.batch?.version ?? 1,
+      {
+        week_start: weekStart,
+        no_additions_confirmed: noAdditions,
+        source_signature: preview.source_signature,
+        expected_source_signature: data.batch?.source_signature ?? null,
+        rows: rows as unknown as JsonValue[],
+      },
     );
+    await runCompletion(() => api.saveCompleted(request));
   };
 
-  const lifecycle = async (action: "validate" | "approve" | "reopen") => {
-    if (!api || !authSubject || !data.batch || dirty) return;
-    await runCommand(
-      api[action],
-      pantryCommandRequest(
-        authSubject,
-        correlationId,
-        data.batch.version,
-        `PANTRY_${action.toUpperCase()}`,
-        {
-          week_start: weekStart,
-          expected_source_signature: data.batch.source_signature,
-        },
-        action === "reopen" ? reopenReason : null,
-      ),
-    );
-  };
+  const canEdit =
+    !saving && !refreshRequired && data.catalog_issues.blockers.length === 0;
 
   if (!authSubject) {
     return (
@@ -314,6 +331,10 @@ export function PantryWorkbench({
           role={load === "error" ? "alert" : "status"}
         >
           {notice}
+          {consequence && <span> {consequence}</span>}
+          {refreshRequired && (
+            <span> Cần tải lại dữ liệu có thẩm quyền trước khi ghi tiếp.</span>
+          )}
         </p>
       )}
       {load === "loading" && <p className="empty">Đang tải Pantry…</p>}
@@ -328,7 +349,7 @@ export function PantryWorkbench({
         description="Nguồn bổ sung thủ công của Lập nhu cầu; Atlas tự suy ra Điểm giao nhận mặc định và Đơn vị mua."
         status={
           <Chip tone={statusTone(data.batch?.pantry_need_batch_status)}>
-            {data.batch?.pantry_need_batch_status ?? "CHƯA CÓ"}
+            {statusLabel(data.batch?.pantry_need_batch_status)}
           </Chip>
         }
       >
@@ -345,7 +366,7 @@ export function PantryWorkbench({
 
         {dirty && (
           <p className="planning-dirty-notice" role="status">
-            Có thay đổi chưa lưu. Hãy xem trước và lưu trước khi xác thực.
+            Có thay đổi chưa lưu. Hãy xem trước rồi lưu nhu cầu bổ sung.
           </p>
         )}
 
@@ -359,7 +380,7 @@ export function PantryWorkbench({
               type="button"
               className="secondary"
               onClick={addRow}
-              disabled={saving || noAdditions || !data.allowed_actions.can_save}
+              disabled={!canEdit || noAdditions}
             >
               <Plus size={17} aria-hidden="true" />
               Thêm dòng Pantry
@@ -368,7 +389,7 @@ export function PantryWorkbench({
               <input
                 type="checkbox"
                 checked={noAdditions}
-                disabled={saving || !data.allowed_actions.can_save}
+                disabled={!canEdit}
                 onChange={(event) => {
                   const checked = event.target.checked;
                   if (
@@ -394,7 +415,7 @@ export function PantryWorkbench({
               type="button"
               className="secondary"
               onClick={() => void previewRows()}
-              disabled={saving || !data.allowed_actions.can_preview}
+              disabled={!canEdit}
             >
               <Eye size={17} aria-hidden="true" />
               Xem trước có thẩm quyền
@@ -404,14 +425,11 @@ export function PantryWorkbench({
               className="primary"
               onClick={() => void save()}
               disabled={
-                saving ||
-                !dirty ||
-                !data.allowed_actions.can_save ||
-                !preview?.can_save
+                saving || refreshRequired || !dirty || !preview?.can_save
               }
             >
               <FloppyDisk size={17} aria-hidden="true" />
-              Lưu bản nháp
+              Lưu nhu cầu bổ sung
             </button>
             <button
               type="button"
@@ -469,7 +487,7 @@ export function PantryWorkbench({
                           min={data.week_start}
                           max={data.week_end}
                           value={row.service_date}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(index, "service_date", event.target.value)
                           }
@@ -479,7 +497,7 @@ export function PantryWorkbench({
                         <select
                           aria-label={`Trường dòng ${index + 1}`}
                           value={row.school_id}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(index, "school_id", event.target.value)
                           }
@@ -498,7 +516,7 @@ export function PantryWorkbench({
                         <select
                           aria-label={`Nguyên liệu dòng ${index + 1}`}
                           value={row.ingredient_id}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(
                               index,
@@ -524,7 +542,7 @@ export function PantryWorkbench({
                         <select
                           aria-label={`Mục đích dòng ${index + 1}`}
                           value={row.pantry_need_purpose_id}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(
                               index,
@@ -551,7 +569,7 @@ export function PantryWorkbench({
                           min="0.000001"
                           step="0.000001"
                           value={row.requested_quantity}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(
                               index,
@@ -567,8 +585,7 @@ export function PantryWorkbench({
                           value={row.note}
                           required={purpose?.note_rule === "REQUIRED"}
                           disabled={
-                            !data.allowed_actions.can_save ||
-                            purpose?.note_rule === "PROHIBITED"
+                            !canEdit || purpose?.note_rule === "PROHIBITED"
                           }
                           placeholder={
                             purpose?.note_rule === "REQUIRED"
@@ -586,7 +603,7 @@ export function PantryWorkbench({
                         <input
                           aria-label={`Tham chiếu dòng ${index + 1}`}
                           value={row.source_request_reference}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(
                               index,
@@ -600,7 +617,7 @@ export function PantryWorkbench({
                         <button
                           type="button"
                           aria-label={`Xóa dòng ${index + 1}`}
-                          disabled={!data.allowed_actions.can_save}
+                          disabled={!canEdit}
                           onClick={() =>
                             markEdited(
                               rows.filter(
@@ -718,52 +735,6 @@ export function PantryWorkbench({
             ))}
           </ul>
         </details>
-        <div
-          className="planning-lifecycle-actions pantry-lifecycle-actions"
-          aria-label="Thao tác vòng đời Pantry"
-        >
-          <span className="planning-action-heading">Quyết định vòng đời</span>
-          <button
-            type="button"
-            className="primary"
-            onClick={() => void lifecycle("validate")}
-            disabled={saving || dirty || !data.allowed_actions.can_validate}
-          >
-            Xác thực
-          </button>
-          <button
-            type="button"
-            className="commitment"
-            onClick={() => void lifecycle("approve")}
-            disabled={saving || dirty || !data.allowed_actions.can_approve}
-          >
-            Phê duyệt
-          </button>
-          {data.batch?.pantry_need_batch_status === "APPROVED" && (
-            <section className="pantry-reopen">
-              <label>
-                Lý do mở lại
-                <textarea
-                  value={reopenReason}
-                  onChange={(event) => setReopenReason(event.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => void lifecycle("reopen")}
-                disabled={
-                  saving ||
-                  dirty ||
-                  !data.allowed_actions.can_reopen ||
-                  reopenReason.trim().length === 0
-                }
-              >
-                Mở lại
-              </button>
-            </section>
-          )}
-        </div>
       </Panel>
     </div>
   );

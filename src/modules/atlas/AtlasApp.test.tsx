@@ -98,7 +98,7 @@ describe("Atlas master-data shell", () => {
     ).toHaveFocus();
   });
 
-  it("adds the sixth Confirmed Need tab without adding a navigation item", async () => {
+  it("keeps automatic readiness inside the five-tab Planning workflow", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
     expect(
@@ -125,28 +125,18 @@ describe("Atlas master-data shell", () => {
       "Thực đơn tuần",
       "Sĩ số",
       "Pantry",
-      "Sẵn sàng đầu vào",
       "Tạo nhu cầu",
       "Xác nhận nhu cầu",
     ]);
-    expect(
-      screen.getByText(/không phải quyết định sẵn sàng có thẩm quyền/i),
-    ).toBeVisible();
 
-    fireEvent.click(screen.getByRole("tab", { name: "Sẵn sàng đầu vào" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Tạo nhu cầu" }));
     expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: /\d{2}\/\d{2}\/\d{4} – \d{2}\/\d{2}\/\d{4}/,
-      }),
+      await screen.findByText("Đầu vào đã sẵn sàng tạo nhu cầu"),
     ).toBeVisible();
-    expect(screen.getByText("Chưa kiểm tra đầu vào")).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
-    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
   });
 
-  it("runs the connected review journey for menu and attendance approval", async () => {
+  it("runs the connected review journey for consequential menu and attendance saves", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
     expect(
@@ -167,18 +157,8 @@ describe("Atlas master-data shell", () => {
     expect(
       await screen.findByText(/Xem trước có thẩm quyền/),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ PHÊ DUYỆT")).toBeInTheDocument(),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
+    await waitFor(() => expect(screen.getByText("ĐÃ LƯU")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
     expect(
@@ -186,85 +166,13 @@ describe("Atlas master-data shell", () => {
         "Tạo từ mặc định theo đúng trường/ngày có thực đơn, nhập workbook hoặc dán hàng loạt; số 0 luôn là giá trị tường minh.",
       ),
     ).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tạo từ sĩ số mặc định" }),
-    );
-    await waitFor(() =>
-      expect(
-        screen.getByText("Đã hoàn tất và đọc lại dữ liệu có thẩm quyền."),
-      ).toBeInTheDocument(),
-    );
     const studentInput = screen.getAllByLabelText(/Suất học sinh ·/)[0];
     fireEvent.change(studentInput, { target: { value: "421" } });
     fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
     await screen.findByText(/Xem trước có thẩm quyền/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu số suất ăn" }));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
-    await waitFor(() =>
-      expect(
-        screen.getByText("Hai nguồn tham chiếu đã được phê duyệt"),
-      ).toBeInTheDocument(),
-    );
-
-    fireEvent.click(screen.getByRole("tab", { name: "Thực đơn tuần" }));
-    fireEvent.change(screen.getByLabelText("Lý do mở lại thực đơn"), {
-      target: { value: "Điều chỉnh món ăn đã duyệt." },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Mở lại" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ MỞ LẠI")).toBeInTheDocument(),
-    );
-    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
-      target: { value: "review-planning-dish-1" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
-    await screen.findByText(/Xem trước có thẩm quyền/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ PHÊ DUYỆT")).toBeInTheDocument(),
-    );
-
-    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
-    fireEvent.change(screen.getByLabelText("Lý do mở lại sĩ số"), {
-      target: { value: "Điều chỉnh số suất đã duyệt." },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Mở lại" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ MỞ LẠI")).toBeInTheDocument(),
-    );
-    fireEvent.change(screen.getAllByLabelText(/Suất học sinh ·/)[0], {
-      target: { value: "422" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
-    await screen.findByText(/Xem trước có thẩm quyền/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu bản nháp" }));
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Xác thực" })).toBeEnabled(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
-    await waitFor(() =>
-      expect(screen.getByText("ĐÃ XÁC THỰC")).toBeInTheDocument(),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Phê duyệt" }));
-    await waitFor(() =>
-      expect(
-        screen.getByText("Hai nguồn tham chiếu đã được phê duyệt"),
-      ).toBeInTheDocument(),
+      expect(screen.getByText(/Đã lưu số suất ăn\./)).toBeInTheDocument(),
     );
   }, 15_000);
 
@@ -281,7 +189,12 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.change(scenario, { target: { value: "menu_stale" } });
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
-    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
+      target: { value: "review-planning-dish-3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    await screen.findByText(/Xem trước có thẩm quyền/);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
     expect(
       await screen.findByText(
         "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.",
@@ -290,7 +203,12 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.change(scenario, { target: { value: "menu_retryable" } });
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
-    fireEvent.click(screen.getByRole("button", { name: "Xác thực" }));
+    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
+      target: { value: "review-planning-dish-3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    await screen.findByText(/Xem trước có thẩm quyền/);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
     expect(
       await screen.findByText(
         "Dữ liệu đang được cập nhật. Có thể thử lại đúng yêu cầu.",

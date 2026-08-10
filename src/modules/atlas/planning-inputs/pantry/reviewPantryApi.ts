@@ -5,7 +5,11 @@ import type {
   JsonValue,
 } from "../../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../../review/reviewMode";
-import type { PantryApi, PantryCommandRequest } from "./pantryApi";
+import type {
+  PantryApi,
+  PantryCommandRequest,
+  PantryCompletionCommandRequest,
+} from "./pantryApi";
 import type {
   PantryBatch,
   PantryPreview,
@@ -171,7 +175,9 @@ function fixture(weekStart: string): PantryWorkbenchData {
   };
 }
 
-function commandWeek(request: PantryCommandRequest) {
+function commandWeek(
+  request: PantryCommandRequest | PantryCompletionCommandRequest,
+) {
   const value = request.payload.week_start;
   return typeof value === "string" ? value : "2026-08-03";
 }
@@ -198,7 +204,7 @@ export function createReviewPantryApi(
           : null;
 
   const command = async (
-    request: PantryCommandRequest,
+    request: PantryCommandRequest | PantryCompletionCommandRequest,
     status: PantryBatch["pantry_need_batch_status"],
     message: string,
     eventTypeOverride?: string,
@@ -323,6 +329,24 @@ export function createReviewPantryApi(
         "Bản nháp Pantry xem thử đã cập nhật.",
         "PantryDraftReplaced",
       );
+    },
+    async saveCompleted(request) {
+      const result = await command(
+        request,
+        "APPROVED",
+        "Đã lưu. Phiên bản này đang được sử dụng cho Kế hoạch.",
+        "PantryCompleted",
+      );
+      if (result.kind !== "success") return result;
+      return success({
+        safe_operator_message:
+          "Đã lưu. Phiên bản này đang được sử dụng cho Kế hoạch.",
+        downstream_currentness: "NOT_GENERATED",
+        authoritative_readback: {
+          pantry: clone(state) as unknown as JsonValue,
+          preflight: { downstream_currentness: "NOT_GENERATED" },
+        },
+      });
     },
     async validate(request) {
       return command(request, "VALIDATED", "Pantry xem thử đã xác thực.");

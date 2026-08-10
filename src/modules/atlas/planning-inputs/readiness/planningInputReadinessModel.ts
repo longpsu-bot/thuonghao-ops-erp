@@ -123,6 +123,33 @@ export type PlanningInputReadinessWorkbenchData = {
   history_has_more: boolean;
 };
 
+export type PlanningInputPreflightIssue = {
+  severity: "BLOCKING" | "WARNING";
+  issue_code: string;
+  message: string;
+  input_type: string | null;
+  school_id: string | null;
+  service_date: string | null;
+};
+
+export type PlanningInputPreflightData = {
+  period_start: string;
+  period_end: string;
+  readiness_state: "READY" | "BLOCKED";
+  source_evidence: Record<ReadinessSourceKind, ReadinessSourceEvidence>;
+  issues: PlanningInputPreflightIssue[];
+  blocking_issue_count: number;
+  downstream_currentness: "CURRENT" | "OUTDATED" | "NOT_GENERATED";
+  current_need: {
+    confirmed_need_batch_id: string;
+    confirmed_need_batch_status: string;
+    confirmed_need_batch_version: number;
+    need_generation_run_id: string;
+    need_generation_run_version: number;
+    need_generation_run_status: string;
+  } | null;
+};
+
 function record(value: unknown): Record<string, JsonValue> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, JsonValue>)
@@ -156,6 +183,21 @@ export function planningInputReadinessReadbackFromResult(
   return result.kind === "success"
     ? parsedWorkbench(result.response.authoritative_readback)
     : null;
+}
+
+export function planningInputPreflightFromResult(result: AtlasRpcResult) {
+  if (result.kind !== "success") return null;
+  const direct = record(result.response.preflight);
+  const readback = record(result.response.authoritative_readback);
+  const nested = readback ? record(readback.preflight) : null;
+  const preflight = direct ?? nested;
+  if (
+    !preflight ||
+    !record(preflight.source_evidence) ||
+    !Array.isArray(preflight.issues)
+  )
+    return null;
+  return preflight as unknown as PlanningInputPreflightData;
 }
 
 export function readinessCandidateTriple(

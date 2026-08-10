@@ -228,12 +228,44 @@ export function planningReadbackFromResult(
     !isRecord(result.response.authoritative_readback)
   )
     return null;
-  return result.response
-    .authoritative_readback as unknown as PlanningInputsWorkbenchData;
+  const readback = result.response.authoritative_readback;
+  const planningInputs = isRecord(readback.planning_inputs)
+    ? readback.planning_inputs
+    : readback;
+  return planningInputs as unknown as PlanningInputsWorkbenchData;
+}
+
+export type PlanningSourceKind = "weekly_menu" | "attendance" | "pantry";
+export type PlanningDownstreamCurrentness =
+  "CURRENT" | "OUTDATED" | "NOT_GENERATED";
+
+export function planningSourceSaveOutcome(
+  source: PlanningSourceKind,
+  currentness: PlanningDownstreamCurrentness,
+) {
+  const savedMessages: Record<PlanningSourceKind, string> = {
+    weekly_menu: "Đã lưu thực đơn.",
+    attendance: "Đã lưu số suất ăn.",
+    pantry: "Đã lưu nhu cầu bổ sung.",
+  };
+  const consequenceMessages: Record<PlanningDownstreamCurrentness, string> = {
+    NOT_GENERATED: "Dữ liệu này sẽ được dùng khi tạo nhu cầu.",
+    CURRENT: "Nhu cầu hiện tại vẫn khớp với dữ liệu đã lưu.",
+    OUTDATED: "Nhu cầu hiện tại cần cập nhật theo dữ liệu vừa lưu.",
+  };
+  return {
+    savedMessage: savedMessages[source],
+    consequenceMessage: consequenceMessages[currentness],
+  };
 }
 
 export function planningResultMessage(result: AtlasRpcResult): string {
   if (result.kind === "success") {
+    const backendMessage =
+      typeof result.response.safe_operator_message === "string"
+        ? result.response.safe_operator_message
+        : null;
+    if (backendMessage) return backendMessage;
     if (result.response.idempotency_status === "NO_CHANGE")
       return "Dữ liệu chuẩn hóa không thay đổi; Atlas không ghi thêm.";
     return "Đã hoàn tất và đọc lại dữ liệu có thẩm quyền.";

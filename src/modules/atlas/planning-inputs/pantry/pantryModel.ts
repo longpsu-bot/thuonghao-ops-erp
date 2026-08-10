@@ -200,7 +200,10 @@ export function pantryPreviewFromResult(
 export function pantryReadbackFromResult(
   result: AtlasRpcResult,
 ): PantryWorkbenchData | null {
-  return pantryWorkbenchFromResult(result);
+  if (result.kind !== "success") return null;
+  const readback = objectValue(result.response.authoritative_readback);
+  const pantry = readback ? objectValue(readback.pantry) : null;
+  return pantry as unknown as PantryWorkbenchData | null;
 }
 
 export function pantryResultMessage(result: AtlasRpcResult) {
@@ -213,7 +216,7 @@ export function pantryResultMessage(result: AtlasRpcResult) {
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Không thể kết nối dịch vụ Pantry.";
+    return "Chưa xác định kết quả lưu. Atlas không tự động gửi lại; hãy tải lại dữ liệu có thẩm quyền.";
   if (result.kind === "client_error")
     return "Ứng dụng đã chặn một yêu cầu Pantry không hợp lệ.";
   const messages: Record<string, string> = {

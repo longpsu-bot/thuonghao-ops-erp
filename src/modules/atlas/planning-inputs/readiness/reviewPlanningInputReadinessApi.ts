@@ -6,7 +6,7 @@ import type {
 } from "../../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../../review/reviewMode";
 import type {
-  PlanningInputReadinessApi,
+  createPlanningInputReadinessApi,
   PlanningInputReadinessCommandRequest,
 } from "./planningInputReadinessApi";
 import type {
@@ -221,7 +221,7 @@ function commandResult(
 
 export function createReviewPlanningInputReadinessApi(
   scenario: AtlasReviewScenario,
-): PlanningInputReadinessApi {
+): ReturnType<typeof createPlanningInputReadinessApi> {
   let state = fixture(scenario, "2026-08-03", "2026-08-09");
   const receipts = new Map<string, AtlasRpcResult>();
 
@@ -257,6 +257,54 @@ export function createReviewPlanningInputReadinessApi(
   };
 
   return {
+    async preflight(_authSubject, correlationId, periodStart, periodEnd) {
+      const failure = scenarioFailure();
+      if (failure) return failure;
+      if (
+        state.period.period_start !== periodStart ||
+        state.period.period_end !== periodEnd
+      )
+        state = fixture(scenario, periodStart, periodEnd);
+      const blockedSources = Object.entries(state.source_evidence).filter(
+        ([, source]) => source.selection_state !== "SELECTED",
+      );
+      const issueCode = (
+        source: string,
+        selectionState: ReadinessSourceEvidence["selection_state"],
+      ) => {
+        const sourceCode =
+          source === "weekly_menu"
+            ? "WEEKLY_MENU"
+            : source === "attendance"
+              ? "ATTENDANCE"
+              : "PANTRY";
+        if (selectionState === "MISSING")
+          return `MISSING_${sourceCode}_APPROVAL_SNAPSHOT`;
+        return `${selectionState}_${sourceCode}_SOURCE`;
+      };
+      return success({
+        contract_version: "RMVP-03B.v2",
+        correlation_id: correlationId,
+        preflight: {
+          period_start: periodStart,
+          period_end: periodEnd,
+          readiness_state: blockedSources.length ? "BLOCKED" : "READY",
+          source_evidence: clone(state.source_evidence),
+          issues: blockedSources.map(([source, evidence]) => ({
+            severity: "BLOCKING",
+            issue_code: issueCode(source, evidence.selection_state),
+            message: evidence.safe_message,
+            input_type: source.toUpperCase(),
+            school_id: null,
+            service_date: null,
+          })),
+          blocking_issue_count: blockedSources.length,
+          downstream_currentness: "NOT_GENERATED",
+          current_need: null,
+        },
+        safe_operator_message: "Đã kiểm tra tự động dữ liệu nguồn.",
+      });
+    },
     async getWorkbench(
       _authSubject,
       _correlationId,

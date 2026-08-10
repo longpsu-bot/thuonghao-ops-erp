@@ -239,7 +239,4 @@ export function createNeedGenerationApi(invoker: NeedGenerationRpcInvoker) {
   };
 }
 
-export type NeedGenerationApi = Omit<
-  ReturnType<typeof createNeedGenerationApi>,
-  "execute"
->;
+export type NeedGenerationApi = ReturnType<typeof createNeedGenerationApi>;
