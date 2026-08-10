@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
+import { planningSourceSaveOutcome } from "../planningInputsModel";
 import { Chip, Panel } from "../../WorkbenchComponents";
 import { pantryCompletionRequest, type PantryApi } from "./pantryApi";
 import {
@@ -113,12 +114,10 @@ export function PantryWorkbench({
   const [preview, setPreview] =
     useState<ReturnType<typeof pantryPreviewFromResult>>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [consequence, setConsequence] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [refreshRequired, setRefreshRequired] = useState(false);
-  const [downstreamCurrentness, setDownstreamCurrentness] = useState<
-    string | null
-  >(null);
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
@@ -151,7 +150,7 @@ export function PantryWorkbench({
     setLoad("ready");
     adopt(workbench);
     setRefreshRequired(false);
-    setDownstreamCurrentness(null);
+    setConsequence(null);
   }, [api, authSubject, correlationId, weekStart, adopt]);
 
   useEffect(() => {
@@ -162,7 +161,7 @@ export function PantryWorkbench({
     setPreview(null);
     setDirty(false);
     setRefreshRequired(false);
-    setDownstreamCurrentness(null);
+    setConsequence(null);
     if (authSubject) void refresh();
     else {
       setLoad("idle");
@@ -253,15 +252,22 @@ export function PantryWorkbench({
   const runCompletion = async (invoke: () => Promise<AtlasRpcResult>) => {
     setSaving(true);
     setNotice(null);
+    setConsequence(null);
     const result = await invoke();
     setSaving(false);
-    setNotice(pantryResultMessage(result));
-    setDownstreamCurrentness(
+    const currentness =
       result.kind === "success" &&
-        typeof result.response.downstream_currentness === "string"
+      typeof result.response.downstream_currentness === "string"
         ? result.response.downstream_currentness
-        : null,
-    );
+        : null;
+    const outcome =
+      currentness === "CURRENT" ||
+      currentness === "OUTDATED" ||
+      currentness === "NOT_GENERATED"
+        ? planningSourceSaveOutcome("pantry", currentness)
+        : null;
+    setNotice(outcome?.savedMessage ?? pantryResultMessage(result));
+    setConsequence(outcome?.consequenceMessage ?? null);
     if (
       result.kind === "transport_error" ||
       (result.kind === "backend_error" &&
@@ -325,9 +331,7 @@ export function PantryWorkbench({
           role={load === "error" ? "alert" : "status"}
         >
           {notice}
-          {downstreamCurrentness === "OUTDATED" && (
-            <strong> Nhu cầu cần cập nhật.</strong>
-          )}
+          {consequence && <span> {consequence}</span>}
           {refreshRequired && (
             <span> Cần tải lại dữ liệu có thẩm quyền trước khi ghi tiếp.</span>
           )}

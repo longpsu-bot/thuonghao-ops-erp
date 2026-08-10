@@ -268,6 +268,20 @@ export function createReviewPlanningInputReadinessApi(
       const blockedSources = Object.entries(state.source_evidence).filter(
         ([, source]) => source.selection_state !== "SELECTED",
       );
+      const issueCode = (
+        source: string,
+        selectionState: ReadinessSourceEvidence["selection_state"],
+      ) => {
+        const sourceCode =
+          source === "weekly_menu"
+            ? "WEEKLY_MENU"
+            : source === "attendance"
+              ? "ATTENDANCE"
+              : "PANTRY";
+        if (selectionState === "MISSING")
+          return `MISSING_${sourceCode}_APPROVAL_SNAPSHOT`;
+        return `${selectionState}_${sourceCode}_SOURCE`;
+      };
       return success({
         contract_version: "RMVP-03B.v2",
         correlation_id: correlationId,
@@ -278,7 +292,7 @@ export function createReviewPlanningInputReadinessApi(
           source_evidence: clone(state.source_evidence),
           issues: blockedSources.map(([source, evidence]) => ({
             severity: "BLOCKING",
-            issue_code: `${evidence.selection_state}_${source.toUpperCase()}`,
+            issue_code: issueCode(source, evidence.selection_state),
             message: evidence.safe_message,
             input_type: source.toUpperCase(),
             school_id: null,

@@ -83,6 +83,8 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       await screen.findByText("Đầu vào đã sẵn sàng tạo nhu cầu"),
     ).toBeInTheDocument();
+    expect(screen.getByText("SẴN SÀNG")).toBeInTheDocument();
+    expect(screen.queryByText("READY")).not.toBeInTheDocument();
     expect(preflight).toHaveBeenCalledTimes(1);
     expect(
       screen.queryByRole("button", { name: /Đánh giá mức sẵn sàng/ }),
@@ -103,12 +105,25 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     ).toBeInTheDocument();
   });
 
-  it("shows BLOCKED sources and prevents execution", async () => {
+  it("shows blocked sources in plain Vietnamese and prevents execution", async () => {
     const api = createReviewNeedGenerationApi("ready");
     const execute = vi.spyOn(api, "execute");
     renderWorkbench(api, createReviewPlanningInputReadinessApi("empty"));
 
     expect(await screen.findByText("Đầu vào đang bị chặn")).toBeInTheDocument();
+    expect(screen.getByText("CẦN XỬ LÝ")).toBeInTheDocument();
+    expect(screen.getAllByText("CHƯA CÓ")).toHaveLength(3);
+    for (const rawToken of [
+      "READY",
+      "BLOCKED",
+      "MISSING",
+      "AMBIGUOUS",
+      "STALE",
+    ])
+      expect(screen.queryByText(rawToken)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Không có bằng chứng đã phê duyệt giao với kỳ."),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Lỗi chặn (3)")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
@@ -116,7 +131,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(execute).not.toHaveBeenCalled();
   });
 
-  it("renders backend blockers before warnings", async () => {
+  it("maps known preflight issues and keeps raw backend sentences hidden", async () => {
     const preflightApi = createReviewPlanningInputReadinessApi("ready");
     const original = preflightApi.preflight;
     vi.spyOn(preflightApi, "preflight").mockImplementation(async (...args) => {
@@ -128,16 +143,16 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
         preflight.issues = [
           {
             severity: "WARNING",
-            issue_code: "WARNING_ONE",
-            message: "Cảnh báo từ backend",
+            issue_code: "ZERO_ATTENDANCE_FOR_PLANNED_MENU",
+            message: "Zero attendance for planned menu.",
             input_type: null,
             school_id: null,
             service_date: null,
           },
           {
             severity: "BLOCKING",
-            issue_code: "BLOCKER_ONE",
-            message: "Lỗi chặn từ backend",
+            issue_code: "MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT",
+            message: "No approved Weekly Menu snapshot intersects the period.",
             input_type: null,
             school_id: null,
             service_date: null,
@@ -148,12 +163,66 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     });
     renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
 
-    const blocker = await screen.findByText("Lỗi chặn từ backend");
-    const warning = screen.getByText("Cảnh báo từ backend");
+    const blocker = await screen.findByText(
+      "Chưa có thực đơn tuần đã lưu phù hợp với kỳ này.",
+    );
+    const warning = screen.getByText(
+      "Thực đơn đã có nhưng tổng số suất ăn của trường và ngày này bằng 0.",
+    );
+    expect(
+      screen.queryByText(
+        "No approved Weekly Menu snapshot intersects the period.",
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Zero attendance for planned menu."),
+    ).not.toBeInTheDocument();
     expect(
       blocker.compareDocumentPosition(warning) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("maps ambiguous and stale source evidence without exposing backend messages", async () => {
+    const preflightApi = createReviewPlanningInputReadinessApi("ready");
+    const original = preflightApi.preflight;
+    vi.spyOn(preflightApi, "preflight").mockImplementation(async (...args) => {
+      const result = await original(...args);
+      if (result.kind === "success" && result.response.preflight) {
+        const preflight = result.response.preflight as Record<string, unknown>;
+        const sources = preflight.source_evidence as Record<
+          string,
+          Record<string, unknown>
+        >;
+        preflight.readiness_state = "BLOCKED";
+        sources.attendance!.selection_state = "AMBIGUOUS";
+        sources.attendance!.safe_message =
+          "Multiple approved candidates found.";
+        sources.pantry!.selection_state = "STALE";
+        sources.pantry!.safe_message = "Selected snapshot is stale.";
+      }
+      return result;
+    });
+    renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
+
+    expect(await screen.findByText("CẦN TẢI LẠI")).toBeInTheDocument();
+    expect(screen.getAllByText("CẦN XỬ LÝ").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText(
+        "Có nhiều bản dữ liệu phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Multiple approved candidates found."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Selected snapshot is stale."),
+    ).not.toBeInTheDocument();
   });
 
   it("uses Cập nhật nhu cầu for backend OUTDATED state", async () => {

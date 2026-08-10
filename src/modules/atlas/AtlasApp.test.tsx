@@ -172,11 +172,7 @@ describe("Atlas master-data shell", () => {
     await screen.findByText(/Xem trước có thẩm quyền/);
     fireEvent.click(screen.getByRole("button", { name: "Lưu số suất ăn" }));
     await waitFor(() =>
-      expect(
-        screen.getByText(
-          "Đã lưu. Phiên bản này đang được sử dụng cho Kế hoạch.",
-        ),
-      ).toBeInTheDocument(),
+      expect(screen.getByText(/Đã lưu số suất ăn\./)).toBeInTheDocument(),
     );
   }, 15_000);
 

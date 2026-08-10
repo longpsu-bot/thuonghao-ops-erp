@@ -117,6 +117,10 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(draft).not.toHaveBeenCalled();
     expect(validate).not.toHaveBeenCalled();
     expect(approve).not.toHaveBeenCalled();
+    expect(screen.getByText(/Đã lưu thực đơn\./)).toHaveTextContent(
+      "Dữ liệu này sẽ được dùng khi tạo nhu cầu.",
+    );
+    expect(screen.queryByText(/trong một giao dịch/i)).not.toBeInTheDocument();
     expect(await screen.findByText("ĐÃ LƯU")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Xác thực" }),
@@ -125,6 +129,15 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
 
   it("prepares Attendance defaults locally and preserves explicit zero in one v2 Save", async () => {
     const api = createReviewPlanningInputsApi("ready");
+    const original = api.saveCompletedAttendance;
+    vi.spyOn(api, "saveCompletedAttendance").mockImplementation(
+      async (request) => {
+        const result = await original(request);
+        if (result.kind === "success")
+          result.response.downstream_currentness = "CURRENT";
+        return result;
+      },
+    );
     const defaultsWrite = vi.spyOn(api, "createAttendanceDefaults");
     const completed = vi.spyOn(api, "saveCompletedAttendance");
     const draft = vi.spyOn(api, "saveAttendance");
@@ -157,6 +170,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(draft).not.toHaveBeenCalled();
     expect(validate).not.toHaveBeenCalled();
     expect(approve).not.toHaveBeenCalled();
+    expect(screen.getByText(/Đã lưu số suất ăn\./)).toHaveTextContent(
+      "Nhu cầu hiện tại vẫn khớp với dữ liệu đã lưu.",
+    );
   });
 
   it("surfaces the backend OUTDATED consequence after source Save", async () => {
@@ -176,7 +192,86 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
     fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
 
-    expect(await screen.findByText(/Nhu cầu cần cập nhật/)).toBeInTheDocument();
+    expect(await screen.findByText(/Đã lưu thực đơn\./)).toHaveTextContent(
+      "Nhu cầu hiện tại cần cập nhật theo dữ liệu vừa lưu.",
+    );
+  });
+
+  it("preserves a dirty Weekly Menu edit when a tab switch is rejected", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench();
+
+    const cell = await screen.findByRole("combobox", {
+      name: /Món canh · Trường Tiểu học Nguyễn Du/,
+    });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
+    );
+    expect(screen.getByRole("tab", { name: "Thực đơn tuần" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(cell).toHaveValue("review-planning-dish-1");
+  });
+
+  it("preserves the current week and local source edit when week change is rejected", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench();
+
+    const cell = await screen.findByRole("combobox", {
+      name: /Món canh · Trường Tiểu học Nguyễn Du/,
+    });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+    const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
+    const currentWeek = weekInput.value;
+    const { nextWeek } = followingWeekFrom(weekInput);
+    fireEvent.change(weekInput, { target: { value: nextWeek } });
+
+    expect(weekInput).toHaveValue(currentWeek);
+    expect(cell).toHaveValue("review-planning-dish-1");
+  });
+
+  it("keeps beforeunload active while source work is unsaved", async () => {
+    renderWorkbench();
+    const cell = await screen.findByRole("combobox", {
+      name: /Món canh · Trường Tiểu học Nguyễn Du/,
+    });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+
+    await waitFor(() => {
+      const event = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    });
+  });
+
+  it("guards Pantry edits and explicit no-additions during navigation", async () => {
+    const confirm = vi
+      .spyOn(window, "confirm")
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false);
+    renderWorkbench();
+    fireEvent.click(screen.getByRole("tab", { name: "Pantry" }));
+    await screen.findByLabelText("Số lượng dòng 1");
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Xác nhận tuần này không có bổ sung",
+      }),
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+
+    expect(screen.getByRole("tab", { name: "Pantry" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Xác nhận tuần này không có bổ sung",
+      }),
+    ).toBeChecked();
   });
 
   it("locks further source mutation after an unknown write outcome until refresh", async () => {

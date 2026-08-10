@@ -235,6 +235,30 @@ export function planningReadbackFromResult(
   return planningInputs as unknown as PlanningInputsWorkbenchData;
 }
 
+export type PlanningSourceKind = "weekly_menu" | "attendance" | "pantry";
+export type PlanningDownstreamCurrentness =
+  "CURRENT" | "OUTDATED" | "NOT_GENERATED";
+
+export function planningSourceSaveOutcome(
+  source: PlanningSourceKind,
+  currentness: PlanningDownstreamCurrentness,
+) {
+  const savedMessages: Record<PlanningSourceKind, string> = {
+    weekly_menu: "Đã lưu thực đơn.",
+    attendance: "Đã lưu số suất ăn.",
+    pantry: "Đã lưu nhu cầu bổ sung.",
+  };
+  const consequenceMessages: Record<PlanningDownstreamCurrentness, string> = {
+    NOT_GENERATED: "Dữ liệu này sẽ được dùng khi tạo nhu cầu.",
+    CURRENT: "Nhu cầu hiện tại vẫn khớp với dữ liệu đã lưu.",
+    OUTDATED: "Nhu cầu hiện tại cần cập nhật theo dữ liệu vừa lưu.",
+  };
+  return {
+    savedMessage: savedMessages[source],
+    consequenceMessage: consequenceMessages[currentness],
+  };
+}
+
 export function planningResultMessage(result: AtlasRpcResult): string {
   if (result.kind === "success") {
     const backendMessage =

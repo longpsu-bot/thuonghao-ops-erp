@@ -36,6 +36,7 @@ import {
   planningPreviewFromResult,
   planningReadbackFromResult,
   planningResultMessage,
+  planningSourceSaveOutcome,
   planningWorkbenchFromResult,
   viDate,
   type AttendanceLine,
@@ -429,6 +430,7 @@ export function PlanningInputsWorkbenchView({
   const [notice, setNotice] = useState<string | null>(null);
   const [sourceOutcome, setSourceOutcome] = useState<{
     message: string;
+    consequence: string | null;
     currentness: string | null;
   } | null>(null);
   const [refreshRequired, setRefreshRequired] = useState(false);
@@ -670,7 +672,10 @@ export function PlanningInputsWorkbenchView({
     [attendanceRows],
   );
 
-  const runCompletion = async (invoke: () => Promise<AtlasRpcResult>) => {
+  const runCompletion = async (
+    source: "weekly_menu" | "attendance",
+    invoke: () => Promise<AtlasRpcResult>,
+  ) => {
     setSaving(true);
     setNotice(null);
     setSourceOutcome(null);
@@ -682,7 +687,18 @@ export function PlanningInputsWorkbenchView({
       typeof result.response.downstream_currentness === "string"
         ? result.response.downstream_currentness
         : null;
-    setSourceOutcome({ message, currentness });
+    const outcome =
+      result.kind === "success" &&
+      (currentness === "CURRENT" ||
+        currentness === "OUTDATED" ||
+        currentness === "NOT_GENERATED")
+        ? planningSourceSaveOutcome(source, currentness)
+        : null;
+    setSourceOutcome({
+      message: outcome?.savedMessage ?? message,
+      consequence: outcome?.consequenceMessage ?? null,
+      currentness,
+    });
     if (
       result.kind === "transport_error" ||
       (result.kind === "backend_error" &&
@@ -753,7 +769,7 @@ export function PlanningInputsWorkbenchView({
         rows: preview.canonical_rows as unknown as JsonValue[],
       },
     );
-    await runCompletion(() => api.saveCompletedMenu(request));
+    await runCompletion("weekly_menu", () => api.saveCompletedMenu(request));
   };
 
   const saveAttendance = async () => {
@@ -773,7 +789,9 @@ export function PlanningInputsWorkbenchView({
         rows: preview.canonical_rows as unknown as JsonValue[],
       },
     );
-    await runCompletion(() => api.saveCompletedAttendance(request));
+    await runCompletion("attendance", () =>
+      api.saveCompletedAttendance(request),
+    );
   };
 
   const createDefaults = async () => {
@@ -1054,8 +1072,8 @@ export function PlanningInputsWorkbenchView({
               role={refreshRequired ? "alert" : "status"}
             >
               {sourceOutcome.message}
-              {sourceOutcome.currentness === "OUTDATED" && (
-                <strong> Nhu cầu cần cập nhật.</strong>
+              {sourceOutcome.consequence && (
+                <span> {sourceOutcome.consequence}</span>
               )}
               {refreshRequired && (
                 <span>

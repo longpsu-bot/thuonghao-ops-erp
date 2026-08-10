@@ -8,6 +8,7 @@ import {
   readinessResultMessage,
   type PlanningInputPreflightData,
   type PlanningInputPreflightIssue,
+  type ReadinessSelectionState,
   type ReadinessSourceKind,
 } from "../readiness/planningInputReadinessModel";
 import {
@@ -63,6 +64,77 @@ function currentnessTone(
   return "warning" as const;
 }
 
+function readinessLabel(state: PlanningInputPreflightData["readiness_state"]) {
+  return state === "READY" ? "SẴN SÀNG" : "CẦN XỬ LÝ";
+}
+
+function sourceSelectionLabel(state: ReadinessSelectionState) {
+  const labels: Record<ReadinessSelectionState, string> = {
+    SELECTED: "ĐÃ LƯU",
+    MISSING: "CHƯA CÓ",
+    AMBIGUOUS: "CẦN XỬ LÝ",
+    STALE: "CẦN TẢI LẠI",
+  };
+  return labels[state];
+}
+
+function sourceSelectionMessage(state: ReadinessSelectionState) {
+  const messages: Record<ReadinessSelectionState, string> = {
+    SELECTED: "Dữ liệu đã lưu hiện hành cho kỳ này.",
+    MISSING: "Chưa có dữ liệu đã lưu phù hợp với kỳ này.",
+    AMBIGUOUS:
+      "Có nhiều bản dữ liệu phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
+    STALE: "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+  };
+  return messages[state];
+}
+
+const preflightIssueMessages: Record<string, string> = {
+  MISSING_WEEKLY_MENU_APPROVAL_SNAPSHOT:
+    "Chưa có thực đơn tuần đã lưu phù hợp với kỳ này.",
+  MISSING_ATTENDANCE_APPROVAL_SNAPSHOT:
+    "Chưa có số suất ăn đã lưu phù hợp với kỳ này.",
+  MISSING_PANTRY_APPROVAL_SNAPSHOT:
+    "Chưa có xác nhận nhu cầu bổ sung phù hợp với kỳ này.",
+  SOURCE_SNAPSHOT_OWNERSHIP_MISMATCH:
+    "Dữ liệu nguồn không thuộc đúng phạm vi cần xử lý.",
+  WEEKLY_MENU_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
+    "Thực đơn tuần đã lưu chưa bao phủ toàn bộ kỳ đang xử lý.",
+  ATTENDANCE_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
+    "Số suất ăn đã lưu chưa bao phủ toàn bộ kỳ đang xử lý.",
+  PANTRY_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
+    "Nhu cầu bổ sung đã lưu chưa bao phủ toàn bộ kỳ đang xử lý.",
+  STALE_OR_MISMATCHED_SNAPSHOT_BINDING:
+    "Dữ liệu nguồn đã thay đổi hoặc không còn khớp. Hãy tải lại trước khi tiếp tục.",
+  REQUEST_WITHOUT_CURRENT_READY_EVALUATION:
+    "Dữ liệu đầu vào hiện tại chưa sẵn sàng để tạo nhu cầu.",
+  MENU_SCHOOL_DATE_WITHOUT_ATTENDANCE:
+    "Có thực đơn nhưng chưa có số suất ăn tương ứng cho trường và ngày này.",
+  ATTENDANCE_SCHOOL_DATE_WITHOUT_MENU:
+    "Có số suất ăn nhưng chưa có thực đơn tương ứng cho trường và ngày này.",
+  ZERO_ATTENDANCE_FOR_PLANNED_MENU:
+    "Thực đơn đã có nhưng tổng số suất ăn của trường và ngày này bằng 0.",
+  AMBIGUOUS_WEEKLY_MENU_SOURCE:
+    "Có nhiều thực đơn tuần phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
+  STALE_WEEKLY_MENU_SOURCE:
+    "Thực đơn tuần đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+  AMBIGUOUS_ATTENDANCE_SOURCE:
+    "Có nhiều bản số suất ăn phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
+  STALE_ATTENDANCE_SOURCE:
+    "Số suất ăn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+  AMBIGUOUS_PANTRY_SOURCE:
+    "Có nhiều bản nhu cầu bổ sung phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
+  STALE_PANTRY_SOURCE:
+    "Nhu cầu bổ sung đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+};
+
+function preflightIssueMessage(issue: PlanningInputPreflightIssue) {
+  return (
+    preflightIssueMessages[issue.issue_code] ??
+    "Có vấn đề với dữ liệu đầu vào. Hãy tải lại và kiểm tra nguồn trước khi tiếp tục."
+  );
+}
+
 function IssueList({
   title,
   tone,
@@ -81,7 +153,7 @@ function IssueList({
       <ul>
         {items.map((item, index) => (
           <li key={`${item.issue_code}:${item.input_type}:${index}`}>
-            {item.message}
+            {preflightIssueMessage(item)}
             {(item.service_date || item.school_id) && (
               <small>
                 {[
@@ -91,6 +163,12 @@ function IssueList({
                   .filter(Boolean)
                   .join(" · ")}
               </small>
+            )}
+            {!preflightIssueMessages[item.issue_code] && (
+              <details>
+                <summary>Chi tiết hỗ trợ</summary>
+                <code>{item.issue_code}</code>
+              </details>
             )}
           </li>
         ))}
@@ -417,7 +495,7 @@ export function NeedGenerationWorkbench({
                 <Chip
                   tone={preflight.readiness_state === "READY" ? "ok" : "danger"}
                 >
-                  {preflight.readiness_state}
+                  {readinessLabel(preflight.readiness_state)}
                 </Chip>
                 <Chip tone={currentnessTone(preflight.downstream_currentness)}>
                   {currentnessLabel(preflight.downstream_currentness)}
@@ -430,7 +508,7 @@ export function NeedGenerationWorkbench({
             {(["weekly_menu", "attendance", "pantry"] as const).map(
               (source) => {
                 const evidence = preflight.source_evidence[source];
-                const selectionState =
+                const selectionState: ReadinessSelectionState =
                   evidence.selection_state ??
                   (evidence.selected ? "SELECTED" : "MISSING");
                 return (
@@ -443,13 +521,11 @@ export function NeedGenerationWorkbench({
                       <Chip
                         tone={selectionState === "SELECTED" ? "ok" : "danger"}
                       >
-                        {selectionState === "SELECTED"
-                          ? "ĐÃ LƯU"
-                          : selectionState}
+                        {sourceSelectionLabel(selectionState)}
                       </Chip>
                     </header>
                     <p className="readiness-source-empty">
-                      {evidence.safe_message}
+                      {sourceSelectionMessage(selectionState)}
                     </p>
                     {evidence.selected && (
                       <details className="readiness-source-audit">

@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
+import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { PantryWorkbench } from "./PantryWorkbench";
 import { createReviewPantryApi } from "./reviewPantryApi";
 
@@ -69,6 +70,10 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
     expect(draft).not.toHaveBeenCalled();
     expect(validate).not.toHaveBeenCalled();
     expect(approve).not.toHaveBeenCalled();
+    expect(screen.getByText(/Đã lưu nhu cầu bổ sung\./)).toHaveTextContent(
+      "Dữ liệu này sẽ được dùng khi tạo nhu cầu.",
+    );
+    expect(screen.queryByText(/trong một giao dịch/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Xác thực" }),
     ).not.toBeInTheDocument();
@@ -145,4 +150,52 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
     await screen.findByText(/Cần tải lại dữ liệu có thẩm quyền/);
     expect(save).toBeDisabled();
   });
+
+  it("ignores a late Pantry read from the prior week", async () => {
+    const api = createReviewPantryApi("ready");
+    const original = api.getWorkbench;
+    const initialWeek = "2026-08-03";
+    const nextWeek = addIsoCalendarDays(initialWeek, 7);
+    let resolvePrior!: (result: AtlasRpcResult) => void;
+    const priorRead = new Promise<AtlasRpcResult>((resolve) => {
+      resolvePrior = resolve;
+    });
+    vi.spyOn(api, "getWorkbench").mockImplementation(async (...args) => {
+      if (args[2] === initialWeek) return priorRead;
+      return original(...args);
+    });
+
+    const view = render(
+      <PantryWorkbench
+        authState={authState}
+        api={api}
+        weekStart={initialWeek}
+      />,
+    );
+    view.rerender(
+      <PantryWorkbench authState={authState} api={api} weekStart={nextWeek} />,
+    );
+
+    expect(await screen.findByLabelText("Ngày phục vụ dòng 1")).toHaveValue(
+      nextWeek,
+    );
+    resolvePrior(
+      await original(
+        "review-only-atlas-operator",
+        crypto.randomUUID(),
+        initialWeek,
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("Ngày phục vụ dòng 1")).toHaveValue(
+        nextWeek,
+      ),
+    );
+  });
 });
+
+function addIsoCalendarDays(isoDate: string, days: number) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day + days));
+  return shifted.toISOString().slice(0, 10);
+}
