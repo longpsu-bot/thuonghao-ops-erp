@@ -46,6 +46,29 @@ function renderWorkbench(
   );
 }
 
+function addIsoCalendarDays(isoDate: string, days: number) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day + days));
+  return shifted.toISOString().slice(0, 10);
+}
+
+function formatIsoDate(isoDate: string) {
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function followingWeekFrom(weekInput: HTMLInputElement) {
+  const currentWeek = weekInput.value;
+  const nextWeek = addIsoCalendarDays(currentWeek, 7);
+  const nextWeekEnd = addIsoCalendarDays(nextWeek, 6);
+  return {
+    currentWeek,
+    nextWeek,
+    nextWeekEnd,
+    nextWeekRange: `${formatIsoDate(nextWeek)} – ${formatIsoDate(nextWeekEnd)}`,
+  };
+}
+
 describe("UI-QUALITY-02A Planning source presentation", () => {
   it("keeps all six workflow destinations and selects each source workbench", async () => {
     renderWorkbench();
@@ -187,14 +210,14 @@ describe("UI-QUALITY-02A Planning source presentation", () => {
 
     const quantity = await screen.findByLabelText("Số lượng dòng 1");
     fireEvent.change(quantity, { target: { value: "4.5" } });
-    const week = screen.getByLabelText("Tuần phục vụ");
-    const originalWeek = week.getAttribute("value");
-    fireEvent.change(week, { target: { value: "2026-08-10" } });
+    const week = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
+    const { currentWeek, nextWeek } = followingWeekFrom(week);
+    fireEvent.change(week, { target: { value: nextWeek } });
 
     expect(confirm).toHaveBeenCalledWith(
       "Bỏ các thay đổi chưa lưu để chuyển tuần?",
     );
-    expect(week).toHaveAttribute("value", originalWeek);
+    expect(week).toHaveValue(currentWeek);
     expect(screen.getByLabelText("Số lượng dòng 1")).toHaveValue(4.5);
   });
 
@@ -287,15 +310,17 @@ describe("UI-QUALITY-02A Planning source presentation", () => {
     );
 
     const weekInput = screen.getByLabelText("Tuần phục vụ");
-    const originalWeek = (weekInput as HTMLInputElement).value;
+    const { currentWeek, nextWeek } = followingWeekFrom(
+      weekInput as HTMLInputElement,
+    );
     fireEvent.change(weekInput, {
-      target: { value: "2026-08-10" },
+      target: { value: nextWeek },
     });
 
     expect(confirm).toHaveBeenCalledWith(
       "Bỏ các thay đổi chưa lưu để chuyển tuần?",
     );
-    expect(weekInput).toHaveValue(originalWeek);
+    expect(weekInput).toHaveValue(currentWeek);
     expect(
       screen.getByRole("button", { name: "Đánh giá mức sẵn sàng" }),
     ).toBeEnabled();
@@ -322,21 +347,22 @@ describe("UI-QUALITY-02A Planning source presentation", () => {
       ).toBeEnabled(),
     );
 
-    fireEvent.change(screen.getByLabelText("Tuần phục vụ"), {
-      target: { value: "2026-08-10" },
-    });
+    const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
+    const { nextWeek, nextWeekEnd, nextWeekRange } =
+      followingWeekFrom(weekInput);
+    fireEvent.change(weekInput, { target: { value: nextWeek } });
 
     expect(confirm).toHaveBeenCalledTimes(1);
-    expect(screen.getByLabelText("Tuần phục vụ")).toHaveValue("2026-08-10");
+    expect(weekInput).toHaveValue(nextWeek);
     expect(
-      await screen.findByRole("heading", { name: "10/08/2026 – 16/08/2026" }),
+      await screen.findByRole("heading", { name: nextWeekRange }),
     ).toBeVisible();
     await waitFor(() =>
       expect(getWorkbench).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
-        "2026-08-10",
-        "2026-08-16",
+        nextWeek,
+        nextWeekEnd,
         undefined,
         25,
         null,
