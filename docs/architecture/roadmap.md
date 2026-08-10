@@ -15,7 +15,7 @@
 - ✅ ARCH-001 — OPS ERP Business Architecture
 - ✅ ARCH-002 — Atlas System Map
 - ✅ Atlas Vision
-- ✅ Contract-first and bounded-PR workflow
+- ✅ Workflow-led, contract-constrained, backend-authoritative bounded-PR workflow
 
 ## ATLAS-ACT-01 — Hosted Staging and Connected-UI Stabilization
 
@@ -29,11 +29,11 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ D-034 / UI-VISUAL-01 Atlas Modern Operations visual foundation — complete through PR #179 at `bf0a1af28f689bfb4a81f6b6db96b298006c1794`
 - ✅ UI-QUALITY-02A Planning source workbenches — complete through PR #180 at `4a585f980464e4367a0b23ea6184ecf10fd70003` for Weekly Menu, Attendance and Pantry
 - ✅ D-035 Atlas Workflow-First Operator UX — accepted Application presentation authority; happy path first, progressive disclosure and one backend-authorized next action
-- ✅ UI-QUALITY-02B Planning Input Readiness and Need Generation — complete on `main` at `5e2955b6798d9310b10bf6b0bcafda701ed45992`; presentation-only workflow reset now awaits the D-036 contract correction
-- 🟡 D-036 Planning workflow simplification — current architecture correction; consequential source Save, automatic Readiness, atomic Need Generation/materialization and the Confirmed Need human commitment boundary are documented before further Planning UX work
-- 🟡 PLANNING-CONTRACT-01 — implemented on a draft branch for independent architecture review: additive consequential source Saves, automatic preflight, and atomic Need Generation/H0C materialization; no Application cutover or deployment yet
-- ⬜ UI-QUALITY-02A-UX — waiting for D-036 implementation implications; deliver as the combined `UI-QUALITY-02AB-UX` source, Readiness and Need Generation alignment only after PLANNING-CONTRACT-01
-- ↘️ UI-QUALITY-02C Confirmed Need — deferred until source completion and Need Generation workflow semantics are stable
+- ✅ UI-QUALITY-02B Planning Input Readiness and Need Generation — complete on `main` at `5e2955b6798d9310b10bf6b0bcafda701ed45992`; its presentation-only workflow reset is now superseded at the command boundary by merged D-036 and PLANNING-CONTRACT-01
+- ✅ D-036 Planning workflow simplification — complete through PR #183 at `eae396b104347d5accaffdb373997904248cbad7`; consequential source Save, automatic Readiness, atomic Need Generation/materialization and the Confirmed Need human commitment boundary are accepted
+- ✅ PLANNING-CONTRACT-01 atomic Planning completion boundaries — complete through PR #184 at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`; additive v2 source Saves, automatic preflight and atomic Need Generation/H0C materialization are merged while v1 remains callable during Application cutover
+- 🟡 UI-QUALITY-02AB-UX — active in draft PR #185; under root review and not yet accepted/merged. The draft cuts Weekly Menu, Attendance, Pantry, Readiness and Need Generation over to the merged v2 workflow without redesigning Confirmed Need.
+- ↘️ UI-QUALITY-02C Confirmed Need — deferred until the upstream v2 Planning Application cutover is stable
 - ⬜ UI-QUALITY-03 connected Admin consolidation — not started
 - ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
 - ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
@@ -59,6 +59,18 @@ D-036
 → PLANNING-UX-01
 ```
 
+Delivery-method shorthand:
+
+```text
+workflow discovery
+→ minimum contract
+→ authoritative backend
+→ connected UI
+→ operator review
+```
+
+This shorthand is discovery and delivery guidance, not a replacement for `OPS_SYSTEM_MAP` authority. Delivery should proceed through thin operational verticals rather than completing speculative capability families before operators can review a connected slice.
+
 ## PD-01 — Planning
 
 Goal: transform controlled customer and internal inputs into approved demand released to Procurement.
@@ -81,7 +93,7 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ PANTRY-RDY-02 readiness persistence amendment — merged through PR #163 as `70c380f49c148a1207574aabc5aefcb44cf30074`; one migration, zero new relations/APIs/functions/triggers/capabilities/roles/scope kinds/policies/grants/source triggers, and the same three readiness suites at exact plans `36/59/57`; [decision](../decisions/decision-pantry-rdy-02-readiness-persistence.md) and [task](../implementation-tasks/TASK-PANTRY-RDY-02-readiness-persistence.md)
 - ✅ PANTRY-NG-01 / PANTRY-NG-02 direct Pantry Need Generation lineage — the accepted D-028 amendment and its backend persistence, integrity, and CMD-15 compatibility merged through PR #167 at `4cc9bddb8f77c962d2c557affee5a7d3f58e75e2`; [amendment](pantry-ng-01-need-generation-direct-ingredient-amendment.md), [canonical decision](../decisions/decision-pantry-ng-01-need-generation-direct-ingredient.md), and [implementation record](../implementation-tasks/TASK-PANTRY-NG-02-direct-ingredient-persistence-materialization.md)
 - ✅ RMVP-04 connected Need Generation — merged through PR #168 at `d497c8921d64fb555baea8e207a27f63925934a7` with one exact-period Planning workbench, create/validate/release/invalidate commands, existing CMD-15 connection, and a fifth Vietnamese Planning Inputs tab; [API contract](../api/rmvp-04-connected-need-generation.md) and [implementation record](../implementation-tasks/TASK-RMVP-04-connected-need-generation.md). Procurement, Warehouse, Dispatch, hosted deployment, and production rollout remain outside scope.
-- 🟡 PLANNING-CONTRACT-01 atomic Planning completion boundaries — draft implementation adds `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2` without changing connected UI behavior or v1 callability; [canonical implementation record](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md)
+- ✅ PLANNING-CONTRACT-01 atomic Planning completion boundaries — merged through PR #184 at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`; adds `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2` while preserving v1 callability during Application coexistence; [canonical implementation record](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md)
 - ✅ RMVP-05 connected Confirmed Need review and quantity confirmation — merged through PR #169 at `9ddc6030c85cc3c076ab74ee0bd1af4f123dcae7` with one shaped review, write-free exact preview, idempotent H1B1 confirmation command, and sixth Vietnamese Planning Inputs tab; [API contract](../api/rmvp-05-connected-confirmed-need-review.md) and [implementation record](../implementation-tasks/TASK-RMVP-05-connected-confirmed-need-review.md). Validation, approval, release, CMD-03, downstream domains, hosted deployment, production policy seed, and Retool remain outside that implementation.
 - ✅ RMVP-06A Confirmed Need complete-batch validation contract — accepted through PR #170 with one future validation API, one unbound capability, runtime reuse, append-only attempts/observations/issues, blocked-outcome evidence, successful `VALIDATED` transition, and a bounded RMVP-06B handoff; [architecture](rmvp-06-confirmed-need-validation-contract.md), [decision](../decisions/decision-rmvp-06-confirmed-need-validation.md), and [task](../implementation-tasks/TASK-RMVP-06A-confirmed-need-validation-contract.md)
 - ✅ RMVP-06B connected Confirmed Need validation — merged through PR #171 at `c4d7970399f6b1c147700925f03e84efdafb0747` with one command, three immutable evidence relations, the complete 19-blocker/two-warning registry, additive read-only validation UI, 65 focused pgTAP assertions, all registered database suites, and complete browser verification; [API](../api/rmvp-06-connected-confirmed-need-validation.md) and [implementation record](../implementation-tasks/TASK-RMVP-06B-connected-confirmed-need-validation.md). Approval, release, reopen, CMD-03, downstream domains, hosted deployment, production capability binding, and Retool remain excluded.
@@ -96,12 +108,12 @@ Goal: transform controlled customer and internal inputs into approved demand rel
 - ✅ PA-06E-H1B1A policy-bound line-decision contract — H1B1-P01 through H1B1-P12 approved as corrected on 2026-07-26; [architecture contract](pa-06e-h1b1-policy-bound-line-decision-contract.md) and [canonical decision registry](../decisions/decision-pa-06e-h1b1-policy-bound-line-decision-evidence.md)
 - ✅ PA-06E-H1B1 policy-bound line-decision persistence — merged before RMVP-05 with one private relation, one nullable pointer, three private functions, six triggers, and no writer/API/runtime grant; [implementation record](../implementation-tasks/TASK-PA-06E-H1B1-policy-bound-line-decision-persistence.md)
 - ✅ PA-06E-H1B2 authorized review/preview/confirmation — implemented and merged through RMVP-05; [exact API](../api/rmvp-05-connected-confirmed-need-review.md)
-- ⬜ Hosted Supabase action for this path — governed by accepted ATLAS-ACT-01; separate staging only, explicit current-cost confirmation required
+- ⬜ Hosted Supabase action for the merged PLANNING-CONTRACT-01 path — Atlas Staging exists separately, but this v2 Planning contract remains undeployed there until a separately authorized protected deployment
 - ⬜ Retool change for this path — unapproved
 - ⬜ Production Planning policy seed — unapproved
 - ✅ React connection through RMVP-07B — the existing sixth Planning Inputs tab includes complete-batch validation, backend-authorized approval and release, separate confirmations, Actor/time/warning evidence, lifecycle history, late-response guards, and authoritative refresh behavior
 
-Planning completion boundary after the pending D-036 implementation:
+Planning completion boundary under merged D-036 and PLANNING-CONTRACT-01:
 
 ```text
 Weekly Menu / Attendance / Pantry consequential Save
@@ -224,7 +236,7 @@ Goal: define, review, and incrementally implement the authoritative Atlas persis
 - ✅ PA-05B-H3 successful Dispatch trip closure — implemented under Issue #93 with exact trip/stop/membership/load/delivery reconciliation, preserved `DELIVERED` status, one completion stamp/version increment, one closure event, one audit event, and 46 focused pgTAP assertions
 - ✅ PA-05C-H2 current command timeline scope — implemented under Issue #102 with the existing private resolver, exact current aggregate vocabulary, same-trip upstream scope resolution, five minimum SELECT/RLS additions, and 46 focused pgTAP assertions
 - ✅ PA-05G backend end-to-end acceptance — implemented under Issue #100 with one rolled-back two-line/two-supplier path, all 17 command executions, four authorized read function types, exact 17 receipt/event/audit counts, the unchanged 18-function security boundary, and 82 focused pgTAP assertions
-- ⬜ PA-06 React connection — after PA-05G under the product owner's backend-first sequencing decision
+- ⬜ PA-06 React connection — historical persistence roadmap item after PA-05G; future connected slices now follow the workflow-led delivery rule below rather than a domain-wide backend-first phase
 - ⬜ Controlled seed/reference data — separately approved after backend acceptance; not required for rolled-back local fixtures
 - ⬜ First connected wholesale supplier-direct vertical slice
 - ⬜ Legacy migration rehearsal and operator validation
@@ -292,16 +304,27 @@ Goal: add costing, invoices, settlement, management reporting, and cross-domain 
 
 ## Delivery rule
 
-A domain advances through:
+Atlas uses **workflow-led, contract-constrained, backend-authoritative** delivery.
+
+A new operational slice should normally advance through:
 
 ```text
-Contract
-→ Issue
-→ Bounded implementation PR
-→ Validation
-→ Review
-→ Merge
-→ Integration and operator review
+Mission / capability / domain ownership
+→ concrete operator job and workflow
+→ lightweight UI/workflow exploration
+→ genuine human decision boundaries
+→ minimum business contract
+→ authoritative backend boundary
+→ connected Application UI
+→ operator / product review
+→ refinement from observed need
+→ next thin vertical slice
 ```
+
+Workflow/UI exploration is discovery, not business authority. The accepted contract still precedes authoritative implementation, and React never owns backend validation, authorization, calculation, lifecycle, lineage, audit, idempotency, or transaction integrity.
+
+Do not complete a speculative backend domain before proving that operators need the proposed command boundaries, and do not complete a frontend domain with the intention of adding authority later.
+
+For cross-version backend consolidation or lifecycle-boundary changes, use the deeper affected-surface integration gate appropriate to that risk. Ordinary UI-only work should use focused UI validation and existing bounded CI rather than inheriting unnecessary database certification.
 
 The roadmap changes when delivery status changes or the product owner approves a scope change. It is not a substitute for contracts or issues.
