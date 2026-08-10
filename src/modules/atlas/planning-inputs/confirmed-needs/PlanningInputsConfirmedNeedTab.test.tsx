@@ -37,7 +37,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     fireEvent.click(tabs[4]!);
     expect(
       await screen.findByText(
-        /So sánh số lượng lý thuyết, đề xuất và đã xác nhận/,
+        /Rà soát SL lý thuyết, SL đề xuất và quyết định SL xác nhận/,
       ),
     ).toBeVisible();
   });

@@ -1,9 +1,12 @@
 import {
   useCallback,
+  createContext,
   useEffect,
   useMemo,
   useRef,
   useState,
+  useContext,
+  type ComponentType,
   type ComponentProps,
 } from "react";
 import { Box, Button, MantineProvider, Paper } from "@mantine/core";
@@ -75,6 +78,19 @@ type GoogleFetchState = {
   sourceRowCount?: number;
   errorCode?: string;
 };
+
+export type AtlasDatePickerInputProps = {
+  label: string;
+  "aria-label": string;
+  value: string;
+  valueFormat: string;
+  locale: string;
+  firstDayOfWeek: 1;
+  onChange: (value: string | Date | null) => void;
+};
+
+export const AtlasDatePickerInputContext =
+  createContext<ComponentType<AtlasDatePickerInputProps> | null>(null);
 
 function statusTone(status?: string) {
   if (
@@ -372,9 +388,18 @@ function ChangeTimeline({ entries }: { entries: ChangeHistory[] }) {
 }
 
 function weekEndOf(weekStart: string) {
-  const end = new Date(`${weekStart}T00:00:00Z`);
-  end.setUTCDate(end.getUTCDate() + 6);
-  return end.toISOString().slice(0, 10);
+  return addLocalCalendarDays(weekStart, 6);
+}
+
+function addLocalCalendarDays(isoDate: string, days: number) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const shifted = new Date(year!, month! - 1, day! + days);
+  return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, "0")}-${String(shifted.getDate()).padStart(2, "0")}`;
+}
+
+function localMondayOfIso(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return mondayOf(new Date(year!, month! - 1, day!));
 }
 
 function emptyData(weekStart: string): PlanningInputsWorkbenchData {
@@ -436,6 +461,7 @@ export function PlanningInputsWorkbenchView({
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [pantryDirty, setPantryDirty] = useState(false);
+  const [confirmedNeedDirty, setConfirmedNeedDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [menuRows, setMenuRows] = useState<MenuLine[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceLine[]>([]);
@@ -459,6 +485,7 @@ export function PlanningInputsWorkbenchView({
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const DatePickerInput = useContext(AtlasDatePickerInputContext);
   const selectedWeekEnd = weekEndOf(weekStart);
 
   const adopt = useCallback((workbench: PlanningInputsWorkbenchData) => {
@@ -517,11 +544,11 @@ export function PlanningInputsWorkbenchView({
   }, [data.google_sheet_sources]);
 
   useEffect(() => {
-    if (!dirty && !pantryDirty) return;
+    if (!dirty && !pantryDirty && !confirmedNeedDirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, pantryDirty]);
+  }, [dirty, pantryDirty, confirmedNeedDirty]);
 
   const discardMenuChanges = () => {
     setMenuRows(activeMenuRows(data.weekly_menu));
@@ -549,14 +576,17 @@ export function PlanningInputsWorkbenchView({
   const currentSourceDirty =
     tab === "pantry"
       ? pantryDirty
-      : tab === "menu" || tab === "attendance"
-        ? dirty
-        : false;
+      : tab === "confirmed-needs"
+        ? confirmedNeedDirty
+        : tab === "menu" || tab === "attendance"
+          ? dirty
+          : false;
 
   const discardCurrentSourceChanges = () => {
     if (tab === "menu") discardMenuChanges();
     if (tab === "attendance") discardAttendanceChanges();
     if (tab === "pantry") setPantryDirty(false);
+    if (tab === "confirmed-needs") setConfirmedNeedDirty(false);
   };
 
   const changeTab = (next: TabId) => {
@@ -574,11 +604,12 @@ export function PlanningInputsWorkbenchView({
 
   const changeWeek = (next: string) => {
     if (
-      (dirty || pantryDirty) &&
+      (dirty || pantryDirty || confirmedNeedDirty) &&
       !window.confirm("Bỏ các thay đổi chưa lưu để chuyển tuần?")
     )
       return false;
-    if (dirty || pantryDirty) discardCurrentSourceChanges();
+    if (dirty || pantryDirty || confirmedNeedDirty)
+      discardCurrentSourceChanges();
     setWeekStart(next);
     setServiceDateFilter(next);
     return true;
@@ -646,9 +677,7 @@ export function PlanningInputsWorkbenchView({
   const serviceDates = useMemo(
     () =>
       Array.from({ length: 7 }, (_, offset) => {
-        const date = new Date(`${data.week_start}T00:00:00Z`);
-        date.setUTCDate(date.getUTCDate() + offset);
-        return date.toISOString().slice(0, 10);
+        return addLocalCalendarDays(data.week_start, offset);
       }),
     [data.week_start],
   );
@@ -967,18 +996,37 @@ export function PlanningInputsWorkbenchView({
         headingLevel={2}
       />
       <Paper component="section" className="planning-context-bar" withBorder>
-        <label>
-          Tuần phục vụ
-          <input
-            type="date"
+        {!DatePickerInput ? (
+          <label>
+            Tuần phục vụ
+            <input
+              aria-label="Tuần phục vụ"
+              value={viDate(weekStart)}
+              data-business-value={weekStart}
+              onChange={(event) => {
+                const value = event.target.value;
+                const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+                  ? value
+                  : value.split("/").reverse().join("-");
+                if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue))
+                  changeWeek(localMondayOfIso(isoValue));
+              }}
+            />
+          </label>
+        ) : (
+          <DatePickerInput
+            label="Tuần phục vụ"
+            aria-label="Tuần phục vụ"
             value={weekStart}
-            onChange={(event) => {
-              if (!changeWeek(event.target.value)) {
-                event.currentTarget.value = weekStart;
-              }
+            valueFormat="DD/MM/YYYY"
+            locale="vi"
+            firstDayOfWeek={1}
+            onChange={(value) => {
+              if (typeof value === "string" && value)
+                changeWeek(localMondayOfIso(value));
             }}
           />
-        </label>
+        )}
         <div>
           <span>Khoảng ngày</span>
           <b>
@@ -1650,6 +1698,7 @@ export function PlanningInputsWorkbenchView({
               api={confirmedNeedApi}
               initialBatchId={confirmedNeedBatchId}
               mode={mode}
+              onDirtyChange={setConfirmedNeedDirty}
             />
           )}
 

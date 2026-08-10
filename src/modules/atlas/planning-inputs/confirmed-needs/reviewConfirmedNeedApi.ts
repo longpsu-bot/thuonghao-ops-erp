@@ -13,8 +13,10 @@ const batchId = "c4500000-0000-0000-0000-000000000001";
 const revisionOne = "c4510000-0000-0000-0000-000000000001";
 const revisionTwo = "c4510000-0000-0000-0000-000000000002";
 
-function fixture(): ConfirmedNeedWorkbenchData {
-  return {
+export function createReviewConfirmedNeedFixture(
+  lineCount = 2,
+): ConfirmedNeedWorkbenchData {
+  const workbench: ConfirmedNeedWorkbenchData = {
     confirmed_need_batch_id: batchId,
     source_kind: "NEED_GENERATION",
     batch_status: "DRAFT_REVIEW",
@@ -44,7 +46,12 @@ function fixture(): ConfirmedNeedWorkbenchData {
       release_snapshot_id: "c4400000-0000-0000-0000-000000000001",
     },
     service_period: { period_start: "2026-08-03", period_end: "2026-08-09" },
-    line_counts: { total: 2, unreviewed: 2, confirmed: 0, adjusted: 0 },
+    line_counts: {
+      total: lineCount,
+      unreviewed: lineCount,
+      confirmed: 0,
+      adjusted: 0,
+    },
     blockers: [],
     warnings: [],
     allowed_actions: {
@@ -88,7 +95,12 @@ function fixture(): ConfirmedNeedWorkbenchData {
     facts_changed_since_validation: null,
     facts_changed_since_approval: null,
     lifecycle_history: [],
-    pagination: { offset: 0, limit: 100, total_lines: 2, has_more: false },
+    pagination: {
+      offset: 0,
+      limit: 100,
+      total_lines: lineCount,
+      has_more: lineCount > 100,
+    },
     lines: [
       {
         confirmed_need_line_id: "c4520000-0000-0000-0000-000000000001",
@@ -190,6 +202,25 @@ function fixture(): ConfirmedNeedWorkbenchData {
       },
     ],
   };
+  if (lineCount > workbench.lines.length) {
+    const templates = [...workbench.lines];
+    for (let index = templates.length; index < lineCount; index += 1) {
+      const template = templates[index % templates.length]!;
+      const suffix = String(index + 1).padStart(12, "0");
+      workbench.lines.push({
+        ...structuredClone(template),
+        confirmed_need_line_id: `c4520000-0000-0000-0000-${suffix}`,
+        current_revision_id: `c4510000-0000-0000-0000-${suffix}`,
+        service_date: `2026-08-${String(3 + (index % 7)).padStart(2, "0")}`,
+        ingredient: {
+          ...template.ingredient,
+          id: `a1300000-0000-0000-0000-${suffix}`,
+          name: `${template.ingredient.name} ${index + 1}`,
+        },
+      });
+    }
+  } else workbench.lines = workbench.lines.slice(0, lineCount);
+  return workbench;
 }
 
 function success(payload: Record<string, JsonValue>): AtlasRpcResult {
@@ -209,12 +240,20 @@ function backendError(code: string): AtlasRpcResult {
 
 export function createReviewConfirmedNeedApi(
   scenario: AtlasReviewScenario,
+  options: { lineCount?: number } = {},
 ): ConfirmedNeedApi {
-  let state = fixture();
+  let state = createReviewConfirmedNeedFixture(options.lineCount ?? 2);
   const receipts = new Map<string, AtlasRpcResult>();
 
   return {
-    async getReview(_subject, correlationId, requestedBatchId) {
+    async getReview(
+      _subject,
+      correlationId,
+      requestedBatchId,
+      _filters,
+      lineOffset = 0,
+      lineLimit = 100,
+    ) {
       if (scenario === "permission_denied")
         return backendError("CAPABILITY_DENIED");
       if (scenario === "server_error")
@@ -227,10 +266,22 @@ export function createReviewConfirmedNeedApi(
         };
       if (requestedBatchId !== batchId)
         return backendError("CONFIRMED_NEED_BATCH_NOT_FOUND");
+      const paged = {
+        ...structuredClone(state),
+        lines: structuredClone(
+          state.lines.slice(lineOffset, lineOffset + lineLimit),
+        ),
+        pagination: {
+          offset: lineOffset,
+          limit: lineLimit,
+          total_lines: state.lines.length,
+          has_more: lineOffset + lineLimit < state.lines.length,
+        },
+      };
       return success({
         contract_version: "RMVP-05.v1",
         correlation_id: correlationId,
-        workbench: structuredClone(state) as unknown as JsonValue,
+        workbench: paged as unknown as JsonValue,
       });
     },
     async preview(request) {
@@ -285,40 +336,45 @@ export function createReviewConfirmedNeedApi(
     async confirm(request: ConfirmedNeedCommandRequest) {
       const replay = receipts.get(request.command_id);
       if (replay) return structuredClone(replay);
+      const nextLines = state.lines.map((line) => {
+        const selected = request.payload.lines.find(
+          (item) => item.confirmed_need_line_id === line.confirmed_need_line_id,
+        );
+        if (!selected) return line;
+        const adjusted =
+          selected.proposed_confirmed_quantity !==
+          line.proposed_confirmed_quantity;
+        return {
+          ...line,
+          current_revision_id: adjusted
+            ? crypto.randomUUID()
+            : line.current_revision_id,
+          current_revision_number: adjusted
+            ? line.current_revision_number + 1
+            : line.current_revision_number,
+          current_decision_id: crypto.randomUUID(),
+          current_decision_number: (line.current_decision_number ?? 0) + 1,
+          current_decision_kind: adjusted
+            ? "ADJUSTED_QUANTITY_CONFIRMED"
+            : "UNCHANGED_PROPOSAL_ACCEPTED",
+          confirmed_quantity_after: selected.proposed_confirmed_quantity,
+        };
+      });
       state = {
         ...state,
         batch_version: state.batch_version + 1,
         line_counts: {
-          total: 2,
-          unreviewed: 0,
-          confirmed: 2,
-          adjusted: 1,
+          total: nextLines.length,
+          unreviewed: nextLines.filter((line) => !line.current_decision_id)
+            .length,
+          confirmed: nextLines.filter((line) => line.current_decision_id)
+            .length,
+          adjusted: nextLines.filter(
+            (line) =>
+              line.current_decision_kind === "ADJUSTED_QUANTITY_CONFIRMED",
+          ).length,
         },
-        lines: state.lines.map((line) => {
-          const selected = request.payload.lines.find(
-            (item) =>
-              item.confirmed_need_line_id === line.confirmed_need_line_id,
-          );
-          if (!selected) return line;
-          const adjusted =
-            selected.proposed_confirmed_quantity !==
-            line.proposed_confirmed_quantity;
-          return {
-            ...line,
-            current_revision_id: adjusted
-              ? "c4510000-0000-0000-0000-000000000010"
-              : line.current_revision_id,
-            current_revision_number: adjusted
-              ? 2
-              : line.current_revision_number,
-            current_decision_id: `c4530000-0000-0000-0000-00000000000${adjusted ? 2 : 1}`,
-            current_decision_number: 1,
-            current_decision_kind: adjusted
-              ? "ADJUSTED_QUANTITY_CONFIRMED"
-              : "UNCHANGED_PROPOSAL_ACCEPTED",
-            confirmed_quantity_after: selected.proposed_confirmed_quantity,
-          };
-        }),
+        lines: nextLines,
       };
       const result = success({
         contract_version: "RMVP-05.v1",
