@@ -618,6 +618,12 @@ For example, with Planning step `0.01 kg`, an entered `10.234 kg` remains
 `10.234 kg`; Atlas does not silently change it to `10.24 kg`. The authoritative
 preview may reject it as nonrepresentable.
 
+The Confirmed Need workbench must expose the exact Planning-confirmed quantity
+and, where useful for review or error explanation, the applicable
+backend-provided Planning step. It must not present a purchase step, purchase
+proposal or purchase-rounding difference as if Confirmed Need owned those
+values.
+
 Purchase/order-step rounding is a separate downstream requirement owned by
 Purchase Handoff / Procurement. Preserving OPS v1 replacement capability still
 requires a later accepted path with this behavior:
@@ -634,6 +640,22 @@ Confirmed Need exact quantity
 For example, `10.23 kg` at purchase step `0.50 kg` proposes `10.50 kg` with a
 visible `+0.27 kg` difference. Purchase quantization must never reduce the
 proposal below Confirmed Need.
+
+When that downstream boundary is implemented, the operator-facing Purchase
+Handoff must visibly expose the complete transformation:
+
+```text
+confirmed quantity
+→ purchase step
+→ rounded purchase proposal
+→ rounding difference
+```
+
+The effective step, before quantity, after quantity and signed difference must
+be understandable together. No quantity transformation may be hidden in a
+backend command, client calculation, exported document or derived read model.
+Backend authority does not remove the requirement to explain its result to the
+operator.
 
 PR #188 and UI-QUALITY-02C-B do not implement this downstream behavior, do not
 move CMD-03 forward and must not claim complete replacement of v1 step rounding.
@@ -807,3 +829,7 @@ round-trip`; no backend prerequisite.
 25. **Step ownership:** Confirmed Need retains exact Planning quantities and
     backend Planning-step authority; later Purchase Handoff / Procurement owns
     upward purchase quantization and its visible nonnegative difference.
+26. **Transformation visibility:** Confirmed Need shows the exact confirmed
+    quantity and useful Planning-step context; later Purchase Handoff must show
+    confirmed quantity → purchase step → rounded proposal → signed difference,
+    with no invisible quantity transformation.
