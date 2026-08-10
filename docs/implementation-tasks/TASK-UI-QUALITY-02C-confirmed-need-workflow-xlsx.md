@@ -520,7 +520,12 @@ creates immutable release evidence. It does not create Purchase Handoff, select
 a supplier, allocate fulfilment, create a purchase order, or mutate Procurement,
 Warehouse or Dispatch.
 
-The confirmation copy must retain that consequence explicitly.
+The release confirmation and released-state consequence must retain that
+boundary explicitly. Confirmed Need Release does not need to calculate, predict
+or display the exact future rounded purchase quantity. It must, however, make
+the operator-facing distinction explicit: `SL xác nhận` is not necessarily
+`SL đặt mua`. The later Purchase Handoff determines and explains any purchase
+quantization before purchase commitment.
 
 ## 9. One-next-action rules
 
@@ -642,7 +647,8 @@ visible `+0.27 kg` difference. Purchase quantization must never reduce the
 proposal below Confirmed Need.
 
 When that downstream boundary is implemented, the operator-facing Purchase
-Handoff must visibly expose the complete transformation:
+Handoff must visibly expose the complete transformation before any purchase
+commitment:
 
 ```text
 confirmed quantity
@@ -651,11 +657,18 @@ confirmed quantity
 → rounding difference
 ```
 
+The Purchase Handoff commitment review must show these four values side by side:
+
+1. confirmed quantity;
+2. effective purchase step;
+3. rounded purchase proposal; and
+4. signed rounding difference.
+
 The effective step, before quantity, after quantity and signed difference must
-be understandable together. No quantity transformation may be hidden in a
-backend command, client calculation, exported document or derived read model.
-Backend authority does not remove the requirement to explain its result to the
-operator.
+be understandable together before the operator makes any purchase commitment.
+No quantity transformation may be hidden in a backend command, client
+calculation, exported document or derived read model. Backend authority does not
+remove the requirement to explain its result to the operator.
 
 PR #188 and UI-QUALITY-02C-B do not implement this downstream behavior, do not
 move CMD-03 forward and must not claim complete replacement of v1 step rounding.
@@ -829,7 +842,9 @@ round-trip`; no backend prerequisite.
 25. **Step ownership:** Confirmed Need retains exact Planning quantities and
     backend Planning-step authority; later Purchase Handoff / Procurement owns
     upward purchase quantization and its visible nonnegative difference.
-26. **Transformation visibility:** Confirmed Need shows the exact confirmed
-    quantity and useful Planning-step context; later Purchase Handoff must show
-    confirmed quantity → purchase step → rounded proposal → signed difference,
-    with no invisible quantity transformation.
+26. **Transformation visibility:** Confirmed Need Release does not predict the
+    future purchase quantity, but states that `SL xác nhận` is not necessarily
+    `SL đặt mua`; before any purchase commitment, later Purchase Handoff must
+    show side by side the confirmed quantity, effective purchase step, rounded
+    purchase proposal and signed rounding difference, with no invisible quantity
+    transformation.
