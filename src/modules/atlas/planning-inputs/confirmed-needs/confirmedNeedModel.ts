@@ -428,7 +428,10 @@ export function confirmedNeedResultMessage(result: AtlasRpcResult) {
       result.response.safe_operator_message ??
       "Đã cập nhật dữ liệu xác nhận nhu cầu."
     );
-  if (result.kind === "backend_error") return result.error.safe_message;
+  if (result.kind === "backend_error")
+    return result.error.error_code === "CAPABILITY_DENIED"
+      ? "Bạn không có quyền truy cập nhu cầu xác nhận này."
+      : result.error.safe_message;
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   return result.diagnostic.safeMessage;

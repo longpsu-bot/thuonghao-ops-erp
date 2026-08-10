@@ -61,6 +61,7 @@ import {
 import { PantryWorkbench } from "./pantry/PantryWorkbench";
 import type { PantryApi } from "./pantry/pantryApi";
 import { createPlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
+import { planningInputPreflightFromResult } from "./readiness/planningInputReadinessModel";
 import { NeedGenerationWorkbench } from "./need-generation/NeedGenerationWorkbench";
 import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
 import { ConfirmedNeedReviewWorkbench } from "./confirmed-needs/ConfirmedNeedReviewWorkbench";
@@ -431,6 +432,7 @@ export function PlanningInputsWorkbenchView({
   readinessApi,
   needGenerationApi,
   confirmedNeedApi,
+  initialWeekStart,
   mode = "connected",
 }: {
   authState: AtlasAuthState;
@@ -442,14 +444,20 @@ export function PlanningInputsWorkbenchView({
   >;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
+  initialWeekStart?: string;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
-  const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
+  const [weekStart, setWeekStart] = useState(
+    () => initialWeekStart ?? mondayOf(new Date()),
+  );
   const [tab, setTab] = useState<TabId>("menu");
   const [confirmedNeedBatchId, setConfirmedNeedBatchId] = useState<
     string | null
   >(null);
+  const [confirmedNeedResolution, setConfirmedNeedResolution] = useState<
+    "idle" | "loading" | "available" | "missing" | "denied" | "error"
+  >("idle");
   const [load, setLoad] = useState<LoadState>("idle");
   const [data, setData] = useState(() => emptyData(weekStart));
   const [notice, setNotice] = useState<string | null>(null);
@@ -483,10 +491,44 @@ export function PlanningInputsWorkbenchView({
   const [schoolSearch, setSchoolSearch] = useState("");
   const [serviceDateFilter, setServiceDateFilter] = useState(weekStart);
   const generation = useRef(0);
+  const confirmedNeedGeneration = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
   const DatePickerInput = useContext(AtlasDatePickerInputContext);
   const selectedWeekEnd = weekEndOf(weekStart);
+
+  const resolveCurrentConfirmedNeed = useCallback(async () => {
+    if (!readinessApi || !authSubject) {
+      setConfirmedNeedBatchId(null);
+      setConfirmedNeedResolution("idle");
+      return;
+    }
+    const request = ++confirmedNeedGeneration.current;
+    setConfirmedNeedBatchId(null);
+    setConfirmedNeedResolution("loading");
+    const result = await readinessApi.preflight(
+      authSubject,
+      correlationId,
+      weekStart,
+      selectedWeekEnd,
+    );
+    if (request !== confirmedNeedGeneration.current) return;
+    const preflight = planningInputPreflightFromResult(result);
+    if (!preflight) {
+      setConfirmedNeedBatchId(null);
+      setConfirmedNeedResolution(
+        result.kind === "backend_error" &&
+          result.error.error_code === "CAPABILITY_DENIED"
+          ? "denied"
+          : "error",
+      );
+      return;
+    }
+    const currentNeedId =
+      preflight.current_need?.confirmed_need_batch_id ?? null;
+    setConfirmedNeedBatchId(currentNeedId);
+    setConfirmedNeedResolution(currentNeedId ? "available" : "missing");
+  }, [authSubject, correlationId, readinessApi, selectedWeekEnd, weekStart]);
 
   const adopt = useCallback((workbench: PlanningInputsWorkbenchData) => {
     setData(workbench);
@@ -532,6 +574,10 @@ export function PlanningInputsWorkbenchView({
       setData(emptyData(weekStart));
     }
   }, [authSubject, refresh, weekStart]);
+
+  useEffect(() => {
+    void resolveCurrentConfirmedNeed();
+  }, [resolveCurrentConfirmedNeed]);
 
   useEffect(() => {
     setSelectedGoogleSourceId((current) =>
@@ -1037,10 +1083,13 @@ export function PlanningInputsWorkbenchView({
           type="button"
           variant="outline"
           leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
-          onClick={() => void refresh()}
+          onClick={() => {
+            void refresh();
+            void resolveCurrentConfirmedNeed();
+          }}
           disabled={saving}
         >
-          Tải lại có thẩm quyền
+          Tải lại dữ liệu
         </Button>
       </Paper>
 
@@ -1124,10 +1173,7 @@ export function PlanningInputsWorkbenchView({
                 <span> {sourceOutcome.consequence}</span>
               )}
               {refreshRequired && (
-                <span>
-                  {" "}
-                  Cần tải lại dữ liệu có thẩm quyền trước khi ghi tiếp.
-                </span>
+                <span> Cần tải lại dữ liệu mới nhất trước khi tiếp tục.</span>
               )}
             </p>
           )}
@@ -1697,6 +1743,7 @@ export function PlanningInputsWorkbenchView({
               authState={authState}
               api={confirmedNeedApi}
               initialBatchId={confirmedNeedBatchId}
+              currentNeedResolution={confirmedNeedResolution}
               mode={mode}
               onDirtyChange={setConfirmedNeedDirty}
             />
@@ -1712,6 +1759,7 @@ export function PlanningInputsWorkbenchView({
               mode={mode}
               onConfirmedNeedMaterialized={(nextBatchId: string) => {
                 setConfirmedNeedBatchId(nextBatchId);
+                setConfirmedNeedResolution("available");
                 setTab("confirmed-needs");
               }}
             />
@@ -1727,7 +1775,7 @@ export function PlanningInputsWorkbenchView({
           )}
           {mode === "review" && (
             <p className="planning-review-footnote">
-              Dữ liệu và lệnh trên trang này chỉ thuộc chế độ xem thử.
+              Dữ liệu trên trang này chỉ thuộc chế độ xem thử.
             </p>
           )}
         </>

@@ -62,16 +62,13 @@ async function preparePreview(api = createReviewConfirmedNeedApi("ready")) {
     target: { value: "PLANNING_STEP_ADJUSTMENT" },
   });
   fireEvent.click(nextActionButton()!);
-  await screen.findByLabelText("Bản xem trước xác nhận");
+  await screen.findByLabelText("Kiểm tra lần cuối");
   return api;
 }
 
 async function confirmAll(api = createReviewConfirmedNeedApi("ready")) {
   await preparePreview(api);
-  fireEvent.click(
-    screen.getByLabelText("Tôi đã kiểm tra bản xem trước số lượng"),
-  );
-  fireEvent.click(nextActionButton()!);
+  fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
   await waitFor(() =>
     expect(nextActionButton()).toHaveTextContent("Hoàn tất xác nhận"),
   );
@@ -106,7 +103,15 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
     expect(screen.getAllByText("Chưa xác nhận").length).toBeGreaterThanOrEqual(
       2,
     );
-    expect(screen.getAllByText("0,25 kg")).toHaveLength(2);
+    expect(screen.getAllByText(/Bước gợi ý:/)).toHaveLength(2);
+    expect(
+      screen.queryByLabelText("Mã lô Confirmed Need"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tải lô" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Trường đang xem")).toHaveValue("");
+    expect(screen.getByText("Excel (không bắt buộc)")).toBeVisible();
     expect(
       screen.getAllByText("Đang xác nhận số lượng").length,
     ).toBeGreaterThan(0);
@@ -124,6 +129,18 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows a plain access-denied message only when the backend rejects access", async () => {
+    renderReview(createReviewConfirmedNeedApi("permission_denied"));
+    expect(
+      await screen.findByText(
+        "Bạn không có quyền truy cập nhu cầu xác nhận này.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/capability|hợp đồng|UUID/i),
+    ).not.toBeInTheDocument();
+  });
+
   it("preserves exact direct input, never rounds to the Planning step and invalidates preview after edits", async () => {
     const api = createReviewConfirmedNeedApi("ready");
     const preview = vi.spyOn(api, "preview");
@@ -134,7 +151,7 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
       target: { value: "PLANNING_STEP_ADJUSTMENT" },
     });
     fireEvent.click(nextActionButton()!);
-    await screen.findByLabelText("Bản xem trước xác nhận");
+    await screen.findByLabelText("Kiểm tra lần cuối");
     const requestLine = preview.mock.calls[0]?.[0].payload.lines.find(
       (line) =>
         line.confirmed_need_line_id === "c4520000-0000-0000-0000-000000000002",
@@ -143,7 +160,7 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
     expect(carrot).toHaveValue("10.234");
     fireEvent.change(carrot, { target: { value: "10.235" } });
     expect(
-      screen.queryByLabelText("Bản xem trước xác nhận"),
+      screen.queryByLabelText("Kiểm tra lần cuối"),
     ).not.toBeInTheDocument();
   });
 
@@ -173,7 +190,9 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
       "5.250000",
     );
     expect(
-      screen.getByText(/Thay đổi từ Excel mới chỉ nằm trong bảng cục bộ/),
+      screen.getByText(
+        /Thay đổi từ Excel mới chỉ nằm trong bảng trên màn hình/,
+      ),
     ).toBeVisible();
     expect(confirm).not.toHaveBeenCalled();
     fireEvent.click(nextActionButton()!);
@@ -192,7 +211,7 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
       target: { files: [await workbookFile()] },
     });
     expect(
-      screen.queryByLabelText("Bản xem trước xác nhận"),
+      screen.queryByLabelText("Kiểm tra lần cuối"),
     ).not.toBeInTheDocument();
     const review = await screen.findByLabelText("Đã đọc file Excel");
     expect(
@@ -249,7 +268,7 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
 
     fireEvent.click(nextActionButton()!);
     await waitFor(() =>
-      expect(nextActionButton()).toHaveTextContent("Phê duyệt lô nhu cầu"),
+      expect(nextActionButton()).toHaveTextContent("Phê duyệt"),
     );
     expect(validate).toHaveBeenCalledOnce();
     expect(approve).not.toHaveBeenCalled();
@@ -259,13 +278,12 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
 
     fireEvent.click(nextActionButton()!);
     expect(
-      screen.getByText(/Phê duyệt toàn bộ số lượng đã hoàn tất xác nhận/),
-    ).toBeVisible();
+      screen.getAllByText(/Phê duyệt toàn bộ số lượng đã hoàn tất xác nhận/)
+        .length,
+    ).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Xác nhận phê duyệt" }));
     await waitFor(() =>
-      expect(nextActionButton()).toHaveTextContent(
-        "Phát hành sang bước lên đơn",
-      ),
+      expect(nextActionButton()).toHaveTextContent("Phát hành"),
     );
     expect(approve).toHaveBeenCalledOnce();
     expect(release).not.toHaveBeenCalled();
@@ -286,19 +304,15 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
     expect(screen.getByText(/mọi làm tròn mua hàng sau này/)).toBeVisible();
   });
 
-  it("presents BLOCKED completion as correction, not false completion", async () => {
-    const api = createReviewConfirmedNeedApi("ready");
-    renderReview(api);
-    await screen.findByText("Gạo thơm");
-    fireEvent.click(screen.getByLabelText("Chọn Gạo thơm"));
-    fireEvent.click(screen.getByLabelText("Chọn Cà rốt"));
-    expect(nextActionButton()).toHaveTextContent("Hoàn tất xác nhận");
-    fireEvent.click(nextActionButton()!);
-    expect(await screen.findByText(/Chưa thể hoàn tất xác nhận/)).toBeVisible();
-    expect(
-      screen.getAllByText(/chưa có quyết định hiện hành/).length,
-    ).toBeGreaterThan(0);
-    expect(nextActionButton()).toHaveTextContent("Xác nhận số lượng");
+  it("reveals correction fields only after a quantity is adjusted", async () => {
+    renderReview();
+    const carrot = await screen.findByLabelText("Số lượng xác nhận Cà rốt");
+    expect(screen.queryByLabelText("Lý do Cà rốt")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Chấp nhận đề xuất")).toHaveLength(2);
+    fireEvent.change(carrot, { target: { value: "5.25" } });
+    expect(screen.getByLabelText("Lý do Cà rốt")).toHaveValue("");
+    expect(screen.getByLabelText("Ghi chú Cà rốt")).toBeVisible();
+    expect(screen.getByText(/cần chọn một lý do điều chỉnh/)).toBeVisible();
   });
 
   it("never auto-chains more than 250 decisions", async () => {
@@ -310,10 +324,7 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
     fireEvent.click(nextActionButton()!);
     await waitFor(() => expect(preview).toHaveBeenCalledOnce());
     expect(preview.mock.calls[0]![0].payload.lines).toHaveLength(250);
-    fireEvent.click(
-      screen.getByLabelText("Tôi đã kiểm tra bản xem trước số lượng"),
-    );
-    fireEvent.click(nextActionButton()!);
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
     await waitFor(() => expect(confirm).toHaveBeenCalledOnce());
     expect(preview).toHaveBeenCalledOnce();
     expect(nextActionButton()).toHaveTextContent("Xác nhận số lượng");
@@ -330,12 +341,9 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
       } satisfies AtlasRpcResult)
       .mockImplementation(originalConfirm);
     await preparePreview(api);
-    fireEvent.click(
-      screen.getByLabelText("Tôi đã kiểm tra bản xem trước số lượng"),
-    );
-    fireEvent.click(nextActionButton()!);
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
     const retry = await screen.findByRole("button", {
-      name: "Gửi lại đúng lệnh chưa chắc chắn",
+      name: "Thử lưu lại",
     });
     expect(api.confirm).toHaveBeenCalledOnce();
     fireEvent.click(retry);
@@ -379,7 +387,7 @@ describe("UI-QUALITY-02C-B Confirmed Need workflow", () => {
     await act(async () => resolve(await originalPreview(request)));
     expect(carrot).toHaveValue("5.5");
     expect(
-      screen.queryByLabelText("Bản xem trước xác nhận"),
+      screen.queryByLabelText("Kiểm tra lần cuối"),
     ).not.toBeInTheDocument();
   });
 });

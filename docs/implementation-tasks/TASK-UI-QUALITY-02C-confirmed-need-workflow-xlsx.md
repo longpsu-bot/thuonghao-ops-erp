@@ -16,6 +16,33 @@ This document is the single canonical implementation handoff for
 `UI-QUALITY-02C-B`. It changes no Application, API, SQL, migration, capability,
 lifecycle, hosted environment, Retool application, or production data.
 
+### First-time operator correction for PR #189
+
+The implemented presentation is governed by a first-time Planning employee,
+not by knowledge of internal architecture:
+
+- `Xác nhận nhu cầu` resolves the current Confirmed Need automatically from
+  Planning preflight `current_need` for the selected service week. Normal UI
+  never asks for a batch ID or exposes an editable technical identifier.
+- Week, school and optional service date are the primary working context. The
+  school/date controls filter only the on-screen review; XLSX export continues
+  to cover the authoritative whole batch.
+- Unchanged quantities display `Chấp nhận đề xuất` without row-selection,
+  reason and note controls. Adjustment fields appear when a quantity changes or
+  when correction is required.
+- `Xác nhận số lượng` obtains the write-free backend preview automatically.
+  Blocking issues are shown as corrections. A successful check opens one simple
+  final summary with `Xác nhận` and `Quay lại`; there is no preview
+  acknowledgement checkbox and no chained write.
+- Authentication and authorization remain backend-enforced. The normal flow
+  adds no human authentication step and displays only a plain access-denied
+  message when access is actually rejected.
+
+The remaining human-visible lifecycle steps are intentionally still distinct:
+`Xác nhận số lượng` → `Hoàn tất xác nhận` → `Phê duyệt` → `Phát hành`.
+Any consolidation of those backend commitments is a separate contract decision,
+not React command chaining.
+
 ## 1. Authority and evidence
 
 This review follows `OPS_SYSTEM_MAP` v1.0:

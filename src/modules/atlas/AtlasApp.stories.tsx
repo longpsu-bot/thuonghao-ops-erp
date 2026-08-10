@@ -4,6 +4,7 @@ import { userEvent, within } from "storybook/test";
 import { AtlasAppView as AtlasApp } from "./AtlasApp";
 import { createReviewAuthState } from "./review/reviewMode";
 import { NeedGenerationWorkbench } from "./planning-inputs/need-generation/NeedGenerationWorkbench";
+import { PlanningInputsWorkbench } from "./planning-inputs/PlanningInputsWorkbench";
 import { createReviewNeedGenerationApi } from "./planning-inputs/need-generation/reviewNeedGenerationApi";
 import { createReviewPlanningInputReadinessApi } from "./planning-inputs/readiness/reviewPlanningInputReadinessApi";
 import { ConfirmedNeedReviewWorkbench } from "./planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench";
@@ -51,7 +52,7 @@ function ConfirmedNeedStateStory({
         kind: "transport_error",
         diagnostic: {
           code: "NETWORK_FAILURE",
-          safeMessage: "Chưa chắc chắn lệnh xác nhận đã được ghi nhận.",
+          safeMessage: "Chưa chắc chắn thay đổi đã được lưu.",
         },
       });
     return next;
@@ -85,16 +86,13 @@ async function prepareConfirmedNeedPreview(canvasElement: HTMLElement) {
     "PLANNING_STEP_ADJUSTMENT",
   );
   await userEvent.click(confirmedNeedNextAction(canvasElement));
-  await canvas.findByLabelText("Bản xem trước xác nhận");
+  await canvas.findByLabelText("Kiểm tra lần cuối");
 }
 
 async function confirmConfirmedNeedQuantities(canvasElement: HTMLElement) {
   const canvas = within(canvasElement);
   await prepareConfirmedNeedPreview(canvasElement);
-  await userEvent.click(
-    canvas.getByLabelText("Tôi đã kiểm tra bản xem trước số lượng"),
-  );
-  await userEvent.click(confirmedNeedNextAction(canvasElement));
+  await userEvent.click(canvas.getByRole("button", { name: "Xác nhận" }));
   await canvas.findByRole("button", { name: "Hoàn tất xác nhận" });
 }
 
@@ -102,7 +100,7 @@ async function completeConfirmedNeedBatch(canvasElement: HTMLElement) {
   const canvas = within(canvasElement);
   await confirmConfirmedNeedQuantities(canvasElement);
   await userEvent.click(confirmedNeedNextAction(canvasElement));
-  await canvas.findByRole("button", { name: "Phê duyệt lô nhu cầu" });
+  await canvas.findByRole("button", { name: "Phê duyệt" });
 }
 
 async function approveConfirmedNeedBatch(canvasElement: HTMLElement) {
@@ -113,8 +111,28 @@ async function approveConfirmedNeedBatch(canvasElement: HTMLElement) {
     await canvas.findByRole("button", { name: "Xác nhận phê duyệt" }),
   );
   await canvas.findByRole("button", {
-    name: "Phát hành sang bước lên đơn",
+    name: "Phát hành",
   });
+}
+
+function FirstTimeConfirmedNeedStory() {
+  const [confirmedNeedApi] = useState(() =>
+    createReviewConfirmedNeedApi("ready"),
+  );
+  const [readinessApi] = useState(() =>
+    createReviewPlanningInputReadinessApi("ready", { currentNeed: true }),
+  );
+  return (
+    <main className="atlas-page">
+      <PlanningInputsWorkbench
+        authState={createReviewAuthState("ready")}
+        readinessApi={readinessApi}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart="2026-08-03"
+        mode="review"
+      />
+    </main>
+  );
 }
 
 async function confirmedNeedWorkbookFile() {
@@ -390,6 +408,39 @@ export const PermissionState: Story = {
   },
 };
 
+export const ConfirmedNeedFirstTimeOperator: Story = {
+  name: "Xác nhận nhu cầu · nhân viên mới lần đầu sử dụng",
+  args: { initialPage: "planning-inputs", reviewMode: true },
+  render: () => <FirstTimeConfirmedNeedStory />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Nhân viên chọn tuần, vào Xác nhận nhu cầu, xem trường và chỉnh một số lượng. Nhu cầu hiện tại tự tải; Excel là tùy chọn và màn hình chỉ nêu một hành động tiếp theo.",
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("tab", { name: "Xác nhận nhu cầu" }),
+    );
+    await canvas.findByText("Gạo thơm");
+    await userEvent.selectOptions(
+      canvas.getByLabelText("Trường đang xem"),
+      "a1100000-0000-0000-0000-000000000001",
+    );
+    const quantity = canvas.getByLabelText("Số lượng xác nhận Cà rốt");
+    await userEvent.clear(quantity);
+    await userEvent.type(quantity, "5.250000");
+    await userEvent.selectOptions(
+      canvas.getByLabelText("Lý do Cà rốt"),
+      "PLANNING_STEP_ADJUSTMENT",
+    );
+    await canvas.findByRole("button", { name: "Xác nhận số lượng" });
+  },
+};
+
 export const ConfirmedNeedEditable: Story = {
   name: "Xác nhận nhu cầu · chỉnh sửa trực tiếp",
   args: { initialPage: "planning-inputs", reviewMode: true },
@@ -432,22 +483,22 @@ export const ConfirmedNeedImportedDraftApplied: Story = {
 };
 
 export const ConfirmedNeedPreview: Story = {
-  name: "Xác nhận nhu cầu · xem trước số lượng",
+  name: "Xác nhận nhu cầu · kiểm tra lần cuối",
   args: { initialPage: "planning-inputs", reviewMode: true },
   render: () => <ConfirmedNeedStateStory />,
   play: async ({ canvasElement }) => prepareConfirmedNeedPreview(canvasElement),
 };
 
 export const ConfirmedNeedBlocked: Story = {
-  name: "Xác nhận nhu cầu · chưa thể hoàn tất",
+  name: "Xác nhận nhu cầu · dòng điều chỉnh cần sửa",
   args: { initialPage: "planning-inputs", reviewMode: true },
   render: () => <ConfirmedNeedStateStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByLabelText("Chọn Gạo thơm"));
-    await userEvent.click(canvas.getByLabelText("Chọn Cà rốt"));
-    await userEvent.click(confirmedNeedNextAction(canvasElement));
-    await canvas.findByText(/Chưa thể hoàn tất xác nhận/);
+    const quantity = await canvas.findByLabelText("Số lượng xác nhận Cà rốt");
+    await userEvent.clear(quantity);
+    await userEvent.type(quantity, "5.250000");
+    await canvas.findByText(/cần chọn một lý do điều chỉnh/);
   },
 };
 
@@ -484,7 +535,7 @@ export const ConfirmedNeedReleased: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Xác nhận phát hành" }),
     );
-    await canvas.findByText("Đã phát hành lô nhu cầu sang bước lên đơn.");
+    await canvas.findByText("Đã phát hành sang bước lên đơn.");
   },
 };
 
@@ -495,12 +546,9 @@ export const ConfirmedNeedUnknownWriteOutcome: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await prepareConfirmedNeedPreview(canvasElement);
-    await userEvent.click(
-      canvas.getByLabelText("Tôi đã kiểm tra bản xem trước số lượng"),
-    );
-    await userEvent.click(confirmedNeedNextAction(canvasElement));
+    await userEvent.click(canvas.getByRole("button", { name: "Xác nhận" }));
     await canvas.findByRole("button", {
-      name: "Gửi lại đúng lệnh chưa chắc chắn",
+      name: "Thử lưu lại",
     });
   },
 };

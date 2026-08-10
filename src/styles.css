@@ -3920,7 +3920,7 @@ tbody tr.selected-row {
 
 .confirmed-need-context {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
+  grid-template-columns: repeat(4, minmax(150px, 1fr)) auto;
   align-items: end;
   gap: 12px;
   padding: 12px 14px;
@@ -3937,12 +3937,21 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-context > div,
+.confirmed-need-context > label,
 .confirmed-need-xlsx-actions > div,
 .confirmed-need-import-review header > div,
 .confirmed-need-preview header,
 .confirmed-need-next-action > div {
   display: grid;
   gap: 4px;
+}
+
+.confirmed-need-context select {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid #bfc5cc;
+  border-radius: 6px;
+  background: var(--atlas-surface);
 }
 
 .confirmed-need-context span,
@@ -3955,11 +3964,11 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-context button,
-.confirmed-need-technical-load button,
 .confirmed-need-xlsx-actions button,
 .confirmed-need-import-review button,
 .confirmed-need-next-action button,
 .confirmed-need-commitment button,
+.confirmed-need-preview-actions button,
 .confirmed-need-exact-retry {
   min-height: 34px;
   padding: 7px 11px;
@@ -3979,6 +3988,12 @@ tbody tr.selected-row {
   color: #fff;
 }
 
+.confirmed-need-preview-actions button.primary {
+  border-color: var(--atlas-primary);
+  background: var(--atlas-primary);
+  color: #fff;
+}
+
 .confirmed-need-context button:disabled,
 .confirmed-need-xlsx-actions button:disabled,
 .confirmed-need-import-review button:disabled,
@@ -3988,7 +4003,6 @@ tbody tr.selected-row {
   opacity: 0.45;
 }
 
-.confirmed-need-technical-load,
 .confirmed-need-evidence {
   margin-top: 10px;
   padding: 9px 11px;
@@ -3997,39 +4011,11 @@ tbody tr.selected-row {
   background: var(--atlas-surface-soft);
 }
 
-.confirmed-need-technical-load summary,
 .confirmed-need-evidence summary {
   cursor: pointer;
   color: var(--atlas-primary);
   font-size: 12px;
   font-weight: 700;
-}
-
-.confirmed-need-technical-load[open] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 8px;
-}
-
-.confirmed-need-technical-load[open] summary {
-  flex-basis: 100%;
-}
-
-.confirmed-need-technical-load label {
-  display: grid;
-  min-width: min(100%, 360px);
-  gap: 4px;
-  color: var(--atlas-text-muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.confirmed-need-technical-load input {
-  min-height: 34px;
-  padding: 7px 9px;
-  border: 1px solid #bfc5cc;
-  border-radius: 6px;
 }
 
 .confirmed-need-attention {
@@ -4110,7 +4096,7 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-table-scroll .compact-table {
-  min-width: 1380px;
+  min-width: 1120px;
   margin: 0;
 }
 
@@ -4121,29 +4107,28 @@ tbody tr.selected-row {
   background: var(--atlas-surface-soft);
 }
 
-.confirmed-need-table-scroll td:nth-child(2) {
+.confirmed-need-table-scroll td:nth-child(1) {
   min-width: 270px;
 }
 
+.confirmed-need-table-scroll td:nth-child(3),
 .confirmed-need-table-scroll td:nth-child(4),
 .confirmed-need-table-scroll td:nth-child(5),
-.confirmed-need-table-scroll td:nth-child(6),
-.confirmed-need-table-scroll td:nth-child(7),
-.confirmed-need-table-scroll td:nth-child(8) {
+.confirmed-need-table-scroll td:nth-child(6) {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.confirmed-need-table-scroll td:nth-child(6) input {
+.confirmed-need-table-scroll td:nth-child(5) input {
   width: 130px;
   text-align: right;
 }
 
-.confirmed-need-table-scroll td:nth-child(9) select {
+.confirmed-need-table-scroll td:nth-child(7) select {
   min-width: 210px;
 }
 
-.confirmed-need-table-scroll td:nth-child(10) input {
+.confirmed-need-table-scroll td:nth-child(7) input {
   min-width: 220px;
 }
 
@@ -4164,6 +4149,29 @@ tbody tr.selected-row {
 
 .confirmed-need-difference {
   color: var(--atlas-primary);
+  font-weight: 700;
+}
+
+.confirmed-need-policy-hint {
+  font-weight: 400;
+}
+
+.confirmed-need-accepted-proposal {
+  color: var(--atlas-success);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.confirmed-need-adjustment-fields {
+  display: grid;
+  gap: 7px;
+}
+
+.confirmed-need-adjustment-fields label {
+  display: grid;
+  gap: 3px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -4284,13 +4292,12 @@ tbody tr.selected-row {
   font-variant-numeric: tabular-nums;
 }
 
-.confirmed-need-preview > label {
+.confirmed-need-preview-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 8px;
   margin-top: 10px;
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .confirmed-need-next-action {

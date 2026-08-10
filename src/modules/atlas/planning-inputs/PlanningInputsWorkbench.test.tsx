@@ -323,7 +323,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const save = screen.getByRole("button", { name: "Lưu thực đơn" });
     fireEvent.click(save);
 
-    await screen.findByText(/Cần tải lại dữ liệu có thẩm quyền/);
+    await screen.findByText(/Cần tải lại dữ liệu mới nhất/);
     expect(save).toBeDisabled();
   });
 });

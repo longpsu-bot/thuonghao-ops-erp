@@ -379,8 +379,7 @@ export function createReviewConfirmedNeedApi(
       const result = success({
         contract_version: "RMVP-05.v1",
         command_id: request.command_id,
-        safe_operator_message:
-          "Đã xác nhận số lượng với bằng chứng quyết định bất biến.",
+        safe_operator_message: "Đã xác nhận số lượng.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));
@@ -573,7 +572,7 @@ export function createReviewConfirmedNeedApi(
         contract_version: "RMVP-07.v1",
         command_name: "approve_confirmed_needs",
         command_id: request.command_id,
-        safe_operator_message: "Đã phê duyệt lô nhu cầu; đang chờ phát hành.",
+        safe_operator_message: "Đã phê duyệt; đang chờ phát hành.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));
@@ -633,7 +632,7 @@ export function createReviewConfirmedNeedApi(
         contract_version: "RMVP-07.v1",
         command_name: "release_confirmed_needs_for_purchase_handoff",
         command_id: request.command_id,
-        safe_operator_message: "Đã phát hành lô nhu cầu sang bước lên đơn.",
+        safe_operator_message: "Đã phát hành sang bước lên đơn.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));

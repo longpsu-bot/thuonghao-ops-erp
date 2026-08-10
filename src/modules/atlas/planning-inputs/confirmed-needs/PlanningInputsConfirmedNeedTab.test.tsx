@@ -27,6 +27,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
+        readinessApi={createReviewPlanningInputReadinessApi("ready")}
         confirmedNeedApi={createReviewConfirmedNeedApi("ready")}
         mode="review"
       />,
@@ -37,7 +38,51 @@ describe("Planning Inputs Confirmed Need tab", () => {
     fireEvent.click(tabs[4]!);
     expect(
       await screen.findByText(
-        /Rà soát SL lý thuyết, SL đề xuất và quyết định SL xác nhận/,
+        /Rà soát số lượng đề xuất và nhập số lượng xác nhận/,
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Chưa có nhu cầu xác nhận cho tuần này."),
+    ).toBeVisible();
+    expect(
+      screen.queryByLabelText("Mã lô Confirmed Need"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("loads the current need from the selected week's preflight without batch knowledge", async () => {
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        readinessApi={createReviewPlanningInputReadinessApi("ready", {
+          currentNeed: true,
+        })}
+        confirmedNeedApi={createReviewConfirmedNeedApi("ready")}
+        mode="review"
+      />,
+    );
+    fireEvent.click(screen.getAllByRole("tab")[4]!);
+    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(screen.getByLabelText("Trường đang xem")).toHaveDisplayValue(
+      "Tất cả trường",
+    );
+    expect(screen.queryByText(/UUID|Mã lô|Tải lô/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a simple message when preflight denies access", async () => {
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        readinessApi={createReviewPlanningInputReadinessApi(
+          "permission_denied",
+        )}
+        confirmedNeedApi={createReviewConfirmedNeedApi("ready")}
+        mode="review"
+      />,
+    );
+    fireEvent.click(screen.getAllByRole("tab")[4]!);
+    expect(
+      await screen.findByText(
+        "Bạn không có quyền truy cập nhu cầu xác nhận này.",
       ),
     ).toBeVisible();
   });
@@ -65,8 +110,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
       ).toHaveAttribute("aria-selected", "true"),
     );
     expect(await screen.findByText("Gạo thơm")).toBeVisible();
-    expect(screen.getByLabelText("Mã lô Confirmed Need")).toHaveValue(
-      "c4500000-0000-0000-0000-000000000001",
-    );
+    expect(
+      screen.queryByLabelText("Mã lô Confirmed Need"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Excel (không bắt buộc)")).toBeVisible();
   });
 });
