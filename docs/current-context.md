@@ -1,9 +1,10 @@
 # OPS ERP Current Context
 
 **Status:** Active project memory  
-**Last updated:** 2026-07-12  
+**Last updated:** 2026-08-10
 **Authority:** Working context summary  
-**Review required:** No — update continuously as project state changes  
+**Planning contract baseline:** `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`
+**Review required:** No — update whenever project direction, active scope, or blocking decisions change.
 
 ---
 
@@ -13,185 +14,180 @@
 - Internal codename: Project Atlas
 - Repository: `longpsu-bot/thuonghao-ops-erp`
 - Source of truth: GitHub repository
-- Primary development approach: architecture-first, UI-led, contract-constrained, Codex-assisted implementation
+- Primary development approach: **workflow-led, contract-constrained, backend-authoritative, Codex-assisted**
+
+Atlas is intended to replace OPS v1 incrementally with the smallest stable system that preserves operational continuity, improves process control, remains maintainable and transferable, and avoids unnecessary complexity or cost.
 
 ---
 
-## 2. Current architecture direction
+## 2. Governing architecture
 
-- React + TypeScript frontend
-- Supabase + PostgreSQL backend
-- Supabase Auth for identity
-- PostgreSQL/RPC for authoritative business logic
-- Retool retained only for support, diagnostics, or emergency admin where useful
-- OPS v1 remains operational during parallel rollout
+Atlas continues to use `OPS_SYSTEM_MAP` v1.0:
 
----
+```text
+Mission
+→ Business Capability
+→ Business Domain
+→ Business Object
+→ Business Contract
+→ Command/Event
+→ Read Model
+→ Application
+→ Technology
+```
 
-## 3. Current foundation status
+This authority order is unchanged. Business architecture defines ownership and boundaries; technology remains subordinate.
 
-Completed baseline documents:
+The delivery lesson from Planning is narrower: before freezing a detailed command contract, prove the operator job, necessary information, meaningful exceptions, and genuine human decision boundaries through lightweight workflow/UI exploration.
 
-- Vision and Product Charter
-- Business Model and Operating Flows
-- Business Glossary
-- Business Processes
-- System Map
-- Domain Model
-- Module Specifications
-- Calculation Specification
-- Security Model
-- API Contract Standard
-- Development Guide
-- Rollout and Migration Plan
-- Master-data review package
-- Vietnamese staff-facing master-data review package
-- Master Data Review Workspace UI spec
-- Planner Workspace UI spec
+Workflow sketches, fixtures, mock screens, and prototypes are **discovery artifacts**, not authoritative Application behavior.
+
+The connected React Application still follows accepted contracts and read models. React coordinates interaction and renders authoritative results; it does not own ERP authority.
 
 ---
 
-## 4. Current accepted principles
+## 3. Preferred delivery cycle
+
+For a new capability, prefer:
+
+```text
+Mission / capability / domain ownership
+→ concrete operator job and workflow
+→ lightweight UI/workflow exploration
+→ genuine human decision boundaries
+→ minimum business contract
+→ authoritative backend boundary
+→ connected Application UI
+→ operator / product review
+→ refinement from observed need
+→ next thin vertical slice
+```
+
+Rules:
+
+- steps involving workflow/UI exploration are discovery, not business authority;
+- prototypes may use fixtures or mock data;
+- prototypes must not hide authoritative calculations, authorization, or business transitions;
+- detailed contracts should be shaped by proven workflow needs before implementation becomes deep;
+- the accepted contract precedes authoritative backend and connected Application implementation;
+- do not build an entire backend domain before proving its operator command boundaries;
+- do not build an entire frontend domain and plan to “add the backend later.”
+
+For later domains such as Warehouse, prefer one operational slice at a time: receiving workflow → exploration → contract → backend → connected UI → operator review, then move to discrepancy handling, stock intake, or another proven need.
+
+---
+
+## 4. Current technical boundary
+
+- React + TypeScript: connected Application UI
+- Supabase + PostgreSQL: authoritative backend and persistence
+- Supabase Auth: identity
+- PostgreSQL/RPC: authoritative validation, authorization, lifecycle, calculations, lineage, audit, idempotency, and transaction integrity
+- GitHub: source of truth and bounded delivery workflow
+- Atlas Staging: separate hosted non-production environment
+- OPS v1 / Retool: retained operational workflow evidence and continuity boundary
+
+Live OPS remains a forbidden Atlas deployment target.
+
+Retool remains useful evidence for simple operator mental models, dense operational work, explicit Save, quick editing, exception handling, and Vietnamese task language. It is not architecture authority. Do not copy direct browser SQL, JavaScript state ownership, client-side calculation authority, hidden write orchestration, implicit authorization, or Retool component structure.
+
+---
+
+## 5. Current accepted product principles
 
 1. Business before technology.
-2. Architecture before implementation.
-3. Use UI-led, contract-constrained design before Supabase schema implementation.
-4. GitHub is the source of truth.
-5. Codex implements bounded approved tasks.
-6. React coordinates; backend decides.
-7. Every operational quantity must be explainable.
-8. Released documents must not be silently recalculated.
-9. OPS v1 and OPS ERP coexist until workflows migrate safely.
-10. No calculation behavior may exist as a hidden or hard-coded magic rule.
+2. Business architecture defines ownership and boundaries.
+3. **Workflow-led, contract-constrained, backend-authoritative.**
+4. Workflow discovery precedes detailed contract freeze.
+5. Accepted contracts precede authoritative implementation.
+6. Deliver thin connected operational verticals rather than complete speculative domains.
+7. React coordinates; backend decides.
+8. Humans approve business commitments; systems validate deterministic system work.
+9. Public human actions should normally represent authored operational facts, genuine business decisions/commitments, or necessary exceptions/corrections.
+10. Every operational quantity must be explainable.
+11. Released history and immutable evidence must not be silently rewritten or recalculated.
+12. Authorization, lineage, audit, idempotency, and transaction integrity remain backend responsibilities.
+13. Shared abstractions require an actual requirement, security/data-integrity need, realistic recovery need, or multiple proven consumers.
+14. Prefer bounded local solutions over generic frameworks when sufficient.
+15. Repeated fail → patch → fail cycles should trigger boundary reassessment rather than more patching.
+16. OPS v1 and Atlas coexist until workflows migrate safely.
 
 ---
 
-## 5. Current review priorities
+## 6. Planning status
 
-Product owner review needed for:
+The current Planning governance is:
 
-1. Planner Workspace UI spec
-2. Business Processes
-3. Calculation Specification
-4. Security Model
-5. Rollout and Migration Plan
-6. Business Glossary Vietnamese labels
-7. Master-data review results after staff review
+- D-034 — Atlas Modern Operations UI: visual direction.
+- D-035 — Workflow-First Operator UX: how Atlas should feel to operate.
+- D-036 — Planning Completion and Commitment Boundaries: human versus deterministic system actions.
+- PLANNING-CONTRACT-01 — merged at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`; implements additive v2 consequential source Saves, automatic readiness preflight, and atomic Need Generation/materialization while retaining v1 compatibility during cutover.
 
----
-
-## 6. Current practical next prototype
-
-**Recovery update (2026-07-12):** TASK-001 produced useful Requirement Review components, but it jumped ahead of the Phase 3 application-shell and workflow-map sequence. It is retained as a UI exploration, not accepted as the Atlas application structure or final Planner contract.
-
-The next prototype is defined by `docs/implementation-tasks/TASK-002-atlas-shell-workflow-prototype.md` and `docs/ui/atlas-application-map.md`.
-
-## 6A. Superseded recommendation
-
-Recommended immediate UI prototype:
+Target operator flow:
 
 ```text
-Planner Workspace React prototype
-  → planning overview
-  → demand source review
-  → requirement review
-  → adjustments and exceptions
-  → supplier assignment preview
-  → procurement readiness
-  → planning summary
+Weekly Menu / Attendance / Pantry
+Edit → Save
+        ↓
+automatic readiness/currentness
+        ↓
+Tạo nhu cầu / Cập nhật nhu cầu
+        ↓
+atomic backend generation + deterministic validation + release + materialization
+        ↓
+Confirmed Need
+human review / correction / commitment / release
 ```
 
-Reason: the planner is the daily operational decision center. It converts demand into actionable requirement readiness and exposes the workflow states that future data contracts, schema design, calculation rules, and backend commands must support.
-
-The Planner Workspace should be created in React first because screen design will answer many unresolved questions about:
-
-- what calculation outputs staff need to see;
-- what warning and blocking states are operationally meaningful;
-- how raw, adjusted, final, and orderable quantities should be presented;
-- where traceability is needed;
-- what table definitions must eventually support;
-- what backend command boundaries are required;
-- what belongs in master data versus transaction state.
-
-This first React prototype must use mock data or static fixtures. It must not create Supabase migrations, production RPCs, or authoritative calculation logic.
-
-The Master Data Review Workspace remains a supporting prototype. It is important, but it should not displace the planner as the first operational prototype.
+Confirmed Need remains the first meaningful downstream human quantity-review and commitment boundary.
 
 ---
 
-## 7. Current Phase 3 sequence
+## 7. Immediate roadmap
 
 ```text
-Atlas application shell and navigation
-  → visible page responsibilities and role handoffs
-  → mock catering journey
-  → mock wholesale journey
-  → integrate recovered Requirement Review components
-  → product-owner workflow review
-  → page-specific state/read/command contracts
+ATLAS-GOV-01 delivery-governance clarification
+→ UI-QUALITY-02AB-UX
+→ UI-QUALITY-02C
+→ PLANNING-UX-01
 ```
 
-No additional Planner feature polishing or Supabase design should precede this shell and workflow prototype.
+`UI-QUALITY-02AB-UX` — active in draft PR #185; under root review and not yet accepted/merged. The draft cuts the connected Planning UI over to the merged v2 source-completion, automatic readiness, and atomic generation contracts.
 
-## 7A. Current likely first operational vertical
+Confirmed Need remains separate under `UI-QUALITY-02C`.
 
-Recommended first operational workflow after planner contract review:
+UI-QUALITY-03, hosted rehearsal, CMD-03 / Purchase Handoff, Procurement expansion, Warehouse, Production/QA, and Dispatch continue under separately bounded tasks.
+
+---
+
+## 8. Complexity and validation discipline
+
+Do not design hypothetical capability families, lifecycle states, APIs, tables, abstractions, or test frameworks merely because they may eventually be useful.
+
+For cross-version backend consolidation or lifecycle-boundary changes, validate the affected surface before the first ready-state Full Integration with:
 
 ```text
-Demand sources
-  → planner workspace
-  → reviewed requirements
-  → procurement readiness
-  → procurement planning
-  → dispatch draft
+implementation
+→ cross-version impact scan
+→ current-platform catalog scan
+→ all registered relevant SQL suites locally
+→ complete affected browser-key journey locally
+→ deferred-trigger / PostgREST COMMIT-boundary review where relevant
+→ focused frontend/build validation
+→ draft CI
+→ one ready-state Full Integration
 ```
 
-Wholesale remains a strong candidate for the first live demand source because it is newer and has less dependency on full legacy recipe migration. However, the planner should be designed broadly enough to support catering, wholesale, pantry additions, and manual corrections.
+This is a targeted lesson from PLANNING-CONTRACT-01, not a universal heavy gate.
+
+UI-only work should use focused UI tests, typecheck, format/build, review export, accessibility/interaction review, and the existing bounded CI appropriate to the changed surface.
+
+The objective is fewer correction loops, not more testing infrastructure.
 
 ---
 
-## 8. Current sequencing decision
+## 9. Update rule
 
-OPS ERP should use UI-led, contract-constrained design before Supabase schema implementation.
+Keep this file concise and current. Update it when the authoritative baseline, delivery method, active roadmap, environment boundary, or blocking product decisions materially change.
 
-This means:
-
-- React planner prototype comes before Supabase schema implementation;
-- UI prototypes are allowed before final schema work;
-- UI prototypes must not become hidden business logic;
-- each screen must define read data, draft state, validation, warnings, backend commands, and eventual data contracts;
-- Supabase schema and RPC implementation should begin only after the relevant workflow, UI states, rule behavior, and API contracts are sufficiently reviewed.
-
-Rationale:
-
-- table design should follow validated workflow needs;
-- calculation rules depend on ingredient, unit, and recipe review;
-- planner UI review exposes missing business states earlier than database-first work;
-- data contracts prevent React from recreating Retool-style hidden state and JavaScript logic;
-- premature schema design risks encoding old OPS v1 assumptions into OPS ERP.
-
----
-
-## 9. Open blockers before Supabase implementation
-
-- exact procurement aggregation level;
-- role and permission matrix;
-- requirement approval authority;
-- correction process after release;
-- first workflow ownership boundary between OPS v1 and OPS ERP;
-- legacy data classification;
-- staff review of ingredients, units, recipe quantities, and calculation-rule candidates;
-- product owner review of the Atlas application map and end-to-end workflow;
-- React shell and connected workflow prototype review.
-
----
-
-## 10. Recovery references
-
-- `docs/recovery/2026-07-12-foundation-recovery-register.md`
-- `docs/ui/atlas-application-map.md`
-- `docs/implementation-tasks/TASK-002-atlas-shell-workflow-prototype.md`
-
-## 11. Update rule
-
-This file should be updated whenever project direction, phase, accepted scope, or blocking decisions change.
+Historical recovery files, completed implementation records, and old decisions should remain historically accurate rather than being rewritten to match later methodology.
