@@ -210,10 +210,10 @@ Names, dates, Units, ingredients and locations are never editable business
 input. The exporter may use cell protection or styling as guidance, but import
 security must not depend on Excel protection.
 
-`Chênh lệch` is a presentation value. A writer may emit a formula if available,
-but formula support is not an MVP dependency requirement. The importer always
-recalculates the signed difference from parsed exact quantities and never trusts
-the workbook cell.
+`Chênh lệch` is a presentation value. Import never trusts that cell. Its display
+may be derived from canonical exact quantities without requiring the writer to
+emit a formula. Formula support is not an MVP dependency requirement and no
+formula result becomes business authority.
 
 For an unreviewed line, `SL xác nhận` starts from `SL đề xuất` and `Lý do` may
 remain blank so import can apply the same local default as direct editing. For a
@@ -221,7 +221,33 @@ previously decided line, export the current authoritative confirmed quantity,
 Vietnamese reason label and current note. Prior history remains in Atlas rather
 than being expanded into workbook columns.
 
-### 5.3 Hidden machine identity
+### 5.3 Exact-decimal export rule
+
+Every exported quantity starts from the canonical exact decimal string held by
+the authoritative readback or shared local draft. The selected writer must
+round-trip every accepted Atlas quantity without forcing it through an
+imprecise JavaScript `number`.
+
+For quantity cells, implementation may either:
+
+- serialize the canonical decimal safely as text; or
+- use a writer-native exact numeric representation after proving exact
+  round-trip for the accepted Atlas quantity domain.
+
+It must not use this path when conversion can alter the value:
+
+```text
+canonical decimal string
+→ Number(...)
+→ XLSX numeric cell
+```
+
+Excel number formatting, formulas and styling are subordinate to exact
+round-trip correctness. This rule applies to `SL lý thuyết`, `SL đề xuất`, `SL
+xác nhận` and any other quantity-bearing value written for later equality or
+integrity checking.
+
+### 5.4 Hidden machine identity
 
 Use the smallest deterministic combination:
 
@@ -268,6 +294,34 @@ partial workbooks are not accepted in the MVP.
 
 ### 6.2 Local parsing and minimum input checks
 
+All quantity-bearing XLSX numeric cells must be captured as their source decimal
+text before JavaScript floating-point conversion. Configure the installed
+`read-excel-file` reader with its `parseNumber` option, or an equivalent exact
+mode, so the parser returns the numeric cell XML value as an exact decimal
+string rather than a JavaScript `number`.
+
+The required path is:
+
+```text
+XLSX numeric source
+→ exact source decimal string
+→ Atlas local exact-decimal parser/normalizer
+→ shared local Confirmed Need draft
+```
+
+The prohibited path is:
+
+```text
+XLSX numeric source
+→ JavaScript Number
+→ string
+```
+
+This requirement covers `SL lý thuyết`, `SL đề xuất`, `SL xác nhận` and any
+other quantity-bearing numeric value used for equality or integrity checking.
+Atlas must capture exact text before comparing a read-only workbook quantity
+with authoritative readback or normalizing an editable quantity.
+
 Import performs only the input checks needed to create the same draft accepted
 from direct editing:
 
@@ -285,10 +339,16 @@ from direct editing:
   calculation occurs in the browser; and
 - reason/note consistency follows the same local rules as direct editing.
 
-If an Excel numeric cell cannot be converted to an unambiguous accepted exact
-decimal string, reject that row and ask the operator to correct the cell. The
-authoritative RMVP-05 preview remains responsible for exact Planning-step,
-policy, Unit, source-membership and current-evidence validation.
+`SL xác nhận` is normalized and validated from the captured exact string. It may
+be explicit zero, must be nonnegative, and may have at most fourteen integer and
+six fractional digits. Atlas never rounds it in the browser. If the exact source
+text cannot be normalized unambiguously under that contract, reject the row and
+ask the operator to correct the cell.
+
+The existing reader's numeric parser configuration provides the required exact
+source string. Do not add `decimal.js` or another numeric dependency merely for
+XLSX import. The authoritative RMVP-05 preview remains responsible for exact
+Planning-step, policy, Unit, source-membership and current-evidence validation.
 
 ### 6.3 Reason and note mapping
 
@@ -512,8 +572,11 @@ backend contract is required, so `CONFIRMED-NEED-CONTRACT-01` is not created.
 ## 11. XLSX dependency conclusion
 
 The installed `read-excel-file` dependency can parse browser-provided XLSX
-workbooks, including all sheets and typed string/number/date cells. It is a
-reader only and cannot create the required export workbook.
+workbooks, including all sheets and typed string/number/date cells. Its
+`parseNumber` option can return source numeric XML values as exact decimal
+strings before JavaScript `number` conversion, so it remains sufficient for the
+import boundary without a second decimal/numeric dependency. It is a reader
+only and cannot create the required export workbook.
 
 `UI-QUALITY-02C-B` therefore requires root review of exactly one narrowly scoped
 XLSX writer dependency. Selection occurs in that implementation task, not here.
@@ -521,7 +584,9 @@ The minimum writer capability is:
 
 - create and download an `.xlsx` workbook in the browser;
 - create the operator and metadata sheets;
-- write strings and numbers without silently rounding accepted draft text;
+- write accepted canonical decimal quantities as safe text or through a proven
+  writer-native exact numeric representation without a lossy JavaScript
+  `number` conversion;
 - set basic widths and number/date formats;
 - hide technical columns and the metadata sheet; and
 - optionally apply modest protection/style/freeze panes.
@@ -530,7 +595,79 @@ Formulas, macros, pivot tables, charts, advanced styling, a generic spreadsheet
 framework and Excel-dropdown support are not requirements. Do not select a
 large spreadsheet framework merely for presentation.
 
-## 12. Responsive behavior
+## 12. Quantity-step authority and downstream purchase quantization
+
+Retained PurchasePlanner evidence rounds imported Actual Needs upward to an
+`order_step` before saving. UI-QUALITY-02C-B must not reproduce that legacy
+arithmetic in the Confirmed Need browser.
+
+Confirmed Need owns the Planning quantity decision and its accepted Planning
+quantity policy. The UI and XLSX importer must:
+
+- retain the operator's exact confirmed quantity;
+- never round, ceil, truncate or normalize it to a purchase/order step;
+- never implement `ceilToStepSafe()` or equivalent authoritative arithmetic;
+- send the unchanged exact local draft through existing RMVP-05 preview and
+  confirmation; and
+- allow the backend effective Planning policy and `planning_step` to accept or
+  reject the value.
+
+The UI may display the backend-provided Planning step and explain a rejection,
+but it must not calculate or substitute an authoritative corrected quantity.
+For example, with Planning step `0.01 kg`, an entered `10.234 kg` remains
+`10.234 kg`; Atlas does not silently change it to `10.24 kg`. The authoritative
+preview may reject it as nonrepresentable.
+
+Purchase/order-step rounding is a separate downstream requirement owned by
+Purchase Handoff / Procurement. Preserving OPS v1 replacement capability still
+requires a later accepted path with this behavior:
+
+```text
+Confirmed Need exact quantity
+→ later Purchase Handoff
+→ effective purchase step
+→ upward purchase quantization
+→ purchasable quantity
+→ visible nonnegative rounding difference
+```
+
+For example, `10.23 kg` at purchase step `0.50 kg` proposes `10.50 kg` with a
+visible `+0.27 kg` difference. Purchase quantization must never reduce the
+proposal below Confirmed Need.
+
+PR #188 and UI-QUALITY-02C-B do not implement this downstream behavior, do not
+move CMD-03 forward and must not claim complete replacement of v1 step rounding.
+The requirement must remain preserved when CMD-03 / Purchase Handoff resumes.
+
+## 13. Vietnamese date presentation and responsive behavior
+
+### 13.1 Vietnamese calendar and date presentation
+
+For every operator-facing calendar or date picker introduced or materially
+touched by UI-QUALITY-02C-B:
+
+- month names and weekday names are Vietnamese;
+- Monday is the first day of the week for service-week/calendar contexts;
+- visible business dates use `dd/MM/yyyy`, unless the existing surrounding
+  Atlas surface consistently requires `dd-MM-yyyy`;
+- API and business values remain local calendar ISO dates `YYYY-MM-DD`;
+- service dates are never derived through UTC serialization or shifted across a
+  UTC/local boundary; and
+- the local-calendar week behavior already fixed in Planning remains intact.
+
+Examples include `Thứ hai`, `Thứ ba`, `Chủ nhật`, `10/08/2026` and `Tháng 8 năm
+2026`. Where Atlas controls the presentation, do not expose English calendar
+chrome such as `Mon`, `Tue`, `August` or `Today`.
+
+If browser-native `<input type="date">` cannot reliably guarantee Vietnamese
+picker chrome across the supported browser environment, use the smallest
+localized implementation practical within the already accepted UI stack. Do
+not casually add a second date framework. If another date-picker dependency
+appears necessary, stop and return the exact need for root review before adding
+it. Backend date semantics, API shapes and service-period contracts remain
+unchanged.
+
+### 13.2 Responsive behavior
 
 XLSX work is desktop-first. At 360 px:
 
@@ -543,7 +680,7 @@ XLSX work is desktop-first. At 360 px:
 
 No special mobile file-editing experience is required.
 
-## 13. UI-QUALITY-02C-B implementation boundary
+## 14. UI-QUALITY-02C-B implementation boundary
 
 ### Objective
 
@@ -558,7 +695,11 @@ Planning Inputs Confirmed Need workbench, without changing backend authority.
 - add a bounded Confirmed Need workbook export/import module and focused tests;
 - use existing RMVP-05 paged reads to assemble and verify the entire batch;
 - use existing RMVP-05 preview/confirm and RMVP-06/07 commands unchanged;
+- configure exact source-decimal XLSX parsing before JavaScript `number`
+  conversion and preserve exact decimals during export;
 - add import review, full rejection, stale handling and dirty-navigation guards;
+- preserve Vietnamese local-calendar/date presentation and Monday-first service
+  weeks for any date control introduced or materially touched;
 - add the minimum responsive styling; and
 - add exactly one writer dependency only after root review.
 
@@ -579,15 +720,20 @@ At minimum prove:
 - stale batch, revision and decision rejection preserves the prior draft;
 - deleted, duplicate, unknown and missing rows never become zero or partial
   apply;
-- exact decimal parsing, explicit zero, malformed values and no browser
-  rounding;
+- exact source-decimal parsing before JavaScript `number`, explicit zero,
+  malformed values and no browser rounding;
+- exact export/import round-trip at the accepted fourteen-integer/six-fraction
+  boundary without `Number(...)` precision loss;
 - Vietnamese reason mapping, defaults and governed note requirements;
 - import review counts/errors and zero-write `Áp dụng vào bảng`;
 - prior preview invalidation after edit/import;
 - authoritative stale/unknown-outcome behavior remains intact;
 - lifecycle labels, one-next-action visibility and release consequence;
+- Vietnamese visible date formatting, Vietnamese rendered weekday/month names,
+  Monday-first week behavior and no UTC/local service-date shift;
 - no import RPC/upload/backend mutation; and
-- 360 px has no page-level overflow and retains state/next action.
+- 360/768/1280 layouts remain usable, with no page-level overflow at 360 px and
+  state/next action retained.
 
 ### Prohibited in UI-QUALITY-02C-B
 
@@ -595,15 +741,21 @@ At minimum prove:
 - `Excel Save`, `Bulk Save`, `Import Save` or any second business write path;
 - browser chaining of RMVP-05/06/07 writes;
 - backend-authoritative quantity calculation in React;
+- quantity conversion through JavaScript `number` before exact XLSX text is
+  captured, or lossy canonical-string → `Number(...)` → XLSX export;
+- `decimal.js` or another numeric dependency merely for XLSX import;
+- Planning-browser purchase-step rounding, `ceilToStepSafe()` or an equivalent
+  authoritative corrected-quantity calculation;
 - persistence or upload of the workbook;
 - filtered-subset or partial import semantics;
 - partial application of valid rows from an invalid workbook;
 - new spreadsheet aggregate/domain object;
 - supplier, PO, Purchase Handoff, Procurement, Warehouse or Dispatch mutation;
+- a new date framework without separate root review of a proven need;
 - Retool/OPS v1/v2 mutation, hosted deployment or production binding; and
 - CMD-03 or `PLANNING-UX-01` work.
 
-## 14. Acceptance answers
+## 15. Acceptance answers
 
 1. **Human job:** review every current line, accept or adjust the proposed
    confirmed quantity with governed reason/note, declare the batch complete,
@@ -643,6 +795,15 @@ At minimum prove:
     refresh/recovery only when exceptional.
 20. **Backend sufficient:** yes; Outcome A.
 21. **Writer dependency:** yes, one narrow writer is required because the
-    installed package reads but does not write XLSX.
-22. **Next task:** `UI-QUALITY-02C-B — Implement Confirmed Need workflow and
-XLSX round-trip`; no backend prerequisite.
+    installed package reads but does not write XLSX; the writer must preserve
+    exact decimal round-trip without lossy JavaScript `number` conversion.
+22. **Next task:** `UI-QUALITY-02C-B — Implement Confirmed Need workflow and XLSX
+round-trip`; no backend prerequisite.
+23. **Exact numeric import:** every quantity-bearing numeric cell is captured as
+    source decimal text through `parseNumber` or equivalent exact mode before
+    JavaScript floating-point conversion.
+24. **Dates:** Vietnamese operator presentation, Monday-first service weeks,
+    local ISO business values and no UTC-derived service-date shifting.
+25. **Step ownership:** Confirmed Need retains exact Planning quantities and
+    backend Planning-step authority; later Purchase Handoff / Procurement owns
+    upward purchase quantization and its visible nonnegative difference.
