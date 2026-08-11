@@ -1,4 +1,4 @@
-# UI-QUALITY-03A — Recipe/BOM First-User Vertical
+# UI-QUALITY-03A — Recipe Creation and Lock Workflow
 
 **Status:** Implemented on bounded draft branch; Product/Architecture review pending
 **Baseline:** `057a30ef30121fc50ef983acd91704d2bca8e82c`
@@ -7,34 +7,35 @@
 
 ## Bounded capability
 
-Make the normal connected Recipe job understandable without Recipe Version lifecycle knowledge: find a Dish, select `Áp dụng cho`, edit basis/composition through Ingredient search, `Lưu`, and later `Đưa vào sử dụng`.
+Restore the retained OPS v1 business workflow in Atlas: current-effective catalog, separate Dish/Recipe creation (with copy as a helper), and a separate Change Order destination after first operational use. Remove the incorrect ordinary Save → put-into-use → successor-maintenance workflow.
 
 ## Acceptance delivered
 
-- Two additive atomic backend commands; no React lifecycle chain.
-- Backend-authoritative Save/put-into-use eligibility with natural Vietnamese disabled reasons.
-- New Recipe, existing draft, and post-release successor Save cases preserve identity, basis, exact lineage, idempotency, and prior immutability.
-- Put-into-use internally validates/materializes and releases for future Planning without historical recalculation.
-- Dish and Ingredient text search; visible selected Dish/type/scope; editable basis and quantities.
-- Only `Lưu` and `Đưa vào sử dụng` compete in normal editing; dominant action follows dirty/saved state.
-- Recipe history and technical version evidence use progressive disclosure.
-- Copy/import remain secondary; Recipe Adjustment/effective-BOM behavior is unchanged.
-- Unknown write outcome requires manual authoritative refresh and is never auto-retried.
+- `Danh sách` is the default read-only catalog with Dish code/name/type, current Recipe scope/basis/Ingredients/status, Dish/Ingredient text search, `Xem`, and clear creation/adjustment guidance.
+- `Tạo món & công thức` is separate, retains Ingredient search, and exposes one human commitment: `Tạo`/`Lưu`.
+- Save makes valid composition Planning-eligible and remains editable only while the Dish has never appeared in an approved Weekly Menu snapshot.
+- An approved snapshot line is the authoritative Atlas first-use evidence. Readback exposes the locked state/reason; Save rechecks it while holding the Dish lock and denies before successor creation.
+- Locked inputs are read-only and direct the operator to `Điều chỉnh` with the safe Vietnamese reason.
+- Recipe Copy fills the current unsaved creation form; it is not a top-level maintenance command and creates no backend draft on its own.
+- Dirty Dish/scope/navigation changes require confirmation; page unload uses the native dirty-form warning.
+- Normal UI contains no Recipe Version, validation, release, successor, or lifecycle action.
+- Existing RMVP-02A.v1 and v2 release/support APIs remain physically callable. React chains no lifecycle commands.
+- Recipe Adjustment/effective-BOM behavior is unchanged and UI-QUALITY-03B remains unstarted.
 
-## Verification
+## Evidence
 
-- Focused Recipe/API/model/RPC UI suite: 34 tests passed.
-- New v2, retained v1 RMVP-02A, and exact platform catalog pgTAP suites: 68 assertions passed; the adjacent Planning security regression suite brings the focused database total to 152.
-- Browser-key local Recipe journey: Save-new, Save-existing, internal validation/release, successor lineage, prior immutability, and reauthentication readback passed.
-- Responsive review passed at 360, 768, and 1280 px with no page-wide overflow; the narrow BOM table retains local horizontal scrolling.
-- Full frontend validation passed: formatting, typecheck, 466 tests, production build, Storybook build, and whitespace check.
+- Retool `BoMCreation`: distinct creation workbench, Recipe copy inside creation, `is_locked` readback, and locked composition controls.
+- Retool `SystemChangeOrder`: `Thay thế`, `Thay đổi định lượng`, `Thêm nguyên liệu`, and `Bỏ nguyên liệu`.
+- Retool `overrideDish` and `overrideSchoolWise`: separate Dish/School override jobs.
+- Live OPS (read-only): `daily_order_dishes` insert locks all Recipe rows for the Dish; locked base BOM writes are rejected and directed to Change Orders.
+- Atlas equivalent: immutable `weekly_menu_approval_snapshot_lines.dish_id` created by Weekly Menu approval. Recipe release only establishes Planning eligibility and is not operational use.
 
-## Security and scope review
+## Required verification
 
-Save uses `master_data.recipes.write`; put-into-use uses `master_data.recipes.release`; the existing validation capability remains separate and callable through v1. No role names are interpreted in React. No new role, capability, schema, table, RLS policy, npm dependency, or hosted binding is introduced.
+- Focused Recipe UI/API/model tests cover read-only catalog, Dish/Ingredient search, distinct creation, copy helper, one-command Save, backend-denied lock, Change Order direction, dirty navigation, and unknown-outcome refresh.
+- Corrected UI-QUALITY-03A pgTAP covers exact approved-Menu lock evidence, pre-use Save, locked denial with no successor, immutable prior Recipe/Planning facts, unchanged adjustment/downstream counts, security, and v1 compatibility.
+- Retained RMVP-02A regression, platform/security catalog, browser-key Recipe journey, full frontend validation, responsive review, and exact-head draft CI are required before ready-for-review consideration.
 
-No Recipe Adjustment, Planning calculation, Confirmed Need, Procurement, Warehouse, Dispatch, Retool, live OPS, or hosted Atlas behavior is changed.
+## Scope and rollback
 
-## Migration and rollback
-
-The forward migration adds two public functions, eight private helpers, and replaces the existing workbench function in place with v1/v2 dispatch. All existing v1 functions remain callable. Disposable local rollback is database reset; any deployed rollback must be forward-only and preserve immutable Recipe lineage and audit evidence.
+No Recipe Adjustment, Planning calculation, Confirmed Need, Procurement, Warehouse, Dispatch, Retool, live OPS, or hosted Atlas mutation is authorized. No dependency is added. Disposable local rollback is reset; deployed rollback is forward-only and preserves Recipe/version/line, approved Menu, Planning, event, receipt, and audit evidence.

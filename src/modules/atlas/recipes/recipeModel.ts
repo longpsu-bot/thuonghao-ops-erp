@@ -106,7 +106,10 @@ export type RecipeWorkflowSelection = {
   recipe_version_id: string | null;
   expected_version: number | null;
   in_use_recipe_version_id: string | null;
-  business_status: "NOT_SAVED" | "SAVED" | "IN_USE" | "NEEDS_ATTENTION";
+  business_status:
+    "NOT_SAVED" | "SAVED" | "AVAILABLE" | "LOCKED" | "NEEDS_ATTENTION";
+  locked_for_normal_editing: boolean;
+  lock_reason: string | null;
   basis_portions: number;
   composition: RecipeCompositionLine[];
   allowed_actions: {
@@ -150,6 +153,8 @@ export const emptyRecipeWorkbench = (): RecipeWorkbenchData => ({
     expected_version: null,
     in_use_recipe_version_id: null,
     business_status: "NOT_SAVED",
+    locked_for_normal_editing: false,
+    lock_reason: null,
     basis_portions: 100,
     composition: [],
     allowed_actions: { save_recipe: false, release_recipe: false },
@@ -250,6 +255,8 @@ export function recipeResultMessage(result: AtlasRpcResult): string {
     STALE_VERSION: "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.",
     VALIDATION_FAILED: "Dữ liệu chưa hợp lệ. Kiểm tra chi tiết và thử lại.",
     INVARIANT_VIOLATION: "Công thức hiện tại chưa cho phép thao tác này.",
+    RECIPE_OPERATIONALLY_LOCKED:
+      "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.",
     CONFLICT: "Dữ liệu mục tiêu đang xung đột với một bản ghi hiện có.",
   };
   return (

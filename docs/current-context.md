@@ -169,7 +169,7 @@ Current Planning governance and implementation:
 - UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`.
 - D-037 / UI-QUALITY-02C-B — merged through PR #189 at `e542e263e3bb672eb2967af0b3d54bfd8771df75`.
 - ATLAS-UI-STANDARD-02 — merged at `057a30ef30121fc50ef983acd91704d2bca8e82c` and governs first-user connected workbenches.
-- D-038 / UI-QUALITY-03A — implemented on the bounded task branch with additive `RMVP-02A.v2` Save and put-into-use commands; draft PR and independent review remain required.
+- D-038 / UI-QUALITY-03A — corrected on the bounded task branch: read-only current-effective catalog, separate creation with one Save, approved-Menu first-use lock, and Change Order direction; draft PR and independent review remain required.
 
 Current human-facing Planning intent:
 
@@ -207,7 +207,7 @@ ATLAS-UI-STANDARD-02
 
 The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
 
-The connected Recipe/BOM workbench now begins with Dish search, visible Dish and `Áp dụng cho` context, Ingredient search, editable composition and basis, `Lưu`, and `Đưa vào sử dụng`. PostgreSQL owns draft/successor creation, deterministic validation, line-revision materialization, release, currentness, authorization, and authoritative readback. Version evidence is progressive disclosure. UI-QUALITY-03B remains separate and must not be started from this slice.
+The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL denies normal Save after the Dish appears in immutable approved Weekly Menu evidence and returns Change Order direction. Version evidence remains support disclosure. UI-QUALITY-03B remains separate and must not be started from this slice.
 
 CMD-03, supplier allocation, purchase-order creation, Warehouse, Production/QA and Dispatch expansion remain deferred until the current stabilization gates are accepted.
 

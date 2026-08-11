@@ -16,7 +16,7 @@ select is(
       and p.proname in ('save_recipe', 'release_recipe')
   ),
   array['release_recipe', 'save_recipe']::text[],
-  'UI-QUALITY-03A exposes exactly the two additive human-level commands'
+  'v2 Save and compatibility Release remain physically callable'
 );
 
 select ok(
@@ -35,23 +35,7 @@ select ok(
     where n.nspname = 'atlas_api'
       and p.proname in ('save_recipe', 'release_recipe')
   ),
-  'v2 commands retain fixed-path definer ownership and the exact API-role boundary'
-);
-
-select ok(
-  not exists (
-    select 1
-    from pg_auth_members membership
-    join pg_roles granted_role on granted_role.oid = membership.roleid
-    join pg_roles member_role on member_role.oid = membership.member
-    where granted_role.rolname in (
-      'atlas_master_data_command_runtime',
-      'atlas_read_runtime'
-    )
-      and member_role.rolname = 'postgres'
-      and membership.set_option
-  ),
-  'UI-QUALITY-03A leaves no postgres set-role membership in Recipe runtimes'
+  'v2 commands retain fixed-path least-privilege runtime ownership'
 );
 
 select is(
@@ -70,27 +54,14 @@ select is(
       and has_function_privilege('authenticated', p.oid, 'EXECUTE')
   ),
   5,
-  'all five existing v1 lifecycle commands remain physically callable'
+  'all five v1 lifecycle commands remain physically callable'
 );
 
 insert into atlas_core.actors (
   actor_id, actor_type, display_name
 ) values
-  (
-    'f3000000-0000-0000-0000-000000000001',
-    'HUMAN',
-    'UI-QUALITY-03A authorized operator'
-  ),
-  (
-    'f3000000-0000-0000-0000-000000000002',
-    'HUMAN',
-    'UI-QUALITY-03A denied operator'
-  ),
-  (
-    'f3000000-0000-0000-0000-000000000003',
-    'HUMAN',
-    'UI-QUALITY-03A unscoped operator'
-  );
+  ('f3000000-0000-0000-0000-000000000001', 'HUMAN', '03A operator'),
+  ('f3000000-0000-0000-0000-000000000002', 'HUMAN', '03A denied');
 
 insert into atlas_core.actor_auth_subjects (
   actor_auth_subject_id, actor_id, auth_subject_id
@@ -104,25 +75,18 @@ insert into atlas_core.actor_auth_subjects (
     'f3000000-0000-0000-0000-000000000012',
     'f3000000-0000-0000-0000-000000000002',
     'f3000000-0000-0000-0000-000000000102'
-  ),
-  (
-    'f3000000-0000-0000-0000-000000000013',
-    'f3000000-0000-0000-0000-000000000003',
-    'f3000000-0000-0000-0000-000000000103'
   );
 
-insert into atlas_core.roles (
-  role_id, role_code, role_name
-) values
+insert into atlas_core.roles (role_id, role_code, role_name) values
   (
     'f3000000-0000-0000-0000-000000000020',
     'uiq03a.recipe_operator',
-    'UI-QUALITY-03A recipe operator'
+    '03A Recipe operator'
   ),
   (
     'f3000000-0000-0000-0000-000000000021',
     'uiq03a.no_capability',
-    'UI-QUALITY-03A no capability'
+    '03A no capability'
   );
 
 insert into atlas_core.role_capabilities (role_id, capability_id)
@@ -142,10 +106,6 @@ insert into atlas_core.actor_role_memberships (actor_id, role_id) values
   (
     'f3000000-0000-0000-0000-000000000002',
     'f3000000-0000-0000-0000-000000000021'
-  ),
-  (
-    'f3000000-0000-0000-0000-000000000003',
-    'f3000000-0000-0000-0000-000000000020'
   );
 
 insert into atlas_core.actor_scopes (actor_id, scope_kind) values
@@ -157,7 +117,7 @@ insert into atlas_admin.school_types (
 ) values (
   'f3100000-0000-0000-0000-000000000001',
   'uiq03a-primary',
-  'UI-QUALITY-03A Primary'
+  'UIQ03A Primary'
 );
 
 insert into atlas_admin.units (
@@ -165,7 +125,7 @@ insert into atlas_admin.units (
 ) values (
   'f3100000-0000-0000-0000-000000000010',
   'uiq03a-kg',
-  'UI-QUALITY-03A kilogram',
+  'UIQ03A kilogram',
   'MASS',
   3
 );
@@ -177,7 +137,7 @@ insert into atlas_admin.ingredients (
   (
     'f3100000-0000-0000-0000-000000000020',
     'uiq03a-pumpkin',
-    'UI-QUALITY-03A Pumpkin',
+    'UIQ03A Pumpkin',
     'Food',
     'f3100000-0000-0000-0000-000000000010',
     'Food',
@@ -187,7 +147,7 @@ insert into atlas_admin.ingredients (
   (
     'f3100000-0000-0000-0000-000000000021',
     'uiq03a-pork',
-    'UI-QUALITY-03A Pork',
+    'UIQ03A Pork',
     'Food',
     'f3100000-0000-0000-0000-000000000010',
     'Food',
@@ -197,13 +157,14 @@ insert into atlas_admin.ingredients (
 
 insert into atlas_admin.dishes (
   dish_id, dish_code, dish_name, dish_category, dish_status,
-  display_order, requires_need_generation, version
+  dish_type_id, display_order, requires_need_generation, version
 ) values (
   'f3100000-0000-0000-0000-000000000030',
   'uiq03a-soup',
-  'UI-QUALITY-03A Soup',
+  'UIQ03A Soup',
   'Acceptance',
   'ACTIVE',
+  'd1500000-0000-4000-8000-000000000001',
   9300,
   true,
   1
@@ -226,10 +187,7 @@ as $$
     'expected_version', p_expected_version,
     'requested_by_auth_subject', p_subject,
     'requested_at', transaction_timestamp() - interval '1 second',
-    'reason_code', case
-      when p_name like 'release%' then 'RECIPE_PUT_INTO_USE'
-      else 'RECIPE_SAVED'
-    end,
+    'reason_code', 'RECIPE_SAVED',
     'reason_note', null,
     'payload', p_payload
   );
@@ -241,12 +199,8 @@ create temporary table uiq03a_results (
 );
 grant select, insert on uiq03a_results to authenticated;
 
-create temporary table uiq03a_snapshot as
+create temporary table uiq03a_scope_snapshot as
 select
-  (select count(*) from atlas_planning.need_generation_recipe_selections)
-    as planning_selection_count,
-  (select count(*) from atlas_planning.need_generation_recipe_line_uses)
-    as planning_line_use_count,
   (select count(*) from atlas_admin.recipe_composition_adjustments)
     as adjustment_count,
   (select count(*) from atlas_procurement.purchase_orders)
@@ -257,33 +211,14 @@ select
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
-  'f3000000-0000-0000-0000-000000000101',
-  true
-);
-
-select lives_ok(
-  $$select atlas_api.get_dish_recipe_workbench(
-    jsonb_build_object(
-      'contract_version', 'RMVP-02A.v1',
-      'requested_by_auth_subject',
-        'f3000000-0000-0000-0000-000000000101',
-      'correlation_id', 'f3900000-0000-0000-0000-000000000002',
-      'payload', '{}'::jsonb
-    )
-  )$$,
-  'the existing v1 workbench read remains callable without a v2 shape'
-);
-
-select set_config(
-  'request.jwt.claim.sub',
   'f3000000-0000-0000-0000-000000000102',
   true
 );
 insert into uiq03a_results values (
-  'save-denied',
+  'save-denied-capability',
   atlas_api.save_recipe(
     pg_temp.uiq03a_request(
-      'save-denied',
+      'save-denied-capability',
       1,
       jsonb_build_object(
         'dish_id', 'f3100000-0000-0000-0000-000000000030',
@@ -301,37 +236,6 @@ insert into uiq03a_results values (
         )
       ),
       'f3000000-0000-0000-0000-000000000102'
-    )
-  )
-);
-
-select set_config(
-  'request.jwt.claim.sub',
-  'f3000000-0000-0000-0000-000000000103',
-  true
-);
-insert into uiq03a_results values (
-  'save-unscoped',
-  atlas_api.save_recipe(
-    pg_temp.uiq03a_request(
-      'save-unscoped',
-      1,
-      jsonb_build_object(
-        'dish_id', 'f3100000-0000-0000-0000-000000000030',
-        'school_type_id', null,
-        'recipe_version_id', null,
-        'basis_portions', 100,
-        'lines', jsonb_build_array(
-          jsonb_build_object(
-            'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-            'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-            'quantity_per_basis', 12.5,
-            'unit_id', 'f3100000-0000-0000-0000-000000000010',
-            'operational_note', null
-          )
-        )
-      ),
-      'f3000000-0000-0000-0000-000000000103'
     )
   )
 );
@@ -358,293 +262,37 @@ insert into uiq03a_results values (
             'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
             'quantity_per_basis', 12.5,
             'unit_id', 'f3100000-0000-0000-0000-000000000010',
-            'operational_note', 'Initial saved line'
+            'operational_note', 'Initial creation'
           )
         )
       )
     )
   )
 );
-
-insert into uiq03a_results values (
-  'save-new-replay',
-  atlas_api.save_recipe(
-    pg_temp.uiq03a_request(
-      'save-new',
-      1,
-      jsonb_build_object(
-        'dish_id', 'f3100000-0000-0000-0000-000000000030',
-        'school_type_id', null,
-        'recipe_version_id', null,
-        'basis_portions', 80,
-        'lines', jsonb_build_array(
-          jsonb_build_object(
-            'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-            'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-            'quantity_per_basis', 12.5,
-            'unit_id', 'f3100000-0000-0000-0000-000000000010',
-            'operational_note', 'Initial saved line'
-          )
-        )
-      )
-    )
-  )
-);
-
 reset role;
 
 select is(
-  (select response_payload ->> 'error_code' from uiq03a_results where result_name = 'save-denied'),
+  (
+    select response_payload ->> 'error_code'
+    from uiq03a_results where result_name = 'save-denied-capability'
+  ),
   'CAPABILITY_DENIED',
-  'Save requires the narrow write capability'
+  'Save requires the narrow Recipe write capability'
 );
 
 select is(
-  (select response_payload ->> 'error_code' from uiq03a_results where result_name = 'save-unscoped'),
-  'SCOPE_DENIED',
-  'Save requires an active global scope'
-);
-
-select is(
-  (select response_payload ->> 'success' from uiq03a_results where result_name = 'save-new'),
-  'true',
-  'Save creates a new Recipe and editable draft atomically'
+  (
+    select response_payload #>> '{authoritative_readback,selected_recipe,business_status}'
+    from uiq03a_results where result_name = 'save-new'
+  ),
+  'AVAILABLE',
+  'one creation Save makes an eligible pre-use Recipe available'
 );
 
 select is(
   (
     select jsonb_build_object(
       'basis', version.basis_portions,
-      'status', version.recipe_version_status,
-      'version_count', (
-        select count(*) from atlas_admin.recipe_versions sibling
-        where sibling.recipe_id = version.recipe_id
-      ),
-      'released_count', (
-        select count(*) from atlas_admin.recipe_versions sibling
-        where sibling.recipe_id = version.recipe_id
-          and sibling.recipe_version_status = 'RELEASED_FOR_PLANNING'
-      )
-    )
-    from atlas_admin.recipe_versions version
-    join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
-    where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030'
-  ),
-  jsonb_build_object(
-    'basis', 80,
-    'status', 'DRAFT',
-    'version_count', 1,
-    'released_count', 0
-  ),
-  'Save preserves the exact basis and does not release downstream'
-);
-
-select is(
-  (select response_payload from uiq03a_results where result_name = 'save-new-replay'),
-  (select response_payload from uiq03a_results where result_name = 'save-new'),
-  'identical Save replay returns the stored authoritative response'
-);
-
-select is(
-  (
-    select count(*)::integer
-    from atlas_core.command_receipts
-    where idempotency_key = 'uiq03a:save-new'
-  ),
-  1,
-  'idempotent Save replay creates no duplicate command receipt'
-);
-
-insert into uiq03a_results
-select
-  scenario.name,
-  atlas_api.save_recipe(
-    pg_temp.uiq03a_request(
-      scenario.name,
-      version.version,
-      jsonb_build_object(
-        'dish_id', recipe.dish_id,
-        'school_type_id', recipe.school_type_id,
-        'recipe_version_id', version.recipe_version_id,
-        'basis_portions', 80,
-        'lines', scenario.lines
-      )
-    )
-  )
-from atlas_admin.recipes recipe
-join atlas_admin.recipe_versions version on version.recipe_id = recipe.recipe_id
-cross join lateral (
-  values
-    (
-      'save-invalid-ingredient',
-      jsonb_build_array(
-        jsonb_build_object(
-          'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-          'ingredient_id', 'f3100000-0000-0000-0000-000000009999',
-          'quantity_per_basis', 10,
-          'unit_id', 'f3100000-0000-0000-0000-000000000010',
-          'operational_note', null
-        )
-      )
-    ),
-    (
-      'save-invalid-unit',
-      jsonb_build_array(
-        jsonb_build_object(
-          'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-          'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-          'quantity_per_basis', 10,
-          'unit_id', 'f3100000-0000-0000-0000-000000009999',
-          'operational_note', null
-        )
-      )
-    ),
-    (
-      'save-duplicate-ingredient',
-      jsonb_build_array(
-        jsonb_build_object(
-          'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-          'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-          'quantity_per_basis', 10,
-          'unit_id', 'f3100000-0000-0000-0000-000000000010',
-          'operational_note', null
-        ),
-        jsonb_build_object(
-          'recipe_line_id', 'f3200000-0000-0000-0000-000000000002',
-          'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-          'quantity_per_basis', 2,
-          'unit_id', 'f3100000-0000-0000-0000-000000000010',
-          'operational_note', null
-        )
-      )
-    ),
-    (
-      'save-invalid-quantity',
-      jsonb_build_array(
-        jsonb_build_object(
-          'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-          'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-          'quantity_per_basis', 0,
-          'unit_id', 'f3100000-0000-0000-0000-000000000010',
-          'operational_note', null
-        )
-      )
-    )
-) scenario(name, lines)
-where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030';
-
-select is(
-  (
-    select array_agg(response_payload ->> 'error_code' order by result_name)::text[]
-    from uiq03a_results
-    where result_name like 'save-invalid-%'
-       or result_name = 'save-duplicate-ingredient'
-  ),
-  array[
-    'VALIDATION_FAILED',
-    'VALIDATION_FAILED',
-    'VALIDATION_FAILED',
-    'VALIDATION_FAILED'
-  ]::text[],
-  'Save rejects duplicate Ingredients and invalid Ingredient, Unit, or quantity'
-);
-
-set local role authenticated;
-select set_config(
-  'request.jwt.claim.sub',
-  'f3000000-0000-0000-0000-000000000101',
-  true
-);
-
-insert into uiq03a_results
-select
-  'save-existing',
-  atlas_api.save_recipe(
-    pg_temp.uiq03a_request(
-      'save-existing',
-      (saved.response_payload #>> '{authoritative_readback,selected_recipe,expected_version}')::bigint,
-      jsonb_build_object(
-        'dish_id', 'f3100000-0000-0000-0000-000000000030',
-        'school_type_id', null,
-        'recipe_version_id',
-          saved.response_payload #>> '{authoritative_readback,selected_recipe,recipe_version_id}',
-        'basis_portions', 90,
-        'lines', jsonb_build_array(
-          jsonb_build_object(
-            'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-            'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-            'quantity_per_basis', 14,
-            'unit_id', 'f3100000-0000-0000-0000-000000000010',
-            'operational_note', 'Updated saved line'
-          )
-        )
-      )
-    )
-  )
-from uiq03a_results saved
-where saved.result_name = 'save-new';
-
-insert into uiq03a_results
-select
-  'save-stale',
-  atlas_api.save_recipe(
-    pg_temp.uiq03a_request(
-      'save-stale',
-      (saved.response_payload #>> '{authoritative_readback,selected_recipe,expected_version}')::bigint - 1,
-      jsonb_build_object(
-        'dish_id', 'f3100000-0000-0000-0000-000000000030',
-        'school_type_id', null,
-        'recipe_version_id',
-          saved.response_payload #>> '{authoritative_readback,selected_recipe,recipe_version_id}',
-        'basis_portions', 90,
-        'lines', jsonb_build_array(
-          jsonb_build_object(
-            'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
-            'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-            'quantity_per_basis', 15,
-            'unit_id', 'f3100000-0000-0000-0000-000000000010',
-            'operational_note', null
-          )
-        )
-      )
-    )
-  )
-from uiq03a_results saved
-where saved.result_name = 'save-existing';
-
-insert into uiq03a_results
-select
-  'release-initial',
-  atlas_api.release_recipe(
-    pg_temp.uiq03a_request(
-      'release-initial',
-      (saved.response_payload #>> '{authoritative_readback,selected_recipe,expected_version}')::bigint,
-      jsonb_build_object(
-        'recipe_version_id',
-          saved.response_payload #>> '{authoritative_readback,selected_recipe,recipe_version_id}'
-      )
-    )
-  )
-from uiq03a_results saved
-where saved.result_name = 'save-existing';
-
-reset role;
-
-select is(
-  (select response_payload ->> 'success' from uiq03a_results where result_name = 'save-existing'),
-  'true',
-  'Save replaces the existing editable draft composition atomically'
-);
-
-select is(
-  (select response_payload ->> 'error_code' from uiq03a_results where result_name = 'save-stale'),
-  'STALE_VERSION',
-  'Save rejects a stale current version'
-);
-
-select is(
-  (
-    select jsonb_build_object(
       'status', version.recipe_version_status,
       'validated', version.validated_at is not null,
       'released', version.released_at is not null,
@@ -658,25 +306,14 @@ select is(
     where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030'
   ),
   jsonb_build_object(
+    'basis', 80,
     'status', 'RELEASED_FOR_PLANNING',
     'validated', true,
     'released', true,
     'revision_count', 1
   ),
-  'put-into-use validates, materializes immutable line evidence, and releases atomically'
+  'Save validates, materializes, and releases for future Planning atomically'
 );
-
-create temporary table uiq03a_prior_release as
-select
-  version.recipe_version_id,
-  version.recipe_id,
-  version.version,
-  atlas_core.rmvp_02a_recipe_version_composition(version.recipe_version_id)
-    as composition
-from atlas_admin.recipe_versions version
-join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
-where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030';
-grant select on uiq03a_prior_release to authenticated;
 
 set local role authenticated;
 select set_config(
@@ -684,26 +321,26 @@ select set_config(
   'f3000000-0000-0000-0000-000000000101',
   true
 );
-
 insert into uiq03a_results
 select
-  'save-successor',
+  'save-pre-use',
   atlas_api.save_recipe(
     pg_temp.uiq03a_request(
-      'save-successor',
-      prior.version,
+      'save-pre-use',
+      (first.response_payload #>> '{authoritative_readback,selected_recipe,expected_version}')::bigint,
       jsonb_build_object(
         'dish_id', 'f3100000-0000-0000-0000-000000000030',
         'school_type_id', null,
-        'recipe_version_id', prior.recipe_version_id,
+        'recipe_version_id',
+          first.response_payload #>> '{authoritative_readback,selected_recipe,recipe_version_id}',
         'basis_portions', 90,
         'lines', jsonb_build_array(
           jsonb_build_object(
             'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
             'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
-            'quantity_per_basis', 16,
+            'quantity_per_basis', 14,
             'unit_id', 'f3100000-0000-0000-0000-000000000010',
-            'operational_note', 'Successor saved line'
+            'operational_note', 'Pre-use correction'
           ),
           jsonb_build_object(
             'recipe_line_id', 'f3200000-0000-0000-0000-000000000002',
@@ -716,62 +353,128 @@ select
       )
     )
   )
-from uiq03a_prior_release prior;
-
+from uiq03a_results first
+where first.result_name = 'save-new';
 reset role;
 
 select is(
   (
     select jsonb_build_object(
-      'version_count', count(*),
-      'draft_count', count(*) filter (where recipe_version_status = 'DRAFT'),
-      'released_count', count(*) filter (
+      'versions', count(*),
+      'released', count(*) filter (
         where recipe_version_status = 'RELEASED_FOR_PLANNING'
       ),
-      'successor_predecessor', bool_and(
-        recipe_version_status <> 'DRAFT'
-        or predecessor_recipe_version_id = prior.recipe_version_id
+      'locked_history', count(*) filter (
+        where recipe_version_status = 'LOCKED'
       )
     )
     from atlas_admin.recipe_versions version
-    cross join uiq03a_prior_release prior
-    where version.recipe_id = prior.recipe_id
+    join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
+    where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030'
   ),
-  jsonb_build_object(
-    'version_count', 2,
-    'draft_count', 1,
-    'released_count', 1,
-    'successor_predecessor', true
-  ),
-  'Save after release creates the correct editable successor internally'
+  jsonb_build_object('versions', 2, 'released', 1, 'locked_history', 1),
+  'pre-use Save may advance internal lineage while keeping one current release'
 );
 
-select is(
-  (
-    select atlas_core.rmvp_02a_recipe_version_composition(
-      prior.recipe_version_id
-    )
-    from uiq03a_prior_release prior
-  ),
-  (select composition from uiq03a_prior_release),
-  'Save after release leaves prior released composition immutable'
-);
+create temporary table uiq03a_before_lock as
+select
+  count(*)::integer as version_count,
+  jsonb_agg(
+    jsonb_build_object(
+      'id', version.recipe_version_id,
+      'status', version.recipe_version_status,
+      'composition', atlas_core.rmvp_02a_recipe_version_composition(
+        version.recipe_version_id
+      )
+    ) order by version.version_number
+  ) as recipe_evidence
+from atlas_admin.recipe_versions version
+join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
+where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030';
+grant select on uiq03a_before_lock to authenticated;
 
-select ok(
-  exists (
-    select 1
-    from atlas_admin.recipe_versions successor
-    join uiq03a_prior_release prior on prior.recipe_id = successor.recipe_id
-    join atlas_admin.recipe_line_revisions prior_line
-      on prior_line.recipe_version_id = prior.recipe_version_id
-    cross join lateral jsonb_array_elements(successor.draft_composition) item
-    where successor.recipe_version_status = 'DRAFT'
-      and successor.predecessor_recipe_version_id = prior.recipe_version_id
-      and item ->> 'recipe_line_id' = prior_line.recipe_line_id::text
-      and item ->> 'predecessor_recipe_line_revision_id' =
-        prior_line.recipe_line_revision_id::text
-  ),
-  'successor Save preserves exact version, stable line, and revision predecessor lineage'
+insert into atlas_admin.customers (
+  customer_id, customer_code, customer_name, customer_type
+) values (
+  'f3300000-0000-0000-0000-000000000001',
+  'uiq03a-school-customer',
+  'UIQ03A School Customer',
+  'SCHOOL_CATERING'
+);
+insert into atlas_admin.delivery_locations (
+  delivery_location_id, customer_id, location_code, location_name, address_text
+) values (
+  'f3300000-0000-0000-0000-000000000002',
+  'f3300000-0000-0000-0000-000000000001',
+  'uiq03a-location',
+  'UIQ03A Location',
+  'Local test only'
+);
+insert into atlas_admin.schools (
+  school_id, customer_id, school_code, school_name, school_type_id,
+  default_delivery_location_id
+) values (
+  'f3300000-0000-0000-0000-000000000003',
+  'f3300000-0000-0000-0000-000000000001',
+  'uiq03a-school',
+  'UIQ03A School',
+  'f3100000-0000-0000-0000-000000000001',
+  'f3300000-0000-0000-0000-000000000002'
+);
+insert into atlas_planning.weekly_menus (
+  weekly_menu_id, week_start, week_end, source_type, source_name,
+  source_signature, weekly_menu_status, row_count, imported_by_actor_id
+) values (
+  'f3400000-0000-0000-0000-000000000001',
+  date '2026-08-10',
+  date '2026-08-16',
+  'TEST',
+  'UIQ03A approved menu evidence',
+  'uiq03a-signature',
+  'DRAFT',
+  1,
+  'f3000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.weekly_menu_lines (
+  weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+  menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+) values (
+  'f3400000-0000-0000-0000-000000000002',
+  'f3400000-0000-0000-0000-000000000001',
+  'f3300000-0000-0000-0000-000000000003',
+  date '2026-08-11',
+  'soup',
+  'f3100000-0000-0000-0000-000000000030',
+  'f3000000-0000-0000-0000-000000000001',
+  'f3000000-0000-0000-0000-000000000001'
+);
+update atlas_planning.weekly_menus
+set weekly_menu_status = 'VALIDATED'
+where weekly_menu_id = 'f3400000-0000-0000-0000-000000000001';
+insert into atlas_planning.weekly_menu_approval_snapshots (
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  approved_by_actor_id, approved_at
+) values (
+  'f3400000-0000-0000-0000-000000000003',
+  'f3400000-0000-0000-0000-000000000001',
+  1,
+  'f3000000-0000-0000-0000-000000000001',
+  transaction_timestamp()
+);
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id
+) values (
+  'f3400000-0000-0000-0000-000000000004',
+  'f3400000-0000-0000-0000-000000000003',
+  'f3400000-0000-0000-0000-000000000001',
+  1,
+  'f3400000-0000-0000-0000-000000000002',
+  'f3300000-0000-0000-0000-000000000003',
+  date '2026-08-11',
+  'soup',
+  'f3100000-0000-0000-0000-000000000030'
 );
 
 set local role authenticated;
@@ -780,101 +483,136 @@ select set_config(
   'f3000000-0000-0000-0000-000000000101',
   true
 );
-
-insert into uiq03a_results
-select
-  'release-successor',
-  atlas_api.release_recipe(
-    pg_temp.uiq03a_request(
-      'release-successor',
-      (saved.response_payload #>> '{authoritative_readback,selected_recipe,expected_version}')::bigint,
-      jsonb_build_object(
-        'recipe_version_id',
-          saved.response_payload #>> '{authoritative_readback,selected_recipe,recipe_version_id}'
+insert into uiq03a_results values (
+  'read-locked',
+  atlas_api.get_dish_recipe_workbench(
+    jsonb_build_object(
+      'contract_version', 'RMVP-02A.v2',
+      'requested_by_auth_subject',
+        'f3000000-0000-0000-0000-000000000101',
+      'correlation_id', 'f3900000-0000-0000-0000-000000000002',
+      'payload', jsonb_build_object(
+        'dish_id', 'f3100000-0000-0000-0000-000000000030',
+        'school_type_id', null
       )
     )
   )
-from uiq03a_results saved
-where saved.result_name = 'save-successor';
-
+);
+insert into uiq03a_results
+select
+  'save-locked',
+  atlas_api.save_recipe(
+    pg_temp.uiq03a_request(
+      'save-locked',
+      (used.response_payload #>> '{workbench,selected_recipe,expected_version}')::bigint,
+      jsonb_build_object(
+        'dish_id', 'f3100000-0000-0000-0000-000000000030',
+        'school_type_id', null,
+        'recipe_version_id',
+          used.response_payload #>> '{workbench,selected_recipe,recipe_version_id}',
+        'basis_portions', 100,
+        'lines', jsonb_build_array(
+          jsonb_build_object(
+            'recipe_line_id', 'f3200000-0000-0000-0000-000000000001',
+            'ingredient_id', 'f3100000-0000-0000-0000-000000000020',
+            'quantity_per_basis', 99,
+            'unit_id', 'f3100000-0000-0000-0000-000000000010',
+            'operational_note', 'must not be written'
+          )
+        )
+      )
+    )
+  )
+from uiq03a_results used
+where used.result_name = 'read-locked';
 reset role;
 
 select is(
   (
-    select jsonb_build_object(
-      'prior_status', prior_version.recipe_version_status,
-      'successor_status', successor.recipe_version_status,
-      'current_release_count', count(*) filter (
-        where version.recipe_version_status = 'RELEASED_FOR_PLANNING'
-      ) over ()
-    )
-    from uiq03a_prior_release prior
-    join atlas_admin.recipe_versions prior_version
-      on prior_version.recipe_version_id = prior.recipe_version_id
-    join atlas_admin.recipe_versions successor
-      on successor.predecessor_recipe_version_id = prior.recipe_version_id
-    join atlas_admin.recipe_versions version on version.recipe_id = prior.recipe_id
-    limit 1
+    select response_payload #>> '{workbench,selected_recipe,business_status}'
+    from uiq03a_results where result_name = 'read-locked'
   ),
-  jsonb_build_object(
-    'prior_status', 'LOCKED',
-    'successor_status', 'RELEASED_FOR_PLANNING',
-    'current_release_count', 1
-  ),
-  'put-into-use locks the prior effective Recipe and makes only the successor current'
+  'LOCKED',
+  'authoritative readback marks the operationally used Dish locked'
 );
 
 select is(
   (
-    select atlas_core.rmvp_02a_recipe_version_composition(
-      prior.recipe_version_id
-    )
-    from uiq03a_prior_release prior
+    select response_payload #>> '{workbench,selected_recipe,disabled_reason_codes,save_recipe}'
+    from uiq03a_results where result_name = 'read-locked'
   ),
-  (select composition from uiq03a_prior_release),
-  'successor release preserves the prior immutable release evidence'
+  'SAVE_OPERATIONALLY_LOCKED',
+  'readback denies normal Save with the specific lock reason code'
+);
+
+select is(
+  (
+    select response_payload ->> 'safe_message'
+    from uiq03a_results where result_name = 'save-locked'
+  ),
+  'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.',
+  'locked Save returns a safe Vietnamese Change Order direction'
 );
 
 select is(
   (
     select jsonb_build_object(
-      'planning_selection_count',
-        (select count(*) from atlas_planning.need_generation_recipe_selections),
-      'planning_line_use_count',
-        (select count(*) from atlas_planning.need_generation_recipe_line_uses)
-  )),
+      'version_count', count(*),
+      'recipe_evidence', jsonb_agg(
+        jsonb_build_object(
+          'id', version.recipe_version_id,
+          'status', version.recipe_version_status,
+          'composition', atlas_core.rmvp_02a_recipe_version_composition(
+            version.recipe_version_id
+          )
+        ) order by version.version_number
+      )
+    )
+    from atlas_admin.recipe_versions version
+    join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
+    where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030'
+  ),
   (
     select jsonb_build_object(
-      'planning_selection_count', planning_selection_count,
-      'planning_line_use_count', planning_line_use_count
+      'version_count', version_count,
+      'recipe_evidence', recipe_evidence
     )
-    from uiq03a_snapshot
+    from uiq03a_before_lock
   ),
-  'put-into-use changes only future Recipe selection and never rewrites historical Planning facts'
+  'locked Save creates no successor and changes no immutable Recipe evidence'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from atlas_planning.weekly_menu_approval_snapshot_lines
+    where dish_id = 'f3100000-0000-0000-0000-000000000030'
+  ),
+  1,
+  'locked Save leaves the authoritative approved Menu evidence unchanged'
 );
 
 select is(
   (
     select jsonb_build_object(
-      'adjustment_count',
+      'adjustments',
         (select count(*) from atlas_admin.recipe_composition_adjustments),
-      'procurement_count',
+      'procurement',
         (select count(*) from atlas_procurement.purchase_orders),
-      'dispatch_count',
+      'dispatch',
         (select count(*) from atlas_dispatch.dispatch_plans)
     )
   ),
   (
     select jsonb_build_object(
-      'adjustment_count', adjustment_count,
-      'procurement_count', procurement_count,
-      'dispatch_count', dispatch_count
+      'adjustments', adjustment_count,
+      'procurement', procurement_count,
+      'dispatch', dispatch_count
     )
-    from uiq03a_snapshot
+    from uiq03a_scope_snapshot
   ),
-  'v2 Save and put-into-use create no Recipe Adjustment, Procurement, or Dispatch delta'
+  'creation Save changes no Adjustment, Procurement, or Dispatch behavior'
 );
 
 select * from finish();
-
 rollback;

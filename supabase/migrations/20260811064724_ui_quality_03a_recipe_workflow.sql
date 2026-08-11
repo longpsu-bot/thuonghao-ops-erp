@@ -1,8 +1,13 @@
--- UI-QUALITY-03A / D-038: two normal human actions for Recipe composition.
+-- UI-QUALITY-03A: restore the v1 creation-and-lock Recipe workflow.
 -- Existing RMVP-02A.v1 functions remain physically callable.
 
 grant atlas_master_data_command_runtime, atlas_read_runtime
   to postgres with set true;
+grant usage on schema atlas_planning
+  to atlas_master_data_command_runtime;
+grant select (dish_id)
+  on atlas_planning.weekly_menu_approval_snapshot_lines
+  to atlas_master_data_command_runtime;
 grant create on schema atlas_core, atlas_api
   to atlas_master_data_command_runtime;
 set role atlas_master_data_command_runtime;
@@ -283,6 +288,20 @@ as $$
   );
 $$;
 
+create function atlas_core.uiq03a_dish_used_operationally(p_dish_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from atlas_planning.weekly_menu_approval_snapshot_lines menu_line
+    where menu_line.dish_id = p_dish_id
+  );
+$$;
+
 create function atlas_core.uiq03a_selection_payload(
   p_actor_id uuid,
   p_dish_id uuid,
@@ -305,6 +324,7 @@ declare
   v_release_message text;
   v_composition jsonb := '[]'::jsonb;
   v_release_ready boolean := false;
+  v_used_operationally boolean := false;
 begin
   if p_dish_id is null then
     select dish.* into v_dish
@@ -324,6 +344,8 @@ begin
       'recipe_id', null,
       'recipe_version_id', null,
       'business_status', 'NEEDS_ATTENTION',
+      'locked_for_normal_editing', false,
+      'lock_reason', null,
       'basis_portions', 100,
       'composition', '[]'::jsonb,
       'allowed_actions', pg_catalog.jsonb_build_object(
@@ -340,6 +362,9 @@ begin
       )
     );
   end if;
+
+  v_used_operationally :=
+    atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id);
 
   select recipe.* into v_recipe
   from atlas_admin.recipes recipe
@@ -408,6 +433,7 @@ begin
   end if;
 
   v_save_code := case
+    when v_used_operationally then 'SAVE_OPERATIONALLY_LOCKED'
     when v_dish.dish_status = 'INACTIVE' then 'SAVE_DISH_INACTIVE'
     when p_school_type_id is not null and not exists (
       select 1 from atlas_admin.school_types school_type
@@ -438,6 +464,8 @@ begin
   end;
 
   v_save_message := case v_save_code
+    when 'SAVE_OPERATIONALLY_LOCKED'
+      then 'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.'
     when 'SAVE_DISH_INACTIVE'
       then 'Món ăn đã ngừng dùng nên không thể lưu công thức mới.'
     when 'SAVE_SCOPE_UNAVAILABLE'
@@ -470,10 +498,15 @@ begin
     'recipe_version_id', v_version.recipe_version_id,
     'expected_version', coalesce(v_version.version, v_dish.version),
     'in_use_recipe_version_id', v_current_release_id,
+    'locked_for_normal_editing', v_used_operationally,
+    'lock_reason', case when v_used_operationally then
+      'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.'
+      else null end,
     'business_status', case
       when v_version.recipe_version_id is null then 'NOT_SAVED'
+      when v_used_operationally then 'LOCKED'
       when v_version.recipe_version_status = 'RELEASED_FOR_PLANNING'
-        then 'IN_USE'
+        then 'AVAILABLE'
       when v_version.recipe_version_status = 'LOCKED' then 'NEEDS_ATTENTION'
       else 'SAVED'
     end,
@@ -697,6 +730,16 @@ begin
       atlas_core.uiq03a_error(
         request, v_name, 'INVARIANT_VIOLATION',
         'Món ăn đã ngừng dùng nên không thể lưu công thức mới.'
+      ),
+      false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.uiq03a_error(
+        request, v_name, 'INVARIANT_VIOLATION',
+        'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.'
       ),
       false
     );
@@ -967,6 +1010,57 @@ begin
   where recipe_version_id = v_target_id
   returning version into v_after;
 
+  insert into atlas_admin.recipe_line_revisions (
+    recipe_id,
+    recipe_version_id,
+    recipe_line_id,
+    line_revision_number,
+    predecessor_recipe_line_revision_id,
+    ingredient_id,
+    quantity_per_basis,
+    unit_id,
+    line_disposition,
+    operational_note,
+    created_by_actor_id
+  )
+  select
+    v_recipe_id,
+    v_target_id,
+    atlas_core.pa_05b_safe_uuid(item ->> 'recipe_line_id'),
+    coalesce(predecessor.line_revision_number + 1, 1),
+    predecessor.recipe_line_revision_id,
+    atlas_core.pa_05b_safe_uuid(item ->> 'ingredient_id'),
+    atlas_core.pa_05b_safe_numeric(item ->> 'quantity_per_basis'),
+    atlas_core.pa_05b_safe_uuid(item ->> 'unit_id'),
+    item ->> 'line_disposition',
+    nullif(item ->> 'operational_note', ''),
+    v_actor_id
+  from pg_catalog.jsonb_array_elements(v_composition) item
+  left join atlas_admin.recipe_line_revisions predecessor
+    on predecessor.recipe_line_revision_id =
+      atlas_core.pa_05b_safe_uuid(
+        item ->> 'predecessor_recipe_line_revision_id'
+      );
+
+  update atlas_admin.recipe_versions
+  set recipe_version_status = 'VALIDATED',
+      validated_by_actor_id = v_actor_id,
+      validated_at = pg_catalog.transaction_timestamp(),
+      version = version + 1
+  where recipe_version_id = v_target_id;
+  set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+  set constraints atlas_admin.recipe_versions_integrity_guard deferred;
+
+  update atlas_admin.recipe_versions
+  set recipe_version_status = 'RELEASED_FOR_PLANNING',
+      released_by_actor_id = v_actor_id,
+      released_at = pg_catalog.transaction_timestamp(),
+      version = version + 1
+  where recipe_version_id = v_target_id
+  returning version into v_after;
+  set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+  set constraints atlas_admin.recipe_versions_integrity_guard deferred;
+
   return atlas_core.uiq03a_finish_success(
     request,
     v_actor_id,
@@ -979,14 +1073,15 @@ begin
       'recipe_version_status', 'DRAFT'
     ) end,
     pg_catalog.jsonb_build_object(
-      'recipe_version_status', 'DRAFT',
+      'recipe_version_status', 'RELEASED_FOR_PLANNING',
       'basis_portions', v_basis,
       'present_line_count', pg_catalog.jsonb_array_length(
         v_payload -> 'lines'
       ),
-      'released_for_planning', false
+      'released_for_planning', true,
+      'operationally_used', false
     ),
-    'Đã lưu công thức. Bạn có thể tiếp tục chỉnh sửa.',
+    'Đã tạo và lưu công thức. Công thức sẵn sàng cho Lập nhu cầu và vẫn có thể chỉnh sửa cho đến khi được sử dụng.',
     v_dish_id,
     v_school_type_id
   );
@@ -1307,7 +1402,7 @@ end;
 $$;
 
 reset role;
-grant create on schema atlas_api to atlas_read_runtime;
+grant create on schema atlas_api, atlas_core to atlas_read_runtime;
 set role atlas_read_runtime;
 
 create or replace function atlas_api.get_dish_recipe_workbench(request jsonb)
@@ -1383,6 +1478,8 @@ alter function atlas_core.uiq03a_validate_command(jsonb, text)
   owner to atlas_owner;
 alter function atlas_core.uiq03a_actor_has_capability(uuid, text)
   owner to atlas_owner;
+alter function atlas_core.uiq03a_dish_used_operationally(uuid)
+  owner to atlas_read_runtime;
 alter function atlas_core.uiq03a_selection_payload(uuid, uuid, uuid)
   owner to atlas_owner;
 alter function atlas_core.uiq03a_workbench_payload(uuid, uuid, uuid)
@@ -1403,12 +1500,18 @@ alter function atlas_api.release_recipe(jsonb)
 
 revoke create on schema atlas_core, atlas_api
   from atlas_master_data_command_runtime;
-revoke create on schema atlas_api from atlas_read_runtime;
+revoke create on schema atlas_api, atlas_core from atlas_read_runtime;
+revoke select (dish_id)
+  on atlas_planning.weekly_menu_approval_snapshot_lines
+  from atlas_master_data_command_runtime;
+revoke usage on schema atlas_planning
+  from atlas_master_data_command_runtime;
 
 grant execute on function
   atlas_core.uiq03a_error(jsonb, text, text, text, boolean, bigint),
   atlas_core.uiq03a_validate_read(jsonb, text),
   atlas_core.uiq03a_actor_has_capability(uuid, text),
+  atlas_core.uiq03a_dish_used_operationally(uuid),
   atlas_core.uiq03a_selection_payload(uuid, uuid, uuid),
   atlas_core.uiq03a_workbench_payload(uuid, uuid, uuid)
 to atlas_read_runtime;
@@ -1417,6 +1520,7 @@ grant execute on function
   atlas_core.uiq03a_error(jsonb, text, text, text, boolean, bigint),
   atlas_core.uiq03a_validate_command(jsonb, text),
   atlas_core.uiq03a_actor_has_capability(uuid, text),
+  atlas_core.uiq03a_dish_used_operationally(uuid),
   atlas_core.uiq03a_selection_payload(uuid, uuid, uuid),
   atlas_core.uiq03a_workbench_payload(uuid, uuid, uuid),
   atlas_core.uiq03a_prepare_command(jsonb, text, text, text),
@@ -1431,6 +1535,7 @@ revoke execute on function
   atlas_core.uiq03a_validate_read(jsonb, text),
   atlas_core.uiq03a_validate_command(jsonb, text),
   atlas_core.uiq03a_actor_has_capability(uuid, text),
+  atlas_core.uiq03a_dish_used_operationally(uuid),
   atlas_core.uiq03a_selection_payload(uuid, uuid, uuid),
   atlas_core.uiq03a_workbench_payload(uuid, uuid, uuid),
   atlas_core.uiq03a_prepare_command(jsonb, text, text, text),
@@ -1450,10 +1555,10 @@ grant execute on function
 to authenticated;
 
 comment on function atlas_api.get_dish_recipe_workbench(jsonb) is
-  'RMVP-02A.v1/v2 authorized Recipe workbench read. V2 adds selected Dish/scope context and backend Save/put-into-use eligibility.';
+  'RMVP-02A.v1/v2 authorized Recipe workbench read. V2 adds current-effective context, creation eligibility, and approved-Menu operational lock readback.';
 comment on function atlas_api.save_recipe(jsonb) is
-  'RMVP-02A.v2 atomic human Save. Creates or reuses the correct editable draft/successor, replaces the complete composition, preserves immutable released history, and releases nothing.';
+  'RMVP-02A.v2 atomic creation Save. Creates or advances the pre-use Recipe, materializes and makes it eligible for Planning, and denies normal editing after the Dish appears in an approved Weekly Menu snapshot.';
 comment on function atlas_api.release_recipe(jsonb) is
-  'RMVP-02A.v2 atomic human commitment. Validates saved composition, materializes immutable line revisions, releases for future Planning, and preserves prior and historical Planning facts.';
+  'RMVP-02A.v2 compatibility/support release entry point. It is not a normal creation-workbench action; RMVP-02A.v1 APIs remain physically callable.';
 
 revoke atlas_master_data_command_runtime, atlas_read_runtime from postgres;

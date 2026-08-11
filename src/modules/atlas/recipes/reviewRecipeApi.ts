@@ -113,15 +113,15 @@ function fixtures(): RecipeWorkbenchData {
         version_number: 1,
         predecessor_recipe_version_id: null,
         basis_portions: 100,
-        recipe_version_status: "DRAFT",
+        recipe_version_status: "RELEASED_FOR_PLANNING",
         version: 1,
         source_evidence: { source_kind: "MANUAL" },
         created_by_actor_id: actor,
         created_at: now,
-        validated_by_actor_id: null,
-        validated_at: null,
-        released_by_actor_id: null,
-        released_at: null,
+        validated_by_actor_id: actor,
+        validated_at: now,
+        released_by_actor_id: actor,
+        released_at: now,
         locked_by_actor_id: null,
         locked_at: null,
         composition: [
@@ -191,12 +191,20 @@ function fixtures(): RecipeWorkbenchData {
       recipe_version_id: ids.version,
       expected_version: 1,
       in_use_recipe_version_id: null,
-      business_status: "SAVED",
+      business_status: "AVAILABLE",
+      locked_for_normal_editing: false,
+      lock_reason: null,
       basis_portions: 100,
       composition: [],
-      allowed_actions: { save_recipe: true, release_recipe: true },
-      disabled_reason_codes: { save_recipe: null, release_recipe: null },
-      disabled_reasons: { save_recipe: null, release_recipe: null },
+      allowed_actions: { save_recipe: true, release_recipe: false },
+      disabled_reason_codes: {
+        save_recipe: null,
+        release_recipe: "RELEASE_ALREADY_IN_USE",
+      },
+      disabled_reasons: {
+        save_recipe: null,
+        release_recipe: "Công thức đã sẵn sàng sử dụng.",
+      },
     },
   };
   data.selected_recipe.composition = clone(data.recipe_versions[0].composition);
@@ -242,6 +250,9 @@ function selectRecipe(
   const releaseReady =
     version?.recipe_version_status === "DRAFT" &&
     version.composition.some((line) => line.line_disposition === "PRESENT");
+  const alreadyAvailable =
+    version?.recipe_version_status === "RELEASED_FOR_PLANNING";
+  const lockedForNormalEditing = false;
   data.selected_recipe = {
     dish_id: dish?.dish_id ?? null,
     school_type_id: schoolTypeId,
@@ -255,8 +266,10 @@ function selectRecipe(
     business_status: !version
       ? "NOT_SAVED"
       : version.recipe_version_status === "RELEASED_FOR_PLANNING"
-        ? "IN_USE"
+        ? "AVAILABLE"
         : "SAVED",
+    locked_for_normal_editing: lockedForNormalEditing,
+    lock_reason: null,
     basis_portions: version?.basis_portions ?? 100,
     composition: clone(version?.composition ?? []),
     allowed_actions: {
@@ -266,7 +279,11 @@ function selectRecipe(
     disabled_reason_codes: {
       save_recipe:
         dish?.dish_status === "INACTIVE" ? "SAVE_DISH_INACTIVE" : null,
-      release_recipe: releaseReady ? null : "RELEASE_SAVE_REQUIRED",
+      release_recipe: releaseReady
+        ? null
+        : alreadyAvailable
+          ? "RELEASE_ALREADY_IN_USE"
+          : "RELEASE_SAVE_REQUIRED",
     },
     disabled_reasons: {
       save_recipe:
@@ -275,7 +292,9 @@ function selectRecipe(
           : null,
       release_recipe: releaseReady
         ? null
-        : "Hãy lưu công thức trước khi đưa vào sử dụng.",
+        : alreadyAvailable
+          ? "Công thức đã sẵn sàng sử dụng."
+          : "Hãy lưu công thức trước khi đưa vào sử dụng.",
     },
   };
 }
@@ -501,7 +520,19 @@ export function createReviewRecipeApi(
       target.composition = clone(
         (request.payload.lines ?? []) as unknown as RecipeCompositionLine[],
       ).map((line) => ({ ...line, line_disposition: "PRESENT" }));
-      target.version += 1;
+      for (const prior of versions) {
+        if (prior.recipe_version_status === "RELEASED_FOR_PLANNING") {
+          prior.recipe_version_status = "LOCKED";
+          prior.locked_by_actor_id = actor;
+          prior.locked_at = now;
+        }
+      }
+      target.recipe_version_status = "RELEASED_FOR_PLANNING";
+      target.validated_by_actor_id = actor;
+      target.validated_at = now;
+      target.released_by_actor_id = actor;
+      target.released_at = now;
+      target.version += 3;
       selectRecipe(data, dishId, schoolTypeId);
       return true;
     }),

@@ -35,7 +35,7 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ PLANNING-CONTRACT-01 atomic Planning completion boundaries — complete through PR #184 at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`; additive v2 source Saves, automatic preflight and atomic Need Generation/H0C materialization are merged while v1 remains callable during Application cutover
 - ✅ UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`; cuts Weekly Menu, Attendance, Pantry, Readiness and Need Generation over to the merged v2 workflow without redesigning Confirmed Need
 - ✅ UI-QUALITY-02C-A / 02C-B Confirmed Need two-action workflow — merged; XLSX/PDF schema remains deliberately deferred
-- 🟡 D-038 / UI-QUALITY-03A Recipe/BOM first-user vertical — implemented on the bounded draft branch with two additive v2 commands, backend action eligibility, no React lifecycle chaining, retained v1 compatibility, and no Recipe Adjustment or downstream behavior change
+- 🟡 D-038 / UI-QUALITY-03A Recipe creation-and-lock vertical — implemented on the bounded draft branch with read-only catalog, separate creation, approved-Menu first-use lock, Change Order direction, no React lifecycle chaining, retained v1 compatibility, and no Recipe Adjustment or downstream behavior change
 - ⬜ UI-QUALITY-03B Recipe Change Order first-user redesign — not started and explicitly outside UI-QUALITY-03A
 - ⬜ UI-QUALITY-03C remaining connected Admin consolidation — not started
 - ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios

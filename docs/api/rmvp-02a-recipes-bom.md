@@ -78,20 +78,20 @@ The bounded public errors include:
 
 No response returns credentials, SQL text, private row dumps, or an exception stack.
 
-## Additive RMVP-02A.v2 operator contract
+## Additive RMVP-02A.v2 creation-and-lock contract
 
-D-038 preserves every v1 entry point above and adds exactly:
+D-038 preserves every v1 entry point above and adds the physically callable functions:
 
 ```text
 atlas_api.save_recipe(request jsonb)
 atlas_api.release_recipe(request jsonb)
 ```
 
-The v2 command envelope uses the shared identifiers, current positive `expected_version`, authenticated/requested subject match, timestamp, and idempotency key. `reason_note` is `null`; the exact reason codes are `RECIPE_SAVED` and `RECIPE_PUT_INTO_USE`.
+The v2 command envelope retains authenticated/requested-subject match, command/correlation/idempotency identifiers, positive current `expected_version`, timestamp, and fixed reason code. Normal React creation invokes only `save_recipe`; `release_recipe` is retained for compatibility/support.
 
-### V2 workbench selection and eligibility
+### V2 workbench selection and lock readback
 
-`get_dish_recipe_workbench` remains one physical function. A v1 request returns its unchanged v1 shape. A v2 request payload accepts only optional `dish_id` and `school_type_id` and returns the normal v1 catalogs/history plus:
+A v1 `get_dish_recipe_workbench` request keeps the v1 shape. A v2 payload accepts only optional `dish_id` and `school_type_id` and adds:
 
 ```json
 {
@@ -100,47 +100,48 @@ The v2 command envelope uses the shared identifiers, current positive `expected_
     "school_type_id": null,
     "recipe_id": "uuid-or-null",
     "recipe_version_id": "uuid-or-null",
-    "expected_version": 2,
+    "expected_version": 4,
     "in_use_recipe_version_id": "uuid-or-null",
-    "business_status": "NOT_SAVED|SAVED|IN_USE|NEEDS_ATTENTION",
+    "business_status": "NOT_SAVED|SAVED|AVAILABLE|LOCKED|NEEDS_ATTENTION",
+    "locked_for_normal_editing": true,
+    "lock_reason": "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.",
     "basis_portions": 100,
     "composition": [],
     "allowed_actions": {
-      "save_recipe": true,
+      "save_recipe": false,
       "release_recipe": false
     },
     "disabled_reason_codes": {
-      "save_recipe": null,
-      "release_recipe": "RELEASE_SAVE_REQUIRED"
+      "save_recipe": "SAVE_OPERATIONALLY_LOCKED",
+      "release_recipe": "RELEASE_ALREADY_IN_USE"
     },
     "disabled_reasons": {
-      "save_recipe": null,
-      "release_recipe": "Hãy lưu công thức trước khi đưa vào sử dụng."
+      "save_recipe": "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.",
+      "release_recipe": "Công thức này đang được sử dụng."
     }
   }
 }
 ```
 
-Eligibility resolves the active Actor, exact capability and active `GLOBAL` scope, Dish/Recipe/reference lifecycle, current saved version, and release-ready composition. React may change `true` to `false` for local dirty/invalid/busy/unknown state; it may never promote backend `false`.
+`locked_for_normal_editing` is true exactly when the Dish exists in immutable `atlas_planning.weekly_menu_approval_snapshot_lines`. This approved-Menu evidence is the Atlas equivalent of the retained OPS v1 first-order-use trigger. Recipe creation, Save, validation, and release do not set the operational lock.
+
+Eligibility also resolves active Actor, exact capability and active `GLOBAL` scope, Dish/Recipe/reference lifecycle, and current version. React may restrict backend `true` for local invalid, dirty, busy, or unknown-outcome state; it may never promote backend `false`.
 
 ### `save_recipe`
 
 - Capability: `master_data.recipes.write`.
-- Payload keys: exact `dish_id`, nullable `school_type_id`, nullable/current `recipe_version_id`, positive integer `basis_portions`, and the complete present `lines` array.
-- Each line contains stable `recipe_line_id`, active `ingredient_id`, positive exact `quantity_per_basis`, active `unit_id`, and nullable `operational_note`.
-- Maximum 500 submitted lines; duplicate stable line or Ingredient identities fail closed.
-- No existing Recipe: create root and editable first draft, then store the complete composition.
-- Existing editable draft: replace its complete composition and preserve currentness.
-- Released current Recipe: create the correct successor internally, map exact predecessor Recipe Line Revisions, retain omitted predecessor lines as explicit `REMOVED` draft evidence, and preserve the prior release unchanged.
-- Success returns `authoritative_readback`; after-summary explicitly records `released_for_planning: false`.
+- Payload: exact `dish_id`, nullable `school_type_id`, nullable/current `recipe_version_id`, positive integer `basis_portions`, and complete present `lines`.
+- Each line has stable target `recipe_line_id`, active `ingredient_id`, positive exact `quantity_per_basis`, active `unit_id`, and nullable `operational_note`; maximum 500; duplicate line or Ingredient identity fails closed.
+- The function locks the Dish, rechecks approved-Menu operational use, and returns `INVARIANT_VIOLATION` with the safe Change-Order direction before any Recipe/version/line mutation when used.
+- For an unused Dish, it creates/reuses the Recipe scope, preserves exact predecessor lineage and explicit removed-line evidence when advancing internal versions, materializes immutable line revisions, and releases the saved composition for future Planning atomically.
+- Success readback reports `business_status: AVAILABLE`, `locked_for_normal_editing: false`, `released_for_planning: true`, and `operationally_used: false`.
+- Save is idempotent, concurrency checked, and never recalculates historical Planning evidence.
 
 ### `release_recipe`
 
-- Capability: `master_data.recipes.release`; `master_data.recipes.validate` remains a distinct v1 compatibility/internal capability and is not additionally required from the human caller.
-- Payload key: exact current saved `recipe_version_id`.
-- Rechecks current version, latest-version currentness, active Dish/Recipe, active Ingredient/Unit references, positive quantities, required non-empty composition, and exact predecessor coverage.
-- If the saved version is a draft, atomically materializes immutable Recipe Line Revisions and deterministic validation evidence before release.
-- Releases the current Recipe for future Planning and locks the prior effective Recipe under retained integrity rules.
-- Returns `effect: FUTURE_PLANNING_REFERENCE_ONLY` and `historical_planning_recalculated: false`.
+- Capability: `master_data.recipes.release`.
+- Physical v2 compatibility/support entry point; it is absent from the normal application workflow.
+- Retains currentness, deterministic validation/materialization, release, receipt, event, audit, and immutable-history guarantees for controlled callers.
+- Does not define operational use and does not set the approved-Menu lock.
 
-Both commands use existing command receipts, idempotent replay, Admin domain/audit events, fixed empty `search_path`, least-privilege runtime ownership, stale-version failure, and no automatic browser retry after an unknown transport outcome.
+Both v2 commands use fixed empty `search_path`, least-privilege runtime ownership, safe errors, and no automatic browser retry after an unknown transport result. Every RMVP-02A.v1 API remains callable.

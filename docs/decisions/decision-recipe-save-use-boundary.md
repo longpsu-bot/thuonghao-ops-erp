@@ -1,4 +1,4 @@
-# D-038 — Recipe Save and Put-Into-Use Boundary
+# D-038 — Recipe Creation and Operational-Use Lock Boundary
 
 **Status:** Accepted
 **Date:** 2026-08-11
@@ -7,34 +7,52 @@
 
 ## Decision
 
-The ordinary Recipe operator workflow has exactly two human actions:
+Recipe work has three separate operator jobs:
 
-1. `Lưu` preserves the complete authored Recipe as editable work and does not release it.
-2. `Đưa vào sử dụng` commits the current saved Recipe for future Planning.
+1. `Danh sách` is a read-only current-effective Dish/Recipe catalog.
+2. `Tạo món & công thức` creates a Dish and its initial general or School-Type Recipe. `Tạo`/`Lưu` makes valid composition available to Planning; there is no separate normal `Đưa vào sử dụng` action.
+3. `Điều chỉnh` owns every business modification after first operational use. Its existing RMVP-02B semantics are unchanged and its UI redesign is deferred to UI-QUALITY-03B.
 
-PostgreSQL owns draft/root/successor creation, deterministic validation, Recipe Line Revision materialization, release, prior-release locking, currentness, authorization, idempotency, lineage, events, audit, and authoritative readback. React must not chain RMVP-02A.v1 lifecycle functions to manufacture this workflow.
+A Dish becomes operationally used when it first appears in immutable approved Weekly Menu evidence: `atlas_planning.weekly_menu_approval_snapshot_lines`. From that point, normal Recipe Save for every scope of that Dish is denied. The backend must not create a successor as a substitute for Change Order.
+
+This is the Atlas representation of retained OPS v1 evidence: `daily_order_dishes` has an `AFTER INSERT` trigger that sets `recipes.is_locked = true` for every Recipe of the referenced Dish, and the BOM guard rejects base-BOM insert/update/delete when the Recipe is locked. Retool `BoMCreation` presents creation and copy; `SystemChangeOrder` presents replace, quantity change, add, and remove; `overrideDish` and `overrideSchoolWise` present scoped override jobs.
+
+## Mutability
+
+Before first operational use:
+
+- Dish stable code remains immutable after creation under RMVP-02A.v1; the 03A application does not expose normal Dish metadata maintenance in the catalog.
+- Dish descriptive metadata is captured during creation. Existing v1 support APIs remain physically callable; 03A does not broaden them.
+- Recipe scope identity is fixed by Dish plus nullable School Type.
+- Recipe basis and base composition may be saved again. PostgreSQL may use internal version lineage to preserve released evidence while the Dish is still unused.
+- `Tạo`/`Lưu` validates, materializes immutable line revisions, and leaves the Recipe `RELEASED_FOR_PLANNING` (human status `Sẵn sàng sử dụng`).
+
+After first operational use:
+
+- Dish stable identity, the Recipe scope identity, and base Recipe composition are not normally editable.
+- `save_recipe` fails before creating a Recipe/version/line write and returns: `Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.`
+- Descriptive changes or composition changes that represent a business correction must follow an approved Change Order/override path; 03A does not redesign that contract.
+- Historical Recipe, approved Menu, Planning selection, and line-use evidence remains immutable.
 
 ## Contract consequences
 
-- Add exactly `atlas_api.save_recipe(jsonb)` and `atlas_api.release_recipe(jsonb)`.
-- Extend the existing workbench read additively for v2 selected Dish/scope context and backend `allowed_actions`, `disabled_reason_codes`, and `disabled_reasons`.
-- Keep every RMVP-02A.v1 function physically callable.
-- Keep `master_data.recipes.write`, `.validate`, and `.release` distinct. Save uses `.write`; put-into-use uses `.release`; `.validate` remains available for v1 compatibility/internal support rather than becoming a second ordinary operator action.
-- Preserve immutable released/locked Recipe Versions, stable Recipe Lines, exact predecessor Recipe Line Revisions, Planning reproducibility, and historical facts.
-- Create no business relation, role, capability, scope kind, lifecycle state, dependency, or generic workflow/search framework.
+- Keep additive `atlas_api.save_recipe(jsonb)` and `atlas_api.release_recipe(jsonb)` plus all RMVP-02A.v1 entry points physically callable.
+- `save_recipe` is the only normal creation-workbench commitment. It checks operational use under the locked Dish row, validates full composition, preserves idempotency/concurrency/lineage, and makes the Recipe Planning-eligible atomically.
+- `release_recipe` remains a compatibility/support entry point. React does not invoke it in the normal workflow.
+- The v2 read returns `business_status`, `locked_for_normal_editing`, `lock_reason`, and backend-authoritative Save eligibility.
+- Lock evidence is Dish-wide, matching the v1 trigger. It is not Recipe creation, validation, release, or first Save.
+- No Recipe Adjustment relation/command, Planning calculation, Confirmed Need, Procurement, Warehouse, or Dispatch behavior changes.
 
 ## Application consequences
 
-The default workbench centers Dish search, selected Dish/type, `Áp dụng cho`, editable basis, Ingredient search, and composition. Normal state language is business-oriented. Recipe Version number, status timestamps, predecessor, and immutable identifiers move behind Recipe history/support disclosure.
+The catalog exposes current-effective Dish name/code/type, Recipe scope/basis/Ingredients/status, text search, `Xem`, and clear navigation to creation or Change Order. It contains no edit, validation, release, successor, or lifecycle controls.
 
-Copy and workbook import remain secondary utilities with unchanged contracts. Recipe Adjustment/effective-BOM behavior remains unchanged and is deferred to UI-QUALITY-03B.
+Creation exposes selected Dish/scope, basis, Ingredient search, composition, and one `Tạo`/`Lưu` action. Recipe Copy is a local creation helper: it fills the current unsaved form and performs no backend write until the operator checks and saves. Dirty context/navigation changes require confirmation; page unload uses the native browser guard.
 
-## Safety and recovery
+Technical version history remains support disclosure only. Unknown write outcomes require an authoritative refresh and are never automatically retried.
 
-Backend eligibility is the maximum permission/lifecycle decision. React may only restrict it for dirty, invalid, busy, or unknown-write state. An unknown outcome disables further writes until a manual authoritative refresh; the browser does not automatically retry.
+## Safety and rollback
 
-Release affects future Planning selection only. It never recalculates historical Planning facts and creates no Confirmed Need, Procurement, Warehouse, or Dispatch record.
+The helper reads only approved-Menu snapshot `dish_id` and runs under the existing fixed-path runtime boundary. Save takes the Dish lock before rechecking operational use, preventing a normal edit after approved evidence exists. No browser role receives private-schema table access.
 
-## Rollback
-
-Before operational use, a disposable local database may reset to the prior migration set. After v2 commands have recorded Recipe history, rollback must be forward-only and preserve all Recipe/version/line identities, revisions, receipts, events, and audit evidence. Removing v1 functions or rewriting prior releases is prohibited.
+Disposable local databases may reset before operational use. Any deployed rollback is forward-only and must preserve Recipe identities, revisions, approved Menu snapshots, Planning evidence, receipts, events, and audit records. Reopening a used base Recipe or rewriting history is prohibited.

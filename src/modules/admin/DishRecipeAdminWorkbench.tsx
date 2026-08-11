@@ -14,7 +14,6 @@ import {
   recipeWorkbenchFromResult,
   schoolScopeLabel,
   unitLabel,
-  type DishRecord,
   type RecipeCompositionLine,
   type RecipeWorkbenchData,
 } from "../atlas/recipes/recipeModel";
@@ -43,9 +42,6 @@ type DishDraft = {
 };
 type CopyDraft = {
   sourceVersionId: string;
-  targetDishId: string;
-  targetSchoolTypeId: string;
-  reason: string;
 };
 
 const emptyDishDraft = (): DishDraft => ({
@@ -74,9 +70,10 @@ const statusTone = (status: string) => {
   return "neutral" as const;
 };
 const recipeBusinessStatusLabel = {
-  NOT_SAVED: "Chưa lưu",
+  NOT_SAVED: "Chưa tạo",
   SAVED: "Đã lưu",
-  IN_USE: "Đang sử dụng",
+  AVAILABLE: "Sẵn sàng sử dụng",
+  LOCKED: "Đã khóa sau khi sử dụng",
   NEEDS_ATTENTION: "Cần xử lý",
 } as const;
 
@@ -96,7 +93,7 @@ export function DishRecipeAdminWorkbench({
     status: "idle",
     data: emptyRecipeWorkbench(),
   });
-  const [tab, setTab] = useState<Tab>("recipes");
+  const [tab, setTab] = useState<Tab>("catalog");
   const [query, setQuery] = useState("");
   const [dishId, setDishId] = useState<string | null>(null);
   const [schoolTypeId, setSchoolTypeId] = useState<string | null>(null);
@@ -110,9 +107,6 @@ export function DishRecipeAdminWorkbench({
   const [basisPortions, setBasisPortions] = useState("100");
   const [copyDraft, setCopyDraft] = useState<CopyDraft>({
     sourceVersionId: "",
-    targetDishId: "",
-    targetSchoolTypeId: "",
-    reason: "",
   });
   const [workbook, setWorkbook] = useState<RecipeWorkbookReview | null>(null);
   const [importReason, setImportReason] = useState("");
@@ -164,11 +158,6 @@ export function DishRecipeAdminWorkbench({
   }, [authSubject, refresh]);
 
   const dish = load.data.dishes.find((item) => item.dish_id === dishId);
-  const dishRecipes = useMemo(
-    () => load.data.recipes.filter((recipe) => recipe.dish_id === dishId),
-    [dishId, load.data.recipes],
-  );
-
   const versions = useMemo(
     () =>
       load.data.recipe_versions
@@ -214,6 +203,13 @@ export function DishRecipeAdminWorkbench({
     nextDishId: string,
     nextSchoolTypeId: string | null,
   ) => {
+    if (
+      isDirty &&
+      !window.confirm(
+        "Bạn có thay đổi chưa lưu. Bỏ các thay đổi này và chuyển sang nội dung khác?",
+      )
+    )
+      return;
     setDishId(nextDishId);
     setSchoolTypeId(nextSchoolTypeId);
     setNotice(null);
@@ -221,20 +217,17 @@ export function DishRecipeAdminWorkbench({
   };
 
   const workflowCommand = async (
-    action: "save" | "release",
     expectedVersion: number,
     payload: Record<string, JsonValue>,
   ) => {
     if (!api || !authSubject) return false;
     setBusy(true);
-    const result = await (
-      action === "save" ? api.saveRecipe : api.releaseRecipe
-    )(
+    const result = await api.saveRecipe(
       recipeWorkflowCommandRequest(
         authSubject,
         correlationId,
         expectedVersion,
-        action,
+        "save",
         payload,
       ),
     );
@@ -249,8 +242,41 @@ export function DishRecipeAdminWorkbench({
     return true;
   };
 
+  const effectiveRecipesForDish = (targetDishId: string) =>
+    load.data.recipes
+      .filter(
+        (recipe) =>
+          recipe.dish_id === targetDishId && recipe.recipe_status === "ACTIVE",
+      )
+      .map((recipe) => ({
+        recipe,
+        version: load.data.recipe_versions
+          .filter(
+            (version) =>
+              version.recipe_id === recipe.recipe_id &&
+              version.recipe_version_status === "RELEASED_FOR_PLANNING",
+          )
+          .sort((left, right) => right.version_number - left.version_number)[0],
+      }))
+      .filter(
+        (
+          item,
+        ): item is typeof item & {
+          version: NonNullable<typeof item.version>;
+        } => Boolean(item.version),
+      );
+
   const shownDishes = load.data.dishes.filter((item) => {
     const needle = query.trim().toLocaleLowerCase("vi");
+    const effectiveIngredientNames = effectiveRecipesForDish(item.dish_id)
+      .flatMap(({ version }) => version.composition)
+      .filter((line) => line.line_disposition === "PRESENT")
+      .map(
+        (line) =>
+          load.data.ingredients.find(
+            (ingredient) => ingredient.ingredient_id === line.ingredient_id,
+          )?.ingredient_name ?? "",
+      );
     return (
       !needle ||
       [
@@ -258,6 +284,7 @@ export function DishRecipeAdminWorkbench({
         item.dish_name,
         item.dish_category,
         item.dish_type_name,
+        ...effectiveIngredientNames,
       ].some((value) => (value ?? "").toLocaleLowerCase("vi").includes(needle))
     );
   });
@@ -311,28 +338,40 @@ export function DishRecipeAdminWorkbench({
     : isDirty
       ? "Có thay đổi chưa lưu"
       : recipeBusinessStatusLabel[load.data.selected_recipe.business_status];
+  const creationLocked =
+    load.data.selected_recipe.locked_for_normal_editing ?? false;
 
-  const beginDish = (selected?: DishRecord) => {
-    setDishEditorId(selected?.dish_id ?? "NEW");
-    setDishDraft(
-      selected
-        ? {
-            code: selected.dish_code,
-            name: selected.dish_name,
-            category: selected.dish_category ?? "",
-            dishTypeId: selected.dish_type_id ?? "",
-            notes: selected.operational_notes ?? "",
-            displayOrder: String(selected.display_order),
-            requiresNeedGeneration: selected.requires_need_generation,
-          }
-        : {
-            ...emptyDishDraft(),
-            dishTypeId:
-              load.data.dish_types.find(
-                (dishType) => dishType.dish_type_status === "ACTIVE",
-              )?.dish_type_id ?? "",
-          },
-    );
+  useEffect(() => {
+    if (!isDirty) return;
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [isDirty]);
+
+  const navigateTab = (nextTab: Tab) => {
+    if (
+      tab === "recipes" &&
+      nextTab !== "recipes" &&
+      isDirty &&
+      !window.confirm(
+        "Bạn có thay đổi chưa lưu. Bỏ các thay đổi này và rời màn hình tạo món/công thức?",
+      )
+    )
+      return;
+    setTab(nextTab);
+  };
+
+  const beginDish = () => {
+    setDishEditorId("NEW");
+    setDishDraft({
+      ...emptyDishDraft(),
+      dishTypeId:
+        load.data.dish_types.find(
+          (dishType) => dishType.dish_type_status === "ACTIVE",
+        )?.dish_type_id ?? "",
+    });
   };
 
   const saveDish = async () => {
@@ -350,9 +389,6 @@ export function DishRecipeAdminWorkbench({
       );
       return;
     }
-    const editing = load.data.dishes.find(
-      (item) => item.dish_id === dishEditorId,
-    );
     const payload = {
       dish_code: dishDraft.code,
       dish_name: dishDraft.name,
@@ -362,12 +398,7 @@ export function DishRecipeAdminWorkbench({
       display_order: displayOrder,
       requires_need_generation: dishDraft.requiresNeedGeneration,
     };
-    const saved = editing
-      ? await command(api.updateDish, editing.version, "DISH_UPDATE", {
-          dish_id: editing.dish_id,
-          ...payload,
-        })
-      : await command(api.createDish, 1, "DISH_CREATE", payload);
+    const saved = await command(api.createDish, 1, "DISH_CREATE", payload);
     if (saved) setDishEditorId(null);
   };
 
@@ -379,7 +410,7 @@ export function DishRecipeAdminWorkbench({
       );
       return;
     }
-    await workflowCommand("save", selection.expected_version, {
+    await workflowCommand(selection.expected_version, {
       dish_id: dish.dish_id,
       school_type_id: schoolTypeId,
       recipe_version_id: selection.recipe_version_id,
@@ -391,26 +422,6 @@ export function DishRecipeAdminWorkbench({
         unit_id: line.unit_id,
         operational_note: line.operational_note,
       })) as unknown as JsonValue,
-    });
-  };
-
-  const releaseComposition = async () => {
-    const selection = load.data.selected_recipe;
-    if (
-      selection.expected_version === null ||
-      !selection.recipe_version_id ||
-      isDirty ||
-      !compositionValid
-    )
-      return;
-    if (
-      !window.confirm(
-        "Đưa công thức đã lưu vào sử dụng cho các lần Lập nhu cầu sau? Lịch sử đã dùng trước đây vẫn được giữ nguyên.",
-      )
-    )
-      return;
-    await workflowCommand("release", selection.expected_version, {
-      recipe_version_id: selection.recipe_version_id,
     });
   };
 
@@ -456,25 +467,26 @@ export function DishRecipeAdminWorkbench({
     );
   };
 
-  const applyCopy = async () => {
-    if (!api || !copyDraft.sourceVersionId || !copyDraft.targetDishId) return;
-    if (!copyDraft.reason.trim()) {
-      setNotice("Cần ghi lý do sao chép.");
-      return;
-    }
-    if (!window.confirm("Tạo một bản nháp mới ở phạm vi đích đã xem trước?"))
-      return;
-    await command(
-      api.copyVersion,
-      1,
-      "RECIPE_VERSION_COPY",
-      {
-        source_recipe_version_id: copyDraft.sourceVersionId,
-        target_dish_id: copyDraft.targetDishId,
-        target_school_type_id: copyDraft.targetSchoolTypeId || null,
-      },
-      copyDraft.reason,
+  const applyCopy = () => {
+    const source = load.data.recipe_versions.find(
+      (item) => item.recipe_version_id === copyDraft.sourceVersionId,
     );
+    if (!source || !dish || creationLocked) return;
+    setBasisPortions(String(source.basis_portions));
+    setComposition(
+      source.composition
+        .filter((line) => line.line_disposition === "PRESENT")
+        .map((line) => ({
+          ...structuredClone(line),
+          recipe_line_id: crypto.randomUUID(),
+          predecessor_recipe_line_revision_id: null,
+          line_code: null,
+        })),
+    );
+    setNotice(
+      `Đã sao chép nội dung vào ${dish.dish_name}. Hãy kiểm tra rồi bấm ${load.data.selected_recipe.recipe_id ? "Lưu" : "Tạo"}.`,
+    );
+    setTab("recipes");
   };
 
   const parseWorkbook = async (file?: File) => {
@@ -537,7 +549,7 @@ export function DishRecipeAdminWorkbench({
   return (
     <Panel
       title="Công thức món ăn"
-      description="Chọn món và phạm vi áp dụng, sau đó cập nhật nguyên liệu và định lượng."
+      description="Tra cứu công thức hiện hành hoặc tạo món và công thức mới."
       status={
         <Chip tone={load.status === "error" ? "danger" : "ok"}>
           {mode === "review" ? "Dữ liệu xem thử" : "Kết nối Atlas"}
@@ -547,10 +559,9 @@ export function DishRecipeAdminWorkbench({
       <div className="master-data-tabs" role="tablist">
         {(
           [
-            ["recipes", "Công thức"],
-            ["catalog", "Món ăn"],
+            ["catalog", "Danh sách"],
+            ["recipes", "Tạo món & công thức"],
             ["adjustments", "Điều chỉnh"],
-            ["copy", "Công cụ"],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -558,7 +569,7 @@ export function DishRecipeAdminWorkbench({
             role="tab"
             aria-selected={tab === value}
             className={tab === value ? "active" : ""}
-            onClick={() => setTab(value)}
+            onClick={() => navigateTab(value)}
             key={value}
           >
             {label}
@@ -648,11 +659,11 @@ export function DishRecipeAdminWorkbench({
         <>
           <div className="master-data-toolbar">
             <label className="evidence-field">
-              Tìm món ăn
+              Tìm món hoặc nguyên liệu
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Tìm theo tên hoặc mã món…"
+                placeholder="Tìm theo tên món, mã món hoặc nguyên liệu…"
               />
             </label>
             <span />
@@ -662,15 +673,21 @@ export function DishRecipeAdminWorkbench({
             <button
               type="button"
               className="primary-toolbar-action"
-              onClick={() => beginDish()}
+              onClick={() => navigateTab("recipes")}
             >
-              Thêm món
+              Tạo món & công thức
             </button>
           </div>
           <div className="master-data-workspace with-detail">
             <div className="master-data-table-scroll">
               <CompactTable
-                headers={["Món ăn", "Loại món", "Trạng thái", "Phạm vi", ""]}
+                headers={[
+                  "Tên món",
+                  "Loại món",
+                  "Công thức hiện hành",
+                  "Tình trạng",
+                  "",
+                ]}
               >
                 {shownDishes.map((item) => (
                   <tr key={item.dish_id}>
@@ -684,57 +701,44 @@ export function DishRecipeAdminWorkbench({
                       )}
                     </td>
                     <td>
+                      {effectiveRecipesForDish(item.dish_id).length ? (
+                        effectiveRecipesForDish(item.dish_id).map(
+                          ({ recipe, version }) => (
+                            <small key={recipe.recipe_id}>
+                              {schoolScopeLabel(recipe, load.data.school_types)}
+                              : {version.basis_portions} suất ·{" "}
+                              {version.composition
+                                .filter(
+                                  (line) => line.line_disposition === "PRESENT",
+                                )
+                                .map((line) =>
+                                  ingredientLabel(
+                                    line.ingredient_id,
+                                    load.data.ingredients,
+                                  ),
+                                )
+                                .join(", ") || "Chưa có nguyên liệu"}
+                            </small>
+                          ),
+                        )
+                      ) : (
+                        <span>Chưa có công thức sẵn sàng</span>
+                      )}
+                    </td>
+                    <td>
                       <Chip tone={statusTone(item.dish_status)}>
                         {statusLabel[item.dish_status]}
                       </Chip>
-                    </td>
-                    <td>
-                      {
-                        load.data.recipes.filter(
-                          (recipeItem) =>
-                            recipeItem.dish_id === item.dish_id &&
-                            recipeItem.recipe_status === "ACTIVE",
-                        ).length
-                      }
                     </td>
                     <td>
                       <div className="master-data-row-actions">
                         <button
                           className="inline-action"
                           onClick={() => {
-                            setTab("recipes");
-                            void selectRecipeContext(item.dish_id, null);
+                            setDishId(item.dish_id);
                           }}
                         >
-                          Mở
-                        </button>
-                        <button
-                          className="inline-action"
-                          onClick={() => beginDish(item)}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          className="inline-action"
-                          disabled={busy || !api}
-                          onClick={() =>
-                            void command(
-                              api!.setDishLifecycle,
-                              item.version,
-                              "DISH_LIFECYCLE",
-                              {
-                                dish_id: item.dish_id,
-                                dish_status:
-                                  item.dish_status === "ACTIVE"
-                                    ? "INACTIVE"
-                                    : "ACTIVE",
-                              },
-                            )
-                          }
-                        >
-                          {item.dish_status === "ACTIVE"
-                            ? "Ngừng dùng"
-                            : "Kích hoạt"}
+                          Xem
                         </button>
                       </div>
                     </td>
@@ -750,33 +754,35 @@ export function DishRecipeAdminWorkbench({
             <aside className="master-data-detail">
               <div className="master-data-detail-heading">
                 <div>
-                  <span>Phạm vi công thức</span>
+                  <span>Thông tin đang sử dụng</span>
                   <h3>{dish?.dish_name ?? "Chọn một món"}</h3>
                 </div>
               </div>
               {dish && (
                 <>
                   <dl className="master-data-detail-list">
-                    {dishRecipes.map((item) => (
-                      <div key={item.recipe_id}>
-                        <dt>
-                          {schoolScopeLabel(item, load.data.school_types)}
-                        </dt>
-                        <dd>
-                          {statusLabel[item.recipe_status]} ·{" "}
-                          {
-                            load.data.recipe_versions.filter(
-                              (candidate) =>
-                                candidate.recipe_id === item.recipe_id,
-                            ).length
-                          }{" "}
-                          phiên bản
-                        </dd>
-                      </div>
-                    ))}
+                    {effectiveRecipesForDish(dish.dish_id).map(
+                      ({ recipe, version }) => (
+                        <div key={recipe.recipe_id}>
+                          <dt>
+                            {schoolScopeLabel(recipe, load.data.school_types)}
+                          </dt>
+                          <dd>
+                            {version.basis_portions} suất ·{" "}
+                            {
+                              version.composition.filter(
+                                (line) => line.line_disposition === "PRESENT",
+                              ).length
+                            }{" "}
+                            nguyên liệu
+                          </dd>
+                        </div>
+                      ),
+                    )}
                   </dl>
                   <p className="supporting-copy">
-                    Mở món ăn để xem hoặc tạo công thức theo phạm vi áp dụng.
+                    Danh sách này chỉ để tra cứu. Nếu món/công thức đã được sử
+                    dụng và cần thay đổi, hãy chuyển sang Điều chỉnh.
                   </p>
                 </>
               )}
@@ -786,600 +792,287 @@ export function DishRecipeAdminWorkbench({
       )}
 
       {tab === "recipes" && (
-        <div className="recipe-first-user-layout">
-          <aside className="recipe-dish-finder" aria-label="Tìm món ăn">
-            <label className="recipe-field-label" htmlFor="recipe-dish-search">
-              Tìm món
-            </label>
-            <input
-              id="recipe-dish-search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Tìm theo tên hoặc mã món…"
-            />
-            <div className="recipe-dish-results" role="listbox">
-              {shownDishes.map((item) => (
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={item.dish_id === dishId}
-                  className={item.dish_id === dishId ? "active" : ""}
-                  key={item.dish_id}
-                  onClick={() => void selectRecipeContext(item.dish_id, null)}
-                >
-                  <strong>{item.dish_name}</strong>
-                  <span>
-                    {item.dish_code}
-                    {item.dish_type_name ? ` · ${item.dish_type_name}` : ""}
-                  </span>
-                </button>
-              ))}
-              {!shownDishes.length && (
-                <p className="supporting-copy">
-                  Không có món ăn phù hợp với nội dung tìm kiếm.
-                </p>
-              )}
+        <>
+          <div className="master-data-toolbar recipe-creation-toolbar">
+            <div>
+              <h2>Tạo món & công thức</h2>
+              <p>
+                Tạo món mới, nhập công thức ban đầu và lưu để sẵn sàng cho Lập
+                nhu cầu.
+              </p>
             </div>
-          </aside>
-
-          <section className="recipe-first-user-editor">
-            {dish ? (
-              <>
-                <header className="recipe-context-header">
-                  <div>
-                    <span>Món đang chọn</span>
-                    <h3>{dish.dish_name}</h3>
-                    <p>
-                      Mã món: {dish.dish_code} · Loại món:{" "}
-                      {dish.dish_type_name ?? "Chưa xác định"}
-                    </p>
-                  </div>
-                  <Chip
-                    tone={
-                      visibleRecipeStatus === "Cần xử lý"
-                        ? "warning"
-                        : visibleRecipeStatus === "Đang sử dụng"
-                          ? "ok"
-                          : "neutral"
-                    }
+            <button type="button" onClick={() => beginDish()}>
+              Tạo món mới
+            </button>
+            <button type="button" onClick={() => navigateTab("copy")}>
+              Sao chép công thức từ món khác
+            </button>
+          </div>
+          <div className="recipe-first-user-layout">
+            <aside
+              className="recipe-dish-finder"
+              aria-label="Chọn món đang tạo"
+            >
+              <label
+                className="recipe-field-label"
+                htmlFor="recipe-dish-search"
+              >
+                Chọn món đang tạo
+              </label>
+              <input
+                id="recipe-dish-search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Tìm theo tên hoặc mã món…"
+              />
+              <div className="recipe-dish-results" role="listbox">
+                {shownDishes.map((item) => (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={item.dish_id === dishId}
+                    className={item.dish_id === dishId ? "active" : ""}
+                    key={item.dish_id}
+                    onClick={() => void selectRecipeContext(item.dish_id, null)}
                   >
-                    {visibleRecipeStatus}
-                  </Chip>
-                </header>
+                    <strong>{item.dish_name}</strong>
+                    <span>
+                      {item.dish_code}
+                      {item.dish_type_name ? ` · ${item.dish_type_name}` : ""}
+                    </span>
+                  </button>
+                ))}
+                {!shownDishes.length && (
+                  <p className="supporting-copy">
+                    Không có món ăn phù hợp với nội dung tìm kiếm.
+                  </p>
+                )}
+              </div>
+            </aside>
 
-                <div className="recipe-scope-row">
-                  <label className="recipe-field-label">
-                    Áp dụng cho
-                    <select
-                      value={schoolTypeId ?? ""}
-                      onChange={(event) =>
-                        void selectRecipeContext(
-                          dish.dish_id,
-                          event.target.value || null,
-                        )
+            <section className="recipe-first-user-editor">
+              {dish ? (
+                <>
+                  <header className="recipe-context-header">
+                    <div>
+                      <span>Món đang chọn</span>
+                      <h3>{dish.dish_name}</h3>
+                      <p>
+                        Mã món: {dish.dish_code} · Loại món:{" "}
+                        {dish.dish_type_name ?? "Chưa xác định"}
+                      </p>
+                    </div>
+                    <Chip
+                      tone={
+                        visibleRecipeStatus === "Cần xử lý"
+                          ? "warning"
+                          : visibleRecipeStatus === "Sẵn sàng sử dụng"
+                            ? "ok"
+                            : "neutral"
                       }
                     >
-                      <option value="">Tất cả</option>
-                      {load.data.school_types
-                        .filter((item) => item.school_type_status === "ACTIVE")
-                        .map((item) => (
-                          <option
-                            key={item.school_type_id}
-                            value={item.school_type_id}
-                          >
-                            {item.school_type_name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-                  <label className="recipe-field-label recipe-basis-field">
-                    Định lượng cho
-                    <span className="recipe-basis-control">
-                      <input
-                        aria-label="Số suất áp dụng cho định lượng"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={basisPortions}
-                        onChange={(event) =>
-                          setBasisPortions(event.target.value)
-                        }
-                      />
-                      <span>suất</span>
-                    </span>
-                  </label>
-                </div>
+                      {visibleRecipeStatus}
+                    </Chip>
+                  </header>
 
-                <div className="recipe-section-heading">
-                  <div>
-                    <h3>Công thức</h3>
-                    <p>
-                      Thêm nguyên liệu, nhập định lượng và chọn đơn vị tương
-                      ứng.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="recipe-ingredient-picker">
-                  <label
-                    className="recipe-field-label"
-                    htmlFor="recipe-ingredient-search"
-                  >
-                    {ingredientTargetLineId
-                      ? "Chọn nguyên liệu thay thế"
-                      : "Thêm nguyên liệu"}
-                  </label>
-                  <div className="recipe-ingredient-search-row">
-                    <input
-                      id="recipe-ingredient-search"
-                      value={ingredientQuery}
-                      onChange={(event) =>
-                        setIngredientQuery(event.target.value)
-                      }
-                      placeholder="Tìm nguyên liệu để thêm…"
-                    />
-                    {ingredientTargetLineId && (
+                  {creationLocked && (
+                    <div className="operator-notice warning" role="alert">
+                      <strong>Đã khóa chỉnh sửa thông thường</strong>
+                      <p>
+                        {load.data.selected_recipe.lock_reason ??
+                          "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi."}
+                      </p>
                       <button
                         type="button"
-                        className="inline-action"
-                        onClick={() => {
-                          setIngredientTargetLineId(null);
-                          setIngredientQuery("");
-                        }}
+                        onClick={() => navigateTab("adjustments")}
                       >
-                        Hủy đổi
+                        Đi đến Điều chỉnh
                       </button>
-                    )}
-                  </div>
-                  {ingredientQuery.trim() && (
-                    <div className="recipe-ingredient-results" role="listbox">
-                      {shownIngredients.map((item) => (
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={false}
-                          key={item.ingredient_id}
-                          onClick={() => chooseIngredient(item.ingredient_id)}
-                        >
-                          <strong>{item.ingredient_name}</strong>
-                          <span>{item.ingredient_code}</span>
-                        </button>
-                      ))}
-                      {!shownIngredients.length && (
-                        <p>Không tìm thấy nguyên liệu phù hợp để thêm.</p>
-                      )}
                     </div>
                   )}
-                </div>
 
-                <div className="master-data-table-scroll recipe-bom-table">
-                  <CompactTable
-                    headers={[
-                      "Nguyên liệu",
-                      "Định lượng",
-                      "Đơn vị",
-                      "Ghi chú",
-                      "",
-                    ]}
-                  >
-                    {presentComposition.map((line) => (
-                      <tr key={line.recipe_line_id}>
-                        <td>
-                          <strong>
-                            {ingredientLabel(
-                              line.ingredient_id,
-                              load.data.ingredients,
-                            )}
-                          </strong>
+                  <div className="recipe-scope-row">
+                    <label className="recipe-field-label">
+                      Áp dụng cho
+                      <select
+                        disabled={creationLocked}
+                        value={schoolTypeId ?? ""}
+                        onChange={(event) =>
+                          void selectRecipeContext(
+                            dish.dish_id,
+                            event.target.value || null,
+                          )
+                        }
+                      >
+                        <option value="">Tất cả</option>
+                        {load.data.school_types
+                          .filter(
+                            (item) => item.school_type_status === "ACTIVE",
+                          )
+                          .map((item) => (
+                            <option
+                              key={item.school_type_id}
+                              value={item.school_type_id}
+                            >
+                              {item.school_type_name}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    <label className="recipe-field-label recipe-basis-field">
+                      Định lượng cho
+                      <span className="recipe-basis-control">
+                        <input
+                          disabled={creationLocked}
+                          aria-label="Số suất áp dụng cho định lượng"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={basisPortions}
+                          onChange={(event) =>
+                            setBasisPortions(event.target.value)
+                          }
+                        />
+                        <span>suất</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="recipe-section-heading">
+                    <div>
+                      <h3>Công thức</h3>
+                      <p>
+                        Thêm nguyên liệu, nhập định lượng và chọn đơn vị tương
+                        ứng.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="recipe-ingredient-picker">
+                    <label
+                      className="recipe-field-label"
+                      htmlFor="recipe-ingredient-search"
+                    >
+                      {ingredientTargetLineId
+                        ? "Chọn nguyên liệu thay thế"
+                        : "Thêm nguyên liệu"}
+                    </label>
+                    <div className="recipe-ingredient-search-row">
+                      <input
+                        disabled={creationLocked}
+                        id="recipe-ingredient-search"
+                        value={ingredientQuery}
+                        onChange={(event) =>
+                          setIngredientQuery(event.target.value)
+                        }
+                        placeholder="Tìm nguyên liệu để thêm…"
+                      />
+                      {ingredientTargetLineId && (
+                        <button
+                          type="button"
+                          className="inline-action"
+                          onClick={() => {
+                            setIngredientTargetLineId(null);
+                            setIngredientQuery("");
+                          }}
+                        >
+                          Hủy đổi
+                        </button>
+                      )}
+                    </div>
+                    {ingredientQuery.trim() && (
+                      <div className="recipe-ingredient-results" role="listbox">
+                        {shownIngredients.map((item) => (
                           <button
                             type="button"
-                            className="inline-action recipe-change-ingredient"
-                            onClick={() => {
-                              setIngredientTargetLineId(line.recipe_line_id);
-                              setIngredientQuery("");
-                            }}
+                            disabled={creationLocked}
+                            role="option"
+                            aria-selected={false}
+                            key={item.ingredient_id}
+                            onClick={() => chooseIngredient(item.ingredient_id)}
                           >
-                            Đổi
+                            <strong>{item.ingredient_name}</strong>
+                            <span>{item.ingredient_code}</span>
                           </button>
-                        </td>
-                        <td>
-                          <input
-                            aria-label={`Định lượng ${ingredientLabel(
-                              line.ingredient_id,
-                              load.data.ingredients,
-                            )}`}
-                            type="number"
-                            min="0"
-                            step="0.000001"
-                            value={line.quantity_per_basis}
-                            onChange={(event) =>
-                              setComposition((lines) =>
-                                lines.map((item) =>
-                                  item.recipe_line_id === line.recipe_line_id
-                                    ? {
-                                        ...item,
-                                        quantity_per_basis: Number(
-                                          event.target.value,
-                                        ),
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
-                        </td>
-                        <td>
-                          <select
-                            aria-label={`Đơn vị ${ingredientLabel(
-                              line.ingredient_id,
-                              load.data.ingredients,
-                            )}`}
-                            value={line.unit_id}
-                            onChange={(event) =>
-                              setComposition((lines) =>
-                                lines.map((item) =>
-                                  item.recipe_line_id === line.recipe_line_id
-                                    ? { ...item, unit_id: event.target.value }
-                                    : item,
-                                ),
-                              )
-                            }
-                          >
-                            {load.data.units
-                              .filter((item) => item.unit_status === "ACTIVE")
-                              .map((item) => (
-                                <option value={item.unit_id} key={item.unit_id}>
-                                  {item.unit_name}
-                                </option>
-                              ))}
-                          </select>
-                        </td>
-                        <td>
-                          <input
-                            aria-label={`Ghi chú ${ingredientLabel(
-                              line.ingredient_id,
-                              load.data.ingredients,
-                            )}`}
-                            value={line.operational_note ?? ""}
-                            onChange={(event) =>
-                              setComposition((lines) =>
-                                lines.map((item) =>
-                                  item.recipe_line_id === line.recipe_line_id
-                                    ? {
-                                        ...item,
-                                        operational_note:
-                                          event.target.value || null,
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="inline-action danger-action"
-                            onClick={() => removeLine(line)}
-                          >
-                            Xóa
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </CompactTable>
-                  {!presentComposition.length && (
-                    <p className="recipe-empty-composition">
-                      Chưa có nguyên liệu. Dùng ô tìm kiếm phía trên để thêm.
-                    </p>
-                  )}
-                </div>
-
-                {!compositionValid && presentComposition.length > 0 && (
-                  <p className="operator-notice warning">
-                    Kiểm tra lại định lượng, đơn vị và nguyên liệu trùng trước
-                    khi lưu.
-                  </p>
-                )}
-
-                <div className="recipe-action-area">
-                  <div>
-                    <strong>{visibleRecipeStatus}</strong>
-                    <p>
-                      Lưu để tiếp tục chỉnh sửa sau. Đưa vào sử dụng chỉ ảnh
-                      hưởng các lần Lập nhu cầu trong tương lai.
-                    </p>
+                        ))}
+                        {!shownIngredients.length && (
+                          <p>Không tìm thấy nguyên liệu phù hợp để thêm.</p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="workbench-actions">
-                    <button
-                      type="button"
-                      className={
-                        isDirty && compositionValid ? "primary" : undefined
-                      }
-                      disabled={
-                        busy ||
-                        writeUncertain ||
-                        !api ||
-                        !isDirty ||
-                        !compositionValid ||
-                        !load.data.selected_recipe.allowed_actions.save_recipe
-                      }
-                      title={
-                        load.data.selected_recipe.disabled_reasons
-                          .save_recipe ?? undefined
-                      }
-                      onClick={() => void saveComposition()}
-                    >
-                      Lưu
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        !isDirty &&
-                        load.data.selected_recipe.allowed_actions.release_recipe
-                          ? "primary"
-                          : undefined
-                      }
-                      disabled={
-                        busy ||
-                        writeUncertain ||
-                        !api ||
-                        isDirty ||
-                        !compositionValid ||
-                        !load.data.selected_recipe.allowed_actions
-                          .release_recipe
-                      }
-                      title={
-                        load.data.selected_recipe.disabled_reasons
-                          .release_recipe ?? undefined
-                      }
-                      onClick={() => void releaseComposition()}
-                    >
-                      Đưa vào sử dụng
-                    </button>
-                  </div>
-                </div>
 
-                {(load.data.selected_recipe.disabled_reasons.save_recipe ||
-                  load.data.selected_recipe.disabled_reasons
-                    .release_recipe) && (
-                  <p className="recipe-disabled-reason">
-                    {isDirty
-                      ? load.data.selected_recipe.disabled_reasons.save_recipe
-                      : load.data.selected_recipe.disabled_reasons
-                          .release_recipe}
-                  </p>
-                )}
-
-                <details className="recipe-history">
-                  <summary>Lịch sử công thức</summary>
-                  {!versions.length ? (
-                    <p>Chưa có lịch sử cho phạm vi áp dụng này.</p>
-                  ) : (
-                    <ol>
-                      {versions.map((item) => (
-                        <li key={item.recipe_version_id}>
-                          <div>
+                  <div className="master-data-table-scroll recipe-bom-table">
+                    <CompactTable
+                      headers={[
+                        "Nguyên liệu",
+                        "Định lượng",
+                        "Đơn vị",
+                        "Ghi chú",
+                        "",
+                      ]}
+                    >
+                      {presentComposition.map((line) => (
+                        <tr key={line.recipe_line_id}>
+                          <td>
                             <strong>
-                              {item.recipe_version_status ===
-                              "RELEASED_FOR_PLANNING"
-                                ? "Đưa vào sử dụng"
-                                : item.recipe_version_status === "DRAFT"
-                                  ? "Đã lưu để chỉnh sửa"
-                                  : "Bản công thức trước đây"}
+                              {ingredientLabel(
+                                line.ingredient_id,
+                                load.data.ingredients,
+                              )}
                             </strong>
-                            <span>
-                              {new Date(
-                                item.released_at ?? item.created_at,
-                              ).toLocaleString("vi-VN")}
-                            </span>
-                          </div>
-                          <details>
-                            <summary>Chi tiết hỗ trợ</summary>
-                            <p>
-                              Số lưu trữ: {item.version_number} · Mã tham chiếu:{" "}
-                              {item.recipe_version_id}
-                            </p>
-                          </details>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </details>
-              </>
-            ) : (
-              <p className="supporting-copy">
-                Chọn một món ăn để xem hoặc tạo công thức.
-              </p>
-            )}
-          </section>
-        </div>
-      )}
-
-      {/* Legacy backend-shaped Recipe Version editor retired by UI-QUALITY-03A.
-      {tab === "versions" && (
-        <div className="recipe-connected-layout">
-          <section className="recipe-selection-panel">
-            <label className="evidence-field">
-              Món ăn
-              <select
-                value={dishId ?? ""}
-                onChange={(event) => setDishId(event.target.value)}
-              >
-                {load.data.dishes.map((item) => (
-                  <option key={item.dish_id} value={item.dish_id}>
-                    {item.dish_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="evidence-field">
-              Phạm vi
-              <select
-                value={recipeId ?? ""}
-                onChange={(event) => setRecipeId(event.target.value)}
-              >
-                {dishRecipes.map((item) => (
-                  <option key={item.recipe_id} value={item.recipe_id}>
-                    {schoolScopeLabel(item, load.data.school_types)} ·{" "}
-                    {statusLabel[item.recipe_status]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="recipe-version-list">
-              {versions.map((item) => (
-                <button
-                  type="button"
-                  className={
-                    item.recipe_version_id === versionId ? "active" : ""
-                  }
-                  onClick={() => setVersionId(item.recipe_version_id)}
-                  key={item.recipe_version_id}
-                >
-                  <strong>v{item.version_number}</strong>
-                  <span>{statusLabel[item.recipe_version_status]}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-          <section className="recipe-composition-panel">
-            {!version ? (
-              <p className="supporting-copy">
-                Phạm vi này chưa có phiên bản công thức.
-              </p>
-            ) : (
-              <>
-                <div className="recipe-version-heading">
-                  <div>
-                    <span>Phiên bản v{version.version_number}</span>
-                    <h3>{statusLabel[version.recipe_version_status]}</h3>
-                  </div>
-                  <Chip tone={statusTone(version.recipe_version_status)}>
-                    {version.predecessor_recipe_version_id
-                      ? "Có tiền nhiệm"
-                      : "Phiên bản đầu"}
-                  </Chip>
-                </div>
-                <div className="recipe-lifecycle-evidence">
-                  <span>
-                    Tạo: {new Date(version.created_at).toLocaleString("vi-VN")}
-                  </span>
-                  <span>
-                    Xác thực:{" "}
-                    {version.validated_at
-                      ? new Date(version.validated_at).toLocaleString("vi-VN")
-                      : "—"}
-                  </span>
-                  <span>
-                    Phát hành:{" "}
-                    {version.released_at
-                      ? new Date(version.released_at).toLocaleString("vi-VN")
-                      : "—"}
-                  </span>
-                </div>
-                <label className="evidence-field recipe-basis-field">
-                  Số suất cơ sở
-                  <input
-                    type="number"
-                    min="1"
-                    disabled={version.recipe_version_status !== "DRAFT"}
-                    value={basisPortions}
-                    onChange={(event) => setBasisPortions(event.target.value)}
-                  />
-                </label>
-                <div className="master-data-table-scroll recipe-bom-table">
-                  <CompactTable
-                    headers={[
-                      "Nguyên liệu",
-                      "Định lượng",
-                      "Đơn vị",
-                      "Ghi chú",
-                      "",
-                    ]}
-                  >
-                    {composition.map((line) => (
-                      <tr key={line.recipe_line_id}>
-                        <td>
-                          {version.recipe_version_status === "DRAFT" &&
-                          line.line_disposition === "PRESENT" ? (
-                            <select
-                              value={line.ingredient_id}
+                            <button
+                              type="button"
+                              disabled={creationLocked}
+                              className="inline-action recipe-change-ingredient"
+                              onClick={() => {
+                                setIngredientTargetLineId(line.recipe_line_id);
+                                setIngredientQuery("");
+                              }}
+                            >
+                              Đổi
+                            </button>
+                          </td>
+                          <td>
+                            <input
+                              disabled={creationLocked}
+                              aria-label={`Định lượng ${ingredientLabel(
+                                line.ingredient_id,
+                                load.data.ingredients,
+                              )}`}
+                              type="number"
+                              min="0"
+                              step="0.000001"
+                              value={line.quantity_per_basis}
                               onChange={(event) =>
                                 setComposition((lines) =>
                                   lines.map((item) =>
                                     item.recipe_line_id === line.recipe_line_id
                                       ? {
                                           ...item,
-                                          ingredient_id: event.target.value,
+                                          quantity_per_basis: Number(
+                                            event.target.value,
+                                          ),
                                         }
                                       : item,
                                   ),
                                 )
                               }
-                            >
-                              {load.data.ingredients
-                                .filter(
-                                  (item) => item.ingredient_status === "ACTIVE",
-                                )
-                                .map((item) => (
-                                  <option
-                                    value={item.ingredient_id}
-                                    key={item.ingredient_id}
-                                  >
-                                    {item.ingredient_name}
-                                  </option>
-                                ))}
-                            </select>
-                          ) : (
-                            ingredientLabel(
-                              line.ingredient_id,
-                              load.data.ingredients,
-                            )
-                          )}
-                          {line.line_disposition === "REMOVED" && (
-                            <small>Đã loại bỏ rõ ràng ở phiên bản này</small>
-                          )}
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.000001"
-                            disabled={
-                              version.recipe_version_status !== "DRAFT" ||
-                              line.line_disposition === "REMOVED"
-                            }
-                            value={line.quantity_per_basis}
-                            onChange={(event) =>
-                              setComposition((lines) =>
-                                lines.map((item) =>
-                                  item.recipe_line_id === line.recipe_line_id
-                                    ? {
-                                        ...item,
-                                        quantity_per_basis: Number(
-                                          event.target.value,
-                                        ),
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
-                        </td>
-                        <td>
-                          {version.recipe_version_status === "DRAFT" &&
-                          line.line_disposition === "PRESENT" ? (
+                            />
+                          </td>
+                          <td>
                             <select
+                              disabled={creationLocked}
+                              aria-label={`Đơn vị ${ingredientLabel(
+                                line.ingredient_id,
+                                load.data.ingredients,
+                              )}`}
                               value={line.unit_id}
                               onChange={(event) =>
                                 setComposition((lines) =>
                                   lines.map((item) =>
                                     item.recipe_line_id === line.recipe_line_id
-                                      ? {
-                                          ...item,
-                                          unit_id: event.target.value,
-                                        }
+                                      ? { ...item, unit_id: event.target.value }
                                       : item,
                                   ),
                                 )
@@ -1396,95 +1089,143 @@ export function DishRecipeAdminWorkbench({
                                   </option>
                                 ))}
                             </select>
-                          ) : (
-                            unitLabel(line.unit_id, load.data.units)
-                          )}
-                        </td>
-                        <td>
-                          <input
-                            disabled={version.recipe_version_status !== "DRAFT"}
-                            value={line.operational_note ?? ""}
-                            onChange={(event) =>
-                              setComposition((lines) =>
-                                lines.map((item) =>
-                                  item.recipe_line_id === line.recipe_line_id
-                                    ? {
-                                        ...item,
-                                        operational_note:
-                                          event.target.value || null,
-                                      }
-                                    : item,
-                                ),
-                              )
-                            }
-                          />
-                        </td>
-                        <td>
-                          {version.recipe_version_status === "DRAFT" &&
-                            line.line_disposition === "PRESENT" && (
-                              <button
-                                className="inline-action danger-action"
-                                onClick={() => removeLine(line)}
-                              >
-                                Loại bỏ
-                              </button>
-                            )}
-                        </td>
-                      </tr>
-                    ))}
-                  </CompactTable>
-                </div>
-                <div className="workbench-actions">
-                  {version.recipe_version_status === "DRAFT" && (
-                    <>
-                      <button onClick={addLine}>Thêm dòng BOM</button>
+                          </td>
+                          <td>
+                            <input
+                              disabled={creationLocked}
+                              aria-label={`Ghi chú ${ingredientLabel(
+                                line.ingredient_id,
+                                load.data.ingredients,
+                              )}`}
+                              value={line.operational_note ?? ""}
+                              onChange={(event) =>
+                                setComposition((lines) =>
+                                  lines.map((item) =>
+                                    item.recipe_line_id === line.recipe_line_id
+                                      ? {
+                                          ...item,
+                                          operational_note:
+                                            event.target.value || null,
+                                        }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              disabled={creationLocked}
+                              className="inline-action danger-action"
+                              onClick={() => removeLine(line)}
+                            >
+                              Xóa
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </CompactTable>
+                    {!presentComposition.length && (
+                      <p className="recipe-empty-composition">
+                        Chưa có nguyên liệu. Dùng ô tìm kiếm phía trên để thêm.
+                      </p>
+                    )}
+                  </div>
+
+                  {!compositionValid && presentComposition.length > 0 && (
+                    <p className="operator-notice warning">
+                      Kiểm tra lại định lượng, đơn vị và nguyên liệu trùng trước
+                      khi lưu.
+                    </p>
+                  )}
+
+                  <div className="recipe-action-area">
+                    <div>
+                      <strong>{visibleRecipeStatus}</strong>
+                      <p>
+                        Tạo/Lưu sẽ làm công thức sẵn sàng cho Lập nhu cầu. Bạn
+                        có thể chỉnh sửa lại cho đến lần đầu món được dùng trong
+                        kế hoạch đã duyệt.
+                      </p>
+                    </div>
+                    <div className="workbench-actions">
                       <button
-                        className="primary"
-                        disabled={busy || !api}
+                        type="button"
+                        className={
+                          isDirty && compositionValid ? "primary" : undefined
+                        }
+                        disabled={
+                          busy ||
+                          writeUncertain ||
+                          !api ||
+                          !isDirty ||
+                          !compositionValid ||
+                          creationLocked ||
+                          !load.data.selected_recipe.allowed_actions.save_recipe
+                        }
+                        title={
+                          load.data.selected_recipe.disabled_reasons
+                            .save_recipe ?? undefined
+                        }
                         onClick={() => void saveComposition()}
                       >
-                        Lưu toàn bộ BOM
+                        {load.data.selected_recipe.recipe_id ? "Lưu" : "Tạo"}
                       </button>
-                      <button
-                        disabled={busy || !api}
-                        onClick={() => void transitionVersion("validate")}
-                      >
-                        Xác thực
-                      </button>
-                    </>
-                  )}
-                  {version.recipe_version_status === "VALIDATED" && (
-                    <button
-                      className="primary"
-                      disabled={busy || !api}
-                      onClick={() => void transitionVersion("release")}
-                    >
-                      Phát hành cho Lập nhu cầu
-                    </button>
-                  )}
-                  {["VALIDATED", "RELEASED_FOR_PLANNING", "LOCKED"].includes(
-                    version.recipe_version_status,
-                  ) && (
-                    <button
-                      disabled={busy || !api}
-                      onClick={() => void transitionVersion("successor")}
-                    >
-                      Tạo phiên bản kế nhiệm
-                    </button>
-                  )}
-                </div>
-                <p className="drawer-guidance">
-                  Phiên bản đã xác thực, phát hành hoặc khóa chỉ đọc. Mọi điều
-                  chỉnh phải đi qua một phiên bản kế nhiệm; việc phát hành chỉ
-                  ảnh hưởng tham chiếu Lập nhu cầu trong tương lai.
-                </p>
-              </>
-            )}
-          </section>
-        </div>
-      )}
+                    </div>
+                  </div>
 
-      */}
+                  {load.data.selected_recipe.disabled_reasons.save_recipe && (
+                    <p className="recipe-disabled-reason">
+                      {load.data.selected_recipe.disabled_reasons.save_recipe}
+                    </p>
+                  )}
+
+                  <details className="recipe-history">
+                    <summary>Lịch sử công thức</summary>
+                    {!versions.length ? (
+                      <p>Chưa có lịch sử cho phạm vi áp dụng này.</p>
+                    ) : (
+                      <ol>
+                        {versions.map((item) => (
+                          <li key={item.recipe_version_id}>
+                            <div>
+                              <strong>
+                                {item.recipe_version_status ===
+                                "RELEASED_FOR_PLANNING"
+                                  ? "Đã lưu và sẵn sàng"
+                                  : item.recipe_version_status === "DRAFT"
+                                    ? "Đã lưu để chỉnh sửa"
+                                    : "Bản công thức trước đây"}
+                              </strong>
+                              <span>
+                                {new Date(
+                                  item.released_at ?? item.created_at,
+                                ).toLocaleString("vi-VN")}
+                              </span>
+                            </div>
+                            <details>
+                              <summary>Chi tiết hỗ trợ</summary>
+                              <p>
+                                Số lưu trữ: {item.version_number} · Mã tham
+                                chiếu: {item.recipe_version_id}
+                              </p>
+                            </details>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </details>
+                </>
+              ) : (
+                <p className="supporting-copy">
+                  Chọn một món ăn để xem hoặc tạo công thức.
+                </p>
+              )}
+            </section>
+          </div>
+        </>
+      )}
 
       {(tab === "copy" || tab === "import") && (
         <div className="recipe-secondary-tabs" role="tablist">
@@ -1510,9 +1251,30 @@ export function DishRecipeAdminWorkbench({
       {tab === "copy" && (
         <div className="recipe-operation-grid">
           <section>
-            <h3>Nguồn và đích</h3>
+            <h3>Sao chép vào món đang tạo</h3>
+            <p className="drawer-guidance">
+              Chọn một công thức tương tự làm mẫu. Nội dung chỉ được điền vào
+              biểu mẫu đang tạo và chưa được lưu cho đến khi bạn kiểm tra rồi
+              bấm Tạo/Lưu.
+            </p>
+            <dl className="master-data-detail-list">
+              <div>
+                <dt>Món đích</dt>
+                <dd>{dish?.dish_name ?? "Chưa chọn món"}</dd>
+              </div>
+              <div>
+                <dt>Áp dụng cho</dt>
+                <dd>
+                  {schoolTypeId
+                    ? (load.data.school_types.find(
+                        (item) => item.school_type_id === schoolTypeId,
+                      )?.school_type_name ?? "Không xác định")
+                    : "Tất cả"}
+                </dd>
+              </div>
+            </dl>
             <label className="evidence-field">
-              Phiên bản nguồn
+              Công thức mẫu
               <select
                 value={copyDraft.sourceVersionId}
                 onChange={(event) =>
@@ -1522,94 +1284,37 @@ export function DishRecipeAdminWorkbench({
                   }))
                 }
               >
-                <option value="">Chọn phiên bản</option>
-                {load.data.recipe_versions.map((item) => {
-                  const sourceRecipe = load.data.recipes.find(
-                    (candidate) => candidate.recipe_id === item.recipe_id,
-                  );
-                  const sourceDish = load.data.dishes.find(
-                    (candidate) => candidate.dish_id === sourceRecipe?.dish_id,
-                  );
-                  return (
-                    <option
-                      key={item.recipe_version_id}
-                      value={item.recipe_version_id}
-                    >
-                      {sourceDish?.dish_name} · v{item.version_number} ·{" "}
-                      {statusLabel[item.recipe_version_status]}
-                    </option>
-                  );
-                })}
+                <option value="">Chọn công thức mẫu</option>
+                {load.data.recipe_versions
+                  .filter(
+                    (item) =>
+                      item.recipe_version_status === "RELEASED_FOR_PLANNING",
+                  )
+                  .map((item) => {
+                    const sourceRecipe = load.data.recipes.find(
+                      (candidate) => candidate.recipe_id === item.recipe_id,
+                    );
+                    const sourceDish = load.data.dishes.find(
+                      (candidate) =>
+                        candidate.dish_id === sourceRecipe?.dish_id,
+                    );
+                    return (
+                      <option
+                        key={item.recipe_version_id}
+                        value={item.recipe_version_id}
+                      >
+                        {sourceDish?.dish_name} · {item.basis_portions} suất
+                      </option>
+                    );
+                  })}
               </select>
-            </label>
-            <label className="evidence-field">
-              Món đích
-              <select
-                value={copyDraft.targetDishId}
-                onChange={(event) =>
-                  setCopyDraft((state) => ({
-                    ...state,
-                    targetDishId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Chọn món đích</option>
-                {load.data.dishes
-                  .filter((item) => item.dish_status === "ACTIVE")
-                  .map((item) => (
-                    <option key={item.dish_id} value={item.dish_id}>
-                      {item.dish_name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <label className="evidence-field">
-              Phạm vi đích
-              <select
-                value={copyDraft.targetSchoolTypeId}
-                onChange={(event) =>
-                  setCopyDraft((state) => ({
-                    ...state,
-                    targetSchoolTypeId: event.target.value,
-                  }))
-                }
-              >
-                <option value="">Công thức chung</option>
-                {load.data.school_types.map((item) => (
-                  <option key={item.school_type_id} value={item.school_type_id}>
-                    {item.school_type_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="evidence-field">
-              Lý do sao chép
-              <textarea
-                value={copyDraft.reason}
-                onChange={(event) =>
-                  setCopyDraft((state) => ({
-                    ...state,
-                    reason: event.target.value,
-                  }))
-                }
-              />
             </label>
           </section>
           <section>
-            <h3>Xem trước có kiểm soát</h3>
+            <h3>Xem trước nội dung sẽ điền</h3>
             {(() => {
               const source = load.data.recipe_versions.find(
                 (item) => item.recipe_version_id === copyDraft.sourceVersionId,
-              );
-              const targetRecipe = load.data.recipes.find(
-                (item) =>
-                  item.dish_id === copyDraft.targetDishId &&
-                  item.school_type_id ===
-                    (copyDraft.targetSchoolTypeId || null) &&
-                  item.recipe_status === "ACTIVE",
-              );
-              const targetVersions = load.data.recipe_versions.filter(
-                (item) => item.recipe_id === targetRecipe?.recipe_id,
               );
               return (
                 <>
@@ -1619,15 +1324,8 @@ export function DishRecipeAdminWorkbench({
                       <dd>{source?.composition.length ?? 0}</dd>
                     </div>
                     <div>
-                      <dt>Phiên bản đích hiện có</dt>
-                      <dd>{targetVersions.length}</dd>
-                    </div>
-                    <div>
                       <dt>Kết quả</dt>
-                      <dd>
-                        Một bản nháp mới; không ghi đè bản nháp hoặc lịch sử
-                        hiện có.
-                      </dd>
+                      <dd>Điền vào biểu mẫu tạo; chưa ghi vào hệ thống.</dd>
                     </div>
                   </dl>
                   <h4>Thành phần công thức nguồn</h4>
@@ -1670,7 +1368,7 @@ export function DishRecipeAdminWorkbench({
                     </div>
                   ) : (
                     <p className="supporting-copy">
-                      Phiên bản nguồn không có thành phần để sao chép.
+                      Công thức mẫu không có thành phần để sao chép.
                     </p>
                   )}
                 </>
@@ -1679,15 +1377,11 @@ export function DishRecipeAdminWorkbench({
             <button
               type="button"
               disabled={
-                busy ||
-                !api ||
-                !copyDraft.sourceVersionId ||
-                !copyDraft.targetDishId ||
-                !copyDraft.reason.trim()
+                busy || !copyDraft.sourceVersionId || !dish || creationLocked
               }
-              onClick={() => void applyCopy()}
+              onClick={applyCopy}
             >
-              Tạo bản nháp từ bản sao
+              Điền vào công thức đang tạo
             </button>
           </section>
         </div>
@@ -1792,7 +1486,7 @@ export function DishRecipeAdminWorkbench({
           <div className="master-data-detail-heading">
             <div>
               <span>Món ăn</span>
-              <h3>{dishEditorId === "NEW" ? "Thêm món" : "Sửa món"}</h3>
+              <h3>Thêm món</h3>
             </div>
             <button onClick={() => setDishEditorId(null)}>×</button>
           </div>
@@ -1809,7 +1503,6 @@ export function DishRecipeAdminWorkbench({
                 {label}
                 <input
                   value={dishDraft[key]}
-                  disabled={key === "code" && dishEditorId !== "NEW"}
                   onChange={(event) =>
                     setDishDraft((state) => ({
                       ...state,
