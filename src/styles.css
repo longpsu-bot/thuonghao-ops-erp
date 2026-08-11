@@ -3871,6 +3871,325 @@ tbody tr.selected-row {
   overflow: auto;
 }
 
+/* UI-QUALITY-02C correction — two-action Confirmed Need workbench. */
+.confirmed-need-shell {
+  display: grid;
+  gap: 16px;
+  color: var(--atlas-ink, #17222d);
+}
+
+.confirmed-need-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border: 1px solid #d9e0e6;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.confirmed-need-eyebrow,
+.confirmed-need-period,
+.confirmed-need-result-count,
+.confirmed-need-hero h2 {
+  margin: 0;
+}
+
+.confirmed-need-eyebrow {
+  color: #60707d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.confirmed-need-hero h2 {
+  margin-top: 3px;
+  font-size: clamp(22px, 2vw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.confirmed-need-period {
+  margin-top: 6px;
+  color: #42515d;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.confirmed-need-context-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.confirmed-need-context-summary > * {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f4f6;
+  font-weight: 500;
+}
+
+.confirmed-need-context-summary strong,
+.confirmed-need-save-state {
+  font-weight: 600;
+}
+
+.confirmed-need-save-state {
+  color: #196540;
+  background: #e8f5ed !important;
+}
+
+.confirmed-need-save-state.dirty {
+  color: #8a4b00;
+  background: #fff3dd !important;
+}
+
+.confirmed-need-notice,
+.confirmed-need-attention,
+.confirmed-need-issues {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.confirmed-need-notice {
+  background: #edf5ff;
+}
+.confirmed-need-attention,
+.confirmed-need-issues.warning {
+  background: #fff4dc;
+}
+.confirmed-need-issues.danger {
+  background: #ffeded;
+}
+.confirmed-need-issues ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.confirmed-need-toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #d9e0e6;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.confirmed-need-toolbar label,
+.confirmed-need-search {
+  display: grid;
+  gap: 6px;
+  color: #42515d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.confirmed-need-toolbar input,
+.confirmed-need-toolbar select,
+.confirmed-need-toolbar output {
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #bdc8d0;
+  border-radius: 7px;
+  background: #fff;
+  color: #17222d;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.confirmed-need-toolbar output {
+  display: flex;
+  align-items: center;
+}
+.confirmed-need-result-count {
+  color: #60707d;
+  font-size: 13px;
+}
+
+.confirmed-need-table-scroll {
+  max-height: min(62vh, 720px);
+  overflow: auto;
+  border: 1px solid #d9e0e6;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.confirmed-need-table-scroll table {
+  min-width: 1050px;
+  font-size: 13px;
+}
+.confirmed-need-table-scroll th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f2f5f7;
+  font-size: 13px;
+  font-weight: 600;
+}
+.confirmed-need-table-scroll td {
+  vertical-align: top;
+  font-weight: 400;
+}
+.confirmed-need-table-scroll td strong,
+.confirmed-need-table-scroll td small {
+  display: block;
+}
+.confirmed-need-table-scroll td small {
+  margin-top: 3px;
+  color: #60707d;
+  font-size: 12px;
+}
+.confirmed-need-table-scroll input,
+.confirmed-need-table-scroll select {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: 7px 8px;
+  border: 1px solid #bdc8d0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 400;
+}
+.confirmed-need-table-scroll td input + input {
+  margin-top: 6px;
+}
+.confirmed-need-table-scroll .field-error {
+  color: #a52a2a;
+  font-size: 12px;
+}
+
+.confirmed-need-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+}
+
+.confirmed-need-utility-actions,
+.confirmed-need-business-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirmed-need-utility-actions small {
+  flex-basis: 100%;
+  color: #60707d;
+  font-size: 12px;
+}
+.confirmed-need-actions button,
+.confirmed-need-commitment button {
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.confirmed-need-actions .primary,
+.confirmed-need-commitment .primary {
+  color: #fff;
+  background: #176b50;
+}
+.confirmed-need-actions .secondary,
+.confirmed-need-commitment .secondary {
+  color: #176b50;
+  border-color: #176b50;
+  background: #fff;
+}
+.confirmed-need-actions .quiet {
+  color: #42515d;
+  background: transparent;
+}
+.confirmed-need-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.confirmed-need-commitment {
+  padding: 18px;
+  border: 1px solid #c6d3cc;
+  border-radius: 9px;
+  background: #f5faf7;
+}
+.confirmed-need-commitment h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+.confirmed-need-commitment p {
+  max-width: 760px;
+  margin: 8px 0 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.confirmed-need-commitment div {
+  display: flex;
+  gap: 8px;
+}
+.confirmed-need-history {
+  font-size: 14px;
+}
+.confirmed-need-history summary {
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .confirmed-need-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .confirmed-need-search {
+    grid-column: 1 / -1;
+  }
+  .confirmed-need-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .confirmed-need-hero {
+    flex-direction: column;
+    padding: 16px;
+  }
+  .confirmed-need-context-summary {
+    justify-content: flex-start;
+  }
+  .confirmed-need-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .confirmed-need-search {
+    grid-column: auto;
+  }
+  .confirmed-need-toolbar input,
+  .confirmed-need-toolbar select,
+  .confirmed-need-toolbar output,
+  .confirmed-need-shell .confirmed-need-table-scroll input,
+  .confirmed-need-shell .confirmed-need-table-scroll select,
+  .confirmed-need-actions button,
+  .confirmed-need-commitment button {
+    min-height: 44px;
+  }
+  .confirmed-need-business-actions,
+  .confirmed-need-business-actions button,
+  .confirmed-need-commitment div,
+  .confirmed-need-commitment button {
+    width: 100%;
+  }
+}
+
 /* UI-QUALITY-02C-B — Confirmed Need operational review and XLSX round-trip */
 .confirmed-need-shell,
 .confirmed-need-shell > .work-panel {

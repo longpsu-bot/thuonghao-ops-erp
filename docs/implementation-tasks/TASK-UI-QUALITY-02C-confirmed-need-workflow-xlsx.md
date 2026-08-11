@@ -1,22 +1,35 @@
-# TASK-UI-QUALITY-02C — Confirmed Need Workflow and XLSX Round-Trip
+# TASK-UI-QUALITY-02C — Confirmed Need Workflow Correction
 
 ## Status and outcome
 
-**UI-QUALITY-02C-A:** workflow definition complete on the exact
-`UI-QUALITY-02AB-UX` merge baseline
-`9818efe4ec1eda7b1b5879494a382921afc758b7`.
+**Correction:** D-037 and the Product Owner correction for draft PR #189
+supersede the earlier UI-QUALITY-02C-A/02C-B assumptions below wherever they
+conflict. The earlier material is retained only as historical review evidence.
 
-**Conclusion:** **Outcome A — the current RMVP-05/06/07 backend contracts are
-sufficient.** No Confirmed Need backend prerequisite is required.
+The corrected implementation adds `RMVP-05.v2` Save and `RMVP-07.v2` Release,
+keeps v1 APIs callable, and presents exactly `Lưu` and `Chuyển sang lên đơn` as
+normal human write actions. React performs no RMVP-05 → RMVP-06 or RMVP-07
+approve → release chaining.
 
-**Next task:** `UI-QUALITY-02C-B — Implement Confirmed Need workflow and XLSX
-round-trip`.
+The Confirmed Need XLSX round-trip, workbook schema, hidden metadata, parser,
+writer, and tests are removed. `Xuất Excel` and `Xuất PDF` are disabled
+placeholders until the workbench read model and final export contract are
+approved. `write-excel-file` is removed; `read-excel-file` remains because
+merged Planning and Recipe features still use it. `@mantine/dates` and `dayjs`
+remain for the Vietnamese service-week date picker.
 
-This document is the single canonical implementation handoff for
-`UI-QUALITY-02C-B`. It changes no Application, API, SQL, migration, capability,
-lifecycle, hosted environment, Retool application, or production data.
+Corrected normal flow:
 
-### First-time operator correction for PR #189
+```text
+Edit → Lưu → continue working if needed → Chuyển sang lên đơn
+```
+
+The workbench prominently shows the service week, School scope, total row count,
+saved/unsaved/released state, text search, structured School/date filters,
+editable confirmed quantity, concise reasons, and one dominant action. Batch
+IDs, versions, fingerprints, capability codes and API names are not normal UI.
+
+### Superseded first-time operator notes from the original PR #189 draft
 
 The implemented presentation is governed by a first-time Planning employee,
 not by knowledge of internal architecture:

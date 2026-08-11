@@ -37,12 +37,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(tabs[4]).toHaveTextContent("Xác nhận nhu cầu");
     fireEvent.click(tabs[4]!);
     expect(
-      await screen.findByText(
-        /Rà soát số lượng đề xuất và nhập số lượng xác nhận/,
-      ),
-    ).toBeVisible();
-    expect(
-      screen.getByText("Chưa có nhu cầu xác nhận cho tuần này."),
+      await screen.findByText("Chưa có nhu cầu cho tuần đã chọn."),
     ).toBeVisible();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
@@ -60,11 +55,15 @@ describe("Planning Inputs Confirmed Need tab", () => {
         mode="review"
       />,
     );
-    fireEvent.click(screen.getAllByRole("tab")[4]!);
-    expect(await screen.findByText("Gạo thơm")).toBeVisible();
-    expect(screen.getByLabelText("Trường đang xem")).toHaveDisplayValue(
-      "Tất cả trường",
+    const confirmedNeedTab = screen.getByRole("tab", {
+      name: "Xác nhận nhu cầu",
+    });
+    fireEvent.click(confirmedNeedTab);
+    await waitFor(() =>
+      expect(confirmedNeedTab).toHaveAttribute("aria-selected", "true"),
     );
+    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(screen.getByLabelText("Trường")).toHaveDisplayValue("Tất cả trường");
     expect(screen.queryByText(/UUID|Mã lô|Tải lô/i)).not.toBeInTheDocument();
   });
 
@@ -79,11 +78,15 @@ describe("Planning Inputs Confirmed Need tab", () => {
         mode="review"
       />,
     );
-    fireEvent.click(screen.getAllByRole("tab")[4]!);
+    const confirmedNeedTab = screen.getByRole("tab", {
+      name: "Xác nhận nhu cầu",
+    });
+    fireEvent.click(confirmedNeedTab);
+    await waitFor(() =>
+      expect(confirmedNeedTab).toHaveAttribute("aria-selected", "true"),
+    );
     expect(
-      await screen.findByText(
-        "Bạn không có quyền truy cập nhu cầu xác nhận này.",
-      ),
+      await screen.findByText("Bạn không có quyền xem dữ liệu này."),
     ).toBeVisible();
   });
 
@@ -113,6 +116,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Excel (không bắt buộc)")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeDisabled();
+    expect(screen.queryByText("Nhập Excel")).not.toBeInTheDocument();
   });
 });

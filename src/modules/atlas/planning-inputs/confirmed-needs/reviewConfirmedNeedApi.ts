@@ -112,12 +112,12 @@ export function createReviewConfirmedNeedFixture(
           name: "Khối trường Atlas",
         },
         school: {
-          id: "a1100000-0000-0000-0000-000000000001",
-          name: "Trường Tiểu học An Bình",
+          id: "a1100000-0000-0000-0000-000000000002",
+          name: "Trường Mầm non Hoa Sen",
         },
         delivery_location: {
-          id: "a1200000-0000-0000-0000-000000000001",
-          name: "Bếp chính",
+          id: "a1200000-0000-0000-0000-000000000002",
+          name: "Bếp phụ",
         },
         ingredient: {
           id: "a1300000-0000-0000-0000-000000000001",
@@ -633,6 +633,123 @@ export function createReviewConfirmedNeedApi(
         command_name: "release_confirmed_needs_for_purchase_handoff",
         command_id: request.command_id,
         safe_operator_message: "Đã phát hành sang bước lên đơn.",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async save(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      if (scenario === "stale")
+        return backendError("STALE_CONFIRMED_NEED_BATCH");
+      const nextLines = state.lines.map((line) => {
+        const changed = request.payload.lines.find(
+          (candidate) =>
+            candidate.confirmed_need_line_id === line.confirmed_need_line_id,
+        );
+        if (!changed) return line;
+        const adjusted =
+          changed.proposed_confirmed_quantity !==
+          line.proposed_confirmed_quantity;
+        return {
+          ...line,
+          current_revision_id: adjusted
+            ? crypto.randomUUID()
+            : line.current_revision_id,
+          current_revision_number: adjusted
+            ? line.current_revision_number + 1
+            : line.current_revision_number,
+          current_decision_id: crypto.randomUUID(),
+          current_decision_number: (line.current_decision_number ?? 0) + 1,
+          current_decision_kind: adjusted
+            ? "ADJUSTED_QUANTITY_CONFIRMED"
+            : "UNCHANGED_PROPOSAL_ACCEPTED",
+          confirmed_quantity_after: changed.proposed_confirmed_quantity,
+        };
+      });
+      state = {
+        ...state,
+        batch_version: state.batch_version + 1,
+        lines: nextLines,
+        line_counts: {
+          total: nextLines.length,
+          unreviewed: nextLines.filter((line) => !line.current_decision_id)
+            .length,
+          confirmed: nextLines.filter((line) => line.current_decision_id)
+            .length,
+          adjusted: nextLines.filter(
+            (line) =>
+              line.current_decision_kind === "ADJUSTED_QUANTITY_CONFIRMED",
+          ).length,
+        },
+      };
+      const result = success({
+        contract_version: "RMVP-05.v2",
+        command_id: request.command_id,
+        safe_operator_message: "Đã lưu thay đổi.",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async releaseSaved(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      if (scenario === "stale")
+        return backendError("STALE_CONFIRMED_NEED_BATCH");
+      if (state.line_counts.unreviewed > 0)
+        return backendError("CONFIRMED_NEED_INCOMPLETE");
+      const now = new Date().toISOString();
+      const validationId = crypto.randomUUID();
+      const approvalId = crypto.randomUUID();
+      const releaseId = crypto.randomUUID();
+      const resultingVersion = state.batch_version + 3;
+      state = {
+        ...state,
+        batch_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+        authoritative_batch_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+        batch_version: resultingVersion,
+        editing_allowed: false,
+        validation_allowed: false,
+        allowed_actions: {
+          preview_confirmation: false,
+          confirm_quantities: false,
+          approve_confirmed_needs: false,
+          release_confirmed_needs_for_purchase_handoff: false,
+        },
+        validation: {
+          ...state.validation,
+          latest_attempt_id: validationId,
+          latest_attempt_number: 1,
+          latest_outcome: "VALIDATED",
+          evaluated_version: request.expected_version,
+          resulting_version: request.expected_version + 1,
+          blocking_count: 0,
+        },
+        approval: {
+          ...state.approval,
+          current_snapshot_id: approvalId,
+          approved_version: request.expected_version + 2,
+          source_validated_version: request.expected_version + 1,
+          validation_attempt_id: validationId,
+          line_count: state.line_counts.total,
+          approved_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          approved_at: now,
+        },
+        release: {
+          current_release_id: releaseId,
+          approval_snapshot_id: approvalId,
+          source_approved_version: request.expected_version + 2,
+          resulting_released_version: resultingVersion,
+          released_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          released_at: now,
+        },
+      };
+      const result = success({
+        contract_version: "RMVP-07.v2",
+        command_id: request.command_id,
+        safe_operator_message: "Đã chuyển sang lên đơn.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));

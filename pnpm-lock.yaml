@@ -35,9 +35,6 @@ importers:
       read-excel-file:
         specifier: 9.3.4
         version: 9.3.4
-      write-excel-file:
-        specifier: 4.1.1
-        version: 4.1.1
     devDependencies:
       '@storybook/react-vite':
         specifier: ^10.5.0
@@ -2142,10 +2139,6 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
-  write-excel-file@4.1.1:
-    resolution: {integrity: sha512-MUnCnNtQrcZek832ZcU24uU0rSphFmKPD1DvIjXOlygVb93CV7Tme6H3jUTkxsMmjB2W7HIzERzjqTi5kui71A==}
-    engines: {node: '>=18'}
-
   ws@8.21.0:
     resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
@@ -3914,10 +3907,6 @@ snapshots:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
-
-  write-excel-file@4.1.1:
-    dependencies:
-      fflate: 0.8.3
 
   ws@8.21.0: {}
 

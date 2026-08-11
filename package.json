@@ -45,8 +45,7 @@
     "dayjs": "1.11.21",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "read-excel-file": "9.3.4",
-    "write-excel-file": "4.1.1"
+    "read-excel-file": "9.3.4"
   },
   "devDependencies": {
     "@storybook/react-vite": "^10.5.0",

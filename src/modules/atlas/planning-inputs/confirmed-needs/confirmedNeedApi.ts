@@ -12,6 +12,8 @@ export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   validate: "atlas_api.validate_confirmed_needs",
   approve: "atlas_api.approve_confirmed_needs",
   release: "atlas_api.release_confirmed_needs_for_purchase_handoff",
+  saveV2: "atlas_api.save_confirmed_needs",
+  releaseV2: "atlas_api.release_confirmed_needs",
 } as const satisfies Record<string, AtlasRpcName>;
 
 export type ConfirmedNeedFilters = {
@@ -95,6 +97,35 @@ export type ConfirmedNeedReleaseRequest = AtlasRpcRequest & {
   requested_at: string;
   reason_code: "CONFIRMED_NEED_RELEASE_REQUESTED";
   reason_note: string | null;
+  payload: { confirmed_need_batch_id: string };
+};
+
+export type ConfirmedNeedSaveV2Request = AtlasRpcRequest & {
+  contract_version: "RMVP-05.v2";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "CONFIRMED_NEED_SAVED";
+  reason_note: null;
+  payload: {
+    confirmed_need_batch_id: string;
+    lines: ConfirmedNeedLineRequest[];
+  };
+};
+
+export type ConfirmedNeedReleaseV2Request = AtlasRpcRequest & {
+  contract_version: "RMVP-07.v2";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "CONFIRMED_NEED_RELEASED";
+  reason_note: null;
   payload: { confirmed_need_batch_id: string };
 };
 
@@ -253,6 +284,49 @@ export function confirmedNeedReleaseRequest(
   ) as ConfirmedNeedReleaseRequest;
 }
 
+export function confirmedNeedSaveV2Request(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+  lines: ConfirmedNeedLineRequest[],
+): ConfirmedNeedSaveV2Request {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-05.v2",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `confirmed-need-save:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "CONFIRMED_NEED_SAVED",
+    reason_note: null,
+    payload: { confirmed_need_batch_id: batchId, lines },
+  };
+}
+
+export function confirmedNeedReleaseV2Request(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+): ConfirmedNeedReleaseV2Request {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-07.v2",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `confirmed-need-release:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "CONFIRMED_NEED_RELEASED",
+    reason_note: null,
+    payload: { confirmed_need_batch_id: batchId },
+  };
+}
+
 export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   return {
     getReview(
@@ -289,6 +363,12 @@ export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
     },
     release(request: ConfirmedNeedReleaseRequest) {
       return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.release, request);
+    },
+    save(request: ConfirmedNeedSaveV2Request) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.saveV2, request);
+    },
+    releaseSaved(request: ConfirmedNeedReleaseV2Request) {
+      return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.releaseV2, request);
     },
   };
 }
