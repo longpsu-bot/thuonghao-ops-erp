@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
-select plan(24);
+select plan(30);
 
 select has_function('atlas_api', 'save_confirmed_needs', array['jsonb'],
   'D037-01 Save v2 is public');
@@ -80,18 +80,44 @@ grant execute on function pg_temp.d037_lines(jsonb) to authenticated;
 grant execute on function pg_temp.d037_command(text, uuid, text, bigint, text, jsonb)
 to authenticated;
 
-insert into atlas_core.role_capabilities(role_id, capability_id)
-select 'b6000000-0000-0000-0000-000000000003', capability.capability_id
-from atlas_core.capabilities capability
-where capability.capability_code in (
-  'confirmed_need_quantities.confirm', 'confirmed_need_release.release')
-on conflict (role_id, capability_id) do nothing;
+delete from atlas_core.role_capabilities role_capability
+using atlas_core.capabilities capability
+where role_capability.role_id = 'b6000000-0000-0000-0000-000000000003'
+  and capability.capability_id = role_capability.capability_id
+  and capability.capability_code in (
+    'confirmed_need_quantities.confirm', 'confirmed_need_release.release');
 
 create temporary table d037_before as select jsonb_build_object(
   'handoff', (select count(*) from atlas_planning.purchase_handoff_batches),
   'procurement', (select count(*) from atlas_procurement.fulfilment_allocations),
   'warehouse', (select count(*) from atlas_evidence.supplier_receiving_evidence),
   'dispatch', (select count(*) from atlas_dispatch.dispatch_plans)) as counts;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub',
+  'b6000000-0000-0000-0000-000000000101', true);
+insert into d037_results values ('read_no_write',
+  atlas_api.get_confirmed_need_review(pg_temp.d037_read()));
+reset role;
+
+insert into atlas_core.role_capabilities(role_id, capability_id)
+select 'b6000000-0000-0000-0000-000000000003', capability.capability_id
+from atlas_core.capabilities capability
+where capability.capability_code = 'confirmed_need_quantities.confirm'
+on conflict (role_id, capability_id) do nothing;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub',
+  'b6000000-0000-0000-0000-000000000101', true);
+insert into d037_results values ('read_save_only',
+  atlas_api.get_confirmed_need_review(pg_temp.d037_read()));
+reset role;
+
+insert into atlas_core.role_capabilities(role_id, capability_id)
+select 'b6000000-0000-0000-0000-000000000003', capability.capability_id
+from atlas_core.capabilities capability
+where capability.capability_code = 'confirmed_need_release.release'
+on conflict (role_id, capability_id) do nothing;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub',
@@ -174,6 +200,40 @@ select ok((select response #>> '{authoritative_readback,release,current_release_
   is not null and response #>> '{authoritative_readback,pagination,total_lines}' = '2'
   from d037_results where name = 'release'),
   'D037-24 Release returns authoritative full readback');
+select ok((select response #>> '{workbench,allowed_actions,save_confirmed_needs}'
+  = 'false' and response #>> '{workbench,allowed_actions,release_confirmed_needs}'
+  = 'false' from d037_results where name = 'read_no_write'),
+  'D037-25 an Actor without Save capability receives no v2 write eligibility');
+select ok((select response #>> '{workbench,allowed_actions,save_confirmed_needs}'
+  = 'true' and response #>> '{workbench,allowed_actions,release_confirmed_needs}'
+  = 'false' and response #>>
+    '{workbench,disabled_reason_codes,release_confirmed_needs}'
+  = 'RELEASE_CAPABILITY_REQUIRED'
+  from d037_results where name = 'read_save_only'),
+  'D037-26 Save-only authority cannot promote Release');
+select ok((select response #>> '{workbench,allowed_actions,save_confirmed_needs}'
+  = 'true' and response #>> '{workbench,allowed_actions,release_confirmed_needs}'
+  = 'false' and response #>>
+    '{workbench,disabled_reason_codes,release_confirmed_needs}'
+  = 'RELEASE_INCOMPLETE' from d037_results where name = 'read'),
+  'D037-27 complete authority does not bypass incomplete saved decisions');
+select ok((select response #>>
+    '{authoritative_readback,allowed_actions,save_confirmed_needs}' = 'true'
+  and response #>>
+    '{authoritative_readback,allowed_actions,release_confirmed_needs}' = 'true'
+  from d037_results where name = 'save'),
+  'D037-28 a complete saved batch authorizes both editable Save and Release');
+select ok((select response #>>
+    '{authoritative_readback,allowed_actions,save_confirmed_needs}' = 'false'
+  and response #>>
+    '{authoritative_readback,allowed_actions,release_confirmed_needs}' = 'false'
+  from d037_results where name = 'release'),
+  'D037-29 a released batch authorizes neither v2 action');
+select ok((select p.prosrc like '%capability.capability_code%'
+  and p.prosrc not like '%role_name%'
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'atlas_core' and p.proname = 'd037_extend_workbench'),
+  'D037-30 eligibility uses capability assignments without role-name inference');
 
 select * from finish();
 rollback;

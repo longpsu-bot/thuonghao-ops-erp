@@ -333,11 +333,15 @@ jobs:
           RMVP05_BROWSER_SOURCE: rmvp04
           RMVP06_BROWSER_SOURCE: rmvp04
           RMVP07_BROWSER_SOURCE: rmvp04
+          RMVP07_CONTRACT: v1
         run: |
           pnpm local:rmvp04:verify
           pnpm local:rmvp05:verify
           pnpm local:rmvp06:verify
           pnpm verify:local:rmvp07
+
+      - name: Verify fresh browser-key D-037 Save and Release
+        run: pnpm verify:local:rmvp07
 
       - name: Verify browser-key atomic Planning completion contracts
         run: pnpm local:planning-contract-01:verify

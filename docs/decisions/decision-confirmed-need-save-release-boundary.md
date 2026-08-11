@@ -29,6 +29,10 @@ Additive functions are:
 
 All RMVP-05/06/07 v1 APIs remain physically callable for compatibility. No production capability binding, hosted Supabase deployment, Retool change, or live OPS mutation is authorized.
 
+The authoritative workbench readback, not React, decides whether the current Actor and batch are eligible for `Lưu` or `Chuyển sang lên đơn`. It returns action booleans plus safe operator reasons using the existing `allowed_actions`, `disabled_reason_codes`, and `disabled_reasons` convention. Local browser state may only restrict those results further. Commands remain independently authoritative and recheck authorization, currentness, completeness, and transaction invariants.
+
+Merge certification keeps two independent browser-key proofs: the complete RMVP-04 → RMVP-05 v1 → RMVP-06 v1 → RMVP-07 v1 compatibility journey, and a fresh unsaved fixture for D-037 Save/replay/Release/replay. The D-037 proof must not inherit the v1 journey's mutated batch.
+
 ## Exports
 
 The Confirmed Need XLSX round-trip is deferred until the workbench read model and final export schema are approved. `Xuất Excel` and `Xuất PDF` remain disabled affordances only; this decision approves no workbook schema, hidden metadata, PDF template, or file-generation infrastructure.

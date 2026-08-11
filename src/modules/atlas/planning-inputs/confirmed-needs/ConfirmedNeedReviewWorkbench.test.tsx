@@ -10,7 +10,10 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
 import { ConfirmedNeedReviewWorkbench } from "./ConfirmedNeedReviewWorkbench";
-import { createReviewConfirmedNeedApi } from "./reviewConfirmedNeedApi";
+import {
+  createReviewConfirmedNeedApi,
+  createReviewConfirmedNeedFixture,
+} from "./reviewConfirmedNeedApi";
 
 afterEach(() => {
   cleanup();
@@ -34,6 +37,22 @@ function renderReview(api = createReviewConfirmedNeedApi("ready")) {
       mode="review"
     />,
   );
+  return api;
+}
+
+function renderAuthoritativeFixture(
+  mutate: (
+    workbench: ReturnType<typeof createReviewConfirmedNeedFixture>,
+  ) => void,
+) {
+  const api = createReviewConfirmedNeedApi("ready");
+  const workbench = createReviewConfirmedNeedFixture();
+  mutate(workbench);
+  vi.spyOn(api, "getReview").mockResolvedValue({
+    kind: "success",
+    response: { success: true, workbench },
+  } as never);
+  renderReview(api);
   return api;
 }
 
@@ -119,12 +138,81 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getAllByText("Đã lưu").length).toBeGreaterThan(0);
   });
 
+  it("does not promote Save when authoritative readback denies it", async () => {
+    const api = renderAuthoritativeFixture((workbench) => {
+      workbench.allowed_actions.save_confirmed_needs = false;
+      workbench.disabled_reason_codes.save_confirmed_needs =
+        "SAVE_CAPABILITY_REQUIRED";
+      workbench.disabled_reasons.save_confirmed_needs =
+        "Bạn chưa có quyền lưu thay đổi này.";
+    });
+    await screen.findByText("Gạo thơm");
+    const save = screen.getByRole("button", { name: "Lưu" });
+    const saveRequest = vi.spyOn(api, "save");
+    expect(save).toBeDisabled();
+    expect(save).not.toHaveClass("primary");
+    expect(save).toHaveAttribute(
+      "title",
+      "Bạn chưa có quyền lưu thay đổi này.",
+    );
+    fireEvent.click(save);
+    expect(saveRequest).not.toHaveBeenCalled();
+  });
+
+  it("does not promote Release when authoritative readback denies it", async () => {
+    renderAuthoritativeFixture((workbench) => {
+      workbench.lines = workbench.lines.map((line, index) => ({
+        ...line,
+        current_decision_id: `c4520000-0000-0000-0000-00000000000${index + 1}`,
+        current_decision_number: 1,
+        confirmed_quantity_after: line.proposed_confirmed_quantity,
+      }));
+      workbench.line_counts = {
+        total: workbench.lines.length,
+        unreviewed: 0,
+        confirmed: workbench.lines.length,
+        adjusted: 0,
+      };
+      workbench.allowed_actions.release_confirmed_needs = false;
+      workbench.disabled_reason_codes.release_confirmed_needs =
+        "RELEASE_CAPABILITY_REQUIRED";
+      workbench.disabled_reasons.release_confirmed_needs =
+        "Bạn chưa có quyền thực hiện bước này.";
+    });
+    await screen.findByText("Gạo thơm");
+    const release = screen.getByRole("button", {
+      name: "Chuyển sang lên đơn",
+    });
+    expect(release).toBeDisabled();
+    expect(release).not.toHaveClass("primary");
+    expect(release).toHaveAttribute(
+      "title",
+      "Bạn chưa có quyền thực hiện bước này.",
+    );
+  });
+
+  it("uses backend eligibility as a ceiling and local validity as a stricter gate", async () => {
+    renderReview();
+    await screen.findByText("Gạo thơm");
+    const save = screen.getByRole("button", { name: "Lưu" });
+    expect(save).toBeEnabled();
+    expect(save).toHaveClass("primary");
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Gạo thơm"), {
+      target: { value: "không hợp lệ" },
+    });
+    expect(save).toBeDisabled();
+    expect(save).not.toHaveClass("primary");
+  });
+
   it("releases only after a current complete save and concise confirmation", async () => {
     const api = await saveAll();
     const release = vi.spyOn(api, "releaseSaved");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    );
+    const releaseButton = screen.getByRole("button", {
+      name: "Chuyển sang lên đơn",
+    });
+    expect(releaseButton).toBeEnabled();
+    expect(releaseButton).toHaveClass("primary");
+    fireEvent.click(releaseButton);
     expect(
       screen.getByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
     ).toHaveTextContent("chưa chọn nhà cung cấp");

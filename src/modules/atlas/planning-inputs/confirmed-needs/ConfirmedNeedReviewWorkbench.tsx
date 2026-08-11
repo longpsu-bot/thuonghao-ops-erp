@@ -262,6 +262,7 @@ export function ConfirmedNeedReviewWorkbench({
       !api ||
       !authSubject ||
       !workbench ||
+      !workbench.allowed_actions.save_confirmed_needs ||
       !changedLines.length ||
       errors.length
     )
@@ -291,7 +292,13 @@ export function ConfirmedNeedReviewWorkbench({
   };
 
   const release = async () => {
-    if (!api || !authSubject || !workbench) return;
+    if (
+      !api ||
+      !authSubject ||
+      !workbench ||
+      !workbench.allowed_actions.release_confirmed_needs
+    )
+      return;
     setBusy(true);
     setReleaseConfirmation(false);
     const result = await api.releaseSaved(
@@ -347,12 +354,25 @@ export function ConfirmedNeedReviewWorkbench({
 
   const released =
     workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
+  const backendCanSave = workbench.allowed_actions.save_confirmed_needs;
+  const backendCanRelease = workbench.allowed_actions.release_confirmed_needs;
+  const canSave =
+    backendCanSave &&
+    !released &&
+    !busy &&
+    !refreshRequired &&
+    changedLines.length > 0 &&
+    errors.length === 0;
   const canRelease =
+    backendCanRelease &&
     !released &&
     !dirty &&
     !refreshRequired &&
-    workbench.line_counts.unreviewed === 0 &&
+    !busy &&
     errors.length === 0;
+  const backendActionReason = dirty
+    ? workbench.disabled_reasons.save_confirmed_needs
+    : workbench.disabled_reasons.release_confirmed_needs;
   const contextSchool = schoolFilter
     ? schools.find((school) => school.id === schoolFilter)?.name
     : "Tất cả trường";
@@ -596,14 +616,13 @@ export function ConfirmedNeedReviewWorkbench({
         <div className="confirmed-need-business-actions">
           <button
             type="button"
-            className={canRelease ? "secondary" : "primary"}
+            className={canSave ? "primary" : "secondary"}
             onClick={() => void save()}
-            disabled={
-              busy ||
-              released ||
-              refreshRequired ||
-              !changedLines.length ||
-              errors.length > 0
+            disabled={!canSave}
+            title={
+              backendCanSave
+                ? undefined
+                : (workbench.disabled_reasons.save_confirmed_needs ?? undefined)
             }
           >
             Lưu
@@ -612,10 +631,19 @@ export function ConfirmedNeedReviewWorkbench({
             type="button"
             className={canRelease ? "primary" : "secondary"}
             onClick={() => setReleaseConfirmation(true)}
-            disabled={busy || !canRelease}
+            disabled={!canRelease}
+            title={
+              backendCanRelease
+                ? undefined
+                : (workbench.disabled_reasons.release_confirmed_needs ??
+                  undefined)
+            }
           >
             Chuyển sang lên đơn
           </button>
+          {backendActionReason && (
+            <small role="status">{backendActionReason}</small>
+          )}
         </div>
       </footer>
 

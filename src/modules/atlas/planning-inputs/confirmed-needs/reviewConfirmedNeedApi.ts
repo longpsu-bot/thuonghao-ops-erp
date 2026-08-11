@@ -59,11 +59,15 @@ export function createReviewConfirmedNeedFixture(
       confirm_quantities: true,
       approve_confirmed_needs: false,
       release_confirmed_needs_for_purchase_handoff: false,
+      save_confirmed_needs: true,
+      release_confirmed_needs: false,
     },
     disabled_reason_codes: {
       approve_confirmed_needs: "APPROVAL_BATCH_NOT_VALIDATED",
       release_confirmed_needs_for_purchase_handoff:
         "RELEASE_BATCH_NOT_APPROVED",
+      save_confirmed_needs: null,
+      release_confirmed_needs: "RELEASE_INCOMPLETE",
     },
     disabled_reasons: {
       preview_confirmation: null,
@@ -71,6 +75,9 @@ export function createReviewConfirmedNeedFixture(
       approve_confirmed_needs: "Lô nhu cầu chưa ở trạng thái đã kiểm tra.",
       release_confirmed_needs_for_purchase_handoff:
         "Lô nhu cầu chưa được phê duyệt.",
+      save_confirmed_needs: null,
+      release_confirmed_needs:
+        "Còn dòng cần xử lý trước khi chuyển sang lên đơn.",
     },
     approval: {
       current_snapshot_id: null,
@@ -455,6 +462,7 @@ export function createReviewConfirmedNeedApi(
           release_confirmed_needs_for_purchase_handoff: false,
         },
         disabled_reason_codes: {
+          ...state.disabled_reason_codes,
           approve_confirmed_needs:
             outcome === "VALIDATED" ? null : "APPROVAL_BATCH_NOT_VALIDATED",
           release_confirmed_needs_for_purchase_handoff:
@@ -531,6 +539,7 @@ export function createReviewConfirmedNeedApi(
           release_confirmed_needs_for_purchase_handoff: true,
         },
         disabled_reason_codes: {
+          ...state.disabled_reason_codes,
           approve_confirmed_needs: "APPROVAL_ALREADY_COMPLETED",
           release_confirmed_needs_for_purchase_handoff: null,
         },
@@ -595,6 +604,7 @@ export function createReviewConfirmedNeedApi(
           release_confirmed_needs_for_purchase_handoff: false,
         },
         disabled_reason_codes: {
+          ...state.disabled_reason_codes,
           approve_confirmed_needs: "APPROVAL_ALREADY_COMPLETED",
           release_confirmed_needs_for_purchase_handoff:
             "RELEASE_ALREADY_COMPLETED",
@@ -672,6 +682,21 @@ export function createReviewConfirmedNeedApi(
         ...state,
         batch_version: state.batch_version + 1,
         lines: nextLines,
+        allowed_actions: {
+          ...state.allowed_actions,
+          save_confirmed_needs: true,
+          release_confirmed_needs: true,
+        },
+        disabled_reason_codes: {
+          ...state.disabled_reason_codes,
+          save_confirmed_needs: null,
+          release_confirmed_needs: null,
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          save_confirmed_needs: null,
+          release_confirmed_needs: null,
+        },
         line_counts: {
           total: nextLines.length,
           unreviewed: nextLines.filter((line) => !line.current_decision_id)
@@ -717,6 +742,18 @@ export function createReviewConfirmedNeedApi(
           confirm_quantities: false,
           approve_confirmed_needs: false,
           release_confirmed_needs_for_purchase_handoff: false,
+          save_confirmed_needs: false,
+          release_confirmed_needs: false,
+        },
+        disabled_reason_codes: {
+          ...state.disabled_reason_codes,
+          save_confirmed_needs: "SAVE_BATCH_NOT_EDITABLE",
+          release_confirmed_needs: "RELEASE_ALREADY_COMPLETED",
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          save_confirmed_needs: "Dữ liệu này không còn cho phép chỉnh sửa.",
+          release_confirmed_needs: "Dữ liệu đã được chuyển sang lên đơn.",
         },
         validation: {
           ...state.validation,

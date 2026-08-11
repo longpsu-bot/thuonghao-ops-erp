@@ -251,16 +251,22 @@ export type ConfirmedNeedWorkbenchData = {
     confirm_quantities: boolean;
     approve_confirmed_needs: boolean;
     release_confirmed_needs_for_purchase_handoff: boolean;
+    save_confirmed_needs: boolean;
+    release_confirmed_needs: boolean;
   };
   disabled_reason_codes: {
     approve_confirmed_needs: string | null;
     release_confirmed_needs_for_purchase_handoff: string | null;
+    save_confirmed_needs: string | null;
+    release_confirmed_needs: string | null;
   };
   disabled_reasons: {
     preview_confirmation: string | null;
     confirm_quantities: string | null;
     approve_confirmed_needs: string | null;
     release_confirmed_needs_for_purchase_handoff: string | null;
+    save_confirmed_needs: string | null;
+    release_confirmed_needs: string | null;
   };
   approval: ConfirmedNeedApprovalSummary;
   release: ConfirmedNeedReleaseSummary;

@@ -215,6 +215,225 @@ begin
 end;
 $$;
 
+create function atlas_core.d037_extend_workbench(
+  p_workbench jsonb,
+  p_actor_id uuid
+)
+returns jsonb
+language plpgsql
+stable
+security invoker
+set search_path = ''
+as $$
+declare
+  v_batch_id uuid := atlas_core.pa_05b_safe_uuid(
+    p_workbench ->> 'confirmed_need_batch_id'
+  );
+  v_batch atlas_planning.confirmed_need_batches%rowtype;
+  v_has_save_capability boolean := false;
+  v_has_release_capability boolean := false;
+  v_handoff_exists boolean := false;
+  v_release_evaluation jsonb;
+  v_save_code text;
+  v_release_code text;
+  v_save_message text;
+  v_release_message text;
+begin
+  select batch.* into strict v_batch
+  from atlas_planning.confirmed_need_batches batch
+  where batch.confirmed_need_batch_id = v_batch_id;
+
+  select exists (
+    select 1
+    from atlas_core.actor_role_memberships membership
+    join atlas_core.roles role_record
+      on role_record.role_id = membership.role_id
+    join atlas_core.role_capabilities role_capability
+      on role_capability.role_id = role_record.role_id
+    join atlas_core.capabilities capability
+      on capability.capability_id = role_capability.capability_id
+    where membership.actor_id = p_actor_id
+      and membership.membership_status = 'ACTIVE'
+      and membership.effective_from <= pg_catalog.transaction_timestamp()
+      and (membership.effective_to is null
+        or membership.effective_to > pg_catalog.transaction_timestamp())
+      and role_record.role_status = 'ACTIVE'
+      and capability.capability_status = 'ACTIVE'
+      and capability.capability_code = 'confirmed_need_quantities.confirm'
+  ) and exists (
+    select 1 from atlas_core.actor_scopes scope
+    where scope.actor_id = p_actor_id
+      and scope.scope_status = 'ACTIVE'
+      and scope.scope_kind = 'GLOBAL'
+      and scope.effective_from <= pg_catalog.transaction_timestamp()
+      and (scope.effective_to is null
+        or scope.effective_to > pg_catalog.transaction_timestamp())
+  ) into v_has_save_capability;
+
+  select exists (
+    select 1
+    from atlas_core.actor_role_memberships membership
+    join atlas_core.roles role_record
+      on role_record.role_id = membership.role_id
+    join atlas_core.role_capabilities role_capability
+      on role_capability.role_id = role_record.role_id
+    join atlas_core.capabilities capability
+      on capability.capability_id = role_capability.capability_id
+    where membership.actor_id = p_actor_id
+      and membership.membership_status = 'ACTIVE'
+      and membership.effective_from <= pg_catalog.transaction_timestamp()
+      and (membership.effective_to is null
+        or membership.effective_to > pg_catalog.transaction_timestamp())
+      and role_record.role_status = 'ACTIVE'
+      and capability.capability_status = 'ACTIVE'
+      and capability.capability_code = 'confirmed_need_release.release'
+  ) and exists (
+    select 1 from atlas_core.actor_scopes scope
+    where scope.actor_id = p_actor_id
+      and scope.scope_status = 'ACTIVE'
+      and scope.scope_kind = 'GLOBAL'
+      and scope.effective_from <= pg_catalog.transaction_timestamp()
+      and (scope.effective_to is null
+        or scope.effective_to > pg_catalog.transaction_timestamp())
+  ) into v_has_release_capability;
+
+  select exists (
+    select 1 from atlas_planning.purchase_handoff_batches handoff
+    where handoff.confirmed_need_batch_id = v_batch_id
+  ) into v_handoff_exists;
+
+  if v_batch.source_kind = 'NEED_GENERATION'
+    and v_batch.batch_status in ('DRAFT_REVIEW', 'REOPENED')
+  then
+    begin
+      v_release_evaluation := atlas_core.rmvp_06_canonical_evaluation(v_batch_id);
+    exception when others then
+      v_release_evaluation := null;
+    end;
+  end if;
+
+  v_save_code := case
+    when v_batch.source_kind <> 'NEED_GENERATION'
+      then 'SAVE_UNSUPPORTED_SOURCE_KIND'
+    when v_batch.batch_status not in ('DRAFT_REVIEW', 'REOPENED')
+      then 'SAVE_BATCH_NOT_EDITABLE'
+    when not v_has_save_capability then 'SAVE_CAPABILITY_REQUIRED'
+    else null
+  end;
+  v_save_message := case v_save_code
+    when 'SAVE_UNSUPPORTED_SOURCE_KIND'
+      then 'Dá»¯ liá»‡u nÃ y khÃ´ng há»— trá»£ thao tÃ¡c lÆ°u.'
+    when 'SAVE_BATCH_NOT_EDITABLE'
+      then 'Dá»¯ liá»‡u nÃ y khÃ´ng cÃ²n cho phÃ©p chá»‰nh sá»­a.'
+    when 'SAVE_CAPABILITY_REQUIRED'
+      then 'Báº¡n chÆ°a cÃ³ quyá»n lÆ°u thay Ä‘á»•i nÃ y.'
+    else null
+  end;
+
+  v_release_code := case
+    when v_batch.source_kind <> 'NEED_GENERATION'
+      then 'RELEASE_UNSUPPORTED_SOURCE_KIND'
+    when v_batch.batch_status = 'RELEASED_FOR_PURCHASE_HANDOFF'
+      then 'RELEASE_ALREADY_COMPLETED'
+    when v_batch.batch_status not in ('DRAFT_REVIEW', 'REOPENED')
+      then 'RELEASE_BATCH_NOT_EDITABLE'
+    when not v_has_release_capability then 'RELEASE_CAPABILITY_REQUIRED'
+    when v_handoff_exists then 'RELEASE_PURCHASE_HANDOFF_CONFLICT'
+    when v_release_evaluation is null
+      or v_release_evaluation ->> 'outcome' <> 'VALIDATED'
+      then 'RELEASE_INCOMPLETE'
+    else null
+  end;
+  v_release_message := case v_release_code
+    when 'RELEASE_UNSUPPORTED_SOURCE_KIND'
+      then 'Dá»¯ liá»‡u nÃ y khÃ´ng há»— trá»£ bÆ°á»›c chuyá»ƒn sang lÃªn Ä‘Æ¡n.'
+    when 'RELEASE_ALREADY_COMPLETED'
+      then 'Dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c chuyá»ƒn sang lÃªn Ä‘Æ¡n.'
+    when 'RELEASE_BATCH_NOT_EDITABLE'
+      then 'Dá»¯ liá»‡u hiá»‡n táº¡i chÆ°a thá»ƒ chuyá»ƒn sang lÃªn Ä‘Æ¡n.'
+    when 'RELEASE_CAPABILITY_REQUIRED'
+      then 'Báº¡n chÆ°a cÃ³ quyá»n thá»±c hiá»‡n bÆ°á»›c nÃ y.'
+    when 'RELEASE_PURCHASE_HANDOFF_CONFLICT'
+      then 'Dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c chuyá»ƒn sang bÆ°á»›c mua hÃ ng.'
+    when 'RELEASE_INCOMPLETE'
+      then 'CÃ²n dÃ²ng cáº§n xá»­ lÃ½ trÆ°á»›c khi chuyá»ƒn sang lÃªn Ä‘Æ¡n.'
+    else null
+  end;
+
+  return p_workbench || pg_catalog.jsonb_build_object(
+    'allowed_actions', (p_workbench -> 'allowed_actions')
+      || pg_catalog.jsonb_build_object(
+        'save_confirmed_needs', v_save_code is null,
+        'release_confirmed_needs', v_release_code is null
+      ),
+    'disabled_reason_codes', (p_workbench -> 'disabled_reason_codes')
+      || pg_catalog.jsonb_build_object(
+        'save_confirmed_needs', v_save_code,
+        'release_confirmed_needs', v_release_code
+      ),
+    'disabled_reasons', (p_workbench -> 'disabled_reasons')
+      || pg_catalog.jsonb_build_object(
+        'save_confirmed_needs', v_save_message,
+        'release_confirmed_needs', v_release_message
+      )
+  );
+end;
+$$;
+
+create or replace function atlas_api.get_confirmed_need_review(request jsonb)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'get_confirmed_need_review';
+  v_error jsonb;
+  v_context jsonb;
+  v_actor_id uuid;
+  v_payload jsonb := request -> 'payload';
+  v_workbench jsonb;
+begin
+  v_error := atlas_core.rmvp_05_validate_read(request, v_name);
+  if v_error is not null then return v_error; end if;
+  v_context := atlas_core.rmvp_05_authorize_global(
+    request, 'confirmed_need_review.read', v_name, true
+  );
+  if v_context ? 'error' then return v_context -> 'error'; end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_context ->> 'actor_id');
+  v_workbench := atlas_core.rmvp_05_workbench_payload(
+    atlas_core.pa_05b_safe_uuid(v_payload ->> 'confirmed_need_batch_id'),
+    coalesce(v_payload -> 'filters', '{}'::jsonb),
+    coalesce(atlas_core.pa_05b_safe_bigint(
+      v_payload ->> 'line_offset')::integer, 0),
+    coalesce(atlas_core.pa_05b_safe_bigint(
+      v_payload ->> 'line_limit')::integer, 100)
+  );
+  if v_workbench is null then
+    return atlas_core.rmvp_05_error(
+      request, v_name, 'CONFIRMED_NEED_BATCH_NOT_FOUND',
+      'The requested Confirmed Need batch was not found.', true
+    );
+  end if;
+  return pg_catalog.jsonb_build_object(
+    'success', true,
+    'contract_version', 'RMVP-05.v1',
+    'correlation_id', request ->> 'correlation_id',
+    'workbench', atlas_core.d037_extend_workbench(
+      atlas_core.rmvp_07_extend_workbench(
+        atlas_core.rmvp_06_extend_workbench(v_workbench), v_actor_id
+      ), v_actor_id
+    )
+  );
+exception when others then
+  return atlas_core.rmvp_05_error(
+    request, v_name, 'INTERNAL_READ_FAILURE',
+    'The Confirmed Need review could not be returned safely.', true
+  );
+end;
+$$;
+
 create function atlas_api.save_confirmed_needs(request jsonb)
 returns jsonb
 language plpgsql
@@ -443,10 +662,15 @@ begin
     'receipt_id', v_receipt_id, 'event_id', v_events -> 'domain_event_id',
     'audit_id', v_events -> 'audit_event_id',
     'safe_operator_message', 'Confirmed Need changes were saved.',
-    'authoritative_readback', atlas_core.rmvp_07_extend_workbench(
-      atlas_core.rmvp_06_extend_workbench(
-        atlas_core.rmvp_05_workbench_payload(v_batch_id, '{}'::jsonb, 0, 10000)
-      ), v_actor_id)
+    'authoritative_readback', atlas_core.d037_extend_workbench(
+      atlas_core.rmvp_07_extend_workbench(
+        atlas_core.rmvp_06_extend_workbench(
+          atlas_core.rmvp_05_workbench_payload(
+            v_batch_id, '{}'::jsonb, 0, 10000
+          )
+        ), v_actor_id
+      ), v_actor_id
+    )
   );
   v_response := atlas_core.pa_05b_finish_command(v_receipt_id, v_response, true);
   set constraints all immediate;
@@ -830,10 +1054,15 @@ begin
     'approval_event_id', v_approval_events -> 'domain_event_id',
     'release_event_id', v_events -> 'domain_event_id',
     'safe_operator_message', 'Confirmed Need was released for ordering.',
-    'authoritative_readback', atlas_core.rmvp_07_extend_workbench(
-      atlas_core.rmvp_06_extend_workbench(
-        atlas_core.rmvp_05_workbench_payload(v_batch_id, '{}'::jsonb, 0, 10000)
-      ), v_actor_id)
+    'authoritative_readback', atlas_core.d037_extend_workbench(
+      atlas_core.rmvp_07_extend_workbench(
+        atlas_core.rmvp_06_extend_workbench(
+          atlas_core.rmvp_05_workbench_payload(
+            v_batch_id, '{}'::jsonb, 0, 10000
+          )
+        ), v_actor_id
+      ), v_actor_id
+    )
   );
   v_response := atlas_core.pa_05b_finish_command(v_receipt_id, v_response, true);
   set constraints all immediate;
@@ -853,11 +1082,13 @@ from atlas_confirmed_need_review_runtime;
 
 revoke execute on function
   atlas_core.d037_error(jsonb, text, text, text, text, boolean, bigint),
-  atlas_core.d037_validate_command(jsonb, text)
+  atlas_core.d037_validate_command(jsonb, text),
+  atlas_core.d037_extend_workbench(jsonb, uuid)
 from public, anon, authenticated, service_role;
 grant execute on function
   atlas_core.d037_error(jsonb, text, text, text, text, boolean, bigint),
-  atlas_core.d037_validate_command(jsonb, text)
+  atlas_core.d037_validate_command(jsonb, text),
+  atlas_core.d037_extend_workbench(jsonb, uuid)
 to atlas_confirmed_need_review_runtime;
 
 revoke execute on function

@@ -29,6 +29,8 @@ saved/unsaved/released state, text search, structured School/date filters,
 editable confirmed quantity, concise reasons, and one dominant action. Batch
 IDs, versions, fingerprints, capability codes and API names are not normal UI.
 
+Exact-head follow-up correction: Save and Release availability now comes from backend-derived `allowed_actions` with safe disabled reasons. React may only apply stricter local gates. Full Integration separately runs the unchanged v1 compatibility journey and a fresh D-037 fixture so their lifecycle mutations cannot contaminate each other.
+
 ### Superseded first-time operator notes from the original PR #189 draft
 
 The implemented presentation is governed by a first-time Planning employee,

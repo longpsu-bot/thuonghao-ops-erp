@@ -25,3 +25,11 @@ Release creates zero Purchase Handoff, supplier, purchase-order, Procurement, Wa
 ## Compatibility and security
 
 RMVP-05/06/07 v1 functions remain callable. Both v2 functions reuse `atlas_confirmed_need_review_runtime`, fixed empty search paths, JWT-bound human Actor resolution, active GLOBAL scope, revoke-first execution, private forced-RLS persistence, and no browser table access or service-role credential.
+
+## Authoritative action eligibility
+
+Every authoritative workbench readback extends the existing action shape with `allowed_actions.save_confirmed_needs` and `allowed_actions.release_confirmed_needs`, plus matching `disabled_reason_codes` and `disabled_reasons` fields.
+
+Save eligibility requires the active Actor's Save capability and GLOBAL scope plus a current editable `NEED_GENERATION` batch in `DRAFT_REVIEW` or `REOPENED`. Release eligibility requires its distinct active Release capability and scope, the same supported working lifecycle, no Purchase Handoff conflict, and a complete current saved fact set that passes the canonical RMVP-06 evaluation. Released batches authorize neither action.
+
+Disabled messages contain concise Vietnamese operator meaning and expose no role, capability code, lifecycle enum, version, fingerprint, API, or SQL detail. React may make an authorized action stricter for local dirty/validity, unknown-outcome refresh, or busy state, but cannot turn backend `false` into UI `true`. Both commands re-authorize and recheck current facts atomically regardless of readback eligibility.

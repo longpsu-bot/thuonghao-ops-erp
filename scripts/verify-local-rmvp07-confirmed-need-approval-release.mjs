@@ -9,6 +9,7 @@ const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
 const deterministicBatchId = "b6500000-0000-0000-0000-000000000050";
 const browserSource = process.env.RMVP07_BROWSER_SOURCE ?? "fixture";
+const contractMode = process.env.RMVP07_CONTRACT ?? "d037";
 const schemaCacheAttempts = 6;
 const schemaCacheDelayMs = 1_500;
 
@@ -29,7 +30,7 @@ function install(relativePath) {
   );
 }
 
-function readRequest(subject, batchId) {
+function d037ReadRequest(subject, batchId) {
   return {
     contract_version: "RMVP-05.v1",
     requested_by_auth_subject: subject,
@@ -43,7 +44,7 @@ function readRequest(subject, batchId) {
   };
 }
 
-function command(subject, workbench, kind, lines) {
+function d037Command(subject, workbench, kind, lines) {
   const commandId = crypto.randomUUID();
   return {
     contract_version: kind === "save" ? "RMVP-05.v2" : "RMVP-07.v2",
@@ -150,14 +151,246 @@ function downstreamState() {
   return JSON.stringify(state);
 }
 
-async function main() {
+function ensureFreshD037Fixture() {
+  const sql = [
+    "select jsonb_build_object(",
+    "'batch_count',(select count(*) from atlas_planning.confirmed_need_batches where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),",
+    "'fresh_count',(select count(*) from atlas_planning.confirmed_need_batches batch where batch.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050' and batch.source_kind='NEED_GENERATION' and batch.batch_status='DRAFT_REVIEW' and batch.version=1 and not exists (select 1 from atlas_planning.confirmed_need_line_decisions decision where decision.confirmed_need_batch_id=batch.confirmed_need_batch_id))",
+    ") as fixture_state;",
+  ].join(" ");
+  const readState = () => {
+    const output = runPinnedSupabase(
+      ["db", "query", "--local", "--agent", "no", "--output", "json", sql],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
+    );
+    const rows = JSON.parse(output);
+    return Array.isArray(rows) ? rows[0]?.fixture_state : null;
+  };
+  let state = readState();
+  if (Number(state?.batch_count ?? 0) === 0) {
+    install("../supabase/local/rmvp_05_browser_fixture.sql");
+    state = readState();
+  }
+  assert(
+    Number(state?.batch_count ?? 0) === 1 &&
+      Number(state?.fresh_count ?? 0) === 1,
+    "D-037 requires one isolated DRAFT_REVIEW fixture with unsaved decisions.",
+  );
+}
+
+function v1ReadRequest(version, subject, payload) {
+  return {
+    contract_version: version,
+    requested_by_auth_subject: subject,
+    correlation_id: crypto.randomUUID(),
+    payload,
+  };
+}
+
+function v1ReviewRequest(subject, batchId) {
+  return v1ReadRequest("RMVP-05.v1", subject, {
+    confirmed_need_batch_id: batchId,
+    filters: {},
+    line_offset: 0,
+    line_limit: 10_000,
+  });
+}
+
+function v1Command(subject, workbench, kind) {
+  const commandId = crypto.randomUUID();
+  const definitions = {
+    validation: {
+      contract_version: "RMVP-06.v1",
+      idempotency_key: `confirmed-need-validation:${commandId}`,
+      reason_code: "BATCH_VALIDATION_REQUESTED",
+    },
+    approval: {
+      contract_version: "RMVP-07.v1",
+      idempotency_key: `confirmed-need-approval:${commandId}`,
+      reason_code: "CONFIRMED_NEED_APPROVAL_REQUESTED",
+    },
+    release: {
+      contract_version: "RMVP-07.v1",
+      idempotency_key: `confirmed-need-release:${commandId}`,
+      reason_code: "CONFIRMED_NEED_RELEASE_REQUESTED",
+    },
+  };
+  return {
+    ...definitions[kind],
+    command_id: commandId,
+    correlation_id: crypto.randomUUID(),
+    expected_version: workbench.batch_version,
+    requested_by_auth_subject: subject,
+    requested_at: new Date(Date.now() - 1_000).toISOString(),
+    reason_note: null,
+    payload: { confirmed_need_batch_id: workbench.confirmed_need_batch_id },
+  };
+}
+
+async function ensureV1Confirmed(client, subject, workbench) {
+  const missing = workbench.lines.filter(
+    (line) => line.current_decision_id === null,
+  );
+  if (!missing.length) return workbench;
+  const lines = missing.map((line) => ({
+    confirmed_need_line_id: line.confirmed_need_line_id,
+    expected_current_revision_id: line.current_revision_id,
+    expected_current_decision_id: null,
+    proposed_confirmed_quantity: line.proposed_confirmed_quantity,
+    reason_code: "PROPOSAL_ACCEPTED",
+    reason_note: null,
+  }));
+  const preview = await invokeSuccess(
+    client,
+    "preview_confirmed_need_confirmation",
+    v1ReadRequest("RMVP-05.v1", subject, {
+      confirmed_need_batch_id: workbench.confirmed_need_batch_id,
+      expected_batch_version: workbench.batch_version,
+      lines,
+    }),
+  );
+  assert(
+    preview.preview.success,
+    "RMVP-07 v1 prerequisite preview was blocked.",
+  );
+  const commandId = crypto.randomUUID();
+  const confirmed = await invokeSuccess(client, "confirm_need_quantities", {
+    contract_version: "RMVP-05.v1",
+    command_id: commandId,
+    correlation_id: crypto.randomUUID(),
+    idempotency_key: `confirmed-need-quantities:${commandId}`,
+    expected_version: workbench.batch_version,
+    requested_by_auth_subject: subject,
+    requested_at: new Date(Date.now() - 1_000).toISOString(),
+    reason_code: "CONFIRMED_NEED_QUANTITIES_CONFIRMED",
+    reason_note: null,
+    payload: {
+      confirmed_need_batch_id: workbench.confirmed_need_batch_id,
+      preview_hash: preview.preview.preview_hash,
+      lines,
+    },
+  });
+  return confirmed.authoritative_readback;
+}
+
+async function ensureV1Validated(client, subject, workbench) {
+  if (workbench.batch_status === "VALIDATED") return workbench;
+  const validated = await invokeSuccess(
+    client,
+    "validate_confirmed_needs",
+    v1Command(subject, workbench, "validation"),
+  );
+  assert(
+    validated.validation_status === "VALIDATED",
+    "RMVP-07 v1 prerequisite validation did not succeed.",
+  );
+  const readback = await invokeSuccess(
+    client,
+    "get_confirmed_need_review",
+    v1ReviewRequest(subject, workbench.confirmed_need_batch_id),
+  );
+  return readback.workbench;
+}
+
+async function v1Main() {
+  assert(
+    browserSource === "fixture" || browserSource === "rmvp04",
+    "RMVP-07 v1 browser source must be fixture or rmvp04.",
+  );
+  const { apiUrl, browserKey } = readLocalSupabaseStatus();
+  if (browserSource === "fixture") ensureFreshD037Fixture();
+  install("../supabase/local/rmvp_06_browser_fixture.sql");
+  const client = createClient(apiUrl, browserKey, {
+    db: { schema: "atlas_api" },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+  const { data: signIn, error } = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
+  assert(!error && signIn.session, "RMVP-07 v1 local sign-in failed.");
+  const subject = signIn.session.user.id;
+  const batchId =
+    browserSource === "fixture"
+      ? deterministicBatchId
+      : await findMaterializedBatch(client, subject);
+  const initial = await invokeSuccess(
+    client,
+    "get_confirmed_need_review",
+    v1ReviewRequest(subject, batchId),
+  );
+  const confirmed = await ensureV1Confirmed(client, subject, initial.workbench);
+  const validated = await ensureV1Validated(client, subject, confirmed);
+  assert(
+    validated.allowed_actions.approve_confirmed_needs === true,
+    "RMVP-07 v1 readback did not authorize approval.",
+  );
+  const downstreamBefore = downstreamState();
+  const approvalCommand = v1Command(subject, validated, "approval");
+  const approval = await invokeSuccess(
+    client,
+    "approve_confirmed_needs",
+    approvalCommand,
+  );
+  const approvalReplay = await invokeSuccess(
+    client,
+    "approve_confirmed_needs",
+    approvalCommand,
+  );
+  assert(
+    approval.resulting_batch_status === "APPROVED" &&
+      JSON.stringify(approvalReplay) === JSON.stringify(approval),
+    "RMVP-07 v1 approval or exact replay failed.",
+  );
+  const releaseCommand = v1Command(
+    subject,
+    approval.authoritative_readback,
+    "release",
+  );
+  const release = await invokeSuccess(
+    client,
+    "release_confirmed_needs_for_purchase_handoff",
+    releaseCommand,
+  );
+  const releaseReplay = await invokeSuccess(
+    client,
+    "release_confirmed_needs_for_purchase_handoff",
+    releaseCommand,
+  );
+  assert(
+    release.resulting_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF" &&
+      JSON.stringify(releaseReplay) === JSON.stringify(release) &&
+      downstreamState() === downstreamBefore,
+    "RMVP-07 v1 release, replay, or downstream isolation failed.",
+  );
+  const finalRead = await invokeSuccess(
+    client,
+    "get_confirmed_need_review",
+    v1ReviewRequest(subject, batchId),
+  );
+  assert(
+    finalRead.workbench.batch_status === "RELEASED_FOR_PURCHASE_HANDOFF" &&
+      finalRead.workbench.release.current_release_id ===
+        release.confirmed_need_release_id,
+    "RMVP-07 v1 final readback is incomplete.",
+  );
+  await client.auth.signOut({ scope: "local" });
+  console.log(
+    `Verified ${browserSource === "fixture" ? "short" : "full upstream"} RMVP-04 → RMVP-05 v1 → RMVP-06 v1 → RMVP-07 v1 approval/replay/release/replay/readback with zero downstream delta for batch ${batchId}.`,
+  );
+}
+
+async function d037Main() {
   assert(
     browserSource === "fixture" || browserSource === "rmvp04",
     "D-037 browser source must be fixture or rmvp04.",
   );
   const { apiUrl, browserKey } = readLocalSupabaseStatus();
-  if (browserSource === "fixture")
-    install("../supabase/local/rmvp_05_browser_fixture.sql");
+  if (browserSource === "fixture") ensureFreshD037Fixture();
   install("../supabase/local/rmvp_06_browser_fixture.sql");
 
   const client = createClient(apiUrl, browserKey, {
@@ -182,7 +415,7 @@ async function main() {
   const initialRead = await invokeSuccess(
     client,
     "get_confirmed_need_review",
-    readRequest(subject, batchId),
+    d037ReadRequest(subject, batchId),
   );
   const initial = initialRead.workbench;
   const lines = initial.lines
@@ -197,7 +430,7 @@ async function main() {
     }));
   assert(lines.length > 0, "D-037 fixture must begin with unsaved decisions.");
 
-  const saveCommand = command(subject, initial, "save", lines);
+  const saveCommand = d037Command(subject, initial, "save", lines);
   const saved = await invokeSuccess(
     client,
     "save_confirmed_needs",
@@ -223,7 +456,7 @@ async function main() {
   );
 
   const downstreamBefore = downstreamState();
-  const releaseCommand = command(
+  const releaseCommand = d037Command(
     subject,
     saved.authoritative_readback,
     "release",
@@ -266,7 +499,7 @@ async function main() {
   const finalRead = await invokeSuccess(
     client,
     "get_confirmed_need_review",
-    readRequest(subject, batchId),
+    d037ReadRequest(subject, batchId),
   );
   assert(
     finalRead.workbench.batch_status === "RELEASED_FOR_PURCHASE_HANDOFF" &&
@@ -280,12 +513,16 @@ async function main() {
 }
 
 try {
-  await main();
+  assert(
+    contractMode === "v1" || contractMode === "d037",
+    "Confirmed Need contract mode must be v1 or d037.",
+  );
+  await (contractMode === "v1" ? v1Main() : d037Main());
 } catch (error) {
   console.error(
     error instanceof Error
       ? error.message
-      : "D-037 local acceptance failed safely.",
+      : "Confirmed Need local acceptance failed safely.",
   );
   process.exitCode = 1;
 }
