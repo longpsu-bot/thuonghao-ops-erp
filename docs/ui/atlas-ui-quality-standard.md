@@ -1,110 +1,325 @@
 # Atlas UI Quality Standard
 
-**Status:** Accepted cross-module UI contract
-
-**Accepted on:** 06/08/2026
-
-**Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
-
-**Authority:** [ATLAS-ACT-01 Hosted Staging and Connected-UI Consolidation Contract](../architecture/atlas-act-01-hosted-staging-ui-consolidation-contract.md)
+**Status:** Accepted cross-module UI contract  
+**Accepted on:** 06/08/2026  
+**Last refined:** 11/08/2026 — ATLAS-UI-STANDARD-02 first-user operator-surface amendment  
+**Reviewed baseline:** `e542e263e3bb672eb2967af0b3d54bfd8771df75`  
+**Authority:** [ATLAS-ACT-01 Hosted Staging and Connected-UI Consolidation Contract](../architecture/atlas-act-01-hosted-staging-ui-consolidation-contract.md), D-034, D-035, D-036 and D-037
 
 ## 1. Purpose
 
-This standard defines the minimum quality required for the existing connected Atlas UI before operator rehearsal.
+This standard defines the minimum Product, interaction, visual, language and accessibility quality required for connected Atlas operator workbenches.
 
 It does not authorize new business capabilities, APIs, lifecycle states, calculations, persistence or client-owned authority.
 
-A usable workbench must make these answers obvious:
+The governing delivery shorthand remains:
 
-- what object or period is being handled;
-- what the authoritative current state is;
-- what requires attention;
-- what action is currently allowed;
-- what that action will change;
-- what evidence and history already exist;
-- what the operator should do when the result is stale, blocked or uncertain.
+**Workflow-led, contract-constrained, backend-authoritative.**
 
-## 2. Principles
+For the Application layer, that means:
 
-1. **Backend-owned authority.** React displays lifecycle, eligibility, quantities and safe messages returned by the backend.
-2. **One current state.** Historical events never compete with the current lifecycle message.
-3. **Exception first.** Blockers and required actions are easier to find than successful background detail.
-4. **Dense but bounded.** Operational tables may be dense but must not force page-wide horizontal overflow.
-5. **Stable action hierarchy.** Primary, secondary, destructive and navigation actions have consistent meaning.
-6. **Vietnamese operator language.** Labels are concise and familiar; technical codes stay available in support detail.
-7. **Accessible interaction.** Keyboard, focus, semantics, contrast and live feedback are acceptance requirements.
-8. **No automatic write retry.** Unknown outcomes require authoritative refresh.
-9. **No visual rewrite of business contracts.** UI work preserves API and lifecycle behavior.
-10. **No speculative design system.** A shared abstraction needs two real current consumers, except shell-level primitives.
+> **The backend is the gatekeeper and workload manager serving the operator. The UI exposes the business job, current work context and genuine human decisions — not backend mechanics.**
 
-## 3. Minimal visual foundation
+A technically correct screen still fails Product review when a competent first-time operator cannot understand what to do.
 
-### Workflow-first operator UX
+## 2. First-user workbench contract
 
-[D-035](../decisions/decision-atlas-workflow-first-operator-ux.md) requires the normal workbench to lead with period, current state, attention, main work and one backend-authorized next action. Future lifecycle controls, technical identities and audit evidence must not compete with the happy path; they appear contextually or through progressive disclosure. Every normal state must pass the five-second and first-time-operator comprehension tests without requiring architecture vocabulary.
+A normal workbench must make these answers obvious without requiring knowledge of Atlas architecture:
 
-UI-QUALITY-01 should define semantic CSS custom properties for:
+1. What job am I doing?
+2. What business scope am I working on now?
+3. What needs my attention?
+4. What can I edit or inspect?
+5. Is my work unsaved, saved or already committed downstream?
+6. What is the one meaningful action I can take now?
+7. What business consequence will that action have?
 
-- a small type scale;
-- spacing and control heights;
-- radii, borders and surfaces;
-- focus outline;
-- text, muted and disabled text;
-- information, success, warning, blocking and unknown-outcome semantics;
-- table header, row and selection states;
-- content width and responsive breakpoints.
-
-Tokens describe purpose, not module names. Business meaning must not rely on color alone.
-
-A standard workbench follows:
+The normal reading flow is:
 
 ```text
-environment/prototype notice where applicable
-→ workbench header and context
-→ authoritative status and exception summary
-→ primary workspace
-→ evidence and history
-→ secondary/support actions
+workbench identity and business context
+→ search / practical filters
+→ attention or blockers when relevant
+→ primary work surface
+→ current saved / committed state
+→ one visually dominant business action
+→ secondary utilities
+→ progressive-disclosure history / evidence / support detail
 ```
 
-## 4. Atlas Modern Operations visual architecture
+Do not make audit, evidence, lifecycle internals or technical identity part of the ordinary reading flow merely because the backend returns them.
 
-D-034 defines Atlas as modern, calm, layered, precise and professional B2B operations software for institutional catering. Every connected page preserves four distinct levels: dark ink-navy navigation, clean white/light global header, warm-stone workspace and a white rounded operational workbench with a subtle border and restrained elevation.
+## 3. Core principles
 
-Operational pages are table-first. The primary workbench dominates the available area and uses tabs, toolbar rows, dividers, compact internal surfaces and bounded evidence detail instead of nested decorative cards. Cards are signals only for backend-supported completeness, attention, blocking or a critical decision total; zero to three is the normal target and zero is valid. Do not add trading-dashboard statistics, decorative deltas, trend arrows or a KPI wall.
+1. **Backend-owned authority.** React renders authoritative state, eligibility, quantities and safe messages returned by the backend. It may make an action stricter for local draft validity, dirty state, busy state or uncertain outcomes, but it must never make a backend-denied action available.
+2. **Show the job, hide the machinery.** API names, capability codes, versions, fingerprints, batch IDs, pagination/chunk sizes, validation stages and internal snapshots do not belong in the normal operator flow.
+3. **One current state.** Historical events never compete with the current business state.
+4. **Exception first when an exception exists.** Blockers and required corrections are easier to find than successful background detail, but successful screens are not dominated by empty warning/evidence containers.
+5. **Dense but human.** Operational tables may be information-dense, but typography, spacing and controls remain comfortable for sustained office use.
+6. **Stable action hierarchy.** At a normal state, one business action is visually dominant. Secondary and utility actions are clearly subordinate.
+7. **Native Vietnamese operator language.** Labels are written from business meaning in natural Vietnamese, not translated word-for-word from backend terminology.
+8. **Fast target finding.** Every table-oriented workbench has a useful text search/filter unless there is a documented reason search would provide no value.
+9. **Accessible interaction.** Keyboard, focus, semantics, contrast, readable sizing and live feedback are acceptance requirements.
+10. **No automatic write retry.** Unknown outcomes require authoritative refresh.
+11. **No fake simplification in React.** If an accepted backend contract forces several deterministic system steps to appear as human actions, stop and reassess the business boundary instead of silently chaining commands in the browser.
+12. **No speculative design system.** Shared abstractions require real current consumers or a legitimate shell-level purpose.
 
-Controls use an approximately 6 px radius; summary/attention surfaces and primary workbenches use approximately 8–10 px. Elevation stays low except for true overlays. Navy expresses structure and primary interaction authority; copper is a restrained brand/active cue; green is success only; amber/orange is warning; red is blocking or destructive; blue is information/focus; ordinary UI remains predominantly neutral. Typography retains Inter, Segoe UI and Arial with compact 32–36 px controls and readable Vietnamese density.
+## 4. Backend gatekeeper and human-action rule
 
-Use only regular-outline Phosphor icons from `@phosphor-icons/react`, normally 18–20 px for top-level navigation, 16–18 px for actions and 14–16 px inline. Icons inherit color, support scanning, do not replace navigation/action text and require accessible naming when used alone. No unofficial or generated Thượng Hảo logo is permitted.
+Complex backend safety is welcome when it protects security, integrity, authorization, currentness, auditability, lineage, recovery, idempotency or transaction correctness.
 
-At 360 px, 768 px and 1280 px, preserve navigation → page context → attention → workbench → action priority without page-wide mobile overflow or cardifying dense tables. Verify focus on white, warm workspace, dark/selected navigation and navy actions; use a light dark-surface focus color where required. Status includes text and, where helpful, icon plus semantic color. Warning text uses a dark accessible shade, copper is not used for small low-contrast text, and reduced motion, semantic headings, labels and keyboard order remain mandatory.
+That complexity should normally make the operator experience **simpler**, not more complicated.
 
-## 5. Shared component rule
+A backend state does not automatically deserve a visible UI state.
 
-Do not prebuild a catalogue of components merely because one might be useful later.
+Before exposing a public button or normal workflow step, ask:
 
-UI-QUALITY-01 may normalize or add only components already repeated in at least two connected surfaces, plus shell-level components. Likely candidates are:
+1. Is the person authoring operational facts?
+2. Is the person making a genuine business decision or commitment?
+3. Is this a necessary exception, correction, acknowledgement or safety decision?
 
-- `WorkbenchHeader`;
-- `Panel` or `SectionPanel`;
-- `StatusChip`;
-- `NoticeBanner` or one `OperationalState` component with variants;
-- `ActionGroup`;
-- `ConfirmationDialog`;
-- `ResponsiveTable` wrapper;
-- `EvidenceSummary`;
-- `LifecycleTimeline` only if two current workbenches adopt it.
+If none applies, the step is probably deterministic system work and should normally remain backend-internal.
 
-Loading, empty, blocking, stale, unknown-outcome, read-only and access-denied presentation may be variants of one operational-state component rather than separate component families.
+This is not an absolute rule that removes legitimate operational acknowledgements or safety decisions. Accepted business requirements remain authoritative.
 
-Reuse or evolve the existing shared module. Do not create parallel primitive families.
+When one business action requires backend workload partitioning, pagination or internal orchestration, the operator does not administer those implementation details. For example, an RPC row limit is not a user workflow concept.
 
-## 6. State presentation
+## 5. Work context
+
+Every workbench visibly identifies its current business scope.
+
+Depending on the job, context may include:
+
+- service week or date;
+- School;
+- Dish;
+- Ingredient;
+- Supplier;
+- Delivery Location;
+- document/reference number;
+- row count;
+- current saved or released/committed state.
+
+Do not require the operator to infer context from table rows or hidden filter values.
+
+Normal UI should not expose opaque UUIDs, internal revision numbers, fingerprints or capability identifiers. Those remain available only in support detail when genuinely useful.
+
+## 6. Search and filters
+
+Every table-oriented operational workbench should provide a prominent text search/filter unless a strong, documented reason shows that search would not help the job.
+
+Search targets human-readable fields operators naturally remember, for example:
+
+- Ingredient name;
+- Dish name;
+- School name;
+- Supplier name;
+- Delivery Location;
+- business reference/document number.
+
+When relevant rows are already loaded, simple client-side presentation filtering is sufficient.
+
+Move search into an authoritative backend selector only when real pagination, data volume, security scope or performance requires it.
+
+Do not build a generic search framework merely to satisfy this rule.
+
+Text search may coexist with structured filters such as date, School, Supplier or status. Presentation filters must not silently change authoritative command scope unless the accepted business contract explicitly says they do.
+
+## 7. Actions, Save and commitment
+
+Action labels use a specific, natural business verb and consequence.
+
+`Lưu` means preserve the operator's current authored work when that is the actual action.
+
+A separate commitment action is used when the operator is genuinely releasing, confirming, sending or making work available downstream.
+
+For Confirmed Need, D-037 establishes the current pattern:
+
+```text
+Edit
+→ Lưu
+→ continue working if needed
+→ Chuyển sang lên đơn
+```
+
+Do not generalize `Lưu → Chuyển sang lên đơn` to every domain. The human-action rule determines each workflow.
+
+Rules:
+
+- use one primary action per local decision context where practical;
+- keep secondary actions subordinate;
+- quiet utility actions such as refresh/export/search support the job but do not compete with the primary business action;
+- separate and confirm destructive or commitment-producing actions when consequence warrants confirmation;
+- use backend-authorized eligibility and safe disabled reasons;
+- busy state prevents duplicate submission;
+- opening a confirmation never submits the command;
+- focus enters and returns from dialogs correctly;
+- unknown write outcomes disable further mutation until authoritative refresh.
+
+Avoid labels derived from architecture such as `Hoàn tất xác nhận`, `Phê duyệt`, `Phát hành`, `Materialize`, or `Request` unless the operator is genuinely making that exact business decision.
+
+## 8. Visual hierarchy and surface discipline
+
+Atlas remains a modern, calm, precise B2B operations application under D-034. The shell may retain its dark navigation, light global header and warm-stone workspace, but individual workbenches should feel like one coherent work surface rather than boxes nested inside boxes.
+
+Default hierarchy:
+
+```text
+Page
+  └ Workbench
+       ├ Context / toolbar
+       ├ Main table or editor
+       └ Action / exception area
+```
+
+Use spacing, typography, dividers and subtle surface changes before adding another bordered card.
+
+Rules:
+
+- the primary workbench dominates the available area;
+- avoid a bordered container for every semantic group;
+- cards are reserved for a real signal, blocker, critical summary or distinct support disclosure;
+- zero cards is valid;
+- avoid KPI walls, decorative deltas, trend arrows and trading-dashboard styling;
+- evidence/history are normally collapsed or placed under `Chi tiết`, `Lịch sử` or another progressive-disclosure affordance;
+- normal screens do not display checksums, signatures, internal versions or evidence identifiers just because they exist;
+- avoid uppercase micro-headings for ordinary workflow structure;
+- avoid arbitrary equal-width or oversized action buttons merely for symmetry.
+
+## 9. Human-scale typography and controls
+
+The UI must be comfortable for employees who use it for hours.
+
+Use approximately:
+
+```text
+Workbench title       22–26 px / weight 600–700
+Section heading       16–18 px / weight 600
+Normal body           14–15 px / weight 400–500
+Table content         13–14 px / weight 400–500
+Field labels          13–14 px / weight 500–600
+Helper text           12–13 px / weight 400
+Buttons               14–15 px / weight around 600
+```
+
+11 px text is exceptional metadata. It is not normal size for instructions, filter labels, action consequences, operational statuses or field labels.
+
+Control guidance:
+
+```text
+normal desktop controls     approximately 38–40 px high
+primary desktop action      approximately 40 px high
+mobile/touch target         approximately 44 px minimum where practical
+```
+
+Do not make every button or label weight 700.
+
+Buttons should normally size from their content. Use larger/equal-width actions only when the workflow genuinely benefits from them.
+
+Visual action hierarchy:
+
+```text
+primary business action     filled / strongest emphasis
+secondary action            outline or subtle
+utility action              quiet / text / icon where appropriate
+```
+
+Typography retains the approved Atlas font stack. The standard governs proportion and readability rather than requiring a new font dependency.
+
+## 10. Vietnamese product language
+
+Operator-facing UI is Vietnamese and is **authored from business meaning**, not translated from backend vocabulary.
+
+Prefer short, direct operational language such as:
+
+- `Lưu`;
+- `Tải lại`;
+- `Tìm kiếm`;
+- `Cần xử lý`;
+- `Cảnh báo`;
+- `Chưa lưu`;
+- `Đã lưu`;
+- `Chuyển sang lên đơn`;
+- `Đã chuyển sang lên đơn`;
+- `Lịch sử`.
+
+Avoid machine-translated or architecture-shaped language such as:
+
+- `Hành động tiếp theo` when the action can simply be shown;
+- `dữ liệu có thẩm quyền`;
+- `lô` where the business does not naturally use that term;
+- `phiên bản` for an internal revision;
+- `bằng chứng quyết định`;
+- lifecycle enum wording;
+- API/request/materialization terminology.
+
+Do not create a giant English-to-Vietnamese translation registry. Choose wording per workflow and actual business meaning.
+
+Backend reason codes remain backend reason codes. UI copy should be concise, native and safe.
+
+User-facing dates use `dd/mm/yyyy`. Timestamps include time only when operationally relevant. ISO values may appear in copyable support detail, not as the primary display.
+
+Quantity precision follows backend Unit/policy evidence. Zero, missing and unavailable remain distinct, and values stay visually adjacent to their Unit.
+
+## 11. Tables and operational density
+
+Tables are the primary work surface where the job is naturally tabular.
+
+Order columns from the operator's task perspective, not from database shape. A common pattern is:
+
+```text
+human-recognizable identity
+→ business scope/context
+→ editable or decision quantities
+→ relevant status / exception
+→ secondary support detail
+```
+
+Actor IDs, evidence IDs, internal versions and timestamps are not automatically table columns. Put them in row detail/history when they are support information rather than core work.
+
+Requirements:
+
+- semantic headers;
+- bounded horizontal scrolling inside the table rather than page-wide overflow;
+- sticky identity columns only where useful;
+- visible row focus/selection;
+- aligned numeric values and adjacent Units;
+- explicit loading and empty states;
+- primary action and critical status remain discoverable without scrolling the whole table;
+- narrow layouts may use row detail for support metadata instead of hiding critical business information.
+
+Do not add a third-party grid or virtualizer without an observed need.
+
+## 12. Export affordances
+
+A workbench may show secondary controls such as:
+
+```text
+Xuất Excel
+Xuất PDF
+```
+
+before final export implementation exists.
+
+Do not freeze speculative file contracts while authoritative tables/read models, business filtering scope or approved document layouts are still changing.
+
+When export is eventually implemented, explicitly define the business contract for:
+
+- template/layout;
+- columns;
+- filtering scope;
+- grouping scope;
+- filenames/document identity;
+- currentness/audit expectations where applicable.
+
+A disabled placeholder must not fake file generation. It should use a concise accessible explanation that the export format is not yet finalized.
+
+## 13. State presentation
 
 ### Loading
 
 - Preserve layout where practical.
-- State what is loading.
+- State what is loading only when the wait is meaningful.
 - Hide or disable commands while authoritative eligibility is unknown.
 
 ### Empty
@@ -112,83 +327,27 @@ Reuse or evolve the existing shared module. Do not create parallel primitive fam
 Distinguish:
 
 - no object selected;
-- no records for the filter or period;
+- no records for the current search/filter/period;
 - a valid zero-line state;
 - a missing prerequisite or blocked source.
 
 ### Blocking and warnings
 
-Blockers appear before warnings. Each issue shows a safe message, affected object/line and next workspace or action when known. Warnings remain visible but do not look like blockers.
+Blockers appear before warnings and use safe business language. Show the affected business object and practical next step when known.
 
 ### Stale
 
-A stale result explains that authoritative data changed and offers refresh. Local draft is preserved only when the API contract permits it. No write is replayed automatically.
+Explain that data changed and offer `Tải lại`. Preserve local draft only when the contract permits it. Never replay writes automatically.
 
 ### Unknown write outcome
 
-The UI states that completion is uncertain, disables further mutation and requires authoritative refresh. It claims neither success nor failure and exposes no raw credential, SQL or transport diagnostic.
+State that completion is uncertain, disable further mutation and require authoritative refresh. Claim neither success nor failure and expose no raw SQL, credential or transport detail.
 
 ### Read-only
 
-Read-only state explains whether editing is unavailable because of lifecycle, capability, stale/unknown outcome, archived history or missing prerequisite. It must not look like a broken form.
+Explain the relevant business reason when needed. A read-only workbench must not look like a broken editable form.
 
-## 7. Actions and confirmation
-
-Action labels use a specific verb and business object or consequence.
-
-Accepted examples include:
-
-- `Kiểm tra toàn bộ`;
-- `Phê duyệt lô nhu cầu`;
-- `Phát hành sang bước lên đơn`.
-
-Rules:
-
-- use one primary action per local decision context where practical;
-- keep secondary actions subordinate;
-- separate and confirm destructive or commitment-producing actions;
-- show backend-safe disabled reasons when available;
-- busy state prevents duplicate submission;
-- opening a confirmation never submits the command;
-- focus enters and returns from dialogs correctly;
-- consequence text states when a likely downstream action does **not** occur.
-
-## 8. Tables and operational density
-
-Tables should order information as:
-
-```text
-stable/source identity
-→ operational object identity
-→ quantities and state
-→ exceptions and decisions
-→ Actor, evidence and time
-```
-
-Requirements:
-
-- semantic headers;
-- bounded horizontal scrolling;
-- sticky columns only for stable identity where useful;
-- visible row focus/selection;
-- aligned numeric values and adjacent Units;
-- explicit loading and empty states, not fake rows;
-- critical status and primary action remain discoverable without table scrolling;
-- narrow layouts may use row detail for support metadata instead of hiding critical data.
-
-Do not add a third-party grid or virtualizer in this phase.
-
-## 9. Language, date and quantity
-
-- Operator UI is Vietnamese.
-- User-facing dates use `dd/mm/yyyy`.
-- Timestamps include time when operationally relevant and use the application timezone consistently.
-- ISO values may appear in copyable support detail, not as the only display.
-- Quantity precision follows backend Unit/policy evidence.
-- Zero, missing and unavailable are distinct.
-- Values and Unit remain visually adjacent.
-
-## 10. Responsive and accessibility acceptance
+## 14. Responsive and accessibility acceptance
 
 Review widths:
 
@@ -201,60 +360,136 @@ Review widths:
 Acceptance requires:
 
 - no page-wide horizontal overflow at 360 px;
+- table scrolling remains local to the table where required;
 - dialogs fit and remain keyboard reachable;
-- navigation and filters remain usable by touch and keyboard;
-- sticky elements do not consume most of a narrow viewport;
+- navigation, search and filters remain usable by touch and keyboard;
 - visible focus and logical keyboard order;
 - semantic headings, labels and table headers;
 - field errors associated with controls;
 - non-color status cues and adequate contrast;
 - result notices use appropriate live-region behavior;
-- reduced-motion compatibility for any animation.
+- reduced-motion compatibility for animation;
+- long Vietnamese labels/messages wrap without destroying action hierarchy.
 
-Automated checks support but do not replace keyboard review.
+Automated checks support but do not replace keyboard and visual review.
 
-## 11. Review evidence
+## 15. First-time-operator acceptance
 
-Shared primitives need focused stories or fixtures for the states they actually support, including long Vietnamese text and narrow containers.
+Every major workbench must pass this Product test:
 
-Each UI-quality PR must publish:
+> A competent Vietnamese office employee who has never seen Atlas opens the screen without explanation.
+
+Within approximately five seconds, they should be able to tell:
+
+1. what the screen is for;
+2. what they are currently working on;
+3. how to find the target they need;
+4. what can be edited;
+5. whether their work is saved;
+6. what the visually primary action will do.
+
+If those answers require Atlas database, lifecycle, capability or API vocabulary, the screen fails Product review even when CI is green.
+
+## 16. OPS v1 / Retool lesson
+
+OPS v1 / retained Retool remains Application-layer workflow evidence, not architecture authority.
+
+Useful ideas to preserve where they match the actual job:
+
+- simple operator mental models;
+- explicit `Lưu`;
+- fast text search;
+- dense practical tables;
+- direct Vietnamese task language;
+- quick editing;
+- practical exception handling;
+- familiar export affordances.
+
+Do not copy:
+
+- direct browser SQL;
+- JavaScript/local state as business authority;
+- client-side calculation authority;
+- hidden chained writes as transaction authority;
+- implicit authorization;
+- Retool component/layout structure as Atlas architecture.
+
+A correct Atlas backend should make React comparatively boring.
+
+## 17. Shared component rule
+
+Do not prebuild a catalogue of components merely because one might be useful later.
+
+Normalize or add shared primitives only when they have at least two real connected consumers or a legitimate shell-level purpose.
+
+Likely recurring primitives include:
+
+- `WorkbenchHeader`;
+- `Panel` / `SectionPanel` only where a real surface boundary exists;
+- `StatusChip`;
+- one operational notice/state treatment;
+- `ActionGroup`;
+- `ConfirmationDialog` where multiple real commitment/destructive actions use it;
+- a bounded table wrapper.
+
+Evidence/timeline primitives should exist only when multiple workbenches genuinely need visible support-history treatment.
+
+Reuse or evolve the existing shared module. Do not create parallel primitive families.
+
+## 18. Review evidence
+
+Each substantial UI-quality PR should publish:
 
 - exact surfaces reviewed;
-- issue inventory and accepted deferred debt;
+- first-user issue inventory and accepted deferred debt;
 - exact changed-path manifest;
 - shared components introduced or reused;
-- focused and regression test results;
+- text-search behavior where the workbench is table-oriented;
+- visible Vietnamese labels materially changed;
+- focused/regression test results;
 - Storybook/UI Review Export result where applicable;
 - responsive notes at 360/768/1280;
 - keyboard/focus review;
-- explicit zero business migration/API/contract delta.
+- explicit business/API/contract delta.
 
-## 12. Certification scorecard
+For a UI-only task, zero backend delta is expected unless the Product review proves that the existing contract itself forces a false or confusing human workflow. In that case, stop the UI task and correct the business/backend boundary separately rather than hiding orchestration in React.
 
-| Dimension          | Acceptance                                                                   |
-| ------------------ | ---------------------------------------------------------------------------- |
-| Current state      | Exactly one authoritative current-state treatment.                           |
-| Action authority   | Backend-provided eligibility and disabled reason.                            |
-| Operational states | Loading, empty, blocker, warning, stale, unknown and read-only are explicit. |
-| Actions            | Primary/secondary/destructive hierarchy is consistent.                       |
-| Tables             | Bounded, semantic and legible at reviewed widths.                            |
-| Language           | Vietnamese labels, dates and domain terms are consistent.                    |
-| Accessibility      | Keyboard, focus, labels, semantics and contrast pass review.                 |
-| Evidence           | Actor, time, version and history are presented consistently.                 |
-| Scope              | No unapproved backend or business behavior changed.                          |
-| Verification       | Tests, build and visual review pass.                                         |
+## 19. Certification scorecard
 
-## 13. Prohibited shortcuts
+| Dimension | Acceptance |
+| --- | --- |
+| First-user comprehension | Job, scope, editable target, saved state and main action are obvious without architecture vocabulary. |
+| Work context | Current business period/object/scope is visible and understandable. |
+| Search | Table-oriented workbench has a fast useful text search/filter or a documented reason not to. |
+| Action authority | Backend-provided eligibility is the maximum permission; React can only restrict further. |
+| Action hierarchy | One meaningful business action dominates the normal state. |
+| Operational states | Loading, empty, blocker, warning, stale, unknown and read-only states are clear when they occur. |
+| Tables | Bounded, semantic and legible at reviewed widths. |
+| Typography | Human-scale text/control proportions support sustained use. |
+| Language | Vietnamese is natural, concise and business-accurate rather than translated backend terminology. |
+| Evidence/history | Support detail is available when needed but does not compete with core work. |
+| Accessibility | Keyboard, focus, labels, semantics, contrast and touch targets pass review. |
+| Scope | No hidden client authority or unapproved business behavior is introduced. |
+| Verification | Appropriate tests, build and visual review pass; green CI alone is not sufficient Product acceptance. |
+
+## 20. Prohibited shortcuts
 
 UI quality work must not:
 
 - add browser-side authoritative calculations;
 - infer capability from role names or lifecycle text;
+- promote an action the backend did not authorize;
 - duplicate backend-safe messages with conflicting client registries;
 - automatically retry writes;
-- hide blockers for visual cleanliness;
-- remove support evidence needed for audit;
-- add a UI framework, grid, global state library or CSS runtime without a separate accepted decision;
+- chain backend lifecycle commands in React to simulate one business action;
+- expose API workload limits as operator workflow;
+- hide real blockers for visual cleanliness;
+- make technical evidence part of the normal flow merely to prove it exists;
+- use tiny text, excessive nested borders/cards or uniformly bold controls to compensate for unclear information hierarchy;
+- add a UI framework, grid, global state library or CSS runtime without a separate accepted need;
+- build a generic search/filter/export framework without proven consumers;
 - polish unconnected downstream prototypes before their connected slices;
 - redesign every module in one PR;
-- modify SQL, migrations, RLS, RPCs or domain contracts to simplify presentation.
+- silently modify SQL, migrations, RLS, RPCs or domain contracts inside a presentation-only task.
+
+When a UI review reveals that the backend contract itself creates unnecessary human ceremony, stop and elevate that as a workflow/contract correction under OPS_SYSTEM_MAP rather than preserving a bad boundary for the sake of implementation convenience.
