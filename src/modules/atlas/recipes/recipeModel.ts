@@ -99,6 +99,30 @@ export type RecipeUnitReference = {
   unit_status: "ACTIVE" | "INACTIVE";
 };
 
+export type RecipeWorkflowSelection = {
+  dish_id: string | null;
+  school_type_id: string | null;
+  recipe_id: string | null;
+  recipe_version_id: string | null;
+  expected_version: number | null;
+  in_use_recipe_version_id: string | null;
+  business_status: "NOT_SAVED" | "SAVED" | "IN_USE" | "NEEDS_ATTENTION";
+  basis_portions: number;
+  composition: RecipeCompositionLine[];
+  allowed_actions: {
+    save_recipe: boolean;
+    release_recipe: boolean;
+  };
+  disabled_reason_codes: {
+    save_recipe: string | null;
+    release_recipe: string | null;
+  };
+  disabled_reasons: {
+    save_recipe: string | null;
+    release_recipe: string | null;
+  };
+};
+
 export type RecipeWorkbenchData = {
   dish_types: DishTypeReference[];
   dishes: DishRecord[];
@@ -107,6 +131,7 @@ export type RecipeWorkbenchData = {
   school_types: RecipeReference[];
   ingredients: RecipeIngredientReference[];
   units: RecipeUnitReference[];
+  selected_recipe: RecipeWorkflowSelection;
 };
 
 export const emptyRecipeWorkbench = (): RecipeWorkbenchData => ({
@@ -117,6 +142,26 @@ export const emptyRecipeWorkbench = (): RecipeWorkbenchData => ({
   school_types: [],
   ingredients: [],
   units: [],
+  selected_recipe: {
+    dish_id: null,
+    school_type_id: null,
+    recipe_id: null,
+    recipe_version_id: null,
+    expected_version: null,
+    in_use_recipe_version_id: null,
+    business_status: "NOT_SAVED",
+    basis_portions: 100,
+    composition: [],
+    allowed_actions: { save_recipe: false, release_recipe: false },
+    disabled_reason_codes: {
+      save_recipe: "SELECTION_REQUIRED",
+      release_recipe: "SELECTION_REQUIRED",
+    },
+    disabled_reasons: {
+      save_recipe: "Hãy chọn món ăn.",
+      release_recipe: "Hãy chọn món ăn.",
+    },
+  },
 });
 
 function responseArray<T>(
@@ -161,6 +206,7 @@ export function recipeWorkbenchFromResult(
     "ingredients",
   );
   const units = responseArray<RecipeUnitReference>(result, source, "units");
+  const selectedRecipe = source.selected_recipe;
   if (
     !dishTypes ||
     !dishes ||
@@ -168,7 +214,10 @@ export function recipeWorkbenchFromResult(
     !recipeVersions ||
     !schoolTypes ||
     !ingredients ||
-    !units
+    !units ||
+    typeof selectedRecipe !== "object" ||
+    selectedRecipe === null ||
+    Array.isArray(selectedRecipe)
   )
     return null;
   return {
@@ -179,6 +228,7 @@ export function recipeWorkbenchFromResult(
     school_types: schoolTypes,
     ingredients,
     units,
+    selected_recipe: selectedRecipe as unknown as RecipeWorkflowSelection,
   };
 }
 
@@ -186,20 +236,20 @@ export function recipeResultMessage(result: AtlasRpcResult): string {
   if (result.kind === "success")
     return (
       result.response.safe_operator_message?.toString() ??
-      "Đã lưu và tải lại dữ liệu có thẩm quyền."
+      "Đã cập nhật và tải lại công thức."
     );
   if (result.kind === "auth_error")
     return "Phiên làm việc không còn hợp lệ. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Không thể kết nối với Atlas. Không có thay đổi nào được giả định.";
+    return "Mất kết nối khi đang cập nhật. Hãy tải lại để kiểm tra kết quả trước khi tiếp tục.";
   if (result.kind === "client_error")
-    return "Thao tác chưa có trong danh mục API đã được duyệt.";
+    return "Thao tác này chưa sẵn sàng. Hãy tải lại hoặc liên hệ bộ phận hỗ trợ.";
   const messages: Record<string, string> = {
     CAPABILITY_DENIED: "Bạn không có quyền thực hiện thao tác này.",
     SCOPE_DENIED: "Phạm vi được cấp không cho phép thao tác này.",
     STALE_VERSION: "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.",
     VALIDATION_FAILED: "Dữ liệu chưa hợp lệ. Kiểm tra chi tiết và thử lại.",
-    INVARIANT_VIOLATION: "Thao tác vi phạm quy tắc vòng đời công thức.",
+    INVARIANT_VIOLATION: "Công thức hiện tại chưa cho phép thao tác này.",
     CONFLICT: "Dữ liệu mục tiêu đang xung đột với một bản ghi hiện có.",
   };
   return (

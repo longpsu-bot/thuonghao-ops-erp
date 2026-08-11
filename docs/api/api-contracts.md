@@ -112,9 +112,13 @@ RMVP-07 implements exactly two separate complete-batch commands, `atlas_api.appr
 
 D-037 adds `atlas_api.save_confirmed_needs(jsonb)` (`RMVP-05.v2`) and `atlas_api.release_confirmed_needs(jsonb)` (`RMVP-07.v2`). Save preserves editable work without a 250-line business ceiling. Release internally performs deterministic validation and approval evidence creation before atomic Planning release under the distinct Release capability. Existing v1 functions remain callable; React calls no lifecycle chain. The exact delta is [Confirmed Need Save and Release v2](confirmed-need-save-release-v2.md).
 
-## 4H. Additive atomic Planning completion contracts
+## 4I. Additive atomic Planning completion contracts
 
 PLANNING-CONTRACT-01 implements D-036 with five additive APIs: consequential Weekly Menu, Attendance, and Pantry Saves; automatic Planning preflight; and one atomic Need Generation/materialization command. The versions are `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2`. Existing v1 APIs remain callable during UI coexistence. The canonical cross-family implementation, security, persistence, correction, compatibility, and retirement record is [PLANNING-CONTRACT-01 Atomic Planning completion boundaries](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md); family payload detail remains in the four existing API documents.
+
+## 4J. Recipe two-action v2 boundary
+
+D-038 adds `atlas_api.save_recipe(jsonb)` and `atlas_api.release_recipe(jsonb)` under `RMVP-02A.v2`. Save creates or reuses the correct editable draft/successor and replaces the complete composition without release. Release internally validates, materializes immutable Recipe Line Revisions, and releases for future Planning atomically. The v2 workbench read adds the selected Dish/scope plus backend-authoritative `save_recipe` and `release_recipe` eligibility. Existing RMVP-02A.v1 functions remain callable; React invokes no lifecycle chain. The exact delta is specified in [RMVP-02A Recipe and BOM API contract](rmvp-02a-recipes-bom.md).
 
 ## 5. Contract template
 

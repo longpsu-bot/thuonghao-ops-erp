@@ -77,3 +77,70 @@ The bounded public errors include:
 - `INTERNAL_READ_FAILURE`
 
 No response returns credentials, SQL text, private row dumps, or an exception stack.
+
+## Additive RMVP-02A.v2 operator contract
+
+D-038 preserves every v1 entry point above and adds exactly:
+
+```text
+atlas_api.save_recipe(request jsonb)
+atlas_api.release_recipe(request jsonb)
+```
+
+The v2 command envelope uses the shared identifiers, current positive `expected_version`, authenticated/requested subject match, timestamp, and idempotency key. `reason_note` is `null`; the exact reason codes are `RECIPE_SAVED` and `RECIPE_PUT_INTO_USE`.
+
+### V2 workbench selection and eligibility
+
+`get_dish_recipe_workbench` remains one physical function. A v1 request returns its unchanged v1 shape. A v2 request payload accepts only optional `dish_id` and `school_type_id` and returns the normal v1 catalogs/history plus:
+
+```json
+{
+  "selected_recipe": {
+    "dish_id": "uuid",
+    "school_type_id": null,
+    "recipe_id": "uuid-or-null",
+    "recipe_version_id": "uuid-or-null",
+    "expected_version": 2,
+    "in_use_recipe_version_id": "uuid-or-null",
+    "business_status": "NOT_SAVED|SAVED|IN_USE|NEEDS_ATTENTION",
+    "basis_portions": 100,
+    "composition": [],
+    "allowed_actions": {
+      "save_recipe": true,
+      "release_recipe": false
+    },
+    "disabled_reason_codes": {
+      "save_recipe": null,
+      "release_recipe": "RELEASE_SAVE_REQUIRED"
+    },
+    "disabled_reasons": {
+      "save_recipe": null,
+      "release_recipe": "Hãy lưu công thức trước khi đưa vào sử dụng."
+    }
+  }
+}
+```
+
+Eligibility resolves the active Actor, exact capability and active `GLOBAL` scope, Dish/Recipe/reference lifecycle, current saved version, and release-ready composition. React may change `true` to `false` for local dirty/invalid/busy/unknown state; it may never promote backend `false`.
+
+### `save_recipe`
+
+- Capability: `master_data.recipes.write`.
+- Payload keys: exact `dish_id`, nullable `school_type_id`, nullable/current `recipe_version_id`, positive integer `basis_portions`, and the complete present `lines` array.
+- Each line contains stable `recipe_line_id`, active `ingredient_id`, positive exact `quantity_per_basis`, active `unit_id`, and nullable `operational_note`.
+- Maximum 500 submitted lines; duplicate stable line or Ingredient identities fail closed.
+- No existing Recipe: create root and editable first draft, then store the complete composition.
+- Existing editable draft: replace its complete composition and preserve currentness.
+- Released current Recipe: create the correct successor internally, map exact predecessor Recipe Line Revisions, retain omitted predecessor lines as explicit `REMOVED` draft evidence, and preserve the prior release unchanged.
+- Success returns `authoritative_readback`; after-summary explicitly records `released_for_planning: false`.
+
+### `release_recipe`
+
+- Capability: `master_data.recipes.release`; `master_data.recipes.validate` remains a distinct v1 compatibility/internal capability and is not additionally required from the human caller.
+- Payload key: exact current saved `recipe_version_id`.
+- Rechecks current version, latest-version currentness, active Dish/Recipe, active Ingredient/Unit references, positive quantities, required non-empty composition, and exact predecessor coverage.
+- If the saved version is a draft, atomically materializes immutable Recipe Line Revisions and deterministic validation evidence before release.
+- Releases the current Recipe for future Planning and locks the prior effective Recipe under retained integrity rules.
+- Returns `effect: FUTURE_PLANNING_REFERENCE_ONLY` and `historical_planning_recalculated: false`.
+
+Both commands use existing command receipts, idempotent replay, Admin domain/audit events, fixed empty `search_path`, least-privilege runtime ownership, stale-version failure, and no automatic browser retry after an unknown transport outcome.

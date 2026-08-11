@@ -5,7 +5,11 @@ import type {
   JsonValue,
 } from "../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../review/reviewMode";
-import type { RecipeApi, RecipeCommandRequest } from "./recipeApi";
+import type {
+  RecipeApi,
+  RecipeCommandRequest,
+  RecipeWorkflowCommandRequest,
+} from "./recipeApi";
 import type {
   DishRecord,
   RecipeCompositionLine,
@@ -24,6 +28,7 @@ const ids = {
   version: "30000000-0000-4000-8000-000000000001",
   ingredient: "40000000-0000-4000-8000-000000000001",
   ingredient2: "40000000-0000-4000-8000-000000000002",
+  ingredient3: "40000000-0000-4000-8000-000000000003",
   unit: "50000000-0000-4000-8000-000000000001",
   schoolType: "60000000-0000-4000-8000-000000000001",
   dishTypeSoup: "80000000-0000-4000-8000-000000000001",
@@ -31,7 +36,7 @@ const ids = {
 };
 
 function fixtures(): RecipeWorkbenchData {
-  return {
+  const data: RecipeWorkbenchData = {
     dish_types: [
       {
         dish_type_id: ids.dishTypeSoup,
@@ -164,6 +169,12 @@ function fixtures(): RecipeWorkbenchData {
         ingredient_name: "Thịt heo xay",
         ingredient_status: "ACTIVE",
       },
+      {
+        ingredient_id: ids.ingredient3,
+        ingredient_code: "hanh-la",
+        ingredient_name: "Hành lá",
+        ingredient_status: "ACTIVE",
+      },
     ],
     units: [
       {
@@ -173,7 +184,23 @@ function fixtures(): RecipeWorkbenchData {
         unit_status: "ACTIVE",
       },
     ],
+    selected_recipe: {
+      dish_id: ids.dish,
+      school_type_id: null,
+      recipe_id: ids.recipe,
+      recipe_version_id: ids.version,
+      expected_version: 1,
+      in_use_recipe_version_id: null,
+      business_status: "SAVED",
+      basis_portions: 100,
+      composition: [],
+      allowed_actions: { save_recipe: true, release_recipe: true },
+      disabled_reason_codes: { save_recipe: null, release_recipe: null },
+      disabled_reasons: { save_recipe: null, release_recipe: null },
+    },
   };
+  data.selected_recipe.composition = clone(data.recipe_versions[0].composition);
+  return data;
 }
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -189,10 +216,69 @@ const backendError = (errorCode: string): AtlasRpcResult => ({
     safe_message: "Yêu cầu xem thử đã bị từ chối an toàn.",
   } as AtlasSafeBackendError,
 });
-const payloadString = (request: RecipeCommandRequest, key: string) =>
+type ReviewRecipeRequest = RecipeCommandRequest | RecipeWorkflowCommandRequest;
+const payloadString = (request: ReviewRecipeRequest, key: string) =>
   String(request.payload[key] ?? "");
-const payloadNumber = (request: RecipeCommandRequest, key: string) =>
+const payloadNumber = (request: ReviewRecipeRequest, key: string) =>
   Number(request.payload[key] ?? 0);
+
+function selectRecipe(
+  data: RecipeWorkbenchData,
+  dishId: string | null = data.selected_recipe.dish_id ??
+    data.dishes[0]?.dish_id ??
+    null,
+  schoolTypeId: string | null = data.selected_recipe.school_type_id,
+) {
+  const dish = data.dishes.find((item) => item.dish_id === dishId);
+  const recipe = data.recipes.find(
+    (item) => item.dish_id === dishId && item.school_type_id === schoolTypeId,
+  );
+  const versions = data.recipe_versions
+    .filter((item) => item.recipe_id === recipe?.recipe_id)
+    .sort((left, right) => right.version_number - left.version_number);
+  const version =
+    versions.find((item) => item.recipe_version_status === "DRAFT") ??
+    versions[0];
+  const releaseReady =
+    version?.recipe_version_status === "DRAFT" &&
+    version.composition.some((line) => line.line_disposition === "PRESENT");
+  data.selected_recipe = {
+    dish_id: dish?.dish_id ?? null,
+    school_type_id: schoolTypeId,
+    recipe_id: recipe?.recipe_id ?? null,
+    recipe_version_id: version?.recipe_version_id ?? null,
+    expected_version: version?.version ?? dish?.version ?? null,
+    in_use_recipe_version_id:
+      versions.find(
+        (item) => item.recipe_version_status === "RELEASED_FOR_PLANNING",
+      )?.recipe_version_id ?? null,
+    business_status: !version
+      ? "NOT_SAVED"
+      : version.recipe_version_status === "RELEASED_FOR_PLANNING"
+        ? "IN_USE"
+        : "SAVED",
+    basis_portions: version?.basis_portions ?? 100,
+    composition: clone(version?.composition ?? []),
+    allowed_actions: {
+      save_recipe: dish?.dish_status !== "INACTIVE",
+      release_recipe: Boolean(releaseReady),
+    },
+    disabled_reason_codes: {
+      save_recipe:
+        dish?.dish_status === "INACTIVE" ? "SAVE_DISH_INACTIVE" : null,
+      release_recipe: releaseReady ? null : "RELEASE_SAVE_REQUIRED",
+    },
+    disabled_reasons: {
+      save_recipe:
+        dish?.dish_status === "INACTIVE"
+          ? "Món ăn đã ngừng dùng nên không thể lưu công thức mới."
+          : null,
+      release_recipe: releaseReady
+        ? null
+        : "Hãy lưu công thức trước khi đưa vào sử dụng.",
+    },
+  };
+}
 
 export function createReviewRecipeApi(
   scenario: AtlasReviewScenario = "ready",
@@ -216,8 +302,8 @@ export function createReviewRecipeApi(
       ...clone(data),
     });
 
-  const mutate = (callback: (request: RecipeCommandRequest) => boolean) => {
-    return (request: RecipeCommandRequest) => {
+  const mutate = (callback: (request: ReviewRecipeRequest) => boolean) => {
+    return (request: ReviewRecipeRequest) => {
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
       return Promise.resolve(
@@ -227,10 +313,18 @@ export function createReviewRecipeApi(
   };
 
   return {
-    getWorkbench() {
+    getWorkbench(_authSubject, _correlationId, selection) {
       if (scenario === "loading")
         return new Promise<AtlasRpcResult>(() => undefined);
       const blocked = blockedRead();
+      if (!blocked)
+        selectRecipe(
+          data,
+          selection?.dishId ?? data.selected_recipe.dish_id,
+          selection
+            ? selection.schoolTypeId
+            : data.selected_recipe.school_type_id,
+        );
       return Promise.resolve(blocked ?? success(clone(data)));
     },
     createDish: mutate((request) => {
@@ -369,6 +463,73 @@ export function createReviewRecipeApi(
         "RELEASED_FOR_PLANNING",
       ),
     ),
+    saveRecipe: mutate((request) => {
+      const dishId = payloadString(request, "dish_id");
+      const schoolTypeId = payloadString(request, "school_type_id") || null;
+      let recipe = data.recipes.find(
+        (item) =>
+          item.dish_id === dishId && item.school_type_id === schoolTypeId,
+      );
+      if (!recipe) {
+        recipe = {
+          recipe_id: crypto.randomUUID(),
+          dish_id: dishId,
+          school_type_id: schoolTypeId,
+          recipe_status: "ACTIVE",
+          version: 1,
+          created_at: now,
+          updated_at: now,
+        };
+        data.recipes.push(recipe);
+      }
+      const versions = data.recipe_versions
+        .filter((item) => item.recipe_id === recipe.recipe_id)
+        .sort((left, right) => right.version_number - left.version_number);
+      let target = versions.find(
+        (item) => item.recipe_version_status === "DRAFT",
+      );
+      if (!target) {
+        target = newVersion(
+          recipe.recipe_id,
+          payloadNumber(request, "basis_portions"),
+          versions[0],
+        );
+        target.version_number = (versions[0]?.version_number ?? 0) + 1;
+        data.recipe_versions.push(target);
+      }
+      target.basis_portions = payloadNumber(request, "basis_portions");
+      target.composition = clone(
+        (request.payload.lines ?? []) as unknown as RecipeCompositionLine[],
+      ).map((line) => ({ ...line, line_disposition: "PRESENT" }));
+      target.version += 1;
+      selectRecipe(data, dishId, schoolTypeId);
+      return true;
+    }),
+    releaseRecipe: mutate((request) => {
+      const version = data.recipe_versions.find(
+        (item) =>
+          item.recipe_version_id ===
+          payloadString(request, "recipe_version_id"),
+      );
+      if (!version || version.recipe_version_status !== "DRAFT") return false;
+      transition(
+        request as RecipeCommandRequest,
+        data.recipe_versions,
+        "DRAFT",
+        "VALIDATED",
+      );
+      transition(
+        request as RecipeCommandRequest,
+        data.recipe_versions,
+        "VALIDATED",
+        "RELEASED_FOR_PLANNING",
+      );
+      const recipe = data.recipes.find(
+        (item) => item.recipe_id === version.recipe_id,
+      );
+      selectRecipe(data, recipe?.dish_id, recipe?.school_type_id ?? null);
+      return true;
+    }),
     copyVersion: mutate((request) => {
       const source = data.recipe_versions.find(
         (item) =>
@@ -414,7 +575,7 @@ function newVersion(
 }
 
 function transition(
-  request: RecipeCommandRequest,
+  request: ReviewRecipeRequest,
   versions: RecipeVersionRecord[],
   from: RecipeVersionRecord["recipe_version_status"],
   to: RecipeVersionRecord["recipe_version_status"],

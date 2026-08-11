@@ -6,7 +6,7 @@
 
 **Authority:** Working context summary
 
-**Current authoritative `main`:** `e542e263e3bb672eb2967af0b3d54bfd8771df75`
+**Current authoritative `main`:** `057a30ef30121fc50ef983acd91704d2bca8e82c`
 
 **Review required:** No — update whenever project direction, active scope, environment boundary, or blocking Product decisions change.
 
@@ -168,6 +168,8 @@ Current Planning governance and implementation:
 - PLANNING-CONTRACT-01 — merged at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`.
 - UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`.
 - D-037 / UI-QUALITY-02C-B — merged through PR #189 at `e542e263e3bb672eb2967af0b3d54bfd8771df75`.
+- ATLAS-UI-STANDARD-02 — merged at `057a30ef30121fc50ef983acd91704d2bca8e82c` and governs first-user connected workbenches.
+- D-038 / UI-QUALITY-03A — implemented on the bounded task branch with additive `RMVP-02A.v2` Save and put-into-use commands; draft PR and independent review remain required.
 
 Current human-facing Planning intent:
 
@@ -195,7 +197,7 @@ Current Product/UI stabilization order:
 
 ```text
 ATLAS-UI-STANDARD-02
-→ UI-QUALITY-03A Recipe / BOM first-user redesign
+→ UI-QUALITY-03A Recipe / BOM first-user redesign (implemented; draft review pending)
 → UI-QUALITY-03B Recipe Change Order first-user redesign
 → UI-QUALITY-03C remaining connected Admin consolidation
 → PLANNING-UX-01 / cross-flow operator review
@@ -205,7 +207,7 @@ ATLAS-UI-STANDARD-02
 
 The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
 
-The immediate Recipe/BOM redesign must begin from the operator job and use v1 only as workflow evidence. It should not preserve version/validation/successor mechanics in the normal UI merely because those mechanics exist in the backend.
+The connected Recipe/BOM workbench now begins with Dish search, visible Dish and `Áp dụng cho` context, Ingredient search, editable composition and basis, `Lưu`, and `Đưa vào sử dụng`. PostgreSQL owns draft/successor creation, deterministic validation, line-revision materialization, release, currentness, authorization, and authoritative readback. Version evidence is progressive disclosure. UI-QUALITY-03B remains separate and must not be started from this slice.
 
 CMD-03, supplier allocation, purchase-order creation, Warehouse, Production/QA and Dispatch expansion remain deferred until the current stabilization gates are accepted.
 

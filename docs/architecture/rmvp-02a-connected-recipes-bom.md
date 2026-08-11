@@ -41,6 +41,17 @@ Five backend-checked capabilities separate read, maintenance, validation, planni
 
 Every write uses the `RMVP-02A.v1` envelope, server-resolved actor identity, global scope, optimistic version checks, idempotent command receipts, one Admin domain event, one audit event, and authoritative workbench readback. `anon` and `service_role` execute no Atlas API.
 
+### D-038 additive operator boundary
+
+`RMVP-02A.v2` adds exactly two public commands and no relation, role, capability, scope kind, lifecycle state, module, or dependency:
+
+- `save_recipe` is the human `Lưu` boundary. It validates the submitted complete composition, creates the Recipe root/first draft when absent, reuses an editable draft, or creates the correct successor after a release. It preserves exact basis, stable lines and predecessor revision lineage, retains explicit removed predecessor evidence, returns editable authoritative readback, and releases nothing.
+- `release_recipe` is the human `Đưa vào sử dụng` commitment. It rechecks currentness and `master_data.recipes.release`, performs deterministic validation and immutable line-revision materialization internally, releases atomically for future Planning, and relies on the retained integrity guard to lock the prior effective version. Existing Planning selections and historical facts are not recalculated.
+
+The v2 read accepts optional selected `dish_id` and `school_type_id`, returns `selected_recipe`, and supplies `allowed_actions`, `disabled_reason_codes`, and natural-Vietnamese `disabled_reasons` for `save_recipe` and `release_recipe`. React may only restrict these decisions for dirty, invalid, busy, or unknown-outcome state.
+
+Capability granularity is unchanged. Save requires `master_data.recipes.write`; put-into-use requires `master_data.recipes.release`. `master_data.recipes.validate` remains available for v1 compatibility and controlled internal/support workflows; it is not deleted or broadened into a generic manage capability.
+
 ## OPS v1 workbook import
 
 The browser accepts only `.xlsx` workbooks and recognizes the narrow OPS v1 Vietnamese headers:
@@ -56,15 +67,24 @@ Retool export `D:\Project\OPS v2\OPS - Công thức.json` was inspected as read-
 
 ## UI boundary
 
-The connected React page supports:
+The default connected React page now supports the ordinary job through:
+
+- Dish search by human-readable name/code and visible selected Dish/type context;
+- `Áp dụng cho` using actual School Type references;
+- editable `Định lượng cho [n] suất` without forcing 100;
+- Ingredient search/select against loaded active references;
+- a clear composition table with quantity, Unit, note, change, and remove interactions;
+- exactly `Lưu` and `Đưa vào sử dụng` as normal human actions;
+- status language `Chưa lưu`, `Đã lưu`, `Đang sử dụng`, `Có thay đổi chưa lưu`, and `Cần xử lý`;
+- Recipe/version evidence behind `Lịch sử công thức` and nested `Chi tiết hỗ trợ` disclosure.
+
+Existing advanced support remains available without business-contract redesign:
 
 - Dish catalog creation, editing, and lifecycle changes;
-- general and School Type Recipe roots;
-- initial and successor drafts;
-- complete BOM editing with explicit removal;
-- validation and planning release;
 - traceable copy preview of the complete source BOM and apply;
 - workbook review, checksum, errors, counts, and apply.
+
+Recipe Adjustment and effective-BOM behavior are unchanged and remain a separate secondary area pending UI-QUALITY-03B. React never chains v1 draft, replace, validate, release, or successor functions to simulate the two human actions.
 
 The normal build requires an authenticated Supabase session and the typed reviewed RPC registry. Review mode uses deterministic browser-only sample data and displays the existing non-persistence notice. It never represents review actions as persisted.
 
