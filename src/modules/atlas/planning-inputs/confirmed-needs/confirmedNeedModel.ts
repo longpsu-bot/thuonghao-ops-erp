@@ -118,6 +118,27 @@ export type ConfirmedNeedDraftLine = {
   reason_note: string;
 };
 
+export const confirmedNeedReasonLabels = {
+  PROPOSAL_ACCEPTED: "Chấp nhận đề xuất",
+  PLANNING_STEP_ADJUSTMENT: "Điều chỉnh theo bước lượng",
+  OPERATIONAL_QUANTITY_ADJUSTMENT: "Điều chỉnh vận hành",
+  OTHER: "Lý do khác",
+} as const satisfies Record<ConfirmedNeedDraftLine["reason_code"], string>;
+
+export type ConfirmedNeedReasonCode = ConfirmedNeedDraftLine["reason_code"];
+
+export function confirmedNeedReasonLabel(code: string | null | undefined) {
+  return code && code in confirmedNeedReasonLabels
+    ? confirmedNeedReasonLabels[code as ConfirmedNeedReasonCode]
+    : "Chưa chọn lý do";
+}
+
+export function confirmedNeedReasonCodeFromLabel(value: string) {
+  return (Object.entries(confirmedNeedReasonLabels).find(
+    ([, label]) => label === value,
+  )?.[0] ?? null) as ConfirmedNeedReasonCode | null;
+}
+
 export type ConfirmedNeedDecisionHistory = {
   decision_id: string;
   decision_number: number;
@@ -176,6 +197,31 @@ export type ConfirmedNeedLine = {
   decision_history: ConfirmedNeedDecisionHistory[];
 };
 
+export function initialConfirmedNeedDraft(
+  line: ConfirmedNeedLine,
+): ConfirmedNeedDraftLine {
+  const currentDecision = line.decision_history.find(
+    (decision) => decision.decision_id === line.current_decision_id,
+  );
+  const reasonCode = currentDecision?.reason_code;
+  return {
+    selected: line.current_decision_id === null,
+    exact_quantity:
+      line.confirmed_quantity_after ?? line.proposed_confirmed_quantity,
+    reason_code:
+      reasonCode && reasonCode in confirmedNeedReasonLabels
+        ? (reasonCode as ConfirmedNeedReasonCode)
+        : line.confirmed_quantity_after &&
+            !exactDecimalEqual(
+              line.confirmed_quantity_after,
+              line.proposed_confirmed_quantity,
+            )
+          ? "PLANNING_STEP_ADJUSTMENT"
+          : "PROPOSAL_ACCEPTED",
+    reason_note: currentDecision?.reason_note ?? "",
+  };
+}
+
 export type ConfirmedNeedWorkbenchData = {
   confirmed_need_batch_id: string;
   source_kind: "NEED_GENERATION";
@@ -205,16 +251,22 @@ export type ConfirmedNeedWorkbenchData = {
     confirm_quantities: boolean;
     approve_confirmed_needs: boolean;
     release_confirmed_needs_for_purchase_handoff: boolean;
+    save_confirmed_needs: boolean;
+    release_confirmed_needs: boolean;
   };
   disabled_reason_codes: {
     approve_confirmed_needs: string | null;
     release_confirmed_needs_for_purchase_handoff: string | null;
+    save_confirmed_needs: string | null;
+    release_confirmed_needs: string | null;
   };
   disabled_reasons: {
     preview_confirmation: string | null;
     confirm_quantities: string | null;
     approve_confirmed_needs: string | null;
     release_confirmed_needs_for_purchase_handoff: string | null;
+    save_confirmed_needs: string | null;
+    release_confirmed_needs: string | null;
   };
   approval: ConfirmedNeedApprovalSummary;
   release: ConfirmedNeedReleaseSummary;
@@ -276,6 +328,38 @@ export function exactDecimalEqual(left: string, right: string) {
   };
   const canonicalLeft = canonical(left);
   return canonicalLeft !== null && canonicalLeft === canonical(right);
+}
+
+export function normalizeConfirmedNeedQuantity(value: string) {
+  const trimmed = value.trim();
+  const normalized =
+    trimmed.includes(",") && !trimmed.includes(".")
+      ? trimmed.replace(",", ".")
+      : trimmed;
+  if (!/^(0|[1-9][0-9]{0,13})(\.[0-9]{1,6})?$/.test(normalized)) return null;
+  return normalized;
+}
+
+function decimalParts(value: string) {
+  const normalized = normalizeConfirmedNeedQuantity(value);
+  if (!normalized) return null;
+  const [integer, fraction = ""] = normalized.split(".");
+  return BigInt(`${integer}${fraction.padEnd(6, "0")}`);
+}
+
+export function subtractExactDecimals(left: string, right: string) {
+  const leftValue = decimalParts(left);
+  const rightValue = decimalParts(right);
+  if (leftValue === null || rightValue === null) return null;
+  const difference = leftValue - rightValue;
+  if (difference === 0n) return "0";
+  const sign = difference < 0n ? "-" : "+";
+  const absolute = (difference < 0n ? -difference : difference)
+    .toString()
+    .padStart(7, "0");
+  const integer = absolute.slice(0, -6).replace(/^0+(?=\d)/, "");
+  const fraction = absolute.slice(-6).replace(/0+$/, "");
+  return `${sign}${integer}${fraction ? `.${fraction}` : ""}`;
 }
 
 export function confirmedNeedPreviewIsStale(preview: ConfirmedNeedPreview) {
@@ -350,7 +434,10 @@ export function confirmedNeedResultMessage(result: AtlasRpcResult) {
       result.response.safe_operator_message ??
       "Đã cập nhật dữ liệu xác nhận nhu cầu."
     );
-  if (result.kind === "backend_error") return result.error.safe_message;
+  if (result.kind === "backend_error")
+    return result.error.error_code === "CAPABILITY_DENIED"
+      ? "Bạn không có quyền truy cập nhu cầu xác nhận này."
+      : result.error.safe_message;
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   return result.diagnostic.safeMessage;

@@ -13,8 +13,10 @@ const batchId = "c4500000-0000-0000-0000-000000000001";
 const revisionOne = "c4510000-0000-0000-0000-000000000001";
 const revisionTwo = "c4510000-0000-0000-0000-000000000002";
 
-function fixture(): ConfirmedNeedWorkbenchData {
-  return {
+export function createReviewConfirmedNeedFixture(
+  lineCount = 2,
+): ConfirmedNeedWorkbenchData {
+  const workbench: ConfirmedNeedWorkbenchData = {
     confirmed_need_batch_id: batchId,
     source_kind: "NEED_GENERATION",
     batch_status: "DRAFT_REVIEW",
@@ -44,7 +46,12 @@ function fixture(): ConfirmedNeedWorkbenchData {
       release_snapshot_id: "c4400000-0000-0000-0000-000000000001",
     },
     service_period: { period_start: "2026-08-03", period_end: "2026-08-09" },
-    line_counts: { total: 2, unreviewed: 2, confirmed: 0, adjusted: 0 },
+    line_counts: {
+      total: lineCount,
+      unreviewed: lineCount,
+      confirmed: 0,
+      adjusted: 0,
+    },
     blockers: [],
     warnings: [],
     allowed_actions: {
@@ -52,11 +59,15 @@ function fixture(): ConfirmedNeedWorkbenchData {
       confirm_quantities: true,
       approve_confirmed_needs: false,
       release_confirmed_needs_for_purchase_handoff: false,
+      save_confirmed_needs: true,
+      release_confirmed_needs: false,
     },
     disabled_reason_codes: {
       approve_confirmed_needs: "APPROVAL_BATCH_NOT_VALIDATED",
       release_confirmed_needs_for_purchase_handoff:
         "RELEASE_BATCH_NOT_APPROVED",
+      save_confirmed_needs: null,
+      release_confirmed_needs: "RELEASE_INCOMPLETE",
     },
     disabled_reasons: {
       preview_confirmation: null,
@@ -64,6 +75,9 @@ function fixture(): ConfirmedNeedWorkbenchData {
       approve_confirmed_needs: "Lô nhu cầu chưa ở trạng thái đã kiểm tra.",
       release_confirmed_needs_for_purchase_handoff:
         "Lô nhu cầu chưa được phê duyệt.",
+      save_confirmed_needs: null,
+      release_confirmed_needs:
+        "Còn dòng cần xử lý trước khi chuyển sang lên đơn.",
     },
     approval: {
       current_snapshot_id: null,
@@ -88,7 +102,12 @@ function fixture(): ConfirmedNeedWorkbenchData {
     facts_changed_since_validation: null,
     facts_changed_since_approval: null,
     lifecycle_history: [],
-    pagination: { offset: 0, limit: 100, total_lines: 2, has_more: false },
+    pagination: {
+      offset: 0,
+      limit: 100,
+      total_lines: lineCount,
+      has_more: lineCount > 100,
+    },
     lines: [
       {
         confirmed_need_line_id: "c4520000-0000-0000-0000-000000000001",
@@ -100,12 +119,12 @@ function fixture(): ConfirmedNeedWorkbenchData {
           name: "Khối trường Atlas",
         },
         school: {
-          id: "a1100000-0000-0000-0000-000000000001",
-          name: "Trường Tiểu học An Bình",
+          id: "a1100000-0000-0000-0000-000000000002",
+          name: "Trường Mầm non Hoa Sen",
         },
         delivery_location: {
-          id: "a1200000-0000-0000-0000-000000000001",
-          name: "Bếp chính",
+          id: "a1200000-0000-0000-0000-000000000002",
+          name: "Bếp phụ",
         },
         ingredient: {
           id: "a1300000-0000-0000-0000-000000000001",
@@ -190,6 +209,25 @@ function fixture(): ConfirmedNeedWorkbenchData {
       },
     ],
   };
+  if (lineCount > workbench.lines.length) {
+    const templates = [...workbench.lines];
+    for (let index = templates.length; index < lineCount; index += 1) {
+      const template = templates[index % templates.length]!;
+      const suffix = String(index + 1).padStart(12, "0");
+      workbench.lines.push({
+        ...structuredClone(template),
+        confirmed_need_line_id: `c4520000-0000-0000-0000-${suffix}`,
+        current_revision_id: `c4510000-0000-0000-0000-${suffix}`,
+        service_date: `2026-08-${String(3 + (index % 7)).padStart(2, "0")}`,
+        ingredient: {
+          ...template.ingredient,
+          id: `a1300000-0000-0000-0000-${suffix}`,
+          name: `${template.ingredient.name} ${index + 1}`,
+        },
+      });
+    }
+  } else workbench.lines = workbench.lines.slice(0, lineCount);
+  return workbench;
 }
 
 function success(payload: Record<string, JsonValue>): AtlasRpcResult {
@@ -209,12 +247,20 @@ function backendError(code: string): AtlasRpcResult {
 
 export function createReviewConfirmedNeedApi(
   scenario: AtlasReviewScenario,
+  options: { lineCount?: number } = {},
 ): ConfirmedNeedApi {
-  let state = fixture();
+  let state = createReviewConfirmedNeedFixture(options.lineCount ?? 2);
   const receipts = new Map<string, AtlasRpcResult>();
 
   return {
-    async getReview(_subject, correlationId, requestedBatchId) {
+    async getReview(
+      _subject,
+      correlationId,
+      requestedBatchId,
+      _filters,
+      lineOffset = 0,
+      lineLimit = 100,
+    ) {
       if (scenario === "permission_denied")
         return backendError("CAPABILITY_DENIED");
       if (scenario === "server_error")
@@ -227,10 +273,22 @@ export function createReviewConfirmedNeedApi(
         };
       if (requestedBatchId !== batchId)
         return backendError("CONFIRMED_NEED_BATCH_NOT_FOUND");
+      const paged = {
+        ...structuredClone(state),
+        lines: structuredClone(
+          state.lines.slice(lineOffset, lineOffset + lineLimit),
+        ),
+        pagination: {
+          offset: lineOffset,
+          limit: lineLimit,
+          total_lines: state.lines.length,
+          has_more: lineOffset + lineLimit < state.lines.length,
+        },
+      };
       return success({
         contract_version: "RMVP-05.v1",
         correlation_id: correlationId,
-        workbench: structuredClone(state) as unknown as JsonValue,
+        workbench: paged as unknown as JsonValue,
       });
     },
     async preview(request) {
@@ -285,46 +343,50 @@ export function createReviewConfirmedNeedApi(
     async confirm(request: ConfirmedNeedCommandRequest) {
       const replay = receipts.get(request.command_id);
       if (replay) return structuredClone(replay);
+      const nextLines = state.lines.map((line) => {
+        const selected = request.payload.lines.find(
+          (item) => item.confirmed_need_line_id === line.confirmed_need_line_id,
+        );
+        if (!selected) return line;
+        const adjusted =
+          selected.proposed_confirmed_quantity !==
+          line.proposed_confirmed_quantity;
+        return {
+          ...line,
+          current_revision_id: adjusted
+            ? crypto.randomUUID()
+            : line.current_revision_id,
+          current_revision_number: adjusted
+            ? line.current_revision_number + 1
+            : line.current_revision_number,
+          current_decision_id: crypto.randomUUID(),
+          current_decision_number: (line.current_decision_number ?? 0) + 1,
+          current_decision_kind: adjusted
+            ? "ADJUSTED_QUANTITY_CONFIRMED"
+            : "UNCHANGED_PROPOSAL_ACCEPTED",
+          confirmed_quantity_after: selected.proposed_confirmed_quantity,
+        };
+      });
       state = {
         ...state,
         batch_version: state.batch_version + 1,
         line_counts: {
-          total: 2,
-          unreviewed: 0,
-          confirmed: 2,
-          adjusted: 1,
+          total: nextLines.length,
+          unreviewed: nextLines.filter((line) => !line.current_decision_id)
+            .length,
+          confirmed: nextLines.filter((line) => line.current_decision_id)
+            .length,
+          adjusted: nextLines.filter(
+            (line) =>
+              line.current_decision_kind === "ADJUSTED_QUANTITY_CONFIRMED",
+          ).length,
         },
-        lines: state.lines.map((line) => {
-          const selected = request.payload.lines.find(
-            (item) =>
-              item.confirmed_need_line_id === line.confirmed_need_line_id,
-          );
-          if (!selected) return line;
-          const adjusted =
-            selected.proposed_confirmed_quantity !==
-            line.proposed_confirmed_quantity;
-          return {
-            ...line,
-            current_revision_id: adjusted
-              ? "c4510000-0000-0000-0000-000000000010"
-              : line.current_revision_id,
-            current_revision_number: adjusted
-              ? 2
-              : line.current_revision_number,
-            current_decision_id: `c4530000-0000-0000-0000-00000000000${adjusted ? 2 : 1}`,
-            current_decision_number: 1,
-            current_decision_kind: adjusted
-              ? "ADJUSTED_QUANTITY_CONFIRMED"
-              : "UNCHANGED_PROPOSAL_ACCEPTED",
-            confirmed_quantity_after: selected.proposed_confirmed_quantity,
-          };
-        }),
+        lines: nextLines,
       };
       const result = success({
         contract_version: "RMVP-05.v1",
         command_id: request.command_id,
-        safe_operator_message:
-          "Đã xác nhận số lượng với bằng chứng quyết định bất biến.",
+        safe_operator_message: "Đã xác nhận số lượng.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));
@@ -400,6 +462,7 @@ export function createReviewConfirmedNeedApi(
           release_confirmed_needs_for_purchase_handoff: false,
         },
         disabled_reason_codes: {
+          ...state.disabled_reason_codes,
           approve_confirmed_needs:
             outcome === "VALIDATED" ? null : "APPROVAL_BATCH_NOT_VALIDATED",
           release_confirmed_needs_for_purchase_handoff:
@@ -476,6 +539,7 @@ export function createReviewConfirmedNeedApi(
           release_confirmed_needs_for_purchase_handoff: true,
         },
         disabled_reason_codes: {
+          ...state.disabled_reason_codes,
           approve_confirmed_needs: "APPROVAL_ALREADY_COMPLETED",
           release_confirmed_needs_for_purchase_handoff: null,
         },
@@ -517,7 +581,7 @@ export function createReviewConfirmedNeedApi(
         contract_version: "RMVP-07.v1",
         command_name: "approve_confirmed_needs",
         command_id: request.command_id,
-        safe_operator_message: "Đã phê duyệt lô nhu cầu; đang chờ phát hành.",
+        safe_operator_message: "Đã phê duyệt; đang chờ phát hành.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));
@@ -540,6 +604,7 @@ export function createReviewConfirmedNeedApi(
           release_confirmed_needs_for_purchase_handoff: false,
         },
         disabled_reason_codes: {
+          ...state.disabled_reason_codes,
           approve_confirmed_needs: "APPROVAL_ALREADY_COMPLETED",
           release_confirmed_needs_for_purchase_handoff:
             "RELEASE_ALREADY_COMPLETED",
@@ -577,7 +642,151 @@ export function createReviewConfirmedNeedApi(
         contract_version: "RMVP-07.v1",
         command_name: "release_confirmed_needs_for_purchase_handoff",
         command_id: request.command_id,
-        safe_operator_message: "Đã phát hành lô nhu cầu sang bước lên đơn.",
+        safe_operator_message: "Đã phát hành sang bước lên đơn.",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async save(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      if (scenario === "stale")
+        return backendError("STALE_CONFIRMED_NEED_BATCH");
+      const nextLines = state.lines.map((line) => {
+        const changed = request.payload.lines.find(
+          (candidate) =>
+            candidate.confirmed_need_line_id === line.confirmed_need_line_id,
+        );
+        if (!changed) return line;
+        const adjusted =
+          changed.proposed_confirmed_quantity !==
+          line.proposed_confirmed_quantity;
+        return {
+          ...line,
+          current_revision_id: adjusted
+            ? crypto.randomUUID()
+            : line.current_revision_id,
+          current_revision_number: adjusted
+            ? line.current_revision_number + 1
+            : line.current_revision_number,
+          current_decision_id: crypto.randomUUID(),
+          current_decision_number: (line.current_decision_number ?? 0) + 1,
+          current_decision_kind: adjusted
+            ? "ADJUSTED_QUANTITY_CONFIRMED"
+            : "UNCHANGED_PROPOSAL_ACCEPTED",
+          confirmed_quantity_after: changed.proposed_confirmed_quantity,
+        };
+      });
+      state = {
+        ...state,
+        batch_version: state.batch_version + 1,
+        lines: nextLines,
+        allowed_actions: {
+          ...state.allowed_actions,
+          save_confirmed_needs: true,
+          release_confirmed_needs: true,
+        },
+        disabled_reason_codes: {
+          ...state.disabled_reason_codes,
+          save_confirmed_needs: null,
+          release_confirmed_needs: null,
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          save_confirmed_needs: null,
+          release_confirmed_needs: null,
+        },
+        line_counts: {
+          total: nextLines.length,
+          unreviewed: nextLines.filter((line) => !line.current_decision_id)
+            .length,
+          confirmed: nextLines.filter((line) => line.current_decision_id)
+            .length,
+          adjusted: nextLines.filter(
+            (line) =>
+              line.current_decision_kind === "ADJUSTED_QUANTITY_CONFIRMED",
+          ).length,
+        },
+      };
+      const result = success({
+        contract_version: "RMVP-05.v2",
+        command_id: request.command_id,
+        safe_operator_message: "Đã lưu thay đổi.",
+        authoritative_readback: structuredClone(state) as unknown as JsonValue,
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
+    async releaseSaved(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      if (scenario === "stale")
+        return backendError("STALE_CONFIRMED_NEED_BATCH");
+      if (state.line_counts.unreviewed > 0)
+        return backendError("CONFIRMED_NEED_INCOMPLETE");
+      const now = new Date().toISOString();
+      const validationId = crypto.randomUUID();
+      const approvalId = crypto.randomUUID();
+      const releaseId = crypto.randomUUID();
+      const resultingVersion = state.batch_version + 3;
+      state = {
+        ...state,
+        batch_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+        authoritative_batch_status: "RELEASED_FOR_PURCHASE_HANDOFF",
+        batch_version: resultingVersion,
+        editing_allowed: false,
+        validation_allowed: false,
+        allowed_actions: {
+          preview_confirmation: false,
+          confirm_quantities: false,
+          approve_confirmed_needs: false,
+          release_confirmed_needs_for_purchase_handoff: false,
+          save_confirmed_needs: false,
+          release_confirmed_needs: false,
+        },
+        disabled_reason_codes: {
+          ...state.disabled_reason_codes,
+          save_confirmed_needs: "SAVE_BATCH_NOT_EDITABLE",
+          release_confirmed_needs: "RELEASE_ALREADY_COMPLETED",
+        },
+        disabled_reasons: {
+          ...state.disabled_reasons,
+          save_confirmed_needs: "Dữ liệu này không còn cho phép chỉnh sửa.",
+          release_confirmed_needs: "Dữ liệu đã được chuyển sang lên đơn.",
+        },
+        validation: {
+          ...state.validation,
+          latest_attempt_id: validationId,
+          latest_attempt_number: 1,
+          latest_outcome: "VALIDATED",
+          evaluated_version: request.expected_version,
+          resulting_version: request.expected_version + 1,
+          blocking_count: 0,
+        },
+        approval: {
+          ...state.approval,
+          current_snapshot_id: approvalId,
+          approved_version: request.expected_version + 2,
+          source_validated_version: request.expected_version + 1,
+          validation_attempt_id: validationId,
+          line_count: state.line_counts.total,
+          approved_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          approved_at: now,
+        },
+        release: {
+          current_release_id: releaseId,
+          approval_snapshot_id: approvalId,
+          source_approved_version: request.expected_version + 2,
+          resulting_released_version: resultingVersion,
+          released_actor: { id: "review-only-atlas-operator", name: "Lan" },
+          released_at: now,
+        },
+      };
+      const result = success({
+        contract_version: "RMVP-07.v2",
+        command_id: request.command_id,
+        safe_operator_message: "Đã chuyển sang lên đơn.",
         authoritative_readback: structuredClone(state) as unknown as JsonValue,
       });
       receipts.set(request.command_id, structuredClone(result));

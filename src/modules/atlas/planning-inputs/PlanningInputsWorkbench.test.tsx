@@ -8,7 +8,11 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../connection/authSession";
-import { PlanningInputsWorkbench } from "./PlanningInputsWorkbench";
+import {
+  AtlasDatePickerInputContext,
+  PlanningInputsWorkbench,
+  type AtlasDatePickerInputProps,
+} from "./PlanningInputsWorkbench";
 import { createReviewPlanningInputsApi } from "./reviewPlanningInputsApi";
 import { createReviewPantryApi } from "./pantry/reviewPantryApi";
 import { createReviewPlanningInputReadinessApi } from "./readiness/reviewPlanningInputReadinessApi";
@@ -49,7 +53,8 @@ function formatIsoDate(isoDate: string) {
 }
 
 function followingWeekFrom(weekInput: HTMLInputElement) {
-  const nextWeek = addIsoCalendarDays(weekInput.value, 7);
+  const currentWeek = weekInput.dataset.businessValue!;
+  const nextWeek = addIsoCalendarDays(currentWeek, 7);
   const nextWeekEnd = addIsoCalendarDays(nextWeek, 6);
   return {
     nextWeek,
@@ -59,6 +64,33 @@ function followingWeekFrom(weekInput: HTMLInputElement) {
 }
 
 describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
+  it("configures the real calendar surface for Vietnamese Monday-first use", async () => {
+    let received: AtlasDatePickerInputProps | null = null;
+    function CalendarProbe(props: AtlasDatePickerInputProps) {
+      received = props;
+      return (
+        <input aria-label={props["aria-label"]} value={props.value} readOnly />
+      );
+    }
+    render(
+      <AtlasDatePickerInputContext.Provider value={CalendarProbe}>
+        <PlanningInputsWorkbench
+          authState={authState}
+          api={createReviewPlanningInputsApi("ready")}
+          pantryApi={createReviewPantryApi("ready")}
+          readinessApi={createReviewPlanningInputReadinessApi("ready")}
+          mode="review"
+        />
+      </AtlasDatePickerInputContext.Provider>,
+    );
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    expect(received).toMatchObject({
+      locale: "vi",
+      firstDayOfWeek: 1,
+      valueFormat: "DD/MM/YYYY",
+    });
+  });
+
   it("retires Readiness as a primary destination", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
@@ -85,9 +117,11 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
     const { nextWeek, nextWeekEnd, nextWeekRange } =
       followingWeekFrom(weekInput);
-    fireEvent.change(weekInput, { target: { value: nextWeek } });
+    const midweekSelection = addIsoCalendarDays(nextWeek, 2);
+    fireEvent.change(weekInput, { target: { value: midweekSelection } });
 
-    expect(weekInput).toHaveValue(nextWeek);
+    expect(weekInput).toHaveValue(formatIsoDate(nextWeek));
+    expect(weekInput).toHaveAttribute("data-business-value", nextWeek);
     await waitFor(() =>
       expect(screen.getByText("Khoảng ngày").parentElement).toHaveTextContent(
         nextWeekRange,
@@ -289,7 +323,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const save = screen.getByRole("button", { name: "Lưu thực đơn" });
     fireEvent.click(save);
 
-    await screen.findByText(/Cần tải lại dữ liệu có thẩm quyền/);
+    await screen.findByText(/Cần tải lại dữ liệu mới nhất/);
     expect(save).toBeDisabled();
   });
 });

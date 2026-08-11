@@ -592,8 +592,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  84,
-  'CAT-14 physical atlas_api function count is exactly eighty-four'
+  86,
+  'CAT-14 physical atlas_api function count is exactly eighty-six'
 );
 
 select is(
@@ -657,6 +657,7 @@ select is(
     'record_dispatch_departure(request jsonb)',
     'record_supplier_receiving_evidence(request jsonb)',
     'record_wholesale_source(request jsonb)',
+    'release_confirmed_needs(request jsonb)',
     'release_confirmed_needs_for_purchase_handoff(request jsonb)',
     'release_dispatch_requirement(request jsonb)',
     'release_need_generation_run(request jsonb)',
@@ -673,6 +674,7 @@ select is(
     'resolve_effective_recipe_composition(request jsonb)',
     'save_attendance(request jsonb)',
     'save_attendance_draft(request jsonb)',
+    'save_confirmed_needs(request jsonb)',
     'save_pantry(request jsonb)',
     'save_pantry_draft(request jsonb)',
     'save_weekly_menu(request jsonb)',
@@ -692,7 +694,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly eighty-four functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly eighty-six functions'
 );
 
 select is(
@@ -848,6 +850,7 @@ select is(
     'record_dispatch_departure(request jsonb)=atlas_dispatch_command_runtime',
     'record_supplier_receiving_evidence(request jsonb)=atlas_evidence_command_runtime',
     'record_wholesale_source(request jsonb)=atlas_planning_command_runtime',
+    'release_confirmed_needs(request jsonb)=atlas_confirmed_need_review_runtime',
     'release_confirmed_needs_for_purchase_handoff(request jsonb)=atlas_confirmed_need_review_runtime',
     'release_dispatch_requirement(request jsonb)=atlas_planning_command_runtime',
     'release_need_generation_run(request jsonb)=atlas_need_generation_runtime',
@@ -864,6 +867,7 @@ select is(
     'resolve_effective_recipe_composition(request jsonb)=atlas_read_runtime',
     'save_attendance(request jsonb)=atlas_planning_command_runtime',
     'save_attendance_draft(request jsonb)=atlas_planning_command_runtime',
+    'save_confirmed_needs(request jsonb)=atlas_confirmed_need_review_runtime',
     'save_pantry(request jsonb)=atlas_planning_command_runtime',
     'save_pantry_draft(request jsonb)=atlas_planning_command_runtime',
     'save_weekly_menu(request jsonb)=atlas_planning_command_runtime',
@@ -948,6 +952,7 @@ select is(
     'record_dispatch_departure(request jsonb)',
     'record_supplier_receiving_evidence(request jsonb)',
     'record_wholesale_source(request jsonb)',
+    'release_confirmed_needs(request jsonb)',
     'release_confirmed_needs_for_purchase_handoff(request jsonb)',
     'release_dispatch_requirement(request jsonb)',
     'release_need_generation_run(request jsonb)',
@@ -964,6 +969,7 @@ select is(
     'resolve_effective_recipe_composition(request jsonb)',
     'save_attendance(request jsonb)',
     'save_attendance_draft(request jsonb)',
+    'save_confirmed_needs(request jsonb)',
     'save_pantry(request jsonb)',
     'save_pantry_draft(request jsonb)',
     'save_weekly_menu(request jsonb)',
@@ -983,7 +989,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly eighty-four functions'
+  'CAT-18 authenticated execute allowlist is exactly eighty-six functions'
 );
 
 select ok(
@@ -1066,6 +1072,7 @@ select ok(
           ('record_dispatch_departure', 'request jsonb'),
           ('record_supplier_receiving_evidence', 'request jsonb'),
           ('record_wholesale_source', 'request jsonb'),
+          ('release_confirmed_needs', 'request jsonb'),
           ('release_confirmed_needs_for_purchase_handoff', 'request jsonb'),
           ('release_dispatch_requirement', 'request jsonb'),
           ('release_need_generation_run', 'request jsonb'),
@@ -1082,6 +1089,7 @@ select ok(
           ('resolve_effective_recipe_composition', 'request jsonb'),
           ('save_attendance', 'request jsonb'),
           ('save_attendance_draft', 'request jsonb'),
+          ('save_confirmed_needs', 'request jsonb'),
           ('save_pantry', 'request jsonb'),
           ('save_pantry_draft', 'request jsonb'),
           ('save_weekly_menu', 'request jsonb'),
@@ -1444,17 +1452,17 @@ select is(
     'policy_count', 582,
     'policy_catalog_md5', 'f5a7dd4123445b4099936166f2e3547d',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 192,
-    'private_function_catalog_md5', '23a64fdaec239dcc81f13f8092918225',
+    'private_function_count', 195,
+    'private_function_catalog_md5', 'f1ebc952fa509c94de723c5300e7a0f0',
     'trigger_count', 89,
     'trigger_catalog_md5', 'e1531e1b8fe24c8d365833705dd1b4df',
-    'positive_target_grant_count', 1434,
-    'positive_target_grant_md5', '8bd9a99c10d353286371783fbcc0d906',
+    'positive_target_grant_count', 1441,
+    'positive_target_grant_md5', '78ba58892468f3f274a491bde92a72ba',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 84,
+    'api_function_count', 86,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 84,
+    'authenticated_execute_count', 86,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

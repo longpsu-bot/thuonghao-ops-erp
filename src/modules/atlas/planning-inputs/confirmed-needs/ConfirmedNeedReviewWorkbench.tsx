@@ -1,94 +1,84 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AtlasAuthState } from "../../connection/authSession";
-import type { AtlasRpcResult } from "../../connection/atlasRpc";
-import { Chip, CompactTable, Panel } from "../../WorkbenchComponents";
+import { CompactTable, Panel } from "../../WorkbenchComponents";
 import {
-  confirmedNeedApprovalRequest,
-  confirmedNeedCommandRequest,
-  confirmedNeedPreviewRequest,
-  confirmedNeedReleaseRequest,
-  confirmedNeedValidationRequest,
+  confirmedNeedReleaseV2Request,
+  confirmedNeedSaveV2Request,
   type ConfirmedNeedApi,
-  type ConfirmedNeedApprovalRequest,
-  type ConfirmedNeedCommandRequest,
-  type ConfirmedNeedFilters,
   type ConfirmedNeedLineRequest,
-  type ConfirmedNeedReleaseRequest,
+  type ConfirmedNeedSaveV2Request,
 } from "./confirmedNeedApi";
 import {
-  confirmedNeedLifecycleRequiresRefresh,
-  confirmedNeedPreviewFromResult,
-  confirmedNeedPreviewIsStale,
   confirmedNeedReadbackFromResult,
+  confirmedNeedReasonLabel,
   confirmedNeedResultAllowsExactRetry,
-  confirmedNeedResultIsStale,
   confirmedNeedResultMessage,
   confirmedNeedWorkbenchFromResult,
-  exactQuantityDisplay,
   exactDecimalEqual,
+  exactQuantityDisplay,
+  initialConfirmedNeedDraft,
+  normalizeConfirmedNeedQuantity,
+  subtractExactDecimals,
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedIssue,
   type ConfirmedNeedLine,
-  type ConfirmedNeedPreview,
   type ConfirmedNeedWorkbenchData,
 } from "./confirmedNeedModel";
 
-const emptyFilters: ConfirmedNeedFilters = {
+const emptyFilters = {
   service_date: null,
   school_id: null,
   delivery_location_id: null,
   ingredient_id: null,
   decision_state: null,
-};
+} as const;
+const exportExplanation =
+  "Chức năng xuất file sẽ được hoàn thiện sau khi mẫu dữ liệu được chốt.";
 
 function viDate(value: string) {
   const [year, month, day] = value.slice(0, 10).split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
 }
 
-function currentLifecycleMessage(status: string) {
-  switch (status) {
-    case "VALIDATED":
-      return "Đã kiểm tra; chờ phê duyệt";
-    case "APPROVED":
-      return "Đã phê duyệt; chờ phát hành";
-    case "RELEASED_FOR_PURCHASE_HANDOFF":
-      return "Đã phát hành sang bước lên đơn";
-    default:
-      return null;
-  }
+function foldSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi-VN");
+}
+
+function statusLabel(workbench: ConfirmedNeedWorkbenchData, dirty: boolean) {
+  if (workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF")
+    return "Đã chuyển sang lên đơn";
+  if (dirty || workbench.line_counts.unreviewed > 0) return "Chưa lưu";
+  return "Đã lưu";
 }
 
 function issueList(
-  title: string,
+  title: "Cần xử lý" | "Cảnh báo",
   items: ConfirmedNeedIssue[],
-  tone: "danger" | "warning",
 ) {
   if (!items.length) return null;
   return (
-    <section className={`planning-issues ${tone}`} aria-label={title}>
+    <section
+      className={`confirmed-need-issues ${title === "Cần xử lý" ? "danger" : "warning"}`}
+      aria-label={title}
+    >
       <strong>
         {title} ({items.length})
       </strong>
       <ul>
         {items.map((item, index) => (
-          <li key={`${item.code}:${index}`}>{item.message ?? item.code}</li>
+          <li key={`${item.code}:${index}`}>{item.message || item.code}</li>
         ))}
       </ul>
     </section>
   );
 }
 
-function initialDraft(line: ConfirmedNeedLine): ConfirmedNeedDraftLine {
-  return {
-    selected: line.current_decision_id === null,
-    exact_quantity: line.proposed_confirmed_quantity,
-    reason_code: "PROPOSAL_ACCEPTED",
-    reason_note: "",
-  };
-}
-
-function lineRequest(
+export function confirmedNeedLineRequest(
   line: ConfirmedNeedLine,
   draft: ConfirmedNeedDraftLine,
 ): ConfirmedNeedLineRequest {
@@ -102,28 +92,37 @@ function lineRequest(
   };
 }
 
-function localDraftError(
-  line: ConfirmedNeedLine,
-  draft: ConfirmedNeedDraftLine,
-) {
-  if (!draft.exact_quantity.trim()) return "Cần nhập số lượng xác nhận.";
+function differs(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
+  const initial = initialConfirmedNeedDraft(line);
+  return (
+    !exactDecimalEqual(initial.exact_quantity, draft.exact_quantity) ||
+    initial.reason_code !== draft.reason_code ||
+    initial.reason_note.trim() !== draft.reason_note.trim()
+  );
+}
+
+function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
+  if (!normalizeConfirmedNeedQuantity(draft.exact_quantity))
+    return "Số lượng phải là số không âm, tối đa 6 chữ số thập phân.";
   const unchanged = exactDecimalEqual(
     draft.exact_quantity,
     line.proposed_confirmed_quantity,
   );
   if (unchanged && draft.reason_code !== "PROPOSAL_ACCEPTED")
-    return "Chấp nhận đề xuất phải dùng lý do PROPOSAL_ACCEPTED.";
+    return "Số lượng không đổi nên không cần lý do điều chỉnh.";
   if (!unchanged && draft.reason_code === "PROPOSAL_ACCEPTED")
-    return "Điều chỉnh số lượng cần chọn lý do điều chỉnh.";
+    return "Hãy chọn lý do khi thay đổi số lượng.";
   if (
     ["OPERATIONAL_QUANTITY_ADJUSTMENT", "OTHER"].includes(draft.reason_code) &&
     !draft.reason_note.trim()
   )
     return "Lý do này cần ghi chú.";
-  if (line.current_decision_id && !draft.reason_note.trim())
-    return "Thay thế bằng chứng quyết định cần ghi chú hiệu chỉnh.";
-  if (unchanged && !line.current_decision_id && draft.reason_note.trim())
-    return "Lần chấp nhận đề xuất đầu tiên không có ghi chú.";
+  if (
+    line.current_decision_id &&
+    differs(line, draft) &&
+    !draft.reason_note.trim()
+  )
+    return "Thay đổi nội dung đã lưu cần ghi chú.";
   return null;
 }
 
@@ -131,603 +130,427 @@ export function ConfirmedNeedReviewWorkbench({
   authState,
   api,
   initialBatchId,
+  currentNeedResolution = initialBatchId ? "available" : "idle",
+  onDirtyChange,
 }: {
   authState: AtlasAuthState;
   api?: ConfirmedNeedApi;
   initialBatchId?: string | null;
+  currentNeedResolution?:
+    "idle" | "loading" | "available" | "missing" | "denied" | "error";
   mode?: "connected" | "review";
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
-  const [batchId, setBatchId] = useState(initialBatchId ?? "");
-  const [batchIdDraft, setBatchIdDraft] = useState(initialBatchId ?? "");
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
     null,
   );
   const [drafts, setDrafts] = useState<Record<string, ConfirmedNeedDraftLine>>(
     {},
   );
-  const [preview, setPreview] = useState<ConfirmedNeedPreview | null>(null);
-  const [previewLines, setPreviewLines] = useState<ConfirmedNeedLineRequest[]>(
-    [],
-  );
-  const [confirmAcknowledged, setConfirmAcknowledged] = useState(false);
-  const [pendingCommand, setPendingCommand] =
-    useState<ConfirmedNeedCommandRequest | null>(null);
+  const [search, setSearch] = useState("");
+  const [schoolFilter, setSchoolFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [lifecycleConfirmation, setLifecycleConfirmation] = useState<
-    "approval" | "release" | null
-  >(null);
-  const [lifecycleRefreshRequired, setLifecycleRefreshRequired] =
-    useState(false);
-  const intentGeneration = useRef(0);
+  const [releaseConfirmation, setReleaseConfirmation] = useState(false);
+  const [refreshRequired, setRefreshRequired] = useState(false);
+  const [pendingSave, setPendingSave] =
+    useState<ConfirmedNeedSaveV2Request | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
-  const invalidateIntent = useCallback(() => {
-    const nextGeneration = ++intentGeneration.current;
-    setPreview(null);
-    setPreviewLines([]);
-    setConfirmAcknowledged(false);
-    setPendingCommand(null);
-    setLifecycleConfirmation(null);
-    return nextGeneration;
+  const adopt = useCallback((next: ConfirmedNeedWorkbenchData) => {
+    setWorkbench(next);
+    setDrafts(
+      Object.fromEntries(
+        next.lines.map((line) => [
+          line.confirmed_need_line_id,
+          initialConfirmedNeedDraft(line),
+        ]),
+      ),
+    );
+    setRefreshRequired(false);
+    setPendingSave(null);
   }, []);
 
-  const adopt = useCallback(
-    (next: ConfirmedNeedWorkbenchData) => {
-      invalidateIntent();
-      setWorkbench(next);
-      setDrafts((current) =>
-        Object.fromEntries(
-          next.lines.map((line) => [
-            line.confirmed_need_line_id,
-            current[line.confirmed_need_line_id] ?? initialDraft(line),
-          ]),
-        ),
-      );
-    },
-    [invalidateIntent],
-  );
-
-  const loadReview = useCallback(
-    async (requestedBatchId = batchId) => {
-      if (!api || !authSubject || !requestedBatchId) return false;
-      const requestGeneration = invalidateIntent();
-      setLoading(true);
-      setNotice(null);
-      const result = await api.getReview(
-        authSubject,
-        correlationId,
-        requestedBatchId,
-        emptyFilters,
-      );
-      if (requestGeneration !== intentGeneration.current) {
-        setLoading(false);
-        return false;
-      }
-      setLoading(false);
-      const next = confirmedNeedWorkbenchFromResult(result);
-      if (!next) {
-        setNotice(confirmedNeedResultMessage(result));
-        return false;
-      }
-      setBatchId(requestedBatchId);
-      setBatchIdDraft(requestedBatchId);
-      setLifecycleRefreshRequired(false);
-      adopt(next);
-      return true;
-    },
-    [api, authSubject, batchId, correlationId, adopt, invalidateIntent],
-  );
-
-  useEffect(() => {
-    if (!initialBatchId) return;
-    setBatchId(initialBatchId);
-    setBatchIdDraft(initialBatchId);
-    if (authSubject) void loadReview(initialBatchId);
-  }, [authSubject, initialBatchId, loadReview]);
-
-  const selected = useMemo(
-    () =>
-      (workbench?.lines ?? []).flatMap((line) => {
-        const draft = drafts[line.confirmed_need_line_id];
-        return draft?.selected ? [lineRequest(line, draft)] : [];
-      }),
-    [drafts, workbench],
-  );
-  const localErrors = useMemo(
-    () =>
-      (workbench?.lines ?? []).flatMap((line) => {
-        const draft = drafts[line.confirmed_need_line_id];
-        if (!draft?.selected) return [];
-        const message = localDraftError(line, draft);
-        return message ? [{ line, message }] : [];
-      }),
-    [drafts, workbench],
-  );
-
-  const editDraft = (
-    lineId: string,
-    patch: Partial<ConfirmedNeedDraftLine>,
-  ) => {
-    invalidateIntent();
-    setDrafts((current) => ({
-      ...current,
-      [lineId]: { ...current[lineId], ...patch },
-    }));
-  };
-
-  const setDecisionMode = (line: ConfirmedNeedLine, adjusted: boolean) => {
-    editDraft(line.confirmed_need_line_id, {
-      exact_quantity: line.proposed_confirmed_quantity,
-      reason_code: adjusted ? "PLANNING_STEP_ADJUSTMENT" : "PROPOSAL_ACCEPTED",
-      reason_note: "",
-      selected: true,
-    });
-  };
-
-  const requestPreview = async () => {
-    if (!api || !authSubject || !workbench || !selected.length) return;
-    if (localErrors.length) {
-      setNotice(localErrors[0]?.message ?? "Bản nháp chưa hợp lệ.");
-      return;
-    }
-    const requestGeneration = invalidateIntent();
+  const load = useCallback(async () => {
+    if (!api || !authSubject || !initialBatchId) return;
     setBusy(true);
-    setNotice(null);
-    const result = await api.preview(
-      confirmedNeedPreviewRequest(
+    const result = await api.getReview(
+      authSubject,
+      correlationId,
+      initialBatchId,
+      emptyFilters,
+      0,
+      10_000,
+    );
+    const next = confirmedNeedWorkbenchFromResult(result);
+    if (next) adopt(next);
+    setNotice(confirmedNeedResultMessage(result));
+    setBusy(false);
+  }, [adopt, api, authSubject, correlationId, initialBatchId]);
+
+  useEffect(() => void load(), [load]);
+
+  const changedLines = useMemo(() => {
+    if (!workbench) return [];
+    return workbench.lines.filter((line) => {
+      const draft = drafts[line.confirmed_need_line_id];
+      return Boolean(
+        draft && (line.current_decision_id === null || differs(line, draft)),
+      );
+    });
+  }, [drafts, workbench]);
+  const dirty = changedLines.some((line) => line.current_decision_id !== null);
+
+  useEffect(
+    () => onDirtyChange?.(dirty || refreshRequired),
+    [dirty, onDirtyChange, refreshRequired],
+  );
+  useEffect(() => {
+    if (!dirty && !refreshRequired) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, refreshRequired]);
+
+  const errors = useMemo(
+    () =>
+      changedLines.flatMap((line) => {
+        const message = draftError(line, drafts[line.confirmed_need_line_id]!);
+        return message ? [`${line.ingredient.name}: ${message}`] : [];
+      }),
+    [changedLines, drafts],
+  );
+
+  const schools = useMemo(
+    () =>
+      workbench
+        ? Array.from(
+            new Map(
+              workbench.lines.map((line) => [line.school.id, line.school]),
+            ).values(),
+          ).sort((a, b) => a.name.localeCompare(b.name, "vi"))
+        : [],
+    [workbench],
+  );
+  const dates = useMemo(
+    () =>
+      workbench
+        ? Array.from(
+            new Set(workbench.lines.map((line) => line.service_date)),
+          ).sort()
+        : [],
+    [workbench],
+  );
+  const visibleLines = useMemo(() => {
+    if (!workbench) return [];
+    const query = foldSearch(search.trim());
+    return workbench.lines.filter((line) => {
+      if (schoolFilter && line.school.id !== schoolFilter) return false;
+      if (dateFilter && line.service_date !== dateFilter) return false;
+      if (!query) return true;
+      return foldSearch(
+        `${line.ingredient.name} ${line.school.name} ${line.delivery_location.name}`,
+      ).includes(query);
+    });
+  }, [dateFilter, schoolFilter, search, workbench]);
+
+  const save = async () => {
+    if (
+      !api ||
+      !authSubject ||
+      !workbench ||
+      !workbench.allowed_actions.save_confirmed_needs ||
+      !changedLines.length ||
+      errors.length
+    )
+      return;
+    const request = confirmedNeedSaveV2Request(
+      authSubject,
+      correlationId,
+      workbench.confirmed_need_batch_id,
+      workbench.batch_version,
+      changedLines.map((line) =>
+        confirmedNeedLineRequest(line, drafts[line.confirmed_need_line_id]!),
+      ),
+    );
+    setPendingSave(request);
+    setBusy(true);
+    const result = await api.save(request);
+    const readback = confirmedNeedReadbackFromResult(result);
+    if (readback) adopt(readback);
+    else if (confirmedNeedResultAllowsExactRetry(result)) {
+      setRefreshRequired(true);
+      setNotice(
+        "Chưa xác định được kết quả lưu. Hãy tải lại dữ liệu trước khi tiếp tục.",
+      );
+    } else setNotice(confirmedNeedResultMessage(result));
+    if (readback) setNotice("Đã lưu thay đổi.");
+    setBusy(false);
+  };
+
+  const release = async () => {
+    if (
+      !api ||
+      !authSubject ||
+      !workbench ||
+      !workbench.allowed_actions.release_confirmed_needs
+    )
+      return;
+    setBusy(true);
+    setReleaseConfirmation(false);
+    const result = await api.releaseSaved(
+      confirmedNeedReleaseV2Request(
         authSubject,
         correlationId,
         workbench.confirmed_need_batch_id,
         workbench.batch_version,
-        selected,
       ),
     );
-    if (requestGeneration !== intentGeneration.current) {
-      setBusy(false);
-      return;
-    }
-    setBusy(false);
-    const next = confirmedNeedPreviewFromResult(result);
-    if (!next) {
-      const message = confirmedNeedResultMessage(result);
-      if (confirmedNeedResultIsStale(result)) {
-        if (await loadReview()) setNotice(message);
-      } else setNotice(message);
-      return;
-    }
-    if (!next.success && confirmedNeedPreviewIsStale(next)) {
-      if (await loadReview())
-        setNotice(
-          "Dữ liệu đã thay đổi; đã làm mới bằng chứng có thẩm quyền và giữ bản nháp tương thích.",
-        );
-      return;
-    }
-    setPreview(next);
-    setPreviewLines(selected);
-    setConfirmAcknowledged(false);
-    setPendingCommand(null);
-    setNotice(
-      next.success
-        ? "Bản xem trước có thẩm quyền đã sẵn sàng; chưa ghi dữ liệu."
-        : "Cần xử lý các lỗi chặn trước khi xác nhận.",
-    );
-  };
-
-  const executeCommand = useCallback(
-    async (request: ConfirmedNeedCommandRequest) => {
-      if (!api) return;
-      const requestGeneration = intentGeneration.current;
-      setBusy(true);
-      setNotice(null);
-      const result: AtlasRpcResult = await api.confirm(request);
-      if (requestGeneration !== intentGeneration.current) {
-        setBusy(false);
-        return;
-      }
-      setBusy(false);
-      if (confirmedNeedResultAllowsExactRetry(result)) {
-        setPendingCommand(request);
-        setNotice(confirmedNeedResultMessage(result));
-        return;
-      }
-      setPendingCommand(null);
-      if (confirmedNeedResultIsStale(result)) {
-        const message = confirmedNeedResultMessage(result);
-        if (await loadReview()) setNotice(message);
-        return;
-      }
-      if (result.kind !== "success") {
-        setNotice(confirmedNeedResultMessage(result));
-        return;
-      }
-      const message = confirmedNeedResultMessage(result);
-      const readback = confirmedNeedReadbackFromResult(result);
-      if (readback) adopt(readback);
-      else if (!(await loadReview())) return;
-      setNotice(message);
-    },
-    [adopt, api, loadReview],
-  );
-
-  const confirm = () => {
-    if (
-      !authSubject ||
-      !workbench ||
-      !preview?.success ||
-      !preview.preview_hash ||
-      !confirmAcknowledged
-    )
-      return;
-    const request = confirmedNeedCommandRequest(
-      authSubject,
-      correlationId,
-      workbench.confirmed_need_batch_id,
-      workbench.batch_version,
-      preview.preview_hash,
-      previewLines,
-    );
-    setPendingCommand(request);
-    void executeCommand(request);
-  };
-
-  const validateBatch = async () => {
-    if (!api || !authSubject || !workbench?.validation_allowed) return;
-    const requestGeneration = invalidateIntent();
-    const request = confirmedNeedValidationRequest(
-      authSubject,
-      correlationId,
-      workbench.confirmed_need_batch_id,
-      workbench.batch_version,
-    );
-    setBusy(true);
-    setNotice(null);
-    const result = await api.validate(request);
-    if (requestGeneration !== intentGeneration.current) {
-      setBusy(false);
-      return;
-    }
-    setBusy(false);
-    if (confirmedNeedResultIsStale(result)) {
-      const message = confirmedNeedResultMessage(result);
-      if (await loadReview()) setNotice(message);
-      return;
-    }
-    if (result.kind !== "success") {
-      setNotice(confirmedNeedResultMessage(result));
-      return;
-    }
     const readback = confirmedNeedReadbackFromResult(result);
     if (readback) adopt(readback);
-    else if (!(await loadReview())) return;
-    setNotice(
-      result.response.validation_status === "VALIDATED"
-        ? null
-        : "Chưa đạt điều kiện kiểm tra",
-    );
-  };
-
-  const beginLifecycleConfirmation = (kind: "approval" | "release") => {
-    invalidateIntent();
-    setLifecycleConfirmation(kind);
-    setNotice(null);
-  };
-
-  const executeLifecycleCommand = async (
-    request: ConfirmedNeedApprovalRequest | ConfirmedNeedReleaseRequest,
-    kind: "approval" | "release",
-  ) => {
-    if (!api) return;
-    const requestGeneration = intentGeneration.current;
-    setBusy(true);
-    setNotice(null);
-    const result =
-      kind === "approval"
-        ? await api.approve(request as ConfirmedNeedApprovalRequest)
-        : await api.release(request as ConfirmedNeedReleaseRequest);
-    if (requestGeneration !== intentGeneration.current) {
-      setBusy(false);
-      return;
-    }
-    setBusy(false);
-    setLifecycleConfirmation(null);
-    if (confirmedNeedLifecycleRequiresRefresh(result)) {
-      setLifecycleRefreshRequired(true);
+    else if (confirmedNeedResultAllowsExactRetry(result)) {
+      setRefreshRequired(true);
       setNotice(
-        `${confirmedNeedResultMessage(result)} Cần làm mới dữ liệu có thẩm quyền trước khi thử lại thủ công.`,
+        "Chưa xác định được kết quả chuyển. Hãy tải lại dữ liệu trước khi tiếp tục.",
       );
-      return;
-    }
-    if (result.kind !== "success") {
-      setNotice(confirmedNeedResultMessage(result));
-      return;
-    }
-    const message = confirmedNeedResultMessage(result);
-    const readback = confirmedNeedReadbackFromResult(result);
-    if (readback) adopt(readback);
-    else if (!(await loadReview())) return;
-    setNotice(message);
+    } else setNotice(confirmedNeedResultMessage(result));
+    if (readback) setNotice("Đã chuyển sang lên đơn.");
+    setBusy(false);
   };
 
-  const confirmLifecycle = () => {
-    if (!authSubject || !workbench || !lifecycleConfirmation) return;
-    const request =
-      lifecycleConfirmation === "approval"
-        ? confirmedNeedApprovalRequest(
-            authSubject,
-            correlationId,
-            workbench.confirmed_need_batch_id,
-            workbench.batch_version,
-          )
-        : confirmedNeedReleaseRequest(
-            authSubject,
-            correlationId,
-            workbench.confirmed_need_batch_id,
-            workbench.batch_version,
-          );
-    void executeLifecycleCommand(request, lifecycleConfirmation);
-  };
+  if (currentNeedResolution === "loading" || (busy && !workbench))
+    return (
+      <Panel title="Xác nhận nhu cầu">
+        <p>Đang tải dữ liệu…</p>
+      </Panel>
+    );
+  if (currentNeedResolution === "denied")
+    return (
+      <Panel title="Xác nhận nhu cầu">
+        <p>Bạn không có quyền xem dữ liệu này.</p>
+      </Panel>
+    );
+  if (currentNeedResolution === "error")
+    return (
+      <Panel title="Xác nhận nhu cầu">
+        <p>Không thể tải nhu cầu hiện tại.</p>
+      </Panel>
+    );
+  if (!initialBatchId || ["idle", "missing"].includes(currentNeedResolution))
+    return (
+      <Panel title="Xác nhận nhu cầu">
+        <p>Chưa có nhu cầu cho tuần đã chọn.</p>
+      </Panel>
+    );
+  if (!workbench)
+    return (
+      <Panel title="Xác nhận nhu cầu">
+        <p>Đang tải dữ liệu…</p>
+      </Panel>
+    );
 
-  const lifecycleMessage = workbench
-    ? currentLifecycleMessage(workbench.authoritative_batch_status)
-    : null;
+  const released =
+    workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
+  const backendCanSave = workbench.allowed_actions.save_confirmed_needs;
+  const backendCanRelease = workbench.allowed_actions.release_confirmed_needs;
+  const canSave =
+    backendCanSave &&
+    !released &&
+    !busy &&
+    !refreshRequired &&
+    changedLines.length > 0 &&
+    errors.length === 0;
+  const canRelease =
+    backendCanRelease &&
+    !released &&
+    !dirty &&
+    !refreshRequired &&
+    !busy &&
+    errors.length === 0;
+  const backendActionReason = dirty
+    ? workbench.disabled_reasons.save_confirmed_needs
+    : workbench.disabled_reasons.release_confirmed_needs;
+  const contextSchool = schoolFilter
+    ? schools.find((school) => school.id === schoolFilter)?.name
+    : "Tất cả trường";
 
   return (
-    <Panel
-      title="Xác nhận nhu cầu"
-      description="So sánh số lượng lý thuyết, đề xuất và đã xác nhận; backend quyết định chính sách, bước lượng và bằng chứng bất biến."
-      status={
-        <Chip tone={workbench?.blockers.length ? "danger" : "warning"}>
-          {workbench?.batch_status ?? "CHƯA TẢI"}
-        </Chip>
-      }
-    >
-      <div className="need-generation-period">
-        <label>
-          Mã lô Confirmed Need
+    <div className="confirmed-need-shell">
+      <header className="confirmed-need-hero">
+        <div>
+          <p className="confirmed-need-eyebrow">Lập nhu cầu</p>
+          <h2>Xác nhận nhu cầu</h2>
+          <p className="confirmed-need-period">
+            Tuần {viDate(workbench.service_period.period_start)}–
+            {viDate(workbench.service_period.period_end)}
+          </p>
+        </div>
+        <div
+          className="confirmed-need-context-summary"
+          aria-label="Thông tin công việc"
+        >
+          <strong>{contextSchool}</strong>
+          <span>{workbench.line_counts.total} dòng</span>
+          <span className={`confirmed-need-save-state ${dirty ? "dirty" : ""}`}>
+            {statusLabel(workbench, dirty)}
+          </span>
+        </div>
+      </header>
+
+      {notice && (
+        <p className="confirmed-need-notice" role="status">
+          {notice}
+        </p>
+      )}
+      {refreshRequired && (
+        <p className="confirmed-need-attention" role="alert">
+          Kết quả thao tác chưa rõ. Atlas sẽ không tự gửi lại. Hãy tải lại dữ
+          liệu mới nhất.
+        </p>
+      )}
+      {issueList("Cần xử lý", workbench.blockers)}
+      {issueList("Cảnh báo", workbench.warnings)}
+
+      <section className="confirmed-need-toolbar" aria-label="Tìm và lọc">
+        <label className="confirmed-need-search">
+          <span>Tìm kiếm</span>
           <input
-            aria-label="Mã lô Confirmed Need"
-            value={batchIdDraft}
-            onChange={(event) => {
-              invalidateIntent();
-              setBatchIdDraft(event.target.value.trim());
-            }}
-            placeholder="UUID"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Tìm theo nguyên liệu, trường, điểm giao…"
           />
         </label>
-        <button
-          type="button"
-          disabled={loading || !batchIdDraft || !authSubject}
-          onClick={() => void loadReview(batchIdDraft)}
-        >
-          Tải lô
-        </button>
-        {workbench && (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => void loadReview()}
+        <label>
+          <span>Trường</span>
+          <select
+            value={schoolFilter}
+            onChange={(event) => setSchoolFilter(event.target.value)}
           >
-            Làm mới
-          </button>
-        )}
-      </div>
+            <option value="">Tất cả trường</option>
+            {schools.map((school) => (
+              <option key={school.id} value={school.id}>
+                {school.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Ngày</span>
+          <select
+            value={dateFilter}
+            onChange={(event) => setDateFilter(event.target.value)}
+          >
+            <option value="">Tất cả ngày</option>
+            {dates.map((date) => (
+              <option key={date} value={date}>
+                {viDate(date)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Tình trạng</span>
+          <output>{statusLabel(workbench, dirty)}</output>
+        </label>
+      </section>
 
-      {loading && <p role="status">Đang tải lô xác nhận nhu cầu…</p>}
-      {workbench && (
-        <>
-          <section className="need-generation-summary">
-            <span>
-              Phiên bản <b>{workbench.batch_version}</b>
-            </span>
-            <span>
-              Chưa xác nhận <b>{workbench.line_counts.unreviewed}</b>
-            </span>
-            <span>
-              Đã xác nhận <b>{workbench.line_counts.confirmed}</b>
-            </span>
-            <span>
-              Đã điều chỉnh <b>{workbench.line_counts.adjusted}</b>
-            </span>
-            <span>
-              Kiểm tra gần nhất{" "}
-              <b>
-                {workbench.validation.latest_outcome === "VALIDATED"
-                  ? "Đã kiểm tra"
-                  : workbench.validation.latest_outcome === "BLOCKED"
-                    ? "Chưa đạt điều kiện kiểm tra"
-                    : "Chưa kiểm tra"}
-              </b>
-            </span>
-            {workbench.validation.evaluated_actor && (
-              <span>
-                Người kiểm tra{" "}
-                <b>{workbench.validation.evaluated_actor.name}</b>
-              </span>
-            )}
-            {workbench.validation.evaluated_at && (
-              <span>
-                Thời điểm{" "}
-                <b>
-                  {new Date(workbench.validation.evaluated_at).toLocaleString(
-                    "vi-VN",
-                  )}
-                </b>
-              </span>
-            )}
-            <span>
-              Vấn đề cần xử lý <b>{workbench.validation.blocking_count}</b>
-            </span>
-            <span>
-              Cảnh báo <b>{workbench.validation.warning_count}</b>
-            </span>
-          </section>
-
-          {lifecycleMessage && <p role="status">{lifecycleMessage}</p>}
-
-          {(workbench.approval.approved_actor ||
-            workbench.release.released_actor) && (
-            <section
-              className="need-generation-summary"
-              aria-label="Bằng chứng phê duyệt và phát hành"
-            >
-              {workbench.approval.approved_actor && (
-                <span>
-                  Người phê duyệt{" "}
-                  <b>{workbench.approval.approved_actor.name}</b>
-                </span>
-              )}
-              {workbench.approval.approved_at && (
-                <span>
-                  Thời điểm phê duyệt{" "}
-                  <b>
-                    {new Date(workbench.approval.approved_at).toLocaleString(
-                      "vi-VN",
-                    )}
-                  </b>
-                </span>
-              )}
-              <span>
-                Cảnh báo được giữ lại <b>{workbench.approval.warning_count}</b>
-              </span>
-              {workbench.release.released_actor && (
-                <span>
-                  Người phát hành <b>{workbench.release.released_actor.name}</b>
-                </span>
-              )}
-              {workbench.release.released_at && (
-                <span>
-                  Thời điểm phát hành{" "}
-                  <b>
-                    {new Date(workbench.release.released_at).toLocaleString(
-                      "vi-VN",
-                    )}
-                  </b>
-                </span>
-              )}
-            </section>
-          )}
-
-          {issueList(
-            "Vấn đề cần xử lý",
-            workbench.validation.grouped_issues.blocking,
-            "danger",
-          )}
-          {issueList(
-            "Cảnh báo",
-            workbench.validation.grouped_issues.warnings,
-            "warning",
-          )}
-          {issueList("Lỗi chặn", workbench.blockers, "danger")}
-          {issueList("Cảnh báo", workbench.warnings, "warning")}
-
-          <div className="table-scroll">
-            <CompactTable
-              headers={[
-                "Chọn",
-                "Ngày / Trường / Nguyên liệu",
-                "Lý thuyết",
-                "Đề xuất",
-                "Đã xác nhận",
-                "Bước lượng",
-                "Bản nháp quyết định",
-              ]}
-            >
-              {workbench.lines.map((line) => {
-                const draft =
-                  drafts[line.confirmed_need_line_id] ?? initialDraft(line);
-                const error = draft.selected
-                  ? localDraftError(line, draft)
-                  : null;
-                return (
-                  <tr key={line.confirmed_need_line_id}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Chọn ${line.ingredient.name}`}
-                        checked={draft.selected}
-                        disabled={!workbench.editing_allowed}
-                        onChange={(event) =>
-                          editDraft(line.confirmed_need_line_id, {
-                            selected: event.target.checked,
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <b>{line.ingredient.name}</b>
-                      <small>
-                        {viDate(line.service_date)} · {line.school.name} ·{" "}
-                        {line.delivery_location.name}
-                      </small>
-                    </td>
-                    <td>
-                      {exactQuantityDisplay(line.theoretical_quantity)}{" "}
-                      {line.controlled_unit.code}
-                    </td>
-                    <td>
-                      {exactQuantityDisplay(line.proposed_confirmed_quantity)}{" "}
-                      {line.controlled_unit.code}
-                    </td>
-                    <td>
-                      {exactQuantityDisplay(line.confirmed_quantity_after)}{" "}
-                      {line.controlled_unit.code}
-                      <small>
-                        {line.current_decision_kind ?? "Chưa có quyết định"}
-                      </small>
-                    </td>
-                    <td>
-                      {line.effective_policy
-                        ? `${exactQuantityDisplay(line.effective_policy.planning_step)} ${line.controlled_unit.code}`
-                        : "Bị chặn"}
-                    </td>
-                    <td>
-                      <div className="planning-lifecycle-actions">
-                        <button
-                          type="button"
-                          disabled={!workbench.editing_allowed}
-                          onClick={() => setDecisionMode(line, false)}
-                        >
-                          Chấp nhận đề xuất
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!workbench.editing_allowed}
-                          onClick={() => setDecisionMode(line, true)}
-                        >
-                          Điều chỉnh số lượng
-                        </button>
-                      </div>
-                      <input
-                        aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
-                        inputMode="decimal"
-                        value={draft.exact_quantity}
-                        disabled={!workbench.editing_allowed}
-                        onChange={(event) =>
-                          editDraft(line.confirmed_need_line_id, {
-                            exact_quantity: event.target.value,
-                          })
-                        }
-                      />
+      <p className="confirmed-need-result-count">
+        Hiển thị {visibleLines.length}/{workbench.line_counts.total} dòng
+      </p>
+      <div className="confirmed-need-table-scroll">
+        <CompactTable
+          headers={[
+            "Nguyên liệu",
+            "Trường / điểm giao",
+            "Ngày",
+            "Nhu cầu tính",
+            "Số lượng xác nhận",
+            "Chênh lệch",
+            "Lý do / ghi chú",
+          ]}
+        >
+          {visibleLines.map((line) => {
+            const draft =
+              drafts[line.confirmed_need_line_id] ??
+              initialConfirmedNeedDraft(line);
+            const adjusted = !exactDecimalEqual(
+              draft.exact_quantity,
+              line.proposed_confirmed_quantity,
+            );
+            const error = draftError(line, draft);
+            return (
+              <tr key={line.confirmed_need_line_id}>
+                <td>
+                  <strong>{line.ingredient.name}</strong>
+                  <small>{line.controlled_unit.name}</small>
+                </td>
+                <td>
+                  {line.school.name}
+                  <small>{line.delivery_location.name}</small>
+                </td>
+                <td>{viDate(line.service_date)}</td>
+                <td>
+                  {exactQuantityDisplay(line.theoretical_quantity)}{" "}
+                  {line.controlled_unit.code}
+                </td>
+                <td>
+                  <input
+                    aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
+                    inputMode="decimal"
+                    value={draft.exact_quantity}
+                    disabled={released || !workbench.editing_allowed}
+                    onChange={(event) => {
+                      const exactQuantity = event.target.value;
+                      const returnsToProposal = exactDecimalEqual(
+                        exactQuantity,
+                        line.proposed_confirmed_quantity,
+                      );
+                      setDrafts((current) => ({
+                        ...current,
+                        [line.confirmed_need_line_id]: {
+                          ...draft,
+                          exact_quantity: exactQuantity,
+                          reason_code: returnsToProposal
+                            ? "PROPOSAL_ACCEPTED"
+                            : draft.reason_code === "PROPOSAL_ACCEPTED"
+                              ? "PLANNING_STEP_ADJUSTMENT"
+                              : draft.reason_code,
+                        },
+                      }));
+                    }}
+                  />
+                  {error && <small className="field-error">{error}</small>}
+                </td>
+                <td>
+                  {subtractExactDecimals(
+                    draft.exact_quantity,
+                    line.proposed_confirmed_quantity,
+                  ) ?? "—"}
+                </td>
+                <td>
+                  {adjusted ? (
+                    <>
                       <select
-                        aria-label={`Lý do ${line.ingredient.name}`}
+                        aria-label={`Lý do điều chỉnh ${line.ingredient.name}`}
                         value={draft.reason_code}
-                        disabled={!workbench.editing_allowed}
+                        disabled={released || !workbench.editing_allowed}
                         onChange={(event) =>
-                          editDraft(line.confirmed_need_line_id, {
-                            reason_code: event.target
-                              .value as ConfirmedNeedDraftLine["reason_code"],
-                          })
+                          setDrafts((current) => ({
+                            ...current,
+                            [line.confirmed_need_line_id]: {
+                              ...draft,
+                              reason_code: event.target
+                                .value as ConfirmedNeedDraftLine["reason_code"],
+                            },
+                          }))
                         }
                       >
-                        <option value="PROPOSAL_ACCEPTED">
-                          Chấp nhận đề xuất
-                        </option>
                         <option value="PLANNING_STEP_ADJUSTMENT">
-                          Điều chỉnh theo bước lượng
+                          Điều chỉnh theo quy cách
                         </option>
                         <option value="OPERATIONAL_QUANTITY_ADJUSTMENT">
                           Điều chỉnh vận hành
@@ -736,252 +559,141 @@ export function ConfirmedNeedReviewWorkbench({
                       </select>
                       <input
                         aria-label={`Ghi chú ${line.ingredient.name}`}
+                        placeholder="Ghi chú khi cần"
                         value={draft.reason_note}
-                        disabled={!workbench.editing_allowed}
+                        disabled={released || !workbench.editing_allowed}
                         onChange={(event) =>
-                          editDraft(line.confirmed_need_line_id, {
-                            reason_note: event.target.value,
-                          })
+                          setDrafts((current) => ({
+                            ...current,
+                            [line.confirmed_need_line_id]: {
+                              ...draft,
+                              reason_note: event.target.value,
+                            },
+                          }))
                         }
-                        placeholder="Ghi chú khi bắt buộc"
                       />
-                      {error && <small role="alert">{error}</small>}
-                      {line.blockers.length > 0 &&
-                        issueList("Lỗi dòng", line.blockers, "danger")}
-                      {line.warnings.length > 0 &&
-                        issueList("Cảnh báo dòng", line.warnings, "warning")}
-                      {issueList(
-                        "Vấn đề cần xử lý",
-                        line.validation_issues.blocking,
-                        "danger",
-                      )}
-                      {issueList(
-                        "Cảnh báo",
-                        line.validation_issues.warnings,
-                        "warning",
-                      )}
-                      {line.decision_history.length > 0 && (
-                        <details>
-                          <summary>
-                            Lịch sử quyết định ({line.decision_history.length})
-                          </summary>
-                          <ol>
-                            {line.decision_history.map((decision) => (
-                              <li key={decision.decision_id}>
-                                #{decision.decision_number} ·{" "}
-                                {exactQuantityDisplay(
-                                  decision.confirmed_quantity_after,
-                                )}{" "}
-                                · {decision.reason_code}
-                                {decision.reason_note && (
-                                  <small>{decision.reason_note}</small>
-                                )}
-                              </li>
-                            ))}
-                          </ol>
-                        </details>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </CompactTable>
-          </div>
+                    </>
+                  ) : (
+                    <span>{confirmedNeedReasonLabel("PROPOSAL_ACCEPTED")}</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </CompactTable>
+      </div>
 
-          <div className="planning-lifecycle-actions">
-            <button
-              type="button"
-              disabled={
-                busy ||
-                selected.length === 0 ||
-                localErrors.length > 0 ||
-                !workbench.allowed_actions.preview_confirmation ||
-                !workbench.editing_allowed
-              }
-              title={
-                workbench.disabled_reasons.preview_confirmation ?? undefined
-              }
-              onClick={() => void requestPreview()}
-            >
-              Xem trước xác nhận
-            </button>
-          </div>
-
-          <div className="planning-lifecycle-actions">
-            <button
-              type="button"
-              disabled={busy || !workbench.validation_allowed}
-              title={workbench.validation_disabled_reason ?? undefined}
-              onClick={() => void validateBatch()}
-            >
-              Kiểm tra toàn bộ
-            </button>
-            {!workbench.validation_allowed &&
-              workbench.validation_disabled_reason && (
-                <small>{workbench.validation_disabled_reason}</small>
-              )}
-          </div>
-
-          <div
-            className="planning-lifecycle-actions"
-            aria-label="Phê duyệt và phát hành lô nhu cầu"
+      <footer className="confirmed-need-actions">
+        <div className="confirmed-need-utility-actions">
+          <button
+            type="button"
+            className="quiet"
+            onClick={() => void load()}
+            disabled={busy}
           >
-            {!lifecycleRefreshRequired &&
-              workbench.allowed_actions.approve_confirmed_needs && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => beginLifecycleConfirmation("approval")}
-                >
-                  Phê duyệt lô nhu cầu
-                </button>
-              )}
-            {!lifecycleRefreshRequired &&
-              workbench.allowed_actions
-                .release_confirmed_needs_for_purchase_handoff && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => beginLifecycleConfirmation("release")}
-                >
-                  Phát hành sang bước lên đơn
-                </button>
-              )}
-            {lifecycleRefreshRequired && (
-              <small>
-                Kết quả ghi chưa chắc chắn. Hãy làm mới dữ liệu trước khi tạo
-                lệnh mới.
-              </small>
-            )}
-            {!workbench.allowed_actions.approve_confirmed_needs &&
-              workbench.disabled_reason_codes.approve_confirmed_needs &&
-              workbench.disabled_reasons.approve_confirmed_needs && (
-                <small
-                  data-disabled-reason={
-                    workbench.disabled_reason_codes.approve_confirmed_needs
-                  }
-                >
-                  {workbench.disabled_reasons.approve_confirmed_needs}
-                </small>
-              )}
-            {!workbench.allowed_actions
-              .release_confirmed_needs_for_purchase_handoff &&
-              workbench.disabled_reason_codes
-                .release_confirmed_needs_for_purchase_handoff &&
-              workbench.disabled_reasons
-                .release_confirmed_needs_for_purchase_handoff && (
-                <small
-                  data-disabled-reason={
-                    workbench.disabled_reason_codes
-                      .release_confirmed_needs_for_purchase_handoff
-                  }
-                >
-                  {
-                    workbench.disabled_reasons
-                      .release_confirmed_needs_for_purchase_handoff
-                  }
-                </small>
-              )}
-          </div>
-
-          {lifecycleConfirmation && (
-            <section aria-label="Xác nhận vòng đời lô nhu cầu">
-              <p>
-                {lifecycleConfirmation === "approval"
-                  ? "Phê duyệt toàn bộ tập dữ liệu đã kiểm tra chính xác này?"
-                  : "Phát hành bản phê duyệt này sang bước lên đơn? Hành động này không chọn nhà cung cấp và không tạo đơn mua hàng."}
-              </p>
-              <button type="button" disabled={busy} onClick={confirmLifecycle}>
-                {lifecycleConfirmation === "approval"
-                  ? "Xác nhận phê duyệt"
-                  : "Xác nhận phát hành"}
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setLifecycleConfirmation(null)}
-              >
-                Hủy
-              </button>
-            </section>
+            Tải lại
+          </button>
+          <button
+            type="button"
+            className="quiet"
+            disabled
+            title={exportExplanation}
+            aria-describedby="confirmed-need-export-note"
+          >
+            Xuất Excel
+          </button>
+          <button
+            type="button"
+            className="quiet"
+            disabled
+            title={exportExplanation}
+            aria-describedby="confirmed-need-export-note"
+          >
+            Xuất PDF
+          </button>
+          <small id="confirmed-need-export-note">{exportExplanation}</small>
+        </div>
+        <div className="confirmed-need-business-actions">
+          <button
+            type="button"
+            className={canSave ? "primary" : "secondary"}
+            onClick={() => void save()}
+            disabled={!canSave}
+            title={
+              backendCanSave
+                ? undefined
+                : (workbench.disabled_reasons.save_confirmed_needs ?? undefined)
+            }
+          >
+            Lưu
+          </button>
+          <button
+            type="button"
+            className={canRelease ? "primary" : "secondary"}
+            onClick={() => setReleaseConfirmation(true)}
+            disabled={!canRelease}
+            title={
+              backendCanRelease
+                ? undefined
+                : (workbench.disabled_reasons.release_confirmed_needs ??
+                  undefined)
+            }
+          >
+            Chuyển sang lên đơn
+          </button>
+          {backendActionReason && (
+            <small role="status">{backendActionReason}</small>
           )}
+        </div>
+      </footer>
 
-          {workbench.lifecycle_history.length > 0 && (
-            <details>
-              <summary>
-                Lịch sử kiểm tra, phê duyệt và phát hành (
-                {workbench.lifecycle_history.length})
-              </summary>
-              <ol>
-                {workbench.lifecycle_history.map((item) => (
-                  <li key={`${item.evidence_kind}:${item.evidence_id}`}>
-                    <b>{item.evidence_kind}</b> · {item.outcome} · phiên bản{" "}
-                    {item.source_version} → {item.resulting_version} ·{" "}
-                    {item.actor.name} ·{" "}
-                    {new Date(item.occurred_at).toLocaleString("vi-VN")} ·{" "}
-                    {item.reason_code} · cảnh báo {item.warning_count}
-                  </li>
-                ))}
-              </ol>
-            </details>
-          )}
-
-          {preview && (
-            <section aria-label="Bản xem trước xác nhận">
-              {issueList("Lỗi chặn bản xem trước", preview.blockers, "danger")}
-              {issueList("Cảnh báo bản xem trước", preview.warnings, "warning")}
-              {preview.ordered_preview_lines.map((line) => (
-                <p key={line.confirmed_need_line_id}>
-                  <b>{line.decision_kind}</b> · {line.proposed_quantity_before}{" "}
-                  → {line.confirmed_quantity_after} · {line.planning_tick_count}{" "}
-                  bước × {line.planning_step}
-                </p>
-              ))}
-              {preview.success && (
-                <>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={confirmAcknowledged}
-                      onChange={(event) =>
-                        setConfirmAcknowledged(event.target.checked)
-                      }
-                    />{" "}
-                    Tôi xác nhận đúng bản xem trước có thẩm quyền này
-                  </label>
-                  <button
-                    type="button"
-                    disabled={
-                      busy ||
-                      !confirmAcknowledged ||
-                      !workbench.allowed_actions.confirm_quantities ||
-                      !workbench.editing_allowed
-                    }
-                    title={
-                      workbench.disabled_reasons.confirm_quantities ?? undefined
-                    }
-                    onClick={confirm}
-                  >
-                    Xác nhận số lượng
-                  </button>
-                </>
-              )}
-            </section>
-          )}
-
-          {pendingCommand && (
+      {releaseConfirmation && (
+        <section
+          className="confirmed-need-commitment"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xác nhận chuyển sang lên đơn"
+        >
+          <h3>Chuyển nhu cầu đã lưu sang bước lên đơn?</h3>
+          <p>
+            Atlas sẽ kiểm tra toàn bộ dữ liệu và ghi nhận cam kết. Hành động này
+            chưa chọn nhà cung cấp, chưa tạo bàn giao mua hàng và chưa tạo đơn
+            mua.
+          </p>
+          <div>
             <button
               type="button"
-              disabled={busy}
-              onClick={() => void executeCommand(pendingCommand)}
+              className="secondary"
+              onClick={() => setReleaseConfirmation(false)}
             >
-              Gửi lại đúng lệnh chưa chắc chắn
+              Quay lại
             </button>
-          )}
-        </>
+            <button
+              type="button"
+              className="primary"
+              onClick={() => void release()}
+            >
+              Xác nhận chuyển
+            </button>
+          </div>
+        </section>
       )}
 
-      {notice && <p role="status">{notice}</p>}
-    </Panel>
+      {workbench.lifecycle_history.length > 0 && (
+        <details className="confirmed-need-history">
+          <summary>Lịch sử xử lý</summary>
+          <ul>
+            {workbench.lifecycle_history.map((item) => (
+              <li key={item.evidence_id}>
+                {viDate(item.occurred_at)} · {item.actor.name}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {pendingSave && refreshRequired && (
+        <span hidden>{pendingSave.command_id}</span>
+      )}
+    </div>
   );
 }

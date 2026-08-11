@@ -155,12 +155,13 @@ jobs:
           pnpm exec supabase db query --local --file supabase/local/rmvp_05_browser_fixture.sql
           pnpm exec supabase test db supabase/tests/rmvp_06_connected_confirmed_need_validation.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_07_connected_confirmed_need_approval_release.sql --local
+          pnpm exec supabase test db supabase/tests/d037_confirmed_need_save_release_boundary.sql --local
           pnpm exec supabase db reset --local --no-seed
 
       - name: Provision deterministic RMVP-07 browser identity
         run: pnpm local:auth:provision
 
-      - name: Verify short browser-key Confirmed Need approval and release
+      - name: Verify short browser-key Confirmed Need Save and Release
         run: pnpm verify:local:rmvp07
 
       - name: Capture bounded failure diagnostics
@@ -306,6 +307,7 @@ jobs:
           pnpm exec supabase db query --local --file supabase/local/rmvp_05_browser_fixture.sql
           pnpm exec supabase test db supabase/tests/rmvp_06_connected_confirmed_need_validation.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_07_connected_confirmed_need_approval_release.sql --local
+          pnpm exec supabase test db supabase/tests/d037_confirmed_need_save_release_boundary.sql --local
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/pa_05g_backend_end_to_end_acceptance.sql --local
           pnpm exec supabase test db supabase/tests/pa_05c_h3_evidence_readiness_current_command_context.sql --local
@@ -331,11 +333,15 @@ jobs:
           RMVP05_BROWSER_SOURCE: rmvp04
           RMVP06_BROWSER_SOURCE: rmvp04
           RMVP07_BROWSER_SOURCE: rmvp04
+          RMVP07_CONTRACT: v1
         run: |
           pnpm local:rmvp04:verify
           pnpm local:rmvp05:verify
           pnpm local:rmvp06:verify
           pnpm verify:local:rmvp07
+
+      - name: Verify fresh browser-key D-037 Save and Release
+        run: pnpm verify:local:rmvp07
 
       - name: Verify browser-key atomic Planning completion contracts
         run: pnpm local:planning-contract-01:verify

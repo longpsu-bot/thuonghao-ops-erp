@@ -1,20 +1,62 @@
-# TASK-UI-QUALITY-02C — Confirmed Need Workflow and XLSX Round-Trip
+# TASK-UI-QUALITY-02C — Confirmed Need Workflow Correction
 
 ## Status and outcome
 
-**UI-QUALITY-02C-A:** workflow definition complete on the exact
-`UI-QUALITY-02AB-UX` merge baseline
-`9818efe4ec1eda7b1b5879494a382921afc758b7`.
+**Correction:** D-037 and the Product Owner correction for draft PR #189
+supersede the earlier UI-QUALITY-02C-A/02C-B assumptions below wherever they
+conflict. The earlier material is retained only as historical review evidence.
 
-**Conclusion:** **Outcome A — the current RMVP-05/06/07 backend contracts are
-sufficient.** No Confirmed Need backend prerequisite is required.
+The corrected implementation adds `RMVP-05.v2` Save and `RMVP-07.v2` Release,
+keeps v1 APIs callable, and presents exactly `Lưu` and `Chuyển sang lên đơn` as
+normal human write actions. React performs no RMVP-05 → RMVP-06 or RMVP-07
+approve → release chaining.
 
-**Next task:** `UI-QUALITY-02C-B — Implement Confirmed Need workflow and XLSX
-round-trip`.
+The Confirmed Need XLSX round-trip, workbook schema, hidden metadata, parser,
+writer, and tests are removed. `Xuất Excel` and `Xuất PDF` are disabled
+placeholders until the workbench read model and final export contract are
+approved. `write-excel-file` is removed; `read-excel-file` remains because
+merged Planning and Recipe features still use it. `@mantine/dates` and `dayjs`
+remain for the Vietnamese service-week date picker.
 
-This document is the single canonical implementation handoff for
-`UI-QUALITY-02C-B`. It changes no Application, API, SQL, migration, capability,
-lifecycle, hosted environment, Retool application, or production data.
+Corrected normal flow:
+
+```text
+Edit → Lưu → continue working if needed → Chuyển sang lên đơn
+```
+
+The workbench prominently shows the service week, School scope, total row count,
+saved/unsaved/released state, text search, structured School/date filters,
+editable confirmed quantity, concise reasons, and one dominant action. Batch
+IDs, versions, fingerprints, capability codes and API names are not normal UI.
+
+Exact-head follow-up correction: Save and Release availability now comes from backend-derived `allowed_actions` with safe disabled reasons. React may only apply stricter local gates. Full Integration separately runs the unchanged v1 compatibility journey and a fresh D-037 fixture so their lifecycle mutations cannot contaminate each other.
+
+### Superseded first-time operator notes from the original PR #189 draft
+
+The implemented presentation is governed by a first-time Planning employee,
+not by knowledge of internal architecture:
+
+- `Xác nhận nhu cầu` resolves the current Confirmed Need automatically from
+  Planning preflight `current_need` for the selected service week. Normal UI
+  never asks for a batch ID or exposes an editable technical identifier.
+- Week, school and optional service date are the primary working context. The
+  school/date controls filter only the on-screen review; XLSX export continues
+  to cover the authoritative whole batch.
+- Unchanged quantities display `Chấp nhận đề xuất` without row-selection,
+  reason and note controls. Adjustment fields appear when a quantity changes or
+  when correction is required.
+- `Xác nhận số lượng` obtains the write-free backend preview automatically.
+  Blocking issues are shown as corrections. A successful check opens one simple
+  final summary with `Xác nhận` and `Quay lại`; there is no preview
+  acknowledgement checkbox and no chained write.
+- Authentication and authorization remain backend-enforced. The normal flow
+  adds no human authentication step and displays only a plain access-denied
+  message when access is actually rejected.
+
+The remaining human-visible lifecycle steps are intentionally still distinct:
+`Xác nhận số lượng` → `Hoàn tất xác nhận` → `Phê duyệt` → `Phát hành`.
+Any consolidation of those backend commitments is a separate contract decision,
+not React command chaining.
 
 ## 1. Authority and evidence
 

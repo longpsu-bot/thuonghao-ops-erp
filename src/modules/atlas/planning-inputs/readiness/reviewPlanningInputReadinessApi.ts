@@ -221,6 +221,7 @@ function commandResult(
 
 export function createReviewPlanningInputReadinessApi(
   scenario: AtlasReviewScenario,
+  options: { currentNeed?: boolean } = {},
 ): ReturnType<typeof createPlanningInputReadinessApi> {
   let state = fixture(scenario, "2026-08-03", "2026-08-09");
   const receipts = new Map<string, AtlasRpcResult>();
@@ -299,8 +300,19 @@ export function createReviewPlanningInputReadinessApi(
             service_date: null,
           })),
           blocking_issue_count: blockedSources.length,
-          downstream_currentness: "NOT_GENERATED",
-          current_need: null,
+          downstream_currentness: options.currentNeed
+            ? "CURRENT"
+            : "NOT_GENERATED",
+          current_need: options.currentNeed
+            ? {
+                confirmed_need_batch_id: "c4500000-0000-0000-0000-000000000001",
+                confirmed_need_batch_status: "DRAFT_REVIEW",
+                confirmed_need_batch_version: 1,
+                need_generation_run_id: "c4400000-0000-0000-0000-000000000001",
+                need_generation_run_version: 1,
+                need_generation_run_status: "MATERIALIZED",
+              }
+            : null,
         },
         safe_operator_message: "Đã kiểm tra tự động dữ liệu nguồn.",
       });

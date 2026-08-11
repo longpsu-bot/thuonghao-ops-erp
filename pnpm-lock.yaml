@@ -11,6 +11,9 @@ importers:
       '@mantine/core':
         specifier: 9.2.2
         version: 9.2.2(@mantine/hooks@9.2.2(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@mantine/dates':
+        specifier: 9.2.2
+        version: 9.2.2(@mantine/core@9.2.2(@mantine/hooks@9.2.2(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.2.2(react@19.2.7))(dayjs@1.11.21)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mantine/hooks':
         specifier: 9.2.2
         version: 9.2.2(react@19.2.7)
@@ -20,6 +23,9 @@ importers:
       '@supabase/supabase-js':
         specifier: 2.110.7
         version: 2.110.7
+      dayjs:
+        specifier: 1.11.21
+        version: 1.11.21
       react:
         specifier: 19.2.7
         version: 19.2.7
@@ -449,6 +455,15 @@ packages:
     resolution: {integrity: sha512-j4d7dwKkrYPP9Lb7ut1u0OodwmosIaKK4azK4GMoTKq1+7TKRrJPxB1vkDjkbOcd+jbUt0qn6EkJdsSMKVcIIw==}
     peerDependencies:
       '@mantine/hooks': 9.2.2
+      react: ^19.2.0
+      react-dom: ^19.2.0
+
+  '@mantine/dates@9.2.2':
+    resolution: {integrity: sha512-6/O5f/u2NjJLKoLvZmSJCo6qQqPg627XjfpeUYqOx/h9I2W36eVaKghM4YObPpfkPZMIojaa3iz82Nw3lmZO3w==}
+    peerDependencies:
+      '@mantine/core': 9.2.2
+      '@mantine/hooks': 9.2.2
+      dayjs: '>=1.0.0'
       react: ^19.2.0
       react-dom: ^19.2.0
 
@@ -1318,6 +1333,9 @@ packages:
   data-urls@7.0.0:
     resolution: {integrity: sha512-23XHcCF+coGYevirZceTVD7NdJOqVn+49IHyxgszm+JIiHLoB2TkmPtsYkNWT1pvRSGkc35L6NHs0yHkN2SumA==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
+
+  dayjs@1.11.21:
+    resolution: {integrity: sha512-98IT+HOahAisibz/yjKbzuOBwYcjJ7BCLPzARyHiyEBmRz4fatF+KPJszEHXsGYjUG234aH/cOjW1wwTbKUZlA==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -2484,6 +2502,15 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
+  '@mantine/dates@9.2.2(@mantine/core@9.2.2(@mantine/hooks@9.2.2(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.2.2(react@19.2.7))(dayjs@1.11.21)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@mantine/core': 9.2.2(@mantine/hooks@9.2.2(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@mantine/hooks': 9.2.2(react@19.2.7)
+      clsx: 2.1.1
+      dayjs: 1.11.21
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+
   '@mantine/hooks@9.2.2(react@19.2.7)':
     dependencies:
       react: 19.2.7
@@ -3126,6 +3153,8 @@ snapshots:
       whatwg-url: 16.0.1(@noble/hashes@1.8.0)
     transitivePeerDependencies:
       - '@noble/hashes'
+
+  dayjs@1.11.21: {}
 
   debug@4.4.3:
     dependencies:
