@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../atlas/connection/atlasRpc";
 import type { RecipeApi } from "../atlas/recipes/recipeApi";
 import { createReviewRecipeApi } from "../atlas/recipes/reviewRecipeApi";
+import * as recipeWorkbook from "../atlas/recipes/recipeWorkbook";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
 import { DishRecipeAdminWorkbench } from "./DishRecipeAdminWorkbench";
@@ -72,6 +73,8 @@ describe("Recipe creation-and-lock workbench", () => {
       await screen.findByRole("tab", { name: "Danh sách", selected: true }),
     ).toBeInTheDocument();
     expect(screen.getAllByText("Canh bí đỏ thịt bằm")).not.toHaveLength(0);
+    expect(screen.getByText("Món canh")).toBeVisible();
+    expect(document.body).not.toHaveTextContent("canh-bi-do-thit-bam");
     expect(screen.getByText(/Bí đỏ.*Thịt heo xay/)).toBeInTheDocument();
     expect(
       screen.getByText(/Danh sách này chỉ để tra cứu/),
@@ -90,7 +93,7 @@ describe("Recipe creation-and-lock workbench", () => {
   it("filters the catalog by Dish code and current Ingredient name", async () => {
     renderWorkbench();
     const search = await screen.findByPlaceholderText(
-      "Tìm theo tên món, mã món hoặc nguyên liệu…",
+      "Tìm theo tên món hoặc nguyên liệu…",
     );
     fireEvent.change(search, { target: { value: "thịt heo" } });
     const catalog = screen.getByRole("table");
@@ -102,6 +105,19 @@ describe("Recipe creation-and-lock workbench", () => {
     fireEvent.change(search, { target: { value: "com-trang" } });
     expect(within(catalog).getByText("Cơm trắng")).toBeInTheDocument();
     expect(within(catalog).queryByText("Canh bí đỏ thịt bằm")).toBeNull();
+    expect(catalog).not.toHaveTextContent("com-trang");
+  });
+
+  it("shows human Dish identity in the creation finder without normalized codes", async () => {
+    renderWorkbench();
+    await openCreation();
+
+    const finder = screen.getByRole("listbox");
+    const option = within(finder).getByRole("option", {
+      name: /Canh bí đỏ thịt bằm.*Món canh/,
+    });
+    expect(option).toBeVisible();
+    expect(option).not.toHaveTextContent("canh-bi-do-thit-bam");
   });
 
   it("keeps creation as a distinct job with Dish context, scope and basis", async () => {
@@ -111,7 +127,8 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(
       await screen.findByRole("heading", { name: "Canh bí đỏ thịt bằm" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Loại món: Món canh/)).toBeInTheDocument();
+    expect(screen.getByText(/Loại món: Món canh/)).toBeVisible();
+    expect(document.body).not.toHaveTextContent("canh-bi-do-thit-bam");
     expect(screen.getByLabelText("Áp dụng cho")).toHaveValue("");
     expect(screen.getByLabelText("Số suất áp dụng cho định lượng")).toHaveValue(
       100,
@@ -130,8 +147,32 @@ describe("Recipe creation-and-lock workbench", () => {
     fireEvent.click(screen.getByRole("option", { name: /Hành lá/ }));
 
     expect(screen.getByText("Hành lá")).toBeInTheDocument();
-    expect(screen.queryByText("Hành lá (hanh-la)")).toBeNull();
+    expect(document.body).not.toHaveTextContent("hanh-la");
     expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
+  });
+
+  it("matches an Ingredient code without rendering it in the result", async () => {
+    renderWorkbench();
+    await openCreation();
+    const search = screen.getByPlaceholderText("Tìm nguyên liệu để thêm…");
+    fireEvent.change(search, { target: { value: "hanh-la" } });
+
+    const option = screen.getByRole("option", { name: "Hành lá" });
+    expect(option).toBeVisible();
+    expect(option).not.toHaveTextContent("hanh-la");
+  });
+
+  it("uses human Ingredient and Unit names in the BOM table", async () => {
+    renderWorkbench();
+    await openCreation();
+
+    const table = screen.getByRole("table");
+    expect(within(table).getByText("Bí đỏ")).toBeVisible();
+    expect(
+      within(table).getAllByRole("option", { name: "Kilôgam" }),
+    ).not.toHaveLength(0);
+    expect(table).not.toHaveTextContent("bi-do");
+    expect(table).not.toHaveTextContent("KG");
   });
 
   it("uses Copy only as a helper that fills the current creation form", async () => {
@@ -145,6 +186,12 @@ describe("Recipe creation-and-lock workbench", () => {
     fireEvent.change(screen.getByLabelText("Chọn công thức nguồn"), {
       target: { value: "30000000-0000-4000-8000-000000000001" },
     });
+
+    const preview = screen.getByText("Xem trước thành phần").parentElement!;
+    expect(within(preview).getByText("Bí đỏ")).toBeVisible();
+    expect(within(preview).getAllByText("Kilôgam")).not.toHaveLength(0);
+    expect(preview).not.toHaveTextContent("bi-do");
+    expect(preview).not.toHaveTextContent("KG");
     fireEvent.click(screen.getByRole("button", { name: "Dùng công thức này" }));
 
     expect(screen.queryByRole("dialog")).toBeNull();
@@ -197,6 +244,57 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(
       screen.getByRole("heading", { name: "Món mới 03A" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows Dish Type names without normalized codes", async () => {
+    renderWorkbench();
+    await openCreation();
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+
+    const selector = screen.getByLabelText("Loại món");
+    expect(
+      within(selector).getByRole("option", { name: "Món canh" }),
+    ).toBeVisible();
+    expect(selector).not.toHaveTextContent("soup");
+    expect(selector).not.toHaveTextContent("savory");
+  });
+
+  it("keeps workbook checksum and lifecycle interpretation in collapsed technical detail", async () => {
+    vi.spyOn(recipeWorkbook, "reviewRecipeWorkbook").mockResolvedValue({
+      fileName: "cong-thuc.xlsx",
+      canonicalJson: '{"rows":[]}',
+      checksum: "a".repeat(64),
+      rows: [],
+      errors: [],
+      warnings: [],
+      sourceCounts: {
+        dishes: 2,
+        recipes: 3,
+        recipeVersions: 3,
+        recipeLines: 7,
+      },
+      lifecycleInterpretation: "Chỉ tạo phiên bản công thức NHÁP.",
+    });
+    renderWorkbench();
+    await openCreation();
+    fireEvent.click(screen.getByRole("button", { name: "Nhập workbook" }));
+    fireEvent.change(screen.getByLabelText("Workbook công thức .xlsx"), {
+      target: { files: [new File(["fixture"], "cong-thuc.xlsx")] },
+    });
+
+    expect(await screen.findByText("Số món")).toBeVisible();
+    expect(screen.getByText("Số công thức")).toBeVisible();
+    expect(screen.getByText("Số dòng nguyên liệu")).toBeVisible();
+    expect(screen.getByText("Lỗi cần xử lý")).toBeVisible();
+    expect(screen.getByText("Kết quả kiểm tra")).toBeVisible();
+    expect(screen.getByText("Checksum")).not.toBeVisible();
+    expect(
+      screen.getByText(/Chỉ tạo phiên bản công thức NHÁP/),
+    ).not.toBeVisible();
+
+    fireEvent.click(screen.getByText("Chi tiết kỹ thuật"));
+    expect(screen.getByText("Checksum")).toBeVisible();
+    expect(screen.getByText(/Chỉ tạo phiên bản công thức NHÁP/)).toBeVisible();
   });
 
   it("Save makes an eligible pre-use Recipe available through one backend command", async () => {

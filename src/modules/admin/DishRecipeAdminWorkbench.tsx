@@ -712,7 +712,7 @@ export function DishRecipeAdminWorkbench({
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Tìm theo tên món, mã món hoặc nguyên liệu…"
+                placeholder="Tìm theo tên món hoặc nguyên liệu…"
               />
             </label>
             <span />
@@ -742,7 +742,6 @@ export function DishRecipeAdminWorkbench({
                   <tr key={item.dish_id}>
                     <td>
                       <strong>{item.dish_name}</strong>
-                      <small>{item.dish_code}</small>
                     </td>
                     <td>
                       {item.dish_type_name ?? (
@@ -879,7 +878,7 @@ export function DishRecipeAdminWorkbench({
                 id="recipe-dish-search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Tìm theo tên hoặc mã món…"
+                placeholder="Tìm theo tên món…"
               />
               <div className="recipe-dish-results" role="listbox">
                 {shownDishes.map((item) => (
@@ -893,8 +892,7 @@ export function DishRecipeAdminWorkbench({
                   >
                     <strong>{item.dish_name}</strong>
                     <span>
-                      {item.dish_code}
-                      {item.dish_type_name ? ` · ${item.dish_type_name}` : ""}
+                      {item.dish_type_name ?? "Chưa xác định loại món"}
                     </span>
                   </button>
                 ))}
@@ -913,10 +911,7 @@ export function DishRecipeAdminWorkbench({
                     <div>
                       <span>Món đang chọn</span>
                       <h3>{dish.dish_name}</h3>
-                      <p>
-                        Mã món: {dish.dish_code} · Loại món:{" "}
-                        {dish.dish_type_name ?? "Chưa xác định"}
-                      </p>
+                      <p>Loại món: {dish.dish_type_name ?? "Chưa xác định"}</p>
                     </div>
                     <Chip
                       tone={
@@ -1048,7 +1043,6 @@ export function DishRecipeAdminWorkbench({
                             onClick={() => chooseIngredient(item.ingredient_id)}
                           >
                             <strong>{item.ingredient_name}</strong>
-                            <span>{item.ingredient_code}</span>
                           </button>
                         ))}
                         {!shownIngredients.length && (
@@ -1413,8 +1407,8 @@ export function DishRecipeAdminWorkbench({
             <h3>2. Xem trước và đối soát</h3>
             {!workbook ? (
               <p className="supporting-copy">
-                Chọn tệp để xem số lượng, lỗi tham chiếu và checksum trước khi
-                áp dụng.
+                Chọn tệp để xem số lượng, lỗi cần xử lý và kết quả kiểm tra
+                trước khi áp dụng.
               </p>
             ) : (
               <>
@@ -1424,24 +1418,45 @@ export function DishRecipeAdminWorkbench({
                     <dd>{workbook.fileName}</dd>
                   </div>
                   <div>
-                    <dt>Nguồn</dt>
-                    <dd>
-                      {workbook.sourceCounts.dishes} món ·{" "}
-                      {workbook.sourceCounts.recipes} công thức ·{" "}
-                      {workbook.sourceCounts.recipeLines} dòng BOM
-                    </dd>
+                    <dt>Số món</dt>
+                    <dd>{workbook.sourceCounts.dishes}</dd>
                   </div>
                   <div>
-                    <dt>Checksum</dt>
-                    <dd>
-                      <code>{workbook.checksum}</code>
-                    </dd>
+                    <dt>Số công thức</dt>
+                    <dd>{workbook.sourceCounts.recipes}</dd>
                   </div>
                   <div>
-                    <dt>Vòng đời</dt>
-                    <dd>{workbook.lifecycleInterpretation}</dd>
+                    <dt>Số dòng nguyên liệu</dt>
+                    <dd>{workbook.sourceCounts.recipeLines}</dd>
+                  </div>
+                  <div>
+                    <dt>Lỗi cần xử lý</dt>
+                    <dd>{workbook.errors.length}</dd>
+                  </div>
+                  <div>
+                    <dt>Kết quả kiểm tra</dt>
+                    <dd>
+                      {workbook.errors.length
+                        ? "Cần sửa lỗi trước khi áp dụng"
+                        : "Đã kiểm tra, có thể áp dụng"}
+                    </dd>
                   </div>
                 </dl>
+                <details>
+                  <summary>Chi tiết kỹ thuật</summary>
+                  <dl className="master-data-detail-list">
+                    <div>
+                      <dt>Checksum</dt>
+                      <dd>
+                        <code>{workbook.checksum}</code>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Cách Atlas lưu dữ liệu</dt>
+                      <dd>{workbook.lifecycleInterpretation}</dd>
+                    </div>
+                  </dl>
+                </details>
                 {workbook.errors.length > 0 && (
                   <div className="command-outcome danger">
                     <h3>Lỗi chặn áp dụng</h3>
@@ -1528,7 +1543,7 @@ export function DishRecipeAdminWorkbench({
                     key={dishType.dish_type_id}
                     disabled={dishType.dish_type_status !== "ACTIVE"}
                   >
-                    {dishType.dish_type_name} ({dishType.dish_type_code})
+                    {dishType.dish_type_name}
                     {dishType.dish_type_status === "INACTIVE"
                       ? " — ngừng hoạt động"
                       : ""}

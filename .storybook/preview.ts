@@ -6,7 +6,6 @@ import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import "dayjs/locale/vi";
 import "../src/styles.css";
-import "../src/recipe-ui-cleanup.css";
 import { atlasTheme } from "../src/theme";
 import {
   AtlasDatePickerInputContext,
