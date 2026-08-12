@@ -104,7 +104,7 @@ A v1 `get_dish_recipe_workbench` request keeps the v1 shape. A v2 payload accept
     "in_use_recipe_version_id": "uuid-or-null",
     "business_status": "NOT_SAVED|SAVED|AVAILABLE|LOCKED|NEEDS_ATTENTION",
     "locked_for_normal_editing": true,
-    "lock_reason": "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.",
+    "lock_reason": "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
     "basis_portions": 100,
     "composition": [],
     "allowed_actions": {
@@ -116,8 +116,8 @@ A v1 `get_dish_recipe_workbench` request keeps the v1 shape. A v2 payload accept
       "release_recipe": "RELEASE_ALREADY_IN_USE"
     },
     "disabled_reasons": {
-      "save_recipe": "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.",
-      "release_recipe": "Công thức này đang được sử dụng."
+      "save_recipe": "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+      "release_recipe": "Công thức đã sẵn sàng cho Lập nhu cầu."
     }
   }
 }
@@ -145,3 +145,7 @@ Eligibility also resolves active Actor, exact capability and active `GLOBAL` sco
 - Does not define operational use and does not set the approved-Menu lock.
 
 Both v2 commands use fixed empty `search_path`, least-privilege runtime ownership, safe errors, and no automatic browser retry after an unknown transport result. Every RMVP-02A.v1 API remains callable.
+
+### Dish-wide lock coverage
+
+The single canonical predicate is `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and every relevant mutation acquire the same deterministic transaction lock before the snapshot or mutation decision. Once the predicate is true, `update_dish`, `set_dish_lifecycle`, `set_recipe_lifecycle`, `create_recipe_draft`, `create_recipe_successor_version`, `replace_recipe_draft_composition`, `validate_recipe_version`, `release_recipe_version_for_planning`, `save_recipe`, `release_recipe`, `copy_recipe_version`, and any `apply_recipe_import` scope targeting that Dish return `INVARIANT_VIOLATION` with the safe Điều chỉnh direction before business writes. RMVP-02B adjustment APIs are outside this base-mutation guard and remain unchanged.

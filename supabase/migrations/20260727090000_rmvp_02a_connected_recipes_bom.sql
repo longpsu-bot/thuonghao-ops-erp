@@ -232,6 +232,22 @@ insert into atlas_core.capabilities (
     'ACTIVE'
   );
 
+create or replace function atlas_core.uiq03a_dish_used_operationally(
+  p_dish_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from atlas_planning.weekly_menu_approval_snapshot_lines menu_line
+    where menu_line.dish_id = p_dish_id
+  );
+$$;
+
 create or replace function atlas_core.rmvp_02a_read_error(
   request jsonb,
   read_name text,
@@ -1019,6 +1035,9 @@ begin
   end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_dish_id::text, 17403)
+  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_dish_id
@@ -1047,6 +1066,17 @@ begin
         '[]'::jsonb,
         '[]'::jsonb,
         v_dish.version
+      ),
+      false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
       ),
       false
     );
@@ -1203,6 +1233,9 @@ begin
   end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_dish_id::text, 17403)
+  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_dish_id
@@ -1231,6 +1264,17 @@ begin
         '[]'::jsonb,
         '[]'::jsonb,
         v_dish.version
+      ),
+      false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
       ),
       false
     );
@@ -1404,6 +1448,24 @@ begin
       false
     );
   end if;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_recipe.dish_id::text, 17403)
+  );
+  perform 1
+  from atlas_admin.dishes dish
+  where dish.dish_id = v_recipe.dish_id
+  for update;
+  if atlas_core.uiq03a_dish_used_operationally(v_recipe.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
   if v_recipe.recipe_status = v_target_status then
     return atlas_core.pa_05b_finish_command(
       v_receipt_id,
@@ -1525,6 +1587,9 @@ begin
   end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_dish_id::text, 17403)
+  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_dish_id
@@ -1553,6 +1618,17 @@ begin
         '[]'::jsonb,
         '[]'::jsonb,
         v_dish.version
+      ),
+      false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
       ),
       false
     );
@@ -1695,6 +1771,7 @@ declare
   v_receipt_id uuid;
   v_source atlas_admin.recipe_versions%rowtype;
   v_recipe atlas_admin.recipes%rowtype;
+  v_dish atlas_admin.dishes%rowtype;
   v_new_version_id uuid;
   v_next_number integer;
   v_composition jsonb;
@@ -1780,6 +1857,24 @@ begin
   from atlas_admin.recipes
   where recipe_id = v_source.recipe_id
   for update;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_recipe.dish_id::text, 17403)
+  );
+  select * into v_dish
+  from atlas_admin.dishes
+  where dish_id = v_recipe.dish_id
+  for update;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
   if v_recipe.recipe_status <> 'ACTIVE' then
     return atlas_core.pa_05b_finish_command(
       v_receipt_id,
@@ -1931,6 +2026,7 @@ declare
   v_receipt_id uuid;
   v_version atlas_admin.recipe_versions%rowtype;
   v_recipe atlas_admin.recipes%rowtype;
+  v_dish atlas_admin.dishes%rowtype;
   v_composition jsonb;
   v_line_count integer;
 begin
@@ -2160,6 +2256,24 @@ begin
   from atlas_admin.recipes
   where recipe_id = v_version.recipe_id
   for key share;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_recipe.dish_id::text, 17403)
+  );
+  select * into v_dish
+  from atlas_admin.dishes
+  where dish_id = v_recipe.dish_id
+  for update;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
   if v_recipe.recipe_status <> 'ACTIVE' then
     return atlas_core.pa_05b_finish_command(
       v_receipt_id,
@@ -2535,10 +2649,24 @@ begin
   from atlas_admin.recipes
   where recipe_id = v_version.recipe_id
   for key share;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_recipe.dish_id::text, 17403)
+  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_recipe.dish_id
-  for key share;
+  for update;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
   if v_recipe.recipe_status <> 'ACTIVE'
      or v_dish.dish_status <> 'ACTIVE' then
     return atlas_core.pa_05b_finish_command(
@@ -2860,10 +2988,24 @@ begin
   from atlas_admin.recipes
   where recipe_id = v_version.recipe_id
   for key share;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_recipe.dish_id::text, 17403)
+  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_recipe.dish_id
-  for key share;
+  for update;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
+      ),
+      false
+    );
+  end if;
   if v_recipe.recipe_status <> 'ACTIVE'
      or v_dish.dish_status <> 'ACTIVE' then
     return atlas_core.pa_05b_finish_command(
@@ -3066,6 +3208,9 @@ begin
   from atlas_admin.dishes
   where dish_id = v_source_recipe.dish_id
   for key share;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_target_dish_id::text, 17403)
+  );
   select * into v_target_dish
   from atlas_admin.dishes
   where dish_id = v_target_dish_id
@@ -3095,6 +3240,17 @@ begin
         '[]'::jsonb,
         '[]'::jsonb,
         v_target_dish.version
+      ),
+      false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_target_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
       ),
       false
     );
@@ -3938,6 +4094,39 @@ begin
         false,
         v_errors,
         v_missing
+      ),
+      false
+    );
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(dish.dish_id::text, 17403)
+  )
+  from atlas_admin.dishes dish
+  join (
+    select distinct pg_catalog.lower(
+      pg_catalog.btrim(item ->> 'dish_code')
+    ) as dish_code
+    from pg_catalog.jsonb_array_elements(v_rows) item
+  ) import_scope on import_scope.dish_code = dish.dish_code
+  order by dish.dish_id;
+  if exists (
+    select 1
+    from atlas_admin.dishes dish
+    join (
+      select distinct pg_catalog.lower(
+        pg_catalog.btrim(item ->> 'dish_code')
+      ) as dish_code
+      from pg_catalog.jsonb_array_elements(v_rows) item
+    ) import_scope on import_scope.dish_code = dish.dish_code
+    where atlas_core.uiq03a_dish_used_operationally(dish.dish_id)
+  ) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.pa_05b_command_error(
+        request, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
+        'ADMIN', v_name
       ),
       false
     );

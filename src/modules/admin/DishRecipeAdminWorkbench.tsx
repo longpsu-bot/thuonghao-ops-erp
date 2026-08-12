@@ -24,8 +24,7 @@ import {
 import { Chip, CompactTable, Panel } from "../atlas/WorkbenchComponents";
 import { RecipeAdjustmentWorkbench } from "./RecipeAdjustmentWorkbench";
 
-type Tab =
-  "recipes" | "catalog" | "adjustments" | "effective" | "copy" | "import";
+type Tab = "recipes" | "catalog" | "adjustments" | "effective" | "import";
 type LoadState = {
   status: "idle" | "loading" | "ready" | "error";
   data: RecipeWorkbenchData;
@@ -58,7 +57,7 @@ const statusLabel: Record<string, string> = {
   ACTIVE: "Đang dùng",
   INACTIVE: "Ngừng dùng",
   VALIDATED: "Đã xác thực",
-  RELEASED_FOR_PLANNING: "Đã phát hành cho Lập nhu cầu",
+  RELEASED_FOR_PLANNING: "Sẵn sàng cho Lập nhu cầu",
   LOCKED: "Đã khóa",
   PRESENT: "Có hiệu lực",
   REMOVED: "Đã loại bỏ",
@@ -72,8 +71,8 @@ const statusTone = (status: string) => {
 const recipeBusinessStatusLabel = {
   NOT_SAVED: "Chưa tạo",
   SAVED: "Đã lưu",
-  AVAILABLE: "Sẵn sàng sử dụng",
-  LOCKED: "Đã khóa sau khi sử dụng",
+  AVAILABLE: "Sẵn sàng cho Lập nhu cầu",
+  LOCKED: "Đã dùng trong thực đơn đã duyệt",
   NEEDS_ATTENTION: "Cần xử lý",
 } as const;
 
@@ -108,6 +107,8 @@ export function DishRecipeAdminWorkbench({
   const [copyDraft, setCopyDraft] = useState<CopyDraft>({
     sourceVersionId: "",
   });
+  const [copyOpen, setCopyOpen] = useState(false);
+  const [copyQuery, setCopyQuery] = useState("");
   const [workbook, setWorkbook] = useState<RecipeWorkbookReview | null>(null);
   const [importReason, setImportReason] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -192,11 +193,10 @@ export function DishRecipeAdminWorkbench({
     setBusy(false);
     setNotice(recipeResultMessage(result));
     if (result.kind === "success") {
-      await refresh();
-      return true;
+      return result;
     }
     if (result.kind === "transport_error") setWriteUncertain(true);
-    return false;
+    return null;
   };
 
   const selectRecipeContext = async (
@@ -340,6 +340,31 @@ export function DishRecipeAdminWorkbench({
       : recipeBusinessStatusLabel[load.data.selected_recipe.business_status];
   const creationLocked =
     load.data.selected_recipe.locked_for_normal_editing ?? false;
+  const copySourceOptions = load.data.recipe_versions.filter((version) => {
+    if (version.recipe_version_status !== "RELEASED_FOR_PLANNING") return false;
+    const recipe = load.data.recipes.find(
+      (item) => item.recipe_id === version.recipe_id,
+    );
+    const sourceDish = load.data.dishes.find(
+      (item) => item.dish_id === recipe?.dish_id,
+    );
+    const needle = copyQuery.trim().toLocaleLowerCase("vi");
+    if (!needle) return true;
+    const ingredientNames = version.composition.map(
+      (line) =>
+        load.data.ingredients.find(
+          (item) => item.ingredient_id === line.ingredient_id,
+        )?.ingredient_name ?? "",
+    );
+    return [
+      sourceDish?.dish_name,
+      sourceDish?.dish_code,
+      ...ingredientNames,
+    ].some((value) => (value ?? "").toLocaleLowerCase("vi").includes(needle));
+  });
+  const copySource = load.data.recipe_versions.find(
+    (item) => item.recipe_version_id === copyDraft.sourceVersionId,
+  );
 
   useEffect(() => {
     if (!isDirty) return;
@@ -399,7 +424,29 @@ export function DishRecipeAdminWorkbench({
       requires_need_generation: dishDraft.requiresNeedGeneration,
     };
     const saved = await command(api.createDish, 1, "DISH_CREATE", payload);
-    if (saved) setDishEditorId(null);
+    if (!saved) return;
+    const affected = saved.response.affected_aggregate_ids;
+    const affectedDishId =
+      typeof affected === "object" &&
+      affected !== null &&
+      !Array.isArray(affected) &&
+      typeof affected.dish_id === "string"
+        ? affected.dish_id
+        : null;
+    const returnedDishes = Array.isArray(saved.response.dishes)
+      ? (saved.response.dishes as RecipeWorkbenchData["dishes"])
+      : [];
+    const createdDishId =
+      affectedDishId ??
+      returnedDishes.find((item) => item.dish_code === dishDraft.code.trim())
+        ?.dish_id;
+    setDishEditorId(null);
+    setTab("recipes");
+    if (createdDishId) {
+      await refresh({ dishId: createdDishId, schoolTypeId: null });
+    } else {
+      await refresh();
+    }
   };
 
   const saveComposition = async () => {
@@ -486,7 +533,8 @@ export function DishRecipeAdminWorkbench({
     setNotice(
       `Đã sao chép nội dung vào ${dish.dish_name}. Hãy kiểm tra rồi bấm ${load.data.selected_recipe.recipe_id ? "Lưu" : "Tạo"}.`,
     );
-    setTab("recipes");
+    setCopyOpen(false);
+    setCopyQuery("");
   };
 
   const parseWorkbook = async (file?: File) => {
@@ -518,7 +566,7 @@ export function DishRecipeAdminWorkbench({
       )
     )
       return;
-    await command(
+    const applied = await command(
       api.applyImport,
       1,
       "RECIPE_WORKBOOK_IMPORT",
@@ -528,6 +576,7 @@ export function DishRecipeAdminWorkbench({
       },
       importReason,
     );
+    if (applied) await refresh();
   };
 
   if (!authSubject) {
@@ -804,8 +853,15 @@ export function DishRecipeAdminWorkbench({
             <button type="button" onClick={() => beginDish()}>
               Tạo món mới
             </button>
-            <button type="button" onClick={() => navigateTab("copy")}>
-              Sao chép công thức từ món khác
+            <button
+              type="button"
+              disabled={!dish || creationLocked}
+              onClick={() => setCopyOpen(true)}
+            >
+              Sao chép công thức
+            </button>
+            <button type="button" onClick={() => navigateTab("import")}>
+              Nhập workbook
             </button>
           </div>
           <div className="recipe-first-user-layout">
@@ -866,7 +922,7 @@ export function DishRecipeAdminWorkbench({
                       tone={
                         visibleRecipeStatus === "Cần xử lý"
                           ? "warning"
-                          : visibleRecipeStatus === "Sẵn sàng sử dụng"
+                          : visibleRecipeStatus === "Sẵn sàng cho Lập nhu cầu"
                             ? "ok"
                             : "neutral"
                       }
@@ -877,10 +933,10 @@ export function DishRecipeAdminWorkbench({
 
                   {creationLocked && (
                     <div className="operator-notice warning" role="alert">
-                      <strong>Đã khóa chỉnh sửa thông thường</strong>
+                      <strong>Đã dùng trong thực đơn đã duyệt</strong>
                       <p>
                         {load.data.selected_recipe.lock_reason ??
-                          "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi."}
+                          "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh."}
                       </p>
                       <button
                         type="button"
@@ -1145,8 +1201,8 @@ export function DishRecipeAdminWorkbench({
                       <strong>{visibleRecipeStatus}</strong>
                       <p>
                         Tạo/Lưu sẽ làm công thức sẵn sàng cho Lập nhu cầu. Bạn
-                        có thể chỉnh sửa lại cho đến lần đầu món được dùng trong
-                        kế hoạch đã duyệt.
+                        có thể chỉnh sửa lại cho đến lần đầu món có trong thực
+                        đơn đã duyệt.
                       </p>
                     </div>
                     <div className="workbench-actions">
@@ -1193,7 +1249,7 @@ export function DishRecipeAdminWorkbench({
                               <strong>
                                 {item.recipe_version_status ===
                                 "RELEASED_FOR_PLANNING"
-                                  ? "Đã lưu và sẵn sàng"
+                                  ? "Sẵn sàng cho Lập nhu cầu"
                                   : item.recipe_version_status === "DRAFT"
                                     ? "Đã lưu để chỉnh sửa"
                                     : "Bản công thức trước đây"}
@@ -1227,162 +1283,104 @@ export function DishRecipeAdminWorkbench({
         </>
       )}
 
-      {(tab === "copy" || tab === "import") && (
-        <div className="recipe-secondary-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "copy"}
-            onClick={() => setTab("copy")}
+      {copyOpen && (
+        <div className="recipe-copy-backdrop">
+          <section
+            className="recipe-copy-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="recipe-copy-title"
           >
-            Sao chép công thức
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "import"}
-            onClick={() => setTab("import")}
-          >
-            Nhập workbook
-          </button>
-        </div>
-      )}
-
-      {tab === "copy" && (
-        <div className="recipe-operation-grid">
-          <section>
-            <h3>Sao chép vào món đang tạo</h3>
+            <header className="master-data-detail-heading">
+              <div>
+                <span>Hỗ trợ tạo công thức</span>
+                <h3 id="recipe-copy-title">Sao chép công thức</h3>
+              </div>
+              <button
+                type="button"
+                aria-label="Đóng Sao chép công thức"
+                onClick={() => setCopyOpen(false)}
+              >
+                ×
+              </button>
+            </header>
             <p className="drawer-guidance">
-              Chọn một công thức tương tự làm mẫu. Nội dung chỉ được điền vào
-              biểu mẫu đang tạo và chưa được lưu cho đến khi bạn kiểm tra rồi
-              bấm Tạo/Lưu.
+              Tìm và xem trước một công thức mẫu. Nội dung chỉ được điền vào
+              biểu mẫu hiện tại và chưa ghi vào Atlas.
             </p>
-            <dl className="master-data-detail-list">
-              <div>
-                <dt>Món đích</dt>
-                <dd>{dish?.dish_name ?? "Chưa chọn món"}</dd>
-              </div>
-              <div>
-                <dt>Áp dụng cho</dt>
-                <dd>
-                  {schoolTypeId
-                    ? (load.data.school_types.find(
-                        (item) => item.school_type_id === schoolTypeId,
-                      )?.school_type_name ?? "Không xác định")
-                    : "Tất cả"}
-                </dd>
-              </div>
-            </dl>
             <label className="evidence-field">
-              Công thức mẫu
+              Tìm công thức nguồn
+              <input
+                value={copyQuery}
+                onChange={(event) => setCopyQuery(event.target.value)}
+                placeholder="Tìm theo món hoặc nguyên liệu…"
+              />
+            </label>
+            <label className="evidence-field">
+              Chọn công thức nguồn
               <select
                 value={copyDraft.sourceVersionId}
                 onChange={(event) =>
-                  setCopyDraft((state) => ({
-                    ...state,
-                    sourceVersionId: event.target.value,
-                  }))
+                  setCopyDraft({ sourceVersionId: event.target.value })
                 }
               >
                 <option value="">Chọn công thức mẫu</option>
-                {load.data.recipe_versions
-                  .filter(
-                    (item) =>
-                      item.recipe_version_status === "RELEASED_FOR_PLANNING",
-                  )
-                  .map((item) => {
-                    const sourceRecipe = load.data.recipes.find(
-                      (candidate) => candidate.recipe_id === item.recipe_id,
-                    );
-                    const sourceDish = load.data.dishes.find(
-                      (candidate) =>
-                        candidate.dish_id === sourceRecipe?.dish_id,
-                    );
-                    return (
-                      <option
-                        key={item.recipe_version_id}
-                        value={item.recipe_version_id}
-                      >
-                        {sourceDish?.dish_name} · {item.basis_portions} suất
-                      </option>
-                    );
-                  })}
+                {copySourceOptions.map((item) => {
+                  const sourceRecipe = load.data.recipes.find(
+                    (candidate) => candidate.recipe_id === item.recipe_id,
+                  );
+                  const sourceDish = load.data.dishes.find(
+                    (candidate) => candidate.dish_id === sourceRecipe?.dish_id,
+                  );
+                  return (
+                    <option
+                      key={item.recipe_version_id}
+                      value={item.recipe_version_id}
+                    >
+                      {sourceDish?.dish_name} · {item.basis_portions} suất
+                    </option>
+                  );
+                })}
               </select>
             </label>
-          </section>
-          <section>
-            <h3>Xem trước nội dung sẽ điền</h3>
-            {(() => {
-              const source = load.data.recipe_versions.find(
-                (item) => item.recipe_version_id === copyDraft.sourceVersionId,
-              );
-              return (
-                <>
-                  <dl className="master-data-detail-list">
-                    <div>
-                      <dt>Dòng nguồn</dt>
-                      <dd>{source?.composition.length ?? 0}</dd>
-                    </div>
-                    <div>
-                      <dt>Kết quả</dt>
-                      <dd>Điền vào biểu mẫu tạo; chưa ghi vào hệ thống.</dd>
-                    </div>
-                  </dl>
-                  <h4>Thành phần công thức nguồn</h4>
-                  {!source ? (
-                    <p className="supporting-copy">
-                      Chọn phiên bản nguồn để xem đầy đủ thành phần sẽ sao chép.
-                    </p>
-                  ) : source.composition.length ? (
-                    <div className="master-data-table-scroll recipe-bom-table">
-                      <CompactTable
-                        headers={[
-                          "Mã dòng",
-                          "Nguyên liệu",
-                          "Định lượng",
-                          "Đơn vị",
-                          "Trạng thái",
-                          "Ghi chú",
-                        ]}
-                      >
-                        {source.composition.map((line) => (
-                          <tr key={line.recipe_line_id}>
-                            <td>{line.line_code ?? "—"}</td>
-                            <td>
-                              {ingredientLabel(
-                                line.ingredient_id,
-                                load.data.ingredients,
-                              )}
-                            </td>
-                            <td>{line.quantity_per_basis}</td>
-                            <td>{unitLabel(line.unit_id, load.data.units)}</td>
-                            <td>
-                              <Chip tone={statusTone(line.line_disposition)}>
-                                {statusLabel[line.line_disposition]}
-                              </Chip>
-                            </td>
-                            <td>{line.operational_note ?? "—"}</td>
-                          </tr>
-                        ))}
-                      </CompactTable>
-                    </div>
-                  ) : (
-                    <p className="supporting-copy">
-                      Công thức mẫu không có thành phần để sao chép.
-                    </p>
-                  )}
-                </>
-              );
-            })()}
-            <button
-              type="button"
-              disabled={
-                busy || !copyDraft.sourceVersionId || !dish || creationLocked
-              }
-              onClick={applyCopy}
-            >
-              Điền vào công thức đang tạo
-            </button>
+            <div className="recipe-copy-preview">
+              <h4>Xem trước thành phần</h4>
+              {!copySource ? (
+                <p className="supporting-copy">
+                  Chọn một công thức nguồn để xem thành phần.
+                </p>
+              ) : (
+                <CompactTable headers={["Nguyên liệu", "Định lượng", "Đơn vị"]}>
+                  {copySource.composition
+                    .filter((line) => line.line_disposition === "PRESENT")
+                    .map((line) => (
+                      <tr key={line.recipe_line_id}>
+                        <td>
+                          {ingredientLabel(
+                            line.ingredient_id,
+                            load.data.ingredients,
+                          )}
+                        </td>
+                        <td>{line.quantity_per_basis}</td>
+                        <td>{unitLabel(line.unit_id, load.data.units)}</td>
+                      </tr>
+                    ))}
+                </CompactTable>
+              )}
+            </div>
+            <div className="workbench-actions">
+              <button type="button" onClick={() => setCopyOpen(false)}>
+                Hủy
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={busy || !copySource || !dish || creationLocked}
+                onClick={applyCopy}
+              >
+                Dùng công thức này
+              </button>
+            </div>
           </section>
         </div>
       )}

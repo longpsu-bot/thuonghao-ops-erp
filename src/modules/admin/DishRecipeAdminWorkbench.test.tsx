@@ -116,7 +116,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(screen.getByLabelText("Số suất áp dụng cho định lượng")).toHaveValue(
       100,
     );
-    expect(screen.getAllByText("Sẵn sàng sử dụng")).not.toHaveLength(0);
+    expect(screen.getAllByText("Sẵn sàng cho Lập nhu cầu")).not.toHaveLength(0);
     expect(
       screen.queryByRole("button", { name: "Đưa vào sử dụng" }),
     ).toBeNull();
@@ -136,25 +136,66 @@ describe("Recipe creation-and-lock workbench", () => {
   it("uses Copy only as a helper that fills the current creation form", async () => {
     renderWorkbench();
     await openCreation();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Sao chép công thức từ món khác" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
 
     expect(
-      screen.getByRole("heading", { name: "Sao chép vào món đang tạo" }),
+      screen.getByRole("dialog", { name: "Sao chép công thức" }),
     ).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Công thức mẫu"), {
+    fireEvent.change(screen.getByLabelText("Chọn công thức nguồn"), {
       target: { value: "30000000-0000-4000-8000-000000000001" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Điền vào công thức đang tạo" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Dùng công thức này" }));
 
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(
-      await screen.findByRole("heading", { name: "Tạo món & công thức" }),
+      screen.getByRole("heading", { name: "Tạo món & công thức" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Đã sao chép nội dung/)).toBeInTheDocument();
     expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
+  });
+
+  it("keeps a newly created Dish active so its initial Recipe can be copied and saved", async () => {
+    const api = createReviewRecipeApi("ready");
+    const createDish = vi.spyOn(api, "createDish");
+    const saveRecipe = vi.spyOn(api, "saveRecipe");
+    renderWorkbench(api);
+    await openCreation();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    fireEvent.change(screen.getByLabelText("Mã món"), {
+      target: { value: "mon-moi-03a" },
+    });
+    fireEvent.change(screen.getByLabelText("Tên món"), {
+      target: { value: "Món mới 03A" },
+    });
+    fireEvent.change(screen.getByLabelText("Loại món"), {
+      target: { value: "80000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu món ăn" }));
+
+    await waitFor(() => expect(createDish).toHaveBeenCalledTimes(1));
+    expect(
+      screen.getByRole("tab", { name: "Tạo món & công thức", selected: true }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Món mới 03A" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Chọn công thức nguồn"), {
+      target: { value: "30000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Dùng công thức này" }));
+    expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tạo" }));
+    await waitFor(() => expect(saveRecipe).toHaveBeenCalledTimes(1));
+    expect(
+      screen.getByRole("tab", { name: "Tạo món & công thức", selected: true }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Món mới 03A" }),
+    ).toBeInTheDocument();
   });
 
   it("Save makes an eligible pre-use Recipe available through one backend command", async () => {
@@ -169,7 +210,9 @@ describe("Recipe creation-and-lock workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() =>
-      expect(screen.getAllByText("Sẵn sàng sử dụng")).not.toHaveLength(0),
+      expect(screen.getAllByText("Sẵn sàng cho Lập nhu cầu")).not.toHaveLength(
+        0,
+      ),
     );
     expect(saveRecipe).toHaveBeenCalledTimes(1);
     expect(releaseRecipe).not.toHaveBeenCalled();
@@ -182,7 +225,7 @@ describe("Recipe creation-and-lock workbench", () => {
     const api = overrideSelection((selected) => {
       selected.locked_for_normal_editing = true;
       selected.lock_reason =
-        "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.";
+        "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.";
       selected.business_status = "LOCKED";
       selected.allowed_actions.save_recipe = false;
       selected.disabled_reason_codes.save_recipe = "SAVE_OPERATIONALLY_LOCKED";
@@ -193,7 +236,7 @@ describe("Recipe creation-and-lock workbench", () => {
     await openCreation();
 
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.",
+      "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
     );
     expect(screen.getByLabelText(/Định lượng Bí đỏ/)).toBeDisabled();
     expect(

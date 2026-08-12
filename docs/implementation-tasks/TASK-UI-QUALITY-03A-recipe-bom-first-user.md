@@ -14,9 +14,9 @@ Restore the retained OPS v1 business workflow in Atlas: current-effective catalo
 - `Danh sách` is the default read-only catalog with Dish code/name/type, current Recipe scope/basis/Ingredients/status, Dish/Ingredient text search, `Xem`, and clear creation/adjustment guidance.
 - `Tạo món & công thức` is separate, retains Ingredient search, and exposes one human commitment: `Tạo`/`Lưu`.
 - Save makes valid composition Planning-eligible and remains editable only while the Dish has never appeared in an approved Weekly Menu snapshot.
-- An approved snapshot line is the authoritative Atlas first-use evidence. Readback exposes the locked state/reason; Save rechecks it while holding the Dish lock and denies before successor creation.
+- An approved snapshot line is the authoritative Atlas first-use evidence. Readback exposes the locked state/reason; every still-callable RMVP-02A base mutation reuses one Dish-wide predicate under the same transaction lock as Weekly Menu approval and denies before business writes.
 - Locked inputs are read-only and direct the operator to `Điều chỉnh` with the safe Vietnamese reason.
-- Recipe Copy fills the current unsaved creation form; it is not a top-level maintenance command and creates no backend draft on its own.
+- Recipe Copy is a search/select/preview modal that fills the current unsaved creation form and closes; it is not a top-level maintenance command and creates no backend draft on its own.
 - Dirty Dish/scope/navigation changes require confirmation; page unload uses the native dirty-form warning.
 - Normal UI contains no Recipe Version, validation, release, successor, or lifecycle action.
 - Existing RMVP-02A.v1 and v2 release/support APIs remain physically callable. React chains no lifecycle commands.

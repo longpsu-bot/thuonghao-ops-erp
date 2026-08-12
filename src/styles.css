@@ -2180,6 +2180,45 @@ tbody tr.selected-row {
   opacity: 0.45;
 }
 
+.recipe-copy-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(17 32 27 / 48%);
+}
+
+.recipe-copy-modal {
+  display: grid;
+  gap: 16px;
+  width: min(760px, 100%);
+  max-height: min(820px, calc(100vh - 48px));
+  padding: 20px;
+  overflow: auto;
+  border: 1px solid var(--atlas-border);
+  border-radius: 12px;
+  background: var(--atlas-surface);
+  box-shadow: 0 24px 64px rgb(17 32 27 / 28%);
+}
+
+.recipe-copy-modal .master-data-detail-heading {
+  padding: 0 0 12px;
+}
+
+.recipe-copy-preview {
+  min-height: 150px;
+  padding: 14px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface-soft);
+}
+
+.recipe-copy-preview h4 {
+  margin: 0 0 10px;
+}
+
 .recipe-first-user-layout {
   display: grid;
   grid-template-columns: minmax(240px, 290px) minmax(0, 1fr);

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { readLocalSupabaseStatus } from "./local-supabase-status.mjs";
 
@@ -40,6 +41,31 @@ function saveRequest(subject, expectedVersion, payload) {
   };
 }
 
+function planningReadRequest(subject, payload) {
+  return {
+    contract_version: "RMVP-03A.v1",
+    requested_by_auth_subject: subject,
+    correlation_id: crypto.randomUUID(),
+    payload,
+  };
+}
+
+function planningCommandRequest(subject, expectedVersion, reasonCode, payload) {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-03A.v1",
+    command_id: commandId,
+    correlation_id: crypto.randomUUID(),
+    idempotency_key: `${reasonCode.toLowerCase()}:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: subject,
+    requested_at: new Date(Date.now() - 1000).toISOString(),
+    reason_code: reasonCode,
+    reason_note: "Bounded local approved-menu lock evidence.",
+    payload,
+  };
+}
+
 async function invoke(client, name, request) {
   const { data, error } = await client
     .schema("atlas_api")
@@ -53,6 +79,25 @@ async function invoke(client, name, request) {
     throw new Error(
       `RMVP-02A ${name} was rejected: ${data?.error_code ?? "UNKNOWN"}.`,
     );
+  return data;
+}
+
+async function invokeDenied(client, name, request) {
+  const { data, error } = await client
+    .schema("atlas_api")
+    .rpc(name, { request })
+    .retry(false);
+  if (error)
+    throw new Error(
+      `RMVP-02A ${name} denial had a transport failure (${error.code ?? "UNKNOWN"}).`,
+    );
+  assert(
+    data?.success === false &&
+      data.error_code === "INVARIANT_VIOLATION" &&
+      data.safe_message ===
+        "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+    `RMVP-02A ${name} did not return the canonical approved-menu denial.`,
+  );
   return data;
 }
 
@@ -75,6 +120,33 @@ async function readWorkbench(client, subject, selection = {}) {
   });
   assert(result.workbench, "RMVP-02A v2 workbench envelope was absent.");
   return result.workbench;
+}
+
+async function readPlanningWorkbench(client, subject, weekStart) {
+  const result = await invoke(
+    client,
+    "get_planning_inputs_workbench",
+    planningReadRequest(subject, { week_start: weekStart }),
+  );
+  return result.workbench;
+}
+
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+async function findEmptyFutureMonday(client, subject) {
+  const candidate = new Date();
+  candidate.setUTCHours(0, 0, 0, 0);
+  const daysUntilMonday = (8 - candidate.getUTCDay()) % 7;
+  candidate.setUTCDate(candidate.getUTCDate() + daysUntilMonday + 7 * 1200);
+  for (let offset = 0; offset < 26; offset += 1) {
+    const weekStart = isoDate(candidate);
+    const workbench = await readPlanningWorkbench(client, subject, weekStart);
+    if (!workbench.weekly_menu) return { weekStart, workbench };
+    candidate.setUTCDate(candidate.getUTCDate() + 7);
+  }
+  throw new Error("RMVP-02A could not find an unused future Menu week.");
 }
 
 async function main() {
@@ -102,11 +174,12 @@ async function main() {
   );
 
   const suffix = crypto.randomUUID().slice(0, 8);
+  const dishCode = `rmvp02a-v2-${suffix}`;
   const created = await invoke(
     client,
     "create_dish",
     v1Request(subject, 1, "RMVP02A_V2_CREATE_DISH", {
-      dish_code: `rmvp02a-v2-${suffix}`,
+      dish_code: dishCode,
       dish_name: `RMVP-02A v2 ${suffix}`,
       dish_category: "Acceptance",
       dish_type_id: dishType.dish_type_id,
@@ -232,9 +305,175 @@ async function main() {
       persisted.selected_recipe.locked_for_normal_editing === false,
     "Creation Save did not persist authoritative readback across sign-in.",
   );
+
+  const { weekStart, workbench: planning } = await findEmptyFutureMonday(
+    client,
+    subject,
+  );
+  const school = planning.schools.find(
+    (item) => item.school_status === "ACTIVE",
+  );
+  assert(school, "Approved-menu lock evidence requires one active School.");
+  const menuPreview = await invoke(
+    client,
+    "preview_weekly_menu_import",
+    planningReadRequest(subject, {
+      week_start: weekStart,
+      rows: [
+        {
+          school_id: school.school_id,
+          service_date: weekStart,
+          menu_slot_code: dishType.dish_type_code,
+          dish_id: dishId,
+          source_row_reference: "rmvp02a-lock:2",
+        },
+      ],
+    }),
+  );
+  assert(
+    menuPreview.preview.can_save &&
+      menuPreview.preview.canonical_rows.length === 1,
+    "Approved-menu lock preview was not saveable.",
+  );
+  await invoke(
+    client,
+    "save_weekly_menu_draft",
+    planningCommandRequest(subject, 1, "RMVP02A_LOCK_MENU_SAVE", {
+      week_start: weekStart,
+      source_type: "BULK_PASTE",
+      source_name: "RMVP-02A lock journey",
+      source_signature: menuPreview.preview.source_signature,
+      expected_source_signature: null,
+      rows: menuPreview.preview.canonical_rows,
+    }),
+  );
+  await invoke(
+    client,
+    "validate_weekly_menu",
+    planningCommandRequest(subject, 1, "RMVP02A_LOCK_MENU_VALIDATE", {
+      week_start: weekStart,
+    }),
+  );
+  const approval = await invoke(
+    client,
+    "approve_weekly_menu",
+    planningCommandRequest(subject, 1, "RMVP02A_LOCK_MENU_APPROVE", {
+      week_start: weekStart,
+    }),
+  );
+  assert(
+    approval.authoritative_readback.weekly_menu.latest_approval_snapshot_id,
+    "Weekly Menu approval did not create lock evidence.",
+  );
+
+  const locked = await readWorkbench(client, subject, {
+    dish_id: dishId,
+    school_type_id: null,
+  });
+  const lockedSelection = locked.selected_recipe;
+  const lockedDish = locked.dishes.find((item) => item.dish_id === dishId);
+  const lockedRoot = locked.recipes.find(
+    (item) => item.recipe_id === lockedSelection.recipe_id,
+  );
+  assert(
+    lockedSelection.business_status === "LOCKED" &&
+      lockedSelection.locked_for_normal_editing === true &&
+      lockedSelection.allowed_actions.save_recipe === false &&
+      lockedDish &&
+      lockedRoot,
+    "Approved Menu evidence did not lock the Dish-wide Recipe readback.",
+  );
+  const lockedEvidence = JSON.stringify({
+    versions: locked.recipe_versions,
+    selected: lockedSelection,
+    dish: lockedDish,
+    root: lockedRoot,
+  });
+
+  await invokeDenied(
+    client,
+    "save_recipe",
+    saveRequest(subject, lockedSelection.expected_version, {
+      dish_id: dishId,
+      school_type_id: null,
+      recipe_version_id: secondVersionId,
+      basis_portions: 100,
+      lines: [
+        {
+          recipe_line_id: stableLineId,
+          ingredient_id: ingredient.ingredient_id,
+          quantity_per_basis: 99,
+          unit_id: unit.unit_id,
+          operational_note: "must not save after approved Menu use",
+        },
+      ],
+    }),
+  );
+  await invokeDenied(
+    client,
+    "set_recipe_lifecycle",
+    v1Request(subject, lockedRoot.version, "RMVP02A_LOCK_LIFECYCLE", {
+      recipe_id: lockedRoot.recipe_id,
+      recipe_status: "INACTIVE",
+    }),
+  );
+  await invokeDenied(
+    client,
+    "copy_recipe_version",
+    v1Request(subject, lockedDish.version, "RMVP02A_LOCK_COPY", {
+      source_recipe_version_id: secondVersionId,
+      target_dish_id: dishId,
+      target_school_type_id: null,
+    }),
+  );
+  const canonicalJson = JSON.stringify({
+    rows: [
+      {
+        legacy_line_id: `ops-v1:line:${dishCode}:ingredient`,
+        dish_legacy_id: `ops-v1:dish:${dishCode}`,
+        recipe_legacy_id: `ops-v1:recipe:${dishCode}:general`,
+        dish_code: dishCode,
+        dish_name: "must not change through import",
+        dish_category: "Acceptance",
+        requires_need_generation: true,
+        school_type_id: null,
+        basis_portions: 100,
+        ingredient_id: ingredient.ingredient_id,
+        quantity_per_basis: 99,
+        unit_id: unit.unit_id,
+        operational_note: "must not import after approved Menu use",
+      },
+    ],
+  });
+  await invokeDenied(
+    client,
+    "apply_recipe_import",
+    v1Request(subject, lockedDish.version, "RMVP02A_LOCK_IMPORT", {
+      canonical_json: canonicalJson,
+      workbook_checksum: createHash("sha256")
+        .update(canonicalJson, "utf8")
+        .digest("hex"),
+    }),
+  );
+
+  const afterDenials = await readWorkbench(client, subject, {
+    dish_id: dishId,
+    school_type_id: null,
+  });
+  assert(
+    JSON.stringify({
+      versions: afterDenials.recipe_versions,
+      selected: afterDenials.selected_recipe,
+      dish: afterDenials.dishes.find((item) => item.dish_id === dishId),
+      root: afterDenials.recipes.find(
+        (item) => item.recipe_id === lockedSelection.recipe_id,
+      ),
+    }) === lockedEvidence,
+    "A denied post-lock command changed base Recipe evidence.",
+  );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified RMVP-02A browser-key sign-in, pre-use eligibility, one-command creation Save, automatic Planning availability, pre-use lineage/immutability, no release action, and authoritative reauthentication readback.",
+    "Verified RMVP-02A browser-key pre-use creation/Save and availability, approved-menu Dish lock, locked readback, Save/lifecycle/copy/import denial, and zero post-lock base Recipe mutation.",
   );
 }
 

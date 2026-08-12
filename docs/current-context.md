@@ -207,7 +207,7 @@ ATLAS-UI-STANDARD-02
 
 The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
 
-The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL denies normal Save after the Dish appears in immutable approved Weekly Menu evidence and returns Change Order direction. Version evidence remains support disclosure. UI-QUALITY-03B remains separate and must not be started from this slice.
+The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a modal form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL uses one Dish-wide predicate and transaction boundary to deny every applicable base Dish/Recipe/BOM mutation after the Dish appears in immutable approved Weekly Menu evidence, returning Change Order direction before business writes. Version evidence remains support disclosure. UI-QUALITY-03B remains separate and must not be started from this slice.
 
 CMD-03, supplier allocation, purchase-order creation, Warehouse, Production/QA and Dispatch expansion remain deferred until the current stabilization gates are accepted.
 

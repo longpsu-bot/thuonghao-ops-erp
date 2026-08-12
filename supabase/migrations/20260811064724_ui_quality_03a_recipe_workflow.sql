@@ -288,20 +288,6 @@ as $$
   );
 $$;
 
-create function atlas_core.uiq03a_dish_used_operationally(p_dish_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1
-    from atlas_planning.weekly_menu_approval_snapshot_lines menu_line
-    where menu_line.dish_id = p_dish_id
-  );
-$$;
-
 create function atlas_core.uiq03a_selection_payload(
   p_actor_id uuid,
   p_dish_id uuid,
@@ -465,7 +451,7 @@ begin
 
   v_save_message := case v_save_code
     when 'SAVE_OPERATIONALLY_LOCKED'
-      then 'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.'
+      then 'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.'
     when 'SAVE_DISH_INACTIVE'
       then 'Món ăn đã ngừng dùng nên không thể lưu công thức mới.'
     when 'SAVE_SCOPE_UNAVAILABLE'
@@ -479,11 +465,11 @@ begin
 
   v_release_message := case v_release_code
     when 'RELEASE_SAVE_REQUIRED'
-      then 'Hãy lưu công thức trước khi đưa vào sử dụng.'
+      then 'Hãy lưu công thức trước khi xác nhận sẵn sàng cho Lập nhu cầu.'
     when 'RELEASE_SCOPE_INACTIVE'
       then 'Món ăn hoặc phạm vi công thức chưa hoạt động.'
     when 'RELEASE_ALREADY_IN_USE'
-      then 'Công thức này đang được sử dụng.'
+      then 'Công thức đã sẵn sàng cho Lập nhu cầu.'
     when 'RELEASE_CAPABILITY_REQUIRED'
       then 'Bạn chưa có quyền đưa công thức vào sử dụng.'
     when 'RELEASE_COMPOSITION_INCOMPLETE'
@@ -500,7 +486,7 @@ begin
     'in_use_recipe_version_id', v_current_release_id,
     'locked_for_normal_editing', v_used_operationally,
     'lock_reason', case when v_used_operationally then
-      'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.'
+      'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.'
       else null end,
     'business_status', case
       when v_version.recipe_version_id is null then 'NOT_SAVED'
@@ -711,6 +697,9 @@ begin
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
 
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_dish_id::text, 17403)
+  );
   select dish.* into v_dish
   from atlas_admin.dishes dish
   where dish.dish_id = v_dish_id
@@ -739,7 +728,7 @@ begin
       v_receipt_id,
       atlas_core.uiq03a_error(
         request, v_name, 'INVARIANT_VIOLATION',
-        'Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.'
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.'
       ),
       false
     );
@@ -1164,7 +1153,7 @@ begin
       v_receipt_id,
       atlas_core.uiq03a_error(
         request, v_name, 'STALE_VERSION',
-        'Công thức đã thay đổi. Hãy tải lại trước khi đưa vào sử dụng.',
+        'Công thức đã thay đổi. Hãy tải lại trước khi xác nhận cho Lập nhu cầu.',
         false, v_version.version
       ),
       false
@@ -1177,8 +1166,8 @@ begin
         request, v_name, 'INVARIANT_VIOLATION',
         case
           when v_version.recipe_version_status = 'RELEASED_FOR_PLANNING'
-            then 'Công thức này đang được sử dụng.'
-          else 'Hãy lưu công thức hiện tại trước khi đưa vào sử dụng.'
+            then 'Công thức đã sẵn sàng cho Lập nhu cầu.'
+          else 'Hãy lưu công thức hiện tại trước khi xác nhận cho Lập nhu cầu.'
         end
       ),
       false
@@ -1189,6 +1178,9 @@ begin
   from atlas_admin.recipes recipe
   where recipe.recipe_id = v_version.recipe_id
   for update;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_recipe.dish_id::text, 17403)
+  );
   select dish.* into v_dish
   from atlas_admin.dishes dish
   where dish.dish_id = v_recipe.dish_id
@@ -1201,6 +1193,16 @@ begin
       atlas_core.uiq03a_error(
         request, v_name, 'INVARIANT_VIOLATION',
         'Món ăn và phạm vi công thức phải đang hoạt động.'
+      ),
+      false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.uiq03a_error(
+        request, v_name, 'INVARIANT_VIOLATION',
+        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.'
       ),
       false
     );
@@ -1377,7 +1379,7 @@ begin
       'effect', 'FUTURE_PLANNING_REFERENCE_ONLY',
       'historical_planning_recalculated', false
     ),
-    'Đã đưa công thức vào sử dụng cho các lần Lập nhu cầu sau.',
+    'Đã xác nhận công thức sẵn sàng cho các lần Lập nhu cầu sau.',
     v_dish.dish_id,
     v_recipe.school_type_id
   );
@@ -1385,7 +1387,7 @@ exception
   when unique_violation then
     return atlas_core.uiq03a_error(
       request, v_name, 'CONFLICT',
-      'Một công thức khác đã được đưa vào sử dụng đồng thời. Hãy tải lại.'
+      'Một công thức khác đã được xác nhận cho Lập nhu cầu đồng thời. Hãy tải lại.'
     );
   when serialization_failure or deadlock_detected then
     return atlas_core.uiq03a_error(

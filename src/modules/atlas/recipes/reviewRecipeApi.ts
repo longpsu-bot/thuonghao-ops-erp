@@ -293,8 +293,8 @@ function selectRecipe(
       release_recipe: releaseReady
         ? null
         : alreadyAvailable
-          ? "Công thức đã sẵn sàng sử dụng."
-          : "Hãy lưu công thức trước khi đưa vào sử dụng.",
+          ? "Công thức đã sẵn sàng cho Lập nhu cầu."
+          : "Hãy lưu công thức trước khi xác nhận cho Lập nhu cầu.",
     },
   };
 }

@@ -25,19 +25,19 @@ Before first operational use:
 - Dish descriptive metadata is captured during creation. Existing v1 support APIs remain physically callable; 03A does not broaden them.
 - Recipe scope identity is fixed by Dish plus nullable School Type.
 - Recipe basis and base composition may be saved again. PostgreSQL may use internal version lineage to preserve released evidence while the Dish is still unused.
-- `Tạo`/`Lưu` validates, materializes immutable line revisions, and leaves the Recipe `RELEASED_FOR_PLANNING` (human status `Sẵn sàng sử dụng`).
+- `Tạo`/`Lưu` validates, materializes immutable line revisions, and leaves the Recipe `RELEASED_FOR_PLANNING` (human status `Sẵn sàng cho Lập nhu cầu`).
 
 After first operational use:
 
 - Dish stable identity, the Recipe scope identity, and base Recipe composition are not normally editable.
-- `save_recipe` fails before creating a Recipe/version/line write and returns: `Món/công thức này đã được sử dụng. Hãy tạo Phiếu điều chỉnh để thay đổi.`
+- Every callable RMVP-02A mutation that could change Dish/Recipe/BOM truth reuses the same approved-Menu predicate and fails before a Dish, Recipe, Recipe Version, Recipe Line, Recipe Line Revision, import/mapping, or release write. The safe direction is: `Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.`
 - Descriptive changes or composition changes that represent a business correction must follow an approved Change Order/override path; 03A does not redesign that contract.
 - Historical Recipe, approved Menu, Planning selection, and line-use evidence remains immutable.
 
 ## Contract consequences
 
 - Keep additive `atlas_api.save_recipe(jsonb)` and `atlas_api.release_recipe(jsonb)` plus all RMVP-02A.v1 entry points physically callable.
-- `save_recipe` is the only normal creation-workbench commitment. It checks operational use under the locked Dish row, validates full composition, preserves idempotency/concurrency/lineage, and makes the Recipe Planning-eligible atomically.
+- `save_recipe` is the only normal creation-workbench commitment. It checks operational use under the serialized Dish boundary, validates full composition, preserves idempotency/concurrency/lineage, and makes the Recipe Planning-eligible atomically.
 - `release_recipe` remains a compatibility/support entry point. React does not invoke it in the normal workflow.
 - The v2 read returns `business_status`, `locked_for_normal_editing`, `lock_reason`, and backend-authoritative Save eligibility.
 - Lock evidence is Dish-wide, matching the v1 trigger. It is not Recipe creation, validation, release, or first Save.
@@ -47,12 +47,12 @@ After first operational use:
 
 The catalog exposes current-effective Dish name/code/type, Recipe scope/basis/Ingredients/status, text search, `Xem`, and clear navigation to creation or Change Order. It contains no edit, validation, release, successor, or lifecycle controls.
 
-Creation exposes selected Dish/scope, basis, Ingredient search, composition, and one `Tạo`/`Lưu` action. Recipe Copy is a local creation helper: it fills the current unsaved form and performs no backend write until the operator checks and saves. Dirty context/navigation changes require confirmation; page unload uses the native browser guard.
+Creation exposes selected Dish/scope, basis, Ingredient search, composition, and one `Tạo`/`Lưu` action. Recipe Copy is a modal local creation helper: search/select source, preview composition, and `Dùng công thức này` fill the current unsaved form and close the modal. It performs no backend write until the operator checks and saves. Dirty context/navigation changes require confirmation; page unload uses the native browser guard.
 
 Technical version history remains support disclosure only. Unknown write outcomes require an authoritative refresh and are never automatically retried.
 
 ## Safety and rollback
 
-The helper reads only approved-Menu snapshot `dish_id` and runs under the existing fixed-path runtime boundary. Save takes the Dish lock before rechecking operational use, preventing a normal edit after approved evidence exists. No browser role receives private-schema table access.
+The helper reads only approved-Menu snapshot `dish_id` and runs under the existing fixed-path runtime boundary. Weekly Menu approval and every relevant base mutation take the same deterministic transaction lock before committing or rechecking operational use. No browser role receives private-schema table access.
 
 Disposable local databases may reset before operational use. Any deployed rollback is forward-only and must preserve Recipe identities, revisions, approved Menu snapshots, Planning evidence, receipts, events, and audit records. Reopening a used base Recipe or rewriting history is prohibited.
