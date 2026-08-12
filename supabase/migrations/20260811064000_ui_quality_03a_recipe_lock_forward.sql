@@ -99,9 +99,9 @@ begin
 
   return coalesce(
     (
-      select array_agg(distinct dish_id order by dish_id)
-      from pg_catalog.unnest(coalesce(v_ids, '{}'::uuid[])) dish_id
-      where dish_id is not null
+      select array_agg(distinct target.dish_id order by target.dish_id)
+      from pg_catalog.unnest(coalesce(v_ids, '{}'::uuid[])) as target(dish_id)
+      where target.dish_id is not null
     ),
     '{}'::uuid[]
   );
