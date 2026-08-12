@@ -12,6 +12,7 @@ import {
 } from "./modules/atlas/planning-inputs/PlanningInputsWorkbench";
 import { atlasTheme } from "./theme";
 import "./styles.css";
+import "./recipe-ui-cleanup.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -129,7 +129,8 @@ describe("Recipe creation-and-lock workbench", () => {
     fireEvent.change(search, { target: { value: "hành" } });
     fireEvent.click(screen.getByRole("option", { name: /Hành lá/ }));
 
-    expect(screen.getByText("Hành lá (hanh-la)")).toBeInTheDocument();
+    expect(screen.getByText("Hành lá")).toBeInTheDocument();
+    expect(screen.queryByText("Hành lá (hanh-la)")).toBeNull();
     expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
   });
 

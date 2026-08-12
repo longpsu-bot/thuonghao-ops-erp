@@ -282,15 +282,15 @@ export function ingredientLabel(
   ingredientId: string,
   ingredients: RecipeIngredientReference[],
 ) {
-  const ingredient = ingredients.find(
-    (item) => item.ingredient_id === ingredientId,
+  return (
+    ingredients.find((item) => item.ingredient_id === ingredientId)
+      ?.ingredient_name ?? "Nguyên liệu không xác định"
   );
-  return ingredient
-    ? `${ingredient.ingredient_name} (${ingredient.ingredient_code})`
-    : ingredientId;
 }
 
 export function unitLabel(unitId: string, units: RecipeUnitReference[]) {
-  const unit = units.find((item) => item.unit_id === unitId);
-  return unit ? `${unit.unit_name} (${unit.unit_code})` : unitId;
+  return (
+    units.find((item) => item.unit_id === unitId)?.unit_name ??
+    "Đơn vị không xác định"
+  );
 }

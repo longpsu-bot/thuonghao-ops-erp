@@ -3163,16 +3163,6 @@ begin
       false
     );
   end if;
-  perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended(line.dish_id::text, 17403)
-  )
-  from (
-    select distinct active_line.dish_id
-    from atlas_planning.weekly_menu_lines active_line
-    where active_line.weekly_menu_id = v_menu.weekly_menu_id
-      and active_line.line_status = 'ACTIVE'
-  ) line
-  order by line.dish_id;
   insert into atlas_planning.weekly_menu_approval_snapshots (
     weekly_menu_approval_snapshot_id,
     weekly_menu_id,
@@ -4230,9 +4220,6 @@ begin
   end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
-  perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended(v_dish_id::text, 17403)
-  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_dish_id
@@ -4261,17 +4248,6 @@ begin
         '[]'::jsonb,
         '[]'::jsonb,
         v_dish.version
-      ),
-      false
-    );
-  end if;
-  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
-    return atlas_core.pa_05b_finish_command(
-      v_receipt_id,
-      atlas_core.pa_05b_command_error(
-        request, 'INVARIANT_VIOLATION',
-        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
-        'ADMIN', v_name
       ),
       false
     );
@@ -4443,9 +4419,6 @@ begin
   end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
   v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
-  perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended(v_dish_id::text, 17403)
-  );
   select * into v_dish
   from atlas_admin.dishes
   where dish_id = v_dish_id
@@ -4474,17 +4447,6 @@ begin
         '[]'::jsonb,
         '[]'::jsonb,
         v_dish.version
-      ),
-      false
-    );
-  end if;
-  if atlas_core.uiq03a_dish_used_operationally(v_dish.dish_id) then
-    return atlas_core.pa_05b_finish_command(
-      v_receipt_id,
-      atlas_core.pa_05b_command_error(
-        request, 'INVARIANT_VIOLATION',
-        'Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.',
-        'ADMIN', v_name
       ),
       false
     );
