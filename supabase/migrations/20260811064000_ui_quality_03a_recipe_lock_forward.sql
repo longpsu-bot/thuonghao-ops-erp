@@ -5,6 +5,11 @@
 -- serializes approved-Menu commitment with base Recipe mutation, and hardens
 -- the still-callable RMVP-02A.v1 command boundary without rewriting history.
 
+grant atlas_read_runtime, atlas_planning_command_runtime
+  to atlas_owner with set true;
+grant create on schema atlas_core
+  to atlas_read_runtime, atlas_planning_command_runtime;
+
 set role atlas_owner;
 
 create or replace function atlas_core.uiq03a_dish_used_operationally(
@@ -225,14 +230,12 @@ before insert on atlas_planning.weekly_menu_approval_snapshot_lines
 for each row
 execute function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes();
 
-reset role;
-
-alter function atlas_core.uiq03a_dish_used_operationally(uuid)
-  owner to atlas_read_runtime;
-alter function atlas_core.uiq03a_rmvp_02a_target_dish_ids(jsonb, text)
-  owner to atlas_read_runtime;
-alter function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes()
-  owner to atlas_planning_command_runtime;
+comment on function atlas_core.uiq03a_dish_used_operationally(uuid) is
+  'UI-QUALITY-03A canonical Dish-wide lock predicate: true after the Dish appears in immutable approved Weekly Menu evidence.';
+comment on function atlas_core.uiq03a_rmvp_02a_target_dish_ids(jsonb, text) is
+  'UI-QUALITY-03A private resolver for existing Dish identities targeted by still-callable RMVP-02A base-mutation commands.';
+comment on function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes() is
+  'UI-QUALITY-03A serializes first committed approved-menu use against base Dish/Recipe mutation using the same transaction advisory lock.';
 
 revoke execute on function
   atlas_core.uiq03a_dish_used_operationally(uuid),
@@ -249,9 +252,16 @@ grant execute on function
   atlas_core.uiq03a_dish_used_operationally(uuid)
 to atlas_read_runtime;
 
-comment on function atlas_core.uiq03a_dish_used_operationally(uuid) is
-  'UI-QUALITY-03A canonical Dish-wide lock predicate: true after the Dish appears in immutable approved Weekly Menu evidence.';
-comment on function atlas_core.uiq03a_rmvp_02a_target_dish_ids(jsonb, text) is
-  'UI-QUALITY-03A private resolver for existing Dish identities targeted by still-callable RMVP-02A base-mutation commands.';
-comment on function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes() is
-  'UI-QUALITY-03A serializes first committed approved-menu use against base Dish/Recipe mutation using the same transaction advisory lock.';
+alter function atlas_core.uiq03a_dish_used_operationally(uuid)
+  owner to atlas_read_runtime;
+alter function atlas_core.uiq03a_rmvp_02a_target_dish_ids(jsonb, text)
+  owner to atlas_read_runtime;
+alter function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes()
+  owner to atlas_planning_command_runtime;
+
+reset role;
+
+revoke create on schema atlas_core
+  from atlas_read_runtime, atlas_planning_command_runtime;
+
+revoke atlas_read_runtime, atlas_planning_command_runtime from atlas_owner;

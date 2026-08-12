@@ -118,7 +118,7 @@ PLANNING-CONTRACT-01 implements D-036 with five additive APIs: consequential Wee
 
 ## 4J. Recipe two-action v2 boundary
 
-D-038 adds `atlas_api.save_recipe(jsonb)` and retains `atlas_api.release_recipe(jsonb)` as a compatibility/support entry point under `RMVP-02A.v2`. Normal `Tạo`/`Lưu` validates, materializes, and makes an unused Dish/Recipe available for future Planning atomically. A Dish appearing in immutable approved Weekly Menu snapshot lines is operationally used; readback marks it locked and Save denies before creating any successor. Existing RMVP-02A.v1 functions remain callable; React invokes no lifecycle chain or release action. The exact delta is specified in [RMVP-02A Recipe and BOM API contract](rmvp-02a-recipes-bom.md).
+D-038 adds `atlas_api.save_recipe(jsonb)` and retains `atlas_api.release_recipe(jsonb)` as a compatibility/support entry point under `RMVP-02A.v2`. Normal `Tạo`/`Lưu` validates, materializes, and makes a pre-commit Dish/Recipe available for future Planning atomically. A Dish appearing in immutable approved Weekly Menu snapshot lines has crossed the committed-use boundary; readback marks it locked and Save denies before creating any successor. Existing RMVP-02A.v1 functions remain callable; React invokes no lifecycle chain or release action. The exact delta is specified in [RMVP-02A Recipe and BOM API contract](rmvp-02a-recipes-bom.md).
 
 ## 5. Contract template
 

@@ -123,7 +123,7 @@ A v1 `get_dish_recipe_workbench` request keeps the v1 shape. A v2 payload accept
 }
 ```
 
-`locked_for_normal_editing` is true exactly when the Dish exists in immutable `atlas_planning.weekly_menu_approval_snapshot_lines`. This approved-Menu evidence is the Atlas equivalent of the retained OPS v1 first-order-use trigger. Recipe creation, Save, validation, and release do not set the operational lock.
+`locked_for_normal_editing` is true exactly when the Dish exists in immutable `atlas_planning.weekly_menu_approval_snapshot_lines`. This approved-Menu commitment evidence is the Atlas equivalent of the retained OPS v1 order-use trigger. Recipe creation, Save, validation, and release do not set the approved-Menu lock.
 
 Eligibility also resolves active Actor, exact capability and active `GLOBAL` scope, Dish/Recipe/reference lifecycle, and current version. React may restrict backend `true` for local invalid, dirty, busy, or unknown-outcome state; it may never promote backend `false`.
 
@@ -132,8 +132,8 @@ Eligibility also resolves active Actor, exact capability and active `GLOBAL` sco
 - Capability: `master_data.recipes.write`.
 - Payload: exact `dish_id`, nullable `school_type_id`, nullable/current `recipe_version_id`, positive integer `basis_portions`, and complete present `lines`.
 - Each line has stable target `recipe_line_id`, active `ingredient_id`, positive exact `quantity_per_basis`, active `unit_id`, and nullable `operational_note`; maximum 500; duplicate line or Ingredient identity fails closed.
-- The function locks the Dish, rechecks approved-Menu operational use, and returns `INVARIANT_VIOLATION` with the safe Change-Order direction before any Recipe/version/line mutation when used.
-- For an unused Dish, it creates/reuses the Recipe scope, preserves exact predecessor lineage and explicit removed-line evidence when advancing internal versions, materializes immutable line revisions, and releases the saved composition for future Planning atomically.
+- The function locks the Dish, rechecks committed approved-Menu use, and returns `INVARIANT_VIOLATION` with the safe Change-Order direction before any Recipe/version/line mutation after that commitment.
+- For a pre-commit Dish, it creates/reuses the Recipe scope, preserves exact predecessor lineage and explicit removed-line evidence when advancing internal versions, materializes immutable line revisions, and releases the saved composition for future Planning atomically.
 - Success readback reports `business_status: AVAILABLE`, `locked_for_normal_editing: false`, `released_for_planning: true`, and `operationally_used: false`.
 - Save is idempotent, concurrency checked, and never recalculates historical Planning evidence.
 
@@ -142,7 +142,7 @@ Eligibility also resolves active Actor, exact capability and active `GLOBAL` sco
 - Capability: `master_data.recipes.release`.
 - Physical v2 compatibility/support entry point; it is absent from the normal application workflow.
 - Retains currentness, deterministic validation/materialization, release, receipt, event, audit, and immutable-history guarantees for controlled callers.
-- Does not define operational use and does not set the approved-Menu lock.
+- Does not define committed approved-Menu use and does not set the approved-Menu lock.
 
 Both v2 commands use fixed empty `search_path`, least-privilege runtime ownership, safe errors, and no automatic browser retry after an unknown transport result. Every RMVP-02A.v1 API remains callable.
 
