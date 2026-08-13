@@ -11,7 +11,7 @@ Recipe work has three separate operator jobs:
 
 1. `Danh sách` is a read-only current-effective Dish/Recipe catalog.
 2. `Tạo món & công thức` creates a Dish and its initial general or School-Type Recipe. `Tạo`/`Lưu` makes valid composition available to Planning; there is no separate normal `Đưa vào sử dụng` action.
-3. `Điều chỉnh` owns every business modification after first committed approved-Menu use. Its existing RMVP-02B semantics are unchanged and its UI redesign is deferred to UI-QUALITY-03B.
+3. `Điều chỉnh` owns Recipe composition modification after first committed approved-Menu use. Its existing RMVP-02B semantics are unchanged and its UI redesign is deferred to UI-QUALITY-03B.
 
 A Dish crosses the normal-edit boundary when it first appears in immutable approved Weekly Menu evidence: `atlas_planning.weekly_menu_approval_snapshot_lines`. From that committed approved-Menu use, normal Recipe Save for every scope of that Dish is denied. The backend must not create a successor as a substitute for Change Order.
 
@@ -29,9 +29,10 @@ Before first committed approved-Menu use:
 
 After first committed approved-Menu use:
 
-- Dish stable identity, the Recipe scope identity, and base Recipe composition are not normally editable.
-- Every callable RMVP-02A mutation that could change Dish/Recipe/BOM truth reuses the same approved-Menu predicate and fails before a Dish, Recipe, Recipe Version, Recipe Line, Recipe Line Revision, import/mapping, or release write. The safe direction is: `Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.`
-- Descriptive changes or composition changes that represent a business correction must follow an approved Change Order/override path; 03A does not redesign that contract.
+- Normal base Recipe/BOM composition mutation is prohibited. The protected commands fail before a new Recipe root, Recipe Version, Recipe Line, Recipe Line Revision, import/mapping, or release write. The safe direction is: `Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.`
+- Recipe composition changes proceed through the accepted RMVP-02B `Điều chỉnh` contract.
+- Dish details and Dish/Recipe-root lifecycle administration remain governed by their own accepted RMVP-02A contracts, including optimistic version, capability, lifecycle, event, and audit rules. Approved-Menu use alone does not prohibit those commands.
+- UI-QUALITY-03A does not expose ordinary editing of existing catalog records, and it introduces no Dish metadata correction workflow or Dish Change Order.
 - Historical Recipe, approved Menu, Planning selection, and line-use evidence remains immutable.
 
 ## Contract consequences
@@ -53,6 +54,6 @@ Technical version history remains support disclosure only. Unknown write outcome
 
 ## Safety and rollback
 
-The helper reads only approved-Menu snapshot `dish_id` and runs under the existing fixed-path runtime boundary. Weekly Menu approval and every relevant base mutation take the same deterministic transaction lock before committing or rechecking committed approved-Menu use. No browser role receives private-schema table access.
+The helper reads only approved-Menu snapshot `dish_id` and runs under the existing fixed-path runtime boundary. Weekly Menu approval and every relevant base Recipe/BOM mutation take the same deterministic transaction lock before committing or rechecking committed approved-Menu use. No browser role receives private-schema table access.
 
 Disposable local databases may reset before approved-Menu commitment. Any deployed rollback is forward-only and must preserve Recipe identities, revisions, approved Menu snapshots, Planning evidence, receipts, events, and audit records. Reopening a committed base Recipe or rewriting history is prohibited.

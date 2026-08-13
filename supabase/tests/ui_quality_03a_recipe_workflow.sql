@@ -206,6 +206,7 @@ create or replace function pg_temp.uiq03a_v1_request(
   p_name text,
   p_expected_version bigint,
   p_payload jsonb,
+  p_subject uuid default 'f3000000-0000-0000-0000-000000000101',
   p_reason_code text default 'UIQ03A_TEST'
 )
 returns jsonb
@@ -217,8 +218,7 @@ as $$
     'correlation_id', 'f3900000-0000-0000-0000-000000000003',
     'idempotency_key', 'uiq03a-v1:' || p_name,
     'expected_version', p_expected_version,
-    'requested_by_auth_subject',
-      'f3000000-0000-0000-0000-000000000101',
+    'requested_by_auth_subject', p_subject,
     'requested_at', transaction_timestamp() - interval '1 second',
     'reason_code', p_reason_code,
     'reason_note', 'Rolled-back UIQ-03A Dish-wide lock test: ' || p_name,
@@ -680,15 +680,16 @@ join atlas_admin.recipe_versions validated
 where dish.dish_id = 'f3100000-0000-0000-0000-000000000030';
 grant select on uiq03a_lock_targets to authenticated;
 
-create temporary table uiq03a_locked_business_baseline as
+create temporary table uiq03a_locked_recipe_bom_baseline as
 select jsonb_build_object(
-  'dish', (
-    select to_jsonb(dish)
-    from atlas_admin.dishes dish
-    where dish.dish_id = 'f3100000-0000-0000-0000-000000000030'
-  ),
-  'recipes', (
-    select jsonb_agg(to_jsonb(recipe) order by recipe.recipe_id)
+  'recipe_roots', (
+    select jsonb_agg(
+      jsonb_build_object(
+        'recipe_id', recipe.recipe_id,
+        'dish_id', recipe.dish_id,
+        'school_type_id', recipe.school_type_id
+      ) order by recipe.recipe_id
+    )
     from atlas_admin.recipes recipe
     where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030'
   ),
@@ -723,7 +724,7 @@ select jsonb_build_object(
     where line.dish_id = 'f3100000-0000-0000-0000-000000000030'
   )
 ) as business_state;
-grant select on uiq03a_locked_business_baseline to authenticated;
+grant select on uiq03a_locked_recipe_bom_baseline to authenticated;
 
 set local role authenticated;
 select set_config(
@@ -773,48 +774,6 @@ select
   )
 from uiq03a_results used
 where used.result_name = 'read-locked';
-
-insert into uiq03a_results
-select 'update-dish-locked', atlas_api.update_dish(
-  pg_temp.uiq03a_v1_request(
-    'update-dish-locked', target.dish_version,
-    jsonb_build_object(
-      'dish_id', 'f3100000-0000-0000-0000-000000000030',
-      'dish_code', 'uiq03a-soup',
-      'dish_name', 'UIQ03A Soup must not change',
-      'dish_category', 'Acceptance',
-      'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
-      'operational_notes', 'must not be written',
-      'display_order', 9300,
-      'requires_need_generation', true
-    )
-  )
-)
-from uiq03a_lock_targets target;
-
-insert into uiq03a_results
-select 'set-dish-lifecycle-locked', atlas_api.set_dish_lifecycle(
-  pg_temp.uiq03a_v1_request(
-    'set-dish-lifecycle-locked', target.dish_version,
-    jsonb_build_object(
-      'dish_id', 'f3100000-0000-0000-0000-000000000030',
-      'dish_status', 'INACTIVE'
-    )
-  )
-)
-from uiq03a_lock_targets target;
-
-insert into uiq03a_results
-select 'set-recipe-lifecycle-locked', atlas_api.set_recipe_lifecycle(
-  pg_temp.uiq03a_v1_request(
-    'set-recipe-lifecycle-locked', target.general_recipe_version,
-    jsonb_build_object(
-      'recipe_id', target.general_recipe_id,
-      'recipe_status', 'INACTIVE'
-    )
-  )
-)
-from uiq03a_lock_targets target;
 
 insert into uiq03a_results
 select 'create-draft-locked', atlas_api.create_recipe_draft(
@@ -917,6 +876,95 @@ cross join uiq03a_import_documents document
 where document.document_name = 'locked-dish';
 reset role;
 
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  'f3000000-0000-0000-0000-000000000102',
+  true
+);
+insert into uiq03a_results
+select 'post-use-update-dish-denied', atlas_api.update_dish(
+  pg_temp.uiq03a_v1_request(
+    'post-use-update-dish-denied', target.dish_version,
+    jsonb_build_object(
+      'dish_id', 'f3100000-0000-0000-0000-000000000030',
+      'dish_code', 'uiq03a-soup',
+      'dish_name', 'UIQ03A Soup maintained after use',
+      'dish_category', 'Acceptance maintained',
+      'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
+      'operational_notes', 'Approved-menu use does not freeze metadata',
+      'display_order', 9301,
+      'requires_need_generation', true
+    ),
+    'f3000000-0000-0000-0000-000000000102'
+  )
+)
+from uiq03a_lock_targets target;
+
+select set_config(
+  'request.jwt.claim.sub',
+  'f3000000-0000-0000-0000-000000000101',
+  true
+);
+insert into uiq03a_results
+select 'post-use-update-dish', atlas_api.update_dish(
+  pg_temp.uiq03a_v1_request(
+    'post-use-update-dish', target.dish_version,
+    jsonb_build_object(
+      'dish_id', 'f3100000-0000-0000-0000-000000000030',
+      'dish_code', 'uiq03a-soup',
+      'dish_name', 'UIQ03A Soup maintained after use',
+      'dish_category', 'Acceptance maintained',
+      'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
+      'operational_notes', 'Approved-menu use does not freeze metadata',
+      'display_order', 9301,
+      'requires_need_generation', true
+    )
+  )
+)
+from uiq03a_lock_targets target;
+
+insert into uiq03a_results
+select 'post-use-dish-lifecycle-stale', atlas_api.set_dish_lifecycle(
+  pg_temp.uiq03a_v1_request(
+    'post-use-dish-lifecycle-stale', target.dish_version,
+    jsonb_build_object(
+      'dish_id', 'f3100000-0000-0000-0000-000000000030',
+      'dish_status', 'INACTIVE'
+    )
+  )
+)
+from uiq03a_lock_targets target;
+
+insert into uiq03a_results
+select 'post-use-recipe-lifecycle', atlas_api.set_recipe_lifecycle(
+  pg_temp.uiq03a_v1_request(
+    'post-use-recipe-lifecycle', target.general_recipe_version,
+    jsonb_build_object(
+      'recipe_id', target.general_recipe_id,
+      'recipe_status', 'INACTIVE'
+    )
+  )
+)
+from uiq03a_lock_targets target;
+
+insert into uiq03a_results
+select 'post-use-dish-lifecycle', atlas_api.set_dish_lifecycle(
+  pg_temp.uiq03a_v1_request(
+    'post-use-dish-lifecycle',
+    (
+      updated.response_payload #>> '{new_versions,aggregate_version}'
+    )::bigint,
+    jsonb_build_object(
+      'dish_id', 'f3100000-0000-0000-0000-000000000030',
+      'dish_status', 'INACTIVE'
+    )
+  )
+)
+from uiq03a_results updated
+where updated.result_name = 'post-use-update-dish';
+reset role;
+
 select is(
   (
     select response_payload #>> '{workbench,selected_recipe,business_status}'
@@ -950,9 +998,6 @@ select is(
     from uiq03a_results result
     where result.result_name in (
       'save-locked',
-      'update-dish-locked',
-      'set-dish-lifecycle-locked',
-      'set-recipe-lifecycle-locked',
       'create-draft-locked',
       'create-successor-locked',
       'replace-composition-locked',
@@ -970,7 +1015,133 @@ select is(
       )
   ),
   0,
-  'every Dish and Recipe base mutation returns the canonical approved-menu denial'
+  'every base Recipe/BOM mutation returns the canonical approved-menu denial'
+);
+
+select is(
+  (
+    select response_payload ->> 'error_code'
+    from uiq03a_results
+    where result_name = 'post-use-update-dish-denied'
+  ),
+  'CAPABILITY_DENIED',
+  'post-use Dish administration retains the RMVP-02A capability boundary'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'error_code', response_payload ->> 'error_code',
+      'actual_version', response_payload -> 'actual_version'
+    )
+    from uiq03a_results
+    where result_name = 'post-use-dish-lifecycle-stale'
+  ),
+  jsonb_build_object('error_code', 'STALE_VERSION', 'actual_version', 2),
+  'post-use Dish lifecycle retains optimistic-version rejection'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from uiq03a_results result
+    where result.result_name in (
+      'post-use-update-dish',
+      'post-use-dish-lifecycle',
+      'post-use-recipe-lifecycle'
+    )
+      and (
+        result.response_payload -> 'success' is distinct from 'true'::jsonb
+        or result.response_payload ->> 'idempotency_status' is distinct from
+          'COMPLETED'
+        or pg_catalog.jsonb_array_length(
+          result.response_payload -> 'emitted_event_ids'
+        ) <> 1
+        or pg_catalog.jsonb_array_length(
+          result.response_payload -> 'audit_event_ids'
+        ) <> 1
+      )
+  ),
+  0,
+  'legitimate post-use administration completes with event and audit evidence'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'dish_name', dish.dish_name,
+      'dish_status', dish.dish_status,
+      'dish_version', dish.version,
+      'recipe_status', recipe.recipe_status,
+      'recipe_version', recipe.version
+    )
+    from atlas_admin.dishes dish
+    join uiq03a_lock_targets target on true
+    join atlas_admin.recipes recipe
+      on recipe.recipe_id = target.general_recipe_id
+    where dish.dish_id = 'f3100000-0000-0000-0000-000000000030'
+  ),
+  jsonb_build_object(
+    'dish_name', 'UIQ03A Soup maintained after use',
+    'dish_status', 'INACTIVE',
+    'dish_version', 3,
+    'recipe_status', 'INACTIVE',
+    'recipe_version', 2
+  ),
+  'accepted Dish and Recipe-root post-use administration remains available'
+);
+
+select is(
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'event_type', event.event_type,
+        'version', event.aggregate_version
+      ) order by event.event_type
+    )
+    from atlas_audit.domain_events event
+    where event.command_id in (
+      md5('uiq03a-v1-command:post-use-update-dish')::uuid,
+      md5('uiq03a-v1-command:post-use-dish-lifecycle')::uuid,
+      md5('uiq03a-v1-command:post-use-recipe-lifecycle')::uuid
+    )
+  ),
+  jsonb_build_array(
+    jsonb_build_object('event_type', 'DishDeactivated', 'version', 3),
+    jsonb_build_object('event_type', 'DishUpdated', 'version', 2),
+    jsonb_build_object('event_type', 'RecipeDeactivated', 'version', 2)
+  ),
+  'post-use administration preserves exact domain-event types and versions'
+);
+
+select is(
+  (
+    select jsonb_agg(
+      jsonb_build_object(
+        'event_type', audit.event_type,
+        'before', audit.aggregate_version_before,
+        'after', audit.aggregate_version_after
+      ) order by audit.event_type
+    )
+    from atlas_audit.audit_events audit
+    where audit.command_id in (
+      md5('uiq03a-v1-command:post-use-update-dish')::uuid,
+      md5('uiq03a-v1-command:post-use-dish-lifecycle')::uuid,
+      md5('uiq03a-v1-command:post-use-recipe-lifecycle')::uuid
+    )
+  ),
+  jsonb_build_array(
+    jsonb_build_object(
+      'event_type', 'DishDeactivated', 'before', 2, 'after', 3
+    ),
+    jsonb_build_object(
+      'event_type', 'DishUpdated', 'before', 1, 'after', 2
+    ),
+    jsonb_build_object(
+      'event_type', 'RecipeDeactivated', 'before', 1, 'after', 2
+    )
+  ),
+  'post-use administration preserves exact audit before/after versions'
 );
 
 select is(
@@ -1003,13 +1174,14 @@ select is(
 
 select is(
   jsonb_build_object(
-    'dish', (
-      select to_jsonb(dish)
-      from atlas_admin.dishes dish
-      where dish.dish_id = 'f3100000-0000-0000-0000-000000000030'
-    ),
-    'recipes', (
-      select jsonb_agg(to_jsonb(recipe) order by recipe.recipe_id)
+    'recipe_roots', (
+      select jsonb_agg(
+        jsonb_build_object(
+          'recipe_id', recipe.recipe_id,
+          'dish_id', recipe.dish_id,
+          'school_type_id', recipe.school_type_id
+        ) order by recipe.recipe_id
+      )
       from atlas_admin.recipes recipe
       where recipe.dish_id = 'f3100000-0000-0000-0000-000000000030'
     ),
@@ -1045,9 +1217,9 @@ select is(
     )
   ),
   (
-    select business_state from uiq03a_locked_business_baseline
+    select business_state from uiq03a_locked_recipe_bom_baseline
   ),
-  'all denied mutation paths leave Dish, Recipe, BOM, import, Adjustment, and approval evidence unchanged'
+  'post-use administration and denied mutations leave Recipe/BOM composition, import, Adjustment, and approval evidence unchanged'
 );
 
 select is(

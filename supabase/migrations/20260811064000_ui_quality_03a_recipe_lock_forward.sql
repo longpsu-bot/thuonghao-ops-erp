@@ -44,18 +44,10 @@ declare
   v_ids uuid[] := '{}'::uuid[];
 begin
   case command_name
-    when 'update_dish', 'set_dish_lifecycle', 'create_recipe_draft' then
+    when 'create_recipe_draft' then
       v_ids := array[
         atlas_core.pa_05b_safe_uuid(v_payload ->> 'dish_id')
       ];
-
-    when 'set_recipe_lifecycle' then
-      select array_agg(recipe.dish_id order by recipe.dish_id)
-      into v_ids
-      from atlas_admin.recipes recipe
-      where recipe.recipe_id = atlas_core.pa_05b_safe_uuid(
-        v_payload ->> 'recipe_id'
-      );
 
     when 'create_recipe_successor_version',
          'replace_recipe_draft_composition',
@@ -97,8 +89,8 @@ begin
       end if;
 
     else
-      -- create_dish and non-mutating/unrelated commands do not target an
-      -- existing Dish identity and therefore do not participate in this guard.
+      -- Dish details and Dish/Recipe-root lifecycle commands retain their own
+      -- RMVP-02A contracts. Only base Recipe/BOM mutation participates here.
       return '{}'::uuid[];
   end case;
 
@@ -233,9 +225,9 @@ execute function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes();
 comment on function atlas_core.uiq03a_dish_used_operationally(uuid) is
   'UI-QUALITY-03A canonical Dish-wide lock predicate: true after the Dish appears in immutable approved Weekly Menu evidence.';
 comment on function atlas_core.uiq03a_rmvp_02a_target_dish_ids(jsonb, text) is
-  'UI-QUALITY-03A private resolver for existing Dish identities targeted by still-callable RMVP-02A base-mutation commands.';
+  'UI-QUALITY-03A private resolver for Dish identities targeted by still-callable RMVP-02A base Recipe/BOM mutation commands.';
 comment on function atlas_core.uiq03a_lock_weekly_menu_recipe_dishes() is
-  'UI-QUALITY-03A serializes first committed approved-menu use against base Dish/Recipe mutation using the same transaction advisory lock.';
+  'UI-QUALITY-03A serializes first committed approved-menu use against base Recipe/BOM mutation using the same transaction advisory lock.';
 
 revoke execute on function
   atlas_core.uiq03a_dish_used_operationally(uuid),
