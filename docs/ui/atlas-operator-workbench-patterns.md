@@ -1,8 +1,8 @@
 # Atlas Operator Workbench Patterns
 
 **Status:** Proposed Product standard — ATLAS-UX-RESET-01  
-**Reviewed baseline:** `057a30ef30121fc50ef983acd91704d2bca8e82c`  
-**Evidence:** retained OPS v1 Retool exports, current connected Atlas Application, D-034, D-035, D-036, D-037 and ATLAS-UI-STANDARD-02
+**Reviewed baseline:** `c3015d7d2fa7e1ab9887ed8d8843619433b97638`  
+**Evidence:** retained OPS v1 Retool exports, current connected Atlas Application, D-034, D-035, D-036, D-037, D-038 and ATLAS-UI-STANDARD-02
 
 ## 1. Purpose
 
@@ -141,7 +141,7 @@ This inventory is not a requirement to preserve every Retool page. It is evidenc
 4. Successful screens can show too much evidence/status merely because the backend returns it.
 5. Planning has exposed source signatures/checksums, readiness/currentness concepts and audit versions too close to normal work.
 6. Need Generation has presented internal source readiness as a visible dashboard rather than answering the operator question: can needs be created or updated?
-7. Older Recipe UI is a Recipe Version lifecycle console rather than a current-catalog / creation / Change Order product.
+7. Recipe before merged PR #191 was a Recipe Version lifecycle console rather than a current-catalog / creation / Change Order product; #191 is now the reference correction, not current debt.
 8. Some catalogs accumulate many row actions instead of moving contextual operations into a selected-object detail surface.
 9. Client-side shortcuts such as arbitrary result slicing can create hidden behavior instead of explicit pagination/search rules.
 10. Shared components risk becoming the starting point for design rather than the consequence of repeated proven interaction patterns.
@@ -472,7 +472,7 @@ This is a design debt register, not authorization for an all-at-once refactor.
 
 ### High priority
 
-- Recipe current-main UI is lifecycle/version shaped; PR #191 correction is the active bounded repair.
+- Change Order remains the next bounded Recipe/Admin Product repair after merged PR #191; UI-QUALITY-03B must preserve RMVP-02B business semantics while replacing backend-shaped presentation.
 - Need Generation still exposes readiness/currentness and evidence concepts too prominently for a derivation job.
 - Planning support detail has exposed technical source evidence such as checksums in the normal workbench.
 - Navigation still includes architecture/roadmap-shaped grouping and unavailable modules.
@@ -487,6 +487,7 @@ This is a design debt register, not authorization for an all-at-once refactor.
 
 ### Keep
 
+- the merged #191 Recipe catalog/creation/lock boundary;
 - Mantine as generic presentation foundation;
 - Atlas visual consistency from D-034;
 - backend-owned authority;
@@ -498,11 +499,11 @@ This is a design debt register, not authorization for an all-at-once refactor.
 
 Do not respond to this debt by launching a broad component rewrite. Repair each workbench when its bounded operator slice is active.
 
-## 14. PR #191 as the first continuation case
+## 14. Merged PR #191 as the first continuation case
 
-The corrected PR #191 direction is the first concrete application of this reset.
+PR #191 is now merged and is the first concrete application of this reset.
 
-It should preserve three Recipe jobs:
+It preserves three Recipe jobs:
 
 ```text
 current-effective catalog
@@ -510,11 +511,11 @@ creation + Recipe Copy helper
 post-lock Change Order
 ```
 
-The normal creation workbench must not silently create a successor after the established lock condition. Post-lock change belongs to the Change Order job.
+The creation workbench does not silently create a successor after the established lock condition. First committed approved-menu use is represented by immutable approved Weekly Menu snapshot evidence, and normal base Recipe/BOM composition changes are then prohibited. Post-lock composition change belongs to RMVP-02B `Điều chỉnh`; Dish metadata and Dish/Recipe-root lifecycle administration remain separately governed.
 
-The exact first-operational-use lock evidence must be independently verified against accepted business/v1 evidence before merge. UI-QUALITY-03B remains a separate later task for improving the Change Order interaction without redefining the job.
+This is workflow-preservation evidence, not a universal lifecycle template for other domains.
 
-ATLAS-UX-RESET-01 does not modify PR #191 implementation or pre-approve it.
+UI-QUALITY-03B is the next separate bounded task for improving Change Order interaction without redefining the job.
 
 ## 15. Product review gate for future PRs
 
@@ -533,7 +534,7 @@ For every PR involving an established business workflow, root review must answer
 11. Can a first-time operator understand the correct workflow in about five seconds?
 12. Is the UI simpler than the implementation beneath it without becoming business-incorrect?
 
-Green CI is necessary but insufficient.
+Hosted CI is ordinarily part of release certification, but it is not sufficient Product evidence by itself. Under an explicitly approved temporary CI-deferred development policy, repository merges may proceed only with strong local validation and independent Product/architecture review; the deferred hosted gates remain certification debt and must be restored before Atlas is treated as release-certified for staging/production deployment.
 
 ## 16. Application to future Warehouse work
 
@@ -563,16 +564,17 @@ Do not design a generic Warehouse lifecycle UI first.
 
 ## 17. Delivery sequence after this reset
 
-The active Admin sequence remains:
+The Recipe/Admin sequence is now:
 
 ```text
-PR #191 correction
-→ independent workflow/Product review
-→ ready-state integration / merge only if accepted and explicitly authorized
+PR #191 Recipe/BOM correction — merged
+→ ATLAS-UX-RESET-01 operator-pattern standard
 → UI-QUALITY-03B Change Order redesign
 → UI-QUALITY-03C remaining Admin consolidation
 → cross-flow operator review
 ```
+
+PR #193 separately made UI Review Export manual-only and does not change this Product sequence.
 
 Future slices must use workflow archaeology and the archetype-selection rule from the beginning rather than removing backend-shaped UX after implementation is deep.
 
