@@ -49,7 +49,7 @@ describe("PD-04 Admin integration conformance", () => {
   it("exposes one Master Data area with Schools and Ingredients & Suppliers", () => {
     renderAtlasSurface("customers-schools", "Trường học");
     renderAtlasSurface("ingredients-units", "Nguyên liệu và Nhà cung ứng");
-    renderAtlasSurface("recipes", "Công thức");
+    renderAtlasSurface("recipes", "Công thức món ăn");
   });
 
   it("keeps Dishes & Recipes as one consolidated Atlas workbench", () => {
@@ -63,12 +63,7 @@ describe("PD-04 Admin integration conformance", () => {
     });
 
     render(<AtlasApp reviewMode initialPage="recipes" />);
-    for (const tab of [
-      "Món ăn",
-      "Phiên bản & BOM",
-      "Sao chép",
-      "Nhập workbook",
-    ])
+    for (const tab of ["Danh sách", "Tạo món & công thức", "Điều chỉnh"])
       expect(screen.getByRole("tab", { name: tab })).toBeInTheDocument();
     expect(screen.queryByText(/Retool layer/i)).not.toBeInTheDocument();
   });

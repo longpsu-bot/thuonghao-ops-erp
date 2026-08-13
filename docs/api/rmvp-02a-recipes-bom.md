@@ -77,3 +77,77 @@ The bounded public errors include:
 - `INTERNAL_READ_FAILURE`
 
 No response returns credentials, SQL text, private row dumps, or an exception stack.
+
+## Additive RMVP-02A.v2 creation-and-lock contract
+
+D-038 preserves every v1 entry point above and adds the physically callable functions:
+
+```text
+atlas_api.save_recipe(request jsonb)
+atlas_api.release_recipe(request jsonb)
+```
+
+The v2 command envelope retains authenticated/requested-subject match, command/correlation/idempotency identifiers, positive current `expected_version`, timestamp, and fixed reason code. Normal React creation invokes only `save_recipe`; `release_recipe` is retained for compatibility/support.
+
+### V2 workbench selection and lock readback
+
+A v1 `get_dish_recipe_workbench` request keeps the v1 shape. A v2 payload accepts only optional `dish_id` and `school_type_id` and adds:
+
+```json
+{
+  "selected_recipe": {
+    "dish_id": "uuid",
+    "school_type_id": null,
+    "recipe_id": "uuid-or-null",
+    "recipe_version_id": "uuid-or-null",
+    "expected_version": 4,
+    "in_use_recipe_version_id": "uuid-or-null",
+    "business_status": "NOT_SAVED|SAVED|AVAILABLE|LOCKED|NEEDS_ATTENTION",
+    "locked_for_normal_editing": true,
+    "lock_reason": "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+    "basis_portions": 100,
+    "composition": [],
+    "allowed_actions": {
+      "save_recipe": false,
+      "release_recipe": false
+    },
+    "disabled_reason_codes": {
+      "save_recipe": "SAVE_OPERATIONALLY_LOCKED",
+      "release_recipe": "RELEASE_ALREADY_IN_USE"
+    },
+    "disabled_reasons": {
+      "save_recipe": "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+      "release_recipe": "Công thức đã sẵn sàng cho Lập nhu cầu."
+    }
+  }
+}
+```
+
+`locked_for_normal_editing` is true exactly when the Dish exists in immutable `atlas_planning.weekly_menu_approval_snapshot_lines`. This approved-Menu commitment evidence is the Atlas equivalent of the retained OPS v1 order-use trigger. Recipe creation, Save, validation, and release do not set the approved-Menu lock.
+
+Eligibility also resolves active Actor, exact capability and active `GLOBAL` scope, Dish/Recipe/reference lifecycle, and current version. React may restrict backend `true` for local invalid, dirty, busy, or unknown-outcome state; it may never promote backend `false`.
+
+### `save_recipe`
+
+- Capability: `master_data.recipes.write`.
+- Payload: exact `dish_id`, nullable `school_type_id`, nullable/current `recipe_version_id`, positive integer `basis_portions`, and complete present `lines`.
+- Each line has stable target `recipe_line_id`, active `ingredient_id`, positive exact `quantity_per_basis`, active `unit_id`, and nullable `operational_note`; maximum 500; duplicate line or Ingredient identity fails closed.
+- The function locks the Dish, rechecks committed approved-Menu use, and returns `INVARIANT_VIOLATION` with the safe Change-Order direction before any Recipe/version/line mutation after that commitment.
+- For a pre-commit Dish, it creates/reuses the Recipe scope, preserves exact predecessor lineage and explicit removed-line evidence when advancing internal versions, materializes immutable line revisions, and releases the saved composition for future Planning atomically.
+- Success readback reports `business_status: AVAILABLE`, `locked_for_normal_editing: false`, `released_for_planning: true`, and `operationally_used: false`.
+- Save is idempotent, concurrency checked, and never recalculates historical Planning evidence.
+
+### `release_recipe`
+
+- Capability: `master_data.recipes.release`.
+- Physical v2 compatibility/support entry point; it is absent from the normal application workflow.
+- Retains currentness, deterministic validation/materialization, release, receipt, event, audit, and immutable-history guarantees for controlled callers.
+- Does not define committed approved-Menu use and does not set the approved-Menu lock.
+
+Both v2 commands use fixed empty `search_path`, least-privilege runtime ownership, safe errors, and no automatic browser retry after an unknown transport result. Every RMVP-02A.v1 API remains callable.
+
+### Dish-wide lock coverage
+
+The single canonical predicate is `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and every relevant base Recipe/BOM mutation acquire the same deterministic transaction lock before the snapshot or mutation decision. Once the predicate is true, `create_recipe_draft`, `create_recipe_successor_version`, `replace_recipe_draft_composition`, `validate_recipe_version`, `release_recipe_version_for_planning`, `save_recipe`, `release_recipe`, `copy_recipe_version`, and any `apply_recipe_import` scope targeting that Dish return `INVARIANT_VIOLATION` with the safe Điều chỉnh direction before business writes.
+
+`update_dish`, `set_dish_lifecycle`, and `set_recipe_lifecycle` are not part of this generic composition lock. They retain the bounded metadata and lifecycle semantics, capability checks, optimistic concurrency, lifecycle validation, event, audit, and immutable-history guarantees already accepted in RMVP-02A.v1. The application still exposes no ordinary editing of existing catalog records, and this correction adds no Dish metadata Change Order. RMVP-02B adjustment APIs remain unchanged.

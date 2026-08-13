@@ -48,6 +48,8 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.validate_recipe_version": "validate_recipe_version",
   "atlas_api.release_recipe_version_for_planning":
     "release_recipe_version_for_planning",
+  "atlas_api.save_recipe": "save_recipe",
+  "atlas_api.release_recipe": "release_recipe",
   "atlas_api.copy_recipe_version": "copy_recipe_version",
   "atlas_api.apply_recipe_import": "apply_recipe_import",
   "atlas_api.get_recipe_adjustment_workbench":

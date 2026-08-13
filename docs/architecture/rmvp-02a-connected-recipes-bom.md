@@ -41,6 +41,19 @@ Five backend-checked capabilities separate read, maintenance, validation, planni
 
 Every write uses the `RMVP-02A.v1` envelope, server-resolved actor identity, global scope, optimistic version checks, idempotent command receipts, one Admin domain event, one audit event, and authoritative workbench readback. `anon` and `service_role` execute no Atlas API.
 
+### D-038 additive creation-and-lock boundary
+
+`RMVP-02A.v2` adds two physically callable public commands without adding a relation, role, capability, scope kind, lifecycle state, module, or dependency:
+
+- `save_recipe` is the normal human `Tạo`/`Lưu` boundary. Under the serialized Dish boundary, it first denies a Dish already present in `weekly_menu_approval_snapshot_lines`. For a pre-commit Dish it validates the complete composition, creates or advances internal Recipe lineage as required, materializes immutable line revisions, and leaves the new version `RELEASED_FOR_PLANNING` in one transaction.
+- `release_recipe` remains an additive compatibility/support boundary. It is not rendered as a normal creation action, and React does not call it.
+
+Release means eligible for future Planning; it is not first committed approved-Menu use. Atlas committed-use evidence is an immutable approved Weekly Menu snapshot line containing the Dish. The read accepts optional `dish_id` and `school_type_id` and returns `selected_recipe` with `business_status`, `locked_for_normal_editing`, `lock_reason`, and backend-authoritative action eligibility.
+
+Before the first committed approved-Menu use, Save may preserve immutable prior release evidence through internal successor lineage. After that commitment, Save returns before any Recipe/version/line write, cannot create a successor, and directs the operator to Change Order. Existing Planning selections and historical facts are never recalculated.
+
+Capability granularity is unchanged. Save requires `master_data.recipes.write`; `master_data.recipes.validate` and `master_data.recipes.release` remain available through v1 and controlled support entry points.
+
 ## OPS v1 workbook import
 
 The browser accepts only `.xlsx` workbooks and recognizes the narrow OPS v1 Vietnamese headers:
@@ -56,17 +69,21 @@ Retool export `D:\Project\OPS v2\OPS - Công thức.json` was inspected as read-
 
 ## UI boundary
 
-The connected React page supports:
+The connected React page separates three operator jobs:
 
-- Dish catalog creation, editing, and lifecycle changes;
-- general and School Type Recipe roots;
-- initial and successor drafts;
-- complete BOM editing with explicit removal;
-- validation and planning release;
-- traceable copy preview of the complete source BOM and apply;
-- workbook review, checksum, errors, counts, and apply.
+- `Danh sách`: default current-effective, read-only lookup with Dish name/type, Recipe scope/basis/Ingredients/status, Dish/Ingredient text search, `Xem`, and navigation to creation or adjustment. Stable Dish codes remain backend identity and search/support evidence; the normal catalog does not render them as operator-facing metadata. It has no edit, validation, release, successor, or lifecycle control.
+- `Tạo món & công thức`: selected Dish/type/scope, editable basis and composition, active-Ingredient search, and one `Tạo`/`Lưu` action. Save makes the Recipe `Sẵn sàng cho Lập nhu cầu`; there is no normal release/lifecycle action.
+- `Điều chỉnh`: the existing separate RMVP-02B workbench for changes after committed approved-Menu use. Its business behavior is unchanged and its first-user redesign is deferred to UI-QUALITY-03B.
 
-The normal build requires an authenticated Supabase session and the typed reviewed RPC registry. Review mode uses deterministic browser-only sample data and displays the existing non-persistence notice. It never represents review actions as persisted.
+Recipe Copy is a modal creation helper. It searches/selects and previews a released source Recipe, then `Dùng công thức này` fills the current local creation form using new target line identities and closes the modal. It performs no backend write until the operator checks and saves. Workbook import remains an advanced creation utility with its existing reviewed contract.
+
+Every still-callable v1/v2 Recipe-Version, composition, copy, and import mutation that can change base Recipe/BOM truth reuses `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and these mutations acquire the same deterministic transaction lock, so the first committed approved snapshot wins and later base composition mutation is denied before business writes. Dish details and Dish/Recipe-root lifecycle commands retain their accepted RMVP-02A administration semantics and do not become Change Orders merely because approved-Menu evidence exists. RMVP-02B adjustment commands are unchanged.
+
+When backend readback reports `locked_for_normal_editing`, basis, Ingredient search, composition controls, and Save are disabled, and the operator is directed to `Điều chỉnh`. Dish/scope/tab changes with dirty creation state require explicit discard confirmation; browser unload uses the native guard.
+
+Normal operator language avoids Recipe Version machinery. Technical number/identifier evidence remains under Recipe history/support disclosure. An unknown write outcome disables further writes until manual authoritative refresh. React invokes only `save_recipe` for the normal commitment and chains no v1 lifecycle calls.
+
+Review mode uses deterministic browser-only data and retains its non-persistence notice.
 
 ## Rollback and production boundary
 

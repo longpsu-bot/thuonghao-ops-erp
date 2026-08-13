@@ -65,14 +65,16 @@ The importer validates source identities and references before target writes, st
 
 ### RMVP-02A connected recipes and BOM
 
-RMVP-02A connects the Vietnamese `Công thức` page to the existing private Dish, Recipe, Recipe Version, stable Recipe Line, and immutable Recipe Line Revision foundation. It adds no table or role. Draft BOM replacement, validation, Planning release, successor correction, copy, and narrow reviewed OPS v1 `.xlsx` import are backend-authoritative and audited.
+RMVP-02A connects the Vietnamese `Công thức` page to the existing private Dish, Recipe Version, stable Recipe Line, and immutable Recipe Line Revision foundation. D-038 restores the retained creation-and-lock workflow: `Tạo`/`Lưu` atomically makes an eligible pre-use Recipe available to Planning; the first immutable approved Weekly Menu use locks normal base editing for the whole Dish; later changes go through `Điều chỉnh`. Version mechanics remain internal and all v1 APIs remain callable.
 
 ```bash
-pnpm exec supabase test db supabase/tests/rmvp_02a_connected_recipes_bom.sql --local
+pnpm exec supabase test db supabase/tests/ui_quality_03a_recipe_workflow.sql supabase/tests/rmvp_02a_connected_recipes_bom.sql --local
+pnpm local:auth:provision
+pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snapshot.example.json
 pnpm local:rmvp02a:verify
 ```
 
-Workbook import creates draft-only state, requires existing active references, records typed legacy reconciliation, and never mutates OPS v1/v2 or Retool. See [`RMVP-02A connected Dishes, Recipes, and BOM`](docs/architecture/rmvp-02a-connected-recipes-bom.md) and the [`RMVP-02A API contract`](docs/api/rmvp-02a-recipes-bom.md).
+The application separates a read-only current-effective catalog, a creation workbench with Dish/Ingredient search and one `Tạo`/`Lưu` commitment, and the existing Change Order area. Copy fills the current unsaved creation form; Recipe history remains support disclosure. See [`RMVP-02A connected Dishes, Recipes, and BOM`](docs/architecture/rmvp-02a-connected-recipes-bom.md), the [`RMVP-02A API contract`](docs/api/rmvp-02a-recipes-bom.md), and [D-038](docs/decisions/decision-recipe-save-use-boundary.md).
 
 ### RMVP-02B Recipe adjustments and effective BOM
 

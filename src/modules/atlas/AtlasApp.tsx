@@ -290,14 +290,14 @@ function MasterDataPage({
           planningPage
             ? "Lập nhu cầu"
             : recipePage
-              ? "Quản trị công thức"
+              ? "Món ăn và công thức"
               : "Dữ liệu gốc"
         }
         title={
           planningPage
             ? "Nguồn kế hoạch"
             : recipePage
-              ? "Công thức"
+              ? "Công thức món ăn"
               : schoolPage
                 ? "Trường học"
                 : "Nguyên liệu và Nhà cung ứng"
@@ -306,7 +306,7 @@ function MasterDataPage({
           planningPage
             ? "Lưu hoàn tất ba nguồn theo tuần, kiểm tra sẵn sàng tự động và tạo nhu cầu bằng một thao tác có thẩm quyền."
             : recipePage
-              ? "Quản lý món ăn, phạm vi công thức chung/theo loại trường, phiên bản BOM bất biến, sao chép và nhập workbook có đối soát."
+              ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Điều chỉnh khi món đã được sử dụng."
               : schoolPage
                 ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
                 : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."
