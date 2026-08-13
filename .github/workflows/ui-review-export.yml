@@ -1,16 +1,13 @@
 name: UI Review Export
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ui-review-export-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ui-review-export-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
