@@ -2,8 +2,8 @@
 
 **Status:** Accepted cross-module UI contract  
 **Accepted on:** 06/08/2026  
-**Last refined:** 11/08/2026 — ATLAS-UI-STANDARD-02 first-user operator-surface amendment  
-**Reviewed baseline:** `e542e263e3bb672eb2967af0b3d54bfd8771df75`  
+**Last refined:** 11/08/2026 — ATLAS-UX-RESET-01 workflow-preservation and operator-pattern amendment  
+**Reviewed baseline:** `057a30ef30121fc50ef983acd91704d2bca8e82c`  
 **Authority:** [ATLAS-ACT-01 Hosted Staging and Connected-UI Consolidation Contract](../architecture/atlas-act-01-hosted-staging-ui-consolidation-contract.md), D-034, D-035, D-036 and D-037
 
 ## 1. Purpose
@@ -493,3 +493,39 @@ UI quality work must not:
 - silently modify SQL, migrations, RLS, RPCs or domain contracts inside a presentation-only task.
 
 When a UI review reveals that the backend contract itself creates unnecessary human ceremony, stop and elevate that as a workflow/contract correction under OPS_SYSTEM_MAP rather than preserving a bad boundary for the sake of implementation convenience.
+
+## 21. Workflow preservation and operator archetypes
+
+ATLAS-UX-RESET-01 adds a required safeguard for established OPS v1 capabilities:
+
+> **UI simplification may hide technical machinery, but it must never erase, bypass or redefine a real business boundary.**
+
+For an established capability, do not redesign the workflow from first principles merely because Atlas can implement a cleaner backend lifecycle. Reconstruct the actual operator job first, identify real lock/immutability/commitment and correction boundaries, preserve them, and then improve the interaction.
+
+Before freezing a UI or contract correction for an existing capability, inspect the retained workflow evidence for:
+
+- normal operator sequence;
+- read-only versus write surfaces;
+- creation workflow;
+- search/filter behavior;
+- copy/import/export helpers;
+- lock/immutability behavior;
+- first operational use;
+- Change Order / override / correction paths;
+- live OPS functions/triggers where needed to verify an invariant.
+
+The child report must classify changes as:
+
+```text
+workflow preserved
+workflow improved
+workflow intentionally changed
+```
+
+Any intentionally changed workflow requires explicit Product Owner approval. If evidence is ambiguous, raise the ambiguity rather than inventing a rule to keep coding.
+
+Do not generalize one domain's successful interaction pattern into another domain without proving equivalent business semantics. `Edit → Save` in Planning and `Lưu → business commitment` in Confirmed Need are not universal Atlas templates.
+
+Use the evidence-backed interaction archetypes in [Atlas Operator Workbench Patterns](atlas-operator-workbench-patterns.md) to frame Product design before component selection. The archetypes guide behavior; they do not authorize a generic React workbench framework.
+
+From now on, the certification scorecard also requires **workflow fidelity**: an aesthetically simpler UI fails Product review if it changes a real business invariant, lock point, Change Order requirement, accountable human decision or operator responsibility without explicit approval.
