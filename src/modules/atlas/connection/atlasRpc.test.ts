@@ -68,8 +68,8 @@ function edgeClient(
 }
 
 describe("Atlas RPC transport", () => {
-  it("contains exactly the reviewed 88-function browser registry", () => {
-    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(88);
+  it("contains exactly the reviewed 89-function browser registry", () => {
+    expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toHaveLength(89);
     expect(Object.keys(ATLAS_RPC_FUNCTIONS)).toEqual([
       "atlas_api.record_wholesale_source",
       "atlas_api.release_wholesale_order",
@@ -113,6 +113,7 @@ describe("Atlas RPC transport", () => {
       "atlas_api.copy_recipe_version",
       "atlas_api.apply_recipe_import",
       "atlas_api.get_recipe_adjustment_workbench",
+      "atlas_api.get_recipe_adjustment_operator_workbench",
       "atlas_api.resolve_effective_recipe_composition",
       "atlas_api.preview_recipe_composition_adjustment",
       "atlas_api.create_recipe_composition_adjustment",

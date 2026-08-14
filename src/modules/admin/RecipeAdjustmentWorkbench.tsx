@@ -1,6 +1,16 @@
+import {
+  Badge,
+  Button,
+  Divider,
+  Drawer,
+  Group,
+  Modal,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasAuthState } from "../atlas/connection/authSession";
-import type { JsonValue } from "../atlas/connection/atlasRpc";
+import type { AtlasRpcResult, JsonValue } from "../atlas/connection/atlasRpc";
 import {
   recipeAdjustmentCommandRequest,
   type RecipeAdjustmentApi,
@@ -11,11 +21,15 @@ import {
   adjustmentWorkbenchFromResult,
   effectiveCompositionFromResult,
   emptyRecipeAdjustmentWorkbench,
+  type AdjustmentReference,
+  type EffectiveCompositionLine,
   type EffectiveCompositionResult,
   type RecipeAdjustmentAction,
+  type RecipeAdjustmentOperatorRecord,
+  type RecipeAdjustmentOperatorRevision,
   type RecipeAdjustmentPreview,
-  type RecipeAdjustmentRecord,
   type RecipeAdjustmentScope,
+  type RecipeAdjustmentTemporalState,
   type RecipeAdjustmentWorkbenchData,
 } from "../atlas/recipe-adjustments/recipeAdjustmentModel";
 import { Chip, CompactTable, Panel } from "../atlas/WorkbenchComponents";
@@ -26,9 +40,9 @@ type LoadState = {
   message?: string;
 };
 
-type RuleDraft = {
-  scope: RecipeAdjustmentScope;
+type AdjustmentDraft = {
   action: RecipeAdjustmentAction;
+  scope: RecipeAdjustmentScope;
   schoolId: string;
   dishId: string;
   schoolTypeId: string;
@@ -37,72 +51,145 @@ type RuleDraft = {
   substituteIngredientId: string;
   quantity: string;
   unitId: string;
+  replaceQuantity: boolean;
   effectiveFrom: string;
   effectiveTo: string;
   reason: string;
+  previewSchoolId: string;
+  previewDishId: string;
 };
 
-const ACTIONS: Record<RecipeAdjustmentScope, RecipeAdjustmentAction[]> = {
+const ACTIONS_BY_SCOPE: Record<
+  RecipeAdjustmentScope,
+  RecipeAdjustmentAction[]
+> = {
   SYSTEM_INGREDIENT: ["REPLACE"],
   SYSTEM_DISH: ["ADD", "REPLACE", "ADJUST_QUANTITY", "REMOVE"],
   SCHOOL: ["REPLACE", "REMOVE"],
   SCHOOL_DISH: ["ADD", "REPLACE", "ADJUST_QUANTITY", "REMOVE"],
 };
 
-const scopeLabel: Record<RecipeAdjustmentScope, string> = {
-  SYSTEM_INGREDIENT: "Toàn hệ thống · Nguyên liệu",
-  SYSTEM_DISH: "Toàn hệ thống · Món ăn",
-  SCHOOL: "Một trường · Mọi món",
-  SCHOOL_DISH: "Một trường · Một món",
-};
 const actionLabel: Record<RecipeAdjustmentAction, string> = {
-  ADD: "Thêm",
-  REPLACE: "Thay thế",
-  ADJUST_QUANTITY: "Điều chỉnh định lượng",
-  REMOVE: "Loại bỏ",
+  REPLACE: "Thay nguyên liệu",
+  ADJUST_QUANTITY: "Đổi định lượng",
+  ADD: "Thêm nguyên liệu",
+  REMOVE: "Bỏ nguyên liệu",
 };
-const layerLabel: Record<string, string> = {
-  RELEASED_RECIPE_VERSION: "BOM phát hành",
-  SYSTEM_INGREDIENT: "Hệ thống · Nguyên liệu",
-  SYSTEM_DISH: "Hệ thống · Món",
-  SCHOOL: "Trường",
-  SCHOOL_DISH: "Trường · Món",
+
+const scopeLabel: Record<RecipeAdjustmentScope, string> = {
+  SYSTEM_INGREDIENT: "Mọi món có nguyên liệu này",
+  SYSTEM_DISH: "Một món tại các trường",
+  SCHOOL: "Mọi món của một trường",
+  SCHOOL_DISH: "Một món của một trường",
+};
+
+const temporalLabel: Record<RecipeAdjustmentTemporalState, string> = {
+  ACTIVE: "Đang hiệu lực",
+  SCHEDULED: "Sắp hiệu lực",
+  ACTIVE_CHANGE_SCHEDULED: "Đang hiệu lực · có thay đổi sắp tới",
+  ACTIVE_CANCELLATION_SCHEDULED: "Đang hiệu lực · đã lên lịch hủy",
+  ACTIVE_RESUMED: "Đang hiệu lực · nội dung trước được áp dụng lại",
+  EXPIRED: "Hết hiệu lực",
+  CANCELLED: "Đã hủy",
 };
 
 const today = () => new Date().toISOString().slice(0, 10);
-const emptyDraft = (): RuleDraft => ({
-  scope: "SYSTEM_DISH",
-  action: "ADD",
-  schoolId: "",
-  dishId: "",
-  schoolTypeId: "",
-  targetIngredientId: "",
-  targetRecipeLineId: "",
-  substituteIngredientId: "",
-  quantity: "",
-  unitId: "",
-  effectiveFrom: today(),
-  effectiveTo: "",
-  reason: "",
-});
 
-function referenceLabel(
-  records: RecipeAdjustmentWorkbenchData["ingredients"],
-  id: string | null,
-  idKey: "school_id" | "dish_id" | "ingredient_id" | "unit_id",
-  nameKey: "school_name" | "dish_name" | "ingredient_name" | "unit_name",
-) {
-  if (!id) return "—";
-  return (
-    records.find((record) => record[idKey] === id)?.[nameKey]?.toString() ?? id
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const [year, month, day] = value.slice(0, 10).split("-");
+  return year && month && day ? `${day}/${month}/${year}` : value;
+}
+
+function formatIssuedAt(value: string | undefined) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(value));
+}
+
+function formatQuantity(value: number | null | undefined) {
+  if (value === null || value === undefined) return "—";
+  return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 6 }).format(
+    value,
   );
 }
 
-function sourceTone(source: string) {
-  if (source === "SCHOOL_DISH") return "danger" as const;
-  if (source === "SCHOOL") return "warning" as const;
-  if (source === "RELEASED_RECIPE_VERSION") return "neutral" as const;
-  return "ok" as const;
+function firstId(
+  records: AdjustmentReference[],
+  key: keyof AdjustmentReference,
+) {
+  const value = records[0]?.[key];
+  return typeof value === "string" ? value : "";
+}
+
+function referenceName(
+  records: AdjustmentReference[],
+  id: string | null | undefined,
+  idKey: keyof AdjustmentReference,
+  nameKey: keyof AdjustmentReference,
+) {
+  if (!id) return "—";
+  const value = records.find((record) => record[idKey] === id)?.[nameKey];
+  return typeof value === "string" ? value : "—";
+}
+
+function emptyDraft(data: RecipeAdjustmentWorkbenchData): AdjustmentDraft {
+  return {
+    action: "REPLACE",
+    scope: "SYSTEM_INGREDIENT",
+    schoolId: firstId(data.schools, "school_id"),
+    dishId: firstId(data.dishes, "dish_id"),
+    schoolTypeId: "",
+    targetIngredientId: "",
+    targetRecipeLineId: "",
+    substituteIngredientId: "",
+    quantity: "",
+    unitId: firstId(data.units, "unit_id"),
+    replaceQuantity: false,
+    effectiveFrom: today(),
+    effectiveTo: "",
+    reason: "",
+    previewSchoolId: firstId(data.schools, "school_id"),
+    previewDishId: firstId(data.dishes, "dish_id"),
+  };
+}
+
+function availableScopes(action: RecipeAdjustmentAction) {
+  return (Object.keys(ACTIONS_BY_SCOPE) as RecipeAdjustmentScope[]).filter(
+    (scope) => ACTIONS_BY_SCOPE[scope].includes(action),
+  );
+}
+
+function temporalText(row: RecipeAdjustmentOperatorRecord) {
+  const date = formatDate(row.temporal_state_date);
+  switch (row.temporal_state) {
+    case "SCHEDULED":
+      return `Sắp hiệu lực từ ${date}`;
+    case "ACTIVE_CHANGE_SCHEDULED":
+      return `Đang hiệu lực · thay đổi từ ${date}`;
+    case "ACTIVE_CANCELLATION_SCHEDULED":
+      return `Đang hiệu lực · hủy từ ${date}`;
+    default:
+      return temporalLabel[row.temporal_state];
+  }
+}
+
+function temporalTone(row: RecipeAdjustmentOperatorRecord) {
+  if (row.temporal_state === "CANCELLED") return "red";
+  if (row.temporal_state === "EXPIRED") return "gray";
+  if (
+    row.temporal_state === "SCHEDULED" ||
+    row.temporal_state.includes("SCHEDULED")
+  )
+    return "yellow";
+  return "green";
+}
+
+function hasUnknownWriteOutcome(result: AtlasRpcResult) {
+  return result.kind === "transport_error";
 }
 
 export function RecipeAdjustmentWorkbench({
@@ -117,12 +204,25 @@ export function RecipeAdjustmentWorkbench({
   mode: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
+  const [referenceDate, setReferenceDate] = useState(today());
   const [load, setLoad] = useState<LoadState>({
     status: "idle",
     data: emptyRecipeAdjustmentWorkbench(),
   });
-  const [draft, setDraft] = useState<RuleDraft>(emptyDraft);
-  const [previewIds, setPreviewIds] = useState<{
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [scopeFilter, setScopeFilter] = useState("");
+  const [createOpened, setCreateOpened] = useState(false);
+  const [detail, setDetail] = useState<RecipeAdjustmentOperatorRecord | null>(
+    null,
+  );
+  const [editing, setEditing] = useState<RecipeAdjustmentOperatorRecord | null>(
+    null,
+  );
+  const [draft, setDraft] = useState<AdjustmentDraft>(() =>
+    emptyDraft(emptyRecipeAdjustmentWorkbench()),
+  );
+  const [draftIds, setDraftIds] = useState<{
     adjustmentId: string;
     revisionId: string;
     adjustmentLineId: string;
@@ -131,20 +231,21 @@ export function RecipeAdjustmentWorkbench({
     revisionId: crypto.randomUUID(),
     adjustmentLineId: crypto.randomUUID(),
   }));
-  const [editing, setEditing] = useState<RecipeAdjustmentRecord | null>(null);
   const [preview, setPreview] = useState<RecipeAdjustmentPreview | null>(null);
+  const [previewFingerprint, setPreviewFingerprint] = useState("");
+  const [cancelTarget, setCancelTarget] =
+    useState<RecipeAdjustmentOperatorRecord | null>(null);
+  const [cancelDate, setCancelDate] = useState(today());
+  const [cancelReason, setCancelReason] = useState("");
   const [resolution, setResolution] =
     useState<EffectiveCompositionResult | null>(null);
-  const [filterScope, setFilterScope] = useState("");
-  const [filterLifecycle, setFilterLifecycle] = useState("");
-  const [filterDate, setFilterDate] = useState(today());
-  const [query, setQuery] = useState("");
-  const [contextSchoolId, setContextSchoolId] = useState("");
-  const [contextDishId, setContextDishId] = useState("");
-  const [contextDate, setContextDate] = useState(today());
+  const [effectiveSchoolId, setEffectiveSchoolId] = useState("");
+  const [effectiveDishId, setEffectiveDishId] = useState("");
+  const [effectiveDate, setEffectiveDate] = useState(today());
   const [reviewScenario, setReviewScenario] = useState("precedence");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mutationLocked, setMutationLocked] = useState(false);
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
@@ -153,7 +254,11 @@ export function RecipeAdjustmentWorkbench({
     if (!api || !authSubject) return false;
     const current = ++generation.current;
     setLoad((state) => ({ ...state, status: "loading", message: undefined }));
-    const result = await api.getWorkbench(authSubject, correlationId);
+    const result = await api.getOperatorWorkbench(
+      authSubject,
+      correlationId,
+      referenceDate,
+    );
     if (current !== generation.current) return false;
     const data = adjustmentWorkbenchFromResult(result);
     if (!data) {
@@ -165,63 +270,17 @@ export function RecipeAdjustmentWorkbench({
       return false;
     }
     setLoad({ status: "ready", data });
-    const firstSchool = data.schools.find(
-      (school) => school.school_status === "ACTIVE",
+    setEffectiveSchoolId(
+      (value) => value || firstId(data.schools, "school_id"),
     );
-    const firstDish = data.dishes.find(
-      (dish) => dish.dish_status === "ACTIVE" && dish.requires_need_generation,
-    );
-    setContextSchoolId((value) => value || firstSchool?.school_id || "");
-    setContextDishId((value) => value || firstDish?.dish_id || "");
-    setDraft((value) => ({
-      ...value,
-      schoolId: value.schoolId || firstSchool?.school_id || "",
-      dishId: value.dishId || firstDish?.dish_id || "",
-    }));
+    setEffectiveDishId((value) => value || firstId(data.dishes, "dish_id"));
+    setMutationLocked(false);
     return true;
-  }, [api, authSubject, correlationId]);
+  }, [api, authSubject, correlationId, referenceDate]);
 
   useEffect(() => {
     if (authSubject && api) void refresh();
   }, [api, authSubject, refresh]);
-
-  const filteredRules = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("vi");
-    return load.data.adjustments.filter((rule) => {
-      const current = rule.revisions.find(
-        (revision) => revision.revision_id === rule.current_revision_id,
-      );
-      const effective =
-        !filterDate ||
-        (!!current &&
-          current.effective_from <= filterDate &&
-          (!current.effective_to || filterDate < current.effective_to));
-      const haystack = [
-        referenceLabel(
-          load.data.schools,
-          rule.school_id,
-          "school_id",
-          "school_name",
-        ),
-        referenceLabel(load.data.dishes, rule.dish_id, "dish_id", "dish_name"),
-        referenceLabel(
-          load.data.ingredients,
-          rule.target_ingredient_id,
-          "ingredient_id",
-          "ingredient_name",
-        ),
-        current?.reason_note ?? "",
-      ]
-        .join(" ")
-        .toLocaleLowerCase("vi");
-      return (
-        (!filterScope || rule.scope_kind === filterScope) &&
-        (!filterLifecycle || rule.lifecycle_status === filterLifecycle) &&
-        effective &&
-        (!normalized || haystack.includes(normalized))
-      );
-    });
-  }, [filterDate, filterLifecycle, filterScope, load.data, query]);
 
   const lineOptions = useMemo(
     () =>
@@ -231,34 +290,194 @@ export function RecipeAdjustmentWorkbench({
     [draft.dishId, load.data.recipe_lines],
   );
 
-  function changeScope(scope: RecipeAdjustmentScope) {
+  const targetLine = useCallback(
+    (row: RecipeAdjustmentOperatorRecord) =>
+      load.data.recipe_lines.find(
+        (line) => line.recipe_line_id === row.target_recipe_line_id,
+      ),
+    [load.data.recipe_lines],
+  );
+
+  const targetName = useCallback(
+    (row: RecipeAdjustmentOperatorRecord) => {
+      if (row.target_ingredient_id)
+        return referenceName(
+          load.data.ingredients,
+          row.target_ingredient_id,
+          "ingredient_id",
+          "ingredient_name",
+        );
+      return targetLine(row)?.ingredient_name ?? "Dòng công thức";
+    },
+    [load.data.ingredients, targetLine],
+  );
+
+  const scopeSummary = useCallback(
+    (row: RecipeAdjustmentOperatorRecord) => {
+      const school = referenceName(
+        load.data.schools,
+        row.school_id,
+        "school_id",
+        "school_name",
+      );
+      const dish = referenceName(
+        load.data.dishes,
+        row.dish_id,
+        "dish_id",
+        "dish_name",
+      );
+      const ingredient = targetName(row);
+      switch (row.scope_kind) {
+        case "SYSTEM_INGREDIENT":
+          return `${ingredient} · ${scopeLabel[row.scope_kind]}`;
+        case "SYSTEM_DISH":
+          return `${dish} · ${scopeLabel[row.scope_kind]}`;
+        case "SCHOOL":
+          return `${school} · ${scopeLabel[row.scope_kind]}`;
+        case "SCHOOL_DISH":
+          return `${dish} · ${school}`;
+      }
+    },
+    [load.data.dishes, load.data.schools, targetName],
+  );
+
+  const changeSummary = useCallback(
+    (
+      row: RecipeAdjustmentOperatorRecord,
+      revision: RecipeAdjustmentOperatorRevision = row.display_revision,
+    ) => {
+      const target = targetName(row);
+      const substitute = referenceName(
+        load.data.ingredients,
+        revision.substitute_ingredient_id,
+        "ingredient_id",
+        "ingredient_name",
+      );
+      const unit = referenceName(
+        load.data.units,
+        revision.unit_id ?? targetLine(row)?.unit_id,
+        "unit_id",
+        "unit_name",
+      );
+      switch (row.action_kind) {
+        case "REPLACE":
+          return `${target} → ${substitute}`;
+        case "ADJUST_QUANTITY":
+          return `${target} → ${formatQuantity(revision.quantity_per_basis)} ${unit}`;
+        case "ADD":
+          return `${target} · ${formatQuantity(revision.quantity_per_basis)} ${unit}`;
+        case "REMOVE":
+          return target;
+      }
+    },
+    [load.data.ingredients, load.data.units, targetLine, targetName],
+  );
+
+  const filteredRows = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("vi");
+    return load.data.operator_rows.filter((row) => {
+      const haystack = [
+        scopeSummary(row),
+        changeSummary(row),
+        actionLabel[row.action_kind],
+        scopeLabel[row.scope_kind],
+        row.display_revision.reason_note,
+      ]
+        .join(" ")
+        .toLocaleLowerCase("vi");
+      return (
+        (!normalized || haystack.includes(normalized)) &&
+        (!statusFilter || row.temporal_state === statusFilter) &&
+        (!scopeFilter || row.scope_kind === scopeFilter)
+      );
+    });
+  }, [
+    changeSummary,
+    load.data.operator_rows,
+    query,
+    scopeFilter,
+    scopeSummary,
+    statusFilter,
+  ]);
+
+  function updateDraft(patch: Partial<AdjustmentDraft>) {
+    setDraft((value) => ({ ...value, ...patch }));
     setPreview(null);
-    setEditing(null);
-    setDraft((value) => ({
-      ...value,
-      scope,
-      action: ACTIONS[scope][0],
-      schoolTypeId: "",
-      targetIngredientId: "",
-      targetRecipeLineId: "",
-      substituteIngredientId: "",
-      quantity: "",
-      unitId: "",
-    }));
-    setPreviewIds({
+    setPreviewFingerprint("");
+  }
+
+  function resetDraftIdentity() {
+    setDraftIds({
       adjustmentId: crypto.randomUUID(),
       revisionId: crypto.randomUUID(),
       adjustmentLineId: crypto.randomUUID(),
     });
   }
 
+  function openCreate() {
+    setEditing(null);
+    setPreview(null);
+    setPreviewFingerprint("");
+    setDraft(emptyDraft(load.data));
+    resetDraftIdentity();
+    setCreateOpened(true);
+  }
+
+  function openCorrection(row: RecipeAdjustmentOperatorRecord) {
+    const revision = row.command_revision;
+    setDetail(null);
+    setEditing(row);
+    setPreview(null);
+    setPreviewFingerprint("");
+    setDraft({
+      action: row.action_kind,
+      scope: row.scope_kind,
+      schoolId: row.school_id ?? firstId(load.data.schools, "school_id"),
+      dishId: row.dish_id ?? firstId(load.data.dishes, "dish_id"),
+      schoolTypeId: row.school_type_id ?? "",
+      targetIngredientId: row.target_ingredient_id ?? "",
+      targetRecipeLineId: row.target_recipe_line_id ?? "",
+      substituteIngredientId: revision.substitute_ingredient_id ?? "",
+      quantity: revision.quantity_per_basis?.toString() ?? "",
+      unitId: revision.unit_id ?? firstId(load.data.units, "unit_id"),
+      replaceQuantity:
+        row.action_kind === "REPLACE" && revision.quantity_per_basis !== null,
+      effectiveFrom: revision.effective_from,
+      effectiveTo: revision.effective_to ?? "",
+      reason: "",
+      previewSchoolId: row.school_id ?? firstId(load.data.schools, "school_id"),
+      previewDishId: row.dish_id ?? firstId(load.data.dishes, "dish_id"),
+    });
+    setDraftIds({
+      adjustmentId: row.adjustment_id,
+      revisionId: crypto.randomUUID(),
+      adjustmentLineId: row.adjustment_line_id ?? crypto.randomUUID(),
+    });
+    setCreateOpened(true);
+  }
+
+  const previewSchoolId =
+    draft.scope === "SCHOOL" || draft.scope === "SCHOOL_DISH"
+      ? draft.schoolId
+      : draft.previewSchoolId;
+  const previewDishId =
+    draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH"
+      ? draft.dishId
+      : draft.previewDishId;
+
   function proposal(): Record<string, JsonValue> {
     const isAdd = draft.action === "ADD";
     const ingredientTarget =
       draft.scope === "SYSTEM_INGREDIENT" || draft.scope === "SCHOOL" || isAdd;
+    const carriesUnit =
+      isAdd || (draft.action === "REPLACE" && draft.replaceQuantity);
+    const carriesQuantity =
+      isAdd ||
+      draft.action === "ADJUST_QUANTITY" ||
+      (draft.action === "REPLACE" && draft.replaceQuantity);
     return {
-      adjustment_id: editing?.adjustment_id ?? previewIds.adjustmentId,
-      revision_id: previewIds.revisionId,
+      adjustment_id: editing?.adjustment_id ?? draftIds.adjustmentId,
+      revision_id: draftIds.revisionId,
       revision_number: editing ? editing.current_revision_number + 1 : 1,
       scope_kind: draft.scope,
       action_kind: draft.action,
@@ -280,60 +499,86 @@ export function RecipeAdjustmentWorkbench({
           ? draft.targetRecipeLineId
           : null,
       adjustment_line_id: isAdd
-        ? (editing?.adjustment_line_id ?? previewIds.adjustmentLineId)
+        ? (editing?.adjustment_line_id ?? draftIds.adjustmentLineId)
         : null,
       substitute_ingredient_id:
         draft.action === "REPLACE" ? draft.substituteIngredientId : null,
-      quantity_per_basis:
-        ["ADD", "ADJUST_QUANTITY"].includes(draft.action) ||
-        (draft.action === "REPLACE" && draft.quantity)
-          ? Number(draft.quantity)
-          : null,
-      unit_id:
-        draft.action === "ADD" || (draft.action === "REPLACE" && draft.quantity)
-          ? draft.unitId
-          : null,
+      quantity_per_basis: carriesQuantity ? Number(draft.quantity) : null,
+      unit_id: carriesUnit ? draft.unitId : null,
       effective_from: draft.effectiveFrom,
       effective_to: draft.effectiveTo || null,
       reason_code: editing ? "RULE_CORRECTION" : "OPERATOR_RULE",
-      reason_note: draft.reason,
+      reason_note: draft.reason.trim(),
       source_evidence: { source_kind: "ATLAS_OPERATOR" },
     };
   }
 
+  const materialFingerprint = JSON.stringify({
+    draft,
+    previewSchoolId,
+    previewDishId,
+  });
+
+  const needsRecipeLine =
+    (draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH") &&
+    draft.action !== "ADD";
+  const needsIngredientTarget =
+    draft.scope === "SYSTEM_INGREDIENT" ||
+    draft.scope === "SCHOOL" ||
+    draft.action === "ADD";
+  const quantityRequired =
+    draft.action === "ADD" ||
+    draft.action === "ADJUST_QUANTITY" ||
+    (draft.action === "REPLACE" && draft.replaceQuantity);
+  const canPreview =
+    !!previewSchoolId &&
+    !!previewDishId &&
+    !!draft.effectiveFrom &&
+    (!draft.effectiveTo || draft.effectiveTo > draft.effectiveFrom) &&
+    !!draft.reason.trim() &&
+    (!needsRecipeLine || !!draft.targetRecipeLineId) &&
+    (!needsIngredientTarget || !!draft.targetIngredientId) &&
+    (draft.action !== "REPLACE" || !!draft.substituteIngredientId) &&
+    (!quantityRequired || Number(draft.quantity) > 0) &&
+    (!(draft.action === "ADD" || draft.replaceQuantity) || !!draft.unitId);
+
   async function runPreview() {
-    if (!api || !authSubject || !contextSchoolId || !contextDishId) return;
+    if (!api || !authSubject || !canPreview) return;
     setBusy(true);
     setNotice("");
     const result = await api.preview(authSubject, correlationId, {
-      as_of_date: contextDate,
-      school_id: contextSchoolId,
-      dish_id: contextDishId,
+      as_of_date: draft.effectiveFrom,
+      school_id: previewSchoolId,
+      dish_id: previewDishId,
       replaces_adjustment_id: editing?.adjustment_id ?? null,
       proposed_adjustment: proposal(),
     });
     const parsed = adjustmentPreviewFromResult(result);
     setPreview(parsed);
-    setNotice(adjustmentResultMessage(result));
+    setPreviewFingerprint(parsed ? materialFingerprint : "");
+    setNotice(
+      parsed
+        ? "Đã cập nhật phần xem ảnh hưởng."
+        : adjustmentResultMessage(result),
+    );
     setBusy(false);
   }
 
-  async function saveRule() {
-    if (!api || !authSubject || !preview?.can_save) return;
+  async function saveAdjustment() {
     if (
-      !window.confirm(
-        editing
-          ? "Xác nhận tạo phiên bản kế nhiệm từ đúng kết quả xem trước?"
-          : "Xác nhận lưu quy tắc từ đúng kết quả xem trước?",
-      )
+      !api ||
+      !authSubject ||
+      mutationLocked ||
+      !preview?.can_save ||
+      previewFingerprint !== materialFingerprint
     )
       return;
     setBusy(true);
     const payload = {
       ...proposal(),
-      as_of_date: contextDate,
-      preview_school_id: contextSchoolId,
-      preview_dish_id: contextDishId,
+      as_of_date: draft.effectiveFrom,
+      preview_school_id: previewSchoolId,
+      preview_dish_id: previewDishId,
       predecessor_revision_id: editing?.current_revision_id ?? null,
     };
     const request = recipeAdjustmentCommandRequest(
@@ -341,110 +586,157 @@ export function RecipeAdjustmentWorkbench({
       correlationId,
       editing?.version ?? 1,
       editing ? "RULE_CORRECTION" : "OPERATOR_RULE",
-      draft.reason,
+      draft.reason.trim(),
       payload,
     );
     const result = editing
       ? await api.supersede(request)
       : await api.create(request);
-    setNotice(adjustmentResultMessage(result));
+    setNotice(
+      result.kind === "success"
+        ? "Đã lưu điều chỉnh."
+        : adjustmentResultMessage(result),
+    );
+    if (hasUnknownWriteOutcome(result)) setMutationLocked(true);
     if (result.kind === "success") {
-      setPreview(null);
+      setCreateOpened(false);
       setEditing(null);
-      setDraft(emptyDraft());
-      setPreviewIds({
-        adjustmentId: crypto.randomUUID(),
-        revisionId: crypto.randomUUID(),
-        adjustmentLineId: crypto.randomUUID(),
-      });
+      setPreview(null);
+      setPreviewFingerprint("");
       await refresh();
     }
     setBusy(false);
   }
 
-  function editRule(rule: RecipeAdjustmentRecord) {
-    const current = rule.revisions.find(
-      (revision) => revision.revision_id === rule.current_revision_id,
-    );
-    if (!current) return;
-    setEditing(rule);
-    setPreview(null);
-    setPreviewIds({
-      adjustmentId: rule.adjustment_id,
-      revisionId: crypto.randomUUID(),
-      adjustmentLineId: rule.adjustment_line_id ?? crypto.randomUUID(),
-    });
-    setDraft({
-      scope: rule.scope_kind,
-      action: rule.action_kind,
-      schoolId: rule.school_id ?? "",
-      dishId: rule.dish_id ?? "",
-      schoolTypeId: rule.school_type_id ?? "",
-      targetIngredientId: rule.target_ingredient_id ?? "",
-      targetRecipeLineId: rule.target_recipe_line_id ?? "",
-      substituteIngredientId: current.substitute_ingredient_id ?? "",
-      quantity: current.quantity_per_basis?.toString() ?? "",
-      unitId: current.unit_id ?? "",
-      effectiveFrom: current.effective_from,
-      effectiveTo: current.effective_to ?? "",
-      reason: "",
-    });
+  function openCancellation(row: RecipeAdjustmentOperatorRecord) {
+    const from = row.command_revision.effective_from;
+    setDetail(null);
+    setCancelTarget(row);
+    setCancelDate(referenceDate < from ? from : referenceDate);
+    setCancelReason("");
   }
 
-  async function cancelRule(rule: RecipeAdjustmentRecord) {
-    if (!api || !authSubject) return;
-    const reason = window.prompt(
-      "Nhập lý do hủy quy tắc. Lịch sử sẽ được giữ nguyên.",
-    );
-    if (!reason?.trim()) return;
-    if (!window.confirm("Xác nhận hủy quy tắc, không xóa lịch sử?")) return;
+  async function cancelAdjustment() {
+    if (
+      !api ||
+      !authSubject ||
+      !cancelTarget ||
+      !cancelDate ||
+      !cancelReason.trim() ||
+      mutationLocked
+    )
+      return;
     setBusy(true);
     const result = await api.cancel(
       recipeAdjustmentCommandRequest(
         authSubject,
         correlationId,
-        rule.version,
+        cancelTarget.version,
         "RULE_CANCELLATION",
-        reason.trim(),
+        cancelReason.trim(),
         {
-          adjustment_id: rule.adjustment_id,
-          predecessor_revision_id: rule.current_revision_id,
+          adjustment_id: cancelTarget.adjustment_id,
+          predecessor_revision_id: cancelTarget.current_revision_id,
           revision_id: crypto.randomUUID(),
-          effective_from: contextDate,
+          effective_from: cancelDate,
         },
       ),
     );
-    setNotice(adjustmentResultMessage(result));
-    if (result.kind === "success") await refresh();
+    setNotice(
+      result.kind === "success"
+        ? "Đã ghi nhận hủy điều chỉnh theo ngày đã chọn."
+        : adjustmentResultMessage(result),
+    );
+    if (hasUnknownWriteOutcome(result)) setMutationLocked(true);
+    if (result.kind === "success") {
+      setCancelTarget(null);
+      setCancelReason("");
+      await refresh();
+    }
     setBusy(false);
   }
 
-  async function resolve() {
-    if (!api || !authSubject || !contextSchoolId || !contextDishId) return;
+  async function resolveEffectiveComposition() {
+    if (!api || !authSubject || !effectiveSchoolId || !effectiveDishId) return;
     setBusy(true);
     setNotice("");
     const result = await api.resolve(authSubject, correlationId, {
-      as_of_date: contextDate,
-      school_id: contextSchoolId,
-      dish_id: contextDishId,
+      as_of_date: effectiveDate,
+      school_id: effectiveSchoolId,
+      dish_id: effectiveDishId,
       review_scenario: mode === "review" ? reviewScenario : null,
     });
-    setResolution(effectiveCompositionFromResult(result));
-    setNotice(adjustmentResultMessage(result));
+    const parsed = effectiveCompositionFromResult(result);
+    setResolution(parsed);
+    setNotice(
+      parsed
+        ? "Đã cập nhật công thức hiệu lực."
+        : adjustmentResultMessage(result),
+    );
     setBusy(false);
   }
 
-  async function copyAudit() {
-    if (!resolution) return;
-    await navigator.clipboard?.writeText(JSON.stringify(resolution, null, 2));
-    setNotice("Đã sao chép chi tiết kiểm toán BOM hiệu lực.");
+  function previewLineKey(line: EffectiveCompositionLine) {
+    return (
+      line.base_recipe_line_id ?? line.adjustment_line_id ?? line.line_code
+    );
+  }
+
+  function previewRows(previewData: RecipeAdjustmentPreview) {
+    const keys = new Set([
+      ...previewData.before.lines.map(previewLineKey),
+      ...previewData.after.lines.map(previewLineKey),
+    ]);
+    return [...keys].map((key) => {
+      const before = previewData.before.lines.find(
+        (line) => previewLineKey(line) === key,
+      );
+      const after = previewData.after.lines.find(
+        (line) => previewLineKey(line) === key,
+      );
+      const changed =
+        before?.final_ingredient_id !== after?.final_ingredient_id ||
+        before?.final_quantity_per_basis !== after?.final_quantity_per_basis ||
+        before?.final_unit_id !== after?.final_unit_id ||
+        before?.final_disposition !== after?.final_disposition;
+      return { key, before, after, changed };
+    });
+  }
+
+  function compositionText(line: EffectiveCompositionLine | undefined) {
+    if (!line) return "Không có";
+    if (line.final_disposition === "REMOVED") return "Đã bỏ";
+    return `${referenceName(
+      load.data.ingredients,
+      line.final_ingredient_id,
+      "ingredient_id",
+      "ingredient_name",
+    )} · ${formatQuantity(line.final_quantity_per_basis)} ${referenceName(
+      load.data.units,
+      line.final_unit_id,
+      "unit_id",
+      "unit_name",
+    )}`;
+  }
+
+  function issuance(revision: RecipeAdjustmentOperatorRevision) {
+    return revision.issuance_kind === "LEGACY_UNATTRIBUTED" ? (
+      <>
+        <span>{formatIssuedAt(revision.issued_at)}</span>
+        <small>Không có dữ liệu từ OPS v1</small>
+      </>
+    ) : (
+      <>
+        <span>{formatIssuedAt(revision.issued_at)}</span>
+        <small>{revision.issued_by_actor_name ?? "—"}</small>
+      </>
+    );
   }
 
   if (authState.status !== "authenticated")
     return (
       <Panel
-        title={view === "rules" ? "Quy tắc điều chỉnh" : "BOM hiệu lực"}
-        description="Dữ liệu có thẩm quyền yêu cầu phiên Atlas hợp lệ."
+        title={view === "rules" ? "ĐIỀU CHỈNH CÔNG THỨC" : "Công thức hiệu lực"}
       >
         <p className="operator-notice warning">
           Phiên làm việc đã mất. Vui lòng đăng nhập lại.
@@ -454,294 +746,627 @@ export function RecipeAdjustmentWorkbench({
 
   if (!api)
     return (
-      <Panel title={view === "rules" ? "Quy tắc điều chỉnh" : "BOM hiệu lực"}>
+      <Panel
+        title={view === "rules" ? "ĐIỀU CHỈNH CÔNG THỨC" : "Công thức hiệu lực"}
+      >
         <p className="operator-notice warning">
-          Kết nối Atlas chưa sẵn sàng. Có thể thử lại an toàn sau khi cấu hình.
+          Kết nối Atlas chưa sẵn sàng. Hãy thử lại sau khi cấu hình.
         </p>
       </Panel>
     );
 
   return (
     <Panel
-      title={view === "rules" ? "Quy tắc điều chỉnh" : "BOM hiệu lực"}
+      title={view === "rules" ? "ĐIỀU CHỈNH CÔNG THỨC" : "Công thức hiệu lực"}
       description={
         view === "rules"
-          ? "Một mô hình đóng cho bốn phạm vi, xem trước cùng bộ giải có thẩm quyền, sửa bằng kế nhiệm và không xóa cứng."
-          : "So sánh BOM phát hành với thành phần hiệu lực theo đúng ngày, Trường và Món ăn."
+          ? "Thay đổi công thức đã khóa bằng điều chỉnh có ngày hiệu lực và lịch sử được giữ nguyên."
+          : "Xem thành phần đang áp dụng theo ngày, trường và món đã chọn."
       }
       status={
         mode === "review" ? (
           <Chip tone="warning">Dữ liệu xem thử · không lưu</Chip>
-        ) : (
-          <Chip tone="ok">Đã kết nối</Chip>
-        )
+        ) : undefined
       }
     >
       {load.status === "loading" && (
-        <p className="operator-notice">Đang tải quy tắc điều chỉnh…</p>
+        <p className="operator-notice">Đang tải danh sách điều chỉnh…</p>
       )}
       {load.status === "error" && (
         <p className="operator-notice warning">
-          {load.message}
+          {load.message}{" "}
           <button type="button" onClick={() => void refresh()}>
             Tải lại
           </button>
         </p>
       )}
       {notice && <p className="operator-notice">{notice}</p>}
-
-      <div className="adjustment-context-bar">
-        <label>
-          Ngày hiệu lực
-          <input
-            type="date"
-            value={contextDate}
-            onChange={(event) => setContextDate(event.target.value)}
-          />
-        </label>
-        <label>
-          Trường
-          <select
-            value={contextSchoolId}
-            onChange={(event) => {
-              setContextSchoolId(event.target.value);
-              setResolution(null);
-            }}
-          >
-            <option value="">Chọn trường</option>
-            {load.data.schools.map((school) => (
-              <option key={school.school_id} value={school.school_id}>
-                {school.school_name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Món ăn
-          <select
-            value={contextDishId}
-            onChange={(event) => {
-              setContextDishId(event.target.value);
-              setResolution(null);
-            }}
-          >
-            <option value="">Chọn món</option>
-            {load.data.dishes.map((dish) => (
-              <option key={dish.dish_id} value={dish.dish_id}>
-                {dish.dish_name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {mode === "review" && view === "effective" && (
-          <label>
-            Tình huống kiểm tra
-            <select
-              value={reviewScenario}
-              onChange={(event) => setReviewScenario(event.target.value)}
-            >
-              <option value="precedence">Đủ năm lớp ưu tiên</option>
-              <option value="replacement_chain">Chuỗi thay thế</option>
-              <option value="removed">Dòng đã loại bỏ</option>
-              <option value="duplicate">Chặn trùng nguyên liệu</option>
-              <option value="cycle">Chặn chu trình</option>
-            </select>
-          </label>
-        )}
-      </div>
+      {mutationLocked && (
+        <div className="operator-notice warning" role="alert">
+          Chưa xác định điều chỉnh đã được ghi nhận hay chưa. Không gửi lại thao
+          tác. Hãy tải lại dữ liệu trước khi tiếp tục.
+          <Button ml="sm" variant="outline" onClick={() => void refresh()}>
+            Tải lại dữ liệu
+          </Button>
+        </div>
+      )}
 
       {view === "rules" ? (
-        <div className="adjustment-workbench-layout">
-          <section className="adjustment-rule-list">
-            <div className="adjustment-filter-grid">
+        <section aria-label="Danh sách điều chỉnh công thức">
+          <div className="adjustment-filter-grid">
+            <label>
+              Tìm kiếm
+              <input
+                type="search"
+                value={query}
+                placeholder="Tìm món, trường hoặc nguyên liệu..."
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <label>
+              Ngày tham chiếu
+              <input
+                type="date"
+                value={referenceDate}
+                onChange={(event) => setReferenceDate(event.target.value)}
+              />
+            </label>
+            <label>
+              Trạng thái hiện tại
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="">Tất cả</option>
+                {(
+                  Object.keys(temporalLabel) as RecipeAdjustmentTemporalState[]
+                ).map((state) => (
+                  <option key={state} value={state}>
+                    {temporalLabel[state]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Phạm vi
+              <select
+                value={scopeFilter}
+                onChange={(event) => setScopeFilter(event.target.value)}
+              >
+                <option value="">Tất cả</option>
+                {(Object.keys(scopeLabel) as RecipeAdjustmentScope[]).map(
+                  (scope) => (
+                    <option key={scope} value={scope}>
+                      {scopeLabel[scope]}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <div className="table-actions">
+              <Button
+                type="button"
+                disabled={load.status !== "ready" || mutationLocked}
+                onClick={openCreate}
+              >
+                Tạo điều chỉnh
+              </Button>
+            </div>
+          </div>
+
+          <Text size="sm" c="dimmed" mb="sm">
+            Trạng thái được tính tại ngày tham chiếu{" "}
+            {formatDate(load.data.reference_date)}.
+          </Text>
+
+          <CompactTable
+            headers={[
+              "Trạng thái",
+              "Món / phạm vi ảnh hưởng",
+              "Loại thay đổi",
+              "Nội dung thay đổi",
+              "Hiệu lực",
+              "Ngày ban hành",
+              "Người ban hành",
+              "Xem",
+            ]}
+          >
+            {filteredRows.map((row) => (
+              <tr key={row.adjustment_id}>
+                <td>
+                  <Badge color={temporalTone(row)} variant="light">
+                    {temporalText(row)}
+                  </Badge>
+                </td>
+                <td>{scopeSummary(row)}</td>
+                <td>{actionLabel[row.action_kind]}</td>
+                <td>{changeSummary(row)}</td>
+                <td>
+                  {formatDate(row.display_revision.effective_from)}
+                  {row.display_revision.effective_to
+                    ? ` – ${formatDate(row.display_revision.effective_to)}`
+                    : ""}
+                </td>
+                <td>{formatIssuedAt(row.display_revision.issued_at)}</td>
+                <td>
+                  {row.display_revision.issuance_kind === "LEGACY_UNATTRIBUTED"
+                    ? "Không có dữ liệu từ OPS v1"
+                    : row.display_revision.issued_by_actor_name}
+                </td>
+                <td>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    onClick={() => setDetail(row)}
+                  >
+                    Xem
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </CompactTable>
+          {load.status === "ready" && filteredRows.length === 0 && (
+            <p className="operator-notice">
+              Không tìm thấy điều chỉnh phù hợp.
+            </p>
+          )}
+        </section>
+      ) : (
+        <section className="effective-bom-workbench">
+          <div className="adjustment-context-bar">
+            <label>
+              Ngày xem
+              <input
+                type="date"
+                value={effectiveDate}
+                onChange={(event) => {
+                  setEffectiveDate(event.target.value);
+                  setResolution(null);
+                }}
+              />
+            </label>
+            <label>
+              Trường
+              <select
+                value={effectiveSchoolId}
+                onChange={(event) => {
+                  setEffectiveSchoolId(event.target.value);
+                  setResolution(null);
+                }}
+              >
+                <option value="">Chọn trường</option>
+                {load.data.schools.map((school) => (
+                  <option key={school.school_id} value={school.school_id}>
+                    {school.school_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Món
+              <select
+                value={effectiveDishId}
+                onChange={(event) => {
+                  setEffectiveDishId(event.target.value);
+                  setResolution(null);
+                }}
+              >
+                <option value="">Chọn món</option>
+                {load.data.dishes.map((dish) => (
+                  <option key={dish.dish_id} value={dish.dish_id}>
+                    {dish.dish_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {mode === "review" && (
               <label>
-                Phạm vi
+                Tình huống xem thử
                 <select
-                  value={filterScope}
-                  onChange={(event) => setFilterScope(event.target.value)}
+                  value={reviewScenario}
+                  onChange={(event) => {
+                    setReviewScenario(event.target.value);
+                    setResolution(null);
+                  }}
                 >
-                  <option value="">Tất cả</option>
-                  {Object.entries(scopeLabel).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
+                  <option value="precedence">Nhiều lớp điều chỉnh</option>
+                  <option value="replacement_chain">
+                    Chuỗi thay nguyên liệu
+                  </option>
+                  <option value="removed">Có dòng đã bỏ</option>
+                  <option value="duplicate">Trùng nguyên liệu</option>
+                  <option value="cycle">Chuỗi thay thế vòng tròn</option>
+                </select>
+              </label>
+            )}
+            <Button
+              type="button"
+              disabled={busy || !effectiveSchoolId || !effectiveDishId}
+              onClick={() => void resolveEffectiveComposition()}
+            >
+              {busy ? "Đang xem…" : "Xem công thức"}
+            </Button>
+          </div>
+
+          {resolution && (
+            <Stack gap="md">
+              <Group>
+                <Badge color={resolution.status === "READY" ? "green" : "red"}>
+                  {resolution.status === "READY" ? "Sẵn sàng" : "Cần kiểm tra"}
+                </Badge>
+                <Text>
+                  {resolution.selected_recipe?.selection_scope === "SCHOOL_TYPE"
+                    ? "Công thức theo loại trường"
+                    : "Công thức chung"}
+                  {resolution.selected_recipe
+                    ? ` · ${resolution.selected_recipe.basis_portions} suất`
+                    : ""}
+                </Text>
+              </Group>
+              {resolution.blockers.map((blocker) => (
+                <p className="operator-notice warning" key={blocker.code}>
+                  {blocker.message}
+                </p>
+              ))}
+              <CompactTable
+                headers={["Nguyên liệu", "Định lượng", "Tình trạng"]}
+              >
+                {resolution.lines.map((line) => (
+                  <tr key={previewLineKey(line)}>
+                    <td>
+                      {referenceName(
+                        load.data.ingredients,
+                        line.final_ingredient_id,
+                        "ingredient_id",
+                        "ingredient_name",
+                      )}
+                    </td>
+                    <td>
+                      {formatQuantity(line.final_quantity_per_basis)}{" "}
+                      {referenceName(
+                        load.data.units,
+                        line.final_unit_id,
+                        "unit_id",
+                        "unit_name",
+                      )}
+                    </td>
+                    <td>
+                      {line.final_disposition === "REMOVED"
+                        ? "Đã bỏ"
+                        : "Đang dùng"}
+                    </td>
+                  </tr>
+                ))}
+              </CompactTable>
+              <details>
+                <summary>Chi tiết kỹ thuật</summary>
+                <p>
+                  Atlas đã áp dụng các điều chỉnh theo thứ tự thẩm quyền đã được
+                  phê duyệt. Thông tin này chỉ dành cho hỗ trợ và kiểm tra.
+                </p>
+                <ul>
+                  {resolution.lines.map((line) => (
+                    <li key={`technical:${previewLineKey(line)}`}>
+                      {line.line_code ?? "Dòng được thêm"}:{" "}
+                      {line.lineage.length} lần điều chỉnh được áp dụng.
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </Stack>
+          )}
+          {!resolution && load.status === "ready" && (
+            <p className="operator-notice">
+              Chọn ngày, trường và món để xem công thức đang áp dụng.
+            </p>
+          )}
+        </section>
+      )}
+
+      <Modal
+        opened={createOpened}
+        onClose={() => !busy && setCreateOpened(false)}
+        title={editing ? "Điều chỉnh lại" : "Tạo điều chỉnh"}
+        size="lg"
+        centered
+        closeOnClickOutside={!busy}
+      >
+        <Stack gap="md">
+          <fieldset>
+            <legend>Bạn muốn thay đổi gì?</legend>
+            <div className="adjustment-choice-grid">
+              {(
+                [
+                  "REPLACE",
+                  "ADJUST_QUANTITY",
+                  "ADD",
+                  "REMOVE",
+                ] as RecipeAdjustmentAction[]
+              ).map((action) => (
+                <label key={action}>
+                  <input
+                    type="radio"
+                    name="adjustment-action"
+                    value={action}
+                    checked={draft.action === action}
+                    disabled={!!editing}
+                    onChange={() => {
+                      const scopes = availableScopes(action);
+                      updateDraft({
+                        action,
+                        scope: scopes[0],
+                        targetIngredientId: "",
+                        targetRecipeLineId: "",
+                        substituteIngredientId: "",
+                        quantity: "",
+                        replaceQuantity: false,
+                      });
+                    }}
+                  />
+                  {actionLabel[action]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Áp dụng ở đâu?</legend>
+            <div className="adjustment-choice-grid">
+              {availableScopes(draft.action).map((scope) => (
+                <label key={scope}>
+                  <input
+                    type="radio"
+                    name="adjustment-scope"
+                    value={scope}
+                    checked={draft.scope === scope}
+                    disabled={!!editing}
+                    onChange={() =>
+                      updateDraft({
+                        scope,
+                        schoolTypeId: "",
+                        targetIngredientId: "",
+                        targetRecipeLineId: "",
+                      })
+                    }
+                  />
+                  {scopeLabel[scope]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {(draft.scope === "SCHOOL" || draft.scope === "SCHOOL_DISH") && (
+            <label>
+              Trường áp dụng
+              <select
+                value={draft.schoolId}
+                disabled={!!editing}
+                onChange={(event) =>
+                  updateDraft({ schoolId: event.target.value })
+                }
+              >
+                <option value="">Chọn trường</option>
+                {load.data.schools.map((school) => (
+                  <option key={school.school_id} value={school.school_id}>
+                    {school.school_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {(draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH") && (
+            <label>
+              Món áp dụng
+              <select
+                value={draft.dishId}
+                disabled={!!editing}
+                onChange={(event) =>
+                  updateDraft({
+                    dishId: event.target.value,
+                    targetRecipeLineId: "",
+                  })
+                }
+              >
+                <option value="">Chọn món</option>
+                {load.data.dishes.map((dish) => (
+                  <option key={dish.dish_id} value={dish.dish_id}>
+                    {dish.dish_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {draft.scope === "SYSTEM_DISH" && (
+            <label>
+              Loại trường (không bắt buộc)
+              <select
+                value={draft.schoolTypeId}
+                disabled={!!editing}
+                onChange={(event) =>
+                  updateDraft({ schoolTypeId: event.target.value })
+                }
+              >
+                <option value="">Tất cả loại trường</option>
+                {load.data.school_types.map((schoolType) => (
+                  <option
+                    key={schoolType.school_type_id ?? "school-type"}
+                    value={schoolType.school_type_id ?? ""}
+                  >
+                    {schoolType.school_type_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {needsIngredientTarget && (
+            <label>
+              {draft.action === "ADD"
+                ? "Nguyên liệu thêm"
+                : "Nguyên liệu cần thay đổi"}
+              <select
+                value={draft.targetIngredientId}
+                disabled={!!editing}
+                onChange={(event) =>
+                  updateDraft({ targetIngredientId: event.target.value })
+                }
+              >
+                <option value="">Chọn nguyên liệu</option>
+                {load.data.ingredients.map((ingredient) => (
+                  <option
+                    key={ingredient.ingredient_id}
+                    value={ingredient.ingredient_id}
+                  >
+                    {ingredient.ingredient_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {needsRecipeLine && (
+            <label>
+              Nguyên liệu trong công thức
+              <select
+                value={draft.targetRecipeLineId}
+                disabled={!!editing}
+                onChange={(event) =>
+                  updateDraft({ targetRecipeLineId: event.target.value })
+                }
+              >
+                <option value="">Chọn nguyên liệu trong món</option>
+                {lineOptions.map((line) => (
+                  <option key={line.recipe_line_id} value={line.recipe_line_id}>
+                    {line.ingredient_name} ·{" "}
+                    {formatQuantity(line.quantity_per_basis)} {line.unit_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {draft.action === "REPLACE" && (
+            <>
+              <label>
+                Nguyên liệu mới
+                <select
+                  value={draft.substituteIngredientId}
+                  onChange={(event) =>
+                    updateDraft({ substituteIngredientId: event.target.value })
+                  }
+                >
+                  <option value="">Chọn nguyên liệu mới</option>
+                  {load.data.ingredients.map((ingredient) => (
+                    <option
+                      key={ingredient.ingredient_id}
+                      value={ingredient.ingredient_id}
+                    >
+                      {ingredient.ingredient_name}
                     </option>
                   ))}
                 </select>
               </label>
               <label>
-                Vòng đời
-                <select
-                  value={filterLifecycle}
-                  onChange={(event) => setFilterLifecycle(event.target.value)}
-                >
-                  <option value="">Tất cả</option>
-                  <option value="ACTIVE">Đang hiệu lực</option>
-                  <option value="SUPERSEDED">Đã thay thế</option>
-                  <option value="CANCELLED">Đã hủy</option>
-                </select>
-              </label>
-              <label>
-                Ngày lọc
                 <input
-                  type="date"
-                  value={filterDate}
-                  onChange={(event) => setFilterDate(event.target.value)}
-                />
+                  type="checkbox"
+                  checked={draft.replaceQuantity}
+                  onChange={(event) =>
+                    updateDraft({
+                      replaceQuantity: event.target.checked,
+                      quantity: event.target.checked ? draft.quantity : "",
+                    })
+                  }
+                />{" "}
+                Đổi cả định lượng
               </label>
-              <label>
-                Tìm trường, món hoặc nguyên liệu
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </label>
-            </div>
-            {load.status === "ready" && filteredRules.length === 0 && (
-              <p className="operator-notice">Chưa có quy tắc phù hợp bộ lọc.</p>
-            )}
-            {filteredRules.map((rule) => {
-              const current = rule.revisions.find(
-                (revision) => revision.revision_id === rule.current_revision_id,
-              );
-              return (
-                <article
-                  className="adjustment-rule-card"
-                  key={rule.adjustment_id}
-                >
-                  <header>
-                    <div>
-                      <Chip
-                        tone={
-                          rule.lifecycle_status === "ACTIVE" ? "ok" : "warning"
-                        }
-                      >
-                        {rule.lifecycle_status === "ACTIVE"
-                          ? "Đang hiệu lực"
-                          : rule.lifecycle_status === "CANCELLED"
-                            ? "Đã hủy"
-                            : "Đã thay thế"}
-                      </Chip>
-                      <strong>{scopeLabel[rule.scope_kind]}</strong>
-                      <span>{actionLabel[rule.action_kind]}</span>
-                    </div>
-                    {rule.lifecycle_status === "ACTIVE" && (
-                      <div className="table-actions">
-                        <button type="button" onClick={() => editRule(rule)}>
-                          Tạo bản kế nhiệm
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void cancelRule(rule)}
-                        >
-                          Hủy
-                        </button>
-                      </div>
-                    )}
-                  </header>
-                  <p>
-                    {referenceLabel(
-                      load.data.schools,
-                      rule.school_id,
-                      "school_id",
-                      "school_name",
-                    )}{" "}
-                    ·{" "}
-                    {referenceLabel(
-                      load.data.dishes,
-                      rule.dish_id,
-                      "dish_id",
-                      "dish_name",
-                    )}{" "}
-                    ·{" "}
-                    {referenceLabel(
-                      load.data.ingredients,
-                      rule.target_ingredient_id,
-                      "ingredient_id",
-                      "ingredient_name",
-                    )}
-                  </p>
-                  <small>
-                    {current?.effective_from} →{" "}
-                    {current?.effective_to ?? "không giới hạn"} ·{" "}
-                    {current?.created_by_actor_name} · {current?.reason_note}
-                  </small>
-                  <details>
-                    <summary>
-                      {rule.revisions.length} phiên bản và quan hệ kế nhiệm
-                    </summary>
-                    <ol>
-                      {rule.revisions.map((revision) => (
-                        <li key={revision.revision_id}>
-                          v{revision.revision_number} ·{" "}
-                          {revision.lifecycle_status} ·{" "}
-                          {revision.predecessor_revision_id
-                            ? "có tiền nhiệm trực tiếp"
-                            : "phiên bản đầu"}{" "}
-                          · {revision.reason_note}
-                        </li>
-                      ))}
-                    </ol>
-                  </details>
-                </article>
-              );
-            })}
-          </section>
+            </>
+          )}
 
-          <aside className="adjustment-rule-editor">
-            <h3>{editing ? "Tạo phiên bản kế nhiệm" : "Tạo quy tắc mới"}</h3>
+          {quantityRequired && (
             <label>
-              Phạm vi
-              <select
-                value={draft.scope}
-                disabled={!!editing}
+              Định lượng mới
+              <input
+                type="number"
+                min="0.000001"
+                step="0.000001"
+                value={draft.quantity}
                 onChange={(event) =>
-                  changeScope(event.target.value as RecipeAdjustmentScope)
+                  updateDraft({ quantity: event.target.value })
+                }
+              />
+            </label>
+          )}
+
+          {(draft.action === "ADD" || draft.replaceQuantity) && (
+            <label>
+              Đơn vị
+              <select
+                value={draft.unitId}
+                onChange={(event) =>
+                  updateDraft({ unitId: event.target.value })
                 }
               >
-                {Object.entries(scopeLabel).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
+                <option value="">Chọn đơn vị</option>
+                {load.data.units.map((unit) => (
+                  <option key={unit.unit_id} value={unit.unit_id}>
+                    {unit.unit_name}
                   </option>
                 ))}
               </select>
+            </label>
+          )}
+
+          <div className="adjustment-period-grid">
+            <label>
+              Hiệu lực từ
+              <input
+                type="date"
+                value={draft.effectiveFrom}
+                onChange={(event) =>
+                  updateDraft({ effectiveFrom: event.target.value })
+                }
+              />
             </label>
             <label>
-              Hành động
-              <select
-                value={draft.action}
-                disabled={!!editing}
-                onChange={(event) => {
-                  setPreview(null);
-                  setDraft((value) => ({
-                    ...value,
-                    action: event.target.value as RecipeAdjustmentAction,
-                    targetIngredientId: "",
-                    targetRecipeLineId: "",
-                    substituteIngredientId: "",
-                    quantity: "",
-                    unitId: "",
-                  }));
-                }}
-              >
-                {ACTIONS[draft.scope].map((action) => (
-                  <option key={action} value={action}>
-                    {actionLabel[action]}
-                  </option>
-                ))}
-              </select>
+              Hiệu lực đến (không bắt buộc)
+              <input
+                type="date"
+                value={draft.effectiveTo}
+                onChange={(event) =>
+                  updateDraft({ effectiveTo: event.target.value })
+                }
+              />
             </label>
-            {(draft.scope === "SCHOOL" || draft.scope === "SCHOOL_DISH") && (
+          </div>
+
+          <label>
+            Lý do
+            <textarea
+              value={draft.reason}
+              onChange={(event) => updateDraft({ reason: event.target.value })}
+            />
+          </label>
+
+          <Divider
+            label="Bối cảnh dùng để xem ảnh hưởng"
+            labelPosition="left"
+          />
+          <Text size="sm" c="dimmed">
+            Bối cảnh này dùng để hiển thị thành phần công thức hiệu lực sau điều
+            chỉnh. Với phạm vi rộng, đây là một bối cảnh đại diện, không phải
+            danh sách toàn bộ món bị ảnh hưởng.
+          </Text>
+
+          {draft.scope === "SYSTEM_INGREDIENT" && (
+            <>
               <label>
-                Trường áp dụng
+                Trường đại diện
                 <select
-                  value={draft.schoolId}
-                  disabled={!!editing}
+                  value={draft.previewSchoolId}
                   onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      schoolId: event.target.value,
-                    }))
+                    updateDraft({ previewSchoolId: event.target.value })
                   }
                 >
                   <option value="">Chọn trường</option>
@@ -752,20 +1377,12 @@ export function RecipeAdjustmentWorkbench({
                   ))}
                 </select>
               </label>
-            )}
-            {(draft.scope === "SYSTEM_DISH" ||
-              draft.scope === "SCHOOL_DISH") && (
               <label>
-                Món áp dụng
+                Món đại diện
                 <select
-                  value={draft.dishId}
-                  disabled={!!editing}
+                  value={draft.previewDishId}
                   onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      dishId: event.target.value,
-                      targetRecipeLineId: "",
-                    }))
+                    updateDraft({ previewDishId: event.target.value })
                   }
                 >
                   <option value="">Chọn món</option>
@@ -776,454 +1393,256 @@ export function RecipeAdjustmentWorkbench({
                   ))}
                 </select>
               </label>
-            )}
-            {draft.scope === "SYSTEM_DISH" && (
-              <label>
-                Giới hạn loại trường (không bắt buộc)
-                <select
-                  value={draft.schoolTypeId}
-                  disabled={!!editing}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      schoolTypeId: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Mọi loại trường</option>
-                  {load.data.school_types.map((schoolType) => (
-                    <option
-                      key={schoolType.school_type_id ?? "school-type"}
-                      value={schoolType.school_type_id ?? ""}
-                    >
-                      {schoolType.school_type_name ?? schoolType.school_type_id}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {(draft.scope === "SYSTEM_INGREDIENT" ||
-              draft.scope === "SCHOOL" ||
-              draft.action === "ADD") && (
-              <label>
-                {draft.action === "ADD"
-                  ? "Nguyên liệu thêm"
-                  : "Nguyên liệu mục tiêu"}
-                <select
-                  value={draft.targetIngredientId}
-                  disabled={!!editing}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      targetIngredientId: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Chọn nguyên liệu</option>
-                  {load.data.ingredients.map((ingredient) => (
-                    <option
-                      key={ingredient.ingredient_id}
-                      value={ingredient.ingredient_id}
-                    >
-                      {ingredient.ingredient_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {(draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH") &&
-              draft.action !== "ADD" && (
-                <label>
-                  Dòng công thức ổn định
-                  <select
-                    value={draft.targetRecipeLineId}
-                    disabled={!!editing}
-                    onChange={(event) =>
-                      setDraft((value) => ({
-                        ...value,
-                        targetRecipeLineId: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Chọn RecipeLine</option>
-                    {lineOptions.map((line) => (
-                      <option
-                        key={line.recipe_line_id}
-                        value={line.recipe_line_id}
-                      >
-                        {line.line_code || "Dòng không có mã"} ·{" "}
-                        {line.recipe_line_id?.slice(0, 8)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-            {draft.action === "REPLACE" && (
-              <label>
-                Nguyên liệu thay thế
-                <select
-                  value={draft.substituteIngredientId}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      substituteIngredientId: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Chọn nguyên liệu</option>
-                  {load.data.ingredients.map((ingredient) => (
-                    <option
-                      key={ingredient.ingredient_id}
-                      value={ingredient.ingredient_id}
-                    >
-                      {ingredient.ingredient_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            {["ADD", "ADJUST_QUANTITY", "REPLACE"].includes(draft.action) && (
-              <label>
-                {draft.action === "REPLACE"
-                  ? "Định lượng thay thế (không bắt buộc)"
-                  : "Định lượng theo định mức"}
-                <input
-                  type="number"
-                  min="0.000001"
-                  step="0.000001"
-                  value={draft.quantity}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      quantity: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            )}
-            {(draft.action === "ADD" ||
-              (draft.action === "REPLACE" && draft.quantity)) && (
-              <label>
-                Đơn vị
-                <select
-                  value={draft.unitId}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      unitId: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Chọn đơn vị</option>
-                  {load.data.units.map((unit) => (
-                    <option key={unit.unit_id} value={unit.unit_id}>
-                      {unit.unit_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <div className="adjustment-period-grid">
-              <label>
-                Hiệu lực từ
-                <input
-                  type="date"
-                  value={draft.effectiveFrom}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      effectiveFrom: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label>
-                Hiệu lực đến (không gồm ngày này)
-                <input
-                  type="date"
-                  value={draft.effectiveTo}
-                  onChange={(event) =>
-                    setDraft((value) => ({
-                      ...value,
-                      effectiveTo: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            </div>
-            <label>
-              Lý do bắt buộc
-              <textarea
-                value={draft.reason}
-                onChange={(event) =>
-                  setDraft((value) => ({
-                    ...value,
-                    reason: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <div className="table-actions">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void runPreview()}
-              >
-                {busy ? "Đang xem trước…" : "Xem trước có thẩm quyền"}
-              </button>
-              <button
-                type="button"
-                disabled={busy || !preview?.can_save}
-                onClick={() => void saveRule()}
-              >
-                {editing ? "Lưu bản kế nhiệm" : "Lưu quy tắc"}
-              </button>
-            </div>
-            {editing && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setPreview(null);
-                  setDraft(emptyDraft());
-                }}
-              >
-                Bỏ sửa kế nhiệm
-              </button>
-            )}
-            {preview && (
-              <section className="adjustment-preview-card">
-                <h4>Kết quả trước / sau</h4>
-                <p>
-                  {preview.affected_line_count} dòng bị ảnh hưởng ·{" "}
-                  {preview.can_save ? "Có thể lưu" : "Đang bị chặn"}
-                </p>
-                {preview.blockers.map((blocker) => (
-                  <p className="operator-notice warning" key={blocker.code}>
-                    {blocker.code}: {blocker.message}
-                  </p>
-                ))}
-                <CompactTable
-                  headers={["RecipeLine", "Trước", "Sau", "Nguồn cuối"]}
-                >
-                  {preview.after.lines.map((line) => {
-                    const before = preview.before.lines.find(
-                      (candidate) =>
-                        (candidate.base_recipe_line_id ??
-                          candidate.adjustment_line_id) ===
-                        (line.base_recipe_line_id ?? line.adjustment_line_id),
-                    );
-                    return (
-                      <tr
-                        key={
-                          line.base_recipe_line_id ?? line.adjustment_line_id
-                        }
-                      >
-                        <td>{line.line_code ?? "Dòng điều chỉnh"}</td>
-                        <td>
-                          {referenceLabel(
-                            load.data.ingredients,
-                            before?.final_ingredient_id ?? null,
-                            "ingredient_id",
-                            "ingredient_name",
-                          )}{" "}
-                          · {before?.final_quantity_per_basis ?? "—"}
-                        </td>
-                        <td>
-                          {referenceLabel(
-                            load.data.ingredients,
-                            line.final_ingredient_id,
-                            "ingredient_id",
-                            "ingredient_name",
-                          )}{" "}
-                          · {line.final_quantity_per_basis}
-                        </td>
-                        <td>{layerLabel[line.source_layer]}</td>
-                      </tr>
-                    );
-                  })}
-                </CompactTable>
-              </section>
-            )}
-          </aside>
-        </div>
-      ) : (
-        <section className="effective-bom-workbench">
-          <div className="table-actions">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void resolve()}
-            >
-              {busy ? "Đang phân giải…" : "Phân giải BOM hiệu lực"}
-            </button>
-            <button
-              type="button"
-              disabled={!resolution}
-              onClick={() => void copyAudit()}
-            >
-              Sao chép chi tiết kiểm toán
-            </button>
-          </div>
-          {resolution && (
-            <>
-              <div className="effective-bom-summary">
-                <article>
-                  <span>Công thức được chọn</span>
-                  <strong>
-                    {resolution.selected_recipe?.selection_scope ===
-                    "SCHOOL_TYPE"
-                      ? "Theo loại trường"
-                      : "Công thức chung"}
-                  </strong>
-                </article>
-                <article>
-                  <span>RecipeVersion</span>
-                  <strong>
-                    {resolution.selected_recipe?.recipe_version_id.slice(0, 8)}
-                  </strong>
-                </article>
-                <article>
-                  <span>Định mức</span>
-                  <strong>
-                    {resolution.selected_recipe?.basis_portions} suất
-                  </strong>
-                </article>
-                <article>
-                  <span>Trạng thái</span>
-                  <strong>
-                    {resolution.status === "READY" ? "Sẵn sàng" : "Bị chặn"}
-                  </strong>
-                </article>
-              </div>
-              {resolution.blockers.map((blocker) => (
-                <p className="operator-notice warning" key={blocker.code}>
-                  {blocker.code}: {blocker.message}
-                </p>
-              ))}
-              {resolution.warnings.map((warning) => (
-                <p className="operator-notice" key={warning.code}>
-                  {warning.message}
-                </p>
-              ))}
-              <div className="effective-bom-comparison">
-                <section>
-                  <h3>BOM phát hành</h3>
-                  <CompactTable
-                    headers={[
-                      "Dòng",
-                      "Nguyên liệu",
-                      "Định lượng",
-                      "Trạng thái",
-                    ]}
-                  >
-                    {resolution.lines.map((line) => (
-                      <tr
-                        key={`base:${line.base_recipe_line_id ?? line.adjustment_line_id}`}
-                      >
-                        <td>{line.line_code ?? "Dòng thêm"}</td>
-                        <td>
-                          {referenceLabel(
-                            load.data.ingredients,
-                            line.base_ingredient_id,
-                            "ingredient_id",
-                            "ingredient_name",
-                          )}
-                        </td>
-                        <td>
-                          {line.base_quantity_per_basis ?? "—"}{" "}
-                          {referenceLabel(
-                            load.data.units,
-                            line.base_unit_id,
-                            "unit_id",
-                            "unit_name",
-                          )}
-                        </td>
-                        <td>
-                          {line.base_disposition ?? "Không có trong BOM gốc"}
-                        </td>
-                      </tr>
-                    ))}
-                  </CompactTable>
-                </section>
-                <section>
-                  <h3>BOM hiệu lực</h3>
-                  <CompactTable
-                    headers={["Dòng", "Nguyên liệu", "Định lượng", "Lớp nguồn"]}
-                  >
-                    {resolution.lines.map((line) => (
-                      <tr
-                        className={
-                          line.final_disposition === "REMOVED"
-                            ? "removed-effective-line"
-                            : ""
-                        }
-                        key={`effective:${line.base_recipe_line_id ?? line.adjustment_line_id}`}
-                      >
-                        <td>
-                          {line.line_code ?? "Dòng thêm"}
-                          <details>
-                            <summary>
-                              {line.lineage.length} bước điều chỉnh
-                            </summary>
-                            {line.lineage.length === 0 ? (
-                              <small>Chỉ dùng BOM phát hành.</small>
-                            ) : (
-                              <ol>
-                                {line.lineage.map((step) => (
-                                  <li key={step.revision_id}>
-                                    {scopeLabel[step.scope_kind]} ·{" "}
-                                    {actionLabel[step.action_kind]} ·{" "}
-                                    {step.reason_note}
-                                  </li>
-                                ))}
-                              </ol>
-                            )}
-                            <code>
-                              {line.base_recipe_line_id ??
-                                line.adjustment_line_id}
-                            </code>
-                          </details>
-                        </td>
-                        <td>
-                          {referenceLabel(
-                            load.data.ingredients,
-                            line.final_ingredient_id,
-                            "ingredient_id",
-                            "ingredient_name",
-                          )}
-                        </td>
-                        <td>
-                          {line.final_quantity_per_basis}{" "}
-                          {referenceLabel(
-                            load.data.units,
-                            line.final_unit_id,
-                            "unit_id",
-                            "unit_name",
-                          )}
-                          {line.final_disposition === "REMOVED" && (
-                            <small> · Đã loại bỏ</small>
-                          )}
-                        </td>
-                        <td>
-                          <Chip tone={sourceTone(line.source_layer)}>
-                            {layerLabel[line.source_layer] ?? line.source_layer}
-                          </Chip>
-                        </td>
-                      </tr>
-                    ))}
-                  </CompactTable>
-                </section>
-              </div>
             </>
           )}
-          {!resolution && load.status === "ready" && (
-            <p className="operator-notice">
-              Chọn đúng ngày, Trường và Món ăn rồi phân giải BOM hiệu lực.
-            </p>
+
+          {draft.scope === "SYSTEM_DISH" && (
+            <label>
+              Trường dùng để xem
+              <select
+                value={draft.previewSchoolId}
+                onChange={(event) =>
+                  updateDraft({ previewSchoolId: event.target.value })
+                }
+              >
+                <option value="">Chọn trường</option>
+                {load.data.schools.map((school) => (
+                  <option key={school.school_id} value={school.school_id}>
+                    {school.school_name}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
-        </section>
-      )}
+
+          {draft.scope === "SCHOOL" && (
+            <label>
+              Món dùng để xem
+              <select
+                value={draft.previewDishId}
+                onChange={(event) =>
+                  updateDraft({ previewDishId: event.target.value })
+                }
+              >
+                <option value="">Chọn món</option>
+                {load.data.dishes.map((dish) => (
+                  <option key={dish.dish_id} value={dish.dish_id}>
+                    {dish.dish_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {draft.scope === "SCHOOL_DISH" && (
+            <Text size="sm">
+              Trường và món đã được xác định trong phạm vi điều chỉnh.
+            </Text>
+          )}
+
+          {preview && (
+            <section
+              className="adjustment-preview-card"
+              aria-label="Ảnh hưởng điều chỉnh"
+            >
+              <Group justify="space-between">
+                <Text fw={700}>Trước điều chỉnh → Sau điều chỉnh</Text>
+                <Badge color={preview.can_save ? "green" : "red"}>
+                  {preview.can_save ? "Có thể lưu" : "Cần kiểm tra"}
+                </Badge>
+              </Group>
+              {preview.blockers.map((blocker) => (
+                <p className="operator-notice warning" key={blocker.code}>
+                  {blocker.message}
+                </p>
+              ))}
+              <CompactTable
+                headers={[
+                  "Dòng ảnh hưởng",
+                  "Trước điều chỉnh",
+                  "Sau điều chỉnh",
+                ]}
+              >
+                {previewRows(preview).map(({ key, before, after, changed }) => (
+                  <tr
+                    key={key}
+                    className={changed ? "adjustment-preview-changed" : ""}
+                  >
+                    <td>
+                      {after?.line_code ??
+                        before?.line_code ??
+                        "Nguyên liệu được thêm"}
+                    </td>
+                    <td>{compositionText(before)}</td>
+                    <td>{compositionText(after)}</td>
+                  </tr>
+                ))}
+              </CompactTable>
+            </section>
+          )}
+
+          <Group justify="flex-end">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy || !canPreview}
+              onClick={() => void runPreview()}
+            >
+              {busy ? "Đang xem…" : "Xem ảnh hưởng"}
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                busy ||
+                mutationLocked ||
+                !preview?.can_save ||
+                previewFingerprint !== materialFingerprint
+              }
+              onClick={() => void saveAdjustment()}
+            >
+              Lưu điều chỉnh
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Drawer
+        opened={!!detail}
+        onClose={() => setDetail(null)}
+        title="Chi tiết điều chỉnh"
+        position="right"
+        size="lg"
+      >
+        {detail && (
+          <Stack gap="md">
+            <Badge color={temporalTone(detail)} variant="light">
+              {temporalText(detail)}
+            </Badge>
+            <div>
+              <Text size="sm" c="dimmed">
+                Phạm vi
+              </Text>
+              <Text fw={600}>{scopeSummary(detail)}</Text>
+              <Text>{scopeLabel[detail.scope_kind]}</Text>
+            </div>
+            <div>
+              <Text size="sm" c="dimmed">
+                Nội dung thay đổi
+              </Text>
+              <Text fw={600}>{actionLabel[detail.action_kind]}</Text>
+              <Text>{changeSummary(detail)}</Text>
+            </div>
+            <div>
+              <Text size="sm" c="dimmed">
+                Hiệu lực
+              </Text>
+              <Text>
+                {formatDate(detail.display_revision.effective_from)}
+                {detail.display_revision.effective_to
+                  ? ` – ${formatDate(detail.display_revision.effective_to)}`
+                  : " trở đi"}
+              </Text>
+            </div>
+            <div>
+              <Text size="sm" c="dimmed">
+                Lý do
+              </Text>
+              <Text>{detail.display_revision.reason_note}</Text>
+            </div>
+            <div>
+              <Text size="sm" c="dimmed">
+                Thông tin ban hành
+              </Text>
+              <Text component="div">{issuance(detail.display_revision)}</Text>
+            </div>
+            <Divider label="Lịch sử điều chỉnh" labelPosition="left" />
+            <ol className="adjustment-history-list">
+              {detail.history.map((revision) => (
+                <li key={revision.revision_id}>
+                  <Text fw={600}>
+                    {revision.business_event_kind === "CANCELLED"
+                      ? "Hủy điều chỉnh"
+                      : revision.business_event_kind === "CREATED"
+                        ? "Tạo điều chỉnh"
+                        : "Điều chỉnh lại"}
+                  </Text>
+                  <Text>{changeSummary(detail, revision)}</Text>
+                  <Text size="sm">
+                    Hiệu lực từ {formatDate(revision.effective_from)}
+                    {revision.effective_to
+                      ? ` đến ${formatDate(revision.effective_to)}`
+                      : ""}
+                  </Text>
+                  <Text size="sm">{revision.reason_note}</Text>
+                  <Text size="sm" component="div">
+                    {issuance(revision)}
+                  </Text>
+                </li>
+              ))}
+            </ol>
+            <Group>
+              {detail.can_correct && (
+                <Button
+                  disabled={mutationLocked}
+                  onClick={() => openCorrection(detail)}
+                >
+                  Điều chỉnh lại
+                </Button>
+              )}
+              {detail.can_cancel && (
+                <Button
+                  color="red"
+                  variant="outline"
+                  disabled={mutationLocked}
+                  onClick={() => openCancellation(detail)}
+                >
+                  Hủy điều chỉnh
+                </Button>
+              )}
+            </Group>
+          </Stack>
+        )}
+      </Drawer>
+
+      <Modal
+        opened={!!cancelTarget}
+        onClose={() => !busy && setCancelTarget(null)}
+        title="Hủy điều chỉnh"
+        centered
+      >
+        <Stack gap="md">
+          <Text>Lịch sử điều chỉnh được giữ nguyên.</Text>
+          <label>
+            Hiệu lực hủy từ
+            <input
+              type="date"
+              value={cancelDate}
+              onChange={(event) => setCancelDate(event.target.value)}
+            />
+          </label>
+          <label>
+            Lý do
+            <textarea
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+            />
+          </label>
+          <Group justify="flex-end">
+            <Button variant="subtle" onClick={() => setCancelTarget(null)}>
+              Quay lại
+            </Button>
+            <Button
+              color="red"
+              disabled={
+                busy || mutationLocked || !cancelDate || !cancelReason.trim()
+              }
+              onClick={() => void cancelAdjustment()}
+            >
+              Xác nhận hủy
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Panel>
   );
 }

@@ -1,14 +1,17 @@
 import "@testing-library/jest-dom/vitest";
+import { MantineProvider } from "@mantine/core";
 import {
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
+import { atlasTheme } from "../../theme";
 import { RecipeAdjustmentWorkbench } from "./RecipeAdjustmentWorkbench";
 
 afterEach(() => {
@@ -16,207 +19,252 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("Recipe adjustment and effective BOM workbench", () => {
-  it("loads every closed scope/action and immutable lifecycle evidence", async () => {
-    render(
-      <RecipeAdjustmentWorkbench
-        authState={createReviewAuthState("ready")}
-        api={createReviewRecipeAdjustmentApi("ready")}
-        view="rules"
-        mode="review"
-      />,
-    );
-    expect(
-      (await screen.findAllByText("Toàn hệ thống · Nguyên liệu")).length,
-    ).toBeGreaterThan(0);
-    for (const action of [
-      "Thêm",
-      "Thay thế",
-      "Điều chỉnh định lượng",
-      "Loại bỏ",
+function renderWorkbench(
+  view: "rules" | "effective" = "rules",
+  api = createReviewRecipeAdjustmentApi("ready"),
+) {
+  return {
+    api,
+    ...render(
+      <MantineProvider theme={atlasTheme}>
+        <RecipeAdjustmentWorkbench
+          authState={createReviewAuthState("ready")}
+          api={api}
+          view={view}
+          mode="review"
+        />
+      </MantineProvider>,
+    ),
+  };
+}
+
+async function openCreateDialog() {
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Tạo điều chỉnh" }),
+  );
+  return screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
+}
+
+function fillSystemIngredientReplacement(dialog: HTMLElement) {
+  fireEvent.change(within(dialog).getByLabelText("Nguyên liệu cần thay đổi"), {
+    target: { value: "17000000-0000-4000-8000-000000000001" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Nguyên liệu mới"), {
+    target: { value: "17000000-0000-4000-8000-000000000003" },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+    target: { value: "Thay theo tiêu chuẩn nguyên liệu đã duyệt." },
+  });
+}
+
+describe("Recipe Change Order first-user workbench", () => {
+  it("renders a table-first human-language list with search and backend-shaped status", async () => {
+    renderWorkbench();
+
+    expect(await screen.findByText("ĐIỀU CHỈNH CÔNG THỨC")).toBeInTheDocument();
+    const table = screen.getByRole("table");
+    for (const header of [
+      "Trạng thái",
+      "Món / phạm vi ảnh hưởng",
+      "Loại thay đổi",
+      "Nội dung thay đổi",
+      "Hiệu lực",
+      "Ngày ban hành",
+      "Người ban hành",
+      "Xem",
     ])
-      expect(screen.getAllByText(action).length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Đã hủy").length).toBeGreaterThan(0);
+      expect(
+        within(table).getByRole("columnheader", { name: header }),
+      ).toBeInTheDocument();
+
+    for (const label of [
+      "Thay nguyên liệu",
+      "Đổi định lượng",
+      "Thêm nguyên liệu",
+      "Bỏ nguyên liệu",
+      "Mọi món có nguyên liệu này",
+      "Một món tại các trường",
+      "Mọi món của một trường",
+      "Một món của một trường",
+    ])
+      expect(screen.getAllByText(new RegExp(label)).length).toBeGreaterThan(0);
+
+    expect(screen.getByText(/Đang hiệu lực · thay đổi từ/)).toBeInTheDocument();
+    expect(screen.getByText("Không có dữ liệu từ OPS v1")).toBeInTheDocument();
+
+    const beforeSearch = within(table).getAllByRole("row").length;
+    fireEvent.change(
+      screen.getByPlaceholderText("Tìm món, trường hoặc nguyên liệu..."),
+      {
+        target: { value: "Minh Khai" },
+      },
+    );
+    expect(within(table).getAllByRole("row").length).toBeLessThan(beforeSearch);
+
+    const normalText = document.body.textContent ?? "";
+    expect(normalText).not.toMatch(
+      /Revision|predecessor|successor|ACTIVE|SUPERSEDED|CANCELLED|Tạo bản kế nhiệm|Phiên bản kế nhiệm/i,
+    );
+    expect(normalText).not.toMatch(
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+    );
+  });
+
+  it("opens a create modal and shows only scopes and fields valid for the chosen intent", async () => {
+    renderWorkbench();
+    const dialog = await openCreateDialog();
+
     expect(
-      screen.getAllByText(/phiên bản và quan hệ kế nhiệm/i).length,
-    ).toBeGreaterThan(0);
+      within(dialog).getByText("Bạn muốn thay đổi gì?"),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByText("Áp dụng ở đâu?")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Thay nguyên liệu")).toBeChecked();
     expect(
-      screen.queryByRole("button", { name: /^Xóa$/i }),
+      within(dialog).getByLabelText("Mọi món có nguyên liệu này"),
+    ).toBeChecked();
+
+    fireEvent.click(within(dialog).getByLabelText("Thêm nguyên liệu"));
+    expect(
+      within(dialog).queryByLabelText("Mọi món có nguyên liệu này"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByLabelText("Nguyên liệu thêm"),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Định lượng mới")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Đơn vị")).toBeInTheDocument();
+    expect(
+      within(dialog).queryByLabelText("Nguyên liệu mới"),
     ).not.toBeInTheDocument();
   });
 
-  it("previews before save and requires explicit confirmation", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    render(
-      <RecipeAdjustmentWorkbench
-        authState={createReviewAuthState("ready")}
-        api={createReviewRecipeAdjustmentApi("ready")}
-        view="rules"
-        mode="review"
-      />,
-    );
-    await screen.findAllByText("Toàn hệ thống · Nguyên liệu");
-    fireEvent.change(screen.getByLabelText("Nguyên liệu thêm"), {
-      target: { value: "17000000-0000-4000-8000-000000000003" },
-    });
-    fireEvent.change(screen.getByLabelText("Định lượng theo định mức"), {
-      target: { value: "5" },
-    });
-    fireEvent.change(screen.getByLabelText("Đơn vị"), {
-      target: { value: "18000000-0000-4000-8000-000000000001" },
-    });
-    fireEvent.change(screen.getByLabelText("Lý do bắt buộc"), {
-      target: { value: "Bổ sung theo tiêu chuẩn đã duyệt." },
-    });
+  it("requires authoritative preview before save and invalidates it after a material edit", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const create = vi.spyOn(api, "create");
+    const dialog = await openCreateDialog();
+    fillSystemIngredientReplacement(dialog);
+
+    const save = within(dialog).getByRole("button", { name: "Lưu điều chỉnh" });
+    expect(save).toBeDisabled();
     fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
-    expect(await screen.findByText(/1 dòng bị ảnh hưởng/)).toBeInTheDocument();
-    const save = screen.getByRole("button", { name: "Lưu quy tắc" });
+    expect(
+      await within(dialog).findByText("Trước điều chỉnh → Sau điều chỉnh"),
+    ).toBeInTheDocument();
+    expect(preview).toHaveBeenCalledOnce();
+    expect(save).toBeEnabled();
+
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Lý do đã được cập nhật sau khi xem ảnh hưởng." },
+    });
+    expect(save).toBeDisabled();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(2));
     expect(save).toBeEnabled();
     fireEvent.click(save);
-    await waitFor(() => expect(window.confirm).toHaveBeenCalledOnce());
-    expect(
-      await screen.findByText(/Đã cập nhật dữ liệu xem thử/),
-    ).toBeInTheDocument();
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
   });
 
-  it("supersedes and cancels through explicit reviewed lifecycle commands", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    vi.spyOn(window, "prompt").mockReturnValue(
-      "Dừng áp dụng theo biên bản đã duyệt.",
-    );
-    const api = createReviewRecipeAdjustmentApi("ready");
+  it("explains representative preview context for broad scopes without claiming a global enumeration", async () => {
+    renderWorkbench();
+    const dialog = await openCreateDialog();
+    expect(
+      within(dialog).getByText("Bối cảnh dùng để xem ảnh hưởng"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByLabelText("Trường đại diện"),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Món đại diện")).toBeInTheDocument();
+    expect(within(dialog).getByText(/bối cảnh đại diện/i)).toBeInTheDocument();
+    expect(
+      within(dialog).queryByText(/tất cả món bị ảnh hưởng/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows business history in a drawer and corrects through the existing supersede command", async () => {
+    const { api } = renderWorkbench();
     const supersede = vi.spyOn(api, "supersede");
-    const cancel = vi.spyOn(api, "cancel");
-    render(
-      <RecipeAdjustmentWorkbench
-        authState={createReviewAuthState("ready")}
-        api={api}
-        view="rules"
-        mode="review"
-      />,
-    );
-    await screen.findAllByText("Toàn hệ thống · Nguyên liệu");
+    const firstView = (
+      await screen.findAllByRole("button", { name: "Xem" })
+    )[0];
+    fireEvent.click(firstView);
+    const drawer = await screen.findByRole("dialog", {
+      name: "Chi tiết điều chỉnh",
+    });
+    expect(within(drawer).getByText("Lịch sử điều chỉnh")).toBeInTheDocument();
+    expect(within(drawer).getByText("Tạo điều chỉnh")).toBeInTheDocument();
+    expect(
+      within(drawer).getAllByText("Không có dữ liệu từ OPS v1").length,
+    ).toBeGreaterThan(0);
 
     fireEvent.click(
-      screen.getAllByRole("button", { name: "Tạo bản kế nhiệm" })[0],
+      within(drawer).getByRole("button", { name: "Điều chỉnh lại" }),
     );
-    fireEvent.change(screen.getByLabelText("Lý do bắt buộc"), {
-      target: { value: "Cập nhật theo tiêu chuẩn đã duyệt." },
+    const dialog = await screen.findByRole("dialog", {
+      name: "Điều chỉnh lại",
+    });
+    expect(within(dialog).getByLabelText("Thay nguyên liệu")).toBeDisabled();
+    expect(
+      within(dialog).getByLabelText("Nguyên liệu cần thay đổi"),
+    ).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Điều chỉnh theo biên bản vận hành mới." },
     });
     fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
-    await screen.findByText(/1 dòng bị ảnh hưởng/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu bản kế nhiệm" }));
+    await within(dialog).findByText("Trước điều chỉnh → Sau điều chỉnh");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
     await waitFor(() => expect(supersede).toHaveBeenCalledOnce());
+  });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Hủy" })[0]);
+  it("cancels through an application modal without prompt or confirm", async () => {
+    const prompt = vi.spyOn(window, "prompt");
+    const confirm = vi.spyOn(window, "confirm");
+    const { api } = renderWorkbench();
+    const cancel = vi.spyOn(api, "cancel");
+    fireEvent.click((await screen.findAllByRole("button", { name: "Xem" }))[1]);
+    const drawer = await screen.findByRole("dialog", {
+      name: "Chi tiết điều chỉnh",
+    });
+    fireEvent.click(
+      within(drawer).getByRole("button", { name: "Hủy điều chỉnh" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Hủy điều chỉnh",
+    });
+    expect(
+      within(dialog).getByText("Lịch sử điều chỉnh được giữ nguyên."),
+    ).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Dừng áp dụng theo quyết định đã duyệt." },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xác nhận hủy" }),
+    );
     await waitFor(() => expect(cancel).toHaveBeenCalledOnce());
-    expect(window.prompt).toHaveBeenCalledOnce();
+    expect(prompt).not.toHaveBeenCalled();
+    expect(confirm).not.toHaveBeenCalled();
   });
 
-  it("renders precedence, removed-line audit, duplicate and cycle blockers", async () => {
-    render(
-      <RecipeAdjustmentWorkbench
-        authState={createReviewAuthState("ready")}
-        api={createReviewRecipeAdjustmentApi("ready")}
-        view="effective"
-        mode="review"
-      />,
-    );
-    await screen.findByText("BOM hiệu lực");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phân giải BOM hiệu lực" }),
-    );
-    expect(await screen.findByText("Trường · Món")).toBeInTheDocument();
-    expect(screen.getByText("4 bước điều chỉnh")).toBeInTheDocument();
-
-    const scenario = screen.getByLabelText("Tình huống kiểm tra");
-    fireEvent.change(scenario, { target: { value: "removed" } });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phân giải BOM hiệu lực" }),
-    );
-    expect(await screen.findByText(/Đã loại bỏ/)).toBeInTheDocument();
-
-    fireEvent.change(scenario, { target: { value: "duplicate" } });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phân giải BOM hiệu lực" }),
-    );
+  it("keeps Công thức hiệu lực as a secondary explicit-context read surface", async () => {
+    renderWorkbench("effective");
+    expect(await screen.findByText("Công thức hiệu lực")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ngày xem")).not.toHaveValue("");
+    expect(screen.getByLabelText("Trường")).toBeInTheDocument();
+    expect(screen.getByLabelText("Món")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem công thức" }));
     expect(
-      await screen.findByText(/DUPLICATE_EFFECTIVE_INGREDIENT/),
+      await screen.findByText(/Công thức theo loại trường/),
     ).toBeInTheDocument();
-
-    fireEvent.change(scenario, { target: { value: "cycle" } });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phân giải BOM hiệu lực" }),
+    expect(screen.getByText("Chi tiết kỹ thuật")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(
+      /recipe_version_id|applied_revision_ids|fingerprint/i,
     );
-    expect(await screen.findByText(/REPLACEMENT_CYCLE/)).toBeInTheDocument();
-  });
-
-  it("shows permission, retry, and session-loss outcomes safely", async () => {
-    for (const [scenario, expected] of [
-      ["permission_denied", "Bạn không có quyền quản trị quy tắc điều chỉnh."],
-      ["server_error", "Yêu cầu xem thử đã bị từ chối an toàn."],
-      ["session_lost", "Yêu cầu xem thử đã bị từ chối an toàn."],
-    ] as const) {
-      const view = render(
-        <RecipeAdjustmentWorkbench
-          authState={createReviewAuthState("ready")}
-          api={createReviewRecipeAdjustmentApi(scenario)}
-          view="rules"
-          mode="review"
-        />,
-      );
-      expect(await screen.findByText(expected)).toBeInTheDocument();
-      view.unmount();
-    }
-  });
-
-  it("shows a deterministic loading state", async () => {
-    render(
-      <RecipeAdjustmentWorkbench
-        authState={createReviewAuthState("ready")}
-        api={createReviewRecipeAdjustmentApi("loading")}
-        view="rules"
-        mode="review"
-      />,
-    );
-    expect(
-      await screen.findByText("Đang tải quy tắc điều chỉnh…"),
-    ).toBeInTheDocument();
-  });
-
-  it("shows a stale-write outcome after an authenticated preview attempt", async () => {
-    render(
-      <RecipeAdjustmentWorkbench
-        authState={createReviewAuthState("ready")}
-        api={createReviewRecipeAdjustmentApi("stale")}
-        view="rules"
-        mode="review"
-      />,
-    );
-    await screen.findAllByText("Toàn hệ thống · Nguyên liệu");
-    fireEvent.change(screen.getByLabelText("Nguyên liệu thêm"), {
-      target: { value: "17000000-0000-4000-8000-000000000003" },
-    });
-    fireEvent.change(screen.getByLabelText("Định lượng theo định mức"), {
-      target: { value: "5" },
-    });
-    fireEvent.change(screen.getByLabelText("Đơn vị"), {
-      target: { value: "18000000-0000-4000-8000-000000000001" },
-    });
-    fireEvent.change(screen.getByLabelText("Lý do bắt buộc"), {
-      target: { value: "Bổ sung theo tiêu chuẩn đã duyệt." },
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
-    );
-    expect(
-      await screen.findByText(
-        "Quy tắc đã thay đổi. Hãy tải lại trước khi lưu.",
-      ),
-    ).toBeInTheDocument();
   });
 });

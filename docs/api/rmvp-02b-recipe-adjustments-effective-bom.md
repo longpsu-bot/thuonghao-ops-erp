@@ -97,3 +97,29 @@ Business blockers include invalid scope/action or typed target, invalid half-ope
 Public error codes include `VALIDATION_FAILED`, `AUTH_SUBJECT_MISMATCH`, `ACTOR_NOT_FOUND`, `ACTOR_INACTIVE`, `CAPABILITY_DENIED`, `SCOPE_DENIED`, `NOT_FOUND`, `STALE_VERSION`, `CONFLICT`, `INVARIANT_VIOLATION`, `IDEMPOTENCY_CONFLICT`, `RETRYABLE_CONCURRENCY_FAILURE`, `INTERNAL_COMMAND_FAILURE`, and `INTERNAL_READ_FAILURE`.
 
 Responses never expose credentials, SQL, private relation dumps, or exception stacks.
+
+## Additive operator read — `RMVP-02B.v2`
+
+### `get_recipe_adjustment_operator_workbench`
+
+- Capability: `master_data.recipe_adjustments.read`
+- Owner: `atlas_read_runtime`
+- Required envelope contract: `RMVP-02B.v2`
+- Required payload: explicit `as_of_date`; the function does not use `CURRENT_DATE`
+- Compatibility: all six `RMVP-02B.v1` functions above remain unchanged and callable
+
+The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity.
+
+`operator_rows` returns one narrow row per stable adjustment with internal IDs and optimistic version for the existing commands, the frozen scope/action identity, a display revision, the exact current command revision, ordered immutable business history, issuance provenance and one server-derived `temporal_state`:
+
+- `ACTIVE`
+- `SCHEDULED`
+- `ACTIVE_CHANGE_SCHEDULED`
+- `ACTIVE_CANCELLATION_SCHEDULED`
+- `ACTIVE_RESUMED`
+- `EXPIRED`
+- `CANCELLED`
+
+`temporal_state_date` supplies the scheduled first-effect, correction or cancellation date when relevant. React maps these states to Vietnamese operator labels but does not reconstruct temporal applicability from root lifecycle and revision dates.
+
+Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED` and a null issuer name; the Atlas importer is not represented as the original business issuer.

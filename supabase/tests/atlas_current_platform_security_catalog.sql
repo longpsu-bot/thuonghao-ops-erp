@@ -592,8 +592,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  88,
-  'CAT-14 physical atlas_api function count is exactly eighty-eight'
+  89,
+  'CAT-14 physical atlas_api function count is exactly eighty-nine'
 );
 
 select is(
@@ -644,6 +644,7 @@ select is(
     'get_planning_input_preflight(request jsonb)',
     'get_planning_input_readiness_workbench(request jsonb)',
     'get_planning_inputs_workbench(request jsonb)',
+    'get_recipe_adjustment_operator_workbench(request jsonb)',
     'get_recipe_adjustment_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
@@ -696,7 +697,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly eighty-eight functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly eighty-nine functions'
 );
 
 select is(
@@ -839,6 +840,7 @@ select is(
     'get_planning_input_preflight(request jsonb)=atlas_read_runtime',
     'get_planning_input_readiness_workbench(request jsonb)=atlas_read_runtime',
     'get_planning_inputs_workbench(request jsonb)=atlas_read_runtime',
+    'get_recipe_adjustment_operator_workbench(request jsonb)=atlas_read_runtime',
     'get_recipe_adjustment_workbench(request jsonb)=atlas_read_runtime',
     'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
@@ -943,6 +945,7 @@ select is(
     'get_planning_input_preflight(request jsonb)',
     'get_planning_input_readiness_workbench(request jsonb)',
     'get_planning_inputs_workbench(request jsonb)',
+    'get_recipe_adjustment_operator_workbench(request jsonb)',
     'get_recipe_adjustment_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
@@ -995,7 +998,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly eighty-eight functions'
+  'CAT-18 authenticated execute allowlist is exactly eighty-nine functions'
 );
 
 select ok(
@@ -1066,6 +1069,7 @@ select ok(
           ('get_planning_input_readiness_workbench', 'request jsonb'),
           ('get_planning_inputs_workbench', 'request jsonb'),
           ('get_recipe_adjustment_workbench', 'request jsonb'),
+          ('get_recipe_adjustment_operator_workbench', 'request jsonb'),
           ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
           ('invalidate_need_generation_run', 'request jsonb'),
@@ -1460,17 +1464,17 @@ select is(
     'policy_count', 582,
     'policy_catalog_md5', 'f5a7dd4123445b4099936166f2e3547d',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 206,
-    'private_function_catalog_md5', '7b08d6fe2e893efdb396edf0a4cd9829',
+    'private_function_count', 207,
+    'private_function_catalog_md5', '8645609b568532162091a178dd98b4f8',
     'trigger_count', 90,
     'trigger_catalog_md5', '1e3a2a592891e788c79eb3c105a27ae5',
-    'positive_target_grant_count', 1462,
-    'positive_target_grant_md5', '1d7a67aaf0559eb48f32ac3ecc731ea8',
+    'positive_target_grant_count', 1465,
+    'positive_target_grant_md5', '9cd25d59adf6e845886cdddf7af456d7',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 88,
+    'api_function_count', 89,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 88,
+    'authenticated_execute_count', 89,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

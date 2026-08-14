@@ -54,6 +54,8 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.apply_recipe_import": "apply_recipe_import",
   "atlas_api.get_recipe_adjustment_workbench":
     "get_recipe_adjustment_workbench",
+  "atlas_api.get_recipe_adjustment_operator_workbench":
+    "get_recipe_adjustment_operator_workbench",
   "atlas_api.resolve_effective_recipe_composition":
     "resolve_effective_recipe_composition",
   "atlas_api.preview_recipe_composition_adjustment":

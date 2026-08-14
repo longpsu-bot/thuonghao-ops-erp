@@ -7,6 +7,7 @@ import type {
 
 export const RECIPE_ADJUSTMENT_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_recipe_adjustment_workbench",
+  getOperatorWorkbench: "atlas_api.get_recipe_adjustment_operator_workbench",
   resolve: "atlas_api.resolve_effective_recipe_composition",
   preview: "atlas_api.preview_recipe_composition_adjustment",
   create: "atlas_api.create_recipe_composition_adjustment",
@@ -47,6 +48,19 @@ export function recipeAdjustmentReadRequest(
   };
 }
 
+export function recipeAdjustmentOperatorReadRequest(
+  authSubject: string,
+  correlationId: string,
+  asOfDate: string,
+): AtlasRpcRequest {
+  return {
+    contract_version: "RMVP-02B.v2",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: { as_of_date: asOfDate },
+  };
+}
+
 export function recipeAdjustmentCommandRequest(
   authSubject: string,
   correlationId: string,
@@ -76,6 +90,20 @@ export function createRecipeAdjustmentApi(invoker: RecipeAdjustmentRpcInvoker) {
       return invoker.invoke(
         RECIPE_ADJUSTMENT_RPC_FUNCTIONS.getWorkbench,
         recipeAdjustmentReadRequest(authSubject, correlationId),
+      );
+    },
+    getOperatorWorkbench(
+      authSubject: string,
+      correlationId: string,
+      asOfDate: string,
+    ) {
+      return invoker.invoke(
+        RECIPE_ADJUSTMENT_RPC_FUNCTIONS.getOperatorWorkbench,
+        recipeAdjustmentOperatorReadRequest(
+          authSubject,
+          correlationId,
+          asOfDate,
+        ),
       );
     },
     resolve(
