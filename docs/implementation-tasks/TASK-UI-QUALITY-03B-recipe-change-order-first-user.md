@@ -53,15 +53,18 @@ The read returns human-reference catalogs, enriched released Recipe-line choices
 
 ## Verification and boundaries
 
-Focused frontend tests cover the table-first surface, human search/labels, modal fields, preview/save gating and invalidation, representative preview context, history/correction/cancellation surfaces, absence of browser prompt/confirm, legacy attribution, backend-shaped status and the secondary effective-composition surface.
+Focused frontend tests cover the table-first surface, human search/labels, authority-first decision order and exact scope mapping, unchanged action filtering, stale-field reset, modal fields, preview/save gating and invalidation, representative preview context, aligned ADD/REPLACE/ADJUST_QUANTITY/REMOVE consequences, history/correction/cancellation surfaces, absence of browser prompt/confirm, legacy attribution, backend-shaped status and the secondary effective-composition surface.
 
 The final review correction keeps that workflow and all RMVP-02B contracts unchanged while improving first-use clarity in the existing Change Order modal:
 
-- the form is a focused Edit state with Mantine business controls, responsive field grouping and only `Xem ảnh hưởng` as its forward action;
-- a successful authoritative preview opens a separate Review state with the business summary, effective period, preview context and changed Recipe lines before `Lưu điều chỉnh` becomes available;
+- the Edit state expresses authority in the human order Business Object → all schools/one school → allowed business action → command payload, while mapping those choices to the existing four RMVP-02B scopes internally;
+- changing Business Object, authority or action clears incompatible hidden payload fields and invalidates the preview; correction mode presents Business Object, authority and action as fixed business context;
+- the form retains Mantine business controls, responsive field grouping and only `Xem ảnh hưởng` as its forward action;
+- a successful authoritative preview opens a separate Review state with the business summary, effective period and representative preview context before `Lưu điều chỉnh` becomes available;
 - `Quay lại` preserves the draft, while any material edit invalidates the preview and requires a fresh authoritative preview;
 - the review fixture now resolves the exact Ingredient or Recipe-line target from the proposal, preserves the existing quantity and Unit when a replacement does not override them, and blocks safely if the deterministic target is missing;
-- unchanged composition lines stay collapsed behind `Xem toàn bộ công thức`, and normal modal/review markup exposes no UUIDs or revision vocabulary.
+- Review shows one complete aligned Before/After Recipe comparison keyed by existing Recipe-line identity; unchanged rows remain visible but subdued, while changed ADD/REPLACE/ADJUST_QUANTITY/REMOVE rows carry a directional marker and emphasis;
+- normal modal/review markup exposes no backend scope/action enums, UUIDs or revision vocabulary.
 
 Focused pgTAP covers current, future, scheduled correction, scheduled cancellation, effective cancellation, finite successor, mandatory predecessor resumption, finite-first expiry, explicit-date behavior, function security and v1 callability. RMVP-02B, RMVP-02A/UI-QUALITY-03A and the current platform/security catalog remain required regressions.
 

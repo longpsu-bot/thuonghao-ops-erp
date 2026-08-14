@@ -17,6 +17,17 @@ import {
   vietnamLocalDate,
 } from "./RecipeAdjustmentWorkbench";
 
+const fixtureIds = {
+  school: "11000000-0000-4000-8000-000000000001",
+  dish: "13000000-0000-4000-8000-000000000001",
+  pumpkinLine: "16000000-0000-4000-8000-000000000001",
+  porkLine: "16000000-0000-4000-8000-000000000002",
+  pumpkin: "17000000-0000-4000-8000-000000000001",
+  pork: "17000000-0000-4000-8000-000000000002",
+  potato: "17000000-0000-4000-8000-000000000004",
+  kilogram: "18000000-0000-4000-8000-000000000001",
+};
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -48,12 +59,33 @@ async function openCreateDialog() {
   return screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
 }
 
-function fillSystemIngredientReplacement(dialog: HTMLElement) {
+function selectAction(dialog: HTMLElement, name: string) {
+  fireEvent.click(within(dialog).getByLabelText(name));
+}
+
+function fillRecipeReplacement(dialog: HTMLElement) {
+  selectAction(dialog, "Thay nguyên liệu");
+  fireEvent.change(
+    within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+    {
+      target: { value: fixtureIds.porkLine },
+    },
+  );
+  fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+    target: { value: fixtureIds.potato },
+  });
+  fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+    target: { value: "Thay theo tiêu chuẩn nguyên liệu đã duyệt." },
+  });
+}
+
+function fillIngredientReplacement(dialog: HTMLElement) {
+  selectAction(dialog, "Thay nguyên liệu");
   fireEvent.change(within(dialog).getByLabelText("Nguyên liệu hiện tại"), {
-    target: { value: "17000000-0000-4000-8000-000000000002" },
+    target: { value: fixtureIds.pork },
   });
   fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
-    target: { value: "17000000-0000-4000-8000-000000000004" },
+    target: { value: fixtureIds.potato },
   });
   fireEvent.change(within(dialog).getByLabelText("Lý do"), {
     target: { value: "Thay theo tiêu chuẩn nguyên liệu đã duyệt." },
@@ -138,39 +170,151 @@ describe("Recipe Change Order first-user workbench", () => {
     );
   });
 
-  it("opens a create modal and shows only scopes and fields valid for the chosen intent", async () => {
+  it("orders the accessible decision tree by object, authority, action, then payload", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
 
+    const objectHeading = within(dialog).getByRole("heading", {
+      level: 3,
+      name: "Đối tượng điều chỉnh",
+    });
+    const authorityHeading = within(dialog).getByRole("heading", {
+      level: 3,
+      name: "Phạm vi áp dụng",
+    });
+    const actionHeading = within(dialog).getByRole("heading", {
+      level: 3,
+      name: "Loại thay đổi",
+    });
     expect(
-      within(dialog).getByText("Bạn muốn thay đổi gì?"),
+      objectHeading.compareDocumentPosition(authorityHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      authorityHeading.compareDocumentPosition(actionHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      within(dialog).getByRole("radiogroup", {
+        name: "Bạn muốn điều chỉnh gì?",
+      }),
     ).toBeInTheDocument();
-    expect(within(dialog).getByText("Áp dụng ở đâu?")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Thay nguyên liệu")).toBeChecked();
     expect(
-      within(dialog).getByLabelText("Mọi món có nguyên liệu này"),
+      within(dialog).getByLabelText("Công thức của một món"),
     ).toBeChecked();
-
-    fireEvent.click(within(dialog).getByLabelText("Thêm nguyên liệu"));
+    expect(within(dialog).getByLabelText("Tất cả trường")).toBeChecked();
     expect(
-      within(dialog).queryByLabelText("Mọi món có nguyên liệu này"),
+      within(dialog).queryByRole("heading", {
+        level: 3,
+        name: "Nội dung điều chỉnh",
+      }),
     ).not.toBeInTheDocument();
+
+    selectAction(dialog, "Thêm nguyên liệu");
     expect(
       within(dialog).getByLabelText("Nguyên liệu thêm"),
     ).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Định lượng mới")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Định lượng")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Đơn vị")).toBeInTheDocument();
     expect(
       within(dialog).queryByLabelText("Thay bằng"),
     ).not.toBeInTheDocument();
   });
 
+  it("filters actions by the unchanged RMVP-02B authority matrix", async () => {
+    renderWorkbench();
+    const dialog = await openCreateDialog();
+    const actionGroup = () =>
+      within(dialog).getByRole("radiogroup", {
+        name: "Bạn muốn thay đổi như thế nào?",
+      });
+    const actionNames = () =>
+      within(actionGroup())
+        .getAllByRole("radio")
+        .map((radio) => radio.getAttribute("aria-label"));
+
+    expect(actionNames()).toEqual([
+      "Thêm nguyên liệu",
+      "Thay nguyên liệu",
+      "Đổi định lượng",
+      "Bỏ nguyên liệu",
+    ]);
+
+    fireEvent.click(within(dialog).getByLabelText("Một trường"));
+    expect(actionNames()).toEqual([
+      "Thêm nguyên liệu",
+      "Thay nguyên liệu",
+      "Đổi định lượng",
+      "Bỏ nguyên liệu",
+    ]);
+
+    fireEvent.click(within(dialog).getByLabelText("Một nguyên liệu"));
+    expect(actionNames()).toEqual(["Thay nguyên liệu"]);
+
+    fireEvent.click(within(dialog).getByLabelText("Một trường"));
+    expect(actionNames()).toEqual(["Thay nguyên liệu", "Bỏ nguyên liệu"]);
+    expect(
+      within(dialog).queryByLabelText("Thêm nguyên liệu"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByLabelText("Đổi định lượng"),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      businessObject: "Công thức của một món",
+      authority: "Tất cả trường",
+      expectedScope: "SYSTEM_DISH",
+    },
+    {
+      businessObject: "Công thức của một món",
+      authority: "Một trường",
+      expectedScope: "SCHOOL_DISH",
+    },
+    {
+      businessObject: "Một nguyên liệu",
+      authority: "Tất cả trường",
+      expectedScope: "SYSTEM_INGREDIENT",
+    },
+    {
+      businessObject: "Một nguyên liệu",
+      authority: "Một trường",
+      expectedScope: "SCHOOL",
+    },
+  ])(
+    "maps $businessObject + $authority to $expectedScope without exposing it",
+    async ({ businessObject, authority, expectedScope }) => {
+      const { api } = renderWorkbench();
+      const preview = vi.spyOn(api, "preview");
+      const dialog = await openCreateDialog();
+
+      if (businessObject !== "Công thức của một món")
+        fireEvent.click(within(dialog).getByLabelText(businessObject));
+      if (authority !== "Tất cả trường")
+        fireEvent.click(within(dialog).getByLabelText(authority));
+      if (businessObject === "Công thức của một món")
+        fillRecipeReplacement(dialog);
+      else fillIngredientReplacement(dialog);
+
+      expect(dialog.textContent).not.toContain(expectedScope);
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+      );
+      await screen.findByRole("dialog", { name: "Thay đổi dự kiến" });
+      const request = preview.mock.calls[0][2];
+      expect(
+        (request.proposed_adjustment as Record<string, unknown>).scope_kind,
+      ).toBe(expectedScope);
+    },
+  );
+
   it("reviews the exact changed line, preserves quantity, and invalidates preview after editing", async () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const create = vi.spyOn(api, "create");
     const dialog = await openCreateDialog();
-    fillSystemIngredientReplacement(dialog);
+    fillRecipeReplacement(dialog);
 
     expect(
       within(dialog).queryByRole("button", { name: "Lưu điều chỉnh" }),
@@ -182,14 +326,36 @@ describe("Recipe Change Order first-user workbench", () => {
       name: "Thay đổi dự kiến",
     });
     expect(preview).toHaveBeenCalledOnce();
+    const comparison = within(review).getByRole("table", {
+      name: "So sánh công thức trước và sau",
+    });
     expect(
-      within(review).getByText("Thịt heo · 8 Kilôgam"),
+      within(comparison).getByText("Thịt heo · 8 Kilôgam"),
     ).toBeInTheDocument();
     expect(
-      within(review).getByText("Khoai tây · 8 Kilôgam"),
+      within(comparison).getByText("Khoai tây · 8 Kilôgam"),
     ).toBeInTheDocument();
+    expect(within(comparison).getAllByText("Bí đỏ · 20 Kilôgam")).toHaveLength(
+      2,
+    );
+    const changedRow = within(comparison)
+      .getAllByRole("row")
+      .find((row) => row.textContent?.includes("Thịt heo"));
+    expect(changedRow).toBeDefined();
+    expect(within(changedRow!).getByLabelText("Có thay đổi")).toHaveTextContent(
+      "→",
+    );
+    const unchangedRow = within(comparison)
+      .getAllByRole("row")
+      .find((row) => row.textContent?.includes("Bí đỏ"));
+    expect(unchangedRow).toBeDefined();
     expect(
-      within(review).queryByText("Bí đỏ · 20 Kilôgam"),
+      within(unchangedRow!).queryByLabelText("Có thay đổi"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(review).queryByRole("button", {
+        name: "Xem toàn bộ công thức",
+      }),
     ).not.toBeInTheDocument();
     expect(
       within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
@@ -198,18 +364,14 @@ describe("Recipe Change Order first-user workbench", () => {
       /SYSTEM_|REPLACE|revision|predecessor|successor|[0-9a-f]{8}-[0-9a-f-]{27,}/i,
     );
 
-    fireEvent.click(
-      within(review).getByRole("button", { name: "Xem toàn bộ công thức" }),
-    );
-    expect(within(review).getAllByText("Bí đỏ · 20 Kilôgam")).toHaveLength(2);
     fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
 
     const edit = await screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
-    expect(within(edit).getByLabelText("Nguyên liệu hiện tại")).toHaveValue(
-      "17000000-0000-4000-8000-000000000002",
-    );
+    expect(
+      within(edit).getByLabelText("Nguyên liệu trong công thức"),
+    ).toHaveValue(fixtureIds.porkLine);
     expect(within(edit).getByLabelText("Thay bằng")).toHaveValue(
-      "17000000-0000-4000-8000-000000000004",
+      fixtureIds.potato,
     );
     expect(within(edit).getByLabelText("Lý do")).toHaveValue(
       "Thay theo tiêu chuẩn nguyên liệu đã duyệt.",
@@ -236,9 +398,111 @@ describe("Recipe Change Order first-user workbench", () => {
     await waitFor(() => expect(create).toHaveBeenCalledOnce());
   });
 
+  it("clears stale payload and preview when Business Object or Authority changes", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    fillRecipeReplacement(dialog);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
+    const edit = await screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
+
+    fireEvent.click(within(edit).getByLabelText("Một nguyên liệu"));
+    expect(within(edit).queryByLabelText("Thay bằng")).not.toBeInTheDocument();
+    expect(
+      within(edit).queryByRole("heading", {
+        level: 3,
+        name: "Nội dung điều chỉnh",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(edit).queryByRole("button", { name: "Lưu điều chỉnh" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(within(edit).getByLabelText("Một trường"));
+    selectAction(edit, "Thay nguyên liệu");
+    expect(within(edit).getByLabelText("Nguyên liệu hiện tại")).toHaveValue("");
+    expect(within(edit).getByLabelText("Thay bằng")).toHaveValue("");
+    expect(preview).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    {
+      action: "Thêm nguyên liệu",
+      targetLabel: "Nguyên liệu thêm",
+      targetValue: fixtureIds.potato,
+      quantity: "0.5",
+      before: "—",
+      after: "Khoai tây · 0,5 Kilôgam",
+    },
+    {
+      action: "Bỏ nguyên liệu",
+      targetLabel: "Nguyên liệu cần bỏ",
+      targetValue: fixtureIds.porkLine,
+      before: "Thịt heo · 8 Kilôgam",
+      after: "Đã bỏ",
+    },
+    {
+      action: "Đổi định lượng",
+      targetLabel: "Nguyên liệu trong công thức",
+      targetValue: fixtureIds.porkLine,
+      quantity: "7.5",
+      before: "Thịt heo · 8 Kilôgam",
+      after: "Thịt heo · 7,5 Kilôgam",
+    },
+  ])(
+    "aligns the full Recipe for $action",
+    async ({ action, targetLabel, targetValue, quantity, before, after }) => {
+      renderWorkbench();
+      const dialog = await openCreateDialog();
+      selectAction(dialog, action);
+      fireEvent.change(within(dialog).getByLabelText(targetLabel), {
+        target: { value: targetValue },
+      });
+      if (quantity)
+        fireEvent.change(
+          within(dialog).getByLabelText(
+            action === "Thêm nguyên liệu" ? "Định lượng" : "Định lượng mới",
+          ),
+          { target: { value: quantity } },
+        );
+      fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+        target: { value: `Kiểm tra ${action.toLocaleLowerCase("vi")}.` },
+      });
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+      );
+      const review = await screen.findByRole("dialog", {
+        name: "Thay đổi dự kiến",
+      });
+      const comparison = within(review).getByRole("table", {
+        name: "So sánh công thức trước và sau",
+      });
+      const alignedRow = within(comparison)
+        .getAllByRole("row")
+        .find((row) => row.textContent?.includes(after));
+      expect(alignedRow).toBeDefined();
+      expect(within(alignedRow!).getByText(before)).toBeInTheDocument();
+      expect(within(alignedRow!).getByText(after)).toBeInTheDocument();
+      expect(
+        within(alignedRow!).getByLabelText("Có thay đổi"),
+      ).toHaveTextContent("→");
+      expect(
+        within(comparison).getAllByText("Bí đỏ · 20 Kilôgam"),
+      ).toHaveLength(2);
+    },
+  );
+
   it("explains representative preview context for broad scopes without claiming a global enumeration", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
+    fireEvent.click(within(dialog).getByLabelText("Một nguyên liệu"));
+    selectAction(dialog, "Thay nguyên liệu");
     expect(within(dialog).getByText("Xem ảnh hưởng tại")).toBeInTheDocument();
     expect(
       within(dialog).getByLabelText("Trường đại diện"),
@@ -246,7 +510,7 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(within(dialog).getByLabelText("Món đại diện")).toBeInTheDocument();
     expect(
       within(dialog).getByText(
-        "Chỉ dùng để xem trước kết quả; phạm vi áp dụng không thay đổi.",
+        /Đây là bối cảnh dùng để xem trước; phạm vi áp dụng vẫn theo lựa chọn ở trên\./,
       ),
     ).toBeInTheDocument();
     expect(
@@ -276,7 +540,17 @@ describe("Recipe Change Order first-user workbench", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Điều chỉnh lại",
     });
-    expect(within(dialog).getByLabelText("Thay nguyên liệu")).toBeDisabled();
+    const fixedContext = within(dialog).getByLabelText(
+      "Bối cảnh điều chỉnh cố định",
+    );
+    expect(
+      within(fixedContext).getByText("Một nguyên liệu"),
+    ).toBeInTheDocument();
+    expect(within(fixedContext).getByText("Tất cả trường")).toBeInTheDocument();
+    expect(
+      within(fixedContext).getByText("Thay nguyên liệu"),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByRole("radiogroup")).not.toBeInTheDocument();
     expect(
       within(dialog).getByLabelText("Nguyên liệu hiện tại"),
     ).toBeDisabled();
