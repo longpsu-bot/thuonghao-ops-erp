@@ -343,31 +343,34 @@ describe("Atlas master-data shell", () => {
     });
     expect(screen.getByText("Trường Tiểu học Nguyễn Du")).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Xem và sửa",
-      }),
+    expect(
+      screen.queryByRole("button", { name: "Xem và sửa" }),
+    ).not.toBeInTheDocument();
+    const studentInput = screen.getByLabelText(
+      "Học sinh mặc định — Trường Tiểu học Nguyễn Du",
     );
-    fireEvent.change(screen.getByLabelText("Suất học sinh mặc định"), {
+    const teacherInput = screen.getByLabelText(
+      "Giáo viên mặc định — Trường Tiểu học Nguyễn Du",
+    );
+    const save = screen.getByRole("button", { name: "Lưu" });
+
+    fireEvent.change(studentInput, {
       target: { value: "-1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
-    expect(
-      screen.getByText("Số suất mặc định phải là số nguyên không âm."),
-    ).toBeInTheDocument();
+    expect(studentInput).toHaveAttribute("aria-invalid", "true");
+    expect(save).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText("Suất học sinh mặc định"), {
+    fireEvent.change(studentInput, {
       target: { value: "512" },
     });
-    fireEvent.change(screen.getByLabelText("Suất giáo viên mặc định"), {
+    fireEvent.change(teacherInput, {
       target: { value: "36" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    fireEvent.click(save);
 
-    await waitFor(() =>
-      expect(screen.queryByLabelText("Sửa số suất mặc định")).toBeNull(),
-    );
-    expect(screen.getByText("512 / 36")).toBeInTheDocument();
+    await waitFor(() => expect(studentInput).toHaveValue(512));
+    expect(teacherInput).toHaveValue(36);
+    expect(screen.getByText("Chưa có thay đổi")).toBeInTheDocument();
   });
 
   it("supports ingredient creation and a validated supplier-priority save", async () => {

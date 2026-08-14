@@ -386,8 +386,8 @@ describe("Atlas staging hosted evidence", () => {
     const authority = readCatalogAuthority();
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(89);
-    expect(authority.apiOwners).toHaveLength(89);
+    expect(authority.apiSignatures).toHaveLength(90);
+    expect(authority.apiOwners).toHaveLength(90);
     expect(authority.policyCount).toBe(582);
     expect(authority.policyDigest).toBe("f5a7dd4123445b4099936166f2e3547d");
   });

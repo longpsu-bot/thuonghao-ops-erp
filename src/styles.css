@@ -1823,6 +1823,56 @@ tbody tr.selected-row {
 .master-data-table-scroll .compact-table td {
   padding: 11px 10px;
 }
+.school-defaults-table {
+  min-height: 360px;
+  max-height: calc(100vh - 390px);
+}
+.school-defaults-table .compact-table tr.school-default-dirty td {
+  background: #f3faf6;
+}
+.school-default-input {
+  width: 112px;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid #b9c9c2;
+  border-radius: 6px;
+  background: #fff;
+  color: #203e34;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.school-default-input:focus {
+  border-color: #26745c;
+  outline: 2px solid rgb(38 116 92 / 16%);
+}
+.school-default-input[aria-invalid="true"] {
+  border-color: #a94442;
+  background: #fff8f7;
+}
+.school-default-error {
+  display: block;
+  margin-top: 4px;
+  color: #9b3432;
+  font-size: 10px;
+}
+.school-defaults-savebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 15px;
+  border-top: 1px solid #dfe5e2;
+  background: #f8faf9;
+}
+.school-defaults-savebar > p {
+  margin: 0;
+  color: #455f56;
+  font-size: 12px;
+  font-weight: 700;
+}
+.school-defaults-savebar .workbench-actions {
+  margin: 0;
+}
 .master-data-detail {
   min-width: 0;
   padding: 16px;
