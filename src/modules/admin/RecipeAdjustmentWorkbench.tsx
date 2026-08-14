@@ -1,12 +1,20 @@
 import {
   Badge,
+  Box,
   Button,
+  Checkbox,
   Divider,
   Drawer,
   Group,
   Modal,
+  NativeSelect,
+  Paper,
+  Radio,
+  SimpleGrid,
   Stack,
   Text,
+  Textarea,
+  TextInput,
 } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasAuthState } from "../atlas/connection/authSession";
@@ -243,6 +251,8 @@ export function RecipeAdjustmentWorkbench({
   }));
   const [preview, setPreview] = useState<RecipeAdjustmentPreview | null>(null);
   const [previewFingerprint, setPreviewFingerprint] = useState("");
+  const [modalStep, setModalStep] = useState<"EDIT" | "REVIEW">("EDIT");
+  const [showFullPreview, setShowFullPreview] = useState(false);
   const [cancelTarget, setCancelTarget] =
     useState<RecipeAdjustmentOperatorRecord | null>(null);
   const [cancelDate, setCancelDate] = useState(vietnamLocalDate());
@@ -414,6 +424,8 @@ export function RecipeAdjustmentWorkbench({
     setDraft((value) => ({ ...value, ...patch }));
     setPreview(null);
     setPreviewFingerprint("");
+    setModalStep("EDIT");
+    setShowFullPreview(false);
   }
 
   function resetDraftIdentity() {
@@ -428,6 +440,8 @@ export function RecipeAdjustmentWorkbench({
     setEditing(null);
     setPreview(null);
     setPreviewFingerprint("");
+    setModalStep("EDIT");
+    setShowFullPreview(false);
     setDraft(emptyDraft(load.data));
     resetDraftIdentity();
     setCreateOpened(true);
@@ -439,6 +453,8 @@ export function RecipeAdjustmentWorkbench({
     setEditing(row);
     setPreview(null);
     setPreviewFingerprint("");
+    setModalStep("EDIT");
+    setShowFullPreview(false);
     setDraft({
       action: row.action_kind,
       scope: row.scope_kind,
@@ -566,6 +582,10 @@ export function RecipeAdjustmentWorkbench({
     const parsed = adjustmentPreviewFromResult(result);
     setPreview(parsed);
     setPreviewFingerprint(parsed ? materialFingerprint : "");
+    if (parsed) {
+      setModalStep("REVIEW");
+      setShowFullPreview(false);
+    }
     setNotice(
       parsed
         ? "Đã cập nhật phần xem ảnh hưởng."
@@ -743,6 +763,81 @@ export function RecipeAdjustmentWorkbench({
       </>
     );
   }
+
+  const draftTargetName = needsIngredientTarget
+    ? referenceName(
+        load.data.ingredients,
+        draft.targetIngredientId,
+        "ingredient_id",
+        "ingredient_name",
+      )
+    : (lineOptions.find(
+        (line) => line.recipe_line_id === draft.targetRecipeLineId,
+      )?.ingredient_name ?? "—");
+  const draftSubstituteName = referenceName(
+    load.data.ingredients,
+    draft.substituteIngredientId,
+    "ingredient_id",
+    "ingredient_name",
+  );
+  const draftUnitName = referenceName(
+    load.data.units,
+    draft.unitId,
+    "unit_id",
+    "unit_name",
+  );
+  const draftChangeText = (() => {
+    switch (draft.action) {
+      case "REPLACE":
+        return `${draftTargetName} → ${draftSubstituteName}${
+          draft.replaceQuantity
+            ? ` · ${formatQuantity(Number(draft.quantity))} ${draftUnitName}`
+            : ""
+        }`;
+      case "ADJUST_QUANTITY":
+        return `${draftTargetName} → ${formatQuantity(Number(draft.quantity))} ${draftUnitName}`;
+      case "ADD":
+        return `${draftTargetName} · ${formatQuantity(Number(draft.quantity))} ${draftUnitName}`;
+      case "REMOVE":
+        return draftTargetName;
+    }
+  })();
+  const draftScopeText = (() => {
+    const school = referenceName(
+      load.data.schools,
+      draft.schoolId,
+      "school_id",
+      "school_name",
+    );
+    const dish = referenceName(
+      load.data.dishes,
+      draft.dishId,
+      "dish_id",
+      "dish_name",
+    );
+    switch (draft.scope) {
+      case "SYSTEM_INGREDIENT":
+        return scopeLabel[draft.scope];
+      case "SYSTEM_DISH":
+        return `${dish} · ${scopeLabel[draft.scope]}`;
+      case "SCHOOL":
+        return `${school} · ${scopeLabel[draft.scope]}`;
+      case "SCHOOL_DISH":
+        return `${dish} · ${school}`;
+    }
+  })();
+  const previewContextText = [
+    referenceName(
+      load.data.schools,
+      previewSchoolId,
+      "school_id",
+      "school_name",
+    ),
+    referenceName(load.data.dishes, previewDishId, "dish_id", "dish_name"),
+  ].join(" · ");
+  const visiblePreviewRows = preview
+    ? previewRows(preview).filter((row) => showFullPreview || row.changed)
+    : [];
 
   if (authState.status !== "authenticated")
     return (
@@ -1081,443 +1176,552 @@ export function RecipeAdjustmentWorkbench({
       <Modal
         opened={createOpened}
         onClose={() => !busy && setCreateOpened(false)}
-        title={editing ? "Điều chỉnh lại" : "Tạo điều chỉnh"}
-        size="lg"
+        title={
+          modalStep === "REVIEW"
+            ? "Thay đổi dự kiến"
+            : editing
+              ? "Điều chỉnh lại"
+              : "Tạo điều chỉnh"
+        }
+        size="760px"
         centered
+        xOffset="16px"
+        styles={{
+          content: { maxHeight: "calc(100dvh - 32px)" },
+          body: {
+            maxHeight: "calc(100dvh - 96px)",
+            overflowY: "auto",
+          },
+        }}
         closeOnClickOutside={!busy}
       >
         <Stack gap="md">
-          <fieldset>
-            <legend>Bạn muốn thay đổi gì?</legend>
-            <div className="adjustment-choice-grid">
-              {(
-                [
-                  "REPLACE",
-                  "ADJUST_QUANTITY",
-                  "ADD",
-                  "REMOVE",
-                ] as RecipeAdjustmentAction[]
-              ).map((action) => (
-                <label key={action}>
-                  <input
-                    type="radio"
-                    name="adjustment-action"
-                    value={action}
-                    checked={draft.action === action}
-                    disabled={!!editing}
-                    onChange={() => {
-                      const scopes = availableScopes(action);
-                      updateDraft({
-                        action,
-                        scope: scopes[0],
-                        targetIngredientId: "",
-                        targetRecipeLineId: "",
-                        substituteIngredientId: "",
-                        quantity: "",
-                        replaceQuantity: false,
-                      });
-                    }}
-                  />
-                  {actionLabel[action]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Áp dụng ở đâu?</legend>
-            <div className="adjustment-choice-grid">
-              {availableScopes(draft.action).map((scope) => (
-                <label key={scope}>
-                  <input
-                    type="radio"
-                    name="adjustment-scope"
-                    value={scope}
-                    checked={draft.scope === scope}
-                    disabled={!!editing}
-                    onChange={() =>
-                      updateDraft({
-                        scope,
-                        schoolTypeId: "",
-                        targetIngredientId: "",
-                        targetRecipeLineId: "",
-                      })
-                    }
-                  />
-                  {scopeLabel[scope]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          {(draft.scope === "SCHOOL" || draft.scope === "SCHOOL_DISH") && (
-            <label>
-              Trường áp dụng
-              <select
-                value={draft.schoolId}
-                disabled={!!editing}
-                onChange={(event) =>
-                  updateDraft({ schoolId: event.target.value })
-                }
-              >
-                <option value="">Chọn trường</option>
-                {load.data.schools.map((school) => (
-                  <option key={school.school_id} value={school.school_id}>
-                    {school.school_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {(draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH") && (
-            <label>
-              Món áp dụng
-              <select
-                value={draft.dishId}
-                disabled={!!editing}
-                onChange={(event) =>
+          {modalStep === "EDIT" ? (
+            <>
+              <Radio.Group
+                value={draft.action}
+                label="Bạn muốn thay đổi gì?"
+                fw={600}
+                onChange={(value) => {
+                  const action = value as RecipeAdjustmentAction;
+                  const scopes = availableScopes(action);
                   updateDraft({
-                    dishId: event.target.value,
+                    action,
+                    scope: scopes[0],
+                    targetIngredientId: "",
+                    targetRecipeLineId: "",
+                    substituteIngredientId: "",
+                    quantity: "",
+                    replaceQuantity: false,
+                  });
+                }}
+              >
+                <SimpleGrid cols={{ base: 1, sm: 2 }} mt="xs">
+                  {(
+                    [
+                      "REPLACE",
+                      "ADJUST_QUANTITY",
+                      "ADD",
+                      "REMOVE",
+                    ] as RecipeAdjustmentAction[]
+                  ).map((action) => (
+                    <Radio.Card
+                      key={action}
+                      value={action}
+                      disabled={!!editing}
+                      aria-label={actionLabel[action]}
+                      p="sm"
+                      radius="md"
+                      withBorder
+                    >
+                      <Group wrap="nowrap">
+                        <Radio.Indicator />
+                        <Text fw={500}>{actionLabel[action]}</Text>
+                      </Group>
+                    </Radio.Card>
+                  ))}
+                </SimpleGrid>
+              </Radio.Group>
+
+              <Radio.Group
+                value={draft.scope}
+                label="Áp dụng ở đâu?"
+                fw={600}
+                onChange={(value) =>
+                  updateDraft({
+                    scope: value as RecipeAdjustmentScope,
+                    schoolTypeId: "",
+                    targetIngredientId: "",
                     targetRecipeLineId: "",
                   })
                 }
               >
-                <option value="">Chọn món</option>
-                {load.data.dishes.map((dish) => (
-                  <option key={dish.dish_id} value={dish.dish_id}>
-                    {dish.dish_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {draft.scope === "SYSTEM_DISH" && (
-            <label>
-              Loại trường (không bắt buộc)
-              <select
-                value={draft.schoolTypeId}
-                disabled={!!editing}
-                onChange={(event) =>
-                  updateDraft({ schoolTypeId: event.target.value })
-                }
-              >
-                <option value="">Tất cả loại trường</option>
-                {load.data.school_types.map((schoolType) => (
-                  <option
-                    key={schoolType.school_type_id ?? "school-type"}
-                    value={schoolType.school_type_id ?? ""}
-                  >
-                    {schoolType.school_type_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {needsIngredientTarget && (
-            <label>
-              {draft.action === "ADD"
-                ? "Nguyên liệu thêm"
-                : "Nguyên liệu cần thay đổi"}
-              <select
-                value={draft.targetIngredientId}
-                disabled={!!editing}
-                onChange={(event) =>
-                  updateDraft({ targetIngredientId: event.target.value })
-                }
-              >
-                <option value="">Chọn nguyên liệu</option>
-                {load.data.ingredients.map((ingredient) => (
-                  <option
-                    key={ingredient.ingredient_id}
-                    value={ingredient.ingredient_id}
-                  >
-                    {ingredient.ingredient_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {needsRecipeLine && (
-            <label>
-              Nguyên liệu trong công thức
-              <select
-                value={draft.targetRecipeLineId}
-                disabled={!!editing}
-                onChange={(event) =>
-                  updateDraft({ targetRecipeLineId: event.target.value })
-                }
-              >
-                <option value="">Chọn nguyên liệu trong món</option>
-                {lineOptions.map((line) => (
-                  <option key={line.recipe_line_id} value={line.recipe_line_id}>
-                    {line.ingredient_name} ·{" "}
-                    {formatQuantity(line.quantity_per_basis)} {line.unit_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {draft.action === "REPLACE" && (
-            <>
-              <label>
-                Nguyên liệu mới
-                <select
-                  value={draft.substituteIngredientId}
-                  onChange={(event) =>
-                    updateDraft({ substituteIngredientId: event.target.value })
-                  }
-                >
-                  <option value="">Chọn nguyên liệu mới</option>
-                  {load.data.ingredients.map((ingredient) => (
-                    <option
-                      key={ingredient.ingredient_id}
-                      value={ingredient.ingredient_id}
+                <SimpleGrid cols={{ base: 1, sm: 2 }} mt="xs">
+                  {availableScopes(draft.action).map((scope) => (
+                    <Radio.Card
+                      key={scope}
+                      value={scope}
+                      disabled={!!editing}
+                      aria-label={scopeLabel[scope]}
+                      p="sm"
+                      radius="md"
+                      withBorder
                     >
-                      {ingredient.ingredient_name}
-                    </option>
+                      <Group wrap="nowrap">
+                        <Radio.Indicator />
+                        <Text fw={500}>{scopeLabel[scope]}</Text>
+                      </Group>
+                    </Radio.Card>
                   ))}
-                </select>
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={draft.replaceQuantity}
+                </SimpleGrid>
+              </Radio.Group>
+
+              {(draft.scope === "SCHOOL" || draft.scope === "SCHOOL_DISH") && (
+                <NativeSelect
+                  label="Trường áp dụng"
+                  value={draft.schoolId}
+                  disabled={!!editing}
+                  data={[
+                    { value: "", label: "Chọn trường" },
+                    ...load.data.schools.map((school) => ({
+                      value: school.school_id ?? "",
+                      label: school.school_name ?? "",
+                    })),
+                  ]}
+                  onChange={(event) =>
+                    updateDraft({ schoolId: event.target.value })
+                  }
+                />
+              )}
+
+              {(draft.scope === "SYSTEM_DISH" ||
+                draft.scope === "SCHOOL_DISH") && (
+                <NativeSelect
+                  label="Món áp dụng"
+                  value={draft.dishId}
+                  disabled={!!editing}
+                  data={[
+                    { value: "", label: "Chọn món" },
+                    ...load.data.dishes.map((dish) => ({
+                      value: dish.dish_id ?? "",
+                      label: dish.dish_name ?? "",
+                    })),
+                  ]}
                   onChange={(event) =>
                     updateDraft({
-                      replaceQuantity: event.target.checked,
-                      quantity: event.target.checked ? draft.quantity : "",
+                      dishId: event.target.value,
+                      targetRecipeLineId: "",
                     })
                   }
-                />{" "}
-                Đổi cả định lượng
-              </label>
-            </>
-          )}
+                />
+              )}
 
-          {quantityRequired && (
-            <label>
-              Định lượng mới
-              <input
-                type="number"
-                min="0.000001"
-                step="0.000001"
-                value={draft.quantity}
+              {draft.scope === "SYSTEM_DISH" && (
+                <NativeSelect
+                  label="Loại trường"
+                  description="Không bắt buộc"
+                  value={draft.schoolTypeId}
+                  disabled={!!editing}
+                  data={[
+                    { value: "", label: "Tất cả loại trường" },
+                    ...load.data.school_types.map((schoolType) => ({
+                      value: schoolType.school_type_id ?? "",
+                      label: schoolType.school_type_name ?? "",
+                    })),
+                  ]}
+                  onChange={(event) =>
+                    updateDraft({ schoolTypeId: event.target.value })
+                  }
+                />
+              )}
+
+              {needsIngredientTarget && (
+                <NativeSelect
+                  label={
+                    draft.action === "ADD"
+                      ? "Nguyên liệu thêm"
+                      : "Nguyên liệu hiện tại"
+                  }
+                  value={draft.targetIngredientId}
+                  disabled={!!editing}
+                  data={[
+                    { value: "", label: "Chọn nguyên liệu" },
+                    ...load.data.ingredients.map((ingredient) => ({
+                      value: ingredient.ingredient_id ?? "",
+                      label: ingredient.ingredient_name ?? "",
+                    })),
+                  ]}
+                  onChange={(event) =>
+                    updateDraft({ targetIngredientId: event.target.value })
+                  }
+                />
+              )}
+
+              {needsRecipeLine && (
+                <NativeSelect
+                  label="Nguyên liệu trong công thức"
+                  value={draft.targetRecipeLineId}
+                  disabled={!!editing}
+                  data={[
+                    { value: "", label: "Chọn nguyên liệu trong món" },
+                    ...lineOptions.map((line) => ({
+                      value: line.recipe_line_id ?? "",
+                      label: `${line.ingredient_name} · ${formatQuantity(
+                        line.quantity_per_basis,
+                      )} ${line.unit_name}`,
+                    })),
+                  ]}
+                  onChange={(event) =>
+                    updateDraft({ targetRecipeLineId: event.target.value })
+                  }
+                />
+              )}
+
+              {draft.action === "REPLACE" && (
+                <>
+                  <NativeSelect
+                    label="Thay bằng"
+                    value={draft.substituteIngredientId}
+                    data={[
+                      { value: "", label: "Chọn nguyên liệu mới" },
+                      ...load.data.ingredients.map((ingredient) => ({
+                        value: ingredient.ingredient_id ?? "",
+                        label: ingredient.ingredient_name ?? "",
+                      })),
+                    ]}
+                    onChange={(event) =>
+                      updateDraft({
+                        substituteIngredientId: event.target.value,
+                      })
+                    }
+                  />
+                  <Checkbox
+                    label="Đổi cả định lượng"
+                    checked={draft.replaceQuantity}
+                    onChange={(event) =>
+                      updateDraft({
+                        replaceQuantity: event.target.checked,
+                        quantity: event.target.checked ? draft.quantity : "",
+                      })
+                    }
+                  />
+                </>
+              )}
+
+              {(quantityRequired ||
+                draft.action === "ADD" ||
+                draft.replaceQuantity) && (
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  {quantityRequired && (
+                    <TextInput
+                      label="Định lượng mới"
+                      type="number"
+                      min="0.000001"
+                      step="0.000001"
+                      value={draft.quantity}
+                      onChange={(event) =>
+                        updateDraft({ quantity: event.target.value })
+                      }
+                    />
+                  )}
+                  {(draft.action === "ADD" || draft.replaceQuantity) && (
+                    <NativeSelect
+                      label="Đơn vị"
+                      value={draft.unitId}
+                      data={[
+                        { value: "", label: "Chọn đơn vị" },
+                        ...load.data.units.map((unit) => ({
+                          value: unit.unit_id ?? "",
+                          label: unit.unit_name ?? "",
+                        })),
+                      ]}
+                      onChange={(event) =>
+                        updateDraft({ unitId: event.target.value })
+                      }
+                    />
+                  )}
+                </SimpleGrid>
+              )}
+
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <TextInput
+                  label="Hiệu lực từ"
+                  type="date"
+                  value={draft.effectiveFrom}
+                  onChange={(event) =>
+                    updateDraft({ effectiveFrom: event.target.value })
+                  }
+                />
+                <TextInput
+                  label="Hiệu lực đến"
+                  description="Không bắt buộc"
+                  type="date"
+                  value={draft.effectiveTo}
+                  onChange={(event) =>
+                    updateDraft({ effectiveTo: event.target.value })
+                  }
+                />
+              </SimpleGrid>
+
+              <Textarea
+                label="Lý do"
+                minRows={3}
+                value={draft.reason}
                 onChange={(event) =>
-                  updateDraft({ quantity: event.target.value })
+                  updateDraft({ reason: event.target.value })
                 }
               />
-            </label>
-          )}
 
-          {(draft.action === "ADD" || draft.replaceQuantity) && (
-            <label>
-              Đơn vị
-              <select
-                value={draft.unitId}
-                onChange={(event) =>
-                  updateDraft({ unitId: event.target.value })
-                }
-              >
-                <option value="">Chọn đơn vị</option>
-                {load.data.units.map((unit) => (
-                  <option key={unit.unit_id} value={unit.unit_id}>
-                    {unit.unit_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+              <Divider label="Xem ảnh hưởng tại" labelPosition="left" />
+              <Text size="sm" c="dimmed">
+                Chỉ dùng để xem trước kết quả; phạm vi áp dụng không thay đổi.
+              </Text>
 
-          <div className="adjustment-period-grid">
-            <label>
-              Hiệu lực từ
-              <input
-                type="date"
-                value={draft.effectiveFrom}
-                onChange={(event) =>
-                  updateDraft({ effectiveFrom: event.target.value })
-                }
-              />
-            </label>
-            <label>
-              Hiệu lực đến (không bắt buộc)
-              <input
-                type="date"
-                value={draft.effectiveTo}
-                onChange={(event) =>
-                  updateDraft({ effectiveTo: event.target.value })
-                }
-              />
-            </label>
-          </div>
+              {draft.scope === "SYSTEM_INGREDIENT" && (
+                <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <NativeSelect
+                    label="Trường đại diện"
+                    value={draft.previewSchoolId}
+                    data={[
+                      { value: "", label: "Chọn trường" },
+                      ...load.data.schools.map((school) => ({
+                        value: school.school_id ?? "",
+                        label: school.school_name ?? "",
+                      })),
+                    ]}
+                    onChange={(event) =>
+                      updateDraft({ previewSchoolId: event.target.value })
+                    }
+                  />
+                  <NativeSelect
+                    label="Món đại diện"
+                    value={draft.previewDishId}
+                    data={[
+                      { value: "", label: "Chọn món" },
+                      ...load.data.dishes.map((dish) => ({
+                        value: dish.dish_id ?? "",
+                        label: dish.dish_name ?? "",
+                      })),
+                    ]}
+                    onChange={(event) =>
+                      updateDraft({ previewDishId: event.target.value })
+                    }
+                  />
+                </SimpleGrid>
+              )}
 
-          <label>
-            Lý do
-            <textarea
-              value={draft.reason}
-              onChange={(event) => updateDraft({ reason: event.target.value })}
-            />
-          </label>
-
-          <Divider
-            label="Bối cảnh dùng để xem ảnh hưởng"
-            labelPosition="left"
-          />
-          <Text size="sm" c="dimmed">
-            Bối cảnh này dùng để hiển thị thành phần công thức hiệu lực sau điều
-            chỉnh. Với phạm vi rộng, đây là một bối cảnh đại diện, không phải
-            danh sách toàn bộ món bị ảnh hưởng.
-          </Text>
-
-          {draft.scope === "SYSTEM_INGREDIENT" && (
-            <>
-              <label>
-                Trường đại diện
-                <select
+              {draft.scope === "SYSTEM_DISH" && (
+                <NativeSelect
+                  label="Trường dùng để xem"
                   value={draft.previewSchoolId}
+                  data={[
+                    { value: "", label: "Chọn trường" },
+                    ...load.data.schools.map((school) => ({
+                      value: school.school_id ?? "",
+                      label: school.school_name ?? "",
+                    })),
+                  ]}
                   onChange={(event) =>
                     updateDraft({ previewSchoolId: event.target.value })
                   }
-                >
-                  <option value="">Chọn trường</option>
-                  {load.data.schools.map((school) => (
-                    <option key={school.school_id} value={school.school_id}>
-                      {school.school_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Món đại diện
-                <select
+                />
+              )}
+
+              {draft.scope === "SCHOOL" && (
+                <NativeSelect
+                  label="Món dùng để xem"
                   value={draft.previewDishId}
+                  data={[
+                    { value: "", label: "Chọn món" },
+                    ...load.data.dishes.map((dish) => ({
+                      value: dish.dish_id ?? "",
+                      label: dish.dish_name ?? "",
+                    })),
+                  ]}
                   onChange={(event) =>
                     updateDraft({ previewDishId: event.target.value })
                   }
+                />
+              )}
+
+              {draft.scope === "SCHOOL_DISH" && (
+                <Text size="sm">
+                  Trường và món đã được xác định trong phạm vi điều chỉnh.
+                </Text>
+              )}
+
+              <Group
+                justify="space-between"
+                style={{
+                  position: "sticky",
+                  bottom: 0,
+                  zIndex: 1,
+                  background: "var(--mantine-color-body)",
+                  paddingTop: "var(--mantine-spacing-sm)",
+                }}
+              >
+                <Button
+                  type="button"
+                  variant="subtle"
+                  color="gray"
+                  disabled={busy}
+                  onClick={() => setCreateOpened(false)}
                 >
-                  <option value="">Chọn món</option>
-                  {load.data.dishes.map((dish) => (
-                    <option key={dish.dish_id} value={dish.dish_id}>
-                      {dish.dish_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-
-          {draft.scope === "SYSTEM_DISH" && (
-            <label>
-              Trường dùng để xem
-              <select
-                value={draft.previewSchoolId}
-                onChange={(event) =>
-                  updateDraft({ previewSchoolId: event.target.value })
-                }
-              >
-                <option value="">Chọn trường</option>
-                {load.data.schools.map((school) => (
-                  <option key={school.school_id} value={school.school_id}>
-                    {school.school_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {draft.scope === "SCHOOL" && (
-            <label>
-              Món dùng để xem
-              <select
-                value={draft.previewDishId}
-                onChange={(event) =>
-                  updateDraft({ previewDishId: event.target.value })
-                }
-              >
-                <option value="">Chọn món</option>
-                {load.data.dishes.map((dish) => (
-                  <option key={dish.dish_id} value={dish.dish_id}>
-                    {dish.dish_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {draft.scope === "SCHOOL_DISH" && (
-            <Text size="sm">
-              Trường và món đã được xác định trong phạm vi điều chỉnh.
-            </Text>
-          )}
-
-          {preview && (
-            <section
-              className="adjustment-preview-card"
-              aria-label="Ảnh hưởng điều chỉnh"
-            >
-              <Group justify="space-between">
-                <Text fw={700}>Trước điều chỉnh → Sau điều chỉnh</Text>
-                <Badge color={preview.can_save ? "green" : "red"}>
-                  {preview.can_save ? "Có thể lưu" : "Cần kiểm tra"}
-                </Badge>
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  disabled={busy || !canPreview}
+                  onClick={() => void runPreview()}
+                >
+                  {busy ? "Đang xem…" : "Xem ảnh hưởng"}
+                </Button>
               </Group>
-              {preview.blockers.map((blocker) => (
+            </>
+          ) : (
+            <>
+              <Paper
+                withBorder
+                radius="md"
+                p="md"
+                aria-label="Tóm tắt điều chỉnh"
+              >
+                <Stack gap="xs">
+                  <Group justify="space-between" align="flex-start">
+                    <Box>
+                      <Text size="sm" c="dimmed">
+                        Loại thay đổi
+                      </Text>
+                      <Text fw={600}>{actionLabel[draft.action]}</Text>
+                      <Text>{draftChangeText}</Text>
+                    </Box>
+                    <Badge color={preview?.can_save ? "green" : "red"}>
+                      {preview?.can_save ? "Có thể lưu" : "Cần kiểm tra"}
+                    </Badge>
+                  </Group>
+                  <Divider />
+                  <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                    <Box>
+                      <Text size="sm" c="dimmed">
+                        Phạm vi áp dụng
+                      </Text>
+                      <Text>{draftScopeText}</Text>
+                    </Box>
+                    <Box>
+                      <Text size="sm" c="dimmed">
+                        Hiệu lực
+                      </Text>
+                      <Text>
+                        {formatDate(draft.effectiveFrom)}
+                        {draft.effectiveTo
+                          ? ` – ${formatDate(draft.effectiveTo)}`
+                          : " trở đi"}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text size="sm" c="dimmed">
+                        Xem ảnh hưởng tại
+                      </Text>
+                      <Text>{previewContextText}</Text>
+                    </Box>
+                    <Box>
+                      <Text size="sm" c="dimmed">
+                        Lý do
+                      </Text>
+                      <Text>{draft.reason}</Text>
+                    </Box>
+                  </SimpleGrid>
+                </Stack>
+              </Paper>
+
+              {preview?.blockers.map((blocker) => (
                 <p className="operator-notice warning" key={blocker.code}>
                   {blocker.message}
                 </p>
               ))}
-              <CompactTable
-                headers={[
-                  "Dòng ảnh hưởng",
-                  "Trước điều chỉnh",
-                  "Sau điều chỉnh",
-                ]}
-              >
-                {previewRows(preview).map(({ key, before, after, changed }) => (
-                  <tr
-                    key={key}
-                    className={changed ? "adjustment-preview-changed" : ""}
-                  >
-                    <td>
-                      {after?.line_code ??
-                        before?.line_code ??
-                        "Nguyên liệu được thêm"}
-                    </td>
-                    <td>{compositionText(before)}</td>
-                    <td>{compositionText(after)}</td>
-                  </tr>
-                ))}
-              </CompactTable>
-            </section>
-          )}
 
-          <Group justify="flex-end">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy || !canPreview}
-              onClick={() => void runPreview()}
-            >
-              {busy ? "Đang xem…" : "Xem ảnh hưởng"}
-            </Button>
-            <Button
-              type="button"
-              disabled={
-                busy ||
-                mutationLocked ||
-                !preview?.can_save ||
-                previewFingerprint !== materialFingerprint
-              }
-              onClick={() => void saveAdjustment()}
-            >
-              Lưu điều chỉnh
-            </Button>
-          </Group>
+              <section aria-label="Ảnh hưởng điều chỉnh">
+                <Group justify="space-between" mb="sm">
+                  <Box>
+                    <Text fw={700}>Trước điều chỉnh → Sau điều chỉnh</Text>
+                    <Text size="sm" c="dimmed">
+                      Các dòng thực sự thay đổi được hiển thị trước.
+                    </Text>
+                  </Box>
+                  {preview &&
+                    previewRows(preview).some((row) => !row.changed) && (
+                      <Button
+                        type="button"
+                        size="compact-sm"
+                        variant="subtle"
+                        onClick={() => setShowFullPreview((value) => !value)}
+                      >
+                        {showFullPreview
+                          ? "Chỉ xem dòng thay đổi"
+                          : "Xem toàn bộ công thức"}
+                      </Button>
+                    )}
+                </Group>
+                <Stack gap="sm">
+                  {visiblePreviewRows.map(({ key, before, after }) => (
+                    <Paper key={key} withBorder radius="md" p="sm">
+                      <Text size="xs" c="dimmed" mb="xs">
+                        {after?.line_code ??
+                          before?.line_code ??
+                          "Nguyên liệu được thêm"}
+                      </Text>
+                      <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                        <Box>
+                          <Text size="xs" c="dimmed">
+                            Trước điều chỉnh
+                          </Text>
+                          <Text fw={500}>{compositionText(before)}</Text>
+                        </Box>
+                        <Box>
+                          <Text size="xs" c="dimmed">
+                            Sau điều chỉnh
+                          </Text>
+                          <Text fw={600}>{compositionText(after)}</Text>
+                        </Box>
+                      </SimpleGrid>
+                    </Paper>
+                  ))}
+                </Stack>
+              </section>
+
+              <Group
+                justify="space-between"
+                style={{
+                  position: "sticky",
+                  bottom: 0,
+                  zIndex: 1,
+                  background: "var(--mantine-color-body)",
+                  paddingTop: "var(--mantine-spacing-sm)",
+                }}
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setModalStep("EDIT")}
+                >
+                  Quay lại
+                </Button>
+                <Button
+                  type="button"
+                  disabled={
+                    busy ||
+                    mutationLocked ||
+                    !preview?.can_save ||
+                    previewFingerprint !== materialFingerprint
+                  }
+                  onClick={() => void saveAdjustment()}
+                >
+                  Lưu điều chỉnh
+                </Button>
+              </Group>
+            </>
+          )}
         </Stack>
       </Modal>
 

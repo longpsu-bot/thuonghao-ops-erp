@@ -518,16 +518,45 @@ export function createReviewRecipeAdjustmentApi(
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
       const proposal = payload.proposed_adjustment as Record<string, JsonValue>;
-      const before = resolutionScenario("replacement_chain");
+      const before = resolutionScenario("preview_base");
       const after = clone(before);
       const action = String(proposal.action_kind);
-      const target = after.lines[0];
-      if (action === "REMOVE") {
+      const scope = String(proposal.scope_kind);
+      const target =
+        action === "ADD"
+          ? undefined
+          : scope === "SYSTEM_INGREDIENT" || scope === "SCHOOL"
+            ? after.lines.find(
+                (line) =>
+                  line.final_ingredient_id ===
+                  String(proposal.target_ingredient_id),
+              )
+            : after.lines.find(
+                (line) =>
+                  line.base_recipe_line_id ===
+                  String(proposal.target_recipe_line_id),
+              );
+      const blockers =
+        target || action === "ADD"
+          ? []
+          : [
+              {
+                code: "REVIEW_TARGET_NOT_FOUND",
+                message:
+                  "Không tìm thấy nguyên liệu cần điều chỉnh trong công thức xem thử.",
+              },
+            ];
+
+      if (target && action === "REMOVE") {
         target.final_disposition = "REMOVED";
         target.final_quantity_per_basis = 0;
-      } else if (action === "REPLACE") {
+      } else if (target && action === "REPLACE") {
         target.final_ingredient_id = String(proposal.substitute_ingredient_id);
-      } else if (action === "ADJUST_QUANTITY") {
+        if (proposal.quantity_per_basis !== null) {
+          target.final_quantity_per_basis = Number(proposal.quantity_per_basis);
+          target.final_unit_id = String(proposal.unit_id);
+        }
+      } else if (target && action === "ADJUST_QUANTITY") {
         target.final_quantity_per_basis = Number(proposal.quantity_per_basis);
       } else if (action === "ADD") {
         after.lines.push({
@@ -547,7 +576,7 @@ export function createReviewRecipeAdjustmentApi(
           source_layer: String(proposal.scope_kind),
         });
       }
-      target.source_layer = String(proposal.scope_kind);
+      if (target) target.source_layer = String(proposal.scope_kind);
       return Promise.resolve(
         success({
           preview: {
@@ -557,10 +586,10 @@ export function createReviewRecipeAdjustmentApi(
             proposed_adjustment: proposal,
             before,
             after,
-            affected_line_count: 1,
-            can_save: true,
+            affected_line_count: blockers.length ? 0 : 1,
+            can_save: blockers.length === 0,
             warnings: [],
-            blockers: [],
+            blockers,
           } as unknown as JsonValue,
           safe_operator_message:
             "Đã xem trước có thẩm quyền trong chế độ không lưu.",

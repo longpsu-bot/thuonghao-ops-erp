@@ -49,11 +49,11 @@ async function openCreateDialog() {
 }
 
 function fillSystemIngredientReplacement(dialog: HTMLElement) {
-  fireEvent.change(within(dialog).getByLabelText("Nguyên liệu cần thay đổi"), {
-    target: { value: "17000000-0000-4000-8000-000000000001" },
+  fireEvent.change(within(dialog).getByLabelText("Nguyên liệu hiện tại"), {
+    target: { value: "17000000-0000-4000-8000-000000000002" },
   });
-  fireEvent.change(within(dialog).getByLabelText("Nguyên liệu mới"), {
-    target: { value: "17000000-0000-4000-8000-000000000003" },
+  fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+    target: { value: "17000000-0000-4000-8000-000000000004" },
   });
   fireEvent.change(within(dialog).getByLabelText("Lý do"), {
     target: { value: "Thay theo tiêu chuẩn nguyên liệu đã duyệt." },
@@ -161,52 +161,94 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(within(dialog).getByLabelText("Định lượng mới")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Đơn vị")).toBeInTheDocument();
     expect(
-      within(dialog).queryByLabelText("Nguyên liệu mới"),
+      within(dialog).queryByLabelText("Thay bằng"),
     ).not.toBeInTheDocument();
   });
 
-  it("requires authoritative preview before save and invalidates it after a material edit", async () => {
+  it("reviews the exact changed line, preserves quantity, and invalidates preview after editing", async () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const create = vi.spyOn(api, "create");
     const dialog = await openCreateDialog();
     fillSystemIngredientReplacement(dialog);
 
-    const save = within(dialog).getByRole("button", { name: "Lưu điều chỉnh" });
-    expect(save).toBeDisabled();
+    expect(
+      within(dialog).queryByRole("button", { name: "Lưu điều chỉnh" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
-    expect(
-      await within(dialog).findByText("Trước điều chỉnh → Sau điều chỉnh"),
-    ).toBeInTheDocument();
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
     expect(preview).toHaveBeenCalledOnce();
-    expect(save).toBeEnabled();
+    expect(
+      within(review).getByText("Thịt heo · 8 Kilôgam"),
+    ).toBeInTheDocument();
+    expect(
+      within(review).getByText("Khoai tây · 8 Kilôgam"),
+    ).toBeInTheDocument();
+    expect(
+      within(review).queryByText("Bí đỏ · 20 Kilôgam"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    ).toBeEnabled();
+    expect(review.textContent).not.toMatch(
+      /SYSTEM_|REPLACE|revision|predecessor|successor|[0-9a-f]{8}-[0-9a-f-]{27,}/i,
+    );
 
-    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Xem toàn bộ công thức" }),
+    );
+    expect(within(review).getAllByText("Bí đỏ · 20 Kilôgam")).toHaveLength(2);
+    fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
+
+    const edit = await screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
+    expect(within(edit).getByLabelText("Nguyên liệu hiện tại")).toHaveValue(
+      "17000000-0000-4000-8000-000000000002",
+    );
+    expect(within(edit).getByLabelText("Thay bằng")).toHaveValue(
+      "17000000-0000-4000-8000-000000000004",
+    );
+    expect(within(edit).getByLabelText("Lý do")).toHaveValue(
+      "Thay theo tiêu chuẩn nguyên liệu đã duyệt.",
+    );
+
+    fireEvent.change(within(edit).getByLabelText("Lý do"), {
       target: { value: "Lý do đã được cập nhật sau khi xem ảnh hưởng." },
     });
-    expect(save).toBeDisabled();
+    expect(
+      within(edit).queryByRole("button", { name: "Lưu điều chỉnh" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+      within(edit).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
     await waitFor(() => expect(preview).toHaveBeenCalledTimes(2));
-    expect(save).toBeEnabled();
-    fireEvent.click(save);
+    const refreshedReview = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    fireEvent.click(
+      within(refreshedReview).getByRole("button", {
+        name: "Lưu điều chỉnh",
+      }),
+    );
     await waitFor(() => expect(create).toHaveBeenCalledOnce());
   });
 
   it("explains representative preview context for broad scopes without claiming a global enumeration", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
-    expect(
-      within(dialog).getByText("Bối cảnh dùng để xem ảnh hưởng"),
-    ).toBeInTheDocument();
+    expect(within(dialog).getByText("Xem ảnh hưởng tại")).toBeInTheDocument();
     expect(
       within(dialog).getByLabelText("Trường đại diện"),
     ).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Món đại diện")).toBeInTheDocument();
-    expect(within(dialog).getByText(/bối cảnh đại diện/i)).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        "Chỉ dùng để xem trước kết quả; phạm vi áp dụng không thay đổi.",
+      ),
+    ).toBeInTheDocument();
     expect(
       within(dialog).queryByText(/tất cả món bị ảnh hưởng/i),
     ).not.toBeInTheDocument();
@@ -236,7 +278,7 @@ describe("Recipe Change Order first-user workbench", () => {
     });
     expect(within(dialog).getByLabelText("Thay nguyên liệu")).toBeDisabled();
     expect(
-      within(dialog).getByLabelText("Nguyên liệu cần thay đổi"),
+      within(dialog).getByLabelText("Nguyên liệu hiện tại"),
     ).toBeDisabled();
     fireEvent.change(within(dialog).getByLabelText("Lý do"), {
       target: { value: "Điều chỉnh theo biên bản vận hành mới." },
@@ -244,9 +286,11 @@ describe("Recipe Change Order first-user workbench", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
-    await within(dialog).findByText("Trước điều chỉnh → Sau điều chỉnh");
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
     fireEvent.click(
-      within(dialog).getByRole("button", { name: "Lưu điều chỉnh" }),
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
     );
     await waitFor(() => expect(supersede).toHaveBeenCalledOnce());
   });

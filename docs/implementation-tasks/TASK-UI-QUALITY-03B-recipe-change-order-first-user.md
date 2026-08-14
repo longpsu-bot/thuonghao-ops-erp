@@ -55,6 +55,14 @@ The read returns human-reference catalogs, enriched released Recipe-line choices
 
 Focused frontend tests cover the table-first surface, human search/labels, modal fields, preview/save gating and invalidation, representative preview context, history/correction/cancellation surfaces, absence of browser prompt/confirm, legacy attribution, backend-shaped status and the secondary effective-composition surface.
 
+The final review correction keeps that workflow and all RMVP-02B contracts unchanged while improving first-use clarity in the existing Change Order modal:
+
+- the form is a focused Edit state with Mantine business controls, responsive field grouping and only `Xem ảnh hưởng` as its forward action;
+- a successful authoritative preview opens a separate Review state with the business summary, effective period, preview context and changed Recipe lines before `Lưu điều chỉnh` becomes available;
+- `Quay lại` preserves the draft, while any material edit invalidates the preview and requires a fresh authoritative preview;
+- the review fixture now resolves the exact Ingredient or Recipe-line target from the proposal, preserves the existing quantity and Unit when a replacement does not override them, and blocks safely if the deterministic target is missing;
+- unchanged composition lines stay collapsed behind `Xem toàn bộ công thức`, and normal modal/review markup exposes no UUIDs or revision vocabulary.
+
 Focused pgTAP covers current, future, scheduled correction, scheduled cancellation, effective cancellation, finite successor, mandatory predecessor resumption, finite-first expiry, explicit-date behavior, function security and v1 callability. RMVP-02B, RMVP-02A/UI-QUALITY-03A and the current platform/security catalog remain required regressions.
 
 No Atlas Staging, live OPS or Retool mutation is authorized. No Supabase deployment is part of this task. Disposable local database rollback is a clean reset; any deployed rollback would be forward-only and preserve immutable Recipe adjustment evidence.
