@@ -80,3 +80,16 @@ The final Recipe-type targeting correction keeps the existing RMVP-02B contract 
 Focused pgTAP covers current, future, scheduled correction, scheduled cancellation, effective cancellation, finite successor, mandatory predecessor resumption, finite-first expiry, explicit-date behavior, function security and v1 callability. RMVP-02B, RMVP-02A/UI-QUALITY-03A and the current platform/security catalog remain required regressions.
 
 No Atlas Staging, live OPS or Retool mutation is authorized. No Supabase deployment is part of this task. Disposable local database rollback is a clean reset; any deployed rollback would be forward-only and preserve immutable Recipe adjustment evidence.
+
+## Final new-Change-Order target-safety correction
+
+The Application no longer converts catalog ordering into operator intent when a new Change Order opens or when its Business Object, authority, School, Dish, or Recipe Type changes.
+
+- Recipe + all schools starts with Dish and Recipe Type unset. Recipe Type presents one placeholder followed by exactly `Tiểu học` and `Trung học`; the representative School remains unset and filtered by the explicit Recipe Type.
+- Recipe + one School starts with School and Dish unset. Recipe Type remains read-only and is derived only after the operator selects a School.
+- Ingredient scopes start with School where applicable, current Ingredient, representative School, and representative Dish unset.
+- Recipe-line, substitute Ingredient, quantity/Unit payload, and authoritative preview state clear whenever their parent target changes; hidden stale IDs cannot flow into a proposal.
+- Preview remains unavailable until every authoritative target, action-specific payload, representative preview context, effective date, and reason required by the existing contract is supplied.
+- Correction mode continues to hydrate and freeze the authoritative context of the existing adjustment. The accepted Review comparison and Preview-before-Save gate are unchanged.
+
+This is an Application-only safety correction. `RMVP-02B.v1`, the additive `RMVP-02B.v2` read, scope/action semantics, precedence, persistence, authorization, correction, cancellation, immutable history, and all Supabase artifacts remain unchanged.

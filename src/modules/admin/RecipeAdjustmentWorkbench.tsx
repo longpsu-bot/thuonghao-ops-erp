@@ -211,25 +211,24 @@ function referenceName(
   return typeof value === "string" ? value : "—";
 }
 
-function emptyDraft(data: RecipeAdjustmentWorkbenchData): AdjustmentDraft {
-  const schoolTypeId = firstId(data.school_types, "school_type_id");
+function emptyDraft(): AdjustmentDraft {
   return {
     action: "",
     scope: "SYSTEM_DISH",
     schoolId: "",
-    dishId: firstId(data.dishes, "dish_id"),
-    schoolTypeId,
+    dishId: "",
+    schoolTypeId: "",
     targetIngredientId: "",
     targetRecipeLineId: "",
     substituteIngredientId: "",
     quantity: "",
-    unitId: firstId(data.units, "unit_id"),
+    unitId: "",
     replaceQuantity: false,
     effectiveFrom: vietnamLocalDate(),
     effectiveTo: "",
     reason: "",
-    previewSchoolId: firstSchoolIdForType(data, schoolTypeId),
-    previewDishId: firstId(data.dishes, "dish_id"),
+    previewSchoolId: "",
+    previewDishId: "",
   };
 }
 
@@ -289,9 +288,7 @@ export function RecipeAdjustmentWorkbench({
   const [editing, setEditing] = useState<RecipeAdjustmentOperatorRecord | null>(
     null,
   );
-  const [draft, setDraft] = useState<AdjustmentDraft>(() =>
-    emptyDraft(emptyRecipeAdjustmentWorkbench()),
-  );
+  const [draft, setDraft] = useState<AdjustmentDraft>(() => emptyDraft());
   const [draftIds, setDraftIds] = useState<{
     adjustmentId: string;
     revisionId: string;
@@ -359,12 +356,15 @@ export function RecipeAdjustmentWorkbench({
       : draft.scope === "SCHOOL_DISH"
         ? schoolTypeIdForSchool(load.data, draft.schoolId)
         : "";
-  const selectedRecipeSchoolTypeName = referenceName(
-    load.data.school_types,
-    selectedRecipeSchoolTypeId,
-    "school_type_id",
-    "school_type_name",
-  );
+  const selectedRecipeSchoolTypeName =
+    draft.scope === "SCHOOL_DISH" && !draft.schoolId
+      ? "Chọn trường để xác định"
+      : referenceName(
+          load.data.school_types,
+          selectedRecipeSchoolTypeId,
+          "school_type_id",
+          "school_type_name",
+        );
   const compatiblePreviewSchools = useMemo(
     () =>
       load.data.schools.filter(
@@ -519,7 +519,7 @@ export function RecipeAdjustmentWorkbench({
     setPreview(null);
     setPreviewFingerprint("");
     setModalStep("EDIT");
-    setDraft(emptyDraft(load.data));
+    setDraft(emptyDraft());
     resetDraftIdentity();
     setCreateOpened(true);
   }
@@ -575,68 +575,43 @@ export function RecipeAdjustmentWorkbench({
   function changeBusinessObject(businessObject: AdjustmentBusinessObject) {
     const authority: AdjustmentAuthority = "ALL_SCHOOLS";
     const scope = scopeFromDecisions(businessObject, authority);
-    const schoolTypeId =
-      businessObject === "RECIPE"
-        ? firstId(load.data.school_types, "school_type_id")
-        : "";
     updateDraft({
       action: "",
       scope,
       schoolId: "",
-      dishId:
-        businessObject === "RECIPE" ? firstId(load.data.dishes, "dish_id") : "",
-      schoolTypeId,
+      dishId: "",
+      schoolTypeId: "",
       targetIngredientId: "",
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: firstId(load.data.units, "unit_id"),
+      unitId: "",
       replaceQuantity: false,
-      previewSchoolId:
-        businessObject === "RECIPE"
-          ? firstSchoolIdForType(load.data, schoolTypeId)
-          : firstId(load.data.schools, "school_id"),
+      previewSchoolId: "",
+      previewDishId: "",
     });
   }
 
   function changeAuthority(authority: AdjustmentAuthority) {
     const scope = scopeFromDecisions(draftBusinessObject, authority);
     const nextAllowedActions = ACTIONS_BY_SCOPE[scope];
-    const schoolId =
-      authority === "ONE_SCHOOL"
-        ? draft.schoolId || firstId(load.data.schools, "school_id")
-        : "";
-    const schoolTypeId =
-      draftBusinessObject === "RECIPE"
-        ? authority === "ONE_SCHOOL"
-          ? schoolTypeIdForSchool(load.data, schoolId)
-          : draft.schoolTypeId ||
-            firstId(load.data.school_types, "school_type_id")
-        : "";
     updateDraft({
       action:
         draft.action && nextAllowedActions.includes(draft.action)
           ? draft.action
           : "",
       scope,
-      schoolId,
-      dishId:
-        draftBusinessObject === "RECIPE"
-          ? draft.dishId || firstId(load.data.dishes, "dish_id")
-          : "",
-      schoolTypeId,
+      schoolId: "",
+      dishId: "",
+      schoolTypeId: "",
       targetIngredientId: "",
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: firstId(load.data.units, "unit_id"),
+      unitId: "",
       replaceQuantity: false,
-      previewSchoolId:
-        draftBusinessObject === "RECIPE"
-          ? authority === "ONE_SCHOOL"
-            ? schoolId
-            : firstSchoolIdForType(load.data, schoolTypeId)
-          : firstId(load.data.schools, "school_id"),
+      previewSchoolId: "",
+      previewDishId: "",
     });
   }
 
@@ -649,7 +624,7 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: firstId(load.data.units, "unit_id"),
+      unitId: "",
       replaceQuantity: false,
     });
   }
@@ -661,7 +636,7 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: firstId(load.data.units, "unit_id"),
+      unitId: "",
       replaceQuantity: false,
     });
   }
@@ -674,17 +649,20 @@ export function RecipeAdjustmentWorkbench({
           ? schoolTypeIdForSchool(load.data, schoolId)
           : "",
       previewSchoolId: schoolId,
+      previewDishId: "",
+      dishId: draft.scope === "SCHOOL_DISH" ? "" : draft.dishId,
     });
   }
 
   function changeDish(dishId: string) {
-    changeTarget({ dishId });
+    changeTarget({ dishId, previewDishId: "" });
   }
 
   function changeRecipeSchoolType(schoolTypeId: string) {
     changeTarget({
       schoolTypeId,
-      previewSchoolId: firstSchoolIdForType(load.data, schoolTypeId),
+      previewSchoolId: "",
+      previewDishId: "",
     });
   }
 
@@ -1609,10 +1587,13 @@ export function RecipeAdjustmentWorkbench({
                       required
                       value={draft.schoolTypeId}
                       disabled={!!editing}
-                      data={load.data.school_types.map((schoolType) => ({
-                        value: schoolType.school_type_id ?? "",
-                        label: schoolType.school_type_name ?? "",
-                      }))}
+                      data={[
+                        { value: "", label: "Chọn loại công thức" },
+                        ...load.data.school_types.map((schoolType) => ({
+                          value: schoolType.school_type_id ?? "",
+                          label: schoolType.school_type_name ?? "",
+                        })),
+                      ]}
                       onChange={(event) =>
                         changeRecipeSchoolType(event.target.value)
                       }
