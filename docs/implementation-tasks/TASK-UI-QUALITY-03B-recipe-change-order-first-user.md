@@ -29,6 +29,8 @@ Present the accepted post-lock Recipe composition adjustment job as a Vietnamese
 - legacy OPS v1 business issuance date and issuer both remain unavailable rather than reusing Atlas import provenance;
 - cancelled rows retain their authoritative pre-cancellation business content while cancellation evidence remains in status and history;
 - operator calendar defaults use the Asia/Ho_Chi_Minh local date;
+- system Recipe changes require one explicit `Loại công thức`, while one-School Recipe changes derive that type from the selected School;
+- Recipe-line and representative-School choices are restricted to the authoritative Recipe type so cross-type targets cannot be proposed;
 - technical revision machinery is removed from the normal UI;
 - `Công thức hiệu lực` remains a secondary read-only surface with technical lineage behind disclosure.
 
@@ -65,6 +67,15 @@ The final review correction keeps that workflow and all RMVP-02B contracts uncha
 - the review fixture now resolves the exact Ingredient or Recipe-line target from the proposal, preserves the existing quantity and Unit when a replacement does not override them, and blocks safely if the deterministic target is missing;
 - Review shows one complete aligned Before/After Recipe comparison keyed by existing Recipe-line identity; unchanged rows remain visible but subdued, while changed ADD/REPLACE/ADJUST_QUANTITY/REMOVE rows carry a directional marker and emphasis;
 - normal modal/review markup exposes no backend scope/action enums, UUIDs or revision vocabulary.
+
+The final Recipe-type targeting correction keeps the existing RMVP-02B contract and makes the OPS v1 Recipe variant boundary explicit in the Application:
+
+- `Công thức của một món` + `Tất cả trường` still maps to `SYSTEM_DISH`, but now requires exactly one `Loại công thức`; there is no blank, optional or both-types choice, and the existing proposal carries that `school_type_id`;
+- `Công thức của một món` + `Một trường` still maps to `SCHOOL_DISH`; the selected School supplies its authoritative School Type as read-only business context and the command retains the existing School/Dish target shape;
+- changing Dish, School or Recipe Type clears stale stable-line/action payload values and invalidates any prior preview;
+- target Recipe lines are filtered by exact Dish + School Type, and system-Recipe preview Schools are filtered to the same School Type; absence of a compatible School blocks preview with operator-facing guidance;
+- Review and correction context identify the exact `Món · Loại công thức`, while the aligned comparison contains only that selected Recipe variant;
+- no Recipe Swap, system-wide Ingredient retirement, multi-Recipe command, new scope, new action, new API or database change is introduced.
 
 Focused pgTAP covers current, future, scheduled correction, scheduled cancellation, effective cancellation, finite successor, mandatory predecessor resumption, finite-first expiry, explicit-date behavior, function security and v1 callability. RMVP-02B, RMVP-02A/UI-QUALITY-03A and the current platform/security catalog remain required regressions.
 

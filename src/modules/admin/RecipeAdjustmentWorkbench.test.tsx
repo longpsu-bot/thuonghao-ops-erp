@@ -19,9 +19,14 @@ import {
 
 const fixtureIds = {
   school: "11000000-0000-4000-8000-000000000001",
+  secondarySchool: "11000000-0000-4000-8000-000000000002",
+  schoolType: "12000000-0000-4000-8000-000000000001",
+  secondarySchoolType: "12000000-0000-4000-8000-000000000002",
   dish: "13000000-0000-4000-8000-000000000001",
   pumpkinLine: "16000000-0000-4000-8000-000000000001",
   porkLine: "16000000-0000-4000-8000-000000000002",
+  secondaryPumpkinLine: "16000000-0000-4000-8000-000000000003",
+  secondaryPorkLine: "16000000-0000-4000-8000-000000000004",
   pumpkin: "17000000-0000-4000-8000-000000000001",
   pork: "17000000-0000-4000-8000-000000000002",
   potato: "17000000-0000-4000-8000-000000000004",
@@ -170,7 +175,7 @@ describe("Recipe Change Order first-user workbench", () => {
     );
   });
 
-  it("orders the accessible decision tree by object, authority, action, then payload", async () => {
+  it("orders the accessible decision tree by object, authority, target, action, then payload", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
 
@@ -186,12 +191,20 @@ describe("Recipe Change Order first-user workbench", () => {
       level: 3,
       name: "Loại thay đổi",
     });
+    const targetHeading = within(dialog).getByRole("heading", {
+      level: 3,
+      name: "Mục tiêu điều chỉnh",
+    });
     expect(
       objectHeading.compareDocumentPosition(authorityHeading) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      authorityHeading.compareDocumentPosition(actionHeading) &
+      authorityHeading.compareDocumentPosition(targetHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      targetHeading.compareDocumentPosition(actionHeading) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -218,6 +231,188 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(within(dialog).getByLabelText("Đơn vị")).toBeInTheDocument();
     expect(
       within(dialog).queryByLabelText("Thay bằng"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("requires and carries one explicit Recipe Type for Recipe + all schools", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+
+    const recipeType = within(dialog).getByRole("combobox", {
+      name: /Loại công thức/,
+    });
+    expect(recipeType).toBeRequired();
+    expect(
+      within(recipeType)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Tiểu học", "Trung học"]);
+    expect(dialog.textContent).not.toMatch(
+      /Không bắt buộc|Tất cả loại trường|Cả hai loại trường/,
+    );
+
+    fillRecipeReplacement(dialog);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    const proposal = preview.mock.calls[0][2].proposed_adjustment as Record<
+      string,
+      unknown
+    >;
+    expect(proposal).toMatchObject({
+      scope_kind: "SYSTEM_DISH",
+      school_type_id: fixtureIds.schoolType,
+    });
+    expect(
+      within(review).getByText("Canh bí đỏ · Tiểu học"),
+    ).toBeInTheDocument();
+    expect(within(review).getByText("Tất cả trường")).toBeInTheDocument();
+
+    const comparison = within(review).getByRole("table", {
+      name: "So sánh công thức trước và sau",
+    });
+    expect(within(comparison).getAllByText("Bí đỏ · 20 Kilôgam")).toHaveLength(
+      2,
+    );
+    expect(
+      within(comparison).queryByText(/25 Kilôgam/),
+    ).not.toBeInTheDocument();
+    expect(
+      within(comparison).queryByText(/10 Kilôgam/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("filters Recipe lines and representative Schools by Recipe Type and clears stale preview", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    fillRecipeReplacement(dialog);
+
+    const primaryLines = within(
+      within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+    )
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(primaryLines).toContain("Thịt heo · 8 Kilôgam");
+    expect(primaryLines).not.toContain("Thịt heo · 10 Kilôgam");
+    expect(
+      within(within(dialog).getByLabelText("Trường dùng để xem"))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Chọn trường", "Trường Tiểu học Minh Khai"]);
+
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
+    const edit = await screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
+
+    fireEvent.change(
+      within(edit).getByRole("combobox", {
+        name: /Loại công thức/,
+      }),
+      {
+        target: { value: fixtureIds.secondarySchoolType },
+      },
+    );
+    expect(
+      within(edit).getByLabelText("Nguyên liệu trong công thức"),
+    ).toHaveValue("");
+    expect(within(edit).getByLabelText("Thay bằng")).toHaveValue("");
+    expect(
+      within(within(edit).getByLabelText("Nguyên liệu trong công thức"))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual([
+      "Chọn nguyên liệu trong món",
+      "Bí đỏ · 25 Kilôgam",
+      "Thịt heo · 10 Kilôgam",
+    ]);
+    expect(
+      within(within(edit).getByLabelText("Trường dùng để xem"))
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Chọn trường", "Trường Trung học Trần Phú"]);
+    expect(
+      within(edit).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+    expect(preview).toHaveBeenCalledOnce();
+  });
+
+  it("derives Recipe Type from one School and prevents cross-type Recipe-line targets", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    fireEvent.click(within(dialog).getByLabelText("Một trường"));
+
+    expect(
+      within(dialog).queryByRole("combobox", { name: "Loại công thức" }),
+    ).not.toBeInTheDocument();
+    const derivedType = within(dialog).getByLabelText(
+      "Loại công thức xác định từ trường",
+    );
+    expect(within(derivedType).getByText("Tiểu học")).toBeInTheDocument();
+
+    fireEvent.change(within(dialog).getByLabelText("Trường"), {
+      target: { value: fixtureIds.secondarySchool },
+    });
+    expect(within(derivedType).getByText("Trung học")).toBeInTheDocument();
+    selectAction(dialog, "Thay nguyên liệu");
+    const recipeLine = within(dialog).getByLabelText(
+      "Nguyên liệu trong công thức",
+    );
+    const options = within(recipeLine)
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(options).toContain("Thịt heo · 10 Kilôgam");
+    expect(options).not.toContain("Thịt heo · 8 Kilôgam");
+
+    fireEvent.change(recipeLine, {
+      target: { value: fixtureIds.secondaryPorkLine },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Điều chỉnh công thức Trung học." },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    const proposal = preview.mock.calls[0][2].proposed_adjustment as Record<
+      string,
+      unknown
+    >;
+    expect(proposal).toMatchObject({
+      scope_kind: "SCHOOL_DISH",
+      school_id: fixtureIds.secondarySchool,
+      school_type_id: null,
+      target_recipe_line_id: fixtureIds.secondaryPorkLine,
+    });
+    expect(
+      within(review).getByText("Canh bí đỏ · Trung học"),
+    ).toBeInTheDocument();
+    expect(
+      within(review).getByText("Trường Trung học Trần Phú"),
+    ).toBeInTheDocument();
+    const comparison = within(review).getByRole("table", {
+      name: "So sánh công thức trước và sau",
+    });
+    expect(within(comparison).getAllByText("Bí đỏ · 25 Kilôgam")).toHaveLength(
+      2,
+    );
+    expect(
+      within(comparison).queryByText(/20 Kilôgam/),
     ).not.toBeInTheDocument();
   });
 
@@ -567,6 +762,48 @@ describe("Recipe Change Order first-user workbench", () => {
       within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
     );
     await waitFor(() => expect(supersede).toHaveBeenCalledOnce());
+  });
+
+  it("keeps Dish and Recipe Type fixed when correcting a system Recipe adjustment", async () => {
+    renderWorkbench();
+    const table = await screen.findByRole("table");
+    const systemRecipeRow = within(table)
+      .getAllByRole("row")
+      .find(
+        (row) =>
+          row.textContent?.includes(
+            "Canh bí đỏ · Tiểu học · Một món tại các trường",
+          ) && row.textContent?.includes("Thay nguyên liệu"),
+      );
+    expect(systemRecipeRow).toBeDefined();
+    fireEvent.click(
+      within(systemRecipeRow!).getByRole("button", { name: "Xem" }),
+    );
+    const drawer = await screen.findByRole("dialog", {
+      name: "Chi tiết điều chỉnh",
+    });
+    fireEvent.click(
+      within(drawer).getByRole("button", { name: "Điều chỉnh lại" }),
+    );
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Điều chỉnh lại",
+    });
+    const fixedContext = within(dialog).getByLabelText(
+      "Bối cảnh điều chỉnh cố định",
+    );
+    expect(
+      within(fixedContext).getByText("Canh bí đỏ · Tiểu học"),
+    ).toBeInTheDocument();
+    expect(within(fixedContext).getByText("Tất cả trường")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Món")).toBeDisabled();
+    expect(
+      within(dialog).getByRole("combobox", { name: /Loại công thức/ }),
+    ).toBeDisabled();
+    expect(
+      within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+    ).toBeDisabled();
+    expect(within(dialog).queryByRole("radiogroup")).not.toBeInTheDocument();
   });
 
   it("cancels through an application modal without prompt or confirm", async () => {

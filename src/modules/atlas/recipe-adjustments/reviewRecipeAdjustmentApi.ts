@@ -28,12 +28,18 @@ const now = "2026-07-27T02:00:00.000Z";
 const actor = "00000000-0000-4000-8000-000000000001";
 const ids = {
   school: "11000000-0000-4000-8000-000000000001",
+  secondarySchool: "11000000-0000-4000-8000-000000000002",
   schoolType: "12000000-0000-4000-8000-000000000001",
+  secondarySchoolType: "12000000-0000-4000-8000-000000000002",
   dish: "13000000-0000-4000-8000-000000000001",
   recipe: "14000000-0000-4000-8000-000000000001",
+  secondaryRecipe: "14000000-0000-4000-8000-000000000002",
   version: "15000000-0000-4000-8000-000000000001",
+  secondaryVersion: "15000000-0000-4000-8000-000000000002",
   line1: "16000000-0000-4000-8000-000000000001",
   line2: "16000000-0000-4000-8000-000000000002",
+  line3: "16000000-0000-4000-8000-000000000003",
+  line4: "16000000-0000-4000-8000-000000000004",
   ingredient1: "17000000-0000-4000-8000-000000000001",
   ingredient2: "17000000-0000-4000-8000-000000000002",
   ingredient3: "17000000-0000-4000-8000-000000000003",
@@ -129,8 +135,7 @@ function rule(
       scope === "SCHOOL" || scope === "SCHOOL_DISH" ? ids.school : null,
     dish_id:
       scope === "SYSTEM_DISH" || scope === "SCHOOL_DISH" ? ids.dish : null,
-    school_type_id:
-      scope === "SYSTEM_DISH" && index % 2 ? ids.schoolType : null,
+    school_type_id: scope === "SYSTEM_DISH" ? ids.schoolType : null,
     target_ingredient_id: hasIngredient ? ids.ingredient1 : null,
     target_recipe_line_id: hasLine ? ids.line1 : null,
     adjustment_line_id:
@@ -270,6 +275,13 @@ function fixtures(): ReviewWorkbenchData {
         school_type_id: ids.schoolType,
         school_status: "ACTIVE",
       },
+      {
+        school_id: ids.secondarySchool,
+        school_code: "truong-tran-phu",
+        school_name: "Trường Trung học Trần Phú",
+        school_type_id: ids.secondarySchoolType,
+        school_status: "ACTIVE",
+      },
     ],
     dishes: [
       {
@@ -284,6 +296,11 @@ function fixtures(): ReviewWorkbenchData {
       {
         school_type_id: ids.schoolType,
         school_type_name: "Tiểu học",
+        school_type_status: "ACTIVE",
+      },
+      {
+        school_type_id: ids.secondarySchoolType,
+        school_type_name: "Trung học",
         school_type_status: "ACTIVE",
       },
     ],
@@ -331,6 +348,30 @@ function fixtures(): ReviewWorkbenchData {
         unit_id: ids.unit,
         unit_name: "Kilôgam",
       },
+      {
+        recipe_line_id: ids.line3,
+        recipe_id: ids.secondaryRecipe,
+        dish_id: ids.dish,
+        school_type_id: ids.secondarySchoolType,
+        line_code: "bi-do-trung-hoc",
+        ingredient_id: ids.ingredient1,
+        ingredient_name: "Bí đỏ",
+        quantity_per_basis: 25,
+        unit_id: ids.unit,
+        unit_name: "Kilôgam",
+      },
+      {
+        recipe_line_id: ids.line4,
+        recipe_id: ids.secondaryRecipe,
+        dish_id: ids.dish,
+        school_type_id: ids.secondarySchoolType,
+        line_code: "thit-heo-trung-hoc",
+        ingredient_id: ids.ingredient2,
+        ingredient_name: "Thịt heo",
+        quantity_per_basis: 10,
+        unit_id: ids.unit,
+        unit_name: "Kilôgam",
+      },
     ],
     operator_rows: adjustments.map(operatorRow),
     adjustments,
@@ -366,22 +407,25 @@ function baseLine(
   lineId: string,
   ingredientId: string,
   lineCode: string,
+  recipeId = ids.recipe,
+  versionId = ids.version,
+  quantity = lineId === ids.line1 ? 20 : 8,
 ): EffectiveCompositionLine {
   return {
     selected_dish_id: ids.dish,
-    selected_recipe_id: ids.recipe,
-    selected_recipe_version_id: ids.version,
+    selected_recipe_id: recipeId,
+    selected_recipe_version_id: versionId,
     basis_portions: 100,
     base_recipe_line_id: lineId,
     base_recipe_line_revision_id: `${lineId.slice(0, -1)}9`,
     adjustment_line_id: null,
     line_code: lineCode,
     base_ingredient_id: ingredientId,
-    base_quantity_per_basis: lineId === ids.line1 ? 20 : 8,
+    base_quantity_per_basis: quantity,
     base_unit_id: ids.unit,
     base_disposition: "PRESENT",
     final_ingredient_id: ingredientId,
-    final_quantity_per_basis: lineId === ids.line1 ? 20 : 8,
+    final_quantity_per_basis: quantity,
     final_unit_id: ids.unit,
     final_disposition: "PRESENT",
     source_layer: "RELEASED_RECIPE_VERSION",
@@ -391,9 +435,26 @@ function baseLine(
   };
 }
 
-function resolutionScenario(name = "precedence"): EffectiveCompositionResult {
-  const first = baseLine(ids.line1, ids.ingredient1, "bi-do");
-  const second = baseLine(ids.line2, ids.ingredient2, "thit-heo");
+function resolutionScenario(name = "precedence", schoolId = ids.school) {
+  const secondary = schoolId === ids.secondarySchool;
+  const recipeId = secondary ? ids.secondaryRecipe : ids.recipe;
+  const versionId = secondary ? ids.secondaryVersion : ids.version;
+  const first = baseLine(
+    secondary ? ids.line3 : ids.line1,
+    ids.ingredient1,
+    secondary ? "bi-do-trung-hoc" : "bi-do",
+    recipeId,
+    versionId,
+    secondary ? 25 : 20,
+  );
+  const second = baseLine(
+    secondary ? ids.line4 : ids.line2,
+    ids.ingredient2,
+    secondary ? "thit-heo-trung-hoc" : "thit-heo",
+    recipeId,
+    versionId,
+    secondary ? 10 : 8,
+  );
   const blockers: EffectiveCompositionResult["blockers"] = [];
   if (name === "precedence") {
     first.final_ingredient_id = ids.ingredient4;
@@ -437,13 +498,13 @@ function resolutionScenario(name = "precedence"): EffectiveCompositionResult {
   return {
     status: blockers.length ? "BLOCKED" : "READY",
     as_of_date: "2026-07-27",
-    school_id: ids.school,
+    school_id: schoolId,
     dish_id: ids.dish,
     historical: false,
     selected_recipe: {
       dish_id: ids.dish,
-      recipe_id: ids.recipe,
-      recipe_version_id: ids.version,
+      recipe_id: recipeId,
+      recipe_version_id: versionId,
       selection_scope: "SCHOOL_TYPE",
       basis_portions: 100,
     },
@@ -509,6 +570,7 @@ export function createReviewRecipeAdjustmentApi(
           success({
             resolution: resolutionScenario(
               String(payload.review_scenario ?? "precedence"),
+              String(payload.school_id ?? ids.school),
             ) as unknown as JsonValue,
             safe_operator_message: "Đã phân giải BOM hiệu lực xem thử.",
           }),
@@ -518,7 +580,10 @@ export function createReviewRecipeAdjustmentApi(
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
       const proposal = payload.proposed_adjustment as Record<string, JsonValue>;
-      const before = resolutionScenario("preview_base");
+      const before = resolutionScenario(
+        "preview_base",
+        String(payload.school_id ?? ids.school),
+      );
       const after = clone(before);
       const action = String(proposal.action_kind);
       const scope = String(proposal.scope_kind);

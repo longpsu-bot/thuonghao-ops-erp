@@ -180,6 +180,26 @@ function firstId(
   return typeof value === "string" ? value : "";
 }
 
+function schoolTypeIdForSchool(
+  data: RecipeAdjustmentWorkbenchData,
+  schoolId: string,
+) {
+  return (
+    data.schools.find((school) => school.school_id === schoolId)
+      ?.school_type_id ?? ""
+  );
+}
+
+function firstSchoolIdForType(
+  data: RecipeAdjustmentWorkbenchData,
+  schoolTypeId: string,
+) {
+  return (
+    data.schools.find((school) => school.school_type_id === schoolTypeId)
+      ?.school_id ?? ""
+  );
+}
+
 function referenceName(
   records: AdjustmentReference[],
   id: string | null | undefined,
@@ -192,12 +212,13 @@ function referenceName(
 }
 
 function emptyDraft(data: RecipeAdjustmentWorkbenchData): AdjustmentDraft {
+  const schoolTypeId = firstId(data.school_types, "school_type_id");
   return {
     action: "",
     scope: "SYSTEM_DISH",
-    schoolId: firstId(data.schools, "school_id"),
+    schoolId: "",
     dishId: firstId(data.dishes, "dish_id"),
-    schoolTypeId: "",
+    schoolTypeId,
     targetIngredientId: "",
     targetRecipeLineId: "",
     substituteIngredientId: "",
@@ -207,7 +228,7 @@ function emptyDraft(data: RecipeAdjustmentWorkbenchData): AdjustmentDraft {
     effectiveFrom: vietnamLocalDate(),
     effectiveTo: "",
     reason: "",
-    previewSchoolId: firstId(data.schools, "school_id"),
+    previewSchoolId: firstSchoolIdForType(data, schoolTypeId),
     previewDishId: firstId(data.dishes, "dish_id"),
   };
 }
@@ -332,12 +353,34 @@ export function RecipeAdjustmentWorkbench({
     if (authSubject && api) void refresh();
   }, [api, authSubject, refresh]);
 
+  const selectedRecipeSchoolTypeId =
+    draft.scope === "SYSTEM_DISH"
+      ? draft.schoolTypeId
+      : draft.scope === "SCHOOL_DISH"
+        ? schoolTypeIdForSchool(load.data, draft.schoolId)
+        : "";
+  const selectedRecipeSchoolTypeName = referenceName(
+    load.data.school_types,
+    selectedRecipeSchoolTypeId,
+    "school_type_id",
+    "school_type_name",
+  );
+  const compatiblePreviewSchools = useMemo(
+    () =>
+      load.data.schools.filter(
+        (school) => school.school_type_id === draft.schoolTypeId,
+      ),
+    [draft.schoolTypeId, load.data.schools],
+  );
   const lineOptions = useMemo(
     () =>
       load.data.recipe_lines.filter(
-        (line) => !draft.dishId || line.dish_id === draft.dishId,
+        (line) =>
+          (!draft.dishId || line.dish_id === draft.dishId) &&
+          !!selectedRecipeSchoolTypeId &&
+          line.school_type_id === selectedRecipeSchoolTypeId,
       ),
-    [draft.dishId, load.data.recipe_lines],
+    [draft.dishId, load.data.recipe_lines, selectedRecipeSchoolTypeId],
   );
 
   const targetLine = useCallback(
@@ -376,19 +419,25 @@ export function RecipeAdjustmentWorkbench({
         "dish_id",
         "dish_name",
       );
+      const schoolType = referenceName(
+        load.data.school_types,
+        row.school_type_id,
+        "school_type_id",
+        "school_type_name",
+      );
       const ingredient = targetName(row);
       switch (row.scope_kind) {
         case "SYSTEM_INGREDIENT":
           return `${ingredient} · ${scopeLabel[row.scope_kind]}`;
         case "SYSTEM_DISH":
-          return `${dish} · ${scopeLabel[row.scope_kind]}`;
+          return `${dish} · ${schoolType} · ${scopeLabel[row.scope_kind]}`;
         case "SCHOOL":
           return `${school} · ${scopeLabel[row.scope_kind]}`;
         case "SCHOOL_DISH":
           return `${dish} · ${school}`;
       }
     },
-    [load.data.dishes, load.data.schools, targetName],
+    [load.data.dishes, load.data.school_types, load.data.schools, targetName],
   );
 
   const changeSummary = useCallback(
@@ -477,6 +526,13 @@ export function RecipeAdjustmentWorkbench({
 
   function openCorrection(row: RecipeAdjustmentOperatorRecord) {
     const revision = row.command_revision;
+    const schoolId = row.school_id ?? firstId(load.data.schools, "school_id");
+    const schoolTypeId =
+      row.scope_kind === "SYSTEM_DISH"
+        ? (row.school_type_id ?? "")
+        : row.scope_kind === "SCHOOL_DISH"
+          ? schoolTypeIdForSchool(load.data, schoolId)
+          : "";
     setDetail(null);
     setEditing(row);
     setPreview(null);
@@ -485,9 +541,9 @@ export function RecipeAdjustmentWorkbench({
     setDraft({
       action: row.action_kind,
       scope: row.scope_kind,
-      schoolId: row.school_id ?? firstId(load.data.schools, "school_id"),
+      schoolId,
       dishId: row.dish_id ?? firstId(load.data.dishes, "dish_id"),
-      schoolTypeId: row.school_type_id ?? "",
+      schoolTypeId,
       targetIngredientId: row.target_ingredient_id ?? "",
       targetRecipeLineId: row.target_recipe_line_id ?? "",
       substituteIngredientId: revision.substitute_ingredient_id ?? "",
@@ -498,7 +554,10 @@ export function RecipeAdjustmentWorkbench({
       effectiveFrom: revision.effective_from,
       effectiveTo: revision.effective_to ?? "",
       reason: "",
-      previewSchoolId: row.school_id ?? firstId(load.data.schools, "school_id"),
+      previewSchoolId:
+        row.scope_kind === "SYSTEM_DISH"
+          ? firstSchoolIdForType(load.data, schoolTypeId)
+          : schoolId,
       previewDishId: row.dish_id ?? firstId(load.data.dishes, "dish_id"),
     });
     setDraftIds({
@@ -516,40 +575,88 @@ export function RecipeAdjustmentWorkbench({
   function changeBusinessObject(businessObject: AdjustmentBusinessObject) {
     const authority: AdjustmentAuthority = "ALL_SCHOOLS";
     const scope = scopeFromDecisions(businessObject, authority);
+    const schoolTypeId =
+      businessObject === "RECIPE"
+        ? firstId(load.data.school_types, "school_type_id")
+        : "";
     updateDraft({
       action: "",
       scope,
       schoolId: "",
       dishId:
         businessObject === "RECIPE" ? firstId(load.data.dishes, "dish_id") : "",
-      schoolTypeId: "",
+      schoolTypeId,
       targetIngredientId: "",
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
       unitId: firstId(load.data.units, "unit_id"),
       replaceQuantity: false,
+      previewSchoolId:
+        businessObject === "RECIPE"
+          ? firstSchoolIdForType(load.data, schoolTypeId)
+          : firstId(load.data.schools, "school_id"),
     });
   }
 
   function changeAuthority(authority: AdjustmentAuthority) {
     const scope = scopeFromDecisions(draftBusinessObject, authority);
     const nextAllowedActions = ACTIONS_BY_SCOPE[scope];
+    const schoolId =
+      authority === "ONE_SCHOOL"
+        ? draft.schoolId || firstId(load.data.schools, "school_id")
+        : "";
+    const schoolTypeId =
+      draftBusinessObject === "RECIPE"
+        ? authority === "ONE_SCHOOL"
+          ? schoolTypeIdForSchool(load.data, schoolId)
+          : draft.schoolTypeId ||
+            firstId(load.data.school_types, "school_type_id")
+        : "";
     updateDraft({
       action:
         draft.action && nextAllowedActions.includes(draft.action)
           ? draft.action
           : "",
       scope,
-      schoolId:
-        authority === "ONE_SCHOOL"
-          ? firstId(load.data.schools, "school_id")
-          : "",
+      schoolId,
       dishId:
         draftBusinessObject === "RECIPE"
           ? draft.dishId || firstId(load.data.dishes, "dish_id")
           : "",
-      schoolTypeId: "",
+      schoolTypeId,
+      targetIngredientId: "",
+      targetRecipeLineId: "",
+      substituteIngredientId: "",
+      quantity: "",
+      unitId: firstId(load.data.units, "unit_id"),
+      replaceQuantity: false,
+      previewSchoolId:
+        draftBusinessObject === "RECIPE"
+          ? authority === "ONE_SCHOOL"
+            ? schoolId
+            : firstSchoolIdForType(load.data, schoolTypeId)
+          : firstId(load.data.schools, "school_id"),
+    });
+  }
+
+  function changeAction(action: RecipeAdjustmentAction) {
+    const ingredientScope =
+      draft.scope === "SYSTEM_INGREDIENT" || draft.scope === "SCHOOL";
+    updateDraft({
+      action,
+      targetIngredientId: ingredientScope ? draft.targetIngredientId : "",
+      targetRecipeLineId: "",
+      substituteIngredientId: "",
+      quantity: "",
+      unitId: firstId(load.data.units, "unit_id"),
+      replaceQuantity: false,
+    });
+  }
+
+  function changeTarget(patch: Partial<AdjustmentDraft>) {
+    updateDraft({
+      ...patch,
       targetIngredientId: "",
       targetRecipeLineId: "",
       substituteIngredientId: "",
@@ -559,15 +666,25 @@ export function RecipeAdjustmentWorkbench({
     });
   }
 
-  function changeAction(action: RecipeAdjustmentAction) {
-    updateDraft({
-      action,
-      targetIngredientId: "",
-      targetRecipeLineId: "",
-      substituteIngredientId: "",
-      quantity: "",
-      unitId: firstId(load.data.units, "unit_id"),
-      replaceQuantity: false,
+  function changeSchool(schoolId: string) {
+    changeTarget({
+      schoolId,
+      schoolTypeId:
+        draft.scope === "SCHOOL_DISH"
+          ? schoolTypeIdForSchool(load.data, schoolId)
+          : "",
+      previewSchoolId: schoolId,
+    });
+  }
+
+  function changeDish(dishId: string) {
+    changeTarget({ dishId });
+  }
+
+  function changeRecipeSchoolType(schoolTypeId: string) {
+    changeTarget({
+      schoolTypeId,
+      previewSchoolId: firstSchoolIdForType(load.data, schoolTypeId),
     });
   }
 
@@ -652,6 +769,12 @@ export function RecipeAdjustmentWorkbench({
     !!draft.effectiveFrom &&
     (!draft.effectiveTo || draft.effectiveTo > draft.effectiveFrom) &&
     !!draft.reason.trim() &&
+    (draft.scope !== "SYSTEM_DISH" ||
+      (!!draft.schoolTypeId &&
+        compatiblePreviewSchools.some(
+          (school) => school.school_id === previewSchoolId,
+        ))) &&
+    (draft.scope !== "SCHOOL_DISH" || !!selectedRecipeSchoolTypeId) &&
     (!needsRecipeLine || !!draft.targetRecipeLineId) &&
     (!needsIngredientTarget || !!draft.targetIngredientId) &&
     (draft.action !== "REPLACE" || !!draft.substituteIngredientId) &&
@@ -893,29 +1016,23 @@ export function RecipeAdjustmentWorkbench({
         return "—";
     }
   })();
-  const draftScopeText = (() => {
-    const school = referenceName(
-      load.data.schools,
-      draft.schoolId,
-      "school_id",
-      "school_name",
-    );
-    const dish = referenceName(
-      load.data.dishes,
-      draft.dishId,
-      "dish_id",
-      "dish_name",
-    );
-    if (draftBusinessObject === "RECIPE")
-      return `${dish} · ${
-        draftAuthority === "ALL_SCHOOLS"
-          ? authorityLabel[draftAuthority]
-          : school
-      }`;
-    return draftAuthority === "ALL_SCHOOLS"
+  const draftSchoolName = referenceName(
+    load.data.schools,
+    draft.schoolId,
+    "school_id",
+    "school_name",
+  );
+  const draftDishName = referenceName(
+    load.data.dishes,
+    draft.dishId,
+    "dish_id",
+    "dish_name",
+  );
+  const draftRecipeText = `${draftDishName} · ${selectedRecipeSchoolTypeName}`;
+  const draftAuthorityText =
+    draftAuthority === "ALL_SCHOOLS"
       ? authorityLabel[draftAuthority]
-      : school;
-  })();
+      : draftSchoolName;
   const previewContextText = [
     referenceName(
       load.data.schools,
@@ -1296,7 +1413,7 @@ export function RecipeAdjustmentWorkbench({
                   <Text fw={700} mb="sm">
                     Bối cảnh điều chỉnh
                   </Text>
-                  <SimpleGrid cols={{ base: 1, sm: 3 }}>
+                  <SimpleGrid cols={{ base: 1, sm: 4 }}>
                     <Box>
                       <Text size="xs" c="dimmed">
                         Đối tượng điều chỉnh
@@ -1305,11 +1422,19 @@ export function RecipeAdjustmentWorkbench({
                         {businessObjectLabel[draftBusinessObject]}
                       </Text>
                     </Box>
+                    {draftBusinessObject === "RECIPE" && (
+                      <Box>
+                        <Text size="xs" c="dimmed">
+                          Công thức
+                        </Text>
+                        <Text fw={600}>{draftRecipeText}</Text>
+                      </Box>
+                    )}
                     <Box>
                       <Text size="xs" c="dimmed">
                         Phạm vi áp dụng
                       </Text>
-                      <Text fw={600}>{authorityLabel[draftAuthority]}</Text>
+                      <Text fw={600}>{draftAuthorityText}</Text>
                     </Box>
                     <Box>
                       <Text size="xs" c="dimmed">
@@ -1410,48 +1535,163 @@ export function RecipeAdjustmentWorkbench({
                       </SimpleGrid>
                     </Radio.Group>
                   </Stack>
-
-                  <Stack
-                    component="section"
-                    gap="xs"
-                    aria-labelledby="adjustment-action-heading"
-                  >
-                    <Text
-                      component="h3"
-                      id="adjustment-action-heading"
-                      fw={700}
-                      size="sm"
-                      m={0}
-                    >
-                      Loại thay đổi
-                    </Text>
-                    <Radio.Group
-                      value={draft.action}
-                      label="Bạn muốn thay đổi như thế nào?"
-                      onChange={(value) =>
-                        changeAction(value as RecipeAdjustmentAction)
-                      }
-                    >
-                      <SimpleGrid cols={{ base: 1, sm: 2 }} mt="xs">
-                        {allowedActions.map((action) => (
-                          <Radio.Card
-                            key={action}
-                            value={action}
-                            aria-label={actionLabel[action]}
-                            p="sm"
-                            radius="md"
-                            withBorder
-                          >
-                            <Group wrap="nowrap">
-                              <Radio.Indicator />
-                              <Text fw={500}>{actionLabel[action]}</Text>
-                            </Group>
-                          </Radio.Card>
-                        ))}
-                      </SimpleGrid>
-                    </Radio.Group>
-                  </Stack>
                 </>
+              )}
+
+              <Stack
+                component="section"
+                gap="md"
+                aria-labelledby="adjustment-target-heading"
+              >
+                <Text
+                  component="h3"
+                  id="adjustment-target-heading"
+                  fw={700}
+                  size="sm"
+                  m={0}
+                >
+                  Mục tiêu điều chỉnh
+                </Text>
+
+                {(draft.scope === "SCHOOL" ||
+                  draft.scope === "SCHOOL_DISH") && (
+                  <NativeSelect
+                    label="Trường"
+                    value={draft.schoolId}
+                    disabled={!!editing}
+                    data={[
+                      { value: "", label: "Chọn trường" },
+                      ...load.data.schools.map((school) => ({
+                        value: school.school_id ?? "",
+                        label: school.school_name ?? "",
+                      })),
+                    ]}
+                    onChange={(event) => changeSchool(event.target.value)}
+                  />
+                )}
+
+                {(draft.scope === "SYSTEM_DISH" ||
+                  draft.scope === "SCHOOL_DISH") && (
+                  <>
+                    {draft.scope === "SCHOOL_DISH" && (
+                      <Paper
+                        withBorder
+                        radius="md"
+                        p="sm"
+                        aria-label="Loại công thức xác định từ trường"
+                      >
+                        <Text size="xs" c="dimmed">
+                          Loại công thức
+                        </Text>
+                        <Text fw={600}>{selectedRecipeSchoolTypeName}</Text>
+                      </Paper>
+                    )}
+                    <NativeSelect
+                      label="Món"
+                      value={draft.dishId}
+                      disabled={!!editing}
+                      data={[
+                        { value: "", label: "Chọn món" },
+                        ...load.data.dishes.map((dish) => ({
+                          value: dish.dish_id ?? "",
+                          label: dish.dish_name ?? "",
+                        })),
+                      ]}
+                      onChange={(event) => changeDish(event.target.value)}
+                    />
+                  </>
+                )}
+
+                {draft.scope === "SYSTEM_DISH" && (
+                  <>
+                    <NativeSelect
+                      label="Loại công thức"
+                      required
+                      value={draft.schoolTypeId}
+                      disabled={!!editing}
+                      data={load.data.school_types.map((schoolType) => ({
+                        value: schoolType.school_type_id ?? "",
+                        label: schoolType.school_type_name ?? "",
+                      }))}
+                      onChange={(event) =>
+                        changeRecipeSchoolType(event.target.value)
+                      }
+                    />
+                    {!draft.schoolTypeId && (
+                      <Text size="sm" c="red" role="alert">
+                        Chưa có loại công thức phù hợp để tạo điều chỉnh.
+                      </Text>
+                    )}
+                  </>
+                )}
+
+                {(draft.scope === "SYSTEM_INGREDIENT" ||
+                  draft.scope === "SCHOOL") && (
+                  <NativeSelect
+                    label={
+                      draft.action === "REMOVE"
+                        ? "Nguyên liệu cần bỏ"
+                        : draft.action === "REPLACE"
+                          ? "Nguyên liệu hiện tại"
+                          : "Nguyên liệu điều chỉnh"
+                    }
+                    value={draft.targetIngredientId}
+                    disabled={!!editing}
+                    data={[
+                      { value: "", label: "Chọn nguyên liệu" },
+                      ...load.data.ingredients.map((ingredient) => ({
+                        value: ingredient.ingredient_id ?? "",
+                        label: ingredient.ingredient_name ?? "",
+                      })),
+                    ]}
+                    onChange={(event) =>
+                      updateDraft({ targetIngredientId: event.target.value })
+                    }
+                  />
+                )}
+              </Stack>
+
+              {!editing && (
+                <Stack
+                  component="section"
+                  gap="xs"
+                  aria-labelledby="adjustment-action-heading"
+                >
+                  <Text
+                    component="h3"
+                    id="adjustment-action-heading"
+                    fw={700}
+                    size="sm"
+                    m={0}
+                  >
+                    Loại thay đổi
+                  </Text>
+                  <Radio.Group
+                    value={draft.action}
+                    label="Bạn muốn thay đổi như thế nào?"
+                    onChange={(value) =>
+                      changeAction(value as RecipeAdjustmentAction)
+                    }
+                  >
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} mt="xs">
+                      {allowedActions.map((action) => (
+                        <Radio.Card
+                          key={action}
+                          value={action}
+                          aria-label={actionLabel[action]}
+                          p="sm"
+                          radius="md"
+                          withBorder
+                        >
+                          <Group wrap="nowrap">
+                            <Radio.Indicator />
+                            <Text fw={500}>{actionLabel[action]}</Text>
+                          </Group>
+                        </Radio.Card>
+                      ))}
+                    </SimpleGrid>
+                  </Radio.Group>
+                </Stack>
               )}
 
               {draft.action && (
@@ -1470,75 +1710,9 @@ export function RecipeAdjustmentWorkbench({
                     Nội dung điều chỉnh
                   </Text>
 
-                  {(draft.scope === "SCHOOL" ||
-                    draft.scope === "SCHOOL_DISH") && (
+                  {draft.action === "ADD" && (
                     <NativeSelect
-                      label="Trường"
-                      value={draft.schoolId}
-                      disabled={!!editing}
-                      data={[
-                        { value: "", label: "Chọn trường" },
-                        ...load.data.schools.map((school) => ({
-                          value: school.school_id ?? "",
-                          label: school.school_name ?? "",
-                        })),
-                      ]}
-                      onChange={(event) =>
-                        updateDraft({ schoolId: event.target.value })
-                      }
-                    />
-                  )}
-
-                  {(draft.scope === "SYSTEM_DISH" ||
-                    draft.scope === "SCHOOL_DISH") && (
-                    <NativeSelect
-                      label="Món"
-                      value={draft.dishId}
-                      disabled={!!editing}
-                      data={[
-                        { value: "", label: "Chọn món" },
-                        ...load.data.dishes.map((dish) => ({
-                          value: dish.dish_id ?? "",
-                          label: dish.dish_name ?? "",
-                        })),
-                      ]}
-                      onChange={(event) =>
-                        updateDraft({
-                          dishId: event.target.value,
-                          targetRecipeLineId: "",
-                        })
-                      }
-                    />
-                  )}
-
-                  {draft.scope === "SYSTEM_DISH" && (
-                    <NativeSelect
-                      label="Loại trường"
-                      description="Không bắt buộc"
-                      value={draft.schoolTypeId}
-                      disabled={!!editing}
-                      data={[
-                        { value: "", label: "Tất cả loại trường" },
-                        ...load.data.school_types.map((schoolType) => ({
-                          value: schoolType.school_type_id ?? "",
-                          label: schoolType.school_type_name ?? "",
-                        })),
-                      ]}
-                      onChange={(event) =>
-                        updateDraft({ schoolTypeId: event.target.value })
-                      }
-                    />
-                  )}
-
-                  {needsIngredientTarget && (
-                    <NativeSelect
-                      label={
-                        draft.action === "ADD"
-                          ? "Nguyên liệu thêm"
-                          : draft.action === "REMOVE"
-                            ? "Nguyên liệu cần bỏ"
-                            : "Nguyên liệu hiện tại"
-                      }
+                      label="Nguyên liệu thêm"
                       value={draft.targetIngredientId}
                       disabled={!!editing}
                       data={[
@@ -1719,20 +1893,29 @@ export function RecipeAdjustmentWorkbench({
                   )}
 
                   {draft.scope === "SYSTEM_DISH" && (
-                    <NativeSelect
-                      label="Trường dùng để xem"
-                      value={draft.previewSchoolId}
-                      data={[
-                        { value: "", label: "Chọn trường" },
-                        ...load.data.schools.map((school) => ({
-                          value: school.school_id ?? "",
-                          label: school.school_name ?? "",
-                        })),
-                      ]}
-                      onChange={(event) =>
-                        updateDraft({ previewSchoolId: event.target.value })
-                      }
-                    />
+                    <>
+                      <NativeSelect
+                        label="Trường dùng để xem"
+                        value={draft.previewSchoolId}
+                        data={[
+                          { value: "", label: "Chọn trường" },
+                          ...compatiblePreviewSchools.map((school) => ({
+                            value: school.school_id ?? "",
+                            label: school.school_name ?? "",
+                          })),
+                        ]}
+                        onChange={(event) =>
+                          updateDraft({ previewSchoolId: event.target.value })
+                        }
+                      />
+                      {draft.schoolTypeId &&
+                        compatiblePreviewSchools.length === 0 && (
+                          <Text size="sm" c="red" role="alert">
+                            Không có trường phù hợp với loại công thức đã chọn
+                            để xem ảnh hưởng.
+                          </Text>
+                        )}
+                    </>
                   )}
 
                   {draft.scope === "SCHOOL" && (
@@ -1819,8 +2002,20 @@ export function RecipeAdjustmentWorkbench({
                           ? "Công thức"
                           : "Phạm vi áp dụng"}
                       </Text>
-                      <Text>{draftScopeText}</Text>
+                      <Text>
+                        {draftBusinessObject === "RECIPE"
+                          ? draftRecipeText
+                          : draftAuthorityText}
+                      </Text>
                     </Box>
+                    {draftBusinessObject === "RECIPE" && (
+                      <Box>
+                        <Text size="sm" c="dimmed">
+                          Phạm vi
+                        </Text>
+                        <Text>{draftAuthorityText}</Text>
+                      </Box>
+                    )}
                     <Box>
                       <Text size="sm" c="dimmed">
                         Hiệu lực
