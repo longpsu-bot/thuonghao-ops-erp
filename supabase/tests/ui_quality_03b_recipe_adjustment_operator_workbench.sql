@@ -64,6 +64,12 @@ select ok(
   'all six RMVP-02B.v1 reads and commands remain callable'
 );
 
+select is(
+  (select count(*) from atlas_core.capabilities),
+  27::bigint,
+  'the v2 Ingredient enrichment introduces no new capability'
+);
+
 insert into atlas_core.actors (
   actor_id, actor_type, display_name
 ) values (
@@ -393,6 +399,19 @@ as $$
   );
 $$;
 
+create function pg_temp.uiq03b_v1_request()
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02B.v1',
+    'requested_by_auth_subject',
+      'f3000000-0000-0000-0000-000000000101',
+    'correlation_id', gen_random_uuid(),
+    'payload', '{}'::jsonb
+  );
+$$;
+
 create function pg_temp.uiq03b_row(target_id uuid, target_date date)
 returns jsonb
 language sql
@@ -411,6 +430,88 @@ select set_config(
   'request.jwt.claim.sub',
   'f3000000-0000-0000-0000-000000000101',
   true
+);
+
+select is(
+  (
+    select ingredient ->> 'purchase_unit_id'
+    from pg_catalog.jsonb_array_elements(
+      atlas_api.get_recipe_adjustment_operator_workbench(
+        pg_temp.uiq03b_request(date '2026-08-14')
+      ) -> 'workbench' -> 'ingredients'
+    ) as ingredient
+    where ingredient ->> 'ingredient_id' =
+      'f3100000-0000-0000-0000-000000000020'
+  ),
+  'f3100000-0000-0000-0000-000000000010',
+  'RMVP-02B.v2 Ingredient catalog returns purchase_unit_id'
+);
+
+select is(
+  (
+    select ingredient ->> 'purchase_unit_name'
+    from pg_catalog.jsonb_array_elements(
+      atlas_api.get_recipe_adjustment_operator_workbench(
+        pg_temp.uiq03b_request(date '2026-08-14')
+      ) -> 'workbench' -> 'ingredients'
+    ) as ingredient
+    where ingredient ->> 'ingredient_id' =
+      'f3100000-0000-0000-0000-000000000020'
+  ),
+  'UIQ03B kilogram',
+  'RMVP-02B.v2 Ingredient catalog returns the correct purchase_unit_name'
+);
+
+select is(
+  (
+    select pg_catalog.array_agg(key_name order by key_name)
+    from pg_catalog.jsonb_array_elements(
+      atlas_api.get_recipe_adjustment_operator_workbench(
+        pg_temp.uiq03b_request(date '2026-08-14')
+      ) -> 'workbench' -> 'ingredients'
+    ) as ingredient
+    cross join lateral pg_catalog.jsonb_object_keys(ingredient) as key_name
+    where ingredient ->> 'ingredient_id' =
+      'f3100000-0000-0000-0000-000000000020'
+  ),
+  array[
+    'ingredient_code',
+    'ingredient_id',
+    'ingredient_name',
+    'ingredient_status',
+    'purchase_unit_id',
+    'purchase_unit_name'
+  ]::text[],
+  'RMVP-02B.v2 preserves existing Ingredient fields and adds only Unit context'
+);
+
+select is(
+  atlas_api.get_recipe_adjustment_workbench(
+    pg_temp.uiq03b_v1_request()
+  ) ->> 'contract_version',
+  'RMVP-02B.v1',
+  'the existing RMVP-02B.v1 workbench remains callable'
+);
+
+select is(
+  (
+    select pg_catalog.array_agg(key_name order by key_name)
+    from pg_catalog.jsonb_array_elements(
+      atlas_api.get_recipe_adjustment_workbench(
+        pg_temp.uiq03b_v1_request()
+      ) -> 'workbench' -> 'ingredients'
+    ) as ingredient
+    cross join lateral pg_catalog.jsonb_object_keys(ingredient) as key_name
+    where ingredient ->> 'ingredient_id' =
+      'f3100000-0000-0000-0000-000000000020'
+  ),
+  array[
+    'ingredient_code',
+    'ingredient_id',
+    'ingredient_name',
+    'ingredient_status'
+  ]::text[],
+  'the RMVP-02B.v1 Ingredient catalog shape is unchanged by v2 enrichment'
 );
 
 select is(

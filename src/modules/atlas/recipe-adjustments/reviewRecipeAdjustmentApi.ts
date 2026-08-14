@@ -44,7 +44,9 @@ const ids = {
   ingredient2: "17000000-0000-4000-8000-000000000002",
   ingredient3: "17000000-0000-4000-8000-000000000003",
   ingredient4: "17000000-0000-4000-8000-000000000004",
+  ingredient5: "17000000-0000-4000-8000-000000000005",
   unit: "18000000-0000-4000-8000-000000000001",
+  gram: "18000000-0000-4000-8000-000000000002",
 };
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -304,22 +306,47 @@ function fixtures(): ReviewWorkbenchData {
         school_type_status: "ACTIVE",
       },
     ],
-    ingredients: [
-      [ids.ingredient1, "bi-do", "Bí đỏ"],
-      [ids.ingredient2, "thit-heo", "Thịt heo"],
-      [ids.ingredient3, "ca-rot", "Cà rốt"],
-      [ids.ingredient4, "khoai-tay", "Khoai tây"],
-    ].map(([ingredient_id, ingredient_code, ingredient_name]) => ({
-      ingredient_id,
-      ingredient_code,
-      ingredient_name,
-      ingredient_status: "ACTIVE",
-    })),
+    ingredients: (
+      [
+        [ids.ingredient1, "bi-do", "Bí đỏ", ids.unit, "Kilôgam"],
+        [ids.ingredient2, "thit-heo", "Thịt heo", ids.gram, "Gam"],
+        [ids.ingredient3, "ca-rot", "Cà rốt", ids.unit, "Kilôgam"],
+        [ids.ingredient4, "khoai-tay", "Khoai tây", ids.unit, "Kilôgam"],
+        [
+          ids.ingredient5,
+          "gia-vi-thieu-don-vi",
+          "Gia vị thiếu đơn vị",
+          null,
+          null,
+        ],
+      ] as const
+    ).map(
+      ([
+        ingredient_id,
+        ingredient_code,
+        ingredient_name,
+        purchase_unit_id,
+        purchase_unit_name,
+      ]) => ({
+        ingredient_id,
+        ingredient_code,
+        ingredient_name,
+        ingredient_status: "ACTIVE",
+        purchase_unit_id,
+        purchase_unit_name,
+      }),
+    ),
     units: [
       {
         unit_id: ids.unit,
         unit_code: "kg",
         unit_name: "Kilôgam",
+        unit_status: "ACTIVE",
+      },
+      {
+        unit_id: ids.gram,
+        unit_code: "g",
+        unit_name: "Gam",
         unit_status: "ACTIVE",
       },
     ],

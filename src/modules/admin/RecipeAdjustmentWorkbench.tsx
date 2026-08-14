@@ -59,7 +59,6 @@ type AdjustmentDraft = {
   targetRecipeLineId: string;
   substituteIngredientId: string;
   quantity: string;
-  unitId: string;
   replaceQuantity: boolean;
   effectiveFrom: string;
   effectiveTo: string;
@@ -222,7 +221,6 @@ function emptyDraft(): AdjustmentDraft {
     targetRecipeLineId: "",
     substituteIngredientId: "",
     quantity: "",
-    unitId: "",
     replaceQuantity: false,
     effectiveFrom: vietnamLocalDate(),
     effectiveTo: "",
@@ -548,7 +546,6 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: row.target_recipe_line_id ?? "",
       substituteIngredientId: revision.substitute_ingredient_id ?? "",
       quantity: revision.quantity_per_basis?.toString() ?? "",
-      unitId: revision.unit_id ?? firstId(load.data.units, "unit_id"),
       replaceQuantity:
         row.action_kind === "REPLACE" && revision.quantity_per_basis !== null,
       effectiveFrom: revision.effective_from,
@@ -585,7 +582,6 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: "",
       replaceQuantity: false,
       previewSchoolId: "",
       previewDishId: "",
@@ -608,7 +604,6 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: "",
       replaceQuantity: false,
       previewSchoolId: "",
       previewDishId: "",
@@ -624,7 +619,6 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: "",
       replaceQuantity: false,
     });
   }
@@ -636,7 +630,6 @@ export function RecipeAdjustmentWorkbench({
       targetRecipeLineId: "",
       substituteIngredientId: "",
       quantity: "",
-      unitId: "",
       replaceQuantity: false,
     });
   }
@@ -674,6 +667,34 @@ export function RecipeAdjustmentWorkbench({
     draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH"
       ? draft.dishId
       : draft.previewDishId;
+  const selectedTargetIngredient = load.data.ingredients.find(
+    (ingredient) => ingredient.ingredient_id === draft.targetIngredientId,
+  );
+  const selectedSubstituteIngredient = load.data.ingredients.find(
+    (ingredient) => ingredient.ingredient_id === draft.substituteIngredientId,
+  );
+  const selectedTargetRecipeLine = lineOptions.find(
+    (line) => line.recipe_line_id === draft.targetRecipeLineId,
+  );
+  const purchaseUnitIngredient =
+    draft.action === "ADD"
+      ? selectedTargetIngredient
+      : draft.action === "REPLACE" && draft.replaceQuantity
+        ? selectedSubstituteIngredient
+        : undefined;
+  const proposalUnitId = purchaseUnitIngredient?.purchase_unit_id ?? "";
+  const draftUnitName =
+    draft.action === "ADJUST_QUANTITY"
+      ? (selectedTargetRecipeLine?.unit_name ?? "—")
+      : (purchaseUnitIngredient?.purchase_unit_name ?? "—");
+  const requiresPurchaseUnit =
+    draft.action === "ADD" ||
+    (draft.action === "REPLACE" && draft.replaceQuantity);
+  const missingPurchaseUnit =
+    requiresPurchaseUnit && !!purchaseUnitIngredient && !proposalUnitId;
+  const missingPurchaseUnitMessage = missingPurchaseUnit
+    ? "Nguyên liệu đã chọn chưa có đơn vị mua. Hãy cập nhật danh mục nguyên liệu trước khi xem ảnh hưởng."
+    : undefined;
 
   function proposal(): Record<string, JsonValue> {
     const isAdd = draft.action === "ADD";
@@ -714,7 +735,7 @@ export function RecipeAdjustmentWorkbench({
       substitute_ingredient_id:
         draft.action === "REPLACE" ? draft.substituteIngredientId : null,
       quantity_per_basis: carriesQuantity ? Number(draft.quantity) : null,
-      unit_id: carriesUnit ? draft.unitId : null,
+      unit_id: carriesUnit ? proposalUnitId : null,
       effective_from: draft.effectiveFrom,
       effective_to: draft.effectiveTo || null,
       reason_code: editing ? "RULE_CORRECTION" : "OPERATOR_RULE",
@@ -725,6 +746,7 @@ export function RecipeAdjustmentWorkbench({
 
   const materialFingerprint = JSON.stringify({
     draft,
+    proposalUnitId,
     previewSchoolId,
     previewDishId,
   });
@@ -757,7 +779,7 @@ export function RecipeAdjustmentWorkbench({
     (!needsIngredientTarget || !!draft.targetIngredientId) &&
     (draft.action !== "REPLACE" || !!draft.substituteIngredientId) &&
     (!quantityRequired || Number(draft.quantity) > 0) &&
-    (!(draft.action === "ADD" || draft.replaceQuantity) || !!draft.unitId);
+    (!requiresPurchaseUnit || (!!proposalUnitId && !missingPurchaseUnit));
 
   async function runPreview() {
     if (!api || !authSubject || !canPreview) return;
@@ -969,12 +991,6 @@ export function RecipeAdjustmentWorkbench({
     draft.substituteIngredientId,
     "ingredient_id",
     "ingredient_name",
-  );
-  const draftUnitName = referenceName(
-    load.data.units,
-    draft.unitId,
-    "unit_id",
-    "unit_name",
   );
   const draftChangeText = (() => {
     switch (draft.action) {
@@ -1366,14 +1382,16 @@ export function RecipeAdjustmentWorkbench({
               ? "Điều chỉnh lại"
               : "Tạo điều chỉnh"
         }
-        size="760px"
+        size="1000px"
         centered
-        xOffset="16px"
+        xOffset="20px"
+        yOffset="20px"
         styles={{
-          content: { maxHeight: "calc(100dvh - 32px)" },
+          content: { maxHeight: "86dvh", overflowX: "hidden" },
           body: {
-            maxHeight: "calc(100dvh - 96px)",
+            maxHeight: "calc(86dvh - 64px)",
             overflowY: "auto",
+            overflowX: "hidden",
           },
         }}
         closeOnClickOutside={!busy}
@@ -1766,42 +1784,28 @@ export function RecipeAdjustmentWorkbench({
                     </>
                   )}
 
-                  {(quantityRequired ||
-                    draft.action === "ADD" ||
-                    draft.replaceQuantity) && (
+                  {quantityRequired && (
                     <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                      {quantityRequired && (
-                        <TextInput
-                          label={
-                            draft.action === "ADD"
-                              ? "Định lượng"
-                              : "Định lượng mới"
-                          }
-                          type="number"
-                          min="0.000001"
-                          step="0.000001"
-                          value={draft.quantity}
-                          onChange={(event) =>
-                            updateDraft({ quantity: event.target.value })
-                          }
-                        />
-                      )}
-                      {(draft.action === "ADD" || draft.replaceQuantity) && (
-                        <NativeSelect
-                          label="Đơn vị"
-                          value={draft.unitId}
-                          data={[
-                            { value: "", label: "Chọn đơn vị" },
-                            ...load.data.units.map((unit) => ({
-                              value: unit.unit_id ?? "",
-                              label: unit.unit_name ?? "",
-                            })),
-                          ]}
-                          onChange={(event) =>
-                            updateDraft({ unitId: event.target.value })
-                          }
-                        />
-                      )}
+                      <TextInput
+                        label={
+                          draft.action === "ADD"
+                            ? "Định lượng"
+                            : "Định lượng mới"
+                        }
+                        type="number"
+                        min="0.000001"
+                        step="0.000001"
+                        value={draft.quantity}
+                        onChange={(event) =>
+                          updateDraft({ quantity: event.target.value })
+                        }
+                      />
+                      <TextInput
+                        label="Đơn vị"
+                        value={draftUnitName}
+                        readOnly
+                        error={missingPurchaseUnitMessage}
+                      />
                     </SimpleGrid>
                   )}
 

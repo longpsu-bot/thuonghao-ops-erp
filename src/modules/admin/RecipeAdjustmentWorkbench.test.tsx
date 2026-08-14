@@ -30,6 +30,7 @@ const fixtureIds = {
   pumpkin: "17000000-0000-4000-8000-000000000001",
   pork: "17000000-0000-4000-8000-000000000002",
   potato: "17000000-0000-4000-8000-000000000004",
+  missingUnitIngredient: "17000000-0000-4000-8000-000000000005",
   kilogram: "18000000-0000-4000-8000-000000000001",
 };
 
@@ -271,11 +272,177 @@ describe("Recipe Change Order first-user workbench", () => {
       within(dialog).getByLabelText("Nguyên liệu thêm"),
     ).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Định lượng")).toBeInTheDocument();
-    expect(within(dialog).getByLabelText("Đơn vị")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Đơn vị")).toHaveAttribute("readonly");
+    expect(
+      within(dialog).queryByRole("combobox", { name: "Đơn vị" }),
+    ).not.toBeInTheDocument();
     expect(
       within(dialog).queryByLabelText("Thay bằng"),
     ).not.toBeInTheDocument();
   });
+
+  it("derives the ADD Unit from the selected Ingredient and carries it in the proposal", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    selectRecipeTarget(dialog);
+    selectAction(dialog, "Thêm nguyên liệu");
+    fireEvent.change(within(dialog).getByLabelText("Nguyên liệu thêm"), {
+      target: { value: fixtureIds.potato },
+    });
+
+    const unit = within(dialog).getByLabelText("Đơn vị");
+    expect(unit).toHaveAttribute("readonly");
+    expect(unit).toHaveValue("Kilôgam");
+    expect(
+      within(dialog).queryByRole("combobox", { name: "Đơn vị" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(within(dialog).getByLabelText("Định lượng"), {
+      target: { value: "0.5" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Bổ sung nguyên liệu theo thực đơn." },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
+      target: { value: fixtureIds.school },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+
+    await screen.findByRole("dialog", { name: "Thay đổi dự kiến" });
+    expect(preview.mock.calls[0][2].proposed_adjustment).toMatchObject({
+      action_kind: "ADD",
+      target_ingredient_id: fixtureIds.potato,
+      quantity_per_basis: 0.5,
+      unit_id: fixtureIds.kilogram,
+    });
+  });
+
+  it("blocks ADD preview safely when the Ingredient has no purchase Unit", async () => {
+    renderWorkbench();
+    const dialog = await openCreateDialog();
+    selectRecipeTarget(dialog);
+    selectAction(dialog, "Thêm nguyên liệu");
+    fireEvent.change(within(dialog).getByLabelText("Nguyên liệu thêm"), {
+      target: { value: fixtureIds.missingUnitIngredient },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Định lượng"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Kiểm tra dữ liệu nguyên liệu thiếu đơn vị." },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
+      target: { value: fixtureIds.school },
+    });
+
+    expect(
+      within(dialog).getByText(
+        "Nguyên liệu đã chọn chưa có đơn vị mua. Hãy cập nhật danh mục nguyên liệu trước khi xem ảnh hưởng.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+  });
+
+  it("preserves the target Recipe-line Unit for quantity adjustment and sends null unit_id", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    selectRecipeTarget(dialog);
+    selectAction(dialog, "Đổi định lượng");
+    fireEvent.change(
+      within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+      { target: { value: fixtureIds.porkLine } },
+    );
+
+    const unit = within(dialog).getByLabelText("Đơn vị");
+    expect(unit).toHaveAttribute("readonly");
+    expect(unit).toHaveValue("Kilôgam");
+    expect(unit).not.toHaveValue("Gam");
+    fireEvent.change(within(dialog).getByLabelText("Định lượng mới"), {
+      target: { value: "7.5" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Điều chỉnh theo định lượng công thức." },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
+      target: { value: fixtureIds.school },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+
+    await screen.findByRole("dialog", { name: "Thay đổi dự kiến" });
+    expect(preview.mock.calls[0][2].proposed_adjustment).toMatchObject({
+      action_kind: "ADJUST_QUANTITY",
+      target_recipe_line_id: fixtureIds.porkLine,
+      quantity_per_basis: 7.5,
+      unit_id: null,
+    });
+  });
+
+  it("shows no Unit decision for REPLACE until quantity override derives the substitute Unit", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    fillRecipeReplacement(dialog);
+    expect(within(dialog).queryByLabelText("Đơn vị")).not.toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByLabelText("Đổi cả định lượng"));
+    const unit = within(dialog).getByLabelText("Đơn vị");
+    expect(unit).toHaveAttribute("readonly");
+    expect(unit).toHaveValue("Kilôgam");
+    expect(
+      within(dialog).queryByRole("combobox", { name: "Đơn vị" }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Định lượng mới"), {
+      target: { value: "10" },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+
+    await screen.findByRole("dialog", { name: "Thay đổi dự kiến" });
+    expect(preview.mock.calls[0][2].proposed_adjustment).toMatchObject({
+      action_kind: "REPLACE",
+      substitute_ingredient_id: fixtureIds.potato,
+      quantity_per_basis: 10,
+      unit_id: fixtureIds.kilogram,
+    });
+  });
+
+  it.each([1280, 650])(
+    "keeps the 1000px modal bounded without horizontal overflow at %ipx",
+    async (viewportWidth) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: viewportWidth,
+      });
+      renderWorkbench();
+      const dialog = await openCreateDialog();
+      const root = dialog.closest<HTMLElement>("[data-centered]");
+      const body = dialog.querySelector<HTMLElement>(".mantine-Modal-body");
+
+      expect(root?.style.getPropertyValue("--modal-size")).toBe(
+        "calc(62.5rem * var(--mantine-scale))",
+      );
+      expect(root?.style.getPropertyValue("--modal-x-offset")).toBe(
+        "calc(1.25rem * var(--mantine-scale))",
+      );
+      expect(dialog).toHaveStyle({ maxHeight: "86dvh", overflowX: "hidden" });
+      expect(body).toHaveStyle({
+        maxHeight: "calc(86dvh - 64px)",
+        overflowX: "hidden",
+      });
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(
+        viewportWidth,
+      );
+    },
+  );
 
   it("requires and carries one explicit Recipe Type for Recipe + all schools", async () => {
     const { api } = renderWorkbench();
@@ -806,10 +973,6 @@ describe("Recipe Change Order first-user workbench", () => {
           ),
           { target: { value: quantity } },
         );
-      if (action === "Thêm nguyên liệu")
-        fireEvent.change(within(dialog).getByLabelText("Đơn vị"), {
-          target: { value: fixtureIds.kilogram },
-        });
       fireEvent.change(within(dialog).getByLabelText("Lý do"), {
         target: { value: `Kiểm tra ${action.toLocaleLowerCase("vi")}.` },
       });
@@ -904,6 +1067,9 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(
       within(dialog).getByLabelText("Nguyên liệu hiện tại"),
     ).toBeDisabled();
+    expect(
+      within(dialog).queryByRole("combobox", { name: "Đơn vị" }),
+    ).not.toBeInTheDocument();
     fireEvent.change(within(dialog).getByLabelText("Lý do"), {
       target: { value: "Điều chỉnh theo biên bản vận hành mới." },
     });

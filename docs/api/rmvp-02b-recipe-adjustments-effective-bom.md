@@ -108,7 +108,7 @@ Responses never expose credentials, SQL, private relation dumps, or exception st
 - Required payload: explicit `as_of_date`; the function does not use `CURRENT_DATE`
 - Compatibility: all six `RMVP-02B.v1` functions above remain unchanged and callable
 
-The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity.
+The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. In `RMVP-02B.v2` only, each Ingredient catalog entry also exposes its configured `purchase_unit_id` and `purchase_unit_name`; the v1 read shape is unchanged. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity. The Application preserves a selected Recipe line's historical Unit, derives ADD and quantity-bearing REPLACE Units from the selected Ingredient purchase Unit, and blocks preview when that required master-data Unit is missing.
 
 `operator_rows` returns one narrow row per stable adjustment with internal IDs and optimistic version for the existing commands, the frozen scope/action identity, a display revision, an authoritative content revision, the exact current command revision, ordered immutable business history, issuance provenance and one server-derived `temporal_state`. For a cancelled root, `display_revision` remains the cancellation evidence while `content_revision` is the latest preceding non-cancellation revision whose business payload was cancelled; React does not infer this lineage.
 

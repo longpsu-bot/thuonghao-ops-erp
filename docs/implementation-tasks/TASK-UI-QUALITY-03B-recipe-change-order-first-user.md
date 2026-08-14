@@ -93,3 +93,11 @@ The Application no longer converts catalog ordering into operator intent when a 
 - Correction mode continues to hydrate and freeze the authoritative context of the existing adjustment. The accepted Review comparison and Preview-before-Save gate are unchanged.
 
 This is an Application-only safety correction. `RMVP-02B.v1`, the additive `RMVP-02B.v2` read, scope/action semantics, precedence, persistence, authorization, correction, cancellation, immutable history, and all Supabase artifacts remain unchanged.
+
+## Final modal and Unit-context polish
+
+- The Change Order modal uses a responsive `1000px` target width with `20px` viewport offsets, an `86dvh` content cap, internal vertical scrolling and no horizontal overflow. Quantity/Unit and effective-period fields share two columns when space permits and stack at constrained widths.
+- Unit is no longer an operator choice. ADD derives the selected Ingredient purchase Unit; quantity-bearing REPLACE derives the substitute Ingredient purchase Unit; ADJUST_QUANTITY displays the target Recipe-line Unit while sending `unit_id = null`; REMOVE and REPLACE without quantity override expose no Unit field.
+- Missing required Ingredient purchase Unit blocks Preview with a safe Vietnamese explanation and no fallback. Existing Recipe-line Units are never normalized to current Ingredient master data.
+- `RMVP-02B.v2` enriches only its Ingredient catalog with `purchase_unit_id` and `purchase_unit_name`; all six v1 functions and the v1 Ingredient shape remain unchanged, with no new capability or persistence.
+- Broad typography normalization is explicitly deferred as cross-flow UI review debt until Attendance → Menu → Need generation → Need confirmation can be evaluated together. This task changes no global font sizes, theme typography, label sizing, table typography or typography tokens.

@@ -24,6 +24,8 @@ export type AdjustmentReference = {
   ingredient_code?: string;
   ingredient_name?: string;
   ingredient_status?: string;
+  purchase_unit_id?: string | null;
+  purchase_unit_name?: string | null;
   unit_id?: string;
   unit_code?: string;
   unit_name?: string;
