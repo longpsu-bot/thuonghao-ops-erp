@@ -96,7 +96,7 @@ export type RecipeAdjustmentOperatorRevision = {
   quantity_per_basis: number | null;
   unit_id: string | null;
   reason_note: string;
-  issued_at?: string;
+  issued_at?: string | null;
   issuance_kind?: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
   issued_by_actor_name?: string | null;
 };
@@ -119,6 +119,7 @@ export type RecipeAdjustmentOperatorRecord = {
   temporal_state: RecipeAdjustmentTemporalState;
   temporal_state_date: string | null;
   display_revision: RecipeAdjustmentOperatorRevision;
+  content_revision: RecipeAdjustmentOperatorRevision;
   command_revision: RecipeAdjustmentOperatorRevision;
   history: RecipeAdjustmentOperatorRevision[];
 };

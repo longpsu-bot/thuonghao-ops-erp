@@ -12,7 +12,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
 import { atlasTheme } from "../../theme";
-import { RecipeAdjustmentWorkbench } from "./RecipeAdjustmentWorkbench";
+import {
+  RecipeAdjustmentWorkbench,
+  vietnamLocalDate,
+} from "./RecipeAdjustmentWorkbench";
 
 afterEach(() => {
   cleanup();
@@ -58,6 +61,15 @@ function fillSystemIngredientReplacement(dialog: HTMLElement) {
 }
 
 describe("Recipe Change Order first-user workbench", () => {
+  it("uses the Vietnam-local calendar date shortly after local midnight", () => {
+    const shortlyAfterMidnightInVietnam = new Date("2026-08-13T17:05:00.000Z");
+
+    expect(shortlyAfterMidnightInVietnam.toISOString().slice(0, 10)).toBe(
+      "2026-08-13",
+    );
+    expect(vietnamLocalDate(shortlyAfterMidnightInVietnam)).toBe("2026-08-14");
+  });
+
   it("renders a table-first human-language list with search and backend-shaped status", async () => {
     renderWorkbench();
 
@@ -90,7 +102,23 @@ describe("Recipe Change Order first-user workbench", () => {
       expect(screen.getAllByText(new RegExp(label)).length).toBeGreaterThan(0);
 
     expect(screen.getByText(/Đang hiệu lực · thay đổi từ/)).toBeInTheDocument();
-    expect(screen.getByText("Không có dữ liệu từ OPS v1")).toBeInTheDocument();
+    const legacyRow = within(table)
+      .getAllByRole("row")
+      .find(
+        (row) =>
+          within(row).queryAllByText("Không có dữ liệu từ OPS v1").length === 2,
+      );
+    expect(legacyRow).toBeDefined();
+
+    const cancelledRows = within(table)
+      .getAllByRole("row")
+      .filter((row) => row.textContent?.includes("Đã hủy"));
+    expect(
+      cancelledRows.some((row) => row.textContent?.includes("Bí đỏ → Cà rốt")),
+    ).toBe(true);
+    expect(
+      cancelledRows.some((row) => row.textContent?.includes("12,5 Kilôgam")),
+    ).toBe(true);
 
     const beforeSearch = within(table).getAllByRole("row").length;
     fireEvent.change(

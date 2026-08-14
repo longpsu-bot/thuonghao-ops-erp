@@ -26,6 +26,9 @@ Present the accepted post-lock Recipe composition adjustment job as a Vietnamese
 - explicit representative School/Dish context for broad-scope preview without claiming global blast-radius enumeration;
 - backend-shaped temporal status for an explicit reference date, including finite-successor resumption;
 - native issuance and unavailable OPS v1 attribution are distinguished safely;
+- legacy OPS v1 business issuance date and issuer both remain unavailable rather than reusing Atlas import provenance;
+- cancelled rows retain their authoritative pre-cancellation business content while cancellation evidence remains in status and history;
+- operator calendar defaults use the Asia/Ho_Chi_Minh local date;
 - technical revision machinery is removed from the normal UI;
 - `Công thức hiệu lực` remains a secondary read-only surface with technical lineage behind disclosure.
 
@@ -46,7 +49,7 @@ This is a deliberate scope boundary, not a claim that the capabilities no longer
 
 `atlas_api.get_recipe_adjustment_operator_workbench(request jsonb)` requires `RMVP-02B.v2` and an explicit `as_of_date`. It reuses the existing read capability/runtime, Recipe adjustment relations and immutable revisions; adds no persistence, role, capability, write API, action, scope or generic status infrastructure; and leaves all six `RMVP-02B.v1` functions physically callable.
 
-The read returns human-reference catalogs, enriched released Recipe-line choices, narrow operator rows, internal command identity, display/current command revisions, immutable business history, native/legacy issuance provenance and server-derived temporal state. React supplies Vietnamese labels but does not decide applicability.
+The read returns human-reference catalogs, enriched released Recipe-line choices, narrow operator rows, internal command identity, display/content/current command revisions, immutable business history, native/legacy issuance provenance and server-derived temporal state. For cancelled roots the backend selects the preceding business content revision; React supplies Vietnamese labels but does not infer revision lineage or decide applicability.
 
 ## Verification and boundaries
 

@@ -140,6 +140,15 @@ insert into atlas_admin.ingredients (
     1
   );
 
+insert into atlas_admin.dishes (
+  dish_id, dish_code, dish_name, dish_status
+) values (
+  'f3100000-0000-0000-0000-000000000030',
+  'uiq03b-cancelled-add-dish',
+  'UIQ03B cancelled ADD Dish',
+  'ACTIVE'
+);
+
 set constraints all deferred;
 
 insert into atlas_admin.recipe_composition_adjustments (
@@ -205,6 +214,22 @@ insert into atlas_admin.recipe_composition_adjustments (
     'f3000000-0000-0000-0000-000000000001',
     'f3000000-0000-0000-0000-000000000001'
   );
+
+insert into atlas_admin.recipe_composition_adjustments (
+  recipe_composition_adjustment_id, scope_kind, action_kind,
+  dish_id, target_ingredient_id, adjustment_line_id,
+  lifecycle_status, version,
+  created_by_actor_id, updated_by_actor_id
+) values (
+  'f3200000-0000-0000-0000-000000000008',
+  'SYSTEM_DISH', 'ADD',
+  'f3100000-0000-0000-0000-000000000030',
+  'f3100000-0000-0000-0000-000000000020',
+  'f3220000-0000-0000-0000-000000000001',
+  'CANCELLED', 2,
+  'f3000000-0000-0000-0000-000000000001',
+  'f3000000-0000-0000-0000-000000000001'
+);
 
 insert into atlas_admin.recipe_composition_adjustment_revisions (
   recipe_composition_adjustment_revision_id,
@@ -304,6 +329,35 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
     'f3100000-0000-0000-0000-000000000021',
     'LEGACY_IMPORT', 'Imported without original attribution.',
     '{"historical_actor_approval_claimed":false}'::jsonb,
+    'f3000000-0000-0000-0000-000000000001'
+  );
+
+insert into atlas_admin.recipe_composition_adjustment_revisions (
+  recipe_composition_adjustment_revision_id,
+  recipe_composition_adjustment_id, scope_kind, action_kind,
+  revision_number, predecessor_revision_id, revision_status,
+  effective_from, effective_to, substitute_ingredient_id,
+  quantity_per_basis, unit_id,
+  reason_code, reason_note, source_evidence, created_by_actor_id
+) values
+  (
+    'f3210000-0000-0000-0000-000000000011',
+    'f3200000-0000-0000-0000-000000000008',
+    'SYSTEM_DISH', 'ADD', 1, null, 'ACTIVE',
+    date '2026-01-01', null, null,
+    12.5, 'f3100000-0000-0000-0000-000000000010',
+    'CANCELLED_ADD_PREDECESSOR', 'ADD content before cancellation.',
+    '{}'::jsonb,
+    'f3000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'f3210000-0000-0000-0000-000000000012',
+    'f3200000-0000-0000-0000-000000000008',
+    'SYSTEM_DISH', 'ADD', 2,
+    'f3210000-0000-0000-0000-000000000011', 'CANCELLED',
+    date '2026-09-01', null, null,
+    null, null,
+    'RULE_CANCELLATION', 'Cancelled ADD.', '{}'::jsonb,
     'f3000000-0000-0000-0000-000000000001'
   );
 
@@ -456,6 +510,62 @@ select is(
   ) -> 'display_revision' -> 'issued_by_actor_name',
   'null'::jsonb,
   'the Atlas importer Actor is not presented as the original OPS v1 issuer'
+);
+
+select is(
+  pg_temp.uiq03b_row(
+    'f3200000-0000-0000-0000-000000000007',
+    date '2026-08-14'
+  ) -> 'display_revision' -> 'issued_at',
+  'null'::jsonb,
+  'the Atlas import timestamp is not presented as the OPS v1 business issuance date'
+);
+
+select is(
+  pg_temp.uiq03b_row(
+    'f3200000-0000-0000-0000-000000000007',
+    date '2026-08-14'
+  ) -> 'history' -> 0 -> 'issued_at',
+  'null'::jsonb,
+  'legacy history also keeps the unavailable business issuance date null'
+);
+
+select is(
+  pg_temp.uiq03b_row(
+    'f3200000-0000-0000-0000-000000000004',
+    date '2026-09-01'
+  ) -> 'display_revision' -> 'substitute_ingredient_id',
+  'null'::jsonb,
+  'the payload-less REPLACE cancellation remains the displayed status revision'
+);
+
+select is(
+  pg_temp.uiq03b_row(
+    'f3200000-0000-0000-0000-000000000004',
+    date '2026-09-01'
+  ) -> 'content_revision' ->> 'substitute_ingredient_id',
+  'f3100000-0000-0000-0000-000000000021',
+  'a cancelled REPLACE authoritatively retains its prior business content'
+);
+
+select is(
+  (
+    pg_temp.uiq03b_row(
+      'f3200000-0000-0000-0000-000000000008',
+      date '2026-09-01'
+    ) -> 'content_revision' ->> 'quantity_per_basis'
+  )::numeric,
+  12.5::numeric,
+  'a cancelled quantity-bearing ADD authoritatively retains its quantity'
+);
+
+select is(
+  pg_temp.uiq03b_row(
+    'f3200000-0000-0000-0000-000000000008',
+    date '2026-09-01'
+  ) -> 'content_revision' ->> 'unit_id',
+  'f3100000-0000-0000-0000-000000000010',
+  'a cancelled quantity-bearing ADD authoritatively retains its Unit'
 );
 
 select * from finish();

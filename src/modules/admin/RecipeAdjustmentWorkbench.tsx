@@ -93,7 +93,17 @@ const temporalLabel: Record<RecipeAdjustmentTemporalState, string> = {
   CANCELLED: "Đã hủy",
 };
 
-const today = () => new Date().toISOString().slice(0, 10);
+export function vietnamLocalDate(value: Date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "—";
@@ -101,7 +111,7 @@ function formatDate(value: string | null | undefined) {
   return year && month && day ? `${day}/${month}/${year}` : value;
 }
 
-function formatIssuedAt(value: string | undefined) {
+function formatIssuedAt(value: string | null | undefined) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "short",
@@ -149,7 +159,7 @@ function emptyDraft(data: RecipeAdjustmentWorkbenchData): AdjustmentDraft {
     quantity: "",
     unitId: firstId(data.units, "unit_id"),
     replaceQuantity: false,
-    effectiveFrom: today(),
+    effectiveFrom: vietnamLocalDate(),
     effectiveTo: "",
     reason: "",
     previewSchoolId: firstId(data.schools, "school_id"),
@@ -204,7 +214,7 @@ export function RecipeAdjustmentWorkbench({
   mode: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
-  const [referenceDate, setReferenceDate] = useState(today());
+  const [referenceDate, setReferenceDate] = useState(vietnamLocalDate());
   const [load, setLoad] = useState<LoadState>({
     status: "idle",
     data: emptyRecipeAdjustmentWorkbench(),
@@ -235,13 +245,13 @@ export function RecipeAdjustmentWorkbench({
   const [previewFingerprint, setPreviewFingerprint] = useState("");
   const [cancelTarget, setCancelTarget] =
     useState<RecipeAdjustmentOperatorRecord | null>(null);
-  const [cancelDate, setCancelDate] = useState(today());
+  const [cancelDate, setCancelDate] = useState(vietnamLocalDate());
   const [cancelReason, setCancelReason] = useState("");
   const [resolution, setResolution] =
     useState<EffectiveCompositionResult | null>(null);
   const [effectiveSchoolId, setEffectiveSchoolId] = useState("");
   const [effectiveDishId, setEffectiveDishId] = useState("");
-  const [effectiveDate, setEffectiveDate] = useState(today());
+  const [effectiveDate, setEffectiveDate] = useState(vietnamLocalDate());
   const [reviewScenario, setReviewScenario] = useState("precedence");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
@@ -344,7 +354,7 @@ export function RecipeAdjustmentWorkbench({
   const changeSummary = useCallback(
     (
       row: RecipeAdjustmentOperatorRecord,
-      revision: RecipeAdjustmentOperatorRevision = row.display_revision,
+      revision: RecipeAdjustmentOperatorRevision = row.content_revision,
     ) => {
       const target = targetName(row);
       const substitute = referenceName(
@@ -610,9 +620,10 @@ export function RecipeAdjustmentWorkbench({
 
   function openCancellation(row: RecipeAdjustmentOperatorRecord) {
     const from = row.command_revision.effective_from;
+    const localDate = vietnamLocalDate();
     setDetail(null);
     setCancelTarget(row);
-    setCancelDate(referenceDate < from ? from : referenceDate);
+    setCancelDate(localDate < from ? from : localDate);
     setCancelReason("");
   }
 
@@ -722,7 +733,7 @@ export function RecipeAdjustmentWorkbench({
   function issuance(revision: RecipeAdjustmentOperatorRevision) {
     return revision.issuance_kind === "LEGACY_UNATTRIBUTED" ? (
       <>
-        <span>{formatIssuedAt(revision.issued_at)}</span>
+        <span>Không có dữ liệu từ OPS v1</span>
         <small>Không có dữ liệu từ OPS v1</small>
       </>
     ) : (
@@ -887,7 +898,11 @@ export function RecipeAdjustmentWorkbench({
                     ? ` – ${formatDate(row.display_revision.effective_to)}`
                     : ""}
                 </td>
-                <td>{formatIssuedAt(row.display_revision.issued_at)}</td>
+                <td>
+                  {row.display_revision.issuance_kind === "LEGACY_UNATTRIBUTED"
+                    ? "Không có dữ liệu từ OPS v1"
+                    : formatIssuedAt(row.display_revision.issued_at)}
+                </td>
                 <td>
                   {row.display_revision.issuance_kind === "LEGACY_UNATTRIBUTED"
                     ? "Không có dữ liệu từ OPS v1"
@@ -1566,7 +1581,11 @@ export function RecipeAdjustmentWorkbench({
                         ? "Tạo điều chỉnh"
                         : "Điều chỉnh lại"}
                   </Text>
-                  <Text>{changeSummary(detail, revision)}</Text>
+                  <Text>
+                    {revision.business_event_kind === "CANCELLED"
+                      ? "Hủy điều chỉnh"
+                      : changeSummary(detail, revision)}
+                  </Text>
                   <Text size="sm">
                     Hiệu lực từ {formatDate(revision.effective_from)}
                     {revision.effective_to

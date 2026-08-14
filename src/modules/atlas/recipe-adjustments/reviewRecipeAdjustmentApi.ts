@@ -69,10 +69,16 @@ function revision(
     lifecycle_status: lifecycle,
     effective_from: "2026-07-01",
     effective_to: null,
-    substitute_ingredient_id: action === "REPLACE" ? ids.ingredient3 : null,
+    substitute_ingredient_id:
+      lifecycle !== "CANCELLED" && action === "REPLACE"
+        ? ids.ingredient3
+        : null,
     quantity_per_basis:
-      action === "ADD" || action === "ADJUST_QUANTITY" ? 12.5 : null,
-    unit_id: action === "ADD" ? ids.unit : null,
+      lifecycle !== "CANCELLED" &&
+      (action === "ADD" || action === "ADJUST_QUANTITY")
+        ? 12.5
+        : null,
+    unit_id: lifecycle !== "CANCELLED" && action === "ADD" ? ids.unit : null,
     reason_code: "REVIEW_SCENARIO",
     reason_note: "Tình huống xác định để xem xét giao diện.",
     source_evidence: { source_kind: "REVIEW_FIXTURE" },
@@ -169,7 +175,7 @@ function operatorRevision(
     quantity_per_basis: revisionItem.quantity_per_basis,
     unit_id: revisionItem.unit_id,
     reason_note: revisionItem.reason_note,
-    issued_at: revisionItem.created_at,
+    issued_at: isLegacy ? null : revisionItem.created_at,
     issuance_kind: isLegacy ? "LEGACY_UNATTRIBUTED" : "ATLAS_NATIVE",
     issued_by_actor_name: isLegacy ? null : revisionItem.created_by_actor_name,
   };
@@ -180,6 +186,16 @@ function operatorRow(
 ): RecipeAdjustmentOperatorRecord {
   const current = item.revisions.at(-1)!;
   const display = operatorRevision(item, current);
+  const contentItem =
+    current.lifecycle_status === "CANCELLED"
+      ? item.revisions
+          .slice()
+          .reverse()
+          .find(
+            (revisionItem) => revisionItem.lifecycle_status !== "CANCELLED",
+          )!
+      : current;
+  const content = operatorRevision(item, contentItem);
   return {
     adjustment_id: item.adjustment_id,
     version: item.version,
@@ -204,6 +220,7 @@ function operatorRow(
     temporal_state_date:
       item.revisions.length > 1 ? current.effective_from : null,
     display_revision: display,
+    content_revision: content,
     command_revision: display,
     history: item.revisions
       .map((revisionItem) => operatorRevision(item, revisionItem))
@@ -225,7 +242,10 @@ function fixtures(): ReviewWorkbenchData {
         index++,
         scope,
         action,
-        scope === "SCHOOL" && action === "REMOVE" ? "CANCELLED" : "ACTIVE",
+        (scope === "SCHOOL" && (action === "REPLACE" || action === "REMOVE")) ||
+          (scope === "SCHOOL_DISH" && action === "ADD")
+          ? "CANCELLED"
+          : "ACTIVE",
       ),
     ),
   );
