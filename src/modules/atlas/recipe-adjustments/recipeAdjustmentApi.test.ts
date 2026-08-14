@@ -4,6 +4,7 @@ import {
   RECIPE_ADJUSTMENT_RPC_FUNCTIONS,
   createRecipeAdjustmentApi,
   recipeAdjustmentCommandRequest,
+  recipeAdjustmentOperatorReadRequest,
   recipeAdjustmentReadRequest,
 } from "./recipeAdjustmentApi";
 
@@ -18,6 +19,18 @@ describe("Recipe adjustment API contract", () => {
       requested_by_auth_subject: "subject-1",
       correlation_id: "correlation-1",
       payload: { as_of_date: "2026-07-27" },
+    });
+    expect(
+      recipeAdjustmentOperatorReadRequest(
+        "subject-1",
+        "correlation-2",
+        "2026-08-14",
+      ),
+    ).toEqual({
+      contract_version: "RMVP-02B.v2",
+      requested_by_auth_subject: "subject-1",
+      correlation_id: "correlation-2",
+      payload: { as_of_date: "2026-08-14" },
     });
 
     vi.spyOn(crypto, "randomUUID").mockReturnValue(
@@ -47,7 +60,7 @@ describe("Recipe adjustment API contract", () => {
     vi.restoreAllMocks();
   });
 
-  it("maps the six operator actions to the reviewed RPC registry", async () => {
+  it("keeps all six v1 APIs and adds one bounded v2 operator read", async () => {
     const calls: Array<[AtlasRpcName, AtlasRpcRequest]> = [];
     const api = createRecipeAdjustmentApi({
       invoke: vi.fn(async (name, request) => {
@@ -67,6 +80,7 @@ describe("Recipe adjustment API contract", () => {
       {},
     );
     await api.getWorkbench("subject-1", "read-1");
+    await api.getOperatorWorkbench("subject-1", "read-operator", "2026-08-14");
     await api.resolve("subject-1", "read-2", {
       as_of_date: "2026-07-27",
     });
@@ -79,6 +93,7 @@ describe("Recipe adjustment API contract", () => {
 
     expect(calls.map(([name]) => name)).toEqual([
       RECIPE_ADJUSTMENT_RPC_FUNCTIONS.getWorkbench,
+      RECIPE_ADJUSTMENT_RPC_FUNCTIONS.getOperatorWorkbench,
       RECIPE_ADJUSTMENT_RPC_FUNCTIONS.resolve,
       RECIPE_ADJUSTMENT_RPC_FUNCTIONS.preview,
       RECIPE_ADJUSTMENT_RPC_FUNCTIONS.create,

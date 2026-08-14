@@ -13,26 +13,40 @@ import type {
   EffectiveCompositionLine,
   EffectiveCompositionResult,
   RecipeAdjustmentAction,
+  RecipeAdjustmentOperatorRecord,
+  RecipeAdjustmentOperatorRevision,
   RecipeAdjustmentRecord,
   RecipeAdjustmentScope,
   RecipeAdjustmentWorkbenchData,
 } from "./recipeAdjustmentModel";
 
+type ReviewWorkbenchData = RecipeAdjustmentWorkbenchData & {
+  adjustments: RecipeAdjustmentRecord[];
+};
+
 const now = "2026-07-27T02:00:00.000Z";
 const actor = "00000000-0000-4000-8000-000000000001";
 const ids = {
   school: "11000000-0000-4000-8000-000000000001",
+  secondarySchool: "11000000-0000-4000-8000-000000000002",
   schoolType: "12000000-0000-4000-8000-000000000001",
+  secondarySchoolType: "12000000-0000-4000-8000-000000000002",
   dish: "13000000-0000-4000-8000-000000000001",
   recipe: "14000000-0000-4000-8000-000000000001",
+  secondaryRecipe: "14000000-0000-4000-8000-000000000002",
   version: "15000000-0000-4000-8000-000000000001",
+  secondaryVersion: "15000000-0000-4000-8000-000000000002",
   line1: "16000000-0000-4000-8000-000000000001",
   line2: "16000000-0000-4000-8000-000000000002",
+  line3: "16000000-0000-4000-8000-000000000003",
+  line4: "16000000-0000-4000-8000-000000000004",
   ingredient1: "17000000-0000-4000-8000-000000000001",
   ingredient2: "17000000-0000-4000-8000-000000000002",
   ingredient3: "17000000-0000-4000-8000-000000000003",
   ingredient4: "17000000-0000-4000-8000-000000000004",
+  ingredient5: "17000000-0000-4000-8000-000000000005",
   unit: "18000000-0000-4000-8000-000000000001",
+  gram: "18000000-0000-4000-8000-000000000002",
 };
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -54,7 +68,7 @@ function revision(
   number: number,
   lifecycle: "ACTIVE" | "SUPERSEDED" | "CANCELLED",
   action: RecipeAdjustmentAction,
-) {
+): RecipeAdjustmentRecord["revisions"][number] {
   return {
     revision_id: `${adjustmentId.slice(0, -1)}${number}`,
     revision_number: number,
@@ -63,10 +77,16 @@ function revision(
     lifecycle_status: lifecycle,
     effective_from: "2026-07-01",
     effective_to: null,
-    substitute_ingredient_id: action === "REPLACE" ? ids.ingredient3 : null,
+    substitute_ingredient_id:
+      lifecycle !== "CANCELLED" && action === "REPLACE"
+        ? ids.ingredient3
+        : null,
     quantity_per_basis:
-      action === "ADD" || action === "ADJUST_QUANTITY" ? 12.5 : null,
-    unit_id: action === "ADD" ? ids.unit : null,
+      lifecycle !== "CANCELLED" &&
+      (action === "ADD" || action === "ADJUST_QUANTITY")
+        ? 12.5
+        : null,
+    unit_id: lifecycle !== "CANCELLED" && action === "ADD" ? ids.unit : null,
     reason_code: "REVIEW_SCENARIO",
     reason_note: "Tình huống xác định để xem xét giao diện.",
     source_evidence: { source_kind: "REVIEW_FIXTURE" },
@@ -102,6 +122,13 @@ function rule(
           ]
         : [revision(adjustmentId, 1, "ACTIVE", action)];
   const current = revisions.at(-1)!;
+  if (index === 1) {
+    revisions[0].reason_code = "LEGACY_IMPORT";
+    revisions[0].source_evidence = {
+      source_system: "OPS_V1",
+      historical_actor_approval_claimed: false,
+    };
+  }
   return {
     adjustment_id: adjustmentId,
     scope_kind: scope,
@@ -110,8 +137,7 @@ function rule(
       scope === "SCHOOL" || scope === "SCHOOL_DISH" ? ids.school : null,
     dish_id:
       scope === "SYSTEM_DISH" || scope === "SCHOOL_DISH" ? ids.dish : null,
-    school_type_id:
-      scope === "SYSTEM_DISH" && index % 2 ? ids.schoolType : null,
+    school_type_id: scope === "SYSTEM_DISH" ? ids.schoolType : null,
     target_ingredient_id: hasIngredient ? ids.ingredient1 : null,
     target_recipe_line_id: hasLine ? ids.line1 : null,
     adjustment_line_id:
@@ -134,7 +160,82 @@ function rule(
   };
 }
 
-function fixtures(): RecipeAdjustmentWorkbenchData {
+function operatorRevision(
+  item: RecipeAdjustmentRecord,
+  revisionItem: RecipeAdjustmentRecord["revisions"][number],
+): RecipeAdjustmentOperatorRevision {
+  const isLegacy =
+    item.legacy_source !== null &&
+    revisionItem.reason_code.startsWith("LEGACY");
+  return {
+    revision_id: revisionItem.revision_id,
+    revision_status: revisionItem.lifecycle_status,
+    business_event_kind:
+      revisionItem.lifecycle_status === "CANCELLED"
+        ? "CANCELLED"
+        : revisionItem.revision_number === 1
+          ? "CREATED"
+          : "CORRECTED",
+    effective_from: revisionItem.effective_from,
+    effective_to: revisionItem.effective_to,
+    substitute_ingredient_id: revisionItem.substitute_ingredient_id,
+    quantity_per_basis: revisionItem.quantity_per_basis,
+    unit_id: revisionItem.unit_id,
+    reason_note: revisionItem.reason_note,
+    issued_at: isLegacy ? null : revisionItem.created_at,
+    issuance_kind: isLegacy ? "LEGACY_UNATTRIBUTED" : "ATLAS_NATIVE",
+    issued_by_actor_name: isLegacy ? null : revisionItem.created_by_actor_name,
+  };
+}
+
+function operatorRow(
+  item: RecipeAdjustmentRecord,
+): RecipeAdjustmentOperatorRecord {
+  const current = item.revisions.at(-1)!;
+  const display = operatorRevision(item, current);
+  const contentItem =
+    current.lifecycle_status === "CANCELLED"
+      ? item.revisions
+          .slice()
+          .reverse()
+          .find(
+            (revisionItem) => revisionItem.lifecycle_status !== "CANCELLED",
+          )!
+      : current;
+  const content = operatorRevision(item, contentItem);
+  return {
+    adjustment_id: item.adjustment_id,
+    version: item.version,
+    current_revision_id: item.current_revision_id,
+    current_revision_number: item.current_revision_number,
+    can_correct: item.lifecycle_status === "ACTIVE",
+    can_cancel: item.lifecycle_status === "ACTIVE",
+    scope_kind: item.scope_kind,
+    action_kind: item.action_kind,
+    school_id: item.school_id,
+    dish_id: item.dish_id,
+    school_type_id: item.school_type_id,
+    target_ingredient_id: item.target_ingredient_id,
+    target_recipe_line_id: item.target_recipe_line_id,
+    adjustment_line_id: item.adjustment_line_id,
+    temporal_state:
+      item.lifecycle_status === "CANCELLED"
+        ? "CANCELLED"
+        : item.revisions.length > 1
+          ? "ACTIVE_CHANGE_SCHEDULED"
+          : "ACTIVE",
+    temporal_state_date:
+      item.revisions.length > 1 ? current.effective_from : null,
+    display_revision: display,
+    content_revision: content,
+    command_revision: display,
+    history: item.revisions
+      .map((revisionItem) => operatorRevision(item, revisionItem))
+      .reverse(),
+  };
+}
+
+function fixtures(): ReviewWorkbenchData {
   const catalog: [RecipeAdjustmentScope, RecipeAdjustmentAction[]][] = [
     ["SYSTEM_INGREDIENT", ["REPLACE"]],
     ["SYSTEM_DISH", ["ADD", "REPLACE", "ADJUST_QUANTITY", "REMOVE"]],
@@ -148,11 +249,15 @@ function fixtures(): RecipeAdjustmentWorkbenchData {
         index++,
         scope,
         action,
-        scope === "SCHOOL" && action === "REMOVE" ? "CANCELLED" : "ACTIVE",
+        (scope === "SCHOOL" && (action === "REPLACE" || action === "REMOVE")) ||
+          (scope === "SCHOOL_DISH" && action === "ADD")
+          ? "CANCELLED"
+          : "ACTIVE",
       ),
     ),
   );
   return {
+    reference_date: "2026-07-27",
     scope_catalog: catalog.map(([scope_kind, actions]) => ({
       scope_kind,
       actions,
@@ -172,6 +277,13 @@ function fixtures(): RecipeAdjustmentWorkbenchData {
         school_type_id: ids.schoolType,
         school_status: "ACTIVE",
       },
+      {
+        school_id: ids.secondarySchool,
+        school_code: "truong-tran-phu",
+        school_name: "Trường Trung học Trần Phú",
+        school_type_id: ids.secondarySchoolType,
+        school_status: "ACTIVE",
+      },
     ],
     dishes: [
       {
@@ -188,23 +300,53 @@ function fixtures(): RecipeAdjustmentWorkbenchData {
         school_type_name: "Tiểu học",
         school_type_status: "ACTIVE",
       },
+      {
+        school_type_id: ids.secondarySchoolType,
+        school_type_name: "Trung học",
+        school_type_status: "ACTIVE",
+      },
     ],
-    ingredients: [
-      [ids.ingredient1, "bi-do", "Bí đỏ"],
-      [ids.ingredient2, "thit-heo", "Thịt heo"],
-      [ids.ingredient3, "ca-rot", "Cà rốt"],
-      [ids.ingredient4, "khoai-tay", "Khoai tây"],
-    ].map(([ingredient_id, ingredient_code, ingredient_name]) => ({
-      ingredient_id,
-      ingredient_code,
-      ingredient_name,
-      ingredient_status: "ACTIVE",
-    })),
+    ingredients: (
+      [
+        [ids.ingredient1, "bi-do", "Bí đỏ", ids.unit, "Kilôgam"],
+        [ids.ingredient2, "thit-heo", "Thịt heo", ids.gram, "Gam"],
+        [ids.ingredient3, "ca-rot", "Cà rốt", ids.unit, "Kilôgam"],
+        [ids.ingredient4, "khoai-tay", "Khoai tây", ids.unit, "Kilôgam"],
+        [
+          ids.ingredient5,
+          "gia-vi-thieu-don-vi",
+          "Gia vị thiếu đơn vị",
+          null,
+          null,
+        ],
+      ] as const
+    ).map(
+      ([
+        ingredient_id,
+        ingredient_code,
+        ingredient_name,
+        purchase_unit_id,
+        purchase_unit_name,
+      ]) => ({
+        ingredient_id,
+        ingredient_code,
+        ingredient_name,
+        ingredient_status: "ACTIVE",
+        purchase_unit_id,
+        purchase_unit_name,
+      }),
+    ),
     units: [
       {
         unit_id: ids.unit,
         unit_code: "kg",
         unit_name: "Kilôgam",
+        unit_status: "ACTIVE",
+      },
+      {
+        unit_id: ids.gram,
+        unit_code: "g",
+        unit_name: "Gam",
         unit_status: "ACTIVE",
       },
     ],
@@ -215,6 +357,11 @@ function fixtures(): RecipeAdjustmentWorkbenchData {
         dish_id: ids.dish,
         school_type_id: ids.schoolType,
         line_code: "bi-do",
+        ingredient_id: ids.ingredient1,
+        ingredient_name: "Bí đỏ",
+        quantity_per_basis: 20,
+        unit_id: ids.unit,
+        unit_name: "Kilôgam",
       },
       {
         recipe_line_id: ids.line2,
@@ -222,8 +369,38 @@ function fixtures(): RecipeAdjustmentWorkbenchData {
         dish_id: ids.dish,
         school_type_id: ids.schoolType,
         line_code: "thit-heo",
+        ingredient_id: ids.ingredient2,
+        ingredient_name: "Thịt heo",
+        quantity_per_basis: 8,
+        unit_id: ids.unit,
+        unit_name: "Kilôgam",
+      },
+      {
+        recipe_line_id: ids.line3,
+        recipe_id: ids.secondaryRecipe,
+        dish_id: ids.dish,
+        school_type_id: ids.secondarySchoolType,
+        line_code: "bi-do-trung-hoc",
+        ingredient_id: ids.ingredient1,
+        ingredient_name: "Bí đỏ",
+        quantity_per_basis: 25,
+        unit_id: ids.unit,
+        unit_name: "Kilôgam",
+      },
+      {
+        recipe_line_id: ids.line4,
+        recipe_id: ids.secondaryRecipe,
+        dish_id: ids.dish,
+        school_type_id: ids.secondarySchoolType,
+        line_code: "thit-heo-trung-hoc",
+        ingredient_id: ids.ingredient2,
+        ingredient_name: "Thịt heo",
+        quantity_per_basis: 10,
+        unit_id: ids.unit,
+        unit_name: "Kilôgam",
       },
     ],
+    operator_rows: adjustments.map(operatorRow),
     adjustments,
   };
 }
@@ -257,22 +434,25 @@ function baseLine(
   lineId: string,
   ingredientId: string,
   lineCode: string,
+  recipeId = ids.recipe,
+  versionId = ids.version,
+  quantity = lineId === ids.line1 ? 20 : 8,
 ): EffectiveCompositionLine {
   return {
     selected_dish_id: ids.dish,
-    selected_recipe_id: ids.recipe,
-    selected_recipe_version_id: ids.version,
+    selected_recipe_id: recipeId,
+    selected_recipe_version_id: versionId,
     basis_portions: 100,
     base_recipe_line_id: lineId,
     base_recipe_line_revision_id: `${lineId.slice(0, -1)}9`,
     adjustment_line_id: null,
     line_code: lineCode,
     base_ingredient_id: ingredientId,
-    base_quantity_per_basis: lineId === ids.line1 ? 20 : 8,
+    base_quantity_per_basis: quantity,
     base_unit_id: ids.unit,
     base_disposition: "PRESENT",
     final_ingredient_id: ingredientId,
-    final_quantity_per_basis: lineId === ids.line1 ? 20 : 8,
+    final_quantity_per_basis: quantity,
     final_unit_id: ids.unit,
     final_disposition: "PRESENT",
     source_layer: "RELEASED_RECIPE_VERSION",
@@ -282,9 +462,26 @@ function baseLine(
   };
 }
 
-function resolutionScenario(name = "precedence"): EffectiveCompositionResult {
-  const first = baseLine(ids.line1, ids.ingredient1, "bi-do");
-  const second = baseLine(ids.line2, ids.ingredient2, "thit-heo");
+function resolutionScenario(name = "precedence", schoolId = ids.school) {
+  const secondary = schoolId === ids.secondarySchool;
+  const recipeId = secondary ? ids.secondaryRecipe : ids.recipe;
+  const versionId = secondary ? ids.secondaryVersion : ids.version;
+  const first = baseLine(
+    secondary ? ids.line3 : ids.line1,
+    ids.ingredient1,
+    secondary ? "bi-do-trung-hoc" : "bi-do",
+    recipeId,
+    versionId,
+    secondary ? 25 : 20,
+  );
+  const second = baseLine(
+    secondary ? ids.line4 : ids.line2,
+    ids.ingredient2,
+    secondary ? "thit-heo-trung-hoc" : "thit-heo",
+    recipeId,
+    versionId,
+    secondary ? 10 : 8,
+  );
   const blockers: EffectiveCompositionResult["blockers"] = [];
   if (name === "precedence") {
     first.final_ingredient_id = ids.ingredient4;
@@ -328,13 +525,13 @@ function resolutionScenario(name = "precedence"): EffectiveCompositionResult {
   return {
     status: blockers.length ? "BLOCKED" : "READY",
     as_of_date: "2026-07-27",
-    school_id: ids.school,
+    school_id: schoolId,
     dish_id: ids.dish,
     historical: false,
     selected_recipe: {
       dish_id: ids.dish,
-      recipe_id: ids.recipe,
-      recipe_version_id: ids.version,
+      recipe_id: recipeId,
+      recipe_version_id: versionId,
       selection_scope: "SCHOOL_TYPE",
       basis_portions: 100,
     },
@@ -379,6 +576,20 @@ export function createReviewRecipeAdjustmentApi(
           }),
       );
     },
+    getOperatorWorkbench(_auth, _correlation, asOfDate) {
+      if (scenario === "loading")
+        return new Promise<AtlasRpcResult>(() => undefined);
+      const blocked = blockedRead();
+      const { adjustments: _adjustments, ...operatorData } = data;
+      operatorData.reference_date = asOfDate;
+      operatorData.operator_rows = data.adjustments.map(operatorRow);
+      return Promise.resolve(
+        blocked ??
+          success({
+            workbench: clone(operatorData) as unknown as JsonValue,
+          }),
+      );
+    },
     resolve(_auth, _correlation, payload) {
       const blocked = blockedRead();
       return Promise.resolve(
@@ -386,6 +597,7 @@ export function createReviewRecipeAdjustmentApi(
           success({
             resolution: resolutionScenario(
               String(payload.review_scenario ?? "precedence"),
+              String(payload.school_id ?? ids.school),
             ) as unknown as JsonValue,
             safe_operator_message: "Đã phân giải BOM hiệu lực xem thử.",
           }),
@@ -395,16 +607,48 @@ export function createReviewRecipeAdjustmentApi(
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
       const proposal = payload.proposed_adjustment as Record<string, JsonValue>;
-      const before = resolutionScenario("replacement_chain");
+      const before = resolutionScenario(
+        "preview_base",
+        String(payload.school_id ?? ids.school),
+      );
       const after = clone(before);
       const action = String(proposal.action_kind);
-      const target = after.lines[0];
-      if (action === "REMOVE") {
+      const scope = String(proposal.scope_kind);
+      const target =
+        action === "ADD"
+          ? undefined
+          : scope === "SYSTEM_INGREDIENT" || scope === "SCHOOL"
+            ? after.lines.find(
+                (line) =>
+                  line.final_ingredient_id ===
+                  String(proposal.target_ingredient_id),
+              )
+            : after.lines.find(
+                (line) =>
+                  line.base_recipe_line_id ===
+                  String(proposal.target_recipe_line_id),
+              );
+      const blockers =
+        target || action === "ADD"
+          ? []
+          : [
+              {
+                code: "REVIEW_TARGET_NOT_FOUND",
+                message:
+                  "Không tìm thấy nguyên liệu cần điều chỉnh trong công thức xem thử.",
+              },
+            ];
+
+      if (target && action === "REMOVE") {
         target.final_disposition = "REMOVED";
         target.final_quantity_per_basis = 0;
-      } else if (action === "REPLACE") {
+      } else if (target && action === "REPLACE") {
         target.final_ingredient_id = String(proposal.substitute_ingredient_id);
-      } else if (action === "ADJUST_QUANTITY") {
+        if (proposal.quantity_per_basis !== null) {
+          target.final_quantity_per_basis = Number(proposal.quantity_per_basis);
+          target.final_unit_id = String(proposal.unit_id);
+        }
+      } else if (target && action === "ADJUST_QUANTITY") {
         target.final_quantity_per_basis = Number(proposal.quantity_per_basis);
       } else if (action === "ADD") {
         after.lines.push({
@@ -424,7 +668,7 @@ export function createReviewRecipeAdjustmentApi(
           source_layer: String(proposal.scope_kind),
         });
       }
-      target.source_layer = String(proposal.scope_kind);
+      if (target) target.source_layer = String(proposal.scope_kind);
       return Promise.resolve(
         success({
           preview: {
@@ -434,10 +678,10 @@ export function createReviewRecipeAdjustmentApi(
             proposed_adjustment: proposal,
             before,
             after,
-            affected_line_count: 1,
-            can_save: true,
+            affected_line_count: blockers.length ? 0 : 1,
+            can_save: blockers.length === 0,
             warnings: [],
-            blockers: [],
+            blockers,
           } as unknown as JsonValue,
           safe_operator_message:
             "Đã xem trước có thẩm quyền trong chế độ không lưu.",

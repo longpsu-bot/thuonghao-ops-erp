@@ -24,6 +24,8 @@ export type AdjustmentReference = {
   ingredient_code?: string;
   ingredient_name?: string;
   ingredient_status?: string;
+  purchase_unit_id?: string | null;
+  purchase_unit_name?: string | null;
   unit_id?: string;
   unit_code?: string;
   unit_name?: string;
@@ -31,6 +33,7 @@ export type AdjustmentReference = {
   recipe_line_id?: string;
   recipe_id?: string;
   line_code?: string | null;
+  quantity_per_basis?: number;
 };
 
 export type RecipeAdjustmentRevision = {
@@ -76,7 +79,55 @@ export type RecipeAdjustmentRecord = {
   revisions: RecipeAdjustmentRevision[];
 };
 
+export type RecipeAdjustmentTemporalState =
+  | "ACTIVE"
+  | "SCHEDULED"
+  | "ACTIVE_CHANGE_SCHEDULED"
+  | "ACTIVE_CANCELLATION_SCHEDULED"
+  | "ACTIVE_RESUMED"
+  | "EXPIRED"
+  | "CANCELLED";
+
+export type RecipeAdjustmentOperatorRevision = {
+  revision_id: string;
+  revision_status?: "ACTIVE" | "SUPERSEDED" | "CANCELLED";
+  business_event_kind?: "CREATED" | "CORRECTED" | "CANCELLED";
+  effective_from: string;
+  effective_to: string | null;
+  substitute_ingredient_id: string | null;
+  quantity_per_basis: number | null;
+  unit_id: string | null;
+  reason_note: string;
+  issued_at?: string | null;
+  issuance_kind?: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
+  issued_by_actor_name?: string | null;
+};
+
+export type RecipeAdjustmentOperatorRecord = {
+  adjustment_id: string;
+  version: number;
+  current_revision_id: string;
+  current_revision_number: number;
+  can_correct: boolean;
+  can_cancel: boolean;
+  scope_kind: RecipeAdjustmentScope;
+  action_kind: RecipeAdjustmentAction;
+  school_id: string | null;
+  dish_id: string | null;
+  school_type_id: string | null;
+  target_ingredient_id: string | null;
+  target_recipe_line_id: string | null;
+  adjustment_line_id: string | null;
+  temporal_state: RecipeAdjustmentTemporalState;
+  temporal_state_date: string | null;
+  display_revision: RecipeAdjustmentOperatorRevision;
+  content_revision: RecipeAdjustmentOperatorRevision;
+  command_revision: RecipeAdjustmentOperatorRevision;
+  history: RecipeAdjustmentOperatorRevision[];
+};
+
 export type RecipeAdjustmentWorkbenchData = {
+  reference_date: string;
   scope_catalog: {
     scope_kind: RecipeAdjustmentScope;
     actions: RecipeAdjustmentAction[];
@@ -88,7 +139,8 @@ export type RecipeAdjustmentWorkbenchData = {
   ingredients: AdjustmentReference[];
   units: AdjustmentReference[];
   recipe_lines: AdjustmentReference[];
-  adjustments: RecipeAdjustmentRecord[];
+  operator_rows: RecipeAdjustmentOperatorRecord[];
+  adjustments?: RecipeAdjustmentRecord[];
 };
 
 export type EffectiveCompositionLine = {
@@ -160,6 +212,7 @@ export type RecipeAdjustmentPreview = {
 
 export const emptyRecipeAdjustmentWorkbench =
   (): RecipeAdjustmentWorkbenchData => ({
+    reference_date: "",
     scope_catalog: [],
     precedence: [],
     schools: [],
@@ -168,7 +221,7 @@ export const emptyRecipeAdjustmentWorkbench =
     ingredients: [],
     units: [],
     recipe_lines: [],
-    adjustments: [],
+    operator_rows: [],
   });
 
 function isRecord(
@@ -192,9 +245,10 @@ export function adjustmentWorkbenchFromResult(
     "ingredients",
     "units",
     "recipe_lines",
-    "adjustments",
+    "operator_rows",
   ] as const;
   if (keys.some((key) => !Array.isArray(source[key]))) return null;
+  if (typeof source.reference_date !== "string") return null;
   return source as unknown as RecipeAdjustmentWorkbenchData;
 }
 
@@ -215,28 +269,24 @@ export function adjustmentPreviewFromResult(
 }
 
 export function adjustmentResultMessage(result: AtlasRpcResult): string {
-  if (result.kind === "success")
-    return (
-      result.response.safe_operator_message?.toString() ??
-      "Đã tải lại dữ liệu điều chỉnh có thẩm quyền."
-    );
+  if (result.kind === "success") return "Đã cập nhật dữ liệu điều chỉnh.";
   if (result.kind === "auth_error")
     return "Phiên làm việc không còn hợp lệ. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Không thể kết nối với Atlas. Có thể thử lại an toàn.";
+    return "Không thể xác định kết quả do mất kết nối. Hãy tải lại dữ liệu trước khi tiếp tục.";
   if (result.kind === "client_error")
-    return "Thao tác chưa có trong danh mục API đã được duyệt.";
-  const messages: Record<string, string> = {
-    CAPABILITY_DENIED: "Bạn không có quyền quản trị quy tắc điều chỉnh.",
+    return "Thao tác này chưa sẵn sàng trong Atlas.";
+  const operatorMessages: Record<string, string> = {
+    CAPABILITY_DENIED: "Bạn không có quyền thực hiện điều chỉnh công thức.",
     SCOPE_DENIED: "Phạm vi được cấp không cho phép thao tác này.",
-    STALE_VERSION: "Quy tắc đã thay đổi. Hãy tải lại trước khi lưu.",
-    VALIDATION_FAILED: "Quy tắc chưa hợp lệ. Kiểm tra chi tiết xem trước.",
+    STALE_VERSION: "Điều chỉnh đã thay đổi. Hãy tải lại trước khi lưu.",
+    VALIDATION_FAILED: "Thông tin điều chỉnh chưa hợp lệ. Hãy kiểm tra lại.",
     INVARIANT_VIOLATION:
-      "BOM hiệu lực bị chặn bởi chu trình, trùng nguyên liệu hoặc mục tiêu không còn phù hợp.",
-    CONFLICT: "Quy tắc trùng hoặc chồng lấn với lịch sử hiện có.",
+      "Công thức hiệu lực bị chặn do chuỗi thay thế, nguyên liệu trùng hoặc mục tiêu không còn phù hợp.",
+    CONFLICT: "Điều chỉnh trùng hoặc chồng lấn với lịch sử hiện có.",
   };
   return (
-    messages[result.error.error_code] ??
+    operatorMessages[result.error.error_code] ??
     result.error.safe_message ??
     "Atlas đã từ chối thao tác một cách an toàn."
   );

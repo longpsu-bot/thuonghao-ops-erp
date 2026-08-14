@@ -7,6 +7,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { MantineProvider } from "@mantine/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../atlas/connection/atlasRpc";
 import type { RecipeApi } from "../atlas/recipes/recipeApi";
@@ -14,6 +15,7 @@ import { createReviewRecipeApi } from "../atlas/recipes/reviewRecipeApi";
 import * as recipeWorkbook from "../atlas/recipes/recipeWorkbook";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
+import { atlasTheme } from "../../theme";
 import { DishRecipeAdminWorkbench } from "./DishRecipeAdminWorkbench";
 
 afterEach(() => {
@@ -23,12 +25,14 @@ afterEach(() => {
 
 function renderWorkbench(api: RecipeApi = createReviewRecipeApi("ready")) {
   return render(
-    <DishRecipeAdminWorkbench
-      authState={createReviewAuthState("ready")}
-      api={api}
-      adjustmentApi={createReviewRecipeAdjustmentApi("ready")}
-      mode="review"
-    />,
+    <MantineProvider theme={atlasTheme}>
+      <DishRecipeAdminWorkbench
+        authState={createReviewAuthState("ready")}
+        api={api}
+        adjustmentApi={createReviewRecipeAdjustmentApi("ready")}
+        mode="review"
+      />
+    </MantineProvider>,
   );
 }
 
