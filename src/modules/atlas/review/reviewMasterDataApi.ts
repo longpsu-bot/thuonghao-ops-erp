@@ -5,7 +5,7 @@ import type {
 } from "../connection/atlasRpc";
 import type {
   MasterDataApi,
-  MasterDataCommandRequest,
+  MasterDataBulkCommandRequest,
 } from "../master-data/masterDataApi";
 import type {
   IngredientMasterData,
@@ -306,18 +306,24 @@ function pendingResult(): Promise<AtlasRpcResult> {
   return new Promise(() => undefined);
 }
 
-function payloadString(request: MasterDataCommandRequest, key: string): string {
+function payloadString(
+  request: { payload: Record<string, JsonValue> },
+  key: string,
+): string {
   const value = request.payload[key];
   return typeof value === "string" ? value : "";
 }
 
-function payloadNumber(request: MasterDataCommandRequest, key: string): number {
+function payloadNumber(
+  request: { payload: Record<string, JsonValue> },
+  key: string,
+): number {
   const value = request.payload[key];
   return typeof value === "number" ? value : Number.NaN;
 }
 
 function payloadArray(
-  request: MasterDataCommandRequest,
+  request: { payload: Record<string, JsonValue> },
   key: string,
 ): JsonValue[] {
   const value = request.payload[key];
@@ -386,6 +392,71 @@ export function createReviewMasterDataApi(
         version: schools[index].version + 1,
       };
       return Promise.resolve(saved());
+    },
+
+    updateSchoolDefaultsBulk(request: MasterDataBulkCommandRequest) {
+      const blocked = writeBlock();
+      if (blocked) return Promise.resolve(blocked);
+      const changes = payloadArray(request, "changes");
+      const prepared = changes.flatMap((value) => {
+        if (!value || typeof value !== "object" || Array.isArray(value))
+          return [];
+        const schoolId =
+          typeof value.school_id === "string" ? value.school_id : "";
+        const expectedVersion =
+          typeof value.expected_version === "number"
+            ? value.expected_version
+            : Number.NaN;
+        const student =
+          typeof value.default_student_portions === "number"
+            ? value.default_student_portions
+            : Number.NaN;
+        const teacher =
+          typeof value.default_teacher_portions === "number"
+            ? value.default_teacher_portions
+            : Number.NaN;
+        const index = schools.findIndex(
+          (school) => school.school_id === schoolId,
+        );
+        return [{ index, expectedVersion, student, teacher }];
+      });
+      if (
+        prepared.length !== changes.length ||
+        prepared.length === 0 ||
+        prepared.some(
+          ({ index, expectedVersion, student, teacher }) =>
+            index < 0 ||
+            schools[index]?.version !== expectedVersion ||
+            !Number.isInteger(student) ||
+            !Number.isInteger(teacher) ||
+            student < 0 ||
+            teacher < 0,
+        )
+      )
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+
+      const updatedSchools = prepared.map(({ index, student, teacher }) => ({
+        school_id: schools[index]!.school_id,
+        version: schools[index]!.version + 1,
+        default_student_portions: student,
+        default_teacher_portions: teacher,
+      }));
+      const nextSchools = [...schools];
+      prepared.forEach(({ index, student, teacher }) => {
+        nextSchools[index] = {
+          ...nextSchools[index]!,
+          default_student_portions: student,
+          default_teacher_portions: teacher,
+          version: nextSchools[index]!.version + 1,
+        };
+      });
+      schools = nextSchools;
+      return Promise.resolve(
+        success({
+          safe_operator_message: `${prepared.length} trường đã được cập nhật.`,
+          updated_schools: updatedSchools,
+        }),
+      );
     },
 
     createIngredient(request) {

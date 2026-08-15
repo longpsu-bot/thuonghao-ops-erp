@@ -2,11 +2,11 @@
 
 **Status:** Active project memory
 
-**Last updated:** 2026-08-11
+**Last updated:** 2026-08-15
 
 **Authority:** Working context summary
 
-**Current authoritative `main`:** `057a30ef30121fc50ef983acd91704d2bca8e82c`
+**Current authoritative `main`:** `60316f59638e1c7c625700166e7c78d7b11e242a`
 
 **Review required:** No — update whenever project direction, active scope, environment boundary, or blocking Product decisions change.
 
@@ -154,6 +154,8 @@ Atlas roles:             0
 
 Atlas Staging is therefore not automatically assumed to match the current repository head. Hosted deployment remains a separate controlled action.
 
+UI-QUALITY-03C-A performs no Atlas Staging deployment; the counts above remain the last recorded hosted observation rather than a claim that staging matches repository `main`.
+
 Live OPS remains a forbidden Atlas deployment target.
 
 ---
@@ -169,7 +171,9 @@ Current Planning governance and implementation:
 - UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`.
 - D-037 / UI-QUALITY-02C-B — merged through PR #189 at `e542e263e3bb672eb2967af0b3d54bfd8771df75`.
 - ATLAS-UI-STANDARD-02 — merged at `057a30ef30121fc50ef983acd91704d2bca8e82c` and governs first-user connected workbenches.
-- D-038 / UI-QUALITY-03A — corrected on the bounded task branch: read-only current-effective catalog, separate creation with one Save, approved-Menu first-use lock, and Change Order direction; draft PR and independent review remain required.
+- D-038 / UI-QUALITY-03A — merged through PR #191 at `0d66a3640811cfeac97d2f986b6c2a3d08da0a4b`.
+- UI-QUALITY-03B Recipe Change Order redesign — merged through PR #194 at `60316f59638e1c7c625700166e7c78d7b11e242a`.
+- UI-QUALITY-03C-A School default portions — active and implemented from exact authoritative `main` `60316f59638e1c7c625700166e7c78d7b11e242a`; one compact inline School table submits only changed rows through one atomic backend Save.
 
 Current human-facing Planning intent:
 
@@ -197,8 +201,9 @@ Current Product/UI stabilization order:
 
 ```text
 ATLAS-UI-STANDARD-02
-→ UI-QUALITY-03A Recipe / BOM first-user redesign (implemented; draft review pending)
-→ UI-QUALITY-03B Recipe Change Order first-user redesign
+→ UI-QUALITY-03A Recipe / BOM first-user redesign (merged #191)
+→ UI-QUALITY-03B Recipe Change Order first-user redesign (merged #194)
+→ UI-QUALITY-03C-A School default portions (active / implemented)
 → UI-QUALITY-03C remaining connected Admin consolidation
 → PLANNING-UX-01 / cross-flow operator review
 → hosted operator/security rehearsal
@@ -207,7 +212,15 @@ ATLAS-UI-STANDARD-02
 
 The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
 
-The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a modal form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL uses one Dish-wide predicate and transaction boundary to deny every applicable base Dish/Recipe/BOM mutation after the Dish appears in immutable approved Weekly Menu evidence, returning Change Order direction before business writes. Version evidence remains support disclosure. UI-QUALITY-03B remains separate and must not be started from this slice.
+The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a modal form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL uses one Dish-wide predicate and transaction boundary to deny every applicable base Dish/Recipe/BOM mutation after the Dish appears in immutable approved Weekly Menu evidence, returning Change Order direction before business writes. Version evidence remains support disclosure.
+
+UI-QUALITY-03C-A restores School defaults as one compact multi-School editing job. Search and School Type filters remain local and do not discard hidden dirty rows; only Student/Teacher defaults are authored. The Product Owner-approved Application flow is now `Edit → Xem thay đổi → Lưu`: Review shows every exact pending Before/After change, including filtered-out dirty Schools, before one atomic `RMVP-01.v2` backend Save. Known stale rejection preserves edits and invalidates Review, while an unknown transport outcome locks further mutation until authoritative refresh. The backend contract is unchanged by this correction. Ingredient/Supplier consolidation is not part of this slice.
+
+PLANNING-UX-01 remains the bounded review of Attendance → Menu → Need Generation → Confirmed Need, typography/rhythm consistency, Preview-before-Save consistency, and final XLSX affordance placement. Attendance and Confirmed Need must later support XLSX-assisted bulk authoring through export → offline editing → import → difference/error review → local draft → `Xem thay đổi` → `Lưu`; Confirmed Need keeps `Chuyển sang lên đơn` as a separate business commitment. Workbook templates, schemas, parsers, generators, storage, RPCs, tests, and implementation remain explicitly deferred until that Product review establishes stable work surfaces and later bounded XLSX contract tasks.
+
+Verified OPS v1 Attendance workflow is also mandatory PLANNING-UX-01 archaeology: Weekly Menu planning normally occurs well before Attendance is confirmed, typically about 2–3 days before service. Menu assignment seeds working Attendance only for corresponding School/service-date coverage, with initial Student/Teacher quantities derived from School defaults. Seeded means editable working data, not confirmed Attendance and not sufficient Need Generation evidence. A later School-default change may propagate only where a future Attendance value remains default-derived; operator-entered, confirmed, or otherwise explicitly authored Attendance must be protected. Atlas's current manual `Tạo từ sĩ số mặc định` interaction is therefore future Product debt: the normal operator surface should already contain the seeded rows and support review/edit, future XLSX assistance, `Xem thay đổi`, and authoritative `Lưu`. This is Product context only; no Attendance command, lifecycle, readiness, Need Generation, trigger, scheduler, XLSX contract, or implementation changes in UI-QUALITY-03C-A.
+
+Atlas-wide typography and rhythm remain deferred to PLANNING-UX-01, after the complete Attendance → Menu → Need Generation → Confirmed Need route can be reviewed together.
 
 CMD-03, supplier allocation, purchase-order creation, Warehouse, Production/QA and Dispatch expansion remain deferred until the current stabilization gates are accepted.
 

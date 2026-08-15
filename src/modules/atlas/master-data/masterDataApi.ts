@@ -9,6 +9,7 @@ export const MASTER_DATA_RPC_FUNCTIONS = {
   getSchools: "atlas_api.get_school_master_data",
   getIngredientsAndSuppliers: "atlas_api.get_ingredient_supplier_master_data",
   updateSchoolDefaults: "atlas_api.update_school_portion_defaults",
+  updateSchoolDefaultsBulk: "atlas_api.update_school_portion_defaults_bulk",
   createIngredient: "atlas_api.create_ingredient",
   updateIngredient: "atlas_api.update_ingredient",
   setIngredientLifecycle: "atlas_api.set_ingredient_lifecycle",
@@ -28,6 +29,25 @@ export type MasterDataCommandRequest = AtlasRpcRequest & {
   reason_code: string;
   reason_note: string | null;
   payload: Record<string, JsonValue>;
+};
+
+export type SchoolDefaultsBulkChange = {
+  school_id: string;
+  expected_version: number;
+  default_student_portions: number;
+  default_teacher_portions: number;
+};
+
+export type MasterDataBulkCommandRequest = AtlasRpcRequest & {
+  contract_version: "RMVP-01.v2";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: string;
+  reason_note: string | null;
+  payload: { changes: SchoolDefaultsBulkChange[] };
 };
 
 type AtlasRpcInvoker = {
@@ -63,6 +83,12 @@ export function createMasterDataApi(invoker: AtlasRpcInvoker) {
     updateSchoolDefaults(request: MasterDataCommandRequest) {
       return invoker.invoke(
         MASTER_DATA_RPC_FUNCTIONS.updateSchoolDefaults,
+        request,
+      );
+    },
+    updateSchoolDefaultsBulk(request: MasterDataBulkCommandRequest) {
+      return invoker.invoke(
+        MASTER_DATA_RPC_FUNCTIONS.updateSchoolDefaultsBulk,
         request,
       );
     },

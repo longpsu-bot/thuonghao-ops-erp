@@ -1,5 +1,9 @@
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
-import type { MasterDataCommandRequest } from "./masterDataApi";
+import type {
+  MasterDataBulkCommandRequest,
+  MasterDataCommandRequest,
+  SchoolDefaultsBulkChange,
+} from "./masterDataApi";
 
 export type SchoolMasterData = {
   school_id: string;
@@ -110,5 +114,24 @@ export function commandRequest(
     reason_code: reasonCode,
     reason_note: "Cập nhật từ khu vực Dữ liệu gốc Atlas.",
     payload,
+  };
+}
+
+export function schoolDefaultsBulkCommandRequest(
+  authSubject: string,
+  correlationId: string,
+  changes: SchoolDefaultsBulkChange[],
+): MasterDataBulkCommandRequest {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "RMVP-01.v2",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `school_portion_defaults_bulk_update:${commandId}`,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "SCHOOL_PORTION_DEFAULTS_BULK_UPDATE",
+    reason_note: "Cập nhật từ khu vực Dữ liệu gốc Atlas.",
+    payload: { changes },
   };
 }

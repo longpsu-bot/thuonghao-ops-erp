@@ -592,8 +592,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  89,
-  'CAT-14 physical atlas_api function count is exactly eighty-nine'
+  90,
+  'CAT-14 physical atlas_api function count is exactly ninety'
 );
 
 select is(
@@ -689,6 +689,7 @@ select is(
     'update_dish(request jsonb)',
     'update_ingredient(request jsonb)',
     'update_school_portion_defaults(request jsonb)',
+    'update_school_portion_defaults_bulk(request jsonb)',
     'update_supplier(request jsonb)',
     'validate_attendance(request jsonb)',
     'validate_confirmed_needs(request jsonb)',
@@ -697,7 +698,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly eighty-nine functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly ninety functions'
 );
 
 select is(
@@ -885,6 +886,7 @@ select is(
     'update_dish(request jsonb)=atlas_master_data_command_runtime',
     'update_ingredient(request jsonb)=atlas_master_data_command_runtime',
     'update_school_portion_defaults(request jsonb)=atlas_master_data_command_runtime',
+    'update_school_portion_defaults_bulk(request jsonb)=atlas_master_data_command_runtime',
     'update_supplier(request jsonb)=atlas_master_data_command_runtime',
     'validate_attendance(request jsonb)=atlas_planning_command_runtime',
     'validate_confirmed_needs(request jsonb)=atlas_confirmed_need_review_runtime',
@@ -990,6 +992,7 @@ select is(
     'update_dish(request jsonb)',
     'update_ingredient(request jsonb)',
     'update_school_portion_defaults(request jsonb)',
+    'update_school_portion_defaults_bulk(request jsonb)',
     'update_supplier(request jsonb)',
     'validate_attendance(request jsonb)',
     'validate_confirmed_needs(request jsonb)',
@@ -998,7 +1001,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly eighty-nine functions'
+  'CAT-18 authenticated execute allowlist is exactly ninety functions'
 );
 
 select ok(
@@ -1113,6 +1116,7 @@ select ok(
           ('update_dish', 'request jsonb'),
           ('update_ingredient', 'request jsonb'),
           ('update_school_portion_defaults', 'request jsonb'),
+          ('update_school_portion_defaults_bulk', 'request jsonb'),
           ('update_supplier', 'request jsonb'),
           ('validate_attendance', 'request jsonb'),
           ('validate_confirmed_needs', 'request jsonb'),
@@ -1468,13 +1472,13 @@ select is(
     'private_function_catalog_md5', '8645609b568532162091a178dd98b4f8',
     'trigger_count', 90,
     'trigger_catalog_md5', '1e3a2a592891e788c79eb3c105a27ae5',
-    'positive_target_grant_count', 1465,
-    'positive_target_grant_md5', '9cd25d59adf6e845886cdddf7af456d7',
+    'positive_target_grant_count', 1467,
+    'positive_target_grant_md5', 'fb20cd8cf9fde6e0b5cf1b444e084280',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 89,
+    'api_function_count', 90,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 89,
+    'authenticated_execute_count', 90,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

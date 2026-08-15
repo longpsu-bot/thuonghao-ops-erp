@@ -3,6 +3,7 @@ import type { AtlasRpcRequest, AtlasRpcResult } from "../connection/atlasRpc";
 import {
   createMasterDataApi,
   MASTER_DATA_RPC_FUNCTIONS,
+  type MasterDataBulkCommandRequest,
   type MasterDataCommandRequest,
 } from "./masterDataApi";
 
@@ -12,12 +13,13 @@ const success: AtlasRpcResult = {
 };
 
 describe("RMVP-01 master-data API adapter", () => {
-  it("maps exactly two reads and seven writes to the reviewed RPC registry", () => {
+  it("maps exactly two reads and eight writes to the reviewed RPC registry", () => {
     expect(MASTER_DATA_RPC_FUNCTIONS).toEqual({
       getSchools: "atlas_api.get_school_master_data",
       getIngredientsAndSuppliers:
         "atlas_api.get_ingredient_supplier_master_data",
       updateSchoolDefaults: "atlas_api.update_school_portion_defaults",
+      updateSchoolDefaultsBulk: "atlas_api.update_school_portion_defaults_bulk",
       createIngredient: "atlas_api.create_ingredient",
       updateIngredient: "atlas_api.update_ingredient",
       setIngredientLifecycle: "atlas_api.set_ingredient_lifecycle",
@@ -25,6 +27,39 @@ describe("RMVP-01 master-data API adapter", () => {
       updateSupplier: "atlas_api.update_supplier",
       replacePriorities: "atlas_api.replace_ingredient_supplier_priorities",
     });
+  });
+
+  it("forwards the RMVP-01.v2 bulk School command without a false aggregate version", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createMasterDataApi({ invoke });
+    const request = {
+      contract_version: "RMVP-01.v2",
+      command_id: "command-bulk",
+      correlation_id: "correlation-1",
+      idempotency_key: "school-defaults:command-bulk",
+      requested_by_auth_subject: "subject-1",
+      requested_at: "2026-08-14T08:00:00.000Z",
+      reason_code: "SCHOOL_PORTION_DEFAULTS_BULK_UPDATE",
+      reason_note: null,
+      payload: {
+        changes: [
+          {
+            school_id: "school-1",
+            expected_version: 3,
+            default_student_portions: 430,
+            default_teacher_portions: 35,
+          },
+        ],
+      },
+    } satisfies MasterDataBulkCommandRequest;
+
+    await api.updateSchoolDefaultsBulk(request);
+
+    expect(invoke).toHaveBeenCalledWith(
+      "atlas_api.update_school_portion_defaults_bulk",
+      request,
+    );
+    expect(request).not.toHaveProperty("expected_version");
   });
 
   it("builds bounded read envelopes and forwards frozen commands unchanged", async () => {

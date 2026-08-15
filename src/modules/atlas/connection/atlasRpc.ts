@@ -28,6 +28,8 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.get_ingredient_supplier_master_data":
     "get_ingredient_supplier_master_data",
   "atlas_api.update_school_portion_defaults": "update_school_portion_defaults",
+  "atlas_api.update_school_portion_defaults_bulk":
+    "update_school_portion_defaults_bulk",
   "atlas_api.create_ingredient": "create_ingredient",
   "atlas_api.update_ingredient": "update_ingredient",
   "atlas_api.set_ingredient_lifecycle": "set_ingredient_lifecycle",

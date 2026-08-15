@@ -16,9 +16,10 @@ The importer is not in `atlas_api`. Only the local `postgres` database operator 
 
 ## Runtime and API security
 
-`atlas_master_data_command_runtime` is `NOLOGIN NOINHERIT`. It owns only the seven RMVP-01 write entry functions:
+`atlas_master_data_command_runtime` is `NOLOGIN NOINHERIT`. It owns the RMVP-01 write entry functions:
 
 - `update_school_portion_defaults`
+- `update_school_portion_defaults_bulk`
 - `create_ingredient`
 - `update_ingredient`
 - `set_ingredient_lifecycle`
@@ -29,6 +30,12 @@ The importer is not in `atlas_api`. Only the local `postgres` database operator 
 It has no Atlas schema `CREATE`, no role inheritance, and no unrelated domain relation privilege. RMVP-02A later grants this same runtime bounded `SELECT`/`INSERT`/`UPDATE` access to the two private `atlas_legacy` evidence relations for transactional reviewed Recipe import; it still cannot execute the RMVP-01 operator snapshot importer or delete legacy evidence. `atlas_read_runtime` owns shaped reads and remains table-`SELECT` only. All API functions are security definers with an empty search path, `PUBLIC` execution is revoked, and only `authenticated` can execute the reviewed entry points. Actor resolution, active capability, and global scope are checked server-side. Writes use expected versions, idempotent receipts, audit events, and domain events.
 
 The retired `atlas_command_runtime` retains zero Atlas privilege. `anon` and `service_role` have no Atlas API execution, while API roles have no private relation access.
+
+### Additive bulk School-default compatibility
+
+UI-QUALITY-03C-A adds `atlas_api.update_school_portion_defaults_bulk(request jsonb)` as `RMVP-01.v2`. One request contains only changed Schools, with each row carrying its own `school_id`, `expected_version`, `default_student_portions`, and `default_teacher_portions`. PostgreSQL validates and authorizes the complete request, locks every School in stable identity order, checks every version, and then updates all rows or none. One operator Save creates one command receipt and one existing `SchoolPortionDefaultsUpdated` domain/audit record per changed School under the same command and correlation context.
+
+The original `atlas_api.update_school_portion_defaults(request jsonb)` remains unchanged and callable as `RMVP-01.v1`. The bulk command reuses `master_data.schools.write`, `atlas_master_data_command_runtime`, the existing School relations, receipt/idempotency infrastructure, and RMVP-01 change-recording machinery. It adds no table, private relation, capability, role, scope kind, policy family, trigger, batch aggregate, or read API.
 
 ## Authority cutover and rollback
 
