@@ -203,8 +203,8 @@ Current Product/UI stabilization order:
 ATLAS-UI-STANDARD-02
 → UI-QUALITY-03A Recipe / BOM first-user redesign (merged #191)
 → UI-QUALITY-03B Recipe Change Order first-user redesign (merged #194)
-→ UI-QUALITY-03C-A School default portions (active / implemented)
-→ UI-QUALITY-03C remaining connected Admin consolidation
+→ UI-QUALITY-03C-A School default portions (merged #195)
+→ UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening (active / implemented)
 → PLANNING-UX-01 / cross-flow operator review
 → hosted operator/security rehearsal
 → explicit decision on CMD-03 / Purchase Handoff
@@ -214,7 +214,9 @@ The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slic
 
 The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a modal form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL uses one Dish-wide predicate and transaction boundary to deny every applicable base Dish/Recipe/BOM mutation after the Dish appears in immutable approved Weekly Menu evidence, returning Change Order direction before business writes. Version evidence remains support disclosure.
 
-UI-QUALITY-03C-A restores School defaults as one compact multi-School editing job. Search and School Type filters remain local and do not discard hidden dirty rows; only Student/Teacher defaults are authored. The Product Owner-approved Application flow is now `Edit → Xem thay đổi → Lưu`: Review shows every exact pending Before/After change, including filtered-out dirty Schools, before one atomic `RMVP-01.v2` backend Save. Known stale rejection preserves edits and invalidates Review, while an unknown transport outcome locks further mutation until authoritative refresh. The backend contract is unchanged by this correction. Ingredient/Supplier consolidation is not part of this slice.
+UI-QUALITY-03C-A merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`. It restores School defaults as one compact multi-School editing job and uses the Product Owner-approved `Edit → Xem thay đổi → Lưu` Application flow before one atomic `RMVP-01.v2` backend Save.
+
+UI-QUALITY-03C-B hardens the existing Ingredient/Supplier operator workflow without redesigning it. The separate tabs, search/filter catalogs, tables, detail drawers, Ingredient-contextual Supplier priorities and lifecycle confirmation remain. The hidden 60-Ingredient result cap is removed; Ingredient create/edit, Supplier create/edit and Supplier-priority changes now require exact local Review before the existing authoritative `RMVP-01.v1` command. Lifecycle remains its own consequence confirmation. Stale or unknown outcomes invalidate Review and require authoritative refresh, while successful writes require authoritative readback before reconciliation is claimed. There is no backend contract, Supabase, Planning, XLSX, Atlas Staging, live OPS or Retool change.
 
 PLANNING-UX-01 remains the bounded review of Attendance → Menu → Need Generation → Confirmed Need, typography/rhythm consistency, Preview-before-Save consistency, and final XLSX affordance placement. Attendance and Confirmed Need must later support XLSX-assisted bulk authoring through export → offline editing → import → difference/error review → local draft → `Xem thay đổi` → `Lưu`; Confirmed Need keeps `Chuyển sang lên đơn` as a separate business commitment. Workbook templates, schemas, parsers, generators, storage, RPCs, tests, and implementation remain explicitly deferred until that Product review establishes stable work surfaces and later bounded XLSX contract tasks.
 
