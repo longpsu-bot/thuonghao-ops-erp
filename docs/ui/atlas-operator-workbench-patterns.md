@@ -466,6 +466,20 @@ Preserve the useful mental models while using Atlas visual standards:
 - do not turn every backend state into a card, chip or section;
 - use human-scale typography and controls from ATLAS-UI-STANDARD-02.
 
+### Review before authoritative Save
+
+For editable operational workbenches, use:
+
+```text
+Edit
+→ review the pending business changes
+→ authoritative Save
+```
+
+Review shows human business facts and only the relevant pending changes, represents the exact intended Save, and becomes invalid after any material edit. For direct authored facts, a local Before/After review may be sufficient. For derived or consequential calculations, use an authoritative backend Preview when the backend must compute the business consequence. This rule does not require a new backend Preview API for every form and does not make Review another lifecycle state.
+
+Verified OPS v1 Attendance evidence adds a mandatory future Planning case: Menu assignment establishes working Attendance only for the covered School/service dates, initially using School defaults. Those default-derived rows are not confirmed Attendance. Later School-default changes may refresh only future quantities that still represent the previous default; operator-entered or confirmed quantities must never be overwritten. Menu planning normally precedes Attendance confirmation, which operationally occurs about 2–3 days before service; this timing is context, not an automatic deadline. The normal future Application should open already-seeded rows for review/edit/Preview/Save rather than presenting `Tạo từ sĩ số mặc định` as a primary business action. Need Generation must continue to require confirmed/current Attendance, not merely seeded rows.
+
 ## 13. Current Atlas Product debt identified by this review
 
 This is a design debt register, not authorization for an all-at-once refactor.

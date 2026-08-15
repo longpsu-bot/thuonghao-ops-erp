@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Modal } from "@mantine/core";
 import type { AtlasAuthState } from "../atlas/connection/authSession";
 import { Chip, CompactTable, Panel } from "../atlas/WorkbenchComponents";
 import type { MasterDataApi } from "../atlas/master-data/masterDataApi";
@@ -22,6 +23,15 @@ type SchoolDraft = {
 type Notice = {
   tone: "success" | "warning" | "danger";
   message: string;
+};
+
+type SchoolDefaultsReview = {
+  school_id: string;
+  expected_version: number;
+  current_student_portions: number;
+  new_student_portions: number;
+  current_teacher_portions: number;
+  new_teacher_portions: number;
 };
 
 const MAX_PORTION_COUNT = 2_147_483_647;
@@ -74,6 +84,9 @@ export function SchoolAdminWorkbench({
   const [saving, setSaving] = useState(false);
   const [mutationLocked, setMutationLocked] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [reviewSnapshot, setReviewSnapshot] = useState<
+    SchoolDefaultsReview[] | null
+  >(null);
   const requestGeneration = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
@@ -101,6 +114,7 @@ export function SchoolAdminWorkbench({
       setDrafts((current) =>
         clearDrafts ? {} : reconcileDrafts(current, schools),
       );
+      setReviewSnapshot(null);
       setMutationLocked(false);
       return true;
     },
@@ -111,6 +125,7 @@ export function SchoolAdminWorkbench({
     requestGeneration.current += 1;
     setNotice(null);
     setDrafts({});
+    setReviewSnapshot(null);
     setMutationLocked(false);
     if (authSubject) void refresh({ clearDrafts: true });
     else setLoad({ status: "idle", schools: [] });
@@ -165,6 +180,7 @@ export function SchoolAdminWorkbench({
     value: string,
   ) => {
     setNotice(null);
+    setReviewSnapshot(null);
     setDrafts((current) => {
       const nextDraft = {
         ...(current[school.school_id] ?? {
@@ -184,11 +200,13 @@ export function SchoolAdminWorkbench({
 
   const discard = () => {
     setDrafts({});
+    setReviewSnapshot(null);
     setNotice(null);
   };
 
   const reloadForReview = async () => {
     setNotice(null);
+    setReviewSnapshot(null);
     const refreshed = await refresh();
     if (refreshed) {
       setNotice({
@@ -199,41 +217,66 @@ export function SchoolAdminWorkbench({
     }
   };
 
-  const save = async () => {
+  const openReview = () => {
+    if (saving || mutationLocked || dirtyCount === 0 || invalidDraftCount > 0)
+      return;
+
+    const snapshot = load.schools.flatMap((school) => {
+      const draft = drafts[school.school_id];
+      if (!draft) return [];
+      const student = parsePortion(draft.student);
+      const teacher = parsePortion(draft.teacher);
+      if (student === null || teacher === null) return [];
+      return [
+        {
+          school_id: school.school_id,
+          expected_version: school.version,
+          current_student_portions: school.default_student_portions,
+          new_student_portions: student,
+          current_teacher_portions: school.default_teacher_portions,
+          new_teacher_portions: teacher,
+        },
+      ];
+    });
+
+    if (snapshot.length !== dirtyCount) return;
+    setReviewSnapshot(snapshot);
+  };
+
+  const closeReview = () => {
+    if (!saving) setReviewSnapshot(null);
+  };
+
+  const saveReviewed = async () => {
     if (
       !api ||
       !authSubject ||
       saving ||
       mutationLocked ||
-      dirtyCount === 0 ||
-      invalidDraftCount > 0
+      !reviewSnapshot ||
+      reviewSnapshot.length === 0
     )
       return;
 
-    const changes = Object.entries(drafts).flatMap(([schoolId, draft]) => {
-      const school = load.schools.find((item) => item.school_id === schoolId);
-      const student = parsePortion(draft.student);
-      const teacher = parsePortion(draft.teacher);
-      if (!school || student === null || teacher === null) return [];
-      return [
-        {
-          school_id: school.school_id,
-          expected_version: school.version,
-          default_student_portions: student,
-          default_teacher_portions: teacher,
-        },
-      ];
-    });
-
-    if (changes.length !== dirtyCount) return;
+    const reviewedChanges = reviewSnapshot.map((change) => ({
+      school_id: change.school_id,
+      expected_version: change.expected_version,
+      default_student_portions: change.new_student_portions,
+      default_teacher_portions: change.new_teacher_portions,
+    }));
     setSaving(true);
     setNotice(null);
     const result = await api.updateSchoolDefaultsBulk(
-      schoolDefaultsBulkCommandRequest(authSubject, correlationId, changes),
+      schoolDefaultsBulkCommandRequest(
+        authSubject,
+        correlationId,
+        reviewedChanges,
+      ),
     );
     setSaving(false);
 
     if (result.kind === "transport_error") {
+      setReviewSnapshot(null);
       setMutationLocked(true);
       setNotice({
         tone: "danger",
@@ -244,11 +287,12 @@ export function SchoolAdminWorkbench({
     }
 
     if (result.kind === "success") {
+      setReviewSnapshot(null);
       const refreshed = await refresh({ clearDrafts: true });
       if (refreshed) {
         setNotice({
           tone: "success",
-          message: `Đã cập nhật ${changes.length} trường và tải lại dữ liệu chính thức.`,
+          message: `Đã cập nhật ${reviewedChanges.length} trường và tải lại dữ liệu chính thức.`,
         });
       } else {
         setMutationLocked(true);
@@ -261,6 +305,7 @@ export function SchoolAdminWorkbench({
       return;
     }
 
+    setReviewSnapshot(null);
     setNotice({
       tone: result.kind === "backend_error" ? "warning" : "danger",
       message:
@@ -279,7 +324,7 @@ export function SchoolAdminWorkbench({
   return (
     <Panel
       title="Sĩ số mặc định"
-      description="Tìm trường, sửa trực tiếp sĩ số học sinh và giáo viên, rồi lưu tất cả thay đổi một lần."
+      description="Tìm trường, sửa trực tiếp sĩ số học sinh và giáo viên, xem lại thay đổi, rồi lưu một lần."
       status={
         <Chip tone={authSubject && load.status !== "error" ? "ok" : "warning"}>
           {authSubject
@@ -471,9 +516,9 @@ export function SchoolAdminWorkbench({
                   dirtyCount === 0 ||
                   invalidDraftCount > 0
                 }
-                onClick={() => void save()}
+                onClick={openReview}
               >
-                {saving ? "Đang lưu…" : "Lưu"}
+                Xem thay đổi
               </button>
             </div>
           </div>
@@ -491,6 +536,104 @@ export function SchoolAdminWorkbench({
               )}
             </div>
           )}
+
+          <Modal
+            opened={reviewSnapshot !== null}
+            onClose={closeReview}
+            title="Xem thay đổi"
+            size="900px"
+            centered
+            xOffset="20px"
+            yOffset="20px"
+            closeOnClickOutside={!saving}
+            closeOnEscape={!saving}
+            withCloseButton={!saving}
+            styles={{
+              content: { maxHeight: "86dvh", overflowX: "hidden" },
+              body: {
+                maxHeight: "calc(86dvh - 64px)",
+                overflowY: "auto",
+                overflowX: "hidden",
+              },
+            }}
+          >
+            <p className="school-default-review-intro">
+              Kiểm tra các giá trị sẽ được lưu cho tất cả trường đã thay đổi.
+            </p>
+            <table className="school-default-review-table">
+              <thead>
+                <tr>
+                  <th>Trường</th>
+                  <th>Học sinh hiện tại</th>
+                  <th>Học sinh sau</th>
+                  <th>Giáo viên hiện tại</th>
+                  <th>Giáo viên sau</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(reviewSnapshot ?? []).map((change) => {
+                  const school = load.schools.find(
+                    (item) => item.school_id === change.school_id,
+                  );
+                  const studentChanged =
+                    change.current_student_portions !==
+                    change.new_student_portions;
+                  const teacherChanged =
+                    change.current_teacher_portions !==
+                    change.new_teacher_portions;
+                  return (
+                    <tr key={change.school_id}>
+                      <td data-label="Trường">
+                        <b>{school?.school_name ?? "Trường học"}</b>
+                        {school?.school_code && (
+                          <small>{school.school_code}</small>
+                        )}
+                      </td>
+                      <td data-label="Học sinh hiện tại">
+                        {change.current_student_portions}
+                      </td>
+                      <td
+                        data-label="Học sinh sau"
+                        className={
+                          studentChanged
+                            ? "school-default-review-after changed"
+                            : "school-default-review-after unchanged"
+                        }
+                      >
+                        {change.new_student_portions}
+                      </td>
+                      <td data-label="Giáo viên hiện tại">
+                        {change.current_teacher_portions}
+                      </td>
+                      <td
+                        data-label="Giáo viên sau"
+                        className={
+                          teacherChanged
+                            ? "school-default-review-after changed"
+                            : "school-default-review-after unchanged"
+                        }
+                      >
+                        {change.new_teacher_portions}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="workbench-actions school-default-review-actions">
+              <button type="button" disabled={saving} onClick={closeReview}>
+                Quay lại
+              </button>
+              <button
+                type="button"
+                className="primary"
+                disabled={saving || mutationLocked || !reviewSnapshot?.length}
+                onClick={() => void saveReviewed()}
+              >
+                {saving ? "Đang lưu…" : "Lưu"}
+              </button>
+            </div>
+          </Modal>
         </>
       )}
     </Panel>

@@ -352,13 +352,16 @@ describe("Atlas master-data shell", () => {
     const teacherInput = screen.getByLabelText(
       "Giáo viên mặc định — Trường Tiểu học Nguyễn Du",
     );
-    const save = screen.getByRole("button", { name: "Lưu" });
+    const review = screen.getByRole("button", { name: "Xem thay đổi" });
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
 
     fireEvent.change(studentInput, {
       target: { value: "-1" },
     });
     expect(studentInput).toHaveAttribute("aria-invalid", "true");
-    expect(save).toBeDisabled();
+    expect(review).toBeDisabled();
 
     fireEvent.change(studentInput, {
       target: { value: "512" },
@@ -366,7 +369,13 @@ describe("Atlas master-data shell", () => {
     fireEvent.change(teacherInput, {
       target: { value: "36" },
     });
-    fireEvent.click(save);
+    fireEvent.click(review);
+
+    const dialog = await screen.findByRole("dialog", { name: "Xem thay đổi" });
+    expect(
+      within(dialog).getByText("Trường Tiểu học Nguyễn Du"),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
 
     await waitFor(() => expect(studentInput).toHaveValue(512));
     expect(teacherInput).toHaveValue(36);

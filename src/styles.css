@@ -1873,6 +1873,89 @@ tbody tr.selected-row {
 .school-defaults-savebar .workbench-actions {
   margin: 0;
 }
+.school-default-review-intro {
+  margin: 0 0 14px;
+  color: #455f56;
+}
+.school-default-review-table {
+  width: 100%;
+  min-width: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+.school-default-review-table th:first-child,
+.school-default-review-table td:first-child {
+  width: 42%;
+}
+.school-default-review-table th,
+.school-default-review-table td {
+  padding: 10px 9px;
+  border-bottom: 1px solid #dfe5e2;
+  text-align: left;
+  vertical-align: top;
+}
+.school-default-review-table th {
+  color: #455f56;
+  font-size: 11px;
+}
+.school-default-review-table td small {
+  display: block;
+  margin-top: 3px;
+  color: #687a74;
+}
+.school-default-review-after.changed {
+  color: #176347;
+  font-weight: 800;
+}
+.school-default-review-after.unchanged {
+  color: #687a74;
+}
+.school-default-review-actions {
+  justify-content: space-between;
+  margin-top: 18px;
+}
+@media (max-width: 700px) {
+  .school-default-review-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .school-default-review-table,
+  .school-default-review-table tbody,
+  .school-default-review-table tr,
+  .school-default-review-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .school-default-review-table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid #dfe5e2;
+  }
+  .school-default-review-table td {
+    padding: 0;
+    border: 0;
+  }
+  .school-default-review-table td:first-child {
+    grid-column: 1 / -1;
+  }
+  .school-default-review-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 3px;
+    color: #687a74;
+    font-size: 10px;
+    font-weight: 700;
+  }
+}
 .master-data-detail {
   min-width: 0;
   padding: 16px;
