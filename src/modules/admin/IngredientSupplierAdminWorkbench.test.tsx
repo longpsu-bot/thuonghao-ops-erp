@@ -42,18 +42,56 @@ const suppliers = Array.from({ length: 7 }, (_, index) => ({
   version: index === 0 ? 7 : 1,
 }));
 
+const ingredientTypes = [
+  {
+    ingredient_type_id: "type-dry",
+    ingredient_type_code: "thuc_pham_kho_gia_vi",
+    ingredient_type_name: "Thực phẩm khô - gia vị",
+    display_order: 15,
+    ingredient_type_status: "ACTIVE" as const,
+  },
+  {
+    ingredient_type_id: "type-vegetable",
+    ingredient_type_code: "rau_cu_qua",
+    ingredient_type_name: "Rau củ quả",
+    display_order: 12,
+    ingredient_type_status: "ACTIVE" as const,
+  },
+];
+
+const ingredientOrderGroups = [
+  {
+    ingredient_order_group_id: "group-pantry",
+    ingredient_order_group_code: "pantry",
+    ingredient_order_group_name: "Hàng đặt riêng",
+    display_order: 1,
+    ingredient_order_group_status: "ACTIVE" as const,
+  },
+  {
+    ingredient_order_group_id: "group-vegetable",
+    ingredient_order_group_code: "daily_vegetable",
+    ingredient_order_group_name: "Rau củ",
+    display_order: 2,
+    ingredient_order_group_status: "ACTIVE" as const,
+  },
+];
+
 function ingredient(index: number) {
   return {
     ingredient_id: `ingredient-${index}`,
     ingredient_code: index === 1 ? "rice" : `ingredient-${index}`,
     ingredient_name: index === 1 ? "Gạo Jasmine" : `Nguyên liệu ${index}`,
     ingredient_status: "ACTIVE" as const,
-    ingredient_type: index === 1 ? "Lương thực" : "Rau củ",
-    shopping_type: "Mua theo kế hoạch",
+    ingredient_type_id: index === 1 ? "type-dry" : "type-vegetable",
+    ingredient_type_name: index === 1 ? "Thực phẩm khô - gia vị" : "Rau củ quả",
+    ingredient_order_group_id: index === 1 ? "group-pantry" : "group-vegetable",
+    ingredient_order_group_name: index === 1 ? "Hàng đặt riêng" : "Rau củ",
+    ingredient_type: index === 1 ? "Thực phẩm khô - gia vị" : "Rau củ quả",
+    shopping_type: index === 1 ? "Hàng đặt riêng" : "Rau củ",
     purchase_unit_id: "unit-kg",
     purchase_unit_code: "kg",
     purchase_unit_name: "Kilôgam",
-    order_step: 5,
+    order_step: index === 1 ? 0.1 : 1,
     version: index === 1 ? 4 : 1,
     supplier_priorities:
       index === 1
@@ -83,6 +121,8 @@ function masterData(ingredientCount = 1) {
         unit_status: "ACTIVE" as const,
       },
     ],
+    ingredient_types: ingredientTypes,
+    ingredient_order_groups: ingredientOrderGroups,
   };
 }
 
@@ -207,7 +247,7 @@ async function saveReview() {
 function fillIngredientCreate() {
   fireEvent.click(screen.getByRole("button", { name: "Tạo nguyên liệu" }));
   fireEvent.change(screen.getByLabelText("Mã nguyên liệu"), {
-    target: { value: "pumpkin" },
+    target: { value: " PUMPKIN " },
   });
   fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
     target: { value: "Bí đỏ" },
@@ -216,17 +256,39 @@ function fillIngredientCreate() {
     target: { value: "unit-kg" },
   });
   fireEvent.change(screen.getByLabelText("Loại nguyên liệu"), {
-    target: { value: "Rau củ" },
+    target: { value: "type-vegetable" },
   });
-  fireEvent.change(screen.getByLabelText("Cách mua"), {
-    target: { value: "Mua theo kế hoạch" },
+  fireEvent.change(screen.getByLabelText("Nhóm đặt hàng"), {
+    target: { value: "group-vegetable" },
   });
-  fireEvent.change(screen.getByLabelText("Bước đặt hàng"), {
+  fireEvent.change(screen.getByLabelText("Mức làm tròn khi đặt hàng"), {
     target: { value: "2" },
   });
 }
 
 describe("Ingredient and Supplier operator workflow", () => {
+  it("renders both classifications as API-backed business selects with corrected labels", async () => {
+    await renderReady();
+    fireEvent.click(firstButton("Sửa"));
+
+    const type = screen.getByLabelText("Loại nguyên liệu");
+    const group = screen.getByLabelText("Nhóm đặt hàng");
+    expect(type.tagName).toBe("SELECT");
+    expect(group.tagName).toBe("SELECT");
+    expect(
+      within(type).getByRole("option", { name: "Rau củ quả" }),
+    ).toBeVisible();
+    expect(
+      within(group).getByRole("option", { name: "Hàng đặt riêng" }),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("Cách mua")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Bước đặt hàng")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Mức làm tròn khi đặt hàng")).toHaveAttribute(
+      "type",
+      "number",
+    );
+  });
+
   it("preserves both catalog jobs, search/filter behavior, fields, and all 75 matching Ingredients", async () => {
     const connected = createApi({ data: masterData(75) });
     await renderReady(connected);
@@ -307,8 +369,8 @@ describe("Ingredient and Supplier operator workflow", () => {
           ingredient_code: "pumpkin",
           ingredient_name: "Bí đỏ hồ lô",
           purchase_unit_id: "unit-kg",
-          ingredient_type: "Rau củ",
-          shopping_type: "Mua theo kế hoạch",
+          ingredient_type_id: "type-vegetable",
+          ingredient_order_group_id: "group-vegetable",
           order_step: 2,
         },
       }),
@@ -332,7 +394,7 @@ describe("Ingredient and Supplier operator workflow", () => {
     });
     await renderReady(connected);
     editIngredientName("Gạo Jasmine mới");
-    fireEvent.change(screen.getByLabelText("Bước đặt hàng"), {
+    fireEvent.change(screen.getByLabelText("Mức làm tròn khi đặt hàng"), {
       target: { value: "10" },
     });
 
@@ -355,12 +417,51 @@ describe("Ingredient and Supplier operator workflow", () => {
           ingredient_id: "ingredient-1",
           ingredient_name: "Gạo Jasmine mới",
           purchase_unit_id: "unit-kg",
-          ingredient_type: "Lương thực",
-          shopping_type: "Mua theo kế hoạch",
+          ingredient_type_id: "type-dry",
+          ingredient_order_group_id: "group-pantry",
           order_step: 10,
         },
       }),
     );
+  });
+
+  it("treats canonical Ingredient and Supplier representations as no-op edits", async () => {
+    const data = masterData();
+    data.ingredients[0]!.order_step = 5;
+    const connected = createApi({ data });
+    await renderReady(connected);
+    fireEvent.click(firstButton("Sửa"));
+    const review = screen.getByRole("button", { name: "Xem thay đổi" });
+
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: " Gạo Jasmine " },
+    });
+    fireEvent.change(screen.getByLabelText("Mức làm tròn khi đặt hàng"), {
+      target: { value: "5.0" },
+    });
+    fireEvent.change(screen.getByLabelText("Loại nguyên liệu"), {
+      target: { value: "type-dry" },
+    });
+    fireEvent.change(screen.getByLabelText("Nhóm đặt hàng"), {
+      target: { value: "group-pantry" },
+    });
+    expect(review).toBeDisabled();
+    expect(
+      screen.queryByRole("dialog", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(connected.updateIngredient).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
+    fireEvent.click(screen.getByRole("tab", { name: /Nhà cung ứng/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Xem và sửa" })[1]!);
+    fireEvent.change(screen.getByLabelText("Tên nhà cung ứng"), {
+      target: { value: " NCC 2 " },
+    });
+    fireEvent.change(screen.getByLabelText("Người liên hệ"), {
+      target: { value: "   " },
+    });
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+    expect(connected.updateSupplier).not.toHaveBeenCalled();
   });
 
   it("reviews and creates a Supplier without exposing a direct Save", async () => {

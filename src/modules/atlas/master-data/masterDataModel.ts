@@ -38,6 +38,10 @@ export type IngredientMasterData = {
   ingredient_code: string;
   ingredient_name: string;
   ingredient_status: "ACTIVE" | "INACTIVE" | "ARCHIVED";
+  ingredient_type_id: string | null;
+  ingredient_type_name: string | null;
+  ingredient_order_group_id: string | null;
+  ingredient_order_group_name: string | null;
   ingredient_type: string | null;
   shopping_type: string | null;
   purchase_unit_id: string | null;
@@ -46,6 +50,22 @@ export type IngredientMasterData = {
   order_step: number | null;
   version: number;
   supplier_priorities: SupplierPriority[];
+};
+
+export type IngredientTypeMasterData = {
+  ingredient_type_id: string;
+  ingredient_type_code: string;
+  ingredient_type_name: string;
+  display_order: number;
+  ingredient_type_status: "ACTIVE" | "INACTIVE";
+};
+
+export type IngredientOrderGroupMasterData = {
+  ingredient_order_group_id: string;
+  ingredient_order_group_code: string;
+  ingredient_order_group_name: string;
+  display_order: number;
+  ingredient_order_group_status: "ACTIVE" | "INACTIVE";
 };
 
 export type SupplierMasterData = {

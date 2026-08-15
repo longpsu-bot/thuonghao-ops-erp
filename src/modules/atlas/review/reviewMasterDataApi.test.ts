@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { responseArray } from "../master-data/masterDataModel";
+import {
+  responseArray,
+  type IngredientMasterData,
+  type IngredientOrderGroupMasterData,
+  type IngredientTypeMasterData,
+} from "../master-data/masterDataModel";
 import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 
 describe("review-only master-data adapter", () => {
@@ -11,6 +16,31 @@ describe("review-only master-data adapter", () => {
     expect(responseArray(schools, "schools")).toHaveLength(33);
     expect(responseArray(catalog, "ingredients")).toHaveLength(180);
     expect(responseArray(catalog, "suppliers")).toHaveLength(24);
+    expect(
+      responseArray<IngredientTypeMasterData>(catalog, "ingredient_types"),
+    ).toHaveLength(17);
+    expect(
+      responseArray<IngredientOrderGroupMasterData>(
+        catalog,
+        "ingredient_order_groups",
+      )?.map((item) => [
+        item.ingredient_order_group_code,
+        item.ingredient_order_group_name,
+        item.display_order,
+      ]),
+    ).toEqual([
+      ["pantry", "Hàng đặt riêng", 1],
+      ["daily_vegetable", "Rau củ", 2],
+      ["daily_other", "Còn lại", 3],
+    ]);
+    expect(
+      responseArray<IngredientMasterData>(catalog, "ingredients")?.[0],
+    ).toMatchObject({
+      ingredient_name: "Gạo Jasmine",
+      ingredient_type_name: "Thực phẩm khô - gia vị",
+      ingredient_order_group_name: "Hàng đặt riêng",
+      order_step: 0.1,
+    });
   });
 
   it("exposes empty, permission, server, and stale outcomes without external calls", async () => {

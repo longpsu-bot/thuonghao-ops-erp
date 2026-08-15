@@ -409,12 +409,12 @@ describe("Atlas master-data shell", () => {
       target: { value: "unit-kg" },
     });
     fireEvent.change(screen.getByLabelText("Loại nguyên liệu"), {
-      target: { value: "Rau củ" },
+      target: { value: "review-ingredient-type-rau_cu_qua" },
     });
-    fireEvent.change(screen.getByLabelText("Cách mua"), {
-      target: { value: "Mua theo kế hoạch" },
+    fireEvent.change(screen.getByLabelText("Nhóm đặt hàng"), {
+      target: { value: "review-ingredient-order-group-daily_vegetable" },
     });
-    fireEvent.change(screen.getByLabelText("Bước đặt hàng"), {
+    fireEvent.change(screen.getByLabelText("Mức làm tròn khi đặt hàng"), {
       target: { value: "5" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));

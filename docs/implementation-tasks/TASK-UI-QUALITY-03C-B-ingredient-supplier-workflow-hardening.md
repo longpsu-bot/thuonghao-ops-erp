@@ -6,7 +6,7 @@
 
 **Branch:** `codex/ui-quality-03c-b-ingredient-supplier-workflow-hardening`
 
-**Backend contract:** existing `RMVP-01.v1`; unchanged
+**Backend contract:** existing `RMVP-01.v1` public functions; additively corrected Ingredient catalog authority
 
 ## Bounded capability
 
@@ -20,6 +20,9 @@ The Application changes are limited to:
 - invalidate Review on return/edit, cancel, close, refresh, stale rejection, unknown outcome or abandoned tab/context;
 - lock further writes after an unknown transport outcome or successful command with failed authoritative readback;
 - require authoritative refresh before recovery and authoritative readback before success is claimed.
+- replace authored Ingredient classification text with API-backed authoritative selects;
+- label the operational grouping `Nhóm đặt hàng` and `order_step` as `Mức làm tròn khi đặt hàng`;
+- canonicalize reviewed drafts so trim-only, blank-only, same-ID and equivalent numeric representations do not become business writes.
 
 No generic Preview/workflow framework or backend Preview API is introduced.
 
@@ -57,9 +60,13 @@ Lifecycle remains a separate consequential action. `Ngừng dùng`, `Kích hoạ
 
 ## Database, security and environment delta
 
-- zero migrations, tables, triggers, roles, capabilities, policies, grants, functions, APIs or contract versions;
-- no change to `masterDataApi` or master-data models;
-- no Supabase file change and no local Supabase rerun required for this Application/docs-only slice;
+- one forward migration adds exactly two private Admin tables, `ingredient_types` and `ingredient_order_groups`, and exactly two nullable UUID foreign-key columns on `ingredients` for historical compatibility;
+- the two catalogs each contain only UUID identity, stable code, Vietnamese display name, display order and active/inactive status; they are predefined and have no catalog-write API or UI;
+- the existing shaped read and three existing Ingredient command functions are replaced in place; their public names, `RMVP-01.v1`, runtime owners, capabilities and browser grants remain;
+- one private importer-core identity is retained behind the original local-only importer name, producing one additional private function but no public API;
+- exact final object delta: +2 ordinary tables, +2 Ingredient columns, +2 foreign keys, +4 indexes, +4 RLS policies, +8 positive target grants, +1 private function, 0 roles, 0 capabilities, 0 triggers and 0 public API functions;
+- `masterDataModel` gains additive catalog/read-shape types; `masterDataApi` invocation names remain unchanged;
+- local clean reset, focused pgTAP, RMVP-01 compatibility, affected downstream suites, platform security catalog and database lint are required;
 - no Atlas Staging deployment or mutation;
 - no live OPS mutation;
 - no Retool mutation;
@@ -67,11 +74,17 @@ Lifecycle remains a separate consequential action. `Ngừng dùng`, `Kích hoạ
 
 ## Verification and rollback
 
-Focused frontend coverage uses a 75-Ingredient synthetic catalog and proves all matching rows remain rendered/reachable, both catalog tabs and search/filter behavior remain, authored forms have no direct Save, invalid drafts block Review, Review shows exact business values, return preserves drafts, later edits require fresh Review, Save uses the exact reviewed payload/version once, Supplier-priority guardrails remain, lifecycle remains separate, and stale/unknown/readback-failure recovery never retries.
+Focused frontend coverage uses a 75-Ingredient synthetic catalog and proves all matching rows remain rendered/reachable, both catalog tabs and search/filter behavior remain, authoritative API catalogs supply the two selects, authored forms have no direct Save, invalid drafts block Review, Review shows exact business names and Vietnamese decimals, return preserves drafts, later material edits require fresh Review, Save uses the exact canonical reviewed payload/version once, no-op representations open no Review and issue no command, Supplier-priority guardrails remain, lifecycle remains separate, and stale/unknown/readback-failure recovery never retries.
 
 Responsive Review checks cover approximately 1280 px and 650 px. The Review modal is height-bounded with hidden horizontal overflow; the existing table scroll and drawer structure remain.
 
-There is no migration or data rollback. Application rollback is removal of this bounded UI/docs change; any command already accepted by PostgreSQL remains an authoritative audited business action and must not be undone through browser state.
+Application rollback is removal of the bounded UI change; any command already accepted by PostgreSQL remains an authoritative audited business action and must not be undone through browser state.
+
+Migration rollback is appropriate only for a disposable local/pre-cutover database because dropping the two catalogs or foreign keys would discard restored classification identity. Any deployed rollback must be a reviewed forward migration that preserves referenced Ingredient history. No deployment is part of this task.
+
+## Deferred Product requirement — DISH-RICE-01
+
+`DISH-RICE-01 — Menu-derived rice accompaniment` is recorded only; it is not implemented here. The preferred Dish operator label is `Ăn kèm cơm`, not `uses_rice`, because it is distinct from Rice appearing inside a Recipe/BOM. Read-only OPS v1 evidence shows `Gạo thơm lài` classified as `Thực phẩm khô - gia vị` / `Hàng đặt riêng` and repeated scheduled Pantry quantities such as 65 kg for TÂN BÌNH; these are workflow evidence only and are not copied into Atlas. A later bounded Product/Planning contract must define how Menu + confirmed/current Attendance + the Dish flag derives one deterministic Rice need per intended meal context, how multiple qualifying Dishes are deduplicated, the governed Rice-per-portion rate source, authoritative Atlas Rice Ingredient identity, lock/correction semantics, and how derived Rice avoids double counting fixed/manual Pantry Rice. The illustrative `0.1 kg/portion` is not approved or frozen. No Dish schema, RMVP-02A/B, Planning, Pantry, XLSX or Rice behavior changes in UI-QUALITY-03C-B.
 
 Hosted GitHub CI is expected to remain blocked before runner execution by the account billing/spending limit. Workflows are unchanged. The PR remains draft and must not merge before independent Product/Architecture review.
 
@@ -84,6 +97,7 @@ Workflow preserved:
 - Ingredient-contextual Supplier priorities and max-six/uniqueness rules;
 - existing Ingredient lifecycle business action and consequence confirmation;
 - existing `RMVP-01.v1` backend authority.
+- Pantry remains a separate authored workflow.
 
 Workflow improved:
 
@@ -91,6 +105,10 @@ Workflow improved:
 - exact Review-before-Save for authored changes;
 - safe stale and unknown-outcome recovery;
 - authoritative readback before reconciliation.
+- Ingredient Type is again controlled material vocabulary;
+- `Nhóm đặt hàng` is again the controlled operational review/routing group;
+- order-step wording expresses rounding meaning;
+- formatting-only edits no longer create fake business writes.
 
 Workflow intentionally changed:
 

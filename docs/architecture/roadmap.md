@@ -38,7 +38,7 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ D-038 / UI-QUALITY-03A Recipe creation-and-lock vertical — merged through PR #191 at `0d66a3640811cfeac97d2f986b6c2a3d08da0a4b`; read-only catalog, separate creation, approved-Menu first-use lock, Change Order direction, no React lifecycle chaining, retained v1 compatibility, and no downstream behavior change
 - ✅ UI-QUALITY-03B Recipe Change Order first-user redesign — merged through PR #194 at `60316f59638e1c7c625700166e7c78d7b11e242a`
 - ✅ UI-QUALITY-03C-A School default portions — merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; restores compact multi-School inline editing and adds Product Owner-approved local Before/After Review before one atomic `RMVP-01.v2` Save, while preserving the single-School v1 command and backend behavior
-- 🟡 UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening — active from authoritative `main` `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; preserves the existing tabs/search/catalog/detail structure, removes the hidden 60-result cap, adds exact local Review before authored `RMVP-01.v1` writes, retains lifecycle confirmation, and adds stale/unknown/readback recovery with zero backend or Planning delta
+- 🟡 UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening — active from authoritative `main` `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; preserves the existing tabs/search/catalog/detail structure, removes the hidden 60-result cap, adds exact canonical Review before authored `RMVP-01.v1` writes, restores two predefined private authoritative Ingredient catalogs and API-backed selects, corrects `Nhóm đặt hàng`/rounding wording, retains lifecycle confirmation, and adds stale/unknown/readback recovery with no Planning delta
 - ⬜ Hosted operator/security rehearsal — not started; later scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
 - ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
 
@@ -62,6 +62,7 @@ D-036
 → UI-QUALITY-02C-A
 → UI-QUALITY-02C-B
 → PLANNING-UX-01: Attendance → Menu → Need Generation → Confirmed Need; typography/rhythm; Preview-before-Save consistency; final XLSX affordance placement
+→ ↘️ DISH-RICE-01 — Menu-derived rice accompaniment (recorded only; begin only after Product semantics are defined): Dish label `Ăn kèm cơm`; Menu + current confirmed Attendance + one deduplicated qualifying meal context should eventually derive Rice need. Dish-Type eligibility, one-per-meal semantics, governed rate source, Atlas Rice identity, correction locks and prevention of double counting with fixed/manual Pantry Rice remain unresolved; `0.1 kg/portion` is illustrative only and no Dish/Planning/Pantry/XLSX implementation is authorized by UI-QUALITY-03C-B
 → bounded Attendance and Confirmed Need XLSX contract tasks after Product review
 ```
 

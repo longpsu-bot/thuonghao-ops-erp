@@ -9,6 +9,8 @@ import {
   responseArray,
   resultMessage,
   type IngredientMasterData,
+  type IngredientOrderGroupMasterData,
+  type IngredientTypeMasterData,
   type SupplierMasterData,
   type UnitMasterData,
 } from "../atlas/master-data/masterDataModel";
@@ -18,6 +20,8 @@ type MasterDataLoad = {
   ingredients: IngredientMasterData[];
   suppliers: SupplierMasterData[];
   units: UnitMasterData[];
+  ingredientTypes: IngredientTypeMasterData[];
+  ingredientOrderGroups: IngredientOrderGroupMasterData[];
   message?: string;
 };
 
@@ -25,8 +29,8 @@ type IngredientDraft = {
   ingredientCode: string;
   ingredientName: string;
   purchaseUnitId: string;
-  ingredientType: string;
-  shoppingType: string;
+  ingredientTypeId: string;
+  ingredientOrderGroupId: string;
   orderStep: string;
 };
 
@@ -48,6 +52,8 @@ type Notice = {
 type IngredientReviewValues = IngredientDraft & {
   orderStepValue: number;
   purchaseUnitLabel: string;
+  ingredientTypeLabel: string;
+  ingredientOrderGroupLabel: string;
 };
 
 type SupplierReviewValues = SupplierDraft;
@@ -94,8 +100,8 @@ const emptyIngredient = (): IngredientDraft => ({
   ingredientCode: "",
   ingredientName: "",
   purchaseUnitId: "",
-  ingredientType: "",
-  shoppingType: "",
+  ingredientTypeId: "",
+  ingredientOrderGroupId: "",
   orderStep: "",
 });
 
@@ -129,8 +135,8 @@ const ingredientDraftFor = (
   ingredientCode: ingredient.ingredient_code,
   ingredientName: ingredient.ingredient_name,
   purchaseUnitId: ingredient.purchase_unit_id ?? "",
-  ingredientType: ingredient.ingredient_type ?? "",
-  shoppingType: ingredient.shopping_type ?? "",
+  ingredientTypeId: ingredient.ingredient_type_id ?? "",
+  ingredientOrderGroupId: ingredient.ingredient_order_group_id ?? "",
   orderStep: String(ingredient.order_step ?? ""),
 });
 
@@ -142,18 +148,33 @@ const supplierDraftFor = (supplier: SupplierMasterData): SupplierDraft => ({
   contactEmail: supplier.contact_email ?? "",
 });
 
+const canonicalIngredientDraft = (draft: IngredientDraft): IngredientDraft => ({
+  ingredientCode: draft.ingredientCode.trim().toLocaleLowerCase("vi"),
+  ingredientName: draft.ingredientName.trim(),
+  purchaseUnitId: draft.purchaseUnitId,
+  ingredientTypeId: draft.ingredientTypeId,
+  ingredientOrderGroupId: draft.ingredientOrderGroupId,
+  orderStep:
+    draft.orderStep.trim() && Number.isFinite(Number(draft.orderStep))
+      ? String(Number(draft.orderStep))
+      : draft.orderStep.trim(),
+});
+
+const canonicalSupplierDraft = (draft: SupplierDraft): SupplierDraft => ({
+  supplierCode: draft.supplierCode.trim().toLocaleLowerCase("vi"),
+  supplierName: draft.supplierName.trim(),
+  contactName: draft.contactName.trim(),
+  contactPhone: draft.contactPhone.trim(),
+  contactEmail: draft.contactEmail.trim(),
+});
+
 const sameIngredientDraft = (left: IngredientDraft, right: IngredientDraft) =>
-  Object.keys(left).every(
-    (key) =>
-      left[key as keyof IngredientDraft] ===
-      right[key as keyof IngredientDraft],
-  );
+  JSON.stringify(canonicalIngredientDraft(left)) ===
+  JSON.stringify(canonicalIngredientDraft(right));
 
 const sameSupplierDraft = (left: SupplierDraft, right: SupplierDraft) =>
-  Object.keys(left).every(
-    (key) =>
-      left[key as keyof SupplierDraft] === right[key as keyof SupplierDraft],
-  );
+  JSON.stringify(canonicalSupplierDraft(left)) ===
+  JSON.stringify(canonicalSupplierDraft(right));
 
 const samePriorities = (left: PriorityDraft[], right: PriorityDraft[]) => {
   const normalize = (items: PriorityDraft[]) =>
@@ -162,6 +183,9 @@ const samePriorities = (left: PriorityDraft[], right: PriorityDraft[]) => {
       .sort((a, b) => a.localeCompare(b));
   return JSON.stringify(normalize(left)) === JSON.stringify(normalize(right));
 };
+
+const formatVietnameseDecimal = (value: number) =>
+  new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 12 }).format(value);
 
 export function IngredientSupplierAdminWorkbench({
   authState,
@@ -178,6 +202,8 @@ export function IngredientSupplierAdminWorkbench({
     ingredients: [],
     suppliers: [],
     units: [],
+    ingredientTypes: [],
+    ingredientOrderGroups: [],
   });
   const [query, setQuery] = useState("");
   const [supplierQuery, setSupplierQuery] = useState("");
@@ -225,7 +251,21 @@ export function IngredientSupplierAdminWorkbench({
     );
     const suppliers = responseArray<SupplierMasterData>(result, "suppliers");
     const units = responseArray<UnitMasterData>(result, "units");
-    if (!ingredients || !suppliers || !units) {
+    const ingredientTypes = responseArray<IngredientTypeMasterData>(
+      result,
+      "ingredient_types",
+    );
+    const ingredientOrderGroups = responseArray<IngredientOrderGroupMasterData>(
+      result,
+      "ingredient_order_groups",
+    );
+    if (
+      !ingredients ||
+      !suppliers ||
+      !units ||
+      !ingredientTypes ||
+      !ingredientOrderGroups
+    ) {
       setLoad((current) => ({
         ...current,
         status: "error",
@@ -233,7 +273,14 @@ export function IngredientSupplierAdminWorkbench({
       }));
       return false;
     }
-    setLoad({ status: "ready", ingredients, suppliers, units });
+    setLoad({
+      status: "ready",
+      ingredients,
+      suppliers,
+      units,
+      ingredientTypes,
+      ingredientOrderGroups,
+    });
     return true;
   }, [api, authSubject, correlationId]);
 
@@ -253,6 +300,8 @@ export function IngredientSupplierAdminWorkbench({
         ingredients: [],
         suppliers: [],
         units: [],
+        ingredientTypes: [],
+        ingredientOrderGroups: [],
       });
   }, [authSubject, refresh]);
 
@@ -293,8 +342,8 @@ export function IngredientSupplierAdminWorkbench({
           [
             ingredient.ingredient_name,
             ingredient.ingredient_code,
-            ingredient.ingredient_type,
-            ingredient.shopping_type,
+            ingredient.ingredient_type_name,
+            ingredient.ingredient_order_group_name,
           ].some((value) =>
             (value ?? "").toLocaleLowerCase("vi").includes(normalized),
           )),
@@ -328,17 +377,18 @@ export function IngredientSupplierAdminWorkbench({
   );
 
   const ingredientOrderStep = Number(ingredientDraft.orderStep);
+  const canonicalIngredient = canonicalIngredientDraft(ingredientDraft);
   const ingredientValid =
-    Boolean(ingredientDraft.ingredientCode.trim()) &&
-    Boolean(ingredientDraft.ingredientName.trim()) &&
-    Boolean(ingredientDraft.purchaseUnitId) &&
-    Boolean(ingredientDraft.ingredientType.trim()) &&
-    Boolean(ingredientDraft.shoppingType.trim()) &&
+    Boolean(canonicalIngredient.ingredientCode) &&
+    Boolean(canonicalIngredient.ingredientName) &&
+    Boolean(canonicalIngredient.purchaseUnitId) &&
+    Boolean(canonicalIngredient.ingredientTypeId) &&
+    Boolean(canonicalIngredient.ingredientOrderGroupId) &&
     Number.isFinite(ingredientOrderStep) &&
     ingredientOrderStep > 0;
   const ingredientDirty =
     ingredientId === "NEW"
-      ? Object.values(ingredientDraft).some(Boolean)
+      ? Object.values(canonicalIngredient).some(Boolean)
       : Boolean(
           editingIngredient &&
           !sameIngredientDraft(
@@ -351,7 +401,7 @@ export function IngredientSupplierAdminWorkbench({
     Boolean(supplierDraft.supplierName.trim());
   const supplierDirty =
     supplierId === "NEW"
-      ? Object.values(supplierDraft).some(Boolean)
+      ? Object.values(canonicalSupplierDraft(supplierDraft)).some(Boolean)
       : Boolean(
           editingSupplier &&
           !sameSupplierDraft(supplierDraft, supplierDraftFor(editingSupplier)),
@@ -460,14 +510,31 @@ export function IngredientSupplierAdminWorkbench({
     )
       return;
     const unit = load.units.find(
-      (item) => item.unit_id === ingredientDraft.purchaseUnitId,
+      (item) => item.unit_id === canonicalIngredient.purchaseUnitId,
+    );
+    const ingredientType = load.ingredientTypes.find(
+      (item) =>
+        item.ingredient_type_id === canonicalIngredient.ingredientTypeId,
+    );
+    const ingredientOrderGroup = load.ingredientOrderGroups.find(
+      (item) =>
+        item.ingredient_order_group_id ===
+        canonicalIngredient.ingredientOrderGroupId,
     );
     const after: IngredientReviewValues = {
-      ...ingredientDraft,
+      ...canonicalIngredient,
       orderStepValue: ingredientOrderStep,
       purchaseUnitLabel: unit
         ? `${unit.unit_name} (${unit.unit_code})`
         : "Chưa chọn",
+      ingredientTypeLabel:
+        ingredientType?.ingredient_type_name ??
+        editingIngredient?.ingredient_type_name ??
+        "Chưa chọn",
+      ingredientOrderGroupLabel:
+        ingredientOrderGroup?.ingredient_order_group_name ??
+        editingIngredient?.ingredient_order_group_name ??
+        "Chưa chọn",
     };
     const creating = ingredientId === "NEW";
     const before = editingIngredient
@@ -477,6 +544,10 @@ export function IngredientSupplierAdminWorkbench({
           purchaseUnitLabel: editingIngredient.purchase_unit_name
             ? `${editingIngredient.purchase_unit_name} (${editingIngredient.purchase_unit_code})`
             : "Chưa chọn",
+          ingredientTypeLabel:
+            editingIngredient.ingredient_type_name ?? "Chưa chọn",
+          ingredientOrderGroupLabel:
+            editingIngredient.ingredient_order_group_name ?? "Chưa chọn",
         }
       : null;
     setReviewSnapshot({
@@ -491,16 +562,16 @@ export function IngredientSupplierAdminWorkbench({
             ingredient_code: after.ingredientCode,
             ingredient_name: after.ingredientName,
             purchase_unit_id: after.purchaseUnitId,
-            ingredient_type: after.ingredientType,
-            shopping_type: after.shoppingType,
+            ingredient_type_id: after.ingredientTypeId,
+            ingredient_order_group_id: after.ingredientOrderGroupId,
             order_step: after.orderStepValue,
           }
         : {
             ingredient_id: ingredientId,
             ingredient_name: after.ingredientName,
             purchase_unit_id: after.purchaseUnitId,
-            ingredient_type: after.ingredientType,
-            shopping_type: after.shoppingType,
+            ingredient_type_id: after.ingredientTypeId,
+            ingredient_order_group_id: after.ingredientOrderGroupId,
             order_step: after.orderStepValue,
           },
     });
@@ -549,7 +620,7 @@ export function IngredientSupplierAdminWorkbench({
     )
       return;
     const creating = supplierId === "NEW";
-    const after = { ...supplierDraft };
+    const after = canonicalSupplierDraft(supplierDraft);
     const commonPayload = {
       supplier_name: after.supplierName,
       contact_name: after.contactName,
@@ -845,8 +916,8 @@ export function IngredientSupplierAdminWorkbench({
                   "Nguyên liệu",
                   "Trạng thái",
                   "Đơn vị mua",
-                  "Loại / cách mua",
-                  "Bước đặt",
+                  "Loại / nhóm đặt hàng",
+                  "Mức làm tròn",
                   "Ưu tiên nhà cung ứng",
                   "Thao tác",
                 ]}
@@ -873,8 +944,10 @@ export function IngredientSupplierAdminWorkbench({
                       <small>{ingredient.purchase_unit_code}</small>
                     </td>
                     <td>
-                      {ingredient.ingredient_type ?? "Chưa đặt"}
-                      <small>{ingredient.shopping_type ?? "Chưa đặt"}</small>
+                      {ingredient.ingredient_type_name ?? "Chưa đặt"}
+                      <small>
+                        {ingredient.ingredient_order_group_name ?? "Chưa đặt"}
+                      </small>
                     </td>
                     <td>{ingredient.order_step ?? "—"}</td>
                     <td>
@@ -1070,26 +1143,72 @@ export function IngredientSupplierAdminWorkbench({
               </label>
               <label className="evidence-field">
                 Loại nguyên liệu
-                <input
+                <select
                   disabled={busy || mutationLocked}
-                  value={ingredientDraft.ingredientType}
+                  value={ingredientDraft.ingredientTypeId}
                   onChange={(event) =>
-                    setIngredientField("ingredientType", event.target.value)
+                    setIngredientField("ingredientTypeId", event.target.value)
                   }
-                />
+                >
+                  <option value="">Chọn loại nguyên liệu</option>
+                  {editingIngredient?.ingredient_type_id &&
+                    !load.ingredientTypes.some(
+                      (item) =>
+                        item.ingredient_type_id ===
+                        editingIngredient.ingredient_type_id,
+                    ) && (
+                      <option value={editingIngredient.ingredient_type_id}>
+                        {editingIngredient.ingredient_type_name} (ngừng dùng)
+                      </option>
+                    )}
+                  {load.ingredientTypes.map((item) => (
+                    <option
+                      key={item.ingredient_type_id}
+                      value={item.ingredient_type_id}
+                    >
+                      {item.ingredient_type_name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="evidence-field">
-                Cách mua
-                <input
+                Nhóm đặt hàng
+                <select
                   disabled={busy || mutationLocked}
-                  value={ingredientDraft.shoppingType}
+                  value={ingredientDraft.ingredientOrderGroupId}
                   onChange={(event) =>
-                    setIngredientField("shoppingType", event.target.value)
+                    setIngredientField(
+                      "ingredientOrderGroupId",
+                      event.target.value,
+                    )
                   }
-                />
+                >
+                  <option value="">Chọn nhóm đặt hàng</option>
+                  {editingIngredient?.ingredient_order_group_id &&
+                    !load.ingredientOrderGroups.some(
+                      (item) =>
+                        item.ingredient_order_group_id ===
+                        editingIngredient.ingredient_order_group_id,
+                    ) && (
+                      <option
+                        value={editingIngredient.ingredient_order_group_id}
+                      >
+                        {editingIngredient.ingredient_order_group_name} (ngừng
+                        dùng)
+                      </option>
+                    )}
+                  {load.ingredientOrderGroups.map((item) => (
+                    <option
+                      key={item.ingredient_order_group_id}
+                      value={item.ingredient_order_group_id}
+                    >
+                      {item.ingredient_order_group_name}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="evidence-field">
-                Bước đặt hàng
+                Mức làm tròn khi đặt hàng
                 <input
                   type="number"
                   min="0.000001"
@@ -1476,18 +1595,24 @@ export function IngredientSupplierAdminWorkbench({
                   ],
                   [
                     "Loại nguyên liệu",
-                    reviewSnapshot.before?.ingredientType,
-                    reviewSnapshot.after.ingredientType,
+                    reviewSnapshot.before?.ingredientTypeLabel,
+                    reviewSnapshot.after.ingredientTypeLabel,
                   ],
                   [
-                    "Cách mua",
-                    reviewSnapshot.before?.shoppingType,
-                    reviewSnapshot.after.shoppingType,
+                    "Nhóm đặt hàng",
+                    reviewSnapshot.before?.ingredientOrderGroupLabel,
+                    reviewSnapshot.after.ingredientOrderGroupLabel,
                   ],
                   [
-                    "Bước đặt hàng",
-                    reviewSnapshot.before?.orderStepValue,
-                    reviewSnapshot.after.orderStepValue,
+                    "Mức làm tròn khi đặt hàng",
+                    reviewSnapshot.before
+                      ? formatVietnameseDecimal(
+                          reviewSnapshot.before.orderStepValue,
+                        )
+                      : undefined,
+                    formatVietnameseDecimal(
+                      reviewSnapshot.after.orderStepValue,
+                    ),
                   ],
                 ].map(([label, before, after]) => {
                   const changed = before === undefined || before !== after;
