@@ -109,6 +109,10 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       await screen.findByText("Nhu cầu hiện tại đã được tạo."),
     ).toBeVisible();
+    expect(screen.getByText("Đã tạo nhu cầu.")).toBeVisible();
+    expect(
+      screen.queryByText(/Phiếu nhu cầu xác nhận|trong một giao dịch/),
+    ).not.toBeInTheDocument();
   });
 
   it("shows blocked sources in plain Vietnamese and prevents execution", async () => {
@@ -244,7 +248,15 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
 
   it("uses Cập nhật nhu cầu for backend OUTDATED state", async () => {
     const api = createReviewNeedGenerationApi("ready");
+    const originalExecute = api.execute;
     const execute = vi.spyOn(api, "execute");
+    execute.mockImplementation(async (...args) => {
+      const result = await originalExecute(...args);
+      if (result.kind === "success")
+        result.response.safe_operator_message =
+          "Đã cập nhật nhu cầu và hiệu chỉnh Phiếu nhu cầu xác nhận trong một giao dịch.";
+      return result;
+    });
     renderWorkbench(api, await makePreflightCurrentness("OUTDATED"));
 
     expect(
@@ -257,6 +269,43 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(execute.mock.calls[0]?.[0].payload).toMatchObject({
       expected_current_need_generation_run_id: "current-run",
     });
+    expect(await screen.findByText("Đã cập nhật nhu cầu.")).toBeVisible();
+    expect(
+      screen.queryByText(/Phiếu nhu cầu xác nhận|trong một giao dịch/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Nhu cầu hiện tại đã được tạo.")).toBeVisible();
+  });
+
+  it("requires reconciliation instead of claiming success when authoritative readback is incomplete", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute").mockResolvedValue({
+      kind: "success",
+      response: {
+        success: true,
+        safe_operator_message:
+          "Đã tạo nhu cầu và Phiếu nhu cầu xác nhận trong một giao dịch.",
+      },
+    });
+    renderWorkbench(api, createReviewPlanningInputReadinessApi("ready"));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+
+    expect(
+      await screen.findByText(
+        "Đã nhận kết quả nhưng chưa tải được dữ liệu mới nhất. Hãy tải lại dữ liệu.",
+      ),
+    ).toBeVisible();
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Đã tạo nhu cầu.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Phiếu nhu cầu xác nhận|trong một giao dịch/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tải lại dữ liệu" }),
+    ).toBeEnabled();
   });
 
   it("shows CURRENT without a misleading generation action", async () => {

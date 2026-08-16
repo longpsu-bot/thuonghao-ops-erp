@@ -406,6 +406,7 @@ export function NeedGenerationWorkbench({
       executionBlocker
     )
       return;
+    const wasUpdate = preflight.downstream_currentness === "OUTDATED";
     const request = needGenerationExecutionRequest(
       authSubject,
       correlationId,
@@ -436,9 +437,15 @@ export function NeedGenerationWorkbench({
     const nextWorkbench = needGenerationReadbackFromResult(result);
     setPreflight(nextPreflight);
     setWorkbench(nextWorkbench);
-    setNotice(needGenerationResultMessage(result));
     setExecutionBlocker(null);
-    if (!nextPreflight || !nextWorkbench) setRefreshRequired(true);
+    if (!nextPreflight || !nextWorkbench) {
+      setRefreshRequired(true);
+      setNotice(
+        "Đã nhận kết quả nhưng chưa tải được dữ liệu mới nhất. Hãy tải lại dữ liệu.",
+      );
+      return;
+    }
+    setNotice(wasUpdate ? "Đã cập nhật nhu cầu." : "Đã tạo nhu cầu.");
   };
 
   const blockers =
