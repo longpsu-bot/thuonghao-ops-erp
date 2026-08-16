@@ -141,4 +141,61 @@ describe("PANTRY-02 API adapter", () => {
     expect(pantryWorkbenchFromResult(stale)).toBeNull();
     expect(pantryResultMessage(stale)).toMatch(/đã thay đổi/i);
   });
+
+  it("uses Nhu cầu bổ sung in representative operator result messages", () => {
+    const backend = (errorCode: string, safeMessage = "safe") =>
+      ({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: errorCode,
+          safe_message: safeMessage,
+        },
+      }) satisfies AtlasRpcResult;
+    const messages = [
+      pantryResultMessage(success),
+      pantryResultMessage({
+        kind: "client_error",
+        diagnostic: { code: "RPC_NOT_ALLOWED", safeMessage: "safe" },
+      }),
+      pantryResultMessage(backend("CAPABILITY_DENIED")),
+      pantryResultMessage(backend("STALE_VERSION")),
+      pantryResultMessage(backend("STALE_SOURCE_SIGNATURE")),
+      pantryResultMessage(backend("INVALID_LIFECYCLE_STATE")),
+      pantryResultMessage(backend("INVARIANT_VIOLATION")),
+      pantryResultMessage(
+        backend("UNMAPPED", "Pantry source signature lifecycle version"),
+      ),
+    ];
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        "Đã lưu Nhu cầu bổ sung.",
+        "Bạn không có quyền cập nhật Nhu cầu bổ sung.",
+        "Nhu cầu bổ sung đã thay đổi. Hãy tải lại dữ liệu trước khi tiếp tục.",
+        "Dữ liệu Nhu cầu bổ sung đã thay đổi. Hãy xem thay đổi lại trước khi lưu.",
+      ]),
+    );
+    for (const message of messages) {
+      expect(message).toMatch(/Nhu cầu bổ sung/);
+      expect(message).not.toMatch(
+        /Pantry|source signature|lifecycle|contract|version/i,
+      );
+    }
+  });
+
+  it("preserves authentication and uncertain-write guidance", () => {
+    expect(
+      pantryResultMessage({
+        kind: "auth_error",
+        diagnostic: { code: "SESSION_EXPIRED", safeMessage: "safe" },
+      }),
+    ).toMatch(/đăng nhập lại/i);
+    expect(
+      pantryResultMessage({
+        kind: "transport_error",
+        diagnostic: { code: "NETWORK_FAILURE", safeMessage: "safe" },
+      }),
+    ).toMatch(/không tự động gửi lại/i);
+  });
 });

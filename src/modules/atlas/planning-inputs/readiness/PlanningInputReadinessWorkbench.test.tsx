@@ -97,7 +97,7 @@ describe("RMVP-03B connected workbench", () => {
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: "Sĩ số" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Pantry" })).toBeVisible();
-    expect(screen.getByText("12 dòng Pantry đã phê duyệt.")).toBeVisible();
+    expect(screen.getByText("12 dòng Nhu cầu bổ sung đã lưu.")).toBeVisible();
     expect(screen.getAllByRole("article")).toHaveLength(3);
     expect(
       screen.queryByRole("combobox", { name: /Chọn bằng chứng/ }),
@@ -261,7 +261,7 @@ describe("RMVP-03B connected workbench", () => {
       />,
     );
     expect(
-      await screen.findByText("Không có bổ sung Pantry — đã xác nhận rõ ràng."),
+      await screen.findByText("Đã xác nhận tuần này không có Nhu cầu bổ sung."),
     ).toBeVisible();
     zero.unmount();
 
@@ -274,7 +274,7 @@ describe("RMVP-03B connected workbench", () => {
       />,
     );
     expect(
-      await screen.findByText("Chưa có bằng chứng Pantry đã phê duyệt."),
+      await screen.findByText("Chưa có Nhu cầu bổ sung đã lưu."),
     ).toBeVisible();
   });
 
@@ -463,7 +463,7 @@ describe("RMVP-03B connected workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tải thêm lịch sử" }));
     expect(
       await screen.findByText(
-        /Đánh giá lịch sử trước khi Pantry được ràng buộc/,
+        /Trạng thái lịch sử được ghi nhận trước khi có Nhu cầu bổ sung/,
       ),
     ).toBeVisible();
     expect(

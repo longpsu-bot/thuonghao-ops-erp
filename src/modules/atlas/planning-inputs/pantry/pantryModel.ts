@@ -211,26 +211,31 @@ export function pantryResultMessage(result: AtlasRpcResult) {
     return (
       (typeof result.response.safe_operator_message === "string"
         ? result.response.safe_operator_message
-        : null) ?? "Thao tác Pantry đã hoàn tất."
+        : null) ?? "Đã lưu Nhu cầu bổ sung."
     );
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
     return "Chưa xác định kết quả lưu. Atlas không tự động gửi lại; hãy tải lại dữ liệu mới nhất.";
   if (result.kind === "client_error")
-    return "Ứng dụng đã chặn một yêu cầu Pantry không hợp lệ.";
+    return "Ứng dụng không thể thực hiện yêu cầu Nhu cầu bổ sung này.";
   const messages: Record<string, string> = {
-    CAPABILITY_DENIED: "Bạn không có quyền thực hiện thao tác Pantry này.",
-    AUTH_SUBJECT_MISMATCH: "Phiên người dùng không khớp yêu cầu.",
-    STALE_VERSION: "Tuần Pantry đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+    CAPABILITY_DENIED: "Bạn không có quyền cập nhật Nhu cầu bổ sung.",
+    AUTH_SUBJECT_MISMATCH:
+      "Phiên người dùng không khớp yêu cầu. Hãy đăng nhập lại.",
+    STALE_VERSION:
+      "Nhu cầu bổ sung đã thay đổi. Hãy tải lại dữ liệu trước khi tiếp tục.",
     STALE_SOURCE_SIGNATURE:
-      "Chữ ký nguồn Pantry đã thay đổi. Hãy xem trước lại.",
+      "Dữ liệu Nhu cầu bổ sung đã thay đổi. Hãy xem thay đổi lại trước khi lưu.",
     INVALID_LIFECYCLE_STATE:
-      "Thao tác không hợp lệ với trạng thái Pantry hiện tại.",
+      "Không thể thực hiện thao tác này với Nhu cầu bổ sung hiện tại.",
     INVARIANT_VIOLATION:
-      "Dữ liệu Pantry còn lỗi chặn. Hãy sửa và xem trước lại.",
+      "Nhu cầu bổ sung còn nội dung cần xử lý. Hãy kiểm tra và xem thay đổi lại.",
   };
-  return messages[result.error.error_code] ?? result.error.safe_message;
+  return (
+    messages[result.error.error_code] ??
+    "Không thể cập nhật Nhu cầu bổ sung. Hãy tải lại dữ liệu trước khi tiếp tục."
+  );
 }
 
 export function pantryRowsFromBatch(
