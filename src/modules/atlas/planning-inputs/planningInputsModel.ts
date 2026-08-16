@@ -324,3 +324,130 @@ export function activeAttendanceRows(
     (line) => (line.line_status ?? "ACTIVE") === "ACTIVE",
   );
 }
+
+function attendanceLineKey(
+  line: Pick<AttendanceLine, "school_id" | "service_date">,
+) {
+  return `${line.school_id}|${line.service_date}`;
+}
+
+export function attendanceWorkingRows(
+  attendance: AttendanceRecord | null,
+  defaultRows: AttendanceLine[],
+): AttendanceLine[] {
+  const rows = new Map<string, AttendanceLine>();
+  for (const line of defaultRows) rows.set(attendanceLineKey(line), line);
+  for (const line of activeAttendanceRows(attendance))
+    rows.set(attendanceLineKey(line), line);
+  return Array.from(rows.values());
+}
+
+export type MenuReviewChange = {
+  school_id: string;
+  service_date: string;
+  menu_slot_code: string;
+  previous_dish_id: string | null;
+  proposed_dish_id: string | null;
+};
+
+export function menuReviewChanges(
+  previousRows: MenuLine[],
+  proposedRows: MenuLine[],
+): MenuReviewChange[] {
+  const key = (line: MenuLine) =>
+    `${line.school_id}|${line.service_date}|${line.menu_slot_code}`;
+  const previous = new Map(previousRows.map((line) => [key(line), line]));
+  const proposed = new Map(proposedRows.map((line) => [key(line), line]));
+  return Array.from(new Set([...previous.keys(), ...proposed.keys()]))
+    .map((rowKey) => {
+      const before = previous.get(rowKey);
+      const after = proposed.get(rowKey);
+      return {
+        school_id: after?.school_id ?? before!.school_id,
+        service_date: after?.service_date ?? before!.service_date,
+        menu_slot_code: after?.menu_slot_code ?? before!.menu_slot_code,
+        previous_dish_id: before?.dish_id ?? null,
+        proposed_dish_id: after?.dish_id ?? null,
+      };
+    })
+    .filter((change) => change.previous_dish_id !== change.proposed_dish_id)
+    .sort(
+      (left, right) =>
+        left.service_date.localeCompare(right.service_date) ||
+        left.school_id.localeCompare(right.school_id) ||
+        left.menu_slot_code.localeCompare(right.menu_slot_code),
+    );
+}
+
+export type AttendanceReviewChange = {
+  school_id: string;
+  service_date: string;
+  previous_student_portions: number | null;
+  proposed_student_portions: number | null;
+  previous_teacher_portions: number | null;
+  proposed_teacher_portions: number | null;
+};
+
+export function attendanceReviewChanges(
+  previousRows: AttendanceLine[],
+  proposedRows: AttendanceLine[],
+): AttendanceReviewChange[] {
+  const previous = new Map(
+    previousRows.map((line) => [attendanceLineKey(line), line]),
+  );
+  const proposed = new Map(
+    proposedRows.map((line) => [attendanceLineKey(line), line]),
+  );
+  return Array.from(new Set([...previous.keys(), ...proposed.keys()]))
+    .map((rowKey) => {
+      const before = previous.get(rowKey);
+      const after = proposed.get(rowKey);
+      return {
+        school_id: after?.school_id ?? before!.school_id,
+        service_date: after?.service_date ?? before!.service_date,
+        previous_student_portions: before?.student_portions ?? null,
+        proposed_student_portions: after?.student_portions ?? null,
+        previous_teacher_portions: before?.teacher_portions ?? null,
+        proposed_teacher_portions: after?.teacher_portions ?? null,
+      };
+    })
+    .filter(
+      (change) =>
+        change.previous_student_portions !== change.proposed_student_portions ||
+        change.previous_teacher_portions !== change.proposed_teacher_portions,
+    )
+    .sort(
+      (left, right) =>
+        left.service_date.localeCompare(right.service_date) ||
+        left.school_id.localeCompare(right.school_id),
+    );
+}
+
+function normalizedSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\u0111/g, "d")
+    .replace(/\u0110/g, "D")
+    .toLocaleLowerCase("vi")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function isSubsequence(needle: string, haystack: string) {
+  let index = 0;
+  for (const character of haystack) {
+    if (character === needle[index]) index += 1;
+    if (index === needle.length) return true;
+  }
+  return needle.length === 0;
+}
+
+export function fuzzyTextMatch(query: string, ...values: string[]) {
+  const terms = normalizedSearchText(query).split(" ").filter(Boolean);
+  if (!terms.length) return true;
+  const haystack = normalizedSearchText(values.join(" "));
+  return terms.every(
+    (term) => haystack.includes(term) || isSubsequence(term, haystack),
+  );
+}

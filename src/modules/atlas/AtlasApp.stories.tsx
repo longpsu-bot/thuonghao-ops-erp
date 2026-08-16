@@ -214,7 +214,7 @@ export const AttendanceEditable: Story = {
 };
 
 export const AttendanceDefaults: Story = {
-  name: "Sĩ số · mặc định cục bộ trước khi lưu",
+  name: "Sĩ số · giá trị làm việc có sẵn trước khi lưu",
   args: {
     initialPage: "planning-inputs",
     initialReviewScenario: "ready",
@@ -223,9 +223,7 @@ export const AttendanceDefaults: Story = {
   play: async ({ canvasElement }) => {
     await selectPlanningTab(canvasElement, "Sĩ số");
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Tạo từ sĩ số mặc định" }),
-    );
+    await canvas.findAllByRole("spinbutton", { name: /Suất học sinh/ });
   },
 };
 
