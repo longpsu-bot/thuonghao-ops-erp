@@ -34,6 +34,20 @@ a dirty local operator edit remains protected by the existing discard guard and
 is not silently replaced. Later School-default changes do not rewrite persisted
 Attendance.
 
+The Application separately derives whether those visible working defaults still
+need operator confirmation. `attendanceNeedsConfirmation` is true when at least
+one School/service-date pair in the current Menu-covered default preview has no
+matching active persisted Attendance pair. It uses pair presence only: it does
+not compare quantities, parse source references, or treat explicit zero as
+missing. This derived state does not mark the workbench dirty.
+
+While confirmation is needed, Attendance shows warning status
+`CẦN XEM & LƯU` and the notice
+`Có sĩ số mặc định mới theo thực đơn chưa được lưu.` The operator must use the
+existing Review and Save sequence. Successful Save adopts the authoritative
+readback; once that readback contains every displayed pair, the derived warning
+clears and the backend-owned saved status is shown again.
+
 The normal `Tạo từ sĩ số mặc định` action is removed. Attendance adds fast
 accent-insensitive fuzzy School search. Blank quantities remain invalid working
 values rather than becoming zero.
@@ -66,9 +80,9 @@ Procurement, and Warehouse were not mutated or started.
 
 ## Verification
 
-- Focused Planning workbench: 18 tests passed.
-- Focused Planning model: 9 tests passed.
-- Broader Planning-input and Atlas shell regression: 17 files / 118 tests
+- Focused Planning workbench: 19 tests passed.
+- Focused Planning model: 10 tests passed.
+- Broader Planning-input and Atlas shell regression: 17 files / 120 tests
   passed.
 - Typecheck passed.
 - Repository formatting check passed.

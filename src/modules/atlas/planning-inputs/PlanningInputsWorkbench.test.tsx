@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../connection/authSession";
@@ -296,6 +297,55 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(studentInputs).toHaveLength(2);
     expect(studentInputs[0]).toHaveValue(420);
     expect(studentInputs[1]).toHaveValue(360);
+  });
+
+  it("requires Review and Save when an approved Attendance is missing a new Menu-covered pair", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.attendance!.attendance_status = "APPROVED";
+      workbench.attendance!.lines = [workbench.attendance!.lines[0]!];
+    });
+    const completed = vi.spyOn(api, "saveCompletedAttendance");
+    renderWorkbench(api);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    const studentInputs = await screen.findAllByRole("spinbutton", {
+      name: /Suất học sinh/,
+    });
+    expect(studentInputs).toHaveLength(2);
+    expect(studentInputs[0]).toHaveValue(420);
+    expect(studentInputs[1]).toHaveValue(360);
+    expect(
+      screen.queryByText("Có thay đổi chưa lưu trong nguồn đang làm việc."),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("ĐÃ LƯU")).not.toBeInTheDocument();
+    expect(screen.getByText("CẦN XEM & LƯU")).toHaveClass("warning");
+    expect(
+      screen.getByText("Có sĩ số mặc định mới theo thực đơn chưa được lưu."),
+    ).toBeInTheDocument();
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const review = await screen.findByRole("region", {
+      name: "Xem thay đổi sĩ số",
+    });
+    const newAttendanceRow = within(review).getByRole("row", {
+      name: /Trường Tiểu học Trần Quốc Toản/,
+    });
+    expect(newAttendanceRow).toHaveTextContent("—");
+    expect(newAttendanceRow).toHaveTextContent("360");
+    expect(newAttendanceRow).toHaveTextContent("24");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.queryByText("CẦN XEM & LƯU")).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByText("Có sĩ số mặc định mới theo thực đơn chưa được lưu."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("ĐÃ LƯU")).toBeInTheDocument();
   });
 
   it("adopts refreshed School defaults for still-unpersisted Attendance", async () => {

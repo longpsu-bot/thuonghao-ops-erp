@@ -35,6 +35,7 @@ import {
 import {
   activeAttendanceRows,
   activeMenuRows,
+  attendanceNeedsConfirmation,
   attendanceReviewChanges,
   attendanceWorkingRows,
   fuzzyTextMatch,
@@ -929,6 +930,14 @@ export function PlanningInputsWorkbenchView({
       }),
     [attendanceRows, attendanceSchoolSearch, data.schools],
   );
+  const needsAttendanceConfirmation = useMemo(
+    () =>
+      attendanceNeedsConfirmation(
+        data.attendance,
+        data.default_attendance_preview,
+      ),
+    [data.attendance, data.default_attendance_preview],
+  );
 
   const runCompletion = async (
     source: "weekly_menu" | "attendance",
@@ -1685,11 +1694,24 @@ export function PlanningInputsWorkbenchView({
               title="Sĩ số"
               description="Sĩ số làm việc đã có sẵn theo thực đơn. Tìm trường, sửa số suất thực tế, xem thay đổi rồi lưu cho Kế hoạch."
               status={
-                <Chip tone={statusTone(data.attendance?.attendance_status)}>
-                  {statusLabel(data.attendance?.attendance_status)}
+                <Chip
+                  tone={
+                    needsAttendanceConfirmation
+                      ? "warning"
+                      : statusTone(data.attendance?.attendance_status)
+                  }
+                >
+                  {needsAttendanceConfirmation
+                    ? "CẦN XEM & LƯU"
+                    : statusLabel(data.attendance?.attendance_status)}
                 </Chip>
               }
             >
+              {needsAttendanceConfirmation && (
+                <p className="planning-dirty-notice" role="status">
+                  Có sĩ số mặc định mới theo thực đơn chưa được lưu.
+                </p>
+              )}
               {dirty && (
                 <p className="planning-dirty-notice" role="status">
                   Có thay đổi chưa lưu trong nguồn đang làm việc.

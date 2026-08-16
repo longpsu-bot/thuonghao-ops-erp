@@ -342,6 +342,18 @@ export function attendanceWorkingRows(
   return Array.from(rows.values());
 }
 
+export function attendanceNeedsConfirmation(
+  attendance: AttendanceRecord | null,
+  defaultRows: AttendanceLine[],
+) {
+  const persistedPairs = new Set(
+    activeAttendanceRows(attendance).map(attendanceLineKey),
+  );
+  return defaultRows.some(
+    (line) => !persistedPairs.has(attendanceLineKey(line)),
+  );
+}
+
 export type MenuReviewChange = {
   school_id: string;
   service_date: string;
