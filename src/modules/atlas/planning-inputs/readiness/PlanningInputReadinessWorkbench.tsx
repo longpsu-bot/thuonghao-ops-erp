@@ -858,7 +858,7 @@ export function PlanningInputReadinessWorkbench({
               onClick={() => void loadWorkbench()}
               disabled={busy || loading}
             >
-              Kiểm tra trạng thái có thẩm quyền
+              Tải lại trạng thái
             </button>
           )}
         </section>

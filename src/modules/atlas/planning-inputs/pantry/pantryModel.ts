@@ -216,7 +216,7 @@ export function pantryResultMessage(result: AtlasRpcResult) {
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Chưa xác định kết quả lưu. Atlas không tự động gửi lại; hãy tải lại dữ liệu có thẩm quyền.";
+    return "Chưa xác định kết quả lưu. Atlas không tự động gửi lại; hãy tải lại dữ liệu mới nhất.";
   if (result.kind === "client_error")
     return "Ứng dụng đã chặn một yêu cầu Pantry không hợp lệ.";
   const messages: Record<string, string> = {

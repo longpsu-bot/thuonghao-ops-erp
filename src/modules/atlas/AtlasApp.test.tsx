@@ -107,7 +107,7 @@ describe("Atlas master-data shell", () => {
     expect(
       screen.getByRole("heading", {
         level: 2,
-        name: "Điều hành nguồn kế hoạch theo tuần",
+        name: "Lập nhu cầu theo tuần",
       }),
     ).toBeVisible();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -122,16 +122,18 @@ describe("Atlas master-data shell", () => {
 
     const tabs = await screen.findAllByRole("tab");
     expect(tabs.map((tab) => tab.textContent)).toEqual([
-      "Thực đơn tuần",
+      "Thực đơn",
       "Sĩ số",
-      "Pantry",
+      "Nhu cầu bổ sung",
       "Tạo nhu cầu",
       "Xác nhận nhu cầu",
     ]);
 
     fireEvent.click(screen.getByRole("tab", { name: "Tạo nhu cầu" }));
     expect(
-      await screen.findByText("Đầu vào đã sẵn sàng tạo nhu cầu"),
+      await screen.findByText(
+        "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.",
+      ),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
   });
@@ -145,7 +147,7 @@ describe("Atlas master-data shell", () => {
     expect(
       (await screen.findAllByText("Canh bí đỏ thịt bằm")).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByRole("tab", { name: "Thực đơn tuần" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
       "aria-selected",
       "true",
     );

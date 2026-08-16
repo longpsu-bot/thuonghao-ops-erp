@@ -4496,6 +4496,257 @@ tbody tr.selected-row {
   overflow: auto;
 }
 
+/* PLANNING-UX-01C — complete Planning operator journey */
+.planning-inputs-workbench > .work-panel,
+.planning-inputs-workbench > .pantry-workbench > .work-panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.planning-inputs-workbench > .workbench-header h2 {
+  font-size: clamp(22px, 2vw, 26px);
+  line-height: 1.2;
+}
+
+.planning-inputs-workbench > .workbench-header .workbench-header-context {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.planning-inputs-workbench .panel-heading {
+  min-height: 0;
+  padding: 2px 0 14px;
+  background: transparent;
+}
+
+.planning-inputs-workbench .panel-heading h2 {
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.planning-inputs-workbench .panel-heading p {
+  max-width: 780px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.planning-inputs-workbench .workbench-chip {
+  padding: 5px 9px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.planning-tabs button {
+  min-height: 44px;
+  padding: 11px 15px;
+  font-size: 14px;
+}
+
+.planning-context-bar label,
+.planning-context-bar > div,
+.planning-toolbar-group label:not(.file-action),
+.need-generation-period label,
+.need-generation-filters label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.planning-toolbar-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.planning-context-bar input,
+.planning-context-bar button,
+.planning-toolbar-group input,
+.planning-toolbar-group select,
+.planning-workbench-toolbar button,
+.planning-inputs-workbench .file-action,
+.need-generation-period input,
+.need-generation-period select,
+.need-generation-period button,
+.need-generation-filters input,
+.need-generation-filters select,
+.need-generation-filters button,
+.need-generation-active-action button,
+.need-generation-table-scroll button {
+  min-height: 40px;
+  font-size: 14px;
+}
+
+.planning-inputs-workbench .compact-table {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.planning-inputs-workbench .compact-table th,
+.planning-inputs-workbench .compact-table td {
+  padding: 10px 11px;
+}
+
+.planning-inputs-workbench .compact-table small,
+.planning-dirty-notice,
+.planning-review-heading span,
+.planning-review-empty,
+.planning-history,
+.planning-evidence,
+.planning-preview-summary,
+.planning-attendance-totals,
+.planning-review-footnote,
+.need-generation-context,
+.need-generation-active-action p,
+.need-generation-blocked-reason,
+.need-generation-requirements-heading small {
+  font-size: 13px;
+}
+
+.planning-issues,
+.confirmed-need-issues {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.planning-evidence summary,
+.pantry-workbench .work-panel > details summary,
+.planning-preview-summary summary,
+.planning-history summary,
+.need-generation-period-disclosure > summary,
+.need-generation-support-detail > summary {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.pantry-review-summary {
+  margin: 0;
+  color: var(--atlas-text);
+  font-size: 14px;
+}
+
+.pantry-review .planning-preview-summary {
+  margin-bottom: 0;
+}
+
+.need-generation-status {
+  margin: 14px 0;
+  padding: 15px 16px;
+  border-left: 4px solid var(--atlas-success);
+  border-radius: 7px;
+  background: var(--atlas-success-soft);
+}
+
+.need-generation-status.warning {
+  border-left-color: var(--atlas-warning-accent);
+  background: #fff8e8;
+}
+
+.need-generation-status.danger {
+  border-left-color: var(--atlas-danger);
+  background: var(--atlas-danger-soft);
+}
+
+.need-generation-status h3 {
+  margin: 0;
+  color: var(--atlas-text);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.need-generation-forward {
+  padding: 15px 16px;
+  border-width: 0 0 0 4px;
+  border-radius: 0 7px 7px 0;
+}
+
+.need-generation-forward header > span,
+.need-generation-requirements-heading span {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.need-generation-forward h3,
+.need-generation-requirements-heading h3 {
+  font-size: 17px;
+}
+
+.need-generation-active-action p,
+.need-generation-blocked-reason {
+  max-width: 760px;
+  color: var(--atlas-text);
+  line-height: 1.5;
+}
+
+.need-generation-support-detail {
+  margin-top: 14px;
+  padding: 0;
+  border-top: 1px solid var(--atlas-border);
+}
+
+.need-generation-support-detail > summary {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+}
+
+.need-generation-support-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.need-generation-support-detail .readiness-source-card h3,
+.need-generation-support-detail .readiness-source-empty,
+.need-generation-support-detail .readiness-source-audit {
+  font-size: 13px;
+}
+
+.confirmed-need-shell button:focus-visible,
+.confirmed-need-shell input:focus-visible,
+.confirmed-need-shell select:focus-visible,
+.need-generation-period-disclosure summary:focus-visible,
+.need-generation-support-detail summary:focus-visible {
+  outline: 3px solid var(--atlas-focus-light);
+  outline-offset: 2px;
+}
+
+@media (max-width: 47.99em) {
+  .planning-context-bar input,
+  .planning-context-bar button,
+  .planning-toolbar-group input,
+  .planning-toolbar-group select,
+  .planning-workbench-toolbar button,
+  .planning-inputs-workbench .file-action,
+  .need-generation-period input,
+  .need-generation-period select,
+  .need-generation-period button,
+  .need-generation-filters input,
+  .need-generation-filters select,
+  .need-generation-filters button,
+  .need-generation-active-action button,
+  .need-generation-table-scroll button {
+    min-height: 44px;
+  }
+
+  .need-generation-forward header,
+  .need-generation-active-action,
+  .need-generation-requirements-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .need-generation-active-action button {
+    width: 100%;
+  }
+}
+
 /* UI-QUALITY-02C correction — two-action Confirmed Need workbench. */
 .confirmed-need-shell {
   display: grid;
@@ -6008,4 +6259,64 @@ tbody tr.selected-row {
   margin-top: 0;
   border-radius: 0 0 8px 8px;
   overflow: auto;
+}
+
+/* PLANNING-UX-01C final cascade over the earlier Planning slices. */
+.planning-inputs-workbench > .work-panel,
+.planning-inputs-workbench > .pantry-workbench > .work-panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.planning-tabs button {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.planning-toolbar-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.planning-toolbar-group label:not(.file-action) {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.planning-toolbar-group input,
+.planning-toolbar-group select,
+.planning-workbench-toolbar button,
+.planning-inputs-workbench .file-action,
+.planning-grid-scroll input,
+.planning-grid-scroll select,
+.planning-grid-scroll button,
+.pantry-zero-confirmation {
+  min-height: 40px;
+  font-size: 14px;
+}
+
+.planning-dirty-notice,
+.planning-evidence summary,
+.pantry-workbench .work-panel > details summary,
+.planning-preview-summary summary,
+.planning-history summary {
+  font-size: 13px;
+}
+
+@media (max-width: 47.99em) {
+  .planning-toolbar-group input,
+  .planning-toolbar-group select,
+  .planning-workbench-toolbar button,
+  .planning-inputs-workbench .file-action,
+  .planning-grid-scroll input,
+  .planning-grid-scroll select,
+  .planning-grid-scroll button,
+  .pantry-zero-confirmation {
+    min-height: 44px;
+  }
 }

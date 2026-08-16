@@ -105,7 +105,7 @@ describe("Mantine-backed Atlas presentation", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Tải lại dữ liệu có thẩm quyền",
+        name: "Tải lại dữ liệu",
       }),
     );
     expect(refresh).toHaveBeenCalledOnce();

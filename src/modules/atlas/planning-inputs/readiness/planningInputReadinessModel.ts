@@ -323,12 +323,12 @@ export function readinessResultMessage(result: AtlasRpcResult) {
     return (
       (typeof result.response.safe_operator_message === "string"
         ? result.response.safe_operator_message
-        : null) ?? "Atlas đã đọc lại trạng thái sẵn sàng có thẩm quyền."
+        : null) ?? "Atlas đã tải lại trạng thái mới nhất."
     );
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Chưa xác định kết quả lệnh. Atlas không tự động gửi lại; hãy kiểm tra trạng thái có thẩm quyền.";
+    return "Chưa xác định kết quả lệnh. Atlas không tự động gửi lại; hãy tải lại trạng thái mới nhất.";
   if (result.kind === "client_error")
     return "Ứng dụng đã chặn yêu cầu ngoài danh mục RMVP-03B.";
   const messages: Record<string, string> = {

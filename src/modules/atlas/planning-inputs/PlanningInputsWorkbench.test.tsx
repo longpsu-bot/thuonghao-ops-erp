@@ -119,9 +119,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
         .getAllByRole("tab")
         .map((tab) => tab.textContent?.replace(/\s+/g, " ").trim()),
     ).toEqual([
-      "Thực đơn tuần",
+      "Thực đơn",
       "Sĩ số",
-      "Pantry",
+      "Nhu cầu bổ sung",
       "Tạo nhu cầu",
       "Xác nhận nhu cầu",
     ]);
@@ -485,7 +485,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(confirm).toHaveBeenCalledWith(
       "Có thay đổi chưa lưu. Chuyển khu vực sẽ bỏ các thay đổi này. Tiếp tục?",
     );
-    expect(screen.getByRole("tab", { name: "Thực đơn tuần" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
@@ -529,7 +529,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       .mockReturnValueOnce(true)
       .mockReturnValueOnce(false);
     renderWorkbench();
-    fireEvent.click(screen.getByRole("tab", { name: "Pantry" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Nhu cầu bổ sung" }));
     await screen.findByLabelText("Số lượng dòng 1");
     fireEvent.click(
       screen.getByRole("checkbox", {
@@ -538,10 +538,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
 
-    expect(screen.getByRole("tab", { name: "Pantry" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
+    expect(
+      screen.getByRole("tab", { name: "Nhu cầu bổ sung" }),
+    ).toHaveAttribute("aria-selected", "true");
     expect(
       screen.getByRole("checkbox", {
         name: "Xác nhận tuần này không có bổ sung",

@@ -268,7 +268,7 @@ export function planningResultMessage(result: AtlasRpcResult): string {
     if (backendMessage) return backendMessage;
     if (result.response.idempotency_status === "NO_CHANGE")
       return "Dữ liệu chuẩn hóa không thay đổi; Atlas không ghi thêm.";
-    return "Đã hoàn tất và đọc lại dữ liệu có thẩm quyền.";
+    return "Đã hoàn tất và tải lại dữ liệu mới nhất.";
   }
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";

@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
@@ -44,6 +45,7 @@ function renderWorkbench(
 
 async function makePreflightCurrentness(
   currentness: "CURRENT" | "OUTDATED" | "NOT_GENERATED",
+  confirmedNeedStatus = "DRAFT_REVIEW",
 ) {
   const api = createReviewPlanningInputReadinessApi("ready");
   const original = api.preflight;
@@ -60,7 +62,7 @@ async function makePreflightCurrentness(
               need_generation_run_version: 3,
               confirmed_need_batch_id: "current-batch",
               confirmed_need_batch_version: 1,
-              confirmed_need_batch_status: "DRAFT_REVIEW",
+              confirmed_need_batch_status: confirmedNeedStatus,
             };
     }
     return result;
@@ -81,9 +83,13 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     renderWorkbench(api, preflightApi);
 
     expect(
-      await screen.findByText("Đầu vào đã sẵn sàng tạo nhu cầu"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("SẴN SÀNG")).toBeInTheDocument();
+      await screen.findByText(
+        "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.",
+      ),
+    ).toBeVisible();
+    const support = screen.getByText("Chi tiết hỗ trợ").closest("details");
+    expect(support).not.toHaveAttribute("open");
+    expect(screen.getByText("SẴN SÀNG")).not.toBeVisible();
     expect(screen.queryByText("READY")).not.toBeInTheDocument();
     expect(preflight).toHaveBeenCalledTimes(1);
     expect(
@@ -101,8 +107,8 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(release).not.toHaveBeenCalled();
     expect(materialize).not.toHaveBeenCalled();
     expect(
-      await screen.findByText("Nhu cầu đang hiện hành"),
-    ).toBeInTheDocument();
+      await screen.findByText("Nhu cầu hiện tại đã được tạo."),
+    ).toBeVisible();
   });
 
   it("shows blocked sources in plain Vietnamese and prevents execution", async () => {
@@ -110,9 +116,12 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     const execute = vi.spyOn(api, "execute");
     renderWorkbench(api, createReviewPlanningInputReadinessApi("empty"));
 
-    expect(await screen.findByText("Đầu vào đang bị chặn")).toBeInTheDocument();
-    expect(screen.getByText("CẦN XỬ LÝ")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Cần lưu Thực đơn trước khi tạo nhu cầu."),
+    ).toBeVisible();
+    expect(screen.getByText("CẦN XỬ LÝ")).not.toBeVisible();
     expect(screen.getAllByText("CHƯA CÓ")).toHaveLength(3);
+    expect(screen.getAllByText("CHƯA CÓ")[0]).not.toBeVisible();
     for (const rawToken of [
       "READY",
       "BLOCKED",
@@ -163,10 +172,14 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     });
     renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
 
-    const blocker = await screen.findByText(
+    const blockerRegion = await screen.findByRole("region", {
+      name: "Lỗi chặn",
+    });
+    const warningRegion = screen.getByRole("region", { name: "Cảnh báo" });
+    const blocker = within(blockerRegion).getByText(
       "Chưa có thực đơn tuần đã lưu phù hợp với kỳ này.",
     );
-    const warning = screen.getByText(
+    const warning = within(warningRegion).getByText(
       "Thực đơn đã có nhưng tổng số suất ăn của trường và ngày này bằng 0.",
     );
     expect(
@@ -205,7 +218,11 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     });
     renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
 
-    expect(await screen.findByText("CẦN TẢI LẠI")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Cần kiểm tra Sĩ số trước khi tạo nhu cầu."),
+    ).toBeVisible();
+    fireEvent.click(screen.getByText("Chi tiết hỗ trợ"));
+    expect(screen.getByText("CẦN TẢI LẠI")).toBeVisible();
     expect(screen.getAllByText("CẦN XỬ LÝ").length).toBeGreaterThan(0);
     expect(
       screen.getByText(
@@ -230,7 +247,11 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     const execute = vi.spyOn(api, "execute");
     renderWorkbench(api, await makePreflightCurrentness("OUTDATED"));
 
-    expect(await screen.findByText("Nhu cầu cần cập nhật")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Dữ liệu nguồn đã thay đổi. Cần cập nhật nhu cầu.",
+      ),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Cập nhật nhu cầu" }));
     await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
     expect(execute.mock.calls[0]?.[0].payload).toMatchObject({
@@ -247,8 +268,8 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     );
 
     expect(
-      await screen.findByText("Nhu cầu đang hiện hành"),
-    ).toBeInTheDocument();
+      await screen.findByText("Nhu cầu hiện tại đã được tạo."),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
@@ -256,6 +277,31 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       screen.getByRole("button", { name: "Mở Xác nhận nhu cầu" }),
     );
     expect(onOpen).toHaveBeenCalledWith("current-batch");
+  });
+
+  it("explains released downstream correction before offering an invalid update", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    renderWorkbench(
+      api,
+      await makePreflightCurrentness(
+        "OUTDATED",
+        "RELEASED_FOR_PURCHASE_HANDOFF",
+      ),
+    );
+
+    expect(
+      await screen.findByText(
+        "Nhu cầu này đã được chuyển sang lên đơn nên chưa thể cập nhật trực tiếp tại đây.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Cập nhật nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Nhu cầu đã chuyển sang lên đơn được giữ nguyên/),
+    ).toBeVisible();
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("does not retry an unknown write and requires authoritative refresh", async () => {
@@ -273,7 +319,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Tải lại có thẩm quyền" }),
+      screen.getByRole("button", { name: "Tải lại dữ liệu" }),
     ).toBeEnabled();
   });
 });

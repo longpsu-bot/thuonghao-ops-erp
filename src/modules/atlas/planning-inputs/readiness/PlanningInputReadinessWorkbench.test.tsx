@@ -393,7 +393,7 @@ describe("RMVP-03B connected workbench", () => {
       screen.queryByRole("button", { name: "Gửi lại đúng yêu cầu" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Kiểm tra trạng thái có thẩm quyền" }),
+      screen.getByRole("button", { name: "Tải lại trạng thái" }),
     ).toBeEnabled();
   });
 

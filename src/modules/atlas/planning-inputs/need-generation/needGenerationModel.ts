@@ -166,12 +166,12 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
     return (
       (typeof result.response.safe_operator_message === "string"
         ? result.response.safe_operator_message
-        : null) ?? "Atlas đã đọc lại nhu cầu có thẩm quyền."
+        : null) ?? "Atlas đã tải lại nhu cầu mới nhất."
     );
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Chưa xác định kết quả lệnh. Atlas không tự gửi lại; hãy tải lại dữ liệu có thẩm quyền trước khi thực hiện hành động khác.";
+    return "Chưa xác định kết quả lệnh. Atlas không tự gửi lại; hãy tải lại dữ liệu mới nhất trước khi thực hiện hành động khác.";
   if (result.kind === "client_error")
     return "Ứng dụng đã chặn yêu cầu ngoài danh mục Need Generation.";
   const messages: Record<string, string> = {

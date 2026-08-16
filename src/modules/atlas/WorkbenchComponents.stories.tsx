@@ -17,7 +17,7 @@ export const ShellAndNestedHeading: Story = {
       <WorkbenchHeader
         eyebrow="Lập nhu cầu"
         title="Nguồn kế hoạch"
-        context="Quản lý nguồn đầu vào theo đúng tuần phục vụ và trạng thái có thẩm quyền."
+        context="Quản lý nguồn đầu vào theo đúng tuần phục vụ và trạng thái đã lưu."
       />
       <WorkbenchHeader
         eyebrow="Nguồn đầu vào"
@@ -58,8 +58,8 @@ export const NarrowLongVietnameseText: Story = {
         variant="warning"
         title="Nguồn dữ liệu đã thay đổi trong khi bạn đang rà soát"
       >
-        Hãy tải lại dữ liệu có thẩm quyền và kiểm tra lại toàn bộ trường học,
-        ngày phục vụ, món ăn và số suất trước khi quyết định bước tiếp theo.
+        Hãy tải lại dữ liệu mới nhất và kiểm tra lại toàn bộ trường học, ngày
+        phục vụ, món ăn và số suất trước khi quyết định bước tiếp theo.
       </OperationalState>
     </div>
   ),
