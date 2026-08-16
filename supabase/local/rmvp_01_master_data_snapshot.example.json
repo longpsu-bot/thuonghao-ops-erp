@@ -61,10 +61,10 @@
         "legacy_id": "ingredient-rice",
         "ingredient_code": "rice-jasmine",
         "ingredient_name": "Gạo Jasmine",
-        "ingredient_type": "Lương thực",
-        "shopping_type": "Mua theo kế hoạch",
+        "ingredient_type": "Thực phẩm khô - gia vị",
+        "shopping_type": "Hàng đặt riêng",
         "purchase_unit_legacy_id": "unit-kg",
-        "order_step": 5,
+        "order_step": 0.1,
         "ingredient_status": "ACTIVE"
       }
     ],

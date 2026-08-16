@@ -398,8 +398,7 @@ describe("Atlas master-data shell", () => {
     await screen.findByText("Gạo Jasmine");
 
     fireEvent.click(screen.getByRole("button", { name: "Tạo nguyên liệu" }));
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
-    expect(screen.getByText(/Điền đủ mã, tên, đơn vị mua/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Mã nguyên liệu"), {
       target: { value: "NL9001" },
     });
@@ -410,16 +409,24 @@ describe("Atlas master-data shell", () => {
       target: { value: "unit-kg" },
     });
     fireEvent.change(screen.getByLabelText("Loại nguyên liệu"), {
-      target: { value: "Rau củ" },
+      target: { value: "review-ingredient-type-rau_cu_qua" },
     });
-    fireEvent.change(screen.getByLabelText("Cách mua"), {
-      target: { value: "Mua theo kế hoạch" },
+    fireEvent.change(screen.getByLabelText("Nhóm đặt hàng"), {
+      target: { value: "review-ingredient-order-group-daily_vegetable" },
     });
-    fireEvent.change(screen.getByLabelText("Bước đặt hàng"), {
+    fireEvent.change(screen.getByLabelText("Mức làm tròn khi đặt hàng"), {
       target: { value: "5" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
-    expect(await screen.findByText("Bí đỏ hữu cơ")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    let dialog = await screen.findByRole("dialog", { name: "Xem thay đổi" });
+    await waitFor(() =>
+      expect(within(dialog).getByText("Nguyên liệu mới")).toBeVisible(),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
+    await waitFor(
+      () => expect(screen.getByText("Bí đỏ hữu cơ")).toBeInTheDocument(),
+      { timeout: 10_000 },
+    );
 
     fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
       target: { value: "NL0001" },
@@ -428,24 +435,29 @@ describe("Atlas master-data shell", () => {
     fireEvent.change(screen.getByLabelText("Nhà cung ứng ưu tiên 2"), {
       target: { value: "review-supplier-01" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thứ tự ưu tiên" }));
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
     expect(
       screen.getByText(
-        "Tối đa sáu nhà cung cấp; nhà cung cấp và mức ưu tiên 1–6 không được trùng.",
+        "Tối đa sáu nhà cung ứng; nhà cung ứng và mức ưu tiên 1–6 không được trùng.",
       ),
     ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Nhà cung ứng ưu tiên 2"), {
       target: { value: "review-supplier-05" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thứ tự ưu tiên" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    dialog = await screen.findByRole("dialog", { name: "Xem thay đổi" });
+    await waitFor(() =>
+      expect(within(dialog).getByText("Sau thay đổi")).toBeVisible(),
+    );
+    fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
     await waitFor(() =>
       expect(
         screen.queryByLabelText("Sắp xếp ưu tiên nhà cung ứng"),
       ).not.toBeInTheDocument(),
     );
     expect(screen.getByText("Công ty Thực phẩm Hà Thành")).toBeInTheDocument();
-  }, 15_000);
+  }, 60_000);
 
   it("renders review-only loading, empty, permission, session, and server outcomes", async () => {
     render(<AtlasApp reviewMode />);

@@ -6,6 +6,7 @@ Deliver one independently deployable Atlas migration plus connected Vietnamese M
 
 - Schools and default student/teacher portions
 - Ingredients and purchasing attributes
+- Predefined authoritative Ingredient Type and Ingredient Order Group catalogs
 - Suppliers and contact information
 - Atomic per-ingredient supplier priorities
 - Controlled one-way legacy snapshot import and reconciliation
@@ -33,6 +34,7 @@ Deliver one independently deployable Atlas migration plus connected Vietnamese M
 - Fresh `supabase db reset --local` applies exactly one RMVP-01 migration.
 - Valid explicit snapshot imports, reports inserted/updated/skipped/rejected counts, reconciles, and replays idempotently.
 - Missing references and duplicate/invalid priorities reject without partial target writes.
+- Ingredient classifications resolve to authoritative catalog IDs; unknown, inactive-new and conflicting ID/text submissions reject without implicit catalog creation.
 - The exact runtime/grant/RLS/function catalog passes focused and whole-platform security tests.
 - An authenticated, capable global actor can read and update schools, ingredients, suppliers, and priorities.
 - Invalid, denied, stale, conflicting, and lost-session outcomes remain safe and actionable.

@@ -388,8 +388,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.databaseRoles).toHaveLength(11);
     expect(authority.apiSignatures).toHaveLength(90);
     expect(authority.apiOwners).toHaveLength(90);
-    expect(authority.policyCount).toBe(582);
-    expect(authority.policyDigest).toBe("f5a7dd4123445b4099936166f2e3547d");
+    expect(authority.policyCount).toBe(586);
+    expect(authority.policyDigest).toBe("97031aad8cd256c0d94ccfd9e40a72ed");
   });
 
   it("uses one normal CAT-22 policy catalog for both count and digest", () => {
@@ -402,7 +402,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 582");
+    expect(sql).toContain("normal_policy_count <> 586");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -418,11 +418,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [582, 1, true],
-    [582, 0, false],
-    [582, 2, false],
-    [581, 1, false],
-    [583, 1, false],
+    [586, 1, true],
+    [586, 0, false],
+    [586, 2, false],
+    [585, 1, false],
+    [587, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

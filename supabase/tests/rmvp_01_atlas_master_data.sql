@@ -293,8 +293,8 @@ select is(
       group by table_name, privilege_type
     ) writable_columns
   ),
-  E'ingredients|INSERT|ingredient_code,ingredient_group,ingredient_name,ingredient_type,order_step,purchase_unit_id,shopping_type\n'
-    || E'ingredients|UPDATE|ingredient_group,ingredient_name,ingredient_status,ingredient_type,order_step,purchase_unit_id,shopping_type,updated_at,version\n'
+  E'ingredients|INSERT|ingredient_code,ingredient_group,ingredient_name,ingredient_order_group_id,ingredient_type,ingredient_type_id,order_step,purchase_unit_id,shopping_type\n'
+    || E'ingredients|UPDATE|ingredient_group,ingredient_name,ingredient_order_group_id,ingredient_status,ingredient_type,ingredient_type_id,order_step,purchase_unit_id,shopping_type,updated_at,version\n'
     || E'schools|UPDATE|default_student_portions,default_teacher_portions,updated_at,version\n'
     || E'supplier_eligibilities|INSERT|effective_from,eligibility_status,ingredient_id,priority,reason_note,supplier_id\n'
     || E'supplier_eligibilities|UPDATE|effective_to,eligibility_status,priority,reason_note,updated_at,version\n'
@@ -419,16 +419,19 @@ insert into atlas_admin.units (
 );
 insert into atlas_admin.ingredients (
   ingredient_id, ingredient_code, ingredient_name, ingredient_group,
-  purchase_unit_id, ingredient_type, shopping_type, order_step
+  purchase_unit_id, ingredient_type_id, ingredient_order_group_id,
+  ingredient_type, shopping_type, order_step
 ) values (
   'd2000000-0000-0000-0000-000000000011',
   'rmvp01-rice',
   'RMVP-01 rice',
-  'Food',
+  'Thực phẩm khô - gia vị',
   'd2000000-0000-0000-0000-000000000010',
-  'Food',
-  'Planned',
-  5
+  'c3100000-0000-4000-8000-000000000015',
+  'c3200000-0000-4000-8000-000000000001',
+  'Thực phẩm khô - gia vị',
+  'Hàng đặt riêng',
+  0.1
 );
 insert into atlas_admin.suppliers (
   supplier_id, supplier_code, supplier_name
@@ -586,8 +589,8 @@ insert into rmvp01_results values (
         'ingredient_code', 'rmvp01-created-ingredient',
         'ingredient_name', 'Created Ingredient',
         'purchase_unit_id', 'd2000000-0000-0000-0000-000000000010',
-        'ingredient_type', 'Food',
-        'shopping_type', 'Planned',
+        'ingredient_type', 'Thực phẩm khô - gia vị',
+        'shopping_type', 'Hàng đặt riêng',
         'order_step', 2
       )
     )
@@ -653,8 +656,8 @@ insert into rmvp01_results values (
         'ingredient_id', 'd2000000-0000-0000-0000-000000000011',
         'ingredient_name', 'RMVP-01 rice updated',
         'purchase_unit_id', 'd2000000-0000-0000-0000-000000000010',
-        'ingredient_type', 'Food',
-        'shopping_type', 'Planned',
+        'ingredient_type_id', 'c3100000-0000-4000-8000-000000000015',
+        'ingredient_order_group_id', 'c3200000-0000-4000-8000-000000000001',
         'order_step', 10
       )
     )
@@ -912,8 +915,8 @@ insert into import_results values (
             'legacy_id', 'legacy-ingredient',
             'ingredient_code', 'rmvp01-import-ingredient',
             'ingredient_name', 'Import ingredient',
-            'ingredient_type', 'Food',
-            'shopping_type', 'Planned',
+            'ingredient_type', 'Thực phẩm khô - gia vị',
+            'shopping_type', 'Hàng đặt riêng',
             'purchase_unit_legacy_id', 'legacy-unit',
             'order_step', 1,
             'ingredient_status', 'ACTIVE'
@@ -964,8 +967,8 @@ insert into import_results values (
             'legacy_id', 'bad-ingredient',
             'ingredient_code', 'rmvp01-bad-import-ingredient',
             'ingredient_name', 'Bad import ingredient',
-            'ingredient_type', 'Food',
-            'shopping_type', 'Planned',
+            'ingredient_type', 'Thực phẩm khô - gia vị',
+            'shopping_type', 'Hàng đặt riêng',
             'purchase_unit_legacy_id', 'missing-unit',
             'order_step', 1,
             'ingredient_status', 'ACTIVE'

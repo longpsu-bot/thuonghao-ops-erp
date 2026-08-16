@@ -9,6 +9,8 @@ import type {
 } from "../master-data/masterDataApi";
 import type {
   IngredientMasterData,
+  IngredientOrderGroupMasterData,
+  IngredientTypeMasterData,
   SchoolMasterData,
   SupplierMasterData,
   UnitMasterData,
@@ -153,6 +155,44 @@ const UNITS: UnitMasterData[] = [
   },
 ];
 
+const INGREDIENT_TYPES: IngredientTypeMasterData[] = [
+  ["banh_keo", "Bánh kẹo"],
+  ["banh_nuoc", "Bánh nước"],
+  ["bo", "Bò"],
+  ["bo_sua", "Bơ sữa"],
+  ["bun_nui_mi_kho", "Bún, nui, mì khô"],
+  ["cha", "Chả"],
+  ["dau_hu", "Đậu hủ"],
+  ["gia_cam", "Gia cầm"],
+  ["heo", "Heo"],
+  ["khac", "Khác"],
+  ["lap_xuong_tom_kho", "Lạp xưởng - tôm khô"],
+  ["rau_cu_qua", "Rau củ quả"],
+  ["sua_tuoi", "Sữa tươi"],
+  ["tan_tuoi", "Tần tươi"],
+  ["thuc_pham_kho_gia_vi", "Thực phẩm khô - gia vị"],
+  ["thuy_hai_san", "Thuỷ hải sản"],
+  ["trung", "Trứng"],
+].map(([code, name], index) => ({
+  ingredient_type_id: `review-ingredient-type-${code}`,
+  ingredient_type_code: code,
+  ingredient_type_name: name,
+  display_order: index + 1,
+  ingredient_type_status: "ACTIVE",
+}));
+
+const INGREDIENT_ORDER_GROUPS: IngredientOrderGroupMasterData[] = [
+  ["pantry", "Hàng đặt riêng"],
+  ["daily_vegetable", "Rau củ"],
+  ["daily_other", "Còn lại"],
+].map(([code, name], index) => ({
+  ingredient_order_group_id: `review-ingredient-order-group-${code}`,
+  ingredient_order_group_code: code,
+  ingredient_order_group_name: name,
+  display_order: index + 1,
+  ingredient_order_group_status: "ACTIVE",
+}));
+
 function createSchools(): SchoolMasterData[] {
   return SCHOOL_NAMES.map((name, index) => {
     const number = index + 1;
@@ -208,12 +248,37 @@ function createSuppliers(): SupplierMasterData[] {
 }
 
 function ingredientType(name: string) {
-  if (/Gạo|Bún|Miến|Mì|Bột/.test(name)) return "Lương thực";
-  if (/Thịt|Cá|Tôm|Trứng/.test(name)) return "Đạm động vật";
-  if (/Cà|Khoai|Bí|Su |Cải|Rau|Bắp|Súp|Hành|Nấm|Mộc/.test(name))
-    return "Rau củ";
-  if (/Đậu|Lạc/.test(name)) return "Đạm thực vật";
-  return "Gia vị và hàng khô";
+  const code = /Thịt bò/.test(name)
+    ? "bo"
+    : /Thịt lợn/.test(name)
+      ? "heo"
+      : /Thịt gà/.test(name)
+        ? "gia_cam"
+        : /Cá|Tôm/.test(name)
+          ? "thuy_hai_san"
+          : /Trứng/.test(name)
+            ? "trung"
+            : /Đậu phụ/.test(name)
+              ? "dau_hu"
+              : /Sữa/.test(name)
+                ? "sua_tuoi"
+                : /Bún|Miến|Mì/.test(name)
+                  ? "bun_nui_mi_kho"
+                  : /Cà|Khoai|Bí|Su |Cải|Rau|Bắp|Súp|Hành|Nấm/.test(name)
+                    ? "rau_cu_qua"
+                    : "thuc_pham_kho_gia_vi";
+  return INGREDIENT_TYPES.find((item) => item.ingredient_type_code === code)!;
+}
+
+function ingredientOrderGroup(name: string) {
+  const code = /Gạo/.test(name)
+    ? "pantry"
+    : /Cà|Khoai|Bí|Su |Cải|Rau|Bắp|Súp|Hành|Nấm/.test(name)
+      ? "daily_vegetable"
+      : "daily_other";
+  return INGREDIENT_ORDER_GROUPS.find(
+    (item) => item.ingredient_order_group_code === code,
+  )!;
 }
 
 function createIngredients(
@@ -225,6 +290,8 @@ function createIngredients(
     const name = cycle === 0 ? baseName : `${baseName} · quy cách ${cycle + 1}`;
     const number = index + 1;
     const unit = /Sữa|Dầu|Nước/.test(baseName) ? UNITS[1] : UNITS[0];
+    const type = ingredientType(baseName);
+    const orderGroup = ingredientOrderGroup(baseName);
     const priorityCount = index < 12 ? 3 : index % 5 === 0 ? 2 : 1;
     const supplier_priorities = Array.from(
       { length: priorityCount },
@@ -249,12 +316,16 @@ function createIngredients(
           : index % 11 === 0 && index > 0
             ? "INACTIVE"
             : "ACTIVE",
-      ingredient_type: ingredientType(baseName),
-      shopping_type: index % 4 === 0 ? "Mua theo ngày" : "Mua theo kế hoạch",
+      ingredient_type_id: type.ingredient_type_id,
+      ingredient_type_name: type.ingredient_type_name,
+      ingredient_order_group_id: orderGroup.ingredient_order_group_id,
+      ingredient_order_group_name: orderGroup.ingredient_order_group_name,
+      ingredient_type: type.ingredient_type_name,
+      shopping_type: orderGroup.ingredient_order_group_name,
       purchase_unit_id: unit.unit_id,
       purchase_unit_code: unit.unit_code,
       purchase_unit_name: unit.unit_name,
-      order_step: /Gia vị|Nước|Dầu/.test(ingredientType(baseName)) ? 1 : 5,
+      order_step: /Gạo/.test(baseName) ? 0.1 : 1,
       version: 1,
       supplier_priorities,
     };
@@ -367,6 +438,8 @@ export function createReviewMasterDataApi(
           ingredients: scenario === "empty" ? [] : clone(ingredients),
           suppliers: scenario === "empty" ? [] : clone(suppliers),
           units: clone(UNITS),
+          ingredient_types: clone(INGREDIENT_TYPES),
+          ingredient_order_groups: clone(INGREDIENT_ORDER_GROUPS),
         }),
       );
     },
@@ -475,6 +548,18 @@ export function createReviewMasterDataApi(
       const unit = UNITS.find(
         (item) => item.unit_id === payloadString(request, "purchase_unit_id"),
       );
+      const type = INGREDIENT_TYPES.find(
+        (item) =>
+          item.ingredient_type_id ===
+          payloadString(request, "ingredient_type_id"),
+      );
+      const orderGroup = INGREDIENT_ORDER_GROUPS.find(
+        (item) =>
+          item.ingredient_order_group_id ===
+          payloadString(request, "ingredient_order_group_id"),
+      );
+      if (!unit || !type || !orderGroup)
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       const id = `review-ingredient-${nextIngredient.toString().padStart(3, "0")}`;
       nextIngredient += 1;
       ingredients = [
@@ -483,8 +568,12 @@ export function createReviewMasterDataApi(
           ingredient_code: code,
           ingredient_name: payloadString(request, "ingredient_name"),
           ingredient_status: "ACTIVE",
-          ingredient_type: payloadString(request, "ingredient_type"),
-          shopping_type: payloadString(request, "shopping_type"),
+          ingredient_type_id: type.ingredient_type_id,
+          ingredient_type_name: type.ingredient_type_name,
+          ingredient_order_group_id: orderGroup.ingredient_order_group_id,
+          ingredient_order_group_name: orderGroup.ingredient_order_group_name,
+          ingredient_type: type.ingredient_type_name,
+          shopping_type: orderGroup.ingredient_order_group_name,
           purchase_unit_id: unit?.unit_id ?? null,
           purchase_unit_code: unit?.unit_code ?? null,
           purchase_unit_name: unit?.unit_name ?? null,
@@ -510,11 +599,27 @@ export function createReviewMasterDataApi(
       const unit = UNITS.find(
         (item) => item.unit_id === payloadString(request, "purchase_unit_id"),
       );
+      const type = INGREDIENT_TYPES.find(
+        (item) =>
+          item.ingredient_type_id ===
+          payloadString(request, "ingredient_type_id"),
+      );
+      const orderGroup = INGREDIENT_ORDER_GROUPS.find(
+        (item) =>
+          item.ingredient_order_group_id ===
+          payloadString(request, "ingredient_order_group_id"),
+      );
+      if (!unit || !type || !orderGroup)
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
       ingredients[index] = {
         ...ingredients[index],
         ingredient_name: payloadString(request, "ingredient_name"),
-        ingredient_type: payloadString(request, "ingredient_type"),
-        shopping_type: payloadString(request, "shopping_type"),
+        ingredient_type_id: type.ingredient_type_id,
+        ingredient_type_name: type.ingredient_type_name,
+        ingredient_order_group_id: orderGroup.ingredient_order_group_id,
+        ingredient_order_group_name: orderGroup.ingredient_order_group_name,
+        ingredient_type: type.ingredient_type_name,
+        shopping_type: orderGroup.ingredient_order_group_name,
         purchase_unit_id: unit?.unit_id ?? null,
         purchase_unit_code: unit?.unit_code ?? null,
         purchase_unit_name: unit?.unit_name ?? null,

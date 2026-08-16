@@ -76,6 +76,10 @@ No business-write command should be implemented without documenting:
 - audit timeline;
 - legacy master-data adapter views.
 
+## 4.0 Implemented RMVP-01 master-data compatibility
+
+`RMVP-01.v1` retains the existing School, Ingredient, Supplier, Unit and Supplier-priority function names. UI-QUALITY-03C-B additively shapes `get_ingredient_supplier_master_data` with active authoritative Ingredient Type and Ingredient Order Group catalogs and per-Ingredient IDs/display names. `create_ingredient` and `update_ingredient` accept those IDs while retaining exact canonical legacy-name resolution; invalid, inactive-new, unknown or conflicting classification inputs are rejected. The private catalogs are never exposed as browser tables, and no capability, role or public API name is added. The exact authority and importer behavior are specified in [RMVP-01 independent Atlas master data](../architecture/rmvp-01-independent-atlas-master-data.md).
+
 ---
 
 ## 4A. Implemented connected recipe contract
