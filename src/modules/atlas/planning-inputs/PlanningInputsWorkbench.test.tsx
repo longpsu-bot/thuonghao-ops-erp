@@ -5,9 +5,12 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../connection/authSession";
+import type { PlanningInputsApi } from "./planningInputsApi";
+import type { PlanningInputsWorkbenchData } from "./planningInputsModel";
 import {
   AtlasDatePickerInputContext,
   PlanningInputsWorkbench,
@@ -39,6 +42,23 @@ function renderWorkbench(api = createReviewPlanningInputsApi("ready")) {
       mode="review"
     />,
   );
+}
+
+function withWorkbench(
+  mutate: (workbench: PlanningInputsWorkbenchData) => void,
+): PlanningInputsApi {
+  const api = createReviewPlanningInputsApi("ready");
+  const getWorkbench = api.getWorkbench.bind(api);
+  api.getWorkbench = async (...args) => {
+    const result = await getWorkbench(...args);
+    if (result.kind === "success" && result.response.workbench) {
+      mutate(
+        result.response.workbench as unknown as PlanningInputsWorkbenchData,
+      );
+    }
+    return result;
+  };
+  return api;
 }
 
 function addIsoCalendarDays(isoDate: string, days: number) {
@@ -130,7 +150,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(addIsoCalendarDays(nextWeek, 6)).toBe(nextWeekEnd);
   });
 
-  it("previews then saves Weekly Menu with exactly one v2 write", async () => {
+  it("requires a current human-readable Menu Review before one v2 Save", async () => {
     const api = createReviewPlanningInputsApi("ready");
     const preview = vi.spyOn(api, "previewMenu");
     const completed = vi.spyOn(api, "saveCompletedMenu");
@@ -142,12 +162,28 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const cell = await screen.findByRole("combobox", {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
-    fireEvent.change(cell, { value: "review-planning-dish-1" });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    const save = screen.getByRole("button", { name: "Lưu" });
+    expect(save).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    const review = screen.getByRole("region", {
+      name: "Xem thay đổi thực đơn",
+    });
+    expect(review).toHaveTextContent("Canh bí đỏ thịt bằm");
+    expect(review).toHaveTextContent("Canh rau ngót");
+    expect(review).toHaveTextContent("Đổi");
+    expect(save).toBeEnabled();
+    fireEvent.click(save);
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
-    expect(preview).toHaveBeenCalledTimes(1);
     expect(completed.mock.calls[0]?.[0].contract_version).toBe("RMVP-03A.v2");
+    expect(completed.mock.calls[0]?.[0].payload.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ dish_id: "review-planning-dish-3" }),
+      ]),
+    );
     expect(draft).not.toHaveBeenCalled();
     expect(validate).not.toHaveBeenCalled();
     expect(approve).not.toHaveBeenCalled();
@@ -161,7 +197,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("prepares Attendance defaults locally and preserves explicit zero in one v2 Save", async () => {
+  it("automatically presents Attendance defaults and preserves explicit zero in one reviewed v2 Save", async () => {
     const api = createReviewPlanningInputsApi("ready");
     const original = api.saveCompletedAttendance;
     vi.spyOn(api, "saveCompletedAttendance").mockImplementation(
@@ -180,25 +216,48 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     renderWorkbench(api);
 
     fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
-    fireEvent.click(
-      await screen.findByRole("button", {
-        name: "Tạo từ sĩ số mặc định",
-      }),
-    );
-    await waitFor(() => expect(defaultsWrite).not.toHaveBeenCalled());
+    expect(
+      screen.queryByRole("button", { name: "Tạo từ sĩ số mặc định" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Chọn workbook")).not.toBeInTheDocument();
+    expect(defaultsWrite).not.toHaveBeenCalled();
 
     const studentInput = await screen.findAllByRole("spinbutton", {
       name: /Suất học sinh/,
     });
+    expect(studentInput[0]).toHaveValue(420);
     fireEvent.change(studentInput[0]!, { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu số suất ăn" }));
+    const save = screen.getByRole("button", { name: "Lưu" });
+    expect(save).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+
+    const review = await screen.findByRole("region", {
+      name: "Xem thay đổi sĩ số",
+    });
+    expect(review).toHaveTextContent("420");
+    expect(review).toHaveTextContent("0");
+    expect(save).toBeEnabled();
+    const teacherInput = screen.getAllByRole("spinbutton", {
+      name: /Suất giáo viên/,
+    })[0]!;
+    fireEvent.change(teacherInput, { target: { value: "29" } });
+    expect(save).toBeDisabled();
+    expect(
+      screen.queryByRole("region", { name: "Xem thay đổi sĩ số" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi sĩ số" });
+    fireEvent.click(save);
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
     expect(request?.contract_version).toBe("RMVP-03A.v2");
     expect(request?.payload.rows).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ student_portions: 0 }),
+        expect.objectContaining({
+          student_portions: 0,
+          teacher_portions: 29,
+        }),
       ]),
     );
     expect(draft).not.toHaveBeenCalled();
@@ -207,6 +266,186 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(screen.getByText(/Đã lưu số suất ăn\./)).toHaveTextContent(
       "Nhu cầu hiện tại vẫn khớp với dữ liệu đã lưu.",
     );
+  });
+
+  it("automatically uses defaults when Attendance is empty", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.attendance = null;
+    });
+    renderWorkbench(api);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    const studentInputs = await screen.findAllByRole("spinbutton", {
+      name: /Suất học sinh/,
+    });
+    expect(studentInputs).toHaveLength(2);
+    expect(studentInputs[0]).toHaveValue(420);
+    expect(studentInputs[1]).toHaveValue(360);
+  });
+
+  it("keeps persisted Attendance and fills only missing Menu-covered pairs", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.default_attendance_preview[0]!.student_portions = 999;
+      workbench.attendance!.lines = [workbench.attendance!.lines[0]!];
+    });
+    renderWorkbench(api);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    const studentInputs = await screen.findAllByRole("spinbutton", {
+      name: /Suất học sinh/,
+    });
+    expect(studentInputs).toHaveLength(2);
+    expect(studentInputs[0]).toHaveValue(420);
+    expect(studentInputs[1]).toHaveValue(360);
+  });
+
+  it("requires Review and Save when an approved Attendance is missing a new Menu-covered pair", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.attendance!.attendance_status = "APPROVED";
+      workbench.attendance!.lines = [workbench.attendance!.lines[0]!];
+    });
+    const completed = vi.spyOn(api, "saveCompletedAttendance");
+    renderWorkbench(api);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    const studentInputs = await screen.findAllByRole("spinbutton", {
+      name: /Suất học sinh/,
+    });
+    expect(studentInputs).toHaveLength(2);
+    expect(studentInputs[0]).toHaveValue(420);
+    expect(studentInputs[1]).toHaveValue(360);
+    expect(
+      screen.queryByText("Có thay đổi chưa lưu trong nguồn đang làm việc."),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("ĐÃ LƯU")).not.toBeInTheDocument();
+    expect(screen.getByText("CẦN XEM & LƯU")).toHaveClass("warning");
+    expect(
+      screen.getByText("Có sĩ số mặc định mới theo thực đơn chưa được lưu."),
+    ).toBeInTheDocument();
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const review = await screen.findByRole("region", {
+      name: "Xem thay đổi sĩ số",
+    });
+    const newAttendanceRow = within(review).getByRole("row", {
+      name: /Trường Tiểu học Trần Quốc Toản/,
+    });
+    expect(newAttendanceRow).toHaveTextContent("—");
+    expect(newAttendanceRow).toHaveTextContent("360");
+    expect(newAttendanceRow).toHaveTextContent("24");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.queryByText("CẦN XEM & LƯU")).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByText("Có sĩ số mặc định mới theo thực đơn chưa được lưu."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("ĐÃ LƯU")).toBeInTheDocument();
+  });
+
+  it("adopts refreshed School defaults for still-unpersisted Attendance", async () => {
+    let readCount = 0;
+    const api = withWorkbench((workbench) => {
+      readCount += 1;
+      workbench.attendance = null;
+      workbench.default_attendance_preview[0]!.student_portions =
+        readCount === 1 ? 500 : 520;
+    });
+    renderWorkbench(api);
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    expect(
+      (await screen.findAllByRole("spinbutton", { name: /Suất học sinh/ }))[0],
+    ).toHaveValue(500);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tải lại dữ liệu" }));
+
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0],
+      ).toHaveValue(520),
+    );
+  });
+
+  it("does not coerce a blank Attendance quantity to zero", async () => {
+    const api = createReviewPlanningInputsApi("ready");
+    const preview = vi.spyOn(api, "previewAttendance");
+    renderWorkbench(api);
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    const studentInput = (
+      await screen.findAllByRole("spinbutton", { name: /Suất học sinh/ })
+    )[0]!;
+    fireEvent.change(studentInput, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    const reviewedRows = preview.mock.calls[0]?.[3] as Array<{
+      student_portions: number;
+    }>;
+    expect(Number.isNaN(reviewedRows[0]?.student_portions)).toBe(true);
+    expect(reviewedRows[0]?.student_portions).not.toBe(0);
+  });
+
+  it("invalidates a reviewed Menu after a material edit", async () => {
+    renderWorkbench();
+    const cell = await screen.findByRole("combobox", {
+      name: /Món canh · Trường Tiểu học Nguyễn Du/,
+    });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
+    const save = screen.getByRole("button", { name: "Lưu" });
+    expect(save).toBeEnabled();
+
+    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+
+    expect(save).toBeDisabled();
+    expect(
+      screen.queryByRole("region", { name: "Xem thay đổi thực đơn" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("filters Attendance Schools with accent-insensitive fuzzy search", async () => {
+    renderWorkbench();
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(screen.getByLabelText("Tìm trường trong sĩ số"), {
+      target: { value: "trn qoc ton" },
+    });
+
+    expect(
+      screen.getByRole("rowheader", {
+        name: "Trường Tiểu học Trần Quốc Toản",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("rowheader", {
+        name: "Trường Tiểu học Nguyễn Du",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not replace a dirty Attendance edit when refresh is rejected", async () => {
+    const api = createReviewPlanningInputsApi("ready");
+    const read = vi.spyOn(api, "getWorkbench");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    renderWorkbench(api);
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    const studentInput = (
+      await screen.findAllByRole("spinbutton", { name: /Suất học sinh/ })
+    )[0]!;
+    fireEvent.change(studentInput, { target: { value: "487" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Tải lại dữ liệu" }));
+
+    expect(confirm).toHaveBeenCalledWith(
+      "Có thay đổi chưa lưu. Tải lại sẽ bỏ các thay đổi này. Tiếp tục?",
+    );
+    expect(studentInput).toHaveValue(487);
+    expect(read).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces the backend OUTDATED consequence after source Save", async () => {
@@ -223,8 +462,10 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const cell = await screen.findByRole("combobox", {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     expect(await screen.findByText(/Đã lưu thực đơn\./)).toHaveTextContent(
       "Nhu cầu hiện tại cần cập nhật theo dữ liệu vừa lưu.",
@@ -238,7 +479,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const cell = await screen.findByRole("combobox", {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
 
     expect(confirm).toHaveBeenCalledWith(
@@ -248,7 +489,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       "aria-selected",
       "true",
     );
-    expect(cell).toHaveValue("review-planning-dish-1");
+    expect(cell).toHaveValue("review-planning-dish-3");
   });
 
   it("preserves the current week and local source edit when week change is rejected", async () => {
@@ -258,14 +499,14 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const cell = await screen.findByRole("combobox", {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
     const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
     const currentWeek = weekInput.value;
     const { nextWeek } = followingWeekFrom(weekInput);
     fireEvent.change(weekInput, { target: { value: nextWeek } });
 
     expect(weekInput).toHaveValue(currentWeek);
-    expect(cell).toHaveValue("review-planning-dish-1");
+    expect(cell).toHaveValue("review-planning-dish-3");
   });
 
   it("keeps beforeunload active while source work is unsaved", async () => {
@@ -273,7 +514,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const cell = await screen.findByRole("combobox", {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
 
     await waitFor(() => {
       const event = new Event("beforeunload", { cancelable: true });
@@ -319,8 +560,10 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const cell = await screen.findByRole("combobox", {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
-    const save = screen.getByRole("button", { name: "Lưu thực đơn" });
+    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
+    const save = screen.getByRole("button", { name: "Lưu" });
     fireEvent.click(save);
 
     await screen.findByText(/Cần tải lại dữ liệu mới nhất/);

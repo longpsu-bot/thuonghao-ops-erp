@@ -153,24 +153,24 @@ describe("Atlas master-data shell", () => {
     fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
       target: { value: "review-planning-dish-3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     expect(
-      await screen.findByText(/Xem trước có thẩm quyền/),
+      await screen.findByRole("region", { name: "Xem thay đổi thực đơn" }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     await waitFor(() => expect(screen.getByText("ĐÃ LƯU")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
     expect(
       screen.getByText(
-        "Tạo từ mặc định theo đúng trường/ngày có thực đơn, nhập workbook hoặc dán hàng loạt; số 0 luôn là giá trị tường minh.",
+        "Sĩ số làm việc đã có sẵn theo thực đơn. Tìm trường, sửa số suất thực tế, xem thay đổi rồi lưu cho Kế hoạch.",
       ),
     ).toBeInTheDocument();
     const studentInput = screen.getAllByLabelText(/Suất học sinh ·/)[0];
     fireEvent.change(studentInput, { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
-    await screen.findByText(/Xem trước có thẩm quyền/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu số suất ăn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi sĩ số" });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     await waitFor(() =>
       expect(screen.getByText(/Đã lưu số suất ăn\./)).toBeInTheDocument(),
     );
@@ -192,9 +192,9 @@ describe("Atlas master-data shell", () => {
     fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
       target: { value: "review-planning-dish-3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
-    await screen.findByText(/Xem trước có thẩm quyền/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     expect(
       await screen.findByText(
         "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.",
@@ -206,9 +206,9 @@ describe("Atlas master-data shell", () => {
     fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
       target: { value: "review-planning-dish-3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem trước" }));
-    await screen.findByText(/Xem trước có thẩm quyền/);
-    fireEvent.click(screen.getByRole("button", { name: "Lưu thực đơn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     expect(
       await screen.findByText(
         "Dữ liệu đang được cập nhật. Có thể thử lại đúng yêu cầu.",
@@ -280,8 +280,13 @@ describe("Atlas master-data shell", () => {
     expect(
       await screen.findByText("Nguồn thực đơn xem thử"),
     ).toBeInTheDocument();
+    await screen.findByText("Bằng chứng Google Sheet vừa tải");
     expect(
-      await screen.findByText(/Xem trước có thẩm quyền/),
+      screen.queryByRole("region", { name: "Xem thay đổi thực đơn" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    expect(
+      await screen.findByRole("region", { name: "Xem thay đổi thực đơn" }),
     ).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();

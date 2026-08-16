@@ -5746,6 +5746,54 @@ tbody tr.selected-row {
   border-top: 1px solid var(--atlas-border);
 }
 
+.planning-review {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #b8d6c8;
+  border-radius: 8px;
+  background: #f5fbf8;
+}
+
+.planning-review-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.planning-review-heading strong {
+  color: var(--atlas-primary);
+  font-size: 15px;
+}
+
+.planning-review-heading span,
+.planning-review-empty {
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.planning-review-table-scroll {
+  max-height: min(34vh, 360px);
+  overflow: auto;
+  border: 1px solid var(--atlas-border);
+  border-radius: 7px;
+  background: var(--atlas-surface);
+}
+
+.planning-review-table-scroll .compact-table {
+  margin: 0;
+}
+
+.planning-review-table-scroll td:nth-last-child(-n + 4) {
+  font-variant-numeric: tabular-nums;
+}
+
+.planning-review .planning-preview-summary {
+  margin-bottom: 0;
+  background: var(--atlas-surface);
+}
+
 .planning-evidence,
 .pantry-workbench .work-panel > details {
   margin-top: 10px;
@@ -5925,6 +5973,11 @@ tbody tr.selected-row {
   .planning-source-summary,
   .planning-source-summary-inline {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planning-review-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .planning-lifecycle-actions {
