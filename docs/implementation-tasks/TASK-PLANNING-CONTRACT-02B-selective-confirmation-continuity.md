@@ -1,6 +1,6 @@
 # TASK-PLANNING-CONTRACT-02B — Selective Confirmation Continuity
 
-**Status:** Implemented locally on `feat/planning-contract-02b-selective-confirmation-continuity`; draft PR and independent review pending
+**Status:** Implemented on `feat/planning-contract-02b-selective-confirmation-continuity`; independent count-integrity correction incorporated and final draft-PR review pending
 
 **Baseline:** `b20ecb0507a50441e02ae1c1827efffa936e5603`
 
@@ -14,6 +14,7 @@
 - Amended the existing PLANNING-CONTRACT-01 materializer, H1B1 pointer/integrity rules, RMVP-05 read model, RMVP-06 validation, RMVP-07 completeness, and D-037 readback without adding a public command or lifecycle.
 - Preserved the original human decision across exact unchanged successors, including manual adjustments and changed Recipe/source composition.
 - Added exact invalidation, no-resurrection, multi-generation carry, historical reconfirmation-chain, prior-unreviewed, replay, policy-change, changed/new/removed, and mixed-scenario coverage.
+- Counted direct-predecessor business facts removed from the current successor independently of human-decision continuity, including unreviewed-only and reviewed/unreviewed mixed-removal regressions.
 - Added backend result counts and bounded Need Generation/Confirmed Need presentation. React performs no business matching or count derivation.
 - Kept PLANNING-CONTRACT-02A source replacement semantics, direct-wholesale compatibility, and the downstream release blocker unchanged.
 

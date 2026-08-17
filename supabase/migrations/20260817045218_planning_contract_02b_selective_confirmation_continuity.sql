@@ -729,6 +729,44 @@ alter table atlas_planning.confirmed_need_validation_lines
     planning_tick_count
   ) on delete restrict;
 
+create function atlas_core.planning_contract_02b_removed_business_fact_count(
+  p_batch_id uuid,
+  p_predecessor_run_id uuid,
+  p_predecessor_run_version bigint,
+  p_predecessor_release_id uuid,
+  p_successor_run_id uuid,
+  p_successor_run_version bigint,
+  p_successor_release_id uuid
+)
+returns integer
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select count(distinct predecessor.confirmed_need_line_id)::integer
+  from atlas_planning.confirmed_need_lines line
+  join atlas_planning.confirmed_need_line_revisions predecessor
+    on predecessor.confirmed_need_line_id = line.confirmed_need_line_id
+   and predecessor.need_generation_run_id = p_predecessor_run_id
+   and predecessor.need_generation_run_version = p_predecessor_run_version
+   and predecessor.need_generation_release_snapshot_id =
+     p_predecessor_release_id
+  where line.confirmed_need_batch_id = p_batch_id
+    and line.source_kind = 'NEED_GENERATION'
+    and not exists (
+      select 1
+      from atlas_planning.confirmed_need_line_revisions successor
+      where successor.confirmed_need_line_id =
+          predecessor.confirmed_need_line_id
+        and successor.need_generation_run_id = p_successor_run_id
+        and successor.need_generation_run_version = p_successor_run_version
+        and successor.need_generation_release_snapshot_id =
+          p_successor_release_id
+        and successor.is_current
+    );
+$$;
+
 create function atlas_core.planning_contract_02b_apply_decision_continuity(
   p_batch_id uuid,
   p_predecessor_run_id uuid,
@@ -1025,20 +1063,26 @@ begin
           where d.confirmed_need_line_id = line.confirmed_need_line_id
         )
     )::integer,
-    'removed', (
-      select count(*)::integer
-      from atlas_planning.confirmed_need_line_decision_continuity c
-      join atlas_planning.confirmed_need_batches batch
-        on batch.confirmed_need_batch_id = c.confirmed_need_batch_id
-      where c.confirmed_need_batch_id = v_batch_id
-        and c.continuity_kind = 'INVALIDATED_LINE_REMOVED'
-        and c.successor_need_generation_run_id =
+    'removed', coalesce((
+      select atlas_core.planning_contract_02b_removed_business_fact_count(
+        batch.confirmed_need_batch_id,
+        predecessor_release.need_generation_run_id,
+        predecessor_release.released_run_version,
+        predecessor_release.need_generation_release_snapshot_id,
+        batch.current_need_generation_run_id,
+        batch.current_need_generation_run_version,
+        batch.current_need_generation_release_snapshot_id
+      )
+      from atlas_planning.confirmed_need_batches batch
+      join atlas_planning.need_generation_runs successor_run
+        on successor_run.need_generation_run_id =
           batch.current_need_generation_run_id
-        and c.successor_need_generation_run_version =
-          batch.current_need_generation_run_version
-        and c.successor_need_generation_release_snapshot_id =
-          batch.current_need_generation_release_snapshot_id
-    )
+      join atlas_planning.need_generation_release_snapshots predecessor_release
+        on predecessor_release.need_generation_run_id =
+          successor_run.predecessor_need_generation_run_id
+      where batch.confirmed_need_batch_id = v_batch_id
+        and batch.source_kind = 'NEED_GENERATION'
+    ), 0)
   ) into v_counts
   from current_lines line;
 
@@ -1161,6 +1205,9 @@ to atlas_need_generation_runtime;
 revoke all on function
   atlas_core.planning_contract_02b_decision_authorizes_revision(uuid, uuid, uuid),
   atlas_core.planning_contract_02b_invalidation_authorizes_clear(uuid, uuid),
+  atlas_core.planning_contract_02b_removed_business_fact_count(
+    uuid, uuid, bigint, uuid, uuid, bigint, uuid
+  ),
   atlas_core.planning_contract_02b_extend_workbench(jsonb)
 from public, anon, authenticated, service_role;
 grant execute on function
@@ -1169,6 +1216,12 @@ grant execute on function
 to atlas_planning_materialization_runtime,
   atlas_confirmed_need_review_runtime,
   atlas_need_generation_runtime;
+grant execute on function
+  atlas_core.planning_contract_02b_removed_business_fact_count(
+    uuid, uuid, bigint, uuid, uuid, bigint, uuid
+  )
+to atlas_planning_materialization_runtime,
+  atlas_confirmed_need_review_runtime;
 grant execute on function
   atlas_core.planning_contract_02b_extend_workbench(jsonb)
 to atlas_confirmed_need_review_runtime;
@@ -1696,12 +1749,16 @@ $new$    'superseded_line_revision_count', v_superseded_revision_count,
         )
     ),
     'new_count', v_created_line_count,
-    'removed_count', (
-      select count(*)::integer
-      from atlas_planning.confirmed_need_line_decision_continuity continuity
-      where continuity.command_id = atlas_core.pa_05b_safe_uuid(request ->> 'command_id')
-        and continuity.continuity_kind = 'INVALIDATED_LINE_REMOVED'
-    )
+    'removed_count',
+      atlas_core.planning_contract_02b_removed_business_fact_count(
+        v_batch_id,
+        v_batch.current_need_generation_run_id,
+        v_batch.current_need_generation_run_version,
+        v_batch.current_need_generation_release_snapshot_id,
+        v_run_id,
+        v_run_version,
+        v_release.need_generation_release_snapshot_id
+      )
   );$new$);
 
   if v_definition = v_original then

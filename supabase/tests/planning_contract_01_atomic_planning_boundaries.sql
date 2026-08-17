@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(134);
+select plan(137);
 
 select is(
   (
@@ -341,6 +341,14 @@ values
   (
     'e4100000-0000-0000-0000-000000000019', 'rmvp04-potato',
     'RMVP-04 potato', 'e4100000-0000-0000-0000-000000000006'
+  ),
+  (
+    'e4100000-0000-0000-0000-000000000020', 'rmvp04-spinach',
+    'RMVP-04 spinach', 'e4100000-0000-0000-0000-000000000006'
+  ),
+  (
+    'e4100000-0000-0000-0000-000000000021', 'rmvp04-celery',
+    'RMVP-04 celery', 'e4100000-0000-0000-0000-000000000006'
   );
 insert into atlas_admin.dishes (
   dish_id, dish_code, dish_name, dish_type_id, dish_status, display_order,
@@ -883,6 +891,20 @@ with proposed(rows) as (
       'pantry_need_purpose_id','e4400000-0000-0000-0000-000000000001',
       'requested_quantity','1.500000','note','New Potato requirement',
       'source_request_reference','RMVP04-POTATO','source_row_reference','1'
+    ),
+    jsonb_build_object(
+      'service_date','2026-11-02','school_id','e4100000-0000-0000-0000-000000000005',
+      'ingredient_id','e4100000-0000-0000-0000-000000000020',
+      'pantry_need_purpose_id','e4400000-0000-0000-0000-000000000001',
+      'requested_quantity','1.000000','note','Temporary reviewed Spinach requirement',
+      'source_request_reference','RMVP04-SPINACH','source_row_reference','1'
+    ),
+    jsonb_build_object(
+      'service_date','2026-11-02','school_id','e4100000-0000-0000-0000-000000000005',
+      'ingredient_id','e4100000-0000-0000-0000-000000000021',
+      'pantry_need_purpose_id','e4400000-0000-0000-0000-000000000001',
+      'requested_quantity','0.750000','note','Temporary unreviewed Celery requirement',
+      'source_request_reference','RMVP04-CELERY','source_row_reference','1'
     )
   ))
 ), canonical(raw_rows, canonical_rows) as (
@@ -993,14 +1015,14 @@ select is((select response->'result_counts'->>'carried_forward_count'
   from pct01_responses where response_name='execute-correction'),'2',
   'PCT02B-04 public correction reports two backend-carried decisions');
 select is((select response->'result_counts'->>'needs_review_count'
-  from pct01_responses where response_name='execute-correction'),'2',
-  'PCT02B-05 public correction reports only changed and new lines for review');
+  from pct01_responses where response_name='execute-correction'),'4',
+  'PCT02B-05 public correction reports only changed and three new lines for review');
 select is((select response->'result_counts'->>'changed_count'
   from pct01_responses where response_name='execute-correction'),'1',
   'PCT02B-06 public correction reports one materially changed line');
 select is((select response->'result_counts'->>'new_count'
-  from pct01_responses where response_name='execute-correction'),'1',
-  'PCT02B-07 correction reports the exact new aggregate');
+  from pct01_responses where response_name='execute-correction'),'3',
+  'PCT02B-07 correction reports all three exact new aggregates');
 select is((select response->'result_counts'->>'removed_count'
   from pct01_responses where response_name='execute-correction'),'1',
   'PCT02B-08 correction reports the exact removed aggregate');
@@ -1074,8 +1096,8 @@ select is((
   select response->'workbench'->'line_counts'
   from pct01_responses where response_name='02b-read-after-correction'
 ),pg_catalog.jsonb_build_object(
-  'total',4,'unreviewed',2,'confirmed',2,'adjusted',1,
-  'carried_forward',2,'needs_review',2,'changed',1,'new',1,'removed',1
+  'total',6,'unreviewed',4,'confirmed',2,'adjusted',1,
+  'carried_forward',2,'needs_review',4,'changed',1,'new',3,'removed',1
 ),'PCT02B-14 authoritative read-model counts preserve compatibility and add 02B state');
 select is((
   select array_agg(line->>'confirmation_state' order by line->>'confirmation_state')
@@ -1084,7 +1106,7 @@ select is((
     readback.response->'workbench'->'lines'
   ) line
   where readback.response_name='02b-read-after-correction'
-),array['CARRIED_FORWARD','CARRIED_FORWARD','CHANGED','NEW']::text[],
+),array['CARRIED_FORWARD','CARRIED_FORWARD','CHANGED','NEW','NEW','NEW']::text[],
   'PCT02B-15 backend classifies carried, changed, and new current lines exactly');
 select throws_ok(
   $$update atlas_planning.confirmed_need_line_decision_continuity
@@ -1104,10 +1126,65 @@ select throws_ok(
   '23514','Decision authority may be cleared only by exact immutable invalidation evidence',
   'PCT02B-18 arbitrary pointer clearing remains rejected');
 
+insert into pct01_requests
+select '02b-confirm-temporary-spinach', jsonb_build_object(
+  'contract_version','RMVP-05.v2',
+  'command_id','e4820000-0000-0000-0000-000000000005',
+  'correlation_id','e4820000-0000-0000-0000-000000000006',
+  'idempotency_key','pct02b-confirm-temporary-spinach',
+  'expected_version',(
+    select (response->'new_versions'->>'confirmed_need_batch_version')::bigint
+    from pct01_responses where response_name='execute-correction'
+  ),
+  'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+  'requested_at',transaction_timestamp(),
+  'reason_code','CONFIRMED_NEED_SAVED','reason_note',null,
+  'payload',jsonb_build_object(
+    'confirmed_need_batch_id', line.confirmed_need_batch_id,
+    'lines',jsonb_build_array(jsonb_build_object(
+      'confirmed_need_line_id',line.confirmed_need_line_id,
+      'expected_current_revision_id',revision.confirmed_need_line_revision_id,
+      'expected_current_decision_id',null,
+      'proposed_confirmed_quantity',revision.confirmed_quantity::text,
+      'reason_code','PROPOSAL_ACCEPTED','reason_note',null
+    ))
+  )
+)
+from atlas_planning.confirmed_need_lines line
+join atlas_planning.confirmed_need_line_revisions revision
+  on revision.confirmed_need_line_id=line.confirmed_need_line_id
+ and revision.is_current
+where line.confirmed_need_batch_id=(
+    select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+    from pct01_responses where response_name='execute-correction'
+  )
+  and line.ingredient_id='e4100000-0000-0000-0000-000000000020';
+
+set local role authenticated;
+insert into pct01_responses
+select '02b-confirm-temporary-spinach',atlas_api.save_confirmed_needs(request)
+from pct01_requests where request_name='02b-confirm-temporary-spinach';
+reset role;
+
+select is((
+  select jsonb_build_object(
+    'success',response->>'success',
+    'decisions',(
+      select count(*)
+      from atlas_planning.confirmed_need_lines line
+      where line.ingredient_id='e4100000-0000-0000-0000-000000000020'
+        and line.current_confirmed_need_line_decision_id is not null
+    )
+  )
+  from pct01_responses where response_name='02b-confirm-temporary-spinach'
+),jsonb_build_object('success','true','decisions',1),
+  'PCT02B-18A temporary Spinach has one real human decision before its removal');
+
 -- A later source version returns Rice to its original proposal. The run-1
 -- decision was invalidated in run 2, so it must not resurrect. Oil and Carrot
 -- continue from the direct predecessor while prior-unreviewed Potato remains
--- unreviewed without fake continuity evidence.
+-- unreviewed. This correction also removes reviewed Spinach and one unreviewed
+-- business fact, but only Spinach may receive decision-invalidation evidence.
 with proposed(rows) as (
   values (jsonb_build_array(
     jsonb_build_object(
@@ -1192,17 +1269,27 @@ reset role;
 
 select ok((select response->>'success'='true' from pct01_responses
   where response_name='02b-source-run3'),
-  'PCT02B-19 successor source removes only the affected Rice addition');
+  'PCT02B-19 successor source removes reviewed Spinach and one unreviewed business fact');
 select ok((select response->>'success'='true' from pct01_responses
   where response_name='02b-execute-run3'),
   'PCT02B-20 third generation completes atomically');
 select is((select response->'result_counts'->>'carried_forward_count'
   from pct01_responses where response_name='02b-execute-run3'),'2',
   'PCT02B-21 only Oil and Carrot carry from the direct predecessor');
+select is((select response->'result_counts'->>'removed_count'
+  from pct01_responses where response_name='02b-execute-run3'),'2',
+  'PCT02B-21A reviewed and unreviewed removals both count as removed business facts');
 select is((
-  select count(*) from atlas_planning.confirmed_need_line_decision_continuity c
+  select jsonb_build_object(
+    'all_continuity',count(*),
+    'removed_invalidation',count(*) filter (
+      where c.continuity_kind='INVALIDATED_LINE_REMOVED'
+    )
+  )
+  from atlas_planning.confirmed_need_line_decision_continuity c
   where c.command_id='e4820000-0000-0000-0000-000000000010'
-),2::bigint,'PCT02B-22 prior-unreviewed lines create no fake continuity evidence');
+),jsonb_build_object('all_continuity',3,'removed_invalidation',1),
+  'PCT02B-22 two removals create only one invalidation row because the other predecessor was unreviewed');
 select ok((
   select line.current_confirmed_need_line_decision_id is null
     and revision.theoretical_quantity=2.500000
@@ -1219,6 +1306,32 @@ select ok((
 select is((select response->'result_counts'->>'needs_review_count'
   from pct01_responses where response_name='02b-execute-run3'),'2',
   'PCT02B-24 Rice and prior-unreviewed Potato still require review');
+set local role authenticated;
+insert into pct01_responses values (
+  '02b-read-run3',
+  atlas_api.get_confirmed_need_review(jsonb_build_object(
+    'contract_version','RMVP-05.v1',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id',gen_random_uuid(),
+    'payload',jsonb_build_object(
+      'confirmed_need_batch_id',(
+        select response->'affected_aggregate_ids'->>'confirmed_need_batch_id'
+        from pct01_responses where response_name='02b-execute-run3'
+      ),
+      'filters','{}'::jsonb,'line_offset',0,'line_limit',100
+    )
+  ))
+);
+reset role;
+select is((
+  select jsonb_build_object(
+    'total',response->'workbench'->'line_counts'->>'total',
+    'needs_review',response->'workbench'->'line_counts'->>'needs_review',
+    'removed',response->'workbench'->'line_counts'->>'removed'
+  )
+  from pct01_responses where response_name='02b-read-run3'
+),jsonb_build_object('total','4','needs_review','2','removed','2'),
+  'PCT02B-24A RMVP-05 excludes both removals from current totals and reports the same removed count');
 select is((
   select count(*)
   from atlas_planning.confirmed_need_line_decision_continuity c
@@ -1420,7 +1533,7 @@ select is((
   where confirmed_need_batch_id=(select
     (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
     from pct01_responses where response_name='02b-execute-run4')
-),6::bigint,'PCT02B-36 four system carries manufacture zero human decisions');
+),7::bigint,'PCT02B-36 four system carries manufacture zero human decisions');
 select is((
   select count(*) from atlas_planning.confirmed_need_line_decision_continuity c
   join pct02b_original_decisions original

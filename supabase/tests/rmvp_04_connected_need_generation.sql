@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(84);
+select plan(86);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
@@ -2796,9 +2796,74 @@ select is(
     where response_name = '02b-recipe-successor-materialize'
   ),
   jsonb_build_object(
-    'success', 'true', 'carried', '1', 'needs_review', '1', 'removed', '0'
+    'success', 'true', 'carried', '1', 'needs_review', '1', 'removed', '1'
   ),
-  'PCT02B-RMVP04-02 governed Recipe replacement carries Pork and reviews only new Potato'
+  'PCT02B-RMVP04-02 unreviewed Onion removal is counted independently while Pork carries and only new Potato needs review'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'removal_evidence', (
+        select count(*)
+        from atlas_planning.confirmed_need_line_decision_continuity continuity
+        where continuity.command_id =
+            'e4900000-0000-0000-0000-000000000084'
+          and continuity.continuity_kind = 'INVALIDATED_LINE_REMOVED'
+      ),
+      'current_onion', (
+        select count(*)
+        from atlas_planning.confirmed_need_lines line
+        join atlas_planning.confirmed_need_line_revisions revision
+          on revision.confirmed_need_line_id = line.confirmed_need_line_id
+          and revision.is_current
+        where line.confirmed_need_batch_id = batch.confirmed_need_batch_id
+          and line.ingredient_id =
+            'e4900000-0000-0000-0000-000000000002'
+      )
+    )
+    from atlas_planning.confirmed_need_batches batch
+    where batch.confirmed_need_batch_id = (
+      select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+      from rmvp04_responses
+      where response_name = '02b-recipe-successor-materialize'
+    )
+  ),
+  jsonb_build_object('removal_evidence', 0, 'current_onion', 0),
+  'PCT02B-RMVP04-02A unreviewed removed Onion has no fake decision invalidation and no current revision'
+);
+
+set local role authenticated;
+insert into rmvp04_responses
+select '02b-recipe-successor-read',
+  atlas_api.get_confirmed_need_review(jsonb_build_object(
+    'contract_version', 'RMVP-05.v1',
+    'requested_by_auth_subject', 'e4000000-0000-0000-0000-000000000101',
+    'correlation_id', gen_random_uuid(),
+    'payload', jsonb_build_object(
+      'confirmed_need_batch_id',
+        response->'affected_aggregate_ids'->>'confirmed_need_batch_id',
+      'filters', jsonb_build_object(),
+      'line_offset', 0,
+      'line_limit', 100
+    )
+  ))
+from rmvp04_responses
+where response_name = '02b-recipe-successor-materialize';
+reset role;
+
+select is(
+  (
+    select jsonb_build_object(
+      'total', response->'workbench'->'line_counts'->>'total',
+      'needs_review', response->'workbench'->'line_counts'->>'needs_review',
+      'removed', response->'workbench'->'line_counts'->>'removed'
+    )
+    from rmvp04_responses
+    where response_name = '02b-recipe-successor-read'
+  ),
+  jsonb_build_object('total', '2', 'needs_review', '1', 'removed', '1'),
+  'PCT02B-RMVP04-02B RMVP-05 excludes removed Onion from current totals and uses the same authoritative removed count'
 );
 
 select is(
@@ -2911,7 +2976,8 @@ where response_name in (
   '02b-recipe-origin-materialize',
   '02b-recipe-predecessor-materialize',
   '02b-recipe-predecessor-save',
-  '02b-recipe-successor-materialize'
+  '02b-recipe-successor-materialize',
+  '02b-recipe-successor-read'
 );
 
 select is(

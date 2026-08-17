@@ -68,7 +68,7 @@ Rows are insert-only, cannot be updated or deleted, use typed foreign keys, and 
 
 For an eligible carried line, the predecessor current revision becomes historical, a new current revision binds the new released generation and its current contribution membership, `theoretical_quantity` is the new exact total, and `confirmed_quantity` is the source human decision's `confirmed_quantity_after`. The line retains the same current decision pointer. Exact `CARRIED_FORWARD` evidence authorizes that older decision for only this direct successor revision.
 
-For a proposal change, the successor revision contains the new proposal, the prior decision remains historical, `INVALIDATED_PROPOSAL_CHANGE` evidence is inserted, and the current pointer is cleared atomically. Equal quantity under a different or ambiguous effective policy is not carry; exact `INVALIDATED_POLICY_INCOMPATIBLE` evidence clears authority. A removed fact receives no fake zero current revision; its old current revision is superseded and a prior human decision, if any, receives `INVALIDATED_LINE_REMOVED` evidence. A new or already-unreviewed fact has no prior human authority and therefore no fake continuity row.
+For a proposal change, the successor revision contains the new proposal, the prior decision remains historical, `INVALIDATED_PROPOSAL_CHANGE` evidence is inserted, and the current pointer is cleared atomically. Equal quantity under a different or ambiguous effective policy is not carry; exact `INVALIDATED_POLICY_INCOMPATIBLE` evidence clears authority. A removed fact receives no fake zero current revision; its old current revision is superseded and a prior human decision, if any, receives `INVALIDATED_LINE_REMOVED` evidence. A new or already-unreviewed fact has no prior human authority and therefore no fake continuity row. Removal counting is deliberately independent: it counts distinct direct-predecessor Confirmed Need business identities absent from the exact current successor set, whether or not those identities carried human authority.
 
 ## 5. Decision pointer and human chain
 
@@ -88,7 +88,7 @@ RMVP-05 current lines add backend-owned `confirmation_state` values:
 - `UNREVIEWED`
 - `CONFIRMED_CURRENT`
 
-Compatibility counts `total`, `unreviewed`, `confirmed`, and `adjusted` remain. Additive authoritative counts are `carried_forward`, `needs_review`, `changed`, `new`, and `removed`. Removed facts are historical and are not part of current total or `needs_review`.
+Compatibility counts `total`, `unreviewed`, `confirmed`, and `adjusted` remain. Additive authoritative counts are `carried_forward`, `needs_review`, `changed`, `new`, and `removed`. Removed facts are historical and are not part of current total or `needs_review`. RMVP-04 command results and RMVP-05 readback use the same private business-fact removal definition; continuity rows remain decision evidence and are never used as a removal-count proxy.
 
 Untouched carried lines are omitted from Save and manufacture no human decisions. If later edited, the ordinary preview/save path appends a direct human successor decision. RMVP-06 and RMVP-07 accept a current decision only through direct revision binding or exact carry evidence. Validation, approval, and release snapshot the current successor revision and quantity, not stale predecessor membership. Changed, new, or unreviewed lines without valid authority block release; carried lines count as valid authority.
 

@@ -233,8 +233,8 @@ select is(
     where n.nspname in ('atlas_core', 'atlas_planning')
       and p.proname like '%planning_contract_02b%'
   ),
-  8,
-  'PCT02B-STR-20 exactly eight private 02B functions exist'
+  9,
+  'PCT02B-STR-20 exactly nine private 02B functions exist'
 );
 select is(
   (
@@ -244,7 +244,7 @@ select is(
       and p.proname like '%planning_contract_02b%'
       and coalesce(p.proconfig, array[]::text[]) @> array['search_path=""']
   ),
-  8,
+  9,
   'PCT02B-STR-21 every private 02B function fixes an empty search_path'
 );
 select ok(
@@ -269,6 +269,11 @@ select ok(
       'authenticated',
       'atlas_core.planning_contract_02b_policy_incompatible_batch(uuid,date,date)'::regprocedure,
       'EXECUTE'
+    )
+    and not has_function_privilege(
+      'authenticated',
+      'atlas_core.planning_contract_02b_removed_business_fact_count(uuid,uuid,bigint,uuid,uuid,bigint,uuid)'::regprocedure,
+      'EXECUTE'
     ),
   'PCT02B-STR-23 browser operators cannot execute private continuity helpers'
 );
@@ -281,6 +286,11 @@ select ok(
     and not has_function_privilege(
       'service_role',
       'atlas_core.planning_contract_02b_policy_incompatible_batch(uuid,date,date)'::regprocedure,
+      'EXECUTE'
+    )
+    and not has_function_privilege(
+      'service_role',
+      'atlas_core.planning_contract_02b_removed_business_fact_count(uuid,uuid,bigint,uuid,uuid,bigint,uuid)'::regprocedure,
       'EXECUTE'
     ),
   'PCT02B-STR-24 service_role cannot execute private continuity helpers'
@@ -297,6 +307,10 @@ select ok(
   has_function_privilege(
     'atlas_confirmed_need_review_runtime',
     'atlas_core.planning_contract_02b_extend_workbench(jsonb)'::regprocedure,
+    'EXECUTE'
+  ) and has_function_privilege(
+    'atlas_confirmed_need_review_runtime',
+    'atlas_core.planning_contract_02b_removed_business_fact_count(uuid,uuid,bigint,uuid,uuid,bigint,uuid)'::regprocedure,
     'EXECUTE'
   ),
   'PCT02B-STR-26 only the authoritative review runtime receives the read extension'
@@ -396,6 +410,7 @@ select ok(
 select ok(
   (
     select prosrc like '%planning_contract_02b_apply_decision_continuity%'
+      and prosrc like '%planning_contract_02b_removed_business_fact_count%'
     from pg_proc
     where oid =
       'atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure
@@ -446,6 +461,11 @@ select ok(
     select prosrc like '%planning_contract_02b_extend_workbench%'
     from pg_proc
     where oid = 'atlas_core.d037_extend_workbench(jsonb,uuid)'::regprocedure
+  ) and (
+    select prosrc like '%planning_contract_02b_removed_business_fact_count%'
+    from pg_proc
+    where oid =
+      'atlas_core.planning_contract_02b_extend_workbench(jsonb)'::regprocedure
   ),
   'PCT02B-STR-41 all v2 readbacks receive backend classifications and counts'
 );
