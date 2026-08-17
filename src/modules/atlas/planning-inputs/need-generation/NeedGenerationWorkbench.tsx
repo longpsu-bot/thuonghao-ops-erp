@@ -35,8 +35,8 @@ const emptyFilters: NeedGenerationFilters = {
 };
 
 const sourceNames: Record<ReadinessSourceKind, string> = {
-  weekly_menu: "Thực đơn tuần",
-  attendance: "Số suất ăn",
+  weekly_menu: "Thực đơn",
+  attendance: "Sĩ số",
   pantry: "Nhu cầu bổ sung",
 };
 
@@ -133,6 +133,48 @@ function preflightIssueMessage(issue: PlanningInputPreflightIssue) {
     preflightIssueMessages[issue.issue_code] ??
     "Có vấn đề với dữ liệu đầu vào. Hãy tải lại và kiểm tra nguồn trước khi tiếp tục."
   );
+}
+
+function releasedCorrectionBlocked(preflight: PlanningInputPreflightData) {
+  return (
+    preflight.downstream_currentness === "OUTDATED" &&
+    preflight.current_need?.confirmed_need_batch_status ===
+      "RELEASED_FOR_PURCHASE_HANDOFF"
+  );
+}
+
+function planningStatusSentence(preflight: PlanningInputPreflightData) {
+  if (releasedCorrectionBlocked(preflight))
+    return "Nhu cầu này đã được chuyển sang lên đơn nên chưa thể cập nhật trực tiếp tại đây.";
+
+  if (preflight.readiness_state === "BLOCKED") {
+    const action =
+      preflight.downstream_currentness === "OUTDATED" ? "cập nhật" : "tạo";
+    for (const source of ["weekly_menu", "attendance", "pantry"] as const) {
+      const evidence = preflight.source_evidence[source];
+      const state =
+        evidence.selection_state ??
+        (evidence.selected ? "SELECTED" : "MISSING");
+      if (state === "MISSING")
+        return `Cần lưu ${sourceNames[source]} trước khi ${action} nhu cầu.`;
+      if (state === "AMBIGUOUS")
+        return `Cần kiểm tra ${sourceNames[source]} trước khi ${action} nhu cầu.`;
+      if (state === "STALE")
+        return `${sourceNames[source]} đã thay đổi. Cần tải lại dữ liệu trước khi tiếp tục.`;
+    }
+    const firstBlocker = preflight.issues.find(
+      (issue) => issue.severity === "BLOCKING",
+    );
+    return firstBlocker
+      ? preflightIssueMessage(firstBlocker)
+      : "Cần xử lý dữ liệu đầu vào trước khi tạo nhu cầu.";
+  }
+
+  if (preflight.downstream_currentness === "CURRENT")
+    return "Nhu cầu hiện tại đã được tạo.";
+  if (preflight.downstream_currentness === "OUTDATED")
+    return "Dữ liệu nguồn đã thay đổi. Cần cập nhật nhu cầu.";
+  return "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.";
 }
 
 function IssueList({
@@ -359,10 +401,12 @@ export function NeedGenerationWorkbench({
       !preflight ||
       preflight.readiness_state !== "READY" ||
       preflight.downstream_currentness === "CURRENT" ||
+      releasedCorrectionBlocked(preflight) ||
       refreshRequired ||
       executionBlocker
     )
       return;
+    const wasUpdate = preflight.downstream_currentness === "OUTDATED";
     const request = needGenerationExecutionRequest(
       authSubject,
       correlationId,
@@ -393,9 +437,15 @@ export function NeedGenerationWorkbench({
     const nextWorkbench = needGenerationReadbackFromResult(result);
     setPreflight(nextPreflight);
     setWorkbench(nextWorkbench);
-    setNotice(needGenerationResultMessage(result));
     setExecutionBlocker(null);
-    if (!nextPreflight || !nextWorkbench) setRefreshRequired(true);
+    if (!nextPreflight || !nextWorkbench) {
+      setRefreshRequired(true);
+      setNotice(
+        "Đã nhận kết quả nhưng chưa tải được dữ liệu mới nhất. Hãy tải lại dữ liệu.",
+      );
+      return;
+    }
+    setNotice(wasUpdate ? "Đã cập nhật nhu cầu." : "Đã tạo nhu cầu.");
   };
 
   const blockers =
@@ -406,9 +456,13 @@ export function NeedGenerationWorkbench({
     preflight?.downstream_currentness === "OUTDATED"
       ? "Cập nhật nhu cầu"
       : "Tạo nhu cầu";
+  const correctionBlocked = preflight
+    ? releasedCorrectionBlocked(preflight)
+    : false;
   const canExecute =
     preflight?.readiness_state === "READY" &&
     preflight.downstream_currentness !== "CURRENT" &&
+    !correctionBlocked &&
     !refreshRequired &&
     !executionBlocker;
 
@@ -451,7 +505,7 @@ export function NeedGenerationWorkbench({
             onClick={() => void loadAuthority()}
           >
             <ArrowClockwise aria-hidden="true" size={16} />
-            Tải lại có thẩm quyền
+            Tải lại dữ liệu
           </button>
         </div>
       </details>
@@ -468,85 +522,24 @@ export function NeedGenerationWorkbench({
       {refreshRequired && (
         <p className="operator-notice warning" role="alert">
           Kết quả ghi chưa thể xác nhận an toàn. Không thể ghi tiếp cho đến khi
-          tải lại dữ liệu có thẩm quyền.
+          tải lại dữ liệu mới nhất.
         </p>
       )}
 
       {preflight && (
         <>
           <section
-            className="need-generation-readiness"
-            aria-label="Trạng thái hiện tại"
+            className={`need-generation-status ${
+              correctionBlocked || preflight.readiness_state === "BLOCKED"
+                ? "danger"
+                : preflight.downstream_currentness === "OUTDATED"
+                  ? "warning"
+                  : "ready"
+            }`}
+            aria-label="Trạng thái tạo nhu cầu"
           >
-            <header>
-              <div>
-                <span>Trạng thái đầu vào và nhu cầu</span>
-                <h3>
-                  {preflight.readiness_state === "BLOCKED"
-                    ? "Đầu vào đang bị chặn"
-                    : preflight.downstream_currentness === "CURRENT"
-                      ? "Nhu cầu đang hiện hành"
-                      : preflight.downstream_currentness === "OUTDATED"
-                        ? "Nhu cầu cần cập nhật"
-                        : "Đầu vào đã sẵn sàng tạo nhu cầu"}
-                </h3>
-              </div>
-              <div className="planning-status-cluster">
-                <Chip
-                  tone={preflight.readiness_state === "READY" ? "ok" : "danger"}
-                >
-                  {readinessLabel(preflight.readiness_state)}
-                </Chip>
-                <Chip tone={currentnessTone(preflight.downstream_currentness)}>
-                  {currentnessLabel(preflight.downstream_currentness)}
-                </Chip>
-              </div>
-            </header>
+            <h3>{planningStatusSentence(preflight)}</h3>
           </section>
-
-          <div className="readiness-source-grid" aria-label="Ba nguồn kế hoạch">
-            {(["weekly_menu", "attendance", "pantry"] as const).map(
-              (source) => {
-                const evidence = preflight.source_evidence[source];
-                const selectionState: ReadinessSelectionState =
-                  evidence.selection_state ??
-                  (evidence.selected ? "SELECTED" : "MISSING");
-                return (
-                  <section
-                    className={`readiness-source-card ${selectionState.toLowerCase()}`}
-                    key={source}
-                  >
-                    <header>
-                      <h3>{sourceNames[source]}</h3>
-                      <Chip
-                        tone={selectionState === "SELECTED" ? "ok" : "danger"}
-                      >
-                        {sourceSelectionLabel(selectionState)}
-                      </Chip>
-                    </header>
-                    <p className="readiness-source-empty">
-                      {sourceSelectionMessage(selectionState)}
-                    </p>
-                    {evidence.selected && (
-                      <details className="readiness-source-audit">
-                        <summary>Chi tiết bằng chứng</summary>
-                        <span>
-                          Phiên bản{" "}
-                          {String(
-                            evidence.selected.weekly_menu_version ??
-                              evidence.selected.attendance_version ??
-                              evidence.selected.pantry_need_batch_version ??
-                              "—",
-                          )}{" "}
-                          · {evidence.selected.line_count} dòng
-                        </span>
-                      </details>
-                    )}
-                  </section>
-                );
-              },
-            )}
-          </div>
 
           <IssueList title="Lỗi chặn" tone="danger" items={blockers} />
           <IssueList title="Cảnh báo" tone="warning" items={warnings} />
@@ -556,13 +549,15 @@ export function NeedGenerationWorkbench({
             aria-label="Việc cần làm tiếp theo"
           >
             <header>
-              <span>Việc cần làm tiếp theo</span>
+              <span>Bước tiếp theo</span>
               <h3>
                 {preflight.downstream_currentness === "CURRENT"
-                  ? "Tiếp tục rà soát nhu cầu xác nhận"
-                  : canExecute
-                    ? executionLabel
-                    : "Xử lý lỗi chặn trước"}
+                  ? "Xác nhận nhu cầu"
+                  : correctionBlocked
+                    ? "Chờ quy trình điều chỉnh tiếp theo"
+                    : canExecute
+                      ? executionLabel
+                      : "Hoàn tất dữ liệu còn thiếu"}
               </h3>
             </header>
             {canExecute && (
@@ -587,6 +582,12 @@ export function NeedGenerationWorkbench({
                 {executionBlocker}
               </p>
             )}
+            {correctionBlocked && (
+              <p className="need-generation-blocked-reason" role="status">
+                Nhu cầu đã chuyển sang lên đơn được giữ nguyên. Quy trình điều
+                chỉnh tiếp theo chưa thuộc màn hình này.
+              </p>
+            )}
             {preflight.downstream_currentness === "CURRENT" &&
               preflight.current_need?.confirmed_need_batch_id && (
                 <button
@@ -602,6 +603,63 @@ export function NeedGenerationWorkbench({
                 </button>
               )}
           </section>
+
+          <details className="need-generation-support-detail">
+            <summary>Chi tiết hỗ trợ</summary>
+            <div className="need-generation-support-state">
+              <Chip
+                tone={preflight.readiness_state === "READY" ? "ok" : "danger"}
+              >
+                {readinessLabel(preflight.readiness_state)}
+              </Chip>
+              <Chip tone={currentnessTone(preflight.downstream_currentness)}>
+                {currentnessLabel(preflight.downstream_currentness)}
+              </Chip>
+            </div>
+            <div
+              className="readiness-source-grid"
+              aria-label="Chi tiết ba nguồn kế hoạch"
+            >
+              {(["weekly_menu", "attendance", "pantry"] as const).map(
+                (source) => {
+                  const evidence = preflight.source_evidence[source];
+                  const selectionState: ReadinessSelectionState =
+                    evidence.selection_state ??
+                    (evidence.selected ? "SELECTED" : "MISSING");
+                  return (
+                    <section
+                      className={`readiness-source-card ${selectionState.toLowerCase()}`}
+                      key={source}
+                    >
+                      <header>
+                        <h3>{sourceNames[source]}</h3>
+                        <Chip
+                          tone={selectionState === "SELECTED" ? "ok" : "danger"}
+                        >
+                          {sourceSelectionLabel(selectionState)}
+                        </Chip>
+                      </header>
+                      <p className="readiness-source-empty">
+                        {sourceSelectionMessage(selectionState)}
+                      </p>
+                      {evidence.selected && (
+                        <span className="readiness-source-audit">
+                          Phiên bản{" "}
+                          {String(
+                            evidence.selected.weekly_menu_version ??
+                              evidence.selected.attendance_version ??
+                              evidence.selected.pantry_need_batch_version ??
+                              "—",
+                          )}{" "}
+                          · {evidence.selected.line_count} dòng
+                        </span>
+                      )}
+                    </section>
+                  );
+                },
+              )}
+            </div>
+          </details>
         </>
       )}
 

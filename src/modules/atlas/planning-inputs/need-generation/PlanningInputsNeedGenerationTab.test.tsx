@@ -30,7 +30,9 @@ describe("Planning Inputs generation tab", () => {
     expect(tabs[3]).toHaveTextContent("Tạo nhu cầu");
     fireEvent.click(tabs[3]!);
     expect(
-      await screen.findByText("Đầu vào đã sẵn sàng tạo nhu cầu"),
+      await screen.findByText(
+        "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.",
+      ),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
   });

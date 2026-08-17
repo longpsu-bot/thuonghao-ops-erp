@@ -31,7 +31,19 @@ function renderPantry(api = createReviewPantryApi("ready")) {
   return api;
 }
 
-describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
+describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
+  it("uses the business job name and plain Review-before-Save actions", async () => {
+    renderPantry();
+
+    expect(
+      await screen.findByRole("heading", { name: "Nhu cầu bổ sung" }),
+    ).toBeVisible();
+    expect(screen.queryByText(/^Pantry$/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.queryByText("Bản nháp cục bộ")).not.toBeInTheDocument();
+  });
+
   it("keeps Location and Unit server-derived and performs one v2 Save", async () => {
     const api = createReviewPantryApi("ready");
     const completed = vi.spyOn(api, "saveCompleted");
@@ -54,13 +66,10 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
         target: { value: "3.5" },
       },
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
-    );
-    await screen.findByLabelText("Xem trước Pantry");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Lưu nhu cầu bổ sung" }),
-    );
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
@@ -90,13 +99,9 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
         name: "Xác nhận tuần này không có bổ sung",
       }),
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
-    );
-    await screen.findByLabelText("Xem trước Pantry");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Lưu nhu cầu bổ sung" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     expect(completed.mock.calls[0]?.[0].payload).toMatchObject({
@@ -112,13 +117,9 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
     });
     fireEvent.change(quantity, { target: { value: "4" } });
     expect(screen.getByText(/Có thay đổi chưa lưu/)).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
-    );
-    await screen.findByLabelText("Xem trước Pantry");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Lưu nhu cầu bổ sung" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() =>
       expect(
@@ -126,6 +127,24 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
       ).not.toBeInTheDocument(),
     );
     expect(screen.getByText("ĐÃ LƯU")).toBeInTheDocument();
+  });
+
+  it("invalidates Review when a material value changes", async () => {
+    renderPantry();
+    const quantity = await screen.findByRole("spinbutton", {
+      name: "Số lượng dòng 1",
+    });
+    fireEvent.change(quantity, { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+
+    fireEvent.change(quantity, { target: { value: "4.5" } });
+
+    expect(
+      screen.queryByLabelText("Xem thay đổi Nhu cầu bổ sung"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
   });
 
   it("requires authoritative refresh after an unknown Save outcome", async () => {
@@ -140,14 +159,12 @@ describe("UI-QUALITY-02AB-UX Pantry cutover", () => {
       await screen.findByRole("spinbutton", { name: "Số lượng dòng 1" }),
       { target: { value: "5" } },
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Xem trước có thẩm quyền" }),
-    );
-    await screen.findByLabelText("Xem trước Pantry");
-    const save = screen.getByRole("button", { name: "Lưu nhu cầu bổ sung" });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    const save = screen.getByRole("button", { name: "Lưu" });
     fireEvent.click(save);
 
-    await screen.findByText(/Cần tải lại dữ liệu có thẩm quyền/);
+    await screen.findByText(/Cần tải lại dữ liệu mới nhất/);
     expect(save).toBeDisabled();
   });
 

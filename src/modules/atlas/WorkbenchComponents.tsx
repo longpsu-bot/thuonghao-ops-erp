@@ -124,8 +124,8 @@ export function OperationalState({
       {variant === "unknown-outcome" && (
         <Text component="p" mt={4}>
           Chưa thể xác nhận thao tác đã thành công hay thất bại. Không tự động
-          gửi lại thao tác. Hãy tải lại dữ liệu có thẩm quyền trước khi quyết
-          định bước tiếp theo.
+          gửi lại thao tác. Hãy tải lại dữ liệu mới nhất trước khi quyết định
+          bước tiếp theo.
         </Text>
       )}
       {onAuthoritativeRefresh && (
@@ -136,7 +136,7 @@ export function OperationalState({
           mt="sm"
           onClick={onAuthoritativeRefresh}
         >
-          Tải lại dữ liệu có thẩm quyền
+          Tải lại dữ liệu
         </Button>
       )}
     </Alert>
@@ -213,7 +213,7 @@ export function ActionBar({ actions }: { actions: string[] }) {
 
 export function TracePanel({ onClose }: { onClose: () => void }) {
   const stages = [
-    ["Nguồn kế hoạch", "Thực đơn tuần / Sĩ số / Hàng đặt riêng / Pantry"],
+    ["Nguồn kế hoạch", "Thực đơn / Sĩ số / Nhu cầu bổ sung"],
     ["Công thức / định lượng", "Canh bí đỏ · 0,225 kg/suất"],
     ["Nhu cầu tính toán", "75 kg theo 320 suất thực tế"],
     ["Nhu cầu thực tế xác nhận", "72 kg · điều chỉnh -3 kg"],

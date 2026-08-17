@@ -213,9 +213,12 @@ describe("Confirmed Need two-action workbench", () => {
     expect(releaseButton).toBeEnabled();
     expect(releaseButton).toHaveClass("primary");
     fireEvent.click(releaseButton);
-    expect(
-      screen.getByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
-    ).toHaveTextContent("chưa chọn nhà cung cấp");
+    const dialog = screen.getByRole("dialog", {
+      name: "Xác nhận chuyển sang lên đơn",
+    });
+    expect(dialog).toHaveTextContent("chưa phân bổ nhà cung cấp");
+    expect(dialog).toHaveTextContent("chưa tạo Bàn giao mua hàng");
+    expect(dialog).toHaveTextContent("chưa tạo Đơn mua hàng");
     fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
     await screen.findByText("Đã chuyển sang lên đơn.");
     expect(release).toHaveBeenCalledTimes(1);

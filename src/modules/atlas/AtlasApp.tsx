@@ -304,7 +304,7 @@ function MasterDataPage({
         }
         context={
           planningPage
-            ? "Lưu hoàn tất ba nguồn theo tuần, kiểm tra sẵn sàng tự động và tạo nhu cầu bằng một thao tác có thẩm quyền."
+            ? "Lưu hoàn tất ba nguồn theo tuần, kiểm tra tự động và tạo nhu cầu bằng một thao tác."
             : recipePage
               ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Điều chỉnh khi món đã được sử dụng."
               : schoolPage

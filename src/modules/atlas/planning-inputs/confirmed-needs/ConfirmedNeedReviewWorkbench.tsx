@@ -657,8 +657,8 @@ export function ConfirmedNeedReviewWorkbench({
           <h3>Chuyển nhu cầu đã lưu sang bước lên đơn?</h3>
           <p>
             Atlas sẽ kiểm tra toàn bộ dữ liệu và ghi nhận cam kết. Hành động này
-            chưa chọn nhà cung cấp, chưa tạo bàn giao mua hàng và chưa tạo đơn
-            mua.
+            chưa phân bổ nhà cung cấp, chưa tạo Bàn giao mua hàng và chưa tạo
+            Đơn mua hàng.
           </p>
           <div>
             <button

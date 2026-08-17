@@ -313,7 +313,7 @@ export function PantryWorkbench({
       <p className="operator-notice warning">
         {authState.status === "session_expired"
           ? "Phiên làm việc đã hết. Vui lòng đăng nhập lại."
-          : "Đăng nhập để xem và cập nhật Pantry."}
+          : "Đăng nhập để xem và cập nhật Nhu cầu bổ sung."}
       </p>
     );
   }
@@ -322,7 +322,7 @@ export function PantryWorkbench({
     <div className="pantry-workbench">
       {mode === "review" && (
         <p className="operator-notice warning">
-          Trạng thái xem thử Pantry — thay đổi không được lưu.
+          Trạng thái xem thử Nhu cầu bổ sung — thay đổi không được lưu.
         </p>
       )}
       {notice && (
@@ -333,20 +333,20 @@ export function PantryWorkbench({
           {notice}
           {consequence && <span> {consequence}</span>}
           {refreshRequired && (
-            <span> Cần tải lại dữ liệu có thẩm quyền trước khi ghi tiếp.</span>
+            <span> Cần tải lại dữ liệu mới nhất trước khi ghi tiếp.</span>
           )}
         </p>
       )}
-      {load === "loading" && <p className="empty">Đang tải Pantry…</p>}
+      {load === "loading" && <p className="empty">Đang tải Nhu cầu bổ sung…</p>}
       {load === "error" && (
         <button type="button" onClick={() => void refresh()}>
-          Thử tải lại Pantry
+          Thử tải lại dữ liệu
         </button>
       )}
 
       <Panel
-        title="Pantry"
-        description="Nguồn bổ sung thủ công của Lập nhu cầu; Atlas tự suy ra Điểm giao nhận mặc định và Đơn vị mua."
+        title="Nhu cầu bổ sung"
+        description="Nhập nguyên liệu cần thêm ngoài thực đơn hoặc xác nhận tuần này không có bổ sung."
         status={
           <Chip tone={statusTone(data.batch?.pantry_need_batch_status)}>
             {statusLabel(data.batch?.pantry_need_batch_status)}
@@ -366,13 +366,13 @@ export function PantryWorkbench({
 
         {dirty && (
           <p className="planning-dirty-notice" role="status">
-            Có thay đổi chưa lưu. Hãy xem trước rồi lưu nhu cầu bổ sung.
+            Có thay đổi chưa lưu. Hãy xem thay đổi rồi lưu.
           </p>
         )}
 
         <div
           className="planning-workbench-toolbar pantry-toolbar"
-          aria-label="Nhập và lưu Pantry"
+          aria-label="Nhập và lưu Nhu cầu bổ sung"
         >
           <div className="planning-toolbar-group pantry-entry-actions">
             <span className="planning-toolbar-label">Nội dung bổ sung</span>
@@ -383,7 +383,7 @@ export function PantryWorkbench({
               disabled={!canEdit || noAdditions}
             >
               <Plus size={17} aria-hidden="true" />
-              Thêm dòng Pantry
+              Thêm dòng
             </button>
             <label className="pantry-zero-confirmation">
               <input
@@ -410,7 +410,7 @@ export function PantryWorkbench({
             </label>
           </div>
           <div className="planning-toolbar-group planning-local-actions">
-            <span className="planning-toolbar-label">Bản nháp cục bộ</span>
+            <span className="planning-toolbar-label">Rà soát và lưu</span>
             <button
               type="button"
               className="secondary"
@@ -418,7 +418,7 @@ export function PantryWorkbench({
               disabled={!canEdit}
             >
               <Eye size={17} aria-hidden="true" />
-              Xem trước có thẩm quyền
+              Xem thay đổi
             </button>
             <button
               type="button"
@@ -429,7 +429,7 @@ export function PantryWorkbench({
               }
             >
               <FloppyDisk size={17} aria-hidden="true" />
-              Lưu nhu cầu bổ sung
+              Lưu
             </button>
             <button
               type="button"
@@ -445,8 +445,8 @@ export function PantryWorkbench({
         {rows.length === 0 ? (
           <p className={`empty${noAdditions ? " pantry-zero-state" : ""}`}>
             {noAdditions
-              ? "Đã chọn xác nhận không có bổ sung; hãy xem trước trước khi lưu."
-              : "Chưa có dòng Pantry."}
+              ? "Đã xác nhận không có bổ sung; hãy xem thay đổi trước khi lưu."
+              : "Chưa có dòng bổ sung."}
           </p>
         ) : (
           <div className="planning-grid-scroll">
@@ -638,10 +638,10 @@ export function PantryWorkbench({
         )}
 
         <details className="planning-evidence">
-          <summary>Bằng chứng nguồn Pantry</summary>
+          <summary>Chi tiết hỗ trợ</summary>
           <section
             className="planning-source-summary planning-source-summary-inline"
-            aria-label="Nguồn Pantry"
+            aria-label="Chi tiết hỗ trợ Nhu cầu bổ sung"
           >
             <span>
               Tuần:{" "}
@@ -663,19 +663,18 @@ export function PantryWorkbench({
 
         {preview && (
           <section
-            className="planning-preview-summary"
-            aria-label="Xem trước Pantry"
+            className="planning-review pantry-review"
+            aria-label="Xem thay đổi Nhu cầu bổ sung"
           >
-            <strong>
-              {preview.comparison.status} · {preview.canonical_rows.length} dòng
-            </strong>
-            <span>
-              Mới {preview.comparison.new_lines.length} · Thay đổi{" "}
-              {preview.comparison.changed_lines.length} · Không đổi{" "}
-              {preview.comparison.unchanged_lines.length} · Loại bỏ{" "}
-              {preview.comparison.omitted_lines.length}
-            </span>
-            <code>{preview.source_signature}</code>
+            <div className="planning-review-heading">
+              <strong>Xem thay đổi</strong>
+              <span>{preview.canonical_rows.length} dòng sau khi lưu</span>
+            </div>
+            <p className="pantry-review-summary">
+              {preview.comparison.new_lines.length} dòng mới ·{" "}
+              {preview.comparison.changed_lines.length} dòng thay đổi ·{" "}
+              {preview.comparison.omitted_lines.length} dòng sẽ bỏ
+            </p>
             <PantryIssues
               title="Lỗi chặn"
               issues={preview.issues.blockers}
@@ -686,6 +685,14 @@ export function PantryWorkbench({
               issues={preview.issues.warnings}
               tone="warning"
             />
+            <details className="planning-preview-summary">
+              <summary>Chi tiết đối chiếu kỹ thuật</summary>
+              <span>
+                {preview.comparison.status} · Không đổi{" "}
+                {preview.comparison.unchanged_lines.length}
+              </span>
+              <code>{preview.source_signature}</code>
+            </details>
           </section>
         )}
 

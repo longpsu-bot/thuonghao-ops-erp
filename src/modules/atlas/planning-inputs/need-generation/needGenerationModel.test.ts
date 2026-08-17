@@ -5,6 +5,7 @@ import {
   needGenerationReadbackFromResult,
   needGenerationResultAllowsExactRetry,
   needGenerationResultIsStale,
+  needGenerationResultMessage,
   needGenerationWorkbenchFromResult,
 } from "./needGenerationModel";
 
@@ -62,5 +63,101 @@ describe("RMVP-04 authoritative model", () => {
   it("formats backend quantities without recalculating them", () => {
     expect(formatQuantity(12.345678)).toBe("12,345678");
     expect(formatQuantity(0)).toBe("0");
+  });
+
+  it("uses business-language generation messages without implementation jargon", () => {
+    const backend = (
+      errorCode: string,
+      retryable = false,
+      safeMessage = "safe",
+    ) =>
+      ({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: errorCode,
+          safe_message: safeMessage,
+          retryable,
+        },
+      }) satisfies AtlasRpcResult;
+    const messages = [
+      needGenerationResultMessage({
+        kind: "client_error",
+        diagnostic: { code: "RPC_NOT_ALLOWED", safeMessage: "safe" },
+      }),
+      needGenerationResultMessage(backend("CAPABILITY_DENIED")),
+      needGenerationResultMessage(backend("READINESS_NOT_REQUESTED")),
+      needGenerationResultMessage(backend("CURRENT_EVALUATION_NOT_READY")),
+      needGenerationResultMessage(backend("STALE_VERSION")),
+      needGenerationResultMessage(backend("STALE_SOURCE_BINDING")),
+      needGenerationResultMessage(
+        backend("NEED_GENERATION_RUN_ALREADY_ACTIVE"),
+      ),
+      needGenerationResultMessage(backend("NEED_GENERATION_HAS_BLOCKERS")),
+      needGenerationResultMessage(backend("DOWNSTREAM_CORRECTION_REQUIRED")),
+      needGenerationResultMessage(
+        backend("RETRYABLE_CONCURRENCY_FAILURE", true),
+      ),
+      needGenerationResultMessage(backend("IDEMPOTENCY_CONFLICT")),
+      needGenerationResultMessage(
+        backend("UNMAPPED", false, "Need Generation READY Bằng chứng nguồn"),
+      ),
+    ];
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        "Ứng dụng không thể thực hiện yêu cầu tạo nhu cầu này.",
+        "Dữ liệu đầu vào chưa sẵn sàng để tạo nhu cầu.",
+        "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+        "Kỳ này đã có nhu cầu đang được xử lý.",
+        "Nhu cầu đã được chuyển sang lên đơn và cần quy trình điều chỉnh riêng.",
+      ]),
+    );
+    for (const message of messages) {
+      expect(message).not.toMatch(/Need Generation|READY|Bằng chứng nguồn/i);
+    }
+  });
+
+  it("keeps authentication, capability, stale, retry, conflict, downstream, and transport outcomes distinct", () => {
+    const backend = (errorCode: string, retryable = false) =>
+      ({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: errorCode,
+          safe_message: "safe",
+          retryable,
+        },
+      }) satisfies AtlasRpcResult;
+
+    expect(
+      needGenerationResultMessage({
+        kind: "auth_error",
+        diagnostic: { code: "SESSION_EXPIRED", safeMessage: "safe" },
+      }),
+    ).toMatch(/đăng nhập lại/i);
+    expect(needGenerationResultMessage(backend("CAPABILITY_DENIED"))).toMatch(
+      /không có quyền/i,
+    );
+    expect(needGenerationResultMessage(backend("STALE_VERSION"))).toMatch(
+      /Nhu cầu đã thay đổi/,
+    );
+    expect(
+      needGenerationResultMessage(
+        backend("RETRYABLE_CONCURRENCY_FAILURE", true),
+      ),
+    ).toMatch(/Có thể thử lại/);
+    expect(
+      needGenerationResultMessage(backend("IDEMPOTENCY_CONFLICT")),
+    ).toMatch(/không còn khớp/);
+    expect(
+      needGenerationResultMessage(backend("DOWNSTREAM_CORRECTION_REQUIRED")),
+    ).toMatch(/quy trình điều chỉnh riêng/);
+    expect(
+      needGenerationResultMessage({
+        kind: "transport_error",
+        diagnostic: { code: "NETWORK_FAILURE", safeMessage: "safe" },
+      }),
+    ).toMatch(/không tự gửi lại/i);
   });
 });

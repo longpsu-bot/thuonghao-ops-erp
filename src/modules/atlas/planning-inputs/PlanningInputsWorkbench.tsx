@@ -1217,9 +1217,9 @@ export function PlanningInputsWorkbenchView({
   return (
     <div className="planning-inputs-workbench">
       <WorkbenchHeader
-        eyebrow="Nguồn đầu vào"
-        title="Điều hành nguồn kế hoạch theo tuần"
-        context="Chọn tuần phục vụ và làm việc theo từng nguồn nghiệp vụ."
+        eyebrow="Lập nhu cầu"
+        title="Lập nhu cầu theo tuần"
+        context="Thực đơn → Sĩ số → Nhu cầu bổ sung → Tạo nhu cầu → Xác nhận nhu cầu."
         headingLevel={2}
       />
       <Paper component="section" className="planning-context-bar" withBorder>
@@ -1295,7 +1295,7 @@ export function PlanningInputsWorkbenchView({
               className={tab === "menu" ? "active" : ""}
               onClick={() => changeTab("menu")}
             >
-              Thực đơn tuần
+              Thực đơn
             </Button>
             <Button
               type="button"
@@ -1315,7 +1315,7 @@ export function PlanningInputsWorkbenchView({
               className={tab === "pantry" ? "active" : ""}
               onClick={() => changeTab("pantry")}
             >
-              Pantry
+              Nhu cầu bổ sung
             </Button>
             <Button
               type="button"

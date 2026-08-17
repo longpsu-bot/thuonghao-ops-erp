@@ -166,32 +166,39 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
     return (
       (typeof result.response.safe_operator_message === "string"
         ? result.response.safe_operator_message
-        : null) ?? "Atlas đã đọc lại nhu cầu có thẩm quyền."
+        : null) ?? "Atlas đã tải lại nhu cầu mới nhất."
     );
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Chưa xác định kết quả lệnh. Atlas không tự gửi lại; hãy tải lại dữ liệu có thẩm quyền trước khi thực hiện hành động khác.";
+    return "Chưa xác định kết quả thao tác. Atlas không tự gửi lại; hãy tải lại dữ liệu mới nhất trước khi thực hiện hành động khác.";
   if (result.kind === "client_error")
-    return "Ứng dụng đã chặn yêu cầu ngoài danh mục Need Generation.";
+    return "Ứng dụng không thể thực hiện yêu cầu tạo nhu cầu này.";
   const messages: Record<string, string> = {
-    READINESS_NOT_REQUESTED:
-      "Hãy quay lại Sẵn sàng đầu vào và yêu cầu tạo nhu cầu trước.",
+    CAPABILITY_DENIED: "Bạn không có quyền tạo hoặc cập nhật nhu cầu.",
+    AUTH_SUBJECT_MISMATCH:
+      "Phiên người dùng không khớp yêu cầu. Hãy đăng nhập lại.",
+    READINESS_NOT_REQUESTED: "Dữ liệu đầu vào chưa sẵn sàng để tạo nhu cầu.",
     CURRENT_EVALUATION_NOT_READY:
-      "Đánh giá đầu vào hiện tại chưa READY hoặc còn lỗi chặn.",
+      "Dữ liệu đầu vào còn nội dung cần xử lý trước khi tạo nhu cầu.",
+    STALE_VERSION:
+      "Nhu cầu đã thay đổi. Hãy tải lại dữ liệu trước khi tiếp tục.",
     STALE_SOURCE_BINDING:
-      "Bằng chứng nguồn đã thay đổi. Atlas đang tải lại trạng thái.",
-    NEED_GENERATION_RUN_ALREADY_ACTIVE:
-      "Kỳ này đã có lần tạo nhu cầu đang hoạt động.",
+      "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+    NEED_GENERATION_RUN_ALREADY_ACTIVE: "Kỳ này đã có nhu cầu đang được xử lý.",
     NEED_GENERATION_HAS_BLOCKERS:
-      "Không thể tiếp tục khi lần tạo nhu cầu còn lỗi chặn.",
+      "Nhu cầu hiện tại còn nội dung cần xử lý trước khi tiếp tục.",
     DOWNSTREAM_CORRECTION_REQUIRED:
-      "Dữ liệu phía sau đã cam kết; cần quy trình điều chỉnh riêng.",
+      "Nhu cầu đã được chuyển sang lên đơn và cần quy trình điều chỉnh riêng.",
     RETRYABLE_CONCURRENCY_FAILURE:
-      "Có xung đột tạm thời. Có thể thử lại đúng yêu cầu đã giữ nguyên.",
-    IDEMPOTENCY_CONFLICT: "Mã lệnh đã thuộc một ý định khác; không gửi lại.",
+      "Có xung đột tạm thời. Có thể thử lại nếu nội dung yêu cầu không thay đổi.",
+    IDEMPOTENCY_CONFLICT:
+      "Yêu cầu này không còn khớp với thao tác trước. Hãy tải lại dữ liệu trước khi tiếp tục.",
   };
-  return messages[result.error.error_code] ?? result.error.safe_message;
+  return (
+    messages[result.error.error_code] ??
+    "Không thể thực hiện yêu cầu tạo nhu cầu này. Hãy tải lại dữ liệu trước khi tiếp tục."
+  );
 }
 
 export function formatQuantity(value: number) {

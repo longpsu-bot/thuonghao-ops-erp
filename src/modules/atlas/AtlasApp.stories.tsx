@@ -99,8 +99,10 @@ function FirstTimeConfirmedNeedStory() {
 
 function NeedGenerationStateStory({
   currentness,
+  confirmedNeedStatus = "DRAFT_REVIEW",
 }: {
   currentness: "OUTDATED" | "CURRENT";
+  confirmedNeedStatus?: "DRAFT_REVIEW" | "RELEASED_FOR_PURCHASE_HANDOFF";
 }) {
   const [api] = useState(() => createReviewNeedGenerationApi("ready"));
   const [preflightApi] = useState(() => {
@@ -117,7 +119,7 @@ function NeedGenerationStateStory({
           need_generation_run_status: "RELEASED_FOR_CONFIRMATION",
           confirmed_need_batch_id: "storybook-current-batch",
           confirmed_need_batch_version: 1,
-          confirmed_need_batch_status: "DRAFT_REVIEW",
+          confirmed_need_batch_status: confirmedNeedStatus,
         };
       }
       return result;
@@ -179,12 +181,12 @@ export const IngredientsAndSuppliers: Story = {
 };
 
 export const SourceWorkbenchNormal: Story = {
-  name: "Thực đơn tuần · trạng thái bình thường",
+  name: "Thực đơn · trạng thái bình thường",
   args: { initialPage: "planning-inputs", reviewMode: true },
 };
 
 export const MenuWarning: Story = {
-  name: "Thực đơn tuần · cảnh báo công thức",
+  name: "Thực đơn · cảnh báo công thức",
   args: {
     initialPage: "planning-inputs",
     initialReviewScenario: "menu_recipe_warning",
@@ -193,7 +195,7 @@ export const MenuWarning: Story = {
 };
 
 export const MenuBlocked: Story = {
-  name: "Thực đơn tuần · lỗi chặn",
+  name: "Thực đơn · lỗi chặn",
   args: {
     initialPage: "planning-inputs",
     initialReviewScenario: "menu_duplicate",
@@ -228,18 +230,18 @@ export const AttendanceDefaults: Story = {
 };
 
 export const PantryRows: Story = {
-  name: "Pantry · có dòng bổ sung",
+  name: "Nhu cầu bổ sung · có dòng",
   args: { initialPage: "planning-inputs", reviewMode: true },
   play: async ({ canvasElement }) => {
-    await selectPlanningTab(canvasElement, "Pantry");
+    await selectPlanningTab(canvasElement, "Nhu cầu bổ sung");
   },
 };
 
 export const PantryNoAdditions: Story = {
-  name: "Pantry · xác nhận không có bổ sung",
+  name: "Nhu cầu bổ sung · xác nhận không có bổ sung",
   args: { initialPage: "planning-inputs", reviewMode: true },
   play: async ({ canvasElement }) => {
-    await selectPlanningTab(canvasElement, "Pantry");
+    await selectPlanningTab(canvasElement, "Nhu cầu bổ sung");
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Xóa dòng 1" }),
@@ -280,6 +282,17 @@ export const NeedGenerationOutdated: Story = {
   name: "Tạo nhu cầu · cần cập nhật",
   args: { initialPage: "planning-inputs", reviewMode: true },
   render: () => <NeedGenerationStateStory currentness="OUTDATED" />,
+};
+
+export const NeedGenerationReleasedOutdated: Story = {
+  name: "Tạo nhu cầu · đã lên đơn, không thể cập nhật trực tiếp",
+  args: { initialPage: "planning-inputs", reviewMode: true },
+  render: () => (
+    <NeedGenerationStateStory
+      currentness="OUTDATED"
+      confirmedNeedStatus="RELEASED_FOR_PURCHASE_HANDOFF"
+    />
+  ),
 };
 
 export const NeedGenerationCurrent: Story = {

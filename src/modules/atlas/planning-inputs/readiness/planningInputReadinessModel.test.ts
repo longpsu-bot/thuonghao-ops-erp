@@ -118,7 +118,7 @@ describe("RMVP-03B authoritative model", () => {
     ).not.toHaveProperty("line_count");
   });
 
-  it("distinguishes positive, explicit-zero, and missing Pantry evidence", () => {
+  it("distinguishes positive, explicit-zero, and missing additional demand", () => {
     expect(
       pantryReadinessEvidenceLabel(
         evidence("POSITIVE_LINES", {
@@ -127,7 +127,7 @@ describe("RMVP-03B authoritative model", () => {
           pantry_evidence_kind: "POSITIVE_LINES",
         }),
       ),
-    ).toBe("7 dòng Pantry đã phê duyệt.");
+    ).toBe("7 dòng Nhu cầu bổ sung đã lưu.");
     expect(
       pantryReadinessEvidenceLabel(
         evidence("EXPLICIT_ZERO_LINES", {
@@ -137,9 +137,9 @@ describe("RMVP-03B authoritative model", () => {
           pantry_evidence_kind: "EXPLICIT_ZERO_LINES",
         }),
       ),
-    ).toMatch(/đã xác nhận rõ ràng/);
+    ).toMatch(/Đã xác nhận tuần này không có Nhu cầu bổ sung/);
     expect(pantryReadinessEvidenceLabel(evidence("MISSING", null))).toMatch(
-      /Chưa có bằng chứng Pantry/,
+      /Chưa có Nhu cầu bổ sung/,
     );
   });
 
@@ -196,7 +196,7 @@ describe("RMVP-03B authoritative model", () => {
           can_authorize_need_generation_request: false,
         },
       }),
-    ).toMatch(/không thể dùng để yêu cầu tạo nhu cầu/);
+    ).toMatch(/không thể dùng để tạo nhu cầu/);
     expect(invalidationReasonRequiresNote("PLANNING_REVIEW_CORRECTION")).toBe(
       true,
     );
@@ -216,7 +216,7 @@ describe("RMVP-03B authoritative model", () => {
       },
     };
     expect(readinessResultAllowsExactRetry(retryable)).toBe(true);
-    expect(readinessResultMessage(retryable)).toMatch(/đúng yêu cầu/);
+    expect(readinessResultMessage(retryable)).toMatch(/nội dung yêu cầu/);
     expect(
       readinessResultAllowsExactRetry({
         kind: "transport_error",
@@ -226,5 +226,83 @@ describe("RMVP-03B authoritative model", () => {
         },
       }),
     ).toBe(false);
+  });
+
+  it("uses business-language readiness messages without implementation jargon", () => {
+    const backend = (errorCode: string, safeMessage = "safe") =>
+      ({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: errorCode,
+          safe_message: safeMessage,
+        },
+      }) satisfies AtlasRpcResult;
+    const messages = [
+      readinessResultMessage({
+        kind: "client_error",
+        diagnostic: { code: "RPC_NOT_ALLOWED", safeMessage: "safe" },
+      }),
+      readinessResultMessage(backend("CAPABILITY_DENIED")),
+      readinessResultMessage(backend("AMBIGUOUS_SOURCE_CANDIDATE")),
+      readinessResultMessage(backend("STALE_SOURCE_CANDIDATE")),
+      readinessResultMessage(backend("STALE_ROOT_STATE")),
+      readinessResultMessage(backend("STALE_CURRENT_EVALUATION")),
+      readinessResultMessage(backend("RETRYABLE_CONCURRENCY_FAILURE")),
+      readinessResultMessage(backend("IDEMPOTENCY_CONFLICT")),
+      readinessResultMessage(
+        backend("NEED_GENERATION_HANDOFF_ALREADY_CONSUMED"),
+      ),
+      readinessResultMessage(
+        backend("UNMAPPED", "RMVP-03B candidate evaluation evidence READY"),
+      ),
+    ];
+
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        "Ứng dụng không thể kiểm tra trạng thái dữ liệu đầu vào.",
+        "Có nhiều dữ liệu phù hợp. Hãy kiểm tra lại dữ liệu đầu vào.",
+        "Dữ liệu đầu vào đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+        "Yêu cầu tạo nhu cầu này đã được sử dụng và không thể rút lại.",
+      ]),
+    );
+    for (const message of messages) {
+      expect(message).not.toMatch(
+        /RMVP-03B|READY|candidate|evaluation|evidence|đánh giá|bằng chứng/i,
+      );
+    }
+  });
+
+  it("keeps authentication, stale-state, retry, conflict, and transport outcomes distinct", () => {
+    const backend = (errorCode: string) =>
+      ({
+        kind: "backend_error",
+        error: { success: false, error_code: errorCode, safe_message: "safe" },
+      }) satisfies AtlasRpcResult;
+
+    expect(
+      readinessResultMessage({
+        kind: "auth_error",
+        diagnostic: { code: "SESSION_EXPIRED", safeMessage: "safe" },
+      }),
+    ).toMatch(/đăng nhập lại/i);
+    expect(readinessResultMessage(backend("CAPABILITY_DENIED"))).toMatch(
+      /không có quyền/i,
+    );
+    expect(readinessResultMessage(backend("STALE_ROOT_STATE"))).toMatch(
+      /Trạng thái dữ liệu đã thay đổi/,
+    );
+    expect(
+      readinessResultMessage(backend("RETRYABLE_CONCURRENCY_FAILURE")),
+    ).toMatch(/Có thể thử lại/);
+    expect(readinessResultMessage(backend("IDEMPOTENCY_CONFLICT"))).toMatch(
+      /không còn khớp/,
+    );
+    expect(
+      readinessResultMessage({
+        kind: "transport_error",
+        diagnostic: { code: "NETWORK_FAILURE", safeMessage: "safe" },
+      }),
+    ).toMatch(/không tự động gửi lại/i);
   });
 });
