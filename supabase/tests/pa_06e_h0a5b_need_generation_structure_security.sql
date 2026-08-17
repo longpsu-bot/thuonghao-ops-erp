@@ -485,8 +485,8 @@ select is(
         and (c.relname like 'need_generation_%' or c.relname = 'theoretical_need_lines')
     ) and not t.tgisinternal
   ),
-  22,
-  'the H0A5b trigger catalog contains exactly twenty-two triggers'
+  23,
+  'the H0A5b catalog plus the approved 02A Recipe replacement guard contains exactly twenty-three triggers'
 );
 
 select is(
@@ -515,8 +515,8 @@ select is(
     ) and not t.tgisinternal and t.tgname like '%_integrity'
       and con.condeferrable and con.condeferred
   ),
-  11,
-  'every H0A5b relation has one initially deferred integrity trigger'
+  12,
+  'every H0A5b relation retains its deferred integrity trigger and theoretical lines add the exact 02A replacement guard'
 );
 
 select is(
@@ -551,9 +551,10 @@ select is(
     'need_generation_runs_guard',
     'need_generation_runs_integrity',
     'theoretical_need_lines_guard',
-    'theoretical_need_lines_integrity'
+    'theoretical_need_lines_integrity',
+    'theoretical_need_lines_recipe_replacement_integrity'
   ]::text[],
-  'all twenty-two trigger names are exact'
+  'all twenty-three trigger names are exact'
 );
 
 select is(

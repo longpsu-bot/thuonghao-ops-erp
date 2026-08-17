@@ -18,6 +18,12 @@ D-028 and [Decision PANTRY-NG-01](decision-pantry-ng-01-need-generation-direct-i
 
 PANTRY-NG-01 is product and architecture authority only. The merged H0A5b persistence remains Recipe-only until a separately authorized migration and focused pgTAP amendment merge. The complete Pantry decisions exist only in `PNG-P01` through `PNG-P12`; this notice does not duplicate that registry.
 
+## PLANNING-CONTRACT-02A bounded amendment notice
+
+D-039 permits one additional, typed correction outcome when the Dish/Recipe selected by an otherwise stable Weekly Menu assignment is replaced. The proof boundary is the same `weekly_menu_id`, stable `weekly_menu_line_id`, School, service date, Menu slot, and authoritative Attendance context, together with exactly one current governed Recipe selection that differs from the predecessor selection. Each contribution from the replaced Recipe becomes a zero-quantity `REMOVED` line with its exact predecessor and explicit predecessor/successor Recipe-selection references. Every contribution from the replacement Recipe is a new `ACTIVE` lineage with no predecessor.
+
+This amendment never maps old and new contributions by Ingredient, Unit, quantity, display order, or coincidental Recipe-line similarity. Missing, stale, ambiguous, or mismatched proof still produces `SILENT_PREDECESSOR_OMISSION` and blocks release. Ordinary same-Recipe RecipeLine removal continues to require the exact released H0A2 `REMOVED` revision. Reintroduction remains unsupported exactly as specified below. Confirmed Need continuity, current-revision/current-decision pointer behavior, UI behavior, and selective carry-forward are not decided here and remain reserved for PLANNING-CONTRACT-02B.
+
 ## 1. Context and governing method
 
 H0A2 supplies stable Recipe and RecipeLine identities, immutable RecipeVersion and RecipeLineRevision evidence, the fixed `PROPORTIONAL_PER_BASIS` calculation kind, and explicit `REMOVED` recipe-line successors. H0A3a and H0A3b supply immutable Weekly Menu and Attendance approval snapshots and stable source-line identities. H0A4b supplies one stable exact-period Planning Input Set, one exact current immutable evaluation, and direct typed Weekly Menu and Attendance snapshot bindings.
@@ -241,7 +247,7 @@ ACTIVE
 REMOVED
 ```
 
-`ACTIVE` quantity is nonnegative. `ACTIVE` zero is a real contribution and is warning-bearing; it is never removal. `REMOVED` quantity is exactly zero, requires exactly one direct predecessor Theoretical Need line, and requires one exact released H0A2 RecipeLineRevision whose `line_disposition = 'REMOVED'`. A first-run or genuinely new contribution cannot enter as `REMOVED`.
+`ACTIVE` quantity is nonnegative. `ACTIVE` zero is a real contribution and is warning-bearing; it is never removal. `REMOVED` quantity is exactly zero and requires exactly one direct predecessor Theoretical Need line. An ordinary same-Recipe removal requires one exact released H0A2 RecipeLineRevision whose `line_disposition = 'REMOVED'`. A governed Dish/Recipe replacement instead requires the complete typed D-039 proof and explicit predecessor/successor Recipe-selection references; it does not claim that the old RecipeLine exists in the replacement Recipe. A first-run or genuinely new contribution cannot enter as `REMOVED`.
 
 Predecessor matching is allowed only between directly linked predecessor/successor runs and requires compatible stable anchors:
 
@@ -262,11 +268,12 @@ Required outcomes are:
 | Attendance correction on the same stable Attendance line             | Each compatible RecipeLine contribution has exactly one successor.                                      |
 | New stable RecipeLine contribution                                   | New `ACTIVE` line with no predecessor.                                                                  |
 | Released H0A2 RecipeLine removal                                     | One zero `REMOVED` line with exactly one predecessor and exact `REMOVED` revision evidence.             |
+| Dish/Recipe replacement on the same governed Menu assignment         | Every old Recipe contribution becomes zero `REMOVED` with its predecessor and old/new Recipe-selection evidence; every replacement Recipe contribution is new `ACTIVE` lineage with no predecessor. |
 | Previously `REMOVED` line while the stable RecipeLine remains absent | Retained as immutable historical evidence and need not be repeated in later runs.                       |
 
 One predecessor has at most one successor. Same-run predecessor, unrelated run-chain predecessor, unrelated period or Planning Input Set, cross-Menu/Attendance/RecipeLine wiring, fork, split, and merge are rejected. A successor cannot merge two predecessors, and two successors cannot split one predecessor.
 
-Every prior `ACTIVE` contribution in the direct predecessor run must have exactly one compatible active or removed successor unless it is proven outside the successor's source scope by a separately approved typed rule. H0A5 approves no such omission rule, so silent omission blocks release. Menu/Dish replacement, removed Menu or Attendance lines, or Recipe-family changes that cannot preserve the required stable anchors do not receive an inferred removal; they fail closed pending a later approved correction policy.
+Every prior `ACTIVE` contribution in the direct predecessor run must have exactly one compatible active or removed successor unless it is proven outside the successor's source scope by a separately approved typed rule. Silent omission blocks release. D-039 approves only the exact governed Dish/Recipe replacement proof above: the stable Menu assignment and Attendance anchors continue, exactly one different current Recipe selection exists, and old contributions receive explicit typed removal evidence. Removed Menu or Attendance lines, ambiguous selections, missing snapshots, unstable assignments, and every other Recipe-family change receive no inferred removal and fail closed.
 
 A prior `REMOVED` contribution remains immutable historical evidence with exact zero quantity, its exact predecessor, and its exact released H0A2 removal evidence. It may be absent from a later run only while the same stable RecipeLine remains absent or otherwise outside the selected `PRESENT` composition. It is not automatically a predecessor for a new active contribution.
 
