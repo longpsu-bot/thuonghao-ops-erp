@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(75);
+select plan(80);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
@@ -2571,8 +2571,7 @@ select is(
   'RMVP04-69 exact replay returns the original result without duplicate replacement evidence'
 );
 
--- Remove the stable assignment from the current Menu snapshot. No governed
--- replacement proof exists, so the original fail-closed blocker remains.
+-- Invalidate the released replacement run before the next approved sources.
 insert into rmvp04_requests
 select 'recipe-replacement-invalidate', pg_temp.rmvp04_command(
   'e4900000-0000-0000-0000-000000000071',
@@ -2591,20 +2590,56 @@ select 'recipe-replacement-invalidate',
 from rmvp04_requests where request_name = 'recipe-replacement-invalidate';
 reset role;
 
+-- A later Menu and Attendance approval must not make the immutable v3
+-- replacement evidence depend on today's mutable root pointers. Recipe C
+-- remains selected on the same stable assignment and receives normal
+-- same-lineage successors in attempt 4.
 set local session_replication_role = replica;
-update atlas_planning.weekly_menu_lines
-set line_status = 'INVALID',
+update atlas_planning.attendance_lines
+set student_portions = 23,
     updated_by_actor_id = 'e4000000-0000-0000-0000-000000000001'
-where weekly_menu_line_id = 'e4900000-0000-0000-0000-000000000030';
+where attendance_line_id = 'e4900000-0000-0000-0000-000000000040';
+
+insert into atlas_planning.attendance_approval_snapshots (
+  attendance_approval_snapshot_id, attendance_batch_id,
+  attendance_version, approved_by_actor_id, approved_at
+) values (
+  'e4900000-0000-0000-0000-000000000045',
+  'e4300000-0000-0000-0000-000000000001', 4,
+  'e4000000-0000-0000-0000-000000000001',
+  '2026-11-01 10:35:00+07'
+);
+
+insert into atlas_planning.attendance_approval_snapshot_lines (
+  attendance_approval_snapshot_line_id, attendance_approval_snapshot_id,
+  attendance_batch_id, attendance_version, attendance_line_id, school_id,
+  service_date, student_portions, teacher_portions
+)
+select
+  case when line.attendance_line_id = 'e4900000-0000-0000-0000-000000000040'
+    then 'e4900000-0000-0000-0000-000000000046'::uuid
+    else gen_random_uuid() end,
+  'e4900000-0000-0000-0000-000000000045', line.attendance_batch_id, 4,
+  line.attendance_line_id, line.school_id, line.service_date,
+  line.student_portions, line.teacher_portions
+from atlas_planning.attendance_lines line
+where line.attendance_batch_id = 'e4300000-0000-0000-0000-000000000001';
+
+update atlas_planning.attendance_batches
+set version = 4,
+    attendance_status = 'APPROVED',
+    latest_approval_snapshot_id = 'e4900000-0000-0000-0000-000000000045',
+    latest_approved_at = '2026-11-01 10:35:00+07'
+where attendance_batch_id = 'e4300000-0000-0000-0000-000000000001';
 
 insert into atlas_planning.weekly_menu_approval_snapshots (
   weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
   approved_by_actor_id, approved_at
 ) values (
-  'e4900000-0000-0000-0000-000000000035',
+  'e4900000-0000-0000-0000-000000000036',
   'e4200000-0000-0000-0000-000000000001', 4,
   'e4000000-0000-0000-0000-000000000001',
-  '2026-11-01 10:35:00+07'
+  '2026-11-01 10:36:00+07'
 );
 
 insert into atlas_planning.weekly_menu_approval_snapshot_lines (
@@ -2612,8 +2647,11 @@ insert into atlas_planning.weekly_menu_approval_snapshot_lines (
   weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
   weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id
 )
-select gen_random_uuid(),
-  'e4900000-0000-0000-0000-000000000035', line.weekly_menu_id, 4,
+select
+  case when line.weekly_menu_line_id = 'e4900000-0000-0000-0000-000000000030'
+    then 'e4900000-0000-0000-0000-000000000037'::uuid
+    else gen_random_uuid() end,
+  'e4900000-0000-0000-0000-000000000036', line.weekly_menu_id, 4,
   line.weekly_menu_line_id, line.school_id, line.service_date,
   line.menu_slot_code, line.dish_id
 from atlas_planning.weekly_menu_lines line
@@ -2622,10 +2660,10 @@ where line.weekly_menu_id = 'e4200000-0000-0000-0000-000000000001'
 
 update atlas_planning.weekly_menus
 set version = 4,
-    row_count = 6,
+    row_count = 7,
     weekly_menu_status = 'APPROVED',
-    latest_approval_snapshot_id = 'e4900000-0000-0000-0000-000000000035',
-    latest_approved_at = '2026-11-01 10:35:00+07'
+    latest_approval_snapshot_id = 'e4900000-0000-0000-0000-000000000036',
+    latest_approved_at = '2026-11-01 10:36:00+07'
 where weekly_menu_id = 'e4200000-0000-0000-0000-000000000001';
 
 insert into atlas_planning.planning_input_evaluations (
@@ -2640,13 +2678,13 @@ insert into atlas_planning.planning_input_evaluations (
   'e4900000-0000-0000-0000-000000000054',
   'e4900000-0000-0000-0000-000000000050', 4, 'READY',
   'e4200000-0000-0000-0000-000000000001', 4,
-  'e4900000-0000-0000-0000-000000000035',
-  'e4300000-0000-0000-0000-000000000001', 3,
-  'e4900000-0000-0000-0000-000000000043',
+  'e4900000-0000-0000-0000-000000000036',
+  'e4300000-0000-0000-0000-000000000001', 4,
+  'e4900000-0000-0000-0000-000000000045',
   'e4400000-0000-0000-0000-000000000002', 1,
   'e4400000-0000-0000-0000-000000000003', 0, 0,
   'e4000000-0000-0000-0000-000000000001',
-  '2026-11-01 10:40:00+07'
+  '2026-11-01 10:37:00+07'
 );
 
 update atlas_planning.planning_input_sets
@@ -2658,14 +2696,223 @@ set constraints all immediate;
 set constraints all deferred;
 
 insert into rmvp04_requests values (
-  'recipe-replacement-missing-line-create',
+  'recipe-replacement-source-advance-create',
   pg_temp.rmvp04_command(
     'e4900000-0000-0000-0000-000000000072',
-    'rmvp04-recipe-replacement-missing-line-create', 4,
+    'rmvp04-recipe-replacement-source-advance-create', 4,
     'NEED_GENERATION_CREATED', null,
     jsonb_build_object(
       'planning_input_set_id', 'e4900000-0000-0000-0000-000000000050',
       'planning_input_evaluation_id', 'e4900000-0000-0000-0000-000000000054',
+      'period_start', '2026-11-06', 'period_end', '2026-11-06'
+    )
+  )
+);
+set local role authenticated;
+insert into rmvp04_responses
+select 'recipe-replacement-source-advance-create',
+  atlas_api.create_need_generation_run(request)
+from rmvp04_requests
+where request_name = 'recipe-replacement-source-advance-create';
+reset role;
+
+select is(
+  (
+    select jsonb_build_object(
+      'success', response_row.response->>'success',
+      'active', count(*) filter (where line.line_disposition = 'ACTIVE'),
+      'predecessors', count(line.predecessor_theoretical_need_line_id),
+      'blockers', run.blocking_issue_count
+    )
+    from rmvp04_responses response_row
+    join atlas_planning.need_generation_runs run
+      on run.need_generation_run_id =
+        (response_row.response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+    join atlas_planning.theoretical_need_lines line
+      on line.need_generation_run_id = run.need_generation_run_id
+    where response_row.response_name = 'recipe-replacement-source-advance-create'
+    group by response_row.response, run.blocking_issue_count
+  ),
+  jsonb_build_object(
+    'success', 'true', 'active', 2, 'predecessors', 2, 'blockers', 0
+  ),
+  'RMVP04-70 newer Menu and Attendance snapshots create normal Recipe C successors'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'current_menu_snapshot', menu.latest_approval_snapshot_id,
+      'current_attendance_snapshot', attendance.latest_approval_snapshot_id,
+      'historical_replacements', count(*) filter (
+        where historical.line_disposition = 'REMOVED'
+          and historical.weekly_menu_approval_snapshot_id =
+            'e4900000-0000-0000-0000-000000000033'
+          and historical.attendance_approval_snapshot_id =
+            'e4900000-0000-0000-0000-000000000043'
+      )
+    )
+    from atlas_planning.weekly_menus menu
+    cross join atlas_planning.attendance_batches attendance
+    cross join atlas_planning.theoretical_need_lines historical
+    where menu.weekly_menu_id = 'e4200000-0000-0000-0000-000000000001'
+      and attendance.attendance_batch_id =
+        'e4300000-0000-0000-0000-000000000001'
+      and historical.need_generation_run_id = (
+        select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+        from rmvp04_responses where response_name = 'recipe-replacement-create'
+      )
+    group by menu.latest_approval_snapshot_id,
+      attendance.latest_approval_snapshot_id
+  ),
+  jsonb_build_object(
+    'current_menu_snapshot', 'e4900000-0000-0000-0000-000000000036',
+    'current_attendance_snapshot', 'e4900000-0000-0000-0000-000000000045',
+    'historical_replacements', 2
+  ),
+  'RMVP04-71 v3 replacement evidence remains unchanged after both roots advance'
+);
+
+select lives_ok(
+  'set constraints all immediate',
+  'RMVP04-72 deferred integrity accepts immutable replacement history after source advancement'
+);
+set constraints all deferred;
+
+select ok(
+  lower(pg_get_functiondef(
+    'atlas_planning.planning_contract_02a_recipe_replacement_guard()'::regprocedure
+  )) not like all(array[
+    '%atlas_planning.weekly_menus%',
+    '%atlas_planning.weekly_menu_lines%',
+    '%atlas_planning.attendance_batches%',
+    '%latest_approval_snapshot_id%'
+  ])
+  and lower(pg_get_functiondef(
+    'atlas_planning.planning_contract_02a_recipe_replacement_guard()'::regprocedure
+  )) like '%(new).*%'
+  and lower(pg_get_functiondef(
+    'atlas_planning.planning_contract_02a_recipe_replacement_guard()'::regprocedure
+  )) not like '%from atlas_planning.theoretical_need_lines removed%'
+  and lower(pg_get_functiondef(
+    'atlas_core.planning_contract_02a_recipe_replacement_removal(uuid,uuid,uuid,jsonb)'::regprocedure
+  )) like '%latest_approval_snapshot_id%current_live_menu%',
+  'RMVP04-73 currentness stays in creation proof and out of persisted historical integrity'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from atlas_planning.theoretical_need_lines historical
+    where historical.need_generation_run_id = (
+      select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+      from rmvp04_responses where response_name = 'recipe-replacement-create'
+    )
+      and historical.line_disposition = 'REMOVED'
+      and historical.recipe_replacement_predecessor_selection_id is not null
+      and historical.recipe_replacement_successor_selection_id is not null
+  ),
+  2,
+  'RMVP04-74 historical replacement evidence remains relationally complete'
+);
+
+insert into rmvp04_requests
+select 'recipe-replacement-source-advance-invalidate', pg_temp.rmvp04_command(
+  'e4900000-0000-0000-0000-000000000073',
+  'rmvp04-recipe-replacement-source-advance-invalidate', 1,
+  'PLANNING_CORRECTION', 'Stable Menu assignment removed next',
+  jsonb_build_object(
+    'need_generation_run_id',
+    response->'affected_aggregate_ids'->>'need_generation_run_id'
+  )
+)
+from rmvp04_responses
+where response_name = 'recipe-replacement-source-advance-create';
+set local role authenticated;
+insert into rmvp04_responses
+select 'recipe-replacement-source-advance-invalidate',
+  atlas_api.invalidate_need_generation_run(request)
+from rmvp04_requests
+where request_name = 'recipe-replacement-source-advance-invalidate';
+reset role;
+
+-- Remove the stable assignment from the current Menu snapshot. No governed
+-- replacement proof exists, so the original fail-closed blocker remains.
+set local session_replication_role = replica;
+update atlas_planning.weekly_menu_lines
+set line_status = 'INVALID',
+    updated_by_actor_id = 'e4000000-0000-0000-0000-000000000001'
+where weekly_menu_line_id = 'e4900000-0000-0000-0000-000000000030';
+
+insert into atlas_planning.weekly_menu_approval_snapshots (
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  approved_by_actor_id, approved_at
+) values (
+  'e4900000-0000-0000-0000-000000000035',
+  'e4200000-0000-0000-0000-000000000001', 5,
+  'e4000000-0000-0000-0000-000000000001',
+  '2026-11-01 10:45:00+07'
+);
+
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id
+)
+select gen_random_uuid(),
+  'e4900000-0000-0000-0000-000000000035', line.weekly_menu_id, 5,
+  line.weekly_menu_line_id, line.school_id, line.service_date,
+  line.menu_slot_code, line.dish_id
+from atlas_planning.weekly_menu_lines line
+where line.weekly_menu_id = 'e4200000-0000-0000-0000-000000000001'
+  and line.line_status = 'ACTIVE';
+
+update atlas_planning.weekly_menus
+set version = 5,
+    row_count = 6,
+    weekly_menu_status = 'APPROVED',
+    latest_approval_snapshot_id = 'e4900000-0000-0000-0000-000000000035',
+    latest_approved_at = '2026-11-01 10:45:00+07'
+where weekly_menu_id = 'e4200000-0000-0000-0000-000000000001';
+
+insert into atlas_planning.planning_input_evaluations (
+  planning_input_evaluation_id, planning_input_set_id, evaluation_version,
+  evaluation_result, weekly_menu_id, weekly_menu_version,
+  weekly_menu_approval_snapshot_id, attendance_batch_id,
+  attendance_version, attendance_approval_snapshot_id,
+  pantry_need_batch_id, pantry_need_batch_version,
+  pantry_need_approval_snapshot_id, blocking_issue_count, warning_count,
+  evaluated_by_actor_id, evaluated_at
+) values (
+  'e4900000-0000-0000-0000-000000000055',
+  'e4900000-0000-0000-0000-000000000050', 5, 'READY',
+  'e4200000-0000-0000-0000-000000000001', 5,
+  'e4900000-0000-0000-0000-000000000035',
+  'e4300000-0000-0000-0000-000000000001', 4,
+  'e4900000-0000-0000-0000-000000000045',
+  'e4400000-0000-0000-0000-000000000002', 1,
+  'e4400000-0000-0000-0000-000000000003', 0, 0,
+  'e4000000-0000-0000-0000-000000000001',
+  '2026-11-01 10:50:00+07'
+);
+
+update atlas_planning.planning_input_sets
+set current_evaluation_id = 'e4900000-0000-0000-0000-000000000055',
+    readiness_status = 'NEED_GENERATION_REQUESTED'
+where planning_input_set_id = 'e4900000-0000-0000-0000-000000000050';
+set local session_replication_role = origin;
+set constraints all immediate;
+set constraints all deferred;
+
+insert into rmvp04_requests values (
+  'recipe-replacement-missing-line-create',
+  pg_temp.rmvp04_command(
+    'e4900000-0000-0000-0000-000000000074',
+    'rmvp04-recipe-replacement-missing-line-create', 5,
+    'NEED_GENERATION_CREATED', null,
+    jsonb_build_object(
+      'planning_input_set_id', 'e4900000-0000-0000-0000-000000000050',
+      'planning_input_evaluation_id', 'e4900000-0000-0000-0000-000000000055',
       'period_start', '2026-11-06', 'period_end', '2026-11-06'
     )
   )
@@ -2693,7 +2940,7 @@ select is(
     where response_name = 'recipe-replacement-missing-line-create'
   ),
   jsonb_build_object('success', 'true', 'silent_omissions', 2),
-  'RMVP04-70 missing stable Menu assignment retains exact SILENT_PREDECESSOR_OMISSION blockers'
+  'RMVP04-75 missing stable Menu assignment retains exact SILENT_PREDECESSOR_OMISSION blockers'
 );
 
 select is(
@@ -2708,13 +2955,13 @@ select is(
       and recipe_replacement_predecessor_selection_id is not null
   ),
   0,
-  'RMVP04-71 no typed replacement removal is fabricated when governed proof is absent'
+  'RMVP04-76 no typed replacement removal is fabricated when governed proof is absent'
 );
 
 select ok(
   lower(pg_get_functiondef('atlas_api.create_need_generation_run(jsonb)'::regprocedure))
     like '%unsupported_reintroduction_after_removal%',
-  'RMVP04-72 existing Recipe removal reintroduction blocker remains in the create contract'
+  'RMVP04-77 existing Recipe removal reintroduction blocker remains in the create contract'
 );
 
 select is(
@@ -2728,7 +2975,7 @@ select is(
       )
   ),
   0,
-  'RMVP04-73 PANTRY_DIRECT lineage never receives Recipe replacement evidence'
+  'RMVP04-78 PANTRY_DIRECT lineage never receives Recipe replacement evidence'
 );
 
 select is(
@@ -2761,7 +3008,7 @@ select is(
     'owner', 'atlas_need_generation_runtime',
     'helper_authenticated', false
   ),
-  'RMVP04-74 public API and runtime ownership remain unchanged while the helper stays private'
+  'RMVP04-79 public API and runtime ownership remain unchanged while the helper stays private'
 );
 
 select ok(
@@ -2771,7 +3018,7 @@ select ok(
     select response->>'error_code' = 'IDEMPOTENCY_CONFLICT'
     from rmvp04_responses where response_name = 'create-conflict'
   ),
-  'RMVP04-75 existing concurrency and idempotency fences remain present'
+  'RMVP04-80 existing concurrency and idempotency fences remain present'
 );
 
 select * from finish();

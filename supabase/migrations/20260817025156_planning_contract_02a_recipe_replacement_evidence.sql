@@ -300,9 +300,13 @@ security invoker
 set search_path = ''
 as $$
 begin
+  if tg_op = 'DELETE' then
+    return null;
+  end if;
+
   if exists (
     select 1
-    from atlas_planning.theoretical_need_lines removed
+    from (select (new).*) removed
     where removed.recipe_replacement_predecessor_selection_id is not null
       and not exists (
         select 1
@@ -332,19 +336,10 @@ begin
         join atlas_planning.weekly_menu_approval_snapshot_lines successor_menu
           on successor_menu.weekly_menu_approval_snapshot_line_id =
             removed.weekly_menu_approval_snapshot_line_id
-        join atlas_planning.weekly_menus successor_menu_root
-          on successor_menu_root.weekly_menu_id = successor_menu.weekly_menu_id
-        join atlas_planning.weekly_menu_lines successor_live_menu
-          on successor_live_menu.weekly_menu_line_id =
-            successor_menu.weekly_menu_line_id
-         and successor_live_menu.weekly_menu_id = successor_menu.weekly_menu_id
         join atlas_planning.attendance_approval_snapshot_lines
           successor_attendance
           on successor_attendance.attendance_approval_snapshot_line_id =
             removed.attendance_approval_snapshot_line_id
-        join atlas_planning.attendance_batches successor_attendance_root
-          on successor_attendance_root.attendance_batch_id =
-            successor_attendance.attendance_batch_id
         where current_run.need_generation_run_id =
             removed.need_generation_run_id
           and removed.recipe_replacement_successor_selection_id is not null
@@ -400,17 +395,6 @@ begin
           and successor_menu.service_date = removed.service_date
           and successor_menu.menu_slot_code = predecessor_menu.menu_slot_code
           and successor_menu.dish_id = successor_selection.dish_id
-          and successor_menu_root.version = successor_menu.weekly_menu_version
-          and successor_menu_root.latest_approval_snapshot_id =
-            successor_menu.weekly_menu_approval_snapshot_id
-          and successor_menu_root.weekly_menu_status in (
-            'APPROVED', 'NEED_GENERATION_REQUESTED'
-          )
-          and successor_live_menu.line_status = 'ACTIVE'
-          and successor_live_menu.school_id = successor_menu.school_id
-          and successor_live_menu.service_date = successor_menu.service_date
-          and successor_live_menu.menu_slot_code = successor_menu.menu_slot_code
-          and successor_live_menu.dish_id = successor_menu.dish_id
           and successor_attendance.attendance_approval_snapshot_id =
             current_input.attendance_approval_snapshot_id
           and successor_attendance.attendance_approval_snapshot_id =
@@ -431,13 +415,6 @@ begin
           and successor_attendance.school_id = removed.school_id
           and successor_attendance.service_date = predecessor.service_date
           and successor_attendance.service_date = removed.service_date
-          and successor_attendance_root.version =
-            successor_attendance.attendance_version
-          and successor_attendance_root.latest_approval_snapshot_id =
-            successor_attendance.attendance_approval_snapshot_id
-          and successor_attendance_root.attendance_status in (
-            'APPROVED', 'USED_FOR_NEED_GENERATION'
-          )
           and row(
             successor_selection.dish_id,
             successor_selection.recipe_id,
