@@ -563,13 +563,14 @@ select is(
   ),
   array[
     'confirmed_need_line_decisions_command_line_key',
+    'confirmed_need_line_decisions_continuity_validation_owner_key',
     'confirmed_need_line_decisions_line_decision_number_key',
     'confirmed_need_line_decisions_line_id_decision_id_key',
     'confirmed_need_line_decisions_line_predecessor_key',
     'confirmed_need_line_decisions_pkey',
     'confirmed_need_line_decisions_validation_owner_key'
   ]::text[],
-  'H1B1-STR-36 PK and five exact unique constraints own exactly six constraint indexes'
+  'H1B1-STR-36 02B adds only the exact continuity validation owner key'
 );
 select ok(
   (
@@ -629,8 +630,8 @@ select is(
     where indrelid
       = 'atlas_planning.confirmed_need_line_decisions'::regclass
   ),
-  10,
-  'H1B1-STR-42 the accepted validation-owner index plus chain, predecessor, and command indexes total ten without a redundant decision-chain index'
+  11,
+  'H1B1-STR-42 the continuity validation owner key raises the exact index total to eleven'
 );
 
 select is(
@@ -895,8 +896,8 @@ select is(
     where polrelid
       = 'atlas_planning.confirmed_need_line_decisions'::regclass
   ),
-  3,
-  'H1B1-STR-58 the decision relation has exact RMVP-05 read/insert and RMVP-07 immutability-lock policies'
+  5,
+  'H1B1-STR-58 the decision relation adds exact backend-only 02B read policies'
 );
 select ok(
   not exists (
@@ -918,7 +919,6 @@ select ok(
           'atlas_dispatch_command_runtime',
           'atlas_evidence_command_runtime',
           'atlas_planning_command_runtime',
-          'atlas_planning_materialization_runtime',
           'atlas_procurement_command_runtime',
           'atlas_read_runtime'
         )
@@ -961,8 +961,32 @@ select ok(
         = 'atlas_planning.confirmed_need_line_decisions'::regclass
       and role.rolname = 'atlas_confirmed_need_review_runtime'
       and privilege.privilege_type in ('SELECT', 'INSERT')
+  )
+  and (
+    select count(*) = 1
+    from pg_class as c
+    cross join lateral aclexplode(
+      coalesce(c.relacl, acldefault('r', c.relowner))
+    ) as privilege
+    join pg_roles as role on role.oid = privilege.grantee
+    where c.oid
+        = 'atlas_planning.confirmed_need_line_decisions'::regclass
+      and role.rolname = 'atlas_planning_materialization_runtime'
+      and privilege.privilege_type = 'SELECT'
+  )
+  and (
+    select count(*) = 1
+    from pg_class as c
+    cross join lateral aclexplode(
+      coalesce(c.relacl, acldefault('r', c.relowner))
+    ) as privilege
+    join pg_roles as role on role.oid = privilege.grantee
+    where c.oid
+        = 'atlas_planning.confirmed_need_line_decisions'::regclass
+      and role.rolname = 'atlas_need_generation_runtime'
+      and privilege.privilege_type = 'SELECT'
   ),
-  'H1B1-STR-59 only the dedicated RMVP-05 runtime receives exact SELECT and INSERT while decision functions remain private'
+  'H1B1-STR-59 RMVP-05 retains write ownership while 02B backend runtimes receive SELECT only'
 );
 select ok(
   to_regclass('public.confirmed_need_line_decisions') is null

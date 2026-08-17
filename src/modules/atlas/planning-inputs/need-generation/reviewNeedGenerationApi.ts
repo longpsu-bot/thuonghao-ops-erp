@@ -291,6 +291,10 @@ export function createReviewNeedGenerationApi(
         downstream_currentness: "CURRENT",
         safe_operator_message:
           "Đã tạo nhu cầu và Phiếu nhu cầu xác nhận trong một giao dịch.",
+        result_counts: {
+          needs_review_count: 4,
+          carried_forward_count: 63,
+        },
         authoritative_readback: {
           preflight: {
             period_start: request.payload.period_start,

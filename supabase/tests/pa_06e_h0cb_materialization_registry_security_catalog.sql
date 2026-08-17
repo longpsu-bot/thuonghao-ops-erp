@@ -27,7 +27,7 @@ select is((select owning_domain||':'||capability_status from atlas_core.capabili
 select ok(exists(select 1 from pg_roles where rolname='atlas_planning_materialization_runtime'), 'dedicated runtime exists');
 select isnt((select rolcanlogin from pg_roles where rolname='atlas_planning_materialization_runtime'), true, 'runtime is NOLOGIN');
 select isnt((select rolinherit from pg_roles where rolname='atlas_planning_materialization_runtime'), true, 'runtime is NOINHERIT');
-select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_materialization_runtime'), 2, 'runtime owns exactly the public CMD-15 wrapper and its private shared algorithm');
+select is((select count(*)::integer from pg_proc where pg_get_userbyid(proowner)='atlas_planning_materialization_runtime'), 4, 'runtime owns exactly CMD-15 and the three private Planning materialization helpers');
 select is(
   (
     select array_agg(n.nspname||'.'||p.proname order by n.nspname, p.proname)::text[]
@@ -37,9 +37,11 @@ select is(
   ),
   array[
     'atlas_api.create_confirmed_needs_from_generation',
-    'atlas_core.planning_contract_01_materialize_confirmed_needs'
+    'atlas_core.planning_contract_01_materialize_confirmed_needs',
+    'atlas_core.planning_contract_02b_apply_decision_continuity',
+    'atlas_core.planning_contract_02b_policy_incompatible_batch'
   ]::text[],
-  'runtime owns exactly CMD-15 and the private PLANNING-CONTRACT-01 materialization helper'
+  'runtime owns exactly CMD-15 and the private PLANNING-CONTRACT-01/02B materialization helpers'
 );
 select is((select count(*)::integer from pg_auth_members m join pg_roles r on r.oid=m.member where r.rolname='atlas_planning_materialization_runtime'), 0, 'runtime is not a member of another role');
 select is((select count(*)::integer from pg_auth_members m join pg_roles r on r.oid=m.roleid join pg_roles member on member.oid=m.member where r.rolname='atlas_planning_materialization_runtime' and member.rolname='postgres' and m.admin_option and not m.inherit_option and not m.set_option), 1, 'only the standard non-inheriting postgres ownership administration link remains');
@@ -54,12 +56,12 @@ select isnt(has_function_privilege('public','atlas_api.create_confirmed_needs_fr
 select isnt(has_function_privilege('public','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), true, 'PUBLIC cannot execute the validator');
 select is((select count(*)::integer from (values('anon'),('authenticated'),('service_role')) roles(role_name) where has_function_privilege(role_name,'atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE')), 0, 'API roles cannot execute the validator');
 select ok(has_function_privilege('atlas_planning_materialization_runtime','atlas_core.pa_06e_h0cb_validate_materialization_request(jsonb)','EXECUTE'), 'runtime may invoke the validator');
-select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 16, 'runtime has exactly the sixteen practical function executes after the accepted shared-algorithm contract');
+select is((select count(*)::integer from information_schema.role_routine_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='EXECUTE'), 19, 'runtime has exactly the nineteen practical function executes after the accepted continuity contract');
 select is((select count(*)::integer from pg_namespace n where n.nspname in ('atlas_core','atlas_admin','atlas_planning','atlas_audit','atlas_api') and has_schema_privilege('atlas_planning_materialization_runtime',n.oid,'USAGE')), 5, 'runtime has usage on exactly five Atlas schemas');
 
 -- Practical minimum relation privileges.
-select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='SELECT'), 45, 'runtime selects exactly the approved forty-five relations');
-select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='INSERT'), 7, 'runtime inserts exactly seven receipt/domain/audit relations');
+select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='SELECT'), 48, 'runtime selects exactly the approved forty-eight relations');
+select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='INSERT'), 8, 'runtime inserts exactly eight receipt/domain/audit/continuity relations');
 select is((select count(*)::integer from information_schema.role_table_grants where grantee='atlas_planning_materialization_runtime' and privilege_type='UPDATE'), 1, 'only the receipt has table-level UPDATE');
 select is((select count(*)::integer from information_schema.role_column_grants where grantee='atlas_planning_materialization_runtime' and table_schema='atlas_planning' and table_name='confirmed_need_batches' and privilege_type='UPDATE' and column_name in ('current_need_generation_run_id','current_need_generation_run_version','current_need_generation_release_snapshot_id','version','updated_at')), 5, 'batch UPDATE is limited to current-source/version metadata');
 select is((select count(*)::integer from information_schema.role_column_grants where grantee='atlas_planning_materialization_runtime' and table_schema='atlas_planning' and table_name='confirmed_need_line_revisions' and privilege_type='UPDATE' and column_name in ('revision_status','is_current')), 2, 'revision UPDATE is limited to current/status metadata');
@@ -72,13 +74,13 @@ select is((select count(*)::integer from information_schema.role_table_grants wh
 select is((select count(*)::integer from information_schema.role_table_grants where grantee in ('anon','authenticated','service_role') and table_schema in ('atlas_core','atlas_admin','atlas_planning','atlas_audit') and table_name in ('command_receipts','confirmed_need_batches','confirmed_need_lines','confirmed_need_line_revisions','confirmed_need_line_revision_contributions')), 0, 'API roles gain no direct private-table privilege');
 
 -- Verb-specific forced-RLS policy surface.
-select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime'), 57, 'runtime has exactly fifty-seven verb-specific policies');
-select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='r'), 47, 'runtime has forty-seven SELECT policies');
-select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='a'), 7, 'runtime has seven INSERT policies');
-select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='w'), 3, 'runtime has three UPDATE policies');
+select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime'), 62, 'runtime has exactly sixty-two verb-specific policies');
+select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='r'), 50, 'runtime has fifty SELECT policies');
+select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='a'), 8, 'runtime has eight INSERT policies');
+select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='w'), 4, 'runtime has four UPDATE policies');
 select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polcmd='*'), 0, 'runtime has no FOR ALL policy');
 select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) where r.rolname='atlas_planning_materialization_runtime' and p.polrelid='atlas_core.command_receipts'::regclass), 3, 'receipt has exact select/insert/update policies');
-select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) join pg_class c on c.oid=p.polrelid where r.rolname='atlas_planning_materialization_runtime' and c.relname like 'confirmed_need%'), 10, 'Confirmed Need destinations have exact verb policies');
+select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) join pg_class c on c.oid=p.polrelid where r.rolname='atlas_planning_materialization_runtime' and c.relname like 'confirmed_need%'), 14, 'Confirmed Need destinations have exact verb policies');
 select is((select count(*)::integer from pg_policy p join pg_roles r on r.oid=any(p.polroles) join pg_class c on c.oid=p.polrelid join pg_namespace n on n.oid=c.relnamespace where r.rolname='atlas_planning_materialization_runtime' and n.nspname='atlas_audit'), 4, 'audit destinations have exact select/insert policies');
 select is((select count(*)::integer from pg_policy p where p.polname like 'pa_06e_h0cb%' and p.polroles && array[(select oid from pg_roles where rolname='authenticated')]), 0, 'H0Cb adds no API-role table policy');
 
@@ -140,6 +142,7 @@ select is(
       'atlas_api.validate_attendance(request jsonb)',
       'atlas_api.validate_pantry(request jsonb)',
       'atlas_api.validate_weekly_menu(request jsonb)',
+      'atlas_core.uiq03a_lock_weekly_menu_recipe_dishes()',
       'atlas_planning.pantry_02_snapshot_integrity_guard()'
     ]::text[],
     'rmvp_03b_command_functions', array[

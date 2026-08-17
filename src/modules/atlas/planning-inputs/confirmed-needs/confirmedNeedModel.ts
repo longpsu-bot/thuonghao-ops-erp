@@ -177,6 +177,8 @@ export type ConfirmedNeedLine = {
   current_decision_number: number | null;
   current_decision_kind: string | null;
   confirmed_quantity_after: string | null;
+  confirmation_state:
+    "CARRIED_FORWARD" | "CHANGED" | "NEW" | "UNREVIEWED" | "CONFIRMED_CURRENT";
   effective_policy: {
     root_id: string;
     revision_id: string;
@@ -243,6 +245,11 @@ export type ConfirmedNeedWorkbenchData = {
     unreviewed: number;
     confirmed: number;
     adjusted: number;
+    carried_forward: number;
+    needs_review: number;
+    changed: number;
+    new: number;
+    removed: number;
   };
   blockers: ConfirmedNeedIssue[];
   warnings: ConfirmedNeedIssue[];
@@ -449,6 +456,19 @@ export function exactQuantityDisplay(value: string | null) {
   const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   const trimmed = fraction?.replace(/0+$/, "");
   return trimmed ? `${grouped},${trimmed}` : grouped;
+}
+
+export function confirmedNeedConfirmationStateLabel(
+  state: ConfirmedNeedLine["confirmation_state"],
+) {
+  const labels: Record<ConfirmedNeedLine["confirmation_state"], string> = {
+    CARRIED_FORWARD: "Giữ nguyên",
+    CHANGED: "Cần rà soát",
+    NEW: "Mới",
+    UNREVIEWED: "Cần rà soát",
+    CONFIRMED_CURRENT: "Đã lưu",
+  };
+  return labels[state];
 }
 
 export function jsonRecord(value: JsonValue | undefined) {

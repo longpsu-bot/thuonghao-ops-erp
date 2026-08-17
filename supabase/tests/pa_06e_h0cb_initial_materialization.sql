@@ -154,7 +154,7 @@ select is((select response_payload#>>'{result_counts,current_line_revision_count
 select is((select response_payload#>>'{result_counts,superseded_line_revision_count}' from h0cb_initial_results where result_name='created'),'0','no initial revision is superseded');
 select is((select count(*)::integer from jsonb_object_keys((select response_payload->'affected_aggregate_ids' from h0cb_initial_results where result_name='created'))),2,'aggregate IDs are bounded to two fields');
 select is((select count(*)::integer from jsonb_object_keys((select response_payload->'new_versions' from h0cb_initial_results where result_name='created'))),2,'new versions are bounded to two fields');
-select is((select count(*)::integer from jsonb_object_keys((select response_payload->'result_counts' from h0cb_initial_results where result_name='created'))),7,'result counts contain exactly seven fields');
+select is((select count(*)::integer from jsonb_object_keys((select response_payload->'result_counts' from h0cb_initial_results where result_name='created'))),12,'result counts contain the seven materialization fields and five additive continuity fields');
 select is((select jsonb_typeof(response_payload->'emitted_event_ids') from h0cb_initial_results where result_name='created'),'array','event IDs use shared envelope');
 select is((select jsonb_array_length(response_payload->'emitted_event_ids') from h0cb_initial_results where result_name='created'),1,'one event is emitted');
 select is((select jsonb_array_length(response_payload->'audit_event_ids') from h0cb_initial_results where result_name='created'),1,'one audit event is emitted');

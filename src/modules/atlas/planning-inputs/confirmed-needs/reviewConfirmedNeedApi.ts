@@ -51,6 +51,11 @@ export function createReviewConfirmedNeedFixture(
       unreviewed: lineCount,
       confirmed: 0,
       adjusted: 0,
+      carried_forward: 0,
+      needs_review: lineCount,
+      changed: 0,
+      new: lineCount,
+      removed: 0,
     },
     blockers: [],
     warnings: [],
@@ -142,6 +147,7 @@ export function createReviewConfirmedNeedFixture(
         current_decision_number: null,
         current_decision_kind: null,
         confirmed_quantity_after: null,
+        confirmation_state: "NEW",
         effective_policy: {
           root_id: "c4600000-0000-0000-0000-000000000001",
           revision_id: "c4610000-0000-0000-0000-000000000001",
@@ -191,6 +197,7 @@ export function createReviewConfirmedNeedFixture(
         current_decision_number: null,
         current_decision_kind: null,
         confirmed_quantity_after: null,
+        confirmation_state: "NEW",
         effective_policy: {
           root_id: "c4600000-0000-0000-0000-000000000001",
           revision_id: "c4610000-0000-0000-0000-000000000001",
@@ -365,6 +372,7 @@ export function createReviewConfirmedNeedApi(
             ? "ADJUSTED_QUANTITY_CONFIRMED"
             : "UNCHANGED_PROPOSAL_ACCEPTED",
           confirmed_quantity_after: selected.proposed_confirmed_quantity,
+          confirmation_state: "CONFIRMED_CURRENT" as const,
         };
       });
       state = {
@@ -380,6 +388,17 @@ export function createReviewConfirmedNeedApi(
             (line) =>
               line.current_decision_kind === "ADJUSTED_QUANTITY_CONFIRMED",
           ).length,
+          carried_forward: nextLines.filter(
+            (line) => line.confirmation_state === "CARRIED_FORWARD",
+          ).length,
+          needs_review: nextLines.filter((line) => !line.current_decision_id)
+            .length,
+          changed: nextLines.filter(
+            (line) => line.confirmation_state === "CHANGED",
+          ).length,
+          new: nextLines.filter((line) => line.confirmation_state === "NEW")
+            .length,
+          removed: state.line_counts.removed,
         },
         lines: nextLines,
       };
@@ -676,6 +695,7 @@ export function createReviewConfirmedNeedApi(
             ? "ADJUSTED_QUANTITY_CONFIRMED"
             : "UNCHANGED_PROPOSAL_ACCEPTED",
           confirmed_quantity_after: changed.proposed_confirmed_quantity,
+          confirmation_state: "CONFIRMED_CURRENT" as const,
         };
       });
       state = {
@@ -707,6 +727,17 @@ export function createReviewConfirmedNeedApi(
             (line) =>
               line.current_decision_kind === "ADJUSTED_QUANTITY_CONFIRMED",
           ).length,
+          carried_forward: nextLines.filter(
+            (line) => line.confirmation_state === "CARRIED_FORWARD",
+          ).length,
+          needs_review: nextLines.filter((line) => !line.current_decision_id)
+            .length,
+          changed: nextLines.filter(
+            (line) => line.confirmation_state === "CHANGED",
+          ).length,
+          new: nextLines.filter((line) => line.confirmation_state === "NEW")
+            .length,
+          removed: state.line_counts.removed,
         },
       };
       const result = success({

@@ -19,6 +19,7 @@ import {
 } from "./needGenerationApi";
 import {
   formatQuantity,
+  needGenerationContinuitySummaryFromResult,
   needGenerationReadbackFromResult,
   needGenerationResultIsStale,
   needGenerationResultMessage,
@@ -435,6 +436,7 @@ export function NeedGenerationWorkbench({
     }
     const nextPreflight = planningInputPreflightFromResult(result);
     const nextWorkbench = needGenerationReadbackFromResult(result);
+    const continuitySummary = needGenerationContinuitySummaryFromResult(result);
     setPreflight(nextPreflight);
     setWorkbench(nextWorkbench);
     setExecutionBlocker(null);
@@ -445,7 +447,13 @@ export function NeedGenerationWorkbench({
       );
       return;
     }
-    setNotice(wasUpdate ? "Đã cập nhật nhu cầu." : "Đã tạo nhu cầu.");
+    setNotice(
+      wasUpdate && continuitySummary
+        ? `Nhu cầu đã được cập nhật. ${continuitySummary.needsReview} dòng cần rà soát; ${continuitySummary.carriedForward} xác nhận trước đó được giữ nguyên.`
+        : wasUpdate
+          ? "Đã cập nhật nhu cầu."
+          : "Đã tạo nhu cầu.",
+    );
   };
 
   const blockers =

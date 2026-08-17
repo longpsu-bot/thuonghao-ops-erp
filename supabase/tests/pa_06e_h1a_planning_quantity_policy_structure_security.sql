@@ -846,7 +846,7 @@ select is(
         'name', expected.policy_name,
         'command', expected.command,
         'permissive', true,
-        'roles', jsonb_build_array('atlas_confirmed_need_review_runtime'),
+        'roles', jsonb_build_array(expected.role_name),
         'using', 'true',
         'with_check', expected.with_check
       )
@@ -856,36 +856,75 @@ select is(
       values
         (
           'atlas_planning.planning_quantity_policies',
+          'planning_contract_02b_generation_policy_root_lock',
+          'atlas_need_generation_runtime',
+          'w',
+          'false'
+        ),
+        (
+          'atlas_planning.planning_quantity_policies',
+          'planning_contract_02b_generation_policy_root_select',
+          'atlas_need_generation_runtime',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.planning_quantity_policies',
           'rmvp_05_confirmed_need_select',
+          'atlas_confirmed_need_review_runtime',
           'r',
           null::text
         ),
         (
           'atlas_planning.planning_quantity_policies',
           'rmvp_05_policy_root_lock',
+          'atlas_confirmed_need_review_runtime',
           'w',
           'true'
         ),
         (
           'atlas_planning.planning_quantity_policy_revisions',
+          'planning_contract_02b_generation_policy_revision_select',
+          'atlas_need_generation_runtime',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.planning_quantity_policy_revisions',
+          'planning_contract_02b_materialization_policy_revision_select',
+          'atlas_planning_materialization_runtime',
+          'r',
+          null::text
+        ),
+        (
+          'atlas_planning.planning_quantity_policy_revisions',
           'rmvp_05_confirmed_need_select',
+          'atlas_confirmed_need_review_runtime',
           'r',
           null::text
         ),
         (
           'atlas_planning.planning_quantity_policy_revisions',
           'rmvp_06_policy_revision_lock',
+          'atlas_confirmed_need_review_runtime',
           'w',
           'false'
         )
-    ) expected(relation_name, policy_name, command, with_check)
+    ) expected(relation_name, policy_name, role_name, command, with_check)
   ),
-  'H1A-STR-53 exact four-policy catalog includes the RMVP-06 revision lock and no unknown policy'
+  'H1A-STR-53 exact eight-policy catalog includes the accepted continuity reads/lock and the RMVP-05/06 policies'
 );
 select is(
   (select jsonb_build_object(
     'rmvp_05_runtime_select', count(*) filter (
       where role.rolname = 'atlas_confirmed_need_review_runtime'
+        and privilege.privilege_type = 'SELECT'
+    ),
+    'continuity_runtime_select', count(*) filter (
+      where role.rolname in (
+        'atlas_need_generation_runtime',
+        'atlas_planning_materialization_runtime'
+      )
         and privilege.privilege_type = 'SELECT'
     ),
     'other_browser_or_runtime', count(*) filter (
@@ -898,7 +937,6 @@ select is(
           'atlas_dispatch_command_runtime',
           'atlas_evidence_command_runtime',
           'atlas_planning_command_runtime',
-          'atlas_planning_materialization_runtime',
           'atlas_procurement_command_runtime',
           'atlas_read_runtime'
         )
@@ -916,9 +954,10 @@ select is(
   ),
   jsonb_build_object(
     'rmvp_05_runtime_select', 2,
+    'continuity_runtime_select', 3,
     'other_browser_or_runtime', 0
   ),
-  'H1A-STR-54 only the dedicated RMVP-05 runtime has exact SELECT on both H1A relations'
+  'H1A-STR-54 only the dedicated RMVP-05 and continuity runtimes have exact SELECT on H1A relations'
 );
 select ok(
   to_regclass('public.planning_quantity_policies') is null

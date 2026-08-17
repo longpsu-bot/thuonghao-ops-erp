@@ -151,6 +151,7 @@ jobs:
           pnpm exec supabase test db supabase/tests/pantry_02_connected_pantry_source.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
           pnpm exec supabase test db supabase/tests/planning_contract_01_atomic_planning_boundaries.sql --local
+          pnpm exec supabase test db supabase/tests/planning_contract_02b_selective_confirmation_continuity.sql --local
           pnpm exec supabase db query --local --file supabase/local/pa_06b_synthetic_identity.sql
           pnpm exec supabase db query --local --file supabase/local/rmvp_05_browser_fixture.sql
           pnpm exec supabase test db supabase/tests/rmvp_06_connected_confirmed_need_validation.sql --local
@@ -302,6 +303,7 @@ jobs:
           pnpm exec supabase test db supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_04_connected_need_generation.sql --local
           pnpm exec supabase test db supabase/tests/planning_contract_01_atomic_planning_boundaries.sql --local
+          pnpm exec supabase test db supabase/tests/planning_contract_02b_selective_confirmation_continuity.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_05_connected_confirmed_need_review.sql --local
           pnpm exec supabase db query --local --file supabase/local/pa_06b_synthetic_identity.sql
           pnpm exec supabase db query --local --file supabase/local/rmvp_05_browser_fixture.sql

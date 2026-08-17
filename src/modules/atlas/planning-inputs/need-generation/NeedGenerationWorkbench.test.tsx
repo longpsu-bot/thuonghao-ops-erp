@@ -269,7 +269,11 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(execute.mock.calls[0]?.[0].payload).toMatchObject({
       expected_current_need_generation_run_id: "current-run",
     });
-    expect(await screen.findByText("Đã cập nhật nhu cầu.")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "Nhu cầu đã được cập nhật. 4 dòng cần rà soát; 63 xác nhận trước đó được giữ nguyên.",
+      ),
+    ).toBeVisible();
     expect(
       screen.queryByText(/Phiếu nhu cầu xác nhận|trong một giao dịch/),
     ).not.toBeInTheDocument();

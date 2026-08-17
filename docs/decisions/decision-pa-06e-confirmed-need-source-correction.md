@@ -1,6 +1,6 @@
 # Decision PA-06E — Confirmed Need Source Correction
 
-**Status:** Proposed decision set; only rows explicitly labeled approved direction are settled
+**Status:** Historical decision set with accepted PLANNING-CONTRACT-02B amendment; only rows explicitly labeled approved direction or amended below are settled
 
 **Contract:** [PA-06E Confirmed Need Review, Adjustment, Revision, and Source-Correction Contract](../architecture/pa-06e-confirmed-need-review-adjustment-revision-contract.md)
 
@@ -62,6 +62,16 @@ The following are settled for future design unless superseded through change con
 9. Require H0 source/decision persistence and materialization before H1 read/preview/confirm.
 10. Treat the proposed API registry delta as non-canonical until a separately approved implementation task changes the registry.
 
+### PLANNING-CONTRACT-02B accepted amendment
+
+PLANNING-CONTRACT-02B supersedes the blanket-review implication in PA06E-07 and PA06E-11 and resolves PA06E-12 for correction-eligible `NEED_GENERATION` batches. An upstream source successor still makes the overall generated Need `OUTDATED`, but it does not automatically invalidate every human line decision.
+
+The backend compares only the direct predecessor and successor current business facts inside the same Confirmed Need batch. Stable identity is exactly `service_date + customer_id + school_id + delivery_location_id + ingredient_id + controlled_unit_id`. A valid current human decision is carried only when that identity, the exact PostgreSQL `numeric(20,6)` theoretical quantity, and the sole effective Planning quantity-policy revision are unchanged. Dish, Recipe, Recipe version/line/revision, source membership, source signatures, Need Generation identities, release snapshots, and fingerprints remain lineage evidence and are not carry predicates.
+
+Carry creates no human decision. The original decision ID, actor, time, confirmed quantity, reason, note, and command evidence remain authoritative through immutable `CARRIED_FORWARD` system evidence connecting the direct predecessor and successor revisions. Proposal change, policy incompatibility, and removal instead create exact immutable invalidation evidence and narrowly authorize pointer clearing. New or already-unreviewed lines receive no fake continuity evidence. A later return to an older quantity cannot resurrect an invalidated decision; reconfirmation appends the next human decision to the historical predecessor chain.
+
+This amendment applies only before downstream release while the existing materialization lifecycle permits correction. `RELEASED_FOR_PURCHASE_HANDOFF` plus stale upstream evidence remains `DOWNSTREAM_CORRECTION_REQUIRED`; release snapshots and downstream facts are not mutated. PLANNING-CONTRACT-02A Recipe-replacement lineage semantics remain unchanged.
+
 ## 4. Explicit non-decisions
 
 PA-06E does not approve:
@@ -72,7 +82,7 @@ PA-06E does not approve:
 - a new status, business aggregate, cross-domain correction workflow, or editable Purchase Handoff;
 - school-catering CMD-03 behavior or any change to direct-wholesale CMD-03;
 - production Planning or purchase step values;
-- partial release, auto-reconfirmation, source-change cascading, or downstream document rewriting;
+- partial release, unsupported decision resurrection, source-change cascading, or downstream document rewriting;
 - direct access from browser roles to private Planning tables;
 - fake wholesale lineage, polymorphic free-text source IDs, caller-authored table names, or generic unvalidated JSON lineage;
 - a live Supabase, OPS v1, production-data, package, credential, or deployment change.
@@ -83,8 +93,10 @@ The corrected sequence remains narrow but explicit. H0 must first contract and l
 
 Product and architecture review must close the pending rows before their behavior can become authoritative. Approved rows may be referenced as requirements, but no proposed function or capability is part of the canonical API registry merely because it appears in PA-06E.
 
+The accepted PLANNING-CONTRACT-02B amendment is authoritative for selective confirmation continuity and is implemented through private relational evidence and existing command surfaces; it does not accept any other pending PA-06E proposal.
+
 ## 6. Security, migration, and rollback effect
 
-This decision record changes documentation only. It creates no database object, callable surface, role, grant, RLS policy, application behavior, live-system state, or deployment.
+The historical PA-06E record was documentation-only. PLANNING-CONTRACT-02B implements its accepted amendment through a new private immutable continuity relation, backend-only helper/grant changes, amended existing command/read behavior, and bounded Application presentation. It adds no public API, operator capability, hosted mutation, live-system change, or deployment.
 
 Future implementation must use backend authorization, exact scope, private tables, hardened function boundaries, idempotency, optimistic concurrency, preview/commit fidelity, safe errors, receipts, events, audit, and authoritative readback. Documentation rollback is a normal Git revert; no database rollback applies.

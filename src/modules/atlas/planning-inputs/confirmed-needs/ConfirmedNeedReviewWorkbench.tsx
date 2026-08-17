@@ -9,6 +9,7 @@ import {
   type ConfirmedNeedSaveV2Request,
 } from "./confirmedNeedApi";
 import {
+  confirmedNeedConfirmationStateLabel,
   confirmedNeedReadbackFromResult,
   confirmedNeedReasonLabel,
   confirmedNeedResultAllowsExactRetry,
@@ -151,6 +152,9 @@ export function ConfirmedNeedReviewWorkbench({
   const [search, setSearch] = useState("");
   const [schoolFilter, setSchoolFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
+  const [confirmationFilter, setConfirmationFilter] = useState<
+    "" | "needs_review" | "carried_forward"
+  >("");
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [releaseConfirmation, setReleaseConfirmation] = useState(false);
@@ -250,12 +254,22 @@ export function ConfirmedNeedReviewWorkbench({
     return workbench.lines.filter((line) => {
       if (schoolFilter && line.school.id !== schoolFilter) return false;
       if (dateFilter && line.service_date !== dateFilter) return false;
+      if (
+        confirmationFilter === "needs_review" &&
+        !["CHANGED", "NEW", "UNREVIEWED"].includes(line.confirmation_state)
+      )
+        return false;
+      if (
+        confirmationFilter === "carried_forward" &&
+        line.confirmation_state !== "CARRIED_FORWARD"
+      )
+        return false;
       if (!query) return true;
       return foldSearch(
         `${line.ingredient.name} ${line.school.name} ${line.delivery_location.name}`,
       ).includes(query);
     });
-  }, [dateFilter, schoolFilter, search, workbench]);
+  }, [confirmationFilter, dateFilter, schoolFilter, search, workbench]);
 
   const save = async () => {
     if (
@@ -394,6 +408,12 @@ export function ConfirmedNeedReviewWorkbench({
         >
           <strong>{contextSchool}</strong>
           <span>{workbench.line_counts.total} dòng</span>
+          {workbench.line_counts.needs_review > 0 && (
+            <span>{workbench.line_counts.needs_review} cần rà soát</span>
+          )}
+          {workbench.line_counts.carried_forward > 0 && (
+            <span>{workbench.line_counts.carried_forward} giữ nguyên</span>
+          )}
           <span className={`confirmed-need-save-state ${dirty ? "dirty" : ""}`}>
             {statusLabel(workbench, dirty)}
           </span>
@@ -454,7 +474,18 @@ export function ConfirmedNeedReviewWorkbench({
         </label>
         <label>
           <span>Tình trạng</span>
-          <output>{statusLabel(workbench, dirty)}</output>
+          <select
+            value={confirmationFilter}
+            onChange={(event) =>
+              setConfirmationFilter(
+                event.target.value as "" | "needs_review" | "carried_forward",
+              )
+            }
+          >
+            <option value="">Tất cả</option>
+            <option value="needs_review">Cần rà soát</option>
+            <option value="carried_forward">Giữ nguyên</option>
+          </select>
         </label>
       </section>
 
@@ -465,6 +496,7 @@ export function ConfirmedNeedReviewWorkbench({
         <CompactTable
           headers={[
             "Nguyên liệu",
+            "Tình trạng",
             "Trường / điểm giao",
             "Ngày",
             "Nhu cầu tính",
@@ -487,6 +519,15 @@ export function ConfirmedNeedReviewWorkbench({
                 <td>
                   <strong>{line.ingredient.name}</strong>
                   <small>{line.controlled_unit.name}</small>
+                </td>
+                <td>
+                  <span
+                    className={`confirmed-need-line-state ${line.confirmation_state.toLocaleLowerCase()}`}
+                  >
+                    {confirmedNeedConfirmationStateLabel(
+                      line.confirmation_state,
+                    )}
+                  </span>
                 </td>
                 <td>
                   {line.school.name}

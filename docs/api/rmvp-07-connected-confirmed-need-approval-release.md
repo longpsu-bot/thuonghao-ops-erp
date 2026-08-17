@@ -97,3 +97,7 @@ Private relations use forced RLS and exact runtime select/insert/immutability-lo
 `scripts/verify-local-rmvp07-confirmed-need-approval-release.mjs` exercises authenticated browser-key approval, exact replay, release, exact replay, final UI readback, and zero downstream delta. Draft smoke uses the deterministic fixture; Full Integration extends the actual RMVP-04 → CMD-15 → RMVP-05 → RMVP-06 path.
 
 Reopen, CMD-03 Purchase Handoff creation, supplier selection, purchase orders, downstream domain changes, hosted Supabase, production capability binding, Retool, credentials, and deployment remain excluded.
+
+## 8. Carried decision snapshot integrity
+
+PLANNING-CONTRACT-02B changes no RMVP-07 public command, capability, lifecycle, or release relation. Complete-fact checks use the same direct-or-exact-carry authority predicate as RMVP-06 and count only current successor revisions. Approval snapshot lines bind the current successor revision, current generated source, and carried confirmed quantity while retaining the original human decision identity through private continuity evidence. A changed/new/unreviewed line still blocks release; a carried line satisfies current human authority. Released and downstream facts remain immutable.

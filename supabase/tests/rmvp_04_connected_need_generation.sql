@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(80);
+select plan(86);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
@@ -163,7 +163,7 @@ select is(
     )
   ),
   jsonb_build_object(
-    'tables', 102,
+    'tables', 103,
     'views', 2,
     'rmvp04_triggers', 0,
     'rmvp06_validation_relations', array[
@@ -175,7 +175,7 @@ select is(
       'atlas_planning.confirmed_need_releases'
     ]::text[]
   ),
-  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes the exact RMVP-06/07 evidence relations'
+  'RMVP04-10 RMVP-04 adds no relation, view, or source trigger while the current platform includes exact RMVP-06/07 and 02B evidence relations'
 );
 
 -- H0A2 normally prevents duplicate active Recipe roots in either scope. The
@@ -1629,6 +1629,43 @@ select ok(
 -- assignment explicitly removes every prior Recipe contribution. New Recipe
 -- contributions begin independent lineage even when Ingredient and quantity
 -- happen to match.
+insert into atlas_core.role_capabilities (role_id, capability_id)
+select 'e4000000-0000-0000-0000-000000000020', capability.capability_id
+from atlas_core.capabilities capability
+where capability.capability_code in (
+  'confirmed_need_review.read',
+  'confirmed_need_quantities.preview',
+  'confirmed_need_quantities.confirm'
+)
+on conflict (role_id, capability_id) do nothing;
+
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id, unit_id, created_by_actor_id
+) values (
+  'e4900000-0000-0000-0000-000000000090',
+  'e4100000-0000-0000-0000-000000000006',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
+  revision_number, predecessor_policy_revision_id, planning_step,
+  effective_from, policy_revision_status, created_by_actor_id, created_at
+) values (
+  'e4900000-0000-0000-0000-000000000091',
+  'e4900000-0000-0000-0000-000000000090',
+  'e4100000-0000-0000-0000-000000000006',
+  1, null, 0.500000, '2026-01-01', 'DRAFT',
+  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
+);
+update atlas_planning.planning_quantity_policy_revisions
+set policy_revision_status = 'ACTIVE',
+    approved_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
+    approved_at = transaction_timestamp(),
+    activated_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
+    activated_at = transaction_timestamp()
+where planning_quantity_policy_revision_id =
+  'e4900000-0000-0000-0000-000000000091';
+
 set local session_replication_role = replica;
 
 insert into atlas_admin.ingredients (
@@ -1894,6 +1931,30 @@ from rmvp04_requests
 where request_name = 'recipe-replacement-initial-release';
 reset role;
 
+set local role authenticated;
+insert into rmvp04_responses
+select '02b-recipe-origin-materialize',
+  atlas_api.create_confirmed_needs_from_generation(jsonb_build_object(
+    'contract_version', 'PA-06E-H0C.v1',
+    'command_id', 'e4900000-0000-0000-0000-000000000078',
+    'correlation_id', 'e4900000-0000-0000-0000-000000000079',
+    'idempotency_key', 'rmvp04-02b-recipe-origin-materialize',
+    'expected_version', 1,
+    'requested_by_auth_subject', 'e4000000-0000-0000-0000-000000000101',
+    'requested_at', transaction_timestamp(),
+    'reason_code', 'RMVP04_MATERIALIZATION',
+    'reason_note', 'Materialize the original Recipe source before correction',
+    'payload', jsonb_build_object(
+      'need_generation_run_id',
+        response->'affected_aggregate_ids'->>'need_generation_run_id',
+      'need_generation_run_version', 3,
+      'confirmed_need_batch_id', null
+    )
+  ))
+from rmvp04_responses
+where response_name = 'recipe-replacement-initial-release';
+reset role;
+
 insert into rmvp04_requests
 select 'recipe-replacement-initial-invalidate', pg_temp.rmvp04_command(
   'e4900000-0000-0000-0000-000000000063',
@@ -2089,6 +2150,144 @@ select 'recipe-same-lineage-release',
   atlas_api.release_need_generation_run(request)
 from rmvp04_requests where request_name = 'recipe-same-lineage-release';
 reset role;
+
+insert into atlas_core.command_receipts (
+  command_receipt_id, command_name, scope_key, idempotency_key, command_id,
+  correlation_id, actor_id, expected_version, request_hash, outcome
+) values (
+  'e4900000-0000-0000-0000-000000000092',
+  'execute_need_generation',
+  'planning-input-period:2026-11-06:2026-11-06',
+  'rmvp04-02b-recipe-predecessor-materialize',
+  'e4900000-0000-0000-0000-000000000080',
+  'e4900000-0000-0000-0000-000000000081',
+  'e4000000-0000-0000-0000-000000000001',
+  1, repeat('8', 64), 'IN_PROGRESS'
+);
+select set_config(
+  'atlas.planning_contract_01_receipt_id',
+  'e4900000-0000-0000-0000-000000000092', true
+);
+select set_config(
+  'atlas.planning_contract_01_actor_id',
+  'e4000000-0000-0000-0000-000000000001', true
+);
+select set_config(
+  'atlas.planning_contract_01_command_name', 'execute_need_generation', true
+);
+grant atlas_need_generation_runtime to postgres with set true;
+grant select, insert on rmvp04_responses
+to atlas_need_generation_runtime;
+set local role atlas_need_generation_runtime;
+insert into rmvp04_responses
+select '02b-recipe-predecessor-materialize',
+  atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb_build_object(
+    'contract_version', 'PA-06E-H0C.v1',
+    'command_id', 'e4900000-0000-0000-0000-000000000080',
+    'correlation_id', 'e4900000-0000-0000-0000-000000000081',
+    'idempotency_key', 'rmvp04-02b-recipe-predecessor-materialize',
+    'expected_version', 1,
+    'requested_by_auth_subject', 'e4000000-0000-0000-0000-000000000101',
+    'requested_at', transaction_timestamp(),
+    'reason_code', 'RMVP04_MATERIALIZATION',
+    'reason_note', 'Materialize the direct Recipe-replacement predecessor',
+    'payload', jsonb_build_object(
+      'need_generation_run_id',
+        released.response->'affected_aggregate_ids'->>'need_generation_run_id',
+      'need_generation_run_version', 3,
+      'confirmed_need_batch_id',
+        origin.response->'affected_aggregate_ids'->>'confirmed_need_batch_id'
+    )
+  ))
+from rmvp04_responses released
+cross join rmvp04_responses origin
+where released.response_name = 'recipe-same-lineage-release'
+  and origin.response_name = '02b-recipe-origin-materialize';
+set constraints all immediate;
+set constraints all deferred;
+reset role;
+revoke atlas_need_generation_runtime from postgres;
+update atlas_core.command_receipts
+set outcome = 'COMPLETED',
+    response_payload = (
+      select response from rmvp04_responses
+      where response_name = '02b-recipe-predecessor-materialize'
+    ),
+    completed_at = transaction_timestamp()
+where command_receipt_id = 'e4900000-0000-0000-0000-000000000092';
+
+insert into rmvp04_requests
+select '02b-recipe-predecessor-save', jsonb_build_object(
+  'contract_version', 'RMVP-05.v2',
+  'command_id', 'e4900000-0000-0000-0000-000000000082',
+  'correlation_id', 'e4900000-0000-0000-0000-000000000083',
+  'idempotency_key', 'rmvp04-02b-recipe-predecessor-save',
+  'expected_version', 2,
+  'requested_by_auth_subject', 'e4000000-0000-0000-0000-000000000101',
+  'requested_at', transaction_timestamp(),
+  'reason_code', 'CONFIRMED_NEED_SAVED',
+  'reason_note', null,
+  'payload', jsonb_build_object(
+    'confirmed_need_batch_id', batch.confirmed_need_batch_id,
+    'lines', jsonb_build_array(jsonb_build_object(
+      'confirmed_need_line_id', line.confirmed_need_line_id,
+      'expected_current_revision_id', revision.confirmed_need_line_revision_id,
+      'expected_current_decision_id', null,
+      'proposed_confirmed_quantity', '6.000000',
+      'reason_code', 'PROPOSAL_ACCEPTED',
+      'reason_note', null
+    ))
+  )
+)
+from rmvp04_responses materialized
+join atlas_planning.confirmed_need_batches batch
+  on batch.confirmed_need_batch_id =
+    (materialized.response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+join atlas_planning.confirmed_need_lines line
+  on line.confirmed_need_batch_id = batch.confirmed_need_batch_id
+  and line.ingredient_id = 'e4900000-0000-0000-0000-000000000001'
+join atlas_planning.confirmed_need_line_revisions revision
+  on revision.confirmed_need_line_id = line.confirmed_need_line_id
+  and revision.is_current
+where materialized.response_name = '02b-recipe-predecessor-materialize';
+
+set local role authenticated;
+insert into rmvp04_responses
+select '02b-recipe-predecessor-save', atlas_api.save_confirmed_needs(request)
+from rmvp04_requests where request_name = '02b-recipe-predecessor-save';
+reset role;
+
+select is(
+  (
+    select jsonb_build_object(
+      'origin', origin.response->>'success',
+      'materialized', materialized.response->>'success',
+      'saved', saved.response->>'success',
+      'pork_decisions', count(decision.confirmed_need_line_decision_id)
+    )
+    from rmvp04_responses origin
+    cross join rmvp04_responses materialized
+    cross join rmvp04_responses saved
+    left join atlas_planning.confirmed_need_batches batch
+      on batch.confirmed_need_batch_id =
+        (materialized.response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+    left join atlas_planning.confirmed_need_lines line
+      on line.confirmed_need_batch_id = batch.confirmed_need_batch_id
+      and line.ingredient_id = 'e4900000-0000-0000-0000-000000000001'
+    left join atlas_planning.confirmed_need_line_decisions decision
+      on decision.confirmed_need_line_decision_id =
+        line.current_confirmed_need_line_decision_id
+    where origin.response_name = '02b-recipe-origin-materialize'
+      and materialized.response_name = '02b-recipe-predecessor-materialize'
+      and saved.response_name = '02b-recipe-predecessor-save'
+    group by origin.response, materialized.response, saved.response
+  ),
+  jsonb_build_object(
+    'origin', 'true', 'materialized', 'true',
+    'saved', 'true', 'pork_decisions', 1
+  ),
+  'PCT02B-RMVP04-01 the direct Recipe predecessor has one saved Pork human decision'
+);
 
 insert into rmvp04_requests
 select 'recipe-same-lineage-invalidate', pg_temp.rmvp04_command(
@@ -2519,6 +2718,267 @@ select 'recipe-replacement-release',
   atlas_api.release_need_generation_run(request)
 from rmvp04_requests where request_name = 'recipe-replacement-release';
 reset role;
+
+insert into atlas_core.command_receipts (
+  command_receipt_id, command_name, scope_key, idempotency_key, command_id,
+  correlation_id, actor_id, expected_version, request_hash, outcome
+) values (
+  'e4900000-0000-0000-0000-000000000094',
+  'execute_need_generation',
+  'planning-input-period:2026-11-06:2026-11-06',
+  'rmvp04-02b-recipe-successor-materialize',
+  'e4900000-0000-0000-0000-000000000084',
+  'e4900000-0000-0000-0000-000000000085',
+  'e4000000-0000-0000-0000-000000000001',
+  3, repeat('9', 64), 'IN_PROGRESS'
+);
+select set_config(
+  'atlas.planning_contract_01_receipt_id',
+  'e4900000-0000-0000-0000-000000000094', true
+);
+select set_config(
+  'atlas.planning_contract_01_actor_id',
+  'e4000000-0000-0000-0000-000000000001', true
+);
+select set_config(
+  'atlas.planning_contract_01_command_name', 'execute_need_generation', true
+);
+grant atlas_need_generation_runtime to postgres with set true;
+grant select, insert on rmvp04_responses
+to atlas_need_generation_runtime;
+set local role atlas_need_generation_runtime;
+insert into rmvp04_responses
+select '02b-recipe-successor-materialize',
+  atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb_build_object(
+    'contract_version', 'PA-06E-H0C.v1',
+    'command_id', 'e4900000-0000-0000-0000-000000000084',
+    'correlation_id', 'e4900000-0000-0000-0000-000000000085',
+    'idempotency_key', 'rmvp04-02b-recipe-successor-materialize',
+    'expected_version', 3,
+    'requested_by_auth_subject', 'e4000000-0000-0000-0000-000000000101',
+    'requested_at', transaction_timestamp(),
+    'reason_code', 'RMVP04_MATERIALIZATION',
+    'reason_note', 'Apply selective continuity after governed Recipe replacement',
+    'payload', jsonb_build_object(
+      'need_generation_run_id',
+        released.response->'affected_aggregate_ids'->>'need_generation_run_id',
+      'need_generation_run_version', 3,
+      'confirmed_need_batch_id',
+        materialized.response->'affected_aggregate_ids'->>'confirmed_need_batch_id'
+    )
+  ))
+from rmvp04_responses released
+cross join rmvp04_responses materialized
+where released.response_name = 'recipe-replacement-release'
+  and materialized.response_name = '02b-recipe-predecessor-materialize';
+set constraints all immediate;
+set constraints all deferred;
+reset role;
+revoke atlas_need_generation_runtime from postgres;
+update atlas_core.command_receipts
+set outcome = 'COMPLETED',
+    response_payload = (
+      select response from rmvp04_responses
+      where response_name = '02b-recipe-successor-materialize'
+    ),
+    completed_at = transaction_timestamp()
+where command_receipt_id = 'e4900000-0000-0000-0000-000000000094';
+
+select is(
+  (
+    select jsonb_build_object(
+      'success', response->>'success',
+      'carried', response->'result_counts'->>'carried_forward_count',
+      'needs_review', response->'result_counts'->>'needs_review_count',
+      'removed', response->'result_counts'->>'removed_count'
+    )
+    from rmvp04_responses
+    where response_name = '02b-recipe-successor-materialize'
+  ),
+  jsonb_build_object(
+    'success', 'true', 'carried', '1', 'needs_review', '1', 'removed', '1'
+  ),
+  'PCT02B-RMVP04-02 unreviewed Onion removal is counted independently while Pork carries and only new Potato needs review'
+);
+
+select is(
+  (
+    select jsonb_build_object(
+      'removal_evidence', (
+        select count(*)
+        from atlas_planning.confirmed_need_line_decision_continuity continuity
+        where continuity.command_id =
+            'e4900000-0000-0000-0000-000000000084'
+          and continuity.continuity_kind = 'INVALIDATED_LINE_REMOVED'
+      ),
+      'current_onion', (
+        select count(*)
+        from atlas_planning.confirmed_need_lines line
+        join atlas_planning.confirmed_need_line_revisions revision
+          on revision.confirmed_need_line_id = line.confirmed_need_line_id
+          and revision.is_current
+        where line.confirmed_need_batch_id = batch.confirmed_need_batch_id
+          and line.ingredient_id =
+            'e4900000-0000-0000-0000-000000000002'
+      )
+    )
+    from atlas_planning.confirmed_need_batches batch
+    where batch.confirmed_need_batch_id = (
+      select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+      from rmvp04_responses
+      where response_name = '02b-recipe-successor-materialize'
+    )
+  ),
+  jsonb_build_object('removal_evidence', 0, 'current_onion', 0),
+  'PCT02B-RMVP04-02A unreviewed removed Onion has no fake decision invalidation and no current revision'
+);
+
+set local role authenticated;
+insert into rmvp04_responses
+select '02b-recipe-successor-read',
+  atlas_api.get_confirmed_need_review(jsonb_build_object(
+    'contract_version', 'RMVP-05.v1',
+    'requested_by_auth_subject', 'e4000000-0000-0000-0000-000000000101',
+    'correlation_id', gen_random_uuid(),
+    'payload', jsonb_build_object(
+      'confirmed_need_batch_id',
+        response->'affected_aggregate_ids'->>'confirmed_need_batch_id',
+      'filters', jsonb_build_object(),
+      'line_offset', 0,
+      'line_limit', 100
+    )
+  ))
+from rmvp04_responses
+where response_name = '02b-recipe-successor-materialize';
+reset role;
+
+select is(
+  (
+    select jsonb_build_object(
+      'total', response->'workbench'->'line_counts'->>'total',
+      'needs_review', response->'workbench'->'line_counts'->>'needs_review',
+      'removed', response->'workbench'->'line_counts'->>'removed'
+    )
+    from rmvp04_responses
+    where response_name = '02b-recipe-successor-read'
+  ),
+  jsonb_build_object('total', '2', 'needs_review', '1', 'removed', '1'),
+  'PCT02B-RMVP04-02B RMVP-05 excludes removed Onion from current totals and uses the same authoritative removed count'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from atlas_planning.confirmed_need_lines line
+    join atlas_planning.confirmed_need_line_decisions decision
+      on decision.confirmed_need_line_decision_id =
+        line.current_confirmed_need_line_decision_id
+    join atlas_planning.confirmed_need_line_decision_continuity continuity
+      on continuity.confirmed_need_line_id = line.confirmed_need_line_id
+      and continuity.source_confirmed_need_line_decision_id =
+        decision.confirmed_need_line_decision_id
+      and continuity.continuity_kind = 'CARRIED_FORWARD'
+    where line.ingredient_id = 'e4900000-0000-0000-0000-000000000001'
+      and decision.confirmed_quantity_after = 6.000000
+  ),
+  1,
+  'PCT02B-RMVP04-03 equal Pork retains the original 6 kg human authority through exact carry evidence'
+);
+
+select is(
+  (
+    select array_agg(distinct source.recipe_id order by source.recipe_id)::text[]
+    from atlas_planning.confirmed_need_lines line
+    join atlas_planning.confirmed_need_line_revisions revision
+      on revision.confirmed_need_line_id = line.confirmed_need_line_id
+      and revision.is_current
+    join atlas_planning.confirmed_need_line_revision_contributions membership
+      on membership.confirmed_need_line_revision_id =
+        revision.confirmed_need_line_revision_id
+    join atlas_planning.theoretical_need_lines source
+      on source.theoretical_need_line_id = membership.theoretical_need_line_id
+    where line.ingredient_id = 'e4900000-0000-0000-0000-000000000001'
+  ),
+  array['e4900000-0000-0000-0000-000000000021']::text[],
+  'PCT02B-RMVP04-04 carried Pork current membership points only to new Recipe C lineage'
+);
+
+-- Keep the existing RMVP-04 source-evolution assertions independent of this
+-- additive Confirmed Need integration scenario. The whole test rolls back;
+-- this bounded fixture cleanup only restores the pre-02B state for the
+-- remaining assertions in the same transaction.
+set local session_replication_role = replica;
+delete from atlas_audit.audit_events
+where command_id in (
+  'e4900000-0000-0000-0000-000000000078',
+  'e4900000-0000-0000-0000-000000000080',
+  'e4900000-0000-0000-0000-000000000082',
+  'e4900000-0000-0000-0000-000000000084'
+);
+delete from atlas_audit.domain_events
+where command_id in (
+  'e4900000-0000-0000-0000-000000000078',
+  'e4900000-0000-0000-0000-000000000080',
+  'e4900000-0000-0000-0000-000000000082',
+  'e4900000-0000-0000-0000-000000000084'
+);
+delete from atlas_planning.confirmed_need_line_decision_continuity
+where confirmed_need_batch_id = (
+  select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+  from rmvp04_responses
+  where response_name = '02b-recipe-origin-materialize'
+);
+delete from atlas_planning.confirmed_need_line_decisions
+where confirmed_need_batch_id = (
+  select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+  from rmvp04_responses
+  where response_name = '02b-recipe-origin-materialize'
+);
+delete from atlas_planning.confirmed_need_line_revision_contributions
+where confirmed_need_batch_id = (
+  select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+  from rmvp04_responses
+  where response_name = '02b-recipe-origin-materialize'
+);
+delete from atlas_planning.confirmed_need_line_revisions
+where confirmed_need_batch_id = (
+  select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+  from rmvp04_responses
+  where response_name = '02b-recipe-origin-materialize'
+);
+delete from atlas_planning.confirmed_need_lines
+where confirmed_need_batch_id = (
+  select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+  from rmvp04_responses
+  where response_name = '02b-recipe-origin-materialize'
+);
+delete from atlas_planning.confirmed_need_batches
+where confirmed_need_batch_id = (
+  select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
+  from rmvp04_responses
+  where response_name = '02b-recipe-origin-materialize'
+);
+delete from atlas_core.command_receipts
+where command_id in (
+  'e4900000-0000-0000-0000-000000000078',
+  'e4900000-0000-0000-0000-000000000080',
+  'e4900000-0000-0000-0000-000000000082',
+  'e4900000-0000-0000-0000-000000000084'
+);
+set local session_replication_role = origin;
+select set_config('atlas.planning_contract_01_receipt_id', '', true);
+select set_config('atlas.planning_contract_01_actor_id', '', true);
+select set_config('atlas.planning_contract_01_command_name', '', true);
+delete from rmvp04_requests
+where request_name = '02b-recipe-predecessor-save';
+delete from rmvp04_responses
+where response_name in (
+  '02b-recipe-origin-materialize',
+  '02b-recipe-predecessor-materialize',
+  '02b-recipe-predecessor-save',
+  '02b-recipe-successor-materialize',
+  '02b-recipe-successor-read'
+);
 
 select is(
   (

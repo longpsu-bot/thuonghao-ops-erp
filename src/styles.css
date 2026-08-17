@@ -4924,6 +4924,30 @@ tbody tr.selected-row {
   color: #60707d;
   font-size: 12px;
 }
+.confirmed-need-line-state {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef2f5;
+  color: #42515d;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.confirmed-need-line-state.carried_forward,
+.confirmed-need-line-state.confirmed_current {
+  background: #e8f5ed;
+  color: #196540;
+}
+.confirmed-need-line-state.changed,
+.confirmed-need-line-state.unreviewed {
+  background: #fff3dd;
+  color: #8a4b00;
+}
+.confirmed-need-line-state.new {
+  background: #edf5ff;
+  color: #245a8d;
+}
 .confirmed-need-table-scroll input,
 .confirmed-need-table-scroll select {
   width: 100%;
@@ -5306,24 +5330,24 @@ tbody tr.selected-row {
   min-width: 270px;
 }
 
-.confirmed-need-table-scroll td:nth-child(3),
 .confirmed-need-table-scroll td:nth-child(4),
 .confirmed-need-table-scroll td:nth-child(5),
-.confirmed-need-table-scroll td:nth-child(6) {
+.confirmed-need-table-scroll td:nth-child(6),
+.confirmed-need-table-scroll td:nth-child(7) {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.confirmed-need-table-scroll td:nth-child(5) input {
+.confirmed-need-table-scroll td:nth-child(6) input {
   width: 130px;
   text-align: right;
 }
 
-.confirmed-need-table-scroll td:nth-child(7) select {
+.confirmed-need-table-scroll td:nth-child(8) select {
   min-width: 210px;
 }
 
-.confirmed-need-table-scroll td:nth-child(7) input {
+.confirmed-need-table-scroll td:nth-child(8) input {
   min-width: 220px;
 }
 
