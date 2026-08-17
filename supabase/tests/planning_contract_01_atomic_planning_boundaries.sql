@@ -377,7 +377,7 @@ values
 insert into atlas_admin.recipe_line_revisions (recipe_line_revision_id, recipe_id, recipe_version_id, recipe_line_id, line_revision_number, ingredient_id, quantity_per_basis, unit_id, created_by_actor_id)
 values
   ('e4100000-0000-0000-0000-000000000012', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000011', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
-  ('e4100000-0000-0000-0000-000000000015', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000014', 1, 'e4100000-0000-0000-0000-000000000013', 5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4100000-0000-0000-0000-000000000015', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000014', 1, 'e4100000-0000-0000-0000-000000000013', 500, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
   ('e4100000-0000-0000-0000-000000000018', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000017', 1, 'e4100000-0000-0000-0000-000000000016', 2.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
   ('e4600000-0000-0000-0000-000000000011', 'e4600000-0000-0000-0000-000000000002', 'e4600000-0000-0000-0000-000000000005', 'e4600000-0000-0000-0000-000000000008', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
   ('e4600000-0000-0000-0000-000000000012', 'e4600000-0000-0000-0000-000000000003', 'e4600000-0000-0000-0000-000000000006', 'e4600000-0000-0000-0000-000000000009', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
@@ -758,7 +758,7 @@ select '02b-save-initial', pg_catalog.jsonb_build_object(
         'expected_current_decision_id', null,
         'proposed_confirmed_quantity', case
           when line.ingredient_id='e4100000-0000-0000-0000-000000000013'
-            then '0.500000'
+            then '98.000000'
           else revision.confirmed_quantity::text end,
         'reason_code', case
           when line.ingredient_id='e4100000-0000-0000-0000-000000000013'
@@ -791,6 +791,7 @@ reset role;
 
 create temporary table pct02b_original_decisions as
 select line.confirmed_need_line_id, line.delivery_location_id, line.ingredient_id,
+  revision.theoretical_quantity,
   decision.confirmed_need_line_decision_id, decision.confirmed_quantity_after,
   decision.reason_code, decision.reason_note, decision.decided_by_actor_id,
   decision.decided_at
@@ -798,6 +799,9 @@ from atlas_planning.confirmed_need_lines line
 join atlas_planning.confirmed_need_line_decisions decision
   on decision.confirmed_need_line_decision_id=
     line.current_confirmed_need_line_decision_id
+join atlas_planning.confirmed_need_line_revisions revision
+  on revision.confirmed_need_line_revision_id=
+    decision.confirmed_need_line_revision_id
 where line.confirmed_need_batch_id=(
   select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid
   from pct01_responses where response_name='execute-initial'
@@ -810,8 +814,9 @@ select is((select count(*) from pct02b_original_decisions),4::bigint,
   'PCT02B-02 every predecessor current line has human authority');
 select is((select count(*) from pct02b_original_decisions
   where reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT'
-    and confirmed_quantity_after=0.500000),1::bigint,
-  'PCT02B-03 one unaffected proposal retains an explicit human adjustment');
+    and theoretical_quantity=100.000000
+    and confirmed_quantity_after=98.000000),1::bigint,
+  'PCT02B-03 exact 100-to-98 human adjustment is recorded before correction');
 
 set local role authenticated;
 insert into pct01_responses values (
@@ -1461,7 +1466,7 @@ select '02b-edit-carried-oil',jsonb_build_object(
       'confirmed_need_line_id',line.confirmed_need_line_id,
       'expected_current_revision_id',revision.confirmed_need_line_revision_id,
       'expected_current_decision_id',line.current_confirmed_need_line_decision_id,
-      'proposed_confirmed_quantity','1.500000',
+      'proposed_confirmed_quantity','98.500000',
       'reason_code','OPERATIONAL_QUANTITY_ADJUSTMENT',
       'reason_note','Carried line edited after source correction'
     ))
@@ -1490,7 +1495,7 @@ select ok((select response->>'success'='true' from pct01_responses
 select ok((
   select decision.decision_number=2
     and decision.predecessor_decision_id=original.confirmed_need_line_decision_id
-    and decision.confirmed_quantity_after=1.500000
+    and decision.confirmed_quantity_after=98.500000
   from atlas_planning.confirmed_need_lines line
   join atlas_planning.confirmed_need_line_decisions decision
     on decision.confirmed_need_line_decision_id=line.current_confirmed_need_line_decision_id
