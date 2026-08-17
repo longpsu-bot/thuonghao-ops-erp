@@ -1558,6 +1558,19 @@ begin
   v_original := v_definition;
 
   v_definition := pg_catalog.replace(v_definition,
+$old$      and theoretical.contribution_family = 'RECIPE_DERIVED'
+      and (selection.need_generation_recipe_selection_id is null or recipe_use.need_generation_recipe_line_use_id is null)
+$old$,
+$new$      and theoretical.contribution_family = 'RECIPE_DERIVED'
+      and not (
+        theoretical.line_disposition = 'REMOVED'
+        and theoretical.recipe_replacement_predecessor_selection_id is not null
+        and theoretical.recipe_replacement_successor_selection_id is not null
+      )
+      and (selection.need_generation_recipe_selection_id is null or recipe_use.need_generation_recipe_line_use_id is null)
+$new$);
+
+  v_definition := pg_catalog.replace(v_definition,
 $old$                   or (
                      successor.contribution_family = 'PANTRY_DIRECT'
                      and successor.line_disposition = 'REMOVED'
