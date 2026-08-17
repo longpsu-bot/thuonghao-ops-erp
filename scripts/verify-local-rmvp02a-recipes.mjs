@@ -131,6 +131,36 @@ async function readPlanningWorkbench(client, subject, weekStart) {
   return result.workbench;
 }
 
+function recipeCompositionEvidence(workbench, dishId) {
+  const recipeIds = new Set(
+    workbench.recipes
+      .filter((recipe) => recipe.dish_id === dishId)
+      .map((recipe) => recipe.recipe_id),
+  );
+  const selected = workbench.selected_recipe;
+  return JSON.stringify({
+    recipeScopes: workbench.recipes
+      .filter((recipe) => recipeIds.has(recipe.recipe_id))
+      .map((recipe) => ({
+        recipe_id: recipe.recipe_id,
+        dish_id: recipe.dish_id,
+        school_type_id: recipe.school_type_id,
+      })),
+    versions: workbench.recipe_versions.filter((version) =>
+      recipeIds.has(version.recipe_id),
+    ),
+    selected: {
+      dish_id: selected.dish_id,
+      school_type_id: selected.school_type_id,
+      recipe_id: selected.recipe_id,
+      recipe_version_id: selected.recipe_version_id,
+      in_use_recipe_version_id: selected.in_use_recipe_version_id,
+      basis_portions: selected.basis_portions,
+      composition: selected.composition,
+    },
+  });
+}
+
 function isoDate(date) {
   return date.toISOString().slice(0, 10);
 }
@@ -389,6 +419,7 @@ async function main() {
     dish: lockedDish,
     root: lockedRoot,
   });
+  const lockedCompositionEvidence = recipeCompositionEvidence(locked, dishId);
 
   await invokeDenied(
     client,
@@ -407,14 +438,6 @@ async function main() {
           operational_note: "must not save after approved Menu use",
         },
       ],
-    }),
-  );
-  await invokeDenied(
-    client,
-    "set_recipe_lifecycle",
-    v1Request(subject, lockedRoot.version, "RMVP02A_LOCK_LIFECYCLE", {
-      recipe_id: lockedRoot.recipe_id,
-      recipe_status: "INACTIVE",
     }),
   );
   await invokeDenied(
@@ -471,9 +494,82 @@ async function main() {
     }) === lockedEvidence,
     "A denied post-lock command changed base Recipe evidence.",
   );
+
+  const lifecycle = await invoke(
+    client,
+    "set_recipe_lifecycle",
+    v1Request(subject, lockedRoot.version, "RMVP02A_LOCK_LIFECYCLE", {
+      recipe_id: lockedRoot.recipe_id,
+      recipe_status: "INACTIVE",
+    }),
+  );
+  const lifecycleReadbackRoot = lifecycle.authoritative_readback.recipes.find(
+    (recipe) => recipe.recipe_id === lockedRoot.recipe_id,
+  );
+  assert(
+    lifecycle.success === true &&
+      lifecycle.idempotency_status === "COMPLETED" &&
+      lifecycle.new_versions?.aggregate_version === lockedRoot.version + 1 &&
+      lifecycle.emitted_event_ids?.length === 1 &&
+      lifecycle.emitted_event_ids[0] &&
+      lifecycle.audit_event_ids?.length === 1 &&
+      lifecycle.audit_event_ids[0] &&
+      lifecycleReadbackRoot?.recipe_status === "INACTIVE" &&
+      lifecycleReadbackRoot.version === lockedRoot.version + 1,
+    "Post-lock Recipe lifecycle administration lacked authoritative success, version, event, audit, or readback evidence.",
+  );
+
+  const afterLifecycle = await readWorkbench(client, subject, {
+    dish_id: dishId,
+    school_type_id: null,
+  });
+  const afterLifecycleSelection = afterLifecycle.selected_recipe;
+  const afterLifecycleRoot = afterLifecycle.recipes.find(
+    (recipe) => recipe.recipe_id === lockedRoot.recipe_id,
+  );
+  assert(
+    afterLifecycleRoot?.recipe_status === "INACTIVE" &&
+      afterLifecycleRoot.version === lockedRoot.version + 1 &&
+      afterLifecycleSelection.locked_for_normal_editing === true &&
+      afterLifecycleSelection.allowed_actions.save_recipe === false &&
+      recipeCompositionEvidence(afterLifecycle, dishId) ===
+        lockedCompositionEvidence,
+    "Recipe lifecycle administration changed composition or reopened normal editing.",
+  );
+
+  await invokeDenied(
+    client,
+    "save_recipe",
+    saveRequest(subject, afterLifecycleSelection.expected_version, {
+      dish_id: dishId,
+      school_type_id: null,
+      recipe_version_id: secondVersionId,
+      basis_portions: 100,
+      lines: [
+        {
+          recipe_line_id: stableLineId,
+          ingredient_id: ingredient.ingredient_id,
+          quantity_per_basis: 99,
+          unit_id: unit.unit_id,
+          operational_note: "must remain locked after lifecycle administration",
+        },
+      ],
+    }),
+  );
+  const finalLocked = await readWorkbench(client, subject, {
+    dish_id: dishId,
+    school_type_id: null,
+  });
+  assert(
+    finalLocked.selected_recipe.locked_for_normal_editing === true &&
+      finalLocked.selected_recipe.allowed_actions.save_recipe === false &&
+      recipeCompositionEvidence(finalLocked, dishId) ===
+        lockedCompositionEvidence,
+    "Recipe lifecycle administration silently reopened or changed locked composition.",
+  );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified RMVP-02A browser-key pre-use creation/Save and availability, approved-menu Dish lock, locked readback, Save/lifecycle/copy/import denial, and zero post-lock base Recipe mutation.",
+    "Verified RMVP-02A browser-key pre-use creation/Save and availability, approved-menu Dish lock, Save/copy/import denial with zero base composition mutation, successful Recipe lifecycle administration with event/audit evidence, and the unchanged post-lifecycle composition lock.",
   );
 }
 
