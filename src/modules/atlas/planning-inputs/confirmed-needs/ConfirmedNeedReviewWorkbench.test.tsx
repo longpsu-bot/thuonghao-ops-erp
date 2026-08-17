@@ -138,6 +138,56 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getAllByText("Đã lưu").length).toBeGreaterThan(0);
   });
 
+  it("presents backend continuity states and omits untouched carried lines from Save", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const workbench = createReviewConfirmedNeedFixture();
+    const carried = workbench.lines[0]!;
+    carried.current_decision_id = "c4520000-0000-0000-0000-000000000091";
+    carried.current_decision_number = 1;
+    carried.current_decision_kind = "ADJUSTED_QUANTITY_CONFIRMED";
+    carried.confirmed_quantity_after = "10.000000";
+    carried.confirmation_state = "CARRIED_FORWARD";
+    workbench.lines[1]!.confirmation_state = "CHANGED";
+    workbench.line_counts = {
+      total: 2,
+      unreviewed: 1,
+      confirmed: 1,
+      adjusted: 1,
+      carried_forward: 1,
+      needs_review: 1,
+      changed: 1,
+      new: 0,
+      removed: 0,
+    };
+    vi.spyOn(api, "getReview").mockResolvedValue({
+      kind: "success",
+      response: { success: true, workbench },
+    } as never);
+    const save = vi.spyOn(api, "save");
+    renderReview(api);
+
+    await screen.findByText("Gạo thơm");
+    expect(screen.getByText("1 cần rà soát")).toBeVisible();
+    expect(screen.getByText("1 giữ nguyên")).toBeVisible();
+    expect(screen.getAllByText("Giữ nguyên").length).toBeGreaterThan(1);
+    expect(screen.getAllByText("Cần rà soát").length).toBeGreaterThan(1);
+    fireEvent.change(screen.getByLabelText("Tình trạng"), {
+      target: { value: "carried_forward" },
+    });
+    expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Tình trạng"), {
+      target: { value: "" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]?.[0].payload.lines).toEqual([
+      expect.objectContaining({
+        confirmed_need_line_id: "c4520000-0000-0000-0000-000000000002",
+      }),
+    ]);
+  });
+
   it("does not promote Save when authoritative readback denies it", async () => {
     const api = renderAuthoritativeFixture((workbench) => {
       workbench.allowed_actions.save_confirmed_needs = false;
@@ -172,6 +222,11 @@ describe("Confirmed Need two-action workbench", () => {
         unreviewed: 0,
         confirmed: workbench.lines.length,
         adjusted: 0,
+        carried_forward: 0,
+        needs_review: 0,
+        changed: 0,
+        new: 0,
+        removed: 0,
       };
       workbench.allowed_actions.release_confirmed_needs = false;
       workbench.disabled_reason_codes.release_confirmed_needs =

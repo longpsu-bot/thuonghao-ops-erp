@@ -207,7 +207,7 @@ select is((select response_payload#>>'{result_counts,created_line_revision_count
 select is((select response_payload#>>'{result_counts,created_revision_contribution_count}' from h0cb_correction_results where result_name='corrected'),'6','all six successor members are captured');
 select is((select response_payload#>>'{result_counts,current_line_revision_count}' from h0cb_correction_results where result_name='corrected'),'5','five new revisions are current');
 select is((select response_payload#>>'{result_counts,superseded_line_revision_count}' from h0cb_correction_results where result_name='corrected'),'3','three old current revisions are superseded');
-select is((select count(*)::integer from jsonb_object_keys((select response_payload->'result_counts' from h0cb_correction_results where result_name='corrected'))),7,'correction returns exactly seven counts');
+select is((select count(*)::integer from jsonb_object_keys((select response_payload->'result_counts' from h0cb_correction_results where result_name='corrected'))),12,'correction returns the seven materialization counts and five additive continuity counts');
 select is((select count(*)::integer from jsonb_object_keys((select response_payload->'affected_aggregate_ids' from h0cb_correction_results where result_name='corrected'))),2,'correction returns bounded aggregate IDs');
 select is((select version from atlas_planning.confirmed_need_batches where confirmed_need_batch_id='cb200000-0000-0000-0000-000000000500'),2::bigint,'stored batch version is two');
 select is((select current_need_generation_run_id from atlas_planning.confirmed_need_batches where confirmed_need_batch_id='cb200000-0000-0000-0000-000000000500'),'cb200000-0000-0000-0000-000000000200'::uuid,'batch advances to direct successor');

@@ -250,3 +250,9 @@ One transaction locks and rereads completed sources, derives preflight, automati
 When current immutable source triples already match the current Need input snapshot, exact execution returns `NO_CHANGE`. A source successor makes the prior Need `OUTDATED`. A reviewed update invalidates the safely correctable terminal run, creates its direct successor, preserves all source/run/release history, and rematerializes only an H0C-permitted `DRAFT_REVIEW`/`REOPENED` Confirmed Need. Approved, released, or downstream-committed facts retain the established safe correction blocker.
 
 The private materialization helper is shared by this command and the unchanged public `PA-06E-H0C.v1` wrapper; the algorithm is not duplicated. All five `RMVP-04.v1` functions and the public CMD-15 wrapper remain callable during coexistence. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
+
+## 14. Selective confirmation continuity
+
+PLANNING-CONTRACT-02B keeps the `RMVP-04.v2` request and public function unchanged. On correction, the existing private materializer compares direct predecessor/successor Confirmed Need facts and returns additive backend-owned `result_counts`: `carried_forward_count`, `needs_review_count`, `changed_count`, `new_count`, and `removed_count` alongside the established materialization counts.
+
+Carry requires exact stable identity, exact PostgreSQL generated quantity equality, the same sole effective H1A policy revision, and valid current authority in the direct predecessor. Source/Dish/Recipe membership is deliberately not an equality predicate. System carry creates no human decision; proposal/policy/removal invalidation is immutable private evidence. `RELEASED_FOR_PURCHASE_HANDOFF` and other established correction blockers still return `DOWNSTREAM_CORRECTION_REQUIRED` before any continuity or rematerialization write.

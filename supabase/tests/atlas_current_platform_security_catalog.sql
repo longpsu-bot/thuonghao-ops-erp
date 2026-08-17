@@ -37,8 +37,8 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 102, 'views', 2),
-  'CAT-02 exact whole-platform table and view totals are 102 and 2'
+  jsonb_build_object('ordinary_tables', 103, 'views', 2),
+  'CAT-02 exact whole-platform table and view totals include 02B continuity evidence'
 );
 
 select is(
@@ -63,9 +63,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 102,
-    'rls_enabled', 102,
-    'rls_forced', 102
+    'authoritative_tables', 103,
+    'rls_enabled', 103,
+    'rls_forced', 103
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -383,10 +383,10 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 586,
-    'md5', '97031aad8cd256c0d94ccfd9e40a72ed'
+    'count', 601,
+    'md5', 'eb60e34add82c6c2a8cdd77be71f5598'
   ),
-  'CAT-07 exact 586-policy RLS catalog includes the two private Ingredient catalogs beside the bounded RMVP-07 and isolated RMVP-05 policies'
+  'CAT-07 exact RLS catalog includes backend-only 02B continuity and integrity policies'
 );
 
 select ok(
@@ -1456,24 +1456,24 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 10,
-    'table_count', 102,
-    'table_catalog_md5', '88e671ea1f1f550b57cf85d4746753bd',
+    'table_count', 103,
+    'table_catalog_md5', 'cc41da01b75bdb90703c58520c9a27a2',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 102,
-    'rls_forced', 102,
+    'rls_enabled', 103,
+    'rls_forced', 103,
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 27,
-    'policy_count', 586,
-    'policy_catalog_md5', '97031aad8cd256c0d94ccfd9e40a72ed',
+    'policy_count', 601,
+    'policy_catalog_md5', 'eb60e34add82c6c2a8cdd77be71f5598',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 210,
-    'private_function_catalog_md5', '4d505926525a92075045266c1e885054',
-    'trigger_count', 91,
-    'trigger_catalog_md5', 'b54291336c4d20a25084f19ce977461c',
-    'positive_target_grant_count', 1476,
-    'positive_target_grant_md5', '730676a60f27fde44aeb4f98b5868a64',
+    'private_function_count', 218,
+    'private_function_catalog_md5', '1cb30505bb45fc07bb5ea1d601fbf2c5',
+    'trigger_count', 94,
+    'trigger_catalog_md5', '8d14708a2aadcef24acddf2bb0db1755',
+    'positive_target_grant_count', 1501,
+    'positive_target_grant_md5', '2af827e63ee8c15556f5c4aba5804fb0',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 90,
     'pa_06a_write_count', 15,

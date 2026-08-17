@@ -3,6 +3,7 @@ import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import {
   formatQuantity,
   needGenerationReadbackFromResult,
+  needGenerationContinuitySummaryFromResult,
   needGenerationResultAllowsExactRetry,
   needGenerationResultIsStale,
   needGenerationResultMessage,
@@ -63,6 +64,30 @@ describe("RMVP-04 authoritative model", () => {
   it("formats backend quantities without recalculating them", () => {
     expect(formatQuantity(12.345678)).toBe("12,345678");
     expect(formatQuantity(0)).toBe("0");
+  });
+
+  it("accepts only complete authoritative continuity counts", () => {
+    expect(
+      needGenerationContinuitySummaryFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          result_counts: {
+            needs_review_count: 4,
+            carried_forward_count: 63,
+          },
+        },
+      }),
+    ).toEqual({ needsReview: 4, carriedForward: 63 });
+    expect(
+      needGenerationContinuitySummaryFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          result_counts: { needs_review_count: 4 },
+        },
+      }),
+    ).toBeNull();
   });
 
   it("uses business-language generation messages without implementation jargon", () => {

@@ -109,6 +109,11 @@ export type NeedGenerationWorkbenchData = {
   };
 };
 
+export type NeedGenerationContinuitySummary = {
+  needsReview: number;
+  carriedForward: number;
+};
+
 function record(value: unknown): Record<string, JsonValue> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, JsonValue>)
@@ -143,6 +148,24 @@ export function needGenerationReadbackFromResult(result: AtlasRpcResult) {
   return parseWorkbench(
     readback?.need_generation ?? result.response.authoritative_readback,
   );
+}
+
+export function needGenerationContinuitySummaryFromResult(
+  result: AtlasRpcResult,
+): NeedGenerationContinuitySummary | null {
+  if (result.kind !== "success") return null;
+  const counts = record(result.response.result_counts);
+  const needsReview = counts?.needs_review_count;
+  const carriedForward = counts?.carried_forward_count;
+  return Number.isInteger(needsReview) &&
+    (needsReview as number) >= 0 &&
+    Number.isInteger(carriedForward) &&
+    (carriedForward as number) >= 0
+    ? {
+        needsReview: needsReview as number,
+        carriedForward: carriedForward as number,
+      }
+    : null;
 }
 
 export function needGenerationResultAllowsExactRetry(result: AtlasRpcResult) {
