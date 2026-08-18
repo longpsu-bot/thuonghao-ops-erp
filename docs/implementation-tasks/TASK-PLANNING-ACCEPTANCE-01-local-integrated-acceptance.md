@@ -200,12 +200,12 @@ Operational browser persistence goes through `atlas_api`; no direct private-tabl
 
 ## 9. Retained OPS v1 / Retool evidence
 
-The authorized E: repository contains the retained read-only review record rather than the raw export files. That record was cross-checked before disposition:
+The authorized E: checkout exposed the retained read-only review record rather than the raw export files. That record was cross-checked before disposition:
 
 - `OPS - Công thức.json`: retained evidence identifies the separate `SystemChangeOrder` Recipe-correction job, its affected-ingredient (`Nguyên liệu bị ảnh hưởng`) context, and the actions `Thay thế`, `Thay đổi định lượng`, `Thêm nguyên liệu`, and `Bỏ nguyên liệu`.
 - `OPS - Lên đơn, Đặt hàng (1).json`, the retained filename corresponding to the requested Ordering export: retained evidence identifies `PurchasePlanner`, ingredient-level Actual Need/state rows, explicit export/edit/import, and normal Save.
 
-The raw JSON exports were not present in the authorized checkout or supplied attachment store, so this run did not claim a new raw-file checksum or parse. The repository-preserved findings support the operator/business context only. Retool SQL, JavaScript orchestration, state, and component structure do not define Atlas authority. Retool was not mutated.
+The raw exports were not available to the acceptance runner in the authorized E: checkout, so this run did not claim a new raw-file checksum or parse. The repository-preserved findings support the operator/business context only. Retool SQL, JavaScript orchestration, state, and component structure do not define Atlas authority. Retool was not mutated.
 
 ## 10. Hosted environment boundary — read-only observation
 
@@ -215,7 +215,7 @@ No hosted migration, SQL write, Auth change, data change, configuration change, 
 
 - Project: `Atlas Staging`, `ACTIVE_HEALTHY`, Singapore, PostgreSQL 17.6.1.155.
 - Managed migrations: **33**, through `20260805202517_rmvp_07_connected_confirmed_need_approval_release`; the 11 later repository migrations from PLANNING-CONTRACT-01 through PLANNING-CONTRACT-02B are not deployed.
-- Read-only catalog observation: **10** Atlas schemas, **102** Atlas tables, **224** Atlas functions, **79** `atlas_api` functions, **583** Atlas policies, and **0** `public` base tables.
+- Read-only catalog observation: **10** Atlas schemas, **100** base tables plus **2** views, **224** non-trigger functions (**262** total `pg_proc` entries including **38** trigger functions), **79** `atlas_api` functions, **583** Atlas policies, and **0** `public` base tables.
 - Edge Functions: **0**.
 
 ### Live OPS — `qnthofvccilhnefdcxnz`
