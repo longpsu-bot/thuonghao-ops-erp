@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "package": {
+    "name": "atlas-staging-identity",
+    "version": "1.0.0",
+    "classification": "IDENTITY",
+    "environment": "staging",
+    "project_ref": "rnzxmxiiqgtdevzregff"
+  },
+  "auth_user": {
+    "auth_subject_id": "a1010000-0000-4000-8000-000000000101",
+    "email_env": "ATLAS_STAGING_TEST_EMAIL",
+    "password_env": "ATLAS_STAGING_TEST_PASSWORD",
+    "email_confirm": true,
+    "user_metadata": {
+      "display_name": "Atlas Staging Synthetic Planning Operator"
+    },
+    "app_metadata": {
+      "environment": "atlas-staging",
+      "managed_by": "atlas-staging-identity@1.0.0"
+    }
+  },
+  "actor": {
+    "actor_id": "a1010000-0000-4000-8000-000000000001",
+    "actor_auth_subject_id": "a1010000-0000-4000-8000-000000000002",
+    "actor_type": "HUMAN",
+    "display_name": "Atlas Staging Synthetic Planning Operator"
+  },
+  "role": {
+    "role_id": "a1010000-0000-4000-8000-000000000003",
+    "role_code": "atlas_staging_admin_planning_operator",
+    "role_name": "Atlas Staging Admin and Planning Operator",
+    "capabilities": [
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000010",
+        "capability_code": "master_data.read"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000011",
+        "capability_code": "master_data.schools.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000012",
+        "capability_code": "master_data.ingredients.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000013",
+        "capability_code": "master_data.suppliers.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000014",
+        "capability_code": "master_data.priorities.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000015",
+        "capability_code": "master_data.recipes.read"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000016",
+        "capability_code": "master_data.recipes.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000017",
+        "capability_code": "planning.inputs.read"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000018",
+        "capability_code": "planning.weekly_menu.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000019",
+        "capability_code": "planning.attendance.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000020",
+        "capability_code": "planning.pantry.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000021",
+        "capability_code": "planning.need_generation.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000022",
+        "capability_code": "confirmed_need_review.read"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000023",
+        "capability_code": "confirmed_need_quantities.confirm"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000024",
+        "capability_code": "confirmed_need_release.release"
+      }
+    ]
+  },
+  "membership": {
+    "actor_role_membership_id": "a1010000-0000-4000-8000-000000000004",
+    "reason_note": "Synthetic Atlas Staging Admin-to-Confirmed-Need rehearsal operator."
+  },
+  "scopes": [
+    {
+      "actor_scope_id": "a1010000-0000-4000-8000-000000000005",
+      "scope_kind": "GLOBAL",
+      "reason_note": "The connected Admin and Planning APIs require the existing reviewed GLOBAL scope."
+    }
+  ]
+}

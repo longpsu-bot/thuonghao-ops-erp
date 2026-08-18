@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 
 export const ATLAS_STAGING_GITHUB_ENVIRONMENT = "atlas-staging";
+export const APPROVED_ATLAS_STAGING_PROJECT_REF = "rnzxmxiiqgtdevzregff";
 export const LIVE_OPS_PROJECT_DENYLIST = Object.freeze([
   "qnthofvccilhnefdcxnz",
 ]);
@@ -15,6 +16,9 @@ export const ATLAS_STAGING_SECRET_NAMES = Object.freeze([
   "ATLAS_STAGING_SUPABASE_ACCESS_TOKEN",
   "ATLAS_STAGING_DB_PASSWORD",
   "ATLAS_STAGING_TEST_PASSWORD",
+]);
+export const ATLAS_STAGING_IDENTITY_SECRET_NAMES = Object.freeze([
+  "ATLAS_STAGING_SUPABASE_SECRET_KEY",
 ]);
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
@@ -79,6 +83,16 @@ export function validateAtlasStagingTarget(projectRefValue, urlValue) {
   };
 }
 
+export function validateApprovedAtlasStagingTarget(projectRefValue, urlValue) {
+  const target = validateAtlasStagingTarget(projectRefValue, urlValue);
+  if (target.projectRef !== APPROVED_ATLAS_STAGING_PROJECT_REF) {
+    throw new Error(
+      "The protected target is not the approved Atlas Staging project.",
+    );
+  }
+  return target;
+}
+
 function browserKeyIsSafe(value) {
   if (!value || /\s/.test(value) || value.startsWith("sb_secret_"))
     return false;
@@ -90,6 +104,21 @@ function browserKeyIsSafe(value) {
       Buffer.from(parts[1], "base64url").toString("utf8"),
     );
     return payload?.role === "anon";
+  } catch {
+    return false;
+  }
+}
+
+function serverSecretKeyIsSafe(value) {
+  if (!value || /\s/.test(value)) return false;
+  if (value.startsWith("sb_secret_") && value.length > 20) return true;
+  const parts = value.split(".");
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(
+      Buffer.from(parts[1], "base64url").toString("utf8"),
+    );
+    return payload?.role === "service_role";
   } catch {
     return false;
   }
@@ -125,6 +154,28 @@ export function validateAtlasStagingProtectedValues(environment) {
     databasePassword: environment.ATLAS_STAGING_DB_PASSWORD,
     testPassword: environment.ATLAS_STAGING_TEST_PASSWORD,
   };
+}
+
+export function validateAtlasStagingPackageProtectedValues(
+  environment,
+  { identity = false } = {},
+) {
+  const target = validateAtlasStagingProtectedValues(environment);
+  validateApprovedAtlasStagingTarget(
+    environment.ATLAS_STAGING_PROJECT_REF,
+    environment.VITE_SUPABASE_URL,
+  );
+  if (!identity) return target;
+
+  const secretKey = String(
+    environment.ATLAS_STAGING_SUPABASE_SECRET_KEY ?? "",
+  ).trim();
+  if (!serverSecretKeyIsSafe(secretKey)) {
+    throw new Error(
+      "The protected server-only Atlas Staging secret key is missing or unsafe.",
+    );
+  }
+  return { ...target, secretKey };
 }
 
 async function readPostgrestConfiguration(target, fetchImpl) {
