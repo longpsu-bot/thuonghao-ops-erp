@@ -34,7 +34,7 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ D-037 Confirmed Need Save and Release boundary — merged through PR #189 at `e542e263e3bb672eb2967af0b3d54bfd8771df75`; two backend-authoritative human actions, v1 compatibility, no browser lifecycle chaining, no downstream mutation, and XLSX/PDF contract deferral
 - ✅ PLANNING-CONTRACT-01 atomic Planning completion boundaries — complete through PR #184 at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`; additive v2 source Saves, automatic preflight and atomic Need Generation/H0C materialization are merged while v1 remains callable during Application cutover
 - ✅ D-040 / PLANNING-CONTRACT-02B selective Confirmed Need continuity — merged through PR #200 at `852e61a5f8780b3eaa00517ad691465256224ad9`, security-catalog reconciled through PR #201 at `59851f37ed35721d3706aa46eeefb6f418ef01c6`, and locally certified on exact `main` `f28603ee7c8cfdd995c3ef82bcc3e4f283991437`; preserves exact unaffected human authority with private continuity evidence and leaves D-039 Recipe-replacement lineage and released downstream blockers unchanged
-- ✅ PLANNING-ACCEPTANCE-01 local integrated Planning gate — accepted on 2026-08-18 after exact-head database, security, browser-key, application, authority, and operator-surface certification; [acceptance record](../implementation-tasks/TASK-PLANNING-ACCEPTANCE-01-local-integrated-acceptance.md). Hosted Staging alignment is now complete; the next gate is `HOSTED-PLANNING-REHEARSAL-01`.
+- ✅ PLANNING-ACCEPTANCE-01 local integrated Planning gate — accepted on 2026-08-18 after exact-head database, security, browser-key, application, authority, and operator-surface certification; [acceptance record](../implementation-tasks/TASK-PLANNING-ACCEPTANCE-01-local-integrated-acceptance.md). Hosted Staging alignment is complete; the remaining pre-Purchase-Handoff path is `HOSTED-PLANNING-REHEARSAL-01A` → protected Identity/Foundation installation → `ATLAS-STAGING-UI-ACCESS-01` → `HOSTED-PLANNING-REHEARSAL-01B`.
 - ✅ ATLAS-STAGING-ALIGN-01 hosted Planning alignment — completed on 2026-08-18 from exact certified `main` `6d2a2651f7aebf8e9cdba6a17432a35f9dee31a0`; Atlas Staging advanced from 33 to 44 migrations, current CAT-22 structure/security authority is hosted, PLANNING-CONTRACT-02A/02B structures are present, Staging Edge Functions remain zero, and live OPS remained untouched; [alignment record](../implementation-tasks/TASK-ATLAS-STAGING-ALIGN-01-staging-planning-alignment.md). No identity/foundation/rehearsal package was installed.
 - ✅ UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`; cuts Weekly Menu, Attendance, Pantry, Readiness and Need Generation over to the merged v2 workflow without redesigning Confirmed Need
 - ✅ UI-QUALITY-02C-A / 02C-B Confirmed Need two-action workflow — merged; XLSX/PDF schema remains deliberately deferred
@@ -42,8 +42,10 @@ Goal: prove the connected Atlas Admin and Planning path in one separate hosted s
 - ✅ UI-QUALITY-03B Recipe Change Order first-user redesign — merged through PR #194 at `60316f59638e1c7c625700166e7c78d7b11e242a`
 - ✅ UI-QUALITY-03C-A School default portions — merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; restores compact multi-School inline editing and adds Product Owner-approved local Before/After Review before one atomic `RMVP-01.v2` Save, while preserving the single-School v1 command and backend behavior
 - 🟡 UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening — active from authoritative `main` `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; preserves the existing tabs/search/catalog/detail structure, removes the hidden 60-result cap, adds exact canonical Review before authored `RMVP-01.v1` writes, restores two predefined private authoritative Ingredient catalogs and API-backed selects, corrects `Nhóm đặt hàng`/rounding wording, retains lifecycle confirmation, and adds stale/unknown/readback recovery with no Planning delta
-- ⬜ HOSTED-PLANNING-REHEARSAL-01 hosted operator/security rehearsal — next; scope remains Admin reference preparation through Confirmed Need release, including blocker, stale, denied-capability, inactive-reference and unknown-outcome scenarios
-- ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, UI and rehearsal gate is accepted
+- 🟡 HOSTED-PLANNING-REHEARSAL-01A Staging Identity/Foundation packages — current next implementation gate. Build explicit, separately invokable Staging Identity and Foundation packages with deterministic local certification, minimum approved capabilities/scopes, minimum synthetic Admin/Planning prerequisites, strong live-OPS target denial, and no hosted mutation during the implementation PR. After merge, install the reviewed packages through a protected Staging action and run the read-only hosted verifier.
+- ⬜ ATLAS-STAGING-UI-ACCESS-01 controlled staff-access frontend — after the reviewed Identity/Foundation packages are installed and verified, publish the connected React application to one persistent Staging URL bound only to Atlas Staging. This is the first milestone at which selected staff may receive a URL plus Staging login for hands-on preview using synthetic/test data. It is explicitly not production rollout and must not expose management/service/database credentials or live OPS.
+- ⬜ HOSTED-PLANNING-REHEARSAL-01B hosted operator/security rehearsal — after Staging UI access exists, execute the real connected Admin → Planning → Confirmed Need release journey with selected operators and prove blocker, stale-version, inactive-reference, denied-capability/scope, unknown-outcome, refresh-before-retry, session/sign-out, and audit/history behavior. This is the acceptance gate before any Product/Architecture decision to resume CMD-03 / Purchase Handoff.
+- ↘️ CMD-03 / Purchase Handoff and downstream purchasing expansion — deferred until the staging, staff-access and hosted rehearsal gates are accepted
 
 Stabilization sequence:
 
@@ -52,8 +54,20 @@ exact-head local certification
 → repository staging readiness
 → separate cost-confirmed Atlas staging
 → connected Planning and Admin UI consolidation
+→ Staging Identity + Foundation package implementation
+→ protected Identity + Foundation installation and hosted verification
+→ persistent connected Staging frontend / controlled staff preview
 → hosted operator/security rehearsal
 → explicit Product/Architecture decision on CMD-03
+```
+
+Staff-access milestone:
+
+```text
+ATLAS-STAGING-UI-ACCESS-01
+= first approved point to give selected staff a persistent Atlas URL + Staging login
+= synthetic/test-data preview only
+≠ production rollout or authoritative daily operations
 ```
 
 Planning workflow-correction sequence:
