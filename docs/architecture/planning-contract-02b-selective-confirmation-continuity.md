@@ -1,6 +1,6 @@
 # PLANNING-CONTRACT-02B — Selective Confirmed Need Decision Continuity
 
-**Status:** Accepted and implemented locally; draft PR review pending
+**Status:** Accepted, merged through PR #200, security-catalog reconciled through PR #201, and locally certified by PLANNING-ACCEPTANCE-01 on 2026-08-18
 
 **Decision:** [D-040](../decisions/decision-register.md)
 
