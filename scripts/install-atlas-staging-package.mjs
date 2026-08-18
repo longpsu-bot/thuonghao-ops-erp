@@ -1,4 +1,6 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -221,6 +223,25 @@ function runSafe(runCommand, command, args, options, protectedValues = []) {
     );
   }
   return String(result.stdout ?? "");
+}
+
+function runLinkedSqlFileSafe(runCommand, statement, options, protectedValues) {
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), "atlas-staging-package-"),
+  );
+  const sqlPath = join(temporaryDirectory, "query.sql");
+  try {
+    writeFileSync(sqlPath, statement, { encoding: "utf8", flag: "wx" });
+    return runSafe(
+      runCommand,
+      cliPath(),
+      ["db", "query", "--linked", "--file", sqlPath, "--agent", "no"],
+      options,
+      protectedValues,
+    );
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
 }
 
 export function verifyPackageCheckout({
@@ -467,11 +488,14 @@ ${purposeRows}
     or exists (select 1 from atlas_planning.planning_quantity_policies where unit_id = ${uuid(unit.unit_id, "Unit")} and planning_quantity_policy_id <> ${uuid(policy.planning_quantity_policy_id, "Planning policy")}) then raise exception 'ATLAS_STAGING_FOUNDATION_POLICY_MISMATCH'; end if;
   if not exists (select 1 from atlas_planning.planning_quantity_policies where planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")}) then insert into atlas_planning.planning_quantity_policies (planning_quantity_policy_id, unit_id, created_by_actor_id, created_at) values (${uuid(policy.planning_quantity_policy_id, "Planning policy")}, ${uuid(unit.unit_id, "Unit")}, ${uuid(manifest.identity_actor_id, "Identity Actor")}, ${sql(policy.evidence_timestamp)}::timestamptz); end if;
 
-  if exists (select 1 from atlas_planning.planning_quantity_policy_revisions where planning_quantity_policy_revision_id = ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")} and (planning_quantity_policy_id <> ${uuid(policy.planning_quantity_policy_id, "Planning policy")} or unit_id <> ${uuid(unit.unit_id, "Unit")} or revision_number <> ${Number(policy.revision_number)} or predecessor_policy_revision_id is not null or planning_step <> ${sql(policy.planning_step)}::numeric or effective_from <> ${sql(policy.effective_from)}::date or effective_to is not null or policy_revision_status <> ${sql(policy.policy_revision_status)} or created_by_actor_id <> ${uuid(manifest.identity_actor_id, "Identity Actor")} or approved_by_actor_id <> ${uuid(manifest.identity_actor_id, "Identity Actor")} or activated_by_actor_id <> ${uuid(manifest.identity_actor_id, "Identity Actor")} or retired_by_actor_id is not null))
+  if exists (select 1 from atlas_planning.planning_quantity_policy_revisions where planning_quantity_policy_revision_id = ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")} and (planning_quantity_policy_id <> ${uuid(policy.planning_quantity_policy_id, "Planning policy")} or unit_id <> ${uuid(unit.unit_id, "Unit")} or revision_number <> ${Number(policy.revision_number)} or predecessor_policy_revision_id is not null or planning_step <> ${sql(policy.planning_step)}::numeric or effective_from <> ${sql(policy.effective_from)}::date or effective_to is not null or created_by_actor_id <> ${uuid(manifest.identity_actor_id, "Identity Actor")} or created_at <> ${sql(policy.evidence_timestamp)}::timestamptz or not ((policy_revision_status = 'DRAFT' and approved_by_actor_id is null and approved_at is null and activated_by_actor_id is null and activated_at is null and retired_by_actor_id is null and retired_at is null) or (policy_revision_status = ${sql(policy.policy_revision_status)} and approved_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and approved_at = ${sql(policy.evidence_timestamp)}::timestamptz and activated_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and activated_at = ${sql(policy.evidence_timestamp)}::timestamptz and retired_by_actor_id is null and retired_at is null))))
     or exists (select 1 from atlas_planning.planning_quantity_policy_revisions where planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and revision_number = ${Number(policy.revision_number)} and planning_quantity_policy_revision_id <> ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")}) then raise exception 'ATLAS_STAGING_FOUNDATION_POLICY_REVISION_MISMATCH'; end if;
   if not exists (select 1 from atlas_planning.planning_quantity_policy_revisions where planning_quantity_policy_revision_id = ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")}) then
-    insert into atlas_planning.planning_quantity_policy_revisions (planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id, revision_number, planning_step, effective_from, policy_revision_status, created_by_actor_id, created_at, approved_by_actor_id, approved_at, activated_by_actor_id, activated_at) values (${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")}, ${uuid(policy.planning_quantity_policy_id, "Planning policy")}, ${uuid(unit.unit_id, "Unit")}, ${Number(policy.revision_number)}, ${sql(policy.planning_step)}::numeric, ${sql(policy.effective_from)}::date, ${sql(policy.policy_revision_status)}, ${uuid(manifest.identity_actor_id, "Identity Actor")}, ${sql(policy.evidence_timestamp)}::timestamptz, ${uuid(manifest.identity_actor_id, "Identity Actor")}, ${sql(policy.evidence_timestamp)}::timestamptz, ${uuid(manifest.identity_actor_id, "Identity Actor")}, ${sql(policy.evidence_timestamp)}::timestamptz);
+    insert into atlas_planning.planning_quantity_policy_revisions (planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id, revision_number, planning_step, effective_from, policy_revision_status, created_by_actor_id, created_at) values (${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")}, ${uuid(policy.planning_quantity_policy_id, "Planning policy")}, ${uuid(unit.unit_id, "Unit")}, ${Number(policy.revision_number)}, ${sql(policy.planning_step)}::numeric, ${sql(policy.effective_from)}::date, 'DRAFT', ${uuid(manifest.identity_actor_id, "Identity Actor")}, ${sql(policy.evidence_timestamp)}::timestamptz);
   end if;
+  update atlas_planning.planning_quantity_policy_revisions
+    set policy_revision_status = ${sql(policy.policy_revision_status)}, approved_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")}, approved_at = ${sql(policy.evidence_timestamp)}::timestamptz, activated_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")}, activated_at = ${sql(policy.evidence_timestamp)}::timestamptz
+    where planning_quantity_policy_revision_id = ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")} and planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and unit_id = ${uuid(unit.unit_id, "Unit")} and revision_number = ${Number(policy.revision_number)} and predecessor_policy_revision_id is null and planning_step = ${sql(policy.planning_step)}::numeric and effective_from = ${sql(policy.effective_from)}::date and effective_to is null and policy_revision_status = 'DRAFT' and created_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and created_at = ${sql(policy.evidence_timestamp)}::timestamptz and approved_by_actor_id is null and approved_at is null and activated_by_actor_id is null and activated_at is null and retired_by_actor_id is null and retired_at is null;
 end;
 $atlas_staging_foundation$;
 `;
@@ -566,6 +590,13 @@ export function planAtlasStagingPackage({
         `<${kind}-package-reconciliation-sql>`,
         "--linked",
       ],
+      [
+        "supabase",
+        "db",
+        "query",
+        `<${kind}-package-verification-sql>`,
+        "--linked",
+      ],
     ],
     mutatesHostedState: true,
     deploysMigrations: false,
@@ -626,15 +657,14 @@ export async function installAtlasStagingPackage({
   }
   const packageSql =
     kind === "identity"
-      ? `${buildIdentityPackageSql(manifest)}\n${buildIdentityVerificationSql(manifest)}`
-      : `${buildFoundationPackageSql(manifest)}\n${buildFoundationVerificationSql(manifest)}`;
-  runSafe(
-    runCommand,
-    cliPath(),
-    ["db", "query", packageSql, "--linked", "--agent", "no"],
-    options,
-    protectedValues,
-  );
+      ? buildIdentityPackageSql(manifest)
+      : buildFoundationPackageSql(manifest);
+  const verificationSql =
+    kind === "identity"
+      ? buildIdentityVerificationSql(manifest)
+      : buildFoundationVerificationSql(manifest);
+  runLinkedSqlFileSafe(runCommand, packageSql, options, protectedValues);
+  runLinkedSqlFileSafe(runCommand, verificationSql, options, protectedValues);
   return { status: "installed", plan };
 }
 

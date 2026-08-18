@@ -132,7 +132,14 @@ describe("Atlas Staging packages", () => {
     expect(sql).toContain("atlas_admin.schools");
     expect(sql).toContain("atlas_planning.pantry_need_purposes");
     expect(sql).toContain("atlas_planning.planning_quantity_policy_revisions");
-    expect(sql).not.toMatch(/\b(delete|truncate|update)\b/i);
+    expect(sql).not.toMatch(/\b(delete|truncate)\b/i);
+    expect(sql.match(/\bupdate\b/gi)).toHaveLength(1);
+    expect(sql).toMatch(
+      /insert into atlas_planning\.planning_quantity_policy_revisions[\s\S]+?'DRAFT'/i,
+    );
+    expect(sql).toMatch(
+      /update atlas_planning\.planning_quantity_policy_revisions\s+set policy_revision_status = 'ACTIVE'/i,
+    );
     expect(sql).not.toMatch(
       /insert into atlas_admin\.(ingredients|suppliers|dishes|recipes)/i,
     );
@@ -263,5 +270,34 @@ describe("Atlas Staging packages", () => {
     });
     expect(runCommand).not.toHaveBeenCalled();
     expect(createClientFactory).not.toHaveBeenCalled();
+  });
+
+  it("executes reconciliation and verification as separate linked queries", async () => {
+    const linkedSql = [];
+    const runCommand = vi.fn((_command, args) => {
+      if (args[0] === "db" && args[1] === "query") {
+        linkedSql.push(readFileSync(args[args.indexOf("--file") + 1], "utf8"));
+      }
+      return {
+        status: 0,
+        stdout: args[0] === "rev-parse" ? `${commitSha}\n` : "",
+      };
+    });
+    await expect(
+      installAtlasStagingPackage({
+        kind: "foundation",
+        commitSha,
+        environment: environment(),
+        runCommand,
+      }),
+    ).resolves.toMatchObject({ status: "installed" });
+    const linkedQueries = runCommand.mock.calls.filter(
+      ([, args]) => args[0] === "db" && args[1] === "query",
+    );
+    expect(linkedQueries).toHaveLength(2);
+    expect(linkedQueries[0][1]).toContain("--file");
+    expect(linkedQueries[1][1]).toContain("--file");
+    expect(linkedSql[0]).toContain("$atlas_staging_foundation$");
+    expect(linkedSql[1]).toContain("$atlas_staging_foundation_verify$");
   });
 });

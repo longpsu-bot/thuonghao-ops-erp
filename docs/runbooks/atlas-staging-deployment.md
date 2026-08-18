@@ -93,7 +93,7 @@ pnpm atlas:staging:identity:install -- --commit-sha <exact-merged-main-sha>
 pnpm atlas:staging:foundation:install -- --commit-sha <exact-merged-main-sha>
 ```
 
-Both commands require explicit staging configuration, an exact URL/project-reference match, the fixed approved Atlas Staging reference, protected credentials, exact `HEAD`, containment in `origin/main`, and a clean worktree. The Identity command reconciles only its deterministic Auth user before insert-only database reconciliation. Matching rows replay safely; an identifier, natural-key, content, capability, or scope mismatch fails closed. The Foundation command is separately invokable, requires the managed Actor, and has the same matching-row-or-fail behavior. Neither command deploys migrations or installs transactional rehearsal facts. `--dry-run` plans the qualified package and performs no process or network execution.
+Both commands require explicit staging configuration, an exact URL/project-reference match, the fixed approved Atlas Staging reference, protected credentials, exact `HEAD`, containment in `origin/main`, and a clean worktree. The Identity command reconciles only its deterministic Auth user before insert-only database reconciliation. Matching rows replay safely; an identifier, natural-key, content, capability, or scope mismatch fails closed. The Foundation command is separately invokable, requires the managed Actor, and has the same matching-row-or-fail behavior; its deterministic H1A policy revision is inserted as `DRAFT` and activated with complete evidence in the same transaction, as required by the approved lifecycle. Neither command deploys migrations or installs transactional rehearsal facts. `--dry-run` plans the qualified package and performs no process or network execution.
 
 For local-only certification, start local Supabase and supply an `@local.test` email and local-only password through the two protected test variables, then run:
 
@@ -114,6 +114,20 @@ pnpm atlas:staging:verify
 It is read-only with respect to hosted state. It validates and links the local protected checkout to the staging reference, then confirms complete machine-readable migration-set equality and exact catalog/security identity authority; exact managed Identity and Foundation state; reachable API; configured and live `atlas_api`; the specific anonymous authorization denial; protected-user sign-in; exactly one active Actor mapping for the Auth subject; one successful approved `get_school_master_data` read returning the single managed School; and session clearing after sign-out. It prints no URL, project reference, email, key, password, token, JWT, or database connection string. Use `--platform-only` before package installation; that phase continues to require zero application roles and does not require package state.
 
 Synthetic business rehearsal is a separate approved package/workflow and is not performed by the default verifier.
+
+Successful hosted verification hands off to `ATLAS-STAGING-UI-ACCESS-01`, which publishes the controlled persistent connected Staging frontend. Only after that staff-access gate exists does `HOSTED-PLANNING-REHEARSAL-01B` execute the hosted operator/security rehearsal. The resulting acceptance evidence precedes any explicit Product/Architecture decision to resume CMD-03 or Purchase Handoff.
+
+```text
+01A merge
+→ protected Identity installation
+→ protected Foundation installation
+→ read-only hosted verification
+→ ATLAS-STAGING-UI-ACCESS-01
+→ HOSTED-PLANNING-REHEARSAL-01B
+→ CMD-03 decision
+```
+
+Mandatory local package certification and the separate hosted-mutation authorization are the 01A evidence gates. GitHub Actions exact-head certification is not an unconditional prerequisite for package installation unless root separately requires it.
 
 ## 7. Incident handling
 

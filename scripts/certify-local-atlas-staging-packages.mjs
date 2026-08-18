@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -22,9 +25,21 @@ function requireLocalCredential(name) {
 }
 
 function runLocalSql(statement) {
-  runPinnedSupabase(["db", "query", statement, "--local", "--agent", "no"], {
-    stdio: ["ignore", "ignore", "inherit"],
-  });
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), "atlas-staging-certification-"),
+  );
+  const sqlPath = join(temporaryDirectory, "query.sql");
+  try {
+    writeFileSync(sqlPath, statement, { encoding: "utf8", flag: "wx" });
+    runPinnedSupabase(
+      ["db", "query", "--local", "--file", sqlPath, "--agent", "no"],
+      {
+        stdio: ["ignore", "ignore", "inherit"],
+      },
+    );
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
 }
 
 function cleanBaselineSql() {
@@ -200,9 +215,8 @@ export async function certifyLocalAtlasStagingPackages() {
       supabaseUrl: apiUrl,
       secretKey: serviceRoleKey,
     });
-    runLocalSql(
-      `${buildIdentityPackageSql(identity)}\n${buildIdentityVerificationSql(identity)}`,
-    );
+    runLocalSql(buildIdentityPackageSql(identity));
+    runLocalSql(buildIdentityVerificationSql(identity));
     return result;
   };
 
@@ -211,12 +225,10 @@ export async function certifyLocalAtlasStagingPackages() {
   if (firstIdentity.replay || !replayIdentity.replay) {
     throw new Error("Identity package replay evidence is inconsistent.");
   }
-  runLocalSql(
-    `${buildFoundationPackageSql(foundation)}\n${buildFoundationVerificationSql(foundation)}`,
-  );
-  runLocalSql(
-    `${buildFoundationPackageSql(foundation)}\n${buildFoundationVerificationSql(foundation)}`,
-  );
+  runLocalSql(buildFoundationPackageSql(foundation));
+  runLocalSql(buildFoundationVerificationSql(foundation));
+  runLocalSql(buildFoundationPackageSql(foundation));
+  runLocalSql(buildFoundationVerificationSql(foundation));
   runLocalSql(operatorFactsRemainEmptySql(identity));
   await verifyBrowserAuthorization({
     apiUrl,

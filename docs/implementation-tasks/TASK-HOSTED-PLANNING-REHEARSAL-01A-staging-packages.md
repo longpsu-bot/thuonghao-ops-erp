@@ -2,7 +2,7 @@
 
 **Status:** Implementation pending root review; packages are not installed
 
-**Baseline:** `b16689ade8f6a4b3b2e16e4910ed10c34b57fb6d`
+**Baseline:** `d57fdc01adf5afe89a1e57527db399c93cb37aa2`
 
 **Approved hosted target:** Atlas Staging `rnzxmxiiqgtdevzregff`
 
@@ -62,11 +62,13 @@ The Foundation package manages these exact synthetic prerequisites:
 
 The package also verifies, but does not own or duplicate, the migration-owned active catalog codes `khac`, `daily_other`, and `savory`.
 
+The H1A policy revision follows the approved lifecycle even during reconciliation: a missing deterministic revision is inserted as `DRAFT` and then activated with complete approval and activation evidence in the same transaction. Replay accepts the exact resulting `ACTIVE` row; any conflicting identity, payload, lifecycle, or evidence fails closed.
+
 ## 4. Foundation reference versus rehearsal-authored facts
 
 **Foundation reference:** the Customer/School/default-location backbone, School Type, `kg` Unit, two accepted Pantry purposes, and active H1A Planning policy above.
 
-**Rehearsal-authored business facts:** Ingredient, Supplier, ingredient-supplier priority, Dish, Recipe/BOM, non-zero School portion defaults, Weekly Menu, Attendance, Pantry batch, Planning Input evaluation, Need Generation run, and Confirmed Need decisions/release. These remain absent so HOSTED-PLANNING-REHEARSAL-01B can prove the connected operator workflows instead of consuming a pre-baked success path.
+**Rehearsal-authored business facts:** Ingredient, Supplier, ingredient-supplier priority, Dish, Recipe/BOM, non-zero School portion defaults, Weekly Menu, Attendance, Pantry batch, Planning Input evaluation, Need Generation run, and Confirmed Need decisions/release. These remain absent so, after package installation and hosted verification establish the prerequisite state and ATLAS-STAGING-UI-ACCESS-01 publishes the controlled connected frontend, HOSTED-PLANNING-REHEARSAL-01B can prove the connected operator workflows instead of consuming a pre-baked success path.
 
 Purchase Handoff, supplier allocation, CMD-03, purchase orders, Warehouse, Dispatch, Production, and Finance facts are outside both packages and outside the later rehearsal boundary.
 
@@ -107,15 +109,15 @@ Failures pass through the shared redactor for supplied protected values, JWT-lik
 6. proves anonymous `atlas_api` denial; and
 7. signs in through the browser key and requires a successful `get_school_master_data` response containing exactly the managed School.
 
-Focused unit tests additionally cover manifest authority, target drift, live-target rejection through the shared guard, credential absence, insert-only SQL shape, Auth first-run/replay/conflict behavior, exact merged-main checkout, and process/network-free dry-run.
+Focused unit tests additionally cover manifest authority, target drift, live-target rejection through the shared guard, credential absence, insert-only Identity SQL, bounded Foundation SQL with the required H1A `DRAFT`-to-`ACTIVE` transition, Auth first-run/replay/conflict behavior, exact merged-main checkout, and process/network-free dry-run.
 
-Repository-only evidence on 2026-08-18: the focused package and staging-contract suites passed 45/45; TypeScript and the production build passed; formatting and `git diff --check` passed. The complete Vitest run passed 556/558 but two unrelated Admin UI tests failed under the long concurrent run; each exact failing test passed immediately when rerun alone. Clean database certification could not start because Docker Desktop failed before exposing its Linux engine (`initializing Inference manager` against its local `dockerInference` socket). This task did not delete that host runtime socket, reset Docker, or weaken certification. The local package command remains mandatory before root acceptance or hosted installation.
+Repository-only evidence on 2026-08-18: clean local certification passed all 44 migrations plus Identity and Foundation first-install/replay, exact-state verification, anonymous denial, authenticated School read, and rehearsal-fact exclusion. The H1A lifecycle (50), H1A effectivity (44), platform security catalog (22), and School/Customer/Location foundation (56) pgTAP suites passed all 172 assertions on a separate fresh reset. The complete Vitest run passed 71/71 files and 561/561 tests, followed by a final 13/13 focused package pass including the split-query regression case. TypeScript, formatting, production build, and `git diff --check` passed. No hosted package command was executed.
 
 A final connected read-only hosted recheck on 2026-08-18 found Atlas Staging unchanged at 44 migrations (newest `20260817045218`), 10 Atlas schemas, 105 Atlas relations, 90 `atlas_api` functions, 27 capabilities, zero Auth users, zero Actors/roles/memberships/scopes, zero named Admin business rows, and zero Edge Functions. Live OPS remained at zero Atlas schemas/relations/functions and 46 public base tables. No hosted package command was executed. Full routine frontend validation remains owned by GitHub Actions; the private-repository billing constraint must not be used to weaken either required workflow.
 
 ## 8. Future hosted installation
 
-No hosted package command is executed by this task. After root acceptance, merge, exact-head CI certification, and separate hosted-mutation authorization, install Identity before Foundation from a clean exact merged-main checkout:
+No hosted package command is executed by this task. After root acceptance, merge, successful mandatory local certification, and separate hosted-mutation authorization, install Identity before Foundation from a clean exact merged-main checkout:
 
 ```text
 pnpm atlas:staging:identity:install -- --commit-sha <exact-merged-main-sha>
@@ -124,6 +126,19 @@ pnpm atlas:staging:verify
 ```
 
 The default verifier is read-only and then requires the exact managed package state plus authenticated School read. Before package installation, `pnpm atlas:staging:verify -- --platform-only` preserves the aligned zero-role platform check.
+
+The authoritative post-merge sequence is:
+
+```text
+protected Identity installation
+→ protected Foundation installation
+→ read-only atlas:staging:verify
+→ ATLAS-STAGING-UI-ACCESS-01
+→ HOSTED-PLANNING-REHEARSAL-01B
+→ explicit Product/Architecture decision on CMD-03
+```
+
+GitHub Actions exact-head certification is not an unconditional 01A installation prerequisite. It may be required later only by a separate explicit root instruction. The private-repository billing constraint therefore does not block the authorized package-installation sequence once mandatory local certification, merge, and hosted-mutation authorization are complete.
 
 ## 9. Incident and rollback approach
 
