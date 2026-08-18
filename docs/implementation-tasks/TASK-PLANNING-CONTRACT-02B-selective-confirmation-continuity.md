@@ -1,6 +1,6 @@
 # TASK-PLANNING-CONTRACT-02B — Selective Confirmation Continuity
 
-**Status:** Implemented on `feat/planning-contract-02b-selective-confirmation-continuity`; independent count-integrity correction incorporated and final draft-PR review pending
+**Status:** Merged through PR #200; independent count-integrity correction merged through PR #201; locally certified by PLANNING-ACCEPTANCE-01 on 2026-08-18
 
 **Baseline:** `b20ecb0507a50441e02ae1c1827efffa936e5603`
 
