@@ -141,26 +141,31 @@ async function releasedRecipeDish(client, subject) {
       readRequest("RMVP-02A.v1", subject, {}),
     )
   ).workbench;
-  const version = workbench.recipe_versions.find(
-    (item) =>
-      item.recipe_version_status === "RELEASED_FOR_PLANNING" &&
-      item.composition.some(
-        (line) =>
-          line.line_disposition === "PRESENT" && line.quantity_per_basis > 0,
-      ),
-  );
-  const recipe = workbench.recipes.find(
-    (item) =>
-      item.recipe_id === version?.recipe_id && item.recipe_status === "ACTIVE",
-  );
-  const dish = workbench.dishes.find(
-    (item) => item.dish_id === recipe?.dish_id && item.dish_status === "ACTIVE",
-  );
+  const candidate = workbench.recipe_versions
+    .map((version) => {
+      const recipe = workbench.recipes.find(
+        (item) => item.recipe_id === version.recipe_id,
+      );
+      const dish = workbench.dishes.find(
+        (item) => item.dish_id === recipe?.dish_id,
+      );
+      return { version, recipe, dish };
+    })
+    .find(
+      ({ version, recipe, dish }) =>
+        version.recipe_version_status === "RELEASED_FOR_PLANNING" &&
+        version.composition.some(
+          (line) =>
+            line.line_disposition === "PRESENT" && line.quantity_per_basis > 0,
+        ) &&
+        recipe?.recipe_status === "ACTIVE" &&
+        dish?.dish_status === "ACTIVE",
+    );
   assert(
-    version && dish?.dish_type_code,
-    "PLANNING-CONTRACT-01 requires the released local Recipe from RMVP-02A acceptance.",
+    candidate?.dish?.dish_type_code,
+    "PLANNING-CONTRACT-01 requires an active released Recipe with an active Dish and usable composition.",
   );
-  return { version, dish };
+  return { version: candidate.version, dish: candidate.dish };
 }
 
 async function previewMenu(client, subject, weekStart, rows) {

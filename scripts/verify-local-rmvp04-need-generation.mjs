@@ -149,26 +149,31 @@ async function releasedRecipeDish(client, subject) {
     "get_dish_recipe_workbench",
     readRequest("RMVP-02A.v1", subject, {}),
   );
-  const version = result.workbench.recipe_versions.find(
-    (item) =>
-      item.recipe_version_status === "RELEASED_FOR_PLANNING" &&
-      item.composition.some(
-        (line) =>
-          line.line_disposition === "PRESENT" && line.quantity_per_basis > 0,
-      ),
-  );
-  const recipe = result.workbench.recipes.find(
-    (item) =>
-      item.recipe_id === version?.recipe_id && item.recipe_status === "ACTIVE",
-  );
-  const dish = result.workbench.dishes.find(
-    (item) => item.dish_id === recipe?.dish_id && item.dish_status === "ACTIVE",
-  );
+  const candidate = result.workbench.recipe_versions
+    .map((version) => {
+      const recipe = result.workbench.recipes.find(
+        (item) => item.recipe_id === version.recipe_id,
+      );
+      const dish = result.workbench.dishes.find(
+        (item) => item.dish_id === recipe?.dish_id,
+      );
+      return { version, recipe, dish };
+    })
+    .find(
+      ({ version, recipe, dish }) =>
+        version.recipe_version_status === "RELEASED_FOR_PLANNING" &&
+        version.composition.some(
+          (line) =>
+            line.line_disposition === "PRESENT" && line.quantity_per_basis > 0,
+        ) &&
+        recipe?.recipe_status === "ACTIVE" &&
+        dish?.dish_status === "ACTIVE",
+    );
   assert(
-    version && recipe && dish,
-    "RMVP-04 requires the released browser-key Recipe created by RMVP-02A acceptance.",
+    candidate,
+    "RMVP-04 requires an active released Recipe with an active Dish and usable composition.",
   );
-  return { version, recipe, dish };
+  return candidate;
 }
 
 async function alignMenuToReleasedRecipe(
