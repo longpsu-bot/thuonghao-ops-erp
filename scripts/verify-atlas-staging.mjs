@@ -8,6 +8,11 @@ import {
   validateAtlasStagingProtectedValues,
   verifyAtlasApiExposure,
 } from "./atlas-staging-contract.mjs";
+import {
+  buildFoundationVerificationSql,
+  buildIdentityVerificationSql,
+  readAtlasStagingPackage,
+} from "./install-atlas-staging-package.mjs";
 
 function cliPath() {
   return process.platform === "win32"
@@ -149,7 +154,10 @@ function sqlArray(values) {
   return `array[${values.map((value) => `'${value.replaceAll("'", "''")}'`).join(", ")}]::text[]`;
 }
 
-export function catalogVerificationSql(authority) {
+export function catalogVerificationSql(
+  authority,
+  { expectedApplicationRoleCode } = {},
+) {
   const schemas = sqlArray(authority.schemas);
   const roles = sqlArray(authority.databaseRoles);
   const signatures = sqlArray(authority.apiSignatures);
@@ -167,7 +175,11 @@ begin
     raise exception 'ATLAS_CATALOG_SCHEMA_MISMATCH';
   end if;
   select array_agg(format('%s|login=%s|inherit=%s|super=%s|createrole=%s|createdb=%s|repl=%s|bypassrls=%s', rolname, rolcanlogin, rolinherit, rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls) order by rolname)::text[] into actual from pg_roles where rolname like 'atlas\\_%' escape '\\';
-  if actual is distinct from ${roles} or (select count(*) from atlas_core.roles) <> 0 then
+  if actual is distinct from ${roles} or ${
+    expectedApplicationRoleCode
+      ? `(select count(*) from atlas_core.roles) <> 1 or not exists (select 1 from atlas_core.roles where role_code = '${expectedApplicationRoleCode.replaceAll("'", "''")}' and role_status = 'ACTIVE')`
+      : `(select count(*) from atlas_core.roles) <> 0`
+  } then
     raise exception 'ATLAS_DATABASE_ROLE_POSTURE_MISMATCH';
   end if;
   if exists (select 1 from pg_roles r cross join pg_namespace n where r.rolname like 'atlas\\_%' escape '\\' and r.rolname <> 'atlas_owner' and n.nspname like 'atlas\\_%' escape '\\' and has_schema_privilege(r.rolname, n.nspname, 'CREATE')) then
@@ -228,15 +240,6 @@ function actorVerificationSql(authSubject) {
       raise exception 'ATLAS_ACTIVE_ACTOR_MAPPING_MISMATCH';
     end if;
   end $$;`;
-}
-
-function extractCustomerId(output) {
-  const match = /ATLAS_CUSTOMER_ID=([0-9a-f-]{36})/i.exec(output);
-  if (!match)
-    throw new Error(
-      "No approved staging customer is available for the read check.",
-    );
-  return match[1];
 }
 
 export function assertAnonymousAuthorizationDenial(error) {
@@ -331,13 +334,21 @@ export async function verifyAtlasStaging({
     repositoryMigrationVersions(cwd),
     parseMigrationHistoryEvidence(migrations),
   );
+  const identityManifest = platformOnly
+    ? undefined
+    : readAtlasStagingPackage("identity", cwd);
+  const foundationManifest = platformOnly
+    ? undefined
+    : readAtlasStagingPackage("foundation", cwd);
   runSafe(
     runCommand,
     cliPath(),
     [
       "db",
       "query",
-      catalogVerificationSql(readCatalogAuthority(cwd)),
+      catalogVerificationSql(readCatalogAuthority(cwd), {
+        expectedApplicationRoleCode: identityManifest?.role.role_code,
+      }),
       "--linked",
     ],
     options,
@@ -370,6 +381,21 @@ export async function verifyAtlasStaging({
   assertAnonymousAuthorizationDenial(anonymousAttempt.error);
   if (platformOnly) return { status: "verified", phase: "platform" };
 
+  runSafe(
+    runCommand,
+    cliPath(),
+    [
+      "db",
+      "query",
+      `${buildIdentityVerificationSql(identityManifest)}\n${buildFoundationVerificationSql(foundationManifest)}`,
+      "--linked",
+      "--agent",
+      "no",
+    ],
+    options,
+    protectedValues,
+  );
+
   const client = createClientFactory(
     target.supabaseUrl,
     target.publishableKey,
@@ -401,32 +427,23 @@ export async function verifyAtlasStaging({
       options,
       protectedValues,
     );
-    const customerOutput = runSafe(
-      runCommand,
-      cliPath(),
-      [
-        "db",
-        "query",
-        "select 'ATLAS_CUSTOMER_ID=' || customer_id::text from atlas_admin.customers where customer_status = 'ACTIVE' order by customer_id limit 1;",
-        "--linked",
-      ],
-      options,
-      protectedValues,
-    );
-    const customerId = extractCustomerId(customerOutput);
-    const serviceDate = new Date().toISOString().slice(0, 10);
     const { data: readResult, error: readError } = await client
       .schema("atlas_api")
-      .rpc("get_operator_blockers", {
+      .rpc("get_school_master_data", {
         request: {
-          contract_version: "PA-05C.v1",
+          contract_version: "RMVP-01.v1",
           correlation_id: randomUUID(),
           requested_by_auth_subject: authSubject,
-          payload: { service_date: serviceDate, customer_id: customerId },
+          payload: {},
         },
       })
       .retry(false);
-    if (readError || !readResult || typeof readResult !== "object") {
+    if (
+      readError ||
+      readResult?.success !== true ||
+      !Array.isArray(readResult.schools) ||
+      readResult.schools.length !== 1
+    ) {
       throw new Error("The approved authenticated Atlas read failed safely.");
     }
   } catch (error) {

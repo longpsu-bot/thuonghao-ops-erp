@@ -1,13 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
+  APPROVED_ATLAS_STAGING_PROJECT_REF,
   ATLAS_STAGING_GITHUB_ENVIRONMENT,
+  ATLAS_STAGING_IDENTITY_SECRET_NAMES,
   ATLAS_STAGING_SECRET_NAMES,
   ATLAS_STAGING_VARIABLE_NAMES,
   LIVE_OPS_PROJECT_DENYLIST,
   ensureAtlasApiExposure,
   redactAtlasStagingDiagnostic,
   validateAtlasStagingProtectedValues,
+  validateAtlasStagingPackageProtectedValues,
   validateAtlasStagingTarget,
   verifyAtlasApiExposure,
   verifyExactHeadCertification,
@@ -61,6 +64,27 @@ describe("Atlas staging safety contract", () => {
       "ATLAS_STAGING_DB_PASSWORD",
       "ATLAS_STAGING_TEST_PASSWORD",
     ]);
+    expect(APPROVED_ATLAS_STAGING_PROJECT_REF).toBe("rnzxmxiiqgtdevzregff");
+    expect(ATLAS_STAGING_IDENTITY_SECRET_NAMES).toEqual([
+      "ATLAS_STAGING_SUPABASE_SECRET_KEY",
+    ]);
+  });
+
+  it("qualifies package installation to the one approved project", () => {
+    const packageEnvironment = environment({
+      ATLAS_STAGING_PROJECT_REF: APPROVED_ATLAS_STAGING_PROJECT_REF,
+      VITE_SUPABASE_URL: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
+      ATLAS_STAGING_SUPABASE_SECRET_KEY:
+        "sb_secret_synthetic_atlas_staging_contract_test",
+    });
+    expect(
+      validateAtlasStagingPackageProtectedValues(packageEnvironment, {
+        identity: true,
+      }).projectRef,
+    ).toBe(APPROVED_ATLAS_STAGING_PROJECT_REF);
+    expect(() =>
+      validateAtlasStagingPackageProtectedValues(environment()),
+    ).toThrow(/approved Atlas Staging/i);
   });
 
   it("contains exactly the live OPS project denylist", () => {
@@ -266,6 +290,9 @@ describe("Atlas staging dry-run and workflow", () => {
       "scripts/atlas-staging-contract.test.mjs",
       "scripts/deploy-atlas-staging.mjs",
       "scripts/verify-atlas-staging.mjs",
+      "scripts/install-atlas-staging-package.mjs",
+      "scripts/certify-local-atlas-staging-packages.mjs",
+      "scripts/atlas-staging-package.test.mjs",
     ];
 
     for (const eventPaths of [pullRequestPaths, pushPaths]) {

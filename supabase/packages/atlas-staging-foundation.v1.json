@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "package": {
+    "name": "atlas-staging-foundation",
+    "version": "1.0.0",
+    "classification": "FOUNDATION_REFERENCE",
+    "environment": "staging",
+    "project_ref": "rnzxmxiiqgtdevzregff"
+  },
+  "identity_actor_id": "a1010000-0000-4000-8000-000000000001",
+  "customer": {
+    "customer_id": "a1020000-0000-4000-8000-000000000201",
+    "customer_code": "atlas-staging-school-customer",
+    "customer_name": "Atlas Staging Synthetic School Customer",
+    "customer_type": "SCHOOL_CATERING"
+  },
+  "delivery_location": {
+    "delivery_location_id": "a1020000-0000-4000-8000-000000000202",
+    "location_code": "atlas-staging-kitchen",
+    "location_name": "Atlas Staging Synthetic Kitchen",
+    "address_text": "Synthetic staging address — not a production delivery location",
+    "delivery_instructions": "Synthetic rehearsal location only",
+    "timezone_name": "Asia/Ho_Chi_Minh"
+  },
+  "school_type": {
+    "school_type_id": "a1020000-0000-4000-8000-000000000203",
+    "school_type_code": "atlas_staging_school",
+    "school_type_name": "Atlas Staging Synthetic School Type"
+  },
+  "school": {
+    "school_id": "a1020000-0000-4000-8000-000000000204",
+    "school_code": "atlas_staging_school",
+    "school_name": "Atlas Staging Synthetic School",
+    "display_order": 1,
+    "operational_notes": "Synthetic staging reference. Portion defaults are intentionally zero for operator preparation.",
+    "default_student_portions": 0,
+    "default_teacher_portions": 0
+  },
+  "unit": {
+    "unit_id": "a1020000-0000-4000-8000-000000000205",
+    "unit_code": "kg",
+    "unit_name": "Kilogram",
+    "dimension_code": "MASS",
+    "decimal_scale": 6
+  },
+  "pantry_purposes": [
+    {
+      "pantry_need_purpose_id": "a1020000-0000-4000-8000-000000000210",
+      "purpose_code": "school_requested_supplement",
+      "purpose_name_vi": "Bổ sung theo yêu cầu của trường",
+      "purpose_description": "An identified School explicitly requested an additional Ingredient quantity beyond controlled Planning sources.",
+      "note_rule": "REQUIRED",
+      "display_order": 10
+    },
+    {
+      "pantry_need_purpose_id": "a1020000-0000-4000-8000-000000000211",
+      "purpose_code": "planning_identified_supplement",
+      "purpose_name_vi": "Bổ sung do bộ phận Kế hoạch xác định",
+      "purpose_description": "Planning identified a service-specific additional Ingredient quantity not represented by another controlled Planning source.",
+      "note_rule": "REQUIRED",
+      "display_order": 20
+    }
+  ],
+  "planning_quantity_policy": {
+    "planning_quantity_policy_id": "a1020000-0000-4000-8000-000000000220",
+    "planning_quantity_policy_revision_id": "a1020000-0000-4000-8000-000000000221",
+    "revision_number": 1,
+    "planning_step": "0.010000",
+    "effective_from": "2026-01-01",
+    "policy_revision_status": "ACTIVE",
+    "evidence_timestamp": "2026-08-18T00:00:00Z"
+  },
+  "required_migration_catalogs": {
+    "ingredient_type_codes": ["khac"],
+    "ingredient_order_group_codes": ["daily_other"],
+    "dish_type_codes": ["savory"]
+  },
+  "rehearsal_authored_business_facts": [
+    "ingredient",
+    "supplier",
+    "ingredient_supplier_priority",
+    "dish",
+    "recipe_and_bom",
+    "school_portion_defaults",
+    "weekly_menu",
+    "attendance",
+    "pantry_batch",
+    "planning_input_evaluation",
+    "need_generation_run",
+    "confirmed_need_decisions_and_release"
+  ]
+}
