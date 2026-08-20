@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   APPROVED_ATLAS_STAGING_PROJECT_REF,
   defaultCommandRunner,
+  localSupabaseCliPath,
   redactAtlasStagingDiagnostic,
   requireExactCommitSha,
   validateAtlasStagingPackageProtectedValues,
@@ -39,12 +40,6 @@ export const IDENTITY_CAPABILITY_CODES = Object.freeze([
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CODE = /^[a-z][a-z0-9]*(?:[._][a-z0-9]+)*$/;
-
-function cliPath() {
-  return process.platform === "win32"
-    ? "node_modules/.bin/supabase.CMD"
-    : "node_modules/.bin/supabase";
-}
 
 function sql(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
@@ -234,7 +229,7 @@ function runLinkedSqlFileSafe(runCommand, statement, options, protectedValues) {
     writeFileSync(sqlPath, statement, { encoding: "utf8", flag: "wx" });
     return runSafe(
       runCommand,
-      cliPath(),
+      localSupabaseCliPath(),
       ["db", "query", "--linked", "--file", sqlPath, "--agent", "no"],
       options,
       protectedValues,
@@ -633,7 +628,7 @@ export async function installAtlasStagingPackage({
   };
   runSafe(
     runCommand,
-    cliPath(),
+    localSupabaseCliPath(),
     [
       "link",
       "--project-ref",

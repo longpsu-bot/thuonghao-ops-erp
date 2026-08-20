@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { posix, win32 } from "node:path";
 
 export const ATLAS_STAGING_GITHUB_ENVIRONMENT = "atlas-staging";
 export const APPROVED_ATLAS_STAGING_PROJECT_REF = "rnzxmxiiqgtdevzregff";
@@ -23,6 +24,12 @@ export const ATLAS_STAGING_IDENTITY_SECRET_NAMES = Object.freeze([
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const PROJECT_REF = /^[a-z0-9]{20}$/;
+
+export function localSupabaseCliPath(platform = process.platform) {
+  return platform === "win32"
+    ? win32.join("node_modules", ".bin", "supabase.CMD")
+    : posix.join("node_modules", ".bin", "supabase");
+}
 
 export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
   let safe = String(value ?? "");
