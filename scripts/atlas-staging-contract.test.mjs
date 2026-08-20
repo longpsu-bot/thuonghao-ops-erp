@@ -7,7 +7,9 @@ import {
   ATLAS_STAGING_SECRET_NAMES,
   ATLAS_STAGING_VARIABLE_NAMES,
   LIVE_OPS_PROJECT_DENYLIST,
+  defaultCommandRunner,
   ensureAtlasApiExposure,
+  localSupabaseCliPath,
   redactAtlasStagingDiagnostic,
   validateAtlasStagingProtectedValues,
   validateAtlasStagingPackageProtectedValues,
@@ -50,6 +52,38 @@ function environment(overrides = {}) {
 }
 
 describe("Atlas staging safety contract", () => {
+  it("builds native Windows and POSIX paths for the local Supabase CLI", () => {
+    expect(localSupabaseCliPath("win32")).toBe(
+      "node_modules\\.bin\\supabase.CMD",
+    );
+    expect(localSupabaseCliPath("linux")).toBe("node_modules/.bin/supabase");
+  });
+
+  it("keeps verifier and installer CLI path selection centralized", () => {
+    for (const path of [
+      "scripts/verify-atlas-staging.mjs",
+      "scripts/install-atlas-staging-package.mjs",
+    ]) {
+      const source = readFileSync(path, "utf8");
+      expect(source).toContain("localSupabaseCliPath()");
+      expect(source).not.toMatch(
+        /function cliPath|supabase\.CMD|process\.platform/,
+      );
+    }
+  });
+
+  it("launches the installed Supabase CLI through the production path and runner", () => {
+    const result = defaultCommandRunner(localSupabaseCliPath(), ["--version"], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        SUPABASE_TELEMETRY_DISABLED: "1",
+      },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
+  }, 30_000);
+
   it("freezes the exact GitHub Environment and protected names", () => {
     expect(ATLAS_STAGING_GITHUB_ENVIRONMENT).toBe("atlas-staging");
     expect(ATLAS_STAGING_VARIABLE_NAMES).toEqual([

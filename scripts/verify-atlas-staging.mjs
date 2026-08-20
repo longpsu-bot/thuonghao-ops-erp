@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
   defaultCommandRunner,
+  localSupabaseCliPath,
   redactAtlasStagingDiagnostic,
   validateAtlasStagingProtectedValues,
   verifyAtlasApiExposure,
@@ -13,12 +14,6 @@ import {
   buildIdentityVerificationSql,
   readAtlasStagingPackage,
 } from "./install-atlas-staging-package.mjs";
-
-function cliPath() {
-  return process.platform === "win32"
-    ? "node_modules/.bin/supabase.CMD"
-    : "node_modules/.bin/supabase";
-}
 
 function runSafe(runCommand, command, args, options, protectedValues) {
   const result = runCommand(command, args, options);
@@ -302,7 +297,7 @@ export async function verifyAtlasStaging({
 
   runSafe(
     runCommand,
-    cliPath(),
+    localSupabaseCliPath(),
     [
       "link",
       "--project-ref",
@@ -316,7 +311,7 @@ export async function verifyAtlasStaging({
 
   const migrations = runSafe(
     runCommand,
-    cliPath(),
+    localSupabaseCliPath(),
     [
       "db",
       "query",
@@ -342,7 +337,7 @@ export async function verifyAtlasStaging({
     : readAtlasStagingPackage("foundation", cwd);
   runSafe(
     runCommand,
-    cliPath(),
+    localSupabaseCliPath(),
     [
       "db",
       "query",
@@ -383,7 +378,7 @@ export async function verifyAtlasStaging({
 
   runSafe(
     runCommand,
-    cliPath(),
+    localSupabaseCliPath(),
     [
       "db",
       "query",
@@ -422,7 +417,7 @@ export async function verifyAtlasStaging({
     const authSubject = signIn.session.user.id;
     runSafe(
       runCommand,
-      cliPath(),
+      localSupabaseCliPath(),
       ["db", "query", actorVerificationSql(authSubject), "--linked"],
       options,
       protectedValues,
