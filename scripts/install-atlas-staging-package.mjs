@@ -1,12 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
   APPROVED_ATLAS_STAGING_PROJECT_REF,
   defaultCommandRunner,
-  localSupabaseCliPath,
+  executeAtlasStagingManagementSql,
   redactAtlasStagingDiagnostic,
   requireExactCommitSha,
   validateAtlasStagingPackageProtectedValues,
@@ -202,41 +200,6 @@ export function validatePackageManifest(kind, manifest) {
     );
   }
   return manifest;
-}
-
-function runSafe(runCommand, command, args, options, protectedValues = []) {
-  const result = runCommand(command, args, options);
-  if (result.status !== 0) {
-    const diagnostic = redactAtlasStagingDiagnostic(
-      `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
-      protectedValues,
-    ).trim();
-    throw new Error(
-      diagnostic
-        ? `Atlas Staging package command failed safely: ${diagnostic}`
-        : "Atlas Staging package command failed safely.",
-    );
-  }
-  return String(result.stdout ?? "");
-}
-
-function runLinkedSqlFileSafe(runCommand, statement, options, protectedValues) {
-  const temporaryDirectory = mkdtempSync(
-    join(tmpdir(), "atlas-staging-package-"),
-  );
-  const sqlPath = join(temporaryDirectory, "query.sql");
-  try {
-    writeFileSync(sqlPath, statement, { encoding: "utf8", flag: "wx" });
-    return runSafe(
-      runCommand,
-      localSupabaseCliPath(),
-      ["db", "query", "--linked", "--file", sqlPath, "--agent", "no"],
-      options,
-      protectedValues,
-    );
-  } finally {
-    rmSync(temporaryDirectory, { force: true, recursive: true });
-  }
 }
 
 export function verifyPackageCheckout({
@@ -574,24 +537,11 @@ export function planAtlasStagingPackage({
     packageVersion: manifest.package.version,
     target,
     commands: [
-      ["supabase", "link", "--project-ref", "<approved-atlas-staging-ref>"],
       ...(kind === "identity"
         ? [["Supabase Auth Admin", "reconcile one protected synthetic user"]]
         : []),
-      [
-        "supabase",
-        "db",
-        "query",
-        `<${kind}-package-reconciliation-sql>`,
-        "--linked",
-      ],
-      [
-        "supabase",
-        "db",
-        "query",
-        `<${kind}-package-verification-sql>`,
-        "--linked",
-      ],
+      ["Management API", "POST", `<${kind}-package-reconciliation-sql>`],
+      ["Management API", "POST", `<${kind}-package-verification-sql>`],
     ],
     mutatesHostedState: true,
     deploysMigrations: false,
@@ -606,39 +556,12 @@ export async function installAtlasStagingPackage({
   cwd = process.cwd(),
   runCommand = defaultCommandRunner,
   createClientFactory = createClient,
+  fetchImpl = fetch,
   dryRun = false,
 } = {}) {
   const plan = planAtlasStagingPackage({ kind, environment, cwd });
   if (dryRun) return { status: "dry-run", plan };
   verifyPackageCheckout({ commitSha, cwd, runCommand });
-  const protectedValues = [
-    plan.target.accessToken,
-    plan.target.databasePassword,
-    plan.target.testPassword,
-    plan.target.publishableKey,
-    plan.target.secretKey,
-  ].filter(Boolean);
-  const options = {
-    cwd,
-    env: {
-      ...environment,
-      SUPABASE_ACCESS_TOKEN: plan.target.accessToken,
-      SUPABASE_TELEMETRY_DISABLED: "1",
-    },
-  };
-  runSafe(
-    runCommand,
-    localSupabaseCliPath(),
-    [
-      "link",
-      "--project-ref",
-      plan.target.projectRef,
-      "--password",
-      plan.target.databasePassword,
-    ],
-    options,
-    protectedValues,
-  );
   const manifest = readAtlasStagingPackage(kind, cwd);
   if (kind === "identity") {
     await reconcileManagedAuthUser({
@@ -658,8 +581,12 @@ export async function installAtlasStagingPackage({
     kind === "identity"
       ? buildIdentityVerificationSql(manifest)
       : buildFoundationVerificationSql(manifest);
-  runLinkedSqlFileSafe(runCommand, packageSql, options, protectedValues);
-  runLinkedSqlFileSafe(runCommand, verificationSql, options, protectedValues);
+  await executeAtlasStagingManagementSql(plan.target, packageSql, fetchImpl);
+  await executeAtlasStagingManagementSql(
+    plan.target,
+    verificationSql,
+    fetchImpl,
+  );
   return { status: "installed", plan };
 }
 

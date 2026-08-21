@@ -272,32 +272,50 @@ describe("Atlas Staging packages", () => {
     expect(createClientFactory).not.toHaveBeenCalled();
   });
 
-  it("executes reconciliation and verification as separate linked queries", async () => {
-    const linkedSql = [];
+  it("executes reconciliation and verification as separate Management API queries", async () => {
+    const managementSql = [];
     const runCommand = vi.fn((_command, args) => {
-      if (args[0] === "db" && args[1] === "query") {
-        linkedSql.push(readFileSync(args[args.indexOf("--file") + 1], "utf8"));
-      }
       return {
         status: 0,
         stdout: args[0] === "rev-parse" ? `${commitSha}\n` : "",
+      };
+    });
+    const endpoint = `https://api.supabase.com/v1/projects/${approvedRef}/database/query`;
+    const fetchImpl = vi.fn(async (url, options) => {
+      managementSql.push(JSON.parse(options.body).query);
+      return {
+        status: 201,
+        async text() {
+          return "[]";
+        },
       };
     });
     await expect(
       installAtlasStagingPackage({
         kind: "foundation",
         commitSha,
-        environment: environment(),
+        environment: environment({ ATLAS_STAGING_DB_PASSWORD: undefined }),
         runCommand,
+        fetchImpl,
       }),
     ).resolves.toMatchObject({ status: "installed" });
-    const linkedQueries = runCommand.mock.calls.filter(
-      ([, args]) => args[0] === "db" && args[1] === "query",
-    );
-    expect(linkedQueries).toHaveLength(2);
-    expect(linkedQueries[0][1]).toContain("--file");
-    expect(linkedQueries[1][1]).toContain("--file");
-    expect(linkedSql[0]).toContain("$atlas_staging_foundation$");
-    expect(linkedSql[1]).toContain("$atlas_staging_foundation_verify$");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    for (const [url, options] of fetchImpl.mock.calls) {
+      expect(url).toBe(endpoint);
+      expect(options.method).toBe("POST");
+      expect(options.headers.Authorization).toBe(
+        "Bearer synthetic-access-token",
+      );
+    }
+    expect(managementSql[0]).toContain("$atlas_staging_foundation$");
+    expect(managementSql[1]).toContain("$atlas_staging_foundation_verify$");
+    expect(
+      runCommand.mock.calls.some(
+        ([command, args]) =>
+          command.includes("supabase") ||
+          args.includes("link") ||
+          args.includes("--linked"),
+      ),
+    ).toBe(false);
   });
 });

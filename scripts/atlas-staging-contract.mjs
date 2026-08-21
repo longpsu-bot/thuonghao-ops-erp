@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { posix, win32 } from "node:path";
 
 export const ATLAS_STAGING_GITHUB_ENVIRONMENT = "atlas-staging";
 export const APPROVED_ATLAS_STAGING_PROJECT_REF = "rnzxmxiiqgtdevzregff";
@@ -24,12 +23,6 @@ export const ATLAS_STAGING_IDENTITY_SECRET_NAMES = Object.freeze([
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const PROJECT_REF = /^[a-z0-9]{20}$/;
-
-export function localSupabaseCliPath(platform = process.platform) {
-  return platform === "win32"
-    ? win32.join("node_modules", ".bin", "supabase.CMD")
-    : posix.join("node_modules", ".bin", "supabase");
-}
 
 export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
   let safe = String(value ?? "");
@@ -131,10 +124,18 @@ function serverSecretKeyIsSafe(value) {
   }
 }
 
-export function validateAtlasStagingProtectedValues(environment) {
+export function validateAtlasStagingProtectedValues(
+  environment,
+  { requireDatabasePassword = true } = {},
+) {
+  const requiredSecretNames = requireDatabasePassword
+    ? ATLAS_STAGING_SECRET_NAMES
+    : ATLAS_STAGING_SECRET_NAMES.filter(
+        (name) => name !== "ATLAS_STAGING_DB_PASSWORD",
+      );
   const missing = [
     ...ATLAS_STAGING_VARIABLE_NAMES,
-    ...ATLAS_STAGING_SECRET_NAMES,
+    ...requiredSecretNames,
   ].filter((name) => !String(environment[name] ?? "").trim());
   if (missing.length) {
     throw new Error(
@@ -153,21 +154,26 @@ export function validateAtlasStagingProtectedValues(environment) {
     environment.ATLAS_STAGING_PROJECT_REF,
     environment.VITE_SUPABASE_URL,
   );
-  return {
+  const protectedValues = {
     ...target,
     publishableKey: environment.VITE_SUPABASE_PUBLISHABLE_KEY,
     testEmail: environment.ATLAS_STAGING_TEST_EMAIL,
     accessToken: environment.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN,
-    databasePassword: environment.ATLAS_STAGING_DB_PASSWORD,
     testPassword: environment.ATLAS_STAGING_TEST_PASSWORD,
   };
+  if (requireDatabasePassword) {
+    protectedValues.databasePassword = environment.ATLAS_STAGING_DB_PASSWORD;
+  }
+  return protectedValues;
 }
 
 export function validateAtlasStagingPackageProtectedValues(
   environment,
   { identity = false } = {},
 ) {
-  const target = validateAtlasStagingProtectedValues(environment);
+  const target = validateAtlasStagingProtectedValues(environment, {
+    requireDatabasePassword: false,
+  });
   validateApprovedAtlasStagingTarget(
     environment.ATLAS_STAGING_PROJECT_REF,
     environment.VITE_SUPABASE_URL,
@@ -183,6 +189,53 @@ export function validateAtlasStagingPackageProtectedValues(
     );
   }
   return { ...target, secretKey };
+}
+
+export async function executeAtlasStagingManagementSql(
+  target,
+  statement,
+  fetchImpl = fetch,
+) {
+  validateApprovedAtlasStagingTarget(target?.projectRef, target?.supabaseUrl);
+  const accessToken = String(target?.accessToken ?? "").trim();
+  const query = String(statement ?? "");
+  if (!accessToken || !query.trim()) {
+    throw new Error(
+      "The protected Atlas Staging database query failed safely.",
+    );
+  }
+
+  let response;
+  try {
+    response = await fetchImpl(
+      `https://api.supabase.com/v1/projects/${target.projectRef}/database/query`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ query }),
+      },
+    );
+  } catch {
+    throw new Error(
+      "The protected Atlas Staging database query failed safely.",
+    );
+  }
+  if (response.status !== 201) {
+    throw new Error(
+      "The protected Atlas Staging database query failed safely.",
+    );
+  }
+  try {
+    return await response.text();
+  } catch {
+    throw new Error(
+      "The protected Atlas Staging database query failed safely.",
+    );
+  }
 }
 
 async function readPostgrestConfiguration(target, fetchImpl) {

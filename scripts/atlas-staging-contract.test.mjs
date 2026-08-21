@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   APPROVED_ATLAS_STAGING_PROJECT_REF,
@@ -7,9 +7,8 @@ import {
   ATLAS_STAGING_SECRET_NAMES,
   ATLAS_STAGING_VARIABLE_NAMES,
   LIVE_OPS_PROJECT_DENYLIST,
-  defaultCommandRunner,
   ensureAtlasApiExposure,
-  localSupabaseCliPath,
+  executeAtlasStagingManagementSql,
   redactAtlasStagingDiagnostic,
   validateAtlasStagingProtectedValues,
   validateAtlasStagingPackageProtectedValues,
@@ -52,37 +51,91 @@ function environment(overrides = {}) {
 }
 
 describe("Atlas staging safety contract", () => {
-  it("builds native Windows and POSIX paths for the local Supabase CLI", () => {
-    expect(localSupabaseCliPath("win32")).toBe(
-      "node_modules\\.bin\\supabase.CMD",
-    );
-    expect(localSupabaseCliPath("linux")).toBe("node_modules/.bin/supabase");
-  });
-
-  it("keeps verifier and installer CLI path selection centralized", () => {
+  it("keeps verifier and installer off the CLI linked-query transport", () => {
     for (const path of [
       "scripts/verify-atlas-staging.mjs",
       "scripts/install-atlas-staging-package.mjs",
     ]) {
       const source = readFileSync(path, "utf8");
-      expect(source).toContain("localSupabaseCliPath()");
-      expect(source).not.toMatch(
-        /function cliPath|supabase\.CMD|process\.platform/,
-      );
+      expect(source).not.toContain("supabase link");
+      expect(source).not.toContain('"link"');
+      expect(source).not.toContain("--linked");
+      expect(source).not.toContain("localSupabaseCliPath");
     }
   });
 
-  it("launches the installed Supabase CLI through the production path and runner", () => {
-    const result = defaultCommandRunner(localSupabaseCliPath(), ["--version"], {
-      cwd: process.cwd(),
-      env: {
-        ...process.env,
-        SUPABASE_TELEMETRY_DISABLED: "1",
+  it("posts SQL to the exact approved Management API endpoint", async () => {
+    const accessToken = "synthetic-access-token";
+    const target = validateAtlasStagingPackageProtectedValues({
+      ...environment({
+        ATLAS_STAGING_PROJECT_REF: APPROVED_ATLAS_STAGING_PROJECT_REF,
+        VITE_SUPABASE_URL: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
+      }),
+      ATLAS_STAGING_DB_PASSWORD: undefined,
+    });
+    const fetchImpl = vi.fn(async () => ({
+      status: 201,
+      async text() {
+        return '[{"result":"safe"}]';
+      },
+    }));
+    const statement = "select current_database();";
+
+    await expect(
+      executeAtlasStagingManagementSql(target, statement, fetchImpl),
+    ).resolves.toBe('[{"result":"safe"}]');
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    const [url, options] = fetchImpl.mock.calls[0];
+    expect(url).toBe(
+      `https://api.supabase.com/v1/projects/${APPROVED_ATLAS_STAGING_PROJECT_REF}/database/query`,
+    );
+    expect(options).toMatchObject({
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
     });
-    expect(result.status).toBe(0);
-    expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
-  }, 30_000);
+    expect(JSON.parse(options.body)).toEqual({ query: statement });
+  });
+
+  it("fails closed without surfacing the bearer credential", async () => {
+    const accessToken = "synthetic-access-token-never-surface";
+    const target = {
+      projectRef: APPROVED_ATLAS_STAGING_PROJECT_REF,
+      supabaseUrl: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
+      accessToken,
+    };
+    let failure;
+    try {
+      await executeAtlasStagingManagementSql(target, "select 1;", async () => ({
+        status: 401,
+      }));
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure.message).toMatch(/failed safely/i);
+    expect(failure.message).not.toContain(accessToken);
+  });
+
+  it("rejects live OPS before issuing a Management API query", async () => {
+    const fetchImpl = vi.fn();
+    await expect(
+      executeAtlasStagingManagementSql(
+        {
+          projectRef: "qnthofvccilhnefdcxnz",
+          supabaseUrl: "https://qnthofvccilhnefdcxnz.supabase.co",
+          accessToken: "synthetic-access-token",
+        },
+        "select 1;",
+        fetchImpl,
+      ),
+    ).rejects.toThrow(/forbidden/i);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 
   it("freezes the exact GitHub Environment and protected names", () => {
     expect(ATLAS_STAGING_GITHUB_ENVIRONMENT).toBe("atlas-staging");
@@ -108,6 +161,7 @@ describe("Atlas staging safety contract", () => {
     const packageEnvironment = environment({
       ATLAS_STAGING_PROJECT_REF: APPROVED_ATLAS_STAGING_PROJECT_REF,
       VITE_SUPABASE_URL: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
+      ATLAS_STAGING_DB_PASSWORD: undefined,
       ATLAS_STAGING_SUPABASE_SECRET_KEY:
         "sb_secret_synthetic_atlas_staging_contract_test",
     });
@@ -119,6 +173,23 @@ describe("Atlas staging safety contract", () => {
     expect(() =>
       validateAtlasStagingPackageProtectedValues(environment()),
     ).toThrow(/approved Atlas Staging/i);
+  });
+
+  it("omits DB password from verifier/package validation but retains it for deployment", () => {
+    const withoutDatabasePassword = environment({
+      ATLAS_STAGING_PROJECT_REF: APPROVED_ATLAS_STAGING_PROJECT_REF,
+      VITE_SUPABASE_URL: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
+      ATLAS_STAGING_DB_PASSWORD: undefined,
+    });
+    const verifierPlan = planAtlasStagingVerification(withoutDatabasePassword);
+    const packageTarget = validateAtlasStagingPackageProtectedValues(
+      withoutDatabasePassword,
+    );
+    expect(verifierPlan.target).not.toHaveProperty("databasePassword");
+    expect(packageTarget).not.toHaveProperty("databasePassword");
+    expect(() => planAtlasStagingDeployment(withoutDatabasePassword)).toThrow(
+      /ATLAS_STAGING_DB_PASSWORD/,
+    );
   });
 
   it("contains exactly the live OPS project denylist", () => {
@@ -344,38 +415,42 @@ describe("Atlas staging dry-run and workflow", () => {
 });
 
 describe("Atlas staging hosted evidence", () => {
-  it("transports every verifier SQL statement through a temporary file", async () => {
+  it("posts every verifier SQL statement to the approved Management API endpoint", async () => {
     const sqlCalls = [];
     const migrationVersions = readdirSync("supabase/migrations")
       .filter((name) => name.endsWith(".sql"))
       .map((name) => name.slice(0, 14))
       .sort();
-    const runCommand = vi.fn((_command, args) => {
-      if (args[0] !== "db") {
-        return { status: 0, stdout: "", stderr: "" };
-      }
-      const fileIndex = args.indexOf("--file");
-      const sqlPath = args[fileIndex + 1];
-      const statement = readFileSync(sqlPath, "utf8");
-      sqlCalls.push({ args, sqlPath, statement });
-      const stdout = statement.includes("ATLAS_MIGRATION_HISTORY=")
-        ? JSON.stringify({
-            result: `ATLAS_MIGRATION_HISTORY=${JSON.stringify({
+    const runCommand = vi.fn();
+    const endpoint = `https://api.supabase.com/v1/projects/${APPROVED_ATLAS_STAGING_PROJECT_REF}/database/query`;
+    const fetchImpl = vi.fn(async (url, options = {}) => {
+      if (url === endpoint) {
+        const body = JSON.parse(options.body);
+        sqlCalls.push({ url, options, statement: body.query });
+        const result = body.query.includes("ATLAS_MIGRATION_HISTORY=")
+          ? `ATLAS_MIGRATION_HISTORY=${JSON.stringify({
               versions: migrationVersions,
               row_count: migrationVersions.length,
-            })}`,
-          })
-        : "";
-      return { status: 0, stdout, stderr: "" };
+            })}`
+          : "safe";
+        return {
+          ok: true,
+          status: 201,
+          async text() {
+            return JSON.stringify([{ result }]);
+          },
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return String(url).includes("/postgrest")
+            ? { db_schema: "public,atlas_api" }
+            : {};
+        },
+      };
     });
-    const fetchImpl = vi.fn(async (url) => ({
-      ok: true,
-      async json() {
-        return String(url).includes("/postgrest")
-          ? { db_schema: "public,atlas_api" }
-          : {};
-      },
-    }));
     const authSubject = "11111111-1111-4111-8111-111111111111";
     let clientCount = 0;
     const createClientFactory = vi.fn(() => {
@@ -419,18 +494,26 @@ describe("Atlas staging hosted evidence", () => {
 
     await expect(
       verifyAtlasStaging({
-        environment: environment(),
+        environment: environment({
+          ATLAS_STAGING_PROJECT_REF: APPROVED_ATLAS_STAGING_PROJECT_REF,
+          VITE_SUPABASE_URL: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
+          ATLAS_STAGING_DB_PASSWORD: undefined,
+        }),
         runCommand,
         fetchImpl,
         createClientFactory,
       }),
     ).resolves.toEqual({ status: "verified", phase: "acceptance" });
 
+    expect(runCommand).not.toHaveBeenCalled();
     expect(sqlCalls).toHaveLength(4);
-    for (const { args, sqlPath } of sqlCalls) {
-      expect(args).toContain("--file");
-      expect(args.join(" ")).not.toContain("json_build_object");
-      expect(existsSync(sqlPath)).toBe(false);
+    for (const { url, options, statement } of sqlCalls) {
+      expect(url).toBe(endpoint);
+      expect(options.method).toBe("POST");
+      expect(options.headers.Authorization).toBe(
+        "Bearer synthetic-access-token",
+      );
+      expect(JSON.parse(options.body)).toEqual({ query: statement });
     }
     expect(sqlCalls.map(({ statement }) => statement)).toEqual([
       expect.stringContaining("ATLAS_MIGRATION_HISTORY="),
@@ -438,6 +521,7 @@ describe("Atlas staging hosted evidence", () => {
       expect.stringContaining("ATLAS_STAGING_IDENTITY"),
       expect.stringContaining("ATLAS_ACTIVE_ACTOR_MAPPING_MISMATCH"),
     ]);
+    expect(sqlCalls[2].statement).toContain("ATLAS_STAGING_FOUNDATION");
   });
 
   it("preserves existing exposed schemas and adds atlas_api exactly once", async () => {
@@ -502,7 +586,7 @@ describe("Atlas staging hosted evidence", () => {
       parseMigrationHistoryEvidence(
         "Local          │ Remote         │ Time\n20260101000000 │ 20260101000000 │ now",
       ),
-    ).toThrow(/JSON output/i);
+    ).toThrow(/Management API JSON response/i);
   });
 
   it.each([
