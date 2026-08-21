@@ -1,18 +1,9 @@
-import {
-  mkdtempSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
-  defaultCommandRunner,
-  localSupabaseCliPath,
+  executeAtlasStagingManagementSql,
   redactAtlasStagingDiagnostic,
   validateAtlasStagingProtectedValues,
   verifyAtlasApiExposure,
@@ -22,47 +13,6 @@ import {
   buildIdentityVerificationSql,
   readAtlasStagingPackage,
 } from "./install-atlas-staging-package.mjs";
-
-function runSafe(runCommand, command, args, options, protectedValues) {
-  const result = runCommand(command, args, options);
-  if (result.status !== 0) {
-    const diagnostic = redactAtlasStagingDiagnostic(
-      `${result.stdout}\n${result.stderr}`,
-      protectedValues,
-    );
-    throw new Error(
-      diagnostic.trim()
-        ? `Atlas staging verification command failed safely: ${diagnostic.trim()}`
-        : "Atlas staging verification command failed safely.",
-    );
-  }
-  return result.stdout;
-}
-
-function runLinkedSqlFileSafe(
-  runCommand,
-  statement,
-  additionalArgs,
-  options,
-  protectedValues,
-) {
-  const temporaryDirectory = mkdtempSync(
-    join(tmpdir(), "atlas-staging-verifier-"),
-  );
-  const sqlPath = join(temporaryDirectory, "query.sql");
-  try {
-    writeFileSync(sqlPath, statement, { encoding: "utf8", flag: "wx" });
-    return runSafe(
-      runCommand,
-      localSupabaseCliPath(),
-      ["db", "query", "--linked", "--file", sqlPath, ...additionalArgs],
-      options,
-      protectedValues,
-    );
-  } finally {
-    rmSync(temporaryDirectory, { force: true, recursive: true });
-  }
-}
 
 export function migrationVersionsFromFilenames(names) {
   const sqlFiles = names.filter((name) => name.endsWith(".sql"));
@@ -100,7 +50,9 @@ export function parseMigrationHistoryEvidence(output) {
   try {
     envelope = JSON.parse(String(output));
   } catch {
-    throw new Error("Hosted migration evidence is not valid CLI JSON output.");
+    throw new Error(
+      "Hosted migration evidence is not a valid Management API JSON response.",
+    );
   }
   const marked = collectStrings(envelope).find((value) =>
     value.includes(MIGRATION_EVIDENCE_MARKER),
@@ -289,13 +241,14 @@ function migrationHistorySql() {
 }
 
 export function planAtlasStagingVerification(environment = process.env) {
-  const target = validateAtlasStagingProtectedValues(environment);
+  const target = validateAtlasStagingProtectedValues(environment, {
+    requireDatabasePassword: false,
+  });
   return {
     target,
     commands: [
-      ["supabase", "link", "--project-ref", "<protected-staging-ref>"],
-      ["supabase", "db", "query", "<migration-json-read>", "--linked"],
-      ["supabase", "db", "query", "<identity-catalog-read>", "--linked"],
+      ["Management API", "POST", "<approved-staging-database-query>"],
+      ["Management API", "migration and catalog verification SQL"],
       ["Data API", "anonymous atlas_api authorization probe"],
     ],
     networkWrites: false,
@@ -305,7 +258,6 @@ export function planAtlasStagingVerification(environment = process.env) {
 export async function verifyAtlasStaging({
   environment = process.env,
   cwd = process.cwd(),
-  runCommand = defaultCommandRunner,
   fetchImpl = fetch,
   createClientFactory = createClient,
   dryRun = false,
@@ -315,39 +267,10 @@ export async function verifyAtlasStaging({
   if (dryRun) return plan;
 
   const { target } = plan;
-  const protectedValues = [
-    target.accessToken,
-    target.databasePassword,
-    target.testPassword,
-    target.publishableKey,
-  ];
-  const commandEnvironment = {
-    ...environment,
-    SUPABASE_ACCESS_TOKEN: target.accessToken,
-    SUPABASE_TELEMETRY_DISABLED: "1",
-  };
-  const options = { cwd, env: commandEnvironment };
-
-  runSafe(
-    runCommand,
-    localSupabaseCliPath(),
-    [
-      "link",
-      "--project-ref",
-      target.projectRef,
-      "--password",
-      target.databasePassword,
-    ],
-    options,
-    protectedValues,
-  );
-
-  const migrations = runLinkedSqlFileSafe(
-    runCommand,
+  const migrations = await executeAtlasStagingManagementSql(
+    target,
     migrationHistorySql(),
-    ["--output", "json", "--agent", "no"],
-    options,
-    protectedValues,
+    fetchImpl,
   );
   assertExactMigrationHistory(
     repositoryMigrationVersions(cwd),
@@ -359,14 +282,12 @@ export async function verifyAtlasStaging({
   const foundationManifest = platformOnly
     ? undefined
     : readAtlasStagingPackage("foundation", cwd);
-  runLinkedSqlFileSafe(
-    runCommand,
+  await executeAtlasStagingManagementSql(
+    target,
     catalogVerificationSql(readCatalogAuthority(cwd), {
       expectedApplicationRoleCode: identityManifest?.role.role_code,
     }),
-    [],
-    options,
-    protectedValues,
+    fetchImpl,
   );
 
   const health = await fetchImpl(`${target.supabaseUrl}/auth/v1/health`, {
@@ -395,12 +316,10 @@ export async function verifyAtlasStaging({
   assertAnonymousAuthorizationDenial(anonymousAttempt.error);
   if (platformOnly) return { status: "verified", phase: "platform" };
 
-  runLinkedSqlFileSafe(
-    runCommand,
+  await executeAtlasStagingManagementSql(
+    target,
     `${buildIdentityVerificationSql(identityManifest)}\n${buildFoundationVerificationSql(foundationManifest)}`,
-    ["--agent", "no"],
-    options,
-    protectedValues,
+    fetchImpl,
   );
 
   const client = createClientFactory(
@@ -427,12 +346,10 @@ export async function verifyAtlasStaging({
   let verificationFailure;
   try {
     const authSubject = signIn.session.user.id;
-    runLinkedSqlFileSafe(
-      runCommand,
+    await executeAtlasStagingManagementSql(
+      target,
       actorVerificationSql(authSubject),
-      [],
-      options,
-      protectedValues,
+      fetchImpl,
     );
     const { data: readResult, error: readError } = await client
       .schema("atlas_api")
