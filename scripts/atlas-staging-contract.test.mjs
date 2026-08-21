@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   APPROVED_ATLAS_STAGING_PROJECT_REF,
@@ -344,6 +344,102 @@ describe("Atlas staging dry-run and workflow", () => {
 });
 
 describe("Atlas staging hosted evidence", () => {
+  it("transports every verifier SQL statement through a temporary file", async () => {
+    const sqlCalls = [];
+    const migrationVersions = readdirSync("supabase/migrations")
+      .filter((name) => name.endsWith(".sql"))
+      .map((name) => name.slice(0, 14))
+      .sort();
+    const runCommand = vi.fn((_command, args) => {
+      if (args[0] !== "db") {
+        return { status: 0, stdout: "", stderr: "" };
+      }
+      const fileIndex = args.indexOf("--file");
+      const sqlPath = args[fileIndex + 1];
+      const statement = readFileSync(sqlPath, "utf8");
+      sqlCalls.push({ args, sqlPath, statement });
+      const stdout = statement.includes("ATLAS_MIGRATION_HISTORY=")
+        ? JSON.stringify({
+            result: `ATLAS_MIGRATION_HISTORY=${JSON.stringify({
+              versions: migrationVersions,
+              row_count: migrationVersions.length,
+            })}`,
+          })
+        : "";
+      return { status: 0, stdout, stderr: "" };
+    });
+    const fetchImpl = vi.fn(async (url) => ({
+      ok: true,
+      async json() {
+        return String(url).includes("/postgrest")
+          ? { db_schema: "public,atlas_api" }
+          : {};
+      },
+    }));
+    const authSubject = "11111111-1111-4111-8111-111111111111";
+    let clientCount = 0;
+    const createClientFactory = vi.fn(() => {
+      clientCount += 1;
+      if (clientCount === 1) {
+        return {
+          schema: () => ({
+            rpc: () => ({
+              retry: async () => ({
+                error: {
+                  code: "42501",
+                  message: "permission denied for schema atlas_api",
+                },
+              }),
+            }),
+          }),
+        };
+      }
+      return {
+        auth: {
+          signInWithPassword: async () => ({
+            data: { session: { user: { id: authSubject } } },
+            error: null,
+          }),
+          signOut: async () => ({ error: null }),
+          getSession: async () => ({
+            data: { session: null },
+            error: null,
+          }),
+        },
+        schema: () => ({
+          rpc: () => ({
+            retry: async () => ({
+              data: { success: true, schools: [{}] },
+              error: null,
+            }),
+          }),
+        }),
+      };
+    });
+
+    await expect(
+      verifyAtlasStaging({
+        environment: environment(),
+        runCommand,
+        fetchImpl,
+        createClientFactory,
+      }),
+    ).resolves.toEqual({ status: "verified", phase: "acceptance" });
+
+    expect(sqlCalls).toHaveLength(4);
+    for (const { args, sqlPath } of sqlCalls) {
+      expect(args).toContain("--file");
+      expect(args.join(" ")).not.toContain("json_build_object");
+      expect(existsSync(sqlPath)).toBe(false);
+    }
+    expect(sqlCalls.map(({ statement }) => statement)).toEqual([
+      expect.stringContaining("ATLAS_MIGRATION_HISTORY="),
+      expect.stringContaining("ATLAS_CATALOG_SCHEMA_MISMATCH"),
+      expect.stringContaining("ATLAS_STAGING_IDENTITY"),
+      expect.stringContaining("ATLAS_ACTIVE_ACTOR_MAPPING_MISMATCH"),
+    ]);
+  });
+
   it("preserves existing exposed schemas and adds atlas_api exactly once", async () => {
     let schemas = "public,graphql_public";
     const fetchImpl = vi.fn(async (_url, options = {}) => {
