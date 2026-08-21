@@ -120,6 +120,15 @@ insert into atlas_admin.schools (
   10
 );
 
+insert into atlas_admin.dish_types (
+  dish_type_id, dish_type_code, dish_type_name, display_order
+) values (
+  '21310000-0000-4000-8000-000000000007',
+  'issue213_inactive_type',
+  'Issue 213 inactive type',
+  213
+);
+
 create or replace function pg_temp.issue213_v1_request(
   p_name text,
   p_expected_version bigint,
@@ -260,9 +269,9 @@ select
       1,
       pg_catalog.jsonb_build_object(
         'dish_code', 'issue213-' || fixture.fixture_name,
-        'dish_name', 'Issue 213 ' || fixture.fixture_name,
+        'dish_name', fixture.dish_name,
         'dish_category', 'Regression',
-        'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
+        'dish_type_id', fixture.dish_type_id,
         'operational_notes', 'Rolled-back Issue 213 fixture',
         'display_order', fixture.display_order,
         'requires_need_generation', true
@@ -271,12 +280,15 @@ select
   )
 from (
   values
-    ('primary', 21301),
-    ('stale', 21302),
-    ('invalid', 21303),
-    ('active', 21304),
-    ('inactive', 21305)
-) fixture(fixture_name, display_order);
+    ('primary', 'Issue 213 primary', 'd1500000-0000-4000-8000-000000000001'::uuid, 21301),
+    ('stale', 'Issue 213 stale', 'd1500000-0000-4000-8000-000000000001'::uuid, 21302),
+    ('invalid', 'Issue 213 invalid', 'd1500000-0000-4000-8000-000000000001'::uuid, 21303),
+    ('active', 'Issue 213 active', 'd1500000-0000-4000-8000-000000000001'::uuid, 21304),
+    ('inactive', 'Issue 213 inactive', 'd1500000-0000-4000-8000-000000000001'::uuid, 21305),
+    ('inactive-type', 'Issue 213 inactive type', '21310000-0000-4000-8000-000000000007'::uuid, 21306),
+    ('duplicate-active', 'Issue 213 Duplicate', 'd1500000-0000-4000-8000-000000000001'::uuid, 21307),
+    ('duplicate-draft', '  issue 213 duplicate  ', 'd1500000-0000-4000-8000-000000000001'::uuid, 21308)
+) fixture(fixture_name, dish_name, dish_type_id, display_order);
 
 reset role;
 
@@ -287,7 +299,7 @@ select is(
     where result_name like 'create-%'
       and response_payload -> 'success' = 'true'::jsonb
   ),
-  5,
+  8,
   'actual create_dish path creates every Issue 213 fixture successfully'
 );
 
@@ -299,9 +311,15 @@ select is(
       and dish_status = 'DRAFT'
       and version = 1
   ),
-  5,
+  8,
   'create_dish leaves every new Dish DRAFT at version 1'
 );
+
+update atlas_admin.dish_types
+set dish_type_status = 'INACTIVE',
+    version = version + 1,
+    updated_at = pg_catalog.transaction_timestamp()
+where dish_type_id = '21310000-0000-4000-8000-000000000007';
 
 set local role authenticated;
 select set_config(
@@ -421,6 +439,44 @@ insert into issue213_results values (
       3,
       pg_temp.issue213_created_dish_id('inactive'),
       '21320000-0000-4000-8000-000000000005'
+    )
+  )
+);
+
+insert into issue213_results values (
+  'inactive-type-save',
+  atlas_api.save_recipe(
+    pg_temp.issue213_save_request(
+      'inactive-type-save',
+      1,
+      pg_temp.issue213_created_dish_id('inactive-type'),
+      '21320000-0000-4000-8000-000000000006'
+    )
+  )
+);
+
+insert into issue213_results values (
+  'activate-duplicate-existing',
+  atlas_api.set_dish_lifecycle(
+    pg_temp.issue213_v1_request(
+      'activate-duplicate-existing',
+      1,
+      pg_catalog.jsonb_build_object(
+        'dish_id', pg_temp.issue213_created_dish_id('duplicate-active'),
+        'dish_status', 'ACTIVE'
+      )
+    )
+  )
+);
+
+insert into issue213_results values (
+  'duplicate-name-save',
+  atlas_api.save_recipe(
+    pg_temp.issue213_save_request(
+      'duplicate-name-save',
+      1,
+      pg_temp.issue213_created_dish_id('duplicate-draft'),
+      '21320000-0000-4000-8000-000000000007'
     )
   )
 );
@@ -708,6 +764,146 @@ select is(
     'recipe_count', 0
   ),
   'existing INACTIVE-Dish Save denial remains unchanged'
+);
+
+select is(
+  (
+    select pg_catalog.jsonb_build_object(
+      'error_code', result.response_payload ->> 'error_code',
+      'safe_message', result.response_payload ->> 'safe_message',
+      'dish_status', dish.dish_status,
+      'dish_version', dish.version,
+      'recipe_roots', (
+        select count(*) from atlas_admin.recipes recipe
+        where recipe.dish_id = dish.dish_id
+      ),
+      'recipe_versions', (
+        select count(*) from atlas_admin.recipe_versions version
+        join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
+        where recipe.dish_id = dish.dish_id
+      ),
+      'recipe_lines', (
+        select count(*) from atlas_admin.recipe_lines line
+        join atlas_admin.recipes recipe on recipe.recipe_id = line.recipe_id
+        where recipe.dish_id = dish.dish_id
+      ),
+      'recipe_line_revisions', (
+        select count(*) from atlas_admin.recipe_line_revisions revision
+        where revision.recipe_id in (
+          select recipe.recipe_id from atlas_admin.recipes recipe
+          where recipe.dish_id = dish.dish_id
+        )
+      ),
+      'domain_events', (
+        select count(*) from atlas_audit.domain_events event
+        where event.command_id =
+          pg_catalog.md5('issue213-command:inactive-type-save')::uuid
+      ),
+      'audit_events', (
+        select count(*) from atlas_audit.audit_events audit
+        where audit.command_id =
+          pg_catalog.md5('issue213-command:inactive-type-save')::uuid
+      ),
+      'completed_receipts', (
+        select count(*) from atlas_core.command_receipts receipt
+        where receipt.command_id =
+          pg_catalog.md5('issue213-command:inactive-type-save')::uuid
+          and receipt.outcome = 'COMPLETED'
+      )
+    )
+    from issue213_results result
+    join atlas_admin.dishes dish
+      on dish.dish_code = 'issue213-inactive-type'
+    where result.result_name = 'inactive-type-save'
+  ),
+  pg_catalog.jsonb_build_object(
+    'error_code', 'INVARIANT_VIOLATION',
+    'safe_message',
+      'An active database-backed Dish Type is required before activation.',
+    'dish_status', 'DRAFT',
+    'dish_version', 1,
+    'recipe_roots', 0,
+    'recipe_versions', 0,
+    'recipe_lines', 0,
+    'recipe_line_revisions', 0,
+    'domain_events', 0,
+    'audit_events', 0,
+    'completed_receipts', 0
+  ),
+  'inactive Dish Type rejects Save before Recipe writes or success evidence'
+);
+
+select is(
+  (
+    select pg_catalog.jsonb_build_object(
+      'error_code', result.response_payload ->> 'error_code',
+      'safe_message', result.response_payload ->> 'safe_message',
+      'existing_status', existing.dish_status,
+      'existing_version', existing.version,
+      'draft_status', draft.dish_status,
+      'draft_version', draft.version,
+      'recipe_roots', (
+        select count(*) from atlas_admin.recipes recipe
+        where recipe.dish_id = draft.dish_id
+      ),
+      'recipe_versions', (
+        select count(*) from atlas_admin.recipe_versions version
+        join atlas_admin.recipes recipe on recipe.recipe_id = version.recipe_id
+        where recipe.dish_id = draft.dish_id
+      ),
+      'recipe_lines', (
+        select count(*) from atlas_admin.recipe_lines line
+        join atlas_admin.recipes recipe on recipe.recipe_id = line.recipe_id
+        where recipe.dish_id = draft.dish_id
+      ),
+      'recipe_line_revisions', (
+        select count(*) from atlas_admin.recipe_line_revisions revision
+        where revision.recipe_id in (
+          select recipe.recipe_id from atlas_admin.recipes recipe
+          where recipe.dish_id = draft.dish_id
+        )
+      ),
+      'domain_events', (
+        select count(*) from atlas_audit.domain_events event
+        where event.command_id =
+          pg_catalog.md5('issue213-command:duplicate-name-save')::uuid
+      ),
+      'audit_events', (
+        select count(*) from atlas_audit.audit_events audit
+        where audit.command_id =
+          pg_catalog.md5('issue213-command:duplicate-name-save')::uuid
+      ),
+      'completed_receipts', (
+        select count(*) from atlas_core.command_receipts receipt
+        where receipt.command_id =
+          pg_catalog.md5('issue213-command:duplicate-name-save')::uuid
+          and receipt.outcome = 'COMPLETED'
+      )
+    )
+    from issue213_results result
+    join atlas_admin.dishes existing
+      on existing.dish_code = 'issue213-duplicate-active'
+    join atlas_admin.dishes draft
+      on draft.dish_code = 'issue213-duplicate-draft'
+    where result.result_name = 'duplicate-name-save'
+  ),
+  pg_catalog.jsonb_build_object(
+    'error_code', 'CONFLICT',
+    'safe_message',
+      'An active dish with this normalized name already exists.',
+    'existing_status', 'ACTIVE',
+    'existing_version', 2,
+    'draft_status', 'DRAFT',
+    'draft_version', 1,
+    'recipe_roots', 0,
+    'recipe_versions', 0,
+    'recipe_lines', 0,
+    'recipe_line_revisions', 0,
+    'domain_events', 0,
+    'audit_events', 0,
+    'completed_receipts', 0
+  ),
+  'duplicate active normalized name conflicts before Recipe writes or success evidence'
 );
 
 select ok(
