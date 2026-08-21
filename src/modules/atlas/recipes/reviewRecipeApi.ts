@@ -485,6 +485,9 @@ export function createReviewRecipeApi(
     saveRecipe: mutate((request) => {
       const dishId = payloadString(request, "dish_id");
       const schoolTypeId = payloadString(request, "school_type_id") || null;
+      const dish = data.dishes.find((item) => item.dish_id === dishId);
+      if (!dish || dish.dish_status === "INACTIVE") return false;
+
       let recipe = data.recipes.find(
         (item) =>
           item.dish_id === dishId && item.school_type_id === schoolTypeId,
@@ -533,6 +536,10 @@ export function createReviewRecipeApi(
       target.released_by_actor_id = actor;
       target.released_at = now;
       target.version += 3;
+      if (dish.dish_status === "DRAFT") {
+        dish.dish_status = "ACTIVE";
+        dish.version += 1;
+      }
       selectRecipe(data, dishId, schoolTypeId);
       return true;
     }),
