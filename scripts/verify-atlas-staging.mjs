@@ -1,5 +1,13 @@
-import { readdirSync, readFileSync } from "node:fs";
+import {
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { randomUUID } from "node:crypto";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -29,6 +37,31 @@ function runSafe(runCommand, command, args, options, protectedValues) {
     );
   }
   return result.stdout;
+}
+
+function runLinkedSqlFileSafe(
+  runCommand,
+  statement,
+  additionalArgs,
+  options,
+  protectedValues,
+) {
+  const temporaryDirectory = mkdtempSync(
+    join(tmpdir(), "atlas-staging-verifier-"),
+  );
+  const sqlPath = join(temporaryDirectory, "query.sql");
+  try {
+    writeFileSync(sqlPath, statement, { encoding: "utf8", flag: "wx" });
+    return runSafe(
+      runCommand,
+      localSupabaseCliPath(),
+      ["db", "query", "--linked", "--file", sqlPath, ...additionalArgs],
+      options,
+      protectedValues,
+    );
+  } finally {
+    rmSync(temporaryDirectory, { force: true, recursive: true });
+  }
 }
 
 export function migrationVersionsFromFilenames(names) {
@@ -309,19 +342,10 @@ export async function verifyAtlasStaging({
     protectedValues,
   );
 
-  const migrations = runSafe(
+  const migrations = runLinkedSqlFileSafe(
     runCommand,
-    localSupabaseCliPath(),
-    [
-      "db",
-      "query",
-      migrationHistorySql(),
-      "--linked",
-      "--output",
-      "json",
-      "--agent",
-      "no",
-    ],
+    migrationHistorySql(),
+    ["--output", "json", "--agent", "no"],
     options,
     protectedValues,
   );
@@ -335,17 +359,12 @@ export async function verifyAtlasStaging({
   const foundationManifest = platformOnly
     ? undefined
     : readAtlasStagingPackage("foundation", cwd);
-  runSafe(
+  runLinkedSqlFileSafe(
     runCommand,
-    localSupabaseCliPath(),
-    [
-      "db",
-      "query",
-      catalogVerificationSql(readCatalogAuthority(cwd), {
-        expectedApplicationRoleCode: identityManifest?.role.role_code,
-      }),
-      "--linked",
-    ],
+    catalogVerificationSql(readCatalogAuthority(cwd), {
+      expectedApplicationRoleCode: identityManifest?.role.role_code,
+    }),
+    [],
     options,
     protectedValues,
   );
@@ -376,17 +395,10 @@ export async function verifyAtlasStaging({
   assertAnonymousAuthorizationDenial(anonymousAttempt.error);
   if (platformOnly) return { status: "verified", phase: "platform" };
 
-  runSafe(
+  runLinkedSqlFileSafe(
     runCommand,
-    localSupabaseCliPath(),
-    [
-      "db",
-      "query",
-      `${buildIdentityVerificationSql(identityManifest)}\n${buildFoundationVerificationSql(foundationManifest)}`,
-      "--linked",
-      "--agent",
-      "no",
-    ],
+    `${buildIdentityVerificationSql(identityManifest)}\n${buildFoundationVerificationSql(foundationManifest)}`,
+    ["--agent", "no"],
     options,
     protectedValues,
   );
@@ -415,10 +427,10 @@ export async function verifyAtlasStaging({
   let verificationFailure;
   try {
     const authSubject = signIn.session.user.id;
-    runSafe(
+    runLinkedSqlFileSafe(
       runCommand,
-      localSupabaseCliPath(),
-      ["db", "query", actorVerificationSql(authSubject), "--linked"],
+      actorVerificationSql(authSubject),
+      [],
       options,
       protectedValues,
     );
