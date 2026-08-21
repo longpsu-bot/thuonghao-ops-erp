@@ -63,7 +63,7 @@
     "postcss-simple-vars": "7.0.1",
     "prettier": "3.9.5",
     "storybook": "^10.5.0",
-    "supabase": "2.109.1",
+    "supabase": "2.111.0",
     "typescript": "7.0.2",
     "vite": "8.1.4",
     "vitest": "4.1.10"
