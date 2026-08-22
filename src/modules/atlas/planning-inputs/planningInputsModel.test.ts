@@ -70,6 +70,19 @@ describe("Planning input model", () => {
         },
       }),
     ).toContain("Nguồn dữ liệu đã thay đổi");
+    expect(
+      planningResultMessage({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "VALIDATION_FAILED",
+          safe_message: "safe",
+          field_errors: [
+            { field: "requested_at", message: "bounded clock skew" },
+          ],
+        },
+      }),
+    ).toMatch(/Thời gian trên thiết bị/);
   });
 
   it("uses persisted Attendance for matching pairs and defaults only for missing pairs", () => {

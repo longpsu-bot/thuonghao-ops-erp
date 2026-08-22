@@ -140,3 +140,8 @@ PLANNING-CONTRACT-01 adds `atlas_api.save_pantry(request jsonb)`. It requires th
 One transaction performs complete replacement, server derivation of Delivery Location and Unit, all Purpose/reference/blocker validation, stable-line handling, deterministic validation, immutable every-and-only approval snapshot creation, and current snapshot establishment. The browser cannot author Location, Unit, Purpose status, lifecycle, readiness, currentness, or routing. The response contains the authoritative Pantry workbench, automatic Planning preflight, and `CURRENT`, `OUTDATED`, or `NOT_GENERATED` downstream currentness as applicable.
 
 Exact replay returns the original durable response, changed reuse conflicts, stale version/signature requires refresh and a new intent, and already-completed identical content returns `NO_CHANGE`. Prior positive and explicit-zero snapshots remain immutable. The six v1 APIs remain exact and callable for the connected UI coexistence window; their behavior and assertions are not weakened. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
+
+The public v2 `requested_at` records client intent and permits no more than 60
+seconds of positive clock skew. After acceptance, all internally derived Pantry
+Save, Validate, Approve, and correction commands use PostgreSQL transaction
+time. The six v1 timestamp validators are unchanged.

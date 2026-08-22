@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(137);
+select plan(145);
 
 select is(
   (
@@ -318,8 +318,18 @@ insert into atlas_admin.delivery_locations (delivery_location_id, customer_id, l
   ('e4100000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000001', 'rmvp04-pantry', 'RMVP-04 Pantry Store', 'Fixture pantry', 'Asia/Ho_Chi_Minh');
 insert into atlas_admin.school_types (school_type_id, school_type_code, school_type_name)
 values ('e4100000-0000-0000-0000-000000000004', 'rmvp04-type', 'RMVP-04 Type');
-insert into atlas_admin.schools (school_id, customer_id, school_code, school_name, school_type_id, default_delivery_location_id, display_order)
-values ('e4100000-0000-0000-0000-000000000005', 'e4100000-0000-0000-0000-000000000001', 'rmvp04-school', 'RMVP-04 School', 'e4100000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000002', 10);
+insert into atlas_admin.schools (
+  school_id, customer_id, school_code, school_name, school_type_id,
+  default_delivery_location_id, display_order,
+  default_student_portions, default_teacher_portions
+)
+values (
+  'e4100000-0000-0000-0000-000000000005',
+  'e4100000-0000-0000-0000-000000000001',
+  'rmvp04-school', 'RMVP-04 School',
+  'e4100000-0000-0000-0000-000000000004',
+  'e4100000-0000-0000-0000-000000000002', 10, 100, 10
+);
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram', 'mass');
 insert into atlas_admin.ingredients (
@@ -628,7 +638,7 @@ insert into pct01_requests values (
     'idempotency_key','pct01-execute-initial',
     'expected_version',1,
     'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
-    'requested_at',transaction_timestamp(),
+    'requested_at',transaction_timestamp() + interval '30 seconds',
     'reason_code','NEED_GENERATION_EXECUTED',
     'reason_note',null,
     'payload',jsonb_build_object(
@@ -644,7 +654,7 @@ select 'execute-initial',atlas_api.execute_need_generation(request)
 from pct01_requests where request_name='execute-initial';
 reset role;
 
-select ok((select response->>'success'='true' from pct01_responses where response_name='execute-initial'),'PCT01-22 atomic mixed generation succeeds');
+select ok((select response->>'success'='true' from pct01_responses where response_name='execute-initial'),'PCT01-22 atomic mixed generation accepts bounded positive client skew');
 select is((select response->>'contract_version' from pct01_responses where response_name='execute-initial'),'RMVP-04.v2','PCT01-23 atomic response uses RMVP-04.v2');
 select is((select response->>'downstream_currentness' from pct01_responses where response_name='execute-initial'),'CURRENT','PCT01-24 committed result is CURRENT');
 select is((select count(*) from atlas_core.command_receipts where command_id='e4800000-0000-0000-0000-000000000001'),1::bigint,'PCT01-25 one top-level receipt exists');
@@ -1776,7 +1786,7 @@ select 'source-menu', jsonb_build_object(
   'correlation_id','e4900000-0000-0000-0000-000000000002',
   'idempotency_key','pct01-source-menu','expected_version',1,
   'requested_by_auth_subject','e4000000-0000-0000-0000-000000000102',
-  'requested_at',transaction_timestamp(),'reason_code','WEEKLY_MENU_SAVED',
+  'requested_at',transaction_timestamp() + interval '30 seconds','reason_code','WEEKLY_MENU_SAVED',
   'reason_note',null,
   'payload',jsonb_build_object(
     'week_start','2026-11-09','source_type','MANUAL','source_name','Atlas',
@@ -1788,8 +1798,8 @@ select 'source-menu', jsonb_build_object(
 with proposed(rows) as (
   values (jsonb_build_array(jsonb_build_object(
     'school_id','e4100000-0000-0000-0000-000000000005',
-    'service_date','2026-11-09','student_portions',20,
-    'teacher_portions',0,'source_row_reference','pct01-attendance-1'
+    'service_date','2026-11-09','student_portions',111,
+    'teacher_portions',10,'source_row_reference','pct01-attendance-1'
   )))
 ), canonical(rows) as (
   select atlas_core.rmvp_03a_canonical_attendance_rows(rows) from proposed
@@ -1801,7 +1811,7 @@ select 'source-attendance', jsonb_build_object(
   'correlation_id','e4900000-0000-0000-0000-000000000004',
   'idempotency_key','pct01-source-attendance','expected_version',1,
   'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
-  'requested_at',transaction_timestamp(),'reason_code','ATTENDANCE_SAVED',
+  'requested_at',transaction_timestamp() + interval '30 seconds','reason_code','ATTENDANCE_SAVED',
   'reason_note',null,
   'payload',jsonb_build_object(
     'week_start','2026-11-09','source_type','MANUAL','source_name','Atlas',
@@ -1828,7 +1838,7 @@ select 'source-pantry', jsonb_build_object(
   'correlation_id','e4900000-0000-0000-0000-000000000006',
   'idempotency_key','pct01-source-pantry','expected_version',1,
   'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
-  'requested_at',transaction_timestamp(),'reason_code','PANTRY_SAVED',
+  'requested_at',transaction_timestamp() + interval '30 seconds','reason_code','PANTRY_SAVED',
   'reason_note',null,
   'payload',jsonb_build_object(
     'week_start','2026-11-09','no_additions_confirmed',false,
@@ -1836,6 +1846,44 @@ select 'source-pantry', jsonb_build_object(
     'expected_source_signature',null,'rows',raw_rows
   )
 ) from canonical;
+
+select set_config('request.jwt.claim.sub','e4000000-0000-0000-0000-000000000101',true);
+set local role authenticated;
+insert into pct01_responses
+select 'source-attendance-preview', atlas_api.preview_attendance_import(
+  jsonb_build_object(
+    'contract_version','RMVP-03A.v1',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id',gen_random_uuid(),
+    'payload',jsonb_build_object(
+      'week_start','2026-11-09','rows',request #> '{payload,rows}'
+    )
+  )
+)
+from pct01_requests where request_name='source-attendance';
+reset role;
+select ok(
+  (select response->>'success'='true'
+    and response->'preview'->>'can_save'='true'
+   from pct01_responses where response_name='source-attendance-preview'),
+  'PCT01-S01 hosted Attendance 111/10 preview can save against defaults 100/10'
+);
+select is(
+  (select jsonb_array_length(response->'preview'->'issues'->'blockers')
+   from pct01_responses where response_name='source-attendance-preview'),
+  0,
+  'PCT01-S02 hosted Attendance 111/10 preview has zero blockers'
+);
+select is(
+  (select array_agg(issue->>'code' order by issue->>'code')::text[]
+   from pct01_responses response
+   cross join lateral jsonb_array_elements(
+     response.response->'preview'->'issues'->'warnings'
+   ) issue
+   where response.response_name='source-attendance-preview'),
+  array['PORTIONS_DIFFER_FROM_DEFAULT']::text[],
+  'PCT01-S02A hosted Attendance 111/10 preview retains only the defaults warning'
+);
 
 select set_config('request.jwt.claim.sub','e4000000-0000-0000-0000-000000000102',true);
 set local role authenticated;
@@ -1886,9 +1934,16 @@ select is(
   'PCT01-S07 completed snapshots contain every-and-only submitted member'
 );
 select is(
-  (select teacher_portions from atlas_planning.attendance_approval_snapshot_lines line join atlas_planning.attendance_batches root on root.latest_approval_snapshot_id=line.attendance_approval_snapshot_id where root.period_start='2026-11-09'),
-  0,
-  'PCT01-S08 explicit zero Attendance portions remain authoritative'
+  (select jsonb_build_object(
+      'student_portions', line.student_portions,
+      'teacher_portions', line.teacher_portions
+    )
+   from atlas_planning.attendance_approval_snapshot_lines line
+   join atlas_planning.attendance_batches root
+     on root.latest_approval_snapshot_id=line.attendance_approval_snapshot_id
+   where root.period_start='2026-11-09'),
+  jsonb_build_object('student_portions',111,'teacher_portions',10),
+  'PCT01-S08 Attendance 111/10 is authoritative in the completed snapshot'
 );
 select ok(
   (select line.delivery_location_id='e4100000-0000-0000-0000-000000000002' and line.unit_id='e4100000-0000-0000-0000-000000000006' from atlas_planning.pantry_need_approval_snapshot_lines line join atlas_planning.pantry_need_batches root on root.latest_approval_snapshot_id=line.pantry_need_approval_snapshot_id where root.week_start='2026-11-09'),
@@ -2072,6 +2127,122 @@ select is(
   (select source_signature from atlas_planning.pantry_need_approval_snapshots where pantry_need_approval_snapshot_id='e4400000-0000-0000-0000-000000000003'),
   repeat('e',64),
   'PCT01-S25 Pantry correction preserves the prior immutable snapshot signature'
+);
+
+-- Issue #215 fail-closed boundary: commands materially beyond the explicit
+-- 60-second allowance, plus malformed time, must fail before business writes.
+create temporary table pct01_clock_skew_counts as
+select jsonb_build_object(
+  'menu_version',(select version from atlas_planning.weekly_menus where week_start='2026-11-09'),
+  'attendance_version',(select version from atlas_planning.attendance_batches where period_start='2026-11-09'),
+  'pantry_version',(select version from atlas_planning.pantry_need_batches where week_start='2026-11-09'),
+  'run_count',(select count(*) from atlas_planning.need_generation_runs),
+  'confirmed_need_batch_count',(select count(*) from atlas_planning.confirmed_need_batches)
+) as counts;
+
+select set_config('request.jwt.claim.sub','e4000000-0000-0000-0000-000000000102',true);
+set local role authenticated;
+insert into pct01_responses
+select 'clock-skew-menu-future', atlas_api.save_weekly_menu(
+  jsonb_set(
+    request || jsonb_build_object(
+      'command_id','e4900000-0000-0000-0000-000000000031',
+      'idempotency_key','clock-skew-menu-future',
+      'expected_version',(select (response->'new_versions'->>'aggregate_version')::bigint from pct01_responses where response_name='source-menu'),
+      'requested_at',transaction_timestamp() + interval '61 seconds'
+    ),
+    '{payload,expected_source_signature}', request #> '{payload,source_signature}'
+  )
+) from pct01_requests where request_name='source-menu';
+reset role;
+
+select set_config('request.jwt.claim.sub','e4000000-0000-0000-0000-000000000101',true);
+set local role authenticated;
+insert into pct01_responses
+select 'clock-skew-attendance-future', atlas_api.save_attendance(
+  jsonb_set(
+    request || jsonb_build_object(
+      'command_id','e4900000-0000-0000-0000-000000000032',
+      'idempotency_key','clock-skew-attendance-future',
+      'expected_version',(select (response->'new_versions'->>'aggregate_version')::bigint from pct01_responses where response_name='source-attendance'),
+      'requested_at',transaction_timestamp() + interval '61 seconds'
+    ),
+    '{payload,expected_source_signature}', request #> '{payload,source_signature}'
+  )
+) from pct01_requests where request_name='source-attendance';
+insert into pct01_responses
+select 'clock-skew-pantry-future', atlas_api.save_pantry(
+  jsonb_set(
+    request || jsonb_build_object(
+      'command_id','e4900000-0000-0000-0000-000000000033',
+      'idempotency_key','clock-skew-pantry-future',
+      'expected_version',(select (response->'new_versions'->>'aggregate_version')::bigint from pct01_responses where response_name='source-pantry'),
+      'requested_at',transaction_timestamp() + interval '61 seconds'
+    ),
+    '{payload,expected_source_signature}', request #> '{payload,source_signature}'
+  )
+) from pct01_requests where request_name='source-pantry';
+insert into pct01_responses
+select 'clock-skew-execute-future', atlas_api.execute_need_generation(
+  request || jsonb_build_object(
+    'command_id','e4900000-0000-0000-0000-000000000034',
+    'idempotency_key','clock-skew-execute-future',
+    'requested_at',transaction_timestamp() + interval '61 seconds'
+  )
+) from pct01_requests where request_name='execute-initial';
+insert into pct01_responses
+select 'clock-skew-attendance-malformed', atlas_api.save_attendance(
+  jsonb_set(
+    request || jsonb_build_object(
+      'command_id','e4900000-0000-0000-0000-000000000035',
+      'idempotency_key','clock-skew-attendance-malformed',
+      'expected_version',(select (response->'new_versions'->>'aggregate_version')::bigint from pct01_responses where response_name='source-attendance'),
+      'requested_at','not-a-timestamp'
+    ),
+    '{payload,expected_source_signature}', request #> '{payload,source_signature}'
+  )
+) from pct01_requests where request_name='source-attendance';
+reset role;
+
+select is(
+  (select array_agg(response->>'error_code' order by response_name)::text[]
+   from pct01_responses where response_name like 'clock-skew-%-future'),
+  array_fill('VALIDATION_FAILED'::text,array[4]),
+  'PCT01-CS01 materially future Planning v2 commands fail closed'
+);
+select ok(
+  not exists (
+    select 1 from pct01_responses response
+    where response.response_name like 'clock-skew-%-future'
+      and not exists (
+        select 1 from jsonb_array_elements(response.response->'field_errors') field_error
+        where field_error->>'field'='requested_at'
+      )
+  ),
+  'PCT01-CS02 materially future responses identify requested_at safely'
+);
+select is(
+  (select response->>'error_code' from pct01_responses where response_name='clock-skew-attendance-malformed'),
+  'VALIDATION_FAILED',
+  'PCT01-CS03 malformed requested_at remains rejected'
+);
+select ok(
+  (select exists (
+    select 1 from jsonb_array_elements(response->'field_errors') field_error
+    where field_error->>'field'='requested_at'
+  ) from pct01_responses where response_name='clock-skew-attendance-malformed'),
+  'PCT01-CS04 malformed requested_at retains field evidence'
+);
+select is(
+  (select counts from pct01_clock_skew_counts),
+  jsonb_build_object(
+    'menu_version',(select version from atlas_planning.weekly_menus where week_start='2026-11-09'),
+    'attendance_version',(select version from atlas_planning.attendance_batches where period_start='2026-11-09'),
+    'pantry_version',(select version from atlas_planning.pantry_need_batches where week_start='2026-11-09'),
+    'run_count',(select count(*) from atlas_planning.need_generation_runs),
+    'confirmed_need_batch_count',(select count(*) from atlas_planning.confirmed_need_batches)
+  ),
+  'PCT01-CS05 rejected time envelopes create no source, run, or Confirmed Need mutation'
 );
 
 select * from finish();
