@@ -18,6 +18,10 @@ const PACKAGE_CLASSIFICATIONS = Object.freeze({
   identity: "IDENTITY",
   foundation: "FOUNDATION_REFERENCE",
 });
+const PACKAGE_VERSIONS = Object.freeze({
+  identity: "1.0.0",
+  foundation: "1.1.0",
+});
 export const IDENTITY_CAPABILITY_CODES = Object.freeze([
   "master_data.read",
   "master_data.schools.write",
@@ -89,7 +93,7 @@ export function validatePackageManifest(kind, manifest) {
   );
   requireManifest(
     manifest?.package?.name === `atlas-staging-${kind}` &&
-      manifest.package.version === "1.0.0" &&
+      manifest.package.version === PACKAGE_VERSIONS[kind] &&
       manifest.package.classification === PACKAGE_CLASSIFICATIONS[kind] &&
       manifest.package.environment === "staging" &&
       manifest.package.project_ref === APPROVED_ATLAS_STAGING_PROJECT_REF,
@@ -159,6 +163,16 @@ export function validatePackageManifest(kind, manifest) {
         "Planning policy revision",
         manifest.planning_quantity_policy?.planning_quantity_policy_revision_id,
       ],
+      [
+        "Need Generation calculation contract",
+        manifest.need_generation_calculation_contract
+          ?.need_generation_calculation_contract_id,
+      ],
+      [
+        "Need Generation calculation contract revision",
+        manifest.need_generation_calculation_contract
+          ?.need_generation_calculation_contract_revision_id,
+      ],
     ])
       uuid(value, label);
     requireManifest(
@@ -178,7 +192,7 @@ export function validatePackageManifest(kind, manifest) {
           "school_requested_supplement",
           "planning_identified_supplement",
         ]) &&
-        manifest.pantry_purposes.every((item) => item.note_rule === "REQUIRED"),
+        manifest.pantry_purposes.every((item) => item.note_rule === "OPTIONAL"),
       "Foundation Pantry purposes differ from the approved set.",
     );
     requireManifest(
@@ -188,6 +202,22 @@ export function validatePackageManifest(kind, manifest) {
         manifest.planning_quantity_policy?.planning_step === "0.010000" &&
         manifest.planning_quantity_policy.policy_revision_status === "ACTIVE",
       "Foundation package contains an unapproved reference-data shape.",
+    );
+    const calculationContract = manifest.need_generation_calculation_contract;
+    requireManifest(
+      calculationContract?.contract_code ===
+        "school_catering_proportional_per_basis" &&
+        calculationContract.revision_number === 1 &&
+        calculationContract.formula_kind ===
+          "STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS" &&
+        calculationContract.quantity_precision === 20 &&
+        calculationContract.quantity_scale === 6 &&
+        calculationContract.factor_precision === 24 &&
+        calculationContract.factor_scale === 12 &&
+        calculationContract.final_coercion_mode ===
+          "POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO" &&
+        calculationContract.evidence_timestamp === "2026-08-22T00:00:00Z",
+      "Foundation Need Generation calculation contract differs from the accepted H0A5b contract.",
     );
     requireManifest(
       JSON.stringify(manifest.required_migration_catalogs) ===
@@ -200,6 +230,131 @@ export function validatePackageManifest(kind, manifest) {
     );
   }
   return manifest;
+}
+
+function buildNeedGenerationCalculationContractReconciliation(manifest) {
+  const contract = manifest.need_generation_calculation_contract;
+  const contractId = uuid(
+    contract.need_generation_calculation_contract_id,
+    "Need Generation calculation contract",
+  );
+  const revisionId = uuid(
+    contract.need_generation_calculation_contract_revision_id,
+    "Need Generation calculation contract revision",
+  );
+  const actorId = uuid(manifest.identity_actor_id, "Identity Actor");
+  const timestamp = `${sql(contract.evidence_timestamp)}::timestamptz`;
+  return `
+  if exists (
+    select 1
+    from atlas_planning.need_generation_calculation_contracts
+    where need_generation_calculation_contract_id = ${contractId}
+      and (
+        contract_code <> ${sql(contract.contract_code)}
+        or current_revision_id <> ${revisionId}
+        or version <> ${Number(contract.revision_number)}
+        or created_at <> ${timestamp}
+        or updated_at <> ${timestamp}
+      )
+  ) or exists (
+    select 1
+    from atlas_planning.need_generation_calculation_contracts
+    where contract_code = ${sql(contract.contract_code)}
+      and need_generation_calculation_contract_id <> ${contractId}
+  ) then
+    raise exception 'ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_MISMATCH';
+  end if;
+
+  if exists (
+    select 1
+    from atlas_planning.need_generation_calculation_contract_revisions
+    where need_generation_calculation_contract_revision_id = ${revisionId}
+      and (
+        need_generation_calculation_contract_id <> ${contractId}
+        or revision_number <> ${Number(contract.revision_number)}
+        or predecessor_revision_id is not null
+        or formula_kind <> ${sql(contract.formula_kind)}
+        or quantity_precision <> ${Number(contract.quantity_precision)}
+        or quantity_scale <> ${Number(contract.quantity_scale)}
+        or factor_precision <> ${Number(contract.factor_precision)}
+        or factor_scale <> ${Number(contract.factor_scale)}
+        or final_coercion_mode <> ${sql(contract.final_coercion_mode)}
+        or approved_by_actor_id <> ${actorId}
+        or approved_at <> ${timestamp}
+      )
+  ) or exists (
+    select 1
+    from atlas_planning.need_generation_calculation_contract_revisions
+    where need_generation_calculation_contract_id = ${contractId}
+      and revision_number = ${Number(contract.revision_number)}
+      and need_generation_calculation_contract_revision_id <> ${revisionId}
+  ) then
+    raise exception 'ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_REVISION_MISMATCH';
+  end if;
+
+  if not exists (
+    select 1
+    from atlas_planning.need_generation_calculation_contracts
+    where need_generation_calculation_contract_id = ${contractId}
+  ) then
+    insert into atlas_planning.need_generation_calculation_contracts (
+      need_generation_calculation_contract_id,
+      contract_code,
+      current_revision_id,
+      version,
+      created_at,
+      updated_at
+    ) values (
+      ${contractId},
+      ${sql(contract.contract_code)},
+      ${revisionId},
+      ${Number(contract.revision_number)},
+      ${timestamp},
+      ${timestamp}
+    );
+  end if;
+
+  if not exists (
+    select 1
+    from atlas_planning.need_generation_calculation_contract_revisions
+    where need_generation_calculation_contract_revision_id = ${revisionId}
+  ) then
+    insert into atlas_planning.need_generation_calculation_contract_revisions (
+      need_generation_calculation_contract_revision_id,
+      need_generation_calculation_contract_id,
+      revision_number,
+      formula_kind,
+      quantity_precision,
+      quantity_scale,
+      factor_precision,
+      factor_scale,
+      final_coercion_mode,
+      approved_by_actor_id,
+      approved_at
+    ) values (
+      ${revisionId},
+      ${contractId},
+      ${Number(contract.revision_number)},
+      ${sql(contract.formula_kind)},
+      ${Number(contract.quantity_precision)},
+      ${Number(contract.quantity_scale)},
+      ${Number(contract.factor_precision)},
+      ${Number(contract.factor_scale)},
+      ${sql(contract.final_coercion_mode)},
+      ${actorId},
+      ${timestamp}
+    );
+  end if;`;
+}
+
+export function buildFoundationNeedGenerationContractSql(manifest) {
+  validatePackageManifest("foundation", manifest);
+  return `do $atlas_staging_foundation_need_generation_contract$
+begin
+  if not exists (select 1 from atlas_core.actors where actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and actor_status = 'ACTIVE') then raise exception 'ATLAS_STAGING_FOUNDATION_IDENTITY_PREREQUISITE_MISSING'; end if;
+${buildNeedGenerationCalculationContractReconciliation(manifest)}
+end;
+$atlas_staging_foundation_need_generation_contract$;`;
 }
 
 export function verifyPackageCheckout({
@@ -392,11 +547,22 @@ export function buildFoundationPackageSql(manifest) {
   const school = manifest.school;
   const unit = manifest.unit;
   const policy = manifest.planning_quantity_policy;
+  const calculationContractReconciliation =
+    buildNeedGenerationCalculationContractReconciliation(manifest);
   const purposeRows = manifest.pantry_purposes
     .map(
       (purpose) => `
-  if exists (select 1 from atlas_planning.pantry_need_purposes where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")} and (purpose_code <> ${sql(purpose.purpose_code)} or purpose_name_vi <> ${sql(purpose.purpose_name_vi)} or purpose_description <> ${sql(purpose.purpose_description)} or note_rule <> ${sql(purpose.note_rule)} or purpose_status <> 'ACTIVE' or display_order <> ${Number(purpose.display_order)}))
+  if exists (select 1 from atlas_planning.pantry_need_purposes where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")} and (purpose_code <> ${sql(purpose.purpose_code)} or purpose_name_vi <> ${sql(purpose.purpose_name_vi)} or purpose_description <> ${sql(purpose.purpose_description)} or purpose_status <> 'ACTIVE' or display_order <> ${Number(purpose.display_order)}))
     or exists (select 1 from atlas_planning.pantry_need_purposes where purpose_code = ${sql(purpose.purpose_code)} and pantry_need_purpose_id <> ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")}) then raise exception 'ATLAS_STAGING_FOUNDATION_PANTRY_PURPOSE_MISMATCH'; end if;
+  if exists (select 1 from atlas_planning.pantry_need_purposes where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")} and note_rule = 'REQUIRED' and version = 1)
+    and (exists (select 1 from atlas_planning.pantry_need_lines where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")})
+      or exists (select 1 from atlas_planning.pantry_need_approval_snapshot_lines where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")})) then raise exception 'ATLAS_STAGING_FOUNDATION_PANTRY_PURPOSE_TRANSITION_REFERENCED'; end if;
+  update atlas_planning.pantry_need_purposes
+    set note_rule = ${sql(purpose.note_rule)}, version = version + 1, updated_at = greatest(updated_at, transaction_timestamp())
+    where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")} and purpose_code = ${sql(purpose.purpose_code)} and purpose_name_vi = ${sql(purpose.purpose_name_vi)} and purpose_description = ${sql(purpose.purpose_description)} and note_rule = 'REQUIRED' and purpose_status = 'ACTIVE' and display_order = ${Number(purpose.display_order)} and version = 1
+      and not exists (select 1 from atlas_planning.pantry_need_lines where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")})
+      and not exists (select 1 from atlas_planning.pantry_need_approval_snapshot_lines where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")});
+  if exists (select 1 from atlas_planning.pantry_need_purposes where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")} and note_rule <> ${sql(purpose.note_rule)}) then raise exception 'ATLAS_STAGING_FOUNDATION_PANTRY_PURPOSE_MISMATCH'; end if;
   if not exists (select 1 from atlas_planning.pantry_need_purposes where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")}) then
     insert into atlas_planning.pantry_need_purposes (pantry_need_purpose_id, purpose_code, purpose_name_vi, purpose_description, note_rule, display_order) values (${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")}, ${sql(purpose.purpose_code)}, ${sql(purpose.purpose_name_vi)}, ${sql(purpose.purpose_description)}, ${sql(purpose.note_rule)}, ${Number(purpose.display_order)});
   end if;`,
@@ -433,7 +599,7 @@ begin
     or exists (select 1 from atlas_admin.school_types where school_type_code = ${sql(schoolType.school_type_code)} and school_type_id <> ${uuid(schoolType.school_type_id, "School Type")}) then raise exception 'ATLAS_STAGING_FOUNDATION_SCHOOL_TYPE_MISMATCH'; end if;
   if not exists (select 1 from atlas_admin.school_types where school_type_id = ${uuid(schoolType.school_type_id, "School Type")}) then insert into atlas_admin.school_types (school_type_id, school_type_code, school_type_name) values (${uuid(schoolType.school_type_id, "School Type")}, ${sql(schoolType.school_type_code)}, ${sql(schoolType.school_type_name)}); end if;
 
-  if exists (select 1 from atlas_admin.schools where school_id = ${uuid(school.school_id, "School")} and (customer_id <> ${uuid(customer.customer_id, "Customer")} or school_code <> ${sql(school.school_code)} or school_name <> ${sql(school.school_name)} or school_type_id is distinct from ${uuid(schoolType.school_type_id, "School Type")} or default_delivery_location_id <> ${uuid(location.delivery_location_id, "Delivery Location")} or school_status <> 'ACTIVE' or display_order <> ${Number(school.display_order)} or operational_notes is distinct from ${sql(school.operational_notes)} or default_student_portions <> ${Number(school.default_student_portions)} or default_teacher_portions <> ${Number(school.default_teacher_portions)}))
+  if exists (select 1 from atlas_admin.schools where school_id = ${uuid(school.school_id, "School")} and (customer_id <> ${uuid(customer.customer_id, "Customer")} or school_code <> ${sql(school.school_code)} or school_name <> ${sql(school.school_name)} or school_type_id is distinct from ${uuid(schoolType.school_type_id, "School Type")} or default_delivery_location_id <> ${uuid(location.delivery_location_id, "Delivery Location")} or school_status <> 'ACTIVE' or display_order <> ${Number(school.display_order)} or operational_notes is distinct from ${sql(school.operational_notes)}))
     or exists (select 1 from atlas_admin.schools where customer_id = ${uuid(customer.customer_id, "Customer")} and school_code = ${sql(school.school_code)} and school_id <> ${uuid(school.school_id, "School")}) then raise exception 'ATLAS_STAGING_FOUNDATION_SCHOOL_MISMATCH'; end if;
   if not exists (select 1 from atlas_admin.schools where school_id = ${uuid(school.school_id, "School")}) then insert into atlas_admin.schools (school_id, customer_id, school_code, school_name, school_type_id, default_delivery_location_id, display_order, operational_notes, default_student_portions, default_teacher_portions) values (${uuid(school.school_id, "School")}, ${uuid(customer.customer_id, "Customer")}, ${sql(school.school_code)}, ${sql(school.school_name)}, ${uuid(schoolType.school_type_id, "School Type")}, ${uuid(location.delivery_location_id, "Delivery Location")}, ${Number(school.display_order)}, ${sql(school.operational_notes)}, ${Number(school.default_student_portions)}, ${Number(school.default_teacher_portions)}); end if;
 
@@ -441,6 +607,7 @@ begin
     or exists (select 1 from atlas_admin.units where unit_code = ${sql(unit.unit_code)} and unit_id <> ${uuid(unit.unit_id, "Unit")}) then raise exception 'ATLAS_STAGING_FOUNDATION_UNIT_MISMATCH'; end if;
   if not exists (select 1 from atlas_admin.units where unit_id = ${uuid(unit.unit_id, "Unit")}) then insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code, decimal_scale) values (${uuid(unit.unit_id, "Unit")}, ${sql(unit.unit_code)}, ${sql(unit.unit_name)}, ${sql(unit.dimension_code)}, ${Number(unit.decimal_scale)}); end if;
 ${purposeRows}
+${calculationContractReconciliation}
 
   if exists (select 1 from atlas_planning.planning_quantity_policies where planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and (unit_id <> ${uuid(unit.unit_id, "Unit")} or created_by_actor_id <> ${uuid(manifest.identity_actor_id, "Identity Actor")}))
     or exists (select 1 from atlas_planning.planning_quantity_policies where unit_id = ${uuid(unit.unit_id, "Unit")} and planning_quantity_policy_id <> ${uuid(policy.planning_quantity_policy_id, "Planning policy")}) then raise exception 'ATLAS_STAGING_FOUNDATION_POLICY_MISMATCH'; end if;
@@ -461,6 +628,10 @@ $atlas_staging_foundation$;
 
 export function buildIdentityVerificationSql(manifest) {
   validatePackageManifest("identity", manifest);
+  const actor = manifest.actor;
+  const role = manifest.role;
+  const membership = manifest.membership;
+  const scope = manifest.scopes[0];
   const actorId = uuid(manifest.actor.actor_id, "Actor");
   const authSubjectId = uuid(
     manifest.auth_user.auth_subject_id,
@@ -470,14 +641,30 @@ export function buildIdentityVerificationSql(manifest) {
   const capabilities = `array[${manifest.role.capabilities
     .map((item) => sql(item.capability_code))
     .join(", ")}]::text[]`;
+  const capabilityBindings = manifest.role.capabilities
+    .map(
+      (item) => `
+    or (select count(*) from atlas_core.role_capabilities role_capability
+        join atlas_core.capabilities capability using (capability_id)
+        where role_capability.role_capability_id = ${uuid(item.role_capability_id, "Role capability")}
+          and role_capability.role_id = ${roleId}
+          and capability.capability_code = ${sql(item.capability_code)}
+          and capability.capability_status = 'ACTIVE'
+          and role_capability.granted_by_actor_id = ${actorId}) <> 1`,
+    )
+    .join("");
   return `do $atlas_staging_identity_verify$
 declare actual_capabilities text[];
 begin
-  if (select count(*) from atlas_core.actors where actor_id = ${actorId} and actor_type = ${sql(manifest.actor.actor_type)} and display_name = ${sql(manifest.actor.display_name)} and actor_status = 'ACTIVE' and deactivated_at is null) <> 1
-    or (select count(*) from atlas_core.actor_auth_subjects where actor_id = ${actorId} and auth_subject_id = ${authSubjectId} and auth_provider = 'SUPABASE_AUTH' and subject_status = 'ACTIVE' and revoked_at is null) <> 1
-    or (select count(*) from atlas_core.roles where role_id = ${roleId} and role_code = ${sql(manifest.role.role_code)} and role_name = ${sql(manifest.role.role_name)} and role_status = 'ACTIVE') <> 1
-    or (select count(*) from atlas_core.actor_role_memberships where actor_id = ${actorId} and role_id = ${roleId} and membership_status = 'ACTIVE' and effective_to is null) <> 1
-    or (select count(*) from atlas_core.actor_scopes where actor_id = ${actorId} and scope_kind = 'GLOBAL' and scope_status = 'ACTIVE' and customer_id is null and school_id is null and delivery_location_id is null and dispatch_trip_id is null and effective_to is null) <> 1 then
+  if (select count(*) from atlas_core.actors where actor_id = ${actorId} and actor_type = ${sql(actor.actor_type)} and display_name = ${sql(actor.display_name)} and actor_status = 'ACTIVE' and deactivated_at is null) <> 1
+    or (select count(*) from atlas_core.actor_auth_subjects where actor_auth_subject_id = ${uuid(actor.actor_auth_subject_id, "Actor Auth subject mapping")} and actor_id = ${actorId} and auth_subject_id = ${authSubjectId} and auth_provider = 'SUPABASE_AUTH' and subject_status = 'ACTIVE' and revoked_at is null) <> 1
+    or (select count(*) from atlas_core.roles where role_id = ${roleId} and role_code = ${sql(role.role_code)} and role_name = ${sql(role.role_name)} and role_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_core.actor_role_memberships where actor_role_membership_id = ${uuid(membership.actor_role_membership_id, "Role membership")} and actor_id = ${actorId} and role_id = ${roleId} and granted_by_actor_id = ${actorId} and membership_status = 'ACTIVE' and effective_to is null and reason_note is not distinct from ${sql(membership.reason_note)}) <> 1
+    or (select count(*) from atlas_core.actor_scopes where actor_scope_id = ${uuid(scope.actor_scope_id, "Actor scope")} and actor_id = ${actorId} and scope_kind = 'GLOBAL' and customer_id is null and delivery_location_id is null and dispatch_trip_id is null and school_id is null and granted_by_actor_id = ${actorId} and scope_status = 'ACTIVE' and effective_to is null and reason_note is not distinct from ${sql(scope.reason_note)}) <> 1
+    or (select count(*) from atlas_core.actor_auth_subjects where actor_id = ${actorId} and subject_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_core.actor_role_memberships where actor_id = ${actorId} and membership_status = 'ACTIVE' and effective_from <= transaction_timestamp() and (effective_to is null or effective_to > transaction_timestamp())) <> 1
+    or (select count(*) from atlas_core.actor_scopes where actor_id = ${actorId} and scope_status = 'ACTIVE' and effective_from <= transaction_timestamp() and (effective_to is null or effective_to > transaction_timestamp())) <> 1
+    or (select count(*) from atlas_core.role_capabilities where role_id = ${roleId}) <> ${manifest.role.capabilities.length}${capabilityBindings} then
     raise exception 'ATLAS_STAGING_IDENTITY_VERIFICATION_MISMATCH';
   end if;
   select array_agg(capability.capability_code order by capability.capability_code)
@@ -500,23 +687,26 @@ export function buildFoundationVerificationSql(manifest) {
   const school = manifest.school;
   const unit = manifest.unit;
   const policy = manifest.planning_quantity_policy;
-  const purposeCodes = `array[${manifest.pantry_purposes.map((item) => sql(item.purpose_code)).join(", ")}]::text[]`;
+  const contract = manifest.need_generation_calculation_contract;
+  const purposeChecks = manifest.pantry_purposes
+    .map(
+      (purpose) => `
+    or (select count(*) from atlas_planning.pantry_need_purposes where pantry_need_purpose_id = ${uuid(purpose.pantry_need_purpose_id, "Pantry purpose")} and purpose_code = ${sql(purpose.purpose_code)} and purpose_name_vi = ${sql(purpose.purpose_name_vi)} and purpose_description = ${sql(purpose.purpose_description)} and note_rule = ${sql(purpose.note_rule)} and purpose_status = 'ACTIVE' and display_order = ${Number(purpose.display_order)}) <> 1`,
+    )
+    .join("");
   return `do $atlas_staging_foundation_verify$
-declare actual_purposes text[];
 begin
-  if (select count(*) from atlas_admin.customers where customer_id = ${uuid(customer.customer_id, "Customer")} and customer_code = ${sql(customer.customer_code)} and customer_type = 'SCHOOL_CATERING' and customer_status = 'ACTIVE') <> 1
-    or (select count(*) from atlas_admin.delivery_locations where delivery_location_id = ${uuid(location.delivery_location_id, "Delivery Location")} and customer_id = ${uuid(customer.customer_id, "Customer")} and location_code = ${sql(location.location_code)} and location_status = 'ACTIVE') <> 1
-    or (select count(*) from atlas_admin.school_types where school_type_id = ${uuid(schoolType.school_type_id, "School Type")} and school_type_code = ${sql(schoolType.school_type_code)} and school_type_status = 'ACTIVE') <> 1
-    or (select count(*) from atlas_admin.schools where school_id = ${uuid(school.school_id, "School")} and customer_id = ${uuid(customer.customer_id, "Customer")} and school_code = ${sql(school.school_code)} and default_delivery_location_id = ${uuid(location.delivery_location_id, "Delivery Location")} and default_student_portions = ${Number(school.default_student_portions)} and default_teacher_portions = ${Number(school.default_teacher_portions)} and school_status = 'ACTIVE') <> 1
-    or (select count(*) from atlas_admin.units where unit_id = ${uuid(unit.unit_id, "Unit")} and unit_code = 'kg' and dimension_code = 'MASS' and unit_status = 'ACTIVE') <> 1
-    or (select count(*) from atlas_planning.planning_quantity_policies where planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and unit_id = ${uuid(unit.unit_id, "Unit")}) <> 1
-    or (select count(*) from atlas_planning.planning_quantity_policy_revisions where planning_quantity_policy_revision_id = ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")} and planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and planning_step = ${sql(policy.planning_step)}::numeric and policy_revision_status = 'ACTIVE') <> 1 then
+  if (select count(*) from atlas_admin.customers where customer_id = ${uuid(customer.customer_id, "Customer")} and customer_code = ${sql(customer.customer_code)} and customer_name = ${sql(customer.customer_name)} and customer_type = ${sql(customer.customer_type)} and customer_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_admin.delivery_locations where delivery_location_id = ${uuid(location.delivery_location_id, "Delivery Location")} and customer_id = ${uuid(customer.customer_id, "Customer")} and location_code = ${sql(location.location_code)} and location_name = ${sql(location.location_name)} and address_text = ${sql(location.address_text)} and delivery_instructions is not distinct from ${sql(location.delivery_instructions)} and timezone_name = ${sql(location.timezone_name)} and location_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_admin.school_types where school_type_id = ${uuid(schoolType.school_type_id, "School Type")} and school_type_code = ${sql(schoolType.school_type_code)} and school_type_name = ${sql(schoolType.school_type_name)} and school_type_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_admin.schools where school_id = ${uuid(school.school_id, "School")} and customer_id = ${uuid(customer.customer_id, "Customer")} and school_code = ${sql(school.school_code)} and school_name = ${sql(school.school_name)} and school_type_id is not distinct from ${uuid(schoolType.school_type_id, "School Type")} and default_delivery_location_id = ${uuid(location.delivery_location_id, "Delivery Location")} and display_order = ${Number(school.display_order)} and operational_notes is not distinct from ${sql(school.operational_notes)} and school_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_admin.units where unit_id = ${uuid(unit.unit_id, "Unit")} and unit_code = ${sql(unit.unit_code)} and unit_name = ${sql(unit.unit_name)} and dimension_code = ${sql(unit.dimension_code)} and decimal_scale = ${Number(unit.decimal_scale)} and unit_status = 'ACTIVE') <> 1
+    or (select count(*) from atlas_planning.planning_quantity_policies where planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and unit_id = ${uuid(unit.unit_id, "Unit")} and created_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")}) <> 1
+    or (select count(*) from atlas_planning.planning_quantity_policy_revisions where planning_quantity_policy_revision_id = ${uuid(policy.planning_quantity_policy_revision_id, "Planning policy revision")} and planning_quantity_policy_id = ${uuid(policy.planning_quantity_policy_id, "Planning policy")} and unit_id = ${uuid(unit.unit_id, "Unit")} and revision_number = ${Number(policy.revision_number)} and predecessor_policy_revision_id is null and planning_step = ${sql(policy.planning_step)}::numeric and effective_from = ${sql(policy.effective_from)}::date and effective_to is null and policy_revision_status = ${sql(policy.policy_revision_status)} and created_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and created_at = ${sql(policy.evidence_timestamp)}::timestamptz and approved_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and approved_at = ${sql(policy.evidence_timestamp)}::timestamptz and activated_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and activated_at = ${sql(policy.evidence_timestamp)}::timestamptz and retired_by_actor_id is null and retired_at is null) <> 1${purposeChecks}
+    or (select count(*) from atlas_planning.need_generation_calculation_contracts where need_generation_calculation_contract_id = ${uuid(contract.need_generation_calculation_contract_id, "Need Generation calculation contract")} and contract_code = ${sql(contract.contract_code)} and current_revision_id = ${uuid(contract.need_generation_calculation_contract_revision_id, "Need Generation calculation contract revision")} and version = ${Number(contract.revision_number)} and created_at = ${sql(contract.evidence_timestamp)}::timestamptz and updated_at = ${sql(contract.evidence_timestamp)}::timestamptz) <> 1
+    or (select count(*) from atlas_planning.need_generation_calculation_contract_revisions where need_generation_calculation_contract_revision_id = ${uuid(contract.need_generation_calculation_contract_revision_id, "Need Generation calculation contract revision")} and need_generation_calculation_contract_id = ${uuid(contract.need_generation_calculation_contract_id, "Need Generation calculation contract")} and revision_number = ${Number(contract.revision_number)} and predecessor_revision_id is null and formula_kind = ${sql(contract.formula_kind)} and quantity_precision = ${Number(contract.quantity_precision)} and quantity_scale = ${Number(contract.quantity_scale)} and factor_precision = ${Number(contract.factor_precision)} and factor_scale = ${Number(contract.factor_scale)} and final_coercion_mode = ${sql(contract.final_coercion_mode)} and approved_by_actor_id = ${uuid(manifest.identity_actor_id, "Identity Actor")} and approved_at = ${sql(contract.evidence_timestamp)}::timestamptz) <> 1
+    or (select count(*) from atlas_planning.need_generation_calculation_contract_revisions where need_generation_calculation_contract_id = ${uuid(contract.need_generation_calculation_contract_id, "Need Generation calculation contract")}) <> 1 then
     raise exception 'ATLAS_STAGING_FOUNDATION_VERIFICATION_MISMATCH';
-  end if;
-  select array_agg(purpose_code order by purpose_code) into actual_purposes
-    from atlas_planning.pantry_need_purposes where pantry_need_purpose_id in (${manifest.pantry_purposes.map((item) => uuid(item.pantry_need_purpose_id, "Pantry purpose")).join(", ")}) and purpose_status = 'ACTIVE' and note_rule = 'REQUIRED';
-  if actual_purposes is distinct from (select array_agg(code order by code) from unnest(${purposeCodes}) code) then
-    raise exception 'ATLAS_STAGING_FOUNDATION_PURPOSE_VERIFICATION_MISMATCH';
   end if;
 end;
 $atlas_staging_foundation_verify$;`;

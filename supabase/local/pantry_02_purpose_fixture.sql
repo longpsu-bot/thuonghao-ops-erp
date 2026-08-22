@@ -52,16 +52,7 @@ insert into atlas_planning.pantry_need_purposes (
     'ACTIVE',
     20
   )
-on conflict (pantry_need_purpose_id) do update
-set
-  purpose_code = excluded.purpose_code,
-  purpose_name_vi = excluded.purpose_name_vi,
-  purpose_description = excluded.purpose_description,
-  note_rule = excluded.note_rule,
-  purpose_status = excluded.purpose_status,
-  display_order = excluded.display_order,
-  version = atlas_planning.pantry_need_purposes.version + 1,
-  updated_at = transaction_timestamp();
+on conflict do nothing;
 
 end
 $pantry_02_fixture$;

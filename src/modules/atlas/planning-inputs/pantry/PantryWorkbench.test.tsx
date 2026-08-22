@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { PantryWorkbench } from "./PantryWorkbench";
+import { pantryRowsForWrite, type PantryDraftRow } from "./pantryModel";
 import { createReviewPantryApi } from "./reviewPantryApi";
 
 afterEach(() => {
@@ -46,6 +47,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
 
   it("keeps Location and Unit server-derived and performs one v2 Save", async () => {
     const api = createReviewPantryApi("ready");
+    const preview = vi.spyOn(api, "preview");
     const completed = vi.spyOn(api, "saveCompleted");
     const draft = vi.spyOn(api, "save");
     const validate = vi.spyOn(api, "validate");
@@ -66,6 +68,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
         target: { value: "3.5" },
       },
     );
+    fireEvent.change(screen.getByRole("textbox", { name: "Ghi chú dòng 1" }), {
+      target: { value: "   " },
+    });
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
@@ -73,7 +78,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
+    expect(preview.mock.calls[0]?.[4]?.[0]).toMatchObject({ note: null });
     expect(request?.contract_version).toBe("PANTRY-02.v2");
+    expect(request?.payload.rows[0]).toMatchObject({ note: null });
     expect(request?.payload.rows[0]).not.toHaveProperty("delivery_location_id");
     expect(request?.payload.rows[0]).not.toHaveProperty("unit_id");
     expect(draft).not.toHaveBeenCalled();
@@ -86,6 +93,26 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     expect(
       screen.queryByRole("button", { name: "Xác thực" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("normalizes meaningful Pantry notes and maps blank notes to null", () => {
+    const row = {
+      service_date: "2026-08-03",
+      school_id: "school",
+      ingredient_id: "ingredient",
+      pantry_need_purpose_id: "purpose",
+      requested_quantity: "1",
+      note: "  Yêu cầu bổ sung có chủ đích.  ",
+      source_request_reference: "request",
+      source_row_reference: "row",
+    } satisfies PantryDraftRow;
+
+    expect(pantryRowsForWrite([row])[0]).toMatchObject({
+      note: "Yêu cầu bổ sung có chủ đích.",
+    });
+    expect(pantryRowsForWrite([{ ...row, note: " \t " }])[0]).toMatchObject({
+      note: null,
+    });
   });
 
   it("saves explicit no-additions completion with zero rows", async () => {

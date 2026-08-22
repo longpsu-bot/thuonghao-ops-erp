@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   IDENTITY_CAPABILITY_CODES,
   buildFoundationPackageSql,
+  buildFoundationNeedGenerationContractSql,
   buildFoundationVerificationSql,
   buildIdentityPackageSql,
   buildIdentityVerificationSql,
@@ -37,6 +38,8 @@ describe("Atlas Staging packages", () => {
   it("freezes the exact minimal Identity and Foundation manifests", () => {
     const identity = readAtlasStagingPackage("identity");
     const foundation = readAtlasStagingPackage("foundation");
+    expect(identity.package.version).toBe("1.0.0");
+    expect(foundation.package.version).toBe("1.1.0");
     expect(
       identity.role.capabilities.map((item) => item.capability_code),
     ).toEqual(IDENTITY_CAPABILITY_CODES);
@@ -46,11 +49,34 @@ describe("Atlas Staging packages", () => {
     expect(foundation.pantry_purposes.map((item) => item.purpose_code)).toEqual(
       ["school_requested_supplement", "planning_identified_supplement"],
     );
+    expect(foundation.pantry_purposes.map((item) => item.note_rule)).toEqual([
+      "OPTIONAL",
+      "OPTIONAL",
+    ]);
     expect(foundation.unit).toMatchObject({
       unit_code: "kg",
       dimension_code: "MASS",
     });
     expect(foundation.planning_quantity_policy.planning_step).toBe("0.010000");
+    expect(foundation.school).toMatchObject({
+      default_student_portions: 0,
+      default_teacher_portions: 0,
+    });
+    expect(foundation.need_generation_calculation_contract).toEqual({
+      need_generation_calculation_contract_id:
+        "a1020000-0000-4000-8000-000000000230",
+      need_generation_calculation_contract_revision_id:
+        "a1020000-0000-4000-8000-000000000231",
+      contract_code: "school_catering_proportional_per_basis",
+      revision_number: 1,
+      formula_kind: "STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS",
+      quantity_precision: 20,
+      quantity_scale: 6,
+      factor_precision: 24,
+      factor_scale: 12,
+      final_coercion_mode: "POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO",
+      evidence_timestamp: "2026-08-22T00:00:00Z",
+    });
   });
 
   it("contains secret names but no credential values in either manifest", () => {
@@ -77,6 +103,22 @@ describe("Atlas Staging packages", () => {
     expect(() => validatePackageManifest("foundation", foundation)).toThrow(
       /exactly the two/i,
     );
+
+    const legacyPurpose = structuredClone(
+      readAtlasStagingPackage("foundation"),
+    );
+    legacyPurpose.pantry_purposes[0].note_rule = "REQUIRED";
+    expect(() => validatePackageManifest("foundation", legacyPurpose)).toThrow(
+      /approved set/i,
+    );
+
+    const changedContract = structuredClone(
+      readAtlasStagingPackage("foundation"),
+    );
+    changedContract.need_generation_calculation_contract.quantity_scale = 5;
+    expect(() =>
+      validatePackageManifest("foundation", changedContract),
+    ).toThrow(/accepted H0A5b/i);
     expect(() =>
       planAtlasStagingPackage({
         kind: "foundation",
@@ -122,18 +164,65 @@ describe("Atlas Staging packages", () => {
     expect(verification).toContain(
       "ATLAS_STAGING_IDENTITY_CAPABILITY_VERIFICATION_MISMATCH",
     );
+    expect(verification).toContain(manifest.actor.actor_auth_subject_id);
+    expect(verification).toContain(
+      manifest.membership.actor_role_membership_id,
+    );
+    expect(verification).toContain(manifest.scopes[0].actor_scope_id);
+    for (const capability of manifest.role.capabilities) {
+      expect(verification).toContain(capability.role_capability_id);
+      expect(verification).toContain(capability.capability_code);
+    }
   });
 
   it("builds bounded Foundation reconciliation without rehearsal facts", () => {
     const manifest = readAtlasStagingPackage("foundation");
     const sql = buildFoundationPackageSql(manifest);
     const verification = buildFoundationVerificationSql(manifest);
+    const existingSchoolMismatch = sql.match(
+      /if exists \(select 1 from atlas_admin\.schools[\s\S]*?ATLAS_STAGING_FOUNDATION_SCHOOL_MISMATCH/iu,
+    )?.[0];
+    const schoolVerification = verification.match(
+      /select count\(\*\) from atlas_admin\.schools[\s\S]*?<> 1/iu,
+    )?.[0];
     expect(sql).toContain("atlas_admin.customers");
     expect(sql).toContain("atlas_admin.schools");
     expect(sql).toContain("atlas_planning.pantry_need_purposes");
     expect(sql).toContain("atlas_planning.planning_quantity_policy_revisions");
+    expect(sql).toContain(
+      "atlas_planning.need_generation_calculation_contract_revisions",
+    );
+    expect(sql).toContain("a1020000-0000-4000-8000-000000000230");
+    expect(sql).toContain("a1020000-0000-4000-8000-000000000231");
+    expect(sql).toContain(
+      "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_MISMATCH",
+    );
+    expect(sql).toContain(
+      "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_REVISION_MISMATCH",
+    );
     expect(sql).not.toMatch(/\b(delete|truncate)\b/i);
-    expect(sql.match(/\bupdate\b/gi)).toHaveLength(1);
+    expect(sql.match(/\bupdate\b/gi)).toHaveLength(3);
+    expect(sql).toContain(
+      "ATLAS_STAGING_FOUNDATION_PANTRY_PURPOSE_TRANSITION_REFERENCED",
+    );
+    expect(sql).toMatch(
+      /set note_rule = 'OPTIONAL', version = version \+ 1, updated_at = greatest\(updated_at, transaction_timestamp\(\)\)/iu,
+    );
+    expect(sql).not.toMatch(/update atlas_admin\.schools/iu);
+    expect(sql).toMatch(
+      /insert into atlas_admin\.schools \([^)]*default_student_portions, default_teacher_portions\) values \([^;]*, 0, 0\)/iu,
+    );
+    expect(existingSchoolMismatch).toContain("school_name");
+    expect(existingSchoolMismatch).toContain("operational_notes");
+    expect(existingSchoolMismatch).not.toContain("default_student_portions");
+    expect(existingSchoolMismatch).not.toContain("default_teacher_portions");
+    expect(schoolVerification).toContain("default_delivery_location_id");
+    expect(schoolVerification).toContain("school_name");
+    expect(schoolVerification).toContain("school_type_id");
+    expect(schoolVerification).toContain("display_order");
+    expect(schoolVerification).toContain("operational_notes");
+    expect(schoolVerification).not.toContain("default_student_portions");
+    expect(schoolVerification).not.toContain("default_teacher_portions");
     expect(sql).toMatch(
       /insert into atlas_planning\.planning_quantity_policy_revisions[\s\S]+?'DRAFT'/i,
     );
@@ -146,8 +235,69 @@ describe("Atlas Staging packages", () => {
     expect(sql).not.toMatch(
       /insert into atlas_planning\.(weekly_menus|attendance_batches|pantry_need_batches|need_generation_runs|confirmed_need_batches)/i,
     );
+    expect(sql).not.toMatch(
+      /insert into atlas_(procurement|evidence|warehouse|dispatch)\./iu,
+    );
     expect(verification).toContain(
       "ATLAS_STAGING_FOUNDATION_VERIFICATION_MISMATCH",
+    );
+    expect(verification).toContain(
+      "formula_kind = 'STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS'",
+    );
+    expect(verification).toContain(
+      "final_coercion_mode = 'POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO'",
+    );
+    for (const ownedField of [
+      "customer_name",
+      "location_name",
+      "address_text",
+      "delivery_instructions",
+      "timezone_name",
+      "school_type_name",
+      "unit_name",
+      "decimal_scale",
+      "created_by_actor_id",
+      "revision_number",
+      "effective_from",
+      "approved_by_actor_id",
+      "activated_by_actor_id",
+      "purpose_name_vi",
+      "purpose_description",
+      "note_rule = 'OPTIONAL'",
+    ]) {
+      expect(verification).toContain(ownedField);
+    }
+  });
+
+  it("uses the Foundation-owned contract in connected local Need Generation", () => {
+    const manifest = readAtlasStagingPackage("foundation");
+    const sql = buildFoundationNeedGenerationContractSql(manifest);
+    const browserFixture = readFileSync(
+      "supabase/local/rmvp_04_browser_fixture.sql",
+      "utf8",
+    );
+    const pantryPurposeFixture = readFileSync(
+      "supabase/local/pantry_02_purpose_fixture.sql",
+      "utf8",
+    );
+    for (const verifier of [
+      "scripts/verify-local-rmvp04-need-generation.mjs",
+      "scripts/verify-local-planning-contract-01.mjs",
+    ]) {
+      expect(readFileSync(verifier, "utf8")).toContain(
+        "installLocalFoundationNeedGenerationContract();",
+      );
+    }
+    expect(sql).toContain(
+      "$atlas_staging_foundation_need_generation_contract$",
+    );
+    expect(sql).toContain(manifest.identity_actor_id);
+    expect(browserFixture).not.toMatch(
+      /insert into atlas_planning\.need_generation_calculation_contracts/i,
+    );
+    expect(pantryPurposeFixture).toMatch(/on conflict do nothing/iu);
+    expect(pantryPurposeFixture).not.toMatch(
+      /update\s+atlas_planning\.pantry_need_purposes/iu,
     );
   });
 

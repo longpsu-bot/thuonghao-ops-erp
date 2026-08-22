@@ -396,6 +396,7 @@ describe("Atlas staging dry-run and workflow", () => {
       "scripts/deploy-atlas-staging.mjs",
       "scripts/verify-atlas-staging.mjs",
       "scripts/install-atlas-staging-package.mjs",
+      "scripts/install-local-foundation-need-generation-contract.mjs",
       "scripts/certify-local-atlas-staging-packages.mjs",
       "scripts/atlas-staging-package.test.mjs",
     ];

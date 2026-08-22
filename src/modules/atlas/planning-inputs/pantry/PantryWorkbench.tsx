@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
-import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
+import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { planningSourceSaveOutcome } from "../planningInputsModel";
 import { Chip, Panel } from "../../WorkbenchComponents";
 import { pantryCompletionRequest, type PantryApi } from "./pantryApi";
@@ -9,6 +9,7 @@ import {
   pantryPreviewFromResult,
   pantryReadbackFromResult,
   pantryResultMessage,
+  pantryRowsForWrite,
   pantryRowsFromBatch,
   pantryWorkbenchFromResult,
   type PantryDraftRow,
@@ -242,7 +243,7 @@ export function PantryWorkbench({
       correlationId,
       weekStart,
       noAdditions,
-      rows as unknown as JsonValue[],
+      pantryRowsForWrite(rows),
     );
     setSaving(false);
     setPreview(pantryPreviewFromResult(result));
@@ -299,7 +300,7 @@ export function PantryWorkbench({
         no_additions_confirmed: noAdditions,
         source_signature: preview.source_signature,
         expected_source_signature: data.batch?.source_signature ?? null,
-        rows: rows as unknown as JsonValue[],
+        rows: pantryRowsForWrite(rows),
       },
     );
     await runCompletion(() => api.saveCompleted(request));

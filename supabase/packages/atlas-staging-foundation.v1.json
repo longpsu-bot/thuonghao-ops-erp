@@ -2,7 +2,7 @@
   "schema_version": 1,
   "package": {
     "name": "atlas-staging-foundation",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "classification": "FOUNDATION_REFERENCE",
     "environment": "staging",
     "project_ref": "rnzxmxiiqgtdevzregff"
@@ -49,7 +49,7 @@
       "purpose_code": "school_requested_supplement",
       "purpose_name_vi": "Bổ sung theo yêu cầu của trường",
       "purpose_description": "An identified School explicitly requested an additional Ingredient quantity beyond controlled Planning sources.",
-      "note_rule": "REQUIRED",
+      "note_rule": "OPTIONAL",
       "display_order": 10
     },
     {
@@ -57,7 +57,7 @@
       "purpose_code": "planning_identified_supplement",
       "purpose_name_vi": "Bổ sung do bộ phận Kế hoạch xác định",
       "purpose_description": "Planning identified a service-specific additional Ingredient quantity not represented by another controlled Planning source.",
-      "note_rule": "REQUIRED",
+      "note_rule": "OPTIONAL",
       "display_order": 20
     }
   ],
@@ -69,6 +69,19 @@
     "effective_from": "2026-01-01",
     "policy_revision_status": "ACTIVE",
     "evidence_timestamp": "2026-08-18T00:00:00Z"
+  },
+  "need_generation_calculation_contract": {
+    "need_generation_calculation_contract_id": "a1020000-0000-4000-8000-000000000230",
+    "need_generation_calculation_contract_revision_id": "a1020000-0000-4000-8000-000000000231",
+    "contract_code": "school_catering_proportional_per_basis",
+    "revision_number": 1,
+    "formula_kind": "STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS",
+    "quantity_precision": 20,
+    "quantity_scale": 6,
+    "factor_precision": 24,
+    "factor_scale": 12,
+    "final_coercion_mode": "POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO",
+    "evidence_timestamp": "2026-08-22T00:00:00Z"
   },
   "required_migration_catalogs": {
     "ingredient_type_codes": ["khac"],
