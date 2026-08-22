@@ -38,6 +38,8 @@ describe("Atlas Staging packages", () => {
   it("freezes the exact minimal Identity and Foundation manifests", () => {
     const identity = readAtlasStagingPackage("identity");
     const foundation = readAtlasStagingPackage("foundation");
+    expect(identity.package.version).toBe("1.0.0");
+    expect(foundation.package.version).toBe("1.1.0");
     expect(
       identity.role.capabilities.map((item) => item.capability_code),
     ).toEqual(IDENTITY_CAPABILITY_CODES);
@@ -47,6 +49,10 @@ describe("Atlas Staging packages", () => {
     expect(foundation.pantry_purposes.map((item) => item.purpose_code)).toEqual(
       ["school_requested_supplement", "planning_identified_supplement"],
     );
+    expect(foundation.pantry_purposes.map((item) => item.note_rule)).toEqual([
+      "OPTIONAL",
+      "OPTIONAL",
+    ]);
     expect(foundation.unit).toMatchObject({
       unit_code: "kg",
       dimension_code: "MASS",
@@ -96,6 +102,14 @@ describe("Atlas Staging packages", () => {
     foundation.pantry_purposes.push(foundation.pantry_purposes[0]);
     expect(() => validatePackageManifest("foundation", foundation)).toThrow(
       /exactly the two/i,
+    );
+
+    const legacyPurpose = structuredClone(
+      readAtlasStagingPackage("foundation"),
+    );
+    legacyPurpose.pantry_purposes[0].note_rule = "REQUIRED";
+    expect(() => validatePackageManifest("foundation", legacyPurpose)).toThrow(
+      /approved set/i,
     );
 
     const changedContract = structuredClone(
@@ -150,6 +164,15 @@ describe("Atlas Staging packages", () => {
     expect(verification).toContain(
       "ATLAS_STAGING_IDENTITY_CAPABILITY_VERIFICATION_MISMATCH",
     );
+    expect(verification).toContain(manifest.actor.actor_auth_subject_id);
+    expect(verification).toContain(
+      manifest.membership.actor_role_membership_id,
+    );
+    expect(verification).toContain(manifest.scopes[0].actor_scope_id);
+    for (const capability of manifest.role.capabilities) {
+      expect(verification).toContain(capability.role_capability_id);
+      expect(verification).toContain(capability.capability_code);
+    }
   });
 
   it("builds bounded Foundation reconciliation without rehearsal facts", () => {
@@ -178,7 +201,13 @@ describe("Atlas Staging packages", () => {
       "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_REVISION_MISMATCH",
     );
     expect(sql).not.toMatch(/\b(delete|truncate)\b/i);
-    expect(sql.match(/\bupdate\b/gi)).toHaveLength(1);
+    expect(sql.match(/\bupdate\b/gi)).toHaveLength(3);
+    expect(sql).toContain(
+      "ATLAS_STAGING_FOUNDATION_PANTRY_PURPOSE_TRANSITION_REFERENCED",
+    );
+    expect(sql).toMatch(
+      /set note_rule = 'OPTIONAL', version = version \+ 1, updated_at = greatest\(updated_at, transaction_timestamp\(\)\)/iu,
+    );
     expect(sql).not.toMatch(/update atlas_admin\.schools/iu);
     expect(sql).toMatch(
       /insert into atlas_admin\.schools \([^)]*default_student_portions, default_teacher_portions\) values \([^;]*, 0, 0\)/iu,
@@ -188,6 +217,10 @@ describe("Atlas Staging packages", () => {
     expect(existingSchoolMismatch).not.toContain("default_student_portions");
     expect(existingSchoolMismatch).not.toContain("default_teacher_portions");
     expect(schoolVerification).toContain("default_delivery_location_id");
+    expect(schoolVerification).toContain("school_name");
+    expect(schoolVerification).toContain("school_type_id");
+    expect(schoolVerification).toContain("display_order");
+    expect(schoolVerification).toContain("operational_notes");
     expect(schoolVerification).not.toContain("default_student_portions");
     expect(schoolVerification).not.toContain("default_teacher_portions");
     expect(sql).toMatch(
@@ -214,6 +247,26 @@ describe("Atlas Staging packages", () => {
     expect(verification).toContain(
       "final_coercion_mode = 'POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO'",
     );
+    for (const ownedField of [
+      "customer_name",
+      "location_name",
+      "address_text",
+      "delivery_instructions",
+      "timezone_name",
+      "school_type_name",
+      "unit_name",
+      "decimal_scale",
+      "created_by_actor_id",
+      "revision_number",
+      "effective_from",
+      "approved_by_actor_id",
+      "activated_by_actor_id",
+      "purpose_name_vi",
+      "purpose_description",
+      "note_rule = 'OPTIONAL'",
+    ]) {
+      expect(verification).toContain(ownedField);
+    }
   });
 
   it("uses the Foundation-owned contract in connected local Need Generation", () => {

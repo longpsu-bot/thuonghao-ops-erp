@@ -117,9 +117,56 @@ end;
 $atlas_staging_clean_baseline$;`;
 }
 
+function freshFoundationInstallProbeSql(manifest) {
+  const purposeIds = manifest.pantry_purposes
+    .map((purpose) => `'${purpose.pantry_need_purpose_id}'::uuid`)
+    .join(", ");
+  return `do $atlas_staging_fresh_foundation_probe$
+declare probe_rolled_back boolean := false;
+begin
+  begin
+    execute $atlas_staging_foundation_package_sql$
+${buildFoundationPackageSql(manifest)}
+$atlas_staging_foundation_package_sql$;
+    if (select count(*) from atlas_planning.pantry_need_purposes
+        where pantry_need_purpose_id in (${purposeIds})
+          and note_rule = 'OPTIONAL' and version = 1) <> 2 then
+      raise exception 'ATLAS_STAGING_FRESH_OPTIONAL_PURPOSE_MISMATCH';
+    end if;
+    raise exception 'ATLAS_STAGING_FRESH_FOUNDATION_PROBE_ROLLBACK';
+  exception when others then
+    if sqlerrm <> 'ATLAS_STAGING_FRESH_FOUNDATION_PROBE_ROLLBACK' then raise; end if;
+    probe_rolled_back := true;
+  end;
+  if not probe_rolled_back
+    or exists (select 1 from atlas_planning.pantry_need_purposes
+      where pantry_need_purpose_id in (${purposeIds})) then
+    raise exception 'ATLAS_STAGING_FRESH_FOUNDATION_PROBE_LEAKED';
+  end if;
+end;
+$atlas_staging_fresh_foundation_probe$;`;
+}
+
+function legacyPantryPurposesSql(manifest) {
+  const values = manifest.pantry_purposes
+    .map(
+      (purpose) =>
+        `('${purpose.pantry_need_purpose_id}'::uuid, '${purpose.purpose_code}', '${purpose.purpose_name_vi.replaceAll("'", "''")}', '${purpose.purpose_description.replaceAll("'", "''")}', 'REQUIRED', ${purpose.display_order})`,
+    )
+    .join(",\n    ");
+  return `insert into atlas_planning.pantry_need_purposes (
+    pantry_need_purpose_id, purpose_code, purpose_name_vi,
+    purpose_description, note_rule, display_order
+  ) values
+    ${values};`;
+}
+
 function initialFoundationStateSql(foundationManifest) {
   const schoolId = foundationManifest.school.school_id;
   const contract = foundationManifest.need_generation_calculation_contract;
+  const purposeIds = foundationManifest.pantry_purposes
+    .map((purpose) => `'${purpose.pantry_need_purpose_id}'::uuid`)
+    .join(", ");
   return `do $atlas_staging_initial_foundation_state$
 begin
   if (select count(*) from atlas_admin.schools
@@ -136,7 +183,10 @@ begin
           '${contract.need_generation_calculation_contract_id}'::uuid) <> 1
     or (select count(*) from atlas_planning.need_generation_calculation_contract_revisions
         where need_generation_calculation_contract_revision_id =
-          '${contract.need_generation_calculation_contract_revision_id}'::uuid) <> 1 then
+          '${contract.need_generation_calculation_contract_revision_id}'::uuid) <> 1
+    or (select count(*) from atlas_planning.pantry_need_purposes
+        where pantry_need_purpose_id in (${purposeIds})
+          and note_rule = 'OPTIONAL' and version = 2) <> 2 then
     raise exception 'ATLAS_STAGING_INITIAL_FOUNDATION_STATE_MISMATCH';
   end if;
 end;
@@ -208,6 +258,9 @@ function foundationReplayPreservationSql(identityManifest, foundationManifest) {
   const roleId = identityManifest.role.role_id;
   const schoolId = foundationManifest.school.school_id;
   const contract = foundationManifest.need_generation_calculation_contract;
+  const purposeIds = foundationManifest.pantry_purposes
+    .map((purpose) => `'${purpose.pantry_need_purpose_id}'::uuid`)
+    .join(", ");
   return `do $atlas_staging_foundation_replay_preservation$
 begin
   if (select count(*) from atlas_admin.schools
@@ -251,6 +304,9 @@ begin
           '${contract.need_generation_calculation_contract_revision_id}'::uuid) <> 1
     or (select count(*) from atlas_planning.need_generation_calculation_contracts) <> 1
     or (select count(*) from atlas_planning.need_generation_calculation_contract_revisions) <> 1
+    or (select count(*) from atlas_planning.pantry_need_purposes
+        where pantry_need_purpose_id in (${purposeIds})
+          and note_rule = 'OPTIONAL' and version = 2) <> 2
     or (select count(*) from atlas_planning.planning_input_sets) <> 0
     or (select count(*) from atlas_planning.need_generation_runs) <> 0
     or (select count(*) from atlas_planning.confirmed_need_batches) <> 0
@@ -465,6 +521,8 @@ export async function certifyLocalAtlasStagingPackages() {
   if (firstIdentity.replay || !replayIdentity.replay) {
     throw new Error("Identity package replay evidence is inconsistent.");
   }
+  runLocalSql(freshFoundationInstallProbeSql(foundation));
+  runLocalSql(legacyPantryPurposesSql(foundation));
   runLocalSql(conflictingCalculationContractSql(foundation, "root"));
   runLocalSql(conflictingCalculationContractSql(foundation, "revision"));
   runLocalSql(buildFoundationPackageSql(foundation));

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "package": {
     "name": "atlas-staging-foundation",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "classification": "FOUNDATION_REFERENCE",
     "environment": "staging",
     "project_ref": "rnzxmxiiqgtdevzregff"
@@ -49,7 +49,7 @@
       "purpose_code": "school_requested_supplement",
       "purpose_name_vi": "Bổ sung theo yêu cầu của trường",
       "purpose_description": "An identified School explicitly requested an additional Ingredient quantity beyond controlled Planning sources.",
-      "note_rule": "REQUIRED",
+      "note_rule": "OPTIONAL",
       "display_order": 10
     },
     {
@@ -57,7 +57,7 @@
       "purpose_code": "planning_identified_supplement",
       "purpose_name_vi": "Bổ sung do bộ phận Kế hoạch xác định",
       "purpose_description": "Planning identified a service-specific additional Ingredient quantity not represented by another controlled Planning source.",
-      "note_rule": "REQUIRED",
+      "note_rule": "OPTIONAL",
       "display_order": 20
     }
   ],

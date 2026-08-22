@@ -59,6 +59,13 @@ export type PantryDraftRow = {
   source_row_reference: string;
 };
 
+export function pantryRowsForWrite(rows: PantryDraftRow[]): JsonValue[] {
+  return rows.map((row) => {
+    const note = row.note.trim();
+    return { ...row, note: note === "" ? null : note } as JsonValue;
+  });
+}
+
 export type PantryLine = PantryDraftRow & {
   pantry_need_line_id: string;
   school_code: string;

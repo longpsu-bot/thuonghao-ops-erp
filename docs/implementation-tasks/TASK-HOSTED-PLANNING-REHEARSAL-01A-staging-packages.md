@@ -11,7 +11,7 @@
 This task implements two explicit, repository-owned, separately invokable packages:
 
 1. `atlas-staging-identity@1.0.0`
-2. `atlas-staging-foundation@1.0.0`
+2. `atlas-staging-foundation@1.1.0`
 
 They establish only the identity and prerequisite reference state needed for a later connected Admin-to-Confirmed-Need rehearsal. They are not migrations, seeds, React fixtures, Retool imports, or a synthetic rehearsal package. Repository migrations remain schema authority; the package manifests own only their named deterministic staging records.
 
@@ -56,8 +56,8 @@ The Foundation package manages these exact synthetic prerequisites:
 | School Type                          | `atlas_staging_school`                                                                   | Supplies the accepted School classification relationship.                                                        |
 | School                               | `atlas_staging_school`                                                                   | Provides the one Planning context; both portion defaults are initialized to zero for later operator preparation. |
 | Unit                                 | `kg` / MASS / scale 6                                                                    | Required authoritative quantity unit for Ingredients, recipes, Planning, and policy resolution.                  |
-| Pantry Purpose                       | `school_requested_supplement`                                                            | Accepted required-note Pantry classification.                                                                    |
-| Pantry Purpose                       | `planning_identified_supplement`                                                         | Accepted required-note Pantry classification.                                                                    |
+| Pantry Purpose                       | `school_requested_supplement`                                                            | Accepted optional-note Pantry classification.                                                                    |
+| Pantry Purpose                       | `planning_identified_supplement`                                                         | Accepted optional-note Pantry classification.                                                                    |
 | Planning policy                      | revision 1, step `0.010000` kg, effective `2026-01-01`, ACTIVE                           | Minimum accepted H1A quantity policy for Need Generation and Confirmed Need calculations.                        |
 | Need Generation calculation contract | `a1020000-0000-4000-8000-000000000230` / revision `a1020000-0000-4000-8000-000000000231` | Fixed approved H0A5b proportional calculation prerequisite required by normal Need Generation execution.         |
 
@@ -77,7 +77,7 @@ Purchase Handoff, supplier allocation, CMD-03, purchase orders, Warehouse, Dispa
 
 ## 5. Replay and conflict behavior
 
-Both manifests use deterministic UUIDs, version `1.0.0`, `environment: staging`, and the exact approved project reference. Reconciliation is insert-if-absent and exact-match-if-present:
+Both manifests use deterministic UUIDs, `environment: staging`, and the exact approved project reference. Identity remains version `1.0.0`; Foundation is version `1.1.0` because its managed calculation contract, School replay ownership, and Pantry note policy materially changed. Reconciliation is insert-if-absent and exact-match-if-present:
 
 - an identical package replay is accepted;
 - an identifier or natural-key collision fails closed;
@@ -85,6 +85,10 @@ Both manifests use deterministic UUIDs, version `1.0.0`, `environment: staging`,
 - the Identity runner updates only its one matching deterministic Auth user so the protected password can be rotated;
 - capabilities must already exist and be active; the package does not create capability catalog rows; and
 - no package path deletes, truncates, resets, or broadly updates Atlas history.
+
+Foundation `1.1.0` creates both managed Pantry purposes as `OPTIONAL`. It may update only the exact legacy Foundation `REQUIRED` version-1 rows, and only while neither live Pantry lines nor approval-snapshot lines reference them. The existing guard advances each row to version 2 and preserves its identity, code, creation evidence, and history. Current OPTIONAL rows replay without another update; any unexpected content, note rule, lineage, or reference state fails closed. Purpose row version is lineage evidence, not package identity.
+
+The read-only verifiers mirror reconciliation ownership. Identity verification proves deterministic Actor/Auth mapping/Role/membership/GLOBAL-scope identities, grant/reason evidence, all deterministic bindings, and exactly the reviewed 15 active capability codes. Foundation verification proves every managed Customer, Location, School Type, School, Unit, Pantry Purpose, H1A policy, and H0A5b calculation-contract field while deliberately excluding operator-owned School portions and transaction-generated School version/timestamps.
 
 ## 6. Target and checkout guards
 
@@ -107,14 +111,16 @@ Failures pass through the shared redactor for supplied protected values, JWT-lik
 1. resets all repository migrations locally with no seed;
 2. proves the identity/foundation baseline is empty;
 3. reconciles Identity, verifies exact state, and replays it;
-4. proves conflicting managed Need Generation contract root/revision state fails closed, then performs the first Foundation install and proves the School was created at `0` Student / `0` Teacher, version `1`;
+4. proves a fresh Foundation install creates OPTIONAL Pantry purposes at version 1, rolls that probe back, installs exact legacy REQUIRED version-1 purposes, proves conflicting calculation-contract state fails closed, then proves Foundation transitions those purposes once to OPTIONAL version 2 and creates the School at `0` Student / `0` Teacher, version `1`;
 5. uses the authoritative `RMVP-01.v2` bulk School-default workflow to change the managed School to `100` Student / `10` Teacher, version `2`, with its one legitimate domain/audit evidence pair;
 6. installs isolated local-only Weekly Menu, Attendance, and Pantry root fixtures solely to model the already-authorized hosted fact-preservation boundary, snapshots their complete rows, then replays Foundation twice;
 7. proves both replays preserve the complete School and source rows, School version `2`, and the existing School evidence count; preserve exactly one calculation-contract root/revision with exact deterministic binding; and create no Planning Input, Need Generation, Confirmed Need decision/release, Purchase Handoff, Procurement, Warehouse, or Dispatch fact;
 8. proves omitted capability bindings and anonymous `atlas_api` denial; and
 9. signs in through the browser key and requires a successful `get_school_master_data` response containing exactly the managed School.
 
-Focused unit tests additionally cover manifest authority, the exact H0A5b calculation contract and deterministic identities, target drift, live-target rejection through the shared guard, credential absence, insert-only Identity SQL, bounded Foundation SQL with the required H1A `DRAFT`-to-`ACTIVE` transition, calculation-contract root/revision conflict checks, Auth first-run/replay/conflict behavior, exact merged-main checkout, and process/network-free dry-run. The connected RMVP-04 and Planning Contract 01 browser verifiers install the calculation contract through the Foundation-owned reconciliation builder; the RMVP-04 browser fixture no longer inserts its own calculation contract.
+Focused unit tests additionally cover manifest authority, verifier parity, the exact H0A5b calculation contract and deterministic identities, Pantry transition guards, target drift, live-target rejection through the shared guard, credential absence, insert-only Identity SQL, bounded Foundation SQL with the required H1A `DRAFT`-to-`ACTIVE` transition, calculation-contract root/revision conflict checks, Auth first-run/replay/conflict behavior, exact merged-main checkout, and process/network-free dry-run. The React Pantry write adapter maps blank or whitespace-only notes to `null` and trims meaningful notes for both Preview and Save; backend REQUIRED and PROHIBITED validation remains unchanged.
+
+`pnpm local:planning-assembly:verify` is the one-reset assembled acceptance. Its only fixtures are synthetic operator input values and the temporary JSON baseline used to compare replay state; migrations and the Identity/Foundation packages create platform/reference prerequisites, and public APIs create School configuration, Admin facts, Recipe/BOM, completed Planning sources, Need Generation, and Confirmed Need decisions/release. It proves the #213 initial Recipe Save activation, #215 +30-second Attendance completion plus beyond-tolerance rejection, positive OPTIONAL Pantry null-note behavior, exact PostgreSQL calculation output, downstream exclusion, and a final Foundation replay that leaves all business and audit/history rows byte-for-byte unchanged.
 
 Repository-only evidence on 2026-08-18: clean local certification passed all 44 migrations plus Identity and Foundation first-install/replay, exact-state verification, anonymous denial, authenticated School read, and rehearsal-fact exclusion. The H1A lifecycle (50), H1A effectivity (44), platform security catalog (22), and School/Customer/Location foundation (56) pgTAP suites passed all 172 assertions on a separate fresh reset. The complete Vitest run passed 71/71 files and 561/561 tests, followed by a final 13/13 focused package pass including the split-query regression case. TypeScript, formatting, production build, and `git diff --check` passed. No hosted package command was executed.
 
