@@ -206,10 +206,12 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
   });
 
-  it("keeps a newly created Dish active so its initial Recipe can be copied and saved", async () => {
+  it("activates a newly created Dish through its single initial Recipe Save", async () => {
     const api = createReviewRecipeApi("ready");
     const createDish = vi.spyOn(api, "createDish");
     const saveRecipe = vi.spyOn(api, "saveRecipe");
+    const setDishLifecycle = vi.spyOn(api, "setDishLifecycle");
+    const releaseRecipe = vi.spyOn(api, "releaseRecipe");
     renderWorkbench(api);
     await openCreation();
 
@@ -242,6 +244,31 @@ describe("Recipe creation-and-lock workbench", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tạo" }));
     await waitFor(() => expect(saveRecipe).toHaveBeenCalledTimes(1));
+    expect(setDishLifecycle).not.toHaveBeenCalled();
+    expect(releaseRecipe).not.toHaveBeenCalled();
+
+    const result = await api.getWorkbench(
+      "00000000-0000-4000-8000-000000000001",
+      "00000000-0000-4000-8000-000000000002",
+    );
+    expect(result.kind).toBe("success");
+    if (result.kind !== "success") throw new Error("Expected review readback");
+    const workbench = (result.response.workbench ?? result.response) as {
+      dishes: Array<{
+        dish_code: string;
+        dish_status: string;
+        version: number;
+      }>;
+      selected_recipe: { business_status: string };
+    };
+    expect(
+      workbench.dishes.find((item) => item.dish_code === "mon-moi-03a"),
+    ).toMatchObject({
+      dish_status: "ACTIVE",
+      version: 2,
+    });
+    expect(workbench.selected_recipe.business_status).toBe("AVAILABLE");
+
     expect(
       screen.getByRole("tab", { name: "Tạo món & công thức", selected: true }),
     ).toBeInTheDocument();
