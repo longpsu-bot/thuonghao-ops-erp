@@ -42,6 +42,63 @@ function runLocalSql(statement) {
   }
 }
 
+function conflictingCalculationContractSql(manifest, conflictKind) {
+  const contract = manifest.need_generation_calculation_contract;
+  const actorId = manifest.identity_actor_id;
+  const rootId =
+    conflictKind === "root"
+      ? "c1020000-0000-4000-8000-000000000230"
+      : contract.need_generation_calculation_contract_id;
+  const revisionId =
+    conflictKind === "root"
+      ? "c1020000-0000-4000-8000-000000000231"
+      : contract.need_generation_calculation_contract_revision_id;
+  const approvedAtSql =
+    conflictKind === "revision"
+      ? `'${contract.evidence_timestamp}'::timestamptz + interval '1 second'`
+      : `'${contract.evidence_timestamp}'::timestamptz`;
+  const expectedDiagnostic =
+    conflictKind === "root"
+      ? "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_MISMATCH"
+      : "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_REVISION_MISMATCH";
+  return `do $atlas_staging_foundation_conflict_probe$
+declare conflict_rejected boolean := false;
+begin
+begin
+insert into atlas_planning.need_generation_calculation_contracts (
+  need_generation_calculation_contract_id, contract_code, current_revision_id,
+  version, created_at, updated_at
+) values (
+  '${rootId}'::uuid, '${contract.contract_code}', '${revisionId}'::uuid,
+  ${contract.revision_number}, '${contract.evidence_timestamp}'::timestamptz,
+  '${contract.evidence_timestamp}'::timestamptz
+);
+insert into atlas_planning.need_generation_calculation_contract_revisions (
+  need_generation_calculation_contract_revision_id,
+  need_generation_calculation_contract_id, revision_number, formula_kind,
+  quantity_precision, quantity_scale, factor_precision, factor_scale,
+  final_coercion_mode, approved_by_actor_id, approved_at
+) values (
+  '${revisionId}'::uuid, '${rootId}'::uuid, ${contract.revision_number},
+  '${contract.formula_kind}', ${contract.quantity_precision},
+  ${contract.quantity_scale}, ${contract.factor_precision},
+  ${contract.factor_scale}, '${contract.final_coercion_mode}',
+  '${actorId}'::uuid, ${approvedAtSql}
+);
+execute $atlas_staging_foundation_package_sql$
+${buildFoundationPackageSql(manifest)}
+$atlas_staging_foundation_package_sql$;
+exception when others then
+  if sqlerrm <> '${expectedDiagnostic}' then raise; end if;
+  conflict_rejected := true;
+end;
+if not conflict_rejected then
+  raise exception 'ATLAS_STAGING_FOUNDATION_CONFLICT_WAS_NOT_REJECTED';
+end if;
+end;
+$atlas_staging_foundation_conflict_probe$;`;
+}
+
 function cleanBaselineSql() {
   return `do $atlas_staging_clean_baseline$
 begin
@@ -51,7 +108,9 @@ begin
     or (select count(*) from atlas_admin.schools) <> 0
     or (select count(*) from atlas_admin.units) <> 0
     or (select count(*) from atlas_planning.pantry_need_purposes) <> 0
-    or (select count(*) from atlas_planning.planning_quantity_policies) <> 0 then
+    or (select count(*) from atlas_planning.planning_quantity_policies) <> 0
+    or (select count(*) from atlas_planning.need_generation_calculation_contracts) <> 0
+    or (select count(*) from atlas_planning.need_generation_calculation_contract_revisions) <> 0 then
     raise exception 'ATLAS_STAGING_LOCAL_BASELINE_NOT_CLEAN';
   end if;
 end;
@@ -225,6 +284,8 @@ export async function certifyLocalAtlasStagingPackages() {
   if (firstIdentity.replay || !replayIdentity.replay) {
     throw new Error("Identity package replay evidence is inconsistent.");
   }
+  runLocalSql(conflictingCalculationContractSql(foundation, "root"));
+  runLocalSql(conflictingCalculationContractSql(foundation, "revision"));
   runLocalSql(buildFoundationPackageSql(foundation));
   runLocalSql(buildFoundationVerificationSql(foundation));
   runLocalSql(buildFoundationPackageSql(foundation));

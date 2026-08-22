@@ -4,6 +4,7 @@ import {
   readLocalSupabaseStatus,
   runPinnedSupabase,
 } from "./local-supabase-status.mjs";
+import { installLocalFoundationNeedGenerationContract } from "./install-local-foundation-need-generation-contract.mjs";
 
 const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
@@ -356,6 +357,7 @@ async function approvePositivePantry(
 }
 
 async function main() {
+  installLocalFoundationNeedGenerationContract();
   installLocalFixture("../supabase/local/pantry_02_purpose_fixture.sql");
   installLocalFixture("../supabase/local/rmvp_04_browser_fixture.sql");
   const { apiUrl, browserKey } = readLocalSupabaseStatus();

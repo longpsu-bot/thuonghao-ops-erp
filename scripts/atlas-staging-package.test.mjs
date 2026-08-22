@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   IDENTITY_CAPABILITY_CODES,
   buildFoundationPackageSql,
+  buildFoundationNeedGenerationContractSql,
   buildFoundationVerificationSql,
   buildIdentityPackageSql,
   buildIdentityVerificationSql,
@@ -51,6 +52,21 @@ describe("Atlas Staging packages", () => {
       dimension_code: "MASS",
     });
     expect(foundation.planning_quantity_policy.planning_step).toBe("0.010000");
+    expect(foundation.need_generation_calculation_contract).toEqual({
+      need_generation_calculation_contract_id:
+        "a1020000-0000-4000-8000-000000000230",
+      need_generation_calculation_contract_revision_id:
+        "a1020000-0000-4000-8000-000000000231",
+      contract_code: "school_catering_proportional_per_basis",
+      revision_number: 1,
+      formula_kind: "STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS",
+      quantity_precision: 20,
+      quantity_scale: 6,
+      factor_precision: 24,
+      factor_scale: 12,
+      final_coercion_mode: "POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO",
+      evidence_timestamp: "2026-08-22T00:00:00Z",
+    });
   });
 
   it("contains secret names but no credential values in either manifest", () => {
@@ -77,6 +93,14 @@ describe("Atlas Staging packages", () => {
     expect(() => validatePackageManifest("foundation", foundation)).toThrow(
       /exactly the two/i,
     );
+
+    const changedContract = structuredClone(
+      readAtlasStagingPackage("foundation"),
+    );
+    changedContract.need_generation_calculation_contract.quantity_scale = 5;
+    expect(() =>
+      validatePackageManifest("foundation", changedContract),
+    ).toThrow(/accepted H0A5b/i);
     expect(() =>
       planAtlasStagingPackage({
         kind: "foundation",
@@ -132,6 +156,17 @@ describe("Atlas Staging packages", () => {
     expect(sql).toContain("atlas_admin.schools");
     expect(sql).toContain("atlas_planning.pantry_need_purposes");
     expect(sql).toContain("atlas_planning.planning_quantity_policy_revisions");
+    expect(sql).toContain(
+      "atlas_planning.need_generation_calculation_contract_revisions",
+    );
+    expect(sql).toContain("a1020000-0000-4000-8000-000000000230");
+    expect(sql).toContain("a1020000-0000-4000-8000-000000000231");
+    expect(sql).toContain(
+      "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_MISMATCH",
+    );
+    expect(sql).toContain(
+      "ATLAS_STAGING_FOUNDATION_NEED_GENERATION_CONTRACT_REVISION_MISMATCH",
+    );
     expect(sql).not.toMatch(/\b(delete|truncate)\b/i);
     expect(sql.match(/\bupdate\b/gi)).toHaveLength(1);
     expect(sql).toMatch(
@@ -148,6 +183,36 @@ describe("Atlas Staging packages", () => {
     );
     expect(verification).toContain(
       "ATLAS_STAGING_FOUNDATION_VERIFICATION_MISMATCH",
+    );
+    expect(verification).toContain(
+      "formula_kind = 'STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS'",
+    );
+    expect(verification).toContain(
+      "final_coercion_mode = 'POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO'",
+    );
+  });
+
+  it("uses the Foundation-owned contract in connected local Need Generation", () => {
+    const manifest = readAtlasStagingPackage("foundation");
+    const sql = buildFoundationNeedGenerationContractSql(manifest);
+    const browserFixture = readFileSync(
+      "supabase/local/rmvp_04_browser_fixture.sql",
+      "utf8",
+    );
+    for (const verifier of [
+      "scripts/verify-local-rmvp04-need-generation.mjs",
+      "scripts/verify-local-planning-contract-01.mjs",
+    ]) {
+      expect(readFileSync(verifier, "utf8")).toContain(
+        "installLocalFoundationNeedGenerationContract();",
+      );
+    }
+    expect(sql).toContain(
+      "$atlas_staging_foundation_need_generation_contract$",
+    );
+    expect(sql).toContain(manifest.identity_actor_id);
+    expect(browserFixture).not.toMatch(
+      /insert into atlas_planning\.need_generation_calculation_contracts/i,
     );
   });
 

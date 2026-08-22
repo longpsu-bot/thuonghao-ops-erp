@@ -93,7 +93,7 @@ pnpm atlas:staging:identity:install -- --commit-sha <exact-merged-main-sha>
 pnpm atlas:staging:foundation:install -- --commit-sha <exact-merged-main-sha>
 ```
 
-Both commands require explicit staging configuration, an exact URL/project-reference match, the fixed approved Atlas Staging reference, protected credentials, exact `HEAD`, containment in `origin/main`, and a clean worktree. The Identity command reconciles only its deterministic Auth user before insert-only database reconciliation. Matching rows replay safely; an identifier, natural-key, content, capability, or scope mismatch fails closed. The Foundation command is separately invokable, requires the managed Actor, and has the same matching-row-or-fail behavior; its deterministic H1A policy revision is inserted as `DRAFT` and activated with complete evidence in the same transaction, as required by the approved lifecycle. Neither command deploys migrations or installs transactional rehearsal facts. `--dry-run` plans the qualified package and performs no process or network execution.
+Both commands require explicit staging configuration, an exact URL/project-reference match, the fixed approved Atlas Staging reference, protected credentials, exact `HEAD`, containment in `origin/main`, and a clean worktree. The Identity command reconciles only its deterministic Auth user before insert-only database reconciliation. Matching rows replay safely; an identifier, natural-key, content, capability, or scope mismatch fails closed. The Foundation command is separately invokable, requires the managed Actor, and has the same matching-row-or-fail behavior; its deterministic H1A policy revision is inserted as `DRAFT` and activated with complete evidence in the same transaction, as required by the approved lifecycle. Foundation also owns the one fixed H0A5b Need Generation calculation-contract root/revision, including exact formula, numeric precision/scales, PostgreSQL coercion, current-revision binding, deterministic approval evidence, and fail-closed root/revision conflicts. Neither command deploys migrations or installs transactional rehearsal facts. `--dry-run` plans the qualified package and performs no process or network execution.
 
 For local-only certification, start local Supabase and supply an `@local.test` email and local-only password through the two protected test variables, then run:
 
@@ -101,7 +101,7 @@ For local-only certification, start local Supabase and supply an `@local.test` e
 pnpm local:staging-packages:certify
 ```
 
-The command resets the local database without a seed, runs Identity and Foundation first-install plus replay, verifies exact managed state and omitted capabilities, checks that operator-authored/downstream facts remain absent, proves anonymous denial, and proves the approved authenticated School read.
+The command resets the local database without a seed, runs Identity, proves conflicting managed Need Generation calculation root/revision state fails closed, runs Foundation first-install plus replay, verifies exact managed state and omitted capabilities, checks that operator-authored/downstream facts remain absent, proves anonymous denial, and proves the approved authenticated School read.
 
 ## 6. Read-only hosted acceptance
 
