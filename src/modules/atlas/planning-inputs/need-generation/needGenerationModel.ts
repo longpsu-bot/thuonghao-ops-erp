@@ -1,4 +1,5 @@
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
+import { planningClockSkewMessage } from "../planningInputsModel";
 
 export type NeedGenerationIssue = {
   need_generation_issue_id: string;
@@ -197,6 +198,8 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
     return "Chưa xác định kết quả thao tác. Atlas không tự gửi lại; hãy tải lại dữ liệu mới nhất trước khi thực hiện hành động khác.";
   if (result.kind === "client_error")
     return "Ứng dụng không thể thực hiện yêu cầu tạo nhu cầu này.";
+  const clockSkewMessage = planningClockSkewMessage(result);
+  if (clockSkewMessage) return clockSkewMessage;
   const messages: Record<string, string> = {
     CAPABILITY_DENIED: "Bạn không có quyền tạo hoặc cập nhật nhu cầu.",
     AUTH_SUBJECT_MISMATCH:

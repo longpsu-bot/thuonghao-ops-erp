@@ -227,4 +227,9 @@ PLANNING-CONTRACT-01 adds two normal completion commands without redefining any 
 
 Both use the existing Atlas command envelope with `contract_version: "RMVP-03A.v2"`, one top-level receipt, exact replay, changed-reuse conflict, expected aggregate version, and expected/source signature checks. Their payloads retain the corresponding v1 Save fields. A material Save returns `COMPLETED`; identical already-completed content returns `NO_CHANGE`. Historical snapshots and stable line identities are retained.
 
+The public v2 `requested_at` records client intent and permits no more than 60
+seconds of positive clock skew. Once accepted, the internal Save, Validate,
+Approve, and correction commands use PostgreSQL transaction time. The v1
+command timestamp contract is unchanged.
+
 The backend may compose the established v1 implementation internally, but a browser invokes only the one consequential Save. It must not chain Save Draft, Validate, and Approve. Existing v1 functions and grants remain callable during the UI coexistence window. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).

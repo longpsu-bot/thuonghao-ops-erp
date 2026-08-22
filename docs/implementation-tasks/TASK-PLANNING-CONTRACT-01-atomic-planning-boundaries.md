@@ -79,6 +79,26 @@ The focused pgTAP suite proves source-specific authorization, atomic completion,
 
 Focused TypeScript tests prove exact registry/version/request construction, one RPC per new adapter call, safe errors, stale handling, transport uncertainty, and no automatic write retry or browser chaining. `scripts/verify-local-planning-contract-01.mjs` uses a publishable browser key and signed synthetic human for all application behavior; administrative fixture provisioning uses only existing disposable local conventions.
 
+## Issue #215 bounded command-clock correction
+
+Planning v2 treats `requested_at` as client-intent evidence and accepts at most
+60 seconds of positive client/server clock skew. The tolerance exists only in
+`planning_contract_01_validate_command`; malformed timestamps and timestamps
+more than 60 seconds ahead of the PostgreSQL transaction clock remain
+`VALIDATION_FAILED` with `requested_at` field evidence.
+
+After the public command passes authentication, authorization, envelope
+validation, and receipt handling, every server-derived RMVP-03A, PANTRY-02,
+RMVP-03B, RMVP-04, and PA-06E-H0C child request uses the authoritative
+transaction timestamp. Child validators therefore do not repeatedly depend on
+the browser clock. Public v1 commands retain their strict non-future semantics,
+and D-037 Confirmed Need v2 remains unchanged.
+
+The correction is forward-only and rewrites no data. Before deployment it may
+be removed with the undeployed migration. After use, rollback requires another
+reviewed forward migration; receipts, source snapshots, generation releases,
+Confirmed Need materialization, events, and audit evidence must be preserved.
+
 ## Explicit exclusions
 
 No hosted Supabase, Retool, OPS v1/v2, production data, UI workbench, RMVP-05/06/07 semantics, Purchase Handoff, Procurement, Warehouse, Dispatch, generic workflow engine, queue, service, dependency, or deployment is changed.

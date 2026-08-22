@@ -180,6 +180,19 @@ describe("RMVP-04 authoritative model", () => {
     ).toMatch(/quy trình điều chỉnh riêng/);
     expect(
       needGenerationResultMessage({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "VALIDATION_FAILED",
+          safe_message: "safe",
+          field_errors: [
+            { field: "requested_at", message: "bounded clock skew" },
+          ],
+        },
+      }),
+    ).toMatch(/Thời gian trên thiết bị/);
+    expect(
+      needGenerationResultMessage({
         kind: "transport_error",
         diagnostic: { code: "NETWORK_FAILURE", safeMessage: "safe" },
       }),

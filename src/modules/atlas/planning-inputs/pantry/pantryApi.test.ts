@@ -187,6 +187,19 @@ describe("PANTRY-02 API adapter", () => {
   it("preserves authentication and uncertain-write guidance", () => {
     expect(
       pantryResultMessage({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "VALIDATION_FAILED",
+          safe_message: "safe",
+          field_errors: [
+            { field: "requested_at", message: "bounded clock skew" },
+          ],
+        },
+      }),
+    ).toMatch(/Thời gian trên thiết bị/);
+    expect(
+      pantryResultMessage({
         kind: "auth_error",
         diagnostic: { code: "SESSION_EXPIRED", safeMessage: "safe" },
       }),

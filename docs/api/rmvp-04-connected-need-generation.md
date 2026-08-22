@@ -251,6 +251,13 @@ When current immutable source triples already match the current Need input snaps
 
 The private materialization helper is shared by this command and the unchanged public `PA-06E-H0C.v1` wrapper; the algorithm is not duplicated. All five `RMVP-04.v1` functions and the public CMD-15 wrapper remain callable during coexistence. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
 
+The public v2 `requested_at` records client intent and permits no more than 60
+seconds of positive clock skew. After it passes the top-level boundary, every
+server-derived readiness, generation lifecycle, and Confirmed Need
+materialization request uses PostgreSQL transaction time. RMVP-03B.v1,
+RMVP-04.v1, PA-06E-H0C.v1, and D-037 timestamp semantics remain unchanged for
+independent public calls.
+
 ## 14. Selective confirmation continuity
 
 PLANNING-CONTRACT-02B keeps the `RMVP-04.v2` request and public function unchanged. On correction, the existing private materializer compares direct predecessor/successor Confirmed Need facts and returns additive backend-owned `result_counts`: `carried_forward_count`, `needs_review_count`, `changed_count`, `new_count`, and `removed_count` alongside the established materialization counts. `removed_count` is the number of distinct predecessor Confirmed Need business identities absent from the exact direct successor current set; it does not depend on whether a removed identity had a human decision or therefore produced invalidation evidence.

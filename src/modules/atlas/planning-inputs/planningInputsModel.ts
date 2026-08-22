@@ -259,6 +259,19 @@ export function planningSourceSaveOutcome(
   };
 }
 
+export function planningClockSkewMessage(result: AtlasRpcResult) {
+  if (
+    result.kind !== "backend_error" ||
+    result.error.error_code !== "VALIDATION_FAILED" ||
+    !result.error.field_errors?.some(
+      (error) => isRecord(error) && error.field === "requested_at",
+    )
+  ) {
+    return null;
+  }
+  return "Thời gian trên thiết bị có thể chưa khớp. Hãy kiểm tra đồng hồ, tải lại dữ liệu rồi thử lại.";
+}
+
 export function planningResultMessage(result: AtlasRpcResult): string {
   if (result.kind === "success") {
     const backendMessage =
@@ -276,6 +289,8 @@ export function planningResultMessage(result: AtlasRpcResult): string {
     return "Không thể kết nối với Atlas; không giả định thao tác đã thành công.";
   if (result.kind === "client_error")
     return "Thao tác chưa có trong danh mục API đã duyệt.";
+  const clockSkewMessage = planningClockSkewMessage(result);
+  if (clockSkewMessage) return clockSkewMessage;
   const messages: Record<string, string> = {
     CAPABILITY_DENIED: "Bạn không có quyền thực hiện thao tác này.",
     STALE_VERSION: "Dữ liệu đã thay đổi. Hãy tải lại trước khi lưu.",
