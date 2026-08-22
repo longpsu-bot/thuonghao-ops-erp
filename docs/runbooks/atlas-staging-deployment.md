@@ -81,7 +81,7 @@ pnpm atlas:staging:verify -- --dry-run
 HOSTED-PLANNING-REHEARSAL-01A defines two repository-owned packages and does not install either one as part of its implementation PR.
 
 - **Identity `atlas-staging-identity@1.0.0`** manages one protected synthetic Auth user, one active Actor and Auth mapping, one minimal Admin/Planning role with the 15 reviewed current capabilities, one active membership, and one reviewed `GLOBAL` scope required by current connected API authorization.
-- **Foundation `atlas-staging-foundation@1.0.0`** manages one synthetic School-catering Customer, one default Delivery Location, one School Type, one School with zero portion defaults, one `kg` Unit, the two accepted Pantry purposes, and one active 0.01 kg Planning quantity-policy revision.
+- **Foundation `atlas-staging-foundation@1.0.0`** manages one synthetic School-catering Customer, one default Delivery Location, one School Type, one School whose creation defaults are zero Student/Teacher portions, one `kg` Unit, the two accepted Pantry purposes, and one active 0.01 kg Planning quantity-policy revision. After School creation, Student/Teacher defaults are operator-owned state: Foundation replay preserves their current values and School version and does not create School audit/business evidence.
 - **Synthetic rehearsal** contains synthetic transactional scenarios only through Confirmed Need release.
 
 Ingredient, Supplier, ingredient-supplier priority, Dish, Recipe/BOM, portion-default preparation, Weekly Menu, Attendance, Pantry batches, Need Generation, and Confirmed Need decisions remain rehearsal-authored through connected operator workflows. Each package is separately reviewed, environment-qualified, deterministic, and explicitly invoked. No all-purpose seed is permitted. Copied Retool payloads and unapproved production data are prohibited. Supplier allocation, CMD-03, Purchase Handoff, purchase orders, Warehouse facts, and Dispatch facts are prohibited.
@@ -101,7 +101,7 @@ For local-only certification, start local Supabase and supply an `@local.test` e
 pnpm local:staging-packages:certify
 ```
 
-The command resets the local database without a seed, runs Identity, proves conflicting managed Need Generation calculation root/revision state fails closed, runs Foundation first-install plus replay, verifies exact managed state and omitted capabilities, checks that operator-authored/downstream facts remain absent, proves anonymous denial, and proves the approved authenticated School read.
+The command resets the local database without a seed, runs Identity, proves conflicting managed Need Generation calculation root/revision state fails closed, and proves Foundation first-install creates the School at `0/0`. It then changes the School to `100/10` through the authoritative `RMVP-01.v2` workflow, installs isolated local-only Weekly Menu/Attendance/Pantry preservation fixtures, and replays Foundation twice. Both replays must preserve the complete School and source rows, School version `2`, and existing School audit/domain evidence; keep exactly one exact calculation-contract root/revision; create no downstream facts; preserve omitted capabilities; prove anonymous denial; and prove the approved authenticated School read.
 
 ## 6. Read-only hosted acceptance
 

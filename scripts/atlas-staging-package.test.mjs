@@ -52,6 +52,10 @@ describe("Atlas Staging packages", () => {
       dimension_code: "MASS",
     });
     expect(foundation.planning_quantity_policy.planning_step).toBe("0.010000");
+    expect(foundation.school).toMatchObject({
+      default_student_portions: 0,
+      default_teacher_portions: 0,
+    });
     expect(foundation.need_generation_calculation_contract).toEqual({
       need_generation_calculation_contract_id:
         "a1020000-0000-4000-8000-000000000230",
@@ -152,6 +156,12 @@ describe("Atlas Staging packages", () => {
     const manifest = readAtlasStagingPackage("foundation");
     const sql = buildFoundationPackageSql(manifest);
     const verification = buildFoundationVerificationSql(manifest);
+    const existingSchoolMismatch = sql.match(
+      /if exists \(select 1 from atlas_admin\.schools[\s\S]*?ATLAS_STAGING_FOUNDATION_SCHOOL_MISMATCH/iu,
+    )?.[0];
+    const schoolVerification = verification.match(
+      /select count\(\*\) from atlas_admin\.schools[\s\S]*?<> 1/iu,
+    )?.[0];
     expect(sql).toContain("atlas_admin.customers");
     expect(sql).toContain("atlas_admin.schools");
     expect(sql).toContain("atlas_planning.pantry_need_purposes");
@@ -169,6 +179,17 @@ describe("Atlas Staging packages", () => {
     );
     expect(sql).not.toMatch(/\b(delete|truncate)\b/i);
     expect(sql.match(/\bupdate\b/gi)).toHaveLength(1);
+    expect(sql).not.toMatch(/update atlas_admin\.schools/iu);
+    expect(sql).toMatch(
+      /insert into atlas_admin\.schools \([^)]*default_student_portions, default_teacher_portions\) values \([^;]*, 0, 0\)/iu,
+    );
+    expect(existingSchoolMismatch).toContain("school_name");
+    expect(existingSchoolMismatch).toContain("operational_notes");
+    expect(existingSchoolMismatch).not.toContain("default_student_portions");
+    expect(existingSchoolMismatch).not.toContain("default_teacher_portions");
+    expect(schoolVerification).toContain("default_delivery_location_id");
+    expect(schoolVerification).not.toContain("default_student_portions");
+    expect(schoolVerification).not.toContain("default_teacher_portions");
     expect(sql).toMatch(
       /insert into atlas_planning\.planning_quantity_policy_revisions[\s\S]+?'DRAFT'/i,
     );
@@ -180,6 +201,9 @@ describe("Atlas Staging packages", () => {
     );
     expect(sql).not.toMatch(
       /insert into atlas_planning\.(weekly_menus|attendance_batches|pantry_need_batches|need_generation_runs|confirmed_need_batches)/i,
+    );
+    expect(sql).not.toMatch(
+      /insert into atlas_(procurement|evidence|warehouse|dispatch)\./iu,
     );
     expect(verification).toContain(
       "ATLAS_STAGING_FOUNDATION_VERIFICATION_MISMATCH",
@@ -199,6 +223,10 @@ describe("Atlas Staging packages", () => {
       "supabase/local/rmvp_04_browser_fixture.sql",
       "utf8",
     );
+    const pantryPurposeFixture = readFileSync(
+      "supabase/local/pantry_02_purpose_fixture.sql",
+      "utf8",
+    );
     for (const verifier of [
       "scripts/verify-local-rmvp04-need-generation.mjs",
       "scripts/verify-local-planning-contract-01.mjs",
@@ -213,6 +241,10 @@ describe("Atlas Staging packages", () => {
     expect(sql).toContain(manifest.identity_actor_id);
     expect(browserFixture).not.toMatch(
       /insert into atlas_planning\.need_generation_calculation_contracts/i,
+    );
+    expect(pantryPurposeFixture).toMatch(/on conflict do nothing/iu);
+    expect(pantryPurposeFixture).not.toMatch(
+      /update\s+atlas_planning\.pantry_need_purposes/iu,
     );
   });
 

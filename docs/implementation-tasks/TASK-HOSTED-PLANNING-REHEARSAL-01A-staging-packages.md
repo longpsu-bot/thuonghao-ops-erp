@@ -49,17 +49,17 @@ The server-only `ATLAS_STAGING_SUPABASE_SECRET_KEY` is used only by the package 
 
 The Foundation package manages these exact synthetic prerequisites:
 
-| Record                               | Deterministic identity                                                                   | Reason                                                                                                   |
-| ------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Customer                             | `atlas-staging-school-customer`                                                          | Owns the synthetic School and Delivery Location under the accepted School-catering model.                |
-| Delivery Location                    | `atlas-staging-kitchen`                                                                  | Required default location for the School and scoped Planning context.                                    |
-| School Type                          | `atlas_staging_school`                                                                   | Supplies the accepted School classification relationship.                                                |
-| School                               | `atlas_staging_school`                                                                   | Provides the one Planning context; both portion defaults remain zero for later operator preparation.     |
-| Unit                                 | `kg` / MASS / scale 6                                                                    | Required authoritative quantity unit for Ingredients, recipes, Planning, and policy resolution.          |
-| Pantry Purpose                       | `school_requested_supplement`                                                            | Accepted required-note Pantry classification.                                                            |
-| Pantry Purpose                       | `planning_identified_supplement`                                                         | Accepted required-note Pantry classification.                                                            |
-| Planning policy                      | revision 1, step `0.010000` kg, effective `2026-01-01`, ACTIVE                           | Minimum accepted H1A quantity policy for Need Generation and Confirmed Need calculations.                |
-| Need Generation calculation contract | `a1020000-0000-4000-8000-000000000230` / revision `a1020000-0000-4000-8000-000000000231` | Fixed approved H0A5b proportional calculation prerequisite required by normal Need Generation execution. |
+| Record                               | Deterministic identity                                                                   | Reason                                                                                                           |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Customer                             | `atlas-staging-school-customer`                                                          | Owns the synthetic School and Delivery Location under the accepted School-catering model.                        |
+| Delivery Location                    | `atlas-staging-kitchen`                                                                  | Required default location for the School and scoped Planning context.                                            |
+| School Type                          | `atlas_staging_school`                                                                   | Supplies the accepted School classification relationship.                                                        |
+| School                               | `atlas_staging_school`                                                                   | Provides the one Planning context; both portion defaults are initialized to zero for later operator preparation. |
+| Unit                                 | `kg` / MASS / scale 6                                                                    | Required authoritative quantity unit for Ingredients, recipes, Planning, and policy resolution.                  |
+| Pantry Purpose                       | `school_requested_supplement`                                                            | Accepted required-note Pantry classification.                                                                    |
+| Pantry Purpose                       | `planning_identified_supplement`                                                         | Accepted required-note Pantry classification.                                                                    |
+| Planning policy                      | revision 1, step `0.010000` kg, effective `2026-01-01`, ACTIVE                           | Minimum accepted H1A quantity policy for Need Generation and Confirmed Need calculations.                        |
+| Need Generation calculation contract | `a1020000-0000-4000-8000-000000000230` / revision `a1020000-0000-4000-8000-000000000231` | Fixed approved H0A5b proportional calculation prerequisite required by normal Need Generation execution.         |
 
 The package also verifies, but does not own or duplicate, the migration-owned active catalog codes `khac`, `daily_other`, and `savory`.
 
@@ -69,7 +69,7 @@ The Need Generation calculation root and immutable revision are Foundation-manag
 
 ## 4. Foundation reference versus rehearsal-authored facts
 
-**Foundation reference:** the Customer/School/default-location backbone, School Type, `kg` Unit, two accepted Pantry purposes, active H1A Planning policy, and the fixed H0A5b Need Generation calculation-contract root/revision above.
+**Foundation reference:** the Customer/School/default-location backbone, School Type, `kg` Unit, two accepted Pantry purposes, active H1A Planning policy, and the fixed H0A5b Need Generation calculation-contract root/revision above. For a missing School, Foundation supplies the initial `0` Student / `0` Teacher portion defaults. After creation, those two fields are operator-owned School business state through `RMVP-01.v1`/`RMVP-01.v2`; Foundation replay neither verifies them against the initial values nor updates them, advances the School version, or creates School change evidence.
 
 **Rehearsal-authored business facts:** Ingredient, Supplier, ingredient-supplier priority, Dish, Recipe/BOM, non-zero School portion defaults, Weekly Menu, Attendance, Pantry batch, Planning Input evaluation, Need Generation run, and Confirmed Need decisions/release. These remain absent so, after package installation and hosted verification establish the prerequisite state and ATLAS-STAGING-UI-ACCESS-01 publishes the controlled connected frontend, HOSTED-PLANNING-REHEARSAL-01B can prove the connected operator workflows instead of consuming a pre-baked success path.
 
@@ -81,7 +81,7 @@ Both manifests use deterministic UUIDs, version `1.0.0`, `environment: staging`,
 
 - an identical package replay is accepted;
 - an identifier or natural-key collision fails closed;
-- a managed-row content, status, membership, capability, or scope mismatch fails closed;
+- a managed Foundation-owned row content, status, membership, capability, or scope mismatch fails closed; an existing School's operator-owned Student/Teacher portion defaults are deliberately excluded from Foundation exact-match checks;
 - the Identity runner updates only its one matching deterministic Auth user so the protected password can be rotated;
 - capabilities must already exist and be active; the package does not create capability catalog rows; and
 - no package path deletes, truncates, resets, or broadly updates Atlas history.
@@ -107,10 +107,12 @@ Failures pass through the shared redactor for supplied protected values, JWT-lik
 1. resets all repository migrations locally with no seed;
 2. proves the identity/foundation baseline is empty;
 3. reconciles Identity, verifies exact state, and replays it;
-4. proves conflicting managed Need Generation contract root/revision state fails closed, then reconciles Foundation, verifies exact state, and replays it;
-5. proves omitted capability bindings and absence of operator-authored/downstream facts;
-6. proves anonymous `atlas_api` denial; and
-7. signs in through the browser key and requires a successful `get_school_master_data` response containing exactly the managed School.
+4. proves conflicting managed Need Generation contract root/revision state fails closed, then performs the first Foundation install and proves the School was created at `0` Student / `0` Teacher, version `1`;
+5. uses the authoritative `RMVP-01.v2` bulk School-default workflow to change the managed School to `100` Student / `10` Teacher, version `2`, with its one legitimate domain/audit evidence pair;
+6. installs isolated local-only Weekly Menu, Attendance, and Pantry root fixtures solely to model the already-authorized hosted fact-preservation boundary, snapshots their complete rows, then replays Foundation twice;
+7. proves both replays preserve the complete School and source rows, School version `2`, and the existing School evidence count; preserve exactly one calculation-contract root/revision with exact deterministic binding; and create no Planning Input, Need Generation, Confirmed Need decision/release, Purchase Handoff, Procurement, Warehouse, or Dispatch fact;
+8. proves omitted capability bindings and anonymous `atlas_api` denial; and
+9. signs in through the browser key and requires a successful `get_school_master_data` response containing exactly the managed School.
 
 Focused unit tests additionally cover manifest authority, the exact H0A5b calculation contract and deterministic identities, target drift, live-target rejection through the shared guard, credential absence, insert-only Identity SQL, bounded Foundation SQL with the required H1A `DRAFT`-to-`ACTIVE` transition, calculation-contract root/revision conflict checks, Auth first-run/replay/conflict behavior, exact merged-main checkout, and process/network-free dry-run. The connected RMVP-04 and Planning Contract 01 browser verifiers install the calculation contract through the Foundation-owned reconciliation builder; the RMVP-04 browser fixture no longer inserts its own calculation contract.
 
