@@ -65,7 +65,10 @@ import {
 import { PantryWorkbench } from "./pantry/PantryWorkbench";
 import type { PantryApi } from "./pantry/pantryApi";
 import { createPlanningInputReadinessApi } from "./readiness/planningInputReadinessApi";
-import { planningInputPreflightFromResult } from "./readiness/planningInputReadinessModel";
+import {
+  planningInputPreflightFromResult,
+  type PlanningInputPreflightData,
+} from "./readiness/planningInputReadinessModel";
 import { NeedGenerationWorkbench } from "./need-generation/NeedGenerationWorkbench";
 import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
 import { ConfirmedNeedReviewWorkbench } from "./confirmed-needs/ConfirmedNeedReviewWorkbench";
@@ -81,6 +84,12 @@ import {
 type TabId =
   "menu" | "attendance" | "pantry" | "need-generation" | "confirmed-needs";
 type LoadState = "idle" | "loading" | "ready" | "error";
+type ConfirmedNeedProjectionResolution =
+  "idle" | "loading" | "ready" | "denied" | "error";
+type DailyConfirmedNeedSelection = {
+  serviceDate: string;
+  batchId: string;
+};
 type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
   status: "idle" | "fetching" | "success" | "error";
@@ -528,6 +537,41 @@ function weekEndOf(weekStart: string) {
   return addLocalCalendarDays(weekStart, 6);
 }
 
+function dailyServiceDates(weekStart: string, weekEnd: string) {
+  const dates: string[] = [];
+  const cursor = new Date(`${weekStart}T00:00:00Z`);
+  const end = new Date(`${weekEnd}T00:00:00Z`);
+  while (cursor <= end && dates.length < 7) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+function confirmedNeedDateStatus(preflight: PlanningInputPreflightData) {
+  if (preflight.downstream_currentness === "LEGACY_OVERLAP")
+    return "Vướng nhu cầu cũ đang có hiệu lực";
+  const currentNeed = preflight.current_need;
+  if (!currentNeed)
+    return preflight.readiness_state === "BLOCKED"
+      ? "Chưa có nhu cầu · nguồn cần xử lý"
+      : "Chưa tạo nhu cầu";
+  const released =
+    currentNeed.confirmed_need_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
+  if (preflight.downstream_currentness === "OUTDATED")
+    return released
+      ? "Đã chuyển sang lên đơn · nguồn đã thay đổi"
+      : "Nhu cầu cần cập nhật";
+  if (released) return "Đã chuyển sang lên đơn";
+  if (
+    ["DRAFT_REVIEW", "REOPENED"].includes(
+      currentNeed.confirmed_need_batch_status,
+    )
+  )
+    return "Cần rà soát";
+  return "Có nhu cầu xác nhận";
+}
+
 function addLocalCalendarDays(isoDate: string, days: number) {
   const [year, month, day] = isoDate.split("-").map(Number);
   const shifted = new Date(year!, month! - 1, day! + days);
@@ -588,12 +632,14 @@ export function PlanningInputsWorkbenchView({
     () => initialWeekStart ?? mondayOf(new Date()),
   );
   const [tab, setTab] = useState<TabId>("menu");
-  const [confirmedNeedBatchId, setConfirmedNeedBatchId] = useState<
-    string | null
-  >(null);
-  const [confirmedNeedResolution, setConfirmedNeedResolution] = useState<
-    "idle" | "loading" | "available" | "missing" | "denied" | "error"
-  >("idle");
+  const [dailyConfirmedNeedPreflights, setDailyConfirmedNeedPreflights] =
+    useState<Record<string, PlanningInputPreflightData>>({});
+  const [selectedConfirmedNeed, setSelectedConfirmedNeed] =
+    useState<DailyConfirmedNeedSelection | null>(null);
+  const [
+    confirmedNeedProjectionResolution,
+    setConfirmedNeedProjectionResolution,
+  ] = useState<ConfirmedNeedProjectionResolution>("idle");
   const [load, setLoad] = useState<LoadState>("idle");
   const [data, setData] = useState(() => emptyData(weekStart));
   const [notice, setNotice] = useState<string | null>(null);
@@ -644,39 +690,75 @@ export function PlanningInputsWorkbenchView({
     authState.status === "authenticated" ? authState.authSubject : null;
   const DatePickerInput = useContext(AtlasDatePickerInputContext);
   const selectedWeekEnd = weekEndOf(weekStart);
+  const confirmedNeedServiceDates = useMemo(
+    () => dailyServiceDates(weekStart, selectedWeekEnd),
+    [selectedWeekEnd, weekStart],
+  );
+  const confirmedNeedCandidates = useMemo(
+    () =>
+      confirmedNeedServiceDates.flatMap((serviceDate) => {
+        const batchId =
+          dailyConfirmedNeedPreflights[serviceDate]?.current_need
+            ?.confirmed_need_batch_id;
+        return batchId ? [{ serviceDate, batchId }] : [];
+      }),
+    [confirmedNeedServiceDates, dailyConfirmedNeedPreflights],
+  );
+  const confirmedNeedResolution = selectedConfirmedNeed
+    ? ("available" as const)
+    : confirmedNeedProjectionResolution === "ready"
+      ? confirmedNeedCandidates.length
+        ? ("selection_required" as const)
+        : ("missing" as const)
+      : confirmedNeedProjectionResolution;
 
   const resolveCurrentConfirmedNeed = useCallback(async () => {
     if (!readinessApi || !authSubject) {
-      setConfirmedNeedBatchId(null);
-      setConfirmedNeedResolution("idle");
+      setDailyConfirmedNeedPreflights({});
+      setSelectedConfirmedNeed(null);
+      setConfirmedNeedProjectionResolution("idle");
       return;
     }
     const request = ++confirmedNeedGeneration.current;
-    setConfirmedNeedBatchId(null);
-    setConfirmedNeedResolution("loading");
-    const result = await readinessApi.preflight(
-      authSubject,
-      correlationId,
-      weekStart,
-      selectedWeekEnd,
+    setDailyConfirmedNeedPreflights({});
+    setSelectedConfirmedNeed(null);
+    setConfirmedNeedProjectionResolution("loading");
+    const results = await Promise.all(
+      confirmedNeedServiceDates.map((serviceDate) =>
+        readinessApi.preflight(
+          authSubject,
+          correlationId,
+          serviceDate,
+          serviceDate,
+        ),
+      ),
     );
     if (request !== confirmedNeedGeneration.current) return;
-    const preflight = planningInputPreflightFromResult(result);
-    if (!preflight) {
-      setConfirmedNeedBatchId(null);
-      setConfirmedNeedResolution(
-        result.kind === "backend_error" &&
-          result.error.error_code === "CAPABILITY_DENIED"
-          ? "denied"
-          : "error",
+    const parsed = Object.fromEntries(
+      confirmedNeedServiceDates.flatMap((serviceDate, index) => {
+        const preflight = planningInputPreflightFromResult(results[index]!);
+        return preflight ? [[serviceDate, preflight]] : [];
+      }),
+    ) as Record<string, PlanningInputPreflightData>;
+    if (Object.keys(parsed).length !== confirmedNeedServiceDates.length) {
+      const denied = results.some(
+        (result) =>
+          result.kind === "backend_error" &&
+          result.error.error_code === "CAPABILITY_DENIED",
       );
+      setDailyConfirmedNeedPreflights(parsed);
+      setConfirmedNeedProjectionResolution(denied ? "denied" : "error");
       return;
     }
-    const currentNeedId =
-      preflight.current_need?.confirmed_need_batch_id ?? null;
-    setConfirmedNeedBatchId(currentNeedId);
-    setConfirmedNeedResolution(currentNeedId ? "available" : "missing");
-  }, [authSubject, correlationId, readinessApi, selectedWeekEnd, weekStart]);
+    const candidates = confirmedNeedServiceDates.flatMap((serviceDate) => {
+      const batchId =
+        parsed[serviceDate]?.current_need?.confirmed_need_batch_id;
+      return batchId ? [{ serviceDate, batchId }] : [];
+    });
+    setDailyConfirmedNeedPreflights(parsed);
+    setSelectedConfirmedNeed(candidates.length === 1 ? candidates[0]! : null);
+    setConfirmedNeedProjectionResolution("ready");
+  }, [authSubject, confirmedNeedServiceDates, correlationId, readinessApi]);
 
   const adopt = useCallback((workbench: PlanningInputsWorkbenchData) => {
     setData(workbench);
@@ -837,9 +919,27 @@ export function PlanningInputsWorkbenchView({
       return false;
     if (dirty || pantryDirty || confirmedNeedDirty)
       discardCurrentSourceChanges();
+    setSelectedConfirmedNeed(null);
     setWeekStart(next);
     setServiceDateFilter(next);
     return true;
+  };
+
+  const selectConfirmedNeedDate = (selection: DailyConfirmedNeedSelection) => {
+    if (
+      selectedConfirmedNeed?.serviceDate === selection.serviceDate &&
+      selectedConfirmedNeed.batchId === selection.batchId
+    )
+      return;
+    if (
+      confirmedNeedDirty &&
+      !window.confirm(
+        "Có thay đổi chưa lưu. Chuyển ngày sẽ bỏ các thay đổi này. Tiếp tục?",
+      )
+    )
+      return;
+    if (confirmedNeedDirty) setConfirmedNeedDirty(false);
+    setSelectedConfirmedNeed(selection);
   };
 
   const activeSchools = useMemo(
@@ -2040,14 +2140,84 @@ export function PlanningInputsWorkbenchView({
           )}
 
           {tab === "confirmed-needs" && (
-            <ConfirmedNeedReviewWorkbench
-              authState={authState}
-              api={confirmedNeedApi}
-              initialBatchId={confirmedNeedBatchId}
-              currentNeedResolution={confirmedNeedResolution}
-              mode={mode}
-              onDirtyChange={setConfirmedNeedDirty}
-            />
+            <>
+              {confirmedNeedProjectionResolution === "ready" && (
+                <Panel
+                  title="Nhu cầu xác nhận theo ngày"
+                  description="Tuần là phần tổng hợp để xem và chọn; mỗi ngày giữ nhu cầu xác nhận riêng."
+                >
+                  <div className="table-scroll">
+                    <table aria-label="Xác nhận nhu cầu theo ngày">
+                      <thead>
+                        <tr>
+                          <th>Ngày phục vụ</th>
+                          <th>Trạng thái</th>
+                          <th>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {confirmedNeedServiceDates.map((serviceDate) => {
+                          const preflight =
+                            dailyConfirmedNeedPreflights[serviceDate];
+                          const batchId =
+                            preflight?.current_need?.confirmed_need_batch_id;
+                          const selected =
+                            selectedConfirmedNeed?.serviceDate ===
+                              serviceDate &&
+                            selectedConfirmedNeed.batchId === batchId;
+                          return (
+                            <tr
+                              key={serviceDate}
+                              aria-current={selected ? "date" : undefined}
+                            >
+                              <td>{viDate(serviceDate)}</td>
+                              <td>
+                                {preflight
+                                  ? confirmedNeedDateStatus(preflight)
+                                  : "Không thể tải trạng thái"}
+                              </td>
+                              <td>
+                                {batchId ? (
+                                  <Button
+                                    type="button"
+                                    variant={selected ? "filled" : "outline"}
+                                    onClick={() =>
+                                      selectConfirmedNeedDate({
+                                        serviceDate,
+                                        batchId,
+                                      })
+                                    }
+                                  >
+                                    {selected ? "Đang xem" : "Mở ngày này"}
+                                  </Button>
+                                ) : (
+                                  <span>—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {selectedConfirmedNeed && (
+                    <p role="status">
+                      Đang xem ngày{" "}
+                      <b>{viDate(selectedConfirmedNeed.serviceDate)}</b>.
+                    </p>
+                  )}
+                </Panel>
+              )}
+              <ConfirmedNeedReviewWorkbench
+                key={selectedConfirmedNeed?.batchId ?? "unselected"}
+                authState={authState}
+                api={confirmedNeedApi}
+                initialBatchId={selectedConfirmedNeed?.batchId ?? null}
+                currentNeedResolution={confirmedNeedResolution}
+                mode={mode}
+                onDirtyChange={setConfirmedNeedDirty}
+              />
+            </>
           )}
 
           {tab === "need-generation" && (
@@ -2058,9 +2228,20 @@ export function PlanningInputsWorkbenchView({
               selectedWeekStart={weekStart}
               selectedWeekEnd={selectedWeekEnd}
               mode={mode}
-              onConfirmedNeedMaterialized={(nextBatchId: string) => {
-                setConfirmedNeedBatchId(nextBatchId);
-                setConfirmedNeedResolution("available");
+              onConfirmedNeedSelected={(
+                nextBatchId,
+                serviceDate,
+                authoritativePreflight,
+              ) => {
+                setDailyConfirmedNeedPreflights((current) => ({
+                  ...current,
+                  [serviceDate]: authoritativePreflight,
+                }));
+                setSelectedConfirmedNeed({
+                  serviceDate,
+                  batchId: nextBatchId,
+                });
+                setConfirmedNeedProjectionResolution("ready");
                 setTab("confirmed-needs");
               }}
             />

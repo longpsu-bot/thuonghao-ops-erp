@@ -255,6 +255,7 @@ export function NeedGenerationWorkbench({
   selectedWeekStart,
   selectedWeekEnd,
   onConfirmedNeedMaterialized,
+  onConfirmedNeedSelected,
 }: {
   authState: AtlasAuthState;
   api?: NeedGenerationApi;
@@ -265,6 +266,11 @@ export function NeedGenerationWorkbench({
   selectedWeekStart: string;
   selectedWeekEnd: string;
   onConfirmedNeedMaterialized?: (confirmedNeedBatchId: string) => void;
+  onConfirmedNeedSelected?: (
+    confirmedNeedBatchId: string,
+    serviceDate: string,
+    authoritativePreflight: PlanningInputPreflightData,
+  ) => void;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -679,11 +685,16 @@ export function NeedGenerationWorkbench({
                 <button
                   type="button"
                   className="primary-forward"
-                  onClick={() =>
-                    onConfirmedNeedMaterialized?.(
-                      preflight.current_need!.confirmed_need_batch_id,
-                    )
-                  }
+                  onClick={() => {
+                    const batchId =
+                      preflight.current_need!.confirmed_need_batch_id;
+                    onConfirmedNeedMaterialized?.(batchId);
+                    onConfirmedNeedSelected?.(
+                      batchId,
+                      selectedServiceDate,
+                      preflight,
+                    );
+                  }}
                 >
                   Mở Xác nhận nhu cầu
                 </button>
