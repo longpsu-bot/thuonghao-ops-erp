@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult, JsonValue } from "../../connection/atlasRpc";
@@ -65,7 +66,10 @@ function readinessWithDailyNeeds(
   return api;
 }
 
-function confirmedNeedApiForDates(batchDates: Record<string, string>) {
+function confirmedNeedApiForDates(
+  batchDates: Record<string, string>,
+  options: { releaseEligible?: boolean } = {},
+) {
   const api = createReviewConfirmedNeedApi("ready");
   const getReview = vi.fn<ConfirmedNeedApi["getReview"]>(
     async (_subject, correlationId, requestedBatchId) => {
@@ -81,6 +85,11 @@ function confirmedNeedApiForDates(batchDates: Record<string, string>) {
         } satisfies AtlasRpcResult;
       const workbench = createReviewConfirmedNeedFixture();
       workbench.confirmed_need_batch_id = requestedBatchId;
+      if (options.releaseEligible) {
+        workbench.allowed_actions.release_confirmed_needs = true;
+        workbench.disabled_reason_codes.release_confirmed_needs = null;
+        workbench.disabled_reasons.release_confirmed_needs = null;
+      }
       workbench.service_period = {
         period_start: serviceDate,
         period_end: serviceDate,
@@ -168,7 +177,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(screen.queryByText(/UUID|Mã lô|Tải lô/i)).not.toBeInTheDocument();
   });
 
-  it("keeps Monday and Wednesday batches independent and opens only the selected date", async () => {
+  it("resets Monday search state when opening the independent Wednesday batch", async () => {
     const mondayBatch = "c4500000-0000-0000-0000-000000000011";
     const wednesdayBatch = "c4500000-0000-0000-0000-000000000013";
     const readinessApi = readinessWithDailyNeeds({
@@ -204,15 +213,39 @@ describe("Planning Inputs Confirmed Need tab", () => {
       screen.getByText("Chọn ngày phục vụ ở bảng trên để mở nhu cầu xác nhận."),
     ).toBeVisible();
 
+    const mondayRow = screen.getByRole("row", {
+      name: /03\/08\/2026 Nhu cầu cần cập nhật/,
+    });
+    fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
+    const search = await screen.findByPlaceholderText(
+      "Tìm theo nguyên liệu, trường, điểm giao…",
+    );
+    fireEvent.change(search, { target: { value: "Nguyễn Du" } });
+    expect(search).toHaveValue("Nguyễn Du");
+
     const wednesdayRow = screen.getByRole("row", {
       name: /05\/08\/2026 Cần rà soát/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 
-    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText("Tìm theo nguyên liệu, trường, điểm giao…"),
+      ).toHaveValue(""),
+    );
     expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("05/08/2026");
-    expect(confirmedNeedApi.getReview).toHaveBeenCalledTimes(1);
-    expect(confirmedNeedApi.getReview).toHaveBeenCalledWith(
+    expect(confirmedNeedApi.getReview).toHaveBeenCalledTimes(2);
+    expect(confirmedNeedApi.getReview).toHaveBeenNthCalledWith(
+      1,
+      expect.any(String),
+      expect.any(String),
+      mondayBatch,
+      expect.any(Object),
+      0,
+      10_000,
+    );
+    expect(confirmedNeedApi.getReview).toHaveBeenNthCalledWith(
+      2,
       expect.any(String),
       expect.any(String),
       wednesdayBatch,
@@ -220,14 +253,60 @@ describe("Planning Inputs Confirmed Need tab", () => {
       0,
       10_000,
     );
-    expect(confirmedNeedApi.getReview).not.toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(String),
-      mondayBatch,
-      expect.anything(),
-      expect.anything(),
-      expect.anything(),
+  });
+
+  it("disarms Monday release confirmation when switching to Wednesday", async () => {
+    const mondayBatch = "c4500000-0000-0000-0000-000000000021";
+    const wednesdayBatch = "c4500000-0000-0000-0000-000000000023";
+    const readinessApi = readinessWithDailyNeeds({
+      "2026-08-03": { batchId: mondayBatch },
+      "2026-08-05": { batchId: wednesdayBatch },
+    });
+    const confirmedNeedApi = confirmedNeedApiForDates(
+      {
+        [mondayBatch]: "2026-08-03",
+        [wednesdayBatch]: "2026-08-05",
+      },
+      { releaseEligible: true },
     );
+    const release = vi.spyOn(confirmedNeedApi, "releaseSaved");
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        readinessApi={readinessApi}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart="2026-08-03"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    const projection = await screen.findByRole("table", {
+      name: "Xác nhận nhu cầu theo ngày",
+    });
+    const mondayRow = within(projection).getByRole("row", {
+      name: /03\/08\/2026 Cần rà soát/,
+    });
+    fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
+    ).toBeVisible();
+
+    const wednesdayRow = within(projection).getByRole("row", {
+      name: /05\/08\/2026 Cần rà soát/,
+    });
+    fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
+
+    await waitFor(() =>
+      expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("05/08/2026"),
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
+    ).not.toBeInTheDocument();
+    expect(release).not.toHaveBeenCalled();
   });
 
   it("shows a simple message when preflight denies access", async () => {

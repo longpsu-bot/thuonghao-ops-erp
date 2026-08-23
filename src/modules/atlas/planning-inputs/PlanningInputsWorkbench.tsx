@@ -2209,6 +2209,7 @@ export function PlanningInputsWorkbenchView({
                 </Panel>
               )}
               <ConfirmedNeedReviewWorkbench
+                key={selectedConfirmedNeed?.batchId ?? "unselected"}
                 authState={authState}
                 api={confirmedNeedApi}
                 initialBatchId={selectedConfirmedNeed?.batchId ?? null}
