@@ -138,7 +138,13 @@ export function ConfirmedNeedReviewWorkbench({
   api?: ConfirmedNeedApi;
   initialBatchId?: string | null;
   currentNeedResolution?:
-    "idle" | "loading" | "available" | "missing" | "denied" | "error";
+    | "idle"
+    | "loading"
+    | "available"
+    | "selection_required"
+    | "missing"
+    | "denied"
+    | "error";
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
 }) {
@@ -353,13 +359,19 @@ export function ConfirmedNeedReviewWorkbench({
         <p>Không thể tải nhu cầu hiện tại.</p>
       </Panel>
     );
+  if (currentNeedResolution === "selection_required")
+    return (
+      <Panel title="Xác nhận nhu cầu">
+        <p>Chọn ngày phục vụ ở bảng trên để mở nhu cầu xác nhận.</p>
+      </Panel>
+    );
   if (!initialBatchId || ["idle", "missing"].includes(currentNeedResolution))
     return (
       <Panel title="Xác nhận nhu cầu">
         <p>Chưa có nhu cầu cho tuần đã chọn.</p>
       </Panel>
     );
-  if (!workbench)
+  if (!workbench || workbench.confirmed_need_batch_id !== initialBatchId)
     return (
       <Panel title="Xác nhận nhu cầu">
         <p>Đang tải dữ liệu…</p>
