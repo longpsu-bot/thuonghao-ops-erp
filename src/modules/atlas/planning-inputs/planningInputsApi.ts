@@ -6,6 +6,7 @@ import type {
   JsonValue,
 } from "../connection/atlasRpc";
 import { ATLAS_EDGE_FUNCTIONS } from "../connection/atlasRpc";
+import { createPlanningCorrectionApi } from "./planningCorrectionApi";
 
 export const PLANNING_INPUT_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_planning_inputs_workbench",
@@ -175,6 +176,7 @@ export function attendanceCompletionRequest(
 }
 
 export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
+  const correction = createPlanningCorrectionApi(invoker);
   const command =
     (
       name: Exclude<
@@ -190,6 +192,8 @@ export function createPlanningInputsApi(invoker: PlanningRpcInvoker) {
       invoker.invoke(PLANNING_INPUT_RPC_FUNCTIONS[name], request);
 
   return {
+    getCorrectionImpact: correction.impact,
+    prepareCorrection: correction.prepare,
     getWorkbench(
       authSubject: string,
       correlationId: string,

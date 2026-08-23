@@ -4,6 +4,7 @@ import type {
   AtlasRpcResult,
   JsonValue,
 } from "../../connection/atlasRpc";
+import { createPlanningCorrectionApi } from "../planningCorrectionApi";
 
 export const PANTRY_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_pantry_source_workbench",
@@ -115,7 +116,10 @@ export function pantryCompletionRequest(
 }
 
 export function createPantryApi(invoker: PantryRpcInvoker) {
+  const correction = createPlanningCorrectionApi(invoker);
   return {
+    getCorrectionImpact: correction.impact,
+    prepareCorrection: correction.prepare,
     getWorkbench(
       authSubject: string,
       correlationId: string,

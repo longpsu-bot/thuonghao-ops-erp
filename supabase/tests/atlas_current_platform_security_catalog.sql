@@ -383,8 +383,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 601,
-    'md5', 'eb60e34add82c6c2a8cdd77be71f5598'
+    'count', 602,
+    'md5', '70678dada96fab8419980bddd01978be'
   ),
   'CAT-07 exact RLS catalog includes backend-only 02B continuity and integrity policies'
 );
@@ -592,8 +592,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  90,
-  'CAT-14 physical atlas_api function count is exactly ninety'
+  92,
+  'CAT-14 physical atlas_api function count is exactly ninety-two'
 );
 
 select is(
@@ -644,12 +644,14 @@ select is(
     'get_planning_input_preflight(request jsonb)',
     'get_planning_input_readiness_workbench(request jsonb)',
     'get_planning_inputs_workbench(request jsonb)',
+    'get_planning_source_correction_impact(request jsonb)',
     'get_recipe_adjustment_operator_workbench(request jsonb)',
     'get_recipe_adjustment_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
     'invalidate_planning_input_readiness(request jsonb)',
+    'prepare_planning_source_correction(request jsonb)',
     'preview_attendance_import(request jsonb)',
     'preview_confirmed_need_confirmation(request jsonb)',
     'preview_pantry_source(request jsonb)',
@@ -698,7 +700,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly ninety functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly ninety-two functions'
 );
 
 select is(
@@ -841,12 +843,14 @@ select is(
     'get_planning_input_preflight(request jsonb)=atlas_read_runtime',
     'get_planning_input_readiness_workbench(request jsonb)=atlas_read_runtime',
     'get_planning_inputs_workbench(request jsonb)=atlas_read_runtime',
+    'get_planning_source_correction_impact(request jsonb)=atlas_read_runtime',
     'get_recipe_adjustment_operator_workbench(request jsonb)=atlas_read_runtime',
     'get_recipe_adjustment_workbench(request jsonb)=atlas_read_runtime',
     'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
     'invalidate_need_generation_run(request jsonb)=atlas_need_generation_runtime',
     'invalidate_planning_input_readiness(request jsonb)=atlas_planning_command_runtime',
+    'prepare_planning_source_correction(request jsonb)=atlas_need_generation_runtime',
     'preview_attendance_import(request jsonb)=atlas_read_runtime',
     'preview_confirmed_need_confirmation(request jsonb)=atlas_confirmed_need_review_runtime',
     'preview_pantry_source(request jsonb)=atlas_read_runtime',
@@ -947,12 +951,14 @@ select is(
     'get_planning_input_preflight(request jsonb)',
     'get_planning_input_readiness_workbench(request jsonb)',
     'get_planning_inputs_workbench(request jsonb)',
+    'get_planning_source_correction_impact(request jsonb)',
     'get_recipe_adjustment_operator_workbench(request jsonb)',
     'get_recipe_adjustment_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
     'invalidate_planning_input_readiness(request jsonb)',
+    'prepare_planning_source_correction(request jsonb)',
     'preview_attendance_import(request jsonb)',
     'preview_confirmed_need_confirmation(request jsonb)',
     'preview_pantry_source(request jsonb)',
@@ -1001,7 +1007,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly ninety functions'
+  'CAT-18 authenticated execute allowlist is exactly ninety-two functions'
 );
 
 select ok(
@@ -1071,12 +1077,14 @@ select ok(
           ('get_planning_input_preflight', 'request jsonb'),
           ('get_planning_input_readiness_workbench', 'request jsonb'),
           ('get_planning_inputs_workbench', 'request jsonb'),
+          ('get_planning_source_correction_impact', 'request jsonb'),
           ('get_recipe_adjustment_workbench', 'request jsonb'),
           ('get_recipe_adjustment_operator_workbench', 'request jsonb'),
           ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
           ('invalidate_need_generation_run', 'request jsonb'),
           ('invalidate_planning_input_readiness', 'request jsonb'),
+          ('prepare_planning_source_correction', 'request jsonb'),
           ('preview_attendance_import', 'request jsonb'),
           ('preview_confirmed_need_confirmation', 'request jsonb'),
           ('preview_pantry_source', 'request jsonb'),
@@ -1465,20 +1473,20 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 27,
-    'policy_count', 601,
-    'policy_catalog_md5', 'eb60e34add82c6c2a8cdd77be71f5598',
+    'policy_count', 602,
+    'policy_catalog_md5', '70678dada96fab8419980bddd01978be',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 222,
-    'private_function_catalog_md5', '4af87ad05c7c2d87e975d5c740f7d064',
+    'private_function_count', 231,
+    'private_function_catalog_md5', '96a53a75dd6b3cd188f736d681fb4dcf',
     'trigger_count', 94,
     'trigger_catalog_md5', '8d14708a2aadcef24acddf2bb0db1755',
-    'positive_target_grant_count', 1510,
-    'positive_target_grant_md5', '2a30b388da288a00664d0afe0aa9f545',
+    'positive_target_grant_count', 1529,
+    'positive_target_grant_md5', '34a926178cbb396585d42a3d605909fe',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 90,
+    'api_function_count', 92,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 90,
+    'authenticated_execute_count', 92,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),
