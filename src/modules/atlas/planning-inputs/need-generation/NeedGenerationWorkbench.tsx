@@ -46,6 +46,17 @@ function viDate(value: string) {
   return year && month && day ? `${day}/${month}/${year}` : value;
 }
 
+function serviceDates(weekStart: string, weekEnd: string) {
+  const dates: string[] = [];
+  const cursor = new Date(`${weekStart}T00:00:00Z`);
+  const end = new Date(`${weekEnd}T00:00:00Z`);
+  while (cursor <= end && dates.length < 7) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
 function currentnessLabel(
   currentness: PlanningInputPreflightData["downstream_currentness"],
 ) {
@@ -53,6 +64,7 @@ function currentnessLabel(
     CURRENT: "HIỆN HÀNH",
     OUTDATED: "CẦN CẬP NHẬT",
     NOT_GENERATED: "CHƯA TẠO",
+    LEGACY_OVERLAP: "VƯỚNG NHU CẦU CŨ",
   } as const;
   return labels[currentness];
 }
@@ -61,7 +73,8 @@ function currentnessTone(
   currentness: PlanningInputPreflightData["downstream_currentness"],
 ) {
   if (currentness === "CURRENT") return "ok" as const;
-  if (currentness === "OUTDATED") return "danger" as const;
+  if (currentness === "OUTDATED" || currentness === "LEGACY_OVERLAP")
+    return "danger" as const;
   return "warning" as const;
 }
 
@@ -127,6 +140,8 @@ const preflightIssueMessages: Record<string, string> = {
     "Có nhiều bản nhu cầu bổ sung phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
   STALE_PANTRY_SOURCE:
     "Nhu cầu bổ sung đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+  ACTIVE_LEGACY_NEED_RANGE_OVERLAP:
+    "Ngày này đã nằm trong một nhu cầu nhiều ngày đang có hiệu lực. Giữ nguyên nhu cầu cũ và chờ quy trình điều chỉnh.",
 };
 
 function preflightIssueMessage(issue: PlanningInputPreflightIssue) {
@@ -145,6 +160,9 @@ function releasedCorrectionBlocked(preflight: PlanningInputPreflightData) {
 }
 
 function planningStatusSentence(preflight: PlanningInputPreflightData) {
+  if (preflight.downstream_currentness === "LEGACY_OVERLAP")
+    return "Ngày này đã thuộc một nhu cầu nhiều ngày đang có hiệu lực nên không thể tạo nhu cầu mới.";
+
   if (releasedCorrectionBlocked(preflight))
     return "Nhu cầu này đã được chuyển sang lên đơn nên chưa thể cập nhật trực tiếp tại đây.";
 
@@ -250,10 +268,15 @@ export function NeedGenerationWorkbench({
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
-  const [periodStart, setPeriodStart] = useState(selectedWeekStart);
-  const [periodEnd, setPeriodEnd] = useState(selectedWeekEnd);
-  const [draftStart, setDraftStart] = useState(selectedWeekStart);
-  const [draftEnd, setDraftEnd] = useState(selectedWeekEnd);
+  const days = useMemo(
+    () => serviceDates(selectedWeekStart, selectedWeekEnd),
+    [selectedWeekEnd, selectedWeekStart],
+  );
+  const [selectedServiceDate, setSelectedServiceDate] =
+    useState(selectedWeekStart);
+  const [dailyPreflights, setDailyPreflights] = useState<
+    Record<string, PlanningInputPreflightData>
+  >({});
   const [preflight, setPreflight] = useState<PlanningInputPreflightData | null>(
     null,
   );
@@ -289,18 +312,22 @@ export function NeedGenerationWorkbench({
       const requestGeneration = ++generation.current;
       setLoading(true);
       setNotice(null);
-      const [preflightResult, workbenchResult] = await Promise.all([
-        preflightApi.preflight(
-          authSubject,
-          correlationId,
-          periodStart,
-          periodEnd,
+      const [preflightResults, workbenchResult] = await Promise.all([
+        Promise.all(
+          days.map((serviceDate) =>
+            preflightApi.preflight(
+              authSubject,
+              correlationId,
+              serviceDate,
+              serviceDate,
+            ),
+          ),
         ),
         api.getWorkbench(
           authSubject,
           correlationId,
-          periodStart,
-          periodEnd,
+          selectedServiceDate,
+          selectedServiceDate,
           overrides.nextRunId === undefined
             ? selectedRunId
             : overrides.nextRunId,
@@ -314,12 +341,24 @@ export function NeedGenerationWorkbench({
       ]);
       if (requestGeneration !== generation.current) return false;
       setLoading(false);
-      const nextPreflight = planningInputPreflightFromResult(preflightResult);
+      const parsedDays = Object.fromEntries(
+        days.flatMap((serviceDate, index) => {
+          const parsed = planningInputPreflightFromResult(
+            preflightResults[index]!,
+          );
+          return parsed ? [[serviceDate, parsed]] : [];
+        }),
+      ) as Record<string, PlanningInputPreflightData>;
+      const nextPreflight = parsedDays[selectedServiceDate] ?? null;
       if (!nextPreflight) {
         setPreflight(null);
-        setNotice(readinessResultMessage(preflightResult));
+        const failed = preflightResults.find(
+          (result) => !planningInputPreflightFromResult(result),
+        );
+        if (failed) setNotice(readinessResultMessage(failed));
         return false;
       }
+      setDailyPreflights(parsedDays);
       setPreflight(nextPreflight);
       setWorkbench(needGenerationWorkbenchFromResult(workbenchResult));
       setRefreshRequired(false);
@@ -330,21 +369,18 @@ export function NeedGenerationWorkbench({
       api,
       authSubject,
       correlationId,
+      days,
       detailGroup,
       filters,
       offset,
-      periodEnd,
-      periodStart,
       preflightApi,
+      selectedServiceDate,
       selectedRunId,
     ],
   );
 
   useEffect(() => {
-    setPeriodStart(selectedWeekStart);
-    setPeriodEnd(selectedWeekEnd);
-    setDraftStart(selectedWeekStart);
-    setDraftEnd(selectedWeekEnd);
+    setSelectedServiceDate(selectedWeekStart);
     setOffset(0);
     setSelectedRunId(null);
     setDetailGroup(null);
@@ -356,7 +392,10 @@ export function NeedGenerationWorkbench({
       setPreflight(null);
       setWorkbench(null);
     }
-  }, [authSubject, loadAuthority]);
+    // Loading is keyed by the authenticated week/day selection. The callback
+    // also carries paging/detail state for explicit operator refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authSubject, selectedServiceDate, selectedWeekEnd, selectedWeekStart]);
 
   const filterOptions = useMemo(() => {
     const groups = workbench?.grouped_requirements ?? [];
@@ -371,18 +410,6 @@ export function NeedGenerationWorkbench({
       ),
     };
   }, [workbench]);
-
-  const applyPeriod = () => {
-    if (!draftStart || !draftEnd || draftEnd < draftStart) {
-      setNotice("Cần chọn khoảng ngày hợp lệ.");
-      return;
-    }
-    setPeriodStart(draftStart);
-    setPeriodEnd(draftEnd);
-    setOffset(0);
-    setSelectedRunId(null);
-    setDetailGroup(null);
-  };
 
   const applyFilters = () => {
     setFilters(draftFilters);
@@ -402,6 +429,7 @@ export function NeedGenerationWorkbench({
       !preflight ||
       preflight.readiness_state !== "READY" ||
       preflight.downstream_currentness === "CURRENT" ||
+      preflight.downstream_currentness === "LEGACY_OVERLAP" ||
       releasedCorrectionBlocked(preflight) ||
       refreshRequired ||
       executionBlocker
@@ -412,8 +440,7 @@ export function NeedGenerationWorkbench({
       authSubject,
       correlationId,
       preflight.current_need?.need_generation_run_version ?? 1,
-      periodStart,
-      periodEnd,
+      selectedServiceDate,
       preflight.current_need?.need_generation_run_id ?? null,
     );
     setBusy(true);
@@ -438,6 +465,11 @@ export function NeedGenerationWorkbench({
     const nextWorkbench = needGenerationReadbackFromResult(result);
     const continuitySummary = needGenerationContinuitySummaryFromResult(result);
     setPreflight(nextPreflight);
+    setDailyPreflights((current) =>
+      nextPreflight
+        ? { ...current, [selectedServiceDate]: nextPreflight }
+        : current,
+    );
     setWorkbench(nextWorkbench);
     setExecutionBlocker(null);
     if (!nextPreflight || !nextWorkbench) {
@@ -470,6 +502,7 @@ export function NeedGenerationWorkbench({
   const canExecute =
     preflight?.readiness_state === "READY" &&
     preflight.downstream_currentness !== "CURRENT" &&
+    preflight.downstream_currentness !== "LEGACY_OVERLAP" &&
     !correctionBlocked &&
     !refreshRequired &&
     !executionBlocker;
@@ -480,43 +513,86 @@ export function NeedGenerationWorkbench({
       description="Kiểm tra tự động ba nguồn đã lưu và tạo hoặc cập nhật nhu cầu bằng một thao tác."
     >
       <p className="need-generation-context">
-        Tuần đang xử lý: <b>{viDate(periodStart)}</b> –{" "}
-        <b>{viDate(periodEnd)}</b>
+        Tuần đang xem: <b>{viDate(selectedWeekStart)}</b> –{" "}
+        <b>{viDate(selectedWeekEnd)}</b>. Mỗi ngày là một nhu cầu độc lập.
       </p>
-      <details className="need-generation-period-disclosure">
-        <summary>Đổi phạm vi xem</summary>
-        <div className="need-generation-period">
-          <label>
-            Từ ngày
-            <input
-              aria-label="Từ ngày tạo nhu cầu"
-              type="date"
-              value={draftStart}
-              onChange={(event) => setDraftStart(event.target.value)}
-            />
-          </label>
-          <label>
-            Đến ngày
-            <input
-              aria-label="Đến ngày tạo nhu cầu"
-              type="date"
-              value={draftEnd}
-              onChange={(event) => setDraftEnd(event.target.value)}
-            />
-          </label>
-          <button type="button" disabled={loading} onClick={applyPeriod}>
-            Xem phạm vi này
-          </button>
-          <button
-            type="button"
-            disabled={loading || busy}
-            onClick={() => void loadAuthority()}
-          >
-            <ArrowClockwise aria-hidden="true" size={16} />
-            Tải lại dữ liệu
-          </button>
-        </div>
-      </details>
+      <button
+        type="button"
+        disabled={loading || busy}
+        onClick={() => void loadAuthority()}
+      >
+        <ArrowClockwise aria-hidden="true" size={16} />
+        Tải lại dữ liệu
+      </button>
+
+      <div className="table-scroll">
+        <table aria-label="Tổng quan nhu cầu theo ngày">
+          <thead>
+            <tr>
+              <th>Ngày</th>
+              <th>Đầu vào</th>
+              <th>Nhu cầu</th>
+              <th>Xác nhận nhu cầu</th>
+              <th>Việc tiếp theo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {days.map((serviceDate) => {
+              const state = dailyPreflights[serviceDate];
+              const released = state ? releasedCorrectionBlocked(state) : false;
+              const action = !state
+                ? "Đang tải"
+                : state.downstream_currentness === "LEGACY_OVERLAP"
+                  ? "Xem nhu cầu cũ"
+                  : state.readiness_state === "BLOCKED"
+                    ? "Sửa dữ liệu nguồn"
+                    : released
+                      ? "Chờ điều chỉnh"
+                      : state.downstream_currentness === "CURRENT"
+                        ? "Rà soát"
+                        : state.downstream_currentness === "OUTDATED"
+                          ? "Cập nhật"
+                          : "Tạo nhu cầu";
+              return (
+                <tr
+                  key={serviceDate}
+                  aria-current={
+                    selectedServiceDate === serviceDate ? "date" : undefined
+                  }
+                >
+                  <td>{viDate(serviceDate)}</td>
+                  <td>{state ? readinessLabel(state.readiness_state) : "—"}</td>
+                  <td>
+                    {state
+                      ? currentnessLabel(state.downstream_currentness)
+                      : "—"}
+                  </td>
+                  <td>
+                    {state?.downstream_currentness === "LEGACY_OVERLAP"
+                      ? "CAM KẾT CŨ"
+                      : (state?.current_need?.confirmed_need_batch_status ??
+                        "—")}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      aria-label={`${action} ${viDate(serviceDate)}`}
+                      onClick={() => {
+                        setSelectedServiceDate(serviceDate);
+                        setOffset(0);
+                        setSelectedRunId(null);
+                        setDetailGroup(null);
+                      }}
+                    >
+                      {action}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {loading && <p role="status">Đang kiểm tra dữ liệu nguồn và nhu cầu…</p>}
       {notice && (
@@ -561,11 +637,13 @@ export function NeedGenerationWorkbench({
               <h3>
                 {preflight.downstream_currentness === "CURRENT"
                   ? "Xác nhận nhu cầu"
-                  : correctionBlocked
-                    ? "Chờ quy trình điều chỉnh tiếp theo"
-                    : canExecute
-                      ? executionLabel
-                      : "Hoàn tất dữ liệu còn thiếu"}
+                  : preflight.downstream_currentness === "LEGACY_OVERLAP"
+                    ? "Chờ quy trình điều chỉnh nhu cầu cũ"
+                    : correctionBlocked
+                      ? "Chờ quy trình điều chỉnh tiếp theo"
+                      : canExecute
+                        ? executionLabel
+                        : "Hoàn tất dữ liệu còn thiếu"}
               </h3>
             </header>
             {canExecute && (

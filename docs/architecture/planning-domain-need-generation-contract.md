@@ -16,7 +16,7 @@
 
 ## 1. Purpose
 
-Need Generation converts one exact requested Planning input set into immutable, atomic theoretical ingredient contributions for later Planning confirmation.
+Need Generation converts one exact requested Planning input set into immutable, atomic theoretical ingredient contributions for later Planning confirmation. For the connected school-catering path, `service_date` is the authority grain: new Planning Input Sets, runs, and generated Confirmed Need batches use `period_start = period_end = service_date`. A week remains an input, navigation, and review projection only.
 
 ```text
 one exact Planning Input Set
@@ -33,13 +33,17 @@ Planning Input Readiness answers whether exact approved Menu, Attendance and Pan
 
 Need Generation does not confirm demand, group operational requirements, assign suppliers, rebalance Purchase Assignments, create purchase orders, mutate Warehouse stock, create Dispatch documents, edit Recipe/BOM data, perform QA/Production, or create Finance records.
 
+The daily authority boundary is fail-closed against historical overlap. If a non-`INVALIDATED` multi-day Need run contains D, Atlas preserves and reads that legacy Need/Confirmed Need chain and blocks creation of a parallel `D..D` root. It does not supersede, split, delete, or correct the legacy commitment; that governed correction remains Issue #222. Public compatibility calls cannot create new arbitrary multi-day roots.
+
 ## 2. Ownership and authoritative objects
 
 Planning owns the run, run input snapshot, Theoretical Need lines, Need Generation issues, release snapshot and referenced Pantry evidence. Admin and Recipe retain ownership of every referenced School, Delivery Location, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision, Ingredient, and Unit.
 
 ### 2.1 NeedGenerationRun
 
-One run is one accepted generation attempt for one exact Planning Input Set and one exact current immutable H0A4b evaluation. It inherits the exact inclusive Planning Input Set period and cannot combine input sets or evaluations. It is never one run per School, date, Menu line, Recipe line, Ingredient, or contribution.
+One run is one accepted generation attempt for one exact Planning Input Set and one exact current immutable H0A4b evaluation. It inherits the exact inclusive Planning Input Set period and cannot combine input sets or evaluations. For new connected school-catering generation, that exact period is one service date (`D..D`), so each date owns an independent linear run chain. A run is never split per School, Menu line, Recipe line, Ingredient, or contribution.
+
+Historical multi-day runs remain immutable compatibility facts. They are not split, rewritten, deleted, or reinterpreted by the daily contract.
 
 The run is a positive-version mutable control root. Generation starts at version 1. Each valid lifecycle transition increments the version exactly once. Generated facts are not mutable through that root.
 

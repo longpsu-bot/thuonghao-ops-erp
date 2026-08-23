@@ -139,7 +139,23 @@ export type PlanningInputPreflightData = {
   source_evidence: Record<ReadinessSourceKind, ReadinessSourceEvidence>;
   issues: PlanningInputPreflightIssue[];
   blocking_issue_count: number;
-  downstream_currentness: "CURRENT" | "OUTDATED" | "NOT_GENERATED";
+  downstream_currentness:
+    "CURRENT" | "OUTDATED" | "NOT_GENERATED" | "LEGACY_OVERLAP";
+  legacy_overlap?: {
+    service_date: string;
+    blocker_code: "ACTIVE_LEGACY_NEED_RANGE_OVERLAP";
+    safe_message: string;
+    active_chains: Array<{
+      need_generation_run_id: string;
+      need_generation_run_status: string;
+      need_generation_run_version: number;
+      period_start: string;
+      period_end: string;
+      confirmed_need_batch_id: string | null;
+      confirmed_need_batch_status: string | null;
+      confirmed_need_batch_version: number | null;
+    }>;
+  };
   current_need: {
     confirmed_need_batch_id: string;
     confirmed_need_batch_status: string;

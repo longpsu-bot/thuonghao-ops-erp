@@ -258,6 +258,27 @@ materialization request uses PostgreSQL transaction time. RMVP-03B.v1,
 RMVP-04.v1, PA-06E-H0C.v1, and D-037 timestamp semantics remain unchanged for
 independent public calls.
 
+## 14. Daily connected execution (`RMVP-04.v3`)
+
+Issue #223 makes `service_date` the authoritative grain for new connected school-catering Need. The canonical public command name remains `atlas_api.execute_need_generation(jsonb)`, but the React workflow now sends the strict v3 payload:
+
+```json
+{
+  "service_date": "2026-08-17",
+  "expected_current_need_generation_run_id": null
+}
+```
+
+`period_start` and `period_end` are not accepted in a v3 payload. The backend adapts the intent to the approved atomic implementation with `period_start = period_end = service_date`; therefore one successful command creates or advances only that date's Planning Input evaluation, Need run/release, and Confirmed Need batch. Public v2 remains callable only for exact `D..D` compatibility. A valid public v2 multi-day intent returns `MULTI_DAY_NEED_GENERATION_RETIRED`; the former arbitrary-period implementation remains private to the Need runtime for controlled historical/internal compatibility.
+
+Source parents may still cover a week or period. Each daily evaluation binds the exact current Weekly Menu, Attendance, and Pantry approval snapshot headers, while generation selects only snapshot lines whose `service_date` equals the commanded date. Recipe arithmetic and PostgreSQL numeric coercion are unchanged.
+
+The weekly UI is a projection over seven independent calls to the existing backend preflight read with `D..D`. Date-level currentness compares stable facts from the selected date inside the current run's bound snapshots with the same date inside the newest approved parent snapshots. An unrelated-day parent successor therefore does not make every day outdated, while exact parent snapshot IDs remain preserved on each run for immutable lineage. These fingerprints are read evidence only and are never client authority.
+
+Same-date unchanged execution returns the established replay or `NO_CHANGE` result. A safely correctable changed date uses the established invalidation/direct-successor and Confirmed Need correction model; other service dates are not locked or mutated. The full reverse-correction workflow after downstream commitment remains owned by Issue #222.
+
+Before reporting a daily state or creating its Planning Input Set, the backend checks every non-`INVALIDATED` historical multi-day Need run whose inclusive period contains the requested `service_date`. Any match returns `downstream_currentness = LEGACY_OVERLAP`, the stable blocker `ACTIVE_LEGACY_NEED_RANGE_OVERLAP`, and safe readback of the overlapping run/range and linked current Confirmed Need identity/status. The v3 command returns the same stable error and creates no `D..D` Planning Input Set, run, release, or Confirmed Need. An `INVALIDATED` multi-day chain and an active range that does not contain D do not block; an exact active `D..D` chain retains the normal current/replay/successor behavior. Historical multi-day rows are never rewritten by this guard.
+
 ## 14. Selective confirmation continuity
 
 PLANNING-CONTRACT-02B keeps the `RMVP-04.v2` request and public function unchanged. On correction, the existing private materializer compares direct predecessor/successor Confirmed Need facts and returns additive backend-owned `result_counts`: `carried_forward_count`, `needs_review_count`, `changed_count`, `new_count`, and `removed_count` alongside the established materialization counts. `removed_count` is the number of distinct predecessor Confirmed Need business identities absent from the exact direct successor current set; it does not depend on whether a removed identity had a human decision or therefore produced invalidation evidence.
