@@ -33,6 +33,8 @@ Planning Input Readiness answers whether exact approved Menu, Attendance and Pan
 
 Need Generation does not confirm demand, group operational requirements, assign suppliers, rebalance Purchase Assignments, create purchase orders, mutate Warehouse stock, create Dispatch documents, edit Recipe/BOM data, perform QA/Production, or create Finance records.
 
+The daily authority boundary is fail-closed against historical overlap. If a non-`INVALIDATED` multi-day Need run contains D, Atlas preserves and reads that legacy Need/Confirmed Need chain and blocks creation of a parallel `D..D` root. It does not supersede, split, delete, or correct the legacy commitment; that governed correction remains Issue #222. Public compatibility calls cannot create new arbitrary multi-day roots.
+
 ## 2. Ownership and authoritative objects
 
 Planning owns the run, run input snapshot, Theoretical Need lines, Need Generation issues, release snapshot and referenced Pantry evidence. Admin and Recipe retain ownership of every referenced School, Delivery Location, Dish, Recipe, RecipeVersion, RecipeLine, RecipeLineRevision, Ingredient, and Unit.

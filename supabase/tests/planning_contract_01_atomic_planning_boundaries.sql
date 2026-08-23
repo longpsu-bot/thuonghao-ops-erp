@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(164);
+select plan(177);
 
 select is(
   (
@@ -2263,6 +2263,387 @@ select is(
   ),
   'PCT01-CS05 rejected time envelopes create no source, run, or Confirmed Need mutation'
 );
+select ok(
+  pg_catalog.to_regclass(
+    'atlas_planning.need_generation_runs_active_multiday_period_idx'
+  ) is not null,
+  'PCT01-L00 active multi-day overlap lookup has its matching partial index'
+);
+
+-- Issue #223 root-review correction. Synthetic legacy rows are inserted with
+-- triggers disabled only inside this rolled-back pgTAP transaction so the
+-- public v3/v2 boundaries can be exercised without manufacturing legacy data
+-- through the now-private period implementation.
+create function pg_temp.pct01_seed_legacy_chain(
+  input_set_id uuid,
+  evaluation_id uuid,
+  run_id uuid,
+  input_snapshot_id uuid,
+  release_snapshot_id uuid,
+  batch_id uuid,
+  legacy_start date,
+  legacy_end date,
+  legacy_status text
+)
+returns jsonb
+language plpgsql
+as $$
+declare
+  v_now timestamptz := pg_catalog.transaction_timestamp();
+  v_result jsonb;
+begin
+  insert into atlas_planning.planning_input_sets (
+    planning_input_set_id, period_start, period_end, readiness_status,
+    current_evaluation_id, created_at, updated_at
+  ) values (
+    input_set_id, legacy_start, legacy_end, 'NEED_GENERATION_REQUESTED',
+    evaluation_id, v_now, v_now
+  );
+  insert into atlas_planning.need_generation_runs (
+    need_generation_run_id, planning_input_set_id,
+    planning_input_evaluation_id, evaluation_version, period_start,
+    period_end, attempt_ordinal, predecessor_need_generation_run_id,
+    input_snapshot_id, run_status, version, generated_line_count,
+    blocking_issue_count, warning_count, generated_by_actor_id, generated_at,
+    validated_by_actor_id, validated_at, released_by_actor_id, released_at,
+    invalidated_by_actor_id, invalidated_at, updated_at
+  ) values (
+    run_id, input_set_id, evaluation_id, 1, legacy_start, legacy_end, 1, null,
+    input_snapshot_id, legacy_status, 1, 1, 0, 0,
+    'e4000000-0000-0000-0000-000000000001', v_now,
+    case when legacy_status='RELEASED_FOR_CONFIRMATION' then
+      'e4000000-0000-0000-0000-000000000001'::uuid end,
+    case when legacy_status='RELEASED_FOR_CONFIRMATION' then v_now end,
+    case when legacy_status='RELEASED_FOR_CONFIRMATION' then
+      'e4000000-0000-0000-0000-000000000001'::uuid end,
+    case when legacy_status='RELEASED_FOR_CONFIRMATION' then v_now end,
+    case when legacy_status='INVALIDATED' then
+      'e4000000-0000-0000-0000-000000000001'::uuid end,
+    case when legacy_status='INVALIDATED' then v_now end,
+    v_now
+  );
+  insert into atlas_planning.confirmed_need_batches (
+    confirmed_need_batch_id, wholesale_order_id, period_start, period_end,
+    batch_status, version, created_by_actor_id, created_at, updated_at,
+    source_kind, origin_need_generation_run_id,
+    origin_need_generation_run_version,
+    origin_need_generation_release_snapshot_id,
+    current_need_generation_run_id, current_need_generation_run_version,
+    current_need_generation_release_snapshot_id
+  ) values (
+    batch_id, null, legacy_start, legacy_end, 'DRAFT_REVIEW', 1,
+    'e4000000-0000-0000-0000-000000000001', v_now, v_now,
+    'NEED_GENERATION', run_id, 1, release_snapshot_id, run_id, 1,
+    release_snapshot_id
+  );
+  select pg_catalog.jsonb_build_object(
+    'input_set', pg_catalog.to_jsonb(input_set),
+    'run', pg_catalog.to_jsonb(run),
+    'batch', pg_catalog.to_jsonb(batch)
+  ) into v_result
+  from atlas_planning.planning_input_sets input_set
+  join atlas_planning.need_generation_runs run
+    on run.planning_input_set_id=input_set.planning_input_set_id
+  join atlas_planning.confirmed_need_batches batch
+    on batch.current_need_generation_run_id=run.need_generation_run_id
+  where input_set.planning_input_set_id=input_set_id;
+  return v_result;
+end;
+$$;
+
+create function pg_temp.pct01_remove_legacy_chain(
+  input_set_id uuid,
+  run_id uuid,
+  batch_id uuid
+)
+returns void
+language plpgsql
+as $$
+begin
+  delete from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id=batch_id;
+  delete from atlas_planning.need_generation_runs
+  where need_generation_run_id=run_id;
+  delete from atlas_planning.planning_input_sets
+  where planning_input_set_id=input_set_id;
+end;
+$$;
+
+create function pg_temp.pct01_read_legacy_chain(target_input_set_id uuid)
+returns jsonb
+language sql
+stable
+as $$
+  select pg_catalog.jsonb_build_object(
+    'input_set', pg_catalog.to_jsonb(input_set),
+    'run', pg_catalog.to_jsonb(run),
+    'batch', pg_catalog.to_jsonb(batch)
+  )
+  from atlas_planning.planning_input_sets input_set
+  join atlas_planning.need_generation_runs run
+    on run.planning_input_set_id=input_set.planning_input_set_id
+  join atlas_planning.confirmed_need_batches batch
+    on batch.current_need_generation_run_id=run.need_generation_run_id
+  where input_set.planning_input_set_id=target_input_set_id
+$$;
+
+create temporary table pct01_legacy_baselines (
+  evidence_name text primary key,
+  evidence jsonb not null
+);
+
+set local session_replication_role = replica;
+insert into pct01_legacy_baselines values (
+  'hosted-shape-17-23',
+  pg_temp.pct01_seed_legacy_chain(
+    'e4820000-0000-0000-0000-000000000001',
+    'e4820000-0000-0000-0000-000000000101',
+    'e4820000-0000-0000-0000-000000000201',
+    'e4820000-0000-0000-0000-000000000301',
+    'e4820000-0000-0000-0000-000000000401',
+    'e4820000-0000-0000-0000-000000000501',
+    '2026-08-17','2026-08-23','RELEASED_FOR_CONFIRMATION'
+  )
+);
+set local session_replication_role = origin;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'legacy-17-23-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e4820000-0000-0000-0000-000000000601',
+    'payload',jsonb_build_object(
+      'period_start','2026-08-17','period_end','2026-08-17'
+    )
+  ))
+), (
+  'legacy-17-23-execute',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e4820000-0000-0000-0000-000000000602',
+    'correlation_id','e4820000-0000-0000-0000-000000000603',
+    'idempotency_key','pct01-legacy-17-23',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-08-17',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+), (
+  'legacy-v2-public-daily-overlap',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v2',
+    'command_id','e4820000-0000-0000-0000-000000000609',
+    'correlation_id','e4820000-0000-0000-0000-000000000610',
+    'idempotency_key','pct01-public-v2-daily-overlap',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'period_start','2026-08-17','period_end','2026-08-17',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+), (
+  'legacy-v2-public-range',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v2',
+    'command_id','e4820000-0000-0000-0000-000000000604',
+    'correlation_id','e4820000-0000-0000-0000-000000000605',
+    'idempotency_key','pct01-public-v2-range-retired',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'period_start','2026-08-17','period_end','2026-08-23',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+);
+reset role;
+
+select is(
+  (select response->'preflight'->>'downstream_currentness'
+   from pct01_responses where response_name='legacy-17-23-preflight'),
+  'LEGACY_OVERLAP',
+  'PCT01-L01 active historical 17..23 is a distinct daily overlap blocker'
+);
+select is(
+  (select response->>'error_code' from pct01_responses
+   where response_name='legacy-17-23-execute'),
+  'ACTIVE_LEGACY_NEED_RANGE_OVERLAP',
+  'PCT01-L02 v3 17..17 returns the stable historical-overlap error'
+);
+select is(
+  pg_catalog.jsonb_build_object(
+    'input_set',(select count(*) from atlas_planning.planning_input_sets
+      where period_start='2026-08-17' and period_end='2026-08-17'),
+    'run',(select count(*) from atlas_planning.need_generation_runs
+      where period_start='2026-08-17' and period_end='2026-08-17'),
+    'batch',(select count(*) from atlas_planning.confirmed_need_batches
+      where period_start='2026-08-17' and period_end='2026-08-17')
+  ),
+  '{"input_set":0,"run":0,"batch":0}'::jsonb,
+  'PCT01-L03 blocked 17..23 overlap creates no D..D authority'
+);
+select is(
+  (select evidence from pct01_legacy_baselines
+   where evidence_name='hosted-shape-17-23'),
+  pg_temp.pct01_read_legacy_chain(
+    'e4820000-0000-0000-0000-000000000001'
+  ),
+  'PCT01-L04 active 17..23 Need and Confirmed Need remain unchanged/readable'
+);
+select is(
+  (select response->>'error_code' from pct01_responses
+   where response_name='legacy-v2-public-range'),
+  'MULTI_DAY_NEED_GENERATION_RETIRED',
+  'PCT01-L05 public v2 cannot create an arbitrary multi-day root'
+);
+select ok(
+  (select response->>'error_code'='PLANNING_INPUTS_NOT_READY'
+     and exists (
+       select 1
+       from pg_catalog.jsonb_array_elements(
+         response->'blocking_references'
+       ) issue
+       where issue->>'issue_code'='ACTIVE_LEGACY_NEED_RANGE_OVERLAP'
+     )
+   from pct01_responses
+   where response_name='legacy-v2-public-daily-overlap'),
+  'PCT01-L05A public v2 exact-day compatibility cannot bypass legacy overlap'
+);
+select is(
+  (select count(*) from atlas_planning.planning_input_sets
+   where period_start='2026-08-17' and period_end='2026-08-23'),
+  1::bigint,
+  'PCT01-L06 rejected public v2 leaves the one historical range unchanged'
+);
+
+set local session_replication_role = replica;
+select pg_temp.pct01_remove_legacy_chain(
+  'e4820000-0000-0000-0000-000000000001',
+  'e4820000-0000-0000-0000-000000000201',
+  'e4820000-0000-0000-0000-000000000501'
+);
+set local session_replication_role = origin;
+
+set local session_replication_role = replica;
+insert into pct01_legacy_baselines values (
+  'hosted-shape-17-21',
+  pg_temp.pct01_seed_legacy_chain(
+    'e4820000-0000-0000-0000-000000000002',
+    'e4820000-0000-0000-0000-000000000102',
+    'e4820000-0000-0000-0000-000000000202',
+    'e4820000-0000-0000-0000-000000000302',
+    'e4820000-0000-0000-0000-000000000402',
+    'e4820000-0000-0000-0000-000000000502',
+    '2026-08-17','2026-08-21','RELEASED_FOR_CONFIRMATION'
+  )
+);
+set local session_replication_role = origin;
+set local role authenticated;
+insert into pct01_responses values (
+  'legacy-17-21-execute',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e4820000-0000-0000-0000-000000000606',
+    'correlation_id','e4820000-0000-0000-0000-000000000607',
+    'idempotency_key','pct01-legacy-17-21',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-08-17',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+);
+reset role;
+select is(
+  (select response->>'error_code' from pct01_responses
+   where response_name='legacy-17-21-execute'),
+  'ACTIVE_LEGACY_NEED_RANGE_OVERLAP',
+  'PCT01-L07 v3 17..17 is also blocked by active historical 17..21'
+);
+select is(
+  pg_catalog.jsonb_build_object(
+    'input_set',(select count(*) from atlas_planning.planning_input_sets
+      where period_start='2026-08-17' and period_end='2026-08-17'),
+    'run',(select count(*) from atlas_planning.need_generation_runs
+      where period_start='2026-08-17' and period_end='2026-08-17'),
+    'batch',(select count(*) from atlas_planning.confirmed_need_batches
+      where period_start='2026-08-17' and period_end='2026-08-17')
+  ),
+  '{"input_set":0,"run":0,"batch":0}'::jsonb,
+  'PCT01-L08 blocked 17..21 overlap creates no D..D authority'
+);
+select is(
+  (select evidence from pct01_legacy_baselines
+   where evidence_name='hosted-shape-17-21'),
+  pg_temp.pct01_read_legacy_chain(
+    'e4820000-0000-0000-0000-000000000002'
+  ),
+  'PCT01-L09 active 17..21 Need and Confirmed Need remain unchanged/readable'
+);
+set local session_replication_role = replica;
+select pg_temp.pct01_remove_legacy_chain(
+  'e4820000-0000-0000-0000-000000000002',
+  'e4820000-0000-0000-0000-000000000202',
+  'e4820000-0000-0000-0000-000000000502'
+);
+set local session_replication_role = origin;
+
+set local session_replication_role = replica;
+insert into pct01_legacy_baselines values
+  ('invalidated-containing',pg_temp.pct01_seed_legacy_chain(
+    'e4820000-0000-0000-0000-000000000003',
+    'e4820000-0000-0000-0000-000000000103',
+    'e4820000-0000-0000-0000-000000000203',
+    'e4820000-0000-0000-0000-000000000303',
+    'e4820000-0000-0000-0000-000000000403',
+    'e4820000-0000-0000-0000-000000000503',
+    '2026-11-02','2026-11-08','INVALIDATED'
+  )),
+  ('active-non-containing',pg_temp.pct01_seed_legacy_chain(
+    'e4820000-0000-0000-0000-000000000004',
+    'e4820000-0000-0000-0000-000000000104',
+    'e4820000-0000-0000-0000-000000000204',
+    'e4820000-0000-0000-0000-000000000304',
+    'e4820000-0000-0000-0000-000000000404',
+    'e4820000-0000-0000-0000-000000000504',
+    '2026-11-04','2026-11-08','RELEASED_FOR_CONFIRMATION'
+  ));
+set local session_replication_role = origin;
+set local role authenticated;
+insert into pct01_responses values (
+  'legacy-nonblocking-tuesday-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e4820000-0000-0000-0000-000000000608',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-03','period_end','2026-11-03'
+    )
+  ))
+);
+reset role;
+select ok(
+  (select response->'preflight'->>'readiness_state'='READY'
+     and response->'preflight'->>'downstream_currentness'='NOT_GENERATED'
+     and not (response->'preflight' ? 'legacy_overlap')
+   from pct01_responses
+   where response_name='legacy-nonblocking-tuesday-preflight'),
+  'PCT01-L10 invalidated containing and active non-containing ranges do not block D'
+);
 
 -- ISSUE-223 assembled daily isolation: the same approved parent week can
 -- produce Tuesday without changing the already-governed Monday chain.
@@ -2338,6 +2719,34 @@ select 'execute-tuesday-replay',atlas_api.execute_need_generation(
   )
 );
 reset role;
+
+select ok(
+  (select evidence from pct01_legacy_baselines
+   where evidence_name='invalidated-containing') =
+    pg_temp.pct01_read_legacy_chain(
+      'e4820000-0000-0000-0000-000000000003'
+    )
+  and
+  (select evidence from pct01_legacy_baselines
+   where evidence_name='active-non-containing') =
+    pg_temp.pct01_read_legacy_chain(
+      'e4820000-0000-0000-0000-000000000004'
+    ),
+  'PCT01-L11 successful daily generation leaves nonblocking legacy rows unchanged/readable'
+);
+
+set local session_replication_role = replica;
+select pg_temp.pct01_remove_legacy_chain(
+  'e4820000-0000-0000-0000-000000000003',
+  'e4820000-0000-0000-0000-000000000203',
+  'e4820000-0000-0000-0000-000000000503'
+);
+select pg_temp.pct01_remove_legacy_chain(
+  'e4820000-0000-0000-0000-000000000004',
+  'e4820000-0000-0000-0000-000000000204',
+  'e4820000-0000-0000-0000-000000000504'
+);
+set local session_replication_role = origin;
 
 select is((select response->>'error_code' from pct01_responses where response_name='daily-range-rejected'),'VALIDATION_FAILED','PCT01-D05 v3 rejects caller-authored multi-day ranges');
 select is((select count(*) from atlas_planning.need_generation_runs where period_start='2026-11-03'),1::bigint,'PCT01-D06 rejected range writes nothing and Tuesday writes one chain');

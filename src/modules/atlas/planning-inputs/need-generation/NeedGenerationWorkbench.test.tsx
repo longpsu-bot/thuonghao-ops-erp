@@ -165,6 +165,85 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("shows the backend legacy-overlap blocker on its daily row and disables generation", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    const preflightApi = createReviewPlanningInputReadinessApi("ready");
+    const original = preflightApi.preflight;
+    vi.spyOn(preflightApi, "preflight").mockImplementation(async (...args) => {
+      const result = await original(...args);
+      if (
+        args[2] === "2026-08-03" &&
+        result.kind === "success" &&
+        result.response.preflight
+      ) {
+        const preflight = result.response.preflight as Record<string, unknown>;
+        preflight.readiness_state = "BLOCKED";
+        preflight.downstream_currentness = "LEGACY_OVERLAP";
+        preflight.blocking_issue_count = 1;
+        preflight.current_need = null;
+        preflight.legacy_overlap = {
+          service_date: "2026-08-03",
+          blocker_code: "ACTIVE_LEGACY_NEED_RANGE_OVERLAP",
+          safe_message:
+            "An active historical multi-day Need commitment contains this service date.",
+          active_chains: [
+            {
+              need_generation_run_id: "legacy-run",
+              need_generation_run_status: "RELEASED_FOR_CONFIRMATION",
+              need_generation_run_version: 3,
+              period_start: "2026-08-03",
+              period_end: "2026-08-09",
+              confirmed_need_batch_id: "legacy-batch",
+              confirmed_need_batch_status: "DRAFT_REVIEW",
+              confirmed_need_batch_version: 1,
+            },
+          ],
+        };
+        preflight.issues = [
+          {
+            severity: "BLOCKING",
+            issue_code: "ACTIVE_LEGACY_NEED_RANGE_OVERLAP",
+            message:
+              "An active historical multi-day Need commitment contains this service date.",
+            input_type: "NEED_GENERATION",
+            school_id: null,
+            service_date: "2026-08-03",
+          },
+        ];
+      }
+      return result;
+    });
+    renderWorkbench(api, preflightApi);
+
+    const table = await screen.findByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    const dailyRow = within(table).getByText("03/08/2026").closest("tr");
+    expect(dailyRow).not.toBeNull();
+    expect(within(dailyRow!).getByText("VƯỚNG NHU CẦU CŨ")).toBeVisible();
+    expect(within(dailyRow!).getByText("CAM KẾT CŨ")).toBeVisible();
+    expect(
+      within(dailyRow!).getByRole("button", {
+        name: "Xem nhu cầu cũ 03/08/2026",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Ngày này đã thuộc một nhu cầu nhiều ngày đang có hiệu lực nên không thể tạo nhu cầu mới.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Ngày này đã nằm trong một nhu cầu nhiều ngày đang có hiệu lực. Giữ nguyên nhu cầu cũ và chờ quy trình điều chỉnh.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it("targets Tuesday independently without caller-authored date ranges", async () => {
     const api = createReviewNeedGenerationApi("ready");
     const execute = vi.spyOn(api, "execute");

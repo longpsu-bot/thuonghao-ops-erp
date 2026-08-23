@@ -64,6 +64,7 @@ function currentnessLabel(
     CURRENT: "HIỆN HÀNH",
     OUTDATED: "CẦN CẬP NHẬT",
     NOT_GENERATED: "CHƯA TẠO",
+    LEGACY_OVERLAP: "VƯỚNG NHU CẦU CŨ",
   } as const;
   return labels[currentness];
 }
@@ -72,7 +73,8 @@ function currentnessTone(
   currentness: PlanningInputPreflightData["downstream_currentness"],
 ) {
   if (currentness === "CURRENT") return "ok" as const;
-  if (currentness === "OUTDATED") return "danger" as const;
+  if (currentness === "OUTDATED" || currentness === "LEGACY_OVERLAP")
+    return "danger" as const;
   return "warning" as const;
 }
 
@@ -138,6 +140,8 @@ const preflightIssueMessages: Record<string, string> = {
     "Có nhiều bản nhu cầu bổ sung phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
   STALE_PANTRY_SOURCE:
     "Nhu cầu bổ sung đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+  ACTIVE_LEGACY_NEED_RANGE_OVERLAP:
+    "Ngày này đã nằm trong một nhu cầu nhiều ngày đang có hiệu lực. Giữ nguyên nhu cầu cũ và chờ quy trình điều chỉnh.",
 };
 
 function preflightIssueMessage(issue: PlanningInputPreflightIssue) {
@@ -156,6 +160,9 @@ function releasedCorrectionBlocked(preflight: PlanningInputPreflightData) {
 }
 
 function planningStatusSentence(preflight: PlanningInputPreflightData) {
+  if (preflight.downstream_currentness === "LEGACY_OVERLAP")
+    return "Ngày này đã thuộc một nhu cầu nhiều ngày đang có hiệu lực nên không thể tạo nhu cầu mới.";
+
   if (releasedCorrectionBlocked(preflight))
     return "Nhu cầu này đã được chuyển sang lên đơn nên chưa thể cập nhật trực tiếp tại đây.";
 
@@ -422,6 +429,7 @@ export function NeedGenerationWorkbench({
       !preflight ||
       preflight.readiness_state !== "READY" ||
       preflight.downstream_currentness === "CURRENT" ||
+      preflight.downstream_currentness === "LEGACY_OVERLAP" ||
       releasedCorrectionBlocked(preflight) ||
       refreshRequired ||
       executionBlocker
@@ -494,6 +502,7 @@ export function NeedGenerationWorkbench({
   const canExecute =
     preflight?.readiness_state === "READY" &&
     preflight.downstream_currentness !== "CURRENT" &&
+    preflight.downstream_currentness !== "LEGACY_OVERLAP" &&
     !correctionBlocked &&
     !refreshRequired &&
     !executionBlocker;
@@ -533,15 +542,17 @@ export function NeedGenerationWorkbench({
               const released = state ? releasedCorrectionBlocked(state) : false;
               const action = !state
                 ? "Đang tải"
-                : state.readiness_state === "BLOCKED"
-                  ? "Sửa dữ liệu nguồn"
-                  : released
-                    ? "Chờ điều chỉnh"
-                    : state.downstream_currentness === "CURRENT"
-                      ? "Rà soát"
-                      : state.downstream_currentness === "OUTDATED"
-                        ? "Cập nhật"
-                        : "Tạo nhu cầu";
+                : state.downstream_currentness === "LEGACY_OVERLAP"
+                  ? "Xem nhu cầu cũ"
+                  : state.readiness_state === "BLOCKED"
+                    ? "Sửa dữ liệu nguồn"
+                    : released
+                      ? "Chờ điều chỉnh"
+                      : state.downstream_currentness === "CURRENT"
+                        ? "Rà soát"
+                        : state.downstream_currentness === "OUTDATED"
+                          ? "Cập nhật"
+                          : "Tạo nhu cầu";
               return (
                 <tr
                   key={serviceDate}
@@ -557,7 +568,10 @@ export function NeedGenerationWorkbench({
                       : "—"}
                   </td>
                   <td>
-                    {state?.current_need?.confirmed_need_batch_status ?? "—"}
+                    {state?.downstream_currentness === "LEGACY_OVERLAP"
+                      ? "CAM KẾT CŨ"
+                      : (state?.current_need?.confirmed_need_batch_status ??
+                        "—")}
                   </td>
                   <td>
                     <button
@@ -623,11 +637,13 @@ export function NeedGenerationWorkbench({
               <h3>
                 {preflight.downstream_currentness === "CURRENT"
                   ? "Xác nhận nhu cầu"
-                  : correctionBlocked
-                    ? "Chờ quy trình điều chỉnh tiếp theo"
-                    : canExecute
-                      ? executionLabel
-                      : "Hoàn tất dữ liệu còn thiếu"}
+                  : preflight.downstream_currentness === "LEGACY_OVERLAP"
+                    ? "Chờ quy trình điều chỉnh nhu cầu cũ"
+                    : correctionBlocked
+                      ? "Chờ quy trình điều chỉnh tiếp theo"
+                      : canExecute
+                        ? executionLabel
+                        : "Hoàn tất dữ liệu còn thiếu"}
               </h3>
             </header>
             {canExecute && (
