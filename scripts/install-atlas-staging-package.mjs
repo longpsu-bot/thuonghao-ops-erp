@@ -364,7 +364,7 @@ export function verifyPackageCheckout({
 } = {}) {
   const commitSha = requireExactCommitSha(commitShaValue);
   const command = (args, message) => {
-    const result = runCommand("git", args, { cwd });
+    const result = runCommand("git", args, { cwd, shell: false });
     if (result.status !== 0) throw new Error(message);
     return String(result.stdout ?? "").trim();
   };
