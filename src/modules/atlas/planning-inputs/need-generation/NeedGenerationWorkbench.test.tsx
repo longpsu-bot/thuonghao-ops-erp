@@ -71,7 +71,7 @@ async function makePreflightCurrentness(
 }
 
 describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", () => {
-  it("loads preflight automatically and executes exactly one v2 write", async () => {
+  it("renders seven backend daily states and executes exactly one Monday v3 write", async () => {
     const api = createReviewNeedGenerationApi("ready");
     const preflightApi = createReviewPlanningInputReadinessApi("ready");
     const preflight = vi.spyOn(preflightApi, "preflight");
@@ -89,9 +89,27 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     ).toBeVisible();
     const support = screen.getByText("Chi tiết hỗ trợ").closest("details");
     expect(support).not.toHaveAttribute("open");
-    expect(screen.getByText("SẴN SÀNG")).not.toBeVisible();
+    expect(screen.getAllByText("SẴN SÀNG")).toHaveLength(8);
     expect(screen.queryByText("READY")).not.toBeInTheDocument();
-    expect(preflight).toHaveBeenCalledTimes(1);
+    expect(preflight).toHaveBeenCalledTimes(7);
+    expect(preflight.mock.calls.map((call) => call.slice(2))).toEqual([
+      ["2026-08-03", "2026-08-03"],
+      ["2026-08-04", "2026-08-04"],
+      ["2026-08-05", "2026-08-05"],
+      ["2026-08-06", "2026-08-06"],
+      ["2026-08-07", "2026-08-07"],
+      ["2026-08-08", "2026-08-08"],
+      ["2026-08-09", "2026-08-09"],
+    ]);
+    expect(
+      screen.getByRole("table", { name: "Tổng quan nhu cầu theo ngày" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByLabelText("Từ ngày tạo nhu cầu"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Đến ngày tạo nhu cầu"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Đánh giá mức sẵn sàng/ }),
     ).not.toBeInTheDocument();
@@ -101,7 +119,10 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
 
     fireEvent.click(screen.getByRole("button", { name: "Tạo nhu cầu" }));
     await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
-    expect(execute.mock.calls[0]?.[0].contract_version).toBe("RMVP-04.v2");
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({
+      contract_version: "RMVP-04.v3",
+      payload: { service_date: "2026-08-03" },
+    });
     expect(create).not.toHaveBeenCalled();
     expect(validate).not.toHaveBeenCalled();
     expect(release).not.toHaveBeenCalled();
@@ -123,7 +144,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       await screen.findByText("Cần lưu Thực đơn trước khi tạo nhu cầu."),
     ).toBeVisible();
-    expect(screen.getByText("CẦN XỬ LÝ")).not.toBeVisible();
+    expect(screen.getAllByText("CẦN XỬ LÝ")).toHaveLength(8);
     expect(screen.getAllByText("CHƯA CÓ")).toHaveLength(3);
     expect(screen.getAllByText("CHƯA CÓ")[0]).not.toBeVisible();
     for (const rawToken of [
@@ -142,6 +163,32 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
     expect(execute).not.toHaveBeenCalled();
+  });
+
+  it("targets Tuesday independently without caller-authored date ranges", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    renderWorkbench(api, createReviewPlanningInputReadinessApi("ready"));
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Tạo nhu cầu 04/08/2026",
+      }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+
+    await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
+    expect(execute.mock.calls[0]?.[0].payload).toEqual({
+      service_date: "2026-08-04",
+      expected_current_need_generation_run_id: null,
+    });
+    expect(execute.mock.calls[0]?.[0].payload).not.toHaveProperty(
+      "period_start",
+    );
+    expect(execute.mock.calls[0]?.[0].payload).not.toHaveProperty("period_end");
+    expect(
+      screen.getByRole("button", { name: "Tạo nhu cầu 03/08/2026" }),
+    ).toBeVisible();
   });
 
   it("maps known preflight issues and keeps raw backend sentences hidden", async () => {

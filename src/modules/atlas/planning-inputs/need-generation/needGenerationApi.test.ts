@@ -14,7 +14,7 @@ const success: AtlasRpcResult = {
 };
 
 describe("RMVP-04 API adapter", () => {
-  it("builds one RMVP-04.v2 generation intent and does not chain v1 lifecycle RPCs", async () => {
+  it("builds one daily RMVP-04.v3 generation intent and does not chain v1 lifecycle RPCs", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createNeedGenerationApi({ invoke });
     const request = needGenerationExecutionRequest(
@@ -22,19 +22,17 @@ describe("RMVP-04 API adapter", () => {
       "correlation",
       3,
       "2026-08-03",
-      "2026-08-09",
       "run-2",
     );
 
     const result = await api.execute(request);
 
     expect(request).toMatchObject({
-      contract_version: "RMVP-04.v2",
+      contract_version: "RMVP-04.v3",
       expected_version: 3,
       reason_code: "NEED_GENERATION_EXECUTED",
       payload: {
-        period_start: "2026-08-03",
-        period_end: "2026-08-09",
+        service_date: "2026-08-03",
         expected_current_need_generation_run_id: "run-2",
       },
     });

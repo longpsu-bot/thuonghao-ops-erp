@@ -120,6 +120,8 @@ D-037 adds `atlas_api.save_confirmed_needs(jsonb)` (`RMVP-05.v2`) and `atlas_api
 
 PLANNING-CONTRACT-01 implements D-036 with five additive APIs: consequential Weekly Menu, Attendance, and Pantry Saves; automatic Planning preflight; and one atomic Need Generation/materialization command. The versions are `RMVP-03A.v2`, `PANTRY-02.v2`, `RMVP-03B.v2`, and `RMVP-04.v2`. Existing v1 APIs remain callable during UI coexistence. The canonical cross-family implementation, security, persistence, correction, compatibility, and retirement record is [PLANNING-CONTRACT-01 Atomic Planning completion boundaries](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md); family payload detail remains in the four existing API documents.
 
+Issue #223 adds `RMVP-04.v3` at the existing `execute_need_generation` name. The new connected payload contains one `service_date`, and the weekly screen projects seven independent date-scoped preflight/read states. No public API name, role, capability, relation, or lifecycle state is added; v2 remains callable for compatibility.
+
 ## 4J. Recipe two-action v2 boundary
 
 D-038 adds `atlas_api.save_recipe(jsonb)` and retains `atlas_api.release_recipe(jsonb)` as a compatibility/support entry point under `RMVP-02A.v2`. Normal `Tạo`/`Lưu` validates, materializes, and makes a pre-commit Dish/Recipe available for future Planning atomically. A Dish appearing in immutable approved Weekly Menu snapshot lines has crossed the committed-use boundary; readback marks it locked and Save denies before creating any successor. Existing RMVP-02A.v1 functions remain callable; React invokes no lifecycle chain or release action. The exact delta is specified in [RMVP-02A Recipe and BOM API contract](rmvp-02a-recipes-bom.md).

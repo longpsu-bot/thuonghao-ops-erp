@@ -278,7 +278,7 @@ export function createReviewNeedGenerationApi(
         invalidate: false,
       };
       const result = success({
-        contract_version: "RMVP-04.v2",
+        contract_version: "RMVP-04.v3",
         command_id: request.command_id,
         correlation_id: request.correlation_id,
         idempotency_status: "COMPLETED",
@@ -297,8 +297,8 @@ export function createReviewNeedGenerationApi(
         },
         authoritative_readback: {
           preflight: {
-            period_start: request.payload.period_start,
-            period_end: request.payload.period_end,
+            period_start: request.payload.service_date,
+            period_end: request.payload.service_date,
             readiness_state: "READY",
             source_evidence: clone(state.source_evidence),
             issues: [],

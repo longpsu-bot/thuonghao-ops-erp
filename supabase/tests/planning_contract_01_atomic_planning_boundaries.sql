@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(145);
+select plan(164);
 
 select is(
   (
@@ -426,14 +426,14 @@ insert into atlas_planning.attendance_batches (attendance_batch_id, period_start
 values ('e4300000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-04 attendance', 'rmvp04-attendance-signature', 4, 'e4000000-0000-0000-0000-000000000001', 'APPROVED', 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:05:00+07', 'e4300000-0000-0000-0000-000000000002');
 insert into atlas_planning.attendance_lines (attendance_line_id, attendance_batch_id, school_id, service_date, student_portions, teacher_portions, created_by_actor_id, updated_by_actor_id) values
   ('e4300000-0000-0000-0000-000000000003', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-02', 15, 5, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
-  ('e4300000-0000-0000-0000-000000000004', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 0, 0, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4300000-0000-0000-0000-000000000004', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 10, 0, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
   ('e4600000-0000-0000-0000-000000000030', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 10, 2, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001'),
   ('e4700000-0000-0000-0000-000000000030', 'e4300000-0000-0000-0000-000000000001', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 10, 2, 'e4000000-0000-0000-0000-000000000001', 'e4000000-0000-0000-0000-000000000001');
 insert into atlas_planning.attendance_approval_snapshots (attendance_approval_snapshot_id, attendance_batch_id, attendance_version, approved_by_actor_id, approved_at)
 values ('e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4000000-0000-0000-0000-000000000001', '2026-11-01 09:05:00+07');
 insert into atlas_planning.attendance_approval_snapshot_lines (attendance_approval_snapshot_line_id, attendance_approval_snapshot_id, attendance_batch_id, attendance_version, attendance_line_id, school_id, service_date, student_portions, teacher_portions) values
   ('e4300000-0000-0000-0000-000000000005', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4300000-0000-0000-0000-000000000003', 'e4100000-0000-0000-0000-000000000005', '2026-11-02', 15, 5),
-  ('e4300000-0000-0000-0000-000000000006', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4300000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 0, 0),
+  ('e4300000-0000-0000-0000-000000000006', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4300000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000005', '2026-11-03', 10, 0),
   ('e4600000-0000-0000-0000-000000000031', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4600000-0000-0000-0000-000000000030', 'e4100000-0000-0000-0000-000000000005', '2026-11-04', 10, 2),
   ('e4700000-0000-0000-0000-000000000031', 'e4300000-0000-0000-0000-000000000002', 'e4300000-0000-0000-0000-000000000001', 1, 'e4700000-0000-0000-0000-000000000030', 'e4100000-0000-0000-0000-000000000005', '2026-11-05', 10, 2);
 
@@ -632,7 +632,7 @@ grant select on pct01_requests to authenticated;
 insert into pct01_requests values (
   'execute-initial',
   jsonb_build_object(
-    'contract_version','RMVP-04.v2',
+    'contract_version','RMVP-04.v3',
     'command_id','e4800000-0000-0000-0000-000000000001',
     'correlation_id','e4800000-0000-0000-0000-000000000002',
     'idempotency_key','pct01-execute-initial',
@@ -642,7 +642,7 @@ insert into pct01_requests values (
     'reason_code','NEED_GENERATION_EXECUTED',
     'reason_note',null,
     'payload',jsonb_build_object(
-      'period_start','2026-11-02','period_end','2026-11-02',
+      'service_date','2026-11-02',
       'expected_current_need_generation_run_id',null
     )
   )
@@ -655,7 +655,7 @@ from pct01_requests where request_name='execute-initial';
 reset role;
 
 select ok((select response->>'success'='true' from pct01_responses where response_name='execute-initial'),'PCT01-22 atomic mixed generation accepts bounded positive client skew');
-select is((select response->>'contract_version' from pct01_responses where response_name='execute-initial'),'RMVP-04.v2','PCT01-23 atomic response uses RMVP-04.v2');
+select is((select response->>'contract_version' from pct01_responses where response_name='execute-initial'),'RMVP-04.v3','PCT01-23 atomic response uses the daily RMVP-04.v3 contract');
 select is((select response->>'downstream_currentness' from pct01_responses where response_name='execute-initial'),'CURRENT','PCT01-24 committed result is CURRENT');
 select is((select count(*) from atlas_core.command_receipts where command_id='e4800000-0000-0000-0000-000000000001'),1::bigint,'PCT01-25 one top-level receipt exists');
 select is((select command_name from atlas_core.command_receipts where command_id='e4800000-0000-0000-0000-000000000001'),'execute_need_generation','PCT01-26 receipt owns the public generation intent');
@@ -699,6 +699,25 @@ select is((
   select count(*) from atlas_planning.confirmed_need_line_revision_contributions
   where confirmed_need_batch_id=(select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid from pct01_responses where response_name='execute-initial')
 ),4::bigint,'PCT01-35 H0C membership retains every theoretical contribution');
+select is((
+  select array_agg(distinct service_date order by service_date)::text[]
+  from atlas_planning.theoretical_need_lines
+  where need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-initial')
+),array['2026-11-02']::text[],'PCT01-D01 daily theoretical lines contain only the commanded service date');
+select ok((
+  select period_start=period_end and period_start='2026-11-02'
+  from atlas_planning.need_generation_runs
+  where need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-initial')
+),'PCT01-D02 daily Need run persists as D..D');
+select ok((
+  select period_start=period_end and period_start='2026-11-02'
+  from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id=(select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid from pct01_responses where response_name='execute-initial')
+),'PCT01-D03 daily Confirmed Need persists as D..D');
+select is((
+  select count(*) from atlas_planning.need_generation_runs
+  where period_start='2026-11-03' and period_end='2026-11-03'
+),0::bigint,'PCT01-D04 Monday generation creates no Tuesday Need');
 select ok(exists(select 1 from atlas_audit.domain_events where command_id='e4800000-0000-0000-0000-000000000001' and event_type='NeedGenerationExecuted'),'PCT01-36 composite execution event exists');
 select ok(exists(select 1 from atlas_audit.domain_events where command_id='e4800000-0000-0000-0000-000000000001' and event_type='ConfirmedNeedsCreated'),'PCT01-37 internal H0C evidence is retained');
 
@@ -964,7 +983,7 @@ select is((select count(*) from atlas_planning.pantry_need_approval_snapshots wh
 
 insert into pct01_requests
 select 'execute-correction',jsonb_build_object(
-  'contract_version','RMVP-04.v2',
+  'contract_version','RMVP-04.v3',
   'command_id','e4800000-0000-0000-0000-000000000020',
   'correlation_id','e4800000-0000-0000-0000-000000000021',
   'idempotency_key','pct01-execute-correction',
@@ -974,7 +993,7 @@ select 'execute-correction',jsonb_build_object(
   'reason_code','UPSTREAM_SOURCE_CHANGED',
   'reason_note','Pantry successor',
   'payload',jsonb_build_object(
-    'period_start','2026-11-02','period_end','2026-11-02',
+    'service_date','2026-11-02',
     'expected_current_need_generation_run_id',response->'affected_aggregate_ids'->>'need_generation_run_id'
   )
 )
@@ -2244,6 +2263,143 @@ select is(
   ),
   'PCT01-CS05 rejected time envelopes create no source, run, or Confirmed Need mutation'
 );
+
+-- ISSUE-223 assembled daily isolation: the same approved parent week can
+-- produce Tuesday without changing the already-governed Monday chain.
+create temporary table pct01_daily_isolation as
+select pg_catalog.jsonb_build_object(
+  'monday_run_id', batch.current_need_generation_run_id,
+  'monday_run_version', run.version,
+  'monday_batch_id', batch.confirmed_need_batch_id,
+  'monday_batch_version', batch.version,
+  'purchase_handoffs', (select count(*) from atlas_planning.purchase_handoff_batches),
+  'allocations', (select count(*) from atlas_procurement.fulfilment_allocations),
+  'purchase_orders', (select count(*) from atlas_procurement.purchase_orders),
+  'receiving', (select count(*) from atlas_evidence.supplier_receiving_evidence),
+  'dispatch', (select count(*) from atlas_dispatch.dispatch_plans)
+) counts
+from atlas_planning.confirmed_need_batches batch
+join atlas_planning.need_generation_runs run
+  on run.need_generation_run_id=batch.current_need_generation_run_id
+where batch.period_start='2026-11-02' and batch.period_end='2026-11-02';
+
+set local role authenticated;
+insert into pct01_responses values (
+  'daily-range-rejected',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e4800000-0000-0000-0000-000000000090',
+    'correlation_id','e4800000-0000-0000-0000-000000000091',
+    'idempotency_key','pct01-daily-range-rejected',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'period_start','2026-11-03','period_end','2026-11-07',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+), (
+  'execute-tuesday',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e4800000-0000-0000-0000-000000000092',
+    'correlation_id','e4800000-0000-0000-0000-000000000093',
+    'idempotency_key','pct01-execute-tuesday',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-11-03',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+);
+reset role;
+
+set local role authenticated;
+insert into pct01_responses
+select 'execute-tuesday-replay',atlas_api.execute_need_generation(
+  jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e4800000-0000-0000-0000-000000000092',
+    'correlation_id','e4800000-0000-0000-0000-000000000093',
+    'idempotency_key','pct01-execute-tuesday',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-11-03',
+      'expected_current_need_generation_run_id',null
+    )
+  )
+);
+reset role;
+
+select is((select response->>'error_code' from pct01_responses where response_name='daily-range-rejected'),'VALIDATION_FAILED','PCT01-D05 v3 rejects caller-authored multi-day ranges');
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2026-11-03'),1::bigint,'PCT01-D06 rejected range writes nothing and Tuesday writes one chain');
+select ok((select response->>'success'='true' and response->>'contract_version'='RMVP-04.v3' from pct01_responses where response_name='execute-tuesday'),'PCT01-D07 Tuesday daily generation succeeds');
+select ok((select period_start=period_end and period_start='2026-11-03' from atlas_planning.need_generation_runs where need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-tuesday')),'PCT01-D08 Tuesday run is D..D');
+select is((select array_agg(distinct service_date order by service_date)::text[] from atlas_planning.theoretical_need_lines where need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-tuesday')),array['2026-11-03']::text[],'PCT01-D09 Tuesday theoretical evidence is date-isolated');
+select ok((select batch.period_start=batch.period_end and batch.period_start='2026-11-03' and not exists (select 1 from atlas_planning.confirmed_need_lines line where line.confirmed_need_batch_id=batch.confirmed_need_batch_id and line.service_date<>'2026-11-03') from atlas_planning.confirmed_need_batches batch where batch.confirmed_need_batch_id=(select (response->'affected_aggregate_ids'->>'confirmed_need_batch_id')::uuid from pct01_responses where response_name='execute-tuesday')),'PCT01-D10 Tuesday Confirmed Need and every line are daily');
+select ok((select snapshot.weekly_menu_approval_snapshot_id='e4200000-0000-0000-0000-000000000002' and snapshot.attendance_approval_snapshot_id='e4300000-0000-0000-0000-000000000002' from atlas_planning.need_generation_input_snapshots snapshot where snapshot.need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-tuesday')),'PCT01-D11 Tuesday binds the exact approved parent snapshots');
+select is((select counts - array['purchase_handoffs','allocations','purchase_orders','receiving','dispatch'] from pct01_daily_isolation),(select pg_catalog.jsonb_build_object('monday_run_id',batch.current_need_generation_run_id,'monday_run_version',run.version,'monday_batch_id',batch.confirmed_need_batch_id,'monday_batch_version',batch.version) from atlas_planning.confirmed_need_batches batch join atlas_planning.need_generation_runs run on run.need_generation_run_id=batch.current_need_generation_run_id where batch.period_start='2026-11-02' and batch.period_end='2026-11-02'),'PCT01-D12 Tuesday does not mutate Monday identity or versions');
+select is((select count(*) from atlas_planning.confirmed_need_batches where period_start='2026-11-03' and period_end='2026-11-03'),1::bigint,'PCT01-D13 exactly one current Tuesday Confirmed Need chain exists');
+select is((select pg_catalog.jsonb_build_object('purchase_handoffs',counts->'purchase_handoffs','allocations',counts->'allocations','purchase_orders',counts->'purchase_orders','receiving',counts->'receiving','dispatch',counts->'dispatch') from pct01_daily_isolation),pg_catalog.jsonb_build_object('purchase_handoffs',(select count(*) from atlas_planning.purchase_handoff_batches),'allocations',(select count(*) from atlas_procurement.fulfilment_allocations),'purchase_orders',(select count(*) from atlas_procurement.purchase_orders),'receiving',(select count(*) from atlas_evidence.supplier_receiving_evidence),'dispatch',(select count(*) from atlas_dispatch.dispatch_plans)),'PCT01-D14 daily generation creates no downstream operational facts');
+select is((select response from pct01_responses where response_name='execute-tuesday-replay'),(select response from pct01_responses where response_name='execute-tuesday'),'PCT01-D15 exact Tuesday retry replays without history');
+select is((select response->'authoritative_readback'->'preflight'->>'downstream_currentness' from pct01_responses where response_name='execute-tuesday'),'CURRENT','PCT01-D16 committed Tuesday result is current');
+select is((select count(*) from atlas_core.command_receipts where command_id='e4800000-0000-0000-0000-000000000092'),1::bigint,'PCT01-D18 Tuesday replay owns one receipt and no extra history');
+
+-- Change Thursday only after Tuesday exists. The exact parent snapshot advances,
+-- but Tuesday's stable date-line facts remain identical and therefore current.
+with proposed(rows) as (
+  select jsonb_set(
+    jsonb_set(request#>'{payload,rows}','{0,requested_quantity}','"3.300000"'::jsonb),
+    '{0,note}','"Thursday-only change after Tuesday generation"'::jsonb
+  )
+  from pct01_requests where request_name='02b-source-policy'
+), canonical(raw_rows,canonical_rows) as (
+  select rows,atlas_core.pantry_02_canonical_rows('2026-11-02',rows)
+  from proposed
+)
+insert into pct01_requests
+select 'daily-thursday-source-successor',jsonb_build_object(
+  'contract_version','PANTRY-02.v2',
+  'command_id','e4800000-0000-0000-0000-000000000094',
+  'correlation_id','e4800000-0000-0000-0000-000000000095',
+  'idempotency_key','pct01-daily-thursday-source-successor',
+  'expected_version',(select (response->'new_versions'->>'aggregate_version')::bigint from pct01_responses where response_name='02b-source-policy'),
+  'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+  'requested_at',transaction_timestamp(),
+  'reason_code','PANTRY_SAVED','reason_note','Thursday-only daily-isolation proof',
+  'payload',jsonb_build_object(
+    'week_start','2026-11-02','no_additions_confirmed',false,
+    'source_signature',atlas_core.pantry_02_signature('2026-11-02',false,canonical_rows),
+    'expected_source_signature',(select request#>>'{payload,source_signature}' from pct01_requests where request_name='02b-source-policy'),
+    'rows',raw_rows
+  )
+) from canonical;
+
+set local role authenticated;
+insert into pct01_responses
+select 'daily-thursday-source-successor',atlas_api.save_pantry(request)
+from pct01_requests where request_name='daily-thursday-source-successor';
+insert into pct01_responses values (
+  'daily-tuesday-after-thursday-change',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e4800000-0000-0000-0000-000000000096',
+    'payload',jsonb_build_object('period_start','2026-11-03','period_end','2026-11-03')
+  ))
+);
+reset role;
+
+select ok((select response->>'success'='true' from pct01_responses where response_name='daily-thursday-source-successor'),'PCT01-D19 unrelated Thursday source successor is accepted');
+select is((select response->'preflight'->>'downstream_currentness' from pct01_responses where response_name='daily-tuesday-after-thursday-change'),'CURRENT','PCT01-D20 Thursday-only source change leaves Tuesday current');
 
 select * from finish();
 rollback;

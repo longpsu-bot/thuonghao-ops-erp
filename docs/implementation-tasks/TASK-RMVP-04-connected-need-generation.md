@@ -98,3 +98,9 @@ GitHub owns Supabase integration. Draft pull-request opens, synchronizations, an
 ## Deferred boundary
 
 RMVP-04 stops at released Need Generation and existing CMD-15 Draft Review materialization. The separately authorized [RMVP-05](TASK-RMVP-05-connected-confirmed-need-review.md) draft implements Planning quantity confirmation without changing RMVP-04. Supplier assignment, Purchase Handoff release, Procurement, Warehouse, Dispatch, hosted Supabase, Retool, production data, credentials, and deployment remain unchanged and separately authorized.
+
+## Issue #223 daily authority amendment
+
+The forward migration `20260823033440_issue_223_daily_need_generation.sql` preserves the v2 implementation as private compatibility code and dispatches `RMVP-04.v3` at the same registered public API name. The v3 payload accepts only one `service_date`, maps it to the existing one-day Planning Input representation (`D..D`), and reuses the full atomic readiness → generation → validation → release → Confirmed Need transaction. No relation, lifecycle, role, capability, or public function name is added.
+
+The connected React workbench keeps the week as a seven-row overview. Each row consumes a date-scoped backend preflight, and the operator selects one service date for generation or review; arbitrary start/end generation controls are removed. Date currentness uses date-line fingerprints from exact immutable approval snapshots so an unrelated-day successor does not stale the whole week. Exact parent snapshot IDs remain authoritative run lineage, historical multi-day rows are unchanged, and downstream reverse correction remains Issue #222.

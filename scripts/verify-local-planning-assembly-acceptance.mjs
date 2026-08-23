@@ -748,9 +748,8 @@ async function main() {
     : await invoke(
         client,
         "execute_need_generation",
-        commandRequest("RMVP-04.v2", subject, 1, "NEED_GENERATION_EXECUTED", {
-          period_start: weekStart,
-          period_end: weekStart,
+        commandRequest("RMVP-04.v3", subject, 1, "NEED_GENERATION_EXECUTED", {
+          service_date: weekStart,
           expected_current_need_generation_run_id: null,
         }),
       );

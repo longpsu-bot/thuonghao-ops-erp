@@ -44,7 +44,7 @@ export type NeedGenerationCommandRequest = AtlasRpcRequest & {
 };
 
 export type NeedGenerationExecutionRequest = AtlasRpcRequest & {
-  contract_version: "RMVP-04.v2";
+  contract_version: "RMVP-04.v3";
   command_id: string;
   correlation_id: string;
   idempotency_key: string;
@@ -54,8 +54,7 @@ export type NeedGenerationExecutionRequest = AtlasRpcRequest & {
   reason_code: "NEED_GENERATION_EXECUTED";
   reason_note: string | null;
   payload: {
-    period_start: string;
-    period_end: string;
+    service_date: string;
     expected_current_need_generation_run_id: string | null;
   };
 };
@@ -138,15 +137,14 @@ export function needGenerationExecutionRequest(
   authSubject: string,
   correlationId: string,
   expectedVersion: number,
-  periodStart: string,
-  periodEnd: string,
+  serviceDate: string,
   expectedCurrentRunId: string | null,
   reasonNote:
     string | null = "Tạo hoặc cập nhật nhu cầu từ dữ liệu nguồn hiện tại.",
 ): NeedGenerationExecutionRequest {
   const commandId = crypto.randomUUID();
   return {
-    contract_version: "RMVP-04.v2",
+    contract_version: "RMVP-04.v3",
     command_id: commandId,
     correlation_id: correlationId,
     idempotency_key: `need_generation_executed:${commandId}`,
@@ -156,8 +154,7 @@ export function needGenerationExecutionRequest(
     reason_code: "NEED_GENERATION_EXECUTED",
     reason_note: reasonNote,
     payload: {
-      period_start: periodStart,
-      period_end: periodEnd,
+      service_date: serviceDate,
       expected_current_need_generation_run_id: expectedCurrentRunId,
     },
   };
