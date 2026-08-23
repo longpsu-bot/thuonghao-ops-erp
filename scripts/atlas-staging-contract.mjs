@@ -303,7 +303,7 @@ export function defaultCommandRunner(command, args, options = {}) {
     cwd: options.cwd,
     env: options.env ?? process.env,
     encoding: "utf8",
-    shell: process.platform === "win32",
+    shell: options.shell ?? process.platform === "win32",
   });
   return {
     status: result.status ?? 1,
@@ -376,11 +376,14 @@ export async function verifyExactHeadCertification({
   }
 
   requireCommandSuccess(
-    runCommand("git", ["cat-file", "-e", `${commitSha}^{commit}`], { cwd }),
+    runCommand("git", ["cat-file", "-e", `${commitSha}^{commit}`], {
+      cwd,
+      shell: false,
+    }),
     "The requested commit does not exist in this checkout.",
   );
   const head = requireCommandSuccess(
-    runCommand("git", ["rev-parse", "HEAD"], { cwd }),
+    runCommand("git", ["rev-parse", "HEAD"], { cwd, shell: false }),
     "The checked-out commit cannot be verified.",
   );
   if (head !== commitSha)
@@ -391,12 +394,13 @@ export async function verifyExactHeadCertification({
       ["merge-base", "--is-ancestor", commitSha, "origin/main"],
       {
         cwd,
+        shell: false,
       },
     ),
     "The requested commit is not contained in main.",
   );
   const status = requireCommandSuccess(
-    runCommand("git", ["status", "--porcelain"], { cwd }),
+    runCommand("git", ["status", "--porcelain"], { cwd, shell: false }),
     "Worktree cleanliness cannot be verified.",
   );
   if (status) throw new Error("The deployment worktree is not clean.");

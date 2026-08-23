@@ -385,16 +385,72 @@ describe("Atlas Staging packages", () => {
     expect(
       verifyPackageCheckout({ commitSha, runCommand: successfulRunner }),
     ).toBe(commitSha);
-    const dirtyRunner = vi.fn((_command, args) => {
-      if (args[0] === "rev-parse")
-        return { status: 0, stdout: `${commitSha}\n` };
-      if (args[0] === "status")
-        return { status: 0, stdout: " M package.json\n" };
-      return { status: 0, stdout: "" };
-    });
-    expect(() =>
-      verifyPackageCheckout({ commitSha, runCommand: dirtyRunner }),
-    ).toThrow(/not clean/i);
+    expect(successfulRunner).toHaveBeenCalledTimes(4);
+    expect(
+      successfulRunner.mock.calls.every(
+        ([command, _args, options]) =>
+          command === "git" && options.shell === false,
+      ),
+    ).toBe(true);
+    expect(successfulRunner.mock.calls.map(([_command, args]) => args)).toEqual(
+      [
+        ["cat-file", "-e", `${commitSha}^{commit}`],
+        ["rev-parse", "HEAD"],
+        ["merge-base", "--is-ancestor", commitSha, "origin/main"],
+        ["status", "--porcelain"],
+      ],
+    );
+  });
+
+  it.each([
+    {
+      name: "an unavailable commit",
+      error: /unavailable/i,
+      result: (args) =>
+        args[0] === "cat-file"
+          ? { status: 1, stdout: "" }
+          : { status: 0, stdout: "" },
+    },
+    {
+      name: "an incorrect HEAD",
+      error: /not at the requested exact commit/i,
+      result: (args) => ({
+        status: 0,
+        stdout: args[0] === "rev-parse" ? `${"c".repeat(40)}\n` : "",
+      }),
+    },
+    {
+      name: "a commit outside origin/main",
+      error: /not contained in origin\/main/i,
+      result: (args) => ({
+        status: args[0] === "merge-base" ? 1 : 0,
+        stdout: args[0] === "rev-parse" ? `${commitSha}\n` : "",
+      }),
+    },
+    {
+      name: "a dirty worktree",
+      error: /not clean/i,
+      result: (args) => ({
+        status: 0,
+        stdout:
+          args[0] === "rev-parse"
+            ? `${commitSha}\n`
+            : args[0] === "status"
+              ? " M package.json\n"
+              : "",
+      }),
+    },
+  ])("fails closed for $name", ({ error, result }) => {
+    const runCommand = vi.fn((_command, args) => result(args));
+    expect(() => verifyPackageCheckout({ commitSha, runCommand })).toThrow(
+      error,
+    );
+    expect(
+      runCommand.mock.calls.every(
+        ([command, _args, options]) =>
+          command === "git" && options.shell === false,
+      ),
+    ).toBe(true);
   });
 
   it("dry-runs without process, Auth, or network execution", async () => {

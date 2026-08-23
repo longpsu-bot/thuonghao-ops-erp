@@ -7,6 +7,7 @@ import {
   ATLAS_STAGING_SECRET_NAMES,
   ATLAS_STAGING_VARIABLE_NAMES,
   LIVE_OPS_PROJECT_DENYLIST,
+  defaultCommandRunner,
   ensureAtlasApiExposure,
   executeAtlasStagingManagementSql,
   redactAtlasStagingDiagnostic,
@@ -18,6 +19,7 @@ import {
 } from "./atlas-staging-contract.mjs";
 import {
   deployAtlasStaging,
+  inspectPinnedSupabaseCli,
   planAtlasStagingDeployment,
 } from "./deploy-atlas-staging.mjs";
 import {
@@ -234,9 +236,7 @@ describe("Atlas staging safety contract", () => {
   });
 
   it("requires exact-head main membership and both exact job certifications", async () => {
-    const commands = [];
-    const runCommand = vi.fn((command, args) => {
-      commands.push([command, ...args]);
+    const runCommand = vi.fn((_command, args) => {
       if (args[0] === "rev-parse")
         return { status: 0, stdout: `${commitSha}\n`, stderr: "" };
       return { status: 0, stdout: "", stderr: "" };
@@ -276,12 +276,18 @@ describe("Atlas staging safety contract", () => {
         fetchImpl,
       }),
     ).resolves.toBe(commitSha);
-    expect(commands).toContainEqual([
-      "git",
-      "merge-base",
-      "--is-ancestor",
-      commitSha,
-      "origin/main",
+    expect(runCommand).toHaveBeenCalledTimes(4);
+    expect(
+      runCommand.mock.calls.every(
+        ([command, _args, options]) =>
+          command === "git" && options.shell === false,
+      ),
+    ).toBe(true);
+    expect(runCommand.mock.calls.map(([_command, args]) => args)).toEqual([
+      ["cat-file", "-e", `${commitSha}^{commit}`],
+      ["rev-parse", "HEAD"],
+      ["merge-base", "--is-ancestor", commitSha, "origin/main"],
+      ["status", "--porcelain"],
     ]);
     expect(
       fetchImpl.mock.calls.some(([url]) => url.includes("frontend-ci.yml")),
@@ -320,9 +326,82 @@ describe("Atlas staging safety contract", () => {
       }),
     ).rejects.toThrow(/certification is missing/i);
   });
+
+  it("fails closed when exact-head workflow evidence is missing", async () => {
+    const runCommand = (_command, args) => ({
+      status: 0,
+      stdout: args[0] === "rev-parse" ? `${commitSha}\n` : "",
+      stderr: "",
+    });
+    const fetchImpl = async (url) => ({
+      ok: true,
+      async json() {
+        return url.includes("/runs?") ? { workflow_runs: [] } : { jobs: [] };
+      },
+    });
+    await expect(
+      verifyExactHeadCertification({
+        commitSha,
+        environment: environment(),
+        runCommand,
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/certification is missing/i);
+  });
+
+  it.skipIf(process.platform !== "win32")(
+    "passes Windows Git commit-object syntax through the native runner",
+    () => {
+      const cwd = process.cwd();
+      const head = defaultCommandRunner("git", ["rev-parse", "HEAD"], {
+        cwd,
+        shell: false,
+      });
+      expect(head.status).toBe(0);
+
+      const result = defaultCommandRunner(
+        "git",
+        ["cat-file", "-e", `${head.stdout.trim()}^{commit}`],
+        { cwd, shell: false },
+      );
+      expect(result.status).toBe(0);
+    },
+  );
 });
 
 describe("Atlas staging dry-run and workflow", () => {
+  it("leaves the pinned Supabase CLI on the default command shell", () => {
+    const expectedVersion = JSON.parse(
+      readFileSync(`${process.cwd()}/package.json`, "utf8"),
+    ).devDependencies.supabase;
+    const runCommand = vi.fn((_command, args) => ({
+      status: 0,
+      stdout:
+        args[0] === "--version"
+          ? `${expectedVersion}\n`
+          : "--project-ref --password --db-url --dry-run --output --agent",
+      stderr: "",
+    }));
+
+    expect(
+      inspectPinnedSupabaseCli({
+        cwd: process.cwd(),
+        environment: {},
+        runCommand,
+      }),
+    ).toBe(expectedVersion);
+    expect(
+      runCommand.mock.calls.every(
+        ([_command, _args, options]) => !("shell" in options),
+      ),
+    ).toBe(true);
+    if (process.platform === "win32") {
+      expect(runCommand.mock.calls[0][0]).toBe(
+        "node_modules/.bin/supabase.CMD",
+      );
+    }
+  });
+
   it("constructs deployment and verifier plans without mutation", async () => {
     const deployPlan = planAtlasStagingDeployment(environment());
     const verifyPlan = planAtlasStagingVerification(environment());
