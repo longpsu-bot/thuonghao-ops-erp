@@ -79,13 +79,17 @@ select ok(
 );
 
 select ok(
-  not has_schema_privilege('atlas_planning_command_runtime', 'atlas_procurement', 'USAGE')
+  has_schema_privilege('atlas_planning_command_runtime', 'atlas_procurement', 'USAGE')
   and not has_schema_privilege('atlas_planning_command_runtime', 'atlas_evidence', 'USAGE')
   and not has_schema_privilege('atlas_planning_command_runtime', 'atlas_dispatch', 'USAGE')
+  and has_table_privilege('atlas_planning_command_runtime', 'atlas_procurement.fulfilment_allocations', 'SELECT')
   and not has_table_privilege('atlas_planning_command_runtime', 'atlas_procurement.fulfilment_allocations', 'INSERT')
+  and not has_table_privilege('atlas_planning_command_runtime', 'atlas_procurement.fulfilment_allocations', 'UPDATE')
+  and not has_table_privilege('atlas_planning_command_runtime', 'atlas_procurement.fulfilment_allocations', 'DELETE')
+  and not has_table_privilege('atlas_planning_command_runtime', 'atlas_procurement.fulfilment_allocations', 'TRUNCATE')
   and not has_table_privilege('atlas_planning_command_runtime', 'atlas_evidence.supplier_receiving_evidence', 'INSERT')
   and not has_table_privilege('atlas_planning_command_runtime', 'atlas_dispatch.dispatch_plans', 'INSERT'),
-  'Planning runtime cannot write Procurement, Evidence, or Dispatch facts'
+  'Planning runtime has only the bounded Procurement allocation read exception'
 );
 
 select ok(

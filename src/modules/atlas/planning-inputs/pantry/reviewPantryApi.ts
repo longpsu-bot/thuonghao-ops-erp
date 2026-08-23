@@ -271,6 +271,24 @@ export function createReviewPantryApi(
   };
 
   return {
+    async getCorrectionImpact(
+      _authSubject,
+      _correlationId,
+      _sourceKind,
+      _sourcePayload,
+    ) {
+      return success({
+        impact: {
+          affected_service_dates: [],
+          date_impacts: [],
+          save_allowed: true,
+          save_blocker_code: null,
+        },
+      });
+    },
+    async prepareCorrection() {
+      return backendError("CORRECTION_ACTION_NOT_REQUIRED");
+    },
     async getWorkbench(_authSubject, _correlationId, weekStart) {
       const error = fail();
       if (error) return error;

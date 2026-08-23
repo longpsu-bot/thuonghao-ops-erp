@@ -3,6 +3,13 @@ import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { planningSourceSaveOutcome } from "../planningInputsModel";
+import { PlanningCorrectionImpactPanel } from "../PlanningCorrectionImpactPanel";
+import {
+  planningCorrectionImpactFromResult,
+  safeNoDownstreamImpact,
+  type PlanningCorrectionChain,
+  type PlanningCorrectionImpact,
+} from "../planningCorrectionApi";
 import { Chip, Panel } from "../../WorkbenchComponents";
 import { pantryCompletionRequest, type PantryApi } from "./pantryApi";
 import {
@@ -114,6 +121,8 @@ export function PantryWorkbench({
   const [noAdditions, setNoAdditions] = useState(false);
   const [preview, setPreview] =
     useState<ReturnType<typeof pantryPreviewFromResult>>(null);
+  const [correctionImpact, setCorrectionImpact] =
+    useState<PlanningCorrectionImpact | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [consequence, setConsequence] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -245,9 +254,26 @@ export function PantryWorkbench({
       noAdditions,
       pantryRowsForWrite(rows),
     );
+    const nextPreview = pantryPreviewFromResult(result);
+    setPreview(nextPreview);
+    const impactResult =
+      nextPreview?.can_save && api.getCorrectionImpact
+        ? await api.getCorrectionImpact(authSubject, correlationId, "PANTRY", {
+            week_start: weekStart,
+            no_additions_confirmed: noAdditions,
+            source_signature: nextPreview.source_signature,
+            expected_source_signature: data.batch?.source_signature ?? null,
+            rows: pantryRowsForWrite(rows),
+          })
+        : null;
+    const impact = impactResult
+      ? planningCorrectionImpactFromResult(impactResult)
+      : nextPreview?.can_save
+        ? safeNoDownstreamImpact("PANTRY")
+        : null;
+    setCorrectionImpact(impact);
     setSaving(false);
-    setPreview(pantryPreviewFromResult(result));
-    setNotice(pantryResultMessage(result));
+    setNotice(pantryResultMessage(impactResult ?? result));
   };
 
   const runCompletion = async (invoke: () => Promise<AtlasRpcResult>) => {
@@ -290,7 +316,14 @@ export function PantryWorkbench({
   };
 
   const save = async () => {
-    if (!api || !authSubject || !preview?.can_save || refreshRequired) return;
+    if (
+      !api ||
+      !authSubject ||
+      !preview?.can_save ||
+      !correctionImpact?.save_allowed ||
+      refreshRequired
+    )
+      return;
     const request = pantryCompletionRequest(
       authSubject,
       correlationId,
@@ -304,6 +337,31 @@ export function PantryWorkbench({
       },
     );
     await runCompletion(() => api.saveCompleted(request));
+  };
+
+  const prepareCorrection = async (chain: PlanningCorrectionChain) => {
+    if (!api?.prepareCorrection || !authSubject) return;
+    setSaving(true);
+    const result = await api.prepareCorrection(
+      authSubject,
+      correlationId,
+      chain,
+      "Hiệu chỉnh Nhu cầu bổ sung sau khi rà soát ảnh hưởng.",
+    );
+    setNotice(pantryResultMessage(result));
+    if (
+      result.kind === "transport_error" ||
+      (result.kind === "backend_error" &&
+        ["STALE_VERSION", "RETRYABLE_CONCURRENCY_FAILURE"].includes(
+          result.error.error_code,
+        ))
+    ) {
+      setSaving(false);
+      setRefreshRequired(true);
+      return;
+    }
+    setSaving(false);
+    if (result.kind === "success") await previewRows();
   };
 
   const canEdit =
@@ -426,7 +484,11 @@ export function PantryWorkbench({
               className="primary"
               onClick={() => void save()}
               disabled={
-                saving || refreshRequired || !dirty || !preview?.can_save
+                saving ||
+                refreshRequired ||
+                !dirty ||
+                !preview?.can_save ||
+                !correctionImpact?.save_allowed
               }
             >
               <FloppyDisk size={17} aria-hidden="true" />
@@ -696,6 +758,11 @@ export function PantryWorkbench({
             </details>
           </section>
         )}
+        <PlanningCorrectionImpactPanel
+          impact={correctionImpact}
+          busy={saving}
+          onPrepare={(chain) => void prepareCorrection(chain)}
+        />
 
         {(data.batch?.invalid_lines.length ?? 0) > 0 && (
           <details>

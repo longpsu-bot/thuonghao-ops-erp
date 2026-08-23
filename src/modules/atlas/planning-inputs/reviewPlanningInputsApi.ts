@@ -535,6 +535,26 @@ export function createReviewPlanningInputsApi(
   };
 
   return {
+    getCorrectionImpact(
+      _authSubject,
+      _correlationId,
+      _sourceKind,
+      _sourcePayload,
+    ) {
+      return Promise.resolve(
+        success({
+          impact: {
+            affected_service_dates: [],
+            date_impacts: [],
+            save_allowed: true,
+            save_blocker_code: null,
+          },
+        }),
+      );
+    },
+    prepareCorrection() {
+      return Promise.resolve(backendError("CORRECTION_ACTION_NOT_REQUIRED"));
+    },
     getWorkbench(_authSubject, _correlationId, weekStart) {
       if (scenario === "loading")
         return new Promise<AtlasRpcResult>(() => undefined);

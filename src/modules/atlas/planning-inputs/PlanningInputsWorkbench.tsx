@@ -70,6 +70,13 @@ import { NeedGenerationWorkbench } from "./need-generation/NeedGenerationWorkben
 import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
 import { ConfirmedNeedReviewWorkbench } from "./confirmed-needs/ConfirmedNeedReviewWorkbench";
 import type { ConfirmedNeedApi } from "./confirmed-needs/confirmedNeedApi";
+import { PlanningCorrectionImpactPanel } from "./PlanningCorrectionImpactPanel";
+import {
+  planningCorrectionImpactFromResult,
+  safeNoDownstreamImpact,
+  type PlanningCorrectionChain,
+  type PlanningCorrectionImpact,
+} from "./planningCorrectionApi";
 
 type TabId =
   "menu" | "attendance" | "pantry" | "need-generation" | "confirmed-needs";
@@ -606,6 +613,10 @@ export function PlanningInputsWorkbenchView({
     useState<PlanningPreview<MenuLine> | null>(null);
   const [attendancePreview, setAttendancePreview] =
     useState<PlanningPreview<AttendanceLine> | null>(null);
+  const [menuCorrectionImpact, setMenuCorrectionImpact] =
+    useState<PlanningCorrectionImpact | null>(null);
+  const [attendanceCorrectionImpact, setAttendanceCorrectionImpact] =
+    useState<PlanningCorrectionImpact | null>(null);
   const [menuSourceName, setMenuSourceName] = useState(
     "Chỉnh sửa trực tiếp Atlas",
   );
@@ -996,13 +1007,36 @@ export function PlanningInputsWorkbenchView({
       weekStart,
       rows as unknown as JsonValue[],
     );
-    setSaving(false);
     const preview = planningPreviewFromResult<MenuLine>(result);
     setMenuPreview(preview);
+    const impactResult =
+      preview?.can_save && api.getCorrectionImpact
+        ? await api.getCorrectionImpact(
+            authSubject,
+            correlationId,
+            "WEEKLY_MENU",
+            {
+              week_start: weekStart,
+              source_type: menuSourceType,
+              source_name: menuSourceName,
+              source_signature: preview.source_signature,
+              expected_source_signature:
+                data.weekly_menu?.source_signature ?? null,
+              rows: preview.canonical_rows as unknown as JsonValue[],
+            },
+          )
+        : null;
+    const impact = impactResult
+      ? planningCorrectionImpactFromResult(impactResult)
+      : preview?.can_save
+        ? safeNoDownstreamImpact("WEEKLY_MENU")
+        : null;
+    setMenuCorrectionImpact(impact);
+    setSaving(false);
     setNotice(
-      preview
+      preview && impact
         ? "Đã cập nhật phần Xem thay đổi cho thực đơn."
-        : planningResultMessage(result),
+        : planningResultMessage(impactResult ?? result),
     );
     return preview;
   };
@@ -1016,13 +1050,36 @@ export function PlanningInputsWorkbenchView({
       weekStart,
       rows as unknown as JsonValue[],
     );
-    setSaving(false);
     const preview = planningPreviewFromResult<AttendanceLine>(result);
     setAttendancePreview(preview);
+    const impactResult =
+      preview?.can_save && api.getCorrectionImpact
+        ? await api.getCorrectionImpact(
+            authSubject,
+            correlationId,
+            "ATTENDANCE",
+            {
+              week_start: weekStart,
+              source_type: attendanceSourceType,
+              source_name: attendanceSourceName,
+              source_signature: preview.source_signature,
+              expected_source_signature:
+                data.attendance?.source_signature ?? null,
+              rows: preview.canonical_rows as unknown as JsonValue[],
+            },
+          )
+        : null;
+    const impact = impactResult
+      ? planningCorrectionImpactFromResult(impactResult)
+      : preview?.can_save
+        ? safeNoDownstreamImpact("ATTENDANCE")
+        : null;
+    setAttendanceCorrectionImpact(impact);
+    setSaving(false);
     setNotice(
-      preview
+      preview && impact
         ? "Đã cập nhật phần Xem thay đổi cho sĩ số."
-        : planningResultMessage(result),
+        : planningResultMessage(impactResult ?? result),
     );
     return preview;
   };
@@ -1030,7 +1087,7 @@ export function PlanningInputsWorkbenchView({
   const saveMenu = async () => {
     if (!api || !authSubject || refreshRequired) return;
     const preview = menuPreview;
-    if (!preview?.can_save) return;
+    if (!preview?.can_save || !menuCorrectionImpact?.save_allowed) return;
     const request = weeklyMenuCompletionRequest(
       authSubject,
       correlationId,
@@ -1050,7 +1107,7 @@ export function PlanningInputsWorkbenchView({
   const saveAttendance = async () => {
     if (!api || !authSubject || refreshRequired) return;
     const preview = attendancePreview;
-    if (!preview?.can_save) return;
+    if (!preview?.can_save || !attendanceCorrectionImpact?.save_allowed) return;
     const request = attendanceCompletionRequest(
       authSubject,
       correlationId,
@@ -1067,6 +1124,37 @@ export function PlanningInputsWorkbenchView({
     await runCompletion("attendance", () =>
       api.saveCompletedAttendance(request),
     );
+  };
+
+  const prepareCorrection = async (
+    source: "menu" | "attendance",
+    chain: PlanningCorrectionChain,
+  ) => {
+    if (!api?.prepareCorrection || !authSubject) return;
+    setSaving(true);
+    const result = await api.prepareCorrection(
+      authSubject,
+      correlationId,
+      chain,
+      "Hiệu chỉnh nguồn Kế hoạch sau khi rà soát ảnh hưởng.",
+    );
+    setNotice(planningResultMessage(result));
+    if (
+      result.kind === "transport_error" ||
+      (result.kind === "backend_error" &&
+        ["STALE_VERSION", "RETRYABLE_CONCURRENCY_FAILURE"].includes(
+          result.error.error_code,
+        ))
+    ) {
+      setSaving(false);
+      setRefreshRequired(true);
+      return;
+    }
+    setSaving(false);
+    if (result.kind === "success") {
+      if (source === "menu") await previewMenu();
+      else await previewAttendance();
+    }
   };
 
   const onMenuFile = async (file?: File) => {
@@ -1514,7 +1602,8 @@ export function PlanningInputsWorkbenchView({
                       refreshRequired ||
                       !dirty ||
                       !menuRows.length ||
-                      !menuPreview?.can_save
+                      !menuPreview?.can_save ||
+                      !menuCorrectionImpact?.save_allowed
                     }
                   >
                     <FloppyDisk size={17} aria-hidden="true" />
@@ -1681,6 +1770,11 @@ export function PlanningInputsWorkbenchView({
                   previousMenuRows={activeMenuRows(data.weekly_menu)}
                   previousAttendanceRows={[]}
                 />
+                <PlanningCorrectionImpactPanel
+                  impact={menuCorrectionImpact}
+                  busy={saving}
+                  onPrepare={(chain) => void prepareCorrection("menu", chain)}
+                />
                 <History entries={data.weekly_menu?.approval_history ?? []} />
                 <ChangeTimeline
                   entries={data.weekly_menu?.change_history ?? []}
@@ -1773,7 +1867,8 @@ export function PlanningInputsWorkbenchView({
                       saving ||
                       refreshRequired ||
                       !attendanceRows.length ||
-                      !attendancePreview?.can_save
+                      !attendancePreview?.can_save ||
+                      !attendanceCorrectionImpact?.save_allowed
                     }
                   >
                     <FloppyDisk size={17} aria-hidden="true" />
@@ -1918,6 +2013,13 @@ export function PlanningInputsWorkbenchView({
                   dishTypes={data.dish_types}
                   previousMenuRows={[]}
                   previousAttendanceRows={activeAttendanceRows(data.attendance)}
+                />
+                <PlanningCorrectionImpactPanel
+                  impact={attendanceCorrectionImpact}
+                  busy={saving}
+                  onPrepare={(chain) =>
+                    void prepareCorrection("attendance", chain)
+                  }
                 />
                 <History entries={data.attendance?.approval_history ?? []} />
                 <ChangeTimeline

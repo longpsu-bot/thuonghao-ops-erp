@@ -86,6 +86,8 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.get_planning_input_readiness_workbench":
     "get_planning_input_readiness_workbench",
   "atlas_api.get_planning_input_preflight": "get_planning_input_preflight",
+  "atlas_api.get_planning_source_correction_impact":
+    "get_planning_source_correction_impact",
   "atlas_api.evaluate_planning_input_readiness":
     "evaluate_planning_input_readiness",
   "atlas_api.request_planning_input_need_generation":
@@ -98,6 +100,8 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.validate_need_generation_run": "validate_need_generation_run",
   "atlas_api.release_need_generation_run": "release_need_generation_run",
   "atlas_api.invalidate_need_generation_run": "invalidate_need_generation_run",
+  "atlas_api.prepare_planning_source_correction":
+    "prepare_planning_source_correction",
   "atlas_api.create_confirmed_needs_from_generation":
     "create_confirmed_needs_from_generation",
   "atlas_api.get_confirmed_need_review": "get_confirmed_need_review",
