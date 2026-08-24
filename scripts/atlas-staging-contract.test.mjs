@@ -11,6 +11,7 @@ import {
   defaultCommandRunner,
   ensureAtlasApiExposure,
   executeAtlasStagingManagementSql,
+  localCertificationEnvironment,
   redactAtlasStagingDiagnostic,
   requireAtlasStagingCertificationMode,
   validateAtlasStagingProtectedValues,
@@ -25,6 +26,7 @@ import {
 } from "./certify-frontend.mjs";
 import {
   SUPABASE_FULL_INTEGRATION_COMMANDS,
+  captureLocalSupabaseFailureDiagnostics,
   certifySupabaseFullIntegration,
 } from "./certify-supabase-full-integration.mjs";
 import {
@@ -66,8 +68,15 @@ function exactHeadRunCommand({
   head = commitSha,
   ancestor = true,
   worktree = "",
+  fetchStatuses = [0, 0],
 } = {}) {
+  let fetchCount = 0;
   return vi.fn((_command, args) => {
+    if (args[0] === "fetch") {
+      const status = fetchStatuses[fetchCount] ?? 0;
+      fetchCount += 1;
+      return { status, stdout: "", stderr: status ? "fetch failed" : "" };
+    }
     if (args[0] === "rev-parse") {
       return { status: 0, stdout: `${head}\n`, stderr: "" };
     }
@@ -267,6 +276,60 @@ describe("Atlas staging safety contract", () => {
       /password|sb_secret|eyJprivate|token-value|direct-secret/,
     );
     expect(diagnostic).toContain("REDACTED");
+  });
+
+  it("constructs local certification environments from an explicit safe allowlist", () => {
+    const safeEnvironment = localCertificationEnvironment({
+      Path: "C:\\Windows\\System32",
+      USERPROFILE: "C:\\Users\\atlas",
+      SystemRoot: "C:\\Windows",
+      TEMP: "C:\\Temp",
+      APPDATA: "C:\\Users\\atlas\\AppData\\Roaming",
+      LOCALAPPDATA: "C:\\Users\\atlas\\AppData\\Local",
+      PNPM_HOME: "C:\\pnpm",
+      DOCKER_CONTEXT: "desktop-linux",
+      LANG: "en_US.UTF-8",
+      LC_ALL: "en_US.UTF-8",
+      GITHUB_TOKEN: "github-token",
+      GH_TOKEN: "gh-token",
+      NPM_TOKEN: "npm-token",
+      DATABASE_URL: "postgresql://user:password@example.test/database",
+      SUPABASE_ACCESS_TOKEN: "supabase-access-token",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+      ATLAS_STAGING_DB_PASSWORD: "staging-password",
+      AWS_ACCESS_KEY_ID: "aws-access-key",
+      AWS_SECRET_ACCESS_KEY: "aws-secret-key",
+      AZURE_CLIENT_SECRET: "azure-secret",
+      GOOGLE_APPLICATION_CREDENTIALS: "C:\\credential.json",
+    });
+    expect(safeEnvironment).toMatchObject({
+      Path: "C:\\Windows\\System32",
+      USERPROFILE: "C:\\Users\\atlas",
+      SystemRoot: "C:\\Windows",
+      TEMP: "C:\\Temp",
+      APPDATA: "C:\\Users\\atlas\\AppData\\Roaming",
+      LOCALAPPDATA: "C:\\Users\\atlas\\AppData\\Local",
+      PNPM_HOME: "C:\\pnpm",
+      DOCKER_CONTEXT: "desktop-linux",
+      LANG: "en_US.UTF-8",
+      LC_ALL: "en_US.UTF-8",
+      SUPABASE_TELEMETRY_DISABLED: "1",
+    });
+    for (const name of [
+      "GITHUB_TOKEN",
+      "GH_TOKEN",
+      "NPM_TOKEN",
+      "DATABASE_URL",
+      "SUPABASE_ACCESS_TOKEN",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "ATLAS_STAGING_DB_PASSWORD",
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY",
+      "AZURE_CLIENT_SECRET",
+      "GOOGLE_APPLICATION_CREDENTIALS",
+    ]) {
+      expect(safeEnvironment).not.toHaveProperty(name);
+    }
   });
 
   it("admits exactly explicit github or local certification", () => {
@@ -471,7 +534,21 @@ describe("Atlas staging safety contract", () => {
       }),
     ).resolves.toBe(commitSha);
     expect(order).toEqual(["frontend", "supabase"]);
-    expect(runCommand).toHaveBeenCalledTimes(8);
+    expect(runCommand).toHaveBeenCalledTimes(10);
+    expect(
+      runCommand.mock.calls.filter(([_command, args]) => args[0] === "fetch"),
+    ).toEqual([
+      [
+        "git",
+        ["fetch", "--no-tags", "origin", "main:refs/remotes/origin/main"],
+        expect.objectContaining({ shell: false }),
+      ],
+      [
+        "git",
+        ["fetch", "--no-tags", "origin", "main:refs/remotes/origin/main"],
+        expect.objectContaining({ shell: false }),
+      ],
+    ]);
     for (const certificationEnvironment of certificationEnvironments) {
       expect(certificationEnvironment).not.toHaveProperty("GITHUB_TOKEN");
       expect(certificationEnvironment).not.toHaveProperty(
@@ -483,8 +560,36 @@ describe("Atlas staging safety contract", () => {
       expect(certificationEnvironment).not.toHaveProperty(
         "VITE_SUPABASE_PUBLISHABLE_KEY",
       );
+      expect(certificationEnvironment.SUPABASE_TELEMETRY_DISABLED).toBe("1");
     }
   });
+
+  it.each([
+    ["first", [1, 0], 0],
+    ["second", [0, 1], 1],
+  ])(
+    "fails closed when the %s local origin/main fetch fails",
+    async (_label, fetchStatuses, expectedSuiteCount) => {
+      const runFrontendCertification = vi.fn();
+      const runSupabaseCertification = vi.fn();
+      await expect(
+        verifyExactHeadCertification({
+          commitSha,
+          certificationMode: "local",
+          environment: environment(),
+          runCommand: exactHeadRunCommand({ fetchStatuses }),
+          runFrontendCertification,
+          runSupabaseCertification,
+        }),
+      ).rejects.toThrow(/origin\/main cannot be fetched/i);
+      expect(runFrontendCertification).toHaveBeenCalledTimes(
+        expectedSuiteCount,
+      );
+      expect(runSupabaseCertification).toHaveBeenCalledTimes(
+        expectedSuiteCount,
+      );
+    },
+  );
 
   it("does not fall back to local suites when GitHub evidence fails", async () => {
     const runFrontendCertification = vi.fn();
@@ -553,12 +658,13 @@ describe("Atlas staging dry-run and workflow", () => {
     ]);
   });
 
-  it("stops Supabase Full Integration on first failure and still cleans up", () => {
+  it("captures bounded redacted Supabase diagnostics before cleanup without replacing the primary failure", () => {
     const calls = [];
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
     const expectedVersion = JSON.parse(
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
-    const runCommand = vi.fn((_command, args) => {
+    const runCommand = vi.fn((command, args) => {
       calls.push(args.join(" "));
       if (args.at(-1) === "--help") {
         return {
@@ -571,19 +677,67 @@ describe("Atlas staging dry-run and workflow", () => {
         return { status: 0, stdout: `${expectedVersion}\n`, stderr: "" };
       }
       if (args.includes("reset")) {
-        return { status: 1, stdout: "", stderr: "bounded failure" };
+        return {
+          status: 1,
+          stdout: "",
+          stderr: "primary certification failure",
+        };
+      }
+      if (command === "docker" && args[0] === "ps") {
+        return {
+          status: 0,
+          stdout: "supabase_db_thuonghao-ops-erp\n",
+          stderr: "",
+        };
+      }
+      if (command === "docker" && args[0] === "logs") {
+        return {
+          status: 0,
+          stdout:
+            "postgresql://user:password@database.test/db Bearer synthetic-bearer password=synthetic-password sb_secret_synthetic\n",
+          stderr: "",
+        };
       }
       return { status: 0, stdout: "", stderr: "" };
     });
     expect(() => certifySupabaseFullIntegration({ runCommand })).toThrow(
-      /bounded failure/i,
+      /primary certification failure/i,
     );
+    const resetIndex = calls.findIndex((call) => call.includes("db reset"));
+    const diagnosticIndex = calls.findIndex((call) =>
+      call.startsWith("version "),
+    );
+    const stopIndex = calls.indexOf("exec supabase stop --no-backup");
+    expect(diagnosticIndex).toBeGreaterThan(resetIndex);
+    expect(stopIndex).toBeGreaterThan(diagnosticIndex);
     expect(calls).toContain("exec supabase stop --no-backup");
     expect(
       calls.some(
         (call) => call.includes("supabase test db") && !call.endsWith("--help"),
       ),
     ).toBe(false);
+    expect(calls).toContain("logs --tail 160 supabase_db_thuonghao-ops-erp");
+    expect(
+      runCommand.mock.calls
+        .filter(([command]) => command === "docker")
+        .every(([_command, _args, options]) => options.timeout === 10_000),
+    ).toBe(true);
+    expect(warning.mock.calls.flat().join("\n")).not.toMatch(
+      /synthetic-bearer|synthetic-password|sb_secret_synthetic|postgresql:\/\/user:password/i,
+    );
+    warning.mockRestore();
+  });
+
+  it("keeps diagnostic collection failure subordinate to the certification failure", () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const runCommand = vi.fn((_command, args) => {
+      if (args[0] === "version") throw new Error("diagnostics unavailable");
+      return { status: 0, stdout: "", stderr: "" };
+    });
+    expect(() =>
+      captureLocalSupabaseFailureDiagnostics({ runCommand }),
+    ).not.toThrow();
+    warning.mockRestore();
   });
 
   it("makes both workflows call the shared repository certification entrypoints", () => {
@@ -748,6 +902,29 @@ describe("Atlas staging dry-run and workflow", () => {
       if (failFrontend) expect(runSupabaseCertification).not.toHaveBeenCalled();
     },
   );
+
+  it("blocks every hosted mutation when final local freshness verification fails", async () => {
+    const runCommand = exactHeadRunCommand({ fetchStatuses: [0, 1] });
+    const fetchImpl = vi.fn();
+    const verifyHosted = vi.fn();
+    await expect(
+      deployAtlasStaging({
+        commitSha,
+        certificationMode: "local",
+        environment: environment(),
+        runCommand,
+        fetchImpl,
+        verifyHosted,
+        runFrontendCertification: vi.fn(async () => {}),
+        runSupabaseCertification: vi.fn(async () => {}),
+      }),
+    ).rejects.toThrow(/origin\/main cannot be fetched/i);
+    expect(
+      runCommand.mock.calls.some(([_command, args]) => args[0] === "link"),
+    ).toBe(false);
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(verifyHosted).not.toHaveBeenCalled();
+  });
 
   it("returns from both local suites directly into protected deployment", async () => {
     const order = [];

@@ -7,6 +7,9 @@ import {
 
 const REDUCED_STACK_EXCLUSIONS =
   "edge-runtime,imgproxy,logflare,mailpit,postgres-meta,realtime,storage-api,studio,supavisor,vector";
+const LOCAL_SUPABASE_PROJECT_ID = "thuonghao-ops-erp";
+const DIAGNOSTIC_LOG_LINE_LIMIT = 160;
+const DIAGNOSTIC_COMMAND_TIMEOUT_MS = 10_000;
 
 const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_current_platform_security_catalog.sql",
@@ -205,6 +208,128 @@ function requireCommandSuccess(result, label) {
   );
 }
 
+function diagnosticText(result, protectedValues) {
+  return redactAtlasStagingDiagnostic(
+    `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
+    protectedValues,
+  )
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .slice(-DIAGNOSTIC_LOG_LINE_LIMIT)
+    .join("\n");
+}
+
+function protectedEnvironmentValues(environment) {
+  return Object.entries(environment)
+    .filter(([name]) =>
+      /(token|secret|password|key|database|db_url)/i.test(name),
+    )
+    .map(([, value]) => value)
+    .filter(Boolean);
+}
+
+function captureDiagnosticCommand({
+  runCommand,
+  cwd,
+  environment,
+  protectedValues,
+  command,
+  args,
+}) {
+  try {
+    const output = diagnosticText(
+      runCommand(command, args, {
+        cwd,
+        env: environment,
+        shell: false,
+        timeout: DIAGNOSTIC_COMMAND_TIMEOUT_MS,
+      }),
+      protectedValues,
+    );
+    if (output) console.warn(output);
+    return output;
+  } catch {
+    console.warn(`Local Supabase diagnostics could not run: ${command}.`);
+    return "";
+  }
+}
+
+export function captureLocalSupabaseFailureDiagnostics({
+  cwd = process.cwd(),
+  environment = process.env,
+  runCommand = defaultCommandRunner,
+} = {}) {
+  const protectedValues = protectedEnvironmentValues(environment);
+  const diagnosticOptions = { runCommand, cwd, environment, protectedValues };
+  console.warn(
+    "Supabase Full Integration: bounded local infrastructure diagnostics",
+  );
+  captureDiagnosticCommand({
+    ...diagnosticOptions,
+    command: "docker",
+    args: [
+      "version",
+      "--format",
+      "client={{.Client.Version}} server={{.Server.Version}}",
+    ],
+  });
+  captureDiagnosticCommand({
+    ...diagnosticOptions,
+    command: "docker",
+    args: [
+      "info",
+      "--format",
+      "containers={{.Containers}} running={{.ContainersRunning}} paused={{.ContainersPaused}} stopped={{.ContainersStopped}} memory={{.MemTotal}}",
+    ],
+  });
+  captureDiagnosticCommand({
+    ...diagnosticOptions,
+    command: "docker",
+    args: [
+      "system",
+      "df",
+      "--format",
+      "type={{.Type}} total={{.TotalCount}} active={{.Active}} size={{.Size}} reclaimable={{.Reclaimable}}",
+    ],
+  });
+
+  let containerNames = "";
+  try {
+    containerNames = captureDiagnosticCommand({
+      ...diagnosticOptions,
+      command: "docker",
+      args: [
+        "ps",
+        "-a",
+        "--filter",
+        `label=com.supabase.cli.project=${LOCAL_SUPABASE_PROJECT_ID}`,
+        "--format",
+        "{{.Names}}",
+      ],
+    });
+  } catch {
+    // captureDiagnosticCommand already reports and isolates diagnostic failures.
+  }
+
+  for (const container of containerNames.split(/\r?\n/).filter(Boolean)) {
+    captureDiagnosticCommand({
+      ...diagnosticOptions,
+      command: "docker",
+      args: [
+        "inspect",
+        "--format",
+        "name={{.Name}} image={{.Config.Image}} state={{.State.Status}} exit_code={{.State.ExitCode}} health={{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}} restart_count={{.RestartCount}}",
+        container,
+      ],
+    });
+    captureDiagnosticCommand({
+      ...diagnosticOptions,
+      command: "docker",
+      args: ["logs", "--tail", String(DIAGNOSTIC_LOG_LINE_LIMIT), container],
+    });
+  }
+}
+
 export function inspectLocalSupabaseCertificationCli({
   cwd = process.cwd(),
   environment = process.env,
@@ -291,6 +416,15 @@ export function certifySupabaseFullIntegration({
     }
   } catch (error) {
     primaryError = error;
+    try {
+      captureLocalSupabaseFailureDiagnostics({
+        cwd,
+        environment: certificationEnvironment,
+        runCommand,
+      });
+    } catch {
+      console.warn("Local Supabase diagnostics could not complete safely.");
+    }
     throw error;
   } finally {
     console.log("Supabase Full Integration: stop local stack");

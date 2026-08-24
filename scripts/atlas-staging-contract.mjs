@@ -27,17 +27,26 @@ export const ATLAS_STAGING_CERTIFICATION_MODES = Object.freeze([
   "github",
   "local",
 ]);
-const LOCAL_CERTIFICATION_PROTECTED_NAMES = new Set([
-  ...ATLAS_STAGING_VARIABLE_NAMES,
-  ...ATLAS_STAGING_SECRET_NAMES,
-  ...ATLAS_STAGING_IDENTITY_SECRET_NAMES,
-  "GITHUB_TOKEN",
-  "SUPABASE_ACCESS_TOKEN",
-  "SUPABASE_ANON_KEY",
-  "SUPABASE_DB_PASSWORD",
-  "SUPABASE_SECRET_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "DATABASE_URL",
+const LOCAL_CERTIFICATION_ENVIRONMENT_NAMES = new Set([
+  "PATH",
+  "HOME",
+  "USERPROFILE",
+  "SYSTEMROOT",
+  "WINDIR",
+  "COMSPEC",
+  "PATHEXT",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "LANG",
+  "TERM",
+  "PNPM_HOME",
+  "DOCKER_HOST",
+  "DOCKER_CONTEXT",
+  "DOCKER_TLS_VERIFY",
+  "DOCKER_CERT_PATH",
 ]);
 
 export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
@@ -49,7 +58,8 @@ export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
     .replace(/postgres(?:ql)?:\/\/[^\s'\"]+/gi, "[REDACTED_DATABASE_URL]")
     .replace(/sb_(?:secret|publishable)_[A-Za-z0-9._-]+/g, "[REDACTED_KEY]")
     .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_JWT]")
-    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, "$1[REDACTED]");
+    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, "$1[REDACTED]")
+    .replace(/\b(password|passwd)\s*([=:]\s*)[^\s'\"]+/gi, "$1$2[REDACTED]");
 }
 
 export function requireExactCommitSha(value) {
@@ -74,12 +84,17 @@ export function requireAtlasStagingCertificationMode(value) {
   return mode;
 }
 
-function localCertificationEnvironment(environment) {
-  return Object.fromEntries(
-    Object.entries(environment).filter(
-      ([name]) => !LOCAL_CERTIFICATION_PROTECTED_NAMES.has(name),
-    ),
+export function localCertificationEnvironment(environment) {
+  const safeEnvironment = Object.fromEntries(
+    Object.entries(environment).filter(([name]) => {
+      const normalizedName = name.toUpperCase();
+      return (
+        LOCAL_CERTIFICATION_ENVIRONMENT_NAMES.has(normalizedName) ||
+        normalizedName.startsWith("LC_")
+      );
+    }),
   );
+  return { ...safeEnvironment, SUPABASE_TELEMETRY_DISABLED: "1" };
 }
 
 export function projectRefFromStagingUrl(value) {
@@ -340,6 +355,7 @@ export function defaultCommandRunner(command, args, options = {}) {
     env: options.env ?? process.env,
     encoding: "utf8",
     shell: options.shell ?? process.platform === "win32",
+    timeout: options.timeout,
   });
   return {
     status: result.status ?? 1,
@@ -427,6 +443,17 @@ function verifyExactHeadState({ commitSha, cwd, runCommand }) {
   if (status) throw new Error("The deployment worktree is not clean.");
 }
 
+function refreshOriginMain({ cwd, runCommand }) {
+  requireCommandSuccess(
+    runCommand(
+      "git",
+      ["fetch", "--no-tags", "origin", "main:refs/remotes/origin/main"],
+      { cwd, shell: false },
+    ),
+    "The current origin/main cannot be fetched for local certification.",
+  );
+}
+
 export async function verifyExactHeadCertification({
   commitSha: commitShaValue,
   certificationMode: certificationModeValue,
@@ -441,6 +468,9 @@ export async function verifyExactHeadCertification({
   const certificationMode = requireAtlasStagingCertificationMode(
     certificationModeValue,
   );
+  if (certificationMode === "local") {
+    refreshOriginMain({ cwd, runCommand });
+  }
   verifyExactHeadState({ commitSha, cwd, runCommand });
 
   if (certificationMode === "github") {
@@ -485,6 +515,7 @@ export async function verifyExactHeadCertification({
       environment: certificationEnvironment,
       runCommand,
     });
+    refreshOriginMain({ cwd, runCommand });
   }
 
   verifyExactHeadState({ commitSha, cwd, runCommand });
