@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import {
   defaultCommandRunner,
   redactAtlasStagingDiagnostic,
+  repositorySupabaseCliInvocation,
 } from "./atlas-staging-contract.mjs";
 
 const REDUCED_STACK_EXCLUSIONS =
@@ -198,14 +199,26 @@ function boundedDiagnostic(result) {
     .trim();
 }
 
-function requireCommandSuccess(result, label) {
+function requireCommandSuccess(result, label, protectedValues = []) {
   if (result.status === 0) return;
-  const diagnostic = boundedDiagnostic(result);
+  const diagnostic = redactAtlasStagingDiagnostic(
+    boundedDiagnostic(result),
+    protectedValues,
+  );
   throw new Error(
     diagnostic
       ? `Supabase Full Integration failed at ${label}.\n${diagnostic}`
       : `Supabase Full Integration failed at ${label}.`,
   );
+}
+
+function runPinnedSupabaseCli({ runCommand, cwd, environment, args }) {
+  const invocation = repositorySupabaseCliInvocation(args, { cwd });
+  return runCommand(invocation.command, invocation.args, {
+    cwd,
+    env: environment,
+    shell: invocation.shell,
+  });
 }
 
 function diagnosticText(result, protectedValues) {
@@ -342,11 +355,12 @@ export function inspectLocalSupabaseCertificationCli({
     cwd,
     env: { ...environment, SUPABASE_TELEMETRY_DISABLED: "1" },
   };
-  const versionResult = runCommand(
-    "pnpm",
-    ["exec", "supabase", "--version"],
-    options,
-  );
+  const versionResult = runPinnedSupabaseCli({
+    runCommand,
+    cwd,
+    environment: options.env,
+    args: ["--version"],
+  });
   requireCommandSuccess(versionResult, "pinned CLI version inspection");
   if (versionResult.stdout.trim() !== expectedVersion) {
     throw new Error(
@@ -367,7 +381,12 @@ export function inspectLocalSupabaseCertificationCli({
     [["exec", "supabase", "stop", "--help"], ["--no-backup"]],
   ];
   for (const [args, flags] of helpChecks) {
-    const result = runCommand("pnpm", args, options);
+    const result = runPinnedSupabaseCli({
+      runCommand,
+      cwd,
+      environment: options.env,
+      args: args.slice(2),
+    });
     requireCommandSuccess(result, `pnpm ${args.join(" ")}`);
     if (flags.some((flag) => !result.stdout.includes(flag))) {
       throw new Error(
@@ -387,6 +406,7 @@ export function certifySupabaseFullIntegration({
     ...environment,
     SUPABASE_TELEMETRY_DISABLED: "1",
   };
+  const protectedValues = protectedEnvironmentValues(certificationEnvironment);
   inspectLocalSupabaseCertificationCli({
     cwd,
     environment: certificationEnvironment,
@@ -397,22 +417,38 @@ export function certifySupabaseFullIntegration({
   try {
     console.log("Supabase Full Integration: start reduced local stack");
     requireCommandSuccess(
-      runCommand(
-        "pnpm",
-        ["exec", "supabase", "start", "--exclude", REDUCED_STACK_EXCLUSIONS],
-        { cwd, env: certificationEnvironment },
-      ),
+      runPinnedSupabaseCli({
+        runCommand,
+        cwd,
+        environment: certificationEnvironment,
+        args: ["start", "--exclude", REDUCED_STACK_EXCLUSIONS],
+      }),
       "reduced local Supabase start",
+      protectedValues,
     );
 
     for (const item of SUPABASE_FULL_INTEGRATION_COMMANDS) {
       const label = `${item.command} ${item.args.join(" ")}`;
       console.log(`Supabase Full Integration: ${label}`);
-      const result = runCommand(item.command, item.args, {
-        cwd,
-        env: { ...certificationEnvironment, ...item.environment },
-      });
-      requireCommandSuccess(result, label);
+      const itemEnvironment = {
+        ...certificationEnvironment,
+        ...item.environment,
+      };
+      const result =
+        item.command === "pnpm" &&
+        item.args[0] === "exec" &&
+        item.args[1] === "supabase"
+          ? runPinnedSupabaseCli({
+              runCommand,
+              cwd,
+              environment: itemEnvironment,
+              args: item.args.slice(2),
+            })
+          : runCommand(item.command, item.args, {
+              cwd,
+              env: itemEnvironment,
+            });
+      requireCommandSuccess(result, label, protectedValues);
     }
   } catch (error) {
     primaryError = error;
@@ -428,15 +464,31 @@ export function certifySupabaseFullIntegration({
     throw error;
   } finally {
     console.log("Supabase Full Integration: stop local stack");
-    const stopResult = runCommand(
-      "pnpm",
-      ["exec", "supabase", "stop", "--no-backup"],
-      { cwd, env: certificationEnvironment },
-    );
-    if (stopResult.status !== 0 && !primaryError) {
-      console.warn(
-        "Local Supabase cleanup did not complete; certification checks had already passed.",
-      );
+    try {
+      const stopResult = runPinnedSupabaseCli({
+        runCommand,
+        cwd,
+        environment: certificationEnvironment,
+        args: ["stop", "--no-backup"],
+      });
+      if (stopResult.status !== 0 && !primaryError) {
+        requireCommandSuccess(
+          stopResult,
+          "local Supabase cleanup",
+          protectedValues,
+        );
+      }
+    } catch (error) {
+      if (!primaryError) {
+        throw new Error(
+          redactAtlasStagingDiagnostic(
+            error instanceof Error
+              ? error.message
+              : "Supabase Full Integration failed at local Supabase cleanup.",
+            protectedValues,
+          ),
+        );
+      }
     }
   }
   return {
