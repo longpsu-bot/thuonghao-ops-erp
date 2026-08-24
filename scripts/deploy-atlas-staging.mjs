@@ -4,10 +4,14 @@ import {
   defaultCommandRunner,
   ensureAtlasApiExposure,
   redactAtlasStagingDiagnostic,
+  requireAtlasStagingCertificationMode,
   requireExactCommitSha,
+  validateApprovedAtlasStagingTarget,
   validateAtlasStagingProtectedValues,
   verifyExactHeadCertification,
 } from "./atlas-staging-contract.mjs";
+import { certifyFrontend } from "./certify-frontend.mjs";
+import { certifySupabaseFullIntegration } from "./certify-supabase-full-integration.mjs";
 import { verifyAtlasStaging } from "./verify-atlas-staging.mjs";
 
 function cliPath() {
@@ -82,6 +86,10 @@ export function inspectPinnedSupabaseCli({
 
 export function planAtlasStagingDeployment(environment = process.env) {
   const target = validateAtlasStagingProtectedValues(environment);
+  validateApprovedAtlasStagingTarget(
+    environment.ATLAS_STAGING_PROJECT_REF,
+    environment.VITE_SUPABASE_URL,
+  );
   return {
     target,
     command: [
@@ -98,6 +106,7 @@ export function planAtlasStagingDeployment(environment = process.env) {
 
 export async function deployAtlasStaging({
   commitSha: commitShaValue,
+  certificationMode: certificationModeValue,
   environment = process.env,
   cwd = process.cwd(),
   runCommand = defaultCommandRunner,
@@ -105,19 +114,27 @@ export async function deployAtlasStaging({
   dryRun = false,
   preflightOnly = false,
   verifyHosted = verifyAtlasStaging,
+  runFrontendCertification = certifyFrontend,
+  runSupabaseCertification = certifySupabaseFullIntegration,
 } = {}) {
   const commitSha = requireExactCommitSha(commitShaValue);
+  const certificationMode = requireAtlasStagingCertificationMode(
+    certificationModeValue,
+  );
   const plan = planAtlasStagingDeployment(environment);
-  if (dryRun) return { status: "dry-run", plan };
+  if (dryRun) return { status: "dry-run", plan, certificationMode };
 
-  inspectPinnedSupabaseCli({ cwd, environment, runCommand });
   await verifyExactHeadCertification({
     commitSha,
+    certificationMode,
     environment,
     cwd,
     runCommand,
     fetchImpl,
+    runFrontendCertification,
+    runSupabaseCertification,
   });
+  inspectPinnedSupabaseCli({ cwd, environment, runCommand });
   if (preflightOnly) return { status: "preflight", plan };
 
   const protectedValues = [
@@ -180,6 +197,7 @@ function argument(name) {
 async function main() {
   const result = await deployAtlasStaging({
     commitSha: argument("--commit-sha"),
+    certificationMode: argument("--certification"),
     dryRun: process.argv.includes("--dry-run"),
     preflightOnly: process.argv.includes("--preflight"),
   });

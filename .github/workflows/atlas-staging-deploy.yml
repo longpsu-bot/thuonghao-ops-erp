@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run non-mutating protected preflight
-        run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --preflight
+        run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --certification github --preflight
 
       - name: Deploy repository migrations and run read-only platform verification
-        run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}"
+        run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --certification github

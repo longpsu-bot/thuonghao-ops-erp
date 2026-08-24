@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   APPROVED_ATLAS_STAGING_PROJECT_REF,
+  ATLAS_STAGING_CERTIFICATION_MODES,
   ATLAS_STAGING_GITHUB_ENVIRONMENT,
   ATLAS_STAGING_IDENTITY_SECRET_NAMES,
   ATLAS_STAGING_SECRET_NAMES,
@@ -11,12 +12,21 @@ import {
   ensureAtlasApiExposure,
   executeAtlasStagingManagementSql,
   redactAtlasStagingDiagnostic,
+  requireAtlasStagingCertificationMode,
   validateAtlasStagingProtectedValues,
   validateAtlasStagingPackageProtectedValues,
   validateAtlasStagingTarget,
   verifyAtlasApiExposure,
   verifyExactHeadCertification,
 } from "./atlas-staging-contract.mjs";
+import {
+  FRONTEND_CERTIFICATION_COMMANDS,
+  certifyFrontend,
+} from "./certify-frontend.mjs";
+import {
+  SUPABASE_FULL_INTEGRATION_COMMANDS,
+  certifySupabaseFullIntegration,
+} from "./certify-supabase-full-integration.mjs";
 import {
   deployAtlasStaging,
   inspectPinnedSupabaseCli,
@@ -33,7 +43,7 @@ import {
   verifyAtlasStaging,
 } from "./verify-atlas-staging.mjs";
 
-const stagingRef = "abcdefghijklmnopqrst";
+const stagingRef = APPROVED_ATLAS_STAGING_PROJECT_REF;
 const commitSha = "a".repeat(40);
 
 function environment(overrides = {}) {
@@ -50,6 +60,25 @@ function environment(overrides = {}) {
     GITHUB_TOKEN: "synthetic-github-token",
     ...overrides,
   };
+}
+
+function exactHeadRunCommand({
+  head = commitSha,
+  ancestor = true,
+  worktree = "",
+} = {}) {
+  return vi.fn((_command, args) => {
+    if (args[0] === "rev-parse") {
+      return { status: 0, stdout: `${head}\n`, stderr: "" };
+    }
+    if (args[0] === "merge-base") {
+      return { status: ancestor ? 0 : 1, stdout: "", stderr: "" };
+    }
+    if (args[0] === "status") {
+      return { status: 0, stdout: worktree, stderr: "" };
+    }
+    return { status: 0, stdout: "", stderr: "" };
+  });
 }
 
 describe("Atlas staging safety contract", () => {
@@ -173,7 +202,12 @@ describe("Atlas staging safety contract", () => {
       }).projectRef,
     ).toBe(APPROVED_ATLAS_STAGING_PROJECT_REF);
     expect(() =>
-      validateAtlasStagingPackageProtectedValues(environment()),
+      validateAtlasStagingPackageProtectedValues(
+        environment({
+          ATLAS_STAGING_PROJECT_REF: "abcdefghijklmnopqrst",
+          VITE_SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
+        }),
+      ),
     ).toThrow(/approved Atlas Staging/i);
   });
 
@@ -235,6 +269,22 @@ describe("Atlas staging safety contract", () => {
     expect(diagnostic).toContain("REDACTED");
   });
 
+  it("admits exactly explicit github or local certification", () => {
+    expect(ATLAS_STAGING_CERTIFICATION_MODES).toEqual(["github", "local"]);
+    expect(requireAtlasStagingCertificationMode("github")).toBe("github");
+    expect(requireAtlasStagingCertificationMode("local")).toBe("local");
+    for (const value of [undefined, "", "skip", "none", "uncertified"]) {
+      expect(() => requireAtlasStagingCertificationMode(value)).toThrow(
+        /explicitly selected/i,
+      );
+    }
+    const deploymentSource = readFileSync(
+      "scripts/deploy-atlas-staging.mjs",
+      "utf8",
+    );
+    expect(deploymentSource).not.toMatch(/skip.certification/i);
+  });
+
   it("requires exact-head main membership and both exact job certifications", async () => {
     const runCommand = vi.fn((_command, args) => {
       if (args[0] === "rev-parse")
@@ -271,12 +321,13 @@ describe("Atlas staging safety contract", () => {
     await expect(
       verifyExactHeadCertification({
         commitSha,
+        certificationMode: "github",
         environment: environment(),
         runCommand,
         fetchImpl,
       }),
     ).resolves.toBe(commitSha);
-    expect(runCommand).toHaveBeenCalledTimes(4);
+    expect(runCommand).toHaveBeenCalledTimes(8);
     expect(
       runCommand.mock.calls.every(
         ([command, _args, options]) =>
@@ -284,6 +335,10 @@ describe("Atlas staging safety contract", () => {
       ),
     ).toBe(true);
     expect(runCommand.mock.calls.map(([_command, args]) => args)).toEqual([
+      ["cat-file", "-e", `${commitSha}^{commit}`],
+      ["rev-parse", "HEAD"],
+      ["merge-base", "--is-ancestor", commitSha, "origin/main"],
+      ["status", "--porcelain"],
       ["cat-file", "-e", `${commitSha}^{commit}`],
       ["rev-parse", "HEAD"],
       ["merge-base", "--is-ancestor", commitSha, "origin/main"],
@@ -320,6 +375,7 @@ describe("Atlas staging safety contract", () => {
     await expect(
       verifyExactHeadCertification({
         commitSha,
+        certificationMode: "github",
         environment: environment(),
         runCommand,
         fetchImpl,
@@ -342,11 +398,117 @@ describe("Atlas staging safety contract", () => {
     await expect(
       verifyExactHeadCertification({
         commitSha,
+        certificationMode: "github",
         environment: environment(),
         runCommand,
         fetchImpl,
       }),
     ).rejects.toThrow(/certification is missing/i);
+  });
+
+  it("keeps GitHub mode dependent on built-in workflow context", async () => {
+    const runFrontendCertification = vi.fn();
+    const runSupabaseCertification = vi.fn();
+    await expect(
+      verifyExactHeadCertification({
+        commitSha,
+        certificationMode: "github",
+        environment: environment({
+          GITHUB_REPOSITORY: undefined,
+          GITHUB_TOKEN: undefined,
+        }),
+        runCommand: exactHeadRunCommand(),
+        runFrontendCertification,
+        runSupabaseCertification,
+      }),
+    ).rejects.toThrow(/built-in workflow context/i);
+    expect(runFrontendCertification).not.toHaveBeenCalled();
+    expect(runSupabaseCertification).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["wrong HEAD", { head: "b".repeat(40) }, /exact commit/i],
+    ["commit outside origin/main", { ancestor: false }, /not contained/i],
+    ["dirty worktree", { worktree: " M protected-file\n" }, /not clean/i],
+  ])(
+    "rejects local certification for %s before either suite runs",
+    async (_label, gitState, expectedError) => {
+      const runFrontendCertification = vi.fn();
+      const runSupabaseCertification = vi.fn();
+      await expect(
+        verifyExactHeadCertification({
+          commitSha,
+          certificationMode: "local",
+          environment: environment(),
+          runCommand: exactHeadRunCommand(gitState),
+          runFrontendCertification,
+          runSupabaseCertification,
+        }),
+      ).rejects.toThrow(expectedError);
+      expect(runFrontendCertification).not.toHaveBeenCalled();
+      expect(runSupabaseCertification).not.toHaveBeenCalled();
+    },
+  );
+
+  it("runs local frontend then Supabase certification and revalidates exact HEAD", async () => {
+    const order = [];
+    const runCommand = exactHeadRunCommand();
+    const certificationEnvironments = [];
+    await expect(
+      verifyExactHeadCertification({
+        commitSha,
+        certificationMode: "local",
+        environment: environment(),
+        runCommand,
+        runFrontendCertification: vi.fn(async ({ environment }) => {
+          order.push("frontend");
+          certificationEnvironments.push(environment);
+        }),
+        runSupabaseCertification: vi.fn(async ({ environment }) => {
+          order.push("supabase");
+          certificationEnvironments.push(environment);
+        }),
+      }),
+    ).resolves.toBe(commitSha);
+    expect(order).toEqual(["frontend", "supabase"]);
+    expect(runCommand).toHaveBeenCalledTimes(8);
+    for (const certificationEnvironment of certificationEnvironments) {
+      expect(certificationEnvironment).not.toHaveProperty("GITHUB_TOKEN");
+      expect(certificationEnvironment).not.toHaveProperty(
+        "ATLAS_STAGING_DB_PASSWORD",
+      );
+      expect(certificationEnvironment).not.toHaveProperty(
+        "ATLAS_STAGING_SUPABASE_ACCESS_TOKEN",
+      );
+      expect(certificationEnvironment).not.toHaveProperty(
+        "VITE_SUPABASE_PUBLISHABLE_KEY",
+      );
+    }
+  });
+
+  it("does not fall back to local suites when GitHub evidence fails", async () => {
+    const runFrontendCertification = vi.fn();
+    const runSupabaseCertification = vi.fn();
+    await expect(
+      verifyExactHeadCertification({
+        commitSha,
+        certificationMode: "github",
+        environment: environment(),
+        runCommand: exactHeadRunCommand(),
+        fetchImpl: async (url) => ({
+          ok: true,
+          async json() {
+            return url.includes("/runs?")
+              ? { workflow_runs: [] }
+              : { jobs: [] };
+          },
+        }),
+        runFrontendCertification,
+        runSupabaseCertification,
+      }),
+    ).rejects.toThrow(/certification is missing/i);
+    expect(runFrontendCertification).not.toHaveBeenCalled();
+    expect(runSupabaseCertification).not.toHaveBeenCalled();
   });
 
   it.skipIf(process.platform !== "win32")(
@@ -370,6 +532,95 @@ describe("Atlas staging safety contract", () => {
 });
 
 describe("Atlas staging dry-run and workflow", () => {
+  it("shares the substantive frontend authority in repository order", () => {
+    expect(FRONTEND_CERTIFICATION_COMMANDS).toEqual([
+      ["install", "--frozen-lockfile"],
+      ["format"],
+      ["typecheck"],
+      ["test"],
+      ["build"],
+    ]);
+    const runCommand = vi.fn((_command, args) => ({
+      status: args[0] === "typecheck" ? 1 : 0,
+      stdout: "",
+      stderr: "",
+    }));
+    expect(() => certifyFrontend({ runCommand })).toThrow(/typecheck/i);
+    expect(runCommand.mock.calls.map(([_command, args]) => args)).toEqual([
+      ["install", "--frozen-lockfile"],
+      ["format"],
+      ["typecheck"],
+    ]);
+  });
+
+  it("stops Supabase Full Integration on first failure and still cleans up", () => {
+    const calls = [];
+    const expectedVersion = JSON.parse(
+      readFileSync(`${process.cwd()}/package.json`, "utf8"),
+    ).devDependencies.supabase;
+    const runCommand = vi.fn((_command, args) => {
+      calls.push(args.join(" "));
+      if (args.at(-1) === "--help") {
+        return {
+          status: 0,
+          stdout: "--exclude --local --no-seed --file --no-backup",
+          stderr: "",
+        };
+      }
+      if (args.at(-1) === "--version") {
+        return { status: 0, stdout: `${expectedVersion}\n`, stderr: "" };
+      }
+      if (args.includes("reset")) {
+        return { status: 1, stdout: "", stderr: "bounded failure" };
+      }
+      return { status: 0, stdout: "", stderr: "" };
+    });
+    expect(() => certifySupabaseFullIntegration({ runCommand })).toThrow(
+      /bounded failure/i,
+    );
+    expect(calls).toContain("exec supabase stop --no-backup");
+    expect(
+      calls.some(
+        (call) => call.includes("supabase test db") && !call.endsWith("--help"),
+      ),
+    ).toBe(false);
+  });
+
+  it("makes both workflows call the shared repository certification entrypoints", () => {
+    const frontendWorkflow = readFileSync(
+      ".github/workflows/frontend-ci.yml",
+      "utf8",
+    );
+    expect(frontendWorkflow).toContain("pnpm certify:frontend");
+    expect(frontendWorkflow).not.toContain("run: pnpm format");
+    expect(frontendWorkflow).not.toContain("run: pnpm typecheck");
+    expect(frontendWorkflow).not.toContain("run: pnpm test");
+    expect(frontendWorkflow).not.toContain("run: pnpm build");
+
+    const supabaseWorkflow = readFileSync(
+      ".github/workflows/supabase-integration.yml",
+      "utf8",
+    );
+    const fullIntegration = supabaseWorkflow.slice(
+      supabaseWorkflow.indexOf("  full-integration:"),
+    );
+    expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
+    expect(fullIntegration).not.toContain("supabase test db");
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(74);
+    expect(
+      SUPABASE_FULL_INTEGRATION_COMMANDS.some(({ args }) =>
+        args.includes(
+          "supabase/tests/pa_05g_backend_end_to_end_acceptance.sql",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      SUPABASE_FULL_INTEGRATION_COMMANDS.some(({ args }) =>
+        args.includes("local:planning-contract-01:verify"),
+      ),
+    ).toBe(true);
+  });
+
   it("leaves the pinned Supabase CLI on the default command shell", () => {
     const expectedVersion = JSON.parse(
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
@@ -421,6 +672,7 @@ describe("Atlas staging dry-run and workflow", () => {
     await expect(
       deployAtlasStaging({
         commitSha,
+        certificationMode: "github",
         environment: environment(),
         runCommand,
         fetchImpl,
@@ -437,6 +689,123 @@ describe("Atlas staging dry-run and workflow", () => {
     ).resolves.toMatchObject({ networkWrites: false });
     expect(runCommand).not.toHaveBeenCalled();
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("keeps protected deployment fixed to the approved Atlas Staging target", () => {
+    expect(() =>
+      planAtlasStagingDeployment(
+        environment({
+          ATLAS_STAGING_PROJECT_REF: "abcdefghijklmnopqrst",
+          VITE_SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
+        }),
+      ),
+    ).toThrow(/approved Atlas Staging/i);
+  });
+
+  it("fails closed when deployment omits the certification selector", async () => {
+    await expect(
+      deployAtlasStaging({
+        commitSha,
+        environment: environment(),
+        dryRun: true,
+      }),
+    ).rejects.toThrow(/explicitly selected/i);
+  });
+
+  it.each([
+    ["frontend", true, false],
+    ["Supabase", false, true],
+  ])(
+    "blocks every hosted mutation when local %s certification fails",
+    async (_label, failFrontend, failSupabase) => {
+      const runCommand = exactHeadRunCommand();
+      const runFrontendCertification = vi.fn(async () => {
+        if (failFrontend) throw new Error("frontend failed");
+      });
+      const runSupabaseCertification = vi.fn(async () => {
+        if (failSupabase) throw new Error("Supabase failed");
+      });
+      const fetchImpl = vi.fn();
+      const verifyHosted = vi.fn();
+
+      await expect(
+        deployAtlasStaging({
+          commitSha,
+          certificationMode: "local",
+          environment: environment(),
+          runCommand,
+          fetchImpl,
+          verifyHosted,
+          runFrontendCertification,
+          runSupabaseCertification,
+        }),
+      ).rejects.toThrow(/failed/i);
+      expect(
+        runCommand.mock.calls.some(([_command, args]) => args[0] === "link"),
+      ).toBe(false);
+      expect(fetchImpl).not.toHaveBeenCalled();
+      expect(verifyHosted).not.toHaveBeenCalled();
+      if (failFrontend) expect(runSupabaseCertification).not.toHaveBeenCalled();
+    },
+  );
+
+  it("returns from both local suites directly into protected deployment", async () => {
+    const order = [];
+    const expectedVersion = JSON.parse(
+      readFileSync(`${process.cwd()}/package.json`, "utf8"),
+    ).devDependencies.supabase;
+    const runCommand = vi.fn((command, args) => {
+      if (command === "git") {
+        if (args[0] === "rev-parse") {
+          return { status: 0, stdout: `${commitSha}\n`, stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      }
+      if (args[0] === "--version") {
+        return { status: 0, stdout: `${expectedVersion}\n`, stderr: "" };
+      }
+      if (args.at(-1) === "--help") {
+        return {
+          status: 0,
+          stdout:
+            "--project-ref --password --db-url --dry-run --output --agent",
+          stderr: "",
+        };
+      }
+      if (args[0] === "link") order.push("hosted-link");
+      if (args[0] === "db" && args[1] === "push") order.push("hosted-push");
+      return { status: 0, stdout: "", stderr: "" };
+    });
+    const fetchImpl = vi.fn(async () => {
+      order.push("hosted-exposure-read");
+      return {
+        ok: true,
+        async json() {
+          return { db_schema: "public,atlas_api" };
+        },
+      };
+    });
+
+    await expect(
+      deployAtlasStaging({
+        commitSha,
+        certificationMode: "local",
+        environment: environment(),
+        runCommand,
+        fetchImpl,
+        runFrontendCertification: vi.fn(async () => order.push("frontend")),
+        runSupabaseCertification: vi.fn(async () => order.push("supabase")),
+        verifyHosted: vi.fn(async () => order.push("hosted-verify")),
+      }),
+    ).resolves.toMatchObject({ status: "deployed" });
+    expect(order).toEqual([
+      "frontend",
+      "supabase",
+      "hosted-link",
+      "hosted-push",
+      "hosted-exposure-read",
+      "hosted-verify",
+    ]);
   });
 
   it("keeps the workflow manual, protected, and free of duplicate integration", () => {
@@ -473,6 +842,8 @@ describe("Atlas staging dry-run and workflow", () => {
       "scripts/atlas-staging-contract.mjs",
       "scripts/atlas-staging-contract.test.mjs",
       "scripts/deploy-atlas-staging.mjs",
+      "scripts/certify-frontend.mjs",
+      "scripts/certify-supabase-full-integration.mjs",
       "scripts/verify-atlas-staging.mjs",
       "scripts/install-atlas-staging-package.mjs",
       "scripts/install-local-foundation-need-generation-contract.mjs",

@@ -23,6 +23,22 @@ export const ATLAS_STAGING_IDENTITY_SECRET_NAMES = Object.freeze([
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const PROJECT_REF = /^[a-z0-9]{20}$/;
+export const ATLAS_STAGING_CERTIFICATION_MODES = Object.freeze([
+  "github",
+  "local",
+]);
+const LOCAL_CERTIFICATION_PROTECTED_NAMES = new Set([
+  ...ATLAS_STAGING_VARIABLE_NAMES,
+  ...ATLAS_STAGING_SECRET_NAMES,
+  ...ATLAS_STAGING_IDENTITY_SECRET_NAMES,
+  "GITHUB_TOKEN",
+  "SUPABASE_ACCESS_TOKEN",
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_DB_PASSWORD",
+  "SUPABASE_SECRET_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "DATABASE_URL",
+]);
 
 export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
   let safe = String(value ?? "");
@@ -44,6 +60,26 @@ export function requireExactCommitSha(value) {
     throw new Error("A valid full commit SHA is required.");
   }
   return sha;
+}
+
+export function requireAtlasStagingCertificationMode(value) {
+  const mode = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (!ATLAS_STAGING_CERTIFICATION_MODES.includes(mode)) {
+    throw new Error(
+      "Atlas staging certification must be explicitly selected as github or local.",
+    );
+  }
+  return mode;
+}
+
+function localCertificationEnvironment(environment) {
+  return Object.fromEntries(
+    Object.entries(environment).filter(
+      ([name]) => !LOCAL_CERTIFICATION_PROTECTED_NAMES.has(name),
+    ),
+  );
 }
 
 export function projectRefFromStagingUrl(value) {
@@ -359,22 +395,7 @@ async function successfulWorkflowRun({
   );
 }
 
-export async function verifyExactHeadCertification({
-  commitSha: commitShaValue,
-  environment = process.env,
-  cwd = process.cwd(),
-  runCommand = defaultCommandRunner,
-  fetchImpl = fetch,
-}) {
-  const commitSha = requireExactCommitSha(commitShaValue);
-  const repository = String(environment.GITHUB_REPOSITORY ?? "");
-  const token = String(environment.GITHUB_TOKEN ?? "");
-  if (!repository || !token) {
-    throw new Error(
-      "GitHub exact-head verification requires the built-in workflow context.",
-    );
-  }
-
+function verifyExactHeadState({ commitSha, cwd, runCommand }) {
   requireCommandSuccess(
     runCommand("git", ["cat-file", "-e", `${commitSha}^{commit}`], {
       cwd,
@@ -404,22 +425,68 @@ export async function verifyExactHeadCertification({
     "Worktree cleanliness cannot be verified.",
   );
   if (status) throw new Error("The deployment worktree is not clean.");
+}
 
-  await successfulWorkflowRun({
-    repository,
-    workflow: "frontend-ci.yml",
-    commitSha,
-    token,
-    requiredJob: "Format, typecheck, test, build",
-    fetchImpl,
-  });
-  await successfulWorkflowRun({
-    repository,
-    workflow: "supabase-integration.yml",
-    commitSha,
-    token,
-    requiredJob: "Supabase Full Integration",
-    fetchImpl,
-  });
+export async function verifyExactHeadCertification({
+  commitSha: commitShaValue,
+  certificationMode: certificationModeValue,
+  environment = process.env,
+  cwd = process.cwd(),
+  runCommand = defaultCommandRunner,
+  fetchImpl = fetch,
+  runFrontendCertification,
+  runSupabaseCertification,
+}) {
+  const commitSha = requireExactCommitSha(commitShaValue);
+  const certificationMode = requireAtlasStagingCertificationMode(
+    certificationModeValue,
+  );
+  verifyExactHeadState({ commitSha, cwd, runCommand });
+
+  if (certificationMode === "github") {
+    const repository = String(environment.GITHUB_REPOSITORY ?? "");
+    const token = String(environment.GITHUB_TOKEN ?? "");
+    if (!repository || !token) {
+      throw new Error(
+        "GitHub exact-head verification requires the built-in workflow context.",
+      );
+    }
+    await successfulWorkflowRun({
+      repository,
+      workflow: "frontend-ci.yml",
+      commitSha,
+      token,
+      requiredJob: "Format, typecheck, test, build",
+      fetchImpl,
+    });
+    await successfulWorkflowRun({
+      repository,
+      workflow: "supabase-integration.yml",
+      commitSha,
+      token,
+      requiredJob: "Supabase Full Integration",
+      fetchImpl,
+    });
+  } else {
+    if (
+      typeof runFrontendCertification !== "function" ||
+      typeof runSupabaseCertification !== "function"
+    ) {
+      throw new Error("Local exact-head certification is unavailable.");
+    }
+    const certificationEnvironment = localCertificationEnvironment(environment);
+    await runFrontendCertification({
+      cwd,
+      environment: certificationEnvironment,
+      runCommand,
+    });
+    await runSupabaseCertification({
+      cwd,
+      environment: certificationEnvironment,
+      runCommand,
+    });
+  }
+
+  verifyExactHeadState({ commitSha, cwd, runCommand });
   return commitSha;
 }

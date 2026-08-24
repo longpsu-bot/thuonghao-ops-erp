@@ -58,28 +58,28 @@ It contains active legacy `public` and `ops_v2` objects, including 55 tables, 43
 
 The retained Retool exports have the following reviewed SHA-256 values:
 
-| Export | SHA-256 |
-| --- | --- |
-| `OPS - Admin (in production).json` | `a6d74ca01f7942687e8639ffef73dba5a89c6bcbf653f9454011cec551549350` |
-| `OPS - Công thức.json` | `b38c86ac3b1fed985f6bc07d91c0708cf5aacccc682434ba2498960d1da1b809` |
+| Export                                   | SHA-256                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `OPS - Admin (in production).json`       | `a6d74ca01f7942687e8639ffef73dba5a89c6bcbf653f9454011cec551549350` |
+| `OPS - Công thức.json`                   | `b38c86ac3b1fed985f6bc07d91c0708cf5aacccc682434ba2498960d1da1b809` |
 | `OPS - Nguyên liệu và Nhà cung ứng.json` | `2fb973cbd6a3900252aa9037a1d4d197551bccc93db60e36512d97f27d903648` |
-| `OPS - Lên đơn, Đặt hàng (1).json` | `6f6ff8d025696d375f354a86126661d20c3e9908d6475d40ecb14ee006b4a371` |
+| `OPS - Lên đơn, Đặt hàng (1).json`       | `6f6ff8d025696d375f354a86126661d20c3e9908d6475d40ecb14ee006b4a371` |
 
 Retool demonstrates the need for dense tables, fast filtering, inline editing, visible exceptions, explicit save/refresh actions and concise Vietnamese task language. It also demonstrates why Atlas must not copy direct browser SQL, UI-owned calculations, hidden state orchestration or legacy page structure.
 
 ## 3. OPS_SYSTEM_MAP placement
 
-| Layer | ATLAS-ACT-01 placement |
-| --- | --- |
-| Mission | Replace OPS v1 safely with a maintainable and transferable Atlas system. |
-| Business capability | Hosted staging activation and operator-experience stabilization. |
-| Business domain | Cross-domain platform support for the already connected Admin and Planning domains. |
-| Business object | Environment identity, deployment release, staging identity/data package and UI acceptance record. |
-| Business contract | This contract plus existing environment, API, domain and UI contracts. |
-| Command/event | No new business command or event. |
-| Read model | Existing backend read models remain authoritative. |
-| Application | Existing Atlas shell and connected workbenches. |
-| Technology | Separate Supabase project, repository migrations, protected GitHub Environment, React/TypeScript/CSS/Storybook and existing CI. |
+| Layer               | ATLAS-ACT-01 placement                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Mission             | Replace OPS v1 safely with a maintainable and transferable Atlas system.                                                        |
+| Business capability | Hosted staging activation and operator-experience stabilization.                                                                |
+| Business domain     | Cross-domain platform support for the already connected Admin and Planning domains.                                             |
+| Business object     | Environment identity, deployment release, staging identity/data package and UI acceptance record.                               |
+| Business contract   | This contract plus existing environment, API, domain and UI contracts.                                                          |
+| Command/event       | No new business command or event.                                                                                               |
+| Read model          | Existing backend read models remain authoritative.                                                                              |
+| Application         | Existing Atlas shell and connected workbenches.                                                                                 |
+| Technology          | Separate Supabase project, repository migrations, protected GitHub Environment, React/TypeScript/CSS/Storybook and existing CI. |
 
 ## 4. Environment boundaries
 
@@ -92,6 +92,9 @@ Local remains the development and deterministic certification environment:
 - all registered pgTAP suites;
 - current browser-key journeys;
 - disposable resettable data.
+- synchronous exact-head deployment certification when explicitly selected,
+  using the same repository frontend and Supabase Full Integration entrypoints
+  as GitHub Actions.
 
 ### 4.2 Atlas staging
 
@@ -175,16 +178,16 @@ Repository migrations are the sole Atlas schema authority. Manual Dashboard DDL 
 
 Initial staging deployment is manual and protected. It must:
 
-1. accept only an exact `main` commit;
-2. verify that the same commit already passed Frontend CI and Supabase Full Integration;
-3. avoid rerunning the complete local integration suite inside the deployment job;
+1. accept only an exact clean commit contained in current `origin/main`;
+2. require an explicit certification source: `github` verifies successful exact-head Frontend CI and Supabase Full Integration evidence, while `local` synchronously runs the shared substantive frontend and Supabase Full Integration entrypoints;
+3. allow no fallback, bypass, durable manually authored certificate, or uncertified mode, and run each complete suite at most once in one deployment invocation;
 4. verify the target project reference and reject the live OPS reference;
 5. apply repository migrations in order using the pinned CLI;
 6. verify hosted migration history and Atlas catalog/security fingerprints;
 7. verify browser-safe Auth/read access;
 8. stop on the first mismatch and redact secrets.
 
-This reuses exact-head certification instead of paying the time cost of a second identical Full Integration run.
+GitHub mode reuses exact-head workflow certification. Local mode revalidates the requested commit, `HEAD`, `origin/main` containment and worktree cleanliness, runs both shared suites, revalidates the Git state, and returns directly into protected mutation. No hosted command runs before certification completes.
 
 After a hosted migration is applied, correction is forward-only through a reviewed migration. Migration history and committed evidence are not rewritten or deleted as an ordinary rollback.
 
