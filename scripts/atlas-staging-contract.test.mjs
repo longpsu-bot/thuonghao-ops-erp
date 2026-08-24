@@ -49,6 +49,20 @@ import {
 
 const stagingRef = APPROVED_ATLAS_STAGING_PROJECT_REF;
 const commitSha = "a".repeat(40);
+const stagingIdentity = JSON.parse(
+  readFileSync("supabase/packages/atlas-staging-identity.v1.json", "utf8"),
+);
+const managedStagingRole = stagingIdentity.role;
+
+function applicationRoleStateAccepted(applicationRoles, { platformOnly }) {
+  if (applicationRoles.length === 0) return platformOnly;
+  return (
+    applicationRoles.length === 1 &&
+    applicationRoles[0].role_id === managedStagingRole.role_id &&
+    applicationRoles[0].role_code === managedStagingRole.role_code &&
+    applicationRoles[0].role_status === "ACTIVE"
+  );
+}
 
 function environment(overrides = {}) {
   return {
@@ -143,24 +157,34 @@ describe("Atlas staging safety contract", () => {
     expect(JSON.parse(options.body)).toEqual({ query: statement });
   });
 
-  it("fails closed without surfacing the bearer credential", async () => {
+  it("reports only a safe Management API status category", async () => {
     const accessToken = "synthetic-access-token-never-surface";
+    const statement = "select protected_catalog_value from private_relation;";
+    const protectedBody = "protected server response body never surface";
     const target = {
       projectRef: APPROVED_ATLAS_STAGING_PROJECT_REF,
       supabaseUrl: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
       accessToken,
     };
+    const readBody = vi.fn(async () => protectedBody);
     let failure;
     try {
-      await executeAtlasStagingManagementSql(target, "select 1;", async () => ({
-        status: 401,
+      await executeAtlasStagingManagementSql(target, statement, async () => ({
+        status: 403,
+        text: readBody,
       }));
     } catch (error) {
       failure = error;
     }
     expect(failure).toBeInstanceOf(Error);
     expect(failure.message).toMatch(/failed safely/i);
+    expect(failure.message).toContain("HTTP 403");
     expect(failure.message).not.toContain(accessToken);
+    expect(failure.message).not.toContain(statement);
+    expect(failure.message).not.toContain(protectedBody);
+    expect(failure.message).not.toContain(target.projectRef);
+    expect(failure.message).not.toContain(target.supabaseUrl);
+    expect(readBody).not.toHaveBeenCalled();
   });
 
   it("rejects live OPS before issuing a Management API query", async () => {
@@ -1158,6 +1182,72 @@ describe("Atlas staging dry-run and workflow", () => {
 });
 
 describe("Atlas staging hosted evidence", () => {
+  it("keeps platform-only verification package-aware without requiring package or Auth checks", async () => {
+    const sqlCalls = [];
+    const migrationVersions = readdirSync("supabase/migrations")
+      .filter((name) => name.endsWith(".sql"))
+      .map((name) => name.slice(0, 14))
+      .sort();
+    const endpoint = `https://api.supabase.com/v1/projects/${APPROVED_ATLAS_STAGING_PROJECT_REF}/database/query`;
+    const fetchImpl = vi.fn(async (url, options = {}) => {
+      if (url === endpoint) {
+        const statement = JSON.parse(options.body).query;
+        sqlCalls.push(statement);
+        const result = statement.includes("ATLAS_MIGRATION_HISTORY=")
+          ? `ATLAS_MIGRATION_HISTORY=${JSON.stringify({
+              versions: migrationVersions,
+              row_count: migrationVersions.length,
+            })}`
+          : "safe";
+        return {
+          ok: true,
+          status: 201,
+          async text() {
+            return JSON.stringify([{ result }]);
+          },
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return String(url).includes("/postgrest")
+            ? { db_schema: "public,atlas_api" }
+            : {};
+        },
+      };
+    });
+    const createClientFactory = vi.fn(() => ({
+      schema: () => ({
+        rpc: () => ({
+          retry: async () => ({
+            error: {
+              code: "42501",
+              message: "permission denied for schema atlas_api",
+            },
+          }),
+        }),
+      }),
+    }));
+
+    await expect(
+      verifyAtlasStaging({
+        environment: environment({ ATLAS_STAGING_DB_PASSWORD: undefined }),
+        fetchImpl,
+        createClientFactory,
+        platformOnly: true,
+      }),
+    ).resolves.toEqual({ status: "verified", phase: "platform" });
+
+    expect(sqlCalls).toHaveLength(2);
+    expect(sqlCalls[1]).toContain(managedStagingRole.role_id);
+    expect(sqlCalls[1]).toContain(managedStagingRole.role_code);
+    expect(sqlCalls[1]).toContain("role_status = 'ACTIVE'");
+    expect(sqlCalls[1]).not.toContain("ATLAS_STAGING_IDENTITY");
+    expect(sqlCalls[1]).not.toContain("ATLAS_STAGING_FOUNDATION");
+    expect(createClientFactory).toHaveBeenCalledOnce();
+  });
+
   it("posts every verifier SQL statement to the approved Management API endpoint", async () => {
     const sqlCalls = [];
     const migrationVersions = readdirSync("supabase/migrations")
@@ -1265,6 +1355,11 @@ describe("Atlas staging hosted evidence", () => {
       expect.stringContaining("ATLAS_ACTIVE_ACTOR_MAPPING_MISMATCH"),
     ]);
     expect(sqlCalls[2].statement).toContain("ATLAS_STAGING_FOUNDATION");
+    expect(sqlCalls[1].statement).toContain(managedStagingRole.role_id);
+    expect(sqlCalls[1].statement).toContain(managedStagingRole.role_code);
+    expect(sqlCalls[1].statement).toContain(
+      "(select count(*) from atlas_core.roles) <> 1",
+    );
   });
 
   it("preserves existing exposed schemas and adds atlas_api exactly once", async () => {
@@ -1374,6 +1469,91 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.apiOwners).toHaveLength(92);
     expect(authority.policyCount).toBe(602);
     expect(authority.policyDigest).toBe("70678dada96fab8419980bddd01978be");
+  });
+
+  it.each([
+    ["zero application roles", [], true],
+    [
+      "the governed active application role",
+      [
+        {
+          role_id: managedStagingRole.role_id,
+          role_code: managedStagingRole.role_code,
+          role_status: "ACTIVE",
+        },
+      ],
+      true,
+    ],
+    [
+      "an unexpected application role",
+      [
+        {
+          role_id: "b2020000-0000-4000-8000-000000000003",
+          role_code: "unexpected_role",
+          role_status: "ACTIVE",
+        },
+      ],
+      false,
+    ],
+    [
+      "multiple application roles",
+      [
+        {
+          role_id: managedStagingRole.role_id,
+          role_code: managedStagingRole.role_code,
+          role_status: "ACTIVE",
+        },
+        {
+          role_id: "b2020000-0000-4000-8000-000000000003",
+          role_code: "additional_role",
+          role_status: "ACTIVE",
+        },
+      ],
+      false,
+    ],
+    [
+      "the inactive governed application role",
+      [
+        {
+          role_id: managedStagingRole.role_id,
+          role_code: managedStagingRole.role_code,
+          role_status: "INACTIVE",
+        },
+      ],
+      false,
+    ],
+  ])("models platform-only + %s", (_label, roles, accepted) => {
+    expect(applicationRoleStateAccepted(roles, { platformOnly: true })).toBe(
+      accepted,
+    );
+  });
+
+  it("makes only the exact managed role optional in platform-only catalog SQL", () => {
+    const platformSql = catalogVerificationSql(readCatalogAuthority(), {
+      managedApplicationRole: managedStagingRole,
+      allowMissingManagedApplicationRole: true,
+    });
+    expect(platformSql).toContain(
+      "(select count(*) from atlas_core.roles) > 1",
+    );
+    expect(platformSql).toContain(
+      "(select count(*) from atlas_core.roles) = 1 and not exists",
+    );
+    expect(platformSql).toContain(
+      `role_id = '${managedStagingRole.role_id}'::uuid`,
+    );
+    expect(platformSql).toContain(
+      `role_code = '${managedStagingRole.role_code}'`,
+    );
+    expect(platformSql).toContain("role_status = 'ACTIVE'");
+
+    const fullSql = catalogVerificationSql(readCatalogAuthority(), {
+      managedApplicationRole: managedStagingRole,
+    });
+    expect(fullSql).toContain("(select count(*) from atlas_core.roles) <> 1");
+    expect(applicationRoleStateAccepted([], { platformOnly: false })).toBe(
+      false,
+    );
   });
 
   it("uses one normal CAT-22 policy catalog for both count and digest", () => {

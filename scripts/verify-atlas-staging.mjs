@@ -136,12 +136,28 @@ function sqlArray(values) {
 
 export function catalogVerificationSql(
   authority,
-  { expectedApplicationRoleCode } = {},
+  { managedApplicationRole, allowMissingManagedApplicationRole = false } = {},
 ) {
   const schemas = sqlArray(authority.schemas);
   const roles = sqlArray(authority.databaseRoles);
   const signatures = sqlArray(authority.apiSignatures);
   const owners = sqlArray(authority.apiOwners);
+  const managedRoleId = String(managedApplicationRole?.role_id ?? "");
+  const managedRoleCode = String(managedApplicationRole?.role_code ?? "");
+  if (
+    managedApplicationRole &&
+    (!/^[0-9a-f-]{36}$/i.test(managedRoleId) || !managedRoleCode)
+  ) {
+    throw new Error("The managed Atlas Staging application role is invalid.");
+  }
+  const exactManagedRole = managedApplicationRole
+    ? `exists (select 1 from atlas_core.roles where role_id = '${managedRoleId}'::uuid and role_code = '${managedRoleCode.replaceAll("'", "''")}' and role_status = 'ACTIVE')`
+    : undefined;
+  const applicationRoleMismatch = exactManagedRole
+    ? allowMissingManagedApplicationRole
+      ? `(select count(*) from atlas_core.roles) > 1 or ((select count(*) from atlas_core.roles) = 1 and not ${exactManagedRole})`
+      : `(select count(*) from atlas_core.roles) <> 1 or not ${exactManagedRole}`
+    : `(select count(*) from atlas_core.roles) <> 0`;
   return `do $$
 declare
   actual text[];
@@ -155,11 +171,7 @@ begin
     raise exception 'ATLAS_CATALOG_SCHEMA_MISMATCH';
   end if;
   select array_agg(format('%s|login=%s|inherit=%s|super=%s|createrole=%s|createdb=%s|repl=%s|bypassrls=%s', rolname, rolcanlogin, rolinherit, rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls) order by rolname)::text[] into actual from pg_roles where rolname like 'atlas\\_%' escape '\\';
-  if actual is distinct from ${roles} or ${
-    expectedApplicationRoleCode
-      ? `(select count(*) from atlas_core.roles) <> 1 or not exists (select 1 from atlas_core.roles where role_code = '${expectedApplicationRoleCode.replaceAll("'", "''")}' and role_status = 'ACTIVE')`
-      : `(select count(*) from atlas_core.roles) <> 0`
-  } then
+  if actual is distinct from ${roles} or ${applicationRoleMismatch} then
     raise exception 'ATLAS_DATABASE_ROLE_POSTURE_MISMATCH';
   end if;
   if exists (select 1 from pg_roles r cross join pg_namespace n where r.rolname like 'atlas\\_%' escape '\\' and r.rolname <> 'atlas_owner' and n.nspname like 'atlas\\_%' escape '\\' and has_schema_privilege(r.rolname, n.nspname, 'CREATE')) then
@@ -276,16 +288,15 @@ export async function verifyAtlasStaging({
     repositoryMigrationVersions(cwd),
     parseMigrationHistoryEvidence(migrations),
   );
-  const identityManifest = platformOnly
-    ? undefined
-    : readAtlasStagingPackage("identity", cwd);
+  const identityManifest = readAtlasStagingPackage("identity", cwd);
   const foundationManifest = platformOnly
     ? undefined
     : readAtlasStagingPackage("foundation", cwd);
   await executeAtlasStagingManagementSql(
     target,
     catalogVerificationSql(readCatalogAuthority(cwd), {
-      expectedApplicationRoleCode: identityManifest?.role.role_code,
+      managedApplicationRole: identityManifest.role,
+      allowMissingManagedApplicationRole: platformOnly,
     }),
     fetchImpl,
   );
