@@ -279,8 +279,14 @@ export async function executeAtlasStagingManagementSql(
     );
   }
   if (response.status !== 201) {
+    const safeStatus =
+      Number.isInteger(response.status) &&
+      response.status >= 100 &&
+      response.status <= 599
+        ? ` (HTTP ${response.status})`
+        : "";
     throw new Error(
-      "The protected Atlas Staging database query failed safely.",
+      `The protected Atlas Staging database query failed safely${safeStatus}.`,
     );
   }
   try {
