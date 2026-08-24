@@ -14,10 +14,11 @@ Before activation, confirm the chosen commit:
 
 - is a full SHA contained in `main`;
 - is checked out exactly with a clean worktree;
-- passed `Frontend CI / Format, typecheck, test, build` for that SHA;
-- passed `Supabase Integration / Supabase Full Integration` for that SHA.
+- has an explicitly selected certification source;
+- in `github` mode, passed `Frontend CI / Format, typecheck, test, build` and `Supabase Integration / Supabase Full Integration` for that SHA;
+- in `local` mode, synchronously passes the shared substantive frontend and Supabase Full Integration entrypoints in the same deployment invocation.
 
-The deployment workflow proves these facts through the built-in `GITHUB_TOKEN`. It does not rerun either complete suite.
+No missing, automatic-fallback, skip, or manually authored certificate mode exists. The GitHub deployment workflow proves workflow evidence through the built-in `GITHUB_TOKEN` and does not rerun either suite. Local mode fetches only `refs/remotes/origin/main` from canonical `origin`, verifies exact HEAD, refreshed `origin/main` containment and worktree cleanliness, runs both suites, then fetches and verifies the same complete Git state again immediately before the protected path.
 
 ## 2. Current-cost confirmation and project creation
 
@@ -61,18 +62,26 @@ ATLAS_STAGING_SUPABASE_SECRET_KEY
 Dispatch `Atlas Staging Deploy` manually and provide the exact full `main` SHA. The workflow uses:
 
 ```text
-pnpm atlas:staging:deploy -- --commit-sha <full-main-sha> --preflight
-pnpm atlas:staging:deploy -- --commit-sha <full-main-sha>
+pnpm atlas:staging:deploy -- --commit-sha <full-main-sha> --certification github --preflight
+pnpm atlas:staging:deploy -- --commit-sha <full-main-sha> --certification github
 ```
+
+For an authorized local deployment when hosted Actions are unavailable, use one invocation from the exact clean `origin/main` commit:
+
+```text
+pnpm atlas:staging:deploy -- --commit-sha <full-main-sha> --certification local
+```
+
+Local mode requires Node 24, pnpm 11, the repository-pinned Supabase CLI, Docker and enough resources for the complete local integration suite. It performs frozen dependency installation, formatting, typecheck, frontend tests, build, the complete Supabase Full Integration authority and final Git-state revalidation before any hosted link or migration command. Do not run local preflight and then treat its result as durable evidence; a later deployment invocation certifies again.
 
 Preflight is non-mutating. The guarded deployment revalidates exact-head certification, inspects repository-pinned Supabase CLI help, links only the ephemeral protected workflow checkout to the already verified staging reference, applies ordered repository migrations with `supabase db push --linked`, stops on the first failure, and then runs the verifier's read-only platform phase. After the migration push, the guarded Management API step reads the project's existing Data API schema list and appends `atlas_api` only when absent; it preserves every existing exposed schema and verifies the resulting configuration. The protected access token therefore requires Data API configuration read/write scope for deployment and read scope for verification. The access token is supplied only through the process environment; no CLI login profile is written.
 
-The platform phase reads complete hosted migration versions directly from `supabase_migrations.schema_migrations` through the pinned CLI's JSON output and requires exact equality with the complete repository set. It verifies that Management API configuration exposes `atlas_api`, then performs an actual anonymous Data API RPC and accepts only the expected PostgreSQL `42501` permission denial; missing schema/function, schema-cache, and transport failures are verification failures. The catalog check uses the approved security-catalog pgTAP authority for exact schema names, database-role posture, all 90 API signatures and owners, security-definer/empty-search-path posture, exact grants, and the CAT-22 normal-policy count and digest. It separately requires exactly one isolated `atlas_admin.units / rmvp_05_unit_lock` policy. This phase does not require identity or foundation data that cannot exist before the first schema deployment.
+The platform phase reads complete hosted migration versions directly from `supabase_migrations.schema_migrations` through the pinned CLI's JSON output and requires exact equality with the complete repository set. It verifies that Management API configuration exposes `atlas_api`, then performs an actual anonymous Data API RPC and accepts only the expected PostgreSQL `42501` permission denial; missing schema/function, schema-cache, and transport failures are verification failures. The repository target authority is 92 `atlas_api` signatures and owners, security-definer/empty-search-path posture, exact grants, and the CAT-22 normal-policy count and digest. The current pre-deployment hosted Staging observation remains 90 `atlas_api` functions until repository migrations are deployed; it is not rewritten as current repository authority. The platform phase separately requires exactly one isolated `atlas_admin.units / rmvp_05_unit_lock` policy and does not require identity or foundation data that cannot exist before the first schema deployment.
 
 Local script testing may use `--dry-run`. Dry-run performs no process execution and makes no network request:
 
 ```text
-pnpm atlas:staging:deploy -- --commit-sha <synthetic-full-sha> --dry-run
+pnpm atlas:staging:deploy -- --commit-sha <synthetic-full-sha> --certification github --dry-run
 pnpm atlas:staging:verify -- --dry-run
 ```
 

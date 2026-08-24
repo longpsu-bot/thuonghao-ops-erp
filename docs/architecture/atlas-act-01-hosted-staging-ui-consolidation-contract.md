@@ -58,28 +58,28 @@ It contains active legacy `public` and `ops_v2` objects, including 55 tables, 43
 
 The retained Retool exports have the following reviewed SHA-256 values:
 
-| Export | SHA-256 |
-| --- | --- |
-| `OPS - Admin (in production).json` | `a6d74ca01f7942687e8639ffef73dba5a89c6bcbf653f9454011cec551549350` |
-| `OPS - Công thức.json` | `b38c86ac3b1fed985f6bc07d91c0708cf5aacccc682434ba2498960d1da1b809` |
+| Export                                   | SHA-256                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `OPS - Admin (in production).json`       | `a6d74ca01f7942687e8639ffef73dba5a89c6bcbf653f9454011cec551549350` |
+| `OPS - Công thức.json`                   | `b38c86ac3b1fed985f6bc07d91c0708cf5aacccc682434ba2498960d1da1b809` |
 | `OPS - Nguyên liệu và Nhà cung ứng.json` | `2fb973cbd6a3900252aa9037a1d4d197551bccc93db60e36512d97f27d903648` |
-| `OPS - Lên đơn, Đặt hàng (1).json` | `6f6ff8d025696d375f354a86126661d20c3e9908d6475d40ecb14ee006b4a371` |
+| `OPS - Lên đơn, Đặt hàng (1).json`       | `6f6ff8d025696d375f354a86126661d20c3e9908d6475d40ecb14ee006b4a371` |
 
 Retool demonstrates the need for dense tables, fast filtering, inline editing, visible exceptions, explicit save/refresh actions and concise Vietnamese task language. It also demonstrates why Atlas must not copy direct browser SQL, UI-owned calculations, hidden state orchestration or legacy page structure.
 
 ## 3. OPS_SYSTEM_MAP placement
 
-| Layer | ATLAS-ACT-01 placement |
-| --- | --- |
-| Mission | Replace OPS v1 safely with a maintainable and transferable Atlas system. |
-| Business capability | Hosted staging activation and operator-experience stabilization. |
-| Business domain | Cross-domain platform support for the already connected Admin and Planning domains. |
-| Business object | Environment identity, deployment release, staging identity/data package and UI acceptance record. |
-| Business contract | This contract plus existing environment, API, domain and UI contracts. |
-| Command/event | No new business command or event. |
-| Read model | Existing backend read models remain authoritative. |
-| Application | Existing Atlas shell and connected workbenches. |
-| Technology | Separate Supabase project, repository migrations, protected GitHub Environment, React/TypeScript/CSS/Storybook and existing CI. |
+| Layer               | ATLAS-ACT-01 placement                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Mission             | Replace OPS v1 safely with a maintainable and transferable Atlas system.                                                        |
+| Business capability | Hosted staging activation and operator-experience stabilization.                                                                |
+| Business domain     | Cross-domain platform support for the already connected Admin and Planning domains.                                             |
+| Business object     | Environment identity, deployment release, staging identity/data package and UI acceptance record.                               |
+| Business contract   | This contract plus existing environment, API, domain and UI contracts.                                                          |
+| Command/event       | No new business command or event.                                                                                               |
+| Read model          | Existing backend read models remain authoritative.                                                                              |
+| Application         | Existing Atlas shell and connected workbenches.                                                                                 |
+| Technology          | Separate Supabase project, repository migrations, protected GitHub Environment, React/TypeScript/CSS/Storybook and existing CI. |
 
 ## 4. Environment boundaries
 

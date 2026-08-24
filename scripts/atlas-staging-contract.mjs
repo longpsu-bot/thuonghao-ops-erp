@@ -23,6 +23,31 @@ export const ATLAS_STAGING_IDENTITY_SECRET_NAMES = Object.freeze([
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const PROJECT_REF = /^[a-z0-9]{20}$/;
+export const ATLAS_STAGING_CERTIFICATION_MODES = Object.freeze([
+  "github",
+  "local",
+]);
+const LOCAL_CERTIFICATION_ENVIRONMENT_NAMES = new Set([
+  "PATH",
+  "HOME",
+  "USERPROFILE",
+  "SYSTEMROOT",
+  "WINDIR",
+  "COMSPEC",
+  "PATHEXT",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "LANG",
+  "TERM",
+  "PNPM_HOME",
+  "DOCKER_HOST",
+  "DOCKER_CONTEXT",
+  "DOCKER_TLS_VERIFY",
+  "DOCKER_CERT_PATH",
+]);
 
 export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
   let safe = String(value ?? "");
@@ -33,7 +58,8 @@ export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
     .replace(/postgres(?:ql)?:\/\/[^\s'\"]+/gi, "[REDACTED_DATABASE_URL]")
     .replace(/sb_(?:secret|publishable)_[A-Za-z0-9._-]+/g, "[REDACTED_KEY]")
     .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_JWT]")
-    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, "$1[REDACTED]");
+    .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, "$1[REDACTED]")
+    .replace(/\b(password|passwd)\s*([=:]\s*)[^\s'\"]+/gi, "$1$2[REDACTED]");
 }
 
 export function requireExactCommitSha(value) {
@@ -44,6 +70,31 @@ export function requireExactCommitSha(value) {
     throw new Error("A valid full commit SHA is required.");
   }
   return sha;
+}
+
+export function requireAtlasStagingCertificationMode(value) {
+  const mode = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  if (!ATLAS_STAGING_CERTIFICATION_MODES.includes(mode)) {
+    throw new Error(
+      "Atlas staging certification must be explicitly selected as github or local.",
+    );
+  }
+  return mode;
+}
+
+export function localCertificationEnvironment(environment) {
+  const safeEnvironment = Object.fromEntries(
+    Object.entries(environment).filter(([name]) => {
+      const normalizedName = name.toUpperCase();
+      return (
+        LOCAL_CERTIFICATION_ENVIRONMENT_NAMES.has(normalizedName) ||
+        normalizedName.startsWith("LC_")
+      );
+    }),
+  );
+  return { ...safeEnvironment, SUPABASE_TELEMETRY_DISABLED: "1" };
 }
 
 export function projectRefFromStagingUrl(value) {
@@ -304,6 +355,7 @@ export function defaultCommandRunner(command, args, options = {}) {
     env: options.env ?? process.env,
     encoding: "utf8",
     shell: options.shell ?? process.platform === "win32",
+    timeout: options.timeout,
   });
   return {
     status: result.status ?? 1,
@@ -359,22 +411,7 @@ async function successfulWorkflowRun({
   );
 }
 
-export async function verifyExactHeadCertification({
-  commitSha: commitShaValue,
-  environment = process.env,
-  cwd = process.cwd(),
-  runCommand = defaultCommandRunner,
-  fetchImpl = fetch,
-}) {
-  const commitSha = requireExactCommitSha(commitShaValue);
-  const repository = String(environment.GITHUB_REPOSITORY ?? "");
-  const token = String(environment.GITHUB_TOKEN ?? "");
-  if (!repository || !token) {
-    throw new Error(
-      "GitHub exact-head verification requires the built-in workflow context.",
-    );
-  }
-
+function verifyExactHeadState({ commitSha, cwd, runCommand }) {
   requireCommandSuccess(
     runCommand("git", ["cat-file", "-e", `${commitSha}^{commit}`], {
       cwd,
@@ -404,22 +441,83 @@ export async function verifyExactHeadCertification({
     "Worktree cleanliness cannot be verified.",
   );
   if (status) throw new Error("The deployment worktree is not clean.");
+}
 
-  await successfulWorkflowRun({
-    repository,
-    workflow: "frontend-ci.yml",
-    commitSha,
-    token,
-    requiredJob: "Format, typecheck, test, build",
-    fetchImpl,
-  });
-  await successfulWorkflowRun({
-    repository,
-    workflow: "supabase-integration.yml",
-    commitSha,
-    token,
-    requiredJob: "Supabase Full Integration",
-    fetchImpl,
-  });
+function refreshOriginMain({ cwd, runCommand }) {
+  requireCommandSuccess(
+    runCommand(
+      "git",
+      ["fetch", "--no-tags", "origin", "main:refs/remotes/origin/main"],
+      { cwd, shell: false },
+    ),
+    "The current origin/main cannot be fetched for local certification.",
+  );
+}
+
+export async function verifyExactHeadCertification({
+  commitSha: commitShaValue,
+  certificationMode: certificationModeValue,
+  environment = process.env,
+  cwd = process.cwd(),
+  runCommand = defaultCommandRunner,
+  fetchImpl = fetch,
+  runFrontendCertification,
+  runSupabaseCertification,
+}) {
+  const commitSha = requireExactCommitSha(commitShaValue);
+  const certificationMode = requireAtlasStagingCertificationMode(
+    certificationModeValue,
+  );
+  if (certificationMode === "local") {
+    refreshOriginMain({ cwd, runCommand });
+  }
+  verifyExactHeadState({ commitSha, cwd, runCommand });
+
+  if (certificationMode === "github") {
+    const repository = String(environment.GITHUB_REPOSITORY ?? "");
+    const token = String(environment.GITHUB_TOKEN ?? "");
+    if (!repository || !token) {
+      throw new Error(
+        "GitHub exact-head verification requires the built-in workflow context.",
+      );
+    }
+    await successfulWorkflowRun({
+      repository,
+      workflow: "frontend-ci.yml",
+      commitSha,
+      token,
+      requiredJob: "Format, typecheck, test, build",
+      fetchImpl,
+    });
+    await successfulWorkflowRun({
+      repository,
+      workflow: "supabase-integration.yml",
+      commitSha,
+      token,
+      requiredJob: "Supabase Full Integration",
+      fetchImpl,
+    });
+  } else {
+    if (
+      typeof runFrontendCertification !== "function" ||
+      typeof runSupabaseCertification !== "function"
+    ) {
+      throw new Error("Local exact-head certification is unavailable.");
+    }
+    const certificationEnvironment = localCertificationEnvironment(environment);
+    await runFrontendCertification({
+      cwd,
+      environment: certificationEnvironment,
+      runCommand,
+    });
+    await runSupabaseCertification({
+      cwd,
+      environment: certificationEnvironment,
+      runCommand,
+    });
+    refreshOriginMain({ cwd, runCommand });
+  }
+
+  verifyExactHeadState({ commitSha, cwd, runCommand });
   return commitSha;
 }
