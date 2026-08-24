@@ -12,7 +12,9 @@ import {
   ensureAtlasApiExposure,
   executeAtlasStagingManagementSql,
   localCertificationEnvironment,
+  nativeSupabaseCliInvocation,
   redactAtlasStagingDiagnostic,
+  repositorySupabaseCliInvocation,
   requireAtlasStagingCertificationMode,
   validateAtlasStagingProtectedValues,
   validateAtlasStagingPackageProtectedValues,
@@ -634,6 +636,56 @@ describe("Atlas staging safety contract", () => {
       expect(result.status).toBe(0);
     },
   );
+
+  it("constructs a Windows-safe pinned Supabase invocation with discrete arguments", () => {
+    const args = [
+      "db",
+      "push",
+      "--password",
+      "protected value with spaces & metacharacters",
+    ];
+    const invocation = nativeSupabaseCliInvocation(
+      "C:\\Repository With Spaces\\node_modules\\@supabase\\cli-windows-x64\\bin\\supabase.exe",
+      args,
+    );
+
+    expect(invocation.command).toBe(
+      "C:\\Repository With Spaces\\node_modules\\@supabase\\cli-windows-x64\\bin\\supabase.exe",
+    );
+    expect(invocation.args).toEqual(args);
+    expect(invocation.args).not.toBe(args);
+    expect(invocation.shell).toBe(false);
+  });
+
+  it.skipIf(process.platform !== "win32")(
+    "resolves the native Windows executable from version-matched pinned packages",
+    () => {
+      const invocation = repositorySupabaseCliInvocation(["--version"], {
+        cwd: process.cwd(),
+      });
+      expect(invocation.command).toMatch(
+        /@supabase\+cli-windows-x64@2\.111\.0[\\/]node_modules[\\/]@supabase[\\/]cli-windows-x64[\\/]bin[\\/]supabase\.exe$/i,
+      );
+      expect(invocation).toMatchObject({
+        args: ["--version"],
+        shell: false,
+      });
+    },
+  );
+
+  it("keeps non-Windows pinned Supabase invocation unchanged", () => {
+    expect(
+      repositorySupabaseCliInvocation(["stop", "--no-backup"], {
+        cwd: "unused path with spaces",
+        platform: "linux",
+        architecture: "x64",
+      }),
+    ).toEqual({
+      command: "pnpm",
+      args: ["exec", "supabase", "stop", "--no-backup"],
+      shell: false,
+    });
+  });
 });
 
 describe("Atlas staging dry-run and workflow", () => {
@@ -683,6 +735,7 @@ describe("Atlas staging dry-run and workflow", () => {
           stderr: "primary certification failure",
         };
       }
+      if (args[0] === "stop") throw new Error("secondary cleanup failure");
       if (command === "docker" && args[0] === "ps") {
         return {
           status: 0,
@@ -707,10 +760,15 @@ describe("Atlas staging dry-run and workflow", () => {
     const diagnosticIndex = calls.findIndex((call) =>
       call.startsWith("version "),
     );
-    const stopIndex = calls.indexOf("exec supabase stop --no-backup");
+    const stopIndex = calls.indexOf("stop --no-backup");
     expect(diagnosticIndex).toBeGreaterThan(resetIndex);
     expect(stopIndex).toBeGreaterThan(diagnosticIndex);
-    expect(calls).toContain("exec supabase stop --no-backup");
+    expect(calls).toContain("stop --no-backup");
+    const stopCall = runCommand.mock.calls.find(
+      ([_command, args]) => args[0] === "stop",
+    );
+    expect(stopCall?.[0]).toMatch(/[\\/]bin[\\/]supabase\.exe$/i);
+    expect(stopCall?.[2]).toMatchObject({ shell: false });
     expect(
       calls.some(
         (call) => call.includes("supabase test db") && !call.endsWith("--help"),
@@ -726,6 +784,50 @@ describe("Atlas staging dry-run and workflow", () => {
       /synthetic-bearer|synthetic-password|sb_secret_synthetic|postgresql:\/\/user:password/i,
     );
     warning.mockRestore();
+  });
+
+  it("fails certification when final cleanup alone fails and redacts protected values", () => {
+    const protectedValue = "cleanup-protected-value-never-surface";
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const runCommand = vi.fn((_command, args) => {
+      if (args.at(-1) === "--help") {
+        return {
+          status: 0,
+          stdout: "--exclude --local --no-seed --file --no-backup",
+          stderr: "",
+        };
+      }
+      if (args.at(-1) === "--version") {
+        return {
+          status: 0,
+          stdout: "2.111.0\n",
+          stderr: "",
+        };
+      }
+      if (args[0] === "stop") {
+        return {
+          status: 1,
+          stdout: "",
+          stderr: `cleanup failed ${protectedValue}`,
+        };
+      }
+      return { status: 0, stdout: "", stderr: "" };
+    });
+
+    let failure;
+    try {
+      certifySupabaseFullIntegration({
+        environment: { ATLAS_STAGING_DB_PASSWORD: protectedValue },
+        runCommand,
+      });
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure.message).toMatch(/local Supabase cleanup/i);
+    expect(failure.message).not.toContain(protectedValue);
+    expect(failure.message).toContain("[REDACTED]");
+    log.mockRestore();
   });
 
   it("keeps diagnostic collection failure subordinate to the certification failure", () => {
@@ -775,7 +877,7 @@ describe("Atlas staging dry-run and workflow", () => {
     ).toBe(true);
   });
 
-  it("leaves the pinned Supabase CLI on the default command shell", () => {
+  it("uses the pinned native Supabase CLI without a command shell on Windows", () => {
     const expectedVersion = JSON.parse(
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
@@ -797,12 +899,12 @@ describe("Atlas staging dry-run and workflow", () => {
     ).toBe(expectedVersion);
     expect(
       runCommand.mock.calls.every(
-        ([_command, _args, options]) => !("shell" in options),
+        ([_command, _args, options]) => options.shell === false,
       ),
     ).toBe(true);
     if (process.platform === "win32") {
-      expect(runCommand.mock.calls[0][0]).toBe(
-        "node_modules/.bin/supabase.CMD",
+      expect(runCommand.mock.calls[0][0]).toMatch(
+        /@supabase\+cli-windows-x64@2\.111\.0[\\/].*[\\/]bin[\\/]supabase\.exe$/i,
       );
     }
   });
@@ -983,6 +1085,19 @@ describe("Atlas staging dry-run and workflow", () => {
       "hosted-exposure-read",
       "hosted-verify",
     ]);
+    const hostedCliCalls = runCommand.mock.calls.filter(
+      ([_command, args]) =>
+        !args.includes("--help") &&
+        (args[0] === "link" || (args[0] === "db" && args[1] === "push")),
+    );
+    expect(hostedCliCalls).toHaveLength(2);
+    expect(
+      hostedCliCalls.every(
+        ([command, _args, options]) =>
+          /[\\/]bin[\\/]supabase\.exe$/i.test(command) &&
+          options.shell === false,
+      ),
+    ).toBe(true);
   });
 
   it("keeps the workflow manual, protected, and free of duplicate integration", () => {

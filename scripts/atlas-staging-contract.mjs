@@ -1,4 +1,7 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 
 export const ATLAS_STAGING_GITHUB_ENVIRONMENT = "atlas-staging";
 export const APPROVED_ATLAS_STAGING_PROJECT_REF = "rnzxmxiiqgtdevzregff";
@@ -362,6 +365,74 @@ export function defaultCommandRunner(command, args, options = {}) {
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
   };
+}
+
+export function nativeSupabaseCliInvocation(command, args) {
+  return {
+    command,
+    args: [...args],
+    shell: false,
+  };
+}
+
+export function repositorySupabaseCliInvocation(
+  args,
+  {
+    cwd = process.cwd(),
+    platform = process.platform,
+    architecture = process.arch,
+  } = {},
+) {
+  const cliArgs = [...args];
+  if (platform !== "win32") {
+    return {
+      command: "pnpm",
+      args: ["exec", "supabase", ...cliArgs],
+      shell: false,
+    };
+  }
+
+  const platformPackage = {
+    arm64: "@supabase/cli-windows-arm64",
+    x64: "@supabase/cli-windows-x64",
+  }[architecture];
+  if (!platformPackage) {
+    throw new Error(
+      "The repository-pinned Supabase CLI does not support this Windows architecture.",
+    );
+  }
+
+  const repositoryRequire = createRequire(join(cwd, "package.json"));
+  const packageAuthority = JSON.parse(
+    readFileSync(join(cwd, "package.json"), "utf8"),
+  );
+  const expectedVersion = packageAuthority.devDependencies?.supabase;
+  const supabasePackagePath = repositoryRequire.resolve(
+    "supabase/package.json",
+  );
+  const supabasePackage = JSON.parse(readFileSync(supabasePackagePath, "utf8"));
+  const platformPackagePath = createRequire(supabasePackagePath).resolve(
+    `${platformPackage}/package.json`,
+  );
+  const platformPackageAuthority = JSON.parse(
+    readFileSync(platformPackagePath, "utf8"),
+  );
+  if (
+    !expectedVersion ||
+    supabasePackage.version !== expectedVersion ||
+    supabasePackage.optionalDependencies?.[platformPackage] !==
+      expectedVersion ||
+    platformPackageAuthority.version !== expectedVersion
+  ) {
+    throw new Error(
+      "The repository-pinned Supabase CLI package authority is inconsistent.",
+    );
+  }
+
+  return nativeSupabaseCliInvocation(
+    join(dirname(platformPackagePath), "bin", "supabase.exe"),
+    cliArgs,
+  );
 }
 
 function requireCommandSuccess(result, message) {

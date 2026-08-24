@@ -4,6 +4,7 @@ import {
   defaultCommandRunner,
   ensureAtlasApiExposure,
   redactAtlasStagingDiagnostic,
+  repositorySupabaseCliInvocation,
   requireAtlasStagingCertificationMode,
   requireExactCommitSha,
   validateApprovedAtlasStagingTarget,
@@ -13,12 +14,6 @@ import {
 import { certifyFrontend } from "./certify-frontend.mjs";
 import { certifySupabaseFullIntegration } from "./certify-supabase-full-integration.mjs";
 import { verifyAtlasStaging } from "./verify-atlas-staging.mjs";
-
-function cliPath() {
-  return process.platform === "win32"
-    ? "node_modules/.bin/supabase.CMD"
-    : "node_modules/.bin/supabase";
-}
 
 function commandSuccess(
   runCommand,
@@ -39,6 +34,23 @@ function commandSuccess(
   return result.stdout;
 }
 
+function supabaseCommandSuccess(
+  runCommand,
+  cwd,
+  args,
+  options,
+  protectedValues = [],
+) {
+  const invocation = repositorySupabaseCliInvocation(args, { cwd });
+  return commandSuccess(
+    runCommand,
+    invocation.command,
+    invocation.args,
+    { ...options, shell: invocation.shell },
+    protectedValues,
+  );
+}
+
 export function inspectPinnedSupabaseCli({
   cwd = process.cwd(),
   environment = process.env,
@@ -50,9 +62,9 @@ export function inspectPinnedSupabaseCli({
     cwd,
     env: { ...environment, SUPABASE_TELEMETRY_DISABLED: "1" },
   };
-  const version = commandSuccess(
+  const version = supabaseCommandSuccess(
     runCommand,
-    cliPath(),
+    cwd,
     ["--version"],
     options,
   ).trim();
@@ -74,7 +86,7 @@ export function inspectPinnedSupabaseCli({
     },
   ];
   for (const item of requiredHelp) {
-    const output = commandSuccess(runCommand, cliPath(), item.args, options);
+    const output = supabaseCommandSuccess(runCommand, cwd, item.args, options);
     if (item.flags.some((flag) => !output.includes(flag))) {
       throw new Error(
         "The pinned Supabase CLI does not expose a required inspected flag.",
@@ -148,9 +160,9 @@ export async function deployAtlasStaging({
     SUPABASE_ACCESS_TOKEN: plan.target.accessToken,
     SUPABASE_TELEMETRY_DISABLED: "1",
   };
-  commandSuccess(
+  supabaseCommandSuccess(
     runCommand,
-    cliPath(),
+    cwd,
     [
       "link",
       "--project-ref",
@@ -164,9 +176,9 @@ export async function deployAtlasStaging({
     },
     protectedValues,
   );
-  commandSuccess(
+  supabaseCommandSuccess(
     runCommand,
-    cliPath(),
+    cwd,
     [
       "db",
       "push",
