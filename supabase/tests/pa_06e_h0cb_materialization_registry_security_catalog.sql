@@ -142,6 +142,14 @@ select is(
       'atlas_api.validate_attendance(request jsonb)',
       'atlas_api.validate_pantry(request jsonb)',
       'atlas_api.validate_weekly_menu(request jsonb)',
+      'atlas_core.issue_222_affected_dates(source_kind text, source_payload jsonb)',
+      'atlas_core.issue_222_chain_payload(run_id uuid)',
+      'atlas_core.issue_222_enforce_source_save(request jsonb, source_kind text, command_name text, contract_version text, capability_code text)',
+      'atlas_core.issue_222_save_attendance_impl(request jsonb)',
+      'atlas_core.issue_222_save_pantry_impl(request jsonb)',
+      'atlas_core.issue_222_save_weekly_menu_impl(request jsonb)',
+      'atlas_core.issue_222_source_impact_payload(source_kind text, source_payload jsonb)',
+      'atlas_core.issue_222_source_save_auth_error(request jsonb, command_name text, contract_version text, capability_code text)',
       'atlas_core.uiq03a_lock_weekly_menu_recipe_dishes()',
       'atlas_planning.pantry_02_snapshot_integrity_guard()'
     ]::text[],
@@ -151,7 +159,7 @@ select is(
       'atlas_api.request_planning_input_need_generation(request jsonb)'
     ]::text[]
   ),
-  'planning command runtime retains the exact historical function set, the three accepted source-completion APIs, and exactly three RMVP-03B command functions'
+  'planning command runtime retains the exact historical and D-042 helper function set, the three accepted source-completion APIs, and exactly three RMVP-03B command functions'
 );
 select is(
   jsonb_build_object(
