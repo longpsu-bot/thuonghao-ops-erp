@@ -21,14 +21,14 @@ It is not a pixel-level audit. Each implementation slice publishes its own befor
 
 ## 2. Shared application foundation
 
-| Area | Current evidence | Direction |
-| --- | --- | --- |
-| Shell/navigation | `src/modules/atlas/AtlasApp.tsx` | Keep structure; standardize hierarchy, environment label and state presentation. |
-| Connection/Auth | `src/modules/atlas/connection/` | Preserve safety boundary; staging identity remains ATLAS-ACT-01B work. |
-| Shared components | `src/modules/atlas/WorkbenchComponents.tsx` | Reuse and extend only where two connected surfaces share a pattern. |
-| Styling | `src/styles.css` | Add semantic tokens and bounded component sections; do not rewrite CSS architecture. |
-| Storybook/UI export | repository configuration and workflow | Use for repeatable visual review. |
-| Tests | module component tests and Vitest | Preserve behavior; add focused accessibility and state tests where changed. |
+| Area                | Current evidence                            | Direction                                                                            |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Shell/navigation    | `src/modules/atlas/AtlasApp.tsx`            | Keep structure; standardize hierarchy, environment label and state presentation.     |
+| Connection/Auth     | `src/modules/atlas/connection/`             | Preserve safety boundary; staging identity remains ATLAS-ACT-01B work.               |
+| Shared components   | `src/modules/atlas/WorkbenchComponents.tsx` | Reuse and extend only where two connected surfaces share a pattern.                  |
+| Styling             | `src/styles.css`                            | Add semantic tokens and bounded component sections; do not rewrite CSS architecture. |
+| Storybook/UI export | repository configuration and workflow       | Use for repeatable visual review.                                                    |
+| Tests               | module component tests and Vitest           | Preserve behavior; add focused accessibility and state tests where changed.          |
 
 ## 3. Connected Planning scope
 
@@ -41,6 +41,17 @@ src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx
 ```
 
 It composes the complete current Planning journey and is the first representative consumer of shared shell/state patterns.
+
+The connected operator projection is one sidebar destination, `Lập nhu cầu`, with the page title `Lập nhu cầu theo tuần` and four task tabs:
+
+```text
+Thực đơn
+→ Sĩ số
+→ Nhu cầu bổ sung
+→ Xác nhận nhu cầu
+```
+
+Need Generation remains a Planning domain and backend command boundary, but it is not a peer operator destination. Date-level readiness/currentness and the contextual `Tạo nhu cầu` / `Cập nhật nhu cầu` action are presented inside `Xác nhận nhu cầu`. The ordinary Confirmed Need table is the single operational quantity projection; grouped theoretical Recipe/Pantry contributions and run history remain support detail.
 
 ### Weekly Menu and Attendance
 
@@ -97,9 +108,9 @@ src/modules/atlas/planning-inputs/need-generation/
 
 Quality priorities:
 
-- one current lifecycle treatment;
+- contextual currentness and next action inside Confirmed Need rather than a peer tab;
 - clear separation of run facts, issues and materialization evidence;
-- bounded dense group/line tables;
+- one operational row for the complete Confirmed Need identity, with Recipe/Pantry contribution detail disclosed underneath;
 - shared action and confirmation presentation.
 
 ### Confirmed Need
@@ -227,12 +238,12 @@ Retool must not be copied as:
 
 ## 9. Delivery sequence
 
-| Slice | Scope | Proof point |
-| --- | --- | --- |
-| UI-QUALITY-01 | Shell, semantic tokens and proven shared primitives | Shell plus one Planning wrapper adopt the foundation with zero business delta. |
-| UI-QUALITY-02 | Connected Planning | Complete Planning journey has consistent states, actions, evidence and responsive behavior. |
-| UI-QUALITY-03 | Connected Admin | Schools, Ingredients/Suppliers and Dishes/Recipes use a consistent master-data pattern. |
-| Staging rehearsal | Cross-module acceptance | Real Auth/security and operator journey pass through Confirmed Need release. |
+| Slice             | Scope                                               | Proof point                                                                                 |
+| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| UI-QUALITY-01     | Shell, semantic tokens and proven shared primitives | Shell plus one Planning wrapper adopt the foundation with zero business delta.              |
+| UI-QUALITY-02     | Connected Planning                                  | Complete Planning journey has consistent states, actions, evidence and responsive behavior. |
+| UI-QUALITY-03     | Connected Admin                                     | Schools, Ingredients/Suppliers and Dishes/Recipes use a consistent master-data pattern.     |
+| Staging rehearsal | Cross-module acceptance                             | Real Auth/security and operator journey pass through Confirmed Need release.                |
 
 ## 10. Required output from each UI slice
 

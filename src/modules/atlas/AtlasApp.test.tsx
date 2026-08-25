@@ -74,7 +74,7 @@ describe("Atlas master-data shell", () => {
       within(navigation).getByRole("button", { name: "Công thức" }),
     ).toBeEnabled();
     expect(
-      within(navigation).getByRole("button", { name: "Nguồn kế hoạch" }),
+      within(navigation).getByRole("button", { name: "Lập nhu cầu" }),
     ).toBeEnabled();
 
     for (const label of [/^Tổng quan/, /^Kế hoạch mua hàng/, /^Kho/]) {
@@ -91,22 +91,19 @@ describe("Atlas master-data shell", () => {
       name: "Mở điều hướng Atlas",
     });
     fireEvent.click(openNavigation);
-    fireEvent.click(screen.getByRole("button", { name: "Nguồn kế hoạch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lập nhu cầu" }));
 
     expect(
       screen.getByRole("button", { name: "Mở điều hướng Atlas" }),
     ).toHaveFocus();
   });
 
-  it("keeps automatic readiness inside the five-tab Planning workflow", async () => {
+  it("keeps automatic readiness inside the four-task Planning workflow", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Nguồn kế hoạch" }),
-    ).toBeVisible();
-    expect(
       screen.getByRole("heading", {
-        level: 2,
+        level: 1,
         name: "Lập nhu cầu theo tuần",
       }),
     ).toBeVisible();
@@ -125,16 +122,11 @@ describe("Atlas master-data shell", () => {
       "Thực đơn",
       "Sĩ số",
       "Nhu cầu bổ sung",
-      "Tạo nhu cầu",
       "Xác nhận nhu cầu",
     ]);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Tạo nhu cầu" }));
-    expect(
-      await screen.findByText(
-        "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.",
-      ),
-    ).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
   });
 
@@ -142,7 +134,7 @@ describe("Atlas master-data shell", () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
     expect(
-      screen.getByRole("heading", { name: "Nguồn kế hoạch" }),
+      screen.getByRole("heading", { name: "Lập nhu cầu theo tuần" }),
     ).toBeInTheDocument();
     expect(
       (await screen.findAllByText("Canh bí đỏ thịt bằm")).length,
@@ -266,6 +258,8 @@ describe("Atlas master-data shell", () => {
     const scenario = screen.getByLabelText("Tình huống xem thử");
 
     fireEvent.change(scenario, { target: { value: "google_source_missing" } });
+    fireEvent.click(await screen.findByText("Nhập thực đơn"));
+    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
     expect(
       await screen.findByText(/Chưa cấu hình nguồn Google Sheet/),
     ).toBeInTheDocument();
@@ -274,6 +268,8 @@ describe("Atlas master-data shell", () => {
     ).toBeDisabled();
 
     fireEvent.change(scenario, { target: { value: "google_fetch_success" } });
+    fireEvent.click(await screen.findByText("Nhập thực đơn"));
+    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
     const sync = await screen.findByRole("button", {
       name: "Đồng bộ từ Google Sheet",
     });
@@ -297,6 +293,8 @@ describe("Atlas master-data shell", () => {
   it("renders safe Google source, empty, sheet, connector, denied, and retryable states", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
     const scenario = screen.getByLabelText("Tình huống xem thử");
+    fireEvent.click(await screen.findByText("Nhập thực đơn"));
+    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
     const cases = [
       [
         "google_source_unavailable",
@@ -316,6 +314,8 @@ describe("Atlas master-data shell", () => {
     ] as const;
     for (const [value, message] of cases) {
       fireEvent.change(scenario, { target: { value } });
+      fireEvent.click(await screen.findByText("Nhập thực đơn"));
+      fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
       const sync = await screen.findByRole("button", {
         name: "Đồng bộ từ Google Sheet",
       });

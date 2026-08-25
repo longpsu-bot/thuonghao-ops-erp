@@ -81,8 +81,7 @@ import {
   type PlanningCorrectionImpact,
 } from "./planningCorrectionApi";
 
-type TabId =
-  "menu" | "attendance" | "pantry" | "need-generation" | "confirmed-needs";
+type TabId = "menu" | "attendance" | "pantry" | "confirmed-needs";
 type LoadState = "idle" | "loading" | "ready" | "error";
 type ConfirmedNeedProjectionResolution =
   "idle" | "loading" | "ready" | "denied" | "error";
@@ -217,14 +216,51 @@ function issueMessage(issue: PlanningIssue) {
   return messages[issue.code] ?? issue.message;
 }
 
+function attendanceIssueMessage(
+  issue: PlanningIssue,
+  rows: AttendanceLine[],
+  defaults: AttendanceLine[],
+  schools: PlanningInputsWorkbenchData["schools"],
+) {
+  if (issue.code !== "PORTIONS_DIFFER_FROM_DEFAULT") return issueMessage(issue);
+  const row = rows.find(
+    (candidate) =>
+      candidate.source_row_reference === issue.source_row_reference,
+  );
+  const defaultRow = row
+    ? defaults.find(
+        (candidate) =>
+          candidate.school_id === row.school_id &&
+          candidate.service_date === row.service_date,
+      )
+    : null;
+  if (!row || !defaultRow) return issueMessage(issue);
+  const schoolName =
+    schools.find((school) => school.school_id === row.school_id)?.school_name ??
+    "trường";
+  const differences = [
+    row.student_portions !== defaultRow.student_portions
+      ? `Sĩ số học sinh ${row.student_portions} khác mức mặc định ${defaultRow.student_portions}`
+      : null,
+    row.teacher_portions !== defaultRow.teacher_portions
+      ? `Sĩ số giáo viên ${row.teacher_portions} khác mức mặc định ${defaultRow.teacher_portions}`
+      : null,
+  ].filter(Boolean);
+  return differences.length
+    ? `${differences.join("; ")} của ${schoolName}.`
+    : issueMessage(issue);
+}
+
 function Issues({
   title,
   issues,
   tone,
+  messageForIssue = issueMessage,
 }: {
   title: string;
   issues: PlanningIssue[];
   tone: "danger" | "warning";
+  messageForIssue?: (issue: PlanningIssue) => string;
 }) {
   if (!issues.length) return null;
   return (
@@ -235,9 +271,12 @@ function Issues({
       <ul>
         {issues.map((item, index) => (
           <li key={`${item.code}:${item.source_row_reference}:${index}`}>
-            {issueMessage(item)}
+            {messageForIssue(item)}
             {item.source_row_reference && (
-              <small>{item.source_row_reference}</small>
+              <details>
+                <summary>Chi tiết hỗ trợ</summary>
+                <code>{item.source_row_reference}</code>
+              </details>
             )}
           </li>
         ))}
@@ -546,30 +585,6 @@ function dailyServiceDates(weekStart: string, weekEnd: string) {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
-}
-
-function confirmedNeedDateStatus(preflight: PlanningInputPreflightData) {
-  if (preflight.downstream_currentness === "LEGACY_OVERLAP")
-    return "Vướng nhu cầu cũ đang có hiệu lực";
-  const currentNeed = preflight.current_need;
-  if (!currentNeed)
-    return preflight.readiness_state === "BLOCKED"
-      ? "Chưa có nhu cầu · nguồn cần xử lý"
-      : "Chưa tạo nhu cầu";
-  const released =
-    currentNeed.confirmed_need_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
-  if (preflight.downstream_currentness === "OUTDATED")
-    return released
-      ? "Đã chuyển sang lên đơn · nguồn đã thay đổi"
-      : "Nhu cầu cần cập nhật";
-  if (released) return "Đã chuyển sang lên đơn";
-  if (
-    ["DRAFT_REVIEW", "REOPENED"].includes(
-      currentNeed.confirmed_need_batch_status,
-    )
-  )
-    return "Cần rà soát";
-  return "Có nhu cầu xác nhận";
 }
 
 function addLocalCalendarDays(isoDate: string, days: number) {
@@ -888,7 +903,7 @@ export function PlanningInputsWorkbenchView({
     if (
       (dirty || pantryDirty || confirmedNeedDirty) &&
       !window.confirm(
-        "Có thay đổi chưa lưu. Tải lại sẽ bỏ các thay đổi này. Tiếp tục?",
+        "Có thay đổi chưa lưu. Làm mới sẽ bỏ các thay đổi này. Tiếp tục?",
       )
     )
       return;
@@ -1407,8 +1422,8 @@ export function PlanningInputsWorkbenchView({
       <WorkbenchHeader
         eyebrow="Lập nhu cầu"
         title="Lập nhu cầu theo tuần"
-        context="Thực đơn → Sĩ số → Nhu cầu bổ sung → Tạo nhu cầu → Xác nhận nhu cầu."
-        headingLevel={2}
+        context="Thực đơn → Sĩ số → Nhu cầu bổ sung → Xác nhận nhu cầu."
+        headingLevel={1}
       />
       <Paper component="section" className="planning-context-bar" withBorder>
         {!DatePickerInput ? (
@@ -1455,7 +1470,7 @@ export function PlanningInputsWorkbenchView({
           onClick={refreshAuthoritativeData}
           disabled={saving}
         >
-          Tải lại dữ liệu
+          Làm mới
         </Button>
       </Paper>
 
@@ -1509,16 +1524,6 @@ export function PlanningInputsWorkbenchView({
               type="button"
               role="tab"
               variant="subtle"
-              aria-selected={tab === "need-generation"}
-              className={tab === "need-generation" ? "active" : ""}
-              onClick={() => changeTab("need-generation")}
-            >
-              Tạo nhu cầu
-            </Button>
-            <Button
-              type="button"
-              role="tab"
-              variant="subtle"
               aria-selected={tab === "confirmed-needs"}
               className={tab === "confirmed-needs" ? "active" : ""}
               onClick={() => changeTab("confirmed-needs")}
@@ -1539,7 +1544,7 @@ export function PlanningInputsWorkbenchView({
                 <span> {sourceOutcome.consequence}</span>
               )}
               {refreshRequired && (
-                <span> Cần tải lại dữ liệu mới nhất trước khi tiếp tục.</span>
+                <span> Cần làm mới dữ liệu trước khi tiếp tục.</span>
               )}
             </p>
           )}
@@ -1632,56 +1637,83 @@ export function PlanningInputsWorkbenchView({
                     </select>
                   </label>
                 </div>
-                <div className="planning-toolbar-group planning-source-group">
-                  <span className="planning-toolbar-label">Nạp nguồn</span>
-                  <label className="file-action">
-                    <UploadSimple size={17} aria-hidden="true" />
-                    Chọn workbook
-                    <input
-                      type="file"
-                      accept=".xlsx"
-                      onChange={(event) =>
-                        void onMenuFile(event.target.files?.[0])
-                      }
-                    />
-                  </label>
-                  <label>
-                    Nguồn Google Sheet
-                    <select
-                      aria-label="Nguồn Google Sheet"
-                      value={selectedGoogleSourceId}
-                      onChange={(event) =>
-                        setSelectedGoogleSourceId(event.target.value)
-                      }
+                <details className="planning-toolbar-group planning-source-group">
+                  <summary>Nhập thực đơn</summary>
+                  <div className="planning-import-methods">
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => setMenuSourceType("WORKBOOK_IMPORT")}
                     >
-                      {data.google_sheet_sources.length === 0 && (
-                        <option value="">Chưa có nguồn cấu hình</option>
-                      )}
-                      {data.google_sheet_sources.map((source) => (
-                        <option
-                          value={source.weekly_menu_google_source_id}
-                          key={source.weekly_menu_google_source_id}
+                      Workbook
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => setMenuSourceType("GOOGLE_SHEET")}
+                    >
+                      Google Sheet
+                    </button>
+                  </div>
+                  {menuSourceType === "WORKBOOK_IMPORT" && (
+                    <label className="file-action">
+                      <UploadSimple size={17} aria-hidden="true" />
+                      Chọn workbook
+                      <input
+                        type="file"
+                        accept=".xlsx"
+                        onChange={(event) =>
+                          void onMenuFile(event.target.files?.[0])
+                        }
+                      />
+                    </label>
+                  )}
+                  {menuSourceType === "GOOGLE_SHEET" && (
+                    <div className="planning-google-import">
+                      <label>
+                        Nguồn Google Sheet
+                        <select
+                          aria-label="Nguồn Google Sheet"
+                          value={selectedGoogleSourceId}
+                          onChange={(event) =>
+                            setSelectedGoogleSourceId(event.target.value)
+                          }
                         >
-                          {source.source_name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => void onGoogleSync()}
-                    disabled={
-                      googleFetch.status === "fetching" ||
-                      !selectedGoogleSourceId
-                    }
-                  >
-                    <CloudArrowDown size={17} aria-hidden="true" />
-                    {googleFetch.status === "fetching"
-                      ? "Đang đồng bộ…"
-                      : "Đồng bộ từ Google Sheet"}
-                  </button>
-                </div>
+                          {data.google_sheet_sources.length === 0 && (
+                            <option value="">Chưa có nguồn cấu hình</option>
+                          )}
+                          {data.google_sheet_sources.map((source) => (
+                            <option
+                              value={source.weekly_menu_google_source_id}
+                              key={source.weekly_menu_google_source_id}
+                            >
+                              {source.source_name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        className="secondary"
+                        onClick={() => void onGoogleSync()}
+                        disabled={
+                          googleFetch.status === "fetching" ||
+                          !selectedGoogleSourceId
+                        }
+                      >
+                        <CloudArrowDown size={17} aria-hidden="true" />
+                        {googleFetch.status === "fetching"
+                          ? "Đang đồng bộ…"
+                          : "Đồng bộ từ Google Sheet"}
+                      </button>
+                      {data.google_sheet_sources.length === 0 && (
+                        <p className="operator-notice warning">
+                          Chưa cấu hình nguồn Google Sheet.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </details>
                 <div className="planning-toolbar-group planning-local-actions">
                   <span className="planning-toolbar-label">Rà soát và lưu</span>
                   <button
@@ -1719,13 +1751,6 @@ export function PlanningInputsWorkbenchView({
                   </button>
                 </div>
               </div>
-              {data.google_sheet_sources.length === 0 && (
-                <p className="operator-notice warning">
-                  Chưa cấu hình nguồn Google Sheet.
-                  <br />
-                  Bạn vẫn có thể nhập tệp .xlsx.
-                </p>
-              )}
               {unmappedDishes.length > 0 && (
                 <p className="operator-notice danger">
                   Có {unmappedDishes.length} món ăn đang hoạt động chưa được gán
@@ -1928,6 +1953,14 @@ export function PlanningInputsWorkbenchView({
                     []),
                 ]}
                 tone="warning"
+                messageForIssue={(issue) =>
+                  attendanceIssueMessage(
+                    issue,
+                    attendanceRows,
+                    data.default_attendance_preview,
+                    data.schools,
+                  )
+                }
               />
               <div
                 className="planning-workbench-toolbar attendance-toolbar"
@@ -2141,72 +2174,35 @@ export function PlanningInputsWorkbenchView({
 
           {tab === "confirmed-needs" && (
             <>
-              {confirmedNeedProjectionResolution === "ready" && (
-                <Panel
-                  title="Nhu cầu xác nhận theo ngày"
-                  description="Tuần là phần tổng hợp để xem và chọn; mỗi ngày giữ nhu cầu xác nhận riêng."
-                >
-                  <div className="table-scroll">
-                    <table aria-label="Xác nhận nhu cầu theo ngày">
-                      <thead>
-                        <tr>
-                          <th>Ngày phục vụ</th>
-                          <th>Trạng thái</th>
-                          <th>Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {confirmedNeedServiceDates.map((serviceDate) => {
-                          const preflight =
-                            dailyConfirmedNeedPreflights[serviceDate];
-                          const batchId =
-                            preflight?.current_need?.confirmed_need_batch_id;
-                          const selected =
-                            selectedConfirmedNeed?.serviceDate ===
-                              serviceDate &&
-                            selectedConfirmedNeed.batchId === batchId;
-                          return (
-                            <tr
-                              key={serviceDate}
-                              aria-current={selected ? "date" : undefined}
-                            >
-                              <td>{viDate(serviceDate)}</td>
-                              <td>
-                                {preflight
-                                  ? confirmedNeedDateStatus(preflight)
-                                  : "Không thể tải trạng thái"}
-                              </td>
-                              <td>
-                                {batchId ? (
-                                  <Button
-                                    type="button"
-                                    variant={selected ? "filled" : "outline"}
-                                    onClick={() =>
-                                      selectConfirmedNeedDate({
-                                        serviceDate,
-                                        batchId,
-                                      })
-                                    }
-                                  >
-                                    {selected ? "Đang xem" : "Mở ngày này"}
-                                  </Button>
-                                ) : (
-                                  <span>—</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  {selectedConfirmedNeed && (
-                    <p role="status">
-                      Đang xem ngày{" "}
-                      <b>{viDate(selectedConfirmedNeed.serviceDate)}</b>.
-                    </p>
-                  )}
-                </Panel>
+              <NeedGenerationWorkbench
+                authState={authState}
+                api={needGenerationApi}
+                preflightApi={readinessApi}
+                selectedWeekStart={weekStart}
+                selectedWeekEnd={selectedWeekEnd}
+                mode={mode}
+                embeddedInConfirmedNeed
+                onConfirmedNeedSelected={(
+                  nextBatchId,
+                  serviceDate,
+                  authoritativePreflight,
+                ) => {
+                  setDailyConfirmedNeedPreflights((current) => ({
+                    ...current,
+                    [serviceDate]: authoritativePreflight,
+                  }));
+                  selectConfirmedNeedDate({
+                    serviceDate,
+                    batchId: nextBatchId,
+                  });
+                  setConfirmedNeedProjectionResolution("ready");
+                }}
+              />
+              {selectedConfirmedNeed && (
+                <p role="status">
+                  Đang xem ngày{" "}
+                  <b>{viDate(selectedConfirmedNeed.serviceDate)}</b>.
+                </p>
               )}
               <ConfirmedNeedReviewWorkbench
                 key={selectedConfirmedNeed?.batchId ?? "unselected"}
@@ -2218,33 +2214,6 @@ export function PlanningInputsWorkbenchView({
                 onDirtyChange={setConfirmedNeedDirty}
               />
             </>
-          )}
-
-          {tab === "need-generation" && (
-            <NeedGenerationWorkbench
-              authState={authState}
-              api={needGenerationApi}
-              preflightApi={readinessApi}
-              selectedWeekStart={weekStart}
-              selectedWeekEnd={selectedWeekEnd}
-              mode={mode}
-              onConfirmedNeedSelected={(
-                nextBatchId,
-                serviceDate,
-                authoritativePreflight,
-              ) => {
-                setDailyConfirmedNeedPreflights((current) => ({
-                  ...current,
-                  [serviceDate]: authoritativePreflight,
-                }));
-                setSelectedConfirmedNeed({
-                  serviceDate,
-                  batchId: nextBatchId,
-                });
-                setConfirmedNeedProjectionResolution("ready");
-                setTab("confirmed-needs");
-              }}
-            />
           )}
 
           {notice && load !== "error" && (

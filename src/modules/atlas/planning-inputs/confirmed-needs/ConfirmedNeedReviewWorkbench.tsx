@@ -304,7 +304,7 @@ export function ConfirmedNeedReviewWorkbench({
     else if (confirmedNeedResultAllowsExactRetry(result)) {
       setRefreshRequired(true);
       setNotice(
-        "Chưa xác định được kết quả lưu. Hãy tải lại dữ liệu trước khi tiếp tục.",
+        "Chưa xác định được kết quả lưu. Hãy làm mới dữ liệu trước khi tiếp tục.",
       );
     } else setNotice(confirmedNeedResultMessage(result));
     if (readback) setNotice("Đã lưu thay đổi.");
@@ -334,7 +334,7 @@ export function ConfirmedNeedReviewWorkbench({
     else if (confirmedNeedResultAllowsExactRetry(result)) {
       setRefreshRequired(true);
       setNotice(
-        "Chưa xác định được kết quả chuyển. Hãy tải lại dữ liệu trước khi tiếp tục.",
+        "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
       );
     } else setNotice(confirmedNeedResultMessage(result));
     if (readback) setNotice("Đã chuyển sang lên đơn.");
@@ -439,8 +439,8 @@ export function ConfirmedNeedReviewWorkbench({
       )}
       {refreshRequired && (
         <p className="confirmed-need-attention" role="alert">
-          Kết quả thao tác chưa rõ. Atlas sẽ không tự gửi lại. Hãy tải lại dữ
-          liệu mới nhất.
+          Kết quả thao tác chưa rõ. Atlas sẽ không tự gửi lại. Hãy làm mới dữ
+          liệu trước khi tiếp tục.
         </p>
       )}
       {issueList("Cần xử lý", workbench.blockers)}
@@ -644,7 +644,7 @@ export function ConfirmedNeedReviewWorkbench({
             onClick={() => void load()}
             disabled={busy}
           >
-            Tải lại
+            Làm mới
           </button>
           <button
             type="button"

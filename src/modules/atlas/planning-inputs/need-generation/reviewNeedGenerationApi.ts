@@ -99,7 +99,7 @@ function generated(state: NeedGenerationWorkbenchData) {
     predecessor_need_generation_run_id: null,
     status: "GENERATED" as const,
     version: 1,
-    generated_line_count: 3,
+    generated_line_count: 2,
     blocking_issue_count: 0,
     warning_count: 1,
     generated_at: "2026-08-02T02:05:00.000Z",
@@ -135,28 +135,10 @@ function generated(state: NeedGenerationWorkbenchData) {
         ingredient_name: "Gạo",
         unit_id: "unit-kg",
         unit_name: "kg",
-        total_theoretical_quantity: 12.5,
-        recipe_derived_quantity: 12.5,
-        pantry_direct_quantity: 0,
-        active_contribution_count: 1,
-        removed_contribution_count: 0,
-        warning_count: 0,
-      },
-      {
-        service_date: state.period.period_start,
-        customer_id: "customer-a",
-        school_id: "school-a",
-        school_name: "Trường Atlas A",
-        delivery_location_id: "location-pantry",
-        delivery_location_name: "Kho phụ Trường Atlas A",
-        ingredient_id: "ingredient-a",
-        ingredient_name: "Gạo",
-        unit_id: "unit-kg",
-        unit_name: "kg",
-        total_theoretical_quantity: 2,
-        recipe_derived_quantity: 0,
-        pantry_direct_quantity: 2,
-        active_contribution_count: 1,
+        total_theoretical_quantity: 23.5,
+        recipe_derived_quantity: 21,
+        pantry_direct_quantity: 2.5,
+        active_contribution_count: 2,
         removed_contribution_count: 0,
         warning_count: 0,
       },
@@ -165,12 +147,23 @@ function generated(state: NeedGenerationWorkbenchData) {
       {
         theoretical_need_line_id: "line-recipe",
         contribution_family: "RECIPE_DERIVED" as const,
-        theoretical_quantity: 12.5,
+        theoretical_quantity: 21,
         unit_id: "unit-kg",
         unit_name: "kg",
         disposition: "ACTIVE" as const,
         dish_name: "Cơm",
         recipe_id: "recipe-a",
+        warning_references: [],
+      },
+      {
+        theoretical_need_line_id: "line-pantry",
+        contribution_family: "PANTRY_DIRECT" as const,
+        theoretical_quantity: 2.5,
+        unit_id: "unit-kg",
+        unit_name: "kg",
+        disposition: "ACTIVE" as const,
+        pantry_purpose: "Bổ sung vận hành",
+        pantry_source_reference: "Phiếu bổ sung 24/08",
         warning_references: [],
       },
     ],
@@ -189,7 +182,7 @@ function generated(state: NeedGenerationWorkbenchData) {
       materialize: "Phát hành nhu cầu trước.",
       invalidate: null,
     },
-    pagination: { offset: 0, limit: 100, total_groups: 2, has_more: false },
+    pagination: { offset: 0, limit: 100, total_groups: 1, has_more: false },
   } satisfies NeedGenerationWorkbenchData;
 }
 
@@ -345,11 +338,12 @@ export function createReviewNeedGenerationApi(
         offset: groupOffset,
         limit: groupLimit,
       };
-      if (!detailGroup) state.atomic_detail = [];
+      const workbench = clone(state);
+      if (!detailGroup) workbench.atomic_detail = [];
       return success({
         contract_version: "RMVP-04.v1",
         correlation_id: correlationId,
-        workbench: clone(state) as unknown as JsonValue,
+        workbench: workbench as unknown as JsonValue,
       });
     },
     async create(request) {

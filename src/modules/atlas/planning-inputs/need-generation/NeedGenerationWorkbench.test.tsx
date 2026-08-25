@@ -82,11 +82,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     const materialize = vi.spyOn(api, "materialize");
     renderWorkbench(api, preflightApi);
 
-    expect(
-      await screen.findByText(
-        "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.",
-      ),
-    ).toBeVisible();
+    expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
     const support = screen.getByText("Chi tiết hỗ trợ").closest("details");
     expect(support).not.toHaveAttribute("open");
     expect(screen.getAllByText("SẴN SÀNG")).toHaveLength(8);
@@ -128,7 +124,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(release).not.toHaveBeenCalled();
     expect(materialize).not.toHaveBeenCalled();
     expect(
-      await screen.findByText("Nhu cầu hiện tại đã được tạo."),
+      await screen.findByText("Nhu cầu đã cập nhật từ dữ liệu hiện tại."),
     ).toBeVisible();
     expect(screen.getByText("Đã tạo nhu cầu.")).toBeVisible();
     expect(
@@ -221,8 +217,8 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     });
     const dailyRow = within(table).getByText("03/08/2026").closest("tr");
     expect(dailyRow).not.toBeNull();
-    expect(within(dailyRow!).getByText("VƯỚNG NHU CẦU CŨ")).toBeVisible();
-    expect(within(dailyRow!).getByText("CAM KẾT CŨ")).toBeVisible();
+    expect(within(dailyRow!).getByText("Vướng nhu cầu cũ")).toBeVisible();
+    expect(within(dailyRow!).getByText("Cam kết cũ")).toBeVisible();
     expect(
       within(dailyRow!).getByRole("button", {
         name: "Xem nhu cầu cũ 03/08/2026",
@@ -361,7 +357,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+        "Dữ liệu nguồn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
       ),
     ).toBeInTheDocument();
     expect(
@@ -387,7 +383,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
 
     expect(
       await screen.findByText(
-        "Dữ liệu nguồn đã thay đổi. Cần cập nhật nhu cầu.",
+        "Dữ liệu nguồn đã thay đổi sau lần tính gần nhất.",
       ),
     ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Cập nhật nhu cầu" }));
@@ -403,7 +399,9 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       screen.queryByText(/Phiếu nhu cầu xác nhận|trong một giao dịch/),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Nhu cầu hiện tại đã được tạo.")).toBeVisible();
+    expect(
+      screen.getByText("Nhu cầu đã cập nhật từ dữ liệu hiện tại."),
+    ).toBeVisible();
   });
 
   it("requires reconciliation instead of claiming success when authoritative readback is incomplete", async () => {
@@ -422,7 +420,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
 
     expect(
       await screen.findByText(
-        "Đã nhận kết quả nhưng chưa tải được dữ liệu mới nhất. Hãy tải lại dữ liệu.",
+        "Đã nhận kết quả nhưng chưa đọc lại được dữ liệu mới nhất. Hãy làm mới.",
       ),
     ).toBeVisible();
     expect(execute).toHaveBeenCalledTimes(1);
@@ -433,9 +431,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Tải lại dữ liệu" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
   });
 
   it("shows CURRENT without a misleading generation action", async () => {
@@ -447,7 +443,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     );
 
     expect(
-      await screen.findByText("Nhu cầu hiện tại đã được tạo."),
+      await screen.findByText("Nhu cầu đã cập nhật từ dữ liệu hiện tại."),
     ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
@@ -456,6 +452,42 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       screen.getByRole("button", { name: "Mở Xác nhận nhu cầu" }),
     );
     expect(onOpen).toHaveBeenCalledWith("current-batch");
+  });
+
+  it("keeps one operational group while preserving Recipe and Pantry contribution detail", async () => {
+    renderWorkbench();
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+    await screen.findByText("Nhu cầu đã cập nhật từ dữ liệu hiện tại.");
+
+    const calculationDetail = screen
+      .getByText("Chi tiết tính nhu cầu")
+      .closest("details")!;
+    expect(calculationDetail).not.toHaveAttribute("open");
+    expect(screen.queryByText("DRAFT_REVIEW")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("RELEASED_FOR_CONFIRMATION"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(calculationDetail).getByText("Chi tiết tính nhu cầu"),
+    );
+    const rows = within(calculationDetail).getAllByRole("row");
+    expect(rows).toHaveLength(2);
+    const requirement = rows[1]!;
+    expect(requirement).toHaveTextContent("Gạo");
+    expect(requirement).toHaveTextContent("21");
+    expect(requirement).toHaveTextContent("2,5");
+    expect(requirement).toHaveTextContent("23,5");
+
+    fireEvent.click(within(requirement).getByRole("button", { name: "Xem" }));
+    const contributionDetail = await screen.findByText(
+      "Chi tiết hình thành số lượng",
+    );
+    const details = contributionDetail.closest("details")!;
+    expect(within(details).getByText(/Công thức/)).toBeVisible();
+    expect(within(details).getByText(/21 kg/)).toBeVisible();
+    expect(within(details).getByText(/Nhu cầu bổ sung/)).toBeVisible();
+    expect(within(details).getByText(/2,5 kg/)).toBeVisible();
   });
 
   it("explains released downstream correction before offering an invalid update", async () => {
@@ -497,8 +529,6 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Tải lại dữ liệu" }),
-    ).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
   });
 });

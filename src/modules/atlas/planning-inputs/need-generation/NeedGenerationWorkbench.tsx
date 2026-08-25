@@ -61,12 +61,35 @@ function currentnessLabel(
   currentness: PlanningInputPreflightData["downstream_currentness"],
 ) {
   const labels = {
-    CURRENT: "HIỆN HÀNH",
-    OUTDATED: "CẦN CẬP NHẬT",
-    NOT_GENERATED: "CHƯA TẠO",
-    LEGACY_OVERLAP: "VƯỚNG NHU CẦU CŨ",
+    CURRENT: "Đã cập nhật",
+    OUTDATED: "Cần cập nhật",
+    NOT_GENERATED: "Chưa tạo",
+    LEGACY_OVERLAP: "Vướng nhu cầu cũ",
   } as const;
   return labels[currentness];
+}
+
+function confirmedNeedStatusLabel(status: string | null | undefined) {
+  const labels: Record<string, string> = {
+    DRAFT_REVIEW: "Chờ xác nhận",
+    REOPENED: "Cần xác nhận lại",
+    VALIDATED: "Đã kiểm tra",
+    APPROVED: "Đã xác nhận",
+    RELEASED_FOR_PURCHASE_HANDOFF: "Đã chuyển sang lên đơn",
+  };
+  return status ? (labels[status] ?? "Có nhu cầu xác nhận") : "Chưa có";
+}
+
+function runStatusLabel(
+  status: NeedGenerationWorkbenchData["run_history"][number]["status"],
+) {
+  const labels = {
+    GENERATED: "Đã tính",
+    VALIDATED: "Đã kiểm tra",
+    RELEASED_FOR_CONFIRMATION: "Chờ xác nhận",
+    INVALIDATED: "Không còn hiệu lực",
+  } as const;
+  return labels[status];
 }
 
 function currentnessTone(
@@ -98,7 +121,7 @@ function sourceSelectionMessage(state: ReadinessSelectionState) {
     MISSING: "Chưa có dữ liệu đã lưu phù hợp với kỳ này.",
     AMBIGUOUS:
       "Có nhiều bản dữ liệu phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
-    STALE: "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+    STALE: "Dữ liệu nguồn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
   };
   return messages[state];
 }
@@ -119,7 +142,7 @@ const preflightIssueMessages: Record<string, string> = {
   PANTRY_PERIOD_DOES_NOT_COVER_EVALUATED_PERIOD:
     "Nhu cầu bổ sung đã lưu chưa bao phủ toàn bộ kỳ đang xử lý.",
   STALE_OR_MISMATCHED_SNAPSHOT_BINDING:
-    "Dữ liệu nguồn đã thay đổi hoặc không còn khớp. Hãy tải lại trước khi tiếp tục.",
+    "Dữ liệu nguồn đã thay đổi hoặc không còn khớp. Hãy làm mới trước khi tiếp tục.",
   REQUEST_WITHOUT_CURRENT_READY_EVALUATION:
     "Dữ liệu đầu vào hiện tại chưa sẵn sàng để tạo nhu cầu.",
   MENU_SCHOOL_DATE_WITHOUT_ATTENDANCE:
@@ -131,15 +154,15 @@ const preflightIssueMessages: Record<string, string> = {
   AMBIGUOUS_WEEKLY_MENU_SOURCE:
     "Có nhiều thực đơn tuần phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
   STALE_WEEKLY_MENU_SOURCE:
-    "Thực đơn tuần đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+    "Thực đơn tuần đã thay đổi. Hãy làm mới trước khi tiếp tục.",
   AMBIGUOUS_ATTENDANCE_SOURCE:
     "Có nhiều bản số suất ăn phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
   STALE_ATTENDANCE_SOURCE:
-    "Số suất ăn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+    "Số suất ăn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
   AMBIGUOUS_PANTRY_SOURCE:
     "Có nhiều bản nhu cầu bổ sung phù hợp. Cần xử lý nguồn trước khi tiếp tục.",
   STALE_PANTRY_SOURCE:
-    "Nhu cầu bổ sung đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+    "Nhu cầu bổ sung đã thay đổi. Hãy làm mới trước khi tiếp tục.",
   ACTIVE_LEGACY_NEED_RANGE_OVERLAP:
     "Ngày này đã nằm trong một nhu cầu nhiều ngày đang có hiệu lực. Giữ nguyên nhu cầu cũ và chờ quy trình điều chỉnh.",
 };
@@ -147,7 +170,7 @@ const preflightIssueMessages: Record<string, string> = {
 function preflightIssueMessage(issue: PlanningInputPreflightIssue) {
   return (
     preflightIssueMessages[issue.issue_code] ??
-    "Có vấn đề với dữ liệu đầu vào. Hãy tải lại và kiểm tra nguồn trước khi tiếp tục."
+    "Có vấn đề với dữ liệu đầu vào. Hãy làm mới và kiểm tra nguồn trước khi tiếp tục."
   );
 }
 
@@ -179,7 +202,7 @@ function planningStatusSentence(preflight: PlanningInputPreflightData) {
       if (state === "AMBIGUOUS")
         return `Cần kiểm tra ${sourceNames[source]} trước khi ${action} nhu cầu.`;
       if (state === "STALE")
-        return `${sourceNames[source]} đã thay đổi. Cần tải lại dữ liệu trước khi tiếp tục.`;
+        return `${sourceNames[source]} đã thay đổi. Cần làm mới dữ liệu trước khi tiếp tục.`;
     }
     const firstBlocker = preflight.issues.find(
       (issue) => issue.severity === "BLOCKING",
@@ -190,10 +213,10 @@ function planningStatusSentence(preflight: PlanningInputPreflightData) {
   }
 
   if (preflight.downstream_currentness === "CURRENT")
-    return "Nhu cầu hiện tại đã được tạo.";
+    return "Nhu cầu đã cập nhật từ dữ liệu hiện tại.";
   if (preflight.downstream_currentness === "OUTDATED")
-    return "Dữ liệu nguồn đã thay đổi. Cần cập nhật nhu cầu.";
-  return "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.";
+    return "Dữ liệu nguồn đã thay đổi sau lần tính gần nhất.";
+  return "Dữ liệu đã sẵn sàng.";
 }
 
 function IssueList({
@@ -256,6 +279,7 @@ export function NeedGenerationWorkbench({
   selectedWeekEnd,
   onConfirmedNeedMaterialized,
   onConfirmedNeedSelected,
+  embeddedInConfirmedNeed = false,
 }: {
   authState: AtlasAuthState;
   api?: NeedGenerationApi;
@@ -271,6 +295,7 @@ export function NeedGenerationWorkbench({
     serviceDate: string,
     authoritativePreflight: PlanningInputPreflightData,
   ) => void;
+  embeddedInConfirmedNeed?: boolean;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -481,7 +506,7 @@ export function NeedGenerationWorkbench({
     if (!nextPreflight || !nextWorkbench) {
       setRefreshRequired(true);
       setNotice(
-        "Đã nhận kết quả nhưng chưa tải được dữ liệu mới nhất. Hãy tải lại dữ liệu.",
+        "Đã nhận kết quả nhưng chưa đọc lại được dữ liệu mới nhất. Hãy làm mới.",
       );
       return;
     }
@@ -492,6 +517,15 @@ export function NeedGenerationWorkbench({
           ? "Đã cập nhật nhu cầu."
           : "Đã tạo nhu cầu.",
     );
+    const nextBatchId = nextPreflight.current_need?.confirmed_need_batch_id;
+    if (nextBatchId) {
+      onConfirmedNeedMaterialized?.(nextBatchId);
+      onConfirmedNeedSelected?.(
+        nextBatchId,
+        selectedServiceDate,
+        nextPreflight,
+      );
+    }
   };
 
   const blockers =
@@ -515,8 +549,8 @@ export function NeedGenerationWorkbench({
 
   return (
     <Panel
-      title="Tạo nhu cầu"
-      description="Kiểm tra tự động ba nguồn đã lưu và tạo hoặc cập nhật nhu cầu bằng một thao tác."
+      title={embeddedInConfirmedNeed ? "Tình trạng nhu cầu" : "Tạo nhu cầu"}
+      description="Atlas kiểm tra dữ liệu nguồn và chỉ đưa ra việc cần làm tiếp theo cho từng ngày."
     >
       <p className="need-generation-context">
         Tuần đang xem: <b>{viDate(selectedWeekStart)}</b> –{" "}
@@ -528,7 +562,7 @@ export function NeedGenerationWorkbench({
         onClick={() => void loadAuthority()}
       >
         <ArrowClockwise aria-hidden="true" size={16} />
-        Tải lại dữ liệu
+        Làm mới
       </button>
 
       <div className="table-scroll">
@@ -555,7 +589,7 @@ export function NeedGenerationWorkbench({
                     : released
                       ? "Chờ điều chỉnh"
                       : state.downstream_currentness === "CURRENT"
-                        ? "Rà soát"
+                        ? "Mở xác nhận"
                         : state.downstream_currentness === "OUTDATED"
                           ? "Cập nhật"
                           : "Tạo nhu cầu";
@@ -575,9 +609,10 @@ export function NeedGenerationWorkbench({
                   </td>
                   <td>
                     {state?.downstream_currentness === "LEGACY_OVERLAP"
-                      ? "CAM KẾT CŨ"
-                      : (state?.current_need?.confirmed_need_batch_status ??
-                        "—")}
+                      ? "Cam kết cũ"
+                      : confirmedNeedStatusLabel(
+                          state?.current_need?.confirmed_need_batch_status,
+                        )}
                   </td>
                   <td>
                     <button
@@ -588,6 +623,19 @@ export function NeedGenerationWorkbench({
                         setOffset(0);
                         setSelectedRunId(null);
                         setDetailGroup(null);
+                        const batchId =
+                          state?.current_need?.confirmed_need_batch_id;
+                        if (
+                          state?.downstream_currentness === "CURRENT" &&
+                          batchId
+                        ) {
+                          onConfirmedNeedMaterialized?.(batchId);
+                          onConfirmedNeedSelected?.(
+                            batchId,
+                            serviceDate,
+                            state,
+                          );
+                        }
                       }}
                     >
                       {action}
@@ -612,7 +660,7 @@ export function NeedGenerationWorkbench({
       {refreshRequired && (
         <p className="operator-notice warning" role="alert">
           Kết quả ghi chưa thể xác nhận an toàn. Không thể ghi tiếp cho đến khi
-          tải lại dữ liệu mới nhất.
+          làm mới dữ liệu.
         </p>
       )}
 
@@ -761,201 +809,207 @@ export function NeedGenerationWorkbench({
       )}
 
       {workbench?.selected_run && (
-        <section
-          className="need-generation-requirements"
-          aria-labelledby="need-generation-requirements-title"
-        >
-          <header className="need-generation-requirements-heading">
-            <div>
-              <span>Bề mặt rà soát chính</span>
-              <h3 id="need-generation-requirements-title">
-                Nhu cầu nguyên liệu hiện có
-              </h3>
-            </div>
-            <small>{workbench.pagination.total_groups} nhóm nhu cầu</small>
-          </header>
+        <details className="need-generation-support-detail">
+          <summary>Chi tiết tính nhu cầu</summary>
+          <section
+            className="need-generation-requirements"
+            aria-labelledby="need-generation-requirements-title"
+          >
+            <header className="need-generation-requirements-heading">
+              <div>
+                <span>Bề mặt rà soát chính</span>
+                <h3 id="need-generation-requirements-title">
+                  Nhu cầu nguyên liệu hiện có
+                </h3>
+              </div>
+              <small>{workbench.pagination.total_groups} nhóm nhu cầu</small>
+            </header>
 
-          <div className="need-generation-filters" aria-label="Bộ lọc nhu cầu">
-            <label>
-              Ngày
-              <input
-                type="date"
-                value={draftFilters.service_date ?? ""}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    service_date: event.target.value || null,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Trường
-              <select
-                value={draftFilters.school_id ?? ""}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    school_id: event.target.value || null,
-                  }))
-                }
-              >
-                <option value="">Tất cả</option>
-                {filterOptions.schools.map(([id, name]) => (
-                  <option value={id} key={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Nguyên liệu
-              <select
-                value={draftFilters.ingredient_id ?? ""}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    ingredient_id: event.target.value || null,
-                  }))
-                }
-              >
-                <option value="">Tất cả</option>
-                {filterOptions.ingredients.map(([id, name]) => (
-                  <option value={id} key={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Nguồn
-              <select
-                value={draftFilters.contribution_family ?? ""}
-                onChange={(event) =>
-                  setDraftFilters((current) => ({
-                    ...current,
-                    contribution_family:
-                      (event.target
-                        .value as NeedGenerationFilters["contribution_family"]) ||
-                      null,
-                  }))
-                }
-              >
-                <option value="">Tất cả</option>
-                <option value="RECIPE_DERIVED">Công thức</option>
-                <option value="PANTRY_DIRECT">Nhu cầu bổ sung</option>
-              </select>
-            </label>
-            <button type="button" onClick={applyFilters}>
-              Lọc
-            </button>
-          </div>
-
-          <div className="planning-grid-scroll need-generation-table-scroll">
-            <CompactTable
-              headers={[
-                "Ngày",
-                "Trường",
-                "Điểm giao",
-                "Nguyên liệu",
-                "ĐVT",
-                "Công thức",
-                "Bổ sung",
-                "Tổng",
-                "Chi tiết",
-              ]}
+            <div
+              className="need-generation-filters"
+              aria-label="Bộ lọc nhu cầu"
             >
-              {workbench.grouped_requirements.map((group) => (
-                <tr
-                  key={`${group.service_date}:${group.school_id}:${group.delivery_location_id}:${group.ingredient_id}:${group.unit_id}`}
+              <label>
+                Ngày
+                <input
+                  type="date"
+                  value={draftFilters.service_date ?? ""}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      service_date: event.target.value || null,
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                Trường
+                <select
+                  value={draftFilters.school_id ?? ""}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      school_id: event.target.value || null,
+                    }))
+                  }
                 >
-                  <td>{viDate(group.service_date)}</td>
-                  <th scope="row">{group.school_name}</th>
-                  <td>{group.delivery_location_name}</td>
-                  <td>{group.ingredient_name}</td>
-                  <td>{group.unit_name}</td>
-                  <td className="quantity-cell">
-                    {formatQuantity(group.recipe_derived_quantity)}
-                  </td>
-                  <td className="quantity-cell">
-                    {formatQuantity(group.pantry_direct_quantity)}
-                  </td>
-                  <td className="quantity-cell total">
-                    <b>{formatQuantity(group.total_theoretical_quantity)}</b>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const identity = groupIdentity(group);
-                        setDetailGroup(identity);
-                        void loadAuthority({ nextDetail: identity });
-                      }}
-                    >
-                      <Eye aria-hidden="true" size={16} />
-                      Xem
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </CompactTable>
-          </div>
+                  <option value="">Tất cả</option>
+                  {filterOptions.schools.map(([id, name]) => (
+                    <option value={id} key={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Nguyên liệu
+                <select
+                  value={draftFilters.ingredient_id ?? ""}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      ingredient_id: event.target.value || null,
+                    }))
+                  }
+                >
+                  <option value="">Tất cả</option>
+                  {filterOptions.ingredients.map(([id, name]) => (
+                    <option value={id} key={id}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Nguồn
+                <select
+                  value={draftFilters.contribution_family ?? ""}
+                  onChange={(event) =>
+                    setDraftFilters((current) => ({
+                      ...current,
+                      contribution_family:
+                        (event.target
+                          .value as NeedGenerationFilters["contribution_family"]) ||
+                        null,
+                    }))
+                  }
+                >
+                  <option value="">Tất cả</option>
+                  <option value="RECIPE_DERIVED">Công thức</option>
+                  <option value="PANTRY_DIRECT">Nhu cầu bổ sung</option>
+                </select>
+              </label>
+              <button type="button" onClick={applyFilters}>
+                Lọc
+              </button>
+            </div>
 
-          {detailGroup && (
-            <details open className="need-generation-detail">
-              <summary>Chi tiết hình thành số lượng</summary>
-              <ul>
-                {workbench.atomic_detail.map((item) => (
-                  <li key={item.theoretical_need_line_id}>
-                    <b>
-                      {item.contribution_family === "RECIPE_DERIVED"
-                        ? "Công thức"
-                        : "Nhu cầu bổ sung"}
-                    </b>{" "}
-                    · {formatQuantity(item.theoretical_quantity)}{" "}
-                    {item.unit_name}
-                    <small>
-                      {item.dish_name ??
-                        item.pantry_purpose ??
-                        item.pantry_source_reference ??
-                        "Bằng chứng đã chụp"}
-                    </small>
-                  </li>
+            <div className="planning-grid-scroll need-generation-table-scroll">
+              <CompactTable
+                headers={[
+                  "Ngày",
+                  "Trường",
+                  "Điểm giao",
+                  "Nguyên liệu",
+                  "ĐVT",
+                  "Công thức",
+                  "Bổ sung",
+                  "Tổng",
+                  "Chi tiết",
+                ]}
+              >
+                {workbench.grouped_requirements.map((group) => (
+                  <tr
+                    key={`${group.service_date}:${group.customer_id}:${group.school_id}:${group.delivery_location_id}:${group.ingredient_id}:${group.unit_id}`}
+                  >
+                    <td>{viDate(group.service_date)}</td>
+                    <th scope="row">{group.school_name}</th>
+                    <td>{group.delivery_location_name}</td>
+                    <td>{group.ingredient_name}</td>
+                    <td>{group.unit_name}</td>
+                    <td className="quantity-cell">
+                      {formatQuantity(group.recipe_derived_quantity)}
+                    </td>
+                    <td className="quantity-cell">
+                      {formatQuantity(group.pantry_direct_quantity)}
+                    </td>
+                    <td className="quantity-cell total">
+                      <b>{formatQuantity(group.total_theoretical_quantity)}</b>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const identity = groupIdentity(group);
+                          setDetailGroup(identity);
+                          void loadAuthority({ nextDetail: identity });
+                        }}
+                      >
+                        <Eye aria-hidden="true" size={16} />
+                        Xem
+                      </button>
+                    </td>
+                  </tr>
                 ))}
-              </ul>
-            </details>
-          )}
+              </CompactTable>
+            </div>
 
-          <div className="need-generation-pagination">
-            <button
-              type="button"
-              disabled={offset === 0 || loading}
-              onClick={() => {
-                const next = Math.max(0, offset - limit);
-                setOffset(next);
-                void loadAuthority({ nextOffset: next });
-              }}
-            >
-              Trang trước
-            </button>
-            <span>
-              {offset + 1}–
-              {Math.min(offset + limit, workbench.pagination.total_groups)} /{" "}
-              {workbench.pagination.total_groups}
-            </span>
-            <button
-              type="button"
-              disabled={!workbench.pagination.has_more || loading}
-              onClick={() => {
-                const next = offset + limit;
-                setOffset(next);
-                void loadAuthority({ nextOffset: next });
-              }}
-            >
-              Trang sau
-            </button>
-          </div>
-        </section>
+            {detailGroup && (
+              <details open className="need-generation-detail">
+                <summary>Chi tiết hình thành số lượng</summary>
+                <ul>
+                  {workbench.atomic_detail.map((item) => (
+                    <li key={item.theoretical_need_line_id}>
+                      <b>
+                        {item.contribution_family === "RECIPE_DERIVED"
+                          ? "Công thức"
+                          : "Nhu cầu bổ sung"}
+                      </b>{" "}
+                      · {formatQuantity(item.theoretical_quantity)}{" "}
+                      {item.unit_name}
+                      <small>
+                        {item.dish_name ??
+                          item.pantry_purpose ??
+                          item.pantry_source_reference ??
+                          "Bằng chứng đã chụp"}
+                      </small>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
+            <div className="need-generation-pagination">
+              <button
+                type="button"
+                disabled={offset === 0 || loading}
+                onClick={() => {
+                  const next = Math.max(0, offset - limit);
+                  setOffset(next);
+                  void loadAuthority({ nextOffset: next });
+                }}
+              >
+                Trang trước
+              </button>
+              <span>
+                {offset + 1}–
+                {Math.min(offset + limit, workbench.pagination.total_groups)} /{" "}
+                {workbench.pagination.total_groups}
+              </span>
+              <button
+                type="button"
+                disabled={!workbench.pagination.has_more || loading}
+                onClick={() => {
+                  const next = offset + limit;
+                  setOffset(next);
+                  void loadAuthority({ nextOffset: next });
+                }}
+              >
+                Trang sau
+              </button>
+            </div>
+          </section>
+        </details>
       )}
 
       {workbench && (
@@ -977,7 +1031,8 @@ export function NeedGenerationWorkbench({
                     });
                   }}
                 >
-                  Lần #{run.attempt_ordinal} · {run.status} · v{run.version}
+                  Lần #{run.attempt_ordinal} · {runStatusLabel(run.status)} ·
+                  phiên bản {run.version}
                 </button>
               </li>
             ))}

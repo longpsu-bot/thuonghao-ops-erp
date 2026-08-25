@@ -122,9 +122,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
       />,
     );
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(5);
-    expect(tabs[4]).toHaveTextContent("Xác nhận nhu cầu");
-    fireEvent.click(tabs[4]!);
+    expect(tabs).toHaveLength(4);
+    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
+    fireEvent.click(tabs[3]!);
     expect(
       await screen.findByText("Chưa có nhu cầu cho tuần đã chọn."),
     ).toBeVisible();
@@ -183,7 +183,6 @@ describe("Planning Inputs Confirmed Need tab", () => {
     const readinessApi = readinessWithDailyNeeds({
       "2026-08-03": {
         batchId: mondayBatch,
-        currentness: "OUTDATED",
       },
       "2026-08-05": { batchId: wednesdayBatch },
     });
@@ -194,6 +193,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
         readinessApi={readinessApi}
         confirmedNeedApi={confirmedNeedApi}
         initialWeekStart="2026-08-03"
@@ -203,18 +203,18 @@ describe("Planning Inputs Confirmed Need tab", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
     const projection = await screen.findByRole("table", {
-      name: "Xác nhận nhu cầu theo ngày",
+      name: "Tổng quan nhu cầu theo ngày",
     });
     expect(projection).toHaveTextContent("03/08/2026");
-    expect(projection).toHaveTextContent("Nhu cầu cần cập nhật");
+    expect(projection).toHaveTextContent("Đã cập nhật");
     expect(projection).toHaveTextContent("05/08/2026");
-    expect(projection).toHaveTextContent("Cần rà soát");
+    expect(projection).toHaveTextContent("Chờ xác nhận");
     expect(
       screen.getByText("Chọn ngày phục vụ ở bảng trên để mở nhu cầu xác nhận."),
     ).toBeVisible();
 
     const mondayRow = screen.getByRole("row", {
-      name: /03\/08\/2026 Nhu cầu cần cập nhật/,
+      name: /03\/08\/2026.*Đã cập nhật.*Chờ xác nhận/,
     });
     fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
     const search = await screen.findByPlaceholderText(
@@ -224,7 +224,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(search).toHaveValue("Nguyễn Du");
 
     const wednesdayRow = screen.getByRole("row", {
-      name: /05\/08\/2026 Cần rà soát/,
+      name: /05\/08\/2026.*Đã cập nhật.*Chờ xác nhận/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 
@@ -273,6 +273,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
         readinessApi={readinessApi}
         confirmedNeedApi={confirmedNeedApi}
         initialWeekStart="2026-08-03"
@@ -282,10 +283,10 @@ describe("Planning Inputs Confirmed Need tab", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
     const projection = await screen.findByRole("table", {
-      name: "Xác nhận nhu cầu theo ngày",
+      name: "Tổng quan nhu cầu theo ngày",
     });
     const mondayRow = within(projection).getByRole("row", {
-      name: /03\/08\/2026 Cần rà soát/,
+      name: /03\/08\/2026.*Đã cập nhật.*Chờ xác nhận/,
     });
     fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
     fireEvent.click(
@@ -296,7 +297,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
 
     const wednesdayRow = within(projection).getByRole("row", {
-      name: /05\/08\/2026 Cần rà soát/,
+      name: /05\/08\/2026.*Đã cập nhật.*Chờ xác nhận/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 
@@ -342,12 +343,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
         mode="review"
       />,
     );
-    fireEvent.click(screen.getAllByRole("tab")[3]!);
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
     fireEvent.click(
       await screen.findByRole("button", { name: /Tạo nhu cầu$/ }),
-    );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở Xác nhận nhu cầu" }),
     );
     await waitFor(() =>
       expect(

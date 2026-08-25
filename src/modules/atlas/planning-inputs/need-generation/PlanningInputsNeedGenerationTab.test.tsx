@@ -15,8 +15,8 @@ const authState = {
   session: { user: { id: "review-only-atlas-operator" } },
 } as unknown as AtlasAuthState;
 
-describe("Planning Inputs generation tab", () => {
-  it("integrates automatic preflight into the fourth internal tab", async () => {
+describe("Planning Inputs contextual generation", () => {
+  it("integrates automatic preflight into Xác nhận nhu cầu without a peer tab", async () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -26,14 +26,13 @@ describe("Planning Inputs generation tab", () => {
       />,
     );
     const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(5);
-    expect(tabs[3]).toHaveTextContent("Tạo nhu cầu");
-    fireEvent.click(tabs[3]!);
+    expect(tabs).toHaveLength(4);
+    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
     expect(
-      await screen.findByText(
-        "Thực đơn, Sĩ số và Nhu cầu bổ sung đã sẵn sàng.",
-      ),
-    ).toBeVisible();
+      screen.queryByRole("tab", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(tabs[3]!);
+    expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
   });
 });

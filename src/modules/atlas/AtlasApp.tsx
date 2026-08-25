@@ -219,14 +219,13 @@ function AtlasNavigation({
 
         <Divider className="atlas-nav-divider" />
         <Stack className="nav-group" gap={3}>
-          <Group className="nav-group-label" gap={8}>
-            <ClipboardText aria-hidden="true" size={16} weight="regular" />
-            <Text component="span">Lập nhu cầu</Text>
-          </Group>
           <NavLink
             component="button"
             type="button"
-            label="Nguồn kế hoạch"
+            label="Lập nhu cầu"
+            leftSection={
+              <ClipboardText aria-hidden="true" size={19} weight="regular" />
+            }
             active={active === "planning-inputs"}
             onClick={() => navigate("planning-inputs")}
           />
@@ -285,33 +284,25 @@ function MasterDataPage({
   const planningPage = page === "planning-inputs";
   return (
     <main className="atlas-page master-data-page">
-      <WorkbenchHeader
-        eyebrow={
-          planningPage
-            ? "Lập nhu cầu"
-            : recipePage
-              ? "Món ăn và công thức"
-              : "Dữ liệu gốc"
-        }
-        title={
-          planningPage
-            ? "Nguồn kế hoạch"
-            : recipePage
+      {!planningPage && (
+        <WorkbenchHeader
+          eyebrow={recipePage ? "Món ăn và công thức" : "Dữ liệu gốc"}
+          title={
+            recipePage
               ? "Công thức món ăn"
               : schoolPage
                 ? "Trường học"
                 : "Nguyên liệu và Nhà cung ứng"
-        }
-        context={
-          planningPage
-            ? "Lưu hoàn tất ba nguồn theo tuần, kiểm tra tự động và tạo nhu cầu bằng một thao tác."
-            : recipePage
+          }
+          context={
+            recipePage
               ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Điều chỉnh khi món đã được sử dụng."
               : schoolPage
                 ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
                 : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."
-        }
-      />
+          }
+        />
+      )}
 
       {planningPage ? (
         <PlanningInputsWorkbench
