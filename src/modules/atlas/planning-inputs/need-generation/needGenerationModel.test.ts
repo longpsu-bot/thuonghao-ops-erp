@@ -133,7 +133,7 @@ describe("RMVP-04 authoritative model", () => {
       expect.arrayContaining([
         "Ứng dụng không thể thực hiện yêu cầu tạo nhu cầu này.",
         "Dữ liệu đầu vào chưa sẵn sàng để tạo nhu cầu.",
-        "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+        "Dữ liệu nguồn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
         "Kỳ này đã có nhu cầu đang được xử lý.",
         "Nhu cầu đã được chuyển sang lên đơn và cần quy trình điều chỉnh riêng.",
       ]),

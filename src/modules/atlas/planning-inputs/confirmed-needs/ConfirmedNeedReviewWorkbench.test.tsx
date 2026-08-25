@@ -297,7 +297,7 @@ describe("Confirmed Need two-action workbench", () => {
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled(),
     );
-    expect(screen.getByRole("button", { name: "Tải lại" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
   });
 
   it("keeps Excel and PDF as disabled placeholders without file generation", async () => {

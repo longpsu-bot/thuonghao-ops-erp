@@ -111,23 +111,39 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
   });
 
-  it("retires Readiness as a primary destination", async () => {
+  it("shows four operator tasks without Readiness or Need Generation peers", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
     expect(
       screen
         .getAllByRole("tab")
         .map((tab) => tab.textContent?.replace(/\s+/g, " ").trim()),
-    ).toEqual([
-      "Thực đơn",
-      "Sĩ số",
-      "Nhu cầu bổ sung",
-      "Tạo nhu cầu",
-      "Xác nhận nhu cầu",
-    ]);
+    ).toEqual(["Thực đơn", "Sĩ số", "Nhu cầu bổ sung", "Xác nhận nhu cầu"]);
     expect(
       screen.queryByRole("tab", { name: "Sẵn sàng đầu vào" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("tab", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows Google configuration only after the Google import flow is chosen", async () => {
+    renderWorkbench(
+      withWorkbench((workbench) => {
+        workbench.google_sheet_sources = [];
+      }),
+    );
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    expect(
+      screen.queryByText("Chưa cấu hình nguồn Google Sheet."),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Nhập thực đơn"));
+    expect(
+      screen.queryByText("Chưa cấu hình nguồn Google Sheet."),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
+    expect(screen.getByText("Chưa cấu hình nguồn Google Sheet.")).toBeVisible();
   });
 
   it("derives the next rendered week from the active calendar", async () => {
@@ -268,6 +284,31 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
   });
 
+  it("explains Attendance default differences with human values and hides the technical reference", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.attendance!.lines[0]!.student_portions = 200;
+      workbench.default_attendance_preview[0]!.student_portions = 100;
+      workbench.attendance!.issues.warnings = [
+        {
+          code: "PORTIONS_DIFFER_FROM_DEFAULT",
+          message: "Attendance differs from the current school defaults.",
+          source_row_reference: "default:TH001",
+        },
+      ];
+    });
+    renderWorkbench(api);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
+    expect(
+      screen.getByText(
+        "Sĩ số học sinh 200 khác mức mặc định 100 của Trường Tiểu học Nguyễn Du.",
+      ),
+    ).toBeVisible();
+    expect(screen.queryByText("default:TH001")).not.toBeVisible();
+    fireEvent.click(screen.getByText("Chi tiết hỗ trợ"));
+    expect(screen.getByText("default:TH001")).toBeVisible();
+  });
+
   it("automatically uses defaults when Attendance is empty", async () => {
     const api = withWorkbench((workbench) => {
       workbench.attendance = null;
@@ -362,7 +403,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       (await screen.findAllByRole("spinbutton", { name: /Suất học sinh/ }))[0],
     ).toHaveValue(500);
 
-    fireEvent.click(screen.getByRole("button", { name: "Tải lại dữ liệu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
 
     await waitFor(() =>
       expect(
@@ -439,10 +480,10 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     )[0]!;
     fireEvent.change(studentInput, { target: { value: "487" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Tải lại dữ liệu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
 
     expect(confirm).toHaveBeenCalledWith(
-      "Có thay đổi chưa lưu. Tải lại sẽ bỏ các thay đổi này. Tiếp tục?",
+      "Có thay đổi chưa lưu. Làm mới sẽ bỏ các thay đổi này. Tiếp tục?",
     );
     expect(studentInput).toHaveValue(487);
     expect(read).toHaveBeenCalledTimes(1);
@@ -565,7 +606,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const save = screen.getByRole("button", { name: "Lưu" });
     fireEvent.click(save);
 
-    await screen.findByText(/Cần tải lại dữ liệu mới nhất/);
+    await screen.findByText(/Cần làm mới dữ liệu/);
     expect(save).toBeDisabled();
   });
 });

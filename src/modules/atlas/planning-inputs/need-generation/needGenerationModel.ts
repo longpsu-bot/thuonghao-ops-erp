@@ -195,7 +195,7 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
   if (result.kind === "auth_error")
     return "Phiên làm việc đã hết. Vui lòng đăng nhập lại.";
   if (result.kind === "transport_error")
-    return "Chưa xác định kết quả thao tác. Atlas không tự gửi lại; hãy tải lại dữ liệu mới nhất trước khi thực hiện hành động khác.";
+    return "Chưa xác định kết quả thao tác. Atlas không tự gửi lại; hãy làm mới dữ liệu trước khi thực hiện hành động khác.";
   if (result.kind === "client_error")
     return "Ứng dụng không thể thực hiện yêu cầu tạo nhu cầu này.";
   const clockSkewMessage = planningClockSkewMessage(result);
@@ -208,9 +208,9 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
     CURRENT_EVALUATION_NOT_READY:
       "Dữ liệu đầu vào còn nội dung cần xử lý trước khi tạo nhu cầu.",
     STALE_VERSION:
-      "Nhu cầu đã thay đổi. Hãy tải lại dữ liệu trước khi tiếp tục.",
+      "Nhu cầu đã thay đổi. Hãy làm mới dữ liệu trước khi tiếp tục.",
     STALE_SOURCE_BINDING:
-      "Dữ liệu nguồn đã thay đổi. Hãy tải lại trước khi tiếp tục.",
+      "Dữ liệu nguồn đã thay đổi. Hãy làm mới trước khi tiếp tục.",
     NEED_GENERATION_RUN_ALREADY_ACTIVE: "Kỳ này đã có nhu cầu đang được xử lý.",
     NEED_GENERATION_HAS_BLOCKERS:
       "Nhu cầu hiện tại còn nội dung cần xử lý trước khi tiếp tục.",
@@ -219,11 +219,11 @@ export function needGenerationResultMessage(result: AtlasRpcResult) {
     RETRYABLE_CONCURRENCY_FAILURE:
       "Có xung đột tạm thời. Có thể thử lại nếu nội dung yêu cầu không thay đổi.",
     IDEMPOTENCY_CONFLICT:
-      "Yêu cầu này không còn khớp với thao tác trước. Hãy tải lại dữ liệu trước khi tiếp tục.",
+      "Yêu cầu này không còn khớp với thao tác trước. Hãy làm mới dữ liệu trước khi tiếp tục.",
   };
   return (
     messages[result.error.error_code] ??
-    "Không thể thực hiện yêu cầu tạo nhu cầu này. Hãy tải lại dữ liệu trước khi tiếp tục."
+    "Không thể thực hiện yêu cầu tạo nhu cầu này. Hãy làm mới dữ liệu trước khi tiếp tục."
   );
 }
 

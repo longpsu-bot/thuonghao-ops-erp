@@ -5866,6 +5866,27 @@ tbody tr.selected-row {
   border-right: 0;
 }
 
+details.planning-source-group > summary {
+  flex-basis: 100%;
+  cursor: pointer;
+  color: var(--atlas-primary);
+  font-weight: 800;
+}
+
+.planning-import-methods,
+.planning-google-import {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+
+.planning-google-import .operator-notice {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 .planning-toolbar-label {
   flex-basis: 100%;
   color: var(--atlas-text-muted);
