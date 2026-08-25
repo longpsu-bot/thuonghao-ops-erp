@@ -51,7 +51,7 @@ Thực đơn
 → Xác nhận nhu cầu
 ```
 
-Need Generation remains a Planning domain and backend command boundary, but it is not a peer operator destination. Date-level readiness/currentness and the contextual `Tạo nhu cầu` / `Cập nhật nhu cầu` action are presented inside `Xác nhận nhu cầu`. The ordinary Confirmed Need table is the single operational quantity projection; grouped theoretical Recipe/Pantry contributions and run history remain support detail.
+Need Generation remains a Planning domain and backend command boundary, but it is not a peer operator destination. Inside `Xác nhận nhu cầu`, the normal daily projection is limited to `Ngày phục vụ`, one translated `Trạng thái`, and `Việc cần làm`. A row control reviews/selects the date (or directly opens an existing current Confirmed Need); only the separate contextual `Tạo nhu cầu` / `Cập nhật nhu cầu` primary action invokes the command. The ordinary Confirmed Need table is the single operational quantity projection; source readiness/evidence, grouped theoretical Recipe/Pantry contributions, versions, and run history remain support detail.
 
 ### Weekly Menu and Attendance
 

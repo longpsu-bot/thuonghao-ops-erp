@@ -14,6 +14,7 @@ Present the approved Planning domain sequence as four operator tasks without exp
 - Page: `Lập nhu cầu theo tuần`.
 - Tabs: `Thực đơn`, `Sĩ số`, `Nhu cầu bổ sung`, `Xác nhận nhu cầu`.
 - `Xác nhận nhu cầu` owns the daily backend preflight projection and exposes only contextual `Tạo nhu cầu`, `Cập nhật nhu cầu`, or `Mở xác nhận` actions.
+- Its normal daily table presents only `Ngày phục vụ`, one translated operator `Trạng thái`, and truthful review/open controls under `Việc cần làm`. Selecting a row never executes a command; create/update remains a separate deliberate primary action.
 - Raw Need Generation and Confirmed Need lifecycle values are translated to Vietnamese business language. Exact run/version history remains under support/history disclosure.
 - The normal quantity table remains Confirmed Need. Theoretical Recipe and Pantry contributions appear only as support detail and aggregate under the existing complete operational identity.
 - Attendance default warnings use School and portion values; technical source references are support-only.

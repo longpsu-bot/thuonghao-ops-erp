@@ -219,6 +219,39 @@ function planningStatusSentence(preflight: PlanningInputPreflightData) {
   return "Dữ liệu đã sẵn sàng.";
 }
 
+function dailyOperatorStatus(preflight: PlanningInputPreflightData) {
+  if (preflight.downstream_currentness === "LEGACY_OVERLAP")
+    return "Thuộc nhu cầu đã lập trước đây";
+  if (preflight.readiness_state === "BLOCKED")
+    return planningStatusSentence(preflight);
+  if (preflight.downstream_currentness === "OUTDATED")
+    return "Dữ liệu đã thay đổi";
+  if (preflight.downstream_currentness === "CURRENT")
+    return preflight.current_need?.confirmed_need_batch_status
+      ? confirmedNeedStatusLabel(
+          preflight.current_need.confirmed_need_batch_status,
+        )
+      : "Chờ xác nhận";
+  return "Sẵn sàng lập nhu cầu";
+}
+
+function dailyReviewAction(preflight: PlanningInputPreflightData | undefined) {
+  if (!preflight) return "Đang tải";
+  if (
+    preflight.downstream_currentness === "CURRENT" &&
+    preflight.current_need?.confirmed_need_batch_id
+  )
+    return "Mở xác nhận";
+  if (preflight.downstream_currentness === "LEGACY_OVERLAP") return "Xem";
+  if (preflight.readiness_state === "BLOCKED") return "Xem lỗi";
+  if (
+    preflight.downstream_currentness === "OUTDATED" ||
+    preflight.downstream_currentness === "NOT_GENERATED"
+  )
+    return "Rà soát";
+  return "Xem";
+}
+
 function IssueList({
   title,
   tone,
@@ -544,6 +577,7 @@ export function NeedGenerationWorkbench({
     preflight.downstream_currentness !== "CURRENT" &&
     preflight.downstream_currentness !== "LEGACY_OVERLAP" &&
     !correctionBlocked &&
+    !loading &&
     !refreshRequired &&
     !executionBlocker;
 
@@ -554,7 +588,7 @@ export function NeedGenerationWorkbench({
     >
       <p className="need-generation-context">
         Tuần đang xem: <b>{viDate(selectedWeekStart)}</b> –{" "}
-        <b>{viDate(selectedWeekEnd)}</b>. Mỗi ngày là một nhu cầu độc lập.
+        <b>{viDate(selectedWeekEnd)}</b>.
       </p>
       <button
         type="button"
@@ -569,30 +603,15 @@ export function NeedGenerationWorkbench({
         <table aria-label="Tổng quan nhu cầu theo ngày">
           <thead>
             <tr>
-              <th>Ngày</th>
-              <th>Đầu vào</th>
-              <th>Nhu cầu</th>
-              <th>Xác nhận nhu cầu</th>
-              <th>Việc tiếp theo</th>
+              <th>Ngày phục vụ</th>
+              <th>Trạng thái</th>
+              <th>Việc cần làm</th>
             </tr>
           </thead>
           <tbody>
             {days.map((serviceDate) => {
               const state = dailyPreflights[serviceDate];
-              const released = state ? releasedCorrectionBlocked(state) : false;
-              const action = !state
-                ? "Đang tải"
-                : state.downstream_currentness === "LEGACY_OVERLAP"
-                  ? "Xem nhu cầu cũ"
-                  : state.readiness_state === "BLOCKED"
-                    ? "Sửa dữ liệu nguồn"
-                    : released
-                      ? "Chờ điều chỉnh"
-                      : state.downstream_currentness === "CURRENT"
-                        ? "Mở xác nhận"
-                        : state.downstream_currentness === "OUTDATED"
-                          ? "Cập nhật"
-                          : "Tạo nhu cầu";
+              const action = dailyReviewAction(state);
               return (
                 <tr
                   key={serviceDate}
@@ -601,25 +620,15 @@ export function NeedGenerationWorkbench({
                   }
                 >
                   <td>{viDate(serviceDate)}</td>
-                  <td>{state ? readinessLabel(state.readiness_state) : "—"}</td>
-                  <td>
-                    {state
-                      ? currentnessLabel(state.downstream_currentness)
-                      : "—"}
-                  </td>
-                  <td>
-                    {state?.downstream_currentness === "LEGACY_OVERLAP"
-                      ? "Cam kết cũ"
-                      : confirmedNeedStatusLabel(
-                          state?.current_need?.confirmed_need_batch_status,
-                        )}
-                  </td>
+                  <td>{state ? dailyOperatorStatus(state) : "Đang tải…"}</td>
                   <td>
                     <button
                       type="button"
                       aria-label={`${action} ${viDate(serviceDate)}`}
                       onClick={() => {
+                        setLoading(true);
                         setSelectedServiceDate(serviceDate);
+                        setPreflight(state ?? null);
                         setOffset(0);
                         setSelectedRunId(null);
                         setDetailGroup(null);

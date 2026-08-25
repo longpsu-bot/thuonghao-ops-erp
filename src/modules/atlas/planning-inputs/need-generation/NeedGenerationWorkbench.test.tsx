@@ -38,6 +38,7 @@ function renderWorkbench(
       selectedWeekStart="2026-08-03"
       selectedWeekEnd="2026-08-09"
       onConfirmedNeedMaterialized={onConfirmedNeedMaterialized}
+      embeddedInConfirmedNeed
     />,
   );
   return { api, preflightApi, onConfirmedNeedMaterialized };
@@ -85,7 +86,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
     const support = screen.getByText("Chi tiết hỗ trợ").closest("details");
     expect(support).not.toHaveAttribute("open");
-    expect(screen.getAllByText("SẴN SÀNG")).toHaveLength(8);
+    expect(screen.getAllByText("SẴN SÀNG")).toHaveLength(1);
     expect(screen.queryByText("READY")).not.toBeInTheDocument();
     expect(preflight).toHaveBeenCalledTimes(7);
     expect(preflight.mock.calls.map((call) => call.slice(2))).toEqual([
@@ -97,9 +98,22 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       ["2026-08-08", "2026-08-08"],
       ["2026-08-09", "2026-08-09"],
     ]);
+    const table = screen.getByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    expect(table).toBeVisible();
     expect(
-      screen.getByRole("table", { name: "Tổng quan nhu cầu theo ngày" }),
-    ).toBeVisible();
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Ngày phục vụ", "Trạng thái", "Việc cần làm"]);
+    expect(within(table).queryByText("Đầu vào")).not.toBeInTheDocument();
+    expect(
+      within(table).queryByText("Xác nhận nhu cầu"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Mỗi ngày là một nhu cầu độc lập."),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Từ ngày tạo nhu cầu"),
     ).not.toBeInTheDocument();
@@ -138,9 +152,11 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     renderWorkbench(api, createReviewPlanningInputReadinessApi("empty"));
 
     expect(
-      await screen.findByText("Cần lưu Thực đơn trước khi tạo nhu cầu."),
+      (
+        await screen.findAllByText("Cần lưu Thực đơn trước khi tạo nhu cầu.")
+      )[0],
     ).toBeVisible();
-    expect(screen.getAllByText("CẦN XỬ LÝ")).toHaveLength(8);
+    expect(screen.getAllByText("CẦN XỬ LÝ")).toHaveLength(1);
     expect(screen.getAllByText("CHƯA CÓ")).toHaveLength(3);
     expect(screen.getAllByText("CHƯA CÓ")[0]).not.toBeVisible();
     for (const rawToken of [
@@ -217,11 +233,12 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     });
     const dailyRow = within(table).getByText("03/08/2026").closest("tr");
     expect(dailyRow).not.toBeNull();
-    expect(within(dailyRow!).getByText("Vướng nhu cầu cũ")).toBeVisible();
-    expect(within(dailyRow!).getByText("Cam kết cũ")).toBeVisible();
+    expect(
+      within(dailyRow!).getByText("Thuộc nhu cầu đã lập trước đây"),
+    ).toBeVisible();
     expect(
       within(dailyRow!).getByRole("button", {
-        name: "Xem nhu cầu cũ 03/08/2026",
+        name: "Xem 03/08/2026",
       }),
     ).toBeVisible();
     expect(
@@ -247,10 +264,15 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
 
     fireEvent.click(
       await screen.findByRole("button", {
-        name: "Tạo nhu cầu 04/08/2026",
+        name: "Rà soát 04/08/2026",
       }),
     );
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+    expect(execute).not.toHaveBeenCalled();
+    const createNeed = await screen.findByRole("button", {
+      name: "Tạo nhu cầu",
+    });
+    expect(createNeed).toBeEnabled();
+    fireEvent.click(createNeed);
 
     await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
     expect(execute.mock.calls[0]?.[0].payload).toEqual({
@@ -262,7 +284,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     );
     expect(execute.mock.calls[0]?.[0].payload).not.toHaveProperty("period_end");
     expect(
-      screen.getByRole("button", { name: "Tạo nhu cầu 03/08/2026" }),
+      screen.getByRole("button", { name: "Rà soát 03/08/2026" }),
     ).toBeVisible();
   });
 
@@ -345,7 +367,9 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     renderWorkbench(createReviewNeedGenerationApi("ready"), preflightApi);
 
     expect(
-      await screen.findByText("Cần kiểm tra Sĩ số trước khi tạo nhu cầu."),
+      (
+        await screen.findAllByText("Cần kiểm tra Sĩ số trước khi tạo nhu cầu.")
+      )[0],
     ).toBeVisible();
     fireEvent.click(screen.getByText("Chi tiết hỗ trợ"));
     expect(screen.getByText("CẦN TẢI LẠI")).toBeVisible();
@@ -386,7 +410,13 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
         "Dữ liệu nguồn đã thay đổi sau lần tính gần nhất.",
       ),
     ).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Cập nhật nhu cầu" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rà soát 04/08/2026" }));
+    expect(execute).not.toHaveBeenCalled();
+    const updateNeed = await screen.findByRole("button", {
+      name: "Cập nhật nhu cầu",
+    });
+    expect(updateNeed).toBeEnabled();
+    fireEvent.click(updateNeed);
     await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
     expect(execute.mock.calls[0]?.[0].payload).toMatchObject({
       expected_current_need_generation_run_id: "current-run",
@@ -397,7 +427,9 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       ),
     ).toBeVisible();
     expect(
-      screen.queryByText(/Phiếu nhu cầu xác nhận|trong một giao dịch/),
+      screen.queryByText(
+        /Đã cập nhật nhu cầu và hiệu chỉnh Phiếu nhu cầu xác nhận/,
+      ),
     ).not.toBeInTheDocument();
     expect(
       screen.getByText("Nhu cầu đã cập nhật từ dữ liệu hiện tại."),
@@ -448,8 +480,15 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(
       screen.queryByRole("button", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
+    const table = screen.getByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    const currentRow = within(table).getByText("04/08/2026").closest("tr")!;
+    expect(within(currentRow).getByText("Chờ xác nhận")).toBeVisible();
     fireEvent.click(
-      screen.getByRole("button", { name: "Mở Xác nhận nhu cầu" }),
+      within(currentRow).getByRole("button", {
+        name: "Mở xác nhận 04/08/2026",
+      }),
     );
     expect(onOpen).toHaveBeenCalledWith("current-batch");
   });
