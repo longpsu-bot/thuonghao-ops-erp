@@ -634,11 +634,16 @@ The backend discovers current completed Weekly Menu, Attendance, and Pantry snap
 The four `RMVP-03B.v1` identities and their historical evaluation/issue behavior remain exact and callable during coexistence. Normal v2 execution no longer requires the browser to call evaluate or request-handoff commands. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
 
 For an exact automatic `D..D` preflight with no current Need, v2 additionally
-requires at least one Weekly Menu approval-snapshot line for D or one positive
-Pantry approval-snapshot line for D before advertising executable generation.
-Attendance alone is not a Need source. A selected approved zero-line Pantry
-snapshot remains valid source evidence but creates no demand; Pantry-only and
-Menu-only dates remain eligible. The transient blocker is
+requires at least one Menu source for D that requires Need Generation or one
+positive Pantry approval-snapshot line for D before advertising executable
+generation. An active Dish with `requires_need_generation = false` does not
+establish daily demand. A non-active Menu Dish remains execution-relevant so
+the existing `INACTIVE_OR_INVALID_DISH` generator validation is preserved and
+is not converted to neutral no-demand. Attendance alone is not a Need source.
+A selected approved zero-line Pantry snapshot remains valid source evidence
+but creates no demand; Pantry-only and need-generating Menu-only dates remain
+eligible. Compatible source parent evidence, daily execution eligibility, and
+a valid generated contribution are distinct conditions. The transient blocker is
 `NO_NEED_SOURCE_FOR_SERVICE_DATE` with the safe meaning “Không có nhu cầu cần
 lập cho ngày này.” It exists only in the automatic composite preflight payload:
 it creates no Planning Input Set, evaluation, persisted RMVP-03B.v1 issue, event,

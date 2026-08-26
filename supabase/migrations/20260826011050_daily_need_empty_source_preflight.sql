@@ -202,12 +202,17 @@ begin
     select exists (
       select 1
       from atlas_planning.weekly_menu_approval_snapshot_lines line
+      join atlas_admin.dishes dish on dish.dish_id = line.dish_id
       where line.weekly_menu_approval_snapshot_id =
         atlas_core.pa_05b_safe_uuid(
           v_sources -> 'weekly_menu' -> 'selected' ->>
             'weekly_menu_approval_snapshot_id'
         )
         and line.service_date = period_start
+        and (
+          dish.dish_status <> 'ACTIVE'
+          or dish.requires_need_generation
+        )
     ) into v_has_menu_source;
 
     select exists (
