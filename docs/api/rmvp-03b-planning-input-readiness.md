@@ -632,3 +632,16 @@ It uses the `RMVP-03B.v2` read envelope, `planning.inputs.read`, the existing re
 The backend discovers current completed Weekly Menu, Attendance, and Pantry snapshots, returns typed `MISSING`, `AMBIGUOUS`, `STALE`, or selected evidence and the complete deterministic issue set, and derives `READY`/`BLOCKED`. It compares the selected immutable source triples with the current Need Generation input snapshot to return `CURRENT`, `OUTDATED`, or `NOT_GENERATED`. The read creates no root, evaluation, issue, lifecycle transition, receipt, event, or audit.
 
 The four `RMVP-03B.v1` identities and their historical evaluation/issue behavior remain exact and callable during coexistence. Normal v2 execution no longer requires the browser to call evaluate or request-handoff commands. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
+
+For an exact automatic `D..D` preflight with no current Need, v2 additionally
+requires at least one Weekly Menu approval-snapshot line for D or one positive
+Pantry approval-snapshot line for D before advertising executable generation.
+Attendance alone is not a Need source. A selected approved zero-line Pantry
+snapshot remains valid source evidence but creates no demand; Pantry-only and
+Menu-only dates remain eligible. The transient blocker is
+`NO_NEED_SOURCE_FOR_SERVICE_DATE` with the safe meaning “Không có nhu cầu cần
+lập cho ngày này.” It exists only in the automatic composite preflight payload:
+it creates no Planning Input Set, evaluation, persisted RMVP-03B.v1 issue, event,
+audit, or historical-taxonomy change. The guard does not apply when a current
+Need already exists, because source disappearance then requires the separately
+governed correction/removal contract.

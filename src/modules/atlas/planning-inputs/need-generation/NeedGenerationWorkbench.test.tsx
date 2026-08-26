@@ -177,6 +177,78 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(execute).not.toHaveBeenCalled();
   });
 
+  it("presents no daily Need source neutrally while Pantry-only remains actionable", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    const preflightApi = createReviewPlanningInputReadinessApi("ready");
+    const original = preflightApi.preflight;
+    vi.spyOn(preflightApi, "preflight").mockImplementation(async (...args) => {
+      const result = await original(...args);
+      if (result.kind !== "success" || !result.response.preflight)
+        return result;
+      const preflight = result.response.preflight as Record<string, unknown>;
+      const sources = preflight.source_evidence as Record<
+        string,
+        Record<string, unknown>
+      >;
+      if (args[2] === "2026-08-03") {
+        preflight.readiness_state = "BLOCKED";
+        preflight.blocking_issue_count = 1;
+        preflight.current_need = null;
+        preflight.issues = [
+          {
+            severity: "BLOCKING",
+            issue_code: "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+            message: "Không có nhu cầu cần lập cho ngày này.",
+            input_type: "NEED_GENERATION",
+            school_id: null,
+            service_date: "2026-08-03",
+          },
+        ];
+        (sources.weekly_menu!.selected as Record<string, unknown>).line_count =
+          0;
+        (sources.pantry!.selected as Record<string, unknown>).line_count = 0;
+      }
+      if (args[2] === "2026-08-04") {
+        (sources.weekly_menu!.selected as Record<string, unknown>).line_count =
+          0;
+        (sources.pantry!.selected as Record<string, unknown>).line_count = 1;
+      }
+      return result;
+    });
+    renderWorkbench(api, preflightApi);
+
+    const table = await screen.findByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    const noDemandRow = within(table).getByText("03/08/2026").closest("tr")!;
+    expect(
+      within(noDemandRow).getByText("Không có nhu cầu cần lập"),
+    ).toBeVisible();
+    expect(
+      within(noDemandRow).getByRole("button", { name: "Xem 03/08/2026" }),
+    ).toBeVisible();
+    expect(
+      screen.getAllByText("Không có nhu cầu cần lập").length,
+    ).toBeGreaterThan(1);
+    expect(
+      screen.queryByText("NO_NEED_SOURCE_FOR_SERVICE_DATE"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("EMPTY_ACTIVE_RELEASE")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      within(table).getByRole("button", { name: "Rà soát 04/08/2026" }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
+    ).toBeEnabled();
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it("shows the backend legacy-overlap blocker on its daily row and disables generation", async () => {
     const api = createReviewNeedGenerationApi("ready");
     const execute = vi.spyOn(api, "execute");

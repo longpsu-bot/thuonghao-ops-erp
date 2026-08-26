@@ -165,6 +165,7 @@ const preflightIssueMessages: Record<string, string> = {
     "Nhu cầu bổ sung đã thay đổi. Hãy làm mới trước khi tiếp tục.",
   ACTIVE_LEGACY_NEED_RANGE_OVERLAP:
     "Ngày này đã nằm trong một nhu cầu nhiều ngày đang có hiệu lực. Giữ nguyên nhu cầu cũ và chờ quy trình điều chỉnh.",
+  NO_NEED_SOURCE_FOR_SERVICE_DATE: "Không có nhu cầu cần lập cho ngày này.",
 };
 
 function preflightIssueMessage(issue: PlanningInputPreflightIssue) {
@@ -182,9 +183,17 @@ function releasedCorrectionBlocked(preflight: PlanningInputPreflightData) {
   );
 }
 
+function hasNoNeedSource(preflight: PlanningInputPreflightData) {
+  return preflight.issues.some(
+    (issue) => issue.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+  );
+}
+
 function planningStatusSentence(preflight: PlanningInputPreflightData) {
   if (preflight.downstream_currentness === "LEGACY_OVERLAP")
     return "Ngày này đã thuộc một nhu cầu nhiều ngày đang có hiệu lực nên không thể tạo nhu cầu mới.";
+
+  if (hasNoNeedSource(preflight)) return "Không có nhu cầu cần lập";
 
   if (releasedCorrectionBlocked(preflight))
     return "Nhu cầu này đã được chuyển sang lên đơn nên chưa thể cập nhật trực tiếp tại đây.";
@@ -222,6 +231,7 @@ function planningStatusSentence(preflight: PlanningInputPreflightData) {
 function dailyOperatorStatus(preflight: PlanningInputPreflightData) {
   if (preflight.downstream_currentness === "LEGACY_OVERLAP")
     return "Thuộc nhu cầu đã lập trước đây";
+  if (hasNoNeedSource(preflight)) return "Không có nhu cầu cần lập";
   if (preflight.readiness_state === "BLOCKED")
     return planningStatusSentence(preflight);
   if (preflight.downstream_currentness === "OUTDATED")
@@ -243,6 +253,7 @@ function dailyReviewAction(preflight: PlanningInputPreflightData | undefined) {
   )
     return "Mở xác nhận";
   if (preflight.downstream_currentness === "LEGACY_OVERLAP") return "Xem";
+  if (hasNoNeedSource(preflight)) return "Xem";
   if (preflight.readiness_state === "BLOCKED") return "Xem lỗi";
   if (
     preflight.downstream_currentness === "OUTDATED" ||
@@ -562,7 +573,11 @@ export function NeedGenerationWorkbench({
   };
 
   const blockers =
-    preflight?.issues.filter((issue) => issue.severity === "BLOCKING") ?? [];
+    preflight?.issues.filter(
+      (issue) =>
+        issue.severity === "BLOCKING" &&
+        issue.issue_code !== "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+    ) ?? [];
   const warnings =
     preflight?.issues.filter((issue) => issue.severity === "WARNING") ?? [];
   const executionLabel =
@@ -572,6 +587,7 @@ export function NeedGenerationWorkbench({
   const correctionBlocked = preflight
     ? releasedCorrectionBlocked(preflight)
     : false;
+  const noNeedSource = preflight ? hasNoNeedSource(preflight) : false;
   const canExecute =
     preflight?.readiness_state === "READY" &&
     preflight.downstream_currentness !== "CURRENT" &&
@@ -677,11 +693,13 @@ export function NeedGenerationWorkbench({
         <>
           <section
             className={`need-generation-status ${
-              correctionBlocked || preflight.readiness_state === "BLOCKED"
-                ? "danger"
-                : preflight.downstream_currentness === "OUTDATED"
-                  ? "warning"
-                  : "ready"
+              noNeedSource
+                ? "ready"
+                : correctionBlocked || preflight.readiness_state === "BLOCKED"
+                  ? "danger"
+                  : preflight.downstream_currentness === "OUTDATED"
+                    ? "warning"
+                    : "ready"
             }`}
             aria-label="Trạng thái tạo nhu cầu"
           >
@@ -702,11 +720,13 @@ export function NeedGenerationWorkbench({
                   ? "Xác nhận nhu cầu"
                   : preflight.downstream_currentness === "LEGACY_OVERLAP"
                     ? "Chờ quy trình điều chỉnh nhu cầu cũ"
-                    : correctionBlocked
-                      ? "Chờ quy trình điều chỉnh tiếp theo"
-                      : canExecute
-                        ? executionLabel
-                        : "Hoàn tất dữ liệu còn thiếu"}
+                    : noNeedSource
+                      ? "Không có nhu cầu cần lập"
+                      : correctionBlocked
+                        ? "Chờ quy trình điều chỉnh tiếp theo"
+                        : canExecute
+                          ? executionLabel
+                          : "Hoàn tất dữ liệu còn thiếu"}
               </h3>
             </header>
             {canExecute && (
@@ -762,9 +782,17 @@ export function NeedGenerationWorkbench({
             <summary>Chi tiết hỗ trợ</summary>
             <div className="need-generation-support-state">
               <Chip
-                tone={preflight.readiness_state === "READY" ? "ok" : "danger"}
+                tone={
+                  noNeedSource
+                    ? "warning"
+                    : preflight.readiness_state === "READY"
+                      ? "ok"
+                      : "danger"
+                }
               >
-                {readinessLabel(preflight.readiness_state)}
+                {noNeedSource
+                  ? "KHÔNG CÓ NHU CẦU"
+                  : readinessLabel(preflight.readiness_state)}
               </Chip>
               <Chip tone={currentnessTone(preflight.downstream_currentness)}>
                 {currentnessLabel(preflight.downstream_currentness)}
