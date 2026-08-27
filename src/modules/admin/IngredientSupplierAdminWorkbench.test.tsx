@@ -235,7 +235,9 @@ function openPriorityEditor() {
 
 async function openReview() {
   fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-  return screen.findByRole("dialog", { name: "Xem thay đổi" });
+  const dialog = await screen.findByRole("dialog", { name: "Xem thay đổi" });
+  await waitFor(() => expect(dialog).toBeVisible());
+  return dialog;
 }
 
 async function saveReview() {
