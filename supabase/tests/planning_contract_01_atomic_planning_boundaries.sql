@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(177);
+select plan(195);
 
 select is(
   (
@@ -2809,6 +2809,533 @@ reset role;
 
 select ok((select response->>'success'='true' from pct01_responses where response_name='daily-thursday-source-successor'),'PCT01-D19 unrelated Thursday source successor is accepted');
 select is((select response->'preflight'->>'downstream_currentness' from pct01_responses where response_name='daily-tuesday-after-thursday-change'),'CURRENT','PCT01-D20 Thursday-only source change leaves Tuesday current');
+
+-- Hosted-acceptance regression: completed week parents are compatibility
+-- evidence, but an initial daily command needs at least one Menu snapshot line
+-- or one positive Pantry snapshot line for that exact service date.
+create temporary table pct01_empty_source_baseline as
+select
+  (select count(*) from atlas_planning.planning_input_sets
+    where period_start='2026-11-07' and period_end='2026-11-07') as input_sets,
+  (select count(*) from atlas_planning.planning_input_evaluations evaluation
+    join atlas_planning.planning_input_sets input_set
+      on input_set.planning_input_set_id=evaluation.planning_input_set_id
+    where input_set.period_start='2026-11-07'
+      and input_set.period_end='2026-11-07') as evaluations,
+  (select count(*) from atlas_planning.planning_input_evaluation_issues issue
+    join atlas_planning.planning_input_evaluations evaluation
+      on evaluation.planning_input_evaluation_id=
+        issue.planning_input_evaluation_id
+    join atlas_planning.planning_input_sets input_set
+      on input_set.planning_input_set_id=evaluation.planning_input_set_id
+    where input_set.period_start='2026-11-07'
+      and input_set.period_end='2026-11-07') as readiness_issues;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'empty-source-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48a0000-0000-0000-0000-000000000001',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-07','period_end','2026-11-07'
+    )
+  ))
+), (
+  'empty-source-execute',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e48a0000-0000-0000-0000-000000000002',
+    'correlation_id','e48a0000-0000-0000-0000-000000000003',
+    'idempotency_key','pct01-empty-source-execute',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-11-07',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+);
+reset role;
+
+select ok(
+  (select response->'preflight'->>'readiness_state'='BLOCKED'
+     and response->'preflight'->>'downstream_currentness'='NOT_GENERATED'
+     and exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='empty-source-preflight'),
+  'PCT01-N01 an initial D..D date with no Menu or Pantry line is not executable'
+);
+select ok(
+  (select response->'preflight'->'current_need'='null'::jsonb
+     and (response#>>'{preflight,source_evidence,weekly_menu,selection_state}')='SELECTED'
+     and (response#>>'{preflight,source_evidence,attendance,selection_state}')='SELECTED'
+     and (response#>>'{preflight,source_evidence,pantry,selection_state}')='SELECTED'
+   from pct01_responses where response_name='empty-source-preflight'),
+  'PCT01-N02 compatible completed parent headers remain selected evidence'
+);
+select ok(
+  (select response->>'error_code'='PLANNING_INPUTS_NOT_READY'
+     and exists (
+       select 1 from jsonb_array_elements(response->'blocking_references') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='empty-source-execute'),
+  'PCT01-N03 direct initial execution fails with the authoritative preflight blocker'
+);
+select is(
+  jsonb_build_object(
+    'input_set',(select count(*) from atlas_planning.planning_input_sets
+      where period_start='2026-11-07' and period_end='2026-11-07'),
+    'evaluation',(select count(*) from atlas_planning.planning_input_evaluations evaluation
+      join atlas_planning.planning_input_sets input_set
+        on input_set.planning_input_set_id=evaluation.planning_input_set_id
+      where input_set.period_start='2026-11-07' and input_set.period_end='2026-11-07'),
+    'run',(select count(*) from atlas_planning.need_generation_runs
+      where period_start='2026-11-07' and period_end='2026-11-07'),
+    'release',(select count(*) from atlas_planning.need_generation_release_snapshots release
+      join atlas_planning.need_generation_runs run
+        on run.need_generation_run_id=release.need_generation_run_id
+      where run.period_start='2026-11-07' and run.period_end='2026-11-07'),
+    'batch',(select count(*) from atlas_planning.confirmed_need_batches
+      where period_start='2026-11-07' and period_end='2026-11-07')
+  ),
+  '{"input_set":0,"evaluation":0,"run":0,"release":0,"batch":0}'::jsonb,
+  'PCT01-N04 blocked execution leaves no Planning authority or materialization'
+);
+select is(
+  (select jsonb_build_object('outcome',outcome,'error_code',error_code)
+   from atlas_core.command_receipts
+   where command_id='e48a0000-0000-0000-0000-000000000002'),
+  '{"outcome":"FAILED_NON_RETRYABLE","error_code":"PLANNING_INPUTS_NOT_READY"}'::jsonb,
+  'PCT01-N05 the normal failed top-level receipt remains as audit evidence'
+);
+select is(
+  (select jsonb_build_object(
+     'input_sets',input_sets,
+     'evaluations',evaluations,
+     'readiness_issues',readiness_issues
+   ) from pct01_empty_source_baseline),
+  jsonb_build_object(
+    'input_sets',(select count(*) from atlas_planning.planning_input_sets
+      where period_start='2026-11-07' and period_end='2026-11-07'),
+    'evaluations',(select count(*) from atlas_planning.planning_input_evaluations evaluation
+      join atlas_planning.planning_input_sets input_set
+        on input_set.planning_input_set_id=evaluation.planning_input_set_id
+      where input_set.period_start='2026-11-07' and input_set.period_end='2026-11-07'),
+    'readiness_issues',(select count(*) from atlas_planning.planning_input_evaluation_issues issue
+      join atlas_planning.planning_input_evaluations evaluation
+        on evaluation.planning_input_evaluation_id=issue.planning_input_evaluation_id
+      join atlas_planning.planning_input_sets input_set
+        on input_set.planning_input_set_id=evaluation.planning_input_set_id
+      where input_set.period_start='2026-11-07' and input_set.period_end='2026-11-07')
+  ),
+  'PCT01-N06 preflight blocker is not persisted in RMVP-03B readiness history'
+);
+
+-- Attendance alone is controlled compatibility evidence, not a demand source.
+set local session_replication_role = replica;
+insert into atlas_planning.attendance_lines (
+  attendance_line_id,attendance_batch_id,school_id,service_date,
+  student_portions,teacher_portions,created_by_actor_id,updated_by_actor_id
+) values (
+  'e48a0000-0000-0000-0000-000000000010',
+  'e4300000-0000-0000-0000-000000000001',
+  'e4100000-0000-0000-0000-000000000005','2026-11-06',20,2,
+  'e4000000-0000-0000-0000-000000000001',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.attendance_approval_snapshot_lines (
+  attendance_approval_snapshot_line_id,attendance_approval_snapshot_id,
+  attendance_batch_id,attendance_version,attendance_line_id,school_id,
+  service_date,student_portions,teacher_portions
+) values (
+  'e48a0000-0000-0000-0000-000000000011',
+  'e4300000-0000-0000-0000-000000000002',
+  'e4300000-0000-0000-0000-000000000001',1,
+  'e48a0000-0000-0000-0000-000000000010',
+  'e4100000-0000-0000-0000-000000000005','2026-11-06',20,2
+);
+update atlas_planning.attendance_batches set row_count=row_count+1
+where attendance_batch_id='e4300000-0000-0000-0000-000000000001';
+set local session_replication_role = origin;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'attendance-only-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48a0000-0000-0000-0000-000000000012',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-06','period_end','2026-11-06'
+    )
+  ))
+);
+reset role;
+
+select ok(
+  (select response->'preflight'->>'readiness_state'='BLOCKED'
+     and exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='attendance-only-preflight'),
+  'PCT01-N07 Attendance-only D does not become executable'
+);
+select is(
+  (select count(*) from atlas_planning.planning_input_sets
+   where period_start='2026-11-06' and period_end='2026-11-06'),
+  0::bigint,
+  'PCT01-N08 Attendance-only preflight remains read-only'
+);
+
+-- Add one controlled positive Pantry-only fact to the current immutable test
+-- snapshot. This is rolled back with the suite and proves PANTRY_DIRECT remains
+-- an independent contribution family.
+set local session_replication_role = replica;
+insert into atlas_planning.pantry_need_lines (
+  pantry_need_line_id,pantry_need_batch_id,service_date,school_id,
+  delivery_location_id,ingredient_id,unit_id,pantry_need_purpose_id,
+  requested_quantity,note,source_request_reference,source_row_reference,
+  updated_by_actor_id
+) values (
+  'e48b0000-0000-0000-0000-000000000001',
+  'e4400000-0000-0000-0000-000000000002','2026-11-08',
+  'e4100000-0000-0000-0000-000000000005',
+  'e4100000-0000-0000-0000-000000000003',
+  'e4100000-0000-0000-0000-000000000007',
+  'e4100000-0000-0000-0000-000000000006',
+  'e4400000-0000-0000-0000-000000000001',1.25,
+  'Pantry-only acceptance fixture','PCT01-PANTRY-ONLY','1',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.pantry_need_approval_snapshot_lines (
+  pantry_need_approval_snapshot_id,pantry_need_line_id,service_date,school_id,
+  school_code_snapshot,school_name_snapshot,delivery_location_id,
+  delivery_location_code_snapshot,delivery_location_name_snapshot,
+  delivery_location_address_snapshot,ingredient_id,ingredient_code_snapshot,
+  ingredient_name_snapshot,unit_id,unit_code_snapshot,unit_name_snapshot,
+  pantry_need_purpose_id,purpose_code_snapshot,purpose_name_snapshot,
+  purpose_description_snapshot,purpose_note_rule_snapshot,note,
+  source_request_reference,source_row_reference,requested_quantity
+)
+select
+  batch.latest_approval_snapshot_id,
+  'e48b0000-0000-0000-0000-000000000001','2026-11-08',
+  template.school_id,template.school_code_snapshot,template.school_name_snapshot,
+  template.delivery_location_id,template.delivery_location_code_snapshot,
+  template.delivery_location_name_snapshot,
+  template.delivery_location_address_snapshot,template.ingredient_id,
+  template.ingredient_code_snapshot,template.ingredient_name_snapshot,
+  template.unit_id,template.unit_code_snapshot,template.unit_name_snapshot,
+  template.pantry_need_purpose_id,template.purpose_code_snapshot,
+  template.purpose_name_snapshot,template.purpose_description_snapshot,
+  template.purpose_note_rule_snapshot,'Pantry-only acceptance fixture',
+  'PCT01-PANTRY-ONLY','1',1.25
+from atlas_planning.pantry_need_batches batch
+join lateral (
+  select line.*
+  from atlas_planning.pantry_need_approval_snapshot_lines line
+  where line.pantry_need_approval_snapshot_id=batch.latest_approval_snapshot_id
+  order by line.pantry_need_line_id
+  limit 1
+) template on true
+where batch.pantry_need_batch_id='e4400000-0000-0000-0000-000000000002';
+update atlas_planning.pantry_need_approval_snapshots snapshot
+set line_count=line_count+1
+from atlas_planning.pantry_need_batches batch
+where batch.pantry_need_batch_id='e4400000-0000-0000-0000-000000000002'
+  and snapshot.pantry_need_approval_snapshot_id=batch.latest_approval_snapshot_id;
+set local session_replication_role = origin;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'pantry-only-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48b0000-0000-0000-0000-000000000002',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-08','period_end','2026-11-08'
+    )
+  ))
+), (
+  'pantry-only-execute',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e48b0000-0000-0000-0000-000000000003',
+    'correlation_id','e48b0000-0000-0000-0000-000000000004',
+    'idempotency_key','pct01-pantry-only-execute',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-11-08',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+), (
+  'existing-current-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48b0000-0000-0000-0000-000000000005',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-02','period_end','2026-11-02'
+    )
+  ))
+);
+reset role;
+
+select ok(
+  (select response->'preflight'->>'readiness_state'='READY'
+     and response->'preflight'->>'downstream_currentness'='NOT_GENERATED'
+     and not exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='pantry-only-preflight'),
+  'PCT01-N09 positive Pantry-only D remains eligible'
+);
+select ok(
+  (select response->>'success'='true'
+   from pct01_responses where response_name='pantry-only-execute'),
+  'PCT01-N10 Pantry-only D executes successfully'
+);
+select ok(
+  (select count(*)>0 and bool_and(contribution_family='PANTRY_DIRECT')
+   from atlas_planning.theoretical_need_lines
+   where need_generation_run_id=(
+     select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid
+     from pct01_responses where response_name='pantry-only-execute'
+   )),
+  'PCT01-N11 Pantry-only execution retains independent PANTRY_DIRECT behavior'
+);
+select ok(
+  (select response->'preflight'->>'downstream_currentness'='CURRENT'
+     and response->'preflight'->'current_need' is not null
+     and not exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='existing-current-preflight'),
+  'PCT01-N12 an existing current daily Need remains current and openable'
+);
+
+-- A valid Menu parent is not itself daily Need demand. The execution gate
+-- follows the generator's Dish order: inactive is blocking, while an active
+-- Dish that does not require Need Generation is skipped.
+set local session_replication_role = replica;
+insert into atlas_admin.dishes (
+  dish_id,dish_code,dish_name,dish_type_id,dish_status,display_order,
+  requires_need_generation
+) values (
+  'e48c0000-0000-0000-0000-000000000001','pct01-non-generating',
+  'PCT01 non-generating Dish','d1500000-0000-4000-8000-000000000002',
+  'ACTIVE',40,false
+);
+insert into atlas_planning.weekly_menu_lines (
+  weekly_menu_line_id,weekly_menu_id,school_id,service_date,menu_slot_code,
+  dish_id,created_by_actor_id,updated_by_actor_id
+) values (
+  'e48c0000-0000-0000-0000-000000000002',
+  'e4200000-0000-0000-0000-000000000001',
+  'e4100000-0000-0000-0000-000000000005','2026-11-07','soup',
+  'e48c0000-0000-0000-0000-000000000001',
+  'e4000000-0000-0000-0000-000000000001',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,weekly_menu_approval_snapshot_id,
+  weekly_menu_id,weekly_menu_version,weekly_menu_line_id,school_id,
+  service_date,menu_slot_code,dish_id
+)
+select
+  'e48c0000-0000-0000-0000-000000000003',snapshot.weekly_menu_approval_snapshot_id,
+  snapshot.weekly_menu_id,snapshot.weekly_menu_version,
+  'e48c0000-0000-0000-0000-000000000002',
+  'e4100000-0000-0000-0000-000000000005','2026-11-07','soup',
+  'e48c0000-0000-0000-0000-000000000001'
+from atlas_planning.weekly_menus root
+join atlas_planning.weekly_menu_approval_snapshots snapshot
+  on snapshot.weekly_menu_approval_snapshot_id=root.latest_approval_snapshot_id
+where root.weekly_menu_id='e4200000-0000-0000-0000-000000000001';
+update atlas_planning.weekly_menus set row_count=row_count+1
+where weekly_menu_id='e4200000-0000-0000-0000-000000000001';
+set local session_replication_role = origin;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'non-generating-menu-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48c0000-0000-0000-0000-000000000004',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-07','period_end','2026-11-07'
+    )
+  ))
+), (
+  'non-generating-menu-execute',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e48c0000-0000-0000-0000-000000000005',
+    'correlation_id','e48c0000-0000-0000-0000-000000000006',
+    'idempotency_key','pct01-non-generating-menu-execute',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-11-07',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+);
+reset role;
+
+select ok(
+  (select response->'preflight'->>'readiness_state'='BLOCKED'
+     and exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='non-generating-menu-preflight'),
+  'PCT01-N13 active non-generating Menu-only D is normal no-demand'
+);
+select ok(
+  (select response->>'error_code'='PLANNING_INPUTS_NOT_READY'
+     and exists (
+       select 1 from jsonb_array_elements(response->'blocking_references') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='non-generating-menu-execute'),
+  'PCT01-N14 active non-generating Menu-only D has no execute authority'
+);
+select is(
+  (select count(*) from atlas_planning.need_generation_runs
+   where period_start='2026-11-07' and period_end='2026-11-07'),
+  0::bigint,
+  'PCT01-N15 blocked non-generating Menu execution leaves no run'
+);
+
+set local session_replication_role = replica;
+update atlas_admin.dishes set dish_status='INACTIVE'
+where dish_id='e48c0000-0000-0000-0000-000000000001';
+set local session_replication_role = origin;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'inactive-menu-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48c0000-0000-0000-0000-000000000007',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-07','period_end','2026-11-07'
+    )
+  ))
+), (
+  'inactive-menu-execute',
+  atlas_api.execute_need_generation(jsonb_build_object(
+    'contract_version','RMVP-04.v3',
+    'command_id','e48c0000-0000-0000-0000-000000000008',
+    'correlation_id','e48c0000-0000-0000-0000-000000000009',
+    'idempotency_key','pct01-inactive-menu-execute',
+    'expected_version',1,
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'requested_at',transaction_timestamp(),
+    'reason_code','NEED_GENERATION_EXECUTED','reason_note',null,
+    'payload',jsonb_build_object(
+      'service_date','2026-11-07',
+      'expected_current_need_generation_run_id',null
+    )
+  ))
+);
+reset role;
+
+select ok(
+  (select response->'preflight'->>'readiness_state'='READY'
+     and not exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='inactive-menu-preflight'),
+  'PCT01-N16 inactive Menu Dish is not relabeled as neutral no-demand'
+);
+select ok(
+  (select response->>'error_code'='NEED_GENERATION_HAS_BLOCKERS'
+     and exists (
+       select 1 from jsonb_array_elements(response->'blocking_references') issue
+       where issue->>'issue_code'='INACTIVE_OR_INVALID_DISH'
+     )
+   from pct01_responses where response_name='inactive-menu-execute'),
+  'PCT01-N17 inactive Menu Dish retains the generator integrity blocker'
+);
+
+set local session_replication_role = replica;
+update atlas_admin.dishes set dish_status='ACTIVE'
+where dish_id='e48c0000-0000-0000-0000-000000000001';
+insert into atlas_planning.weekly_menu_lines (
+  weekly_menu_line_id,weekly_menu_id,school_id,service_date,menu_slot_code,
+  dish_id,created_by_actor_id,updated_by_actor_id
+) values (
+  'e48c0000-0000-0000-0000-000000000010',
+  'e4200000-0000-0000-0000-000000000001',
+  'e4100000-0000-0000-0000-000000000005','2026-11-07','savory',
+  'e4100000-0000-0000-0000-000000000008',
+  'e4000000-0000-0000-0000-000000000001',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,weekly_menu_approval_snapshot_id,
+  weekly_menu_id,weekly_menu_version,weekly_menu_line_id,school_id,
+  service_date,menu_slot_code,dish_id
+)
+select
+  'e48c0000-0000-0000-0000-000000000011',snapshot.weekly_menu_approval_snapshot_id,
+  snapshot.weekly_menu_id,snapshot.weekly_menu_version,
+  'e48c0000-0000-0000-0000-000000000010',
+  'e4100000-0000-0000-0000-000000000005','2026-11-07','savory',
+  'e4100000-0000-0000-0000-000000000008'
+from atlas_planning.weekly_menus root
+join atlas_planning.weekly_menu_approval_snapshots snapshot
+  on snapshot.weekly_menu_approval_snapshot_id=root.latest_approval_snapshot_id
+where root.weekly_menu_id='e4200000-0000-0000-0000-000000000001';
+update atlas_planning.weekly_menus set row_count=row_count+1
+where weekly_menu_id='e4200000-0000-0000-0000-000000000001';
+set local session_replication_role = origin;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'mixed-generating-menu-preflight',
+  atlas_api.get_planning_input_preflight(jsonb_build_object(
+    'contract_version','RMVP-03B.v2',
+    'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+    'correlation_id','e48c0000-0000-0000-0000-000000000012',
+    'payload',jsonb_build_object(
+      'period_start','2026-11-07','period_end','2026-11-07'
+    )
+  ))
+);
+reset role;
+
+select ok(
+  (select response->'preflight'->>'readiness_state'='READY'
+     and not exists (
+       select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
+       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+     )
+   from pct01_responses where response_name='mixed-generating-menu-preflight'),
+  'PCT01-N18 mixed Menu D remains eligible through its generating Dish'
+);
 
 select * from finish();
 rollback;

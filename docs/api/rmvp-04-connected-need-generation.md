@@ -281,6 +281,24 @@ Same-date unchanged execution returns the established replay or `NO_CHANGE` resu
 
 Before reporting a daily state or creating its Planning Input Set, the backend checks every non-`INVALIDATED` historical multi-day Need run whose inclusive period contains the requested `service_date`. Any match returns `downstream_currentness = LEGACY_OVERLAP`, the stable blocker `ACTIVE_LEGACY_NEED_RANGE_OVERLAP`, and safe readback of the overlapping run/range and linked current Confirmed Need identity/status. The v3 command returns the same stable error and creates no `D..D` Planning Input Set, run, release, or Confirmed Need. An `INVALIDATED` multi-day chain and an active range that does not contain D do not block; an exact active `D..D` chain retains the normal current/replay/successor behavior. Historical multi-day rows are never rewritten by this guard.
 
+For initial daily generation, the same authoritative preflight also requires
+at least one Menu source for D that requires Need Generation or one positive
+Pantry snapshot line for D. An active Dish whose
+`requires_need_generation = false` is skipped and does not establish daily
+demand. A non-active Menu Dish is still execution-relevant so the existing
+`INACTIVE_OR_INVALID_DISH` generator validation remains authoritative rather
+than being relabeled as neutral no-demand. Attendance alone and an approved
+zero-line Pantry snapshot do not create demand. When neither demand source
+exists and there is no current exact-day Need, preflight returns `BLOCKED` with
+`NO_NEED_SOURCE_FOR_SERVICE_DATE`; v3 returns the established top-level
+`PLANNING_INPUTS_NOT_READY` failure with that blocking reference before any
+Planning Input Set or downstream generation/materialization fact is created.
+The normal failed command receipt remains audit evidence. This does not weaken
+`EMPTY_ACTIVE_RELEASE`, alter persisted `RMVP-03B.v1` evaluations/issues, or
+define cancellation/removal when an existing current Need loses all demand.
+Compatible source parent evidence, daily execution eligibility, and a valid
+generated contribution remain three distinct conditions.
+
 ## 14. Selective confirmation continuity
 
 PLANNING-CONTRACT-02B keeps the `RMVP-04.v2` request and public function unchanged. On correction, the existing private materializer compares direct predecessor/successor Confirmed Need facts and returns additive backend-owned `result_counts`: `carried_forward_count`, `needs_review_count`, `changed_count`, `new_count`, and `removed_count` alongside the established materialization counts. `removed_count` is the number of distinct predecessor Confirmed Need business identities absent from the exact direct successor current set; it does not depend on whether a removed identity had a human decision or therefore produced invalidation evidence.
