@@ -80,6 +80,12 @@ function environment(overrides = {}) {
   };
 }
 
+function semanticSupabaseArgs(command, args) {
+  return command === "pnpm" && args[0] === "exec" && args[1] === "supabase"
+    ? args.slice(2)
+    : args;
+}
+
 function exactHeadRunCommand({
   head = commitSha,
   ancestor = true,
@@ -741,25 +747,28 @@ describe("Atlas staging dry-run and workflow", () => {
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
     const runCommand = vi.fn((command, args) => {
-      calls.push(args.join(" "));
-      if (args.at(-1) === "--help") {
+      const semanticArgs = semanticSupabaseArgs(command, args);
+      calls.push(semanticArgs.join(" "));
+      if (semanticArgs.at(-1) === "--help") {
         return {
           status: 0,
           stdout: "--exclude --local --no-seed --file --no-backup",
           stderr: "",
         };
       }
-      if (args.at(-1) === "--version") {
+      if (semanticArgs.at(-1) === "--version") {
         return { status: 0, stdout: `${expectedVersion}\n`, stderr: "" };
       }
-      if (args.includes("reset")) {
+      if (semanticArgs.includes("reset")) {
         return {
           status: 1,
           stdout: "",
           stderr: "primary certification failure",
         };
       }
-      if (args[0] === "stop") throw new Error("secondary cleanup failure");
+      if (semanticArgs[0] === "stop") {
+        throw new Error("secondary cleanup failure");
+      }
       if (command === "docker" && args[0] === "ps") {
         return {
           status: 0,
@@ -789,13 +798,15 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(stopIndex).toBeGreaterThan(diagnosticIndex);
     expect(calls).toContain("stop --no-backup");
     const stopCall = runCommand.mock.calls.find(
-      ([_command, args]) => args[0] === "stop",
+      ([command, args]) => semanticSupabaseArgs(command, args)[0] === "stop",
     );
-    expect(stopCall?.[0]).toMatch(/[\\/]bin[\\/]supabase\.exe$/i);
     expect(stopCall?.[2]).toMatchObject({ shell: false });
+    if (process.platform === "win32") {
+      expect(stopCall?.[0]).toMatch(/[\\/]bin[\\/]supabase\.exe$/i);
+    }
     expect(
       calls.some(
-        (call) => call.includes("supabase test db") && !call.endsWith("--help"),
+        (call) => call.startsWith("test db ") && !call.endsWith("--help"),
       ),
     ).toBe(false);
     expect(calls).toContain("logs --tail 160 supabase_db_thuonghao-ops-erp");
@@ -813,22 +824,23 @@ describe("Atlas staging dry-run and workflow", () => {
   it("fails certification when final cleanup alone fails and redacts protected values", () => {
     const protectedValue = "cleanup-protected-value-never-surface";
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const runCommand = vi.fn((_command, args) => {
-      if (args.at(-1) === "--help") {
+    const runCommand = vi.fn((command, args) => {
+      const semanticArgs = semanticSupabaseArgs(command, args);
+      if (semanticArgs.at(-1) === "--help") {
         return {
           status: 0,
           stdout: "--exclude --local --no-seed --file --no-backup",
           stderr: "",
         };
       }
-      if (args.at(-1) === "--version") {
+      if (semanticArgs.at(-1) === "--version") {
         return {
           status: 0,
           stdout: "2.111.0\n",
           stderr: "",
         };
       }
-      if (args[0] === "stop") {
+      if (semanticArgs[0] === "stop") {
         return {
           status: 1,
           stdout: "",
@@ -901,18 +913,21 @@ describe("Atlas staging dry-run and workflow", () => {
     ).toBe(true);
   });
 
-  it("uses the pinned native Supabase CLI without a command shell on Windows", () => {
+  it("uses the pinned Supabase CLI without a command shell and stays native on Windows", () => {
     const expectedVersion = JSON.parse(
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
-    const runCommand = vi.fn((_command, args) => ({
-      status: 0,
-      stdout:
-        args[0] === "--version"
-          ? `${expectedVersion}\n`
-          : "--project-ref --password --db-url --dry-run --output --agent",
-      stderr: "",
-    }));
+    const runCommand = vi.fn((command, args) => {
+      const semanticArgs = semanticSupabaseArgs(command, args);
+      return {
+        status: 0,
+        stdout:
+          semanticArgs[0] === "--version"
+            ? `${expectedVersion}\n`
+            : "--project-ref --password --db-url --dry-run --output --agent",
+        stderr: "",
+      };
+    });
 
     expect(
       inspectPinnedSupabaseCli({
@@ -1021,7 +1036,10 @@ describe("Atlas staging dry-run and workflow", () => {
         }),
       ).rejects.toThrow(/failed/i);
       expect(
-        runCommand.mock.calls.some(([_command, args]) => args[0] === "link"),
+        runCommand.mock.calls.some(
+          ([command, args]) =>
+            semanticSupabaseArgs(command, args)[0] === "link",
+        ),
       ).toBe(false);
       expect(fetchImpl).not.toHaveBeenCalled();
       expect(verifyHosted).not.toHaveBeenCalled();
@@ -1046,7 +1064,9 @@ describe("Atlas staging dry-run and workflow", () => {
       }),
     ).rejects.toThrow(/origin\/main cannot be fetched/i);
     expect(
-      runCommand.mock.calls.some(([_command, args]) => args[0] === "link"),
+      runCommand.mock.calls.some(
+        ([command, args]) => semanticSupabaseArgs(command, args)[0] === "link",
+      ),
     ).toBe(false);
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(verifyHosted).not.toHaveBeenCalled();
@@ -1058,16 +1078,17 @@ describe("Atlas staging dry-run and workflow", () => {
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
     const runCommand = vi.fn((command, args) => {
+      const semanticArgs = semanticSupabaseArgs(command, args);
       if (command === "git") {
         if (args[0] === "rev-parse") {
           return { status: 0, stdout: `${commitSha}\n`, stderr: "" };
         }
         return { status: 0, stdout: "", stderr: "" };
       }
-      if (args[0] === "--version") {
+      if (semanticArgs[0] === "--version") {
         return { status: 0, stdout: `${expectedVersion}\n`, stderr: "" };
       }
-      if (args.at(-1) === "--help") {
+      if (semanticArgs.at(-1) === "--help") {
         return {
           status: 0,
           stdout:
@@ -1075,8 +1096,10 @@ describe("Atlas staging dry-run and workflow", () => {
           stderr: "",
         };
       }
-      if (args[0] === "link") order.push("hosted-link");
-      if (args[0] === "db" && args[1] === "push") order.push("hosted-push");
+      if (semanticArgs[0] === "link") order.push("hosted-link");
+      if (semanticArgs[0] === "db" && semanticArgs[1] === "push") {
+        order.push("hosted-push");
+      }
       return { status: 0, stdout: "", stderr: "" };
     });
     const fetchImpl = vi.fn(async () => {
@@ -1109,19 +1132,27 @@ describe("Atlas staging dry-run and workflow", () => {
       "hosted-exposure-read",
       "hosted-verify",
     ]);
-    const hostedCliCalls = runCommand.mock.calls.filter(
-      ([_command, args]) =>
-        !args.includes("--help") &&
-        (args[0] === "link" || (args[0] === "db" && args[1] === "push")),
-    );
+    const hostedCliCalls = runCommand.mock.calls.filter(([command, args]) => {
+      const semanticArgs = semanticSupabaseArgs(command, args);
+      return (
+        !semanticArgs.includes("--help") &&
+        (semanticArgs[0] === "link" ||
+          (semanticArgs[0] === "db" && semanticArgs[1] === "push"))
+      );
+    });
     expect(hostedCliCalls).toHaveLength(2);
     expect(
       hostedCliCalls.every(
-        ([command, _args, options]) =>
-          /[\\/]bin[\\/]supabase\.exe$/i.test(command) &&
-          options.shell === false,
+        ([_command, _args, options]) => options.shell === false,
       ),
     ).toBe(true);
+    if (process.platform === "win32") {
+      expect(
+        hostedCliCalls.every(([command]) =>
+          /[\\/]bin[\\/]supabase\.exe$/i.test(command),
+        ),
+      ).toBe(true);
+    }
   });
 
   it("keeps the workflow manual, protected, and free of duplicate integration", () => {
