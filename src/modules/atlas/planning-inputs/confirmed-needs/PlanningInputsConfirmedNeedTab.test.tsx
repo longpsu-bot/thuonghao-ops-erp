@@ -40,6 +40,7 @@ function readinessWithDailyNeeds(
       currentness?: PlanningInputPreflightData["downstream_currentness"];
     }
   >,
+  options: { noDemandDates?: string[] } = {},
 ) {
   const api = createReviewPlanningInputReadinessApi("ready");
   const original = api.preflight.bind(api);
@@ -50,6 +51,21 @@ function readinessWithDailyNeeds(
     const need = needs[serviceDate];
     const preflight = result.response
       .preflight as unknown as PlanningInputPreflightData;
+    if (options.noDemandDates?.includes(serviceDate)) {
+      preflight.readiness_state = "BLOCKED";
+      preflight.blocking_issue_count = 1;
+      preflight.current_need = null;
+      preflight.issues = [
+        {
+          severity: "BLOCKING",
+          issue_code: "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+          message: "Không có nhu cầu cần lập cho ngày này.",
+          input_type: "NEED_GENERATION",
+          school_id: null,
+          service_date: serviceDate,
+        },
+      ];
+    }
     if (need) {
       preflight.downstream_currentness = need.currentness ?? "CURRENT";
       preflight.current_need = {
@@ -308,6 +324,109 @@ describe("Planning Inputs Confirmed Need tab", () => {
       screen.queryByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
     ).not.toBeInTheDocument();
     expect(release).not.toHaveBeenCalled();
+  });
+
+  it("disarms a stale Confirmed Need when the global service date changes", async () => {
+    const mondayBatch = "c4500000-0000-0000-0000-000000000031";
+    const readinessApi = readinessWithDailyNeeds(
+      {
+        "2026-08-24": { batchId: mondayBatch },
+      },
+      { noDemandDates: ["2026-08-25"] },
+    );
+    const confirmedNeedApi = confirmedNeedApiForDates(
+      { [mondayBatch]: "2026-08-24" },
+      { releaseEligible: true },
+    );
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        readinessApi={readinessApi}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart="2026-08-24"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
+      "24/08/2026",
+    );
+    expect(
+      await screen.findByRole("textbox", {
+        name: "Số lượng xác nhận Gạo thơm",
+      }),
+    ).toBeVisible();
+    expect(
+      await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Thực đơn" }));
+    const serviceDate = screen.getByLabelText("Ngày phục vụ");
+    fireEvent.change(serviceDate, { target: { value: "2026-08-25" } });
+    expect(serviceDate).toHaveValue("2026-08-25");
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+
+    const projection = await screen.findByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    expect(
+      within(projection).getByRole("row", {
+        name: /25\/08\/2026.*Không có nhu cầu cần lập/,
+      }),
+    ).toBeVisible();
+    expect(screen.queryByText(/Đang xem ngày/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("realigns the global service date when opening a Confirmed Need row", async () => {
+    const mondayBatch = "c4500000-0000-0000-0000-000000000041";
+    const readinessApi = readinessWithDailyNeeds({
+      "2026-08-24": { batchId: mondayBatch },
+    });
+    const confirmedNeedApi = confirmedNeedApiForDates({
+      [mondayBatch]: "2026-08-24",
+    });
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        readinessApi={readinessApi}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart="2026-08-24"
+        mode="review"
+      />,
+    );
+
+    const serviceDate = screen.getByLabelText("Ngày phục vụ");
+    fireEvent.change(serviceDate, { target: { value: "2026-08-25" } });
+    expect(serviceDate).toHaveValue("2026-08-25");
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    const projection = await screen.findByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    fireEvent.click(
+      within(projection).getByRole("button", {
+        name: "Mở xác nhận 24/08/2026",
+      }),
+    );
+
+    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
+      "24/08/2026",
+    );
+    expect(
+      await screen.findByRole("textbox", {
+        name: "Số lượng xác nhận Gạo thơm",
+      }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Thực đơn" }));
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-08-24");
   });
 
   it("shows a simple message when preflight denies access", async () => {
