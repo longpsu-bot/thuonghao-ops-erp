@@ -709,20 +709,14 @@ export function PlanningInputsWorkbenchView({
     () => dailyServiceDates(weekStart, selectedWeekEnd),
     [selectedWeekEnd, weekStart],
   );
-  const confirmedNeedCandidates = useMemo(
-    () =>
-      confirmedNeedServiceDates.flatMap((serviceDate) => {
-        const batchId =
-          dailyConfirmedNeedPreflights[serviceDate]?.current_need
-            ?.confirmed_need_batch_id;
-        return batchId ? [{ serviceDate, batchId }] : [];
-      }),
-    [confirmedNeedServiceDates, dailyConfirmedNeedPreflights],
-  );
-  const confirmedNeedResolution = selectedConfirmedNeed
+  const visibleConfirmedNeed =
+    selectedConfirmedNeed?.serviceDate === serviceDateFilter
+      ? selectedConfirmedNeed
+      : null;
+  const confirmedNeedResolution = visibleConfirmedNeed
     ? ("available" as const)
     : confirmedNeedProjectionResolution === "ready"
-      ? confirmedNeedCandidates.length
+      ? dailyConfirmedNeedPreflights[serviceDateFilter]?.current_need
         ? ("selection_required" as const)
         : ("missing" as const)
       : confirmedNeedProjectionResolution;
@@ -770,10 +764,21 @@ export function PlanningInputsWorkbenchView({
         parsed[serviceDate]?.current_need?.confirmed_need_batch_id;
       return batchId ? [{ serviceDate, batchId }] : [];
     });
+    const soleCandidate = candidates.length === 1 ? candidates[0]! : null;
     setDailyConfirmedNeedPreflights(parsed);
-    setSelectedConfirmedNeed(candidates.length === 1 ? candidates[0]! : null);
+    setSelectedConfirmedNeed(soleCandidate);
+    if (soleCandidate)
+      setServiceDateFilter((current) =>
+        current === weekStart ? soleCandidate.serviceDate : current,
+      );
     setConfirmedNeedProjectionResolution("ready");
-  }, [authSubject, confirmedNeedServiceDates, correlationId, readinessApi]);
+  }, [
+    authSubject,
+    confirmedNeedServiceDates,
+    correlationId,
+    readinessApi,
+    weekStart,
+  ]);
 
   const adopt = useCallback((workbench: PlanningInputsWorkbenchData) => {
     setData(workbench);
@@ -940,20 +945,41 @@ export function PlanningInputsWorkbenchView({
     return true;
   };
 
-  const selectConfirmedNeedDate = (selection: DailyConfirmedNeedSelection) => {
+  const handleServiceDateChange = (nextDate: string) => {
+    if (nextDate === serviceDateFilter) return;
+    const disarmsConfirmedNeed =
+      selectedConfirmedNeed !== null &&
+      selectedConfirmedNeed.serviceDate !== nextDate;
     if (
-      selectedConfirmedNeed?.serviceDate === selection.serviceDate &&
-      selectedConfirmedNeed.batchId === selection.batchId
-    )
-      return;
-    if (
+      disarmsConfirmedNeed &&
       confirmedNeedDirty &&
       !window.confirm(
         "Có thay đổi chưa lưu. Chuyển ngày sẽ bỏ các thay đổi này. Tiếp tục?",
       )
     )
       return;
-    if (confirmedNeedDirty) setConfirmedNeedDirty(false);
+    if (disarmsConfirmedNeed) {
+      if (confirmedNeedDirty) setConfirmedNeedDirty(false);
+      setSelectedConfirmedNeed(null);
+    }
+    setServiceDateFilter(nextDate);
+  };
+
+  const selectConfirmedNeedDate = (selection: DailyConfirmedNeedSelection) => {
+    const sameSelection =
+      selectedConfirmedNeed?.serviceDate === selection.serviceDate &&
+      selectedConfirmedNeed.batchId === selection.batchId;
+    if (sameSelection && serviceDateFilter === selection.serviceDate) return;
+    if (
+      !sameSelection &&
+      confirmedNeedDirty &&
+      !window.confirm(
+        "Có thay đổi chưa lưu. Chuyển ngày sẽ bỏ các thay đổi này. Tiếp tục?",
+      )
+    )
+      return;
+    if (!sameSelection && confirmedNeedDirty) setConfirmedNeedDirty(false);
+    setServiceDateFilter(selection.serviceDate);
     setSelectedConfirmedNeed(selection);
   };
 
@@ -1626,7 +1652,7 @@ export function PlanningInputsWorkbenchView({
                     <select
                       value={serviceDateFilter}
                       onChange={(event) =>
-                        setServiceDateFilter(event.target.value)
+                        handleServiceDateChange(event.target.value)
                       }
                     >
                       {serviceDates.map((date) => (
@@ -2198,17 +2224,17 @@ export function PlanningInputsWorkbenchView({
                   setConfirmedNeedProjectionResolution("ready");
                 }}
               />
-              {selectedConfirmedNeed && (
+              {visibleConfirmedNeed && (
                 <p role="status">
                   Đang xem ngày{" "}
-                  <b>{viDate(selectedConfirmedNeed.serviceDate)}</b>.
+                  <b>{viDate(visibleConfirmedNeed.serviceDate)}</b>.
                 </p>
               )}
               <ConfirmedNeedReviewWorkbench
-                key={selectedConfirmedNeed?.batchId ?? "unselected"}
+                key={visibleConfirmedNeed?.batchId ?? "unselected"}
                 authState={authState}
                 api={confirmedNeedApi}
-                initialBatchId={selectedConfirmedNeed?.batchId ?? null}
+                initialBatchId={visibleConfirmedNeed?.batchId ?? null}
                 currentNeedResolution={confirmedNeedResolution}
                 mode={mode}
                 onDirtyChange={setConfirmedNeedDirty}
