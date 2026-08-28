@@ -102,6 +102,21 @@ function confirmedNeedApiForDates(
       const workbench = createReviewConfirmedNeedFixture();
       workbench.confirmed_need_batch_id = requestedBatchId;
       if (options.releaseEligible) {
+        workbench.lines = workbench.lines.map((line, index) => ({
+          ...line,
+          current_decision_id: `release-ready-decision-${index + 1}`,
+          current_decision_number: 1,
+          current_decision_kind: "PROPOSAL_ACCEPTED",
+          confirmed_quantity_after: line.proposed_confirmed_quantity,
+          confirmation_state: "CONFIRMED_CURRENT",
+        }));
+        workbench.line_counts = {
+          ...workbench.line_counts,
+          unreviewed: 0,
+          confirmed: workbench.lines.length,
+          needs_review: 0,
+          new: 0,
+        };
         workbench.allowed_actions.release_confirmed_needs = true;
         workbench.disabled_reason_codes.release_confirmed_needs = null;
         workbench.disabled_reasons.release_confirmed_needs = null;

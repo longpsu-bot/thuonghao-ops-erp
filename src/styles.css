@@ -4161,6 +4161,122 @@ tbody tr.selected-row {
   }
 }
 
+/* Planning Workbench Visual Refinement V2 — Confirmed Need table-first pane. */
+.confirmed-need-heading h2,
+.confirmed-need-heading p {
+  margin: 0;
+}
+
+.confirmed-need-heading h2 {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.confirmed-need-heading .confirmed-need-period {
+  margin-top: 3px;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.confirmed-need-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 7px 10px;
+  border-block: 1px solid var(--atlas-border);
+  background: var(--atlas-surface-soft);
+  font-size: 12px;
+}
+
+.confirmed-need-summary-strip .confirmed-need-save-state {
+  margin-left: auto;
+}
+
+.confirmed-need-rail-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirmed-need-rail-action small {
+  max-width: 220px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+}
+
+.confirmed-need-toolbar {
+  grid-template-columns: minmax(240px, 2fr) minmax(130px, 1fr) minmax(
+      150px,
+      1fr
+    ) auto;
+  align-items: end;
+  padding: 8px 10px;
+}
+
+.confirmed-need-difference-filter {
+  display: flex !important;
+  align-items: center;
+  grid-template-columns: none;
+  min-height: 40px;
+  gap: 7px !important;
+  white-space: nowrap;
+}
+
+.confirmed-need-difference-filter input {
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.confirmed-need-table-scroll .compact-table {
+  min-width: 860px;
+}
+
+.confirmed-need-table-scroll td:nth-child(2),
+.confirmed-need-table-scroll td:nth-child(3),
+.confirmed-need-table-scroll td:nth-child(5) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.confirmed-need-table-scroll td:nth-child(4) input {
+  width: 130px;
+  text-align: right;
+}
+
+.confirmed-need-table-scroll td:nth-child(6) select,
+.confirmed-need-table-scroll td:nth-child(6) input {
+  min-width: 190px;
+}
+
+@media (max-width: 56.25em) {
+  .confirmed-need-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .confirmed-need-search,
+  .confirmed-need-difference-filter {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 32.5em) {
+  .confirmed-need-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .confirmed-need-search,
+  .confirmed-need-difference-filter {
+    grid-column: auto;
+  }
+
+  .confirmed-need-summary-strip .confirmed-need-save-state {
+    margin-left: 0;
+  }
+}
+
 /* Planning Workbench Visual Refinement V2 — operating rail foundation. */
 .planning-operating-rail {
   position: sticky;

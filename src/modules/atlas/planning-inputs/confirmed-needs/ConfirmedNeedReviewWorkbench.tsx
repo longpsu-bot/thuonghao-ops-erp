@@ -5,6 +5,7 @@ import {
   planningSchoolScopeLabel,
   schoolInPlanningScope,
 } from "../planningSchoolScope";
+import { PlanningRailActionPortal } from "../PlanningRailActionPortal";
 import {
   confirmedNeedReleaseV2Request,
   confirmedNeedSaveV2Request,
@@ -37,9 +38,6 @@ const emptyFilters = {
   ingredient_id: null,
   decision_state: null,
 } as const;
-const exportExplanation =
-  "Chức năng xuất file sẽ được hoàn thiện sau khi mẫu dữ liệu được chốt.";
-
 function viDate(value: string) {
   const [year, month, day] = value.slice(0, 10).split("-");
   return year && month && day ? `${day}/${month}/${year}` : value;
@@ -106,6 +104,16 @@ function differs(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
   );
 }
 
+function hasDraftDifference(
+  line: ConfirmedNeedLine,
+  draft: ConfirmedNeedDraftLine,
+) {
+  return !exactDecimalEqual(
+    draft.exact_quantity,
+    line.proposed_confirmed_quantity,
+  );
+}
+
 function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
   if (!normalizeConfirmedNeedQuantity(draft.exact_quantity))
     return "Số lượng phải là số không âm, tối đa 6 chữ số thập phân.";
@@ -166,6 +174,7 @@ export function ConfirmedNeedReviewWorkbench({
   const [confirmationFilter, setConfirmationFilter] = useState<
     "" | "needs_review" | "carried_forward"
   >("");
+  const [showDifferencesOnly, setShowDifferencesOnly] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [releaseConfirmation, setReleaseConfirmation] = useState(false);
@@ -275,12 +284,27 @@ export function ConfirmedNeedReviewWorkbench({
         line.confirmation_state !== "CARRIED_FORWARD"
       )
         return false;
-      if (!query) return true;
-      return foldSearch(
-        `${line.ingredient.name} ${line.school.name} ${line.delivery_location.name}`,
-      ).includes(query);
+      if (
+        query &&
+        !foldSearch(
+          `${line.ingredient.name} ${line.school.name} ${line.delivery_location.name}`,
+        ).includes(query)
+      )
+        return false;
+      const draft = drafts[line.confirmed_need_line_id];
+      if (showDifferencesOnly && draft && !hasDraftDifference(line, draft))
+        return false;
+      return true;
     });
-  }, [confirmationFilter, dateFilter, schoolScopeIds, search, workbench]);
+  }, [
+    confirmationFilter,
+    dateFilter,
+    drafts,
+    schoolScopeIds,
+    search,
+    showDifferencesOnly,
+    workbench,
+  ]);
 
   const hiddenDirtyCount = changedLines.filter(
     (line) => !schoolInPlanningScope(line.school.id, schoolScopeIds),
@@ -405,7 +429,7 @@ export function ConfirmedNeedReviewWorkbench({
     !refreshRequired &&
     !busy &&
     errors.length === 0;
-  const backendActionReason = dirty
+  const backendActionReason = changedLines.length
     ? workbench.disabled_reasons.save_confirmed_needs
     : workbench.disabled_reasons.release_confirmed_needs;
   const contextSchool = planningSchoolScopeLabel(
@@ -419,33 +443,71 @@ export function ConfirmedNeedReviewWorkbench({
   );
 
   return (
-    <div className="confirmed-need-shell">
-      <header className="confirmed-need-hero">
+    <section className="confirmed-need-shell" aria-label="Bàn xác nhận nhu cầu">
+      <PlanningRailActionPortal>
+        <div className="confirmed-need-rail-action">
+          {changedLines.length > 0 ? (
+            <button
+              type="button"
+              className={canSave ? "primary" : "secondary"}
+              onClick={() => void save()}
+              disabled={!canSave}
+              title={
+                backendCanSave
+                  ? undefined
+                  : (workbench.disabled_reasons.save_confirmed_needs ??
+                    undefined)
+              }
+            >
+              Lưu
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={canRelease ? "primary" : "secondary"}
+              onClick={() => setReleaseConfirmation(true)}
+              disabled={!canRelease}
+              title={
+                backendCanRelease
+                  ? undefined
+                  : (workbench.disabled_reasons.release_confirmed_needs ??
+                    undefined)
+              }
+            >
+              Chuyển sang lên đơn
+            </button>
+          )}
+          {backendActionReason && (
+            <small role="status">{backendActionReason}</small>
+          )}
+        </div>
+      </PlanningRailActionPortal>
+
+      <header className="confirmed-need-heading">
         <div>
-          <p className="confirmed-need-eyebrow">Lập nhu cầu</p>
           <h2>Xác nhận nhu cầu</h2>
           <p className="confirmed-need-period">
             Tuần {viDate(workbench.service_period.period_start)}–
             {viDate(workbench.service_period.period_end)}
           </p>
         </div>
-        <div
-          className="confirmed-need-context-summary"
-          aria-label="Thông tin công việc"
-        >
-          <strong>{contextSchool}</strong>
-          <span>{workbench.line_counts.total} dòng</span>
-          {workbench.line_counts.needs_review > 0 && (
-            <span>{workbench.line_counts.needs_review} cần rà soát</span>
-          )}
-          {workbench.line_counts.carried_forward > 0 && (
-            <span>{workbench.line_counts.carried_forward} giữ nguyên</span>
-          )}
-          <span className={`confirmed-need-save-state ${dirty ? "dirty" : ""}`}>
-            {statusLabel(workbench, dirty)}
-          </span>
-        </div>
       </header>
+
+      <section
+        className="confirmed-need-summary-strip"
+        aria-label="Tóm tắt xác nhận nhu cầu"
+      >
+        <strong>{contextSchool}</strong>
+        <span>{workbench.line_counts.total} dòng</span>
+        <span>{workbench.line_counts.needs_review} cần rà soát</span>
+        <span>{workbench.line_counts.confirmed} đã xác nhận</span>
+        <span>{workbench.line_counts.adjusted} đã điều chỉnh</span>
+        <span
+          className={`confirmed-need-save-state ${changedLines.length ? "dirty" : ""}`}
+        >
+          {statusLabel(workbench, dirty)}
+        </span>
+      </section>
 
       {notice && (
         <p className="confirmed-need-notice" role="status">
@@ -453,10 +515,15 @@ export function ConfirmedNeedReviewWorkbench({
         </p>
       )}
       {refreshRequired && (
-        <p className="confirmed-need-attention" role="alert">
-          Kết quả thao tác chưa rõ. Atlas sẽ không tự gửi lại. Hãy làm mới dữ
-          liệu trước khi tiếp tục.
-        </p>
+        <div className="confirmed-need-attention" role="alert">
+          <span>
+            Kết quả thao tác chưa rõ. Atlas sẽ không tự gửi lại. Hãy làm mới dữ
+            liệu trước khi tiếp tục.
+          </span>
+          <button type="button" onClick={() => void load()} disabled={busy}>
+            Làm mới
+          </button>
+        </div>
       )}
       {issueList("Cần xử lý", workbench.blockers)}
       {issueList("Cảnh báo", workbench.warnings)}
@@ -467,7 +534,10 @@ export function ConfirmedNeedReviewWorkbench({
         </p>
       )}
 
-      <section className="confirmed-need-toolbar" aria-label="Tìm và lọc">
+      <section
+        className="confirmed-need-toolbar"
+        aria-label="Bộ lọc xác nhận nhu cầu"
+      >
         <label className="confirmed-need-search">
           <span>Tìm kiếm</span>
           <input
@@ -506,18 +576,27 @@ export function ConfirmedNeedReviewWorkbench({
             <option value="carried_forward">Giữ nguyên</option>
           </select>
         </label>
+        <label className="confirmed-need-difference-filter">
+          <input
+            type="checkbox"
+            checked={showDifferencesOnly}
+            onChange={(event) => setShowDifferencesOnly(event.target.checked)}
+          />
+          <span>Chỉ hiển thị dòng có chênh lệch</span>
+        </label>
       </section>
 
       <p className="confirmed-need-result-count">
         Hiển thị {visibleLines.length}/{workbench.line_counts.total} dòng
       </p>
-      <div className="confirmed-need-table-scroll">
+      <section
+        className="confirmed-need-table-scroll"
+        aria-label="Bảng xác nhận nhu cầu"
+      >
         <CompactTable
           headers={[
-            "Nguyên liệu",
-            "Tình trạng",
-            "Trường / điểm giao",
-            "Ngày",
+            "Nguyên liệu / nơi nhận",
+            "Đơn vị",
             "Nhu cầu tính",
             "Số lượng xác nhận",
             "Chênh lệch",
@@ -537,9 +616,6 @@ export function ConfirmedNeedReviewWorkbench({
               <tr key={line.confirmed_need_line_id}>
                 <td>
                   <strong>{line.ingredient.name}</strong>
-                  <small>{line.controlled_unit.name}</small>
-                </td>
-                <td>
                   <span
                     className={`confirmed-need-line-state ${line.confirmation_state.toLocaleLowerCase()}`}
                   >
@@ -547,16 +623,11 @@ export function ConfirmedNeedReviewWorkbench({
                       line.confirmation_state,
                     )}
                   </span>
-                </td>
-                <td>
-                  {line.school.name}
+                  <small>{line.school.name}</small>
                   <small>{line.delivery_location.name}</small>
                 </td>
-                <td>{viDate(line.service_date)}</td>
-                <td>
-                  {exactQuantityDisplay(line.theoretical_quantity)}{" "}
-                  {line.controlled_unit.code}
-                </td>
+                <td>{line.controlled_unit.code}</td>
+                <td>{exactQuantityDisplay(line.theoretical_quantity)}</td>
                 <td>
                   <input
                     aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
@@ -641,71 +712,7 @@ export function ConfirmedNeedReviewWorkbench({
             );
           })}
         </CompactTable>
-      </div>
-
-      <footer className="confirmed-need-actions">
-        <div className="confirmed-need-utility-actions">
-          <button
-            type="button"
-            className="quiet"
-            onClick={() => void load()}
-            disabled={busy}
-          >
-            Làm mới
-          </button>
-          <button
-            type="button"
-            className="quiet"
-            disabled
-            title={exportExplanation}
-            aria-describedby="confirmed-need-export-note"
-          >
-            Xuất Excel
-          </button>
-          <button
-            type="button"
-            className="quiet"
-            disabled
-            title={exportExplanation}
-            aria-describedby="confirmed-need-export-note"
-          >
-            Xuất PDF
-          </button>
-          <small id="confirmed-need-export-note">{exportExplanation}</small>
-        </div>
-        <div className="confirmed-need-business-actions">
-          <button
-            type="button"
-            className={canSave ? "primary" : "secondary"}
-            onClick={() => void save()}
-            disabled={!canSave}
-            title={
-              backendCanSave
-                ? undefined
-                : (workbench.disabled_reasons.save_confirmed_needs ?? undefined)
-            }
-          >
-            Lưu
-          </button>
-          <button
-            type="button"
-            className={canRelease ? "primary" : "secondary"}
-            onClick={() => setReleaseConfirmation(true)}
-            disabled={!canRelease}
-            title={
-              backendCanRelease
-                ? undefined
-                : (workbench.disabled_reasons.release_confirmed_needs ??
-                  undefined)
-            }
-          >
-            Chuyển sang lên đơn
-          </button>
-          {backendActionReason && (
-            <small role="status">{backendActionReason}</small>
-          )}
-        </div>
-      </footer>
+      </section>
 
       {releaseConfirmation && (
         <section
@@ -754,6 +761,6 @@ export function ConfirmedNeedReviewWorkbench({
       {pendingSave && refreshRequired && (
         <span hidden>{pendingSave.command_id}</span>
       )}
-    </div>
+    </section>
   );
 }
