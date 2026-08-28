@@ -32,7 +32,9 @@ export function PlanningRailActionProvider({
 export function PlanningRailActionHost({ children }: { children?: ReactNode }) {
   const value = useContext(PlanningRailActionContext);
   if (!value)
-    throw new Error("PlanningRailActionHost requires PlanningRailActionProvider.");
+    throw new Error(
+      "PlanningRailActionHost requires PlanningRailActionProvider.",
+    );
   return (
     <div
       ref={value.setHost}
@@ -44,9 +46,15 @@ export function PlanningRailActionHost({ children }: { children?: ReactNode }) {
   );
 }
 
-export function PlanningRailActionPortal({ children }: { children: ReactNode }) {
+export function PlanningRailActionPortal({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const value = useContext(PlanningRailActionContext);
   if (!value)
-    throw new Error("PlanningRailActionPortal requires PlanningRailActionProvider.");
+    throw new Error(
+      "PlanningRailActionPortal requires PlanningRailActionProvider.",
+    );
   return value.host ? createPortal(children, value.host) : null;
 }

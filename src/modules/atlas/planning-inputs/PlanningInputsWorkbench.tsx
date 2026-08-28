@@ -1551,9 +1551,7 @@ export function PlanningInputsWorkbenchView({
           type="button"
           className="primary"
           onClick={() => void saveMenu()}
-          disabled={
-            saving || refreshRequired || !dirty || !menuRows.length
-          }
+          disabled={saving || refreshRequired || !dirty || !menuRows.length}
         >
           <FloppyDisk size={17} aria-hidden="true" />
           Lưu
@@ -1570,7 +1568,8 @@ export function PlanningInputsWorkbenchView({
         </button>
       )
     ) : tab === "attendance" ? (
-      attendancePreview?.can_save && attendanceCorrectionImpact?.save_allowed ? (
+      attendancePreview?.can_save &&
+      attendanceCorrectionImpact?.save_allowed ? (
         <button
           type="button"
           className="primary"
@@ -1596,747 +1595,763 @@ export function PlanningInputsWorkbenchView({
   return (
     <PlanningRailActionProvider>
       <div className="planning-inputs-workbench">
-      <div className="planning-compact-header">
-        <WorkbenchHeader
-          eyebrow="Lập nhu cầu"
-          title="Lập nhu cầu theo tuần"
-          context="Hoàn tất nguồn đầu vào và xác nhận nhu cầu cho tuần phục vụ đã chọn."
-          headingLevel={1}
-        />
-      </div>
+        <div className="planning-compact-header">
+          <WorkbenchHeader
+            eyebrow="Lập nhu cầu"
+            title="Lập nhu cầu theo tuần"
+            context="Hoàn tất nguồn đầu vào và xác nhận nhu cầu cho tuần phục vụ đã chọn."
+            headingLevel={1}
+          />
+        </div>
 
-      <PlanningOperatingRail
-        weekControl={
-          !DatePickerInput ? (
-            <label>
-              Tuần phục vụ
-              <input
+        <PlanningOperatingRail
+          weekControl={
+            !DatePickerInput ? (
+              <label>
+                Tuần phục vụ
+                <input
+                  aria-label="Tuần phục vụ"
+                  value={viDate(weekStart)}
+                  data-business-value={weekStart}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+                      ? value
+                      : value.split("/").reverse().join("-");
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue))
+                      changeWeek(localMondayOfIso(isoValue));
+                  }}
+                />
+              </label>
+            ) : (
+              <DatePickerInput
+                label="Tuần phục vụ"
                 aria-label="Tuần phục vụ"
-                value={viDate(weekStart)}
-                data-business-value={weekStart}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
-                    ? value
-                    : value.split("/").reverse().join("-");
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue))
-                    changeWeek(localMondayOfIso(isoValue));
+                value={weekStart}
+                valueFormat="DD/MM/YYYY"
+                locale="vi"
+                firstDayOfWeek={1}
+                onChange={(value) => {
+                  if (typeof value === "string" && value)
+                    changeWeek(localMondayOfIso(value));
                 }}
               />
+            )
+          }
+          serviceDateControl={
+            <label>
+              Ngày phục vụ
+              <select
+                aria-label="Ngày phục vụ"
+                value={serviceDateFilter}
+                onChange={(event) =>
+                  handleServiceDateChange(event.target.value)
+                }
+              >
+                {serviceDates.map((date) => (
+                  <option value={date} key={date}>
+                    {viDate(date)}
+                  </option>
+                ))}
+              </select>
             </label>
-          ) : (
-            <DatePickerInput
-              label="Tuần phục vụ"
-              aria-label="Tuần phục vụ"
-              value={weekStart}
-              valueFormat="DD/MM/YYYY"
-              locale="vi"
-              firstDayOfWeek={1}
-              onChange={(value) => {
-                if (typeof value === "string" && value)
-                  changeWeek(localMondayOfIso(value));
-              }}
+          }
+          schoolControl={
+            <PlanningSchoolScopeControl
+              schools={activeSchools}
+              selectedSchoolIds={schoolScopeIds}
+              onChange={setSchoolScopeIds}
             />
-          )
-        }
-        serviceDateControl={
-          <label>
-            Ngày phục vụ
-            <select
-              aria-label="Ngày phục vụ"
-              value={serviceDateFilter}
-              onChange={(event) => handleServiceDateChange(event.target.value)}
+          }
+          workflowItems={workflowItems}
+          activeId={tab}
+          onStepChange={changeTab}
+          secondaryActions={
+            <Button
+              type="button"
+              variant="outline"
+              leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
+              onClick={refreshAuthoritativeData}
+              disabled={saving}
             >
-              {serviceDates.map((date) => (
-                <option value={date} key={date}>
-                  {viDate(date)}
-                </option>
-              ))}
-            </select>
-          </label>
-        }
-        schoolControl={
-          <PlanningSchoolScopeControl
-            schools={activeSchools}
-            selectedSchoolIds={schoolScopeIds}
-            onChange={setSchoolScopeIds}
-          />
-        }
-        workflowItems={workflowItems}
-        activeId={tab}
-        onStepChange={changeTab}
-        secondaryActions={
-          <Button
-            type="button"
-            variant="outline"
-            leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
-            onClick={refreshAuthoritativeData}
-            disabled={saving}
-          >
-            Làm mới
-          </Button>
-        }
-        actions={authSubject ? sourceRailAction : undefined}
-      />
+              Làm mới
+            </Button>
+          }
+          actions={authSubject ? sourceRailAction : undefined}
+        />
 
-      <div className="planning-period-context" aria-label="Khoảng ngày">
+        <div className="planning-period-context" aria-label="Khoảng ngày">
           <div>
             <span>Khoảng ngày</span>
             <b>
               {viDate(data.week_start)} – {viDate(data.week_end)}
             </b>
           </div>
-      </div>
+        </div>
 
-      {!authSubject ? (
-        <OperationalState
-          variant={
-            authState.status === "session_expired"
-              ? "read-only"
-              : "access-denied"
-          }
-          title={authMessage}
-        />
-      ) : (
-        <>
-          {(tab === "menu" || tab === "attendance") && sourceOutcome && (
-            <p
-              className={`operator-notice${
-                sourceOutcome.currentness === "OUTDATED" ? " warning" : ""
-              }`}
-              role={refreshRequired ? "alert" : "status"}
-            >
-              {sourceOutcome.message}
-              {sourceOutcome.consequence && (
-                <span> {sourceOutcome.consequence}</span>
-              )}
-              {refreshRequired && (
-                <span> Cần làm mới dữ liệu trước khi tiếp tục.</span>
-              )}
-            </p>
-          )}
-
-          {(tab === "menu" || tab === "attendance") && load === "loading" && (
-            <OperationalState
-              variant="information"
-              title="Đang tải nguồn kế hoạch…"
-            />
-          )}
-          {(tab === "menu" || tab === "attendance") && load === "error" && (
-            <OperationalState
-              variant="system-error"
-              title={notice ?? "Không thể tải nguồn kế hoạch."}
-              onAuthoritativeRefresh={() => void refresh()}
-            />
-          )}
-
-          {tab === "menu" && load !== "error" && (
-            <Panel
-              title="Thực đơn tuần"
-              description="Chọn món theo trường và ngày phục vụ, xem rõ các thay đổi rồi lưu cho Kế hoạch."
-              status={
-                <Chip tone={statusTone(data.weekly_menu?.weekly_menu_status)}>
-                  {statusLabel(data.weekly_menu?.weekly_menu_status)}
-                </Chip>
-              }
-            >
-              {dirty && (
-                <p className="planning-dirty-notice" role="status">
-                  Có thay đổi chưa lưu trong nguồn đang làm việc.
-                </p>
-              )}
-              {importErrors.map((error) => (
-                <p className="operator-notice danger" key={error}>
-                  {error}
-                </p>
-              ))}
-              <Issues
-                title="Lỗi chặn"
-                issues={
-                  menuPreview?.issues.blockers ??
-                  data.weekly_menu?.issues.blockers ??
-                  []
-                }
-                tone="danger"
-              />
-              <Issues
-                title="Cảnh báo"
-                issues={[
-                  ...(menuPreview?.issues.warnings ??
-                    data.weekly_menu?.issues.warnings ??
-                    []),
-                  ...importWarnings.map((warning) => ({
-                    code: warning,
-                    message: warning,
-                    source_row_reference: null,
-                  })),
-                ]}
-                tone="warning"
-              />
-              <div
-                className="planning-workbench-toolbar"
-                aria-label="Bộ lọc, nguồn và thao tác thực đơn"
+        {!authSubject ? (
+          <OperationalState
+            variant={
+              authState.status === "session_expired"
+                ? "read-only"
+                : "access-denied"
+            }
+            title={authMessage}
+          />
+        ) : (
+          <>
+            {(tab === "menu" || tab === "attendance") && sourceOutcome && (
+              <p
+                className={`operator-notice${
+                  sourceOutcome.currentness === "OUTDATED" ? " warning" : ""
+                }`}
+                role={refreshRequired ? "alert" : "status"}
               >
-                <details className="planning-toolbar-group planning-source-group">
-                  <summary>Nhập thực đơn</summary>
-                  <div className="planning-import-methods">
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => setMenuSourceType("WORKBOOK_IMPORT")}
-                    >
-                      Workbook
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      onClick={() => setMenuSourceType("GOOGLE_SHEET")}
-                    >
-                      Google Sheet
-                    </button>
-                  </div>
-                  {menuSourceType === "WORKBOOK_IMPORT" && (
-                    <label className="file-action">
-                      <UploadSimple size={17} aria-hidden="true" />
-                      Chọn workbook
-                      <input
-                        type="file"
-                        accept=".xlsx"
-                        onChange={(event) =>
-                          void onMenuFile(event.target.files?.[0])
-                        }
-                      />
-                    </label>
-                  )}
-                  {menuSourceType === "GOOGLE_SHEET" && (
-                    <div className="planning-google-import">
-                      <label>
-                        Nguồn Google Sheet
-                        <select
-                          aria-label="Nguồn Google Sheet"
-                          value={selectedGoogleSourceId}
-                          onChange={(event) =>
-                            setSelectedGoogleSourceId(event.target.value)
-                          }
-                        >
-                          {data.google_sheet_sources.length === 0 && (
-                            <option value="">Chưa có nguồn cấu hình</option>
-                          )}
-                          {data.google_sheet_sources.map((source) => (
-                            <option
-                              value={source.weekly_menu_google_source_id}
-                              key={source.weekly_menu_google_source_id}
-                            >
-                              {source.source_name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                {sourceOutcome.message}
+                {sourceOutcome.consequence && (
+                  <span> {sourceOutcome.consequence}</span>
+                )}
+                {refreshRequired && (
+                  <span> Cần làm mới dữ liệu trước khi tiếp tục.</span>
+                )}
+              </p>
+            )}
+
+            {(tab === "menu" || tab === "attendance") && load === "loading" && (
+              <OperationalState
+                variant="information"
+                title="Đang tải nguồn kế hoạch…"
+              />
+            )}
+            {(tab === "menu" || tab === "attendance") && load === "error" && (
+              <OperationalState
+                variant="system-error"
+                title={notice ?? "Không thể tải nguồn kế hoạch."}
+                onAuthoritativeRefresh={() => void refresh()}
+              />
+            )}
+
+            {tab === "menu" && load !== "error" && (
+              <Panel
+                title="Thực đơn tuần"
+                description="Chọn món theo trường và ngày phục vụ, xem rõ các thay đổi rồi lưu cho Kế hoạch."
+                status={
+                  <Chip tone={statusTone(data.weekly_menu?.weekly_menu_status)}>
+                    {statusLabel(data.weekly_menu?.weekly_menu_status)}
+                  </Chip>
+                }
+              >
+                {dirty && (
+                  <p className="planning-dirty-notice" role="status">
+                    Có thay đổi chưa lưu trong nguồn đang làm việc.
+                  </p>
+                )}
+                {importErrors.map((error) => (
+                  <p className="operator-notice danger" key={error}>
+                    {error}
+                  </p>
+                ))}
+                <Issues
+                  title="Lỗi chặn"
+                  issues={
+                    menuPreview?.issues.blockers ??
+                    data.weekly_menu?.issues.blockers ??
+                    []
+                  }
+                  tone="danger"
+                />
+                <Issues
+                  title="Cảnh báo"
+                  issues={[
+                    ...(menuPreview?.issues.warnings ??
+                      data.weekly_menu?.issues.warnings ??
+                      []),
+                    ...importWarnings.map((warning) => ({
+                      code: warning,
+                      message: warning,
+                      source_row_reference: null,
+                    })),
+                  ]}
+                  tone="warning"
+                />
+                <div
+                  className="planning-workbench-toolbar"
+                  aria-label="Bộ lọc, nguồn và thao tác thực đơn"
+                >
+                  <details className="planning-toolbar-group planning-source-group">
+                    <summary>Nhập thực đơn</summary>
+                    <div className="planning-import-methods">
                       <button
                         type="button"
                         className="secondary"
-                        onClick={() => void onGoogleSync()}
-                        disabled={
-                          googleFetch.status === "fetching" ||
-                          !selectedGoogleSourceId
-                        }
+                        onClick={() => setMenuSourceType("WORKBOOK_IMPORT")}
                       >
-                        <CloudArrowDown size={17} aria-hidden="true" />
-                        {googleFetch.status === "fetching"
-                          ? "Đang đồng bộ…"
-                          : "Đồng bộ từ Google Sheet"}
+                        Workbook
                       </button>
-                      {data.google_sheet_sources.length === 0 && (
-                        <p className="operator-notice warning">
-                          Chưa cấu hình nguồn Google Sheet.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </details>
-                <div className="planning-toolbar-group planning-local-actions">
-                  <span className="planning-toolbar-label">Thao tác cục bộ</span>
-                  <button
-                    type="button"
-                    className="quiet"
-                    onClick={discardMenuChanges}
-                    disabled={!dirty}
-                  >
-                    Hủy thay đổi
-                  </button>
-                </div>
-              </div>
-              {unmappedDishes.length > 0 && (
-                <p className="operator-notice danger">
-                  Có {unmappedDishes.length} món ăn đang hoạt động chưa được gán
-                  Loại món; các món này không thể phân vào Thực đơn tuần.
-                </p>
-              )}
-              {activeDishTypes.length === 0 && (
-                <p className="operator-notice danger">
-                  Không có Loại món đang hoạt động để tạo cột Thực đơn tuần.
-                </p>
-              )}
-              {menuKeys.length === 0 ? (
-                <p className="empty">
-                  Không có trường hoạt động phù hợp bộ lọc.
-                </p>
-              ) : (
-                <div
-                  className="planning-grid-scroll planning-dense-table-surface"
-                  role="region"
-                  aria-label="Lưới thực đơn"
-                >
-                  <CompactTable
-                    headers={[
-                      "Trường",
-                      ...activeDishTypes.map(
-                        (dishType) => dishType.dish_type_name,
-                      ),
-                    ]}
-                  >
-                    {menuKeys.map((key) => {
-                      const [schoolId, serviceDate] = key.split("|");
-                      const school = data.schools.find(
-                        (item) => item.school_id === schoolId,
-                      );
-                      return (
-                        <tr key={key}>
-                          <th scope="row">
-                            {school?.school_name ?? schoolId}
-                          </th>
-                          {activeDishTypes.map((dishType) => {
-                            const line = menuRows.find(
-                              (item) =>
-                                item.school_id === schoolId &&
-                                item.service_date === serviceDate &&
-                                item.menu_slot_code === dishType.dish_type_code,
-                            );
-                            const matchingDishes = activeDishes.filter(
-                              (dish) =>
-                                dish.dish_type_id === dishType.dish_type_id,
-                            );
-                            const selectedDish = line
-                              ? activeDishes.find(
-                                  (dish) => dish.dish_id === line.dish_id,
-                                )
-                              : undefined;
-                            const selectedMismatch =
-                              selectedDish &&
-                              selectedDish.dish_type_id !==
-                                dishType.dish_type_id;
-                            return (
-                              <td key={dishType.dish_type_code}>
-                                <select
-                                  aria-label={`${dishType.dish_type_name} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
-                                  value={line?.dish_id ?? ""}
-                                  onChange={(event) =>
-                                    updateMenuCell(
-                                      schoolId,
-                                      serviceDate,
-                                      dishType.dish_type_code,
-                                      event.target.value,
-                                    )
-                                  }
-                                  disabled={saving || refreshRequired}
-                                >
-                                  <option value="">—</option>
-                                  {selectedMismatch && selectedDish && (
-                                    <option
-                                      value={selectedDish.dish_id}
-                                      disabled
-                                    >
-                                      ⚠ {selectedDish.dish_name} — không khớp
-                                      Loại món
-                                    </option>
-                                  )}
-                                  {matchingDishes.map((dish) => (
-                                    <option
-                                      value={dish.dish_id}
-                                      key={dish.dish_id}
-                                    >
-                                      {dish.dish_name}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </CompactTable>
-                </div>
-              )}
-              <details className="planning-support-region">
-                <summary>Chi tiết hỗ trợ</summary>
-                <div className="planning-support-content">
-                  <SourceSummary source={data.weekly_menu} />
-                  {googleFetch.status === "success" && (
-                    <details className="planning-evidence">
-                      <summary>Bằng chứng Google Sheet vừa tải</summary>
-                      <section
-                        className="planning-source-summary planning-source-summary-inline"
-                        aria-label="Nguồn Google Sheet vừa tải"
+                      <button
+                        type="button"
+                        className="secondary"
+                        onClick={() => setMenuSourceType("GOOGLE_SHEET")}
                       >
-                        <span>
-                          Nguồn: <b>{googleFetch.sourceName}</b>
-                        </span>
-                        <span>
-                          Trang tính: <b>{googleFetch.sheetName}</b>
-                        </span>
-                        <span>
-                          Tải lúc:{" "}
-                          <b>
-                            {googleFetch.fetchedAt
-                              ? new Date(googleFetch.fetchedAt).toLocaleString(
-                                  "vi-VN",
-                                )
-                              : "—"}
-                          </b>
-                        </span>
-                        <span>
-                          Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
-                        </span>
-                      </section>
-                    </details>
-                  )}
-                  {browserChecksum && (
-                    <p className="planning-checksum">
-                      SHA-256 trình duyệt: <code>{browserChecksum}</code>
-                    </p>
-                  )}
-                  <History entries={data.weekly_menu?.approval_history ?? []} />
-                  <ChangeTimeline
-                    entries={data.weekly_menu?.change_history ?? []}
-                  />
+                        Google Sheet
+                      </button>
+                    </div>
+                    {menuSourceType === "WORKBOOK_IMPORT" && (
+                      <label className="file-action">
+                        <UploadSimple size={17} aria-hidden="true" />
+                        Chọn workbook
+                        <input
+                          type="file"
+                          accept=".xlsx"
+                          onChange={(event) =>
+                            void onMenuFile(event.target.files?.[0])
+                          }
+                        />
+                      </label>
+                    )}
+                    {menuSourceType === "GOOGLE_SHEET" && (
+                      <div className="planning-google-import">
+                        <label>
+                          Nguồn Google Sheet
+                          <select
+                            aria-label="Nguồn Google Sheet"
+                            value={selectedGoogleSourceId}
+                            onChange={(event) =>
+                              setSelectedGoogleSourceId(event.target.value)
+                            }
+                          >
+                            {data.google_sheet_sources.length === 0 && (
+                              <option value="">Chưa có nguồn cấu hình</option>
+                            )}
+                            {data.google_sheet_sources.map((source) => (
+                              <option
+                                value={source.weekly_menu_google_source_id}
+                                key={source.weekly_menu_google_source_id}
+                              >
+                                {source.source_name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => void onGoogleSync()}
+                          disabled={
+                            googleFetch.status === "fetching" ||
+                            !selectedGoogleSourceId
+                          }
+                        >
+                          <CloudArrowDown size={17} aria-hidden="true" />
+                          {googleFetch.status === "fetching"
+                            ? "Đang đồng bộ…"
+                            : "Đồng bộ từ Google Sheet"}
+                        </button>
+                        {data.google_sheet_sources.length === 0 && (
+                          <p className="operator-notice warning">
+                            Chưa cấu hình nguồn Google Sheet.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </details>
+                  <div className="planning-toolbar-group planning-local-actions">
+                    <span className="planning-toolbar-label">
+                      Thao tác cục bộ
+                    </span>
+                    <button
+                      type="button"
+                      className="quiet"
+                      onClick={discardMenuChanges}
+                      disabled={!dirty}
+                    >
+                      Hủy thay đổi
+                    </button>
+                  </div>
                 </div>
-              </details>
-              <ReviewSummary
-                preview={menuPreview}
-                kind="menu"
-                schools={data.schools}
-                dishes={data.dishes}
-                dishTypes={data.dish_types}
-                previousMenuRows={activeMenuRows(data.weekly_menu)}
-                previousAttendanceRows={[]}
-              />
-              <PlanningCorrectionImpactPanel
-                impact={menuCorrectionImpact}
-                busy={saving}
-                onPrepare={(chain) => void prepareCorrection("menu", chain)}
-              />
-            </Panel>
-          )}
-
-          {tab === "attendance" && load !== "error" && (
-            <Panel
-              title="Sĩ số"
-              description="Sĩ số làm việc đã có sẵn theo thực đơn. Tìm trường, sửa số suất thực tế, xem thay đổi rồi lưu cho Kế hoạch."
-              status={
-                <Chip
-                  tone={
-                    needsAttendanceConfirmation
-                      ? "warning"
-                      : statusTone(data.attendance?.attendance_status)
-                  }
-                >
-                  {needsAttendanceConfirmation
-                    ? "CẦN XEM & LƯU"
-                    : statusLabel(data.attendance?.attendance_status)}
-                </Chip>
-              }
-            >
-              {needsAttendanceConfirmation && (
-                <p className="planning-dirty-notice" role="status">
-                  Có sĩ số mặc định mới theo thực đơn chưa được lưu.
-                </p>
-              )}
-              {dirty && (
-                <p className="planning-dirty-notice" role="status">
-                  Có thay đổi chưa lưu trong nguồn đang làm việc.
-                </p>
-              )}
-              <Issues
-                title="Lỗi chặn"
-                issues={
-                  attendancePreview?.issues.blockers ??
-                  data.attendance?.issues.blockers ??
-                  []
-                }
-                tone="danger"
-              />
-              <Issues
-                title="Cảnh báo"
-                issues={[
-                  ...(attendancePreview?.issues.warnings ??
-                    data.attendance?.issues.warnings ??
-                    []),
-                ]}
-                tone="warning"
-                messageForIssue={(issue) =>
-                  attendanceIssueMessage(
-                    issue,
-                    attendanceRows,
-                    data.default_attendance_preview,
-                    data.schools,
-                  )
-                }
-              />
-              <div
-                className="planning-workbench-toolbar attendance-toolbar"
-                aria-label="Tìm kiếm, rà soát và lưu sĩ số"
-              >
-                <div className="planning-toolbar-group planning-local-actions">
-                  <span className="planning-toolbar-label">Thao tác cục bộ</span>
-                  <button
-                    type="button"
-                    className="quiet"
-                    onClick={discardAttendanceChanges}
-                    disabled={!dirty}
-                  >
-                    Hủy thay đổi
-                  </button>
-                </div>
-              </div>
-              <details className="attendance-paste">
-                <summary>Dán hàng loạt từ bảng tính</summary>
-                <p>Thứ tự cột: trường, ngày, suất học sinh, suất giáo viên.</p>
-                <textarea
-                  aria-label="Dữ liệu sĩ số dán hàng loạt"
-                  value={attendancePaste}
-                  onChange={(event) => setAttendancePaste(event.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const rows = parseAttendancePaste(
-                      attendancePaste,
-                      data.schools,
-                    );
-                    setAttendanceRows(rows);
-                    setAttendancePreview(null);
-                    setAttendanceSourceType("BULK_PASTE");
-                    setAttendanceSourceName("Dán hàng loạt Atlas");
-                    setBrowserChecksum(null);
-                    setDirty(true);
-                  }}
-                >
-                  Chuẩn hóa dữ liệu đã dán
-                </button>
-              </details>
-              {filteredAttendanceRows.length === 0 ? (
-                <p className="empty">
-                  {attendanceRows.length === 0
-                    ? "Chưa có trường/ngày có thực đơn trong tuần này."
-                    : "Không tìm thấy trường phù hợp."}
-                </p>
-              ) : (
-                <div
-                  className="planning-grid-scroll attendance-grid-scroll planning-dense-table-surface"
-                  role="region"
-                  aria-label="Danh sách sĩ số"
-                >
-                  <CompactTable
-                    headers={[
-                      "Trường",
-                      "Học sinh mặc định",
-                      "Học sinh thực tế",
-                      "Giáo viên",
-                      "Tổng suất",
-                    ]}
-                  >
-                    {filteredAttendanceRows.map((line) => {
-                      const school = data.schools.find(
-                        (item) => item.school_id === line.school_id,
-                      );
-                      const defaultLine = data.default_attendance_preview.find(
-                        (candidate) =>
-                          candidate.school_id === line.school_id &&
-                          candidate.service_date === line.service_date,
-                      );
-                      const editable = !saving && !refreshRequired;
-                      return (
-                        <tr key={`${line.school_id}:${line.service_date}`}>
-                          <th scope="row">
-                            {school?.school_name ?? line.school_id}
-                          </th>
-                          <td>{defaultLine?.student_portions ?? "—"}</td>
-                          <td>
-                            <input
-                              aria-label={`Suất học sinh · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
-                              type="number"
-                              min="0"
-                              value={
-                                Number.isNaN(line.student_portions)
-                                  ? ""
-                                  : line.student_portions
-                              }
-                              disabled={!editable}
-                              onChange={(event) =>
-                                updateAttendance(
-                                  line,
-                                  "student_portions",
-                                  event.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                          <td>
-                            <input
-                              aria-label={`Suất giáo viên · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
-                              type="number"
-                              min="0"
-                              value={
-                                Number.isNaN(line.teacher_portions)
-                                  ? ""
-                                  : line.teacher_portions
-                              }
-                              disabled={!editable}
-                              onChange={(event) =>
-                                updateAttendance(
-                                  line,
-                                  "teacher_portions",
-                                  event.target.value,
-                                )
-                              }
-                            />
-                          </td>
-                          <td>
-                            {Number.isFinite(line.student_portions) &&
-                            Number.isFinite(line.teacher_portions)
-                              ? line.student_portions + line.teacher_portions
-                              : "Cần nhập"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </CompactTable>
-                </div>
-              )}
-              {attendanceRows.length > 0 && (
-                <p className="planning-attendance-totals">
-                  Tổng: <b>{attendanceTotals.students}</b> suất học sinh ·{" "}
-                  <b>{attendanceTotals.teachers}</b> suất giáo viên ·{" "}
-                  <b>{attendanceTotals.students + attendanceTotals.teachers}</b>{" "}
-                  suất
-                </p>
-              )}
-              <details className="planning-support-region">
-                <summary>Chi tiết hỗ trợ</summary>
-                <div className="planning-support-content">
-                  <SourceSummary source={data.attendance} />
-                  {browserChecksum && (
-                    <p className="planning-checksum">
-                      SHA-256 trình duyệt: <code>{browserChecksum}</code>
-                    </p>
-                  )}
-                  <History entries={data.attendance?.approval_history ?? []} />
-                  <ChangeTimeline
-                    entries={data.attendance?.change_history ?? []}
-                  />
-                </div>
-              </details>
-              <ReviewSummary
-                preview={attendancePreview}
-                kind="attendance"
-                schools={data.schools}
-                dishes={data.dishes}
-                dishTypes={data.dish_types}
-                previousMenuRows={[]}
-                previousAttendanceRows={activeAttendanceRows(data.attendance)}
-              />
-              <PlanningCorrectionImpactPanel
-                impact={attendanceCorrectionImpact}
-                busy={saving}
-                onPrepare={(chain) =>
-                  void prepareCorrection("attendance", chain)
-                }
-              />
-            </Panel>
-          )}
-
-          {tab === "pantry" && (
-            <PantryWorkbench
-              authState={authState}
-              api={pantryApi}
-              weekStart={weekStart}
-              schoolScopeIds={schoolScopeIds}
-              mode={mode}
-              onDirtyChange={setPantryDirty}
-            />
-          )}
-
-          {tab === "confirmed-needs" && (
-            <div className="planning-confirmed-layout">
-              <aside
-                className="planning-confirmed-daily"
-                aria-label="Tổng quan nhu cầu theo ngày"
-              >
-                <NeedGenerationWorkbench
-                  authState={authState}
-                  api={needGenerationApi}
-                  preflightApi={readinessApi}
-                  selectedWeekStart={weekStart}
-                  selectedWeekEnd={selectedWeekEnd}
-                  mode={mode}
-                  embeddedInConfirmedNeed
-                  onConfirmedNeedSelected={(
-                    nextBatchId,
-                    serviceDate,
-                    authoritativePreflight,
-                  ) => {
-                    setDailyConfirmedNeedPreflights((current) => ({
-                      ...current,
-                      [serviceDate]: authoritativePreflight,
-                    }));
-                    selectConfirmedNeedDate({
-                      serviceDate,
-                      batchId: nextBatchId,
-                    });
-                    setConfirmedNeedProjectionResolution("ready");
-                  }}
-                />
-              </aside>
-              <section
-                className="planning-confirmed-review"
-                aria-label="Chi tiết xác nhận nhu cầu"
-              >
-                {visibleConfirmedNeed && (
-                  <p role="status">
-                    Đang xem ngày{" "}
-                    <b>{viDate(visibleConfirmedNeed.serviceDate)}</b>.
+                {unmappedDishes.length > 0 && (
+                  <p className="operator-notice danger">
+                    Có {unmappedDishes.length} món ăn đang hoạt động chưa được
+                    gán Loại món; các món này không thể phân vào Thực đơn tuần.
                   </p>
                 )}
-                <ConfirmedNeedReviewWorkbench
-                  key={visibleConfirmedNeed?.batchId ?? "unselected"}
-                  authState={authState}
-                  api={confirmedNeedApi}
-                  initialBatchId={visibleConfirmedNeed?.batchId ?? null}
-                  currentNeedResolution={confirmedNeedResolution}
-                  mode={mode}
-                  schoolScopeIds={schoolScopeIds}
-                  onDirtyChange={setConfirmedNeedDirty}
+                {activeDishTypes.length === 0 && (
+                  <p className="operator-notice danger">
+                    Không có Loại món đang hoạt động để tạo cột Thực đơn tuần.
+                  </p>
+                )}
+                {menuKeys.length === 0 ? (
+                  <p className="empty">
+                    Không có trường hoạt động phù hợp bộ lọc.
+                  </p>
+                ) : (
+                  <div
+                    className="planning-grid-scroll planning-dense-table-surface"
+                    role="region"
+                    aria-label="Lưới thực đơn"
+                  >
+                    <CompactTable
+                      headers={[
+                        "Trường",
+                        ...activeDishTypes.map(
+                          (dishType) => dishType.dish_type_name,
+                        ),
+                      ]}
+                    >
+                      {menuKeys.map((key) => {
+                        const [schoolId, serviceDate] = key.split("|");
+                        const school = data.schools.find(
+                          (item) => item.school_id === schoolId,
+                        );
+                        return (
+                          <tr key={key}>
+                            <th scope="row">
+                              {school?.school_name ?? schoolId}
+                            </th>
+                            {activeDishTypes.map((dishType) => {
+                              const line = menuRows.find(
+                                (item) =>
+                                  item.school_id === schoolId &&
+                                  item.service_date === serviceDate &&
+                                  item.menu_slot_code ===
+                                    dishType.dish_type_code,
+                              );
+                              const matchingDishes = activeDishes.filter(
+                                (dish) =>
+                                  dish.dish_type_id === dishType.dish_type_id,
+                              );
+                              const selectedDish = line
+                                ? activeDishes.find(
+                                    (dish) => dish.dish_id === line.dish_id,
+                                  )
+                                : undefined;
+                              const selectedMismatch =
+                                selectedDish &&
+                                selectedDish.dish_type_id !==
+                                  dishType.dish_type_id;
+                              return (
+                                <td key={dishType.dish_type_code}>
+                                  <select
+                                    aria-label={`${dishType.dish_type_name} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
+                                    value={line?.dish_id ?? ""}
+                                    onChange={(event) =>
+                                      updateMenuCell(
+                                        schoolId,
+                                        serviceDate,
+                                        dishType.dish_type_code,
+                                        event.target.value,
+                                      )
+                                    }
+                                    disabled={saving || refreshRequired}
+                                  >
+                                    <option value="">—</option>
+                                    {selectedMismatch && selectedDish && (
+                                      <option
+                                        value={selectedDish.dish_id}
+                                        disabled
+                                      >
+                                        ⚠ {selectedDish.dish_name} — không khớp
+                                        Loại món
+                                      </option>
+                                    )}
+                                    {matchingDishes.map((dish) => (
+                                      <option
+                                        value={dish.dish_id}
+                                        key={dish.dish_id}
+                                      >
+                                        {dish.dish_name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </CompactTable>
+                  </div>
+                )}
+                <details className="planning-support-region">
+                  <summary>Chi tiết hỗ trợ</summary>
+                  <div className="planning-support-content">
+                    <SourceSummary source={data.weekly_menu} />
+                    {googleFetch.status === "success" && (
+                      <details className="planning-evidence">
+                        <summary>Bằng chứng Google Sheet vừa tải</summary>
+                        <section
+                          className="planning-source-summary planning-source-summary-inline"
+                          aria-label="Nguồn Google Sheet vừa tải"
+                        >
+                          <span>
+                            Nguồn: <b>{googleFetch.sourceName}</b>
+                          </span>
+                          <span>
+                            Trang tính: <b>{googleFetch.sheetName}</b>
+                          </span>
+                          <span>
+                            Tải lúc:{" "}
+                            <b>
+                              {googleFetch.fetchedAt
+                                ? new Date(
+                                    googleFetch.fetchedAt,
+                                  ).toLocaleString("vi-VN")
+                                : "—"}
+                            </b>
+                          </span>
+                          <span>
+                            Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
+                          </span>
+                        </section>
+                      </details>
+                    )}
+                    {browserChecksum && (
+                      <p className="planning-checksum">
+                        SHA-256 trình duyệt: <code>{browserChecksum}</code>
+                      </p>
+                    )}
+                    <History
+                      entries={data.weekly_menu?.approval_history ?? []}
+                    />
+                    <ChangeTimeline
+                      entries={data.weekly_menu?.change_history ?? []}
+                    />
+                  </div>
+                </details>
+                <ReviewSummary
+                  preview={menuPreview}
+                  kind="menu"
+                  schools={data.schools}
+                  dishes={data.dishes}
+                  dishTypes={data.dish_types}
+                  previousMenuRows={activeMenuRows(data.weekly_menu)}
+                  previousAttendanceRows={[]}
                 />
-              </section>
-            </div>
-          )}
+                <PlanningCorrectionImpactPanel
+                  impact={menuCorrectionImpact}
+                  busy={saving}
+                  onPrepare={(chain) => void prepareCorrection("menu", chain)}
+                />
+              </Panel>
+            )}
 
-          {notice && load !== "error" && (
-            <p
-              className="operator-notice"
-              role={notice.includes("không") ? "alert" : "status"}
-            >
-              {notice}
-            </p>
-          )}
-          {mode === "review" && (
-            <p className="planning-review-footnote">
-              Dữ liệu trên trang này chỉ thuộc chế độ xem thử.
-            </p>
-          )}
-        </>
-      )}
+            {tab === "attendance" && load !== "error" && (
+              <Panel
+                title="Sĩ số"
+                description="Sĩ số làm việc đã có sẵn theo thực đơn. Tìm trường, sửa số suất thực tế, xem thay đổi rồi lưu cho Kế hoạch."
+                status={
+                  <Chip
+                    tone={
+                      needsAttendanceConfirmation
+                        ? "warning"
+                        : statusTone(data.attendance?.attendance_status)
+                    }
+                  >
+                    {needsAttendanceConfirmation
+                      ? "CẦN XEM & LƯU"
+                      : statusLabel(data.attendance?.attendance_status)}
+                  </Chip>
+                }
+              >
+                {needsAttendanceConfirmation && (
+                  <p className="planning-dirty-notice" role="status">
+                    Có sĩ số mặc định mới theo thực đơn chưa được lưu.
+                  </p>
+                )}
+                {dirty && (
+                  <p className="planning-dirty-notice" role="status">
+                    Có thay đổi chưa lưu trong nguồn đang làm việc.
+                  </p>
+                )}
+                <Issues
+                  title="Lỗi chặn"
+                  issues={
+                    attendancePreview?.issues.blockers ??
+                    data.attendance?.issues.blockers ??
+                    []
+                  }
+                  tone="danger"
+                />
+                <Issues
+                  title="Cảnh báo"
+                  issues={[
+                    ...(attendancePreview?.issues.warnings ??
+                      data.attendance?.issues.warnings ??
+                      []),
+                  ]}
+                  tone="warning"
+                  messageForIssue={(issue) =>
+                    attendanceIssueMessage(
+                      issue,
+                      attendanceRows,
+                      data.default_attendance_preview,
+                      data.schools,
+                    )
+                  }
+                />
+                <div
+                  className="planning-workbench-toolbar attendance-toolbar"
+                  aria-label="Tìm kiếm, rà soát và lưu sĩ số"
+                >
+                  <div className="planning-toolbar-group planning-local-actions">
+                    <span className="planning-toolbar-label">
+                      Thao tác cục bộ
+                    </span>
+                    <button
+                      type="button"
+                      className="quiet"
+                      onClick={discardAttendanceChanges}
+                      disabled={!dirty}
+                    >
+                      Hủy thay đổi
+                    </button>
+                  </div>
+                </div>
+                <details className="attendance-paste">
+                  <summary>Dán hàng loạt từ bảng tính</summary>
+                  <p>
+                    Thứ tự cột: trường, ngày, suất học sinh, suất giáo viên.
+                  </p>
+                  <textarea
+                    aria-label="Dữ liệu sĩ số dán hàng loạt"
+                    value={attendancePaste}
+                    onChange={(event) => setAttendancePaste(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const rows = parseAttendancePaste(
+                        attendancePaste,
+                        data.schools,
+                      );
+                      setAttendanceRows(rows);
+                      setAttendancePreview(null);
+                      setAttendanceSourceType("BULK_PASTE");
+                      setAttendanceSourceName("Dán hàng loạt Atlas");
+                      setBrowserChecksum(null);
+                      setDirty(true);
+                    }}
+                  >
+                    Chuẩn hóa dữ liệu đã dán
+                  </button>
+                </details>
+                {filteredAttendanceRows.length === 0 ? (
+                  <p className="empty">
+                    {attendanceRows.length === 0
+                      ? "Chưa có trường/ngày có thực đơn trong tuần này."
+                      : "Không tìm thấy trường phù hợp."}
+                  </p>
+                ) : (
+                  <div
+                    className="planning-grid-scroll attendance-grid-scroll planning-dense-table-surface"
+                    role="region"
+                    aria-label="Danh sách sĩ số"
+                  >
+                    <CompactTable
+                      headers={[
+                        "Trường",
+                        "Học sinh mặc định",
+                        "Học sinh thực tế",
+                        "Giáo viên",
+                        "Tổng suất",
+                      ]}
+                    >
+                      {filteredAttendanceRows.map((line) => {
+                        const school = data.schools.find(
+                          (item) => item.school_id === line.school_id,
+                        );
+                        const defaultLine =
+                          data.default_attendance_preview.find(
+                            (candidate) =>
+                              candidate.school_id === line.school_id &&
+                              candidate.service_date === line.service_date,
+                          );
+                        const editable = !saving && !refreshRequired;
+                        return (
+                          <tr key={`${line.school_id}:${line.service_date}`}>
+                            <th scope="row">
+                              {school?.school_name ?? line.school_id}
+                            </th>
+                            <td>{defaultLine?.student_portions ?? "—"}</td>
+                            <td>
+                              <input
+                                aria-label={`Suất học sinh · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
+                                type="number"
+                                min="0"
+                                value={
+                                  Number.isNaN(line.student_portions)
+                                    ? ""
+                                    : line.student_portions
+                                }
+                                disabled={!editable}
+                                onChange={(event) =>
+                                  updateAttendance(
+                                    line,
+                                    "student_portions",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </td>
+                            <td>
+                              <input
+                                aria-label={`Suất giáo viên · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
+                                type="number"
+                                min="0"
+                                value={
+                                  Number.isNaN(line.teacher_portions)
+                                    ? ""
+                                    : line.teacher_portions
+                                }
+                                disabled={!editable}
+                                onChange={(event) =>
+                                  updateAttendance(
+                                    line,
+                                    "teacher_portions",
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                            </td>
+                            <td>
+                              {Number.isFinite(line.student_portions) &&
+                              Number.isFinite(line.teacher_portions)
+                                ? line.student_portions + line.teacher_portions
+                                : "Cần nhập"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </CompactTable>
+                  </div>
+                )}
+                {attendanceRows.length > 0 && (
+                  <p className="planning-attendance-totals">
+                    Tổng: <b>{attendanceTotals.students}</b> suất học sinh ·{" "}
+                    <b>{attendanceTotals.teachers}</b> suất giáo viên ·{" "}
+                    <b>
+                      {attendanceTotals.students + attendanceTotals.teachers}
+                    </b>{" "}
+                    suất
+                  </p>
+                )}
+                <details className="planning-support-region">
+                  <summary>Chi tiết hỗ trợ</summary>
+                  <div className="planning-support-content">
+                    <SourceSummary source={data.attendance} />
+                    {browserChecksum && (
+                      <p className="planning-checksum">
+                        SHA-256 trình duyệt: <code>{browserChecksum}</code>
+                      </p>
+                    )}
+                    <History
+                      entries={data.attendance?.approval_history ?? []}
+                    />
+                    <ChangeTimeline
+                      entries={data.attendance?.change_history ?? []}
+                    />
+                  </div>
+                </details>
+                <ReviewSummary
+                  preview={attendancePreview}
+                  kind="attendance"
+                  schools={data.schools}
+                  dishes={data.dishes}
+                  dishTypes={data.dish_types}
+                  previousMenuRows={[]}
+                  previousAttendanceRows={activeAttendanceRows(data.attendance)}
+                />
+                <PlanningCorrectionImpactPanel
+                  impact={attendanceCorrectionImpact}
+                  busy={saving}
+                  onPrepare={(chain) =>
+                    void prepareCorrection("attendance", chain)
+                  }
+                />
+              </Panel>
+            )}
+
+            {tab === "pantry" && (
+              <PantryWorkbench
+                authState={authState}
+                api={pantryApi}
+                weekStart={weekStart}
+                schoolScopeIds={schoolScopeIds}
+                mode={mode}
+                onDirtyChange={setPantryDirty}
+              />
+            )}
+
+            {tab === "confirmed-needs" && (
+              <div className="planning-confirmed-layout">
+                <aside
+                  className="planning-confirmed-daily"
+                  aria-label="Tổng quan nhu cầu theo ngày"
+                >
+                  <NeedGenerationWorkbench
+                    authState={authState}
+                    api={needGenerationApi}
+                    preflightApi={readinessApi}
+                    selectedWeekStart={weekStart}
+                    selectedWeekEnd={selectedWeekEnd}
+                    mode={mode}
+                    embeddedInConfirmedNeed
+                    onConfirmedNeedSelected={(
+                      nextBatchId,
+                      serviceDate,
+                      authoritativePreflight,
+                    ) => {
+                      setDailyConfirmedNeedPreflights((current) => ({
+                        ...current,
+                        [serviceDate]: authoritativePreflight,
+                      }));
+                      selectConfirmedNeedDate({
+                        serviceDate,
+                        batchId: nextBatchId,
+                      });
+                      setConfirmedNeedProjectionResolution("ready");
+                    }}
+                  />
+                </aside>
+                <section
+                  className="planning-confirmed-review"
+                  aria-label="Chi tiết xác nhận nhu cầu"
+                >
+                  {visibleConfirmedNeed && (
+                    <p role="status">
+                      Đang xem ngày{" "}
+                      <b>{viDate(visibleConfirmedNeed.serviceDate)}</b>.
+                    </p>
+                  )}
+                  <ConfirmedNeedReviewWorkbench
+                    key={visibleConfirmedNeed?.batchId ?? "unselected"}
+                    authState={authState}
+                    api={confirmedNeedApi}
+                    initialBatchId={visibleConfirmedNeed?.batchId ?? null}
+                    currentNeedResolution={confirmedNeedResolution}
+                    mode={mode}
+                    schoolScopeIds={schoolScopeIds}
+                    onDirtyChange={setConfirmedNeedDirty}
+                  />
+                </section>
+              </div>
+            )}
+
+            {notice && load !== "error" && (
+              <p
+                className="operator-notice"
+                role={notice.includes("không") ? "alert" : "status"}
+              >
+                {notice}
+              </p>
+            )}
+            {mode === "review" && (
+              <p className="planning-review-footnote">
+                Dữ liệu trên trang này chỉ thuộc chế độ xem thử.
+              </p>
+            )}
+          </>
+        )}
       </div>
     </PlanningRailActionProvider>
   );

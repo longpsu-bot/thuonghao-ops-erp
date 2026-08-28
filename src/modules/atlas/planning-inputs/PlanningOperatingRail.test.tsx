@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { atlasTheme } from "../../../theme";
@@ -12,18 +18,37 @@ import type { PlanningWorkflowItem } from "./PlanningWorkflowBar";
 
 afterEach(cleanup);
 
-const items: PlanningWorkflowItem<"menu" | "attendance" | "pantry" | "need">[] = [
-  { id: "menu", step: 1, label: "Thực đơn", status: "Cần lưu", tone: "warning" },
-  { id: "attendance", step: 2, label: "Sĩ số", status: "Sẵn sàng", tone: "ok" },
-  { id: "pantry", step: 3, label: "Bổ sung", status: "2 mục", tone: "neutral" },
-  {
-    id: "need",
-    step: 4,
-    label: "Xác nhận nhu cầu",
-    status: "Chờ xác nhận",
-    tone: "warning",
-  },
-];
+const items: PlanningWorkflowItem<"menu" | "attendance" | "pantry" | "need">[] =
+  [
+    {
+      id: "menu",
+      step: 1,
+      label: "Thực đơn",
+      status: "Cần lưu",
+      tone: "warning",
+    },
+    {
+      id: "attendance",
+      step: 2,
+      label: "Sĩ số",
+      status: "Sẵn sàng",
+      tone: "ok",
+    },
+    {
+      id: "pantry",
+      step: 3,
+      label: "Bổ sung",
+      status: "2 mục",
+      tone: "neutral",
+    },
+    {
+      id: "need",
+      step: 4,
+      label: "Xác nhận nhu cầu",
+      status: "Chờ xác nhận",
+      tone: "warning",
+    },
+  ];
 
 function renderRail(children?: React.ReactNode) {
   const onStepChange = vi.fn();
@@ -54,13 +79,21 @@ describe("PlanningOperatingRail", () => {
       name: "Thanh điều hành Lập nhu cầu",
     });
 
-    expect(within(rail).getByRole("button", { name: "Tuần 25/08" })).toBeVisible();
-    expect(within(rail).getByRole("button", { name: "Ngày 25/08" })).toBeVisible();
-    expect(within(rail).getByRole("button", { name: "Tất cả trường" })).toBeVisible();
+    expect(
+      within(rail).getByRole("button", { name: "Tuần 25/08" }),
+    ).toBeVisible();
+    expect(
+      within(rail).getByRole("button", { name: "Ngày 25/08" }),
+    ).toBeVisible();
+    expect(
+      within(rail).getByRole("button", { name: "Tất cả trường" }),
+    ).toBeVisible();
     expect(within(rail).getAllByRole("tablist")).toHaveLength(1);
     expect(screen.getAllByRole("tablist")).toHaveLength(1);
     const actionHost = within(rail).getByLabelText("Hành động bước hiện tại");
-    expect(within(actionHost).getByRole("button", { name: "Xem thay đổi" })).toBeVisible();
+    expect(
+      within(actionHost).getByRole("button", { name: "Xem thay đổi" }),
+    ).toBeVisible();
     expect(screen.getAllByLabelText("Hành động bước hiện tại")).toHaveLength(1);
 
     fireEvent.click(within(rail).getByRole("tab", { name: "Bổ sung" }));

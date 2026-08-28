@@ -1,6 +1,6 @@
 # Planning Workbench Visual Refinement V2
 
-**Status:** Approved visual direction; pending user spec sign-off  
+**Status:** Approved for implementation
 **Date:** 2026-08-28  
 **Implementation baseline:** `82260b0608e280e6d49696a9a620add14f17b2bd` on PR #236  
 **Governing architecture:** `OPS_SYSTEM_MAP v1.0` / `ARCH-002`
@@ -77,6 +77,7 @@ No gradients, decorative KPI cards, oversized illustrations, new typography syst
 The normal Planning page title appears once at the top and scrolls away.
 
 Content:
+
 - `Lập nhu cầu theo tuần`;
 - one concise explanatory sentence;
 - existing global user/application controls from the shell.
@@ -94,17 +95,20 @@ Target desktop height: **52–56 px**.
 It contains three zones:
 
 **Left — operating context**
+
 - week selector/range;
 - global service date;
 - parent multi-school display scope.
 
 **Center — workflow**
+
 - exactly four steps: `Thực đơn`, `Sĩ số`, `Bổ sung`, `Xác nhận nhu cầu`;
 - step number + label + one short status/count;
 - active step uses current Atlas blue;
 - text remains sufficient without color.
 
 **Right — stable action slot**
+
 - one primary action in a consistent location;
 - at most two compact secondary controls when existing behavior requires them;
 - no invented commands.
@@ -159,6 +163,7 @@ Review output should be compact and adjacent to the table, not a second large da
 Attendance is a compact editable roster.
 
 Preferred columns:
+
 - Trường;
 - Học sinh mặc định;
 - Học sinh thực tế;
@@ -175,6 +180,7 @@ A single slim summary strip is acceptable if useful, but no KPI cards. Existing 
 Pantry is a week-level exception/adjustment table.
 
 Preferred columns:
+
 - Trường;
 - Ngày phục vụ;
 - Nguyên liệu;
@@ -203,10 +209,12 @@ Confirmed Need is the most table-first surface in Planning.
 Use a narrow left daily navigator and a large right selected-date workbench.
 
 Left pane width target:
+
 - **300–330 px** around a 1366 px viewport;
 - **320–360 px** at larger desktop sizes.
 
 The left pane contains only:
+
 - `Tổng quan theo ngày`;
 - optional compact search if useful;
 - date rows with short state and small navigation affordance.
@@ -242,6 +250,7 @@ Do not reintroduce an internal school selector. Do not infer ingredient grouping
 The table is the visual center of the screen.
 
 Preferred order using current governed fields:
+
 - Nguyên liệu;
 - Đơn vị;
 - current calculated/proposed quantity fields as contract allows;
@@ -263,16 +272,19 @@ Hidden dirty edits remain intact. The existing warning about unsaved changes out
 Primary targets: **1366×768** and **1920×1080**.
 
 At 1366×768:
+
 - no page-level horizontal overflow;
 - sticky rail remains compact;
 - Confirmed Need should remain split side-by-side if practical;
 - tables use internal overflow only where necessary.
 
 At 1920×1080:
+
 - do not enlarge controls proportionally;
 - use the extra space for more rows and useful column width.
 
 At approximately **900 px and below**:
+
 - the sticky rail may horizontally scroll as one region or use a controlled two-line form;
 - Confirmed Need daily navigator stacks above detail;
 - tables may scroll internally;
@@ -283,6 +295,7 @@ At approximately **900 px and below**:
 Do not turn `PlanningInputsWorkbench.tsx` into a larger styling monolith.
 
 Expected responsibilities:
+
 - `PlanningInputsWorkbench`: page/week/date/step/school state and dirty coordination;
 - `PlanningOperatingRail` (new or extracted): sticky context + workflow + action slot;
 - `PlanningWorkflowBar`: workflow presentation inside the rail;
@@ -313,6 +326,7 @@ Targeted extraction is encouraged only when it makes these boundaries clearer. A
 The redesign may improve placement/hierarchy of backend-safe messages but must not silently rewrite backend semantics.
 
 Two pre-existing hosted content issues remain out of this visual scope unless separately authorized:
+
 - one Confirmed Need blocker in English;
 - one lifecycle message with mojibake.
 
@@ -321,6 +335,7 @@ Two pre-existing hosted content issues remain out of this visual scope unless se
 Tests should protect behavior/structure rather than pixels.
 
 At minimum prove:
+
 1. exactly one workflow `tablist`;
 2. separate scrolling page-title region and sticky operating rail;
 3. rail contains week, date, school scope, workflow, and primary-action slot;
@@ -339,6 +354,7 @@ At minimum prove:
 Before merge, review exact-head Cloudflare preview at **1366×768** and **1920×1080**.
 
 Accept only if:
+
 - it is unmistakably the same Atlas visual system;
 - title area is calm and non-duplicative;
 - one slim sticky operating rail remains visible;

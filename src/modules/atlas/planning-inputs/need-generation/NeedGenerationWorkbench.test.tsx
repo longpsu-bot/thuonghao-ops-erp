@@ -88,9 +88,13 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(selectedDay).toHaveAttribute("aria-current", "date");
     expect(selectedDay).toHaveClass("selected");
     expect(within(navigator).getAllByRole("button")).toHaveLength(7);
-    expect(screen.queryByRole("heading", { name: "Tình trạng nhu cầu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Tình trạng nhu cầu" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Tuần đang xem:/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Làm mới" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Làm mới" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Chi tiết hỗ trợ")).not.toBeInTheDocument();
   });
 

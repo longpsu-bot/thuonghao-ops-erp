@@ -29,11 +29,13 @@
 ## File Map
 
 **Create**
+
 - `src/modules/atlas/planning-inputs/PlanningOperatingRail.tsx`
 - `src/modules/atlas/planning-inputs/PlanningOperatingRail.test.tsx`
 - `src/modules/atlas/planning-inputs/PlanningRailActionPortal.tsx`
 
 **Modify**
+
 - `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx`
 - `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.test.tsx`
 - `src/modules/atlas/planning-inputs/PlanningWorkflowBar.tsx` only if needed for compact rail semantics/classes; do not change workflow meaning.
@@ -55,6 +57,7 @@
 ## Task 1 — Build the sticky operating rail and action portal
 
 **Files:**
+
 - Create: `src/modules/atlas/planning-inputs/PlanningRailActionPortal.tsx`
 - Create: `src/modules/atlas/planning-inputs/PlanningOperatingRail.tsx`
 - Create: `src/modules/atlas/planning-inputs/PlanningOperatingRail.test.tsx`
@@ -106,7 +109,11 @@ type PlanningRailActionContextValue = {
 const PlanningRailActionContext =
   createContext<PlanningRailActionContextValue | null>(null);
 
-export function PlanningRailActionProvider({ children }: { children: ReactNode }) {
+export function PlanningRailActionProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const value = useMemo(() => ({ host, setHost }), [host]);
   return (
@@ -119,7 +126,9 @@ export function PlanningRailActionProvider({ children }: { children: ReactNode }
 export function PlanningRailActionHost({ children }: { children?: ReactNode }) {
   const value = useContext(PlanningRailActionContext);
   if (!value)
-    throw new Error("PlanningRailActionHost requires PlanningRailActionProvider.");
+    throw new Error(
+      "PlanningRailActionHost requires PlanningRailActionProvider.",
+    );
   return (
     <div
       ref={value.setHost}
@@ -131,10 +140,16 @@ export function PlanningRailActionHost({ children }: { children?: ReactNode }) {
   );
 }
 
-export function PlanningRailActionPortal({ children }: { children: ReactNode }) {
+export function PlanningRailActionPortal({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const value = useContext(PlanningRailActionContext);
   if (!value)
-    throw new Error("PlanningRailActionPortal requires PlanningRailActionProvider.");
+    throw new Error(
+      "PlanningRailActionPortal requires PlanningRailActionProvider.",
+    );
   return value.host ? createPortal(children, value.host) : null;
 }
 ```
@@ -173,6 +188,7 @@ type PlanningOperatingRailProps<T extends string> = {
 - [ ] For Menu/Attendance, pass the existing command handler as the rail's direct `actions` prop. Do not duplicate it in local toolbars.
 
 Menu/Attendance rail action state:
+
 - before a valid review exists: `Xem thay đổi`;
 - after existing preview + correction-impact rules allow save: `Lưu`;
 - any current backend/stale/busy disabling reason remains respected.
@@ -222,6 +238,7 @@ git commit -m "feat: add Planning sticky operating rail"
 ## Task 2 — Make Menu and Attendance true dense work surfaces
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.test.tsx`
 - Modify: `src/styles.css`
@@ -303,6 +320,7 @@ git commit -m "refactor: densify Planning Menu and Attendance"
 ## Task 3 — Densify Pantry and project its owned action into the rail
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/pantry/PantryWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/pantry/PantryWorkbench.test.tsx`
 - Modify: `src/styles.css`
@@ -368,6 +386,7 @@ git commit -m "refactor: densify Pantry workbench actions"
 ## Task 4 — Turn embedded Need Generation into the compact daily navigator
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/need-generation/NeedGenerationWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/need-generation/NeedGenerationWorkbench.test.tsx`
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/PlanningInputsConfirmedNeedTab.test.tsx`
@@ -429,6 +448,7 @@ git commit -m "refactor: compact Confirmed Need daily navigator"
 ## Task 5 — Make Confirmed Need summary-light and table-first
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench.test.tsx`
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/PlanningInputsConfirmedNeedTab.test.tsx`
@@ -535,6 +555,7 @@ git commit -m "refactor: make Confirmed Need table-first"
 ## Task 6 — Consolidate Planning CSS, certify behavior, and prepare exact-head V2 review
 
 **Files:**
+
 - Modify: `src/styles.css`
 - Modify: `docs/superpowers/specs/2026-08-28-planning-workbench-visual-refinement-v2-design.md`
 - Modify any V2 test file above only for genuine integration fixes discovered by final focused certification.
@@ -602,6 +623,7 @@ git diff --name-only e683d775c8756da8af089164eb3793b0792dd6ee...HEAD
 Expected V2 delta: Planning frontend/components/tests, Planning-scoped CSS, V2 spec status, and V2 plan only.
 
 Hard fail if V2 introduces:
+
 - `supabase/`
 - `.github/`
 - migrations
@@ -649,6 +671,7 @@ git push origin feat/planning-compact-workbench-ux-v1
 Use the exact-head Cloudflare preview at both **1366×768** and **1920×1080**.
 
 Verify manually:
+
 - calm title area scrolls away;
 - one slim sticky operating rail remains visible;
 - week/date/school/workflow context is readable without dominating the page;

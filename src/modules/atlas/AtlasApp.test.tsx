@@ -126,8 +126,14 @@ describe("Atlas master-data shell", () => {
     ]);
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
+    expect(
+      await screen.findByRole("table", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("runs the connected review journey for consequential menu and attendance saves", async () => {

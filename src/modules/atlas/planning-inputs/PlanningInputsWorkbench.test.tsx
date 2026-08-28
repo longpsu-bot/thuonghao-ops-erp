@@ -138,9 +138,13 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(rail).not.toContainElement(pageTitle);
     expect(within(rail).getByLabelText("Tuần phục vụ")).toBeVisible();
     expect(within(rail).getByLabelText("Ngày phục vụ")).toBeVisible();
-    expect(within(rail).getByRole("button", { name: "Phạm vi trường" })).toBeVisible();
+    expect(
+      within(rail).getByRole("button", { name: "Phạm vi trường" }),
+    ).toBeVisible();
     expect(within(rail).getByRole("button", { name: "Làm mới" })).toBeVisible();
-    expect(within(rail).getByLabelText("Hành động bước hiện tại")).toBeVisible();
+    expect(
+      within(rail).getByLabelText("Hành động bước hiện tại"),
+    ).toBeVisible();
     expect(screen.getAllByRole("tablist")).toHaveLength(1);
     expect(screen.getAllByRole("tab")).toHaveLength(4);
     expect(
@@ -328,7 +332,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(
       within(menuPanel).queryByRole("button", { name: "Lưu" }),
     ).not.toBeInTheDocument();
-    expect(within(menuGrid).queryByText(formatIsoDate(hiddenServiceDate))).not.toBeInTheDocument();
+    expect(
+      within(menuGrid).queryByText(formatIsoDate(hiddenServiceDate)),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
@@ -359,7 +365,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       name: "Danh sách sĩ số",
     });
     expect(attendanceGrid).toHaveClass("planning-dense-table-surface");
-    expect(within(attendanceGrid).getByRole("columnheader", { name: "Trường" })).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", { name: "Trường" }),
+    ).toBeVisible();
     expect(
       within(attendanceGrid).getByRole("columnheader", {
         name: "Học sinh mặc định",
@@ -370,9 +378,15 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
         name: "Học sinh thực tế",
       }),
     ).toBeVisible();
-    expect(within(attendanceGrid).getByRole("columnheader", { name: "Giáo viên" })).toBeVisible();
-    expect(within(attendanceGrid).getByRole("columnheader", { name: "Tổng suất" })).toBeVisible();
-    expect(within(attendanceGrid).queryByText(formatIsoDate(hiddenServiceDate))).not.toBeInTheDocument();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", { name: "Giáo viên" }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", { name: "Tổng suất" }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).queryByText(formatIsoDate(hiddenServiceDate)),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("rowheader", { name: "Trường Mầm non Hoa Hồng" }),
     ).not.toBeInTheDocument();
@@ -442,7 +456,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
     fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
-    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
 
     await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
@@ -506,7 +522,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
     expect(studentInput[0]).toHaveValue(420);
     fireEvent.change(studentInput[0]!, { target: { value: "0" } });
-    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
 
     const review = await screen.findByRole("region", {
@@ -520,7 +538,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       name: /Suất giáo viên/,
     })[0]!;
     fireEvent.change(teacherInput, { target: { value: "29" } });
-    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
     expect(
       screen.queryByRole("region", { name: "Xem thay đổi sĩ số" }),
@@ -709,7 +729,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
 
     fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
 
-    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
     expect(
       screen.queryByRole("region", { name: "Xem thay đổi thực đơn" }),

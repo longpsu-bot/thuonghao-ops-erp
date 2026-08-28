@@ -125,11 +125,15 @@ describe("Confirmed Need two-action workbench", () => {
       ];
       workbench.lifecycle_history = [
         {
+          evidence_kind: "VALIDATION",
           evidence_id: "evidence-1",
+          outcome: "VALIDATED",
+          source_version: 1,
+          resulting_version: 1,
           occurred_at: "2026-08-03T08:00:00Z",
           actor: { id: "operator-1", name: "Điều phối viên" },
-          event_type: "CONFIRMED_NEED_SAVED",
-          batch_version: 1,
+          reason_code: "REVIEW_COMPLETED",
+          warning_count: 1,
         },
       ];
     });
@@ -536,17 +540,19 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.queryByText("Nhập Excel")).not.toBeInTheDocument();
   });
 
-  it("uses readable human-scale controls at desktop and mobile breakpoints", async () => {
+  it("uses the approved compact Planning dimensions and mobile breakpoint", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
     const { readFileSync } = await vi.importActual<{
       readFileSync(path: string | URL, encoding: "utf8"): string;
     }>("node:fs");
     const styles = readFileSync("src/styles.css", "utf8");
-    expect(styles).toContain("font-size: clamp(22px, 2vw, 26px)");
-    expect(styles).toContain("min-height: 40px");
-    expect(styles).toContain("@media (max-width: 900px)");
-    expect(styles).toContain("@media (max-width: 520px)");
+    expect(styles).toContain("--planning-rail-height: 54px");
+    expect(styles).toContain("--planning-control-height: 32px");
+    expect(styles).toContain("--planning-row-height: 40px");
+    expect(styles).toContain("--planning-header-row-height: 36px");
+    expect(styles).toContain("--planning-cell-inline: 12px");
+    expect(styles).toContain("@media (max-width: 56.25em)");
     expect(styles).toContain("min-height: 44px");
   });
 });

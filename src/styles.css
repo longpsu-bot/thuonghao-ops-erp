@@ -4161,122 +4161,6 @@ tbody tr.selected-row {
   }
 }
 
-/* Planning Workbench Visual Refinement V2 — Confirmed Need table-first pane. */
-.confirmed-need-heading h2,
-.confirmed-need-heading p {
-  margin: 0;
-}
-
-.confirmed-need-heading h2 {
-  font-size: 18px;
-  line-height: 1.25;
-}
-
-.confirmed-need-heading .confirmed-need-period {
-  margin-top: 3px;
-  color: var(--atlas-text-muted);
-  font-size: 12px;
-}
-
-.confirmed-need-summary-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  padding: 7px 10px;
-  border-block: 1px solid var(--atlas-border);
-  background: var(--atlas-surface-soft);
-  font-size: 12px;
-}
-
-.confirmed-need-summary-strip .confirmed-need-save-state {
-  margin-left: auto;
-}
-
-.confirmed-need-rail-action {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.confirmed-need-rail-action small {
-  max-width: 220px;
-  color: var(--atlas-text-muted);
-  font-size: 11px;
-}
-
-.confirmed-need-toolbar {
-  grid-template-columns: minmax(240px, 2fr) minmax(130px, 1fr) minmax(
-      150px,
-      1fr
-    ) auto;
-  align-items: end;
-  padding: 8px 10px;
-}
-
-.confirmed-need-difference-filter {
-  display: flex !important;
-  align-items: center;
-  grid-template-columns: none;
-  min-height: 40px;
-  gap: 7px !important;
-  white-space: nowrap;
-}
-
-.confirmed-need-difference-filter input {
-  width: 16px;
-  min-height: 16px;
-  margin: 0;
-  padding: 0;
-}
-
-.confirmed-need-table-scroll .compact-table {
-  min-width: 860px;
-}
-
-.confirmed-need-table-scroll td:nth-child(2),
-.confirmed-need-table-scroll td:nth-child(3),
-.confirmed-need-table-scroll td:nth-child(5) {
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.confirmed-need-table-scroll td:nth-child(4) input {
-  width: 130px;
-  text-align: right;
-}
-
-.confirmed-need-table-scroll td:nth-child(6) select,
-.confirmed-need-table-scroll td:nth-child(6) input {
-  min-width: 190px;
-}
-
-@media (max-width: 56.25em) {
-  .confirmed-need-toolbar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .confirmed-need-search,
-  .confirmed-need-difference-filter {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 32.5em) {
-  .confirmed-need-toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .confirmed-need-search,
-  .confirmed-need-difference-filter {
-    grid-column: auto;
-  }
-
-  .confirmed-need-summary-strip .confirmed-need-save-state {
-    margin-left: 0;
-  }
-}
-
 /* Planning Workbench Visual Refinement V2 — operating rail foundation. */
 .planning-operating-rail {
   position: sticky;
@@ -4938,7 +4822,7 @@ tbody tr.selected-row {
 .need-generation-filters button,
 .need-generation-active-action button,
 .need-generation-table-scroll button {
-  min-height: 40px;
+  min-height: 34px;
   font-size: 14px;
 }
 
@@ -4947,9 +4831,14 @@ tbody tr.selected-row {
   line-height: 1.4;
 }
 
-.planning-inputs-workbench .compact-table th,
+.planning-inputs-workbench .compact-table th {
+  height: var(--planning-header-row-height);
+  padding: 6px var(--planning-cell-inline);
+}
+
 .planning-inputs-workbench .compact-table td {
-  padding: 10px 11px;
+  height: var(--planning-row-height);
+  padding: 4px var(--planning-cell-inline);
 }
 
 .planning-inputs-workbench .compact-table small,
@@ -5110,80 +4999,61 @@ tbody tr.selected-row {
   }
 }
 
-/* UI-QUALITY-02C correction — two-action Confirmed Need workbench. */
+/* Planning Workbench Visual Refinement V2 — Confirmed Need table-first pane. */
 .confirmed-need-shell {
   display: grid;
-  gap: 16px;
+  gap: 10px;
   color: var(--atlas-ink, #17222d);
 }
 
-.confirmed-need-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 20px 22px;
-  border: 1px solid #d9e0e6;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.confirmed-need-eyebrow,
+.confirmed-need-heading h2,
 .confirmed-need-period,
-.confirmed-need-result-count,
-.confirmed-need-hero h2 {
+.confirmed-need-result-count {
   margin: 0;
 }
 
-.confirmed-need-eyebrow {
-  color: #60707d;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.confirmed-need-hero h2 {
-  margin-top: 3px;
-  font-size: clamp(22px, 2vw, 26px);
-  font-weight: 700;
-  line-height: 1.2;
+.confirmed-need-heading h2 {
+  font-size: 18px;
+  line-height: 1.25;
 }
 
 .confirmed-need-period {
-  margin-top: 6px;
-  color: #42515d;
-  font-size: 15px;
-  font-weight: 500;
+  margin-top: 3px;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
 }
 
-.confirmed-need-context-summary {
+.confirmed-need-summary-strip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  font-size: 14px;
-}
-
-.confirmed-need-context-summary > * {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #f1f4f6;
-  font-weight: 500;
-}
-
-.confirmed-need-context-summary strong,
-.confirmed-need-save-state {
-  font-weight: 600;
+  gap: 6px 14px;
+  padding: 7px 10px;
+  border-block: 1px solid var(--atlas-border);
+  background: var(--atlas-surface-soft);
+  font-size: 12px;
 }
 
 .confirmed-need-save-state {
+  margin-left: auto;
   color: #196540;
-  background: #e8f5ed !important;
+  font-weight: 600;
 }
 
 .confirmed-need-save-state.dirty {
   color: #8a4b00;
-  background: #fff3dd !important;
+}
+
+.confirmed-need-rail-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirmed-need-rail-action small {
+  max-width: 220px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
 }
 
 .confirmed-need-notice,
@@ -5213,11 +5083,15 @@ tbody tr.selected-row {
 
 .confirmed-need-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 2fr) repeat(3, minmax(150px, 1fr));
-  gap: 12px;
-  padding: 14px;
+  grid-template-columns:
+    minmax(240px, 2fr) minmax(130px, 1fr) minmax(150px, 1fr)
+    auto;
+  align-items: end;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px;
   border: 1px solid #d9e0e6;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -5233,9 +5107,9 @@ tbody tr.selected-row {
 .confirmed-need-toolbar input,
 .confirmed-need-toolbar select,
 .confirmed-need-toolbar output {
-  min-height: 40px;
+  min-height: var(--planning-control-height);
   box-sizing: border-box;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border: 1px solid #bdc8d0;
   border-radius: 7px;
   background: #fff;
@@ -5243,6 +5117,22 @@ tbody tr.selected-row {
   font: inherit;
   font-size: 14px;
   font-weight: 400;
+}
+
+.confirmed-need-difference-filter {
+  display: flex !important;
+  align-items: center;
+  grid-template-columns: none;
+  min-height: var(--planning-control-height);
+  gap: 7px !important;
+  white-space: nowrap;
+}
+
+.confirmed-need-difference-filter input {
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+  padding: 0;
 }
 
 .confirmed-need-toolbar output {
@@ -5263,18 +5153,22 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-table-scroll table {
-  min-width: 1050px;
+  min-width: 860px;
   font-size: 13px;
 }
 .confirmed-need-table-scroll th {
   position: sticky;
   top: 0;
   z-index: 1;
+  height: var(--planning-header-row-height);
+  padding: 6px var(--planning-cell-inline);
   background: #f2f5f7;
   font-size: 13px;
   font-weight: 600;
 }
 .confirmed-need-table-scroll td {
+  height: var(--planning-row-height);
+  padding: 4px var(--planning-cell-inline);
   vertical-align: top;
   font-weight: 400;
 }
@@ -5314,7 +5208,7 @@ tbody tr.selected-row {
 .confirmed-need-table-scroll input,
 .confirmed-need-table-scroll select {
   width: 100%;
-  min-height: 38px;
+  min-height: var(--planning-control-height);
   box-sizing: border-box;
   padding: 7px 8px;
   border: 1px solid #bdc8d0;
@@ -5322,6 +5216,23 @@ tbody tr.selected-row {
   background: #fff;
   font-size: 13px;
   font-weight: 400;
+}
+
+.confirmed-need-table-scroll td:nth-child(2),
+.confirmed-need-table-scroll td:nth-child(3),
+.confirmed-need-table-scroll td:nth-child(5) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.confirmed-need-table-scroll td:nth-child(4) input {
+  width: 130px;
+  text-align: right;
+}
+
+.confirmed-need-table-scroll td:nth-child(6) select,
+.confirmed-need-table-scroll td:nth-child(6) input {
+  min-width: 190px;
 }
 .confirmed-need-table-scroll td input + input {
   margin-top: 6px;
@@ -5413,7 +5324,8 @@ tbody tr.selected-row {
   .confirmed-need-toolbar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .confirmed-need-search {
+  .confirmed-need-search,
+  .confirmed-need-difference-filter {
     grid-column: 1 / -1;
   }
   .confirmed-need-actions {
@@ -5423,25 +5335,21 @@ tbody tr.selected-row {
 }
 
 @media (max-width: 520px) {
-  .confirmed-need-hero {
-    flex-direction: column;
-    padding: 16px;
-  }
-  .confirmed-need-context-summary {
-    justify-content: flex-start;
-  }
   .confirmed-need-toolbar {
     grid-template-columns: 1fr;
   }
-  .confirmed-need-search {
+  .confirmed-need-search,
+  .confirmed-need-difference-filter {
     grid-column: auto;
+  }
+  .confirmed-need-summary-strip .confirmed-need-save-state {
+    margin-left: 0;
   }
   .confirmed-need-toolbar input,
   .confirmed-need-toolbar select,
   .confirmed-need-toolbar output,
   .confirmed-need-shell .confirmed-need-table-scroll input,
   .confirmed-need-shell .confirmed-need-table-scroll select,
-  .confirmed-need-actions button,
   .confirmed-need-commitment button {
     min-height: 44px;
   }
@@ -5601,30 +5509,24 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-attention {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 0;
   border-block: 1px solid var(--atlas-border);
   background: var(--atlas-surface-soft);
 }
 
 .confirmed-need-attention span {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
   padding: 10px 12px;
-  border-right: 1px solid var(--atlas-border);
   color: var(--atlas-text-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
-.confirmed-need-attention span:last-child {
-  border-right: 0;
-}
-
-.confirmed-need-attention b {
-  color: var(--atlas-primary);
-  font-size: 14px;
+.confirmed-need-attention button {
+  min-height: var(--planning-control-height);
+  margin-right: 8px;
 }
 
 .confirmed-need-local-notice,
@@ -5647,7 +5549,7 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-issues {
-  margin-top: 10px;
+  margin-top: 0;
   padding: 10px 12px;
   border: 1px solid #d9b15e;
   border-radius: 7px;
@@ -5669,7 +5571,7 @@ tbody tr.selected-row {
   width: 100%;
   max-width: 100%;
   max-height: min(62vh, 720px);
-  margin-top: 12px;
+  margin-top: 0;
   overflow: auto;
   border: 1px solid var(--atlas-border);
   border-radius: 8px;
@@ -5678,7 +5580,7 @@ tbody tr.selected-row {
 }
 
 .confirmed-need-table-scroll .compact-table {
-  min-width: 1120px;
+  min-width: 860px;
   margin: 0;
 }
 
@@ -5693,25 +5595,21 @@ tbody tr.selected-row {
   min-width: 270px;
 }
 
-.confirmed-need-table-scroll td:nth-child(4),
-.confirmed-need-table-scroll td:nth-child(5),
-.confirmed-need-table-scroll td:nth-child(6),
-.confirmed-need-table-scroll td:nth-child(7) {
+.confirmed-need-table-scroll td:nth-child(2),
+.confirmed-need-table-scroll td:nth-child(3),
+.confirmed-need-table-scroll td:nth-child(5) {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.confirmed-need-table-scroll td:nth-child(6) input {
+.confirmed-need-table-scroll td:nth-child(4) input {
   width: 130px;
   text-align: right;
 }
 
-.confirmed-need-table-scroll td:nth-child(8) select {
-  min-width: 210px;
-}
-
-.confirmed-need-table-scroll td:nth-child(8) input {
-  min-width: 220px;
+.confirmed-need-table-scroll td:nth-child(6) select,
+.confirmed-need-table-scroll td:nth-child(6) input {
+  min-width: 190px;
 }
 
 .confirmed-need-table-scroll input,
@@ -6210,7 +6108,8 @@ tbody tr.selected-row {
   display: grid;
   grid-template-columns: minmax(300px, 0.9fr) minmax(360px, 1.35fr) auto;
   gap: 0;
-  margin: 14px 0;
+  min-height: 48px;
+  margin: 10px 0;
   border-block: 1px solid var(--atlas-border);
   background: var(--atlas-surface-soft);
 }
@@ -6221,7 +6120,7 @@ tbody tr.selected-row {
   flex-wrap: wrap;
   align-items: end;
   gap: 8px;
-  padding: 12px;
+  padding: 6px 10px;
   border-right: 1px solid var(--atlas-border);
 }
 
@@ -6705,73 +6604,5 @@ details.planning-source-group > summary {
   .pantry-reopen {
     align-items: stretch;
     flex-direction: column;
-  }
-}
-
-/* UI-QUALITY-02B final table override follows UI-QUALITY-02A source rules. */
-.need-generation-table-scroll {
-  max-height: min(62vh, 720px);
-  margin-top: 0;
-  border-radius: 0 0 8px 8px;
-  overflow: auto;
-}
-
-/* PLANNING-UX-01C final cascade over the earlier Planning slices. */
-.planning-inputs-workbench > .work-panel,
-.planning-inputs-workbench > .pantry-workbench > .work-panel {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.planning-tabs button {
-  min-height: 44px;
-  font-size: 14px;
-}
-
-.planning-toolbar-label {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: normal;
-  text-transform: none;
-}
-
-.planning-toolbar-group label:not(.file-action) {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.planning-toolbar-group input,
-.planning-toolbar-group select,
-.planning-workbench-toolbar button,
-.planning-inputs-workbench .file-action,
-.planning-grid-scroll input,
-.planning-grid-scroll select,
-.planning-grid-scroll button,
-.pantry-zero-confirmation {
-  min-height: 40px;
-  font-size: 14px;
-}
-
-.planning-dirty-notice,
-.planning-evidence summary,
-.pantry-workbench .work-panel > details summary,
-.planning-preview-summary summary,
-.planning-history summary {
-  font-size: 13px;
-}
-
-@media (max-width: 47.99em) {
-  .planning-toolbar-group input,
-  .planning-toolbar-group select,
-  .planning-workbench-toolbar button,
-  .planning-inputs-workbench .file-action,
-  .planning-grid-scroll input,
-  .planning-grid-scroll select,
-  .planning-grid-scroll button,
-  .pantry-zero-confirmation {
-    min-height: 44px;
   }
 }

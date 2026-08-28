@@ -199,7 +199,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Ghi chú dòng 1" }), {
       target: { value: "   " },
     });
-    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -299,7 +301,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     expect(
       screen.queryByLabelText("Xem thay đổi Nhu cầu bổ sung"),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
   });
 
