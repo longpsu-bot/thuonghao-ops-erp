@@ -9,7 +9,7 @@ import {
   type ComponentType,
   type ComponentProps,
 } from "react";
-import { Box, Button, MantineProvider, Paper } from "@mantine/core";
+import { Button, MantineProvider, Paper } from "@mantine/core";
 import {
   ArrowClockwise,
   CloudArrowDown,
@@ -38,7 +38,6 @@ import {
   attendanceNeedsConfirmation,
   attendanceReviewChanges,
   attendanceWorkingRows,
-  fuzzyTextMatch,
   menuReviewChanges,
   mondayOf,
   planningPreviewFromResult,
@@ -74,6 +73,15 @@ import type { NeedGenerationApi } from "./need-generation/needGenerationApi";
 import { ConfirmedNeedReviewWorkbench } from "./confirmed-needs/ConfirmedNeedReviewWorkbench";
 import type { ConfirmedNeedApi } from "./confirmed-needs/confirmedNeedApi";
 import { PlanningCorrectionImpactPanel } from "./PlanningCorrectionImpactPanel";
+import { PlanningSchoolScopeControl } from "./PlanningSchoolScopeControl";
+import {
+  normalizePlanningSchoolScope,
+  schoolInPlanningScope,
+} from "./planningSchoolScope";
+import {
+  PlanningWorkflowBar,
+  type PlanningWorkflowItem,
+} from "./PlanningWorkflowBar";
 import {
   planningCorrectionImpactFromResult,
   safeNoDownstreamImpact,
@@ -135,6 +143,80 @@ function statusLabel(status?: string) {
     USED_FOR_NEED_GENERATION: "ĐÃ LƯU",
   };
   return status ? (labels[status] ?? status) : "CHƯA CÓ";
+}
+
+function sourceWorkflowState(
+  sourceStatus: string | undefined,
+  needsSave: boolean,
+) {
+  if (
+    needsSave ||
+    ["DRAFT", "VALIDATED", "REOPENED"].includes(sourceStatus ?? "")
+  )
+    return { status: "Cần lưu", tone: "warning" as const };
+  if (
+    [
+      "APPROVED",
+      "NEED_GENERATION_REQUESTED",
+      "USED_FOR_NEED_GENERATION",
+    ].includes(sourceStatus ?? "")
+  )
+    return { status: "Sẵn sàng", tone: "ok" as const };
+  return { status: "Chưa có", tone: "neutral" as const };
+}
+
+function pantryWorkflowState(preflight?: PlanningInputPreflightData) {
+  const evidence = preflight?.source_evidence.pantry;
+  if (!evidence || evidence.selection_state === "MISSING")
+    return { status: "Chưa có", tone: "neutral" as const };
+  if (
+    evidence.selection_state !== "SELECTED" ||
+    !evidence.source_current ||
+    evidence.pantry_evidence_kind === "INVALID_ZERO_EVIDENCE"
+  )
+    return { status: "Cần xử lý", tone: "danger" as const };
+  if (
+    evidence.pantry_evidence_kind === "EXPLICIT_ZERO_LINES" ||
+    evidence.selected?.pantry_evidence_kind === "EXPLICIT_ZERO_LINES"
+  )
+    return { status: "Không bổ sung", tone: "ok" as const };
+  const lineCount = evidence.selected?.line_count ?? 0;
+  return lineCount > 0
+    ? { status: `${lineCount} mục`, tone: "ok" as const }
+    : { status: "Chưa có", tone: "neutral" as const };
+}
+
+function confirmedNeedWorkflowState(preflight?: PlanningInputPreflightData) {
+  if (!preflight) return { status: "Chưa có", tone: "neutral" as const };
+  if (
+    preflight.issues.some(
+      (issue) => issue.issue_code === "NO_NEED_SOURCE_FOR_SERVICE_DATE",
+    )
+  )
+    return {
+      status: "Không có nhu cầu cần lập",
+      tone: "neutral" as const,
+    };
+  const status = preflight.current_need?.confirmed_need_batch_status;
+  const labels: Record<
+    string,
+    { status: string; tone: "ok" | "warning" | "neutral" }
+  > = {
+    DRAFT_REVIEW: { status: "Chờ xác nhận", tone: "warning" },
+    REOPENED: { status: "Cần xác nhận lại", tone: "warning" },
+    VALIDATED: { status: "Đã kiểm tra", tone: "ok" },
+    APPROVED: { status: "Đã xác nhận", tone: "ok" },
+    RELEASED_FOR_PURCHASE_HANDOFF: {
+      status: "Đã chuyển sang lên đơn",
+      tone: "ok",
+    },
+  };
+  if (status && labels[status]) return labels[status];
+  if (preflight.readiness_state === "BLOCKED")
+    return { status: "Cần xử lý", tone: "warning" as const };
+  if (preflight.downstream_currentness === "NOT_GENERATED")
+    return { status: "Sẵn sàng", tone: "ok" as const };
+  return { status: "Cần xử lý", tone: "warning" as const };
 }
 
 function googleResultMessage(result: AtlasRpcResult) {
@@ -647,6 +729,7 @@ export function PlanningInputsWorkbenchView({
     () => initialWeekStart ?? mondayOf(new Date()),
   );
   const [tab, setTab] = useState<TabId>("menu");
+  const [schoolScopeIds, setSchoolScopeIds] = useState<string[]>([]);
   const [dailyConfirmedNeedPreflights, setDailyConfirmedNeedPreflights] =
     useState<Record<string, PlanningInputPreflightData>>({});
   const [selectedConfirmedNeed, setSelectedConfirmedNeed] =
@@ -696,8 +779,6 @@ export function PlanningInputsWorkbenchView({
     status: "idle",
   });
   const [attendancePaste, setAttendancePaste] = useState("");
-  const [schoolSearch, setSchoolSearch] = useState("");
-  const [attendanceSchoolSearch, setAttendanceSchoolSearch] = useState("");
   const [serviceDateFilter, setServiceDateFilter] = useState(weekStart);
   const generation = useRef(0);
   const confirmedNeedGeneration = useRef(0);
@@ -994,6 +1075,15 @@ export function PlanningInputsWorkbenchView({
         ),
     [data.schools],
   );
+  useEffect(() => {
+    setSchoolScopeIds((current) => {
+      const normalized = normalizePlanningSchoolScope(current, activeSchools);
+      return normalized.length === current.length &&
+        normalized.every((id, index) => id === current[index])
+        ? current
+        : normalized;
+    });
+  }, [activeSchools]);
   const activeDishes = useMemo(
     () =>
       data.dishes
@@ -1022,12 +1112,8 @@ export function PlanningInputsWorkbenchView({
     [activeDishes],
   );
   const menuKeys = useMemo(() => {
-    const search = schoolSearch.trim().toLocaleLowerCase("vi");
-    const schools = activeSchools.filter(
-      (school) =>
-        !search ||
-        school.school_code.toLocaleLowerCase("vi").includes(search) ||
-        school.school_name.toLocaleLowerCase("vi").includes(search),
+    const schools = activeSchools.filter((school) =>
+      schoolInPlanningScope(school.school_id, schoolScopeIds),
     );
     const keys = new Set(
       schools.map((school) => `${school.school_id}|${serviceDateFilter}`),
@@ -1035,13 +1121,12 @@ export function PlanningInputsWorkbenchView({
     for (const line of menuRows) {
       if (
         line.service_date === serviceDateFilter &&
-        (!search ||
-          schools.some((school) => school.school_id === line.school_id))
+        schoolInPlanningScope(line.school_id, schoolScopeIds)
       )
         keys.add(`${line.school_id}|${line.service_date}`);
     }
     return Array.from(keys).sort();
-  }, [menuRows, activeSchools, schoolSearch, serviceDateFilter]);
+  }, [menuRows, activeSchools, schoolScopeIds, serviceDateFilter]);
   const serviceDates = useMemo(
     () =>
       Array.from({ length: 7 }, (_, offset) => {
@@ -1070,17 +1155,10 @@ export function PlanningInputsWorkbenchView({
   );
   const filteredAttendanceRows = useMemo(
     () =>
-      attendanceRows.filter((line) => {
-        const school = data.schools.find(
-          (item) => item.school_id === line.school_id,
-        );
-        return fuzzyTextMatch(
-          attendanceSchoolSearch,
-          school?.school_code ?? "",
-          school?.school_name ?? line.school_id,
-        );
-      }),
-    [attendanceRows, attendanceSchoolSearch, data.schools],
+      attendanceRows.filter((line) =>
+        schoolInPlanningScope(line.school_id, schoolScopeIds),
+      ),
+    [attendanceRows, schoolScopeIds],
   );
   const needsAttendanceConfirmation = useMemo(
     () =>
@@ -1090,6 +1168,28 @@ export function PlanningInputsWorkbenchView({
       ),
     [data.attendance, data.default_attendance_preview],
   );
+  const selectedPreflight = dailyConfirmedNeedPreflights[serviceDateFilter];
+  const menuWorkflow = sourceWorkflowState(
+    data.weekly_menu?.weekly_menu_status,
+    dirty,
+  );
+  const attendanceWorkflow = sourceWorkflowState(
+    data.attendance?.attendance_status,
+    dirty || needsAttendanceConfirmation,
+  );
+  const pantryWorkflow = pantryWorkflowState(selectedPreflight);
+  const confirmedNeedWorkflow = confirmedNeedWorkflowState(selectedPreflight);
+  const workflowItems: PlanningWorkflowItem<TabId>[] = [
+    { id: "menu", step: 1, label: "Thực đơn", ...menuWorkflow },
+    { id: "attendance", step: 2, label: "Sĩ số", ...attendanceWorkflow },
+    { id: "pantry", step: 3, label: "Bổ sung", ...pantryWorkflow },
+    {
+      id: "confirmed-needs",
+      step: 4,
+      label: "Xác nhận nhu cầu",
+      ...confirmedNeedWorkflow,
+    },
+  ];
 
   const runCompletion = async (
     source: "weekly_menu" | "attendance",
@@ -1489,6 +1589,11 @@ export function PlanningInputsWorkbenchView({
             {viDate(data.week_start)} – {viDate(data.week_end)}
           </b>
         </div>
+        <PlanningSchoolScopeControl
+          schools={activeSchools}
+          selectedSchoolIds={schoolScopeIds}
+          onChange={setSchoolScopeIds}
+        />
         <Button
           type="button"
           variant="outline"
@@ -1511,52 +1616,11 @@ export function PlanningInputsWorkbenchView({
         />
       ) : (
         <>
-          <Box
-            className="planning-tabs"
-            role="tablist"
-            aria-label="Quy trình Lập nhu cầu"
-          >
-            <Button
-              type="button"
-              role="tab"
-              variant="subtle"
-              aria-selected={tab === "menu"}
-              className={tab === "menu" ? "active" : ""}
-              onClick={() => changeTab("menu")}
-            >
-              Thực đơn
-            </Button>
-            <Button
-              type="button"
-              role="tab"
-              variant="subtle"
-              aria-selected={tab === "attendance"}
-              className={tab === "attendance" ? "active" : ""}
-              onClick={() => changeTab("attendance")}
-            >
-              Sĩ số
-            </Button>
-            <Button
-              type="button"
-              role="tab"
-              variant="subtle"
-              aria-selected={tab === "pantry"}
-              className={tab === "pantry" ? "active" : ""}
-              onClick={() => changeTab("pantry")}
-            >
-              Nhu cầu bổ sung
-            </Button>
-            <Button
-              type="button"
-              role="tab"
-              variant="subtle"
-              aria-selected={tab === "confirmed-needs"}
-              className={tab === "confirmed-needs" ? "active" : ""}
-              onClick={() => changeTab("confirmed-needs")}
-            >
-              Xác nhận nhu cầu
-            </Button>
-          </Box>
+          <PlanningWorkflowBar
+            items={workflowItems}
+            activeId={tab}
+            onChange={changeTab}
+          />
 
           {(tab === "menu" || tab === "attendance") && sourceOutcome && (
             <p
@@ -1638,15 +1702,6 @@ export function PlanningInputsWorkbenchView({
               >
                 <div className="planning-toolbar-group planning-filter-group">
                   <span className="planning-toolbar-label">Phạm vi lưới</span>
-                  <label>
-                    Tìm trường
-                    <input
-                      type="search"
-                      value={schoolSearch}
-                      onChange={(event) => setSchoolSearch(event.target.value)}
-                      placeholder="Mã hoặc tên trường"
-                    />
-                  </label>
                   <label>
                     Ngày phục vụ
                     <select
@@ -1992,21 +2047,6 @@ export function PlanningInputsWorkbenchView({
                 className="planning-workbench-toolbar attendance-toolbar"
                 aria-label="Tìm kiếm, rà soát và lưu sĩ số"
               >
-                <div className="planning-toolbar-group planning-filter-group">
-                  <span className="planning-toolbar-label">Danh sách</span>
-                  <label>
-                    Tìm trường
-                    <input
-                      type="search"
-                      aria-label="Tìm trường trong sĩ số"
-                      value={attendanceSchoolSearch}
-                      onChange={(event) =>
-                        setAttendanceSchoolSearch(event.target.value)
-                      }
-                      placeholder="Mã hoặc tên trường"
-                    />
-                  </label>
-                </div>
                 <div className="planning-toolbar-group planning-local-actions">
                   <span className="planning-toolbar-label">Rà soát và lưu</span>
                   <button

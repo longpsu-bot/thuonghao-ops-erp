@@ -3051,6 +3051,67 @@ tbody tr.selected-row {
   border-bottom-color: #17604d;
   color: #17604d;
 }
+.planning-workflow-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  max-width: 100%;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--atlas-border);
+}
+.planning-workflow-tab {
+  min-width: 0;
+  height: auto;
+  padding: 9px 12px;
+  border-bottom: 3px solid transparent;
+  color: var(--atlas-text-muted);
+}
+.planning-workflow-tab.active {
+  border-bottom-color: var(--atlas-primary);
+  color: var(--atlas-primary);
+}
+.planning-workflow-step {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+}
+.planning-workflow-copy {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+}
+.planning-workflow-copy strong,
+.planning-workflow-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.planning-workflow-copy span {
+  font-size: 11px;
+  font-weight: 600;
+}
+.planning-workflow-tab.ok .planning-workflow-copy span {
+  color: var(--atlas-success);
+}
+.planning-workflow-tab.warning .planning-workflow-copy span {
+  color: var(--atlas-warning-text);
+}
+.planning-workflow-tab.danger .planning-workflow-copy span {
+  color: var(--atlas-danger);
+}
+.planning-school-scope-options {
+  display: grid;
+  gap: 8px;
+  max-height: 280px;
+  margin-top: 8px;
+  overflow-y: auto;
+}
 .planning-toolbar {
   margin-bottom: 12px;
 }
