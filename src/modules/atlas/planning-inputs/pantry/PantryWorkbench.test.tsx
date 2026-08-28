@@ -5,10 +5,15 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
+import {
+  PlanningRailActionHost,
+  PlanningRailActionProvider,
+} from "../PlanningRailActionPortal";
 import { PantryWorkbench } from "./PantryWorkbench";
 import { pantryRowsForWrite, type PantryDraftRow } from "./pantryModel";
 import { createReviewPantryApi } from "./reviewPantryApi";
@@ -30,12 +35,15 @@ function renderPantry(
   schoolScopeIds: string[] = [],
 ) {
   render(
-    <PantryWorkbench
-      authState={authState}
-      api={api}
-      weekStart="2026-08-03"
-      schoolScopeIds={schoolScopeIds}
-    />,
+    <PlanningRailActionProvider>
+      <PlanningRailActionHost />
+      <PantryWorkbench
+        authState={authState}
+        api={api}
+        weekStart="2026-08-03"
+        schoolScopeIds={schoolScopeIds}
+      />
+    </PlanningRailActionProvider>,
   );
   return api;
 }
@@ -145,8 +153,23 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       await screen.findByRole("heading", { name: "Nhu cầu bổ sung" }),
     ).toBeVisible();
     expect(screen.queryByText(/^Pantry$/)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    const actionHost = screen.getByLabelText("Hành động bước hiện tại");
+    expect(
+      within(actionHost).getByRole("button", { name: "Xem thay đổi" }),
+    ).toBeVisible();
+    expect(
+      within(actionHost).queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    const localToolbar = screen.getByLabelText("Nhập Nhu cầu bổ sung");
+    expect(
+      within(localToolbar).queryByRole("button", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(localToolbar).queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Bảng nhu cầu bổ sung" }),
+    ).toHaveClass("planning-dense-table-surface");
     expect(screen.queryByText("Bản nháp cục bộ")).not.toBeInTheDocument();
   });
 
@@ -176,7 +199,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Ghi chú dòng 1" }), {
       target: { value: "   " },
     });
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -276,7 +299,8 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     expect(
       screen.queryByLabelText("Xem thay đổi Nhu cầu bổ sung"),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
   });
 
   it("requires authoritative refresh after an unknown Save outcome", async () => {
@@ -315,14 +339,20 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     });
 
     const view = render(
-      <PantryWorkbench
-        authState={authState}
-        api={api}
-        weekStart={initialWeek}
-      />,
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <PantryWorkbench
+          authState={authState}
+          api={api}
+          weekStart={initialWeek}
+        />
+      </PlanningRailActionProvider>,
     );
     view.rerender(
-      <PantryWorkbench authState={authState} api={api} weekStart={nextWeek} />,
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <PantryWorkbench authState={authState} api={api} weekStart={nextWeek} />
+      </PlanningRailActionProvider>,
     );
 
     expect(await screen.findByLabelText("Ngày phục vụ dòng 1")).toHaveValue(

@@ -5,6 +5,7 @@ import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { planningSourceSaveOutcome } from "../planningInputsModel";
 import { schoolInPlanningScope } from "../planningSchoolScope";
 import { PlanningCorrectionImpactPanel } from "../PlanningCorrectionImpactPanel";
+import { PlanningRailActionPortal } from "../PlanningRailActionPortal";
 import {
   planningCorrectionImpactFromResult,
   safeNoDownstreamImpact,
@@ -398,6 +399,29 @@ export function PantryWorkbench({
 
   return (
     <div className="pantry-workbench">
+      <PlanningRailActionPortal>
+        {preview?.can_save && correctionImpact?.save_allowed ? (
+          <button
+            type="button"
+            className="primary"
+            onClick={() => void save()}
+            disabled={saving || refreshRequired || !dirty}
+          >
+            <FloppyDisk size={17} aria-hidden="true" />
+            Lưu
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="primary"
+            onClick={() => void previewRows()}
+            disabled={!canEdit}
+          >
+            <Eye size={17} aria-hidden="true" />
+            Xem thay đổi
+          </button>
+        )}
+      </PlanningRailActionPortal>
       {mode === "review" && (
         <p className="operator-notice warning">
           Trạng thái xem thử Nhu cầu bổ sung — thay đổi không được lưu.
@@ -450,7 +474,7 @@ export function PantryWorkbench({
 
         <div
           className="planning-workbench-toolbar pantry-toolbar"
-          aria-label="Nhập và lưu Nhu cầu bổ sung"
+          aria-label="Nhập Nhu cầu bổ sung"
         >
           <div className="planning-toolbar-group pantry-entry-actions">
             <span className="planning-toolbar-label">Nội dung bổ sung</span>
@@ -486,33 +510,6 @@ export function PantryWorkbench({
               />
               Xác nhận toàn tuần không có bổ sung
             </label>
-          </div>
-          <div className="planning-toolbar-group planning-local-actions">
-            <span className="planning-toolbar-label">Rà soát và lưu</span>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => void previewRows()}
-              disabled={!canEdit}
-            >
-              <Eye size={17} aria-hidden="true" />
-              Xem thay đổi
-            </button>
-            <button
-              type="button"
-              className="primary"
-              onClick={() => void save()}
-              disabled={
-                saving ||
-                refreshRequired ||
-                !dirty ||
-                !preview?.can_save ||
-                !correctionImpact?.save_allowed
-              }
-            >
-              <FloppyDisk size={17} aria-hidden="true" />
-              Lưu
-            </button>
             <button
               type="button"
               className="quiet"
@@ -531,7 +528,11 @@ export function PantryWorkbench({
               : "Chưa có dòng bổ sung."}
           </p>
         ) : (
-          <div className="planning-grid-scroll">
+          <div
+            className="planning-grid-scroll planning-dense-table-surface"
+            role="region"
+            aria-label="Bảng nhu cầu bổ sung"
+          >
             <table className="compact-table pantry-table">
               <thead>
                 <tr>
