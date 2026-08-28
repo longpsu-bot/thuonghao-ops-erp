@@ -40,6 +40,21 @@ function renderReview(api = createReviewConfirmedNeedApi("ready")) {
   return api;
 }
 
+function renderScopedReview(
+  api: ReturnType<typeof createReviewConfirmedNeedApi>,
+  schoolScopeIds: string[],
+) {
+  return render(
+    <ConfirmedNeedReviewWorkbench
+      authState={authState}
+      api={api}
+      initialBatchId={batchId}
+      mode="review"
+      schoolScopeIds={schoolScopeIds}
+    />,
+  );
+}
+
 function renderAuthoritativeFixture(
   mutate: (
     workbench: ReturnType<typeof createReviewConfirmedNeedFixture>,
@@ -115,18 +130,96 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
   });
 
-  it("keeps School and date filters as presentation-only filters", async () => {
-    renderReview();
-    await screen.findByText("Gạo thơm");
+  it("composes external school scope with search, date, and confirmation filters", async () => {
+    const api = createReviewConfirmedNeedApi("ready", { lineCount: 3 });
+    renderScopedReview(api, ["review-planning-school-3"]);
+    await screen.findByText("Gạo thơm 3");
+    expect(screen.queryByText("Cà rốt")).not.toBeInTheDocument();
+
     const toolbar = screen.getByRole("region", { name: "Tìm và lọc" });
-    fireEvent.change(within(toolbar).getByLabelText("Trường"), {
-      target: { value: "review-planning-school-1" },
-    });
-    expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
+    fireEvent.change(
+      within(toolbar).getByPlaceholderText(
+        "Tìm theo nguyên liệu, trường, điểm giao…",
+      ),
+      { target: { value: "gạo thơm 3" } },
+    );
     fireEvent.change(within(toolbar).getByLabelText("Ngày"), {
-      target: { value: "2026-08-04" },
+      target: { value: "2026-08-05" },
     });
-    expect(screen.getByText("Hiển thị 0/2 dòng")).toBeVisible();
+    fireEvent.change(within(toolbar).getByLabelText("Tình trạng"), {
+      target: { value: "needs_review" },
+    });
+    expect(screen.getByText("Hiển thị 1/3 dòng")).toBeVisible();
+  });
+
+  it("keeps hidden dirty edits and includes them in Save", async () => {
+    const api = createReviewConfirmedNeedApi("ready", { lineCount: 3 });
+    const workbench = createReviewConfirmedNeedFixture(3);
+    workbench.lines.forEach((line, index) => {
+      line.current_decision_id = `review-current-decision-${index + 1}`;
+      line.current_decision_number = 1;
+      line.current_decision_kind = "PROPOSAL_ACCEPTED";
+      line.confirmed_quantity_after = line.proposed_confirmed_quantity;
+      line.confirmation_state = "CONFIRMED_CURRENT";
+    });
+    workbench.line_counts = {
+      ...workbench.line_counts,
+      unreviewed: 0,
+      confirmed: 3,
+      needs_review: 0,
+      new: 0,
+    };
+    vi.spyOn(api, "getReview").mockResolvedValue({
+      kind: "success",
+      response: { success: true, workbench },
+    } as never);
+    const save = vi.spyOn(api, "save");
+    const view = renderScopedReview(api, []);
+    await screen.findByText("Gạo thơm");
+
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Gạo thơm"), {
+      target: { value: "10.5" },
+    });
+    fireEvent.change(screen.getByLabelText("Ghi chú Gạo thơm"), {
+      target: { value: "Điều chỉnh trường 1" },
+    });
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Cà rốt"), {
+      target: { value: "5.5" },
+    });
+    fireEvent.change(screen.getByLabelText("Ghi chú Cà rốt"), {
+      target: { value: "Điều chỉnh trường 2" },
+    });
+
+    view.rerender(
+      <ConfirmedNeedReviewWorkbench
+        authState={authState}
+        api={api}
+        initialBatchId={batchId}
+        mode="review"
+        schoolScopeIds={["review-planning-school-2"]}
+      />,
+    );
+    expect(screen.queryByText("Gạo thơm")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Có 1 thay đổi chưa lưu ngoài phạm vi trường đang hiển thị. Lưu vẫn áp dụng cho toàn bộ thay đổi hiện tại.",
+      ),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]?.[0].payload.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          confirmed_need_line_id: "c4520000-0000-0000-0000-000000000001",
+          proposed_confirmed_quantity: "10.5",
+        }),
+        expect.objectContaining({
+          confirmed_need_line_id: "c4520000-0000-0000-0000-000000000002",
+          proposed_confirmed_quantity: "5.5",
+        }),
+      ]),
+    );
   });
 
   it("exposes Save and Release but no validation, completion, or approval ceremony", async () => {

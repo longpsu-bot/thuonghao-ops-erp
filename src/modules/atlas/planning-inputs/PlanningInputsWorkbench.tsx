@@ -2278,6 +2278,7 @@ export function PlanningInputsWorkbenchView({
                 initialBatchId={visibleConfirmedNeed?.batchId ?? null}
                 currentNeedResolution={confirmedNeedResolution}
                 mode={mode}
+                schoolScopeIds={schoolScopeIds}
                 onDirtyChange={setConfirmedNeedDirty}
               />
             </>

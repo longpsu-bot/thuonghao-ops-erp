@@ -189,7 +189,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
       0,
       10_000,
     );
-    expect(screen.getByLabelText("Trường")).toHaveDisplayValue("Tất cả trường");
+    expect(
+      screen.getByRole("button", { name: "Phạm vi trường" }),
+    ).toHaveTextContent("Tất cả trường");
     expect(screen.queryByText(/UUID|Mã lô|Tải lô/i)).not.toBeInTheDocument();
   });
 

@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import { CompactTable, Panel } from "../../WorkbenchComponents";
 import {
+  planningSchoolScopeLabel,
+  schoolInPlanningScope,
+} from "../planningSchoolScope";
+import {
   confirmedNeedReleaseV2Request,
   confirmedNeedSaveV2Request,
   type ConfirmedNeedApi,
@@ -133,6 +137,7 @@ export function ConfirmedNeedReviewWorkbench({
   initialBatchId,
   currentNeedResolution = initialBatchId ? "available" : "idle",
   onDirtyChange,
+  schoolScopeIds = [],
 }: {
   authState: AtlasAuthState;
   api?: ConfirmedNeedApi;
@@ -147,6 +152,7 @@ export function ConfirmedNeedReviewWorkbench({
     | "error";
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
+  schoolScopeIds?: string[];
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
@@ -156,7 +162,6 @@ export function ConfirmedNeedReviewWorkbench({
     {},
   );
   const [search, setSearch] = useState("");
-  const [schoolFilter, setSchoolFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [confirmationFilter, setConfirmationFilter] = useState<
     "" | "needs_review" | "carried_forward"
@@ -258,7 +263,7 @@ export function ConfirmedNeedReviewWorkbench({
     if (!workbench) return [];
     const query = foldSearch(search.trim());
     return workbench.lines.filter((line) => {
-      if (schoolFilter && line.school.id !== schoolFilter) return false;
+      if (!schoolInPlanningScope(line.school.id, schoolScopeIds)) return false;
       if (dateFilter && line.service_date !== dateFilter) return false;
       if (
         confirmationFilter === "needs_review" &&
@@ -275,7 +280,11 @@ export function ConfirmedNeedReviewWorkbench({
         `${line.ingredient.name} ${line.school.name} ${line.delivery_location.name}`,
       ).includes(query);
     });
-  }, [confirmationFilter, dateFilter, schoolFilter, search, workbench]);
+  }, [confirmationFilter, dateFilter, schoolScopeIds, search, workbench]);
+
+  const hiddenDirtyCount = changedLines.filter(
+    (line) => !schoolInPlanningScope(line.school.id, schoolScopeIds),
+  ).length;
 
   const save = async () => {
     if (
@@ -399,9 +408,15 @@ export function ConfirmedNeedReviewWorkbench({
   const backendActionReason = dirty
     ? workbench.disabled_reasons.save_confirmed_needs
     : workbench.disabled_reasons.release_confirmed_needs;
-  const contextSchool = schoolFilter
-    ? schools.find((school) => school.id === schoolFilter)?.name
-    : "Tất cả trường";
+  const contextSchool = planningSchoolScopeLabel(
+    schoolScopeIds,
+    schools.map((school, index) => ({
+      school_id: school.id,
+      school_code: "",
+      school_name: school.name,
+      display_order: index + 1,
+    })),
+  );
 
   return (
     <div className="confirmed-need-shell">
@@ -445,6 +460,12 @@ export function ConfirmedNeedReviewWorkbench({
       )}
       {issueList("Cần xử lý", workbench.blockers)}
       {issueList("Cảnh báo", workbench.warnings)}
+      {hiddenDirtyCount > 0 && (
+        <p className="confirmed-need-attention" role="status">
+          Có {hiddenDirtyCount} thay đổi chưa lưu ngoài phạm vi trường đang hiển
+          thị. Lưu vẫn áp dụng cho toàn bộ thay đổi hiện tại.
+        </p>
+      )}
 
       <section className="confirmed-need-toolbar" aria-label="Tìm và lọc">
         <label className="confirmed-need-search">
@@ -455,20 +476,6 @@ export function ConfirmedNeedReviewWorkbench({
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Tìm theo nguyên liệu, trường, điểm giao…"
           />
-        </label>
-        <label>
-          <span>Trường</span>
-          <select
-            value={schoolFilter}
-            onChange={(event) => setSchoolFilter(event.target.value)}
-          >
-            <option value="">Tất cả trường</option>
-            {schools.map((school) => (
-              <option key={school.id} value={school.id}>
-                {school.name}
-              </option>
-            ))}
-          </select>
         </label>
         <label>
           <span>Ngày</span>
