@@ -129,6 +129,18 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
+    const pageTitle = screen.getByRole("heading", {
+      name: "Lập nhu cầu theo tuần",
+    });
+    const rail = screen.getByRole("region", {
+      name: "Thanh điều hành Lập nhu cầu",
+    });
+    expect(rail).not.toContainElement(pageTitle);
+    expect(within(rail).getByLabelText("Tuần phục vụ")).toBeVisible();
+    expect(within(rail).getByLabelText("Ngày phục vụ")).toBeVisible();
+    expect(within(rail).getByRole("button", { name: "Phạm vi trường" })).toBeVisible();
+    expect(within(rail).getByRole("button", { name: "Làm mới" })).toBeVisible();
+    expect(within(rail).getByLabelText("Hành động bước hiện tại")).toBeVisible();
     expect(screen.getAllByRole("tablist")).toHaveLength(1);
     expect(screen.getAllByRole("tab")).toHaveLength(4);
     expect(
@@ -370,8 +382,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
     fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
-    const save = screen.getByRole("button", { name: "Lưu" });
-    expect(save).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
 
     await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
@@ -381,6 +392,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(review).toHaveTextContent("Canh bí đỏ thịt bằm");
     expect(review).toHaveTextContent("Canh rau ngót");
     expect(review).toHaveTextContent("Đổi");
+    const save = screen.getByRole("button", { name: "Lưu" });
     expect(save).toBeEnabled();
     fireEvent.click(save);
 
@@ -434,8 +446,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
     expect(studentInput[0]).toHaveValue(420);
     fireEvent.change(studentInput[0]!, { target: { value: "0" } });
-    const save = screen.getByRole("button", { name: "Lưu" });
-    expect(save).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
 
     const review = await screen.findByRole("region", {
@@ -443,18 +454,20 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
     expect(review).toHaveTextContent("420");
     expect(review).toHaveTextContent("0");
+    const save = screen.getByRole("button", { name: "Lưu" });
     expect(save).toBeEnabled();
     const teacherInput = screen.getAllByRole("spinbutton", {
       name: /Suất giáo viên/,
     })[0]!;
     fireEvent.change(teacherInput, { target: { value: "29" } });
-    expect(save).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
     expect(
       screen.queryByRole("region", { name: "Xem thay đổi sĩ số" }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi sĩ số" });
-    fireEvent.click(save);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
@@ -632,12 +645,12 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
-    const save = screen.getByRole("button", { name: "Lưu" });
-    expect(save).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
 
     fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
 
-    expect(save).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Lưu" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
     expect(
       screen.queryByRole("region", { name: "Xem thay đổi thực đơn" }),
     ).not.toBeInTheDocument();

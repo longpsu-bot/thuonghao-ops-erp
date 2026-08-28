@@ -9,7 +9,7 @@ import {
   type ComponentType,
   type ComponentProps,
 } from "react";
-import { Button, MantineProvider, Paper } from "@mantine/core";
+import { Button, MantineProvider } from "@mantine/core";
 import {
   ArrowClockwise,
   CloudArrowDown,
@@ -78,10 +78,9 @@ import {
   normalizePlanningSchoolScope,
   schoolInPlanningScope,
 } from "./planningSchoolScope";
-import {
-  PlanningWorkflowBar,
-  type PlanningWorkflowItem,
-} from "./PlanningWorkflowBar";
+import type { PlanningWorkflowItem } from "./PlanningWorkflowBar";
+import { PlanningOperatingRail } from "./PlanningOperatingRail";
+import { PlanningRailActionProvider } from "./PlanningRailActionPortal";
 import {
   planningCorrectionImpactFromResult,
   safeNoDownstreamImpact,
@@ -1543,17 +1542,70 @@ export function PlanningInputsWorkbenchView({
       ? "Phiên làm việc đã hết. Vui lòng đăng nhập lại để tiếp tục."
       : "Đăng nhập để xem và cập nhật nguồn kế hoạch.";
 
+  const sourceRailAction =
+    tab === "menu" ? (
+      menuPreview?.can_save && menuCorrectionImpact?.save_allowed ? (
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void saveMenu()}
+          disabled={
+            saving || refreshRequired || !dirty || !menuRows.length
+          }
+        >
+          <FloppyDisk size={17} aria-hidden="true" />
+          Lưu
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void previewMenu()}
+          disabled={saving || !menuRows.length}
+        >
+          <Eye size={17} aria-hidden="true" />
+          Xem thay đổi
+        </button>
+      )
+    ) : tab === "attendance" ? (
+      attendancePreview?.can_save && attendanceCorrectionImpact?.save_allowed ? (
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void saveAttendance()}
+          disabled={saving || refreshRequired || !attendanceRows.length}
+        >
+          <FloppyDisk size={17} aria-hidden="true" />
+          Lưu
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void previewAttendance()}
+          disabled={saving || !attendanceRows.length}
+        >
+          <Eye size={17} aria-hidden="true" />
+          Xem thay đổi
+        </button>
+      )
+    ) : undefined;
+
   return (
-    <div className="planning-inputs-workbench">
+    <PlanningRailActionProvider>
+      <div className="planning-inputs-workbench">
       <div className="planning-compact-header">
         <WorkbenchHeader
           eyebrow="Lập nhu cầu"
           title="Lập nhu cầu theo tuần"
-          context="Thực đơn → Sĩ số → Nhu cầu bổ sung → Xác nhận nhu cầu."
+          context="Hoàn tất nguồn đầu vào và xác nhận nhu cầu cho tuần phục vụ đã chọn."
           headingLevel={1}
         />
-        <Paper component="section" className="planning-context-bar" withBorder>
-          {!DatePickerInput ? (
+      </div>
+
+      <PlanningOperatingRail
+        weekControl={
+          !DatePickerInput ? (
             <label>
               Tuần phục vụ
               <input
@@ -1583,18 +1635,35 @@ export function PlanningInputsWorkbenchView({
                   changeWeek(localMondayOfIso(value));
               }}
             />
-          )}
-          <div>
-            <span>Khoảng ngày</span>
-            <b>
-              {viDate(data.week_start)} – {viDate(data.week_end)}
-            </b>
-          </div>
+          )
+        }
+        serviceDateControl={
+          <label>
+            Ngày phục vụ
+            <select
+              aria-label="Ngày phục vụ"
+              value={serviceDateFilter}
+              onChange={(event) => handleServiceDateChange(event.target.value)}
+            >
+              {serviceDates.map((date) => (
+                <option value={date} key={date}>
+                  {viDate(date)}
+                </option>
+              ))}
+            </select>
+          </label>
+        }
+        schoolControl={
           <PlanningSchoolScopeControl
             schools={activeSchools}
             selectedSchoolIds={schoolScopeIds}
             onChange={setSchoolScopeIds}
           />
+        }
+        workflowItems={workflowItems}
+        activeId={tab}
+        onStepChange={changeTab}
+        secondaryActions={
           <Button
             type="button"
             variant="outline"
@@ -1604,7 +1673,17 @@ export function PlanningInputsWorkbenchView({
           >
             Làm mới
           </Button>
-        </Paper>
+        }
+        actions={authSubject ? sourceRailAction : undefined}
+      />
+
+      <div className="planning-period-context" aria-label="Khoảng ngày">
+          <div>
+            <span>Khoảng ngày</span>
+            <b>
+              {viDate(data.week_start)} – {viDate(data.week_end)}
+            </b>
+          </div>
       </div>
 
       {!authSubject ? (
@@ -1618,12 +1697,6 @@ export function PlanningInputsWorkbenchView({
         />
       ) : (
         <>
-          <PlanningWorkflowBar
-            items={workflowItems}
-            activeId={tab}
-            onChange={changeTab}
-          />
-
           {(tab === "menu" || tab === "attendance") && sourceOutcome && (
             <p
               className={`operator-notice${
@@ -1702,24 +1775,6 @@ export function PlanningInputsWorkbenchView({
                 className="planning-workbench-toolbar"
                 aria-label="Bộ lọc, nguồn và thao tác thực đơn"
               >
-                <div className="planning-toolbar-group planning-filter-group">
-                  <span className="planning-toolbar-label">Phạm vi lưới</span>
-                  <label>
-                    Ngày phục vụ
-                    <select
-                      value={serviceDateFilter}
-                      onChange={(event) =>
-                        handleServiceDateChange(event.target.value)
-                      }
-                    >
-                      {serviceDates.map((date) => (
-                        <option value={date} key={date}>
-                          {viDate(date)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
                 <details className="planning-toolbar-group planning-source-group">
                   <summary>Nhập thực đơn</summary>
                   <div className="planning-import-methods">
@@ -1798,32 +1853,7 @@ export function PlanningInputsWorkbenchView({
                   )}
                 </details>
                 <div className="planning-toolbar-group planning-local-actions">
-                  <span className="planning-toolbar-label">Rà soát và lưu</span>
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => void previewMenu()}
-                    disabled={saving || !menuRows.length}
-                  >
-                    <Eye size={17} aria-hidden="true" />
-                    Xem thay đổi
-                  </button>
-                  <button
-                    type="button"
-                    className="primary"
-                    onClick={() => void saveMenu()}
-                    disabled={
-                      saving ||
-                      refreshRequired ||
-                      !dirty ||
-                      !menuRows.length ||
-                      !menuPreview?.can_save ||
-                      !menuCorrectionImpact?.save_allowed
-                    }
-                  >
-                    <FloppyDisk size={17} aria-hidden="true" />
-                    Lưu
-                  </button>
+                  <span className="planning-toolbar-label">Thao tác cục bộ</span>
                   <button
                     type="button"
                     className="quiet"
@@ -2053,31 +2083,7 @@ export function PlanningInputsWorkbenchView({
                 aria-label="Tìm kiếm, rà soát và lưu sĩ số"
               >
                 <div className="planning-toolbar-group planning-local-actions">
-                  <span className="planning-toolbar-label">Rà soát và lưu</span>
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => void previewAttendance()}
-                    disabled={saving || !attendanceRows.length}
-                  >
-                    <Eye size={17} aria-hidden="true" />
-                    Xem thay đổi
-                  </button>
-                  <button
-                    type="button"
-                    className="primary"
-                    onClick={() => void saveAttendance()}
-                    disabled={
-                      saving ||
-                      refreshRequired ||
-                      !attendanceRows.length ||
-                      !attendancePreview?.can_save ||
-                      !attendanceCorrectionImpact?.save_allowed
-                    }
-                  >
-                    <FloppyDisk size={17} aria-hidden="true" />
-                    Lưu
-                  </button>
+                  <span className="planning-toolbar-label">Thao tác cục bộ</span>
                   <button
                     type="button"
                     className="quiet"
@@ -2317,7 +2323,8 @@ export function PlanningInputsWorkbenchView({
           )}
         </>
       )}
-    </div>
+      </div>
+    </PlanningRailActionProvider>
   );
 }
 

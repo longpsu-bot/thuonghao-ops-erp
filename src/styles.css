@@ -2959,6 +2959,12 @@ tbody tr.selected-row {
   display: grid;
   gap: 16px;
   min-width: 0;
+  --planning-rail-height: 54px;
+  --planning-control-height: 32px;
+  --planning-row-height: 40px;
+  --planning-header-row-height: 36px;
+  --planning-cell-inline: 12px;
+  --planning-gap: 10px;
 }
 .planning-inputs-workbench > .workbench-header {
   margin-bottom: 0;
@@ -4152,6 +4158,87 @@ tbody tr.selected-row {
 
   .planning-context-bar input {
     width: 100%;
+  }
+}
+
+/* Planning Workbench Visual Refinement V2 — operating rail foundation. */
+.planning-operating-rail {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: grid;
+  grid-template-columns: minmax(360px, auto) minmax(480px, 1fr) auto;
+  align-items: center;
+  min-height: var(--planning-rail-height);
+  gap: var(--planning-gap);
+  padding: 6px 10px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface);
+  box-shadow: 0 2px 8px rgb(28 39 53 / 6%);
+}
+
+.atlas-review-bar ~ * .planning-operating-rail {
+  top: 58px;
+}
+
+.planning-operating-context,
+.planning-operating-action-zone,
+.planning-operating-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.planning-operating-context label {
+  display: grid;
+  gap: 2px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.planning-operating-context input,
+.planning-operating-context select,
+.planning-operating-context button,
+.planning-operating-action-zone button,
+.planning-operating-actions button {
+  min-height: var(--planning-control-height);
+}
+
+.planning-operating-workflow,
+.planning-operating-workflow .planning-workflow-bar {
+  min-width: 0;
+}
+
+.planning-operating-workflow .planning-workflow-bar {
+  margin: 0;
+}
+
+.planning-operating-action-zone {
+  justify-content: flex-end;
+}
+
+.planning-operating-actions button {
+  white-space: nowrap;
+}
+
+.planning-period-context {
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 75em) {
+  .planning-operating-rail {
+    grid-template-columns: minmax(340px, auto) minmax(520px, 1fr) auto;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 56.25em) {
+  .planning-operating-rail {
+    grid-template-columns: max-content minmax(640px, 1fr) max-content;
   }
 }
 
