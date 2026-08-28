@@ -270,28 +270,65 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("filters Menu and Attendance rendering without truncating authoritative previews", async () => {
+    let hiddenServiceDate = "";
     const api = withWorkbench((workbench) => {
       const menuTemplate = workbench.weekly_menu!.lines[0]!;
+      hiddenServiceDate = addIsoCalendarDays(workbench.week_start, 1);
       workbench.weekly_menu!.lines.push({
         ...menuTemplate,
         weekly_menu_line_id: "review-menu-line-3-school",
         school_id: "review-planning-school-3",
         dish_id: "review-planning-dish-3",
       });
+      workbench.weekly_menu!.lines.push({
+        ...menuTemplate,
+        weekly_menu_line_id: "review-menu-line-hidden-date",
+        service_date: hiddenServiceDate,
+      });
       const attendanceTemplate = workbench.attendance!.lines[0]!;
-      workbench.attendance!.lines.push({
+      const thirdSchoolAttendance = {
         ...attendanceTemplate,
         attendance_line_id: "review-attendance-line-3-school",
         school_id: "review-planning-school-3",
         student_portions: 180,
         teacher_portions: 18,
-      });
+      };
+      const hiddenDateAttendance = {
+        ...attendanceTemplate,
+        attendance_line_id: "review-attendance-line-hidden-date",
+        service_date: hiddenServiceDate,
+        student_portions: 210,
+        teacher_portions: 16,
+      };
+      workbench.attendance!.lines.push(
+        thirdSchoolAttendance,
+        hiddenDateAttendance,
+      );
+      workbench.default_attendance_preview.push(
+        { ...thirdSchoolAttendance, student_portions: 175 },
+        { ...hiddenDateAttendance, student_portions: 205 },
+      );
     });
     const previewMenu = vi.spyOn(api, "previewMenu");
     const previewAttendance = vi.spyOn(api, "previewAttendance");
     vi.spyOn(window, "confirm").mockReturnValue(true);
     renderWorkbench(api);
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    const menuPanel = screen
+      .getByRole("heading", { name: "Thực đơn tuần" })
+      .closest(".work-panel") as HTMLElement;
+    const menuGrid = within(menuPanel).getByRole("region", {
+      name: "Lưới thực đơn",
+    });
+    expect(menuGrid).toHaveClass("planning-dense-table-surface");
+    expect(
+      within(menuPanel).queryByRole("button", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menuPanel).queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(within(menuGrid).queryByText(formatIsoDate(hiddenServiceDate))).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
@@ -310,10 +347,32 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(previewMenu.mock.calls[0]?.[3]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ service_date: hiddenServiceDate }),
       ]),
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    const attendancePanel = screen
+      .getByRole("heading", { name: "Sĩ số" })
+      .closest(".work-panel") as HTMLElement;
+    const attendanceGrid = within(attendancePanel).getByRole("region", {
+      name: "Danh sách sĩ số",
+    });
+    expect(attendanceGrid).toHaveClass("planning-dense-table-surface");
+    expect(within(attendanceGrid).getByRole("columnheader", { name: "Trường" })).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", {
+        name: "Học sinh mặc định",
+      }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", {
+        name: "Học sinh thực tế",
+      }),
+    ).toBeVisible();
+    expect(within(attendanceGrid).getByRole("columnheader", { name: "Giáo viên" })).toBeVisible();
+    expect(within(attendanceGrid).getByRole("columnheader", { name: "Tổng suất" })).toBeVisible();
+    expect(within(attendanceGrid).queryByText(formatIsoDate(hiddenServiceDate))).not.toBeInTheDocument();
     expect(
       screen.queryByRole("rowheader", { name: "Trường Mầm non Hoa Hồng" }),
     ).not.toBeInTheDocument();
@@ -326,6 +385,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(previewAttendance.mock.calls[0]?.[3]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ service_date: hiddenServiceDate }),
       ]),
     );
   });

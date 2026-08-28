@@ -1133,9 +1133,18 @@ export function PlanningInputsWorkbenchView({
       }),
     [data.week_start],
   );
+  const filteredAttendanceRows = useMemo(
+    () =>
+      attendanceRows.filter(
+        (line) =>
+          line.service_date === serviceDateFilter &&
+          schoolInPlanningScope(line.school_id, schoolScopeIds),
+      ),
+    [attendanceRows, schoolScopeIds, serviceDateFilter],
+  );
   const attendanceTotals = useMemo(
     () =>
-      attendanceRows.reduce(
+      filteredAttendanceRows.reduce(
         (total, line) => ({
           students:
             total.students +
@@ -1150,14 +1159,7 @@ export function PlanningInputsWorkbenchView({
         }),
         { students: 0, teachers: 0 },
       ),
-    [attendanceRows],
-  );
-  const filteredAttendanceRows = useMemo(
-    () =>
-      attendanceRows.filter((line) =>
-        schoolInPlanningScope(line.school_id, schoolScopeIds),
-      ),
-    [attendanceRows, schoolScopeIds],
+    [filteredAttendanceRows],
   );
   const needsAttendanceConfirmation = useMemo(
     () =>
@@ -1880,10 +1882,14 @@ export function PlanningInputsWorkbenchView({
                   Không có trường hoạt động phù hợp bộ lọc.
                 </p>
               ) : (
-                <div className="planning-grid-scroll">
+                <div
+                  className="planning-grid-scroll planning-dense-table-surface"
+                  role="region"
+                  aria-label="Lưới thực đơn"
+                >
                   <CompactTable
                     headers={[
-                      "Trường / ngày",
+                      "Trường",
                       ...activeDishTypes.map(
                         (dishType) => dishType.dish_type_name,
                       ),
@@ -1898,7 +1904,6 @@ export function PlanningInputsWorkbenchView({
                         <tr key={key}>
                           <th scope="row">
                             {school?.school_name ?? schoolId}
-                            <small>{viDate(serviceDate)}</small>
                           </th>
                           {activeDishTypes.map((dishType) => {
                             const line = menuRows.find(
@@ -2127,19 +2132,28 @@ export function PlanningInputsWorkbenchView({
                     : "Không tìm thấy trường phù hợp."}
                 </p>
               ) : (
-                <div className="planning-grid-scroll attendance-grid-scroll">
+                <div
+                  className="planning-grid-scroll attendance-grid-scroll planning-dense-table-surface"
+                  role="region"
+                  aria-label="Danh sách sĩ số"
+                >
                   <CompactTable
                     headers={[
                       "Trường",
-                      "Ngày phục vụ",
-                      "Suất học sinh",
-                      "Suất giáo viên",
-                      "Tổng",
+                      "Học sinh mặc định",
+                      "Học sinh thực tế",
+                      "Giáo viên",
+                      "Tổng suất",
                     ]}
                   >
                     {filteredAttendanceRows.map((line) => {
                       const school = data.schools.find(
                         (item) => item.school_id === line.school_id,
+                      );
+                      const defaultLine = data.default_attendance_preview.find(
+                        (candidate) =>
+                          candidate.school_id === line.school_id &&
+                          candidate.service_date === line.service_date,
                       );
                       const editable = !saving && !refreshRequired;
                       return (
@@ -2147,7 +2161,7 @@ export function PlanningInputsWorkbenchView({
                           <th scope="row">
                             {school?.school_name ?? line.school_id}
                           </th>
-                          <td>{viDate(line.service_date)}</td>
+                          <td>{defaultLine?.student_portions ?? "—"}</td>
                           <td>
                             <input
                               aria-label={`Suất học sinh · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}

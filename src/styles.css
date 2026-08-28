@@ -4242,6 +4242,41 @@ tbody tr.selected-row {
   }
 }
 
+.planning-dense-table-surface {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface);
+}
+
+.planning-dense-table-surface .compact-table {
+  min-width: 100%;
+}
+
+.planning-dense-table-surface .compact-table th {
+  height: var(--planning-header-row-height);
+  padding: 6px var(--planning-cell-inline);
+}
+
+.planning-dense-table-surface .compact-table td {
+  height: var(--planning-row-height);
+  padding: 4px var(--planning-cell-inline);
+}
+
+.planning-dense-table-surface .compact-table th:first-child {
+  position: sticky;
+  z-index: 2;
+  left: 0;
+  background: inherit;
+}
+
+.planning-dense-table-surface input,
+.planning-dense-table-surface select,
+.planning-dense-table-surface button {
+  min-height: var(--planning-control-height);
+}
+
 /* UI-QUALITY-02B — Planning readiness and Need Generation */
 .atlas-content,
 .atlas-page {
