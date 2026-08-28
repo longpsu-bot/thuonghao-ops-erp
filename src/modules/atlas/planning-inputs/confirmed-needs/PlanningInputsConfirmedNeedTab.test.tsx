@@ -454,7 +454,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
   });
 
-  it("opens the batch returned by RMVP-04 materialization", async () => {
+  it("keeps embedded Need Generation as navigation rather than command authority", async () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -465,19 +465,16 @@ describe("Planning Inputs Confirmed Need tab", () => {
       />,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    fireEvent.click(
-      await screen.findByRole("button", { name: /Tạo nhu cầu$/ }),
-    );
-    await waitFor(() =>
-      expect(
-        screen.getByRole("tab", { name: "Xác nhận nhu cầu" }),
-      ).toHaveAttribute("aria-selected", "true"),
-    );
-    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(
+      await screen.findByRole("region", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeDisabled();
-    expect(screen.queryByText("Nhập Excel")).not.toBeInTheDocument();
   });
 });
