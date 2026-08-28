@@ -148,6 +148,44 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).toHaveTextContent("Tất cả trường");
   });
 
+  it("keeps unsaved workflow status local to the active Menu or Attendance step", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.weekly_menu!.weekly_menu_status = "APPROVED";
+      workbench.attendance!.attendance_status = "APPROVED";
+      workbench.default_attendance_preview = structuredClone(
+        workbench.attendance!.lines,
+      );
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWorkbench(api);
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    fireEvent.change(
+      screen.getAllByRole("combobox", { name: /Món canh ·/ })[0]!,
+      {
+        target: { value: "review-planning-dish-3" },
+      },
+    );
+    expect(
+      screen.getByRole("tab", { name: "Thực đơn" }),
+    ).toHaveAccessibleDescription("Cần lưu");
+    expect(
+      screen.getByRole("tab", { name: "Sĩ số" }),
+    ).toHaveAccessibleDescription("Sẵn sàng");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0]!,
+      { target: { value: "421" } },
+    );
+    expect(
+      screen.getByRole("tab", { name: "Thực đơn" }),
+    ).toHaveAccessibleDescription("Sẵn sàng");
+    expect(
+      screen.getByRole("tab", { name: "Sĩ số" }),
+    ).toHaveAccessibleDescription("Cần lưu");
+  });
+
   it("uses a compact header and keeps support evidence collapsed without hiding blockers", async () => {
     renderWorkbench(
       withWorkbench((workbench) => {

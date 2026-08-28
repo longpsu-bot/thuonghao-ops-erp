@@ -1171,11 +1171,11 @@ export function PlanningInputsWorkbenchView({
   const selectedPreflight = dailyConfirmedNeedPreflights[serviceDateFilter];
   const menuWorkflow = sourceWorkflowState(
     data.weekly_menu?.weekly_menu_status,
-    dirty,
+    tab === "menu" && dirty,
   );
   const attendanceWorkflow = sourceWorkflowState(
     data.attendance?.attendance_status,
-    dirty || needsAttendanceConfirmation,
+    (tab === "attendance" && dirty) || needsAttendanceConfirmation,
   );
   const pantryWorkflow = pantryWorkflowState(selectedPreflight);
   const confirmedNeedWorkflow = confirmedNeedWorkflowState(selectedPreflight);
