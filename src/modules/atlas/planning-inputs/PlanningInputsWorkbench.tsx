@@ -1545,65 +1545,67 @@ export function PlanningInputsWorkbenchView({
 
   return (
     <div className="planning-inputs-workbench">
-      <WorkbenchHeader
-        eyebrow="Lập nhu cầu"
-        title="Lập nhu cầu theo tuần"
-        context="Thực đơn → Sĩ số → Nhu cầu bổ sung → Xác nhận nhu cầu."
-        headingLevel={1}
-      />
-      <Paper component="section" className="planning-context-bar" withBorder>
-        {!DatePickerInput ? (
-          <label>
-            Tuần phục vụ
-            <input
+      <div className="planning-compact-header">
+        <WorkbenchHeader
+          eyebrow="Lập nhu cầu"
+          title="Lập nhu cầu theo tuần"
+          context="Thực đơn → Sĩ số → Nhu cầu bổ sung → Xác nhận nhu cầu."
+          headingLevel={1}
+        />
+        <Paper component="section" className="planning-context-bar" withBorder>
+          {!DatePickerInput ? (
+            <label>
+              Tuần phục vụ
+              <input
+                aria-label="Tuần phục vụ"
+                value={viDate(weekStart)}
+                data-business-value={weekStart}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
+                    ? value
+                    : value.split("/").reverse().join("-");
+                  if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue))
+                    changeWeek(localMondayOfIso(isoValue));
+                }}
+              />
+            </label>
+          ) : (
+            <DatePickerInput
+              label="Tuần phục vụ"
               aria-label="Tuần phục vụ"
-              value={viDate(weekStart)}
-              data-business-value={weekStart}
-              onChange={(event) => {
-                const value = event.target.value;
-                const isoValue = /^\d{4}-\d{2}-\d{2}$/.test(value)
-                  ? value
-                  : value.split("/").reverse().join("-");
-                if (/^\d{4}-\d{2}-\d{2}$/.test(isoValue))
-                  changeWeek(localMondayOfIso(isoValue));
+              value={weekStart}
+              valueFormat="DD/MM/YYYY"
+              locale="vi"
+              firstDayOfWeek={1}
+              onChange={(value) => {
+                if (typeof value === "string" && value)
+                  changeWeek(localMondayOfIso(value));
               }}
             />
-          </label>
-        ) : (
-          <DatePickerInput
-            label="Tuần phục vụ"
-            aria-label="Tuần phục vụ"
-            value={weekStart}
-            valueFormat="DD/MM/YYYY"
-            locale="vi"
-            firstDayOfWeek={1}
-            onChange={(value) => {
-              if (typeof value === "string" && value)
-                changeWeek(localMondayOfIso(value));
-            }}
+          )}
+          <div>
+            <span>Khoảng ngày</span>
+            <b>
+              {viDate(data.week_start)} – {viDate(data.week_end)}
+            </b>
+          </div>
+          <PlanningSchoolScopeControl
+            schools={activeSchools}
+            selectedSchoolIds={schoolScopeIds}
+            onChange={setSchoolScopeIds}
           />
-        )}
-        <div>
-          <span>Khoảng ngày</span>
-          <b>
-            {viDate(data.week_start)} – {viDate(data.week_end)}
-          </b>
-        </div>
-        <PlanningSchoolScopeControl
-          schools={activeSchools}
-          selectedSchoolIds={schoolScopeIds}
-          onChange={setSchoolScopeIds}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
-          onClick={refreshAuthoritativeData}
-          disabled={saving}
-        >
-          Làm mới
-        </Button>
-      </Paper>
+          <Button
+            type="button"
+            variant="outline"
+            leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
+            onClick={refreshAuthoritativeData}
+            disabled={saving}
+          >
+            Làm mới
+          </Button>
+        </Paper>
+      </div>
 
       {!authSubject ? (
         <OperationalState
@@ -1931,61 +1933,64 @@ export function PlanningInputsWorkbenchView({
                   </CompactTable>
                 </div>
               )}
-              <div className="planning-support-region">
-                <SourceSummary source={data.weekly_menu} />
-                {googleFetch.status === "success" && (
-                  <details className="planning-evidence">
-                    <summary>Bằng chứng Google Sheet vừa tải</summary>
-                    <section
-                      className="planning-source-summary planning-source-summary-inline"
-                      aria-label="Nguồn Google Sheet vừa tải"
-                    >
-                      <span>
-                        Nguồn: <b>{googleFetch.sourceName}</b>
-                      </span>
-                      <span>
-                        Trang tính: <b>{googleFetch.sheetName}</b>
-                      </span>
-                      <span>
-                        Tải lúc:{" "}
-                        <b>
-                          {googleFetch.fetchedAt
-                            ? new Date(googleFetch.fetchedAt).toLocaleString(
-                                "vi-VN",
-                              )
-                            : "—"}
-                        </b>
-                      </span>
-                      <span>
-                        Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
-                      </span>
-                    </section>
-                  </details>
-                )}
-                {browserChecksum && (
-                  <p className="planning-checksum">
-                    SHA-256 trình duyệt: <code>{browserChecksum}</code>
-                  </p>
-                )}
-                <ReviewSummary
-                  preview={menuPreview}
-                  kind="menu"
-                  schools={data.schools}
-                  dishes={data.dishes}
-                  dishTypes={data.dish_types}
-                  previousMenuRows={activeMenuRows(data.weekly_menu)}
-                  previousAttendanceRows={[]}
-                />
-                <PlanningCorrectionImpactPanel
-                  impact={menuCorrectionImpact}
-                  busy={saving}
-                  onPrepare={(chain) => void prepareCorrection("menu", chain)}
-                />
-                <History entries={data.weekly_menu?.approval_history ?? []} />
-                <ChangeTimeline
-                  entries={data.weekly_menu?.change_history ?? []}
-                />
-              </div>
+              <details className="planning-support-region">
+                <summary>Chi tiết hỗ trợ</summary>
+                <div className="planning-support-content">
+                  <SourceSummary source={data.weekly_menu} />
+                  {googleFetch.status === "success" && (
+                    <details className="planning-evidence">
+                      <summary>Bằng chứng Google Sheet vừa tải</summary>
+                      <section
+                        className="planning-source-summary planning-source-summary-inline"
+                        aria-label="Nguồn Google Sheet vừa tải"
+                      >
+                        <span>
+                          Nguồn: <b>{googleFetch.sourceName}</b>
+                        </span>
+                        <span>
+                          Trang tính: <b>{googleFetch.sheetName}</b>
+                        </span>
+                        <span>
+                          Tải lúc:{" "}
+                          <b>
+                            {googleFetch.fetchedAt
+                              ? new Date(googleFetch.fetchedAt).toLocaleString(
+                                  "vi-VN",
+                                )
+                              : "—"}
+                          </b>
+                        </span>
+                        <span>
+                          Dòng nguồn: <b>{googleFetch.sourceRowCount ?? 0}</b>
+                        </span>
+                      </section>
+                    </details>
+                  )}
+                  {browserChecksum && (
+                    <p className="planning-checksum">
+                      SHA-256 trình duyệt: <code>{browserChecksum}</code>
+                    </p>
+                  )}
+                  <History entries={data.weekly_menu?.approval_history ?? []} />
+                  <ChangeTimeline
+                    entries={data.weekly_menu?.change_history ?? []}
+                  />
+                </div>
+              </details>
+              <ReviewSummary
+                preview={menuPreview}
+                kind="menu"
+                schools={data.schools}
+                dishes={data.dishes}
+                dishTypes={data.dish_types}
+                previousMenuRows={activeMenuRows(data.weekly_menu)}
+                previousAttendanceRows={[]}
+              />
+              <PlanningCorrectionImpactPanel
+                impact={menuCorrectionImpact}
+                busy={saving}
+                onPrepare={(chain) => void prepareCorrection("menu", chain)}
+              />
             </Panel>
           )}
 
@@ -2197,34 +2202,37 @@ export function PlanningInputsWorkbenchView({
                   suất
                 </p>
               )}
-              <div className="planning-support-region">
-                <SourceSummary source={data.attendance} />
-                {browserChecksum && (
-                  <p className="planning-checksum">
-                    SHA-256 trình duyệt: <code>{browserChecksum}</code>
-                  </p>
-                )}
-                <ReviewSummary
-                  preview={attendancePreview}
-                  kind="attendance"
-                  schools={data.schools}
-                  dishes={data.dishes}
-                  dishTypes={data.dish_types}
-                  previousMenuRows={[]}
-                  previousAttendanceRows={activeAttendanceRows(data.attendance)}
-                />
-                <PlanningCorrectionImpactPanel
-                  impact={attendanceCorrectionImpact}
-                  busy={saving}
-                  onPrepare={(chain) =>
-                    void prepareCorrection("attendance", chain)
-                  }
-                />
-                <History entries={data.attendance?.approval_history ?? []} />
-                <ChangeTimeline
-                  entries={data.attendance?.change_history ?? []}
-                />
-              </div>
+              <details className="planning-support-region">
+                <summary>Chi tiết hỗ trợ</summary>
+                <div className="planning-support-content">
+                  <SourceSummary source={data.attendance} />
+                  {browserChecksum && (
+                    <p className="planning-checksum">
+                      SHA-256 trình duyệt: <code>{browserChecksum}</code>
+                    </p>
+                  )}
+                  <History entries={data.attendance?.approval_history ?? []} />
+                  <ChangeTimeline
+                    entries={data.attendance?.change_history ?? []}
+                  />
+                </div>
+              </details>
+              <ReviewSummary
+                preview={attendancePreview}
+                kind="attendance"
+                schools={data.schools}
+                dishes={data.dishes}
+                dishTypes={data.dish_types}
+                previousMenuRows={[]}
+                previousAttendanceRows={activeAttendanceRows(data.attendance)}
+              />
+              <PlanningCorrectionImpactPanel
+                impact={attendanceCorrectionImpact}
+                busy={saving}
+                onPrepare={(chain) =>
+                  void prepareCorrection("attendance", chain)
+                }
+              />
             </Panel>
           )}
 
@@ -2240,48 +2248,58 @@ export function PlanningInputsWorkbenchView({
           )}
 
           {tab === "confirmed-needs" && (
-            <>
-              <NeedGenerationWorkbench
-                authState={authState}
-                api={needGenerationApi}
-                preflightApi={readinessApi}
-                selectedWeekStart={weekStart}
-                selectedWeekEnd={selectedWeekEnd}
-                mode={mode}
-                embeddedInConfirmedNeed
-                onConfirmedNeedSelected={(
-                  nextBatchId,
-                  serviceDate,
-                  authoritativePreflight,
-                ) => {
-                  setDailyConfirmedNeedPreflights((current) => ({
-                    ...current,
-                    [serviceDate]: authoritativePreflight,
-                  }));
-                  selectConfirmedNeedDate({
+            <div className="planning-confirmed-layout">
+              <aside
+                className="planning-confirmed-daily"
+                aria-label="Tổng quan nhu cầu theo ngày"
+              >
+                <NeedGenerationWorkbench
+                  authState={authState}
+                  api={needGenerationApi}
+                  preflightApi={readinessApi}
+                  selectedWeekStart={weekStart}
+                  selectedWeekEnd={selectedWeekEnd}
+                  mode={mode}
+                  embeddedInConfirmedNeed
+                  onConfirmedNeedSelected={(
+                    nextBatchId,
                     serviceDate,
-                    batchId: nextBatchId,
-                  });
-                  setConfirmedNeedProjectionResolution("ready");
-                }}
-              />
-              {visibleConfirmedNeed && (
-                <p role="status">
-                  Đang xem ngày{" "}
-                  <b>{viDate(visibleConfirmedNeed.serviceDate)}</b>.
-                </p>
-              )}
-              <ConfirmedNeedReviewWorkbench
-                key={visibleConfirmedNeed?.batchId ?? "unselected"}
-                authState={authState}
-                api={confirmedNeedApi}
-                initialBatchId={visibleConfirmedNeed?.batchId ?? null}
-                currentNeedResolution={confirmedNeedResolution}
-                mode={mode}
-                schoolScopeIds={schoolScopeIds}
-                onDirtyChange={setConfirmedNeedDirty}
-              />
-            </>
+                    authoritativePreflight,
+                  ) => {
+                    setDailyConfirmedNeedPreflights((current) => ({
+                      ...current,
+                      [serviceDate]: authoritativePreflight,
+                    }));
+                    selectConfirmedNeedDate({
+                      serviceDate,
+                      batchId: nextBatchId,
+                    });
+                    setConfirmedNeedProjectionResolution("ready");
+                  }}
+                />
+              </aside>
+              <section
+                className="planning-confirmed-review"
+                aria-label="Chi tiết xác nhận nhu cầu"
+              >
+                {visibleConfirmedNeed && (
+                  <p role="status">
+                    Đang xem ngày{" "}
+                    <b>{viDate(visibleConfirmedNeed.serviceDate)}</b>.
+                  </p>
+                )}
+                <ConfirmedNeedReviewWorkbench
+                  key={visibleConfirmedNeed?.batchId ?? "unselected"}
+                  authState={authState}
+                  api={confirmedNeedApi}
+                  initialBatchId={visibleConfirmedNeed?.batchId ?? null}
+                  currentNeedResolution={confirmedNeedResolution}
+                  mode={mode}
+                  schoolScopeIds={schoolScopeIds}
+                  onDirtyChange={setConfirmedNeedDirty}
+                />
+              </section>
+            </div>
           )}
 
           {notice && load !== "error" && (

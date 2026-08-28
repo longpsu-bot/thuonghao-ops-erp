@@ -148,6 +148,56 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).toHaveTextContent("Tất cả trường");
   });
 
+  it("uses a compact header and keeps support evidence collapsed without hiding blockers", async () => {
+    renderWorkbench(
+      withWorkbench((workbench) => {
+        workbench.weekly_menu!.issues.blockers = [
+          {
+            code: "EMPTY_WEEKLY_MENU",
+            message: "Weekly Menu is empty.",
+            source_row_reference: null,
+          },
+        ];
+      }),
+    );
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    expect(
+      screen
+        .getByRole("heading", { name: "Lập nhu cầu theo tuần" })
+        .closest(".planning-compact-header"),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("Thực đơn tuần chưa có phân công hợp lệ."),
+    ).toBeVisible();
+    const supportSummary = screen.getByText("Chi tiết hỗ trợ");
+    const support = supportSummary.closest("details");
+    expect(support).not.toHaveAttribute("open");
+    expect(
+      within(support as HTMLElement).getByText("Bằng chứng nguồn hiện tại"),
+    ).not.toBeVisible();
+  });
+
+  it("renders Confirmed Need as daily overview plus selected-date review without automation actions", async () => {
+    renderWorkbench();
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+
+    expect(
+      await screen.findByRole("complementary", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("region", { name: "Chi tiết xác nhận nhu cầu" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", {
+        name: /Bổ sung tự động|Pantry Rules|Đặt hàng tự động/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("persists a multi-school display scope across all steps and service dates", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
@@ -408,7 +458,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       ),
     ).toBeVisible();
     expect(screen.queryByText("default:TH001")).not.toBeVisible();
-    fireEvent.click(screen.getByText("Chi tiết hỗ trợ"));
+    const supportSummaries = screen.getAllByText("Chi tiết hỗ trợ");
+    fireEvent.click(supportSummaries[1]);
+    fireEvent.click(supportSummaries[0]);
     expect(screen.getByText("default:TH001")).toBeVisible();
   });
 

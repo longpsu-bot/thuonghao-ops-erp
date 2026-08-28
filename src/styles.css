@@ -6103,6 +6103,43 @@ details.planning-source-group > summary {
   border-top: 1px solid var(--atlas-border);
 }
 
+.planning-support-region > summary {
+  padding: 8px 0;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.planning-support-content {
+  display: grid;
+  gap: 8px;
+}
+
+.planning-compact-header {
+  display: grid;
+  gap: 10px;
+}
+
+.planning-compact-header > .workbench-header {
+  margin-bottom: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--atlas-border);
+}
+
+.planning-confirmed-layout {
+  display: grid;
+  grid-template-columns: minmax(330px, 0.8fr) minmax(0, 1.6fr);
+  align-items: start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.planning-confirmed-daily,
+.planning-confirmed-review {
+  min-width: 0;
+}
+
 .planning-review {
   margin-top: 14px;
   padding: 12px;
@@ -6270,6 +6307,16 @@ details.planning-source-group > summary {
   .pantry-toolbar .planning-local-actions {
     grid-column: auto;
     border-top: 0;
+  }
+}
+
+@media (max-width: 56.25em) {
+  .planning-workflow-bar {
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+  }
+
+  .planning-confirmed-layout {
+    grid-template-columns: 1fr;
   }
 }
 
