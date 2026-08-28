@@ -28,6 +28,7 @@
 ## Task 1 — Add school display-scope primitives and align review fixtures
 
 **Files:**
+
 - Create: `src/modules/atlas/planning-inputs/planningSchoolScope.ts`
 - Create: `src/modules/atlas/planning-inputs/PlanningSchoolScopeControl.tsx`
 - Create: `src/modules/atlas/planning-inputs/PlanningSchoolScopeControl.test.tsx`
@@ -111,10 +112,7 @@ export function normalizePlanningSchoolScope(
   return orderedIds.filter((id) => valid.includes(id));
 }
 
-export function schoolInPlanningScope(
-  schoolId: string,
-  selectedIds: string[],
-) {
+export function schoolInPlanningScope(schoolId: string, selectedIds: string[]) {
   return selectedIds.length === 0 || selectedIds.includes(schoolId);
 }
 
@@ -145,6 +143,7 @@ type PlanningSchoolScopeControlProps = {
 ```
 
 Use only existing Mantine primitives (`Popover`, `Button`, `Checkbox`, `TextInput`, optional `ScrollArea`). Requirements:
+
 - button `aria-label="Phạm vi trường"`;
 - button text from `planningSchoolScopeLabel`;
 - searchable list sorted by `display_order`, then Vietnamese name;
@@ -189,6 +188,7 @@ git commit -m "test: align Planning multi-school review fixtures"
 ## Task 2 — Replace plain tabs with the unified workflow/status bar and parent school scope
 
 **Files:**
+
 - Create: `src/modules/atlas/planning-inputs/PlanningWorkflowBar.tsx`
 - Create: `src/modules/atlas/planning-inputs/PlanningWorkflowBar.test.tsx`
 - Modify: `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx`
@@ -221,11 +221,7 @@ Expected RED.
 - [ ] Create these types:
 
 ```ts
-export type PlanningWorkflowTone =
-  | "ok"
-  | "warning"
-  | "danger"
-  | "neutral";
+export type PlanningWorkflowTone = "ok" | "warning" | "danger" | "neutral";
 
 export type PlanningWorkflowItem<T extends string = string> = {
   id: T;
@@ -268,17 +264,20 @@ const [schoolScopeIds, setSchoolScopeIds] = useState<string[]>([]);
 - [ ] Build four `PlanningWorkflowItem<TabId>` values in the parent. Do not add reads.
 
 Menu/Attendance:
+
 - dirty / derived attendance confirmation / DRAFT / VALIDATED / REOPENED → `Cần lưu` or `Chưa lưu` with warning tone;
 - APPROVED / NEED_GENERATION_REQUESTED / USED_FOR_NEED_GENERATION → `Sẵn sàng` with ok tone;
 - missing → `Chưa có` with neutral/warning tone.
 
 Pantry from selected service date preflight `source_evidence.pantry`:
+
 - selected positive evidence → `${line_count} mục`;
 - explicit zero evidence → `Không bổ sung`;
 - missing → `Chưa có`;
 - ambiguous/stale/invalid → `Cần xử lý`.
 
 Confirmed Need from selected service date preflight:
+
 - blocker `NO_NEED_SOURCE_FOR_SERVICE_DATE` → `Không có nhu cầu cần lập`;
 - `DRAFT_REVIEW` → `Chờ xác nhận`;
 - `REOPENED` → `Cần xác nhận lại`;
@@ -319,6 +318,7 @@ git commit -m "feat: add compact Planning workflow scope"
 ## Task 3 — Apply school display scope to Pantry without changing week-level writes
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/pantry/PantryWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/pantry/PantryWorkbench.test.tsx`
 - Modify: `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx`
@@ -395,6 +395,7 @@ git commit -m "feat: scope Pantry display by selected schools"
 ## Task 4 — Apply external school scope to Confirmed Need and protect hidden dirty edits
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench.test.tsx`
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/PlanningInputsConfirmedNeedTab.test.tsx` only where the global school control replaces an internal school control expectation.
@@ -475,6 +476,7 @@ git commit -m "feat: scope Confirmed Need display safely"
 ## Task 5 — Finish compact layout, progressive disclosure, and certification
 
 **Files:**
+
 - Modify: `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx`
 - Modify: `src/modules/atlas/planning-inputs/PlanningInputsWorkbench.test.tsx`
 - Modify: `src/modules/atlas/planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench.tsx` only for structural/support disclosure classes if needed.
@@ -585,6 +587,7 @@ git diff --name-only e683d775c8756da8af089164eb3793b0792dd6ee...HEAD
 ```
 
 Expected: only Planning frontend/review-fixture files, `src/styles.css`, and the approved spec/plan. The diff must contain no:
+
 - `supabase/`
 - `.github/`
 - deployment scripts
@@ -610,6 +613,7 @@ Open PR with title:
 `Planning: simplify compact workbench and multi-school scope`
 
 PR body must state:
+
 - presentation/interaction-only Planning refinement;
 - one unified workflow/status bar;
 - multi-school selection is display-only and cannot narrow authoritative write payloads;
