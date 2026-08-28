@@ -1,9 +1,12 @@
 # Planning Compact Workbench UX V1
 
-**Status:** Proposed implementation design  
-**Date:** 2026-08-28  
-**Baseline:** `e683d775c8756da8af089164eb3793b0792dd6ee`  
-**Governing architecture:** `OPS_SYSTEM_MAP v1.0` / `ARCH-002`  
+**Status:** Proposed implementation design
+
+**Date:** 2026-08-28
+
+**Baseline:** `e683d775c8756da8af089164eb3793b0792dd6ee`
+
+**Governing architecture:** `OPS_SYSTEM_MAP v1.0` / `ARCH-002`
 **Selected direction:** Model B — Compact Workbench, refined with one unified workflow/status bar and multi-school display scope.
 
 ## Goal
