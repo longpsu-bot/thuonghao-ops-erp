@@ -25,10 +25,46 @@ const authState = {
   session: { user: { id: "review-only-atlas-operator" } },
 } as unknown as AtlasAuthState;
 
-function renderPantry(api = createReviewPantryApi("ready")) {
+function renderPantry(
+  api = createReviewPantryApi("ready"),
+  schoolScopeIds: string[] = [],
+) {
   render(
-    <PantryWorkbench authState={authState} api={api} weekStart="2026-08-03" />,
+    <PantryWorkbench
+      authState={authState}
+      api={api}
+      weekStart="2026-08-03"
+      schoolScopeIds={schoolScopeIds}
+    />,
   );
+  return api;
+}
+
+function pantryApiWithHiddenFirstRow() {
+  const api = createReviewPantryApi("ready");
+  const getWorkbench = api.getWorkbench.bind(api);
+  api.getWorkbench = async (...args) => {
+    const result = await getWorkbench(...args);
+    if (result.kind === "success" && result.response.workbench) {
+      const workbench = result.response.workbench as never as {
+        batch: { active_lines: Array<Record<string, unknown>> };
+      };
+      const visible = workbench.batch.active_lines[0]!;
+      workbench.batch.active_lines.unshift({
+        ...visible,
+        pantry_need_line_id: "review-pantry-line-hidden",
+        school_id: "review-planning-school-3",
+        school_code: "TH003",
+        school_name: "Trường Mầm non Hoa Hồng",
+        delivery_location_id: "review-planning-location-3",
+        delivery_location_code: "KITCHEN-TH003",
+        delivery_location_name: "Bếp chính Hoa Hồng",
+        requested_quantity: "7.000000",
+        source_row_reference: "review:hidden:row",
+      });
+    }
+    return result;
+  };
   return api;
 }
 
@@ -42,6 +78,64 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     expect(school).toHaveTextContent("TH001 · Trường Tiểu học Nguyễn Du");
     expect(school).toHaveTextContent("TH002 · Trường Tiểu học Trần Quốc Toản");
     expect(school).toHaveTextContent("TH003 · Trường Mầm non Hoa Hồng");
+  });
+
+  it("filters rows visually while preserving original indexes and complete preview/save rows", async () => {
+    const api = pantryApiWithHiddenFirstRow();
+    const preview = vi.spyOn(api, "preview");
+    const save = vi.spyOn(api, "saveCompleted");
+    renderPantry(api, ["review-planning-school-1"]);
+
+    expect(await screen.findByText("Bếp chính Nguyễn Du")).toBeVisible();
+    expect(screen.queryByText("Bếp chính Hoa Hồng")).not.toBeInTheDocument();
+    const visibleQuantity = screen.getByRole("spinbutton", {
+      name: "Số lượng dòng 2",
+    });
+    fireEvent.change(visibleQuantity, { target: { value: "13.5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    expect(preview.mock.calls[0]?.[4]).toEqual([
+      expect.objectContaining({
+        school_id: "review-planning-school-3",
+        requested_quantity: "7.000000",
+      }),
+      expect.objectContaining({
+        school_id: "review-planning-school-1",
+        requested_quantity: "13.5",
+      }),
+    ]);
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]?.[0].payload.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ school_id: "review-planning-school-1" }),
+      ]),
+    );
+  });
+
+  it("defaults a new row to the first school in an explicit display scope", async () => {
+    renderPantry(createReviewPantryApi("ready"), [
+      "review-planning-school-2",
+      "review-planning-school-3",
+    ]);
+    await screen.findByRole("heading", { name: "Nhu cầu bổ sung" });
+    fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
+
+    expect(screen.getByRole("combobox", { name: "Trường dòng 2" })).toHaveValue(
+      "review-planning-school-2",
+    );
+  });
+
+  it("states that zero additions is a whole-week command", async () => {
+    renderPantry();
+    expect(
+      await screen.findByRole("checkbox", {
+        name: "Xác nhận toàn tuần không có bổ sung",
+      }),
+    ).toBeVisible();
   });
 
   it("uses the business job name and plain Review-before-Save actions", async () => {
@@ -134,7 +228,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
 
     fireEvent.click(
       await screen.findByRole("checkbox", {
-        name: "Xác nhận tuần này không có bổ sung",
+        name: "Xác nhận toàn tuần không có bổ sung",
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));

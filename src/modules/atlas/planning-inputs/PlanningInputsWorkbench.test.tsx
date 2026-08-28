@@ -674,7 +674,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     await screen.findByLabelText("Số lượng dòng 1");
     fireEvent.click(
       screen.getByRole("checkbox", {
-        name: "Xác nhận tuần này không có bổ sung",
+        name: "Xác nhận toàn tuần không có bổ sung",
       }),
     );
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
@@ -685,7 +685,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
     expect(
       screen.getByRole("checkbox", {
-        name: "Xác nhận tuần này không có bổ sung",
+        name: "Xác nhận toàn tuần không có bổ sung",
       }),
     ).toBeChecked();
   });

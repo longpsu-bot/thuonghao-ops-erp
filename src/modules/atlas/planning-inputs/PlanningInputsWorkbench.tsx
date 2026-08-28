@@ -2233,6 +2233,7 @@ export function PlanningInputsWorkbenchView({
               authState={authState}
               api={pantryApi}
               weekStart={weekStart}
+              schoolScopeIds={schoolScopeIds}
               mode={mode}
               onDirtyChange={setPantryDirty}
             />

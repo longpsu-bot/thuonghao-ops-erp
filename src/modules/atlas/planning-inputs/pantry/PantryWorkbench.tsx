@@ -3,6 +3,7 @@ import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { planningSourceSaveOutcome } from "../planningInputsModel";
+import { schoolInPlanningScope } from "../planningSchoolScope";
 import { PlanningCorrectionImpactPanel } from "../PlanningCorrectionImpactPanel";
 import {
   planningCorrectionImpactFromResult,
@@ -107,12 +108,14 @@ export function PantryWorkbench({
   weekStart,
   mode = "connected",
   onDirtyChange,
+  schoolScopeIds = [],
 }: {
   authState: AtlasAuthState;
   api?: PantryApi;
   weekStart: string;
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
+  schoolScopeIds?: string[];
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [load, setLoad] = useState<LoadState>("idle");
@@ -198,6 +201,22 @@ export function PantryWorkbench({
       ),
     [data.purposes],
   );
+  const scopedSchools = useMemo(
+    () =>
+      data.schools.filter((school) =>
+        schoolInPlanningScope(school.school_id, schoolScopeIds),
+      ),
+    [data.schools, schoolScopeIds],
+  );
+  const visibleRowEntries = useMemo(
+    () =>
+      rows
+        .map((row, index) => ({ row, index }))
+        .filter(({ row }) =>
+          schoolInPlanningScope(row.school_id, schoolScopeIds),
+        ),
+    [rows, schoolScopeIds],
+  );
 
   const markEdited = (next: PantryDraftRow[]) => {
     setRows(next);
@@ -213,7 +232,7 @@ export function PantryWorkbench({
   };
 
   const addRow = () => {
-    const school = data.schools[0];
+    const school = scopedSchools[0];
     const ingredient = data.ingredients[0];
     const purpose = purposes[0];
     if (!school || !ingredient || !purpose) return;
@@ -465,7 +484,7 @@ export function PantryWorkbench({
                   setDirty(true);
                 }}
               />
-              Xác nhận tuần này không có bổ sung
+              Xác nhận toàn tuần không có bổ sung
             </label>
           </div>
           <div className="planning-toolbar-group planning-local-actions">
@@ -505,7 +524,7 @@ export function PantryWorkbench({
           </div>
         </div>
 
-        {rows.length === 0 ? (
+        {visibleRowEntries.length === 0 ? (
           <p className={`empty${noAdditions ? " pantry-zero-state" : ""}`}>
             {noAdditions
               ? "Đã xác nhận không có bổ sung; hãy xem thay đổi trước khi lưu."
@@ -529,7 +548,7 @@ export function PantryWorkbench({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, index) => {
+                {visibleRowEntries.map(({ row, index }) => {
                   const school = data.schools.find(
                     (item) => item.school_id === row.school_id,
                   );
@@ -565,7 +584,7 @@ export function PantryWorkbench({
                             updateRow(index, "school_id", event.target.value)
                           }
                         >
-                          {data.schools.map((item) => (
+                          {scopedSchools.map((item) => (
                             <option value={item.school_id} key={item.school_id}>
                               {item.school_code} · {item.school_name}
                             </option>
