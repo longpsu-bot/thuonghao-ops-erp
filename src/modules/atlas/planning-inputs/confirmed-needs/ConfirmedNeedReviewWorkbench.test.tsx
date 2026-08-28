@@ -65,6 +65,25 @@ async function saveAll(api = createReviewConfirmedNeedApi("ready")) {
 }
 
 describe("Confirmed Need two-action workbench", () => {
+  it("uses all three canonical Planning review schools", () => {
+    const fixture = createReviewConfirmedNeedFixture(3);
+
+    expect(fixture.lines.map((line) => line.school)).toEqual([
+      {
+        id: "review-planning-school-1",
+        name: "Trường Tiểu học Nguyễn Du",
+      },
+      {
+        id: "review-planning-school-2",
+        name: "Trường Tiểu học Trần Quốc Toản",
+      },
+      {
+        id: "review-planning-school-3",
+        name: "Trường Mầm non Hoa Hồng",
+      },
+    ]);
+  });
+
   it("shows the current work context in first-time operator language", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
@@ -79,7 +98,7 @@ describe("Confirmed Need two-action workbench", () => {
 
   it.each([
     ["ingredient", "cà rốt", "Cà rốt"],
-    ["school", "hoa sen", "Trường Mầm non Hoa Sen"],
+    ["school", "nguyễn du", "Trường Tiểu học Nguyễn Du"],
     ["delivery location", "bếp phụ", "Bếp phụ"],
   ])("searches loaded %s fields", async (_kind, query, expected) => {
     renderReview();
@@ -101,7 +120,7 @@ describe("Confirmed Need two-action workbench", () => {
     await screen.findByText("Gạo thơm");
     const toolbar = screen.getByRole("region", { name: "Tìm và lọc" });
     fireEvent.change(within(toolbar).getByLabelText("Trường"), {
-      target: { value: "a1100000-0000-0000-0000-000000000002" },
+      target: { value: "review-planning-school-1" },
     });
     expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
     fireEvent.change(within(toolbar).getByLabelText("Ngày"), {

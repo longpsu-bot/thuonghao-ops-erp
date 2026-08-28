@@ -124,8 +124,8 @@ export function createReviewConfirmedNeedFixture(
           name: "Khối trường Atlas",
         },
         school: {
-          id: "a1100000-0000-0000-0000-000000000002",
-          name: "Trường Mầm non Hoa Sen",
+          id: "review-planning-school-1",
+          name: "Trường Tiểu học Nguyễn Du",
         },
         delivery_location: {
           id: "a1200000-0000-0000-0000-000000000002",
@@ -174,8 +174,8 @@ export function createReviewConfirmedNeedFixture(
           name: "Khối trường Atlas",
         },
         school: {
-          id: "a1100000-0000-0000-0000-000000000001",
-          name: "Trường Tiểu học An Bình",
+          id: "review-planning-school-2",
+          name: "Trường Tiểu học Trần Quốc Toản",
         },
         delivery_location: {
           id: "a1200000-0000-0000-0000-000000000001",
@@ -226,6 +226,13 @@ export function createReviewConfirmedNeedFixture(
         confirmed_need_line_id: `c4520000-0000-0000-0000-${suffix}`,
         current_revision_id: `c4510000-0000-0000-0000-${suffix}`,
         service_date: `2026-08-${String(3 + (index % 7)).padStart(2, "0")}`,
+        school:
+          index === 2
+            ? {
+                id: "review-planning-school-3",
+                name: "Trường Mầm non Hoa Hồng",
+              }
+            : structuredClone(template.school),
         ingredient: {
           ...template.ingredient,
           id: `a1300000-0000-0000-0000-${suffix}`,

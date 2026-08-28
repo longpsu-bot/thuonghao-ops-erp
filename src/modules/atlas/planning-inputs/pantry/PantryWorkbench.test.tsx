@@ -33,6 +33,17 @@ function renderPantry(api = createReviewPantryApi("ready")) {
 }
 
 describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
+  it("uses the three canonical Planning review schools", async () => {
+    renderPantry();
+
+    const school = await screen.findByRole("combobox", {
+      name: "Trường dòng 1",
+    });
+    expect(school).toHaveTextContent("TH001 · Trường Tiểu học Nguyễn Du");
+    expect(school).toHaveTextContent("TH002 · Trường Tiểu học Trần Quốc Toản");
+    expect(school).toHaveTextContent("TH003 · Trường Mầm non Hoa Hồng");
+  });
+
   it("uses the business job name and plain Review-before-Save actions", async () => {
     renderPantry();
 
@@ -54,7 +65,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     const approve = vi.spyOn(api, "approve");
     renderPantry(api);
 
-    expect(await screen.findByText("Bếp chính Minh Khai")).toHaveAttribute(
+    expect(await screen.findByText("Bếp chính Nguyễn Du")).toHaveAttribute(
       "data-derived",
       "delivery-location",
     );

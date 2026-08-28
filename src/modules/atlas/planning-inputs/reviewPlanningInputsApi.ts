@@ -311,7 +311,7 @@ function fixtures(
         school_id: "review-planning-school-3",
         school_code: "TH003",
         school_name: "Trường Mầm non Hoa Hồng",
-        school_status: "INACTIVE",
+        school_status: "ACTIVE",
         display_order: 3,
         school_type_id: "review-preschool",
         default_student_portions: 180,
