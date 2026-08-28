@@ -118,10 +118,10 @@ describe("Atlas master-data shell", () => {
     ).not.toBeInTheDocument();
 
     const tabs = await screen.findAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual([
+    expect(tabs.map((tab) => tab.getAttribute("aria-label"))).toEqual([
       "Thực đơn",
       "Sĩ số",
-      "Nhu cầu bổ sung",
+      "Bổ sung",
       "Xác nhận nhu cầu",
     ]);
 
