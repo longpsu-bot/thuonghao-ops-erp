@@ -27,7 +27,8 @@ describe("Planning Inputs contextual generation", () => {
     );
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(4);
-    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveAccessibleName("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveTextContent("Xác nhận");
     expect(
       screen.queryByRole("tab", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
