@@ -623,53 +623,35 @@ export function NeedGenerationWorkbench({
         aria-busy={loading}
       >
         <header className="need-generation-daily-heading">
-          <strong>Tổng quan theo ngày</strong>
+          <strong>Chọn ngày xác nhận</strong>
+          <span>{days.length} ngày phục vụ</span>
         </header>
-        <div className="need-generation-daily-scroll">
-          <table aria-label="Tổng quan nhu cầu theo ngày">
-            <colgroup>
-              <col className="need-generation-daily-date-column" />
-              <col />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Ngày phục vụ</th>
-                <th>Trạng thái và việc cần làm</th>
-              </tr>
-            </thead>
-            <tbody>
-              {days.map((serviceDate) => {
-                const state = dailyPreflights[serviceDate];
-                const action = dailyReviewAction(state);
-                const selected = selectedServiceDate === serviceDate;
-                return (
-                  <tr
-                    key={serviceDate}
-                    className={`need-generation-daily-row${selected ? " selected" : ""}`}
-                    aria-current={selected ? "date" : undefined}
-                  >
-                    <td>
-                      <strong>{viDate(serviceDate)}</strong>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="need-generation-daily-state-action"
-                        aria-label={`${action} ${viDate(serviceDate)}`}
-                        onClick={() => openDailyReview(serviceDate, state)}
-                      >
-                        <span>
-                          {action} ·{" "}
-                          {state ? dailyOperatorStatus(state) : "Đang tải…"}
-                        </span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <nav
+          className="need-generation-daily-selector"
+          aria-label="Chọn ngày xác nhận nhu cầu"
+        >
+          {days.map((serviceDate) => {
+            const state = dailyPreflights[serviceDate];
+            const action = dailyReviewAction(state);
+            const selected = selectedServiceDate === serviceDate;
+            return (
+              <button
+                key={serviceDate}
+                type="button"
+                className={`need-generation-daily-option${selected ? " selected" : ""}`}
+                aria-label={`${action} ${viDate(serviceDate)}`}
+                aria-current={selected ? "date" : undefined}
+                aria-controls="planning-confirmed-review"
+                onClick={() => openDailyReview(serviceDate, state)}
+              >
+                <strong>{viDate(serviceDate)}</strong>
+                <span>
+                  {action} · {state ? dailyOperatorStatus(state) : "Đang tải…"}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
       </section>
     );
   }

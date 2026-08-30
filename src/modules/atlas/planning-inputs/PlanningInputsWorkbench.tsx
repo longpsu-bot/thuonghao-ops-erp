@@ -2302,11 +2302,12 @@ export function PlanningInputsWorkbenchView({
                   />
                 </aside>
                 <section
+                  id="planning-confirmed-review"
                   className="planning-confirmed-review"
                   aria-label="Chi tiết xác nhận nhu cầu"
                 >
                   {visibleConfirmedNeed && (
-                    <p role="status">
+                    <p className="planning-confirmed-selection" role="status">
                       Đang xem ngày{" "}
                       <b>{viDate(visibleConfirmedNeed.serviceDate)}</b>.
                     </p>
