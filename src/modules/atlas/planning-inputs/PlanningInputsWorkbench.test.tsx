@@ -479,18 +479,18 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
     const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
-    const { nextWeek, nextWeekEnd, nextWeekRange } =
-      followingWeekFrom(weekInput);
+    const { nextWeek, nextWeekEnd } = followingWeekFrom(weekInput);
     const midweekSelection = addIsoCalendarDays(nextWeek, 2);
     fireEvent.change(weekInput, { target: { value: midweekSelection } });
 
     expect(weekInput).toHaveValue(formatIsoDate(nextWeek));
     expect(weekInput).toHaveAttribute("data-business-value", nextWeek);
     await waitFor(() =>
-      expect(screen.getByText("Khoảng ngày").parentElement).toHaveTextContent(
-        nextWeekRange,
-      ),
+      expect(
+        screen.getByRole("option", { name: formatIsoDate(nextWeekEnd) }),
+      ).toBeInTheDocument(),
     );
+    expect(screen.queryByText("Khoảng ngày")).not.toBeInTheDocument();
     expect(addIsoCalendarDays(nextWeek, 6)).toBe(nextWeekEnd);
   });
 

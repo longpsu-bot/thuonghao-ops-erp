@@ -1683,15 +1683,6 @@ export function PlanningInputsWorkbenchView({
           actions={authSubject ? sourceRailAction : undefined}
         />
 
-        <div className="planning-period-context" aria-label="Khoảng ngày">
-          <div>
-            <span>Khoảng ngày</span>
-            <b>
-              {viDate(data.week_start)} – {viDate(data.week_end)}
-            </b>
-          </div>
-        </div>
-
         {!authSubject ? (
           <OperationalState
             variant={

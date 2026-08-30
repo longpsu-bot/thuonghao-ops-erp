@@ -107,7 +107,6 @@ export function PantryWorkbench({
   authState,
   api,
   weekStart,
-  mode = "connected",
   onDirtyChange,
   schoolScopeIds = [],
 }: {
@@ -430,11 +429,6 @@ export function PantryWorkbench({
           </button>
         )}
       </PlanningRailActionPortal>
-      {mode === "review" && (
-        <p className="operator-notice warning">
-          Trạng thái xem thử Nhu cầu bổ sung — thay đổi không được lưu.
-        </p>
-      )}
       {notice && (
         <p
           className={`operator-notice${load === "error" ? " danger" : ""}`}

@@ -1,5 +1,3 @@
-import { Button } from "@mantine/core";
-
 export type PlanningWorkflowTone = "ok" | "warning" | "danger" | "neutral";
 
 export type PlanningWorkflowItem<T extends string = string> = {
@@ -32,11 +30,10 @@ export function PlanningWorkflowBar<T extends string>({
         const statusId = `planning-workflow-${item.id}-status`;
         const active = item.id === activeId;
         return (
-          <Button
+          <button
             key={item.id}
             type="button"
             role="tab"
-            variant="subtle"
             aria-label={item.label}
             aria-describedby={statusId}
             aria-selected={active}
@@ -50,7 +47,7 @@ export function PlanningWorkflowBar<T extends string>({
               <strong>{item.compactLabel ?? item.label}</strong>
               <span id={statusId}>{item.status}</span>
             </span>
-          </Button>
+          </button>
         );
       })}
     </div>
