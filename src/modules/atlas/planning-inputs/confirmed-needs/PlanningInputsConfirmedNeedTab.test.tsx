@@ -237,31 +237,33 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const projection = await screen.findByRole("table", {
-      name: "Tổng quan nhu cầu theo ngày",
+    const dailySelector = await screen.findByRole("navigation", {
+      name: "Chọn ngày xác nhận nhu cầu",
     });
-    expect(projection).toHaveTextContent("03/08/2026");
-    expect(projection).toHaveTextContent("05/08/2026");
-    expect(projection).toHaveTextContent("Chờ xác nhận");
-    expect(projection).toHaveTextContent("Mở xác nhận");
+    expect(dailySelector).toHaveTextContent("03/08/2026");
+    expect(dailySelector).toHaveTextContent("05/08/2026");
+    expect(dailySelector).toHaveTextContent("Chờ xác nhận");
+    expect(dailySelector).toHaveTextContent("Mở xác nhận");
     expect(
-      screen.getByText("Chọn ngày phục vụ ở bảng trên để mở nhu cầu xác nhận."),
+      screen.getByText("Chọn ngày phục vụ ở trên để mở nhu cầu xác nhận."),
     ).toBeVisible();
 
-    const mondayRow = screen.getByRole("row", {
-      name: /03\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
-    });
-    fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
+    fireEvent.click(
+      within(dailySelector).getByRole("button", {
+        name: "Mở xác nhận 03/08/2026",
+      }),
+    );
     const search = await screen.findByPlaceholderText(
       "Tìm theo nguyên liệu, trường, điểm giao…",
     );
     fireEvent.change(search, { target: { value: "Nguyễn Du" } });
     expect(search).toHaveValue("Nguyễn Du");
 
-    const wednesdayRow = screen.getByRole("row", {
-      name: /05\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
-    });
-    fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
+    fireEvent.click(
+      within(dailySelector).getByRole("button", {
+        name: "Mở xác nhận 05/08/2026",
+      }),
+    );
 
     await waitFor(() =>
       expect(
@@ -317,13 +319,14 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const projection = await screen.findByRole("table", {
-      name: "Tổng quan nhu cầu theo ngày",
+    const dailySelector = await screen.findByRole("navigation", {
+      name: "Chọn ngày xác nhận nhu cầu",
     });
-    const mondayRow = within(projection).getByRole("row", {
-      name: /03\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
-    });
-    fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
+    fireEvent.click(
+      within(dailySelector).getByRole("button", {
+        name: "Mở xác nhận 03/08/2026",
+      }),
+    );
     fireEvent.click(
       await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
     );
@@ -331,10 +334,11 @@ describe("Planning Inputs Confirmed Need tab", () => {
       screen.getByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
     ).toBeVisible();
 
-    const wednesdayRow = within(projection).getByRole("row", {
-      name: /05\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
-    });
-    fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
+    fireEvent.click(
+      within(dailySelector).getByRole("button", {
+        name: "Mở xác nhận 05/08/2026",
+      }),
+    );
 
     await waitFor(() =>
       expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("05/08/2026"),
@@ -387,14 +391,12 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(serviceDate).toHaveValue("2026-08-25");
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
 
-    const projection = await screen.findByRole("table", {
-      name: "Tổng quan nhu cầu theo ngày",
+    const dailySelector = await screen.findByRole("navigation", {
+      name: "Chọn ngày xác nhận nhu cầu",
     });
     expect(
-      within(projection).getByRole("row", {
-        name: /25\/08\/2026.*Không có nhu cầu cần lập/,
-      }),
-    ).toBeVisible();
+      within(dailySelector).getByRole("button", { name: "Xem 25/08/2026" }),
+    ).toHaveTextContent("Không có nhu cầu cần lập");
     expect(screen.queryByText(/Đang xem ngày/)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" }),
@@ -427,11 +429,11 @@ describe("Planning Inputs Confirmed Need tab", () => {
     fireEvent.change(serviceDate, { target: { value: "2026-08-25" } });
     expect(serviceDate).toHaveValue("2026-08-25");
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const projection = await screen.findByRole("table", {
-      name: "Tổng quan nhu cầu theo ngày",
+    const dailySelector = await screen.findByRole("navigation", {
+      name: "Chọn ngày xác nhận nhu cầu",
     });
     fireEvent.click(
-      within(projection).getByRole("button", {
+      within(dailySelector).getByRole("button", {
         name: "Mở xác nhận 24/08/2026",
       }),
     );

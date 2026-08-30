@@ -415,7 +415,7 @@ export function ConfirmedNeedReviewWorkbench({
   if (currentNeedResolution === "selection_required")
     return (
       <Panel title="Xác nhận nhu cầu">
-        <p>Chọn ngày phục vụ ở bảng trên để mở nhu cầu xác nhận.</p>
+        <p>Chọn ngày phục vụ ở trên để mở nhu cầu xác nhận.</p>
       </Panel>
     );
   if (!initialBatchId || ["idle", "missing"].includes(currentNeedResolution))

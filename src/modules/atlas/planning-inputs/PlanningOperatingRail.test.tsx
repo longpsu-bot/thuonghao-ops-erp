@@ -88,6 +88,12 @@ describe("PlanningOperatingRail", () => {
     expect(
       within(rail).getByRole("button", { name: "Tất cả trường" }),
     ).toBeVisible();
+    expect(
+      within(rail).getByRole("group", { name: "Phạm vi vận hành" }),
+    ).toBeVisible();
+    expect(
+      within(rail).getByRole("group", { name: "Các bước lập nhu cầu" }),
+    ).toBeVisible();
     expect(within(rail).getAllByRole("tablist")).toHaveLength(1);
     expect(screen.getAllByRole("tablist")).toHaveLength(1);
     const actionHost = within(rail).getByLabelText("Hành động bước hiện tại");

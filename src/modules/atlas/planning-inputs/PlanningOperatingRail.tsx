@@ -32,12 +32,20 @@ export function PlanningOperatingRail<T extends string>({
       role="region"
       aria-label="Thanh điều hành Lập nhu cầu"
     >
-      <div className="planning-operating-context">
+      <div
+        className="planning-operating-context"
+        role="group"
+        aria-label="Phạm vi vận hành"
+      >
         {weekControl}
         {serviceDateControl}
         {schoolControl}
       </div>
-      <div className="planning-operating-workflow">
+      <div
+        className="planning-operating-workflow"
+        role="group"
+        aria-label="Các bước lập nhu cầu"
+      >
         <PlanningWorkflowBar
           items={workflowItems}
           activeId={activeId}

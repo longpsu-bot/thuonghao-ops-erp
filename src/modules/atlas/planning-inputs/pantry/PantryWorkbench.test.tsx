@@ -162,6 +162,16 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     ).not.toBeInTheDocument();
     const localToolbar = screen.getByLabelText("Nhập Nhu cầu bổ sung");
     expect(
+      within(localToolbar).getByRole("group", {
+        name: "Thao tác dòng bổ sung",
+      }),
+    ).toBeVisible();
+    expect(
+      within(localToolbar).getByRole("group", {
+        name: "Xác nhận không phát sinh",
+      }),
+    ).toBeVisible();
+    expect(
       within(localToolbar).queryByRole("button", { name: "Xem thay đổi" }),
     ).not.toBeInTheDocument();
     expect(
@@ -177,6 +187,29 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       screen.getByRole("region", { name: "Bảng nhu cầu bổ sung" }),
     ).toHaveClass("planning-dense-table-surface");
     expect(screen.queryByText("Bản nháp cục bộ")).not.toBeInTheDocument();
+  });
+
+  it("keeps support and history behind one secondary disclosure", async () => {
+    renderPantry();
+    await screen.findByRole("heading", { name: "Nhu cầu bổ sung" });
+
+    const summary = screen.getByText("Chi tiết hỗ trợ và lịch sử");
+    const disclosure = summary.closest("details");
+    expect(disclosure).not.toHaveAttribute("open");
+    expect(
+      within(disclosure as HTMLElement).getByText(/Lịch sử phê duyệt/),
+    ).not.toBeVisible();
+    expect(
+      within(disclosure as HTMLElement).getByText(/Lịch sử thay đổi/),
+    ).not.toBeVisible();
+
+    fireEvent.click(summary);
+    expect(
+      within(disclosure as HTMLElement).getByText(/Lịch sử phê duyệt/),
+    ).toBeVisible();
+    expect(
+      within(disclosure as HTMLElement).getByText(/Lịch sử thay đổi/),
+    ).toBeVisible();
   });
 
   it("keeps Location and Unit server-derived and performs one v2 Save", async () => {

@@ -478,7 +478,11 @@ export function PantryWorkbench({
           className="planning-workbench-toolbar pantry-toolbar"
           aria-label="Nhập Nhu cầu bổ sung"
         >
-          <div className="planning-toolbar-group pantry-entry-actions">
+          <div
+            className="planning-toolbar-group pantry-entry-actions"
+            role="group"
+            aria-label="Thao tác dòng bổ sung"
+          >
             <button
               type="button"
               className="secondary"
@@ -488,6 +492,21 @@ export function PantryWorkbench({
               <Plus size={17} aria-hidden="true" />
               Thêm dòng
             </button>
+            {dirty && (
+              <button
+                type="button"
+                className="quiet planning-toolbar-discard"
+                onClick={discardLocalChanges}
+              >
+                Hủy thay đổi
+              </button>
+            )}
+          </div>
+          <div
+            className="pantry-zero-decision"
+            role="group"
+            aria-label="Xác nhận không phát sinh"
+          >
             <label className="pantry-zero-confirmation">
               <input
                 type="checkbox"
@@ -511,15 +530,6 @@ export function PantryWorkbench({
               />
               Xác nhận toàn tuần không có bổ sung
             </label>
-            {dirty && (
-              <button
-                type="button"
-                className="quiet planning-toolbar-discard"
-                onClick={discardLocalChanges}
-              >
-                Hủy thay đổi
-              </button>
-            )}
           </div>
         </div>
 
@@ -730,30 +740,6 @@ export function PantryWorkbench({
           </div>
         )}
 
-        <details className="planning-evidence">
-          <summary>Chi tiết hỗ trợ</summary>
-          <section
-            className="planning-source-summary planning-source-summary-inline"
-            aria-label="Chi tiết hỗ trợ Nhu cầu bổ sung"
-          >
-            <span>
-              Tuần:{" "}
-              <b>
-                {dateVi(data.week_start)} – {dateVi(data.week_end)}
-              </b>
-            </span>
-            <span>
-              Nguồn: <b>{data.source_method.source_name}</b>
-            </span>
-            <span>
-              Phiên bản: <b>{data.batch?.version ?? "—"}</b>
-            </span>
-            <span>
-              Chữ ký: <code>{data.batch?.source_signature ?? "—"}</code>
-            </span>
-          </section>
-        </details>
-
         {preview && (
           <section
             className="planning-review pantry-review"
@@ -794,51 +780,78 @@ export function PantryWorkbench({
           onPrepare={(chain) => void prepareCorrection(chain)}
         />
 
-        {(data.batch?.invalid_lines.length ?? 0) > 0 && (
-          <details>
-            <summary>
-              Dòng đã vô hiệu ({data.batch?.invalid_lines.length})
-            </summary>
-            <ul>
-              {data.batch?.invalid_lines.map((line) => (
-                <li key={line.pantry_need_line_id}>
-                  {dateVi(line.service_date)} · {line.school_name} ·{" "}
-                  {line.ingredient_name} · {line.requested_quantity}{" "}
-                  {line.unit_name}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
+        <details className="planning-evidence pantry-support-disclosure">
+          <summary>Chi tiết hỗ trợ và lịch sử</summary>
+          <div className="pantry-support-content">
+            <section
+              className="pantry-support-section"
+              aria-label="Chi tiết hỗ trợ Nhu cầu bổ sung"
+            >
+              <h3>Nguồn hiện tại</h3>
+              <div className="planning-source-summary planning-source-summary-inline">
+                <span>
+                  Tuần:{" "}
+                  <b>
+                    {dateVi(data.week_start)} – {dateVi(data.week_end)}
+                  </b>
+                </span>
+                <span>
+                  Nguồn: <b>{data.source_method.source_name}</b>
+                </span>
+                <span>
+                  Phiên bản: <b>{data.batch?.version ?? "—"}</b>
+                </span>
+                <span>
+                  Chữ ký: <code>{data.batch?.source_signature ?? "—"}</code>
+                </span>
+              </div>
+            </section>
 
-        <details>
-          <summary>
-            Lịch sử phê duyệt ({data.batch?.approval_history.length ?? 0})
-          </summary>
-          <ul>
-            {data.batch?.approval_history.map((snapshot) => (
-              <li key={snapshot.pantry_need_approval_snapshot_id}>
-                Phiên bản {snapshot.approved_batch_version} ·{" "}
-                {snapshot.approved_by_display_name} ·{" "}
-                {new Date(snapshot.approved_at).toLocaleString("vi-VN")} ·{" "}
-                {snapshot.line_count} dòng
-              </li>
-            ))}
-          </ul>
-        </details>
-        <details>
-          <summary>
-            Lịch sử thay đổi ({data.batch?.change_history.length ?? 0})
-          </summary>
-          <ul>
-            {data.batch?.change_history.map((change) => (
-              <li key={change.audit_event_id}>
-                {change.event_type} · v{change.version_after} ·{" "}
-                {change.actor_display_name}
-                {change.reason_note && <small>{change.reason_note}</small>}
-              </li>
-            ))}
-          </ul>
+            {(data.batch?.invalid_lines.length ?? 0) > 0 && (
+              <section className="pantry-support-section">
+                <h3>Dòng đã vô hiệu ({data.batch?.invalid_lines.length})</h3>
+                <ul>
+                  {data.batch?.invalid_lines.map((line) => (
+                    <li key={line.pantry_need_line_id}>
+                      {dateVi(line.service_date)} · {line.school_name} ·{" "}
+                      {line.ingredient_name} · {line.requested_quantity}{" "}
+                      {line.unit_name}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <section className="pantry-support-section">
+              <h3>
+                Lịch sử phê duyệt ({data.batch?.approval_history.length ?? 0})
+              </h3>
+              <ul>
+                {data.batch?.approval_history.map((snapshot) => (
+                  <li key={snapshot.pantry_need_approval_snapshot_id}>
+                    Phiên bản {snapshot.approved_batch_version} ·{" "}
+                    {snapshot.approved_by_display_name} ·{" "}
+                    {new Date(snapshot.approved_at).toLocaleString("vi-VN")} ·{" "}
+                    {snapshot.line_count} dòng
+                  </li>
+                ))}
+              </ul>
+            </section>
+            <section className="pantry-support-section">
+              <h3>
+                Lịch sử thay đổi ({data.batch?.change_history.length ?? 0})
+              </h3>
+              <ul>
+                {data.batch?.change_history.map((change) => (
+                  <li key={change.audit_event_id}>
+                    {change.event_type} · v{change.version_after} ·{" "}
+                    {change.actor_display_name}
+                    {change.reason_note && <small>{change.reason_note}</small>}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
         </details>
       </Panel>
     </div>

@@ -127,8 +127,8 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
     expect(
-      await screen.findByRole("table", {
-        name: "Tổng quan nhu cầu theo ngày",
+      await screen.findByRole("navigation", {
+        name: "Chọn ngày xác nhận nhu cầu",
       }),
     ).toBeVisible();
     expect(
