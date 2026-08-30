@@ -26,6 +26,7 @@ const items: PlanningWorkflowItem<
     id: "confirmed",
     step: 4,
     label: "Xác nhận nhu cầu",
+    compactLabel: "Xác nhận",
     status: "Chờ xác nhận",
     tone: "warning",
   },
@@ -51,9 +52,12 @@ describe("PlanningWorkflowBar", () => {
     items.forEach((item) => {
       const tab = screen.getByRole("tab", { name: item.label });
       expect(tab).toHaveTextContent(String(item.step));
-      expect(tab).toHaveTextContent(item.label);
+      expect(tab).toHaveTextContent(item.compactLabel ?? item.label);
       expect(tab).toHaveAccessibleDescription(item.status);
     });
+    expect(
+      screen.getByRole("tab", { name: "Xác nhận nhu cầu" }),
+    ).not.toHaveTextContent("Xác nhận nhu cầu");
     expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
       "aria-selected",
       "true",

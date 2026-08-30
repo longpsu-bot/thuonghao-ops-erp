@@ -154,7 +154,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(4);
-    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveAccessibleName("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveTextContent("Xác nhận");
+    expect(tabs[3]).not.toHaveTextContent("Xác nhận nhu cầu");
     fireEvent.click(tabs[3]!);
     expect(
       await screen.findByText("Chưa có nhu cầu cho tuần đã chọn."),
@@ -247,7 +249,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
 
     const mondayRow = screen.getByRole("row", {
-      name: /03\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /03\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
     const search = await screen.findByPlaceholderText(
@@ -257,7 +259,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(search).toHaveValue("Nguyễn Du");
 
     const wednesdayRow = screen.getByRole("row", {
-      name: /05\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /05\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 
@@ -319,7 +321,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       name: "Tổng quan nhu cầu theo ngày",
     });
     const mondayRow = within(projection).getByRole("row", {
-      name: /03\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /03\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
     fireEvent.click(
@@ -330,7 +332,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
 
     const wednesdayRow = within(projection).getByRole("row", {
-      name: /05\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /05\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 

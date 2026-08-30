@@ -118,6 +118,43 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getAllByText("Chưa lưu").length).toBeGreaterThan(0);
   });
 
+  it("keeps a successful single-date read table-first", async () => {
+    renderAuthoritativeFixture((workbench) => {
+      workbench.lines = workbench.lines.map((line) => ({
+        ...line,
+        service_date: "2026-08-03",
+      }));
+    });
+    await screen.findByText("Gạo thơm");
+
+    expect(
+      screen.queryByText("Đã cập nhật dữ liệu xác nhận nhu cầu."),
+    ).not.toBeInTheDocument();
+    const toolbar = screen.getByRole("region", {
+      name: "Bộ lọc xác nhận nhu cầu",
+    });
+    expect(within(toolbar).queryByLabelText("Ngày")).not.toBeInTheDocument();
+  });
+
+  it("maps governed lifecycle blockers to concise operator language", async () => {
+    renderAuthoritativeFixture((workbench) => {
+      workbench.blockers = [
+        {
+          code: "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE",
+          message: "The batch is not in a reviewable lifecycle state.",
+        },
+      ];
+    });
+    await screen.findByText("Gạo thơm");
+
+    expect(
+      screen.getByText("Nhu cầu này chưa ở trạng thái có thể rà soát."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("The batch is not in a reviewable lifecycle state."),
+    ).not.toBeInTheDocument();
+  });
+
   it("orders the selected-date workbench as summary, conditional notices, filters, table, then collapsed support", async () => {
     renderAuthoritativeFixture((workbench) => {
       workbench.warnings = [
@@ -432,6 +469,11 @@ describe("Confirmed Need two-action workbench", () => {
       "title",
       "Bạn chưa có quyền lưu thay đổi này.",
     );
+    expect(
+      within(screen.getByLabelText("Hành động bước hiện tại")).queryByRole(
+        "status",
+      ),
+    ).not.toBeInTheDocument();
     fireEvent.click(save);
     expect(saveRequest).not.toHaveBeenCalled();
   });

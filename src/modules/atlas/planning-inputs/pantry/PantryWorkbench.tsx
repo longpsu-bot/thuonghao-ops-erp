@@ -135,6 +135,14 @@ export function PantryWorkbench({
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const serviceDates = useMemo(() => {
+    const start = new Date(`${data.week_start}T00:00:00Z`);
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(start);
+      date.setUTCDate(start.getUTCDate() + index);
+      return date.toISOString().slice(0, 10);
+    });
+  }, [data.week_start]);
 
   const adopt = useCallback((workbench: PantryWorkbenchData) => {
     setData(workbench);
@@ -477,7 +485,6 @@ export function PantryWorkbench({
           aria-label="Nhập Nhu cầu bổ sung"
         >
           <div className="planning-toolbar-group pantry-entry-actions">
-            <span className="planning-toolbar-label">Nội dung bổ sung</span>
             <button
               type="button"
               className="secondary"
@@ -510,14 +517,15 @@ export function PantryWorkbench({
               />
               Xác nhận toàn tuần không có bổ sung
             </label>
-            <button
-              type="button"
-              className="quiet"
-              onClick={discardLocalChanges}
-              disabled={!dirty}
-            >
-              Hủy thay đổi
-            </button>
+            {dirty && (
+              <button
+                type="button"
+                className="quiet planning-toolbar-discard"
+                onClick={discardLocalChanges}
+              >
+                Hủy thay đổi
+              </button>
+            )}
           </div>
         </div>
 
@@ -537,10 +545,8 @@ export function PantryWorkbench({
               <thead>
                 <tr>
                   <th>Ngày phục vụ</th>
-                  <th>Trường</th>
-                  <th>Điểm giao nhận</th>
-                  <th>Nguyên liệu</th>
-                  <th>Đơn vị</th>
+                  <th>Trường / điểm giao</th>
+                  <th>Nguyên liệu / đơn vị</th>
                   <th>Mục đích</th>
                   <th>Số lượng</th>
                   <th>Ghi chú</th>
@@ -564,17 +570,20 @@ export function PantryWorkbench({
                   return (
                     <tr key={`${row.source_row_reference}:${index}`}>
                       <td>
-                        <input
+                        <select
                           aria-label={`Ngày phục vụ dòng ${index + 1}`}
-                          type="date"
-                          min={data.week_start}
-                          max={data.week_end}
                           value={row.service_date}
                           disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(index, "service_date", event.target.value)
                           }
-                        />
+                        >
+                          {serviceDates.map((date) => (
+                            <option value={date} key={date}>
+                              {dateVi(date)}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td>
                         <select
@@ -591,9 +600,13 @@ export function PantryWorkbench({
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td data-derived="delivery-location">
-                        {school?.default_delivery_location.location_name ?? "—"}
+                        <small
+                          className="pantry-derived-value"
+                          data-derived="delivery-location"
+                        >
+                          {school?.default_delivery_location.location_name ??
+                            "—"}
+                        </small>
                       </td>
                       <td>
                         <select
@@ -617,9 +630,12 @@ export function PantryWorkbench({
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td data-derived="purchase-unit">
-                        {ingredient?.purchase_unit.unit_name ?? "—"}
+                        <small
+                          className="pantry-derived-value"
+                          data-derived="purchase-unit"
+                        >
+                          {ingredient?.purchase_unit.unit_name ?? "—"}
+                        </small>
                       </td>
                       <td>
                         <select

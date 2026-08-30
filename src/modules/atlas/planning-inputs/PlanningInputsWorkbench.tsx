@@ -1188,6 +1188,7 @@ export function PlanningInputsWorkbenchView({
       id: "confirmed-needs",
       step: 4,
       label: "Xác nhận nhu cầu",
+      compactLabel: "Xác nhận",
       ...confirmedNeedWorkflow,
     },
   ];
@@ -1669,12 +1670,14 @@ export function PlanningInputsWorkbenchView({
           secondaryActions={
             <Button
               type="button"
+              className="planning-refresh-action"
               variant="outline"
-              leftSection={<ArrowClockwise size={17} aria-hidden="true" />}
+              aria-label="Làm mới"
+              title="Làm mới dữ liệu"
               onClick={refreshAuthoritativeData}
               disabled={saving}
             >
-              Làm mới
+              <ArrowClockwise size={17} aria-hidden="true" />
             </Button>
           }
           actions={authSubject ? sourceRailAction : undefined}
@@ -1855,19 +1858,15 @@ export function PlanningInputsWorkbenchView({
                       </div>
                     )}
                   </details>
-                  <div className="planning-toolbar-group planning-local-actions">
-                    <span className="planning-toolbar-label">
-                      Thao tác cục bộ
-                    </span>
+                  {dirty && (
                     <button
                       type="button"
-                      className="quiet"
+                      className="quiet planning-toolbar-discard"
                       onClick={discardMenuChanges}
-                      disabled={!dirty}
                     >
                       Hủy thay đổi
                     </button>
-                  </div>
+                  )}
                 </div>
                 {unmappedDishes.length > 0 && (
                   <p className="operator-notice danger">
@@ -2093,48 +2092,46 @@ export function PlanningInputsWorkbenchView({
                   className="planning-workbench-toolbar attendance-toolbar"
                   aria-label="Tìm kiếm, rà soát và lưu sĩ số"
                 >
-                  <div className="planning-toolbar-group planning-local-actions">
-                    <span className="planning-toolbar-label">
-                      Thao tác cục bộ
-                    </span>
+                  <details className="attendance-paste">
+                    <summary>Dán hàng loạt từ bảng tính</summary>
+                    <p>
+                      Thứ tự cột: trường, ngày, suất học sinh, suất giáo viên.
+                    </p>
+                    <textarea
+                      aria-label="Dữ liệu sĩ số dán hàng loạt"
+                      value={attendancePaste}
+                      onChange={(event) =>
+                        setAttendancePaste(event.target.value)
+                      }
+                    />
                     <button
                       type="button"
-                      className="quiet"
+                      onClick={() => {
+                        const rows = parseAttendancePaste(
+                          attendancePaste,
+                          data.schools,
+                        );
+                        setAttendanceRows(rows);
+                        setAttendancePreview(null);
+                        setAttendanceSourceType("BULK_PASTE");
+                        setAttendanceSourceName("Dán hàng loạt Atlas");
+                        setBrowserChecksum(null);
+                        setDirty(true);
+                      }}
+                    >
+                      Chuẩn hóa dữ liệu đã dán
+                    </button>
+                  </details>
+                  {dirty && (
+                    <button
+                      type="button"
+                      className="quiet planning-toolbar-discard"
                       onClick={discardAttendanceChanges}
-                      disabled={!dirty}
                     >
                       Hủy thay đổi
                     </button>
-                  </div>
+                  )}
                 </div>
-                <details className="attendance-paste">
-                  <summary>Dán hàng loạt từ bảng tính</summary>
-                  <p>
-                    Thứ tự cột: trường, ngày, suất học sinh, suất giáo viên.
-                  </p>
-                  <textarea
-                    aria-label="Dữ liệu sĩ số dán hàng loạt"
-                    value={attendancePaste}
-                    onChange={(event) => setAttendancePaste(event.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const rows = parseAttendancePaste(
-                        attendancePaste,
-                        data.schools,
-                      );
-                      setAttendanceRows(rows);
-                      setAttendancePreview(null);
-                      setAttendanceSourceType("BULK_PASTE");
-                      setAttendanceSourceName("Dán hàng loạt Atlas");
-                      setBrowserChecksum(null);
-                      setDirty(true);
-                    }}
-                  >
-                    Chuẩn hóa dữ liệu đã dán
-                  </button>
-                </details>
                 {filteredAttendanceRows.length === 0 ? (
                   <p className="empty">
                     {attendanceRows.length === 0

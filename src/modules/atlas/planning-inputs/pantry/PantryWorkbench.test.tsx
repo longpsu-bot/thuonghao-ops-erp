@@ -168,6 +168,12 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       within(localToolbar).queryByRole("button", { name: "Lưu" }),
     ).not.toBeInTheDocument();
     expect(
+      within(localToolbar).queryByText("Nội dung bổ sung"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(localToolbar).queryByRole("button", { name: "Hủy thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole("region", { name: "Bảng nhu cầu bổ sung" }),
     ).toHaveClass("planning-dense-table-surface");
     expect(screen.queryByText("Bản nháp cục bộ")).not.toBeInTheDocument();
@@ -190,6 +196,29 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       "data-derived",
       "purchase-unit",
     );
+    const table = within(
+      screen.getByRole("region", { name: "Bảng nhu cầu bổ sung" }),
+    ).getByRole("table");
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Ngày phục vụ",
+      "Trường / điểm giao",
+      "Nguyên liệu / đơn vị",
+      "Mục đích",
+      "Số lượng",
+      "Ghi chú",
+      "Tham chiếu",
+      "",
+    ]);
+    const serviceDate = within(table).getByRole("combobox", {
+      name: "Ngày phục vụ dòng 1",
+    });
+    expect(
+      within(serviceDate).getByRole("option", { name: "03/08/2026" }),
+    ).toBeVisible();
     fireEvent.change(
       screen.getByRole("spinbutton", { name: "Số lượng dòng 1" }),
       {

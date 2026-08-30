@@ -59,6 +59,24 @@ function statusLabel(workbench: ConfirmedNeedWorkbenchData, dirty: boolean) {
   return "Đã lưu";
 }
 
+function issueMessage(item: ConfirmedNeedIssue) {
+  const labels: Record<string, string> = {
+    CONFIRMED_NEED_BATCH_NOT_REVIEWABLE:
+      "Nhu cầu này chưa ở trạng thái có thể rà soát.",
+  };
+  return labels[item.code] ?? item.message ?? item.code;
+}
+
+function actionReason(code: string | null, fallback: string | null) {
+  const labels: Record<string, string> = {
+    SAVE_CAPABILITY_REQUIRED: "Bạn chưa có quyền lưu thay đổi này.",
+    RELEASE_CAPABILITY_REQUIRED: "Bạn chưa có quyền thực hiện bước này.",
+    SAVE_BATCH_NOT_EDITABLE: "Dữ liệu này không còn cho phép chỉnh sửa.",
+    RELEASE_ALREADY_COMPLETED: "Dữ liệu đã được chuyển sang lên đơn.",
+  };
+  return (code && labels[code]) || fallback || undefined;
+}
+
 function issueList(
   title: "Cần xử lý" | "Cảnh báo",
   items: ConfirmedNeedIssue[],
@@ -74,7 +92,7 @@ function issueList(
       </strong>
       <ul>
         {items.map((item, index) => (
-          <li key={`${item.code}:${index}`}>{item.message || item.code}</li>
+          <li key={`${item.code}:${index}`}>{issueMessage(item)}</li>
         ))}
       </ul>
     </section>
@@ -211,7 +229,9 @@ export function ConfirmedNeedReviewWorkbench({
     );
     const next = confirmedNeedWorkbenchFromResult(result);
     if (next) adopt(next);
-    setNotice(confirmedNeedResultMessage(result));
+    setNotice(
+      result.kind === "success" ? null : confirmedNeedResultMessage(result),
+    );
     setBusy(false);
   }, [adopt, api, authSubject, correlationId, initialBatchId]);
 
@@ -429,9 +449,6 @@ export function ConfirmedNeedReviewWorkbench({
     !refreshRequired &&
     !busy &&
     errors.length === 0;
-  const backendActionReason = changedLines.length
-    ? workbench.disabled_reasons.save_confirmed_needs
-    : workbench.disabled_reasons.release_confirmed_needs;
   const contextSchool = planningSchoolScopeLabel(
     schoolScopeIds,
     schools.map((school, index) => ({
@@ -455,8 +472,10 @@ export function ConfirmedNeedReviewWorkbench({
               title={
                 backendCanSave
                   ? undefined
-                  : (workbench.disabled_reasons.save_confirmed_needs ??
-                    undefined)
+                  : actionReason(
+                      workbench.disabled_reason_codes.save_confirmed_needs,
+                      workbench.disabled_reasons.save_confirmed_needs,
+                    )
               }
             >
               Lưu
@@ -470,15 +489,14 @@ export function ConfirmedNeedReviewWorkbench({
               title={
                 backendCanRelease
                   ? undefined
-                  : (workbench.disabled_reasons.release_confirmed_needs ??
-                    undefined)
+                  : actionReason(
+                      workbench.disabled_reason_codes.release_confirmed_needs,
+                      workbench.disabled_reasons.release_confirmed_needs,
+                    )
               }
             >
               Chuyển sang lên đơn
             </button>
-          )}
-          {backendActionReason && (
-            <small role="status">{backendActionReason}</small>
           )}
         </div>
       </PlanningRailActionPortal>
@@ -547,20 +565,22 @@ export function ConfirmedNeedReviewWorkbench({
             placeholder="Tìm theo nguyên liệu, trường, điểm giao…"
           />
         </label>
-        <label>
-          <span>Ngày</span>
-          <select
-            value={dateFilter}
-            onChange={(event) => setDateFilter(event.target.value)}
-          >
-            <option value="">Tất cả ngày</option>
-            {dates.map((date) => (
-              <option key={date} value={date}>
-                {viDate(date)}
-              </option>
-            ))}
-          </select>
-        </label>
+        {dates.length > 1 && (
+          <label>
+            <span>Ngày</span>
+            <select
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value)}
+            >
+              <option value="">Tất cả ngày</option>
+              {dates.map((date) => (
+                <option key={date} value={date}>
+                  {viDate(date)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           <span>Tình trạng</span>
           <select

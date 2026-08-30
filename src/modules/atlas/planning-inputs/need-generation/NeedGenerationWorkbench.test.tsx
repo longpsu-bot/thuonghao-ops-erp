@@ -88,6 +88,20 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     expect(selectedDay).toHaveAttribute("aria-current", "date");
     expect(selectedDay).toHaveClass("selected");
     expect(within(navigator).getAllByRole("button")).toHaveLength(7);
+    const table = within(navigator).getByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Ngày phục vụ", "Trạng thái và việc cần làm"]);
+    within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .forEach((row) =>
+        expect(within(row).getAllByRole("cell")).toHaveLength(2),
+      );
     expect(
       screen.queryByRole("heading", { name: "Tình trạng nhu cầu" }),
     ).not.toBeInTheDocument();

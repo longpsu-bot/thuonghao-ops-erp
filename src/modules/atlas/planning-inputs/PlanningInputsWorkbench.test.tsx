@@ -141,7 +141,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(
       within(rail).getByRole("button", { name: "Phạm vi trường" }),
     ).toBeVisible();
-    expect(within(rail).getByRole("button", { name: "Làm mới" })).toBeVisible();
+    const refresh = within(rail).getByRole("button", { name: "Làm mới" });
+    expect(refresh).toBeVisible();
+    expect(refresh).not.toHaveTextContent("Làm mới");
     expect(
       within(rail).getByLabelText("Hành động bước hiện tại"),
     ).toBeVisible();
@@ -162,6 +164,55 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(
       screen.getByRole("button", { name: "Phạm vi trường" }),
     ).toHaveTextContent("Tất cả trường");
+  });
+
+  it("keeps local source tools compact until an edit needs a discard action", async () => {
+    renderWorkbench();
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    const menuToolbar = screen.getByLabelText(
+      "Bộ lọc, nguồn và thao tác thực đơn",
+    );
+    expect(
+      within(menuToolbar).queryByText("Thao tác cục bộ"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menuToolbar).queryByRole("button", { name: "Hủy thay đổi" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getAllByRole("combobox", { name: /Món canh ·/ })[0]!,
+      { target: { value: "review-planning-dish-3" } },
+    );
+    expect(
+      within(menuToolbar).getByRole("button", { name: "Hủy thay đổi" }),
+    ).toBeVisible();
+    fireEvent.click(
+      within(menuToolbar).getByRole("button", { name: "Hủy thay đổi" }),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    const attendanceToolbar = screen.getByLabelText(
+      "Tìm kiếm, rà soát và lưu sĩ số",
+    );
+    expect(
+      within(attendanceToolbar).getByText("Dán hàng loạt từ bảng tính"),
+    ).toBeVisible();
+    expect(
+      within(attendanceToolbar).queryByRole("button", {
+        name: "Hủy thay đổi",
+      }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0]!,
+      { target: { value: "421" } },
+    );
+    expect(
+      within(attendanceToolbar).getByRole("button", {
+        name: "Hủy thay đổi",
+      }),
+    ).toBeVisible();
   });
 
   it("keeps unsaved workflow status local to the active Menu or Attendance step", async () => {

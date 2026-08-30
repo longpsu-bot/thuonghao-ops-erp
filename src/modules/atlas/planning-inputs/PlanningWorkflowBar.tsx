@@ -6,6 +6,7 @@ export type PlanningWorkflowItem<T extends string = string> = {
   id: T;
   step: 1 | 2 | 3 | 4;
   label: string;
+  compactLabel?: string;
   status: string;
   tone: PlanningWorkflowTone;
 };
@@ -46,7 +47,7 @@ export function PlanningWorkflowBar<T extends string>({
               {item.step}
             </span>
             <span className="planning-workflow-copy">
-              <strong>{item.label}</strong>
+              <strong>{item.compactLabel ?? item.label}</strong>
               <span id={statusId}>{item.status}</span>
             </span>
           </Button>

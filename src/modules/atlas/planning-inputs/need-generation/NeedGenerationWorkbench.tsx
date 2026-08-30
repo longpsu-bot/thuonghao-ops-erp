@@ -627,11 +627,14 @@ export function NeedGenerationWorkbench({
         </header>
         <div className="need-generation-daily-scroll">
           <table aria-label="Tổng quan nhu cầu theo ngày">
-            <thead className="visually-hidden">
+            <colgroup>
+              <col className="need-generation-daily-date-column" />
+              <col />
+            </colgroup>
+            <thead>
               <tr>
                 <th>Ngày phục vụ</th>
-                <th>Trạng thái</th>
-                <th>Việc cần làm</th>
+                <th>Trạng thái và việc cần làm</th>
               </tr>
             </thead>
             <tbody>
@@ -648,15 +651,17 @@ export function NeedGenerationWorkbench({
                     <td>
                       <strong>{viDate(serviceDate)}</strong>
                     </td>
-                    <td>{state ? dailyOperatorStatus(state) : "Đang tải…"}</td>
                     <td>
                       <button
                         type="button"
-                        className="quiet"
+                        className="need-generation-daily-state-action"
                         aria-label={`${action} ${viDate(serviceDate)}`}
                         onClick={() => openDailyReview(serviceDate, state)}
                       >
-                        {action}
+                        <span>
+                          {action} ·{" "}
+                          {state ? dailyOperatorStatus(state) : "Đang tải…"}
+                        </span>
                       </button>
                     </td>
                   </tr>
