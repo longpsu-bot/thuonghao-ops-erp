@@ -115,16 +115,344 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
     expect(
-      screen
-        .getAllByRole("tab")
-        .map((tab) => tab.textContent?.replace(/\s+/g, " ").trim()),
-    ).toEqual(["Thực đơn", "Sĩ số", "Nhu cầu bổ sung", "Xác nhận nhu cầu"]);
+      screen.getAllByRole("tab").map((tab) => tab.getAttribute("aria-label")),
+    ).toEqual(["Thực đơn", "Sĩ số", "Bổ sung", "Xác nhận nhu cầu"]);
     expect(
       screen.queryByRole("tab", { name: "Sẵn sàng đầu vào" }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("tab", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("uses one workflow/status row and defaults the display scope to all schools", async () => {
+    renderWorkbench();
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    const pageTitle = screen.getByRole("heading", {
+      name: "Lập nhu cầu theo tuần",
+    });
+    const rail = screen.getByRole("region", {
+      name: "Thanh điều hành Lập nhu cầu",
+    });
+    expect(rail).not.toContainElement(pageTitle);
+    expect(within(rail).getByLabelText("Tuần phục vụ")).toBeVisible();
+    expect(within(rail).getByLabelText("Ngày phục vụ")).toBeVisible();
+    expect(
+      within(rail).getByRole("button", { name: "Phạm vi trường" }),
+    ).toBeVisible();
+    const refresh = within(rail).getByRole("button", { name: "Làm mới" });
+    expect(refresh).toBeVisible();
+    expect(refresh).not.toHaveTextContent("Làm mới");
+    expect(
+      within(rail).getByLabelText("Hành động bước hiện tại"),
+    ).toBeVisible();
+    expect(screen.getAllByRole("tablist")).toHaveLength(1);
+    expect(screen.getAllByRole("tab")).toHaveLength(4);
+    expect(
+      screen.getByRole("tab", { name: "Thực đơn" }),
+    ).toHaveAccessibleDescription("Cần lưu");
+    expect(
+      screen.getByRole("tab", { name: "Sĩ số" }),
+    ).toHaveAccessibleDescription("Cần lưu");
+    expect(
+      screen.getByRole("tab", { name: "Bổ sung" }),
+    ).toHaveAccessibleDescription("12 mục");
+    expect(
+      screen.getByRole("tab", { name: "Xác nhận nhu cầu" }),
+    ).toHaveAccessibleDescription("Sẵn sàng");
+    expect(
+      screen.getByRole("button", { name: "Phạm vi trường" }),
+    ).toHaveTextContent("Tất cả trường");
+  });
+
+  it("keeps local source tools compact until an edit needs a discard action", async () => {
+    renderWorkbench();
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    const menuToolbar = screen.getByLabelText(
+      "Bộ lọc, nguồn và thao tác thực đơn",
+    );
+    expect(
+      within(menuToolbar).queryByText("Thao tác cục bộ"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menuToolbar).queryByRole("button", { name: "Hủy thay đổi" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getAllByRole("combobox", { name: /Món canh ·/ })[0]!,
+      { target: { value: "review-planning-dish-3" } },
+    );
+    expect(
+      within(menuToolbar).getByRole("button", { name: "Hủy thay đổi" }),
+    ).toBeVisible();
+    fireEvent.click(
+      within(menuToolbar).getByRole("button", { name: "Hủy thay đổi" }),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    const attendanceToolbar = screen.getByLabelText(
+      "Tìm kiếm, rà soát và lưu sĩ số",
+    );
+    expect(
+      within(attendanceToolbar).getByText("Dán hàng loạt từ bảng tính"),
+    ).toBeVisible();
+    expect(
+      within(attendanceToolbar).queryByRole("button", {
+        name: "Hủy thay đổi",
+      }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0]!,
+      { target: { value: "421" } },
+    );
+    expect(
+      within(attendanceToolbar).getByRole("button", {
+        name: "Hủy thay đổi",
+      }),
+    ).toBeVisible();
+  });
+
+  it("keeps unsaved workflow status local to the active Menu or Attendance step", async () => {
+    const api = withWorkbench((workbench) => {
+      workbench.weekly_menu!.weekly_menu_status = "APPROVED";
+      workbench.attendance!.attendance_status = "APPROVED";
+      workbench.default_attendance_preview = structuredClone(
+        workbench.attendance!.lines,
+      );
+    });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWorkbench(api);
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    fireEvent.change(
+      screen.getAllByRole("combobox", { name: /Món canh ·/ })[0]!,
+      {
+        target: { value: "review-planning-dish-3" },
+      },
+    );
+    expect(
+      screen.getByRole("tab", { name: "Thực đơn" }),
+    ).toHaveAccessibleDescription("Cần lưu");
+    expect(
+      screen.getByRole("tab", { name: "Sĩ số" }),
+    ).toHaveAccessibleDescription("Sẵn sàng");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    fireEvent.change(
+      screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0]!,
+      { target: { value: "421" } },
+    );
+    expect(
+      screen.getByRole("tab", { name: "Thực đơn" }),
+    ).toHaveAccessibleDescription("Sẵn sàng");
+    expect(
+      screen.getByRole("tab", { name: "Sĩ số" }),
+    ).toHaveAccessibleDescription("Cần lưu");
+  });
+
+  it("uses a compact header and keeps support evidence collapsed without hiding blockers", async () => {
+    renderWorkbench(
+      withWorkbench((workbench) => {
+        workbench.weekly_menu!.issues.blockers = [
+          {
+            code: "EMPTY_WEEKLY_MENU",
+            message: "Weekly Menu is empty.",
+            source_row_reference: null,
+          },
+        ];
+      }),
+    );
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    expect(
+      screen
+        .getByRole("heading", { name: "Lập nhu cầu theo tuần" })
+        .closest(".planning-compact-header"),
+    ).not.toBeNull();
+    expect(
+      screen.getByText("Thực đơn tuần chưa có phân công hợp lệ."),
+    ).toBeVisible();
+    const supportSummary = screen.getByText("Chi tiết hỗ trợ");
+    const support = supportSummary.closest("details");
+    expect(support).not.toHaveAttribute("open");
+    expect(
+      within(support as HTMLElement).getByText("Bằng chứng nguồn hiện tại"),
+    ).not.toBeVisible();
+  });
+
+  it("renders Confirmed Need as daily overview plus selected-date review without automation actions", async () => {
+    renderWorkbench();
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+
+    expect(
+      await screen.findByRole("complementary", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("region", { name: "Chi tiết xác nhận nhu cầu" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", {
+        name: /Bổ sung tự động|Pantry Rules|Đặt hàng tự động/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("persists a multi-school display scope across all steps and service dates", async () => {
+    renderWorkbench();
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    expect(
+      screen.getByRole("button", { name: "Phạm vi trường" }),
+    ).toHaveTextContent("2 trường");
+
+    const dateSelect = screen.getByLabelText("Ngày phục vụ");
+    fireEvent.change(dateSelect, {
+      target: { value: (dateSelect as HTMLSelectElement).options[1]!.value },
+    });
+    for (const step of ["Sĩ số", "Bổ sung", "Xác nhận nhu cầu", "Thực đơn"]) {
+      fireEvent.click(screen.getByRole("tab", { name: step }));
+      expect(
+        screen.getByRole("button", { name: "Phạm vi trường" }),
+      ).toHaveTextContent("2 trường");
+    }
+  });
+
+  it("filters Menu and Attendance rendering without truncating authoritative previews", async () => {
+    let hiddenServiceDate = "";
+    const api = withWorkbench((workbench) => {
+      const menuTemplate = workbench.weekly_menu!.lines[0]!;
+      hiddenServiceDate = addIsoCalendarDays(workbench.week_start, 1);
+      workbench.weekly_menu!.lines.push({
+        ...menuTemplate,
+        weekly_menu_line_id: "review-menu-line-3-school",
+        school_id: "review-planning-school-3",
+        dish_id: "review-planning-dish-3",
+      });
+      workbench.weekly_menu!.lines.push({
+        ...menuTemplate,
+        weekly_menu_line_id: "review-menu-line-hidden-date",
+        service_date: hiddenServiceDate,
+      });
+      const attendanceTemplate = workbench.attendance!.lines[0]!;
+      const thirdSchoolAttendance = {
+        ...attendanceTemplate,
+        attendance_line_id: "review-attendance-line-3-school",
+        school_id: "review-planning-school-3",
+        student_portions: 180,
+        teacher_portions: 18,
+      };
+      const hiddenDateAttendance = {
+        ...attendanceTemplate,
+        attendance_line_id: "review-attendance-line-hidden-date",
+        service_date: hiddenServiceDate,
+        student_portions: 210,
+        teacher_portions: 16,
+      };
+      workbench.attendance!.lines.push(
+        thirdSchoolAttendance,
+        hiddenDateAttendance,
+      );
+      workbench.default_attendance_preview.push(
+        { ...thirdSchoolAttendance, student_portions: 175 },
+        { ...hiddenDateAttendance, student_portions: 205 },
+      );
+    });
+    const previewMenu = vi.spyOn(api, "previewMenu");
+    const previewAttendance = vi.spyOn(api, "previewAttendance");
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderWorkbench(api);
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+
+    const menuPanel = screen
+      .getByRole("heading", { name: "Thực đơn tuần" })
+      .closest(".work-panel") as HTMLElement;
+    const menuGrid = within(menuPanel).getByRole("region", {
+      name: "Lưới thực đơn",
+    });
+    expect(menuGrid).toHaveClass("planning-dense-table-surface");
+    expect(
+      within(menuPanel).queryByRole("button", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menuPanel).queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(menuGrid).queryByText(formatIsoDate(hiddenServiceDate)),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    expect(
+      screen.queryByRole("rowheader", { name: /Hoa Hồng/ }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(
+      screen.getByRole("combobox", {
+        name: /Món canh · Trường Tiểu học Nguyễn Du/,
+      }),
+      { target: { value: "review-planning-dish-3" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() => expect(previewMenu).toHaveBeenCalledTimes(1));
+    expect(previewMenu.mock.calls[0]?.[3]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ service_date: hiddenServiceDate }),
+      ]),
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+    const attendancePanel = screen
+      .getByRole("heading", { name: "Sĩ số" })
+      .closest(".work-panel") as HTMLElement;
+    const attendanceGrid = within(attendancePanel).getByRole("region", {
+      name: "Danh sách sĩ số",
+    });
+    expect(attendanceGrid).toHaveClass("planning-dense-table-surface");
+    expect(
+      within(attendanceGrid).getByRole("columnheader", { name: "Trường" }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", {
+        name: "Học sinh mặc định",
+      }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", {
+        name: "Học sinh thực tế",
+      }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", { name: "Giáo viên" }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).getByRole("columnheader", { name: "Tổng suất" }),
+    ).toBeVisible();
+    expect(
+      within(attendanceGrid).queryByText(formatIsoDate(hiddenServiceDate)),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("rowheader", { name: "Trường Mầm non Hoa Hồng" }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(
+      screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0]!,
+      { target: { value: "421" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() => expect(previewAttendance).toHaveBeenCalledTimes(1));
+    expect(previewAttendance.mock.calls[0]?.[3]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ service_date: hiddenServiceDate }),
+      ]),
+    );
   });
 
   it("shows Google configuration only after the Google import flow is chosen", async () => {
@@ -151,18 +479,18 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
     const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
-    const { nextWeek, nextWeekEnd, nextWeekRange } =
-      followingWeekFrom(weekInput);
+    const { nextWeek, nextWeekEnd } = followingWeekFrom(weekInput);
     const midweekSelection = addIsoCalendarDays(nextWeek, 2);
     fireEvent.change(weekInput, { target: { value: midweekSelection } });
 
     expect(weekInput).toHaveValue(formatIsoDate(nextWeek));
     expect(weekInput).toHaveAttribute("data-business-value", nextWeek);
     await waitFor(() =>
-      expect(screen.getByText("Khoảng ngày").parentElement).toHaveTextContent(
-        nextWeekRange,
-      ),
+      expect(
+        screen.getByRole("option", { name: formatIsoDate(nextWeekEnd) }),
+      ).toBeInTheDocument(),
     );
+    expect(screen.queryByText("Khoảng ngày")).not.toBeInTheDocument();
     expect(addIsoCalendarDays(nextWeek, 6)).toBe(nextWeekEnd);
   });
 
@@ -179,8 +507,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       name: /Món canh · Trường Tiểu học Nguyễn Du/,
     });
     fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
-    const save = screen.getByRole("button", { name: "Lưu" });
-    expect(save).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
 
     await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
@@ -190,6 +519,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(review).toHaveTextContent("Canh bí đỏ thịt bằm");
     expect(review).toHaveTextContent("Canh rau ngót");
     expect(review).toHaveTextContent("Đổi");
+    const save = screen.getByRole("button", { name: "Lưu" });
     expect(save).toBeEnabled();
     fireEvent.click(save);
 
@@ -243,8 +573,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
     expect(studentInput[0]).toHaveValue(420);
     fireEvent.change(studentInput[0]!, { target: { value: "0" } });
-    const save = screen.getByRole("button", { name: "Lưu" });
-    expect(save).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
 
     const review = await screen.findByRole("region", {
@@ -252,18 +583,22 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
     expect(review).toHaveTextContent("420");
     expect(review).toHaveTextContent("0");
+    const save = screen.getByRole("button", { name: "Lưu" });
     expect(save).toBeEnabled();
     const teacherInput = screen.getAllByRole("spinbutton", {
       name: /Suất giáo viên/,
     })[0]!;
     fireEvent.change(teacherInput, { target: { value: "29" } });
-    expect(save).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
     expect(
       screen.queryByRole("region", { name: "Xem thay đổi sĩ số" }),
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi sĩ số" });
-    fireEvent.click(save);
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
@@ -305,7 +640,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       ),
     ).toBeVisible();
     expect(screen.queryByText("default:TH001")).not.toBeVisible();
-    fireEvent.click(screen.getByText("Chi tiết hỗ trợ"));
+    const supportSummaries = screen.getAllByText("Chi tiết hỗ trợ");
+    fireEvent.click(supportSummaries[1]);
+    fireEvent.click(supportSummaries[0]);
     expect(screen.getByText("default:TH001")).toBeVisible();
   });
 
@@ -439,33 +776,32 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
-    const save = screen.getByRole("button", { name: "Lưu" });
-    expect(save).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
 
     fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
 
-    expect(save).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
     expect(
       screen.queryByRole("region", { name: "Xem thay đổi thực đơn" }),
     ).not.toBeInTheDocument();
   });
 
-  it("filters Attendance Schools with accent-insensitive fuzzy search", async () => {
+  it("searches the parent school scope without Vietnamese accents", async () => {
     renderWorkbench();
-    fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
-    fireEvent.change(screen.getByLabelText("Tìm trường trong sĩ số"), {
-      target: { value: "trn qoc ton" },
+    await screen.findByRole("heading", { name: "Thực đơn tuần" });
+    fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Tìm trường" }), {
+      target: { value: "tran quoc toan" },
     });
 
     expect(
-      screen.getByRole("rowheader", {
-        name: "Trường Tiểu học Trần Quốc Toản",
-      }),
+      screen.getByRole("checkbox", { name: /Trần Quốc Toản/ }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("rowheader", {
-        name: "Trường Tiểu học Nguyễn Du",
-      }),
+      screen.queryByRole("checkbox", { name: /Nguyễn Du/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -570,21 +906,22 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       .mockReturnValueOnce(true)
       .mockReturnValueOnce(false);
     renderWorkbench();
-    fireEvent.click(screen.getByRole("tab", { name: "Nhu cầu bổ sung" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
     await screen.findByLabelText("Số lượng dòng 1");
     fireEvent.click(
       screen.getByRole("checkbox", {
-        name: "Xác nhận tuần này không có bổ sung",
+        name: "Xác nhận toàn tuần không có bổ sung",
       }),
     );
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
 
-    expect(
-      screen.getByRole("tab", { name: "Nhu cầu bổ sung" }),
-    ).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Bổ sung" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     expect(
       screen.getByRole("checkbox", {
-        name: "Xác nhận tuần này không có bổ sung",
+        name: "Xác nhận toàn tuần không có bổ sung",
       }),
     ).toBeChecked();
   });

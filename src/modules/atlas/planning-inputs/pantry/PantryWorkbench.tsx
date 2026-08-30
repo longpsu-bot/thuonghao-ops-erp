@@ -3,7 +3,9 @@ import { Eye, FloppyDisk, Plus } from "@phosphor-icons/react";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
 import { planningSourceSaveOutcome } from "../planningInputsModel";
+import { schoolInPlanningScope } from "../planningSchoolScope";
 import { PlanningCorrectionImpactPanel } from "../PlanningCorrectionImpactPanel";
+import { PlanningRailActionPortal } from "../PlanningRailActionPortal";
 import {
   planningCorrectionImpactFromResult,
   safeNoDownstreamImpact,
@@ -105,14 +107,15 @@ export function PantryWorkbench({
   authState,
   api,
   weekStart,
-  mode = "connected",
   onDirtyChange,
+  schoolScopeIds = [],
 }: {
   authState: AtlasAuthState;
   api?: PantryApi;
   weekStart: string;
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
+  schoolScopeIds?: string[];
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [load, setLoad] = useState<LoadState>("idle");
@@ -131,6 +134,14 @@ export function PantryWorkbench({
   const generation = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const serviceDates = useMemo(() => {
+    const start = new Date(`${data.week_start}T00:00:00Z`);
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(start);
+      date.setUTCDate(start.getUTCDate() + index);
+      return date.toISOString().slice(0, 10);
+    });
+  }, [data.week_start]);
 
   const adopt = useCallback((workbench: PantryWorkbenchData) => {
     setData(workbench);
@@ -198,6 +209,22 @@ export function PantryWorkbench({
       ),
     [data.purposes],
   );
+  const scopedSchools = useMemo(
+    () =>
+      data.schools.filter((school) =>
+        schoolInPlanningScope(school.school_id, schoolScopeIds),
+      ),
+    [data.schools, schoolScopeIds],
+  );
+  const visibleRowEntries = useMemo(
+    () =>
+      rows
+        .map((row, index) => ({ row, index }))
+        .filter(({ row }) =>
+          schoolInPlanningScope(row.school_id, schoolScopeIds),
+        ),
+    [rows, schoolScopeIds],
+  );
 
   const markEdited = (next: PantryDraftRow[]) => {
     setRows(next);
@@ -213,7 +240,7 @@ export function PantryWorkbench({
   };
 
   const addRow = () => {
-    const school = data.schools[0];
+    const school = scopedSchools[0];
     const ingredient = data.ingredients[0];
     const purpose = purposes[0];
     if (!school || !ingredient || !purpose) return;
@@ -379,11 +406,29 @@ export function PantryWorkbench({
 
   return (
     <div className="pantry-workbench">
-      {mode === "review" && (
-        <p className="operator-notice warning">
-          Trạng thái xem thử Nhu cầu bổ sung — thay đổi không được lưu.
-        </p>
-      )}
+      <PlanningRailActionPortal>
+        {preview?.can_save && correctionImpact?.save_allowed ? (
+          <button
+            type="button"
+            className="primary"
+            onClick={() => void save()}
+            disabled={saving || refreshRequired || !dirty}
+          >
+            <FloppyDisk size={17} aria-hidden="true" />
+            Lưu
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="primary"
+            onClick={() => void previewRows()}
+            disabled={!canEdit}
+          >
+            <Eye size={17} aria-hidden="true" />
+            Xem thay đổi
+          </button>
+        )}
+      </PlanningRailActionPortal>
       {notice && (
         <p
           className={`operator-notice${load === "error" ? " danger" : ""}`}
@@ -431,10 +476,9 @@ export function PantryWorkbench({
 
         <div
           className="planning-workbench-toolbar pantry-toolbar"
-          aria-label="Nhập và lưu Nhu cầu bổ sung"
+          aria-label="Nhập Nhu cầu bổ sung"
         >
           <div className="planning-toolbar-group pantry-entry-actions">
-            <span className="planning-toolbar-label">Nội dung bổ sung</span>
             <button
               type="button"
               className="secondary"
@@ -465,62 +509,38 @@ export function PantryWorkbench({
                   setDirty(true);
                 }}
               />
-              Xác nhận tuần này không có bổ sung
+              Xác nhận toàn tuần không có bổ sung
             </label>
-          </div>
-          <div className="planning-toolbar-group planning-local-actions">
-            <span className="planning-toolbar-label">Rà soát và lưu</span>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => void previewRows()}
-              disabled={!canEdit}
-            >
-              <Eye size={17} aria-hidden="true" />
-              Xem thay đổi
-            </button>
-            <button
-              type="button"
-              className="primary"
-              onClick={() => void save()}
-              disabled={
-                saving ||
-                refreshRequired ||
-                !dirty ||
-                !preview?.can_save ||
-                !correctionImpact?.save_allowed
-              }
-            >
-              <FloppyDisk size={17} aria-hidden="true" />
-              Lưu
-            </button>
-            <button
-              type="button"
-              className="quiet"
-              onClick={discardLocalChanges}
-              disabled={!dirty}
-            >
-              Hủy thay đổi
-            </button>
+            {dirty && (
+              <button
+                type="button"
+                className="quiet planning-toolbar-discard"
+                onClick={discardLocalChanges}
+              >
+                Hủy thay đổi
+              </button>
+            )}
           </div>
         </div>
 
-        {rows.length === 0 ? (
+        {visibleRowEntries.length === 0 ? (
           <p className={`empty${noAdditions ? " pantry-zero-state" : ""}`}>
             {noAdditions
               ? "Đã xác nhận không có bổ sung; hãy xem thay đổi trước khi lưu."
               : "Chưa có dòng bổ sung."}
           </p>
         ) : (
-          <div className="planning-grid-scroll">
+          <div
+            className="planning-grid-scroll planning-dense-table-surface"
+            role="region"
+            aria-label="Bảng nhu cầu bổ sung"
+          >
             <table className="compact-table pantry-table">
               <thead>
                 <tr>
                   <th>Ngày phục vụ</th>
-                  <th>Trường</th>
-                  <th>Điểm giao nhận</th>
-                  <th>Nguyên liệu</th>
-                  <th>Đơn vị</th>
+                  <th>Trường / điểm giao</th>
+                  <th>Nguyên liệu / đơn vị</th>
                   <th>Mục đích</th>
                   <th>Số lượng</th>
                   <th>Ghi chú</th>
@@ -529,7 +549,7 @@ export function PantryWorkbench({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, index) => {
+                {visibleRowEntries.map(({ row, index }) => {
                   const school = data.schools.find(
                     (item) => item.school_id === row.school_id,
                   );
@@ -544,17 +564,20 @@ export function PantryWorkbench({
                   return (
                     <tr key={`${row.source_row_reference}:${index}`}>
                       <td>
-                        <input
+                        <select
                           aria-label={`Ngày phục vụ dòng ${index + 1}`}
-                          type="date"
-                          min={data.week_start}
-                          max={data.week_end}
                           value={row.service_date}
                           disabled={!canEdit}
                           onChange={(event) =>
                             updateRow(index, "service_date", event.target.value)
                           }
-                        />
+                        >
+                          {serviceDates.map((date) => (
+                            <option value={date} key={date}>
+                              {dateVi(date)}
+                            </option>
+                          ))}
+                        </select>
                       </td>
                       <td>
                         <select
@@ -565,15 +588,19 @@ export function PantryWorkbench({
                             updateRow(index, "school_id", event.target.value)
                           }
                         >
-                          {data.schools.map((item) => (
+                          {scopedSchools.map((item) => (
                             <option value={item.school_id} key={item.school_id}>
                               {item.school_code} · {item.school_name}
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td data-derived="delivery-location">
-                        {school?.default_delivery_location.location_name ?? "—"}
+                        <small
+                          className="pantry-derived-value"
+                          data-derived="delivery-location"
+                        >
+                          {school?.default_delivery_location.location_name ??
+                            "—"}
+                        </small>
                       </td>
                       <td>
                         <select
@@ -597,9 +624,12 @@ export function PantryWorkbench({
                             </option>
                           ))}
                         </select>
-                      </td>
-                      <td data-derived="purchase-unit">
-                        {ingredient?.purchase_unit.unit_name ?? "—"}
+                        <small
+                          className="pantry-derived-value"
+                          data-derived="purchase-unit"
+                        >
+                          {ingredient?.purchase_unit.unit_name ?? "—"}
+                        </small>
                       </td>
                       <td>
                         <select

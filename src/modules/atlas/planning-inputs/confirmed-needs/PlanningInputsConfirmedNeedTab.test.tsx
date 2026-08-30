@@ -102,6 +102,21 @@ function confirmedNeedApiForDates(
       const workbench = createReviewConfirmedNeedFixture();
       workbench.confirmed_need_batch_id = requestedBatchId;
       if (options.releaseEligible) {
+        workbench.lines = workbench.lines.map((line, index) => ({
+          ...line,
+          current_decision_id: `release-ready-decision-${index + 1}`,
+          current_decision_number: 1,
+          current_decision_kind: "PROPOSAL_ACCEPTED",
+          confirmed_quantity_after: line.proposed_confirmed_quantity,
+          confirmation_state: "CONFIRMED_CURRENT",
+        }));
+        workbench.line_counts = {
+          ...workbench.line_counts,
+          unreviewed: 0,
+          confirmed: workbench.lines.length,
+          needs_review: 0,
+          new: 0,
+        };
         workbench.allowed_actions.release_confirmed_needs = true;
         workbench.disabled_reason_codes.release_confirmed_needs = null;
         workbench.disabled_reasons.release_confirmed_needs = null;
@@ -139,7 +154,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(4);
-    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveAccessibleName("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveTextContent("Xác nhận");
+    expect(tabs[3]).not.toHaveTextContent("Xác nhận nhu cầu");
     fireEvent.click(tabs[3]!);
     expect(
       await screen.findByText("Chưa có nhu cầu cho tuần đã chọn."),
@@ -189,7 +206,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
       0,
       10_000,
     );
-    expect(screen.getByLabelText("Trường")).toHaveDisplayValue("Tất cả trường");
+    expect(
+      screen.getByRole("button", { name: "Phạm vi trường" }),
+    ).toHaveTextContent("Tất cả trường");
     expect(screen.queryByText(/UUID|Mã lô|Tải lô/i)).not.toBeInTheDocument();
   });
 
@@ -230,7 +249,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
 
     const mondayRow = screen.getByRole("row", {
-      name: /03\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /03\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
     const search = await screen.findByPlaceholderText(
@@ -240,7 +259,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(search).toHaveValue("Nguyễn Du");
 
     const wednesdayRow = screen.getByRole("row", {
-      name: /05\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /05\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 
@@ -302,7 +321,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       name: "Tổng quan nhu cầu theo ngày",
     });
     const mondayRow = within(projection).getByRole("row", {
-      name: /03\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /03\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(mondayRow.querySelector("button") as HTMLButtonElement);
     fireEvent.click(
@@ -313,7 +332,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
 
     const wednesdayRow = within(projection).getByRole("row", {
-      name: /05\/08\/2026.*Chờ xác nhận.*Mở xác nhận/,
+      name: /05\/08\/2026.*Mở xác nhận.*Chờ xác nhận/,
     });
     fireEvent.click(wednesdayRow.querySelector("button") as HTMLButtonElement);
 
@@ -452,7 +471,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
   });
 
-  it("opens the batch returned by RMVP-04 materialization", async () => {
+  it("keeps embedded Need Generation as navigation rather than command authority", async () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -463,19 +482,16 @@ describe("Planning Inputs Confirmed Need tab", () => {
       />,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    fireEvent.click(
-      await screen.findByRole("button", { name: /Tạo nhu cầu$/ }),
-    );
-    await waitFor(() =>
-      expect(
-        screen.getByRole("tab", { name: "Xác nhận nhu cầu" }),
-      ).toHaveAttribute("aria-selected", "true"),
-    );
-    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(
+      await screen.findByRole("region", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeDisabled();
-    expect(screen.queryByText("Nhập Excel")).not.toBeInTheDocument();
   });
 });

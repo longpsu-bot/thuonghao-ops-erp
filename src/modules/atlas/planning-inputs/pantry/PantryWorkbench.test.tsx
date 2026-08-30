@@ -5,10 +5,15 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
 import type { AtlasRpcResult } from "../../connection/atlasRpc";
+import {
+  PlanningRailActionHost,
+  PlanningRailActionProvider,
+} from "../PlanningRailActionPortal";
 import { PantryWorkbench } from "./PantryWorkbench";
 import { pantryRowsForWrite, type PantryDraftRow } from "./pantryModel";
 import { createReviewPantryApi } from "./reviewPantryApi";
@@ -25,14 +30,122 @@ const authState = {
   session: { user: { id: "review-only-atlas-operator" } },
 } as unknown as AtlasAuthState;
 
-function renderPantry(api = createReviewPantryApi("ready")) {
+function renderPantry(
+  api = createReviewPantryApi("ready"),
+  schoolScopeIds: string[] = [],
+) {
   render(
-    <PantryWorkbench authState={authState} api={api} weekStart="2026-08-03" />,
+    <PlanningRailActionProvider>
+      <PlanningRailActionHost />
+      <PantryWorkbench
+        authState={authState}
+        api={api}
+        weekStart="2026-08-03"
+        schoolScopeIds={schoolScopeIds}
+      />
+    </PlanningRailActionProvider>,
   );
   return api;
 }
 
+function pantryApiWithHiddenFirstRow() {
+  const api = createReviewPantryApi("ready");
+  const getWorkbench = api.getWorkbench.bind(api);
+  api.getWorkbench = async (...args) => {
+    const result = await getWorkbench(...args);
+    if (result.kind === "success" && result.response.workbench) {
+      const workbench = result.response.workbench as never as {
+        batch: { active_lines: Array<Record<string, unknown>> };
+      };
+      const visible = workbench.batch.active_lines[0]!;
+      workbench.batch.active_lines.unshift({
+        ...visible,
+        pantry_need_line_id: "review-pantry-line-hidden",
+        school_id: "review-planning-school-3",
+        school_code: "TH003",
+        school_name: "Trường Mầm non Hoa Hồng",
+        delivery_location_id: "review-planning-location-3",
+        delivery_location_code: "KITCHEN-TH003",
+        delivery_location_name: "Bếp chính Hoa Hồng",
+        requested_quantity: "7.000000",
+        source_row_reference: "review:hidden:row",
+      });
+    }
+    return result;
+  };
+  return api;
+}
+
 describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
+  it("uses the three canonical Planning review schools", async () => {
+    renderPantry();
+
+    const school = await screen.findByRole("combobox", {
+      name: "Trường dòng 1",
+    });
+    expect(school).toHaveTextContent("TH001 · Trường Tiểu học Nguyễn Du");
+    expect(school).toHaveTextContent("TH002 · Trường Tiểu học Trần Quốc Toản");
+    expect(school).toHaveTextContent("TH003 · Trường Mầm non Hoa Hồng");
+  });
+
+  it("filters rows visually while preserving original indexes and complete preview/save rows", async () => {
+    const api = pantryApiWithHiddenFirstRow();
+    const preview = vi.spyOn(api, "preview");
+    const save = vi.spyOn(api, "saveCompleted");
+    renderPantry(api, ["review-planning-school-1"]);
+
+    expect(await screen.findByText("Bếp chính Nguyễn Du")).toBeVisible();
+    expect(screen.queryByText("Bếp chính Hoa Hồng")).not.toBeInTheDocument();
+    const visibleQuantity = screen.getByRole("spinbutton", {
+      name: "Số lượng dòng 2",
+    });
+    fireEvent.change(visibleQuantity, { target: { value: "13.5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    expect(preview.mock.calls[0]?.[4]).toEqual([
+      expect.objectContaining({
+        school_id: "review-planning-school-3",
+        requested_quantity: "7.000000",
+      }),
+      expect.objectContaining({
+        school_id: "review-planning-school-1",
+        requested_quantity: "13.5",
+      }),
+    ]);
+    await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]?.[0].payload.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ school_id: "review-planning-school-1" }),
+      ]),
+    );
+  });
+
+  it("defaults a new row to the first school in an explicit display scope", async () => {
+    renderPantry(createReviewPantryApi("ready"), [
+      "review-planning-school-2",
+      "review-planning-school-3",
+    ]);
+    await screen.findByRole("heading", { name: "Nhu cầu bổ sung" });
+    fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
+
+    expect(screen.getByRole("combobox", { name: "Trường dòng 2" })).toHaveValue(
+      "review-planning-school-2",
+    );
+  });
+
+  it("states that zero additions is a whole-week command", async () => {
+    renderPantry();
+    expect(
+      await screen.findByRole("checkbox", {
+        name: "Xác nhận toàn tuần không có bổ sung",
+      }),
+    ).toBeVisible();
+  });
+
   it("uses the business job name and plain Review-before-Save actions", async () => {
     renderPantry();
 
@@ -40,8 +153,29 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       await screen.findByRole("heading", { name: "Nhu cầu bổ sung" }),
     ).toBeVisible();
     expect(screen.queryByText(/^Pantry$/)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    const actionHost = screen.getByLabelText("Hành động bước hiện tại");
+    expect(
+      within(actionHost).getByRole("button", { name: "Xem thay đổi" }),
+    ).toBeVisible();
+    expect(
+      within(actionHost).queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    const localToolbar = screen.getByLabelText("Nhập Nhu cầu bổ sung");
+    expect(
+      within(localToolbar).queryByRole("button", { name: "Xem thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(localToolbar).queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(localToolbar).queryByText("Nội dung bổ sung"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(localToolbar).queryByRole("button", { name: "Hủy thay đổi" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Bảng nhu cầu bổ sung" }),
+    ).toHaveClass("planning-dense-table-surface");
     expect(screen.queryByText("Bản nháp cục bộ")).not.toBeInTheDocument();
   });
 
@@ -54,7 +188,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     const approve = vi.spyOn(api, "approve");
     renderPantry(api);
 
-    expect(await screen.findByText("Bếp chính Minh Khai")).toHaveAttribute(
+    expect(await screen.findByText("Bếp chính Nguyễn Du")).toHaveAttribute(
       "data-derived",
       "delivery-location",
     );
@@ -62,6 +196,29 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       "data-derived",
       "purchase-unit",
     );
+    const table = within(
+      screen.getByRole("region", { name: "Bảng nhu cầu bổ sung" }),
+    ).getByRole("table");
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "Ngày phục vụ",
+      "Trường / điểm giao",
+      "Nguyên liệu / đơn vị",
+      "Mục đích",
+      "Số lượng",
+      "Ghi chú",
+      "Tham chiếu",
+      "",
+    ]);
+    const serviceDate = within(table).getByRole("combobox", {
+      name: "Ngày phục vụ dòng 1",
+    });
+    expect(
+      within(serviceDate).getByRole("option", { name: "03/08/2026" }),
+    ).toBeVisible();
     fireEvent.change(
       screen.getByRole("spinbutton", { name: "Số lượng dòng 1" }),
       {
@@ -71,7 +228,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Ghi chú dòng 1" }), {
       target: { value: "   " },
     });
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -123,7 +282,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
 
     fireEvent.click(
       await screen.findByRole("checkbox", {
-        name: "Xác nhận tuần này không có bổ sung",
+        name: "Xác nhận toàn tuần không có bổ sung",
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
@@ -171,7 +330,10 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     expect(
       screen.queryByLabelText("Xem thay đổi Nhu cầu bổ sung"),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeEnabled();
   });
 
   it("requires authoritative refresh after an unknown Save outcome", async () => {
@@ -210,14 +372,20 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     });
 
     const view = render(
-      <PantryWorkbench
-        authState={authState}
-        api={api}
-        weekStart={initialWeek}
-      />,
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <PantryWorkbench
+          authState={authState}
+          api={api}
+          weekStart={initialWeek}
+        />
+      </PlanningRailActionProvider>,
     );
     view.rerender(
-      <PantryWorkbench authState={authState} api={api} weekStart={nextWeek} />,
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <PantryWorkbench authState={authState} api={api} weekStart={nextWeek} />
+      </PlanningRailActionProvider>,
     );
 
     expect(await screen.findByLabelText("Ngày phục vụ dòng 1")).toHaveValue(

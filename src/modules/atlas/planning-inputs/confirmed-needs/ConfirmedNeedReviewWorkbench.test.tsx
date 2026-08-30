@@ -9,6 +9,10 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../../connection/authSession";
+import {
+  PlanningRailActionHost,
+  PlanningRailActionProvider,
+} from "../PlanningRailActionPortal";
 import { ConfirmedNeedReviewWorkbench } from "./ConfirmedNeedReviewWorkbench";
 import {
   createReviewConfirmedNeedApi,
@@ -28,16 +32,34 @@ const authState = {
 } as unknown as AtlasAuthState;
 const batchId = "c4500000-0000-0000-0000-000000000001";
 
-function renderReview(api = createReviewConfirmedNeedApi("ready")) {
-  render(
-    <ConfirmedNeedReviewWorkbench
-      authState={authState}
-      api={api}
-      initialBatchId={batchId}
-      mode="review"
-    />,
+function reviewTree(
+  api: ReturnType<typeof createReviewConfirmedNeedApi>,
+  schoolScopeIds: string[] = [],
+) {
+  return (
+    <PlanningRailActionProvider>
+      <PlanningRailActionHost />
+      <ConfirmedNeedReviewWorkbench
+        authState={authState}
+        api={api}
+        initialBatchId={batchId}
+        mode="review"
+        schoolScopeIds={schoolScopeIds}
+      />
+    </PlanningRailActionProvider>
   );
+}
+
+function renderReview(api = createReviewConfirmedNeedApi("ready")) {
+  render(reviewTree(api));
   return api;
+}
+
+function renderScopedReview(
+  api: ReturnType<typeof createReviewConfirmedNeedApi>,
+  schoolScopeIds: string[],
+) {
+  return render(reviewTree(api, schoolScopeIds));
 }
 
 function renderAuthoritativeFixture(
@@ -65,6 +87,25 @@ async function saveAll(api = createReviewConfirmedNeedApi("ready")) {
 }
 
 describe("Confirmed Need two-action workbench", () => {
+  it("uses all three canonical Planning review schools", () => {
+    const fixture = createReviewConfirmedNeedFixture(3);
+
+    expect(fixture.lines.map((line) => line.school)).toEqual([
+      {
+        id: "review-planning-school-1",
+        name: "Trường Tiểu học Nguyễn Du",
+      },
+      {
+        id: "review-planning-school-2",
+        name: "Trường Tiểu học Trần Quốc Toản",
+      },
+      {
+        id: "review-planning-school-3",
+        name: "Trường Mầm non Hoa Hồng",
+      },
+    ]);
+  });
+
   it("shows the current work context in first-time operator language", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
@@ -77,9 +118,154 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getAllByText("Chưa lưu").length).toBeGreaterThan(0);
   });
 
+  it("keeps a successful single-date read table-first", async () => {
+    renderAuthoritativeFixture((workbench) => {
+      workbench.lines = workbench.lines.map((line) => ({
+        ...line,
+        service_date: "2026-08-03",
+      }));
+    });
+    await screen.findByText("Gạo thơm");
+
+    expect(
+      screen.queryByText("Đã cập nhật dữ liệu xác nhận nhu cầu."),
+    ).not.toBeInTheDocument();
+    const toolbar = screen.getByRole("region", {
+      name: "Bộ lọc xác nhận nhu cầu",
+    });
+    expect(within(toolbar).queryByLabelText("Ngày")).not.toBeInTheDocument();
+  });
+
+  it("maps governed lifecycle blockers to concise operator language", async () => {
+    renderAuthoritativeFixture((workbench) => {
+      workbench.blockers = [
+        {
+          code: "CONFIRMED_NEED_BATCH_NOT_REVIEWABLE",
+          message: "The batch is not in a reviewable lifecycle state.",
+        },
+      ];
+    });
+    await screen.findByText("Gạo thơm");
+
+    expect(
+      screen.getByText("Nhu cầu này chưa ở trạng thái có thể rà soát."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText("The batch is not in a reviewable lifecycle state."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("orders the selected-date workbench as summary, conditional notices, filters, table, then collapsed support", async () => {
+    renderAuthoritativeFixture((workbench) => {
+      workbench.warnings = [
+        { code: "REVIEW_WARNING", message: "Kiểm tra dòng cảnh báo." },
+      ];
+      workbench.lifecycle_history = [
+        {
+          evidence_kind: "VALIDATION",
+          evidence_id: "evidence-1",
+          outcome: "VALIDATED",
+          source_version: 1,
+          resulting_version: 1,
+          occurred_at: "2026-08-03T08:00:00Z",
+          actor: { id: "operator-1", name: "Điều phối viên" },
+          reason_code: "REVIEW_COMPLETED",
+          warning_count: 1,
+        },
+      ];
+    });
+    await screen.findByText("Gạo thơm");
+
+    const shell = screen.getByRole("region", {
+      name: "Bàn xác nhận nhu cầu",
+    });
+    const ordered = [
+      within(shell).getByRole("heading", { name: "Xác nhận nhu cầu" }),
+      within(shell).getByRole("region", { name: "Tóm tắt xác nhận nhu cầu" }),
+      within(shell).getByRole("region", { name: "Cảnh báo" }),
+      within(shell).getByRole("region", { name: "Bộ lọc xác nhận nhu cầu" }),
+      within(shell).getByRole("region", { name: "Bảng xác nhận nhu cầu" }),
+      within(shell).getByText("Lịch sử xử lý"),
+    ];
+    ordered.slice(1).forEach((element, index) => {
+      expect(
+        ordered[index]!.compareDocumentPosition(element) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+    expect(within(shell).getByText("2 dòng")).toBeVisible();
+    expect(within(shell).getByText(/cần rà soát/)).toBeVisible();
+    expect(within(shell).getByText(/đã xác nhận/)).toBeVisible();
+    expect(within(shell).getByText(/đã điều chỉnh/)).toBeVisible();
+    expect(
+      within(shell).queryByText(/tổng số lượng|tổng nhu cầu/i),
+    ).not.toBeInTheDocument();
+    expect(
+      within(shell).getByText("Lịch sử xử lý").closest("details"),
+    ).not.toHaveAttribute("open");
+  });
+
+  it("keeps the governed line table flat and compact", async () => {
+    renderReview();
+    await screen.findByText("Gạo thơm");
+    const tableRegion = screen.getByRole("region", {
+      name: "Bảng xác nhận nhu cầu",
+    });
+    const table = within(tableRegion).getByRole("table");
+    expect(within(table).getAllByRole("row")).toHaveLength(3);
+    expect(
+      within(table).queryByText(/nhóm nguyên liệu/i),
+    ).not.toBeInTheDocument();
+    [
+      "Nguyên liệu / nơi nhận",
+      "Đơn vị",
+      "Nhu cầu tính",
+      "Số lượng xác nhận",
+      "Chênh lệch",
+      "Lý do / ghi chú",
+    ].forEach((header) =>
+      expect(
+        within(table).getByRole("columnheader", { name: header }),
+      ).toBeVisible(),
+    );
+    const riceRow = within(table).getByText("Gạo thơm").closest("tr")!;
+    expect(
+      within(riceRow).getByText("Trường Tiểu học Nguyễn Du"),
+    ).toBeVisible();
+    expect(within(riceRow).getByText("Bếp phụ")).toBeVisible();
+    expect(within(riceRow).getByText("kg")).toBeVisible();
+    expect(within(riceRow).getByText("10,25")).toBeVisible();
+    expect(
+      within(riceRow).getByLabelText("Số lượng xác nhận Gạo thơm"),
+    ).toBeVisible();
+  });
+
+  it("filters only the display by current draft difference and still saves the full changed payload", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const save = vi.spyOn(api, "save");
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Gạo thơm"), {
+      target: { value: "10.5" },
+    });
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Chỉ hiển thị dòng có chênh lệch",
+      }),
+    );
+    expect(screen.getByText("Gạo thơm")).toBeVisible();
+    expect(screen.queryByText("Cà rốt")).not.toBeInTheDocument();
+    expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]?.[0].payload.lines).toHaveLength(2);
+  });
+
   it.each([
     ["ingredient", "cà rốt", "Cà rốt"],
-    ["school", "hoa sen", "Trường Mầm non Hoa Sen"],
+    ["school", "nguyễn du", "Trường Tiểu học Nguyễn Du"],
     ["delivery location", "bếp phụ", "Bếp phụ"],
   ])("searches loaded %s fields", async (_kind, query, expected) => {
     renderReview();
@@ -96,27 +282,101 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
   });
 
-  it("keeps School and date filters as presentation-only filters", async () => {
-    renderReview();
-    await screen.findByText("Gạo thơm");
-    const toolbar = screen.getByRole("region", { name: "Tìm và lọc" });
-    fireEvent.change(within(toolbar).getByLabelText("Trường"), {
-      target: { value: "a1100000-0000-0000-0000-000000000002" },
+  it("composes external school scope with search, date, and confirmation filters", async () => {
+    const api = createReviewConfirmedNeedApi("ready", { lineCount: 3 });
+    renderScopedReview(api, ["review-planning-school-3"]);
+    await screen.findByText("Gạo thơm 3");
+    expect(screen.queryByText("Cà rốt")).not.toBeInTheDocument();
+
+    const toolbar = screen.getByRole("region", {
+      name: "Bộ lọc xác nhận nhu cầu",
     });
-    expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
+    fireEvent.change(
+      within(toolbar).getByPlaceholderText(
+        "Tìm theo nguyên liệu, trường, điểm giao…",
+      ),
+      { target: { value: "gạo thơm 3" } },
+    );
     fireEvent.change(within(toolbar).getByLabelText("Ngày"), {
-      target: { value: "2026-08-04" },
+      target: { value: "2026-08-05" },
     });
-    expect(screen.getByText("Hiển thị 0/2 dòng")).toBeVisible();
+    fireEvent.change(within(toolbar).getByLabelText("Tình trạng"), {
+      target: { value: "needs_review" },
+    });
+    expect(screen.getByText("Hiển thị 1/3 dòng")).toBeVisible();
   });
 
-  it("exposes Save and Release but no validation, completion, or approval ceremony", async () => {
+  it("keeps hidden dirty edits and includes them in Save", async () => {
+    const api = createReviewConfirmedNeedApi("ready", { lineCount: 3 });
+    const workbench = createReviewConfirmedNeedFixture(3);
+    workbench.lines.forEach((line, index) => {
+      line.current_decision_id = `review-current-decision-${index + 1}`;
+      line.current_decision_number = 1;
+      line.current_decision_kind = "PROPOSAL_ACCEPTED";
+      line.confirmed_quantity_after = line.proposed_confirmed_quantity;
+      line.confirmation_state = "CONFIRMED_CURRENT";
+    });
+    workbench.line_counts = {
+      ...workbench.line_counts,
+      unreviewed: 0,
+      confirmed: 3,
+      needs_review: 0,
+      new: 0,
+    };
+    vi.spyOn(api, "getReview").mockResolvedValue({
+      kind: "success",
+      response: { success: true, workbench },
+    } as never);
+    const save = vi.spyOn(api, "save");
+    const view = renderScopedReview(api, []);
+    await screen.findByText("Gạo thơm");
+
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Gạo thơm"), {
+      target: { value: "10.5" },
+    });
+    fireEvent.change(screen.getByLabelText("Ghi chú Gạo thơm"), {
+      target: { value: "Điều chỉnh trường 1" },
+    });
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Cà rốt"), {
+      target: { value: "5.5" },
+    });
+    fireEvent.change(screen.getByLabelText("Ghi chú Cà rốt"), {
+      target: { value: "Điều chỉnh trường 2" },
+    });
+
+    view.rerender(reviewTree(api, ["review-planning-school-2"]));
+    expect(screen.queryByText("Gạo thơm")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Có 1 thay đổi chưa lưu ngoài phạm vi trường đang hiển thị. Lưu vẫn áp dụng cho toàn bộ thay đổi hiện tại.",
+      ),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0]?.[0].payload.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          confirmed_need_line_id: "c4520000-0000-0000-0000-000000000001",
+          proposed_confirmed_quantity: "10.5",
+        }),
+        expect.objectContaining({
+          confirmed_need_line_id: "c4520000-0000-0000-0000-000000000002",
+          proposed_confirmed_quantity: "5.5",
+        }),
+      ]),
+    );
+  });
+
+  it("shows only the current primary action in the Planning rail", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
-    expect(screen.getByRole("button", { name: "Lưu" })).toBeVisible();
+    const rail = screen.getByLabelText("Hành động bước hiện tại");
+    expect(within(rail).getByRole("button", { name: "Lưu" })).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    ).toBeVisible();
+      within(rail).queryByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
         name: /Hoàn tất xác nhận|Phê duyệt|Phát hành/,
@@ -168,8 +428,12 @@ describe("Confirmed Need two-action workbench", () => {
 
     await screen.findByText("Gạo thơm");
     expect(screen.getByText("1 cần rà soát")).toBeVisible();
-    expect(screen.getByText("1 giữ nguyên")).toBeVisible();
-    expect(screen.getAllByText("Giữ nguyên").length).toBeGreaterThan(1);
+    expect(screen.getByText("1 đã xác nhận")).toBeVisible();
+    expect(
+      screen
+        .getAllByText("Giữ nguyên")
+        .some((element) => element.tagName !== "OPTION"),
+    ).toBe(true);
     expect(screen.getAllByText("Cần rà soát").length).toBeGreaterThan(1);
     fireEvent.change(screen.getByLabelText("Tình trạng"), {
       target: { value: "carried_forward" },
@@ -205,6 +469,11 @@ describe("Confirmed Need two-action workbench", () => {
       "title",
       "Bạn chưa có quyền lưu thay đổi này.",
     );
+    expect(
+      within(screen.getByLabelText("Hành động bước hiện tại")).queryByRole(
+        "status",
+      ),
+    ).not.toBeInTheDocument();
     fireEvent.click(save);
     expect(saveRequest).not.toHaveBeenCalled();
   });
@@ -300,30 +569,32 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
   });
 
-  it("keeps Excel and PDF as disabled placeholders without file generation", async () => {
+  it("does not show unsupported export UI", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
-    expect(screen.getByRole("button", { name: "Xuất Excel" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Xuất PDF" })).toBeDisabled();
     expect(
-      screen.getByText(
-        "Chức năng xuất file sẽ được hoàn thiện sau khi mẫu dữ liệu được chốt.",
-      ),
-    ).toBeVisible();
+      screen.queryByRole("button", { name: "Xuất Excel" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Xuất PDF" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Chức năng xuất file/)).not.toBeInTheDocument();
     expect(screen.queryByText("Nhập Excel")).not.toBeInTheDocument();
   });
 
-  it("uses readable human-scale controls at desktop and mobile breakpoints", async () => {
+  it("uses the approved compact Planning dimensions and mobile breakpoint", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
     const { readFileSync } = await vi.importActual<{
       readFileSync(path: string | URL, encoding: "utf8"): string;
     }>("node:fs");
     const styles = readFileSync("src/styles.css", "utf8");
-    expect(styles).toContain("font-size: clamp(22px, 2vw, 26px)");
-    expect(styles).toContain("min-height: 40px");
-    expect(styles).toContain("@media (max-width: 900px)");
-    expect(styles).toContain("@media (max-width: 520px)");
+    expect(styles).toContain("--planning-rail-height: 54px");
+    expect(styles).toContain("--planning-control-height: 32px");
+    expect(styles).toContain("--planning-row-height: 40px");
+    expect(styles).toContain("--planning-header-row-height: 36px");
+    expect(styles).toContain("--planning-cell-inline: 12px");
+    expect(styles).toContain("@media (max-width: 56.25em)");
     expect(styles).toContain("min-height: 44px");
   });
 });

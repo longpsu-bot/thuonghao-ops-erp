@@ -16,7 +16,7 @@ const authState = {
 } as unknown as AtlasAuthState;
 
 describe("Planning Inputs contextual generation", () => {
-  it("integrates automatic preflight into Xác nhận nhu cầu without a peer tab", async () => {
+  it("integrates automatic preflight into the compact daily navigator without a peer tab", async () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -27,12 +27,19 @@ describe("Planning Inputs contextual generation", () => {
     );
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(4);
-    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveAccessibleName("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveTextContent("Xác nhận");
     expect(
       screen.queryByRole("tab", { name: "Tạo nhu cầu" }),
     ).not.toBeInTheDocument();
     fireEvent.click(tabs[3]!);
-    expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
+    expect(
+      await screen.findByRole("table", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -29,6 +29,7 @@ function renderWorkbench(
   api = createReviewNeedGenerationApi("ready"),
   preflightApi = createReviewPlanningInputReadinessApi("ready"),
   onConfirmedNeedMaterialized = vi.fn(),
+  embeddedInConfirmedNeed = false,
 ) {
   render(
     <NeedGenerationWorkbench
@@ -38,7 +39,7 @@ function renderWorkbench(
       selectedWeekStart="2026-08-03"
       selectedWeekEnd="2026-08-09"
       onConfirmedNeedMaterialized={onConfirmedNeedMaterialized}
-      embeddedInConfirmedNeed
+      embeddedInConfirmedNeed={embeddedInConfirmedNeed}
     />,
   );
   return { api, preflightApi, onConfirmedNeedMaterialized };
@@ -72,6 +73,45 @@ async function makePreflightCurrentness(
 }
 
 describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", () => {
+  it("renders embedded Confirmed Need navigation as a compact selected-day list", async () => {
+    renderWorkbench(
+      createReviewNeedGenerationApi("ready"),
+      createReviewPlanningInputReadinessApi("ready"),
+      vi.fn(),
+      true,
+    );
+
+    const navigator = await screen.findByRole("region", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    const selectedDay = within(navigator).getByText("03/08/2026").closest("tr");
+    expect(selectedDay).toHaveAttribute("aria-current", "date");
+    expect(selectedDay).toHaveClass("selected");
+    expect(within(navigator).getAllByRole("button")).toHaveLength(7);
+    const table = within(navigator).getByRole("table", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Ngày phục vụ", "Trạng thái và việc cần làm"]);
+    within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .forEach((row) =>
+        expect(within(row).getAllByRole("cell")).toHaveLength(2),
+      );
+    expect(
+      screen.queryByRole("heading", { name: "Tình trạng nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tuần đang xem:/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Làm mới" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Chi tiết hỗ trợ")).not.toBeInTheDocument();
+  });
+
   it("renders seven backend daily states and executes exactly one Monday v3 write", async () => {
     const api = createReviewNeedGenerationApi("ready");
     const preflightApi = createReviewPlanningInputReadinessApi("ready");

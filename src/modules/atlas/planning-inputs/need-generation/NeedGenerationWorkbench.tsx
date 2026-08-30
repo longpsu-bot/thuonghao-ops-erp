@@ -597,6 +597,83 @@ export function NeedGenerationWorkbench({
     !refreshRequired &&
     !executionBlocker;
 
+  const openDailyReview = (
+    serviceDate: string,
+    state: PlanningInputPreflightData | undefined,
+  ) => {
+    setLoading(true);
+    setSelectedServiceDate(serviceDate);
+    setPreflight(state ?? null);
+    setOffset(0);
+    setSelectedRunId(null);
+    setDetailGroup(null);
+    const batchId = state?.current_need?.confirmed_need_batch_id;
+    if (state?.downstream_currentness === "CURRENT" && batchId) {
+      onConfirmedNeedMaterialized?.(batchId);
+      onConfirmedNeedSelected?.(batchId, serviceDate, state);
+    }
+  };
+
+  if (embeddedInConfirmedNeed) {
+    return (
+      <section
+        className="need-generation-daily-navigator"
+        role="region"
+        aria-label="Tổng quan nhu cầu theo ngày"
+        aria-busy={loading}
+      >
+        <header className="need-generation-daily-heading">
+          <strong>Tổng quan theo ngày</strong>
+        </header>
+        <div className="need-generation-daily-scroll">
+          <table aria-label="Tổng quan nhu cầu theo ngày">
+            <colgroup>
+              <col className="need-generation-daily-date-column" />
+              <col />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Ngày phục vụ</th>
+                <th>Trạng thái và việc cần làm</th>
+              </tr>
+            </thead>
+            <tbody>
+              {days.map((serviceDate) => {
+                const state = dailyPreflights[serviceDate];
+                const action = dailyReviewAction(state);
+                const selected = selectedServiceDate === serviceDate;
+                return (
+                  <tr
+                    key={serviceDate}
+                    className={`need-generation-daily-row${selected ? " selected" : ""}`}
+                    aria-current={selected ? "date" : undefined}
+                  >
+                    <td>
+                      <strong>{viDate(serviceDate)}</strong>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="need-generation-daily-state-action"
+                        aria-label={`${action} ${viDate(serviceDate)}`}
+                        onClick={() => openDailyReview(serviceDate, state)}
+                      >
+                        <span>
+                          {action} ·{" "}
+                          {state ? dailyOperatorStatus(state) : "Đang tải…"}
+                        </span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <Panel
       title={embeddedInConfirmedNeed ? "Tình trạng nhu cầu" : "Tạo nhu cầu"}
@@ -641,27 +718,7 @@ export function NeedGenerationWorkbench({
                     <button
                       type="button"
                       aria-label={`${action} ${viDate(serviceDate)}`}
-                      onClick={() => {
-                        setLoading(true);
-                        setSelectedServiceDate(serviceDate);
-                        setPreflight(state ?? null);
-                        setOffset(0);
-                        setSelectedRunId(null);
-                        setDetailGroup(null);
-                        const batchId =
-                          state?.current_need?.confirmed_need_batch_id;
-                        if (
-                          state?.downstream_currentness === "CURRENT" &&
-                          batchId
-                        ) {
-                          onConfirmedNeedMaterialized?.(batchId);
-                          onConfirmedNeedSelected?.(
-                            batchId,
-                            serviceDate,
-                            state,
-                          );
-                        }
-                      }}
+                      onClick={() => openDailyReview(serviceDate, state)}
                     >
                       {action}
                     </button>

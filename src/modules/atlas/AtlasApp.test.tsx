@@ -118,16 +118,22 @@ describe("Atlas master-data shell", () => {
     ).not.toBeInTheDocument();
 
     const tabs = await screen.findAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual([
+    expect(tabs.map((tab) => tab.getAttribute("aria-label"))).toEqual([
       "Thực đơn",
       "Sĩ số",
-      "Nhu cầu bổ sung",
+      "Bổ sung",
       "Xác nhận nhu cầu",
     ]);
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    expect(await screen.findByText("Dữ liệu đã sẵn sàng.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Tạo nhu cầu" })).toBeVisible();
+    expect(
+      await screen.findByRole("table", {
+        name: "Tổng quan nhu cầu theo ngày",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("runs the connected review journey for consequential menu and attendance saves", async () => {
