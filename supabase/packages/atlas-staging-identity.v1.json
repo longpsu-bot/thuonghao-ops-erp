@@ -90,6 +90,14 @@
       {
         "role_capability_id": "a1010000-0000-4000-8000-000000000024",
         "capability_code": "confirmed_need_release.release"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000025",
+        "capability_code": "procurement.school_catering.read"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000026",
+        "capability_code": "procurement.school_catering.write"
       }
     ]
   },
