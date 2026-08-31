@@ -1132,3 +1132,8 @@ revoke execute on function
   atlas_core.school_catering_immutable_revision_guard(),
   atlas_core.school_catering_purchase_handoff_source_kind(uuid)
 from public;
+
+reset role;
+grant atlas_planning_command_runtime, atlas_procurement_command_runtime,
+  atlas_confirmed_need_review_runtime,atlas_need_generation_runtime,
+  atlas_read_runtime to postgres with set false;
