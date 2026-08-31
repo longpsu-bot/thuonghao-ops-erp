@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(84);
+select plan(86);
 
 select has_table('atlas_procurement', 'school_catering_allocation_families', 'Allocation Family roots exist');
 select has_table('atlas_procurement', 'school_catering_allocation_family_revisions', 'Allocation Family revisions exist');
@@ -80,6 +80,33 @@ select function_owner_is('atlas_api', 'release_school_catering_purchase_handoff'
 select function_owner_is('atlas_api', 'save_school_catering_supplier_allocation', array['jsonb'], 'atlas_procurement_command_runtime');
 select function_owner_is('atlas_api', 'confirm_school_catering_supplier_recommendations', array['jsonb'], 'atlas_procurement_command_runtime');
 select function_owner_is('atlas_api', 'get_school_catering_procurement_workbench', array['jsonb'], 'atlas_read_runtime');
+
+select ok((
+  with helper as (
+    select regexp_replace(lower(pg_get_functiondef(
+      'atlas_core.school_catering_lock_supplier_evidence(date,uuid,jsonb,boolean)'::regprocedure
+    )), '\s+', ' ', 'g') as body
+  )
+  select position('from atlas_admin.ingredients ingredient' in body) > 0
+    and position('from atlas_admin.ingredients ingredient' in body)
+      < position('from atlas_admin.suppliers supplier' in body)
+    and position('for key share' in substring(
+      body from position('from atlas_admin.ingredients ingredient' in body)
+      for position('from atlas_admin.suppliers supplier' in body)
+        - position('from atlas_admin.ingredients ingredient' in body)
+    )) > 0
+  from helper
+), 'supplier evidence locks the Ingredient aggregate guard before Supplier evidence');
+select ok((
+  with helper as (
+    select regexp_replace(lower(pg_get_functiondef(
+      'atlas_core.school_catering_lock_supplier_evidence(date,uuid,jsonb,boolean)'::regprocedure
+    )), '\s+', ' ', 'g') as body
+  )
+  select body ~ 'order by eligibility\.supplier_id,\s*eligibility\.supplier_eligibility_id for share;'
+    and body !~ 'order by eligibility\.supplier_id,\s*eligibility\.supplier_eligibility_id for key share;'
+  from helper
+), 'current supplier eligibility evidence uses FOR SHARE against non-key updates');
 
 select function_privs_are('atlas_api', 'release_school_catering_purchase_handoff', array['jsonb'], 'authenticated', array['EXECUTE']);
 select function_privs_are('atlas_api', 'save_school_catering_supplier_allocation', array['jsonb'], 'authenticated', array['EXECUTE']);

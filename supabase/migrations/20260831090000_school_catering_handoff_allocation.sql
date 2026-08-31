@@ -46,6 +46,8 @@ create function atlas_core.school_catering_lock_supplier_evidence(
   p_service_date date,p_ingredient_id uuid,p_splits jsonb,p_recommendation boolean
 ) returns void language plpgsql volatile security definer set search_path='' as $$
 begin
+  perform 1 from atlas_admin.ingredients ingredient
+  where ingredient.ingredient_id=p_ingredient_id for key share;
   perform 1 from atlas_admin.suppliers supplier
   where supplier.supplier_id in (
     select atlas_core.pa_05b_safe_uuid(split ->> 'supplier_id')
@@ -63,7 +65,7 @@ begin
     and eligibility.eligibility_status='ACTIVE'
     and eligibility.effective_from<=p_service_date
     and (eligibility.effective_to is null or eligibility.effective_to>p_service_date)
-  order by eligibility.supplier_id,eligibility.supplier_eligibility_id for key share;
+  order by eligibility.supplier_id,eligibility.supplier_eligibility_id for share;
 end;
 $$;
 revoke execute on function
@@ -173,7 +175,8 @@ begin
   end if;
 
   -- One canonical currentness protocol for both manual and recommendation writes:
-  -- suppliers -> eligibility -> current Handoff source -> family/current revision.
+  -- Ingredient aggregate -> suppliers -> eligibility -> current Handoff source
+  -- -> family/current revision.
   perform atlas_core.school_catering_lock_supplier_evidence(v_service_date,v_ingredient_id,
     p_splits,p_decision_origin='PRIORITY_RECOMMENDATION');
   perform atlas_core.school_catering_lock_handoff_source(
