@@ -6,10 +6,10 @@ set search_path = extensions, public, pg_catalog;
 
 select plan(48);
 
-select has_table('atlas_procurement', 'school_catering_allocation_families');
-select has_table('atlas_procurement', 'school_catering_allocation_family_revisions');
-select has_table('atlas_procurement', 'school_catering_allocation_family_contributions');
-select has_table('atlas_procurement', 'school_catering_allocation_supplier_splits');
+select has_table('atlas_procurement', 'school_catering_allocation_families', 'Allocation Family roots exist');
+select has_table('atlas_procurement', 'school_catering_allocation_family_revisions', 'Allocation Family revisions exist');
+select has_table('atlas_procurement', 'school_catering_allocation_family_contributions', 'Allocation Family contributions exist');
+select has_table('atlas_procurement', 'school_catering_allocation_supplier_splits', 'Allocation Family supplier splits exist');
 
 select has_function('atlas_api', 'release_school_catering_purchase_handoff', array['jsonb']);
 select has_function('atlas_api', 'save_school_catering_supplier_allocation', array['jsonb']);
@@ -27,7 +27,7 @@ select ok(exists (
     and owning_domain = 'PROCUREMENT' and capability_status = 'ACTIVE'
 ), 'school-catering Procurement write capability is explicit');
 
-select has_column('atlas_planning', 'purchase_demand_references', 'source_kind');
+select has_column('atlas_planning', 'purchase_demand_references', 'source_kind', 'Purchase Demand Reference is source-qualified');
 select ok(exists (
   select 1 from information_schema.columns
   where table_schema='atlas_planning' and table_name='purchase_demand_references'
