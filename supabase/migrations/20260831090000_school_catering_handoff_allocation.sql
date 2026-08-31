@@ -302,7 +302,7 @@ returns jsonb language plpgsql volatile security definer set search_path='' as $
 declare
   v_name constant text := 'save_school_catering_supplier_allocation';
   v_actor jsonb; v_actor_id uuid; v_begin jsonb; v_receipt uuid; v_result jsonb;
-  v_event uuid; v_audit uuid; v_response jsonb;
+  v_event uuid; v_audit uuid; v_response jsonb; v_receipt_request jsonb;
 begin
   if request ->> 'contract_version' is distinct from 'SCHOOL-CATERING-PROCUREMENT.v1'
      or atlas_core.pa_05b_safe_uuid(request ->> 'command_id') is null
@@ -326,7 +326,12 @@ begin
     return coalesce(v_response,atlas_core.pa_05b_command_error(request,'SCOPE_DENIED',
       'The actor is outside the requested school-catering scope.','PROCUREMENT',v_name));
   end if;
-  v_begin := atlas_core.pa_05b_begin_command(request,v_actor_id,v_name,'PROCUREMENT',
+  v_receipt_request := case
+    when atlas_core.pa_05b_safe_bigint(request ->> 'expected_version')=0
+      then pg_catalog.jsonb_set(request,'{expected_version}','null'::jsonb)
+    else request
+  end;
+  v_begin := atlas_core.pa_05b_begin_command(v_receipt_request,v_actor_id,v_name,'PROCUREMENT',
     'school-catering-family:' || coalesce(request #>> '{payload,family,service_date}','') || ':' ||
     coalesce(request #>> '{payload,family,delivery_location_id}','') || ':' ||
     coalesce(request #>> '{payload,family,ingredient_id}','') || ':' ||
@@ -490,6 +495,7 @@ declare
   v_actor jsonb; v_actor_id uuid; v_error jsonb;
   v_start date := atlas_core.pa_05d_safe_date(request #>> '{payload,date_start}');
   v_end date := atlas_core.pa_05d_safe_date(request #>> '{payload,date_end}');
+  v_search text := nullif(pg_catalog.btrim(request #>> '{payload,search}'),'');
   v_rows jsonb;
 begin
   if request ->> 'contract_version' is distinct from 'SCHOOL-CATERING-PROCUREMENT.v1'
@@ -567,16 +573,26 @@ begin
       or s.school_id::text in (select jsonb_array_elements_text(request #> '{payload,school_ids}')))
       and (jsonb_array_length(coalesce(request #> '{payload,states}','[]'::jsonb))=0
         or s.state in (select jsonb_array_elements_text(request #> '{payload,states}')))
-      and (nullif(btrim(request #>> '{payload,search}'),'') is null
-        or s.location_name ilike '%' || btrim(request #>> '{payload,search}') || '%'
-        or coalesce(s.school_name,'') ilike '%' || btrim(request #>> '{payload,search}') || '%'
-        or s.ingredient_name ilike '%' || btrim(request #>> '{payload,search}') || '%'
-        or exists(select 1 from pg_catalog.jsonb_array_elements(s.eligible) eligible
-          where coalesce(eligible ->> 'supplier_name','') ilike
-            '%' || btrim(request #>> '{payload,search}') || '%')
-        or exists(select 1 from pg_catalog.jsonb_array_elements(s.splits) split
-          where coalesce(split ->> 'supplier_name','') ilike
-            '%' || btrim(request #>> '{payload,search}') || '%'))
+      and (v_search is null
+        or s.location_name ilike '%' || v_search || '%'
+        or coalesce(s.school_name,'') ilike '%' || v_search || '%'
+        or s.ingredient_name ilike '%' || v_search || '%'
+        or exists(
+          select 1
+          from atlas_admin.supplier_eligibilities eligibility
+          join atlas_admin.suppliers supplier on supplier.supplier_id=eligibility.supplier_id
+          where eligibility.ingredient_id=s.ingredient_id
+            and eligibility.eligibility_status='ACTIVE'
+            and eligibility.effective_from<=s.service_date
+            and (eligibility.effective_to is null or eligibility.effective_to>s.service_date)
+            and supplier.supplier_status='ACTIVE'
+            and supplier.supplier_name ilike '%' || v_search || '%')
+        or exists(
+          select 1
+          from atlas_procurement.school_catering_allocation_supplier_splits split
+          join atlas_admin.suppliers supplier on supplier.supplier_id=split.supplier_id
+          where split.family_revision_id=s.family_revision_id
+            and supplier.supplier_name ilike '%' || v_search || '%'))
   )
   select coalesce(jsonb_agg(jsonb_build_object(
     'family',jsonb_build_object('service_date',d.service_date,'delivery_location_id',d.delivery_location_id,

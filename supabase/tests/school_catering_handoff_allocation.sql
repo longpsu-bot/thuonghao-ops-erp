@@ -573,11 +573,6 @@ insert into sc_results values('mixed_handoff_denied',atlas_api.release_school_ca
   pg_temp.sc_command('23800000-0000-4000-8000-000000000102','SCHOOL-CATERING-HANDOFF.v1',
     '23850000-0000-4000-8000-000000000015',7,'SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED',
     jsonb_build_object('confirmed_need_batch_id','23840000-0000-4000-8000-000000000102'))));
-select set_config('request.jwt.claim.sub','23800000-0000-4000-8000-000000000101',true);
-insert into sc_results values('global_handoff',atlas_api.release_school_catering_purchase_handoff(
-  pg_temp.sc_command('23800000-0000-4000-8000-000000000101','SCHOOL-CATERING-HANDOFF.v1',
-    '23850000-0000-4000-8000-000000000016',7,'SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED',
-    jsonb_build_object('confirmed_need_batch_id','23840000-0000-4000-8000-000000000102'))));
 reset role;
 select is((select response ->> 'success' from sc_results where name='scoped_handoff'),'true',
   'DELIVERY_LOCATION-scoped actor releases an entirely in-scope Handoff');
@@ -585,6 +580,14 @@ select ok((select response ->> 'error_code' from sc_results where name='mixed_ha
     and not exists(select 1 from atlas_planning.purchase_handoff_batches
       where confirmed_need_batch_id='23840000-0000-4000-8000-000000000102'),
   'mixed-location Handoff fails closed before writes for a partially scoped actor');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','23800000-0000-4000-8000-000000000101',true);
+insert into sc_results values('global_handoff',atlas_api.release_school_catering_purchase_handoff(
+  pg_temp.sc_command('23800000-0000-4000-8000-000000000101','SCHOOL-CATERING-HANDOFF.v1',
+    '23850000-0000-4000-8000-000000000016',7,'SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED',
+    jsonb_build_object('confirmed_need_batch_id','23840000-0000-4000-8000-000000000102'))));
+reset role;
 select is((select response ->> 'success' from sc_results where name='global_handoff'),'true',
   'GLOBAL actor releases the same mixed-location Handoff');
 
