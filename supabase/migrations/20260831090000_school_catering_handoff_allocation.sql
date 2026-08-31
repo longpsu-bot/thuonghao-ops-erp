@@ -3,11 +3,119 @@
 reset role;
 grant atlas_planning_command_runtime, atlas_procurement_command_runtime,
   atlas_confirmed_need_review_runtime,atlas_need_generation_runtime,
-  atlas_read_runtime to postgres with set true;
+  atlas_read_runtime,atlas_master_data_command_runtime to postgres with set true;
 grant usage on schema extensions to atlas_owner,atlas_planning_command_runtime,
   atlas_procurement_command_runtime,atlas_read_runtime;
 set role atlas_owner;
+grant create on schema atlas_core to atlas_master_data_command_runtime,atlas_planning_command_runtime;
 grant create on schema atlas_core,atlas_api to atlas_procurement_command_runtime;
+
+create function atlas_core.school_catering_actor_has_scope(
+  p_actor_id uuid,p_customer_id uuid,p_school_id uuid,p_delivery_location_id uuid
+) returns boolean language sql stable security invoker set search_path='' as $$
+  select exists(
+    select 1
+    from atlas_core.actor_scopes scope
+    where scope.actor_id=p_actor_id
+      and scope.scope_status='ACTIVE'
+      and scope.effective_from<=pg_catalog.transaction_timestamp()
+      and (scope.effective_to is null or scope.effective_to>pg_catalog.transaction_timestamp())
+      and (
+        scope.scope_kind='GLOBAL'
+        or (scope.scope_kind='DELIVERY_LOCATION'
+          and scope.delivery_location_id=p_delivery_location_id)
+        or (scope.scope_kind='CUSTOMER' and (scope.customer_id=p_customer_id or exists(
+          select 1 from atlas_admin.delivery_locations location
+          where location.delivery_location_id=p_delivery_location_id
+            and location.customer_id=scope.customer_id)))
+        or (scope.scope_kind='SCHOOL' and (scope.school_id=p_school_id or exists(
+          select 1 from atlas_admin.schools school
+          where school.school_id=scope.school_id
+            and school.default_delivery_location_id=p_delivery_location_id)))
+      )
+  );
+$$;
+revoke execute on function atlas_core.school_catering_actor_has_scope(uuid,uuid,uuid,uuid) from public;
+grant execute on function atlas_core.school_catering_actor_has_scope(uuid,uuid,uuid,uuid)
+  to atlas_procurement_command_runtime,atlas_planning_command_runtime,atlas_read_runtime;
+
+reset role;
+set role atlas_master_data_command_runtime;
+
+create function atlas_core.school_catering_lock_supplier_evidence(
+  p_service_date date,p_ingredient_id uuid,p_splits jsonb,p_recommendation boolean
+) returns void language plpgsql volatile security definer set search_path='' as $$
+begin
+  perform 1 from atlas_admin.suppliers supplier
+  where supplier.supplier_id in (
+    select atlas_core.pa_05b_safe_uuid(split ->> 'supplier_id')
+    from pg_catalog.jsonb_array_elements(
+      case when p_recommendation then '[]'::jsonb else p_splits end) split
+    union
+    select eligibility.supplier_id from atlas_admin.supplier_eligibilities eligibility
+    where p_recommendation and eligibility.ingredient_id=p_ingredient_id
+      and eligibility.eligibility_status='ACTIVE'
+      and eligibility.effective_from<=p_service_date
+      and (eligibility.effective_to is null or eligibility.effective_to>p_service_date)
+  ) order by supplier.supplier_id for key share;
+  perform 1 from atlas_admin.supplier_eligibilities eligibility
+  where eligibility.ingredient_id=p_ingredient_id
+    and eligibility.eligibility_status='ACTIVE'
+    and eligibility.effective_from<=p_service_date
+    and (eligibility.effective_to is null or eligibility.effective_to>p_service_date)
+  order by eligibility.supplier_id,eligibility.supplier_eligibility_id for key share;
+end;
+$$;
+revoke execute on function
+  atlas_core.school_catering_lock_supplier_evidence(date,uuid,jsonb,boolean) from public;
+grant execute on function
+  atlas_core.school_catering_lock_supplier_evidence(date,uuid,jsonb,boolean)
+  to atlas_procurement_command_runtime;
+
+reset role;
+set role atlas_planning_command_runtime;
+
+create function atlas_core.school_catering_lock_handoff_source(
+  p_service_date date,p_delivery_location_id uuid,p_ingredient_id uuid,p_unit_id uuid
+) returns void language plpgsql volatile security definer set search_path='' as $$
+begin
+  perform 1 from atlas_planning.purchase_handoff_batches batch
+  where exists(select 1 from atlas_planning.purchase_handoff_revisions revision
+    join atlas_planning.purchase_handoff_line_revisions line
+      on line.purchase_handoff_revision_id=revision.purchase_handoff_revision_id
+    join atlas_planning.purchase_demand_references demand
+      on demand.purchase_handoff_line_revision_id=line.purchase_handoff_line_revision_id
+     and demand.source_kind='NEED_GENERATION'
+    where revision.purchase_handoff_batch_id=batch.purchase_handoff_batch_id
+      and revision.is_current and revision.revision_status='RELEASED_TO_PROCUREMENT'
+      and line.service_date=p_service_date
+      and line.delivery_location_id=p_delivery_location_id
+      and line.ingredient_id=p_ingredient_id and line.unit_id=p_unit_id)
+  order by batch.purchase_handoff_batch_id for key share;
+  perform 1 from atlas_planning.purchase_handoff_revisions revision
+  where revision.purchase_handoff_revision_id in (
+    select line.purchase_handoff_revision_id
+    from atlas_planning.purchase_handoff_line_revisions line
+    join atlas_planning.purchase_demand_references demand
+      on demand.purchase_handoff_line_revision_id=line.purchase_handoff_line_revision_id
+     and demand.source_kind='NEED_GENERATION'
+    where line.service_date=p_service_date
+      and line.delivery_location_id=p_delivery_location_id
+      and line.ingredient_id=p_ingredient_id and line.unit_id=p_unit_id)
+    and revision.is_current and revision.revision_status='RELEASED_TO_PROCUREMENT'
+  order by revision.purchase_handoff_revision_id for key share;
+end;
+$$;
+revoke execute on function
+  atlas_core.school_catering_lock_handoff_source(date,uuid,uuid,uuid) from public;
+grant execute on function
+  atlas_core.school_catering_lock_handoff_source(date,uuid,uuid,uuid)
+  to atlas_procurement_command_runtime;
+
+reset role;
+set role atlas_owner;
+revoke create on schema atlas_core from
+  atlas_master_data_command_runtime,atlas_planning_command_runtime;
 reset role;
 set role atlas_procurement_command_runtime;
 
@@ -16,7 +124,7 @@ create function atlas_core.school_catering_persist_allocation(
   p_family jsonb,p_splits jsonb,p_decision_origin text
 ) returns jsonb language plpgsql volatile set search_path='' as $$
 declare
-  v_service_date date := atlas_core.pa_05d_safe_date(p_family ->> 'service_date');
+  v_service_date date;
   v_location_id uuid := atlas_core.pa_05b_safe_uuid(p_family ->> 'delivery_location_id');
   v_ingredient_id uuid := atlas_core.pa_05b_safe_uuid(p_family ->> 'ingredient_id');
   v_unit_id uuid := atlas_core.pa_05b_safe_uuid(p_family ->> 'unit_id');
@@ -29,16 +137,58 @@ declare
   v_revision_id uuid;
   v_revision_number integer;
   v_split jsonb;
+  v_effective_splits jsonb := p_splits;
   v_sum numeric(20,6);
   v_supplier_id uuid;
+  v_best_priority smallint;
+  v_best_count integer;
 begin
+  begin
+    v_service_date := nullif(pg_catalog.btrim(p_family ->> 'service_date'),'')::date;
+  exception when invalid_datetime_format or datetime_field_overflow then
+    return jsonb_build_object('success',false,'error_code','VALIDATION_FAILED');
+  end;
   if v_service_date is null or v_location_id is null or v_ingredient_id is null
      or v_unit_id is null or p_family ->> 'expected_source_fingerprint' is null
-     or pg_catalog.jsonb_typeof(p_splits) is distinct from 'array'
-     or pg_catalog.jsonb_array_length(p_splits)=0
      or p_decision_origin not in ('MANUAL','PRIORITY_RECOMMENDATION','REBALANCED') then
     return jsonb_build_object('success',false,'error_code','VALIDATION_FAILED');
   end if;
+  if p_decision_origin<>'PRIORITY_RECOMMENDATION' then
+    if pg_catalog.jsonb_typeof(p_splits) is distinct from 'array'
+       or pg_catalog.jsonb_array_length(p_splits)=0 then
+      return jsonb_build_object('success',false,'error_code','VALIDATION_FAILED');
+    end if;
+    if exists(select 1 from pg_catalog.jsonb_array_elements(p_splits) s
+      where s - array['supplier_id','allocated_quantity'] <> '{}'::jsonb
+         or atlas_core.pa_05b_safe_uuid(s ->> 'supplier_id') is null
+         or atlas_core.pa_05b_safe_numeric(s ->> 'allocated_quantity') is null
+         or atlas_core.pa_05b_safe_numeric(s ->> 'allocated_quantity') <= 0) then
+      return jsonb_build_object('success',false,'error_code','NON_POSITIVE_SPLIT');
+    end if;
+    if (select pg_catalog.count(*) from pg_catalog.jsonb_array_elements(p_splits)) <>
+       (select pg_catalog.count(distinct s ->> 'supplier_id')
+        from pg_catalog.jsonb_array_elements(p_splits) s) then
+      return jsonb_build_object('success',false,'error_code','DUPLICATE_SUPPLIER');
+    end if;
+  end if;
+
+  -- One canonical currentness protocol for both manual and recommendation writes:
+  -- suppliers -> eligibility -> current Handoff source -> family/current revision.
+  perform atlas_core.school_catering_lock_supplier_evidence(v_service_date,v_ingredient_id,
+    p_splits,p_decision_origin='PRIORITY_RECOMMENDATION');
+  perform atlas_core.school_catering_lock_handoff_source(
+    v_service_date,v_location_id,v_ingredient_id,v_unit_id);
+
+  select f.family_id,f.version into v_family_id,v_version
+  from atlas_procurement.school_catering_allocation_families f
+  where f.service_date=v_service_date and f.delivery_location_id=v_location_id
+    and f.ingredient_id=v_ingredient_id and f.unit_id=v_unit_id for update;
+  if v_family_id is not null then
+    select r.family_revision_id,r.revision_number into v_prior_revision_id,v_revision_number
+    from atlas_procurement.school_catering_allocation_family_revisions r
+    where r.family_id=v_family_id and r.is_current for update;
+  end if;
+
   v_projection := atlas_core.school_catering_family_projection(
     v_service_date,v_location_id,v_ingredient_id,v_unit_id);
   v_quantity := atlas_core.pa_05b_safe_numeric(v_projection ->> 'family_quantity');
@@ -50,60 +200,68 @@ begin
     return jsonb_build_object('success',false,'error_code','SOURCE_CHANGED',
       'source_fingerprint',v_fingerprint);
   end if;
-  if exists(select 1 from jsonb_array_elements(p_splits) s
-    where s - array['supplier_id','allocated_quantity'] <> '{}'::jsonb
-       or atlas_core.pa_05b_safe_uuid(s ->> 'supplier_id') is null
-       or atlas_core.pa_05b_safe_numeric(s ->> 'allocated_quantity') is null
-       or atlas_core.pa_05b_safe_numeric(s ->> 'allocated_quantity') <= 0) then
-    return jsonb_build_object('success',false,'error_code','NON_POSITIVE_SPLIT');
+  if p_decision_origin='PRIORITY_RECOMMENDATION' and v_family_id is not null then
+    return jsonb_build_object('success',false,'error_code','STALE_OR_EDITED');
   end if;
-  if (select count(*) from jsonb_array_elements(p_splits)) <>
-     (select count(distinct s ->> 'supplier_id') from jsonb_array_elements(p_splits) s) then
-    return jsonb_build_object('success',false,'error_code','DUPLICATE_SUPPLIER');
+  if coalesce(v_version,0) <> p_expected_version then
+    return jsonb_build_object('success',false,'error_code','STALE_VERSION',
+      'actual_version',coalesce(v_version,0));
   end if;
-  select sum(atlas_core.pa_05b_safe_numeric(s ->> 'allocated_quantity'))::numeric(20,6)
-    into v_sum from jsonb_array_elements(p_splits) s;
+
+  if p_decision_origin='PRIORITY_RECOMMENDATION' then
+    select pg_catalog.min(e.priority) into v_best_priority
+    from atlas_admin.supplier_eligibilities e
+    join atlas_admin.suppliers sp
+      on sp.supplier_id=e.supplier_id and sp.supplier_status='ACTIVE'
+    where e.ingredient_id=v_ingredient_id and e.eligibility_status='ACTIVE'
+      and e.priority is not null and e.effective_from<=v_service_date
+      and (e.effective_to is null or e.effective_to>v_service_date);
+    select pg_catalog.count(*)::integer,
+      (pg_catalog.array_agg(e.supplier_id order by e.supplier_id))[1]
+      into v_best_count,v_supplier_id
+    from atlas_admin.supplier_eligibilities e
+    join atlas_admin.suppliers sp
+      on sp.supplier_id=e.supplier_id and sp.supplier_status='ACTIVE'
+    where e.ingredient_id=v_ingredient_id and e.eligibility_status='ACTIVE'
+      and e.priority=v_best_priority and e.effective_from<=v_service_date
+      and (e.effective_to is null or e.effective_to>v_service_date);
+    if v_best_count<>1 then
+      return jsonb_build_object('success',false,'error_code',
+        case when v_best_count=0 then 'NO_ELIGIBLE_SUPPLIER'
+             else 'AMBIGUOUS_SUPPLIER_PRIORITY' end);
+    end if;
+    v_effective_splits := pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+      'supplier_id',v_supplier_id,'allocated_quantity',v_quantity));
+  end if;
+
+  select pg_catalog.sum(atlas_core.pa_05b_safe_numeric(s ->> 'allocated_quantity'))::numeric(20,6)
+    into v_sum from pg_catalog.jsonb_array_elements(v_effective_splits) s;
   if v_sum is distinct from v_quantity then
     return jsonb_build_object('success',false,'error_code','ALLOCATION_IMBALANCED',
       'family_quantity',v_quantity,'allocated_quantity',v_sum);
   end if;
-  perform 1 from atlas_admin.suppliers sp where sp.supplier_id in
-    (select atlas_core.pa_05b_safe_uuid(s ->> 'supplier_id') from jsonb_array_elements(p_splits) s)
-    order by sp.supplier_id for key share;
-  if exists(select 1 from jsonb_array_elements(p_splits) s
-    left join atlas_admin.suppliers sp on sp.supplier_id=atlas_core.pa_05b_safe_uuid(s ->> 'supplier_id')
-    where sp.supplier_id is null or sp.supplier_status <> 'ACTIVE') then
+  if exists(select 1 from pg_catalog.jsonb_array_elements(v_effective_splits) s
+    left join atlas_admin.suppliers sp
+      on sp.supplier_id=atlas_core.pa_05b_safe_uuid(s ->> 'supplier_id')
+    where sp.supplier_id is null or sp.supplier_status<>'ACTIVE') then
     return jsonb_build_object('success',false,'error_code','SUPPLIER_INACTIVE');
   end if;
-  if exists(select 1 from jsonb_array_elements(p_splits) s
+  if exists(select 1 from pg_catalog.jsonb_array_elements(v_effective_splits) s
     where not exists(select 1 from atlas_admin.supplier_eligibilities e
       where e.supplier_id=atlas_core.pa_05b_safe_uuid(s ->> 'supplier_id')
         and e.ingredient_id=v_ingredient_id and e.eligibility_status='ACTIVE'
-        and e.effective_from <= v_service_date
-        and (e.effective_to is null or e.effective_to > v_service_date))) then
+        and e.effective_from<=v_service_date
+        and (e.effective_to is null or e.effective_to>v_service_date))) then
     return jsonb_build_object('success',false,'error_code','SUPPLIER_INELIGIBLE');
   end if;
 
-  select f.family_id,f.version into v_family_id,v_version
-  from atlas_procurement.school_catering_allocation_families f
-  where f.service_date=v_service_date and f.delivery_location_id=v_location_id
-    and f.ingredient_id=v_ingredient_id and f.unit_id=v_unit_id for update;
   if v_family_id is null then
-    if p_expected_version <> 0 then
-      return jsonb_build_object('success',false,'error_code','STALE_VERSION','actual_version',0);
-    end if;
     insert into atlas_procurement.school_catering_allocation_families(
       service_date,delivery_location_id,ingredient_id,unit_id,version)
     values(v_service_date,v_location_id,v_ingredient_id,v_unit_id,1)
     returning family_id,version into v_family_id,v_version;
     v_revision_number := 1;
   else
-    if p_expected_version <> v_version then
-      return jsonb_build_object('success',false,'error_code','STALE_VERSION','actual_version',v_version);
-    end if;
-    select r.family_revision_id,r.revision_number into v_prior_revision_id,v_revision_number
-    from atlas_procurement.school_catering_allocation_family_revisions r
-    where r.family_id=v_family_id and r.is_current for update;
     update atlas_procurement.school_catering_allocation_family_revisions
       set is_current=false where family_revision_id=v_prior_revision_id;
     update atlas_procurement.school_catering_allocation_families
@@ -124,7 +282,7 @@ begin
   select v_revision_id,atlas_core.pa_05b_safe_uuid(c ->> 'purchase_handoff_line_revision_id'),
     atlas_core.pa_05b_safe_numeric(c ->> 'contribution_quantity')
   from jsonb_array_elements(v_projection -> 'contributions') c;
-  for v_split in select value from jsonb_array_elements(p_splits) loop
+  for v_split in select value from pg_catalog.jsonb_array_elements(v_effective_splits) loop
     v_supplier_id := atlas_core.pa_05b_safe_uuid(v_split ->> 'supplier_id');
     insert into atlas_procurement.school_catering_allocation_supplier_splits(
       family_revision_id,supplier_id,allocated_quantity,split_ratio,decision_origin)
@@ -159,9 +317,15 @@ begin
   if v_actor ? 'error' then return v_actor -> 'error'; end if;
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_actor ->> 'actor_id');
   v_response := atlas_core.pa_05b_authorize_actor(request,v_actor_id,
-    'procurement.school_catering.write','PROCUREMENT',v_name,null,
-    atlas_core.pa_05b_safe_uuid(request #>> '{payload,family,delivery_location_id}'),null);
-  if v_response is not null then return v_response; end if;
+    'procurement.school_catering.write','PROCUREMENT',v_name,null,null,null);
+  if v_response is not null and v_response ->> 'error_code'<>'SCOPE_DENIED' then
+    return v_response;
+  end if;
+  if not atlas_core.school_catering_actor_has_scope(v_actor_id,null,null,
+      atlas_core.pa_05b_safe_uuid(request #>> '{payload,family,delivery_location_id}')) then
+    return coalesce(v_response,atlas_core.pa_05b_command_error(request,'SCOPE_DENIED',
+      'The actor is outside the requested school-catering scope.','PROCUREMENT',v_name));
+  end if;
   v_begin := atlas_core.pa_05b_begin_command(request,v_actor_id,v_name,'PROCUREMENT',
     'school-catering-family:' || coalesce(request #>> '{payload,family,service_date}','') || ':' ||
     coalesce(request #>> '{payload,family,delivery_location_id}','') || ':' ||
@@ -216,8 +380,8 @@ returns jsonb language plpgsql volatile security definer set search_path='' as $
 declare
   v_name constant text := 'confirm_school_catering_supplier_recommendations';
   v_actor jsonb; v_actor_id uuid; v_begin jsonb; v_receipt uuid;
-  v_candidate jsonb; v_projection jsonb; v_result jsonb; v_supplier uuid;
-  v_best_priority smallint; v_best_count integer; v_version bigint;
+  v_candidate jsonb; v_result jsonb; v_service_date date;
+  v_location_id uuid; v_ingredient_id uuid; v_unit_id uuid; v_expected_version bigint;
   v_confirmed jsonb := '[]'::jsonb; v_skipped jsonb := '[]'::jsonb;
   v_event uuid; v_audit uuid; v_response jsonb;
 begin
@@ -236,60 +400,50 @@ begin
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_actor ->> 'actor_id');
   v_response := atlas_core.pa_05b_authorize_actor(request,v_actor_id,
     'procurement.school_catering.write','PROCUREMENT',v_name,null,null,null);
-  if v_response is not null then return v_response; end if;
+  if v_response is not null and v_response ->> 'error_code'<>'SCOPE_DENIED' then
+    return v_response;
+  end if;
+  -- Scope the complete explicit set before opening the command receipt. Invalid
+  -- candidates remain safe skips, while any valid out-of-scope candidate fails
+  -- the bulk command atomically.
+  for v_candidate in select value from pg_catalog.jsonb_array_elements(request #> '{payload,candidates}') loop
+    if pg_catalog.jsonb_typeof(v_candidate)='object'
+       and v_candidate - array['service_date','delivery_location_id','ingredient_id','unit_id',
+         'expected_family_version','expected_source_fingerprint']='{}'::jsonb
+       and atlas_core.pa_05b_safe_uuid(v_candidate ->> 'delivery_location_id') is not null
+       and not atlas_core.school_catering_actor_has_scope(v_actor_id,null,null,
+         atlas_core.pa_05b_safe_uuid(v_candidate ->> 'delivery_location_id')) then
+      return coalesce(v_response,atlas_core.pa_05b_command_error(request,'SCOPE_DENIED',
+        'The actor is outside one or more requested school-catering scopes.',
+        'PROCUREMENT',v_name));
+    end if;
+  end loop;
   v_begin := atlas_core.pa_05b_begin_command(request,v_actor_id,v_name,'PROCUREMENT',
     'school-catering-recommendations:' || (request ->> 'command_id'));
   if v_begin ->> 'status' in ('REPLAY','ERROR') then return v_begin -> 'response'; end if;
   v_receipt := atlas_core.pa_05b_safe_uuid(v_begin ->> 'receipt_id');
-  for v_candidate in select value from jsonb_array_elements(request #> '{payload,candidates}') loop
-    if v_candidate - array['service_date','delivery_location_id','ingredient_id','unit_id',
-         'expected_family_version','expected_source_fingerprint'] <> '{}'::jsonb then
+  for v_candidate in select value from pg_catalog.jsonb_array_elements(request #> '{payload,candidates}') loop
+    v_location_id := atlas_core.pa_05b_safe_uuid(v_candidate ->> 'delivery_location_id');
+    v_ingredient_id := atlas_core.pa_05b_safe_uuid(v_candidate ->> 'ingredient_id');
+    v_unit_id := atlas_core.pa_05b_safe_uuid(v_candidate ->> 'unit_id');
+    v_expected_version := atlas_core.pa_05b_safe_bigint(v_candidate ->> 'expected_family_version');
+    begin
+      v_service_date := nullif(pg_catalog.btrim(v_candidate ->> 'service_date'),'')::date;
+    exception when invalid_datetime_format or datetime_field_overflow then
+      v_service_date := null;
+    end;
+    if pg_catalog.jsonb_typeof(v_candidate)<>'object'
+       or v_candidate - array['service_date','delivery_location_id','ingredient_id','unit_id',
+          'expected_family_version','expected_source_fingerprint'] <> '{}'::jsonb
+       or v_service_date is null or v_location_id is null or v_ingredient_id is null
+       or v_unit_id is null or v_expected_version is null
+       or v_candidate ->> 'expected_source_fingerprint' is null then
       v_skipped := v_skipped || jsonb_build_array(v_candidate || jsonb_build_object('reason','INVALID_CANDIDATE'));
       continue;
     end if;
-    select f.version into v_version
-    from atlas_procurement.school_catering_allocation_families f
-    where f.service_date=atlas_core.pa_05d_safe_date(v_candidate ->> 'service_date')
-      and f.delivery_location_id=atlas_core.pa_05b_safe_uuid(v_candidate ->> 'delivery_location_id')
-      and f.ingredient_id=atlas_core.pa_05b_safe_uuid(v_candidate ->> 'ingredient_id')
-      and f.unit_id=atlas_core.pa_05b_safe_uuid(v_candidate ->> 'unit_id') for update;
-    if coalesce(v_version,0) <> coalesce(atlas_core.pa_05b_safe_bigint(v_candidate ->> 'expected_family_version'),-1)
-       or coalesce(v_version,0) <> 0 then
-      v_skipped := v_skipped || jsonb_build_array(v_candidate || jsonb_build_object('reason','STALE_OR_EDITED'));
-      continue;
-    end if;
-    v_projection := atlas_core.school_catering_family_projection(
-      atlas_core.pa_05d_safe_date(v_candidate ->> 'service_date'),
-      atlas_core.pa_05b_safe_uuid(v_candidate ->> 'delivery_location_id'),
-      atlas_core.pa_05b_safe_uuid(v_candidate ->> 'ingredient_id'),
-      atlas_core.pa_05b_safe_uuid(v_candidate ->> 'unit_id'));
-    if v_projection ->> 'source_fingerprint' is distinct from v_candidate ->> 'expected_source_fingerprint' then
-      v_skipped := v_skipped || jsonb_build_array(v_candidate || jsonb_build_object('reason','SOURCE_CHANGED'));
-      continue;
-    end if;
-    select min(e.priority) into v_best_priority from atlas_admin.supplier_eligibilities e
-    join atlas_admin.suppliers s on s.supplier_id=e.supplier_id and s.supplier_status='ACTIVE'
-    where e.ingredient_id=atlas_core.pa_05b_safe_uuid(v_candidate ->> 'ingredient_id')
-      and e.eligibility_status='ACTIVE' and e.priority is not null
-      and e.effective_from <= atlas_core.pa_05d_safe_date(v_candidate ->> 'service_date')
-      and (e.effective_to is null or e.effective_to > atlas_core.pa_05d_safe_date(v_candidate ->> 'service_date'));
-    select count(*)::integer,(array_agg(e.supplier_id order by e.supplier_id))[1]
-      into v_best_count,v_supplier
-    from atlas_admin.supplier_eligibilities e join atlas_admin.suppliers s
-      on s.supplier_id=e.supplier_id and s.supplier_status='ACTIVE'
-    where e.ingredient_id=atlas_core.pa_05b_safe_uuid(v_candidate ->> 'ingredient_id')
-      and e.eligibility_status='ACTIVE' and e.priority=v_best_priority
-      and e.effective_from <= atlas_core.pa_05d_safe_date(v_candidate ->> 'service_date')
-      and (e.effective_to is null or e.effective_to > atlas_core.pa_05d_safe_date(v_candidate ->> 'service_date'));
-    if v_best_count <> 1 then
-      v_skipped := v_skipped || jsonb_build_array(v_candidate || jsonb_build_object(
-        'reason',case when v_best_count=0 then 'NO_ELIGIBLE_SUPPLIER' else 'AMBIGUOUS_SUPPLIER_PRIORITY' end));
-      continue;
-    end if;
     v_result := atlas_core.school_catering_persist_allocation(v_actor_id,
-      atlas_core.pa_05b_safe_uuid(request ->> 'command_id'),0,v_candidate,
-      jsonb_build_array(jsonb_build_object('supplier_id',v_supplier,
-        'allocated_quantity',v_projection ->> 'family_quantity')),'PRIORITY_RECOMMENDATION');
+      atlas_core.pa_05b_safe_uuid(request ->> 'command_id'),v_expected_version,v_candidate,
+      '[]'::jsonb,'PRIORITY_RECOMMENDATION');
     if (v_result ->> 'success')::boolean then
       v_confirmed := v_confirmed || jsonb_build_array(v_result);
     else
@@ -319,6 +473,13 @@ begin
     'emitted_event_ids',jsonb_build_array(v_event),'audit_event_ids',jsonb_build_array(v_audit),
     'safe_operator_message','Đã xác nhận các đề xuất còn hiện hành.','warnings','[]'::jsonb,'blockers','[]'::jsonb);
   return atlas_core.pa_05b_finish_command(v_receipt,v_response,true);
+exception when serialization_failure or deadlock_detected then
+  return atlas_core.pa_05b_command_error(request,'RETRYABLE_CONCURRENCY_FAILURE',
+    'The command could not acquire a safe transaction state. Retry the exact request.',
+    'PROCUREMENT',v_name,true);
+when others then
+  return atlas_core.pa_05b_command_error(request,'INTERNAL_COMMAND_FAILURE',
+    'The supplier recommendations could not be confirmed safely.','PROCUREMENT',v_name);
 end;
 $$;
 
@@ -342,7 +503,9 @@ begin
   v_actor_id := atlas_core.pa_05b_safe_uuid(v_actor ->> 'actor_id');
   v_error := atlas_core.pa_05b_authorize_actor(request,v_actor_id,
     'procurement.school_catering.read','PROCUREMENT',v_name,null,null,null);
-  if v_error is not null then return v_error; end if;
+  if v_error is not null and v_error ->> 'error_code'<>'SCOPE_DENIED' then
+    return v_error;
+  end if;
   with keys as (
     select distinct lr.service_date,lr.delivery_location_id,lr.ingredient_id,lr.unit_id
     from atlas_planning.purchase_handoff_batches b
@@ -352,6 +515,7 @@ begin
     join atlas_planning.purchase_demand_references d on d.purchase_handoff_line_revision_id=lr.purchase_handoff_line_revision_id
       and d.source_kind='NEED_GENERATION'
     where b.handoff_status='RELEASED_TO_PROCUREMENT' and lr.service_date between v_start and v_end
+      and atlas_core.school_catering_actor_has_scope(v_actor_id,null,null,lr.delivery_location_id)
   ), data as (
     select k.*,p.projection,f.family_id,f.version,r.family_revision_id,r.source_fingerprint accepted_fingerprint,
       r.family_quantity accepted_quantity,r.decision_origin,
@@ -373,6 +537,13 @@ begin
       and f.ingredient_id=k.ingredient_id and f.unit_id=k.unit_id
     left join atlas_procurement.school_catering_allocation_family_revisions r
       on r.family_id=f.family_id and r.is_current
+  ), evidence as (
+    select d.*,pg_catalog.jsonb_array_length(d.eligible) eligible_count,
+      (select pg_catalog.count(*)::integer
+       from pg_catalog.jsonb_array_elements(d.eligible) e
+       where (e ->> 'priority')::integer=(select pg_catalog.min((x ->> 'priority')::integer)
+         from pg_catalog.jsonb_array_elements(d.eligible) x)) best_priority_count
+    from data d
   ), shaped as (
     select d.*,dl.location_name,sc.school_id,sc.school_name,i.ingredient_name,u.unit_code,
       case
@@ -386,7 +557,7 @@ begin
         when d.accepted_fingerprint<>d.projection ->> 'source_fingerprint' then 'NEEDS_REALLOCATION'
         else 'BLOCKED'
       end state
-    from data d join atlas_admin.delivery_locations dl on dl.delivery_location_id=d.delivery_location_id
+    from evidence d join atlas_admin.delivery_locations dl on dl.delivery_location_id=d.delivery_location_id
     left join atlas_admin.schools sc on sc.default_delivery_location_id=dl.delivery_location_id
     join atlas_admin.ingredients i on i.ingredient_id=d.ingredient_id
     join atlas_admin.units u on u.unit_id=d.unit_id
@@ -399,7 +570,13 @@ begin
       and (nullif(btrim(request #>> '{payload,search}'),'') is null
         or s.location_name ilike '%' || btrim(request #>> '{payload,search}') || '%'
         or coalesce(s.school_name,'') ilike '%' || btrim(request #>> '{payload,search}') || '%'
-        or s.ingredient_name ilike '%' || btrim(request #>> '{payload,search}') || '%')
+        or s.ingredient_name ilike '%' || btrim(request #>> '{payload,search}') || '%'
+        or exists(select 1 from pg_catalog.jsonb_array_elements(s.eligible) eligible
+          where coalesce(eligible ->> 'supplier_name','') ilike
+            '%' || btrim(request #>> '{payload,search}') || '%')
+        or exists(select 1 from pg_catalog.jsonb_array_elements(s.splits) split
+          where coalesce(split ->> 'supplier_name','') ilike
+            '%' || btrim(request #>> '{payload,search}') || '%'))
   )
   select coalesce(jsonb_agg(jsonb_build_object(
     'family',jsonb_build_object('service_date',d.service_date,'delivery_location_id',d.delivery_location_id,
@@ -411,9 +588,7 @@ begin
     'family_quantity',d.projection -> 'family_quantity','contributions',d.projection -> 'contributions',
     'contribution_count',jsonb_array_length(d.projection -> 'contributions'),'splits',d.splits,
     'eligible_suppliers',d.eligible,'state',d.state,
-    'recommendation',case when d.family_revision_id is null and
-      (select count(*) from jsonb_array_elements(d.eligible) e where (e ->> 'priority')::int=(
-        select min((x ->> 'priority')::int) from jsonb_array_elements(d.eligible) x))=1
+    'recommendation',case when d.family_revision_id is null and d.best_priority_count=1
       then jsonb_build_object('supplier_id',(select e ->> 'supplier_id' from jsonb_array_elements(d.eligible) e
         order by (e ->> 'priority')::int limit 1),'allocated_quantity',d.projection -> 'family_quantity','split_ratio',1)
       else null end,
@@ -434,8 +609,23 @@ begin
         ) x
       ) q
     ) else null end,
-    'allowed_actions',jsonb_build_object('save_allocation',true,'confirm_recommendation',d.family_revision_id is null),
-    'disabled_reasons','[]'::jsonb,'blockers','[]'::jsonb,'warnings','[]'::jsonb)
+    'allowed_actions',jsonb_build_object('save_allocation',d.eligible_count>0,
+      'confirm_recommendation',d.family_revision_id is null and d.best_priority_count=1),
+    'disabled_reasons',case
+      when d.eligible_count=0 then jsonb_build_array('NO_ELIGIBLE_SUPPLIER')
+      when d.family_revision_id is null and d.best_priority_count=0
+        then jsonb_build_array('NO_PRIORITIZED_SUPPLIER')
+      when d.family_revision_id is null and d.best_priority_count>1
+        then jsonb_build_array('AMBIGUOUS_SUPPLIER_PRIORITY')
+      when d.family_revision_id is not null then jsonb_build_array('ALLOCATION_ALREADY_EXISTS')
+      else '[]'::jsonb end,
+    'blockers',case
+      when d.eligible_count=0 then jsonb_build_array('NO_ELIGIBLE_SUPPLIER')
+      when d.family_revision_id is null and d.best_priority_count=0
+        then jsonb_build_array('NO_PRIORITIZED_SUPPLIER')
+      when d.family_revision_id is null and d.best_priority_count>1
+        then jsonb_build_array('AMBIGUOUS_SUPPLIER_PRIORITY')
+      else '[]'::jsonb end,'warnings','[]'::jsonb)
     order by d.service_date,d.location_name,d.ingredient_name,d.unit_id),'[]'::jsonb) into v_rows
   from filtered d;
   return jsonb_build_object('success',true,'contract_version','SCHOOL-CATERING-PROCUREMENT.v1',
@@ -774,7 +964,19 @@ begin
   v_error := atlas_core.pa_05b_authorize_actor(request, v_actor_id,
     'confirmed_need_release.release', 'PLANNING', v_command_name,
     null, null, null);
-  if v_error is not null then return v_error; end if;
+  if v_error is not null and v_error ->> 'error_code'<>'SCOPE_DENIED' then
+    return v_error;
+  end if;
+  if exists(
+    select 1 from atlas_planning.confirmed_need_line_revisions line
+    where line.confirmed_need_batch_id=v_batch_id and line.is_current
+      and not atlas_core.school_catering_actor_has_scope(v_actor_id,
+        line.customer_id,line.school_id,line.delivery_location_id)
+  ) then
+    return coalesce(v_error,atlas_core.pa_05b_command_error(request,'SCOPE_DENIED',
+      'The actor is outside one or more school-catering Handoff scopes.',
+      'PLANNING',v_command_name));
+  end if;
 
   v_begin := atlas_core.pa_05b_begin_command(request, v_actor_id,
     v_command_name, 'PLANNING', 'confirmed-need-batch:' || v_batch_id::text);
@@ -1136,4 +1338,4 @@ from public;
 reset role;
 grant atlas_planning_command_runtime, atlas_procurement_command_runtime,
   atlas_confirmed_need_review_runtime,atlas_need_generation_runtime,
-  atlas_read_runtime to postgres with set false;
+  atlas_read_runtime,atlas_master_data_command_runtime to postgres with set false;
