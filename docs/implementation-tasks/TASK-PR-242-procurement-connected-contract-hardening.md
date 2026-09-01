@@ -1,6 +1,6 @@
 # PR #242 — Procurement connected-contract hardening
 
-**Status:** Implemented on Draft branch
+**Status:** Implemented on PR branch
 
 **Decisions:** D-037, D-042
 
@@ -22,6 +22,7 @@ No table, role, capability, scope kind, browser table grant, or public API is ad
 - `school_catering_purchase_orders.sql` compares every string `ordered_quantity` with its authoritative PostgreSQL value.
 - `d037_confirmed_need_save_release_boundary.sql` exercises the public corrected Planning release and public Handoff release against one retained invalidated root, then proves one current `SUPERSEDING` revision.
 - `school_catering_planning_correction.sql` retains the DRAFT-PO stale behavior, wholesale blocker, and released school-catering PO blocker.
+- `verify-local-school-catering-procurement.mjs` consumes the exact fixed-scale string ratio in the authenticated connected journey.
 
 ## Migration and rollback
 

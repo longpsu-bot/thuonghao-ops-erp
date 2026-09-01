@@ -294,7 +294,8 @@ async function main() {
   );
   const row = readback.rows[0];
   assert(
-    row?.state === "UNALLOCATED" && row.recommendation?.split_ratio === 1,
+    row?.state === "UNALLOCATED" &&
+      row.recommendation?.split_ratio === "1.000000000000",
     "Workbench did not return the uncommitted 100% priority recommendation.",
   );
 
