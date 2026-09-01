@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -649,6 +650,43 @@ describe("school-catering Procurement purchase-order stage", () => {
     expect(
       screen.queryByRole("table", { name: "Đơn mua" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("discards a mutation result that resolves after the operator changes stage", async () => {
+    const api = createReviewSchoolCateringProcurementApi("default");
+    let resolveSave!: (
+      value: Awaited<ReturnType<typeof api.saveAllocation>>,
+    ) => void;
+    vi.spyOn(api, "saveAllocation").mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    renderWorkbench(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Đơn mua" }));
+    await screen.findByRole("table", { name: "Đơn mua" });
+
+    await act(async () => {
+      resolveSave(
+        reviewSuccess({
+          success: true,
+          safe_operator_message: "Kết quả cũ không được hiển thị.",
+          warnings: [],
+          blockers: [],
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Kết quả cũ không được hiển thị."),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("table", { name: "Đơn mua" })).toBeVisible();
   });
 });
 

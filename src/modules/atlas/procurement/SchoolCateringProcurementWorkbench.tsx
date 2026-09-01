@@ -252,7 +252,9 @@ export function SchoolCateringProcurementWorkbench({
     affectedLabels: string[],
     retry: () => Promise<void>,
     authoritativeReadback: () => Promise<boolean>,
+    expectedIntent: number,
   ) => {
+    if (expectedIntent !== intent.current) return;
     const outcome = outcomeFromResult(result, affectedLabels);
     setCommandOutcome(outcome);
     if (outcome.classification === "RETRYABLE_FAILURE") {
@@ -289,6 +291,7 @@ export function SchoolCateringProcurementWorkbench({
         },
         splits,
       );
+    const mutationIntent = intent.current;
     setBusy(true);
     const result = await api.saveAllocation(request);
     await finishMutation(
@@ -296,6 +299,7 @@ export function SchoolCateringProcurementWorkbench({
       [row.ingredient_name],
       () => saveAllocation(row, splits, request),
       loadAllocation,
+      mutationIntent,
     );
   };
 
@@ -318,6 +322,7 @@ export function SchoolCateringProcurementWorkbench({
       })),
     );
     const run = async () => {
+      const mutationIntent = intent.current;
       setBusy(true);
       const result = await api.confirmRecommendations(request);
       await finishMutation(
@@ -325,6 +330,7 @@ export function SchoolCateringProcurementWorkbench({
         selected.map((row) => row.ingredient_name),
         run,
         loadAllocation,
+        mutationIntent,
       );
       if (result.kind === "success") setSelectedRecommendationKeys(new Set());
     };
@@ -344,6 +350,7 @@ export function SchoolCateringProcurementWorkbench({
         dateEnd,
       );
     const run = async () => {
+      const mutationIntent = intent.current;
       setBusy(true);
       const result = await api.createPurchaseOrderDrafts(request);
       await finishMutation(
@@ -351,6 +358,7 @@ export function SchoolCateringProcurementWorkbench({
         [`${dateStart} – ${dateEnd}`],
         run,
         loadPurchaseOrders,
+        mutationIntent,
       );
     };
     await run();
@@ -371,6 +379,7 @@ export function SchoolCateringProcurementWorkbench({
         order.current_revision.purchase_order_revision_id,
       );
     const run = async () => {
+      const mutationIntent = intent.current;
       setBusy(true);
       const result = await api.releasePurchaseOrder(request);
       await finishMutation(
@@ -378,6 +387,7 @@ export function SchoolCateringProcurementWorkbench({
         [order.supplier.supplier_name],
         run,
         loadPurchaseOrders,
+        mutationIntent,
       );
     };
     await run();
