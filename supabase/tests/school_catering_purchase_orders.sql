@@ -243,8 +243,24 @@ returns jsonb language sql stable set search_path='' as $$
     'payload',jsonb_build_object('date_start','2026-09-21','date_end','2026-09-22',
       'supplier_ids','[]'::jsonb,'statuses','[]'::jsonb,'search',null));
 $$;
+create function pg_temp.prb_release(
+  p_command uuid,p_supplier uuid,p_expected bigint default null,
+  p_use_predecessor boolean default false,p_extra_payload jsonb default '{}'::jsonb
+) returns jsonb language sql stable security definer set search_path='' as $$
+  select pg_temp.prb_command(p_command,coalesce(p_expected,po.version),
+    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
+      'purchase_order_id',po.purchase_order_id,
+      'expected_purchase_order_revision_id',case when p_use_predecessor
+        then por.predecessor_revision_id else por.purchase_order_revision_id end
+    ) || p_extra_payload) || jsonb_build_object('correlation_id',p_command)
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
+  where po.supplier_id=p_supplier and po.purchase_order_kind='SCHOOL_CATERING'
+    and por.is_current;
+$$;
 grant execute on function pg_temp.prb_command(uuid,bigint,text,jsonb,uuid),
-  pg_temp.prb_family(date,uuid,uuid),pg_temp.prb_read() to authenticated;
+  pg_temp.prb_family(date,uuid,uuid),pg_temp.prb_read(),
+  pg_temp.prb_release(uuid,uuid,bigint,boolean,jsonb) to authenticated;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
@@ -353,15 +369,10 @@ insert into prb_results values('allocation-successor',atlas_api.save_school_cate
         jsonb_build_object('supplier_id','24020000-0000-4000-8000-000000000051','allocated_quantity',50),
         jsonb_build_object('supplier_id','24020000-0000-4000-8000-000000000052','allocated_quantity',50))))));
 insert into prb_results values('read-stale',atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
-insert into prb_results
-select 'release-stale',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000012',po.version,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.purchase_order_revision_id)))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000051' and por.is_current;
+insert into prb_results values('release-stale',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000012',
+    '24020000-0000-4000-8000-000000000051')));
 reset role;
 
 select ok((select (response ->> 'success')::boolean
@@ -412,16 +423,11 @@ select ok((
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
-insert into prb_results
-select 'release-unknown-field',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000014',po.version,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.purchase_order_revision_id,
-      'document_number','caller-must-not-author-this')))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000051' and por.is_current;
+insert into prb_results values('release-unknown-field',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000014',
+    '24020000-0000-4000-8000-000000000051',null,false,
+    jsonb_build_object('document_number','caller-must-not-author-this'))));
 reset role;
 select is((select response ->> 'error_code' from prb_results where name='release-unknown-field'),
   'VALIDATION_FAILED','release rejects caller-authored document numbers and unknown fields');
@@ -430,15 +436,10 @@ update atlas_admin.suppliers set supplier_status='INACTIVE'
 where supplier_id='24020000-0000-4000-8000-000000000052';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
-insert into prb_results
-select 'release-inactive',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000015',po.version,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.purchase_order_revision_id)))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000052' and por.is_current;
+insert into prb_results values('release-inactive',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000015',
+    '24020000-0000-4000-8000-000000000052')));
 reset role;
 select is((select response ->> 'error_code' from prb_results where name='release-inactive'),
   'SUPPLIER_INACTIVE','release revalidates current supplier activity');
@@ -447,42 +448,22 @@ where supplier_id='24020000-0000-4000-8000-000000000052';
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
-insert into prb_results
-select 'release-a',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000016',po.version,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.purchase_order_revision_id)))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000051' and por.is_current;
-insert into prb_results
-select 'release-a-replay',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000016',2,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.predecessor_revision_id)))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000051' and por.is_current;
-insert into prb_results
-select 'release-a-conflict',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000016',po.version,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.purchase_order_revision_id)))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000053' and por.is_current;
-insert into prb_results
-select 'release-a-second',atlas_api.release_school_catering_purchase_order(
-  pg_temp.prb_command('24050000-0000-4000-8000-000000000017',po.version,
-    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
-      'purchase_order_id',po.purchase_order_id,
-      'expected_purchase_order_revision_id',por.purchase_order_revision_id)))
-from atlas_procurement.purchase_orders po
-join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
-where po.supplier_id='24020000-0000-4000-8000-000000000051' and por.is_current;
+insert into prb_results values('release-a',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000016',
+    '24020000-0000-4000-8000-000000000051')));
+insert into prb_results values('release-a-replay',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000016',
+    '24020000-0000-4000-8000-000000000051',2,true)));
+insert into prb_results values('release-a-conflict',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000016',
+    '24020000-0000-4000-8000-000000000053')));
+insert into prb_results values('release-a-second',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000017',
+    '24020000-0000-4000-8000-000000000051')));
 reset role;
 
 select ok((select (response ->> 'success')::boolean from prb_results where name='release-a'),
@@ -526,6 +507,33 @@ select is((
   join atlas_procurement.purchase_orders po using(purchase_order_id)
   where po.supplier_id='24020000-0000-4000-8000-000000000051'
 ),3,'draft materialization never regenerates a released PO');
+
+select ok((
+  select count(*)=2
+    and bool_and(polr.predecessor_revision_id is not null)
+    and bool_and(polr.school_catering_allocation_supplier_split_id is not null)
+  from atlas_procurement.purchase_order_line_revisions polr
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_revision_id)
+  join atlas_procurement.purchase_orders po using(purchase_order_id)
+  where po.supplier_id='24020000-0000-4000-8000-000000000051'
+    and por.is_current and por.revision_status='RELEASED_TO_SUPPLIER'
+), 'released successor lines preserve exact immutable source and predecessor references');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('read-released',
+  atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select ok((
+  select count(*)=1
+  from prb_results r cross join lateral
+    jsonb_array_elements(r.response -> 'purchase_orders') row
+  where r.name='read-released'
+    and row #>> '{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'
+    and (row ->> 'export_ready')::boolean
+    and not (row ->> 'release_eligible')::boolean
+    and row ->> 'document_number' is not null
+), 'read model exposes only a released PO as export-ready with its official number');
 
 select ok((
   select count(*)=1 from atlas_audit.domain_events
