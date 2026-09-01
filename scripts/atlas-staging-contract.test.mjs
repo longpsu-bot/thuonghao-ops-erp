@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import {
   APPROVED_ATLAS_STAGING_PROJECT_REF,
@@ -1172,6 +1172,78 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).not.toMatch(/production/i);
   });
 
+  it("keeps Identity installation manual, protected, exact-head, and package-owned", () => {
+    const workflowPath = ".github/workflows/atlas-staging-identity-install.yml";
+    expect(existsSync(workflowPath)).toBe(true);
+    if (!existsSync(workflowPath)) return;
+
+    const workflow = readFileSync(workflowPath, "utf8");
+    const lines = workflow.split(/\r?\n/).map((line) => line.trim());
+    const dryRunCommand =
+      'run: pnpm atlas:staging:identity:install -- --commit-sha "${{ inputs.commit_sha }}" --dry-run';
+    const installCommand =
+      'run: pnpm atlas:staging:identity:install -- --commit-sha "${{ inputs.commit_sha }}"';
+    const verifyCommand = "run: pnpm atlas:staging:verify";
+
+    expect(workflow).toMatch(/on:\s*\n\s*workflow_dispatch:/);
+    expect(workflow).not.toMatch(/\n\s+(push|pull_request|schedule|release):/);
+    expect(workflow).toMatch(
+      /workflow_dispatch:\s*\n\s*inputs:\s*\n\s*commit_sha:\s*\n(?:\s+.*\n)*?\s+required: true/,
+    );
+    expect(workflow).toMatch(
+      /commit_sha:\s*\n\s+description: Exact full merged-main SHA/,
+    );
+    expect(workflow).toContain("environment: atlas-staging");
+    expect(workflow).toMatch(/permissions:\s*\n\s+contents: read\s*\n/);
+    expect(workflow).not.toMatch(/permissions:[\s\S]*\bwrite\b/);
+    expect(workflow).toContain("ref: ${{ inputs.commit_sha }}");
+    expect(workflow).toContain("fetch-depth: 0");
+    expect(workflow).toContain(
+      "git fetch --no-tags origin main:refs/remotes/origin/main",
+    );
+    expect(workflow).toContain("version: 11.7.0");
+    expect(workflow).toContain("node-version: 24");
+    expect(workflow).toContain("pnpm install --frozen-lockfile");
+
+    const dryRunIndex = lines.indexOf(dryRunCommand);
+    const installIndex = lines.indexOf(installCommand);
+    const verifyIndex = lines.indexOf(verifyCommand);
+    expect(dryRunIndex).toBeGreaterThan(-1);
+    expect(installIndex).toBeGreaterThan(dryRunIndex);
+    expect(verifyIndex).toBeGreaterThan(installIndex);
+    expect(lines.filter((line) => line === installCommand)).toHaveLength(1);
+
+    for (const variableName of [
+      "ATLAS_STAGING_PROJECT_REF",
+      "VITE_ATLAS_ENVIRONMENT",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
+      "ATLAS_STAGING_TEST_EMAIL",
+    ]) {
+      expect(workflow).toContain(
+        `${variableName}: \${{ vars.${variableName} }}`,
+      );
+    }
+    for (const secretName of [
+      "ATLAS_STAGING_SUPABASE_ACCESS_TOKEN",
+      "ATLAS_STAGING_TEST_PASSWORD",
+      "ATLAS_STAGING_SUPABASE_SECRET_KEY",
+    ]) {
+      expect(workflow).toContain(
+        `${secretName}: \${{ secrets.${secretName} }}`,
+      );
+    }
+    expect(workflow).not.toContain("ATLAS_STAGING_DB_PASSWORD");
+    expect(workflow).not.toContain("supabase db push");
+    expect(workflow).not.toContain("atlas:staging:deploy");
+    expect(workflow).not.toContain("atlas:staging:foundation:install");
+    expect(workflow).not.toMatch(
+      /qnthofvccilhnefdcxnz|live[ -]ops|production/i,
+    );
+    expect(workflow).not.toMatch(/\bpsql\b|supabase db query|\.sql\b/i);
+    expect(workflow).not.toContain("install-atlas-staging-package.mjs");
+  });
+
   it("classifies every Atlas staging boundary script for Supabase certification", () => {
     const workflow = readFileSync(
       ".github/workflows/supabase-integration.yml",
@@ -1186,6 +1258,7 @@ describe("Atlas staging dry-run and workflow", () => {
       workflow.indexOf("\n  workflow_dispatch:"),
     );
     const stagingBoundaryPaths = [
+      ".github/workflows/atlas-staging-identity-install.yml",
       "scripts/atlas-staging-contract.mjs",
       "scripts/atlas-staging-contract.test.mjs",
       "scripts/deploy-atlas-staging.mjs",
