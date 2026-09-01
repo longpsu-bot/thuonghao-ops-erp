@@ -157,6 +157,8 @@ declare
   v_save_message text;
   v_release_message text;
 begin
+  p_workbench := atlas_core.planning_contract_02b_extend_workbench(p_workbench);
+
   select batch.* into strict v_batch
   from atlas_planning.confirmed_need_batches batch
   where batch.confirmed_need_batch_id = v_batch_id;
