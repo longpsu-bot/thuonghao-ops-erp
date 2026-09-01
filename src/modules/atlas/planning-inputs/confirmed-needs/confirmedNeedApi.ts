@@ -14,6 +14,7 @@ export const CONFIRMED_NEED_RPC_FUNCTIONS = {
   release: "atlas_api.release_confirmed_needs_for_purchase_handoff",
   saveV2: "atlas_api.save_confirmed_needs",
   releaseV2: "atlas_api.release_confirmed_needs",
+  releasePurchaseHandoff: "atlas_api.release_school_catering_purchase_handoff",
 } as const satisfies Record<string, AtlasRpcName>;
 
 export type ConfirmedNeedFilters = {
@@ -125,6 +126,19 @@ export type ConfirmedNeedReleaseV2Request = AtlasRpcRequest & {
   requested_by_auth_subject: string;
   requested_at: string;
   reason_code: "CONFIRMED_NEED_RELEASED";
+  reason_note: null;
+  payload: { confirmed_need_batch_id: string };
+};
+
+export type ConfirmedNeedPurchaseHandoffRequest = AtlasRpcRequest & {
+  contract_version: "SCHOOL-CATERING-HANDOFF.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: "SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED";
   reason_note: null;
   payload: { confirmed_need_batch_id: string };
 };
@@ -327,6 +341,27 @@ export function confirmedNeedReleaseV2Request(
   };
 }
 
+export function confirmedNeedPurchaseHandoffRequest(
+  authSubject: string,
+  correlationId: string,
+  batchId: string,
+  expectedVersion: number,
+): ConfirmedNeedPurchaseHandoffRequest {
+  const commandId = crypto.randomUUID();
+  return {
+    contract_version: "SCHOOL-CATERING-HANDOFF.v1",
+    command_id: commandId,
+    correlation_id: correlationId,
+    idempotency_key: `school-catering-handoff:${commandId}`,
+    expected_version: expectedVersion,
+    requested_by_auth_subject: authSubject,
+    requested_at: new Date().toISOString(),
+    reason_code: "SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED",
+    reason_note: null,
+    payload: { confirmed_need_batch_id: batchId },
+  };
+}
+
 export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
   return {
     getReview(
@@ -369,6 +404,12 @@ export function createConfirmedNeedApi(invoker: ConfirmedNeedRpcInvoker) {
     },
     releaseSaved(request: ConfirmedNeedReleaseV2Request) {
       return invoker.invoke(CONFIRMED_NEED_RPC_FUNCTIONS.releaseV2, request);
+    },
+    releasePurchaseHandoff(request: ConfirmedNeedPurchaseHandoffRequest) {
+      return invoker.invoke(
+        CONFIRMED_NEED_RPC_FUNCTIONS.releasePurchaseHandoff,
+        request,
+      );
     },
   };
 }

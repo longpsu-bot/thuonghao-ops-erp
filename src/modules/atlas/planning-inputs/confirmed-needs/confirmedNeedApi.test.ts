@@ -6,6 +6,7 @@ import {
   confirmedNeedPreviewRequest,
   confirmedNeedReadRequest,
   confirmedNeedReleaseRequest,
+  confirmedNeedPurchaseHandoffRequest,
   confirmedNeedValidationRequest,
   createConfirmedNeedApi,
 } from "./confirmedNeedApi";
@@ -210,6 +211,34 @@ describe("RMVP-05 API adapter", () => {
       "atlas_api.validate_confirmed_needs",
       "atlas_api.approve_confirmed_needs",
       "atlas_api.release_confirmed_needs_for_purchase_handoff",
+    ]);
+  });
+
+  it("builds and routes the exact Planning-owned school-catering Handoff envelope", async () => {
+    const request = confirmedNeedPurchaseHandoffRequest(
+      "subject",
+      "correlation-handoff",
+      "batch-1",
+      8,
+    );
+    expect(request).toMatchObject({
+      contract_version: "SCHOOL-CATERING-HANDOFF.v1",
+      correlation_id: "correlation-handoff",
+      expected_version: 8,
+      requested_by_auth_subject: "subject",
+      reason_code: "SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED",
+      reason_note: null,
+      payload: { confirmed_need_batch_id: "batch-1" },
+    });
+    expect(request.idempotency_key).toBe(
+      `school-catering-handoff:${request.command_id}`,
+    );
+
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createConfirmedNeedApi({ invoke });
+    await api.releasePurchaseHandoff(request);
+    expect(invoke.mock.calls).toEqual([
+      ["atlas_api.release_school_catering_purchase_handoff", request],
     ]);
   });
 });
