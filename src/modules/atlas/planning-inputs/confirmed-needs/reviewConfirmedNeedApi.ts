@@ -830,5 +830,28 @@ export function createReviewConfirmedNeedApi(
       receipts.set(request.command_id, structuredClone(result));
       return result;
     },
+    async releasePurchaseHandoff(request) {
+      const replay = receipts.get(request.command_id);
+      if (replay) return structuredClone(replay);
+      if (state.authoritative_batch_status !== "RELEASED_FOR_PURCHASE_HANDOFF")
+        return backendError("CONFIRMED_NEED_NOT_RELEASED");
+      if (scenario === "stale") return backendError("STALE_VERSION");
+      const result = success({
+        contract_version: "SCHOOL-CATERING-HANDOFF.v1",
+        command_id: request.command_id,
+        correlation_id: request.correlation_id,
+        idempotency_status: "COMPLETED",
+        affected_aggregate_ids: {
+          confirmed_need_batch_id: state.confirmed_need_batch_id,
+          purchase_handoff_batch_id: "c4700000-0000-0000-0000-000000000001",
+        },
+        new_versions: { purchase_handoff_version: 1 },
+        safe_operator_message: "Đã tạo Bàn giao mua hàng.",
+        warnings: [],
+        blockers: [],
+      });
+      receipts.set(request.command_id, structuredClone(result));
+      return result;
+    },
   };
 }

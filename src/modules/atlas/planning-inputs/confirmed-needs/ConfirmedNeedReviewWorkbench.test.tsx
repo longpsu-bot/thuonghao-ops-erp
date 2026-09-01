@@ -35,6 +35,7 @@ const batchId = "c4500000-0000-0000-0000-000000000001";
 function reviewTree(
   api: ReturnType<typeof createReviewConfirmedNeedApi>,
   schoolScopeIds: string[] = [],
+  onPurchaseHandoffReleased?: () => void,
 ) {
   return (
     <PlanningRailActionProvider>
@@ -45,13 +46,17 @@ function reviewTree(
         initialBatchId={batchId}
         mode="review"
         schoolScopeIds={schoolScopeIds}
+        onPurchaseHandoffReleased={onPurchaseHandoffReleased}
       />
     </PlanningRailActionProvider>
   );
 }
 
-function renderReview(api = createReviewConfirmedNeedApi("ready")) {
-  render(reviewTree(api));
+function renderReview(
+  api = createReviewConfirmedNeedApi("ready"),
+  onPurchaseHandoffReleased?: () => void,
+) {
+  render(reviewTree(api, [], onPurchaseHandoffReleased));
   return api;
 }
 
@@ -78,8 +83,11 @@ function renderAuthoritativeFixture(
   return api;
 }
 
-async function saveAll(api = createReviewConfirmedNeedApi("ready")) {
-  renderReview(api);
+async function saveAll(
+  api = createReviewConfirmedNeedApi("ready"),
+  onPurchaseHandoffReleased?: () => void,
+) {
+  renderReview(api, onPurchaseHandoffReleased);
   await screen.findByText("Gạo thơm");
   fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
   await screen.findByText("Đã lưu thay đổi.");
@@ -550,6 +558,117 @@ describe("Confirmed Need two-action workbench", () => {
       screen.getAllByText("Đã chuyển sang lên đơn").length,
     ).toBeGreaterThan(0);
     expect(screen.getByLabelText("Số lượng xác nhận Cà rốt")).toBeDisabled();
+  });
+
+  it("does not attempt the Purchase Handoff when Confirmed Need release fails", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const releasePurchaseHandoff = vi.fn().mockResolvedValue({
+      kind: "success",
+      response: { success: true },
+    });
+    Object.assign(api, { releasePurchaseHandoff });
+    await saveAll(api);
+    const releaseSaved = vi.spyOn(api, "releaseSaved").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "CONFIRMED_NEED_RELEASE_BLOCKED",
+        safe_message: "Nhu cầu chưa thể phát hành.",
+      },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
+
+    expect(
+      await screen.findByText("Nhu cầu chưa thể phát hành."),
+    ).toBeVisible();
+    expect(releaseSaved).toHaveBeenCalledTimes(1);
+    expect(releasePurchaseHandoff).not.toHaveBeenCalled();
+  });
+
+  it("keeps the durable intermediate state and retries only the same Handoff intent", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const onPurchaseHandoffReleased = vi.fn();
+    const handoffFailure = {
+      kind: "backend_error" as const,
+      error: {
+        success: false as const,
+        error_code: "RETRYABLE_CONCURRENCY_FAILURE",
+        safe_message: "Bàn giao mua hàng chưa được tạo.",
+        retryable: true,
+      },
+    };
+    const releasePurchaseHandoff = vi
+      .fn()
+      .mockResolvedValueOnce(handoffFailure)
+      .mockResolvedValue({
+        kind: "success",
+        response: {
+          success: true,
+          safe_operator_message: "Đã tạo Bàn giao mua hàng.",
+        },
+      });
+    Object.assign(api, { releasePurchaseHandoff });
+    await saveAll(api, onPurchaseHandoffReleased);
+    const releaseSaved = vi.spyOn(api, "releaseSaved");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
+
+    expect(
+      await screen.findByText(/Nhu cầu đã được phát hành.*Bàn giao mua hàng/),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Thử lại bàn giao" }),
+    ).toBeEnabled();
+    expect(releaseSaved).toHaveBeenCalledTimes(1);
+    expect(releasePurchaseHandoff).toHaveBeenCalledTimes(1);
+    const firstIntent = releasePurchaseHandoff.mock.calls[0]?.[0];
+
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại bàn giao" }));
+
+    await waitFor(() =>
+      expect(releasePurchaseHandoff).toHaveBeenCalledTimes(2),
+    );
+    expect(releasePurchaseHandoff.mock.calls[1]?.[0]).toBe(firstIntent);
+    expect(releaseSaved).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(onPurchaseHandoffReleased).toHaveBeenCalledOnce(),
+    );
+  });
+
+  it("refreshes authoritative Planning state and navigates after both commands succeed", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const onPurchaseHandoffReleased = vi.fn();
+    const releasePurchaseHandoff = vi.fn().mockResolvedValue({
+      kind: "success",
+      response: {
+        success: true,
+        safe_operator_message: "Đã tạo Bàn giao mua hàng.",
+      },
+    });
+    Object.assign(api, { releasePurchaseHandoff });
+    await saveAll(api, onPurchaseHandoffReleased);
+    const getReview = vi.spyOn(api, "getReview");
+    const releaseSaved = vi.spyOn(api, "releaseSaved");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
+
+    await waitFor(() =>
+      expect(onPurchaseHandoffReleased).toHaveBeenCalledOnce(),
+    );
+    expect(releaseSaved).toHaveBeenCalledTimes(1);
+    expect(releasePurchaseHandoff).toHaveBeenCalledTimes(1);
+    expect(getReview).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Đã chuyển sang lên đơn.")).toBeVisible();
   });
 
   it("requires authoritative refresh after an unknown Save outcome without automatic retry", async () => {

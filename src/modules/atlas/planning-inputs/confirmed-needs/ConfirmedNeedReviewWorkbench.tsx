@@ -7,10 +7,12 @@ import {
 } from "../planningSchoolScope";
 import { PlanningRailActionPortal } from "../PlanningRailActionPortal";
 import {
+  confirmedNeedPurchaseHandoffRequest,
   confirmedNeedReleaseV2Request,
   confirmedNeedSaveV2Request,
   type ConfirmedNeedApi,
   type ConfirmedNeedLineRequest,
+  type ConfirmedNeedPurchaseHandoffRequest,
   type ConfirmedNeedSaveV2Request,
 } from "./confirmedNeedApi";
 import {
@@ -164,6 +166,7 @@ export function ConfirmedNeedReviewWorkbench({
   currentNeedResolution = initialBatchId ? "available" : "idle",
   onDirtyChange,
   schoolScopeIds = [],
+  onPurchaseHandoffReleased,
 }: {
   authState: AtlasAuthState;
   api?: ConfirmedNeedApi;
@@ -179,6 +182,7 @@ export function ConfirmedNeedReviewWorkbench({
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
   schoolScopeIds?: string[];
+  onPurchaseHandoffReleased?: () => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
@@ -199,6 +203,8 @@ export function ConfirmedNeedReviewWorkbench({
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [pendingSave, setPendingSave] =
     useState<ConfirmedNeedSaveV2Request | null>(null);
+  const [pendingHandoff, setPendingHandoff] =
+    useState<ConfirmedNeedPurchaseHandoffRequest | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -236,6 +242,10 @@ export function ConfirmedNeedReviewWorkbench({
   }, [adopt, api, authSubject, correlationId, initialBatchId]);
 
   useEffect(() => void load(), [load]);
+  useEffect(() => {
+    setPendingHandoff(null);
+    setReleaseConfirmation(false);
+  }, [initialBatchId]);
 
   const changedLines = useMemo(() => {
     if (!workbench) return [];
@@ -364,34 +374,70 @@ export function ConfirmedNeedReviewWorkbench({
     setBusy(false);
   };
 
-  const release = async () => {
-    if (
-      !api ||
-      !authSubject ||
-      !workbench ||
-      !workbench.allowed_actions.release_confirmed_needs
-    )
+  const releaseHandoff = async (
+    request: ConfirmedNeedPurchaseHandoffRequest,
+  ) => {
+    if (!api) return;
+    setBusy(true);
+    const result = await api.releasePurchaseHandoff(request);
+    if (result.kind === "success") {
+      setPendingHandoff(null);
+      await load();
+      setNotice("Đã chuyển sang lên đơn.");
+      setBusy(false);
+      onPurchaseHandoffReleased?.();
       return;
+    }
+    setPendingHandoff(request);
+    setNotice(
+      `Nhu cầu đã được phát hành. Bàn giao mua hàng chưa hoàn tất. ${confirmedNeedResultMessage(result)}`,
+    );
+    setBusy(false);
+  };
+
+  const release = async () => {
+    if (!api || !authSubject || !workbench) return;
     setBusy(true);
     setReleaseConfirmation(false);
-    const result = await api.releaseSaved(
-      confirmedNeedReleaseV2Request(
+    const alreadyReleased =
+      workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
+    let releasedWorkbench = workbench;
+    if (!alreadyReleased) {
+      if (!workbench.allowed_actions.release_confirmed_needs) {
+        setBusy(false);
+        return;
+      }
+      const result = await api.releaseSaved(
+        confirmedNeedReleaseV2Request(
+          authSubject,
+          correlationId,
+          workbench.confirmed_need_batch_id,
+          workbench.batch_version,
+        ),
+      );
+      const readback = confirmedNeedReadbackFromResult(result);
+      if (!readback) {
+        if (confirmedNeedResultAllowsExactRetry(result)) {
+          setRefreshRequired(true);
+          setNotice(
+            "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
+          );
+        } else setNotice(confirmedNeedResultMessage(result));
+        setBusy(false);
+        return;
+      }
+      adopt(readback);
+      releasedWorkbench = readback;
+    }
+    const handoffRequest =
+      pendingHandoff ??
+      confirmedNeedPurchaseHandoffRequest(
         authSubject,
         correlationId,
-        workbench.confirmed_need_batch_id,
-        workbench.batch_version,
-      ),
-    );
-    const readback = confirmedNeedReadbackFromResult(result);
-    if (readback) adopt(readback);
-    else if (confirmedNeedResultAllowsExactRetry(result)) {
-      setRefreshRequired(true);
-      setNotice(
-        "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
+        releasedWorkbench.confirmed_need_batch_id,
+        releasedWorkbench.batch_version,
       );
-    } else setNotice(confirmedNeedResultMessage(result));
-    if (readback) setNotice("Đã chuyển sang lên đơn.");
-    setBusy(false);
+    await releaseHandoff(handoffRequest);
   };
 
   if (currentNeedResolution === "loading" || (busy && !workbench))
@@ -443,8 +489,7 @@ export function ConfirmedNeedReviewWorkbench({
     changedLines.length > 0 &&
     errors.length === 0;
   const canRelease =
-    backendCanRelease &&
-    !released &&
+    (backendCanRelease || released) &&
     !dirty &&
     !refreshRequired &&
     !busy &&
@@ -487,7 +532,7 @@ export function ConfirmedNeedReviewWorkbench({
               onClick={() => setReleaseConfirmation(true)}
               disabled={!canRelease}
               title={
-                backendCanRelease
+                backendCanRelease || released
                   ? undefined
                   : actionReason(
                       workbench.disabled_reason_codes.release_confirmed_needs,
@@ -531,6 +576,22 @@ export function ConfirmedNeedReviewWorkbench({
         <p className="confirmed-need-notice" role="status">
           {notice}
         </p>
+      )}
+      {pendingHandoff && (
+        <section
+          className="confirmed-need-notice confirmed-need-handoff-recovery"
+          aria-label="Khôi phục Bàn giao mua hàng"
+        >
+          <strong>Nhu cầu đã phát hành; Bàn giao mua hàng còn chờ.</strong>
+          <button
+            type="button"
+            className="primary"
+            disabled={busy}
+            onClick={() => void releaseHandoff(pendingHandoff)}
+          >
+            Thử lại bàn giao
+          </button>
+        </section>
       )}
       {refreshRequired && (
         <div className="confirmed-need-attention" role="alert">
