@@ -129,6 +129,7 @@ select is(
       'atlas_api.record_wholesale_source(request jsonb)',
       'atlas_api.release_dispatch_requirement(request jsonb)',
       'atlas_api.release_purchase_handoff(request jsonb)',
+      'atlas_api.release_school_catering_purchase_handoff(request jsonb)',
       'atlas_api.release_wholesale_order(request jsonb)',
       'atlas_api.reopen_attendance(request jsonb)',
       'atlas_api.reopen_pantry(request jsonb)',
@@ -150,6 +151,8 @@ select is(
       'atlas_core.issue_222_save_weekly_menu_impl(request jsonb)',
       'atlas_core.issue_222_source_impact_payload(source_kind text, source_payload jsonb)',
       'atlas_core.issue_222_source_save_auth_error(request jsonb, command_name text, contract_version text, capability_code text)',
+      'atlas_core.school_catering_lock_handoff_source(p_service_date date, p_delivery_location_id uuid, p_ingredient_id uuid, p_unit_id uuid)',
+      'atlas_core.school_catering_purchase_handoff_source_kind(p_handoff_batch_id uuid)',
       'atlas_core.uiq03a_lock_weekly_menu_recipe_dishes()',
       'atlas_planning.pantry_02_snapshot_integrity_guard()'
     ]::text[],

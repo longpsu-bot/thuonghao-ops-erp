@@ -14,6 +14,8 @@ const DIAGNOSTIC_COMMAND_TIMEOUT_MS = 10_000;
 
 const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_current_platform_security_catalog.sql",
+  "school_catering_handoff_allocation.sql",
+  "school_catering_planning_correction.sql",
   "pa_04_supplier_direct_slice_1_foundation.sql",
   "pa_05b_h1_runtime_role_hardening_test.sql",
   "pa_05b_h2_multiline_dispatch_execution.sql",

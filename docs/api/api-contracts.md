@@ -137,6 +137,10 @@ D-042 adds exactly two public functions under `PLANNING-CORRECTION.v1`, taking t
 
 The three existing consequential Saves retain their public names and contracts. Before mutation they derive material dates from canonical approved facts, lock and re-read the current Planning chain, and reject the complete Save if any affected date is governed or blocked. A no-change proposal retains its existing no-change/idempotency behavior. Draft/Reopened daily chains remain safe through the existing Save invalidation path; a released/no-Handoff Confirmed Need must first be reopened by an Actor holding both listed capabilities. Legacy ranges are retired whole and independently. PA-05D Purchase Demand Reference and Dispatch Requirement lineage is Handoff-owned; `atlas_procurement.fulfilment_allocations` is the first later-domain commitment tested by this contract. No command saves the source or regenerates Need implicitly.
 
+## 4L. Implemented connected school-catering Procurement allocation
+
+PR A implements four connected functions: school-catering Purchase Handoff release, manual Allocation Family save, explicit bulk recommendation confirmation, and the shaped Procurement workbench. It adds two Procurement capabilities and immutable family/revision/contribution/split history without changing the supplier-direct wholesale PA-05E command family. The three Purchase Order functions are registered but remain non-callable until sequential PR B. Exact envelopes, security, correction behavior and verification are specified in [School-Catering Procurement API Contract](school-catering-procurement.md).
+
 ## 5. Contract template
 
 ```md

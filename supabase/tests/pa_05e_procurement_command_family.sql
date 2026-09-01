@@ -45,9 +45,22 @@ select ok(
 );
 
 select is(
-  (select count(*)::integer from pg_proc p join pg_roles r on r.oid = p.proowner where r.rolname = 'atlas_procurement_command_runtime'),
-  2,
-  'Procurement runtime owns only the two PA-05E entry functions'
+  (
+    select array_agg(p.proname order by p.proname)
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    join pg_roles r on r.oid = p.proowner
+    where n.nspname = 'atlas_api'
+      and p.proname in ('allocate_supplier_direct_fulfilment', 'release_supplier_purchase_order')
+      and pg_get_function_identity_arguments(p.oid) = 'request jsonb'
+      and r.rolname = 'atlas_procurement_command_runtime'
+      and p.prosecdef
+      and p.provolatile = 'v'
+      and p.proconfig is not null
+      and p.proconfig::text like '%search_path=%'
+  ),
+  array['allocate_supplier_direct_fulfilment', 'release_supplier_purchase_order']::name[],
+  'Procurement runtime retains both hardened PA-05E entry functions'
 );
 
 select ok(
@@ -99,10 +112,21 @@ select ok(
     select 1 from pg_policy p
     join pg_class c on c.oid=p.polrelid
     join pg_namespace n on n.oid=c.relnamespace
-    where n.nspname='atlas_procurement' and p.polcmd in ('w','d')
+    where n.nspname='atlas_procurement'
+      and c.relname in (
+        'fulfilment_allocations',
+        'fulfilment_allocation_revisions',
+        'fulfilment_allocation_lines',
+        'fulfilment_allocation_line_revisions',
+        'purchase_orders',
+        'purchase_order_revisions',
+        'purchase_order_lines',
+        'purchase_order_line_revisions'
+      )
+      and p.polcmd in ('w','d')
       and p.polroles && array[(select oid from pg_roles where rolname='atlas_procurement_command_runtime')]
   ),
-  'Procurement runtime has no RLS path to update or delete Procurement facts'
+  'Procurement runtime has no RLS path to update or delete PA-05E facts'
 );
 
 select ok(

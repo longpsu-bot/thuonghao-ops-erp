@@ -24,6 +24,7 @@
     "local:rmvp05:verify": "node scripts/verify-local-rmvp05-confirmed-need-review.mjs",
     "local:rmvp06:verify": "node scripts/verify-local-rmvp06-confirmed-need-validation.mjs",
     "verify:local:rmvp07": "node scripts/verify-local-rmvp07-confirmed-need-approval-release.mjs",
+    "local:school-catering-procurement:verify": "node scripts/verify-local-school-catering-procurement.mjs",
     "local:pantry02:verify": "node scripts/verify-local-pantry02.mjs",
     "local:connection:verify": "node scripts/verify-local-supabase-connection.mjs",
     "certify:frontend": "node scripts/certify-frontend.mjs",
