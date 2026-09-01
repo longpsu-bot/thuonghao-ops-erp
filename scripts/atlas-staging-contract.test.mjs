@@ -898,7 +898,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(76);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(78);
     expect(
       SUPABASE_FULL_INTEGRATION_COMMANDS.some(({ args }) =>
         args.includes(
@@ -1569,10 +1569,10 @@ describe("Atlas staging hosted evidence", () => {
     const authority = readCatalogAuthority();
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(96);
-    expect(authority.apiOwners).toHaveLength(96);
-    expect(authority.policyCount).toBe(631);
-    expect(authority.policyDigest).toBe("574fed4f090d1fb9605b17f3c9ba8e88");
+    expect(authority.apiSignatures).toHaveLength(99);
+    expect(authority.apiOwners).toHaveLength(99);
+    expect(authority.policyCount).toBe(633);
+    expect(authority.policyDigest).toBe("ca91300869ea6ba094dd897158607206");
   });
 
   it.each([
@@ -1670,7 +1670,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 631");
+    expect(sql).toContain("normal_policy_count <> 633");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -1686,11 +1686,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [631, 1, true],
-    [631, 0, false],
-    [631, 2, false],
-    [630, 1, false],
+    [633, 1, true],
+    [633, 0, false],
+    [633, 2, false],
     [632, 1, false],
+    [634, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

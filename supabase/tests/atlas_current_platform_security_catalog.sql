@@ -395,8 +395,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 631,
-    'md5', '574fed4f090d1fb9605b17f3c9ba8e88'
+    'count', 633,
+    'md5', 'ca91300869ea6ba094dd897158607206'
   ),
   'CAT-07 exact RLS catalog includes backend-only 02B continuity and integrity policies'
 );
@@ -604,8 +604,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  96,
-  'CAT-14 physical atlas_api function count is exactly ninety-six'
+  99,
+  'CAT-14 physical atlas_api function count is exactly ninety-nine'
 );
 
 select is(
@@ -643,6 +643,7 @@ select is(
     'create_recipe_composition_adjustment(request jsonb)',
     'create_recipe_draft(request jsonb)',
     'create_recipe_successor_version(request jsonb)',
+    'create_school_catering_purchase_order_drafts(request jsonb)',
     'create_supplier(request jsonb)',
     'evaluate_planning_input_readiness(request jsonb)',
     'execute_need_generation(request jsonb)',
@@ -661,6 +662,7 @@ select is(
     'get_recipe_adjustment_operator_workbench(request jsonb)',
     'get_recipe_adjustment_workbench(request jsonb)',
     'get_school_catering_procurement_workbench(request jsonb)',
+    'get_school_catering_purchase_orders(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
@@ -682,6 +684,7 @@ select is(
     'release_recipe(request jsonb)',
     'release_recipe_version_for_planning(request jsonb)',
     'release_school_catering_purchase_handoff(request jsonb)',
+    'release_school_catering_purchase_order(request jsonb)',
     'release_supplier_purchase_order(request jsonb)',
     'release_wholesale_order(request jsonb)',
     'reopen_attendance(request jsonb)',
@@ -716,7 +719,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly ninety-six functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly ninety-nine functions'
 );
 
 select is(
@@ -846,6 +849,7 @@ select is(
     'create_recipe_composition_adjustment(request jsonb)=atlas_master_data_command_runtime',
     'create_recipe_draft(request jsonb)=atlas_master_data_command_runtime',
     'create_recipe_successor_version(request jsonb)=atlas_master_data_command_runtime',
+    'create_school_catering_purchase_order_drafts(request jsonb)=atlas_procurement_command_runtime',
     'create_supplier(request jsonb)=atlas_master_data_command_runtime',
     'evaluate_planning_input_readiness(request jsonb)=atlas_planning_command_runtime',
     'execute_need_generation(request jsonb)=atlas_need_generation_runtime',
@@ -864,6 +868,7 @@ select is(
     'get_recipe_adjustment_operator_workbench(request jsonb)=atlas_read_runtime',
     'get_recipe_adjustment_workbench(request jsonb)=atlas_read_runtime',
     'get_school_catering_procurement_workbench(request jsonb)=atlas_read_runtime',
+    'get_school_catering_purchase_orders(request jsonb)=atlas_read_runtime',
     'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
     'invalidate_need_generation_run(request jsonb)=atlas_need_generation_runtime',
@@ -885,6 +890,7 @@ select is(
     'release_recipe(request jsonb)=atlas_master_data_command_runtime',
     'release_recipe_version_for_planning(request jsonb)=atlas_master_data_command_runtime',
     'release_school_catering_purchase_handoff(request jsonb)=atlas_planning_command_runtime',
+    'release_school_catering_purchase_order(request jsonb)=atlas_procurement_command_runtime',
     'release_supplier_purchase_order(request jsonb)=atlas_procurement_command_runtime',
     'release_wholesale_order(request jsonb)=atlas_planning_command_runtime',
     'reopen_attendance(request jsonb)=atlas_planning_command_runtime',
@@ -958,6 +964,7 @@ select is(
     'create_recipe_composition_adjustment(request jsonb)',
     'create_recipe_draft(request jsonb)',
     'create_recipe_successor_version(request jsonb)',
+    'create_school_catering_purchase_order_drafts(request jsonb)',
     'create_supplier(request jsonb)',
     'evaluate_planning_input_readiness(request jsonb)',
     'execute_need_generation(request jsonb)',
@@ -976,6 +983,7 @@ select is(
     'get_recipe_adjustment_operator_workbench(request jsonb)',
     'get_recipe_adjustment_workbench(request jsonb)',
     'get_school_catering_procurement_workbench(request jsonb)',
+    'get_school_catering_purchase_orders(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
@@ -997,6 +1005,7 @@ select is(
     'release_recipe(request jsonb)',
     'release_recipe_version_for_planning(request jsonb)',
     'release_school_catering_purchase_handoff(request jsonb)',
+    'release_school_catering_purchase_order(request jsonb)',
     'release_supplier_purchase_order(request jsonb)',
     'release_wholesale_order(request jsonb)',
     'reopen_attendance(request jsonb)',
@@ -1031,7 +1040,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-18 authenticated execute allowlist is exactly ninety-six functions'
+  'CAT-18 authenticated execute allowlist is exactly ninety-nine functions'
 );
 
 select ok(
@@ -1088,6 +1097,7 @@ select ok(
           ('create_recipe_composition_adjustment', 'request jsonb'),
           ('create_recipe_draft', 'request jsonb'),
           ('create_recipe_successor_version', 'request jsonb'),
+          ('create_school_catering_purchase_order_drafts', 'request jsonb'),
           ('create_supplier', 'request jsonb'),
           ('evaluate_planning_input_readiness', 'request jsonb'),
           ('execute_need_generation', 'request jsonb'),
@@ -1106,6 +1116,7 @@ select ok(
           ('get_recipe_adjustment_workbench', 'request jsonb'),
           ('get_recipe_adjustment_operator_workbench', 'request jsonb'),
           ('get_school_catering_procurement_workbench', 'request jsonb'),
+          ('get_school_catering_purchase_orders', 'request jsonb'),
           ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
           ('invalidate_need_generation_run', 'request jsonb'),
@@ -1127,6 +1138,7 @@ select ok(
           ('release_recipe', 'request jsonb'),
           ('release_recipe_version_for_planning', 'request jsonb'),
           ('release_school_catering_purchase_handoff', 'request jsonb'),
+          ('release_school_catering_purchase_order', 'request jsonb'),
           ('release_supplier_purchase_order', 'request jsonb'),
           ('release_wholesale_order', 'request jsonb'),
           ('replace_ingredient_supplier_priorities', 'request jsonb'),
@@ -1501,20 +1513,20 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 29,
-    'policy_count', 631,
-    'policy_catalog_md5', '574fed4f090d1fb9605b17f3c9ba8e88',
+    'policy_count', 633,
+    'policy_catalog_md5', 'ca91300869ea6ba094dd897158607206',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 238,
-    'private_function_catalog_md5', '470514ba0d3f81d8ef2a1065f2ba5ace',
-    'trigger_count', 97,
-    'trigger_catalog_md5', 'bf4dbe2911415b29da1455a1a024e6ca',
-    'positive_target_grant_count', 1572,
-    'positive_target_grant_md5', '0590bd4929fd7932a15f9231c0d44615',
+    'private_function_count', 242,
+    'private_function_catalog_md5', '5df5a78455e1ff62bb966fb77eaac95d',
+    'trigger_count', 99,
+    'trigger_catalog_md5', '9ed71ece440a6891b8ae6cb02d0abf97',
+    'positive_target_grant_count', 1591,
+    'positive_target_grant_md5', '8082692caaf711522504ac6d23742f96',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 96,
+    'api_function_count', 99,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 96,
+    'authenticated_execute_count', 99,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),

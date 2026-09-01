@@ -118,15 +118,40 @@ select ok(
         'fulfilment_allocation_revisions',
         'fulfilment_allocation_lines',
         'fulfilment_allocation_line_revisions',
-        'purchase_orders',
-        'purchase_order_revisions',
         'purchase_order_lines',
         'purchase_order_line_revisions'
       )
       and p.polcmd in ('w','d')
       and p.polroles && array[(select oid from pg_roles where rolname='atlas_procurement_command_runtime')]
+  )
+  and not exists (
+    select 1 from pg_policy p
+    join pg_class c on c.oid=p.polrelid
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='atlas_procurement'
+      and c.relname in ('purchase_orders','purchase_order_revisions')
+      and p.polcmd='d'
+      and p.polroles && array[(select oid from pg_roles where rolname='atlas_procurement_command_runtime')]
+  )
+  and (
+    select array_agg(p.polname order by p.polname)
+    from pg_policy p
+    where p.polrelid in (
+      'atlas_procurement.purchase_orders'::regclass,
+      'atlas_procurement.purchase_order_revisions'::regclass
+    )
+      and p.polcmd='w'
+      and p.polroles && array[(select oid from pg_roles where rolname='atlas_procurement_command_runtime')]
+  )=array['school_catering_po_revision_update','school_catering_po_root_update']::name[]
+  and not exists (
+    select 1 from pg_policy p
+    where p.polname in ('school_catering_po_revision_update','school_catering_po_root_update')
+      and (
+        pg_get_expr(p.polqual,p.polrelid) not ilike '%SCHOOL_CATERING%'
+        or pg_get_expr(p.polwithcheck,p.polrelid) not ilike '%SCHOOL_CATERING%'
+      )
   ),
-  'Procurement runtime has no RLS path to update or delete PA-05E facts'
+  'Procurement runtime update policies are limited to school-catering PO lifecycle facts'
 );
 
 select ok(
