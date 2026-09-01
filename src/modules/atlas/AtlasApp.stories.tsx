@@ -468,3 +468,63 @@ export const VietnameseCalendar: Story = {
     await userEvent.click(await canvas.findByLabelText("Tuần phục vụ"));
   },
 };
+
+export const ProcurementAllocation: Story = {
+  name: "Mua hàng · phân bổ đề xuất",
+  args: {
+    initialPage: "procurement",
+    initialReviewScenario: "procurement_default",
+    reviewMode: true,
+  },
+};
+
+export const ProcurementRebalance: Story = {
+  name: "Mua hàng · cân bằng 60/40 thành 72/48",
+  args: {
+    initialPage: "procurement",
+    initialReviewScenario: "procurement_rebalance",
+    reviewMode: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+  },
+};
+
+export const ProcurementStalePurchaseOrder: Story = {
+  name: "Mua hàng · đơn nháp cần cập nhật",
+  args: {
+    initialPage: "procurement",
+    initialReviewScenario: "procurement_stale_po",
+    reviewMode: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Đơn mua" }),
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+  },
+};
+
+export const ProcurementReleasedPurchaseOrder: Story = {
+  name: "Mua hàng · đơn đã phát hành",
+  args: {
+    initialPage: "procurement",
+    initialReviewScenario: "procurement_released_po",
+    reviewMode: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Đơn mua" }),
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+  },
+};

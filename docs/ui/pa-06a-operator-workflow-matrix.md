@@ -37,6 +37,14 @@ For every workflow:
 | Allocate school-catering demand families         | Buyer reviews released NEED_GENERATION Handoff quantities grouped by service date, delivery location, ingredient and unit     | Current family fingerprint/version, active eligible suppliers, exact quantities                                | School-catering Procurement Allocation APIs; manual split or explicit unique-priority confirmation                                                         | Persists immutable Allocation Family revision, exact Handoff contributions and server-calculated ratios                        | Show `UNALLOCATED`, `BALANCED`, stale rebalance, reallocation or blocked state. This remains separate from supplier-direct wholesale allocation.                                                                         |
 | Draft and release school-catering Purchase Order | Buyer groups every balanced family by supplier/date, reviews multi-school destinations, then releases one supplier commitment | Source-current family/split revisions, active/effective supplier eligibility, current PO root/revision/version | School-catering Procurement PO APIs; operator selects a bounded date range or one current DRAFT but never authors supplier, status, quantity, or PO number | Creates/supersedes supplier/date DRAFT snapshots; release creates an immutable successor and backend-generated official number | Block incomplete dates, stale DRAFTs, inactive/ineligible suppliers, and released-PO correction. Show derived stale/release/export state and exact lines. Keep the wholesale CMD-06 document-number contract unchanged.  |
 
+The connected React projection for the two school-catering rows above is
+`src/modules/atlas/procurement/`, reached from the enabled `Kế hoạch mua hàng`
+sidebar item after Planning completes the durable Confirmed Need release and
+Purchase Handoff release commands. It uses one Allocation Family row and one
+supplier/date PO row as its authoritative operator grains. The older
+`src/modules/procurement/ProcurementWorkbench.tsx` prototype is not part of this
+workflow, and PA-05E supplier-direct wholesale remains a separate command family.
+
 ## 4. Evidence workflows
 
 | Workflow                     | Operator, trigger, and goal                                                  | Prerequisite and information needed                                                                        | Registry entry and operator input categories                                 | Authoritative transition and output                                  | Success, blocker, recovery, audit, and next action                                                                                                                                                        |

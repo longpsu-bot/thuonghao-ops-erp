@@ -60,7 +60,17 @@ export type AtlasReviewScenario =
   | "attendance_permission_denied"
   | "attendance_retryable"
   | "attendance_stale"
-  | "attendance_session_lost";
+  | "attendance_session_lost"
+  | "procurement_default"
+  | "procurement_manual_split"
+  | "procurement_rebalance"
+  | "procurement_needs_reallocation"
+  | "procurement_po_draft"
+  | "procurement_stale_po"
+  | "procurement_released_po"
+  | "procurement_permission_denied"
+  | "procurement_retryable_failure"
+  | "procurement_empty";
 
 type ReviewEnvironment = {
   VITE_ATLAS_REVIEW_MODE?: string;
