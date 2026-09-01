@@ -85,6 +85,18 @@ function install(relativePath) {
   );
 }
 
+function verifyPlanningCorrectionBoundary() {
+  runPinnedSupabase(
+    [
+      "test",
+      "db",
+      "supabase/tests/school_catering_planning_correction.sql",
+      "--local",
+    ],
+    { stdio: "inherit" },
+  );
+}
+
 async function invoke(client, name, request) {
   const { data, error } = await client
     .schema("atlas_api")
@@ -226,6 +238,7 @@ function quantityParts(value) {
 
 async function main() {
   const { apiUrl, browserKey } = readLocalSupabaseStatus();
+  verifyPlanningCorrectionBoundary();
   runNodeScript(
     "./provision-local-atlas-identity.mjs",
     "local identity provisioning",
@@ -286,14 +299,17 @@ async function main() {
     "Workbench did not return the uncommitted 100% priority recommendation.",
   );
 
-  const candidate = {
-    ...row.family,
-    expected_family_version: row.family.version,
-    expected_source_fingerprint: row.family.source_fingerprint,
-  };
-  delete candidate.family_id;
-  delete candidate.version;
-  delete candidate.source_fingerprint;
+  const candidates = readback.rows.map((item) => {
+    const candidate = {
+      ...item.family,
+      expected_family_version: item.family.version,
+      expected_source_fingerprint: item.family.source_fingerprint,
+    };
+    delete candidate.family_id;
+    delete candidate.version;
+    delete candidate.source_fingerprint;
+    return candidate;
+  });
   const confirmed = await invoke(
     client,
     "confirm_school_catering_supplier_recommendations",
@@ -301,13 +317,14 @@ async function main() {
       subject,
       "SCHOOL_CATERING_SUPPLIER_RECOMMENDATIONS_CONFIRMED",
       1,
-      { candidates: [candidate] },
+      { candidates },
       "SCHOOL-CATERING-PROCUREMENT.v1",
     ),
   );
   assert(
-    confirmed.confirmed.length === 1 && confirmed.skipped.length === 0,
-    "The explicit 100% supplier recommendation was not confirmed.",
+    confirmed.confirmed.length === candidates.length &&
+      confirmed.skipped.length === 0,
+    "The explicit 100% supplier recommendations were not all confirmed.",
   );
 
   readback = await invoke(
@@ -377,9 +394,93 @@ async function main() {
     ),
     "Final readback does not retain the server-calculated 40% split.",
   );
+
+  assert(
+    readback.rows.every((item) => item.state === "BALANCED"),
+    "Not every family is balanced before PO draft materialization.",
+  );
+  const poDate = finalRow.service_date;
+  const drafts = await invoke(
+    client,
+    "create_school_catering_purchase_order_drafts",
+    command(
+      subject,
+      "SCHOOL_CATERING_PO_DRAFTS_CREATED",
+      1,
+      { date_start: poDate, date_end: poDate },
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  assert(
+    drafts.created_purchase_order_ids.length >= 2 &&
+      drafts.ready_dates.includes(poDate) &&
+      drafts.skipped_dates.length === 0,
+    "Supplier/date PO drafts were not materialized from every balanced family.",
+  );
+
+  const poReadRequest = {
+    contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
+    requested_by_auth_subject: subject,
+    correlation_id: crypto.randomUUID(),
+    payload: {
+      date_start: poDate,
+      date_end: poDate,
+      supplier_ids: [],
+      statuses: [],
+      search: null,
+    },
+  };
+  let purchaseOrders = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  const draft = purchaseOrders.purchase_orders.find(
+    (purchaseOrder) =>
+      purchaseOrder.supplier.supplier_id === supplierA &&
+      purchaseOrder.release_eligible,
+  );
+  assert(
+    draft?.status === "DRAFT" && draft.document_number === null,
+    "Authoritative PO readback did not expose a releasable unnumbered DRAFT.",
+  );
+  const releasedPo = await invoke(
+    client,
+    "release_school_catering_purchase_order",
+    command(
+      subject,
+      "SCHOOL_CATERING_PO_RELEASED",
+      draft.version,
+      {
+        purchase_order_id: draft.purchase_order_id,
+        expected_purchase_order_revision_id:
+          draft.current_revision.purchase_order_revision_id,
+      },
+      "SCHOOL-CATERING-PROCUREMENT.v1",
+    ),
+  );
+  assert(
+    /^PO-\d{8}-[0-9A-F]{16}$/.test(releasedPo.document_number),
+    "PO release did not return the deterministic backend-generated number.",
+  );
+  purchaseOrders = await invoke(
+    client,
+    "get_school_catering_purchase_orders",
+    poReadRequest,
+  );
+  const releasedReadback = purchaseOrders.purchase_orders.find(
+    (purchaseOrder) =>
+      purchaseOrder.purchase_order_id === draft.purchase_order_id,
+  );
+  assert(
+    releasedReadback?.status === "RELEASED_TO_SUPPLIER" &&
+      releasedReadback.export_ready === true &&
+      releasedReadback.document_number === releasedPo.document_number,
+    "Authoritative PO readback did not retain the released number/export state.",
+  );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified authenticated school-catering Handoff, recommendation, 60/40 manual split, and exact readback without creating Purchase Orders.",
+    "Verified D-042 draft/released correction gates plus authenticated Handoff, balanced allocation, PO draft, backend number release, and authoritative readback.",
   );
 }
 
