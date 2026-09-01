@@ -286,10 +286,13 @@ describe("Planning Inputs Confirmed Need tab", () => {
       },
       "2026-08-05": { batchId: wednesdayBatch },
     });
-    const confirmedNeedApi = confirmedNeedApiForDates({
-      [mondayBatch]: "2026-08-03",
-      [wednesdayBatch]: "2026-08-05",
-    });
+    const confirmedNeedApi = confirmedNeedApiForDates(
+      {
+        [mondayBatch]: "2026-08-03",
+        [wednesdayBatch]: "2026-08-05",
+      },
+      { releaseEligible: true },
+    );
     render(
       <PlanningInputsWorkbench
         authState={authState}

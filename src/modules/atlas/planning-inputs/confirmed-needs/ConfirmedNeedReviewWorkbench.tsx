@@ -115,33 +115,35 @@ export function confirmedNeedLineRequest(
   };
 }
 
-function differs(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
+function hasUnsavedLocalChange(
+  line: ConfirmedNeedLine,
+  draft: ConfirmedNeedDraftLine,
+) {
   const initial = initialConfirmedNeedDraft(line);
   return (
+    line.current_decision_id === null ||
     !exactDecimalEqual(initial.exact_quantity, draft.exact_quantity) ||
     initial.reason_code !== draft.reason_code ||
     initial.reason_note.trim() !== draft.reason_note.trim()
   );
 }
 
-function hasDraftDifference(
-  line: ConfirmedNeedLine,
-  draft: ConfirmedNeedDraftLine,
-) {
-  return !exactDecimalEqual(
-    draft.exact_quantity,
-    line.proposed_confirmed_quantity,
-  );
-}
-
 function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
   if (!normalizeConfirmedNeedQuantity(draft.exact_quantity))
     return "Số lượng phải là số không âm, tối đa 6 chữ số thập phân.";
+  const initial = initialConfirmedNeedDraft(line);
   const unchanged = exactDecimalEqual(
     draft.exact_quantity,
     line.proposed_confirmed_quantity,
   );
-  if (unchanged && draft.reason_code !== "PROPOSAL_ACCEPTED")
+  const preservesSavedAdjustment =
+    line.current_decision_id !== null &&
+    initial.reason_code !== "PROPOSAL_ACCEPTED";
+  if (
+    unchanged &&
+    draft.reason_code !== "PROPOSAL_ACCEPTED" &&
+    !preservesSavedAdjustment
+  )
     return "Số lượng không đổi nên không cần lý do điều chỉnh.";
   if (!unchanged && draft.reason_code === "PROPOSAL_ACCEPTED")
     return "Hãy chọn lý do khi thay đổi số lượng.";
@@ -152,7 +154,7 @@ function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
     return "Lý do này cần ghi chú.";
   if (
     line.current_decision_id &&
-    differs(line, draft) &&
+    hasUnsavedLocalChange(line, draft) &&
     !draft.reason_note.trim()
   )
     return "Thay đổi nội dung đã lưu cần ghi chú.";
@@ -251,12 +253,10 @@ export function ConfirmedNeedReviewWorkbench({
     if (!workbench) return [];
     return workbench.lines.filter((line) => {
       const draft = drafts[line.confirmed_need_line_id];
-      return Boolean(
-        draft && (line.current_decision_id === null || differs(line, draft)),
-      );
+      return Boolean(draft && hasUnsavedLocalChange(line, draft));
     });
   }, [drafts, workbench]);
-  const dirty = changedLines.some((line) => line.current_decision_id !== null);
+  const dirty = changedLines.length > 0;
 
   useEffect(
     () => onDirtyChange?.(dirty || refreshRequired),
@@ -322,7 +322,7 @@ export function ConfirmedNeedReviewWorkbench({
       )
         return false;
       const draft = drafts[line.confirmed_need_line_id];
-      if (showDifferencesOnly && draft && !hasDraftDifference(line, draft))
+      if (showDifferencesOnly && draft && !hasUnsavedLocalChange(line, draft))
         return false;
       return true;
     });
@@ -663,7 +663,7 @@ export function ConfirmedNeedReviewWorkbench({
             checked={showDifferencesOnly}
             onChange={(event) => setShowDifferencesOnly(event.target.checked)}
           />
-          <span>Chỉ hiển thị dòng có chênh lệch</span>
+          <span>Chỉ hiển thị thay đổi chưa lưu</span>
         </label>
       </section>
 
@@ -680,7 +680,7 @@ export function ConfirmedNeedReviewWorkbench({
             "Đơn vị",
             "Nhu cầu tính",
             "Số lượng xác nhận",
-            "Chênh lệch",
+            "Thay đổi chưa lưu",
             "Lý do / ghi chú",
           ]}
         >
@@ -688,11 +688,17 @@ export function ConfirmedNeedReviewWorkbench({
             const draft =
               drafts[line.confirmed_need_line_id] ??
               initialConfirmedNeedDraft(line);
-            const adjusted = !exactDecimalEqual(
-              draft.exact_quantity,
-              line.proposed_confirmed_quantity,
-            );
-            const error = draftError(line, draft);
+            const initial = initialConfirmedNeedDraft(line);
+            const rowHasUnsavedChange = hasUnsavedLocalChange(line, draft);
+            const showsAdjustmentReason =
+              draft.reason_code !== "PROPOSAL_ACCEPTED";
+            const delta = rowHasUnsavedChange
+              ? subtractExactDecimals(
+                  draft.exact_quantity,
+                  initial.exact_quantity,
+                )
+              : null;
+            const error = rowHasUnsavedChange ? draftError(line, draft) : null;
             return (
               <tr key={line.confirmed_need_line_id}>
                 <td>
@@ -717,34 +723,32 @@ export function ConfirmedNeedReviewWorkbench({
                     disabled={released || !workbench.editing_allowed}
                     onChange={(event) => {
                       const exactQuantity = event.target.value;
-                      const returnsToProposal = exactDecimalEqual(
+                      const returnsToSavedBaseline = exactDecimalEqual(
                         exactQuantity,
-                        line.proposed_confirmed_quantity,
+                        initial.exact_quantity,
                       );
                       setDrafts((current) => ({
                         ...current,
                         [line.confirmed_need_line_id]: {
                           ...draft,
                           exact_quantity: exactQuantity,
-                          reason_code: returnsToProposal
-                            ? "PROPOSAL_ACCEPTED"
+                          reason_code: returnsToSavedBaseline
+                            ? initial.reason_code
                             : draft.reason_code === "PROPOSAL_ACCEPTED"
                               ? "PLANNING_STEP_ADJUSTMENT"
                               : draft.reason_code,
+                          reason_note: returnsToSavedBaseline
+                            ? initial.reason_note
+                            : draft.reason_note,
                         },
                       }));
                     }}
                   />
                   {error && <small className="field-error">{error}</small>}
                 </td>
+                <td>{delta && delta !== "0" ? delta : "—"}</td>
                 <td>
-                  {subtractExactDecimals(
-                    draft.exact_quantity,
-                    line.proposed_confirmed_quantity,
-                  ) ?? "—"}
-                </td>
-                <td>
-                  {adjusted ? (
+                  {showsAdjustmentReason ? (
                     <>
                       <select
                         aria-label={`Lý do điều chỉnh ${line.ingredient.name}`}
