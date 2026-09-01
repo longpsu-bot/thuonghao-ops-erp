@@ -4261,10 +4261,9 @@ tbody tr.selected-row {
 
 .procurement-context-strip {
   display: grid;
-  grid-template-columns: repeat(2, minmax(130px, 0.65fr)) minmax(
-      150px,
-      0.8fr
-    ) minmax(220px, 1.5fr) minmax(150px, 0.8fr) auto auto;
+  grid-template-columns:
+    repeat(2, minmax(130px, 0.65fr)) minmax(150px, 0.8fr)
+    minmax(220px, 1.5fr) minmax(150px, 0.8fr) auto auto;
   align-items: end;
   gap: 8px;
   padding: 9px 10px;
@@ -4654,6 +4653,169 @@ tbody tr.selected-row {
   margin-top: 9px;
 }
 
+.procurement-orders-stage {
+  min-width: 0;
+  border: 1px solid var(--atlas-border);
+  border-radius: 10px;
+  background: var(--atlas-surface);
+  box-shadow: 0 2px 10px rgb(28 39 53 / 7%);
+}
+
+.procurement-order-actions {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--atlas-border);
+}
+
+.procurement-order-actions div,
+.procurement-order-actions span {
+  display: grid;
+  gap: 3px;
+}
+
+.procurement-order-actions span {
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.procurement-order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.42fr);
+  align-items: start;
+}
+
+.procurement-order-table-scroll {
+  max-height: min(65vh, 760px);
+  overflow: auto;
+}
+
+.procurement-order-table {
+  width: 100%;
+  min-width: 930px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.procurement-order-table th,
+.procurement-order-detail table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 38px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--atlas-border);
+  background: #f2f5f7;
+  color: #42515d;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.procurement-order-table td,
+.procurement-order-detail table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #ebe7e0;
+  vertical-align: top;
+}
+
+.procurement-order-table tr.selected td {
+  background: #f5f8fa;
+}
+
+.procurement-order-detail {
+  position: sticky;
+  top: 12px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border-left: 1px solid var(--atlas-border);
+  background: #fff;
+}
+
+.procurement-order-detail > header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.procurement-order-detail > header span,
+.procurement-order-detail > header p {
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.procurement-order-detail h3,
+.procurement-order-detail p {
+  margin: 0;
+}
+
+.procurement-order-detail h3 {
+  margin: 3px 0;
+  font-size: 18px;
+}
+
+.procurement-order-detail > header > strong {
+  color: var(--atlas-primary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.procurement-order-detail table {
+  width: 100%;
+  border: 1px solid var(--atlas-border);
+  border-radius: 7px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.procurement-order-detail table td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.procurement-release-context {
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  border-radius: 7px;
+  background: var(--atlas-surface-soft);
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.procurement-release-context strong {
+  color: var(--atlas-text);
+}
+
+.procurement-order-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.procurement-order-detail-actions .secondary {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--atlas-primary);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--atlas-primary);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.procurement-order-detail-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 @media (max-width: 75em) {
   .procurement-context-strip {
     grid-template-columns: repeat(3, minmax(150px, 1fr));
@@ -4665,6 +4827,16 @@ tbody tr.selected-row {
 
   .procurement-split-panel {
     position: static;
+  }
+
+  .procurement-order-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .procurement-order-detail {
+    position: static;
+    border-top: 1px solid var(--atlas-border);
+    border-left: 0;
   }
 }
 
@@ -4682,13 +4854,20 @@ tbody tr.selected-row {
   }
 
   .procurement-family-actions,
-  .procurement-split-panel > header {
+  .procurement-split-panel > header,
+  .procurement-order-actions,
+  .procurement-order-detail > header {
     align-items: stretch;
     flex-direction: column;
   }
 
   .procurement-split-list label {
     grid-template-columns: minmax(0, 1fr) 100px auto;
+  }
+
+  .procurement-order-detail-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

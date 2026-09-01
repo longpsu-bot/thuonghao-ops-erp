@@ -254,3 +254,201 @@ describe("school-catering Procurement allocation workbench", () => {
     expect(screen.queryByDisplayValue("100.000000")).not.toBeInTheDocument();
   });
 });
+
+describe("school-catering Procurement purchase-order stage", () => {
+  it("keeps exactly two stages and renders supplier-date orders with multi-location detail", async () => {
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={createReviewSchoolCateringProcurementApi("po_draft")}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    const stages = screen.getByRole("navigation", {
+      name: "Các bước Procurement",
+    });
+    expect(within(stages).getAllByRole("button")).toHaveLength(2);
+    const table = await screen.findByRole("table", { name: "Đơn mua" });
+    expect(within(table).getByText("NCC An Phú")).toBeVisible();
+    expect(within(table).getByText("02/09/2026")).toBeVisible();
+    expect(within(table).getByText("2 dòng")).toBeVisible();
+    fireEvent.click(
+      within(table).getByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent("Bếp chính Nguyễn Du");
+    expect(detail).toHaveTextContent("Bếp chính Trần Quốc Toản");
+    const lines = within(detail).getByRole("table", {
+      name: "Dòng đơn mua NCC An Phú",
+    });
+    expect(within(lines).getByText("60")).toBeVisible();
+    expect(within(lines).getByText("40")).toBeVisible();
+    expect(within(lines).getAllByText("kg")).toHaveLength(2);
+    expect(within(detail).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/số đơn/i)).not.toBeInTheDocument();
+  });
+
+  it("materializes the selected date range and preserves blocked dates beside usable results", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    const createDrafts = vi.spyOn(api, "createPurchaseOrderDrafts");
+    createDrafts.mockResolvedValueOnce({
+      kind: "success",
+      response: {
+        success: true,
+        safe_operator_message: "Đã tạo đơn cho ngày sẵn sàng.",
+        ready_dates: ["2026-09-02"],
+        skipped_dates: ["2026-09-03"],
+        warnings: [],
+        blockers: ["03/09/2026: nhu cầu chưa sẵn sàng"],
+      },
+    });
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo đơn mua" }));
+    await waitFor(() => expect(createDrafts).toHaveBeenCalledOnce());
+    expect(createDrafts.mock.calls[0]?.[0].payload).toEqual({
+      date_start: "2026-09-01",
+      date_end: "2026-09-07",
+    });
+    const outcome = await screen.findByRole("region", {
+      name: "Kết quả lệnh Procurement",
+    });
+    expect(outcome).toHaveTextContent("03/09/2026: nhu cầu chưa sẵn sàng");
+    expect(screen.getByRole("table", { name: "Đơn mua" })).toHaveTextContent(
+      "NCC An Phú",
+    );
+  });
+
+  it("disables stale draft release and regenerates through the approved materialization command", async () => {
+    const api = createReviewSchoolCateringProcurementApi("stale_po");
+    const createDrafts = vi.spyOn(api, "createPurchaseOrderDrafts");
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Phát hành cho NCC" }),
+    ).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tạo lại đơn cần cập nhật" }),
+    );
+    await waitFor(() => expect(createDrafts).toHaveBeenCalledOnce());
+  });
+
+  it("releases one PO independently and displays only the server-generated official number", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    const release = vi.spyOn(api, "releasePurchaseOrder");
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phát hành cho NCC" }));
+    await waitFor(() => expect(release).toHaveBeenCalledOnce());
+    expect(release.mock.calls[0]?.[0]).toMatchObject({
+      expected_version: 1,
+      payload: {
+        purchase_order_id: "25000000-0000-4000-8000-000000000051",
+        expected_purchase_order_revision_id:
+          "25000000-0000-4000-8000-000000000052",
+      },
+    });
+    expect(
+      await screen.findAllByText("PO-20260902-2500000000004000"),
+    ).toHaveLength(2);
+    expect(
+      screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Đã phát hành")).toBeVisible();
+  });
+
+  it("renders an already released PO as read-only", async () => {
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={createReviewSchoolCateringProcurementApi("released_po")}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+    expect(screen.getAllByText("PO-20260902-2500000000004000")).toHaveLength(2);
+    expect(screen.getByText("Đã phát hành")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("discards an earlier PO read after the operator changes stage", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    let resolveOrders!: (
+      value: Awaited<ReturnType<typeof api.getPurchaseOrders>>,
+    ) => void;
+    vi.spyOn(api, "getPurchaseOrders").mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOrders = resolve;
+      }),
+    );
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Phân bổ nhà cung ứng" }),
+    );
+    resolveOrders({
+      kind: "success",
+      response: createReviewProcurementWorkbenchFixture(
+        "default",
+      ) as unknown as AtlasSuccessEnvelope,
+    });
+    await screen.findByRole("table", { name: "Allocation Family" });
+    expect(
+      screen.queryByRole("table", { name: "Đơn mua" }),
+    ).not.toBeInTheDocument();
+  });
+});
