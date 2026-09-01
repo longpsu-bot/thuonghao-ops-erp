@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(86);
+select plan(88);
 
 select has_table('atlas_procurement', 'school_catering_allocation_families', 'Allocation Family roots exist');
 select has_table('atlas_procurement', 'school_catering_allocation_family_revisions', 'Allocation Family revisions exist');
@@ -423,6 +423,18 @@ select is((select row #>> '{allowed_actions,confirm_recommendation}' from sc_res
   'unique lowest priority enables authoritative recommendation confirmation');
 select is(jsonb_array_length((select response -> 'rows' from sc_results where name='supplier_search')),3,
   'supplier-name search returns every current family for which that supplier is eligible');
+select ok((select jsonb_typeof(row -> 'family_quantity')='string'
+    and row ->> 'family_quantity'='100.000000'
+    and jsonb_typeof(row #> '{contributions,0,contribution_quantity}')='string'
+    and row #>> '{contributions,0,contribution_quantity}'='100.000000'
+    and jsonb_typeof(row #> '{recommendation,allocated_quantity}')='string'
+    and row #>> '{recommendation,allocated_quantity}'='100.000000'
+    and jsonb_typeof(row #> '{recommendation,split_ratio}')='string'
+    and row #>> '{recommendation,split_ratio}'='1.000000000000'
+  from sc_results r cross join lateral jsonb_array_elements(r.response -> 'rows') row
+  where r.name='global_read' and row ->> 'ingredient_id'='23820000-0000-4000-8000-000000000041'
+    and row ->> 'delivery_location_id'='23820000-0000-4000-8000-000000000011'),
+  'workbench read serializes exact family, contribution, and recommendation quantities as strings');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','23800000-0000-4000-8000-000000000102',true);
@@ -579,6 +591,8 @@ insert into sc_results values('global_successor',atlas_api.save_school_catering_
       'splits',jsonb_build_array(
         jsonb_build_object('supplier_id','23820000-0000-4000-8000-000000000051','allocated_quantity',30),
         jsonb_build_object('supplier_id','23820000-0000-4000-8000-000000000052','allocated_quantity',20))))));
+insert into sc_results values('allocated_read',atlas_api.get_school_catering_procurement_workbench(
+  pg_temp.sc_read('23800000-0000-4000-8000-000000000101',null)));
 reset role;
 select is((select response #>> '{family,family_version}' from sc_results where name='global_manual'),'1',
   'GLOBAL actor saves a current exact balanced manual allocation');
@@ -589,6 +603,14 @@ select ok((select count(*)=2 and count(*) filter(where not is_current)=1
   join atlas_procurement.school_catering_allocation_families f using(family_id)
   where f.delivery_location_id='23820000-0000-4000-8000-000000000012'),
   'GLOBAL successor preserves the prior Allocation revision intact');
+select ok((select bool_and(jsonb_typeof(split -> 'allocated_quantity')='string'
+      and jsonb_typeof(split -> 'split_ratio')='string')
+  from sc_results r cross join lateral jsonb_array_elements(r.response -> 'rows') row
+  cross join lateral jsonb_array_elements(row -> 'splits') split
+  where r.name='allocated_read'
+    and row ->> 'delivery_location_id'='23820000-0000-4000-8000-000000000012'
+    and row ->> 'ingredient_id'='23820000-0000-4000-8000-000000000041'),
+  'workbench read serializes persisted allocation quantities and ratios as strings');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','23800000-0000-4000-8000-000000000102',true);
