@@ -4392,10 +4392,21 @@ tbody tr.selected-row {
 
 .procurement-currentness {
   align-self: center;
-  color: var(--atlas-success);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.procurement-currentness.current {
+  color: var(--atlas-success);
+}
+
+.procurement-currentness.loading {
+  color: var(--atlas-accent-text);
+}
+
+.procurement-currentness.unavailable {
+  color: var(--atlas-danger);
 }
 
 .procurement-stage-selector {
@@ -4474,7 +4485,7 @@ tbody tr.selected-row {
   width: 100%;
   min-width: 960px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .procurement-family-table th {
@@ -4719,6 +4730,21 @@ tbody tr.selected-row {
   margin-top: 9px;
 }
 
+.procurement-technical-details {
+  margin-top: 9px;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.procurement-technical-details summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.procurement-technical-details code + code::before {
+  content: ", ";
+}
+
 .procurement-orders-stage {
   min-width: 0;
   border: 1px solid var(--atlas-border);
@@ -4763,7 +4789,7 @@ tbody tr.selected-row {
   width: 100%;
   min-width: 930px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .procurement-order-table th,

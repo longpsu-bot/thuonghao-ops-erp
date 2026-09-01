@@ -279,6 +279,19 @@ function createMultiSchoolWorkbenchFixture() {
 }
 
 describe("school-catering Procurement allocation workbench", () => {
+  it("uses Vietnamese business labels instead of Allocation Family jargon", async () => {
+    renderWorkbench();
+
+    expect(await screen.findByText("Suất ăn học đường")).toBeVisible();
+    expect(screen.getByText("1 nhóm nhu cầu")).toBeVisible();
+    expect(screen.queryByText(/Allocation Family/)).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+    expect(screen.getByText("Nhu cầu đã chọn")).toBeVisible();
+  });
+
   it("renders one table row per Allocation Family with the exact operator columns", async () => {
     renderWorkbench();
     await screen.findByText("Gạo thơm");
@@ -531,7 +544,7 @@ describe("school-catering Procurement allocation workbench", () => {
     ).toBeVisible();
   });
 
-  it("shows stale-version recovery persistently and requires authoritative reload", async () => {
+  it("keeps STALE_VERSION subordinate while showing natural stale recovery", async () => {
     const api = createReviewSchoolCateringProcurementApi("stale_version");
     renderWorkbench(api);
     fireEvent.click(
@@ -543,7 +556,13 @@ describe("school-catering Procurement allocation workbench", () => {
       name: "Kết quả lệnh Procurement",
     });
     expect(result).toHaveTextContent("Dữ liệu đã thay đổi");
-    expect(result).toHaveTextContent("STALE_VERSION");
+    const technicalDetails = within(result)
+      .getByText("Chi tiết kỹ thuật")
+      .closest("details");
+    expect(technicalDetails).not.toBeNull();
+    expect(
+      within(technicalDetails!).getByText("STALE_VERSION"),
+    ).not.toBeVisible();
     expect(
       screen.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
     ).toBeEnabled();
@@ -568,8 +587,9 @@ describe("school-catering Procurement allocation workbench", () => {
     const result = await screen.findByRole("region", {
       name: "Kết quả lệnh Procurement",
     });
-    expect(result).toHaveTextContent("Chưa xác định được kết quả lệnh");
-    expect(result).toHaveTextContent("bắt buộc tải lại");
+    expect(result).toHaveTextContent("Chưa xác nhận kết quả");
+    expect(result).toHaveTextContent("Hãy tải lại dữ liệu hiện tại");
+    expect(result).not.toHaveTextContent("dữ liệu có thẩm quyền");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
     fireEvent.click(
       screen.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
@@ -635,6 +655,78 @@ describe("school-catering Procurement allocation workbench", () => {
   });
 });
 
+describe("school-catering Procurement currentness", () => {
+  it("does not claim current data after an allocation read fails", async () => {
+    const api = createReviewSchoolCateringProcurementApi("default");
+    vi.spyOn(api, "getWorkbench").mockResolvedValueOnce({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "READ_UNAVAILABLE",
+        safe_message: "Không thể tải phân bổ hiện tại.",
+      },
+    });
+
+    renderWorkbench(api);
+
+    await screen.findByText("Không thể tải phân bổ hiện tại.");
+    const currentness = screen.getByText("Chưa xác nhận dữ liệu hiện tại");
+    expect(currentness).toHaveClass("unavailable");
+    expect(currentness).not.toHaveClass("current");
+  });
+
+  it("does not claim current data after a purchase-order read fails", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    vi.spyOn(api, "getPurchaseOrders").mockResolvedValueOnce({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "READ_UNAVAILABLE",
+        safe_message: "Không thể tải đơn mua hiện tại.",
+      },
+    });
+
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    await screen.findByText("Không thể tải đơn mua hiện tại.");
+    const currentness = screen.getByText("Chưa xác nhận dữ liệu hiện tại");
+    expect(currentness).toHaveClass("unavailable");
+    expect(currentness).not.toHaveClass("current");
+  });
+
+  it("restores currentness after a successful authoritative reload", async () => {
+    const api = createReviewSchoolCateringProcurementApi("default");
+    vi.spyOn(api, "getWorkbench")
+      .mockResolvedValueOnce({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "READ_UNAVAILABLE",
+          safe_message: "Không thể tải phân bổ hiện tại.",
+        },
+      })
+      .mockResolvedValueOnce(
+        reviewSuccess(createReviewProcurementWorkbenchFixture("default")),
+      );
+
+    renderWorkbench(api);
+    await screen.findByText("Không thể tải phân bổ hiện tại.");
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+
+    expect(await screen.findByText("Dữ liệu hiện tại")).toHaveClass("current");
+    expect(screen.getByText("Gạo thơm")).toBeVisible();
+  });
+});
+
 describe("school-catering Procurement purchase-order stage", () => {
   it("translates every deployed blocked-date reason without exposing technical codes", () => {
     const reasons = [
@@ -662,6 +754,67 @@ describe("school-catering Procurement purchase-order stage", () => {
     ]);
     for (const [, reason] of reasons)
       expect(messages.join(" ")).not.toContain(reason);
+  });
+
+  it("renders a known PO disabled reason in natural Vietnamese", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    const fixture = createReviewPurchaseOrdersFixture("po_draft");
+    fixture.purchase_orders[0]!.allowed_actions.release = false;
+    fixture.purchase_orders[0]!.disabled_reasons = ["SUPPLIER_INACTIVE"];
+    vi.spyOn(api, "getPurchaseOrders").mockResolvedValue(
+      reviewSuccess(fixture),
+    );
+
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent("Nhà cung cấp hiện không hoạt động.");
+    expect(detail).not.toHaveTextContent("SUPPLIER_INACTIVE");
+  });
+
+  it("falls back safely for an unknown PO blocker without exposing its code", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    const fixture = createReviewPurchaseOrdersFixture("po_draft");
+    fixture.purchase_orders[0]!.blockers = ["FUTURE_PO_RULE"];
+    vi.spyOn(api, "getPurchaseOrders").mockResolvedValue(
+      reviewSuccess(fixture),
+    );
+
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent(
+      "Đơn mua chưa thể tiếp tục; hãy tải lại và kiểm tra thông tin hiện tại.",
+    );
+    expect(detail).not.toHaveTextContent("FUTURE_PO_RULE");
   });
 
   it("keeps exactly two stages and renders supplier-date orders with multi-location detail", async () => {

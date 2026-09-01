@@ -3,6 +3,10 @@ import type {
   PurchaseOrdersData,
   SchoolCateringPurchaseOrder,
 } from "./schoolCateringProcurementModel";
+import { procurementOperatorMessages } from "./procurementOperatorCopy";
+
+const purchaseOrderFallback =
+  "Đơn mua chưa thể tiếp tục; hãy tải lại và kiểm tra thông tin hiện tại.";
 
 function dateLabel(value: string) {
   return value.split("-").reverse().join("/");
@@ -68,6 +72,14 @@ export function PurchaseOrderStage({
   const selected = data?.purchase_orders.find(
     (order) => order.purchase_order_id === selectedId,
   );
+  const selectedMessages = selected
+    ? procurementOperatorMessages(
+        [...selected.blockers, ...selected.disabled_reasons].filter(
+          (reason) => !(selected.stale && reason === "PO_DRAFT_STALE"),
+        ),
+        purchaseOrderFallback,
+      )
+    : [];
 
   return (
     <section
@@ -150,7 +162,10 @@ export function PurchaseOrderStage({
                     <td>
                       {order.stale
                         ? "Cần cập nhật"
-                        : order.warnings.join(", ") || "—"}
+                        : procurementOperatorMessages(
+                            order.warnings,
+                            "Có cảnh báo cần kiểm tra.",
+                          ).join(", ") || "—"}
                     </td>
                   </tr>
                 ))}
@@ -181,9 +196,9 @@ export function PurchaseOrderStage({
                   trước khi phát hành.
                 </p>
               )}
-              {selected.blockers.map((blocker) => (
-                <p className="procurement-inline-danger" key={blocker}>
-                  {blocker}
+              {selectedMessages.map((message) => (
+                <p className="procurement-inline-danger" key={message}>
+                  {message}
                 </p>
               ))}
 

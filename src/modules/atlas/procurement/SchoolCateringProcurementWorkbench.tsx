@@ -29,6 +29,14 @@ import type {
 } from "./schoolCateringProcurementModel";
 import { SupplierSplitPanel } from "./SupplierSplitPanel";
 
+type ProcurementReadCurrentness = "loading" | "current" | "unavailable";
+
+const currentnessLabels: Record<ProcurementReadCurrentness, string> = {
+  loading: "Đang cập nhật…",
+  current: "Dữ liệu hiện tại",
+  unavailable: "Chưa xác nhận dữ liệu hiện tại",
+};
+
 function fold(value: string) {
   return value
     .normalize("NFD")
@@ -182,7 +190,7 @@ function outcomeFromResult(
     blockers: [],
     next_action:
       result.kind === "transport_error"
-        ? "Tải lại dữ liệu có thẩm quyền trước khi thao tác tiếp."
+        ? "Tải lại dữ liệu hiện tại trước khi thao tác tiếp."
         : null,
   };
 }
@@ -229,6 +237,10 @@ export function SchoolCateringProcurementWorkbench({
   const [purchaseOrderLoadMessage, setPurchaseOrderLoadMessage] = useState<
     string | null
   >(null);
+  const [allocationCurrentness, setAllocationCurrentness] =
+    useState<ProcurementReadCurrentness>("unavailable");
+  const [purchaseOrderCurrentness, setPurchaseOrderCurrentness] =
+    useState<ProcurementReadCurrentness>("unavailable");
   const [commandOutcome, setCommandOutcome] =
     useState<ProcurementCommandOutcome | null>(null);
   const [mutationLocked, setMutationLocked] = useState(false);
@@ -242,6 +254,7 @@ export function SchoolCateringProcurementWorkbench({
   const loadAllocation = useCallback(async () => {
     if (!api || !authSubject) return false;
     const currentIntent = ++intent.current;
+    setAllocationCurrentness("loading");
     setBusy(true);
     const result = await api.getWorkbench(
       procurementWorkbenchReadRequest(authSubject, correlationId, {
@@ -259,6 +272,7 @@ export function SchoolCateringProcurementWorkbench({
       if (selectedSchoolIds.length === 0)
         setSchoolCatalogue(schoolOptions(next.rows));
       setLoadMessage(null);
+      setAllocationCurrentness("current");
       setMutationLocked(false);
       setSelectedFamilyKey((current) =>
         next.rows.some((row) => row.family.source_fingerprint === current)
@@ -267,6 +281,7 @@ export function SchoolCateringProcurementWorkbench({
       );
     } else {
       setWorkbench(null);
+      setAllocationCurrentness("unavailable");
       setLoadMessage(
         result.kind === "backend_error"
           ? result.error.safe_message
@@ -284,6 +299,7 @@ export function SchoolCateringProcurementWorkbench({
   const loadPurchaseOrders = useCallback(async () => {
     if (!api || !authSubject) return false;
     const currentIntent = ++intent.current;
+    setPurchaseOrderCurrentness("loading");
     setBusy(true);
     const result = await api.getPurchaseOrders(
       purchaseOrdersReadRequest(authSubject, correlationId, {
@@ -299,9 +315,11 @@ export function SchoolCateringProcurementWorkbench({
     if (next) {
       setPurchaseOrders(next);
       setPurchaseOrderLoadMessage(null);
+      setPurchaseOrderCurrentness("current");
       setMutationLocked(false);
     } else {
       setPurchaseOrders(null);
+      setPurchaseOrderCurrentness("unavailable");
       setPurchaseOrderLoadMessage(
         result.kind === "backend_error"
           ? result.error.safe_message
@@ -486,6 +504,8 @@ export function SchoolCateringProcurementWorkbench({
 
   const reloadAuthoritative = () =>
     stage === "allocation" ? loadAllocation() : loadPurchaseOrders();
+  const currentness =
+    stage === "allocation" ? allocationCurrentness : purchaseOrderCurrentness;
 
   const changeSchoolScope = (schoolIds: string[]) => {
     intent.current += 1;
@@ -498,7 +518,7 @@ export function SchoolCateringProcurementWorkbench({
     <section className="procurement-workbench" aria-label="Kế hoạch mua hàng">
       <header className="procurement-heading">
         <div>
-          <span>School catering</span>
+          <span>Suất ăn học đường</span>
           <h1>Kế hoạch mua hàng</h1>
           <p>Phân bổ nhu cầu đã bàn giao và phát hành đơn theo nhà cung cấp.</p>
         </div>
@@ -569,8 +589,8 @@ export function SchoolCateringProcurementWorkbench({
         >
           Làm mới
         </button>
-        <span className="procurement-currentness">
-          {busy ? "Đang cập nhật…" : "Dữ liệu hiện tại"}
+        <span className={`procurement-currentness ${currentness}`}>
+          {currentnessLabels[currentness]}
         </span>
       </section>
 
@@ -619,7 +639,7 @@ export function SchoolCateringProcurementWorkbench({
                 aria-label="Danh sách Allocation Family"
               >
                 <div className="procurement-family-actions">
-                  <span>{visibleRows.length} Allocation Family</span>
+                  <span>{visibleRows.length} nhóm nhu cầu</span>
                   <button
                     type="button"
                     className="primary procurement-primary-action"

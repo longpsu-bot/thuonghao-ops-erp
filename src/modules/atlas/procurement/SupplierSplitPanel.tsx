@@ -117,7 +117,7 @@ export function SupplierSplitPanel({
     >
       <header>
         <div>
-          <span>Allocation Family đã chọn</span>
+          <span>Nhu cầu đã chọn</span>
           <h3>{row.ingredient_name}</h3>
           <p>
             {row.school_name ?? row.location_name} · {row.location_name}
