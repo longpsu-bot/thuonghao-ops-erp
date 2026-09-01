@@ -1,0 +1,145 @@
+import type { AllocationFamilyRow } from "./schoolCateringProcurementModel";
+
+const QUANTITY_SCALE = 1_000_000n;
+
+const stateLabels: Record<AllocationFamilyRow["state"], string> = {
+  UNALLOCATED: "Chưa phân bổ",
+  BALANCED: "Đã đủ",
+  STALE_REBALANCE_AVAILABLE: "Có thể cân bằng lại",
+  NEEDS_REALLOCATION: "Cần phân bổ lại",
+  BLOCKED: "Đang bị chặn",
+};
+
+function quantity(value: string | number) {
+  const exact = scaledQuantity(String(value));
+  return exact === null ? String(value) : displayQuantity(exact);
+}
+
+function scaledQuantity(value: string) {
+  const match = value.trim().match(/^(-?)(\d+)(?:\.(\d{0,6}))?$/);
+  if (!match) return null;
+  const magnitude =
+    BigInt(match[2]!) * QUANTITY_SCALE +
+    BigInt((match[3] ?? "").padEnd(6, "0"));
+  return match[1] === "-" ? -magnitude : magnitude;
+}
+
+function displayQuantity(value: bigint) {
+  const negative = value < 0n;
+  const absolute = negative ? -value : value;
+  const integer = absolute / QUANTITY_SCALE;
+  const fraction = String(absolute % QUANTITY_SCALE)
+    .padStart(6, "0")
+    .replace(/0+$/, "");
+  return `${negative ? "-" : ""}${integer}${fraction ? `.${fraction}` : ""}`;
+}
+
+function allocated(row: AllocationFamilyRow) {
+  return row.splits.reduce<bigint>(
+    (total, split) => total + (scaledQuantity(split.allocated_quantity) ?? 0n),
+    0n,
+  );
+}
+
+export function AllocationFamilyTable({
+  rows,
+  selectedFamilyKey,
+  selectedRecommendationKeys,
+  onSelect,
+  onToggleRecommendation,
+}: {
+  rows: AllocationFamilyRow[];
+  selectedFamilyKey: string | null;
+  selectedRecommendationKeys: Set<string>;
+  onSelect: (row: AllocationFamilyRow) => void;
+  onToggleRecommendation: (row: AllocationFamilyRow, selected: boolean) => void;
+}) {
+  return (
+    <div className="procurement-family-table-scroll">
+      <table
+        className="procurement-family-table"
+        aria-label="Allocation Family"
+      >
+        <thead>
+          <tr>
+            <th aria-label="Chọn đề xuất" />
+            <th>Ngày giao</th>
+            <th>Trường / điểm giao</th>
+            <th>Nguyên liệu</th>
+            <th>Nhu cầu</th>
+            <th>Đã phân bổ</th>
+            <th>Còn lại / chênh lệch</th>
+            <th>NCC</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const key = row.family.source_fingerprint;
+            const assigned = allocated(row);
+            const authoritative = scaledQuantity(row.family_quantity) ?? 0n;
+            const difference = authoritative - assigned;
+            return (
+              <tr
+                key={key}
+                className={selectedFamilyKey === key ? "selected" : undefined}
+              >
+                <td>
+                  {row.allowed_actions.confirm_recommendation && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Chọn đề xuất ${row.ingredient_name}`}
+                      checked={selectedRecommendationKeys.has(key)}
+                      onChange={(event) =>
+                        onToggleRecommendation(row, event.target.checked)
+                      }
+                    />
+                  )}
+                </td>
+                <td>{row.service_date.split("-").reverse().join("/")}</td>
+                <td>
+                  <strong>{row.school_name ?? row.location_name}</strong>
+                  <small>{row.location_name}</small>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="procurement-row-select"
+                    aria-label={`Mở phân bổ ${row.ingredient_name}`}
+                    onClick={() => onSelect(row)}
+                  >
+                    {row.ingredient_name}
+                  </button>
+                  <small>{row.contribution_count} nguồn bàn giao</small>
+                </td>
+                <td>
+                  {quantity(row.family_quantity)} {row.unit_code}
+                </td>
+                <td>
+                  {displayQuantity(assigned)} {row.unit_code}
+                </td>
+                <td>
+                  {displayQuantity(difference)} {row.unit_code}
+                </td>
+                <td>
+                  {row.splits.length
+                    ? row.splits.map((split) => split.supplier_name).join(", ")
+                    : row.recommendation
+                      ? "Có đề xuất"
+                      : "—"}
+                </td>
+                <td>
+                  <span
+                    className={`procurement-state ${row.state.toLowerCase()}`}
+                  >
+                    {stateLabels[row.state]}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}

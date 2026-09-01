@@ -9,6 +9,7 @@ import {
   releasePurchaseOrderRequest,
   saveSupplierAllocationRequest,
 } from "./schoolCateringProcurementApi";
+import { createReviewSchoolCateringProcurementApi } from "./reviewSchoolCateringProcurementApi";
 
 const success: AtlasRpcResult = {
   kind: "success",
@@ -256,5 +257,124 @@ describe("school-catering Procurement API adapter", () => {
       ["atlas_api.create_school_catering_purchase_order_drafts", drafts],
       ["atlas_api.release_school_catering_purchase_order", release],
     ]);
+  });
+});
+
+describe("school-catering Procurement review API", () => {
+  it.each([
+    ["default", "UNALLOCATED"],
+    ["manual_split", "BALANCED"],
+    ["unallocated", "UNALLOCATED"],
+    ["rebalance", "STALE_REBALANCE_AVAILABLE"],
+    ["needs_reallocation", "NEEDS_REALLOCATION"],
+  ] as const)(
+    "returns the deterministic %s allocation state",
+    async (scenario, state) => {
+      const api = createReviewSchoolCateringProcurementApi(scenario);
+      const result = await api.getWorkbench(
+        procurementWorkbenchReadRequest("subject", "correlation", {
+          date_start: "2026-09-01",
+          date_end: "2026-09-07",
+          school_ids: [],
+          states: [],
+          search: null,
+        }),
+      );
+      expect(result.kind).toBe("success");
+      if (result.kind === "success") {
+        expect(result.response.rows).toEqual([
+          expect.objectContaining({ state }),
+        ]);
+      }
+    },
+  );
+
+  it.each([
+    ["po_draft", "DRAFT", false],
+    ["stale_po", "DRAFT", true],
+    ["released_po", "RELEASED_TO_SUPPLIER", false],
+  ] as const)(
+    "returns the deterministic %s purchase-order state",
+    async (scenario, status, stale) => {
+      const api = createReviewSchoolCateringProcurementApi(scenario);
+      const result = await api.getPurchaseOrders(
+        purchaseOrdersReadRequest("subject", "correlation", {
+          date_start: "2026-09-01",
+          date_end: "2026-09-07",
+          supplier_ids: [],
+          statuses: [],
+          search: null,
+        }),
+      );
+      expect(result.kind).toBe("success");
+      if (result.kind === "success") {
+        expect(result.response.purchase_orders).toEqual([
+          expect.objectContaining({ status, stale }),
+        ]);
+      }
+    },
+  );
+
+  it("provides denied, retryable, stale-version, replay, and empty review evidence", async () => {
+    const read = procurementWorkbenchReadRequest("subject", "correlation", {
+      date_start: "2026-09-01",
+      date_end: "2026-09-07",
+      school_ids: [],
+      states: [],
+      search: null,
+    });
+    await expect(
+      createReviewSchoolCateringProcurementApi(
+        "permission_denied",
+      ).getWorkbench(read),
+    ).resolves.toMatchObject({
+      kind: "backend_error",
+      error: { error_code: "CAPABILITY_DENIED" },
+    });
+    await expect(
+      createReviewSchoolCateringProcurementApi(
+        "retryable_failure",
+      ).getWorkbench(read),
+    ).resolves.toMatchObject({
+      kind: "transport_error",
+      diagnostic: { code: "NETWORK_FAILURE" },
+    });
+
+    const staleApi = createReviewSchoolCateringProcurementApi("stale_version");
+    const save = saveSupplierAllocationRequest(
+      "subject",
+      "correlation",
+      0,
+      {
+        service_date: "2026-09-02",
+        delivery_location_id: "location-1",
+        ingredient_id: "ingredient-1",
+        unit_id: "unit-kg",
+        expected_source_fingerprint: "fingerprint-1",
+      },
+      [{ supplier_id: "supplier-a", allocated_quantity: "100" }],
+    );
+    await expect(staleApi.saveAllocation(save)).resolves.toMatchObject({
+      kind: "backend_error",
+      error: { error_code: "STALE_VERSION" },
+    });
+
+    await expect(
+      createReviewSchoolCateringProcurementApi("replay_success").saveAllocation(
+        save,
+      ),
+    ).resolves.toMatchObject({
+      kind: "success",
+      response: { idempotency_status: "REPLAY" },
+    });
+
+    const empty =
+      await createReviewSchoolCateringProcurementApi("empty").getWorkbench(
+        read,
+      );
+    expect(empty).toMatchObject({
+      kind: "success",
+      response: { rows: [] },
+    });
   });
 });

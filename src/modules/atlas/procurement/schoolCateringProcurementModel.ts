@@ -176,6 +176,7 @@ export type ProcurementCommandClassification =
 
 export type ProcurementCommandOutcome = {
   classification: ProcurementCommandClassification;
+  code: string | null;
   safe_message: string;
   affected_labels: string[];
   current_versions: string[];
