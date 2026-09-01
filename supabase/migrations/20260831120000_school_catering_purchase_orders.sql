@@ -298,6 +298,14 @@ as $$
       on r.family_id=f.family_id and r.is_current
     join atlas_procurement.school_catering_allocation_supplier_splits s
       on s.family_revision_id=r.family_revision_id and s.supplier_id=root.supplier_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
   ), actual as (
     select polr.school_catering_allocation_supplier_split_id supplier_split_id
     from atlas_procurement.purchase_order_line_revisions polr
@@ -318,7 +326,9 @@ as $$
     ) projection
     where polr.purchase_order_revision_id=p_purchase_order_revision_id
       and (not r.is_current
-        or r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint')
+        or r.source_fingerprint is distinct from projection.value ->> 'source_fingerprint'
+        or r.family_quantity is distinct from
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity'))
   ) or exists((select supplier_split_id from expected except select supplier_split_id from actual))
     or exists((select supplier_split_id from actual except select supplier_split_id from expected));
 $$;
@@ -433,7 +443,29 @@ begin
   if v_begin ->> 'status' in ('REPLAY','ERROR') then return v_begin -> 'response'; end if;
   v_receipt := atlas_core.pa_05b_safe_uuid(v_begin ->> 'receipt_id');
 
-  -- Reuse PR-A's deterministic evidence locks, then lock family revisions.
+  -- Match release ordering: uniqueness guard, source evidence, then family rows.
+  for v_supplier in
+    select distinct f.service_date,s.supplier_id
+    from atlas_procurement.school_catering_allocation_families f
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      on r.family_id=f.family_id and r.is_current
+    join atlas_procurement.school_catering_allocation_supplier_splits s
+      on s.family_revision_id=r.family_revision_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
+    where f.service_date between v_date_start and v_date_end
+      and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
+    order by f.service_date,s.supplier_id
+  loop
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
+      'school-catering-po:' || v_supplier.service_date::text || ':' || v_supplier.supplier_id::text,0));
+  end loop;
+
   for v_row in
     select f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id,
       jsonb_agg(jsonb_build_object('supplier_id',s.supplier_id,
@@ -443,7 +475,15 @@ begin
       on r.family_id=f.family_id and r.is_current
     join atlas_procurement.school_catering_allocation_supplier_splits s
       on s.family_revision_id=r.family_revision_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
     where f.service_date between v_date_start and v_date_end
+      and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
     group by f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
     order by f.service_date,f.ingredient_id,f.delivery_location_id,f.unit_id
   loop
@@ -456,7 +496,15 @@ begin
   from atlas_procurement.school_catering_allocation_families f
   join atlas_procurement.school_catering_allocation_family_revisions r
     on r.family_id=f.family_id and r.is_current
+  cross join lateral (
+    select atlas_core.school_catering_family_projection(
+      f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+    ) value
+  ) projection
   where f.service_date between v_date_start and v_date_end
+    and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+    and r.family_quantity=
+      atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
   order by f.family_id for update of f,r;
 
   -- Recompute readiness under the deterministic source locks.
@@ -477,13 +525,19 @@ begin
       on r.family_id=f.family_id and r.is_current
     join atlas_procurement.school_catering_allocation_supplier_splits s
       on s.family_revision_id=r.family_revision_id
+    cross join lateral (
+      select atlas_core.school_catering_family_projection(
+        f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+      ) value
+    ) projection
     where to_char(f.service_date,'YYYY-MM-DD') in (
       select value #>> '{}' from jsonb_array_elements(v_ready_dates)
     )
+      and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+      and r.family_quantity=
+        atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
     order by f.service_date,s.supplier_id
   loop
-    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
-      'school-catering-po:' || v_supplier.service_date::text || ':' || v_supplier.supplier_id::text,0));
     select null::uuid purchase_order_revision_id,0::integer revision_number into v_prior;
     select po.purchase_order_id,po.purchase_order_status,po.version
       into v_root
@@ -547,7 +601,15 @@ begin
         on r.family_id=f.family_id and r.is_current
       join atlas_procurement.school_catering_allocation_supplier_splits s
         on s.family_revision_id=r.family_revision_id
+      cross join lateral (
+        select atlas_core.school_catering_family_projection(
+          f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id
+        ) value
+      ) projection
       where f.service_date=v_supplier.service_date and s.supplier_id=v_supplier.supplier_id
+        and r.source_fingerprint=projection.value ->> 'source_fingerprint'
+        and r.family_quantity=
+          atlas_core.pa_05b_safe_numeric(projection.value ->> 'family_quantity')
       order by f.family_id
     loop
       select pol.purchase_order_line_id into v_purchase_order_line_id

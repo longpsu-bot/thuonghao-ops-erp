@@ -85,16 +85,15 @@ function install(relativePath) {
   );
 }
 
-function verifyPlanningCorrectionBoundary() {
-  runPinnedSupabase(
-    [
-      "test",
-      "db",
-      "supabase/tests/school_catering_planning_correction.sql",
-      "--local",
-    ],
-    { stdio: "inherit" },
-  );
+function verifyPlanningCorrectionBoundaries() {
+  for (const testFile of [
+    "supabase/tests/school_catering_planning_correction.sql",
+    "supabase/tests/school_catering_purchase_orders.sql",
+  ]) {
+    runPinnedSupabase(["test", "db", testFile, "--local"], {
+      stdio: "inherit",
+    });
+  }
 }
 
 async function invoke(client, name, request) {
@@ -238,7 +237,7 @@ function quantityParts(value) {
 
 async function main() {
   const { apiUrl, browserKey } = readLocalSupabaseStatus();
-  verifyPlanningCorrectionBoundary();
+  verifyPlanningCorrectionBoundaries();
   runNodeScript(
     "./provision-local-atlas-identity.mjs",
     "local identity provisioning",
@@ -480,7 +479,7 @@ async function main() {
   );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified D-042 draft/released correction gates plus authenticated Handoff, balanced allocation, PO draft, backend number release, and authoritative readback.",
+    "Verified D-042 correction gates and removed-Handoff-family PO regeneration through public allocation/draft commands, plus authenticated Handoff, balanced allocation, PO draft, backend number release, and authoritative readback.",
   );
 }
 

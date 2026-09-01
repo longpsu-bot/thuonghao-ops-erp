@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(59);
+select plan(66);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -542,6 +542,193 @@ select ok((
     and row ->> 'document_number' is not null
 ), 'read model exposes only a released PO as export-ready with its official number');
 
+-- A corrected current Handoff can remove one business key while retaining the
+-- old Allocation Family and DRAFT evidence. Only the corrected source universe
+-- may participate in the regenerated current DRAFT.
+set session_replication_role = replica;
+insert into atlas_planning.purchase_handoff_batches(
+  purchase_handoff_batch_id,confirmed_need_batch_id,period_start,period_end,
+  handoff_status,version,created_by_actor_id)
+values('24130000-0000-4000-8000-000000000061','24130000-0000-4000-8000-000000000060',
+  '2026-09-23','2026-09-23','RELEASED_TO_PROCUREMENT',1,
+  '24000000-0000-4000-8000-000000000001');
+insert into atlas_planning.purchase_handoff_revisions(
+  purchase_handoff_revision_id,purchase_handoff_batch_id,revision_number,revision_kind,
+  revision_status,is_current,released_by_actor_id,released_at,command_id)
+values('24130000-0000-4000-8000-000000000071','24130000-0000-4000-8000-000000000061',
+  1,'BASE','RELEASED_TO_PROCUREMENT',true,
+  '24000000-0000-4000-8000-000000000001',transaction_timestamp(),
+  '24130000-0000-4000-8000-000000000070');
+insert into atlas_planning.purchase_handoff_lines(
+  purchase_handoff_line_id,purchase_handoff_batch_id,confirmed_need_line_id)
+values
+ ('24130000-0000-4000-8000-000000000081','24130000-0000-4000-8000-000000000061',
+  '24130000-0000-4000-8000-0000000000b1'),
+ ('24130000-0000-4000-8000-000000000082','24130000-0000-4000-8000-000000000061',
+  '24130000-0000-4000-8000-0000000000b2');
+insert into atlas_planning.purchase_handoff_line_revisions(
+  purchase_handoff_line_revision_id,purchase_handoff_revision_id,purchase_handoff_line_id,
+  confirmed_need_line_revision_id,ingredient_id,handoff_quantity,unit_id,service_date,
+  delivery_location_id,command_id)
+values
+ ('24130000-0000-4000-8000-000000000091','24130000-0000-4000-8000-000000000071',
+  '24130000-0000-4000-8000-000000000081','24130000-0000-4000-8000-0000000000c1',
+  '24020000-0000-4000-8000-000000000041',30,
+  '24020000-0000-4000-8000-000000000031','2026-09-23',
+  '24020000-0000-4000-8000-000000000011','24130000-0000-4000-8000-000000000070'),
+ ('24130000-0000-4000-8000-000000000092','24130000-0000-4000-8000-000000000071',
+  '24130000-0000-4000-8000-000000000082','24130000-0000-4000-8000-0000000000c2',
+  '24020000-0000-4000-8000-000000000041',20,
+  '24020000-0000-4000-8000-000000000031','2026-09-23',
+  '24020000-0000-4000-8000-000000000012','24130000-0000-4000-8000-000000000070');
+insert into atlas_planning.purchase_demand_references(
+  purchase_demand_reference_id,purchase_handoff_line_revision_id,
+  confirmed_need_snapshot_line_id,approved_quantity,unit_id,source_kind)
+values
+ ('24130000-0000-4000-8000-0000000000a1','24130000-0000-4000-8000-000000000091',
+  '24130000-0000-4000-8000-0000000000d1',30,
+  '24020000-0000-4000-8000-000000000031','NEED_GENERATION'),
+ ('24130000-0000-4000-8000-0000000000a2','24130000-0000-4000-8000-000000000092',
+  '24130000-0000-4000-8000-0000000000d2',20,
+  '24020000-0000-4000-8000-000000000031','NEED_GENERATION');
+set session_replication_role = origin;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('removed-family-allocation-a',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000021',0,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-23',
+          '24020000-0000-4000-8000-000000000011',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','24020000-0000-4000-8000-000000000051',
+          'allocated_quantity',30))))));
+insert into prb_results values('removed-family-allocation-b',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000022',0,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-23',
+          '24020000-0000-4000-8000-000000000012',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','24020000-0000-4000-8000-000000000051',
+          'allocated_quantity',20))))));
+insert into prb_results values('removed-family-initial-draft',
+  atlas_api.create_school_catering_purchase_order_drafts(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000023',1,
+      'SCHOOL_CATERING_PO_DRAFTS_CREATED',
+      jsonb_build_object('date_start','2026-09-23','date_end','2026-09-23'))));
+reset role;
+
+select ok((select bool_and((response ->> 'success')::boolean)
+  from prb_results where name in ('removed-family-allocation-a','removed-family-allocation-b')),
+  'the isolated date initially has two balanced current Handoff families');
+select ok((select (response ->> 'success')::boolean
+  from prb_results where name='removed-family-initial-draft') and (
+  select count(*)=2
+  from atlas_procurement.purchase_order_line_revisions polr
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_revision_id)
+  join atlas_procurement.purchase_orders po using(purchase_order_id)
+  where po.school_catering_service_date='2026-09-23' and por.is_current
+), 'the initial source truth materializes one two-line DRAFT');
+
+set session_replication_role = replica;
+update atlas_planning.purchase_handoff_revisions
+set revision_status='INVALIDATED',is_current=false
+where purchase_handoff_revision_id='24130000-0000-4000-8000-000000000071';
+insert into atlas_planning.purchase_handoff_revisions(
+  purchase_handoff_revision_id,purchase_handoff_batch_id,revision_number,revision_kind,
+  revision_status,is_current,predecessor_revision_id,released_by_actor_id,released_at,command_id)
+values('24130000-0000-4000-8000-000000000072','24130000-0000-4000-8000-000000000061',
+  2,'SUPERSEDING','RELEASED_TO_PROCUREMENT',true,
+  '24130000-0000-4000-8000-000000000071',
+  '24000000-0000-4000-8000-000000000001',transaction_timestamp(),
+  '24130000-0000-4000-8000-000000000073');
+insert into atlas_planning.purchase_handoff_line_revisions(
+  purchase_handoff_line_revision_id,purchase_handoff_revision_id,purchase_handoff_line_id,
+  confirmed_need_line_revision_id,ingredient_id,handoff_quantity,unit_id,service_date,
+  delivery_location_id,command_id)
+values('24130000-0000-4000-8000-000000000093','24130000-0000-4000-8000-000000000072',
+  '24130000-0000-4000-8000-000000000081','24130000-0000-4000-8000-0000000000c3',
+  '24020000-0000-4000-8000-000000000041',35,
+  '24020000-0000-4000-8000-000000000031','2026-09-23',
+  '24020000-0000-4000-8000-000000000011','24130000-0000-4000-8000-000000000073');
+insert into atlas_planning.purchase_demand_references(
+  purchase_demand_reference_id,purchase_handoff_line_revision_id,
+  confirmed_need_snapshot_line_id,approved_quantity,unit_id,source_kind)
+values('24130000-0000-4000-8000-0000000000a3','24130000-0000-4000-8000-000000000093',
+  '24130000-0000-4000-8000-0000000000d3',35,
+  '24020000-0000-4000-8000-000000000031','NEED_GENERATION');
+update atlas_planning.purchase_handoff_batches
+set version=2,updated_at=transaction_timestamp()
+where purchase_handoff_batch_id='24130000-0000-4000-8000-000000000061';
+set session_replication_role = origin;
+
+select ok((
+  select count(*)=2 and count(*) filter(where f.delivery_location_id=
+    '24020000-0000-4000-8000-000000000012' and r.is_current)=1
+  from atlas_procurement.school_catering_allocation_families f
+  join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+  where f.service_date='2026-09-23'
+) and (
+  select count(*)=2
+  from atlas_procurement.purchase_order_line_revisions polr
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_revision_id)
+  join atlas_procurement.purchase_orders po using(purchase_order_id)
+  where po.school_catering_service_date='2026-09-23' and por.revision_number=1
+), 'correction preserves the removed Allocation Family and prior DRAFT evidence');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('removed-family-rebalance',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000024',1,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-23',
+          '24020000-0000-4000-8000-000000000011',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','24020000-0000-4000-8000-000000000051',
+          'allocated_quantity',35))))));
+insert into prb_results values('removed-family-regenerate',
+  atlas_api.create_school_catering_purchase_order_drafts(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000025',1,
+      'SCHOOL_CATERING_PO_DRAFTS_CREATED',
+      jsonb_build_object('date_start','2026-09-23','date_end','2026-09-23'))));
+reset role;
+
+select ok((select (response ->> 'success')::boolean
+    and response #>> '{family,family_version}'='2'
+  from prb_results where name='removed-family-rebalance'),
+  'the remaining current-Handoff family can be rebalanced against corrected truth');
+select ok((select (response ->> 'success')::boolean
+    and jsonb_array_length(response -> 'regenerated_purchase_order_ids')=1
+  from prb_results where name='removed-family-regenerate'),
+  'draft materialization regenerates only the supplier/date rooted in current truth');
+select ok((
+  select count(*)=1 and bool_and(pol.school_catering_allocation_family_id=
+    (select family_id from atlas_procurement.school_catering_allocation_families
+     where service_date='2026-09-23'
+       and delivery_location_id='24020000-0000-4000-8000-000000000011'))
+  from atlas_procurement.purchase_order_line_revisions polr
+  join atlas_procurement.purchase_order_lines pol
+    on pol.purchase_order_line_id=polr.purchase_order_line_id
+  join atlas_procurement.purchase_order_revisions por
+    on por.purchase_order_revision_id=polr.purchase_order_revision_id
+  join atlas_procurement.purchase_orders po
+    on po.purchase_order_id=por.purchase_order_id
+  where po.school_catering_service_date='2026-09-23' and por.is_current
+), 'the regenerated current DRAFT excludes the removed historical family');
+select ok((
+  select not atlas_core.school_catering_po_draft_is_stale(
+    po.purchase_order_id,por.purchase_order_revision_id)
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
+  where po.school_catering_service_date='2026-09-23' and por.is_current
+), 'historical removed-family evidence does not keep the corrected current DRAFT stale');
+
 select ok((
   select count(*)=1 from atlas_audit.domain_events
   where event_type='SchoolCateringPurchaseOrderReleased'
@@ -570,7 +757,15 @@ select ok((
 ) and (
   select pg_get_functiondef('atlas_api.release_school_catering_purchase_order(jsonb)'::regprocedure)
     ~* 'order by[^;]+for (key )?share'
-), 'release combines a uniqueness guard with deterministic ordered source locks');
+) and (
+  select position(
+      'pg_advisory_xact_lock' in
+      pg_get_functiondef('atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure)
+    ) < position(
+      'school_catering_lock_supplier_evidence' in
+      pg_get_functiondef('atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure)
+    )
+), 'release and draft generation acquire uniqueness guards before deterministic ordered source locks');
 
 select * from finish();
 rollback;
