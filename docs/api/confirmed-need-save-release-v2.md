@@ -22,6 +22,8 @@ In one transaction the command locks the complete current batch, executes the un
 
 Release creates zero Purchase Handoff, supplier, purchase-order, Procurement, Warehouse, or Dispatch facts. Exact replay returns the original response. An unknown outcome requires authoritative refresh; clients must not automatically retry.
 
+D-042 correction history is not an active Handoff conflict. Both authoritative eligibility and `release_confirmed_needs` ignore retained Purchase Handoff roots whose status is `INVALIDATED` or `REOPENED`; any other Handoff status for the batch remains a conflict. The subsequent school-catering Handoff command reuses the retained root and appends the governed `SUPERSEDING` revision.
+
 ## Compatibility and security
 
 RMVP-05/06/07 v1 functions remain callable. Both v2 functions reuse `atlas_confirmed_need_review_runtime`, fixed empty search paths, JWT-bound human Actor resolution, active GLOBAL scope, revoke-first execution, private forced-RLS persistence, and no browser table access or service-role credential.

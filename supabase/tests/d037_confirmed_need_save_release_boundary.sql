@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
-select plan(30);
+select plan(33);
 
 select has_function('atlas_api', 'save_confirmed_needs', array['jsonb'],
   'D037-01 Save v2 is public');
@@ -140,6 +140,40 @@ select 'save_replay', atlas_api.save_confirmed_needs(pg_temp.d037_command(
   'd037-save', 1, 'CONFIRMED_NEED_SAVED',
   pg_temp.d037_lines((select response -> 'workbench'
     from d037_results where name = 'read'))));
+reset role;
+
+-- D-042 retains the invalidated school-catering Handoff root so the corrected
+-- Planning release can reuse it. This fixture reproduces that retained state;
+-- the following calls exercise both public commands across the boundary.
+insert into atlas_planning.purchase_handoff_batches(
+  purchase_handoff_batch_id, confirmed_need_batch_id, period_start, period_end,
+  handoff_status, version, created_by_actor_id)
+values (
+  'b6720000-0000-0000-0000-000000000001',
+  'b6500000-0000-0000-0000-000000000050',
+  (select period_start from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id = 'b6500000-0000-0000-0000-000000000050'),
+  (select period_end from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id = 'b6500000-0000-0000-0000-000000000050'),
+  'INVALIDATED', 2, 'b6000000-0000-0000-0000-000000000001');
+insert into atlas_planning.purchase_handoff_revisions(
+  purchase_handoff_revision_id, purchase_handoff_batch_id, revision_number,
+  revision_kind, revision_status, is_current, released_by_actor_id, released_at,
+  command_id)
+values (
+  'b6720000-0000-0000-0000-000000000002',
+  'b6720000-0000-0000-0000-000000000001', 1, 'BASE', 'INVALIDATED', false,
+  'b6000000-0000-0000-0000-000000000001', transaction_timestamp(),
+  'b6720000-0000-0000-0000-000000000003');
+update d037_before set counts = jsonb_set(
+  counts, '{handoff}', to_jsonb((select count(*)
+    from atlas_planning.purchase_handoff_batches)));
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub',
+  'b6000000-0000-0000-0000-000000000101', true);
+insert into d037_results values ('read_after_invalidated_handoff',
+  atlas_api.get_confirmed_need_review(pg_temp.d037_read()));
 insert into d037_results values ('release_stale',
   atlas_api.release_confirmed_needs(pg_temp.d037_command(
     'RMVP-07.v2', 'b6710000-0000-0000-0000-000000000003',
@@ -151,6 +185,12 @@ insert into d037_results values ('release_replay',
   atlas_api.release_confirmed_needs(pg_temp.d037_command(
     'RMVP-07.v2', 'b6710000-0000-0000-0000-000000000004',
     'd037-release', 2, 'CONFIRMED_NEED_RELEASED')));
+insert into d037_results values ('handoff_superseding',
+  atlas_api.release_school_catering_purchase_handoff(pg_temp.d037_command(
+    'SCHOOL-CATERING-HANDOFF.v1',
+    'b6710000-0000-0000-0000-000000000005',
+    'd037-handoff-superseding', 5,
+    'SCHOOL_CATERING_PURCHASE_HANDOFF_RELEASED')));
 reset role;
 
 select is((select response ->> 'error_code' from d037_results
@@ -234,6 +274,19 @@ select ok((select p.prosrc like '%capability.capability_code%'
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'atlas_core' and p.proname = 'd037_extend_workbench'),
   'D037-30 eligibility uses capability assignments without role-name inference');
+select is((select response ->> 'success' from d037_results
+  where name = 'handoff_superseding'), 'true',
+  'D037-31 corrected Planning release can cross into the public Handoff command');
+select ok((select count(*) = 2
+    and count(*) filter (where revision_kind = 'SUPERSEDING'
+      and revision_status = 'RELEASED_TO_PROCUREMENT' and is_current) = 1
+  from atlas_planning.purchase_handoff_revisions
+  where purchase_handoff_batch_id = 'b6720000-0000-0000-0000-000000000001'),
+  'D037-32 the retained Handoff root receives one current SUPERSEDING revision');
+select ok((select response #>> '{workbench,allowed_actions,release_confirmed_needs}' = 'true'
+    and response #>> '{workbench,disabled_reason_codes,release_confirmed_needs}' is null
+  from d037_results where name = 'read_after_invalidated_handoff'),
+  'D037-33 v2 eligibility does not classify invalidated Handoff history as a conflict');
 
 select * from finish();
 rollback;
