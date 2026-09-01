@@ -1,0 +1,62 @@
+name: Atlas Staging Identity Install
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full merged-main SHA to install from
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  install-atlas-staging-identity:
+    name: Guarded Atlas staging Identity installation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    env:
+      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+      VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+      ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+      ATLAS_STAGING_SUPABASE_SECRET_KEY: ${{ secrets.ATLAS_STAGING_SUPABASE_SECRET_KEY }}
+
+    steps:
+      - name: Check out the requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Fetch main for ancestry verification
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run non-mutating Identity package dry-run
+        run: pnpm atlas:staging:identity:install -- --commit-sha "${{ inputs.commit_sha }}" --dry-run
+
+      - name: Replay the protected Identity package
+        run: pnpm atlas:staging:identity:install -- --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Run read-only hosted verification
+        run: pnpm atlas:staging:verify
