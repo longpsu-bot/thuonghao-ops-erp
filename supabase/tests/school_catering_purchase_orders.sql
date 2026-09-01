@@ -299,7 +299,10 @@ insert into prb_results values('drafts',atlas_api.create_school_catering_purchas
     jsonb_build_object('date_start','2026-09-21','date_end','2026-09-22'))));
 reset role;
 
-select ok((select (response ->> 'success')::boolean from prb_results where name='drafts'),
+select ok((select (response ->> 'success')::boolean
+    and jsonb_array_length(
+      response #> '{authoritative_readback,purchase_order_ids}')=3
+  from prb_results where name='drafts'),
   'bounded range draft materialization succeeds for ready dates');
 select ok((select response -> 'ready_dates' @> '["2026-09-21"]'::jsonb
     and response -> 'skipped_dates' @> '[{"service_date":"2026-09-22"}]'::jsonb
@@ -466,7 +469,11 @@ insert into prb_results values('release-a-second',
     '24020000-0000-4000-8000-000000000051')));
 reset role;
 
-select ok((select (response ->> 'success')::boolean from prb_results where name='release-a'),
+select ok((select (response ->> 'success')::boolean
+    and response #>> '{authoritative_readback,status}'='RELEASED_TO_SUPPLIER'
+    and response #>> '{authoritative_readback,document_number}'=
+      response ->> 'document_number'
+  from prb_results where name='release-a'),
   'one current PO releases successfully');
 select ok((
   select response ->> 'document_number'=format('PO-20260921-%s',

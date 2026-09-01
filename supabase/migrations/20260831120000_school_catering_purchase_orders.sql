@@ -605,6 +605,11 @@ begin
     'regenerated_purchase_order_ids',v_regenerated,'ready_dates',v_ready_dates,
     'skipped_dates',v_skipped_dates,'emitted_event_ids',jsonb_build_array(v_event),
     'audit_event_ids',jsonb_build_array(v_audit),
+    'authoritative_readback',jsonb_build_object(
+      'purchase_order_ids',v_created || v_regenerated,
+      'created_purchase_order_ids',v_created,
+      'regenerated_purchase_order_ids',v_regenerated,
+      'ready_dates',v_ready_dates,'skipped_dates',v_skipped_dates),
     'safe_operator_message','Đã tạo các đơn mua cho ngày sẵn sàng.',
     'warnings','[]'::jsonb,'blockers',v_skipped_dates);
   return atlas_core.pa_05b_finish_command(v_receipt,v_response,true);
@@ -861,6 +866,14 @@ begin
     'purchase_order_line_revision_ids',v_line_revision_ids,
     'new_version',v_root.version+1,'emitted_event_ids',jsonb_build_array(v_event),
     'audit_event_ids',jsonb_build_array(v_audit),
+    'authoritative_readback',jsonb_build_object(
+      'purchase_order_id',v_purchase_order_id,
+      'purchase_order_revision_id',v_new_revision_id,
+      'supplier_id',v_root.supplier_id,
+      'service_date',v_root.school_catering_service_date,
+      'status','RELEASED_TO_SUPPLIER','version',v_root.version+1,
+      'document_number',v_document_number,
+      'purchase_order_line_revision_ids',v_line_revision_ids),
     'safe_operator_message','Đã phát hành đơn mua cho nhà cung cấp.',
     'warnings','[]'::jsonb,'blockers','[]'::jsonb);
   return atlas_core.pa_05b_finish_command(v_receipt,v_response,true);
