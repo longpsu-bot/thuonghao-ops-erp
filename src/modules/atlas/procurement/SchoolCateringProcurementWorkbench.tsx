@@ -15,10 +15,12 @@ import {
   saveSupplierAllocationRequest,
   type SchoolCateringProcurementApi,
 } from "./schoolCateringProcurementApi";
+import { purchaseOrderDraftReadinessMessages } from "./schoolCateringProcurementModel";
 import type {
   AllocationFamilyRow,
   AllocationFamilyState,
   ProcurementCommandOutcome,
+  ProcurementSchoolOption,
   ProcurementStage,
   ProcurementWorkbenchData,
   PurchaseOrdersData,
@@ -42,6 +44,83 @@ function strings(value: JsonValue | undefined) {
     : [];
 }
 
+function schoolOptions(rows: AllocationFamilyRow[]) {
+  return Array.from(
+    new Map(
+      rows.flatMap((row) =>
+        row.school_id && row.school_name
+          ? [[row.school_id, row.school_name] as const]
+          : [],
+      ),
+    ),
+    ([school_id, school_name]) => ({ school_id, school_name }),
+  ).sort((a, b) => a.school_name.localeCompare(b.school_name, "vi"));
+}
+
+function SchoolScopeControl({
+  schools,
+  selectedSchoolIds,
+  onChange,
+}: {
+  schools: ProcurementSchoolOption[];
+  selectedSchoolIds: string[];
+  onChange: (schoolIds: string[]) => void;
+}) {
+  const allSchoolIds = schools.map((school) => school.school_id);
+  const selected = new Set(
+    selectedSchoolIds.length ? selectedSchoolIds : allSchoolIds,
+  );
+  const label =
+    selectedSchoolIds.length === 0
+      ? "Tất cả trường"
+      : selectedSchoolIds.length === 1
+        ? (schools.find((school) => school.school_id === selectedSchoolIds[0])
+            ?.school_name ?? "1 trường")
+        : `${selectedSchoolIds.length} trường`;
+
+  const toggleSchool = (schoolId: string, checked: boolean) => {
+    const next = new Set(selected);
+    if (checked) next.add(schoolId);
+    else next.delete(schoolId);
+    const ordered = allSchoolIds.filter((id) => next.has(id));
+    onChange(
+      ordered.length === 0 || ordered.length === allSchoolIds.length
+        ? []
+        : ordered,
+    );
+  };
+
+  return (
+    <details className="procurement-school-scope">
+      <summary aria-label="Phạm vi trường">
+        <span>Trường / điểm giao</span>
+        <strong>{label}</strong>
+      </summary>
+      <div className="procurement-school-scope-options">
+        <button type="button" onClick={() => onChange([])}>
+          Tất cả trường
+        </button>
+        {schools.length === 0 ? (
+          <p>Chưa có trường trong dữ liệu hiện tại.</p>
+        ) : (
+          schools.map((school) => (
+            <label key={school.school_id}>
+              <input
+                type="checkbox"
+                checked={selected.has(school.school_id)}
+                onChange={(event) =>
+                  toggleSchool(school.school_id, event.currentTarget.checked)
+                }
+              />
+              <span>{school.school_name}</span>
+            </label>
+          ))
+        )}
+      </div>
+    </details>
+  );
+}
+
 function outcomeFromResult(
   result: AtlasRpcResult,
   affectedLabels: string[] = [],
@@ -58,7 +137,13 @@ function outcomeFromResult(
         ([key, value]) => `${key}: ${String(value)}`,
       ),
       warnings: strings(result.response.warnings),
-      blockers: strings(result.response.blockers),
+      blockers: Array.from(
+        new Set([
+          ...strings(result.response.blockers),
+          ...purchaseOrderDraftReadinessMessages(result.response.blockers),
+          ...purchaseOrderDraftReadinessMessages(result.response.skipped_dates),
+        ]),
+      ),
       next_action: null,
     };
   }
@@ -124,6 +209,10 @@ export function SchoolCateringProcurementWorkbench({
   const [stateFilter, setStateFilter] = useState<AllocationFamilyState | "">(
     "",
   );
+  const [selectedSchoolIds, setSelectedSchoolIds] = useState<string[]>([]);
+  const [schoolCatalogue, setSchoolCatalogue] = useState<
+    ProcurementSchoolOption[]
+  >([]);
   const [workbench, setWorkbench] = useState<ProcurementWorkbenchData | null>(
     null,
   );
@@ -158,7 +247,7 @@ export function SchoolCateringProcurementWorkbench({
       procurementWorkbenchReadRequest(authSubject, correlationId, {
         date_start: dateStart,
         date_end: dateEnd,
-        school_ids: [],
+        school_ids: selectedSchoolIds,
         states: [],
         search: null,
       }),
@@ -167,6 +256,8 @@ export function SchoolCateringProcurementWorkbench({
     const next = procurementWorkbenchFromResult(result);
     if (next) {
       setWorkbench(next);
+      if (selectedSchoolIds.length === 0)
+        setSchoolCatalogue(schoolOptions(next.rows));
       setLoadMessage(null);
       setMutationLocked(false);
       setSelectedFamilyKey((current) =>
@@ -188,7 +279,7 @@ export function SchoolCateringProcurementWorkbench({
     }
     setBusy(false);
     return Boolean(next);
-  }, [api, authSubject, correlationId, dateEnd, dateStart]);
+  }, [api, authSubject, correlationId, dateEnd, dateStart, selectedSchoolIds]);
 
   const loadPurchaseOrders = useCallback(async () => {
     if (!api || !authSubject) return false;
@@ -396,6 +487,13 @@ export function SchoolCateringProcurementWorkbench({
   const reloadAuthoritative = () =>
     stage === "allocation" ? loadAllocation() : loadPurchaseOrders();
 
+  const changeSchoolScope = (schoolIds: string[]) => {
+    intent.current += 1;
+    setSelectedFamilyKey(null);
+    setSelectedRecommendationKeys(new Set());
+    setSelectedSchoolIds(schoolIds);
+  };
+
   return (
     <section className="procurement-workbench" aria-label="Kế hoạch mua hàng">
       <header className="procurement-heading">
@@ -426,10 +524,13 @@ export function SchoolCateringProcurementWorkbench({
             onChange={(event) => setDateEnd(event.target.value)}
           />
         </label>
-        <details>
-          <summary>Trường / điểm giao</summary>
-          <p>Phạm vi hiện tại theo quyền truy cập.</p>
-        </details>
+        {stage === "allocation" && (
+          <SchoolScopeControl
+            schools={schoolCatalogue}
+            selectedSchoolIds={selectedSchoolIds}
+            onChange={changeSchoolScope}
+          />
+        )}
         <label className="procurement-search">
           Tìm kiếm
           <input
@@ -439,22 +540,28 @@ export function SchoolCateringProcurementWorkbench({
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <label>
-          Ngoại lệ
-          <select
-            value={stateFilter}
-            onChange={(event) =>
-              setStateFilter(event.target.value as AllocationFamilyState | "")
-            }
-          >
-            <option value="">Tất cả</option>
-            <option value="UNALLOCATED">Chưa phân bổ</option>
-            <option value="BLOCKED">Chưa đủ / lệch</option>
-            <option value="BALANCED">Đã đủ</option>
-            <option value="NEEDS_REALLOCATION">Cần phân bổ lại</option>
-            <option value="STALE_REBALANCE_AVAILABLE">NCC không phù hợp</option>
-          </select>
-        </label>
+        {stage === "allocation" && (
+          <label>
+            Ngoại lệ
+            <select
+              value={stateFilter}
+              onChange={(event) =>
+                setStateFilter(event.target.value as AllocationFamilyState | "")
+              }
+            >
+              <option value="">Tất cả</option>
+              <option value="UNALLOCATED">Chưa phân bổ</option>
+              <option value="BALANCED">Đã đủ</option>
+              <option value="STALE_REBALANCE_AVAILABLE">
+                Có thể cân bằng lại
+              </option>
+              <option value="NEEDS_REALLOCATION">
+                Cần phân bổ lại / NCC không phù hợp
+              </option>
+              <option value="BLOCKED">Đang bị chặn</option>
+            </select>
+          </label>
+        )}
         <button
           type="button"
           className="secondary"

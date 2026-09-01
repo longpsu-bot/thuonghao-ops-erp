@@ -46,6 +46,22 @@ function initialDraft(row: AllocationFamilyRow) {
   );
 }
 
+const allocationDisabledReasonLabels: Record<string, string> = {
+  NO_ELIGIBLE_SUPPLIER: "Chưa có nhà cung ứng phù hợp để lưu phân bổ.",
+  NO_PRIORITIZED_SUPPLIER: "Chưa có nhà cung ứng ưu tiên để đề xuất phân bổ.",
+  AMBIGUOUS_SUPPLIER_PRIORITY:
+    "Có nhiều nhà cung ứng cùng mức ưu tiên; cần chọn thủ công.",
+  SOURCE_CHANGED: "Phân bổ cần cập nhật theo nhu cầu mới trước khi lưu.",
+  SUPPLIER_INELIGIBLE: "Có nhà cung ứng không còn phù hợp; cần phân bổ lại.",
+};
+
+function allocationDisabledReasonLabel(reason: string) {
+  return (
+    allocationDisabledReasonLabels[reason] ??
+    "Máy chủ hiện không cho phép lưu phân bổ này."
+  );
+}
+
 export function SupplierSplitPanel({
   row,
   busy,
@@ -82,10 +98,16 @@ export function SupplierSplitPanel({
       ),
   );
   const canSave =
+    row.allowed_actions.save_allocation &&
     !busy &&
     !mutationLocked &&
     difference === 0n &&
     Object.values(draft).some((value) => (scaled(value) ?? 0n) > 0n);
+  const backendDisabledMessages = row.allowed_actions.save_allocation
+    ? []
+    : Array.from(new Set([...row.blockers, ...row.disabled_reasons])).map(
+        allocationDisabledReasonLabel,
+      );
 
   return (
     <aside
@@ -163,6 +185,12 @@ export function SupplierSplitPanel({
           {row.unit_code}
         </span>
       </div>
+
+      {backendDisabledMessages.map((message) => (
+        <p className="procurement-inline-danger" key={message}>
+          {message}
+        </p>
+      ))}
 
       <button
         type="button"

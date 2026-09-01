@@ -4295,12 +4295,78 @@ tbody tr.selected-row {
 }
 
 .procurement-context-strip details {
+  position: relative;
   min-height: 36px;
   align-content: center;
   padding: 7px 9px;
   border: 1px solid #bdc8d0;
   border-radius: 7px;
   background: #fff;
+}
+
+.procurement-school-scope summary {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+}
+
+.procurement-school-scope summary::-webkit-details-marker {
+  display: none;
+}
+
+.procurement-school-scope summary span {
+  color: #42515d;
+  font-size: 10px;
+}
+
+.procurement-school-scope summary strong {
+  overflow: hidden;
+  color: var(--atlas-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.procurement-school-scope-options {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  width: min(320px, 80vw);
+  max-height: 280px;
+  gap: 2px;
+  padding: 8px;
+  overflow-y: auto;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface);
+  box-shadow: 0 8px 24px rgb(28 39 53 / 14%);
+}
+
+.procurement-school-scope:not([open]) .procurement-school-scope-options {
+  display: none;
+}
+
+.procurement-school-scope-options label {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  color: var(--atlas-text);
+  font-weight: 500;
+}
+
+.procurement-school-scope-options label:hover {
+  background: #f2f5f7;
+}
+
+.procurement-school-scope-options input {
+  width: 16px;
+  min-height: 16px;
+  padding: 0;
 }
 
 .procurement-context-strip summary,

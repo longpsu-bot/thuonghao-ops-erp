@@ -100,6 +100,11 @@ export type ProcurementWorkbenchData = {
   blockers: string[];
 };
 
+export type ProcurementSchoolOption = {
+  school_id: string;
+  school_name: string;
+};
+
 export type PurchaseOrderStatus = "DRAFT" | "RELEASED_TO_SUPPLIER";
 
 export type PurchaseOrderLine = {
@@ -173,6 +178,74 @@ export type ProcurementCommandClassification =
   | "STALE"
   | "UNKNOWN_OUTCOME"
   | "BLOCKED";
+
+export type PurchaseOrderDraftReadinessReason =
+  | "NO_CURRENT_FAMILIES"
+  | "ALLOCATION_MISSING"
+  | "SOURCE_CHANGED"
+  | "ALLOCATION_IMBALANCED"
+  | "SUPPLIER_INELIGIBLE";
+
+export type PurchaseOrderDraftReadinessBlocker = {
+  service_date: string;
+  delivery_location_id?: string | null;
+  ingredient_id?: string | null;
+  unit_id?: string | null;
+  family_id?: string | null;
+  family_revision_id?: string | null;
+  reason: PurchaseOrderDraftReadinessReason | string;
+};
+
+export type PurchaseOrderDraftSkippedDate = {
+  service_date: string;
+  family_count: number;
+  ready: false;
+  blockers: PurchaseOrderDraftReadinessBlocker[];
+};
+
+const purchaseOrderDraftReasonLabels: Record<
+  PurchaseOrderDraftReadinessReason,
+  string
+> = {
+  NO_CURRENT_FAMILIES: "chưa có nhu cầu mua hiện hành.",
+  ALLOCATION_MISSING: "còn nhu cầu chưa phân bổ nhà cung ứng.",
+  SOURCE_CHANGED: "phân bổ cần cập nhật theo nhu cầu mới.",
+  ALLOCATION_IMBALANCED: "tổng phân bổ chưa khớp nhu cầu.",
+  SUPPLIER_INELIGIBLE: "có nhà cung cấp không còn phù hợp.",
+};
+
+function readinessRecord(value: unknown) {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function readinessDateLabel(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+}
+
+export function purchaseOrderDraftReadinessMessages(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  const messages = value.flatMap((item) => {
+    const skippedDate = readinessRecord(item);
+    if (
+      typeof skippedDate?.service_date !== "string" ||
+      !Array.isArray(skippedDate.blockers)
+    )
+      return [];
+    const date = readinessDateLabel(skippedDate.service_date);
+    return skippedDate.blockers.flatMap((rawBlocker) => {
+      const blocker = readinessRecord(rawBlocker);
+      if (typeof blocker?.reason !== "string") return [];
+      const reason = blocker.reason as PurchaseOrderDraftReadinessReason;
+      return [
+        `${date}: ${purchaseOrderDraftReasonLabels[reason] ?? "chưa thể tạo đơn mua; hãy kiểm tra điều kiện sẵn sàng."}`,
+      ];
+    });
+  });
+  return Array.from(new Set(messages));
+}
 
 export type ProcurementCommandOutcome = {
   classification: ProcurementCommandClassification;

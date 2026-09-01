@@ -13,6 +13,7 @@ import type {
 import type {
   AllocationFamilyRow,
   ProcurementWorkbenchData,
+  PurchaseOrderDraftSkippedDate,
   PurchaseOrdersData,
   SchoolCateringPurchaseOrder,
 } from "./schoolCateringProcurementModel";
@@ -42,7 +43,7 @@ const supplierBId = "25000000-0000-4000-8000-000000000042";
 const purchaseOrderId = "25000000-0000-4000-8000-000000000051";
 const purchaseOrderRevisionId = "25000000-0000-4000-8000-000000000052";
 
-function success(response: Record<string, JsonValue>): AtlasRpcResult {
+function success(response: Record<string, unknown>): AtlasRpcResult {
   return {
     kind: "success",
     response: { success: true, ...response } as AtlasSuccessEnvelope,
@@ -448,6 +449,22 @@ export function createReviewSchoolCateringProcurementApi(
       const failure = preflight();
       if (failure) return failure;
       purchaseOrders = createReviewPurchaseOrdersFixture("po_draft");
+      const skippedDates: PurchaseOrderDraftSkippedDate[] =
+        request.payload.date_end === request.payload.date_start
+          ? []
+          : [
+              {
+                service_date: request.payload.date_end,
+                family_count: 0,
+                ready: false,
+                blockers: [
+                  {
+                    service_date: request.payload.date_end,
+                    reason: "NO_CURRENT_FAMILIES",
+                  },
+                ],
+              },
+            ];
       return success({
         command_id: request.command_id,
         correlation_id: request.correlation_id,
@@ -455,15 +472,15 @@ export function createReviewSchoolCateringProcurementApi(
         created_purchase_order_ids: [purchaseOrderId],
         regenerated_purchase_order_ids: [],
         ready_dates: [request.payload.date_start],
-        skipped_dates: [],
+        skipped_dates: skippedDates,
         authoritative_readback: {
           purchase_order_ids: [purchaseOrderId],
           ready_dates: [request.payload.date_start],
-          skipped_dates: [],
+          skipped_dates: skippedDates,
         },
         safe_operator_message: "Đã tạo đơn mua cho ngày sẵn sàng.",
         warnings: [],
-        blockers: [],
+        blockers: skippedDates,
       });
     },
     async releasePurchaseOrder(request: ReleasePurchaseOrderRequest) {

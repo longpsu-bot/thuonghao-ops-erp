@@ -19,6 +19,7 @@ import {
   PlanningRailActionProvider,
 } from "../planning-inputs/PlanningRailActionPortal";
 import { SchoolCateringProcurementWorkbench } from "./SchoolCateringProcurementWorkbench";
+import { purchaseOrderDraftReadinessMessages } from "./schoolCateringProcurementModel";
 import {
   createReviewPurchaseOrdersFixture,
   createReviewProcurementWorkbenchFixture,
@@ -243,6 +244,40 @@ function renderWorkbench(
   return api;
 }
 
+function createMultiSchoolWorkbenchFixture() {
+  const fixture = createReviewProcurementWorkbenchFixture("default");
+  const first = fixture.rows[0]!;
+  const second = structuredClone(first);
+  second.family = {
+    ...second.family,
+    delivery_location_id: "25000000-0000-4000-8000-000000000012",
+    ingredient_id: "25000000-0000-4000-8000-000000000022",
+    source_fingerprint: "review-source-200",
+  };
+  second.delivery_location_id = second.family.delivery_location_id;
+  second.location_name = "Bếp chính Trần Quốc Toản";
+  second.school_id = "25000000-0000-4000-8000-000000000062";
+  second.school_name = "Trường Tiểu học Trần Quốc Toản";
+  second.ingredient_id = second.family.ingredient_id;
+  second.ingredient_name = "Dầu ăn";
+
+  const third = structuredClone(first);
+  third.family = {
+    ...third.family,
+    delivery_location_id: "25000000-0000-4000-8000-000000000013",
+    ingredient_id: "25000000-0000-4000-8000-000000000023",
+    source_fingerprint: "review-source-300",
+  };
+  third.delivery_location_id = third.family.delivery_location_id;
+  third.location_name = "Bếp chính Hoa Hồng";
+  third.school_id = "25000000-0000-4000-8000-000000000063";
+  third.school_name = "Trường Mầm non Hoa Hồng";
+  third.ingredient_id = third.family.ingredient_id;
+  third.ingredient_name = "Cà rốt";
+  fixture.rows = [first, second, third];
+  return fixture;
+}
+
 describe("school-catering Procurement allocation workbench", () => {
   it("renders one table row per Allocation Family with the exact operator columns", async () => {
     renderWorkbench();
@@ -335,6 +370,34 @@ describe("school-catering Procurement allocation workbench", () => {
     ).toHaveTextContent("Đã lưu phân bổ nhà cung ứng.");
   });
 
+  it("never enables a balanced split when the backend disallows saving", async () => {
+    const api = createReviewSchoolCateringProcurementApi("manual_split");
+    const fixture = createReviewProcurementWorkbenchFixture("manual_split");
+    fixture.rows[0]!.allowed_actions.save_allocation = false;
+    fixture.rows[0]!.disabled_reasons = ["NO_ELIGIBLE_SUPPLIER"];
+    vi.spyOn(api, "getWorkbench").mockResolvedValue({
+      kind: "success",
+      response: fixture as unknown as AtlasSuccessEnvelope,
+    });
+    const save = vi.spyOn(api, "saveAllocation");
+
+    renderWorkbench(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+    const panel = screen.getByRole("region", { name: "Phân bổ Gạo thơm" });
+    const saveButton = within(panel).getByRole("button", {
+      name: "Lưu phân bổ",
+    });
+
+    expect(saveButton).toBeDisabled();
+    expect(panel).toHaveTextContent(
+      "Chưa có nhà cung ứng phù hợp để lưu phân bổ.",
+    );
+    fireEvent.click(saveButton);
+    expect(save).not.toHaveBeenCalled();
+  });
+
   it("keeps authoritative decimal quantities exact in table arithmetic", async () => {
     const api = createReviewSchoolCateringProcurementApi("manual_split");
     const fixture = createReviewProcurementWorkbenchFixture("manual_split");
@@ -379,6 +442,80 @@ describe("school-catering Procurement allocation workbench", () => {
         expected_source_fingerprint: "review-source-100",
       },
     ]);
+  });
+
+  it("reloads with exact multi-school scope and discards an older scoped read", async () => {
+    const api = createReviewSchoolCateringProcurementApi("default");
+    const fixture = createMultiSchoolWorkbenchFixture();
+    const schoolB = fixture.rows[1]!.school_id!;
+    const schoolC = fixture.rows[2]!.school_id!;
+    let resolveOlderScope!: (
+      value: Awaited<ReturnType<typeof api.getWorkbench>>,
+    ) => void;
+    const getWorkbench = vi
+      .spyOn(api, "getWorkbench")
+      .mockImplementation((request) => {
+        const schoolIds = (request.payload as { school_ids: string[] })
+          .school_ids;
+        if (schoolIds.join("/") === `${schoolC}/${schoolB}`)
+          return new Promise((resolve) => {
+            resolveOlderScope = resolve;
+          });
+        return Promise.resolve(
+          reviewSuccess({
+            ...fixture,
+            rows: schoolIds.length
+              ? fixture.rows.filter((row) => schoolIds.includes(row.school_id!))
+              : fixture.rows,
+          }),
+        );
+      });
+
+    renderWorkbench(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+    expect(
+      screen.getByRole("region", { name: "Phân bổ Gạo thơm" }),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByLabelText("Phạm vi trường"));
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Trường Tiểu học Nguyễn Du",
+      }),
+    );
+    await waitFor(() =>
+      expect(getWorkbench.mock.calls.at(-1)?.[0].payload).toMatchObject({
+        school_ids: [schoolC, schoolB],
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Trường Tiểu học Trần Quốc Toản",
+      }),
+    );
+    await waitFor(() =>
+      expect(getWorkbench.mock.calls.at(-1)?.[0].payload).toMatchObject({
+        school_ids: [schoolC],
+      }),
+    );
+    expect(await screen.findByText("Cà rốt")).toBeVisible();
+    expect(screen.queryByText("Gạo thơm")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "Phân bổ Gạo thơm" }),
+    ).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveOlderScope(
+        reviewSuccess({
+          ...fixture,
+          rows: fixture.rows.slice(1),
+        }),
+      );
+    });
+    expect(screen.getByText("Cà rốt")).toBeVisible();
+    expect(screen.queryByText("Dầu ăn")).not.toBeInTheDocument();
   });
 
   it("keeps technical identity and lineage behind disclosure", async () => {
@@ -453,9 +590,80 @@ describe("school-catering Procurement allocation workbench", () => {
     expect(screen.getByText(/NCC Bình Minh.*không còn phù hợp/)).toBeVisible();
     expect(screen.queryByDisplayValue("100.000000")).not.toBeInTheDocument();
   });
+
+  it("filters rebalance separately from supplier-ineligible reallocation", async () => {
+    const api = createReviewSchoolCateringProcurementApi("rebalance");
+    const fixture = createReviewProcurementWorkbenchFixture("rebalance");
+    const needsReallocation = structuredClone(
+      createReviewProcurementWorkbenchFixture("needs_reallocation").rows[0]!,
+    );
+    needsReallocation.family = {
+      ...needsReallocation.family,
+      ingredient_id: "25000000-0000-4000-8000-000000000022",
+      source_fingerprint: "review-source-ineligible-200",
+    };
+    needsReallocation.ingredient_id = needsReallocation.family.ingredient_id;
+    needsReallocation.ingredient_name = "Dầu ăn";
+    fixture.rows.push(needsReallocation);
+    vi.spyOn(api, "getWorkbench").mockResolvedValue({
+      kind: "success",
+      response: fixture as unknown as AtlasSuccessEnvelope,
+    });
+
+    renderWorkbench(api);
+    const filter = await screen.findByRole("combobox", { name: "Ngoại lệ" });
+    expect(
+      within(filter).getByRole("option", { name: "Có thể cân bằng lại" }),
+    ).toHaveValue("STALE_REBALANCE_AVAILABLE");
+    expect(
+      within(filter).getByRole("option", {
+        name: "Cần phân bổ lại / NCC không phù hợp",
+      }),
+    ).toHaveValue("NEEDS_REALLOCATION");
+
+    fireEvent.change(filter, {
+      target: { value: "STALE_REBALANCE_AVAILABLE" },
+    });
+    const table = screen.getByRole("table", { name: "Allocation Family" });
+    expect(within(table).getByText("Gạo thơm")).toBeVisible();
+    expect(within(table).queryByText("Dầu ăn")).not.toBeInTheDocument();
+
+    fireEvent.change(filter, { target: { value: "NEEDS_REALLOCATION" } });
+    expect(within(table).getByText("Dầu ăn")).toBeVisible();
+    expect(within(table).getByText("Cần phân bổ lại")).toBeVisible();
+    expect(within(table).queryByText("Gạo thơm")).not.toBeInTheDocument();
+  });
 });
 
 describe("school-catering Procurement purchase-order stage", () => {
+  it("translates every deployed blocked-date reason without exposing technical codes", () => {
+    const reasons = [
+      ["2026-09-03", "NO_CURRENT_FAMILIES"],
+      ["2026-09-04", "ALLOCATION_MISSING"],
+      ["2026-09-05", "SOURCE_CHANGED"],
+      ["2026-09-06", "ALLOCATION_IMBALANCED"],
+      ["2026-09-07", "SUPPLIER_INELIGIBLE"],
+    ] as const;
+    const messages = purchaseOrderDraftReadinessMessages(
+      reasons.map(([serviceDate, reason]) => ({
+        service_date: serviceDate,
+        family_count: reason === "NO_CURRENT_FAMILIES" ? 0 : 1,
+        ready: false,
+        blockers: [{ service_date: serviceDate, reason }],
+      })),
+    );
+
+    expect(messages).toEqual([
+      "03/09/2026: chưa có nhu cầu mua hiện hành.",
+      "04/09/2026: còn nhu cầu chưa phân bổ nhà cung ứng.",
+      "05/09/2026: phân bổ cần cập nhật theo nhu cầu mới.",
+      "06/09/2026: tổng phân bổ chưa khớp nhu cầu.",
+      "07/09/2026: có nhà cung cấp không còn phù hợp.",
+    ]);
+    for (const [, reason] of reasons)
+      expect(messages.join(" ")).not.toContain(reason);
+  });
+
   it("keeps exactly two stages and renders supplier-date orders with multi-location detail", async () => {
     render(
       <SchoolCateringProcurementWorkbench
@@ -472,6 +680,10 @@ describe("school-catering Procurement purchase-order stage", () => {
       name: "Các bước Procurement",
     });
     expect(within(stages).getAllByRole("button")).toHaveLength(2);
+    expect(
+      screen.queryByRole("combobox", { name: "Ngoại lệ" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Phạm vi trường")).not.toBeInTheDocument();
     const table = await screen.findByRole("table", { name: "Đơn mua" });
     expect(within(table).getByText("NCC An Phú")).toBeVisible();
     expect(within(table).getByText("02/09/2026")).toBeVisible();
@@ -497,15 +709,31 @@ describe("school-catering Procurement purchase-order stage", () => {
   it("materializes the selected date range and preserves blocked dates beside usable results", async () => {
     const api = createReviewSchoolCateringProcurementApi("po_draft");
     const createDrafts = vi.spyOn(api, "createPurchaseOrderDrafts");
+    const blockedDate = {
+      service_date: "2026-09-03",
+      family_count: 1,
+      ready: false,
+      blockers: [
+        {
+          service_date: "2026-09-03",
+          delivery_location_id: "25000000-0000-4000-8000-000000000011",
+          ingredient_id: "25000000-0000-4000-8000-000000000021",
+          unit_id: "25000000-0000-4000-8000-000000000031",
+          family_id: "25000000-0000-4000-8000-000000000001",
+          family_revision_id: "25000000-0000-4000-8000-000000000002",
+          reason: "ALLOCATION_MISSING",
+        },
+      ],
+    };
     createDrafts.mockResolvedValueOnce({
       kind: "success",
       response: {
         success: true,
         safe_operator_message: "Đã tạo đơn cho ngày sẵn sàng.",
         ready_dates: ["2026-09-02"],
-        skipped_dates: ["2026-09-03"],
+        skipped_dates: [blockedDate],
         warnings: [],
-        blockers: ["03/09/2026: nhu cầu chưa sẵn sàng"],
+        blockers: [blockedDate],
       },
     });
     render(
@@ -528,7 +756,10 @@ describe("school-catering Procurement purchase-order stage", () => {
     const outcome = await screen.findByRole("region", {
       name: "Kết quả lệnh Procurement",
     });
-    expect(outcome).toHaveTextContent("03/09/2026: nhu cầu chưa sẵn sàng");
+    expect(outcome).toHaveTextContent(
+      "03/09/2026: còn nhu cầu chưa phân bổ nhà cung ứng.",
+    );
+    expect(outcome).not.toHaveTextContent("ALLOCATION_MISSING");
     expect(screen.getByRole("table", { name: "Đơn mua" })).toHaveTextContent(
       "NCC An Phú",
     );
