@@ -10,11 +10,210 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasAuthState } from "../connection/authSession";
 import type { AtlasSuccessEnvelope } from "../connection/atlasRpc";
+import { useState } from "react";
+import { ConfirmedNeedReviewWorkbench } from "../planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench";
+import { createReviewConfirmedNeedApi } from "../planning-inputs/confirmed-needs/reviewConfirmedNeedApi";
+import {
+  PlanningRailActionHost,
+  PlanningRailActionProvider,
+} from "../planning-inputs/PlanningRailActionPortal";
 import { SchoolCateringProcurementWorkbench } from "./SchoolCateringProcurementWorkbench";
 import {
+  createReviewPurchaseOrdersFixture,
   createReviewProcurementWorkbenchFixture,
   createReviewSchoolCateringProcurementApi,
 } from "./reviewSchoolCateringProcurementApi";
+
+const confirmedNeedBatchId = "c4500000-0000-0000-0000-000000000001";
+
+function reviewSuccess(response: Record<string, unknown>) {
+  return {
+    kind: "success" as const,
+    response: response as unknown as AtlasSuccessEnvelope,
+  };
+}
+
+function createCrossStageJourney() {
+  const confirmedNeedApi = createReviewConfirmedNeedApi("ready");
+  const procurementApi = createReviewSchoolCateringProcurementApi("empty");
+  let handoff: "NONE" | "INITIAL_100" | "CORRECTED_120" = "NONE";
+  let allocation: "NONE" | "INITIAL_60_40" | "CORRECTED_72_48" = "NONE";
+  let purchaseOrder: "NONE" | "DRAFT" | "STALE" | "REGENERATED" | "RELEASED" =
+    "NONE";
+
+  confirmedNeedApi.releasePurchaseHandoff = async () => {
+    handoff = "INITIAL_100";
+    return reviewSuccess({
+      success: true,
+      safe_operator_message: "Đã tạo Bàn giao mua hàng 100 kg.",
+    });
+  };
+
+  procurementApi.getWorkbench = async () => {
+    if (handoff === "NONE")
+      return reviewSuccess(createReviewProcurementWorkbenchFixture("empty"));
+    if (handoff === "INITIAL_100" && allocation === "NONE")
+      return reviewSuccess(createReviewProcurementWorkbenchFixture("default"));
+    if (handoff === "INITIAL_100")
+      return reviewSuccess(
+        createReviewProcurementWorkbenchFixture("manual_split"),
+      );
+    if (allocation !== "CORRECTED_72_48")
+      return reviewSuccess(
+        createReviewProcurementWorkbenchFixture("rebalance"),
+      );
+
+    const corrected = createReviewProcurementWorkbenchFixture("manual_split");
+    const row = corrected.rows[0]!;
+    row.family_quantity = "120.000000";
+    row.family.source_fingerprint = "review-source-120";
+    row.splits[0]!.allocated_quantity = "72.000000";
+    row.splits[1]!.allocated_quantity = "48.000000";
+    return reviewSuccess(corrected);
+  };
+
+  procurementApi.saveAllocation = async (request) => {
+    const quantities = request.payload.splits.map(
+      (split) => split.allocated_quantity,
+    );
+    if (handoff === "INITIAL_100") {
+      if (quantities.join("/") !== "60.000000/40.000000")
+        throw new Error(
+          "Initial family must persist the exact 60/40 snapshot.",
+        );
+      allocation = "INITIAL_60_40";
+    } else {
+      if (quantities.join("/") !== "72.000000/48.000000")
+        throw new Error(
+          "Corrected family must persist the backend 72/48 proposal.",
+        );
+      allocation = "CORRECTED_72_48";
+    }
+    return reviewSuccess({
+      success: true,
+      safe_operator_message: "Đã lưu phân bổ nhà cung ứng.",
+      warnings: [],
+      blockers: [],
+    });
+  };
+
+  procurementApi.getPurchaseOrders = async () => {
+    const fixture =
+      purchaseOrder === "NONE"
+        ? createReviewPurchaseOrdersFixture("empty")
+        : purchaseOrder === "STALE"
+          ? createReviewPurchaseOrdersFixture("stale_po")
+          : purchaseOrder === "RELEASED"
+            ? createReviewPurchaseOrdersFixture("released_po")
+            : createReviewPurchaseOrdersFixture("po_draft");
+    return reviewSuccess(fixture);
+  };
+
+  procurementApi.createPurchaseOrderDrafts = async () => {
+    purchaseOrder = handoff === "CORRECTED_120" ? "REGENERATED" : "DRAFT";
+    return reviewSuccess({
+      success: true,
+      safe_operator_message:
+        handoff === "CORRECTED_120"
+          ? "Đã tạo lại đơn cần cập nhật."
+          : "Đã tạo đơn mua cho ngày sẵn sàng.",
+      warnings: [],
+      blockers: [],
+    });
+  };
+
+  procurementApi.releasePurchaseOrder = async () => {
+    purchaseOrder = "RELEASED";
+    return reviewSuccess({
+      success: true,
+      safe_operator_message: "Đã phát hành đơn mua cho nhà cung cấp.",
+      document_number: "PO-20260902-2500000000004000",
+      warnings: [],
+      blockers: [],
+    });
+  };
+
+  return {
+    confirmedNeedApi,
+    procurementApi,
+    invalidateForPlanningCorrection() {
+      if (purchaseOrder === "RELEASED")
+        return {
+          kind: "backend_error" as const,
+          error: {
+            success: false as const,
+            error_code: "DOWNSTREAM_SUPPLIER_COMMITMENT_EXISTS",
+            safe_message:
+              "Không thể sửa nhu cầu sau khi đơn đã phát hành cho nhà cung cấp.",
+          },
+        };
+      handoff = "NONE";
+      return reviewSuccess({
+        success: true,
+        safe_operator_message: "Đã vô hiệu Bàn giao cũ để sửa nhu cầu.",
+      });
+    },
+    releaseCorrectedHandoff() {
+      handoff = "CORRECTED_120";
+      purchaseOrder = purchaseOrder === "DRAFT" ? "STALE" : purchaseOrder;
+      return reviewSuccess({
+        success: true,
+        safe_operator_message: "Đã phát hành Bàn giao đã sửa 120 kg.",
+      });
+    },
+  };
+}
+
+function CrossStageJourney({
+  journey,
+}: {
+  journey: ReturnType<typeof createCrossStageJourney>;
+}) {
+  const [page, setPage] = useState<"planning" | "procurement">("planning");
+  const [initialHandoffReleased, setInitialHandoffReleased] = useState(false);
+  return (
+    <>
+      <nav aria-label="Điều hướng hành trình kiểm thử">
+        <button type="button" onClick={() => setPage("planning")}>
+          Lập nhu cầu
+        </button>
+        <button type="button" onClick={() => setPage("procurement")}>
+          Kế hoạch mua hàng
+        </button>
+      </nav>
+      {page === "planning" ? (
+        initialHandoffReleased ? (
+          <section aria-label="Điều chỉnh nhu cầu Planning">
+            <h2>Điều chỉnh nhu cầu Planning</h2>
+            <p>Bàn giao hiện tại sẽ bị vô hiệu trước khi phát hành bản sửa.</p>
+          </section>
+        ) : (
+          <PlanningRailActionProvider>
+            <PlanningRailActionHost />
+            <ConfirmedNeedReviewWorkbench
+              authState={authState}
+              api={journey.confirmedNeedApi}
+              initialBatchId={confirmedNeedBatchId}
+              mode="review"
+              onPurchaseHandoffReleased={() => {
+                setInitialHandoffReleased(true);
+                setPage("procurement");
+              }}
+            />
+          </PlanningRailActionProvider>
+        )
+      ) : (
+        <SchoolCateringProcurementWorkbench
+          authState={authState}
+          api={journey.procurementApi}
+          initialDateStart="2026-09-01"
+          initialDateEnd="2026-09-07"
+          mode="review"
+        />
+      )}
+    </>
+  );
+}
 
 afterEach(() => {
   cleanup();
@@ -451,4 +650,105 @@ describe("school-catering Procurement purchase-order stage", () => {
       screen.queryByRole("table", { name: "Đơn mua" }),
     ).not.toBeInTheDocument();
   });
+});
+
+describe("Planning to school-catering Procurement propagation", () => {
+  it("preserves correction, rebalance, stale-draft, release, and downstream commitment boundaries", async () => {
+    const journey = createCrossStageJourney();
+    render(<CrossStageJourney journey={journey} />);
+
+    await screen.findByText("Gạo thơm");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await screen.findByText("Đã lưu thay đổi.");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Kế hoạch mua hàng" }),
+    ).toBeVisible();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+    fireEvent.change(screen.getByLabelText("Phân bổ NCC An Phú"), {
+      target: { value: "60.000000" },
+    });
+    fireEvent.change(screen.getByLabelText("Phân bổ NCC Bình Minh"), {
+      target: { value: "40.000000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    await screen.findByText("Đã lưu phân bổ nhà cung ứng.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Đơn mua" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo đơn mua" }));
+    expect(
+      await screen.findByRole("table", { name: "Đơn mua" }),
+    ).toHaveTextContent("Bản nháp");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lập nhu cầu" }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "Điều chỉnh nhu cầu Planning",
+      }),
+    ).toBeVisible();
+    expect(journey.invalidateForPlanningCorrection()).toMatchObject({
+      kind: "success",
+    });
+    expect(journey.releaseCorrectedHandoff()).toMatchObject({
+      kind: "success",
+      response: {
+        safe_operator_message: "Đã phát hành Bàn giao đã sửa 120 kg.",
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Kế hoạch mua hàng" }));
+    expect(await screen.findByText("Có thể cân bằng lại")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    );
+    expect(screen.getByLabelText("Phân bổ NCC An Phú")).toHaveValue(
+      "72.000000",
+    );
+    expect(screen.getByLabelText("Phân bổ NCC Bình Minh")).toHaveValue(
+      "48.000000",
+    );
+    expect(screen.getByText("Tổng đang nhập: 120 kg")).toBeVisible();
+    expect(screen.getByText("Chênh lệch: 0 kg")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    await screen.findByText("Đã lưu phân bổ nhà cung ứng.");
+    const familyTable = screen.getByRole("table", {
+      name: "Allocation Family",
+    });
+    expect(within(familyTable).getAllByText("120 kg")).toHaveLength(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Đơn mua" }));
+    expect(await screen.findByText("Cần cập nhật")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "Phát hành cho NCC" }),
+    ).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tạo lại đơn cần cập nhật" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Phát hành cho NCC" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phát hành cho NCC" }));
+    expect(
+      await screen.findAllByText("PO-20260902-2500000000004000"),
+    ).toHaveLength(2);
+
+    expect(journey.invalidateForPlanningCorrection()).toMatchObject({
+      kind: "backend_error",
+      error: {
+        error_code: "DOWNSTREAM_SUPPLIER_COMMITMENT_EXISTS",
+      },
+    });
+    expect(screen.getAllByText("PO-20260902-2500000000004000")).toHaveLength(2);
+  }, 20_000);
 });
