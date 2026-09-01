@@ -58,10 +58,12 @@ select function_privs_are('atlas_api', 'get_school_catering_purchase_orders',
   array['jsonb'], 'anon', array[]::text[]);
 
 -- Shared Purchase Order aggregate extension.
-select has_column('atlas_procurement','purchase_orders','purchase_order_kind');
-select has_column('atlas_procurement','purchase_orders','school_catering_service_date');
+select has_column('atlas_procurement','purchase_orders','purchase_order_kind',
+  'shared PO root declares its source kind');
+select has_column('atlas_procurement','purchase_orders','school_catering_service_date',
+  'school-catering root stores the supplier/date identity date');
 select col_default_is('atlas_procurement','purchase_orders','purchase_order_kind',
-  '''SUPPLIER_DIRECT_WHOLESALE''::text',
+  'SUPPLIER_DIRECT_WHOLESALE',
   'legacy/wholesale inserts default to the existing PO kind');
 select has_check('atlas_procurement','purchase_orders','purchase_orders_kind_check');
 select has_check('atlas_procurement','purchase_orders','purchase_orders_school_catering_date_check');
@@ -71,7 +73,8 @@ select ok(exists(
     and indexdef ilike '%unique%supplier_id%school_catering_service_date%'
     and indexdef ilike '%purchase_order_kind%SCHOOL_CATERING%'
 ), 'one active school-catering PO lineage is enforced per supplier and service date');
-select has_column('atlas_procurement','purchase_order_lines','school_catering_allocation_family_id');
+select has_column('atlas_procurement','purchase_order_lines','school_catering_allocation_family_id',
+  'stable PO line supports a school-catering Allocation Family source');
 select ok(exists(
   select 1 from information_schema.columns
   where table_schema='atlas_procurement' and table_name='purchase_order_lines'
@@ -79,7 +82,8 @@ select ok(exists(
 ), 'wholesale PO stable-line source becomes nullable for the shared XOR');
 select has_check('atlas_procurement','purchase_order_lines','purchase_order_lines_source_xor_check');
 select has_column('atlas_procurement','purchase_order_line_revisions',
-  'school_catering_allocation_supplier_split_id');
+  'school_catering_allocation_supplier_split_id',
+  'PO line revision supports an exact school-catering Supplier Split source');
 select ok(exists(
   select 1 from information_schema.columns
   where table_schema='atlas_procurement' and table_name='purchase_order_line_revisions'
