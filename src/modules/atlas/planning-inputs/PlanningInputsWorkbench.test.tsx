@@ -901,8 +901,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("guards Pantry edits and explicit no-additions during navigation", async () => {
-    const confirm = vi
-      .spyOn(window, "confirm")
+    vi.spyOn(window, "confirm")
       .mockReturnValueOnce(true)
       .mockReturnValueOnce(false);
     renderWorkbench();

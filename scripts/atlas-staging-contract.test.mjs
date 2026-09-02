@@ -16,6 +16,7 @@ import {
   redactAtlasStagingDiagnostic,
   repositorySupabaseCliInvocation,
   requireAtlasStagingCertificationMode,
+  throwPreferredFailure,
   validateAtlasStagingProtectedValues,
   validateAtlasStagingPackageProtectedValues,
   validateAtlasStagingTarget,
@@ -79,6 +80,25 @@ function environment(overrides = {}) {
     ...overrides,
   };
 }
+
+describe("cleanup failure precedence", () => {
+  it("keeps the primary operation failure when cleanup also fails", () => {
+    const primaryFailure = new Error("primary operation failure");
+    const cleanupFailure = new Error("secondary cleanup failure");
+
+    expect(() => throwPreferredFailure(primaryFailure, cleanupFailure)).toThrow(
+      primaryFailure,
+    );
+  });
+
+  it("surfaces cleanup failure when the operation otherwise succeeds", () => {
+    const cleanupFailure = new Error("cleanup-only failure");
+
+    expect(() => throwPreferredFailure(undefined, cleanupFailure)).toThrow(
+      cleanupFailure,
+    );
+  });
+});
 
 function semanticSupabaseArgs(command, args) {
   return command === "pnpm" && args[0] === "exec" && args[1] === "supabase"
@@ -300,8 +320,10 @@ describe("Atlas staging safety contract", () => {
   );
 
   it("redacts keys, JWTs, database URLs, and supplied protected values", () => {
+    // Credential-shaped synthetic fixture required to prove database URL redaction.
+    // noinspection HardcodedPasswords
     const diagnostic = redactAtlasStagingDiagnostic(
-      "postgresql://postgres:password@db.example.supabase.co:5432/postgres sb_secret_value eyJprivate Bearer token-value direct-secret",
+      "postgresql://synthetic-user:synthetic-password@db.example.test:5432/synthetic-db sb_secret_value eyJprivate Bearer token-value direct-secret",
       ["direct-secret"],
     );
     expect(diagnostic).not.toMatch(
@@ -743,6 +765,10 @@ describe("Atlas staging dry-run and workflow", () => {
   it("captures bounded redacted Supabase diagnostics before cleanup without replacing the primary failure", () => {
     const calls = [];
     const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Credential-shaped synthetic fixture required to prove diagnostic redaction.
+    // noinspection HardcodedPasswords
+    const syntheticDiagnostic =
+      "postgresql://synthetic-user:synthetic-password@database.test/db Bearer synthetic-bearer password=synthetic-password sb_secret_synthetic";
     const expectedVersion = JSON.parse(
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
@@ -779,8 +805,7 @@ describe("Atlas staging dry-run and workflow", () => {
       if (command === "docker" && args[0] === "logs") {
         return {
           status: 0,
-          stdout:
-            "postgresql://user:password@database.test/db Bearer synthetic-bearer password=synthetic-password sb_secret_synthetic\n",
+          stdout: `${syntheticDiagnostic}\n`,
           stderr: "",
         };
       }
@@ -816,7 +841,7 @@ describe("Atlas staging dry-run and workflow", () => {
         .every(([_command, _args, options]) => options.timeout === 10_000),
     ).toBe(true);
     expect(warning.mock.calls.flat().join("\n")).not.toMatch(
-      /synthetic-bearer|synthetic-password|sb_secret_synthetic|postgresql:\/\/user:password/i,
+      /synthetic-bearer|synthetic-password|sb_secret_synthetic|postgresql:\/\/synthetic-user/i,
     );
     warning.mockRestore();
   });

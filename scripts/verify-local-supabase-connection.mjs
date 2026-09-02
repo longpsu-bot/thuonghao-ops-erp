@@ -47,9 +47,10 @@ async function main() {
       })
       .retry(false);
     if (probeError || !probe || typeof probe !== "object") {
-      throw new Error("The authenticated Atlas read transport failed safely.");
-    }
-    if (probe.success === true) {
+      probeFailure = new Error(
+        "The authenticated Atlas read transport failed safely.",
+      );
+    } else if (probe.success === true) {
       probeCategory = "SUCCESS";
     } else if (
       probe.success === false &&
@@ -59,7 +60,7 @@ async function main() {
     ) {
       probeCategory = "SAFE_NOT_FOUND";
     } else {
-      throw new Error(
+      probeFailure = new Error(
         "The authenticated Atlas read returned an unacceptable safe category.",
       );
     }

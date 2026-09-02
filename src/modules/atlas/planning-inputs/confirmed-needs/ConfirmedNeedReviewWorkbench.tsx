@@ -322,9 +322,11 @@ export function ConfirmedNeedReviewWorkbench({
       )
         return false;
       const draft = drafts[line.confirmed_need_line_id];
-      if (showDifferencesOnly && draft && !hasUnsavedLocalChange(line, draft))
-        return false;
-      return true;
+      return !(
+        showDifferencesOnly &&
+        draft &&
+        !hasUnsavedLocalChange(line, draft)
+      );
     });
   }, [
     confirmationFilter,
