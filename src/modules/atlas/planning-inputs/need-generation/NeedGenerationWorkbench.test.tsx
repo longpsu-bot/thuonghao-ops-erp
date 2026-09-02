@@ -30,6 +30,7 @@ function renderWorkbench(
   preflightApi = createReviewPlanningInputReadinessApi("ready"),
   onConfirmedNeedMaterialized = vi.fn(),
   embeddedInConfirmedNeed = false,
+  onConfirmedNeedSelected = vi.fn(),
 ) {
   render(
     <NeedGenerationWorkbench
@@ -39,10 +40,16 @@ function renderWorkbench(
       selectedWeekStart="2026-08-03"
       selectedWeekEnd="2026-08-09"
       onConfirmedNeedMaterialized={onConfirmedNeedMaterialized}
+      onConfirmedNeedSelected={onConfirmedNeedSelected}
       embeddedInConfirmedNeed={embeddedInConfirmedNeed}
     />,
   );
-  return { api, preflightApi, onConfirmedNeedMaterialized };
+  return {
+    api,
+    preflightApi,
+    onConfirmedNeedMaterialized,
+    onConfirmedNeedSelected,
+  };
 }
 
 async function makePreflightCurrentness(
@@ -74,8 +81,10 @@ async function makePreflightCurrentness(
 
 describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", () => {
   it("renders embedded Confirmed Need navigation as an attached seven-day selector", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
     renderWorkbench(
-      createReviewNeedGenerationApi("ready"),
+      api,
       createReviewPlanningInputReadinessApi("ready"),
       vi.fn(),
       true,
@@ -95,6 +104,11 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       "aria-controls",
       "planning-confirmed-review",
     );
+    fireEvent.click(selectedDay);
+    expect(execute).not.toHaveBeenCalled();
+    expect(
+      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
+    ).toBeEnabled();
     expect(within(selector).getAllByRole("button")).toHaveLength(7);
     expect(
       within(navigator).queryByRole("table", {
@@ -109,6 +123,158 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       screen.queryByRole("button", { name: "Làm mới" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Chi tiết hỗ trợ")).not.toBeInTheDocument();
+  });
+
+  it("executes exactly one selected-day RMVP-04.v3 command and selects its returned batch", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    const create = vi.spyOn(api, "create");
+    const validate = vi.spyOn(api, "validate");
+    const release = vi.spyOn(api, "release");
+    const materialize = vi.spyOn(api, "materialize");
+    const onConfirmedNeedSelected = vi.fn();
+    render(
+      <NeedGenerationWorkbench
+        authState={authState}
+        api={api}
+        preflightApi={createReviewPlanningInputReadinessApi("ready")}
+        selectedWeekStart="2026-08-31"
+        selectedWeekEnd="2026-09-06"
+        embeddedInConfirmedNeed
+        onConfirmedNeedSelected={onConfirmedNeedSelected}
+      />,
+    );
+
+    const navigator = await screen.findByRole("region", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    fireEvent.click(
+      within(navigator).getByRole("button", {
+        name: "Rà soát 31/08/2026",
+      }),
+    );
+    expect(execute).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
+    );
+
+    await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({
+      contract_version: "RMVP-04.v3",
+      payload: {
+        service_date: "2026-08-31",
+        expected_current_need_generation_run_id: null,
+      },
+    });
+    expect(create).not.toHaveBeenCalled();
+    expect(validate).not.toHaveBeenCalled();
+    expect(release).not.toHaveBeenCalled();
+    expect(materialize).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(onConfirmedNeedSelected).toHaveBeenCalledWith(
+        "c4500000-0000-0000-0000-000000000001",
+        "2026-08-31",
+        expect.objectContaining({
+          downstream_currentness: "CURRENT",
+          current_need: expect.objectContaining({
+            confirmed_need_batch_id: "c4500000-0000-0000-0000-000000000001",
+            confirmed_need_batch_status: "DRAFT_REVIEW",
+          }),
+        }),
+      ),
+    );
+  });
+
+  it("uses the authoritative returned service date when selecting the generated batch", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const originalExecute = api.execute.bind(api);
+    vi.spyOn(api, "execute").mockImplementation(async (request) => {
+      const result = await originalExecute(request);
+      if (result.kind === "success") {
+        const readback = result.response.authoritative_readback as unknown as {
+          preflight: Record<string, unknown>;
+        };
+        readback.preflight.period_start = "2026-09-01";
+        readback.preflight.period_end = "2026-09-01";
+      }
+      return result;
+    });
+    const onConfirmedNeedSelected = vi.fn();
+    render(
+      <NeedGenerationWorkbench
+        authState={authState}
+        api={api}
+        preflightApi={createReviewPlanningInputReadinessApi("ready")}
+        selectedWeekStart="2026-08-31"
+        selectedWeekEnd="2026-09-06"
+        embeddedInConfirmedNeed
+        onConfirmedNeedSelected={onConfirmedNeedSelected}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+
+    await waitFor(() =>
+      expect(onConfirmedNeedSelected).toHaveBeenCalledWith(
+        "c4500000-0000-0000-0000-000000000001",
+        "2026-09-01",
+        expect.objectContaining({ period_start: "2026-09-01" }),
+      ),
+    );
+  });
+
+  it("opens the exact CURRENT Confirmed Need without executing generation", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    const onConfirmedNeedSelected = vi.fn();
+    renderWorkbench(
+      api,
+      await makePreflightCurrentness("CURRENT"),
+      vi.fn(),
+      true,
+      onConfirmedNeedSelected,
+    );
+
+    const openConfirmedNeed = await screen.findByRole("button", {
+      name: "Mở xác nhận",
+    });
+    expect(openConfirmedNeed).toBeEnabled();
+    fireEvent.click(openConfirmedNeed);
+
+    expect(execute).not.toHaveBeenCalled();
+    expect(onConfirmedNeedSelected).toHaveBeenCalledWith(
+      "current-batch",
+      "2026-08-03",
+      expect.objectContaining({ downstream_currentness: "CURRENT" }),
+    );
+  });
+
+  it("keeps embedded BLOCKED state backend-driven with no execute action", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(api, "execute");
+    renderWorkbench(
+      api,
+      createReviewPlanningInputReadinessApi("empty"),
+      vi.fn(),
+      true,
+    );
+
+    const selectedDayAction = await screen.findByRole("region", {
+      name: "Việc cần làm cho ngày đã chọn",
+    });
+    expect(
+      within(selectedDayAction).getByText(
+        "Cần lưu Thực đơn trước khi tạo nhu cầu.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Tạo nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cập nhật nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(execute).not.toHaveBeenCalled();
   });
 
   it("renders seven backend daily states and executes exactly one Monday v3 write", async () => {
@@ -514,7 +680,12 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
           "Đã cập nhật nhu cầu và hiệu chỉnh Phiếu nhu cầu xác nhận trong một giao dịch.";
       return result;
     });
-    renderWorkbench(api, await makePreflightCurrentness("OUTDATED"));
+    renderWorkbench(
+      api,
+      await makePreflightCurrentness("OUTDATED"),
+      vi.fn(),
+      true,
+    );
 
     expect(
       await screen.findByText(

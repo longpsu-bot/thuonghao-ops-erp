@@ -215,8 +215,8 @@ describe("Atlas master-data shell", () => {
       }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
-    ).not.toBeInTheDocument();
+      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
+    ).toBeEnabled();
   });
 
   it("runs the connected review journey for consequential menu and attendance saves", async () => {

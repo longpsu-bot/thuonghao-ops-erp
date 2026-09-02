@@ -541,25 +541,63 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
   });
 
-  it("keeps embedded Need Generation as navigation rather than command authority", async () => {
+  it("generates the selected day, opens the returned Draft Review batch, and preserves Save then release", async () => {
+    const needGenerationApi = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(needGenerationApi, "execute");
+    const confirmedNeedApi = createReviewConfirmedNeedApi("ready");
+    const getReview = vi.spyOn(confirmedNeedApi, "getReview");
+    const save = vi.spyOn(confirmedNeedApi, "save");
     render(
       <PlanningInputsWorkbench
         authState={authState}
-        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        needGenerationApi={needGenerationApi}
         readinessApi={createReviewPlanningInputReadinessApi("ready")}
-        confirmedNeedApi={createReviewConfirmedNeedApi("ready")}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart="2026-08-31"
         mode="review"
       />,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    expect(
-      await screen.findByRole("region", {
-        name: "Tổng quan nhu cầu theo ngày",
+    const navigator = await screen.findByRole("region", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    fireEvent.click(
+      within(navigator).getByRole("button", {
+        name: "Rà soát 31/08/2026",
       }),
-    ).toBeVisible();
+    );
+    expect(execute).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
+    );
+
+    await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({
+      contract_version: "RMVP-04.v3",
+      payload: { service_date: "2026-08-31" },
+    });
+    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
+      "31/08/2026",
+    );
+    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(getReview).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      defaultBatchId,
+      expect.any(Object),
+      0,
+      10_000,
+    );
+
+    const saveButton = screen.getByRole("button", { name: "Lưu" });
+    expect(saveButton).toBeEnabled();
+    fireEvent.click(saveButton);
+    expect(await screen.findByText("Đã lưu thay đổi.")).toBeVisible();
+    expect(save).toHaveBeenCalledTimes(1);
     expect(
-      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).toBeEnabled();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();

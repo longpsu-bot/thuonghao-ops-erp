@@ -39,7 +39,7 @@ describe("Planning Inputs contextual generation", () => {
       }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
-    ).not.toBeInTheDocument();
+      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
+    ).toBeEnabled();
   });
 });

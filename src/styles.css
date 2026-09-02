@@ -5290,9 +5290,75 @@ tbody tr.selected-row {
   outline-offset: -2px;
 }
 
+.need-generation-daily-selected-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border-top: 1px solid var(--planning-border);
+  background: var(--atlas-surface);
+}
+
+.need-generation-daily-selected-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.need-generation-daily-selected-copy > span {
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.need-generation-daily-selected-copy > strong {
+  color: var(--atlas-primary);
+  font-size: 15px;
+}
+
+.need-generation-daily-selected-copy > p {
+  margin: 0;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.need-generation-daily-selected-action > button {
+  display: inline-flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid var(--atlas-primary);
+  border-radius: 6px;
+  background: var(--atlas-primary);
+  color: #fff;
+  font-weight: 800;
+}
+
+.need-generation-daily-selected-notice {
+  flex-basis: 100%;
+  margin: 0;
+}
+
 @container (max-width: 720px) {
   .need-generation-daily-selector {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .need-generation-daily-selected-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .need-generation-daily-selected-action > button {
+    width: 100%;
   }
 }
 
