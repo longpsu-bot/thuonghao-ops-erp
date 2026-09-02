@@ -4892,6 +4892,7 @@ tbody tr.selected-row {
   gap: 8px;
 }
 
+.procurement-order-actions .secondary,
 .procurement-order-detail-actions .secondary {
   min-height: 36px;
   padding: 7px 12px;

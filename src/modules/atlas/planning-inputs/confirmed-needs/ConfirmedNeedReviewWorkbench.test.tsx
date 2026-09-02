@@ -762,7 +762,7 @@ describe("Confirmed Need two-action workbench", () => {
     expect(save).not.toHaveClass("primary");
   });
 
-  it("releases only after a current complete save and concise confirmation", async () => {
+  it("truthfully confirms that release creates or updates Purchase Handoff before Procurement", async () => {
     const api = await saveAll();
     const release = vi.spyOn(api, "releaseSaved");
     const releaseButton = screen.getByRole("button", {
@@ -774,9 +774,12 @@ describe("Confirmed Need two-action workbench", () => {
     const dialog = screen.getByRole("dialog", {
       name: "Xác nhận chuyển sang lên đơn",
     });
+    expect(dialog).toHaveTextContent(
+      "tạo hoặc cập nhật Bàn giao mua hàng sang Thu mua",
+    );
     expect(dialog).toHaveTextContent("chưa phân bổ nhà cung cấp");
-    expect(dialog).toHaveTextContent("chưa tạo Bàn giao mua hàng");
-    expect(dialog).toHaveTextContent("chưa tạo Đơn mua hàng");
+    expect(dialog).toHaveTextContent("chưa tạo Đơn mua");
+    expect(dialog).not.toHaveTextContent("chưa tạo Bàn giao mua hàng");
     fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
     await screen.findByText("Đã chuyển sang lên đơn.");
     expect(release).toHaveBeenCalledTimes(1);

@@ -808,9 +808,9 @@ export function ConfirmedNeedReviewWorkbench({
         >
           <h3>Chuyển nhu cầu đã lưu sang bước lên đơn?</h3>
           <p>
-            Atlas sẽ kiểm tra toàn bộ dữ liệu và ghi nhận cam kết. Hành động này
-            chưa phân bổ nhà cung cấp, chưa tạo Bàn giao mua hàng và chưa tạo
-            Đơn mua hàng.
+            Atlas sẽ kiểm tra và phát hành nhu cầu đã lưu, sau đó tạo hoặc cập
+            nhật Bàn giao mua hàng sang Thu mua. Bước này chưa phân bổ nhà cung
+            cấp và chưa tạo Đơn mua.
           </p>
           <div>
             <button

@@ -320,6 +320,28 @@ describe("school-catering Procurement allocation workbench", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows the recommended supplier name as an uncommitted proposal", async () => {
+    renderWorkbench();
+    const table = await screen.findByRole("table", {
+      name: "Allocation Family",
+    });
+    const row = within(table).getByText("Gạo thơm").closest("tr")!;
+    const recommendation = within(row).getByRole("checkbox", {
+      name: "Chọn đề xuất Gạo thơm",
+    });
+    const confirm = screen.getByRole("button", {
+      name: "Xác nhận phân bổ đề xuất",
+    });
+
+    expect(within(row).getByText("NCC An Phú · đề xuất")).toBeVisible();
+    expect(within(row).getByText("Chưa phân bổ")).toBeVisible();
+    expect(recommendation).not.toBeChecked();
+    expect(confirm).toBeDisabled();
+
+    fireEvent.click(recommendation);
+    expect(confirm).toBeEnabled();
+  });
+
   it("opens an attached split editor while keeping recommendation advisory", async () => {
     const api = renderWorkbench();
     const confirm = vi.spyOn(api, "confirmRecommendations");
@@ -728,6 +750,113 @@ describe("school-catering Procurement currentness", () => {
 });
 
 describe("school-catering Procurement purchase-order stage", () => {
+  describe("PO action hierarchy", () => {
+    function renderOrders(
+      scenario: "po_draft" | "stale_po" | "released_po",
+      empty = false,
+    ) {
+      const api = createReviewSchoolCateringProcurementApi(scenario);
+      if (empty)
+        vi.spyOn(api, "getPurchaseOrders").mockResolvedValue(
+          reviewSuccess(createReviewPurchaseOrdersFixture("empty")),
+        );
+      render(
+        <SchoolCateringProcurementWorkbench
+          authState={authState}
+          api={api}
+          initialDateStart="2026-09-01"
+          initialDateEnd="2026-09-07"
+          initialStage="orders"
+          mode="review"
+        />,
+      );
+    }
+
+    it("keeps Create Purchase Orders primary when the current scope is empty", async () => {
+      renderOrders("po_draft", true);
+
+      const materialize = await screen.findByRole("button", {
+        name: "Tạo đơn mua",
+      });
+      expect(materialize).toBeEnabled();
+      expect(materialize).toHaveClass("primary");
+      expect(materialize).not.toHaveClass("secondary");
+    });
+
+    it("makes Release the only enabled primary action for a selected clean DRAFT", async () => {
+      renderOrders("po_draft");
+      const materialize = await screen.findByRole("button", {
+        name: "Tạo đơn mua",
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+      );
+      const release = screen.getByRole("button", {
+        name: "Phát hành cho NCC",
+      });
+
+      expect(materialize).toBeEnabled();
+      expect(materialize).toHaveClass("secondary");
+      expect(materialize).not.toHaveClass("primary");
+      expect(release).toBeEnabled();
+      expect(release).toHaveClass("primary");
+      expect(
+        screen
+          .getAllByRole("button")
+          .filter(
+            (button) =>
+              button.classList.contains("primary") &&
+              !button.hasAttribute("disabled"),
+          ),
+      ).toEqual([release]);
+    });
+
+    it("makes Regenerate primary while stale Release and top-level Create remain subordinate", async () => {
+      renderOrders("stale_po");
+      const materialize = await screen.findByRole("button", {
+        name: "Tạo đơn mua",
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+      );
+      const regenerate = screen.getByRole("button", {
+        name: "Tạo lại đơn cần cập nhật",
+      });
+      const release = screen.getByRole("button", {
+        name: "Phát hành cho NCC",
+      });
+
+      expect(materialize).toBeEnabled();
+      expect(materialize).toHaveClass("secondary");
+      expect(materialize).not.toHaveClass("primary");
+      expect(regenerate).toBeEnabled();
+      expect(regenerate).toHaveClass("primary");
+      expect(release).toBeDisabled();
+      expect(release).toHaveClass("secondary");
+      expect(release).not.toHaveClass("primary");
+    });
+
+    it("keeps released order evidence visible without a competing release action", async () => {
+      renderOrders("released_po");
+      const materialize = await screen.findByRole("button", {
+        name: "Tạo đơn mua",
+      });
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
+      );
+
+      expect(materialize).toBeEnabled();
+      expect(materialize).toHaveClass("secondary");
+      expect(materialize).not.toHaveClass("primary");
+      expect(
+        screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getAllByText("PO-20260902-2500000000004000")).toHaveLength(
+        2,
+      );
+    });
+  });
+
   it("translates every deployed blocked-date reason without exposing technical codes", () => {
     const reasons = [
       ["2026-09-03", "NO_CURRENT_FAMILIES"],

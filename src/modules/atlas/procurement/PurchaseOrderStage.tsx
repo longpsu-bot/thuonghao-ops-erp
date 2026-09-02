@@ -72,6 +72,7 @@ export function PurchaseOrderStage({
   const selected = data?.purchase_orders.find(
     (order) => order.purchase_order_id === selectedId,
   );
+  const hasPurchaseOrders = (data?.purchase_orders.length ?? 0) > 0;
   const selectedMessages = selected
     ? procurementOperatorMessages(
         [...selected.blockers, ...selected.disabled_reasons].filter(
@@ -93,7 +94,11 @@ export function PurchaseOrderStage({
         </div>
         <button
           type="button"
-          className="primary procurement-primary-action"
+          className={
+            hasPurchaseOrders
+              ? "secondary"
+              : "primary procurement-primary-action"
+          }
           disabled={busy || mutationLocked}
           onClick={onMaterialize}
         >
@@ -240,7 +245,7 @@ export function PurchaseOrderStage({
                   {selected.stale && (
                     <button
                       type="button"
-                      className="secondary"
+                      className="primary procurement-primary-action"
                       disabled={busy || mutationLocked}
                       onClick={onMaterialize}
                     >
@@ -249,7 +254,11 @@ export function PurchaseOrderStage({
                   )}
                   <button
                     type="button"
-                    className="primary procurement-primary-action"
+                    className={
+                      selected.stale
+                        ? "secondary"
+                        : "primary procurement-primary-action"
+                    }
                     disabled={
                       busy ||
                       mutationLocked ||

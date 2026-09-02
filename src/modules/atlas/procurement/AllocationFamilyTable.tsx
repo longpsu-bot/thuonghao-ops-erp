@@ -41,6 +41,18 @@ function allocated(row: AllocationFamilyRow) {
   );
 }
 
+function supplierLabel(row: AllocationFamilyRow) {
+  if (row.splits.length)
+    return row.splits.map((split) => split.supplier_name).join(", ");
+  if (!row.recommendation) return "—";
+  const recommendedSupplier = row.eligible_suppliers.find(
+    (supplier) => supplier.supplier_id === row.recommendation?.supplier_id,
+  );
+  return recommendedSupplier
+    ? `${recommendedSupplier.supplier_name} · đề xuất`
+    : "Có đề xuất";
+}
+
 export function AllocationFamilyTable({
   rows,
   selectedFamilyKey,
@@ -121,13 +133,7 @@ export function AllocationFamilyTable({
                 <td>
                   {displayQuantity(difference)} {row.unit_code}
                 </td>
-                <td>
-                  {row.splits.length
-                    ? row.splits.map((split) => split.supplier_name).join(", ")
-                    : row.recommendation
-                      ? "Có đề xuất"
-                      : "—"}
-                </td>
+                <td>{supplierLabel(row)}</td>
                 <td>
                   <span
                     className={`procurement-state ${row.state.toLowerCase()}`}
