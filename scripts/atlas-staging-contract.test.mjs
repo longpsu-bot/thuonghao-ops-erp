@@ -765,6 +765,10 @@ describe("Atlas staging dry-run and workflow", () => {
   it("captures bounded redacted Supabase diagnostics before cleanup without replacing the primary failure", () => {
     const calls = [];
     const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Credential-shaped synthetic fixture required to prove diagnostic redaction.
+    // noinspection HardcodedPasswords
+    const syntheticDiagnostic =
+      "postgresql://synthetic-user:synthetic-password@database.test/db Bearer synthetic-bearer password=synthetic-password sb_secret_synthetic";
     const expectedVersion = JSON.parse(
       readFileSync(`${process.cwd()}/package.json`, "utf8"),
     ).devDependencies.supabase;
@@ -801,10 +805,7 @@ describe("Atlas staging dry-run and workflow", () => {
       if (command === "docker" && args[0] === "logs") {
         return {
           status: 0,
-          // Credential-shaped synthetic fixture required to prove diagnostic redaction.
-          // noinspection HardcodedPasswords
-          stdout:
-            "postgresql://synthetic-user:synthetic-password@database.test/db Bearer synthetic-bearer password=synthetic-password sb_secret_synthetic\n",
+          stdout: `${syntheticDiagnostic}\n`,
           stderr: "",
         };
       }
