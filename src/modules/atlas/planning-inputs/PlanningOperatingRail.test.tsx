@@ -22,28 +22,24 @@ const items: PlanningWorkflowItem<"menu" | "attendance" | "pantry" | "need">[] =
   [
     {
       id: "menu",
-      step: 1,
       label: "Thực đơn",
       status: "Cần lưu",
       tone: "warning",
     },
     {
       id: "attendance",
-      step: 2,
       label: "Sĩ số",
       status: "Sẵn sàng",
       tone: "ok",
     },
     {
       id: "pantry",
-      step: 3,
       label: "Bổ sung",
       status: "2 mục",
       tone: "neutral",
     },
     {
       id: "need",
-      step: 4,
       label: "Xác nhận nhu cầu",
       status: "Chờ xác nhận",
       tone: "warning",
@@ -92,7 +88,7 @@ describe("PlanningOperatingRail", () => {
       within(rail).getByRole("group", { name: "Phạm vi vận hành" }),
     ).toBeVisible();
     expect(
-      within(rail).getByRole("group", { name: "Các bước lập nhu cầu" }),
+      within(rail).getByRole("group", { name: "Công việc lập nhu cầu" }),
     ).toBeVisible();
     expect(within(rail).getAllByRole("tablist")).toHaveLength(1);
     expect(screen.getAllByRole("tablist")).toHaveLength(1);

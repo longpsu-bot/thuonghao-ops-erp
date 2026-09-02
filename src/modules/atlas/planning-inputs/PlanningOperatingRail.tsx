@@ -44,7 +44,7 @@ export function PlanningOperatingRail<T extends string>({
       <div
         className="planning-operating-workflow"
         role="group"
-        aria-label="Các bước lập nhu cầu"
+        aria-label="Công việc lập nhu cầu"
       >
         <PlanningWorkflowBar
           items={workflowItems}

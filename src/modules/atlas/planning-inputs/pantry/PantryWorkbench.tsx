@@ -12,7 +12,7 @@ import {
   type PlanningCorrectionChain,
   type PlanningCorrectionImpact,
 } from "../planningCorrectionApi";
-import { Chip, Panel } from "../../WorkbenchComponents";
+import { Chip } from "../../WorkbenchComponents";
 import { pantryCompletionRequest, type PantryApi } from "./pantryApi";
 import {
   pantryPreviewFromResult,
@@ -448,15 +448,18 @@ export function PantryWorkbench({
         </button>
       )}
 
-      <Panel
-        title="Nhu cầu bổ sung"
-        description="Nhập nguyên liệu cần thêm ngoài thực đơn hoặc xác nhận tuần này không có bổ sung."
-        status={
+      <section
+        className="planning-job-surface planning-pantry-surface"
+        aria-label="Bề mặt làm việc Nhu cầu bổ sung"
+      >
+        <div
+          className="planning-job-status"
+          aria-label="Trạng thái Nhu cầu bổ sung"
+        >
           <Chip tone={statusTone(data.batch?.pantry_need_batch_status)}>
             {statusLabel(data.batch?.pantry_need_batch_status)}
           </Chip>
-        }
-      >
+        </div>
         <PantryIssues
           title="Lỗi danh mục"
           issues={data.catalog_issues.blockers}
@@ -533,255 +536,288 @@ export function PantryWorkbench({
           </div>
         </div>
 
-        {visibleRowEntries.length === 0 ? (
-          <p className={`empty${noAdditions ? " pantry-zero-state" : ""}`}>
-            {noAdditions
-              ? "Đã xác nhận không có bổ sung; hãy xem thay đổi trước khi lưu."
-              : "Chưa có dòng bổ sung."}
-          </p>
-        ) : (
-          <div
-            className="planning-grid-scroll planning-dense-table-surface"
-            role="region"
-            aria-label="Bảng nhu cầu bổ sung"
-          >
-            <table className="compact-table pantry-table">
-              <thead>
-                <tr>
-                  <th>Ngày phục vụ</th>
-                  <th>Trường / điểm giao</th>
-                  <th>Nguyên liệu / đơn vị</th>
-                  <th>Mục đích</th>
-                  <th>Số lượng</th>
-                  <th>Ghi chú</th>
-                  <th>Tham chiếu</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {visibleRowEntries.map(({ row, index }) => {
-                  const school = data.schools.find(
-                    (item) => item.school_id === row.school_id,
-                  );
-                  const ingredient = data.ingredients.find(
-                    (item) => item.ingredient_id === row.ingredient_id,
-                  );
-                  const purpose = purposes.find(
-                    (item) =>
-                      item.pantry_need_purpose_id ===
-                      row.pantry_need_purpose_id,
-                  );
-                  return (
-                    <tr key={`${row.source_row_reference}:${index}`}>
-                      <td>
-                        <select
-                          aria-label={`Ngày phục vụ dòng ${index + 1}`}
-                          value={row.service_date}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            updateRow(index, "service_date", event.target.value)
-                          }
-                        >
-                          {serviceDates.map((date) => (
-                            <option value={date} key={date}>
-                              {dateVi(date)}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <select
-                          aria-label={`Trường dòng ${index + 1}`}
-                          value={row.school_id}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            updateRow(index, "school_id", event.target.value)
-                          }
-                        >
-                          {scopedSchools.map((item) => (
-                            <option value={item.school_id} key={item.school_id}>
-                              {item.school_code} · {item.school_name}
-                            </option>
-                          ))}
-                        </select>
-                        <small
-                          className="pantry-derived-value"
-                          data-derived="delivery-location"
-                        >
-                          {school?.default_delivery_location.location_name ??
-                            "—"}
-                        </small>
-                      </td>
-                      <td>
-                        <select
-                          aria-label={`Nguyên liệu dòng ${index + 1}`}
-                          value={row.ingredient_id}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            updateRow(
-                              index,
-                              "ingredient_id",
-                              event.target.value,
-                            )
-                          }
-                        >
-                          {data.ingredients.map((item) => (
-                            <option
-                              value={item.ingredient_id}
-                              key={item.ingredient_id}
-                            >
-                              {item.ingredient_code} · {item.ingredient_name}
-                            </option>
-                          ))}
-                        </select>
-                        <small
-                          className="pantry-derived-value"
-                          data-derived="purchase-unit"
-                        >
-                          {ingredient?.purchase_unit.unit_name ?? "—"}
-                        </small>
-                      </td>
-                      <td>
-                        <select
-                          aria-label={`Mục đích dòng ${index + 1}`}
-                          value={row.pantry_need_purpose_id}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            updateRow(
-                              index,
-                              "pantry_need_purpose_id",
-                              event.target.value,
-                            )
-                          }
-                        >
-                          {purposes.map((purpose) => (
-                            <option
-                              value={purpose.pantry_need_purpose_id}
-                              key={purpose.pantry_need_purpose_id}
-                              title={purpose.purpose_description}
-                            >
-                              {purpose.purpose_name_vi}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          aria-label={`Số lượng dòng ${index + 1}`}
-                          type="number"
-                          min="0.000001"
-                          step="0.000001"
-                          value={row.requested_quantity}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            updateRow(
-                              index,
-                              "requested_quantity",
-                              event.target.value,
-                            )
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          aria-label={`Ghi chú dòng ${index + 1}`}
-                          value={row.note}
-                          required={purpose?.note_rule === "REQUIRED"}
-                          disabled={
-                            !canEdit || purpose?.note_rule === "PROHIBITED"
-                          }
-                          placeholder={
-                            purpose?.note_rule === "REQUIRED"
-                              ? "Bắt buộc theo Mục đích"
-                              : purpose?.note_rule === "PROHIBITED"
-                                ? "Không được phép theo Mục đích"
-                                : "Không bắt buộc"
-                          }
-                          onChange={(event) =>
-                            updateRow(index, "note", event.target.value)
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          aria-label={`Tham chiếu dòng ${index + 1}`}
-                          value={row.source_request_reference}
-                          disabled={!canEdit}
-                          onChange={(event) =>
-                            updateRow(
-                              index,
-                              "source_request_reference",
-                              event.target.value,
-                            )
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          aria-label={`Xóa dòng ${index + 1}`}
-                          disabled={!canEdit}
-                          onClick={() =>
-                            markEdited(
-                              rows.filter(
-                                (_candidate, rowIndex) => rowIndex !== index,
-                              ),
-                            )
-                          }
-                        >
-                          Xóa
-                        </button>
-                      </td>
+        <div
+          className={`planning-decision-layout${preview ? " has-review" : ""}`}
+          role="group"
+          aria-label="Bảng và phần xem thay đổi Nhu cầu bổ sung"
+        >
+          <div className="planning-decision-work">
+            {visibleRowEntries.length === 0 ? (
+              <p className={`empty${noAdditions ? " pantry-zero-state" : ""}`}>
+                {noAdditions
+                  ? "Đã xác nhận không có bổ sung; hãy xem thay đổi trước khi lưu."
+                  : "Chưa có dòng bổ sung."}
+              </p>
+            ) : (
+              <div
+                className="planning-grid-scroll planning-dense-table-surface"
+                role="region"
+                aria-label="Bảng nhu cầu bổ sung"
+              >
+                <table className="compact-table pantry-table">
+                  <thead>
+                    <tr>
+                      <th>Ngày phục vụ</th>
+                      <th>Trường / điểm giao</th>
+                      <th>Nguyên liệu / đơn vị</th>
+                      <th>Mục đích</th>
+                      <th>Số lượng</th>
+                      <th>Ghi chú</th>
+                      <th>Tham chiếu</th>
+                      <th />
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {visibleRowEntries.map(({ row, index }) => {
+                      const school = data.schools.find(
+                        (item) => item.school_id === row.school_id,
+                      );
+                      const ingredient = data.ingredients.find(
+                        (item) => item.ingredient_id === row.ingredient_id,
+                      );
+                      const purpose = purposes.find(
+                        (item) =>
+                          item.pantry_need_purpose_id ===
+                          row.pantry_need_purpose_id,
+                      );
+                      return (
+                        <tr key={`${row.source_row_reference}:${index}`}>
+                          <td>
+                            <select
+                              aria-label={`Ngày phục vụ dòng ${index + 1}`}
+                              value={row.service_date}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateRow(
+                                  index,
+                                  "service_date",
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              {serviceDates.map((date) => (
+                                <option value={date} key={date}>
+                                  {dateVi(date)}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            <select
+                              aria-label={`Trường dòng ${index + 1}`}
+                              value={row.school_id}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateRow(
+                                  index,
+                                  "school_id",
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              {scopedSchools.map((item) => (
+                                <option
+                                  value={item.school_id}
+                                  key={item.school_id}
+                                >
+                                  {item.school_code} · {item.school_name}
+                                </option>
+                              ))}
+                            </select>
+                            <small
+                              className="pantry-derived-value"
+                              data-derived="delivery-location"
+                            >
+                              {school?.default_delivery_location
+                                .location_name ?? "—"}
+                            </small>
+                          </td>
+                          <td>
+                            <select
+                              aria-label={`Nguyên liệu dòng ${index + 1}`}
+                              value={row.ingredient_id}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateRow(
+                                  index,
+                                  "ingredient_id",
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              {data.ingredients.map((item) => (
+                                <option
+                                  value={item.ingredient_id}
+                                  key={item.ingredient_id}
+                                >
+                                  {item.ingredient_code} ·{" "}
+                                  {item.ingredient_name}
+                                </option>
+                              ))}
+                            </select>
+                            <small
+                              className="pantry-derived-value"
+                              data-derived="purchase-unit"
+                            >
+                              {ingredient?.purchase_unit.unit_name ?? "—"}
+                            </small>
+                          </td>
+                          <td>
+                            <select
+                              aria-label={`Mục đích dòng ${index + 1}`}
+                              value={row.pantry_need_purpose_id}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateRow(
+                                  index,
+                                  "pantry_need_purpose_id",
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              {purposes.map((purpose) => (
+                                <option
+                                  value={purpose.pantry_need_purpose_id}
+                                  key={purpose.pantry_need_purpose_id}
+                                  title={purpose.purpose_description}
+                                >
+                                  {purpose.purpose_name_vi}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            <input
+                              aria-label={`Số lượng dòng ${index + 1}`}
+                              type="number"
+                              min="0.000001"
+                              step="0.000001"
+                              value={row.requested_quantity}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateRow(
+                                  index,
+                                  "requested_quantity",
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              aria-label={`Ghi chú dòng ${index + 1}`}
+                              value={row.note}
+                              required={purpose?.note_rule === "REQUIRED"}
+                              disabled={
+                                !canEdit || purpose?.note_rule === "PROHIBITED"
+                              }
+                              placeholder={
+                                purpose?.note_rule === "REQUIRED"
+                                  ? "Bắt buộc theo Mục đích"
+                                  : purpose?.note_rule === "PROHIBITED"
+                                    ? "Không được phép theo Mục đích"
+                                    : "Không bắt buộc"
+                              }
+                              onChange={(event) =>
+                                updateRow(index, "note", event.target.value)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              aria-label={`Tham chiếu dòng ${index + 1}`}
+                              value={row.source_request_reference}
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateRow(
+                                  index,
+                                  "source_request_reference",
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              aria-label={`Xóa dòng ${index + 1}`}
+                              disabled={!canEdit}
+                              onClick={() =>
+                                markEdited(
+                                  rows.filter(
+                                    (_candidate, rowIndex) =>
+                                      rowIndex !== index,
+                                  ),
+                                )
+                              }
+                            >
+                              Xóa
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
 
-        {preview && (
-          <section
-            className="planning-review pantry-review"
-            aria-label="Xem thay đổi Nhu cầu bổ sung"
-          >
-            <div className="planning-review-heading">
-              <strong>Xem thay đổi</strong>
-              <span>{preview.canonical_rows.length} dòng sau khi lưu</span>
-            </div>
-            <p className="pantry-review-summary">
-              {preview.comparison.new_lines.length} dòng mới ·{" "}
-              {preview.comparison.changed_lines.length} dòng thay đổi ·{" "}
-              {preview.comparison.omitted_lines.length} dòng sẽ bỏ
-            </p>
-            <PantryIssues
-              title="Lỗi chặn"
-              issues={preview.issues.blockers}
-              tone="danger"
-            />
-            <PantryIssues
-              title="Cảnh báo"
-              issues={preview.issues.warnings}
-              tone="warning"
-            />
-            <details className="planning-preview-summary">
-              <summary>Chi tiết đối chiếu kỹ thuật</summary>
-              <span>
-                {preview.comparison.status} · Không đổi{" "}
-                {preview.comparison.unchanged_lines.length}
-              </span>
-              <code>{preview.source_signature}</code>
-            </details>
-          </section>
-        )}
-        <PlanningCorrectionImpactPanel
-          impact={correctionImpact}
-          busy={saving}
-          onPrepare={(chain) => void prepareCorrection(chain)}
-        />
+          {preview && (
+            <aside className="planning-decision-review">
+              <section
+                className="planning-review pantry-review"
+                aria-label="Xem thay đổi Nhu cầu bổ sung"
+              >
+                <div className="planning-review-heading">
+                  <strong>Xem thay đổi</strong>
+                  <span>{preview.canonical_rows.length} dòng sau khi lưu</span>
+                </div>
+                <p className="pantry-review-summary">
+                  {preview.comparison.new_lines.length} dòng mới ·{" "}
+                  {preview.comparison.changed_lines.length} dòng thay đổi ·{" "}
+                  {preview.comparison.omitted_lines.length} dòng sẽ bỏ
+                </p>
+                <PantryIssues
+                  title="Lỗi chặn"
+                  issues={preview.issues.blockers}
+                  tone="danger"
+                />
+                <PantryIssues
+                  title="Cảnh báo"
+                  issues={preview.issues.warnings}
+                  tone="warning"
+                />
+                <details className="planning-preview-summary">
+                  <summary>Chi tiết đối chiếu kỹ thuật</summary>
+                  <span>
+                    {preview.comparison.status} · Không đổi{" "}
+                    {preview.comparison.unchanged_lines.length}
+                  </span>
+                  <code>{preview.source_signature}</code>
+                </details>
+                <button
+                  type="button"
+                  className="secondary planning-review-back"
+                  onClick={() => {
+                    setPreview(null);
+                    setCorrectionImpact(null);
+                  }}
+                >
+                  Quay lại
+                </button>
+              </section>
+              <PlanningCorrectionImpactPanel
+                impact={correctionImpact}
+                busy={saving}
+                onPrepare={(chain) => void prepareCorrection(chain)}
+              />
+            </aside>
+          )}
+        </div>
 
         <details className="planning-evidence pantry-support-disclosure">
-          <summary>Chi tiết hỗ trợ và lịch sử</summary>
+          <summary>Nguồn &amp; lịch sử</summary>
           <div className="pantry-support-content">
             <section
               className="pantry-support-section"
@@ -853,7 +889,7 @@ export function PantryWorkbench({
             </section>
           </div>
         </details>
-      </Panel>
+      </section>
     </div>
   );
 }

@@ -129,7 +129,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       "review-planning-school-2",
       "review-planning-school-3",
     ]);
-    await screen.findByRole("heading", { name: "Nhu cầu bổ sung" });
+    await screen.findByRole("region", {
+      name: "Bề mặt làm việc Nhu cầu bổ sung",
+    });
     fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
 
     expect(screen.getByRole("combobox", { name: "Trường dòng 2" })).toHaveValue(
@@ -150,7 +152,9 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     renderPantry();
 
     expect(
-      await screen.findByRole("heading", { name: "Nhu cầu bổ sung" }),
+      await screen.findByRole("region", {
+        name: "Bề mặt làm việc Nhu cầu bổ sung",
+      }),
     ).toBeVisible();
     expect(screen.queryByText(/^Pantry$/)).not.toBeInTheDocument();
     const actionHost = screen.getByLabelText("Hành động bước hiện tại");
@@ -191,9 +195,11 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
 
   it("keeps support and history behind one secondary disclosure", async () => {
     renderPantry();
-    await screen.findByRole("heading", { name: "Nhu cầu bổ sung" });
+    await screen.findByRole("region", {
+      name: "Bề mặt làm việc Nhu cầu bổ sung",
+    });
 
-    const summary = screen.getByText("Chi tiết hỗ trợ và lịch sử");
+    const summary = screen.getByText("Nguồn & lịch sử");
     const disclosure = summary.closest("details");
     expect(disclosure).not.toHaveAttribute("open");
     expect(
@@ -266,6 +272,19 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByLabelText("Xem thay đổi Nhu cầu bổ sung");
+    const decisionLayout = screen.getByRole("group", {
+      name: "Bảng và phần xem thay đổi Nhu cầu bổ sung",
+    });
+    expect(decisionLayout).toHaveClass("has-review");
+    expect(
+      within(decisionLayout).getByLabelText("Bảng nhu cầu bổ sung"),
+    ).toBeVisible();
+    expect(
+      within(decisionLayout).getByLabelText("Xem thay đổi Nhu cầu bổ sung"),
+    ).toBeVisible();
+    expect(
+      within(decisionLayout).getByRole("button", { name: "Quay lại" }),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));

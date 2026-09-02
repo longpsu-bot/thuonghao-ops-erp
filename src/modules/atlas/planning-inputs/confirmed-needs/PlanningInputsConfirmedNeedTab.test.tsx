@@ -220,8 +220,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     const tabs = screen.getAllByRole("tab");
     expect(tabs).toHaveLength(4);
     expect(tabs[3]).toHaveAccessibleName("Xác nhận nhu cầu");
-    expect(tabs[3]).toHaveTextContent("Xác nhận");
-    expect(tabs[3]).not.toHaveTextContent("Xác nhận nhu cầu");
+    expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
     fireEvent.click(tabs[3]!);
     expect(
       await screen.findByText("Chưa có nhu cầu cho tuần đã chọn."),
