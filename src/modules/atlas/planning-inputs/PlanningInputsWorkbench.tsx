@@ -24,7 +24,6 @@ import {
   Chip,
   CompactTable,
   OperationalState,
-  Panel,
   WorkbenchHeader,
 } from "../WorkbenchComponents";
 import {
@@ -89,6 +88,22 @@ import {
 } from "./planningCorrectionApi";
 
 type TabId = "menu" | "attendance" | "pantry" | "confirmed-needs";
+const planningJobTitles: Record<TabId, string> = {
+  menu: "Thực đơn tuần",
+  attendance: "Sĩ số",
+  pantry: "Nhu cầu bổ sung",
+  "confirmed-needs": "Xác nhận nhu cầu",
+};
+
+function foldPlanningSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLocaleLowerCase("vi")
+    .trim();
+}
 type LoadState = "idle" | "loading" | "ready" | "error";
 type ConfirmedNeedProjectionResolution =
   "idle" | "loading" | "ready" | "denied" | "error";
@@ -468,6 +483,7 @@ function ReviewSummary<T>({
   dishTypes,
   previousMenuRows,
   previousAttendanceRows,
+  onBack,
 }: {
   preview: PlanningPreview<T> | null;
   kind: "menu" | "attendance";
@@ -476,6 +492,7 @@ function ReviewSummary<T>({
   dishTypes: PlanningInputsWorkbenchData["dish_types"];
   previousMenuRows: MenuLine[];
   previousAttendanceRows: AttendanceLine[];
+  onBack: () => void;
 }) {
   if (!preview) return null;
   const menuChanges =
@@ -585,6 +602,13 @@ function ReviewSummary<T>({
         kind={kind}
         schools={schools}
       />
+      <button
+        type="button"
+        className="secondary planning-review-back"
+        onClick={onBack}
+      >
+        Quay lại
+      </button>
     </section>
   );
 }
@@ -780,6 +804,7 @@ export function PlanningInputsWorkbenchView({
     status: "idle",
   });
   const [attendancePaste, setAttendancePaste] = useState("");
+  const [attendanceSearch, setAttendanceSearch] = useState("");
   const [serviceDateFilter, setServiceDateFilter] = useState(weekStart);
   const generation = useRef(0);
   const confirmedNeedGeneration = useRef(0);
@@ -1135,15 +1160,28 @@ export function PlanningInputsWorkbenchView({
       }),
     [data.week_start],
   );
-  const filteredAttendanceRows = useMemo(
-    () =>
-      attendanceRows.filter(
-        (line) =>
-          line.service_date === serviceDateFilter &&
-          schoolInPlanningScope(line.school_id, schoolScopeIds),
-      ),
-    [attendanceRows, schoolScopeIds, serviceDateFilter],
-  );
+  const filteredAttendanceRows = useMemo(() => {
+    const query = foldPlanningSearch(attendanceSearch);
+    return attendanceRows.filter((line) => {
+      const school = data.schools.find(
+        (candidate) => candidate.school_id === line.school_id,
+      );
+      const schoolText = foldPlanningSearch(
+        `${school?.school_code ?? ""} ${school?.school_name ?? line.school_id}`,
+      );
+      return (
+        line.service_date === serviceDateFilter &&
+        schoolInPlanningScope(line.school_id, schoolScopeIds) &&
+        (!query || schoolText.includes(query))
+      );
+    });
+  }, [
+    attendanceRows,
+    attendanceSearch,
+    data.schools,
+    schoolScopeIds,
+    serviceDateFilter,
+  ]);
   const attendanceTotals = useMemo(
     () =>
       filteredAttendanceRows.reduce(
@@ -1183,14 +1221,12 @@ export function PlanningInputsWorkbenchView({
   const pantryWorkflow = pantryWorkflowState(selectedPreflight);
   const confirmedNeedWorkflow = confirmedNeedWorkflowState(selectedPreflight);
   const workflowItems: PlanningWorkflowItem<TabId>[] = [
-    { id: "menu", step: 1, label: "Thực đơn", ...menuWorkflow },
-    { id: "attendance", step: 2, label: "Sĩ số", ...attendanceWorkflow },
-    { id: "pantry", step: 3, label: "Bổ sung", ...pantryWorkflow },
+    { id: "menu", label: "Thực đơn", ...menuWorkflow },
+    { id: "attendance", label: "Sĩ số", ...attendanceWorkflow },
+    { id: "pantry", label: "Bổ sung", ...pantryWorkflow },
     {
       id: "confirmed-needs",
-      step: 4,
       label: "Xác nhận nhu cầu",
-      compactLabel: "Xác nhận",
       ...confirmedNeedWorkflow,
     },
   ];
@@ -1601,7 +1637,7 @@ export function PlanningInputsWorkbenchView({
         <div className="planning-compact-header">
           <WorkbenchHeader
             eyebrow="Lập nhu cầu"
-            title="Lập nhu cầu theo tuần"
+            title={planningJobTitles[tab]}
             context="Hoàn tất nguồn đầu vào và xác nhận nhu cầu cho tuần phục vụ đã chọn."
             headingLevel={1}
           />
@@ -1728,15 +1764,18 @@ export function PlanningInputsWorkbenchView({
             )}
 
             {tab === "menu" && load !== "error" && (
-              <Panel
-                title="Thực đơn tuần"
-                description="Chọn món theo trường và ngày phục vụ, xem rõ các thay đổi rồi lưu cho Kế hoạch."
-                status={
+              <section
+                className="planning-job-surface planning-menu-surface"
+                aria-label="Bề mặt làm việc Thực đơn tuần"
+              >
+                <div
+                  className="planning-job-status"
+                  aria-label="Trạng thái Thực đơn tuần"
+                >
                   <Chip tone={statusTone(data.weekly_menu?.weekly_menu_status)}>
                     {statusLabel(data.weekly_menu?.weekly_menu_status)}
                   </Chip>
-                }
-              >
+                </div>
                 {dirty && (
                   <p className="planning-dirty-notice" role="status">
                     Có thay đổi chưa lưu trong nguồn đang làm việc.
@@ -1872,100 +1911,133 @@ export function PlanningInputsWorkbenchView({
                     Không có Loại món đang hoạt động để tạo cột Thực đơn tuần.
                   </p>
                 )}
-                {menuKeys.length === 0 ? (
-                  <p className="empty">
-                    Không có trường hoạt động phù hợp bộ lọc.
-                  </p>
-                ) : (
-                  <div
-                    className="planning-grid-scroll planning-dense-table-surface"
-                    role="region"
-                    aria-label="Lưới thực đơn"
-                  >
-                    <CompactTable
-                      headers={[
-                        "Trường",
-                        ...activeDishTypes.map(
-                          (dishType) => dishType.dish_type_name,
-                        ),
-                      ]}
-                    >
-                      {menuKeys.map((key) => {
-                        const [schoolId, serviceDate] = key.split("|");
-                        const school = data.schools.find(
-                          (item) => item.school_id === schoolId,
-                        );
-                        return (
-                          <tr key={key}>
-                            <th scope="row">
-                              {school?.school_name ?? schoolId}
-                            </th>
-                            {activeDishTypes.map((dishType) => {
-                              const line = menuRows.find(
-                                (item) =>
-                                  item.school_id === schoolId &&
-                                  item.service_date === serviceDate &&
-                                  item.menu_slot_code ===
-                                    dishType.dish_type_code,
-                              );
-                              const matchingDishes = activeDishes.filter(
-                                (dish) =>
-                                  dish.dish_type_id === dishType.dish_type_id,
-                              );
-                              const selectedDish = line
-                                ? activeDishes.find(
-                                    (dish) => dish.dish_id === line.dish_id,
-                                  )
-                                : undefined;
-                              const selectedMismatch =
-                                selectedDish &&
-                                selectedDish.dish_type_id !==
-                                  dishType.dish_type_id;
-                              return (
-                                <td key={dishType.dish_type_code}>
-                                  <select
-                                    aria-label={`${dishType.dish_type_name} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
-                                    value={line?.dish_id ?? ""}
-                                    onChange={(event) =>
-                                      updateMenuCell(
-                                        schoolId,
-                                        serviceDate,
+                <div
+                  className={`planning-decision-layout${menuPreview ? " has-review" : ""}`}
+                  role="group"
+                  aria-label="Bảng và phần xem thay đổi thực đơn"
+                >
+                  <div className="planning-decision-work">
+                    {menuKeys.length === 0 ? (
+                      <p className="empty">
+                        Không có trường hoạt động phù hợp bộ lọc.
+                      </p>
+                    ) : (
+                      <div
+                        className="planning-grid-scroll planning-dense-table-surface"
+                        role="region"
+                        aria-label="Lưới thực đơn"
+                      >
+                        <CompactTable
+                          headers={[
+                            "Trường",
+                            ...activeDishTypes.map(
+                              (dishType) => dishType.dish_type_name,
+                            ),
+                          ]}
+                        >
+                          {menuKeys.map((key) => {
+                            const [schoolId, serviceDate] = key.split("|");
+                            const school = data.schools.find(
+                              (item) => item.school_id === schoolId,
+                            );
+                            return (
+                              <tr key={key}>
+                                <th scope="row">
+                                  {school?.school_name ?? schoolId}
+                                </th>
+                                {activeDishTypes.map((dishType) => {
+                                  const line = menuRows.find(
+                                    (item) =>
+                                      item.school_id === schoolId &&
+                                      item.service_date === serviceDate &&
+                                      item.menu_slot_code ===
                                         dishType.dish_type_code,
-                                        event.target.value,
+                                  );
+                                  const matchingDishes = activeDishes.filter(
+                                    (dish) =>
+                                      dish.dish_type_id ===
+                                      dishType.dish_type_id,
+                                  );
+                                  const selectedDish = line
+                                    ? activeDishes.find(
+                                        (dish) => dish.dish_id === line.dish_id,
                                       )
-                                    }
-                                    disabled={saving || refreshRequired}
-                                  >
-                                    <option value="">—</option>
-                                    {selectedMismatch && selectedDish && (
-                                      <option
-                                        value={selectedDish.dish_id}
-                                        disabled
+                                    : undefined;
+                                  const selectedMismatch =
+                                    selectedDish &&
+                                    selectedDish.dish_type_id !==
+                                      dishType.dish_type_id;
+                                  return (
+                                    <td key={dishType.dish_type_code}>
+                                      <select
+                                        aria-label={`${dishType.dish_type_name} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
+                                        value={line?.dish_id ?? ""}
+                                        onChange={(event) =>
+                                          updateMenuCell(
+                                            schoolId,
+                                            serviceDate,
+                                            dishType.dish_type_code,
+                                            event.target.value,
+                                          )
+                                        }
+                                        disabled={saving || refreshRequired}
                                       >
-                                        ⚠ {selectedDish.dish_name} — không khớp
-                                        Loại món
-                                      </option>
-                                    )}
-                                    {matchingDishes.map((dish) => (
-                                      <option
-                                        value={dish.dish_id}
-                                        key={dish.dish_id}
-                                      >
-                                        {dish.dish_name}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </CompactTable>
+                                        <option value="">—</option>
+                                        {selectedMismatch && selectedDish && (
+                                          <option
+                                            value={selectedDish.dish_id}
+                                            disabled
+                                          >
+                                            ⚠ {selectedDish.dish_name} — không
+                                            khớp Loại món
+                                          </option>
+                                        )}
+                                        {matchingDishes.map((dish) => (
+                                          <option
+                                            value={dish.dish_id}
+                                            key={dish.dish_id}
+                                          >
+                                            {dish.dish_name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </CompactTable>
+                      </div>
+                    )}
                   </div>
-                )}
+                  {menuPreview && (
+                    <aside className="planning-decision-review">
+                      <ReviewSummary
+                        preview={menuPreview}
+                        kind="menu"
+                        schools={data.schools}
+                        dishes={data.dishes}
+                        dishTypes={data.dish_types}
+                        previousMenuRows={activeMenuRows(data.weekly_menu)}
+                        previousAttendanceRows={[]}
+                        onBack={() => {
+                          setMenuPreview(null);
+                          setMenuCorrectionImpact(null);
+                        }}
+                      />
+                      <PlanningCorrectionImpactPanel
+                        impact={menuCorrectionImpact}
+                        busy={saving}
+                        onPrepare={(chain) =>
+                          void prepareCorrection("menu", chain)
+                        }
+                      />
+                    </aside>
+                  )}
+                </div>
                 <details className="planning-support-region">
-                  <summary>Chi tiết hỗ trợ</summary>
+                  <summary>Nguồn &amp; lịch sử</summary>
                   <div className="planning-support-content">
                     <SourceSummary source={data.weekly_menu} />
                     {googleFetch.status === "success" && (
@@ -2010,28 +2082,18 @@ export function PlanningInputsWorkbenchView({
                     />
                   </div>
                 </details>
-                <ReviewSummary
-                  preview={menuPreview}
-                  kind="menu"
-                  schools={data.schools}
-                  dishes={data.dishes}
-                  dishTypes={data.dish_types}
-                  previousMenuRows={activeMenuRows(data.weekly_menu)}
-                  previousAttendanceRows={[]}
-                />
-                <PlanningCorrectionImpactPanel
-                  impact={menuCorrectionImpact}
-                  busy={saving}
-                  onPrepare={(chain) => void prepareCorrection("menu", chain)}
-                />
-              </Panel>
+              </section>
             )}
 
             {tab === "attendance" && load !== "error" && (
-              <Panel
-                title="Sĩ số"
-                description="Sĩ số làm việc đã có sẵn theo thực đơn. Tìm trường, sửa số suất thực tế, xem thay đổi rồi lưu cho Kế hoạch."
-                status={
+              <section
+                className="planning-job-surface planning-attendance-surface"
+                aria-label="Bề mặt làm việc Sĩ số"
+              >
+                <div
+                  className="planning-job-status"
+                  aria-label="Trạng thái Sĩ số"
+                >
                   <Chip
                     tone={
                       needsAttendanceConfirmation
@@ -2043,8 +2105,7 @@ export function PlanningInputsWorkbenchView({
                       ? "CẦN XEM & LƯU"
                       : statusLabel(data.attendance?.attendance_status)}
                   </Chip>
-                }
-              >
+                </div>
                 {needsAttendanceConfirmation && (
                   <p className="planning-dirty-notice" role="status">
                     Có sĩ số mặc định mới theo thực đơn chưa được lưu.
@@ -2085,6 +2146,18 @@ export function PlanningInputsWorkbenchView({
                   className="planning-workbench-toolbar attendance-toolbar"
                   aria-label="Tìm kiếm, rà soát và lưu sĩ số"
                 >
+                  <label className="attendance-local-search">
+                    Tìm trường
+                    <input
+                      type="search"
+                      aria-label="Tìm trong sĩ số"
+                      placeholder="Mã hoặc tên trường"
+                      value={attendanceSearch}
+                      onChange={(event) =>
+                        setAttendanceSearch(event.target.value)
+                      }
+                    />
+                  </label>
                   <details className="attendance-paste">
                     <summary>Dán hàng loạt từ bảng tính</summary>
                     <p>
@@ -2125,96 +2198,133 @@ export function PlanningInputsWorkbenchView({
                     </button>
                   )}
                 </div>
-                {filteredAttendanceRows.length === 0 ? (
-                  <p className="empty">
-                    {attendanceRows.length === 0
-                      ? "Chưa có trường/ngày có thực đơn trong tuần này."
-                      : "Không tìm thấy trường phù hợp."}
-                  </p>
-                ) : (
-                  <div
-                    className="planning-grid-scroll attendance-grid-scroll planning-dense-table-surface"
-                    role="region"
-                    aria-label="Danh sách sĩ số"
-                  >
-                    <CompactTable
-                      headers={[
-                        "Trường",
-                        "Học sinh mặc định",
-                        "Học sinh thực tế",
-                        "Giáo viên",
-                        "Tổng suất",
-                      ]}
-                    >
-                      {filteredAttendanceRows.map((line) => {
-                        const school = data.schools.find(
-                          (item) => item.school_id === line.school_id,
-                        );
-                        const defaultLine =
-                          data.default_attendance_preview.find(
-                            (candidate) =>
-                              candidate.school_id === line.school_id &&
-                              candidate.service_date === line.service_date,
-                          );
-                        const editable = !saving && !refreshRequired;
-                        return (
-                          <tr key={`${line.school_id}:${line.service_date}`}>
-                            <th scope="row">
-                              {school?.school_name ?? line.school_id}
-                            </th>
-                            <td>{defaultLine?.student_portions ?? "—"}</td>
-                            <td>
-                              <input
-                                aria-label={`Suất học sinh · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
-                                type="number"
-                                min="0"
-                                value={
-                                  Number.isNaN(line.student_portions)
-                                    ? ""
-                                    : line.student_portions
-                                }
-                                disabled={!editable}
-                                onChange={(event) =>
-                                  updateAttendance(
-                                    line,
-                                    "student_portions",
-                                    event.target.value,
-                                  )
-                                }
-                              />
-                            </td>
-                            <td>
-                              <input
-                                aria-label={`Suất giáo viên · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
-                                type="number"
-                                min="0"
-                                value={
-                                  Number.isNaN(line.teacher_portions)
-                                    ? ""
-                                    : line.teacher_portions
-                                }
-                                disabled={!editable}
-                                onChange={(event) =>
-                                  updateAttendance(
-                                    line,
-                                    "teacher_portions",
-                                    event.target.value,
-                                  )
-                                }
-                              />
-                            </td>
-                            <td>
-                              {Number.isFinite(line.student_portions) &&
-                              Number.isFinite(line.teacher_portions)
-                                ? line.student_portions + line.teacher_portions
-                                : "Cần nhập"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </CompactTable>
+                <div
+                  className={`planning-decision-layout${attendancePreview ? " has-review" : ""}`}
+                  role="group"
+                  aria-label="Bảng và phần xem thay đổi sĩ số"
+                >
+                  <div className="planning-decision-work">
+                    {filteredAttendanceRows.length === 0 ? (
+                      <p className="empty">
+                        {attendanceRows.length === 0
+                          ? "Chưa có trường/ngày có thực đơn trong tuần này."
+                          : "Không tìm thấy trường phù hợp."}
+                      </p>
+                    ) : (
+                      <div
+                        className="planning-grid-scroll attendance-grid-scroll planning-dense-table-surface"
+                        role="region"
+                        aria-label="Danh sách sĩ số"
+                      >
+                        <CompactTable
+                          headers={[
+                            "Trường",
+                            "Học sinh mặc định",
+                            "Học sinh thực tế",
+                            "Giáo viên",
+                            "Tổng suất",
+                          ]}
+                        >
+                          {filteredAttendanceRows.map((line) => {
+                            const school = data.schools.find(
+                              (item) => item.school_id === line.school_id,
+                            );
+                            const defaultLine =
+                              data.default_attendance_preview.find(
+                                (candidate) =>
+                                  candidate.school_id === line.school_id &&
+                                  candidate.service_date === line.service_date,
+                              );
+                            const editable = !saving && !refreshRequired;
+                            return (
+                              <tr
+                                key={`${line.school_id}:${line.service_date}`}
+                              >
+                                <th scope="row">
+                                  {school?.school_name ?? line.school_id}
+                                </th>
+                                <td>{defaultLine?.student_portions ?? "—"}</td>
+                                <td>
+                                  <input
+                                    aria-label={`Suất học sinh · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
+                                    type="number"
+                                    min="0"
+                                    value={
+                                      Number.isNaN(line.student_portions)
+                                        ? ""
+                                        : line.student_portions
+                                    }
+                                    disabled={!editable}
+                                    onChange={(event) =>
+                                      updateAttendance(
+                                        line,
+                                        "student_portions",
+                                        event.target.value,
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    aria-label={`Suất giáo viên · ${school?.school_name ?? line.school_id} · ${viDate(line.service_date)}`}
+                                    type="number"
+                                    min="0"
+                                    value={
+                                      Number.isNaN(line.teacher_portions)
+                                        ? ""
+                                        : line.teacher_portions
+                                    }
+                                    disabled={!editable}
+                                    onChange={(event) =>
+                                      updateAttendance(
+                                        line,
+                                        "teacher_portions",
+                                        event.target.value,
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  {Number.isFinite(line.student_portions) &&
+                                  Number.isFinite(line.teacher_portions)
+                                    ? line.student_portions +
+                                      line.teacher_portions
+                                    : "Cần nhập"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </CompactTable>
+                      </div>
+                    )}
                   </div>
-                )}
+                  {attendancePreview && (
+                    <aside className="planning-decision-review">
+                      <ReviewSummary
+                        preview={attendancePreview}
+                        kind="attendance"
+                        schools={data.schools}
+                        dishes={data.dishes}
+                        dishTypes={data.dish_types}
+                        previousMenuRows={[]}
+                        previousAttendanceRows={activeAttendanceRows(
+                          data.attendance,
+                        )}
+                        onBack={() => {
+                          setAttendancePreview(null);
+                          setAttendanceCorrectionImpact(null);
+                        }}
+                      />
+                      <PlanningCorrectionImpactPanel
+                        impact={attendanceCorrectionImpact}
+                        busy={saving}
+                        onPrepare={(chain) =>
+                          void prepareCorrection("attendance", chain)
+                        }
+                      />
+                    </aside>
+                  )}
+                </div>
                 {attendanceRows.length > 0 && (
                   <p className="planning-attendance-totals">
                     Tổng: <b>{attendanceTotals.students}</b> suất học sinh ·{" "}
@@ -2226,7 +2336,7 @@ export function PlanningInputsWorkbenchView({
                   </p>
                 )}
                 <details className="planning-support-region">
-                  <summary>Chi tiết hỗ trợ</summary>
+                  <summary>Nguồn &amp; lịch sử</summary>
                   <div className="planning-support-content">
                     <SourceSummary source={data.attendance} />
                     {browserChecksum && (
@@ -2242,23 +2352,7 @@ export function PlanningInputsWorkbenchView({
                     />
                   </div>
                 </details>
-                <ReviewSummary
-                  preview={attendancePreview}
-                  kind="attendance"
-                  schools={data.schools}
-                  dishes={data.dishes}
-                  dishTypes={data.dish_types}
-                  previousMenuRows={[]}
-                  previousAttendanceRows={activeAttendanceRows(data.attendance)}
-                />
-                <PlanningCorrectionImpactPanel
-                  impact={attendanceCorrectionImpact}
-                  busy={saving}
-                  onPrepare={(chain) =>
-                    void prepareCorrection("attendance", chain)
-                  }
-                />
-              </Panel>
+              </section>
             )}
 
             {tab === "pantry" && (

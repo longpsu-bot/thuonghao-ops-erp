@@ -193,7 +193,7 @@ describe("Atlas master-data shell", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Lập nhu cầu theo tuần",
+        name: "Thực đơn tuần",
       }),
     ).toBeVisible();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -229,7 +229,7 @@ describe("Atlas master-data shell", () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
 
     expect(
-      screen.getByRole("heading", { name: "Lập nhu cầu theo tuần" }),
+      screen.getByRole("heading", { level: 1, name: "Thực đơn tuần" }),
     ).toBeInTheDocument();
     expect(
       (await screen.findAllByText("Canh bí đỏ thịt bằm")).length,
@@ -251,10 +251,11 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
     expect(
-      screen.getByText(
-        "Sĩ số làm việc đã có sẵn theo thực đơn. Tìm trường, sửa số suất thực tế, xem thay đổi rồi lưu cho Kế hoạch.",
-      ),
-    ).toBeInTheDocument();
+      screen.getByRole("heading", { level: 1, name: "Sĩ số" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("searchbox", { name: "Tìm trong sĩ số" }),
+    ).toBeVisible();
     const studentInput = screen.getAllByLabelText(/Suất học sinh ·/)[0];
     fireEvent.change(studentInput, { target: { value: "421" } });
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));

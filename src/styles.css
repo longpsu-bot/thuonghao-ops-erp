@@ -2961,7 +2961,7 @@ tbody tr.selected-row {
   container-type: inline-size;
   gap: 8px;
   min-width: 0;
-  --planning-rail-height: 54px;
+  --planning-rail-height: 48px;
   --planning-control-height: 32px;
   --planning-row-height: 40px;
   --planning-header-row-height: 36px;
@@ -3065,8 +3065,8 @@ tbody tr.selected-row {
 }
 .planning-workflow-bar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(96px, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(4, minmax(112px, 1fr));
+  gap: 3px;
   max-width: 100%;
   overflow: hidden;
   border: 0;
@@ -3077,13 +3077,12 @@ tbody tr.selected-row {
   display: flex;
   width: 100%;
   min-width: 0;
-  height: 44px;
+  height: 38px;
   align-items: center;
-  gap: 7px;
-  padding: 5px 8px;
-  border: 0;
-  border-left: 1px solid var(--atlas-border);
-  border-radius: 0;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
   background: transparent;
   color: var(--atlas-text-muted);
   font: inherit;
@@ -3093,19 +3092,13 @@ tbody tr.selected-row {
   background: var(--atlas-surface-soft);
 }
 .planning-workflow-tab.active {
+  border-color: var(--planning-border);
   background: var(--atlas-primary-soft);
-  box-shadow: inset 0 2px var(--atlas-accent);
+  box-shadow: inset 0 -2px var(--atlas-primary);
   color: var(--atlas-primary);
 }
 .planning-workflow-tab.active::after {
-  position: absolute;
-  right: 8px;
-  bottom: 0;
-  left: 8px;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--atlas-primary);
-  content: "";
+  content: none;
 }
 .planning-workflow-tab:focus-visible {
   z-index: 1;
@@ -3114,23 +3107,6 @@ tbody tr.selected-row {
 }
 .planning-workflow-tab.active:focus-visible {
   outline: 0;
-}
-.planning-workflow-step {
-  display: inline-grid;
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  background: var(--atlas-surface);
-  font-size: 11px;
-  font-weight: 800;
-}
-.planning-workflow-tab.active .planning-workflow-step {
-  border-color: var(--atlas-primary);
-  background: var(--atlas-primary);
-  color: #fff;
 }
 .planning-workflow-copy {
   display: grid;
@@ -3149,7 +3125,7 @@ tbody tr.selected-row {
   line-height: 1.1;
 }
 .planning-workflow-copy span {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   line-height: 1.1;
 }
@@ -3217,6 +3193,61 @@ tbody tr.selected-row {
 .planning-grid-scroll {
   max-width: 100%;
   overflow: auto;
+}
+
+.planning-job-surface {
+  min-width: 0;
+}
+
+.planning-job-status {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 4px 2px -2px;
+}
+
+.planning-decision-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  align-items: start;
+  gap: 0;
+}
+
+.planning-decision-layout.has-review {
+  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr);
+  gap: 10px;
+}
+
+.planning-decision-work,
+.planning-decision-review {
+  min-width: 0;
+}
+
+.planning-decision-review {
+  position: sticky;
+  top: calc(var(--planning-rail-height) + 8px);
+  display: grid;
+  gap: 8px;
+}
+
+.planning-decision-review .planning-review {
+  margin-top: 8px;
+}
+
+.planning-review-back {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--planning-border);
+  border-radius: 7px;
+  background: var(--atlas-surface);
+  color: var(--atlas-primary);
+  font-weight: 700;
 }
 .planning-grid-scroll table {
   min-width: 920px;
@@ -5152,13 +5183,13 @@ tbody tr.selected-row {
   top: 0;
   display: grid;
   grid-template-areas: "context workflow actions";
-  grid-template-columns: 304px minmax(420px, 1fr) max-content;
+  grid-template-columns: minmax(300px, 0.8fr) minmax(390px, 1fr) max-content;
   align-items: center;
   box-sizing: border-box;
   height: var(--planning-rail-height);
   min-height: var(--planning-rail-height);
-  gap: 8px;
-  padding: 5px 8px;
+  gap: 6px;
+  padding: 4px 7px;
   border: 1px solid var(--planning-border);
   border-radius: var(--planning-radius);
   background: var(--atlas-surface);
@@ -5295,17 +5326,17 @@ tbody tr.selected-row {
   color: var(--atlas-primary);
 }
 
-@container (max-width: 1120px) {
+@container (max-width: 960px) {
   .planning-operating-rail {
     grid-template-areas:
       "context actions"
       "workflow workflow";
     grid-template-columns: minmax(0, 1fr) max-content;
     height: auto;
-    min-height: 96px;
+    min-height: 88px;
     align-items: center;
     overflow: visible;
-    padding: 7px 8px;
+    padding: 6px 7px;
   }
 
   .planning-operating-workflow {
@@ -5314,7 +5345,7 @@ tbody tr.selected-row {
   }
 }
 
-@container (max-width: 720px) {
+@container (max-width: 680px) {
   .planning-operating-rail {
     grid-template-areas:
       "context"
@@ -5947,7 +5978,7 @@ tbody tr.selected-row {
 
 /* PLANNING-UX-01C — complete Planning operator journey */
 .planning-inputs-workbench > .work-panel,
-.planning-inputs-workbench > .pantry-workbench > .work-panel {
+.planning-inputs-workbench > .pantry-workbench > .planning-job-surface {
   border: 1px solid var(--planning-border);
   border-radius: var(--planning-radius);
   background: var(--atlas-surface);
@@ -6091,7 +6122,7 @@ tbody tr.selected-row {
 }
 
 .planning-evidence summary,
-.pantry-workbench .work-panel > details summary,
+.pantry-workbench .planning-job-surface > details summary,
 .planning-preview-summary summary,
 .planning-history summary,
 .need-generation-period-disclosure > summary,
@@ -6233,15 +6264,19 @@ tbody tr.selected-row {
   color: var(--atlas-ink, #17222d);
 }
 
-.confirmed-need-heading h2,
+.confirmed-need-job-label,
 .confirmed-need-period,
 .confirmed-need-result-count {
   margin: 0;
 }
 
-.confirmed-need-heading h2 {
-  font-size: 18px;
-  line-height: 1.25;
+.confirmed-need-job-label {
+  color: var(--atlas-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .confirmed-need-period {
@@ -7514,6 +7549,24 @@ details.planning-source-group[open] {
   background: transparent;
 }
 
+.attendance-local-search {
+  display: grid;
+  min-width: 190px;
+  flex: 0 1 260px;
+  gap: 3px;
+  color: var(--atlas-text-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.attendance-local-search input {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--planning-border);
+  border-radius: 7px;
+  background: var(--atlas-surface);
+}
+
 .attendance-toolbar .attendance-paste[open] {
   flex-basis: 100%;
   padding: 8px 10px;
@@ -7674,7 +7727,7 @@ details.planning-source-group[open] {
 }
 
 .planning-evidence,
-.pantry-workbench .work-panel > details {
+.pantry-workbench .planning-job-surface > details {
   margin-top: 10px;
   padding: 9px 11px;
   border: 1px solid var(--planning-border);
@@ -7683,7 +7736,7 @@ details.planning-source-group[open] {
 }
 
 .planning-evidence summary,
-.pantry-workbench .work-panel > details summary {
+.pantry-workbench .planning-job-surface > details summary {
   cursor: pointer;
   color: var(--atlas-primary);
   font-size: 12px;
@@ -7772,7 +7825,7 @@ details.planning-source-group[open] {
   padding: 0 10px;
 }
 
-.pantry-workbench .work-panel > .pantry-support-disclosure > summary {
+.pantry-workbench .planning-job-surface > .pantry-support-disclosure > summary {
   display: flex;
   min-height: 38px;
   align-items: center;
@@ -7847,6 +7900,14 @@ details.planning-source-group[open] {
 
   .planning-confirmed-layout {
     grid-template-columns: 1fr;
+  }
+
+  .planning-decision-layout.has-review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planning-decision-review {
+    position: static;
   }
 }
 

@@ -444,37 +444,37 @@ export function ConfirmedNeedReviewWorkbench({
 
   if (currentNeedResolution === "loading" || (busy && !workbench))
     return (
-      <Panel title="Xác nhận nhu cầu">
+      <Panel title="Trạng thái dữ liệu">
         <p>Đang tải dữ liệu…</p>
       </Panel>
     );
   if (currentNeedResolution === "denied")
     return (
-      <Panel title="Xác nhận nhu cầu">
+      <Panel title="Trạng thái dữ liệu">
         <p>Bạn không có quyền xem dữ liệu này.</p>
       </Panel>
     );
   if (currentNeedResolution === "error")
     return (
-      <Panel title="Xác nhận nhu cầu">
+      <Panel title="Trạng thái dữ liệu">
         <p>Không thể tải nhu cầu hiện tại.</p>
       </Panel>
     );
   if (currentNeedResolution === "selection_required")
     return (
-      <Panel title="Xác nhận nhu cầu">
+      <Panel title="Trạng thái dữ liệu">
         <p>Chọn ngày phục vụ ở trên để mở nhu cầu xác nhận.</p>
       </Panel>
     );
   if (!initialBatchId || ["idle", "missing"].includes(currentNeedResolution))
     return (
-      <Panel title="Xác nhận nhu cầu">
+      <Panel title="Trạng thái dữ liệu">
         <p>Chưa có nhu cầu cho tuần đã chọn.</p>
       </Panel>
     );
   if (!workbench || workbench.confirmed_need_batch_id !== initialBatchId)
     return (
-      <Panel title="Xác nhận nhu cầu">
+      <Panel title="Trạng thái dữ liệu">
         <p>Đang tải dữ liệu…</p>
       </Panel>
     );
@@ -510,47 +510,48 @@ export function ConfirmedNeedReviewWorkbench({
     <section className="confirmed-need-shell" aria-label="Bàn xác nhận nhu cầu">
       <PlanningRailActionPortal>
         <div className="confirmed-need-rail-action">
-          {changedLines.length > 0 ? (
-            <button
-              type="button"
-              className={canSave ? "primary" : "secondary"}
-              onClick={() => void save()}
-              disabled={!canSave}
-              title={
-                backendCanSave
-                  ? undefined
-                  : actionReason(
-                      workbench.disabled_reason_codes.save_confirmed_needs,
-                      workbench.disabled_reasons.save_confirmed_needs,
-                    )
-              }
-            >
-              Lưu
-            </button>
-          ) : (
-            <button
-              type="button"
-              className={canRelease ? "primary" : "secondary"}
-              onClick={() => setReleaseConfirmation(true)}
-              disabled={!canRelease}
-              title={
-                backendCanRelease || released
-                  ? undefined
-                  : actionReason(
-                      workbench.disabled_reason_codes.release_confirmed_needs,
-                      workbench.disabled_reasons.release_confirmed_needs,
-                    )
-              }
-            >
-              Chuyển sang lên đơn
-            </button>
-          )}
+          {!released &&
+            (changedLines.length > 0 ? (
+              <button
+                type="button"
+                className={canSave ? "primary" : "secondary"}
+                onClick={() => void save()}
+                disabled={!canSave}
+                title={
+                  backendCanSave
+                    ? undefined
+                    : actionReason(
+                        workbench.disabled_reason_codes.save_confirmed_needs,
+                        workbench.disabled_reasons.save_confirmed_needs,
+                      )
+                }
+              >
+                Lưu
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={canRelease ? "primary" : "secondary"}
+                onClick={() => setReleaseConfirmation(true)}
+                disabled={!canRelease}
+                title={
+                  backendCanRelease || released
+                    ? undefined
+                    : actionReason(
+                        workbench.disabled_reason_codes.release_confirmed_needs,
+                        workbench.disabled_reasons.release_confirmed_needs,
+                      )
+                }
+              >
+                Chuyển sang lên đơn
+              </button>
+            ))}
         </div>
       </PlanningRailActionPortal>
 
       <header className="confirmed-need-heading">
         <div>
-          <h2>Xác nhận nhu cầu</h2>
+          <span className="confirmed-need-job-label">Ngày đang xác nhận</span>
           <p className="confirmed-need-period">
             Tuần {viDate(workbench.service_period.period_start)}–
             {viDate(workbench.service_period.period_end)}

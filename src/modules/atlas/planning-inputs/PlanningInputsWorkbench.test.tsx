@@ -125,12 +125,39 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("uses the active Planning job as the single page H1", async () => {
+    renderWorkbench();
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Thực đơn tuần",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { name: "Lập nhu cầu theo tuần" }),
+    ).not.toBeInTheDocument();
+
+    for (const [tab, heading] of [
+      ["Sĩ số", "Sĩ số"],
+      ["Bổ sung", "Nhu cầu bổ sung"],
+      ["Xác nhận nhu cầu", "Xác nhận nhu cầu"],
+    ] as const) {
+      fireEvent.click(screen.getByRole("tab", { name: tab }));
+      expect(
+        await screen.findByRole("heading", { level: 1, name: heading }),
+      ).toBeVisible();
+      expect(screen.getAllByRole("heading", { name: heading })).toHaveLength(1);
+    }
+  });
+
   it("uses one workflow/status row and defaults the display scope to all schools", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
     const pageTitle = screen.getByRole("heading", {
-      name: "Lập nhu cầu theo tuần",
+      level: 1,
+      name: "Thực đơn tuần",
     });
     const rail = screen.getByRole("region", {
       name: "Thanh điều hành Lập nhu cầu",
@@ -269,13 +296,13 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
 
     expect(
       screen
-        .getByRole("heading", { name: "Lập nhu cầu theo tuần" })
+        .getByRole("heading", { level: 1, name: "Thực đơn tuần" })
         .closest(".planning-compact-header"),
     ).not.toBeNull();
     expect(
       screen.getByText("Thực đơn tuần chưa có phân công hợp lệ."),
     ).toBeVisible();
-    const supportSummary = screen.getByText("Chi tiết hỗ trợ");
+    const supportSummary = screen.getByText("Nguồn & lịch sử");
     const support = supportSummary.closest("details");
     expect(support).not.toHaveAttribute("open");
     expect(
@@ -370,9 +397,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     renderWorkbench(api);
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
-    const menuPanel = screen
-      .getByRole("heading", { name: "Thực đơn tuần" })
-      .closest(".work-panel") as HTMLElement;
+    const menuPanel = screen.getByRole("region", {
+      name: "Bề mặt làm việc Thực đơn tuần",
+    });
     const menuGrid = within(menuPanel).getByRole("region", {
       name: "Lưới thực đơn",
     });
@@ -409,9 +436,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
-    const attendancePanel = screen
-      .getByRole("heading", { name: "Sĩ số" })
-      .closest(".work-panel") as HTMLElement;
+    const attendancePanel = screen.getByRole("region", {
+      name: "Bề mặt làm việc Sĩ số",
+    });
     const attendanceGrid = within(attendancePanel).getByRole("region", {
       name: "Danh sách sĩ số",
     });
@@ -440,6 +467,15 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("rowheader", { name: "Trường Mầm non Hoa Hồng" }),
+    ).not.toBeInTheDocument();
+    const attendanceSearch = screen.getByRole("searchbox", {
+      name: "Tìm trong sĩ số",
+    });
+    fireEvent.change(attendanceSearch, { target: { value: "nguyen du" } });
+    expect(
+      screen.queryByRole("rowheader", {
+        name: "Trường Tiểu học Trần Quốc Toản",
+      }),
     ).not.toBeInTheDocument();
     fireEvent.change(
       screen.getAllByRole("spinbutton", { name: /Suất học sinh/ })[0]!,
@@ -516,6 +552,19 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const review = screen.getByRole("region", {
       name: "Xem thay đổi thực đơn",
     });
+    const menuDecisionLayout = screen.getByRole("group", {
+      name: "Bảng và phần xem thay đổi thực đơn",
+    });
+    expect(menuDecisionLayout).toHaveClass("has-review");
+    expect(
+      within(menuDecisionLayout).getByLabelText("Lưới thực đơn"),
+    ).toBeVisible();
+    expect(
+      within(menuDecisionLayout).getByLabelText("Xem thay đổi thực đơn"),
+    ).toBeVisible();
+    expect(
+      within(review).getByRole("button", { name: "Quay lại" }),
+    ).toBeVisible();
     expect(review).toHaveTextContent("Canh bí đỏ thịt bằm");
     expect(review).toHaveTextContent("Canh rau ngót");
     expect(review).toHaveTextContent("Đổi");
@@ -581,6 +630,19 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const review = await screen.findByRole("region", {
       name: "Xem thay đổi sĩ số",
     });
+    const attendanceDecisionLayout = screen.getByRole("group", {
+      name: "Bảng và phần xem thay đổi sĩ số",
+    });
+    expect(attendanceDecisionLayout).toHaveClass("has-review");
+    expect(
+      within(attendanceDecisionLayout).getByLabelText("Danh sách sĩ số"),
+    ).toBeVisible();
+    expect(
+      within(attendanceDecisionLayout).getByLabelText("Xem thay đổi sĩ số"),
+    ).toBeVisible();
+    expect(
+      within(review).getByRole("button", { name: "Quay lại" }),
+    ).toBeVisible();
     expect(review).toHaveTextContent("420");
     expect(review).toHaveTextContent("0");
     const save = screen.getByRole("button", { name: "Lưu" });
@@ -640,9 +702,8 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       ),
     ).toBeVisible();
     expect(screen.queryByText("default:TH001")).not.toBeVisible();
-    const supportSummaries = screen.getAllByText("Chi tiết hỗ trợ");
-    fireEvent.click(supportSummaries[1]);
-    fireEvent.click(supportSummaries[0]);
+    fireEvent.click(screen.getByText("Nguồn & lịch sử"));
+    fireEvent.click(screen.getByText("Chi tiết hỗ trợ"));
     expect(screen.getByText("default:TH001")).toBeVisible();
   });
 

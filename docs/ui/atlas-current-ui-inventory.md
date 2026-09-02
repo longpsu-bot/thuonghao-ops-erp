@@ -46,14 +46,22 @@ src/modules/atlas/planning-inputs/PlanningInputsWorkbench.tsx
 
 It composes the complete current Planning journey and is the first representative consumer of shared shell/state patterns.
 
-The connected operator projection is one sidebar destination, `Lập nhu cầu`, with the page title `Lập nhu cầu theo tuần` and four task tabs:
+The connected operator projection is one sidebar destination, `Lập nhu cầu`, with one compact dynamic page title for the active job and four calm task tabs:
 
 ```text
 Thực đơn
 → Sĩ số
-→ Nhu cầu bổ sung
+→ Bổ sung
 → Xác nhận nhu cầu
 ```
+
+PLANNING-UX-CLOSEOUT-01 completes the pre-freeze operational pass. Menu,
+Attendance, and Pantry are table-first editing jobs; Preview is attached beside
+the active table on wide screens and stacks below it at 900 px. The operating
+rail owns the single contextual primary action. Search remains display-only so
+complete-write payloads retain hidden rows. Support evidence stays collapsed as
+`Nguồn & lịch sử`, and Need Generation remains embedded within the confirmed
+job instead of becoming a fifth destination.
 
 Need Generation remains a Planning domain and backend command boundary, but it is not a peer operator destination. Inside `Xác nhận nhu cầu`, the normal daily projection is limited to `Ngày phục vụ`, one translated `Trạng thái`, and `Việc cần làm`. A row control reviews/selects the date (or directly opens an existing current Confirmed Need); only the separate contextual `Tạo nhu cầu` / `Cập nhật nhu cầu` primary action invokes the command. The ordinary Confirmed Need table is the single operational quantity projection; source readiness/evidence, grouped theoretical Recipe/Pantry contributions, versions, and run history remain support detail.
 

@@ -2,9 +2,7 @@ export type PlanningWorkflowTone = "ok" | "warning" | "danger" | "neutral";
 
 export type PlanningWorkflowItem<T extends string = string> = {
   id: T;
-  step: 1 | 2 | 3 | 4;
   label: string;
-  compactLabel?: string;
   status: string;
   tone: PlanningWorkflowTone;
 };
@@ -40,11 +38,8 @@ export function PlanningWorkflowBar<T extends string>({
             className={`planning-workflow-tab ${item.tone}${active ? " active" : ""}`}
             onClick={() => onChange(item.id)}
           >
-            <span className="planning-workflow-step" aria-hidden="true">
-              {item.step}
-            </span>
             <span className="planning-workflow-copy">
-              <strong>{item.compactLabel ?? item.label}</strong>
+              <strong>{item.label}</strong>
               <span id={statusId}>{item.status}</span>
             </span>
           </button>

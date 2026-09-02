@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { atlasTheme } from "../../../theme";
@@ -15,25 +21,22 @@ const items: PlanningWorkflowItem<
 >[] = [
   {
     id: "menu",
-    step: 1,
     label: "Thực đơn",
     status: "Cần lưu",
     tone: "warning",
   },
-  { id: "attendance", step: 2, label: "Sĩ số", status: "Sẵn sàng", tone: "ok" },
-  { id: "pantry", step: 3, label: "Bổ sung", status: "2 mục", tone: "neutral" },
+  { id: "attendance", label: "Sĩ số", status: "Sẵn sàng", tone: "ok" },
+  { id: "pantry", label: "Bổ sung", status: "2 mục", tone: "neutral" },
   {
     id: "confirmed",
-    step: 4,
     label: "Xác nhận nhu cầu",
-    compactLabel: "Xác nhận",
     status: "Chờ xác nhận",
     tone: "warning",
   },
 ];
 
 describe("PlanningWorkflowBar", () => {
-  it("renders one accessible four-step workflow/status tablist", () => {
+  it("renders one calm four-mode task navigation without wizard numbers", () => {
     render(
       <MantineProvider theme={atlasTheme} env="test">
         <PlanningWorkflowBar items={items} activeId="menu" onChange={vi.fn()} />
@@ -49,15 +52,14 @@ describe("PlanningWorkflowBar", () => {
       "Bổ sung",
       "Xác nhận nhu cầu",
     ]);
-    items.forEach((item) => {
+    items.forEach((item, index) => {
       const tab = screen.getByRole("tab", { name: item.label });
-      expect(tab).toHaveTextContent(String(item.step));
-      expect(tab).toHaveTextContent(item.compactLabel ?? item.label);
+      expect(
+        within(tab).queryByText(String(index + 1)),
+      ).not.toBeInTheDocument();
+      expect(tab).toHaveTextContent(item.label);
       expect(tab).toHaveAccessibleDescription(item.status);
     });
-    expect(
-      screen.getByRole("tab", { name: "Xác nhận nhu cầu" }),
-    ).not.toHaveTextContent("Xác nhận nhu cầu");
     expect(screen.getByRole("tab", { name: "Thực đơn" })).toHaveAttribute(
       "aria-selected",
       "true",

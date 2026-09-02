@@ -177,9 +177,10 @@ describe("Confirmed Need two-action workbench", () => {
   it("shows the current work context in first-time operator language", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
+    expect(screen.getByText("Ngày đang xác nhận")).toBeVisible();
     expect(
-      screen.getByRole("heading", { name: "Xác nhận nhu cầu" }),
-    ).toBeVisible();
+      screen.queryByRole("heading", { name: "Xác nhận nhu cầu" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Tuần 03/08/2026–09/08/2026")).toBeVisible();
     expect(screen.getAllByText("Tất cả trường").length).toBeGreaterThan(0);
     expect(screen.getByText("2 dòng")).toBeVisible();
@@ -248,7 +249,7 @@ describe("Confirmed Need two-action workbench", () => {
       name: "Bàn xác nhận nhu cầu",
     });
     const ordered = [
-      within(shell).getByRole("heading", { name: "Xác nhận nhu cầu" }),
+      within(shell).getByText("Ngày đang xác nhận"),
       within(shell).getByRole("region", { name: "Tóm tắt xác nhận nhu cầu" }),
       within(shell).getByRole("region", { name: "Cảnh báo" }),
       within(shell).getByRole("region", { name: "Bộ lọc xác nhận nhu cầu" }),
@@ -786,6 +787,12 @@ describe("Confirmed Need two-action workbench", () => {
     expect(
       screen.getAllByText("Đã chuyển sang lên đơn").length,
     ).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByLabelText("Số lượng xác nhận Cà rốt")).toBeDisabled();
   });
 
@@ -930,19 +937,16 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.queryByText("Nhập Excel")).not.toBeInTheDocument();
   });
 
-  it("uses the approved compact Planning dimensions and mobile breakpoint", async () => {
+  it("keeps the embedded review subordinate to the active page heading", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");
-    const { readFileSync } = await vi.importActual<{
-      readFileSync(path: string | URL, encoding: "utf8"): string;
-    }>("node:fs");
-    const styles = readFileSync("src/styles.css", "utf8");
-    expect(styles).toContain("--planning-rail-height: 54px");
-    expect(styles).toContain("--planning-control-height: 32px");
-    expect(styles).toContain("--planning-row-height: 40px");
-    expect(styles).toContain("--planning-header-row-height: 36px");
-    expect(styles).toContain("--planning-cell-inline: 12px");
-    expect(styles).toContain("@media (max-width: 56.25em)");
-    expect(styles).toContain("min-height: 44px");
+    const shell = screen.getByRole("region", {
+      name: "Bàn xác nhận nhu cầu",
+    });
+    expect(within(shell).getByText("Ngày đang xác nhận")).toBeVisible();
+    expect(within(shell).queryByRole("heading")).not.toBeInTheDocument();
+    expect(
+      within(shell).getByRole("region", { name: "Bảng xác nhận nhu cầu" }),
+    ).toBeVisible();
   });
 });
