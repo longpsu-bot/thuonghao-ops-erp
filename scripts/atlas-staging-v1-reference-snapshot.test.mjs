@@ -41,7 +41,7 @@ function sourceSnapshot(overrides = {}) {
     sourceAccess: {
       roleName: "supabase_read_only_user",
       superuser: false,
-      bypassRls: false,
+      bypassRls: true,
       createRole: false,
       createDb: false,
       hasRequiredSelect: true,
@@ -350,11 +350,12 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
 
   it("builds one SELECT-only source snapshot statement over the six approved tables", () => {
     const sql = buildV1SourceSnapshotSql();
+    const sqlWithoutStringLiterals = sql.replace(/'(?:''|[^'])*'/g, "''");
     expect(sql.trim()).toMatch(/^select\b/i);
     expect(sql.trim()).toMatch(/;$/);
     expect(sql.match(/\bselect\b/gi)?.length).toBeGreaterThan(1);
     expect(sql).toContain("from public.ingredient_suppliers");
-    expect(sql).not.toMatch(
+    expect(sqlWithoutStringLiterals).not.toMatch(
       /\b(begin|commit|insert|update|delete|truncate|alter|drop|create)\b/i,
     );
     for (const table of [
@@ -366,7 +367,19 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
       "ingredient_shopping_type",
     ]) {
       expect(sql).toContain(`public.${table}`);
+      for (const privilege of [
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "TRUNCATE",
+      ]) {
+        expect(sql).toContain(
+          `pg_catalog.has_table_privilege(role.oid, 'public.${table}', '${privilege}')`,
+        );
+      }
     }
+    expect(sql).not.toContain("information_schema.role_table_grants");
   });
 
   it("extracts only through the fixed live OPS read-only Management API endpoint", async () => {
@@ -408,6 +421,21 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
     ).rejects.toThrow(/approved OPS v1 source project/i);
   });
 
+  it("accepts BYPASSRLS for the exact Supabase read-only role", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      status: 201,
+      text: async () => JSON.stringify([{ snapshot: sourceSnapshot() }]),
+    }));
+    const result = await extractV1ReferenceSnapshot({
+      accessToken: "synthetic-management-token",
+      fetchImpl,
+    });
+    expect(result.sourceAccess).toMatchObject({
+      roleName: "supabase_read_only_user",
+      bypassRls: true,
+    });
+  });
+
   it("rejects a source response that was not executed as the Supabase read-only role", async () => {
     const fetchImpl = vi.fn(async () => ({
       status: 201,
@@ -418,6 +446,36 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
               sourceAccess: {
                 ...sourceSnapshot().sourceAccess,
                 roleName: "postgres",
+              },
+            }),
+          },
+        ]),
+    }));
+    await expect(
+      extractV1ReferenceSnapshot({
+        accessToken: "synthetic-management-token",
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/not proven read-only/i);
+  });
+
+  it.each([
+    ["superuser authority", { superuser: true }],
+    ["missing effective SELECT", { hasRequiredSelect: false }],
+    [
+      "effective table mutation authority",
+      { hasNonSelectTablePrivilege: true },
+    ],
+  ])("rejects %s on the source role", async (_case, accessOverride) => {
+    const fetchImpl = vi.fn(async () => ({
+      status: 201,
+      text: async () =>
+        JSON.stringify([
+          {
+            snapshot: sourceSnapshot({
+              sourceAccess: {
+                ...sourceSnapshot().sourceAccess,
+                ...accessOverride,
               },
             }),
           },

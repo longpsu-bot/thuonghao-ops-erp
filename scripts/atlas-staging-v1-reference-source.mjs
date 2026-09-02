@@ -10,9 +10,23 @@ const REQUIRED_SOURCE_TABLES = Object.freeze([
 ]);
 
 export function buildV1SourceSnapshotSql() {
-  const quotedTables = REQUIRED_SOURCE_TABLES.map((name) => `'${name}'`).join(
-    ", ",
+  const qualifiedTables = REQUIRED_SOURCE_TABLES.map(
+    (name) => `public.${name}`,
   );
+  const requiredSelectChecks = qualifiedTables
+    .map(
+      (table) =>
+        `pg_catalog.has_table_privilege(role.oid, '${table}', 'SELECT')`,
+    )
+    .join("\n        and ");
+  const nonSelectChecks = qualifiedTables
+    .flatMap((table) =>
+      ["INSERT", "UPDATE", "DELETE", "TRUNCATE"].map(
+        (privilege) =>
+          `pg_catalog.has_table_privilege(role.oid, '${table}', '${privilege}')`,
+      ),
+    )
+    .join("\n        or ");
   return `select jsonb_build_object(
   'sourceProjectRef', '${OPS_V1_SOURCE_PROJECT_REF}',
   'snapshotAt', pg_catalog.clock_timestamp(),
@@ -24,20 +38,10 @@ export function buildV1SourceSnapshotSql() {
       'createRole', role.rolcreaterole,
       'createDb', role.rolcreatedb,
       'hasRequiredSelect', (
-        select count(distinct grant_row.table_name) = ${REQUIRED_SOURCE_TABLES.length}
-        from information_schema.role_table_grants grant_row
-        where grant_row.grantee = role.rolname
-          and grant_row.table_schema = 'public'
-          and grant_row.table_name in (${quotedTables})
-          and grant_row.privilege_type = 'SELECT'
+        ${requiredSelectChecks}
       ),
-      'hasNonSelectTablePrivilege', exists (
-        select 1
-        from information_schema.role_table_grants grant_row
-        where grant_row.grantee = role.rolname
-          and grant_row.table_schema = 'public'
-          and grant_row.table_name in (${quotedTables})
-          and grant_row.privilege_type <> 'SELECT'
+      'hasNonSelectTablePrivilege', (
+        ${nonSelectChecks}
       )
     )
     from pg_catalog.pg_roles role
@@ -127,7 +131,6 @@ function validateSourceAccess(snapshot) {
     !access ||
     access.roleName !== "supabase_read_only_user" ||
     access.superuser !== false ||
-    access.bypassRls !== false ||
     access.createRole !== false ||
     access.createDb !== false ||
     access.hasRequiredSelect !== true ||
