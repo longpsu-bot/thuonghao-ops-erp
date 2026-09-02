@@ -93,7 +93,10 @@ describe("Atlas master-data shell", () => {
     render(<AtlasApp reviewMode initialPage="procurement" />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Kế hoạch mua hàng" }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Phân bổ nhà cung ứng",
+      }),
     ).toBeVisible();
     expect(
       await screen.findByRole("table", { name: "Allocation Family" }),
@@ -145,7 +148,10 @@ describe("Atlas master-data shell", () => {
     );
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Kế hoạch mua hàng" }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Phân bổ nhà cung ứng",
+      }),
     ).toBeVisible();
     expect(
       await screen.findByRole("table", { name: "Allocation Family" }),
