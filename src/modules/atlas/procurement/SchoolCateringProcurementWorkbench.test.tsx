@@ -279,6 +279,21 @@ function createMultiSchoolWorkbenchFixture() {
 }
 
 describe("school-catering Procurement allocation workbench", () => {
+  it("uses a compact active-job title and changes it with the selected mode", async () => {
+    renderWorkbench();
+
+    expect(
+      await screen.findByRole("heading", { name: "Phân bổ nhà cung ứng" }),
+    ).toBeVisible();
+    expect(screen.getByText("Kế hoạch mua hàng")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Chế độ Đơn mua" }));
+    expect(screen.getByRole("heading", { name: "Đơn mua" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Chế độ Phân bổ NCC" }),
+    ).toHaveTextContent("Phân bổ NCC");
+  });
+
   it("uses Vietnamese business labels instead of Allocation Family jargon", async () => {
     renderWorkbench();
 
@@ -286,10 +301,10 @@ describe("school-catering Procurement allocation workbench", () => {
     expect(screen.getByText("1 nhóm nhu cầu")).toBeVisible();
     expect(screen.queryByText(/Allocation Family/)).not.toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
-    expect(screen.getByText("Nhu cầu đã chọn")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Phân bổ NCC" }));
+    expect(
+      screen.getByRole("heading", { name: "Phân bổ — Gạo thơm" }),
+    ).toBeVisible();
   });
 
   it("renders one table row per Allocation Family with the exact operator columns", async () => {
@@ -318,6 +333,26 @@ describe("school-catering Procurement allocation workbench", () => {
     expect(
       screen.queryByRole("toolbar", { name: /Gạo thơm/ }),
     ).not.toBeInTheDocument();
+    const ingredient = within(table).getByText("Gạo thơm");
+    expect(ingredient.closest("button")).toBeNull();
+    expect(
+      within(ingredient.closest("tr")!).getByRole("button", {
+        name: "Phân bổ NCC",
+      }),
+    ).toBeVisible();
+  });
+
+  it("uses an explicit view action when accepted allocation already exists", async () => {
+    renderWorkbench(createReviewSchoolCateringProcurementApi("manual_split"));
+    const table = await screen.findByRole("table", {
+      name: "Allocation Family",
+    });
+    const row = within(table).getByText("Gạo thơm").closest("tr")!;
+
+    expect(
+      within(row).getByRole("button", { name: "Xem phân bổ" }),
+    ).toBeVisible();
+    expect(within(row).getByText("Gạo thơm").closest("button")).toBeNull();
   });
 
   it("shows the recommended supplier name as an uncommitted proposal", async () => {
@@ -345,36 +380,113 @@ describe("school-catering Procurement allocation workbench", () => {
   it("opens an attached split editor while keeping recommendation advisory", async () => {
     const api = renderWorkbench();
     const confirm = vi.spyOn(api, "confirmRecommendations");
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
 
     const panel = screen.getByRole("region", { name: "Phân bổ Gạo thơm" });
     expect(panel).toHaveTextContent("100");
     expect(panel).toHaveTextContent("kg");
-    expect(panel).toHaveTextContent("Ưu tiên 1");
-    expect(within(panel).getByLabelText("Phân bổ NCC An Phú")).toHaveValue(
-      "100.000000",
-    );
+    expect(panel).toHaveTextContent("Đề xuất");
+    expect(panel).toHaveTextContent("NCC An Phú");
+    expect(within(panel).queryByLabelText("Phân bổ NCC An Phú")).toBeNull();
+    expect(
+      within(panel).getByRole("button", { name: "Dùng đề xuất" }),
+    ).toBeVisible();
     expect(confirm).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+  });
+
+  it("closes the attached allocation detail without mutating the family", async () => {
+    const api = renderWorkbench();
+    const save = vi.spyOn(api, "saveAllocation");
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+
+    const panel = screen.getByRole("region", { name: "Phân bổ Gạo thơm" });
+    fireEvent.click(within(panel).getByRole("button", { name: "Đóng" }));
+
+    expect(
+      screen.queryByRole("region", { name: "Phân bổ Gạo thơm" }),
+    ).not.toBeInTheDocument();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("keeps the table in a locally scrollable master/detail workspace", async () => {
+    renderWorkbench();
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+
+    const table = screen.getByRole("table", { name: "Allocation Family" });
+    expect(table.parentElement).toHaveClass("procurement-family-table-scroll");
+    expect(table.closest(".procurement-allocation-layout")).not.toBeNull();
+    expect(
+      screen.getByRole("region", { name: "Phân bổ Gạo thơm" }),
+    ).toHaveClass("procurement-split-panel");
+  });
+
+  it("adds only unselected eligible suppliers and removes operator-added rows", async () => {
+    const api = createReviewSchoolCateringProcurementApi("manual_split");
+    const fixture = createReviewProcurementWorkbenchFixture("manual_split");
+    fixture.rows[0]!.eligible_suppliers.push({
+      supplier_id: "25000000-0000-4000-8000-000000000043",
+      supplier_name: "NCC Cửu Long",
+      priority: 3,
+    });
+    vi.spyOn(api, "getWorkbench").mockResolvedValue({
+      kind: "success",
+      response: fixture as unknown as AtlasSuccessEnvelope,
+    });
+    renderWorkbench(api);
+    fireEvent.click(await screen.findByRole("button", { name: "Xem phân bổ" }));
+
+    const panel = screen.getByRole("region", { name: "Phân bổ Gạo thơm" });
+    expect(within(panel).getByLabelText("Phân bổ NCC An Phú")).toBeVisible();
+    expect(within(panel).getByLabelText("Phân bổ NCC Bình Minh")).toBeVisible();
+    expect(within(panel).queryByLabelText("Phân bổ NCC Cửu Long")).toBeNull();
+
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    );
+    const supplierPicker = within(panel).getByRole("combobox", {
+      name: "Nhà cung ứng đủ điều kiện",
+    });
+    expect(within(supplierPicker).queryByText("NCC An Phú")).toBeNull();
+    expect(within(supplierPicker).queryByText("NCC Bình Minh")).toBeNull();
+    expect(within(supplierPicker).getByText("NCC Cửu Long")).toBeVisible();
+    fireEvent.change(supplierPicker, {
+      target: { value: "25000000-0000-4000-8000-000000000043" },
+    });
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Thêm NCC Cửu Long" }),
+    );
+
+    expect(within(panel).getByLabelText("Phân bổ NCC Cửu Long")).toBeVisible();
+    fireEvent.click(
+      within(panel).getByRole("button", { name: "Xóa NCC Cửu Long" }),
+    );
+    expect(within(panel).queryByLabelText("Phân bổ NCC Cửu Long")).toBeNull();
+  });
+
+  it("keeps the add-supplier action visible when every eligible supplier participates", async () => {
+    renderWorkbench(createReviewSchoolCateringProcurementApi("manual_split"));
+    fireEvent.click(await screen.findByRole("button", { name: "Xem phân bổ" }));
+
+    expect(
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    ).toBeDisabled();
   });
 
   it("submits the complete two-supplier family snapshot with exact strings", async () => {
     const api = createReviewSchoolCateringProcurementApi("manual_split");
     const save = vi.spyOn(api, "saveAllocation");
     renderWorkbench(api);
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem phân bổ" }));
     fireEvent.change(screen.getByLabelText("Phân bổ NCC An Phú"), {
       target: { value: "70.000000" },
     });
     fireEvent.change(screen.getByLabelText("Phân bổ NCC Bình Minh"), {
       target: { value: "30.000000" },
     });
-    expect(screen.getByText("Tổng đang nhập: 100 kg")).toBeVisible();
-    expect(screen.getByText("Chênh lệch: 0 kg")).toBeVisible();
+    expect(screen.getByText("Nhu cầu: 100 kg")).toBeVisible();
+    expect(screen.getByText("Đã phân bổ: 100 kg")).toBeVisible();
+    expect(screen.getByText("Còn lại: 0 kg")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
 
     await waitFor(() => expect(save).toHaveBeenCalledOnce());
@@ -405,6 +517,38 @@ describe("school-catering Procurement allocation workbench", () => {
     ).toHaveTextContent("Đã lưu phân bổ nhà cung ứng.");
   });
 
+  it("replaces the submitted draft with the authoritative allocation readback", async () => {
+    const api = createReviewSchoolCateringProcurementApi("manual_split");
+    const initial = createReviewProcurementWorkbenchFixture("manual_split");
+    const persisted = structuredClone(initial);
+    persisted.rows[0]!.family.version = 2;
+    persisted.rows[0]!.splits[0]!.allocated_quantity = "61.000000";
+    persisted.rows[0]!.splits[1]!.allocated_quantity = "39.000000";
+    const getWorkbench = vi
+      .spyOn(api, "getWorkbench")
+      .mockResolvedValueOnce(reviewSuccess(initial))
+      .mockResolvedValue(reviewSuccess(persisted));
+    renderWorkbench(api);
+    fireEvent.click(await screen.findByRole("button", { name: "Xem phân bổ" }));
+    fireEvent.change(screen.getByLabelText("Phân bổ NCC An Phú"), {
+      target: { value: "70.000000" },
+    });
+    fireEvent.change(screen.getByLabelText("Phân bổ NCC Bình Minh"), {
+      target: { value: "30.000000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+
+    await waitFor(() => expect(getWorkbench).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Phân bổ NCC An Phú")).toHaveValue(
+        "61.000000",
+      ),
+    );
+    expect(screen.getByLabelText("Phân bổ NCC Bình Minh")).toHaveValue(
+      "39.000000",
+    );
+  });
+
   it("never enables a balanced split when the backend disallows saving", async () => {
     const api = createReviewSchoolCateringProcurementApi("manual_split");
     const fixture = createReviewProcurementWorkbenchFixture("manual_split");
@@ -417,9 +561,7 @@ describe("school-catering Procurement allocation workbench", () => {
     const save = vi.spyOn(api, "saveAllocation");
 
     renderWorkbench(api);
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem phân bổ" }));
     const panel = screen.getByRole("region", { name: "Phân bổ Gạo thơm" });
     const saveButton = within(panel).getByRole("button", {
       name: "Lưu phân bổ",
@@ -507,8 +649,12 @@ describe("school-catering Procurement allocation workbench", () => {
       });
 
     renderWorkbench(api);
+    const initialTable = await screen.findByRole("table", {
+      name: "Allocation Family",
+    });
+    const riceRow = within(initialTable).getByText("Gạo thơm").closest("tr")!;
     fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+      within(riceRow).getByRole("button", { name: "Phân bổ NCC" }),
     );
     expect(
       screen.getByRole("region", { name: "Phân bổ Gạo thơm" }),
@@ -555,11 +701,9 @@ describe("school-catering Procurement allocation workbench", () => {
 
   it("keeps technical identity and lineage behind disclosure", async () => {
     renderWorkbench();
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
     expect(screen.queryByText("review-source-100")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText("Dữ liệu truy vết"));
+    fireEvent.click(screen.getByText("Nguồn & lịch sử"));
     expect(screen.getByText("review-source-100")).toBeVisible();
     expect(
       screen.getByText("25000000-0000-4000-8000-000000000071"),
@@ -569,9 +713,8 @@ describe("school-catering Procurement allocation workbench", () => {
   it("keeps STALE_VERSION subordinate while showing natural stale recovery", async () => {
     const api = createReviewSchoolCateringProcurementApi("stale_version");
     renderWorkbench(api);
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
 
     const result = await screen.findByRole("region", {
@@ -601,9 +744,8 @@ describe("school-catering Procurement allocation workbench", () => {
       },
     });
     renderWorkbench(api);
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
 
     const result = await screen.findByRole("region", {
@@ -622,18 +764,30 @@ describe("school-catering Procurement allocation workbench", () => {
   });
 
   it("renders natural Vietnamese exception states without automatic redistribution", async () => {
-    renderWorkbench(
-      createReviewSchoolCateringProcurementApi("needs_reallocation"),
-    );
+    const api = createReviewSchoolCateringProcurementApi("needs_reallocation");
+    const fixture =
+      createReviewProcurementWorkbenchFixture("needs_reallocation");
+    fixture.rows[0]!.eligible_suppliers.push({
+      supplier_id: "25000000-0000-4000-8000-000000000043",
+      supplier_name: "NCC Cửu Long",
+      priority: 3,
+    });
+    vi.spyOn(api, "getWorkbench").mockResolvedValue(reviewSuccess(fixture));
+    renderWorkbench(api);
     expect(await screen.findByText("Cần phân bổ lại")).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
-    expect(screen.getByText(/NCC Bình Minh.*không còn phù hợp/)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Phân bổ NCC" }));
+    expect(
+      screen.getByText(/NCC Bình Minh.*không còn phù hợp/),
+    ).toHaveTextContent("40 kg");
     expect(screen.queryByDisplayValue("100.000000")).not.toBeInTheDocument();
+    expect(screen.getByText("Còn lại: 40 kg")).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
+    );
+    expect(screen.getByRole("option", { name: "NCC Cửu Long" })).toBeVisible();
   });
 
-  it("filters rebalance separately from supplier-ineligible reallocation", async () => {
+  it("maps the compact local exception filter to existing backend states", async () => {
     const api = createReviewSchoolCateringProcurementApi("rebalance");
     const fixture = createReviewProcurementWorkbenchFixture("rebalance");
     const needsReallocation = structuredClone(
@@ -655,25 +809,16 @@ describe("school-catering Procurement allocation workbench", () => {
     renderWorkbench(api);
     const filter = await screen.findByRole("combobox", { name: "Ngoại lệ" });
     expect(
-      within(filter).getByRole("option", { name: "Có thể cân bằng lại" }),
-    ).toHaveValue("STALE_REBALANCE_AVAILABLE");
-    expect(
-      within(filter).getByRole("option", {
-        name: "Cần phân bổ lại / NCC không phù hợp",
-      }),
-    ).toHaveValue("NEEDS_REALLOCATION");
+      within(filter)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual(["Tất cả", "Chưa phân bổ", "Cần cập nhật", "Bị chặn"]);
 
-    fireEvent.change(filter, {
-      target: { value: "STALE_REBALANCE_AVAILABLE" },
-    });
+    fireEvent.change(filter, { target: { value: "needs_update" } });
     const table = screen.getByRole("table", { name: "Allocation Family" });
     expect(within(table).getByText("Gạo thơm")).toBeVisible();
-    expect(within(table).queryByText("Dầu ăn")).not.toBeInTheDocument();
-
-    fireEvent.change(filter, { target: { value: "NEEDS_REALLOCATION" } });
     expect(within(table).getByText("Dầu ăn")).toBeVisible();
     expect(within(table).getByText("Cần phân bổ lại")).toBeVisible();
-    expect(within(table).queryByText("Gạo thơm")).not.toBeInTheDocument();
   });
 });
 
@@ -785,19 +930,15 @@ describe("school-catering Procurement purchase-order stage", () => {
 
     it("makes Release the only enabled primary action for a selected clean DRAFT", async () => {
       renderOrders("po_draft");
-      const materialize = await screen.findByRole("button", {
-        name: "Tạo đơn mua",
-      });
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-      );
+      await screen.findByRole("button", { name: "Tạo đơn mua" });
+      fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
       const release = screen.getByRole("button", {
         name: "Phát hành cho NCC",
       });
 
-      expect(materialize).toBeEnabled();
-      expect(materialize).toHaveClass("secondary");
-      expect(materialize).not.toHaveClass("primary");
+      expect(
+        screen.queryByRole("button", { name: "Tạo đơn mua" }),
+      ).not.toBeInTheDocument();
       expect(release).toBeEnabled();
       expect(release).toHaveClass("primary");
       expect(
@@ -811,43 +952,32 @@ describe("school-catering Procurement purchase-order stage", () => {
       ).toEqual([release]);
     });
 
-    it("makes Regenerate primary while stale Release and top-level Create remain subordinate", async () => {
+    it("renders only Regenerate for a selected stale DRAFT", async () => {
       renderOrders("stale_po");
-      const materialize = await screen.findByRole("button", {
-        name: "Tạo đơn mua",
-      });
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-      );
+      await screen.findByRole("button", { name: "Tạo đơn mua" });
+      fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
       const regenerate = screen.getByRole("button", {
         name: "Tạo lại đơn cần cập nhật",
       });
-      const release = screen.getByRole("button", {
-        name: "Phát hành cho NCC",
-      });
 
-      expect(materialize).toBeEnabled();
-      expect(materialize).toHaveClass("secondary");
-      expect(materialize).not.toHaveClass("primary");
+      expect(
+        screen.queryByRole("button", { name: "Tạo đơn mua" }),
+      ).not.toBeInTheDocument();
       expect(regenerate).toBeEnabled();
       expect(regenerate).toHaveClass("primary");
-      expect(release).toBeDisabled();
-      expect(release).toHaveClass("secondary");
-      expect(release).not.toHaveClass("primary");
+      expect(
+        screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+      ).not.toBeInTheDocument();
     });
 
     it("keeps released order evidence visible without a competing release action", async () => {
       renderOrders("released_po");
-      const materialize = await screen.findByRole("button", {
-        name: "Tạo đơn mua",
-      });
-      fireEvent.click(
-        await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-      );
+      await screen.findByRole("button", { name: "Tạo đơn mua" });
+      fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
 
-      expect(materialize).toBeEnabled();
-      expect(materialize).toHaveClass("secondary");
-      expect(materialize).not.toHaveClass("primary");
+      expect(
+        screen.queryByRole("button", { name: "Tạo đơn mua" }),
+      ).not.toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: "Phát hành cho NCC" }),
       ).not.toBeInTheDocument();
@@ -904,9 +1034,7 @@ describe("school-catering Procurement purchase-order stage", () => {
         mode="review"
       />,
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
 
     const detail = screen.getByRole("region", {
       name: "Chi tiết đơn mua NCC An Phú",
@@ -933,9 +1061,7 @@ describe("school-catering Procurement purchase-order stage", () => {
         mode="review"
       />,
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
 
     const detail = screen.getByRole("region", {
       name: "Chi tiết đơn mua NCC An Phú",
@@ -970,9 +1096,8 @@ describe("school-catering Procurement purchase-order stage", () => {
     expect(within(table).getByText("NCC An Phú")).toBeVisible();
     expect(within(table).getByText("02/09/2026")).toBeVisible();
     expect(within(table).getByText("2 dòng")).toBeVisible();
-    fireEvent.click(
-      within(table).getByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(within(table).getByRole("button", { name: "Xem đơn" }));
+    expect(within(table).getByText("NCC An Phú").closest("button")).toBeNull();
     const detail = screen.getByRole("region", {
       name: "Chi tiết đơn mua NCC An Phú",
     });
@@ -986,6 +1111,33 @@ describe("school-catering Procurement purchase-order stage", () => {
     expect(within(lines).getAllByText("kg")).toHaveLength(2);
     expect(within(detail).queryByRole("textbox")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/số đơn/i)).not.toBeInTheDocument();
+  });
+
+  it("closes PO detail and restores the range-level Create action", async () => {
+    const api = createReviewSchoolCateringProcurementApi("po_draft");
+    const materialize = vi.spyOn(api, "createPurchaseOrderDrafts");
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+    expect(
+      screen.queryByRole("button", { name: "Tạo đơn mua" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+
+    expect(
+      screen.queryByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tạo đơn mua" })).toBeVisible();
+    expect(materialize).not.toHaveBeenCalled();
   });
 
   it("materializes the selected date range and preserves blocked dates beside usable results", async () => {
@@ -1061,12 +1213,10 @@ describe("school-catering Procurement purchase-order stage", () => {
       />,
     );
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
     expect(
-      screen.getByRole("button", { name: "Phát hành cho NCC" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Tạo lại đơn cần cập nhật" }),
     );
@@ -1087,9 +1237,7 @@ describe("school-catering Procurement purchase-order stage", () => {
       />,
     );
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
     fireEvent.click(screen.getByRole("button", { name: "Phát hành cho NCC" }));
     await waitFor(() => expect(release).toHaveBeenCalledOnce());
     expect(release.mock.calls[0]?.[0]).toMatchObject({
@@ -1120,14 +1268,69 @@ describe("school-catering Procurement purchase-order stage", () => {
         mode="review"
       />,
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
     expect(screen.getAllByText("PO-20260902-2500000000004000")).toHaveLength(2);
     expect(screen.getByText("Đã phát hành")).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Phát hành cho NCC" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows XLSX as the primary released output and PDF as secondary", async () => {
+    const exportXlsx = vi.fn();
+    const exportPdf = vi.fn();
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={createReviewSchoolCateringProcurementApi("released_po")}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+        onExportPurchaseOrderXlsx={exportXlsx}
+        onExportPurchaseOrderPdf={exportPdf}
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+
+    const xlsx = screen.getByRole("button", { name: "Xuất XLSX" });
+    const pdf = screen.getByRole("button", { name: "Xuất PDF" });
+    expect(xlsx).toHaveClass("primary");
+    expect(pdf).not.toHaveClass("primary");
+
+    fireEvent.click(xlsx);
+    fireEvent.click(pdf);
+    expect(exportXlsx).toHaveBeenCalledWith(
+      expect.objectContaining({
+        document_number: "PO-20260902-2500000000004000",
+        status: "RELEASED_TO_SUPPLIER",
+        lines: expect.arrayContaining([
+          expect.objectContaining({ ordered_quantity: "60.000000" }),
+          expect.objectContaining({ ordered_quantity: "40.000000" }),
+        ]),
+      }),
+    );
+    expect(exportPdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        current_revision: expect.objectContaining({ revision_number: 2 }),
+      }),
+    );
+  });
+
+  it("does not expose output actions for an unreleased PO", async () => {
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={createReviewSchoolCateringProcurementApi("po_draft")}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+    expect(screen.queryByRole("button", { name: "Xuất XLSX" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Xuất PDF" })).toBeNull();
   });
 
   it("discards an earlier PO read after the operator changes stage", async () => {
@@ -1150,9 +1353,7 @@ describe("school-catering Procurement purchase-order stage", () => {
         mode="review"
       />,
     );
-    fireEvent.click(
-      screen.getByRole("button", { name: "Phân bổ nhà cung ứng" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Chế độ Phân bổ NCC" }));
     resolveOrders({
       kind: "success",
       response: createReviewProcurementWorkbenchFixture(
@@ -1176,11 +1377,10 @@ describe("school-catering Procurement purchase-order stage", () => {
       }),
     );
     renderWorkbench(api);
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
-    fireEvent.click(screen.getByRole("button", { name: "Đơn mua" }));
+    fireEvent.click(screen.getByRole("button", { name: "Chế độ Đơn mua" }));
     await screen.findByRole("table", { name: "Đơn mua" });
 
     await act(async () => {
@@ -1217,11 +1417,20 @@ describe("Planning to school-catering Procurement propagation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
 
     expect(
-      await screen.findByRole("heading", { name: "Kế hoạch mua hàng" }),
+      await screen.findByRole("heading", { name: "Phân bổ nhà cung ứng" }),
     ).toBeVisible();
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
     fireEvent.click(
-      await screen.findByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+      screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
     );
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Nhà cung ứng đủ điều kiện" }),
+      {
+        target: { value: "25000000-0000-4000-8000-000000000042" },
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Thêm NCC Bình Minh" }));
     fireEvent.change(screen.getByLabelText("Phân bổ NCC An Phú"), {
       target: { value: "60.000000" },
     });
@@ -1231,7 +1440,7 @@ describe("Planning to school-catering Procurement propagation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     await screen.findByText("Đã lưu phân bổ nhà cung ứng.");
 
-    fireEvent.click(screen.getByRole("button", { name: "Đơn mua" }));
+    fireEvent.click(screen.getByRole("button", { name: "Chế độ Đơn mua" }));
     fireEvent.click(await screen.findByRole("button", { name: "Tạo đơn mua" }));
     expect(
       await screen.findByRole("table", { name: "Đơn mua" }),
@@ -1255,17 +1464,29 @@ describe("Planning to school-catering Procurement propagation", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Kế hoạch mua hàng" }));
     expect(await screen.findByText("Có thể cân bằng lại")).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở phân bổ Gạo thơm" }),
+    fireEvent.click(screen.getByRole("button", { name: "Phân bổ NCC" }));
+    expect(screen.getByLabelText("Phân bổ NCC An Phú")).toHaveValue(
+      "60.000000",
     );
+    expect(screen.getByLabelText("Phân bổ NCC Bình Minh")).toHaveValue(
+      "40.000000",
+    );
+    expect(
+      screen.getByRole("region", { name: "Đề xuất cân bằng lại" }),
+    ).toHaveTextContent("72");
+    expect(
+      screen.getByRole("region", { name: "Đề xuất cân bằng lại" }),
+    ).toHaveTextContent("48");
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng đề xuất" }));
     expect(screen.getByLabelText("Phân bổ NCC An Phú")).toHaveValue(
       "72.000000",
     );
     expect(screen.getByLabelText("Phân bổ NCC Bình Minh")).toHaveValue(
       "48.000000",
     );
-    expect(screen.getByText("Tổng đang nhập: 120 kg")).toBeVisible();
-    expect(screen.getByText("Chênh lệch: 0 kg")).toBeVisible();
+    expect(screen.getByText("Nhu cầu: 120 kg")).toBeVisible();
+    expect(screen.getByText("Đã phân bổ: 120 kg")).toBeVisible();
+    expect(screen.getByText("Còn lại: 0 kg")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     await screen.findByText("Đã lưu phân bổ nhà cung ứng.");
     const familyTable = screen.getByRole("table", {
@@ -1273,14 +1494,12 @@ describe("Planning to school-catering Procurement propagation", () => {
     });
     expect(within(familyTable).getAllByText("120 kg")).toHaveLength(2);
 
-    fireEvent.click(screen.getByRole("button", { name: "Đơn mua" }));
+    fireEvent.click(screen.getByRole("button", { name: "Chế độ Đơn mua" }));
     expect(await screen.findByText("Cần cập nhật")).toBeVisible();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Mở đơn mua NCC An Phú" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn" }));
     expect(
-      screen.getByRole("button", { name: "Phát hành cho NCC" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Phát hành cho NCC" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Tạo lại đơn cần cập nhật" }),
     );
