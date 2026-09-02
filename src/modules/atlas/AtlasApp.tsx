@@ -68,6 +68,15 @@ import {
   type ConfirmedNeedApi,
 } from "./planning-inputs/confirmed-needs/confirmedNeedApi";
 import { createReviewConfirmedNeedApi } from "./planning-inputs/confirmed-needs/reviewConfirmedNeedApi";
+import { SchoolCateringProcurementWorkbench } from "./procurement/SchoolCateringProcurementWorkbench";
+import {
+  createSchoolCateringProcurementApi,
+  type SchoolCateringProcurementApi,
+} from "./procurement/schoolCateringProcurementApi";
+import {
+  createReviewSchoolCateringProcurementApi,
+  type SchoolCateringProcurementReviewScenario,
+} from "./procurement/reviewSchoolCateringProcurementApi";
 import { OperationalState, WorkbenchHeader } from "./WorkbenchComponents";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
@@ -78,7 +87,11 @@ import {
 } from "./review/reviewMode";
 
 export type MasterDataPageId =
-  "customers-schools" | "ingredients-units" | "recipes" | "planning-inputs";
+  | "customers-schools"
+  | "ingredients-units"
+  | "recipes"
+  | "planning-inputs"
+  | "procurement";
 
 type AtlasAppProps = {
   initialPage?: MasterDataPageId;
@@ -157,7 +170,66 @@ const REVIEW_SCENARIOS: {
   { value: "attendance_retryable", label: "Sĩ số · thử lại được" },
   { value: "attendance_stale", label: "Sĩ số · dữ liệu cũ" },
   { value: "attendance_session_lost", label: "Sĩ số · mất phiên" },
+  { value: "procurement_default", label: "Mua hàng · phân bổ đề xuất" },
+  { value: "procurement_manual_split", label: "Mua hàng · chia nhiều NCC" },
+  { value: "procurement_rebalance", label: "Mua hàng · cân bằng lại" },
+  {
+    value: "procurement_needs_reallocation",
+    label: "Mua hàng · NCC không còn phù hợp",
+  },
+  { value: "procurement_po_draft", label: "Mua hàng · đơn nháp" },
+  { value: "procurement_stale_po", label: "Mua hàng · đơn cần cập nhật" },
+  { value: "procurement_released_po", label: "Mua hàng · đã phát hành" },
+  {
+    value: "procurement_permission_denied",
+    label: "Mua hàng · thiếu quyền",
+  },
+  {
+    value: "procurement_retryable_failure",
+    label: "Mua hàng · lỗi kết nối",
+  },
+  { value: "procurement_empty", label: "Mua hàng · không có dữ liệu" },
 ];
+
+function procurementReviewScenario(
+  scenario: AtlasReviewScenario,
+): SchoolCateringProcurementReviewScenario {
+  const procurementScenarios: Partial<
+    Record<AtlasReviewScenario, SchoolCateringProcurementReviewScenario>
+  > = {
+    ready: "default",
+    empty: "empty",
+    permission_denied: "permission_denied",
+    procurement_default: "default",
+    procurement_manual_split: "manual_split",
+    procurement_rebalance: "rebalance",
+    procurement_needs_reallocation: "needs_reallocation",
+    procurement_po_draft: "po_draft",
+    procurement_stale_po: "stale_po",
+    procurement_released_po: "released_po",
+    procurement_permission_denied: "permission_denied",
+    procurement_retryable_failure: "retryable_failure",
+    procurement_empty: "empty",
+  };
+  return procurementScenarios[scenario] ?? "default";
+}
+
+function currentProcurementScope() {
+  const today = new Date();
+  const day = today.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = new Date(today);
+  start.setDate(today.getDate() + mondayOffset);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const localDate = (value: Date) => {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const date = String(value.getDate()).padStart(2, "0");
+    return `${year}-${month}-${date}`;
+  };
+  return { dateStart: localDate(start), dateEnd: localDate(end) };
+}
 
 function AtlasNavigation({
   active,
@@ -232,13 +304,14 @@ function AtlasNavigation({
         </Stack>
 
         <NavLink
-          renderRoot={(props) => <button {...props} type="button" disabled />}
+          component="button"
+          type="button"
           label="Kế hoạch mua hàng"
-          description="Chưa triển khai"
           leftSection={
             <ShoppingCart aria-hidden="true" size={19} weight="regular" />
           }
-          disabled
+          active={active === "procurement"}
+          onClick={() => navigate("procurement")}
         />
         <NavLink
           renderRoot={(props) => <button {...props} type="button" disabled />}
@@ -265,6 +338,8 @@ function MasterDataPage({
   readinessApi,
   needGenerationApi,
   confirmedNeedApi,
+  procurementApi,
+  onPurchaseHandoffReleased,
   mode,
 }: {
   page: MasterDataPageId;
@@ -277,14 +352,18 @@ function MasterDataPage({
   readinessApi?: ReturnType<typeof createPlanningInputReadinessApi>;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
+  procurementApi?: SchoolCateringProcurementApi;
+  onPurchaseHandoffReleased?: () => void;
   mode: "connected" | "review";
 }) {
   const schoolPage = page === "customers-schools";
   const recipePage = page === "recipes";
   const planningPage = page === "planning-inputs";
+  const procurementPage = page === "procurement";
+  const procurementScope = currentProcurementScope();
   return (
     <main className="atlas-page master-data-page">
-      {!planningPage && (
+      {!planningPage && !procurementPage && (
         <WorkbenchHeader
           eyebrow={recipePage ? "Món ăn và công thức" : "Dữ liệu gốc"}
           title={
@@ -312,6 +391,15 @@ function MasterDataPage({
           readinessApi={readinessApi}
           needGenerationApi={needGenerationApi}
           confirmedNeedApi={confirmedNeedApi}
+          onPurchaseHandoffReleased={onPurchaseHandoffReleased}
+          mode={mode}
+        />
+      ) : procurementPage ? (
+        <SchoolCateringProcurementWorkbench
+          authState={authState}
+          api={procurementApi}
+          initialDateStart={procurementScope.dateStart}
+          initialDateEnd={procurementScope.dateEnd}
           mode={mode}
         />
       ) : recipePage ? (
@@ -345,6 +433,7 @@ function AtlasShell({
   readinessApi,
   needGenerationApi,
   confirmedNeedApi,
+  procurementApi,
   mode,
   session,
   connection,
@@ -361,6 +450,7 @@ function AtlasShell({
   readinessApi?: ReturnType<typeof createPlanningInputReadinessApi>;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
+  procurementApi?: SchoolCateringProcurementApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   connection?: AtlasSupabaseClientResult;
@@ -460,6 +550,8 @@ function AtlasShell({
           readinessApi={readinessApi}
           needGenerationApi={needGenerationApi}
           confirmedNeedApi={confirmedNeedApi}
+          procurementApi={procurementApi}
+          onPurchaseHandoffReleased={() => setActive("procurement")}
           mode={mode}
         />
       </AppShell.Main>
@@ -500,6 +592,13 @@ function ReviewAtlasApp({
     () => createReviewConfirmedNeedApi(scenario),
     [scenario],
   );
+  const procurementApi = useMemo(
+    () =>
+      createReviewSchoolCateringProcurementApi(
+        procurementReviewScenario(scenario),
+      ),
+    [scenario],
+  );
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -514,6 +613,7 @@ function ReviewAtlasApp({
       readinessApi={readinessApi}
       needGenerationApi={needGenerationApi}
       confirmedNeedApi={confirmedNeedApi}
+      procurementApi={procurementApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -568,6 +668,11 @@ function ConnectedAtlasApp({
     () => (transport ? createConfirmedNeedApi(transport) : undefined),
     [transport],
   );
+  const procurementApi = useMemo(
+    () =>
+      transport ? createSchoolCateringProcurementApi(transport) : undefined,
+    [transport],
+  );
 
   return (
     <AtlasShell
@@ -581,6 +686,7 @@ function ConnectedAtlasApp({
       readinessApi={readinessApi}
       needGenerationApi={needGenerationApi}
       confirmedNeedApi={confirmedNeedApi}
+      procurementApi={procurementApi}
       mode="connected"
       session={auth}
       connection={connection}

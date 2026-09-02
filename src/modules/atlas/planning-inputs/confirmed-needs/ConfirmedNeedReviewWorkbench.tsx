@@ -7,10 +7,12 @@ import {
 } from "../planningSchoolScope";
 import { PlanningRailActionPortal } from "../PlanningRailActionPortal";
 import {
+  confirmedNeedPurchaseHandoffRequest,
   confirmedNeedReleaseV2Request,
   confirmedNeedSaveV2Request,
   type ConfirmedNeedApi,
   type ConfirmedNeedLineRequest,
+  type ConfirmedNeedPurchaseHandoffRequest,
   type ConfirmedNeedSaveV2Request,
 } from "./confirmedNeedApi";
 import {
@@ -113,33 +115,35 @@ export function confirmedNeedLineRequest(
   };
 }
 
-function differs(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
+function hasUnsavedLocalChange(
+  line: ConfirmedNeedLine,
+  draft: ConfirmedNeedDraftLine,
+) {
   const initial = initialConfirmedNeedDraft(line);
   return (
+    line.current_decision_id === null ||
     !exactDecimalEqual(initial.exact_quantity, draft.exact_quantity) ||
     initial.reason_code !== draft.reason_code ||
     initial.reason_note.trim() !== draft.reason_note.trim()
   );
 }
 
-function hasDraftDifference(
-  line: ConfirmedNeedLine,
-  draft: ConfirmedNeedDraftLine,
-) {
-  return !exactDecimalEqual(
-    draft.exact_quantity,
-    line.proposed_confirmed_quantity,
-  );
-}
-
 function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
   if (!normalizeConfirmedNeedQuantity(draft.exact_quantity))
     return "Số lượng phải là số không âm, tối đa 6 chữ số thập phân.";
+  const initial = initialConfirmedNeedDraft(line);
   const unchanged = exactDecimalEqual(
     draft.exact_quantity,
     line.proposed_confirmed_quantity,
   );
-  if (unchanged && draft.reason_code !== "PROPOSAL_ACCEPTED")
+  const preservesSavedAdjustment =
+    line.current_decision_id !== null &&
+    initial.reason_code !== "PROPOSAL_ACCEPTED";
+  if (
+    unchanged &&
+    draft.reason_code !== "PROPOSAL_ACCEPTED" &&
+    !preservesSavedAdjustment
+  )
     return "Số lượng không đổi nên không cần lý do điều chỉnh.";
   if (!unchanged && draft.reason_code === "PROPOSAL_ACCEPTED")
     return "Hãy chọn lý do khi thay đổi số lượng.";
@@ -150,7 +154,7 @@ function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
     return "Lý do này cần ghi chú.";
   if (
     line.current_decision_id &&
-    differs(line, draft) &&
+    hasUnsavedLocalChange(line, draft) &&
     !draft.reason_note.trim()
   )
     return "Thay đổi nội dung đã lưu cần ghi chú.";
@@ -164,6 +168,7 @@ export function ConfirmedNeedReviewWorkbench({
   currentNeedResolution = initialBatchId ? "available" : "idle",
   onDirtyChange,
   schoolScopeIds = [],
+  onPurchaseHandoffReleased,
 }: {
   authState: AtlasAuthState;
   api?: ConfirmedNeedApi;
@@ -179,6 +184,7 @@ export function ConfirmedNeedReviewWorkbench({
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
   schoolScopeIds?: string[];
+  onPurchaseHandoffReleased?: () => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
@@ -199,6 +205,8 @@ export function ConfirmedNeedReviewWorkbench({
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [pendingSave, setPendingSave] =
     useState<ConfirmedNeedSaveV2Request | null>(null);
+  const [pendingHandoff, setPendingHandoff] =
+    useState<ConfirmedNeedPurchaseHandoffRequest | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -236,17 +244,19 @@ export function ConfirmedNeedReviewWorkbench({
   }, [adopt, api, authSubject, correlationId, initialBatchId]);
 
   useEffect(() => void load(), [load]);
+  useEffect(() => {
+    setPendingHandoff(null);
+    setReleaseConfirmation(false);
+  }, [initialBatchId]);
 
   const changedLines = useMemo(() => {
     if (!workbench) return [];
     return workbench.lines.filter((line) => {
       const draft = drafts[line.confirmed_need_line_id];
-      return Boolean(
-        draft && (line.current_decision_id === null || differs(line, draft)),
-      );
+      return Boolean(draft && hasUnsavedLocalChange(line, draft));
     });
   }, [drafts, workbench]);
-  const dirty = changedLines.some((line) => line.current_decision_id !== null);
+  const dirty = changedLines.length > 0;
 
   useEffect(
     () => onDirtyChange?.(dirty || refreshRequired),
@@ -312,7 +322,7 @@ export function ConfirmedNeedReviewWorkbench({
       )
         return false;
       const draft = drafts[line.confirmed_need_line_id];
-      if (showDifferencesOnly && draft && !hasDraftDifference(line, draft))
+      if (showDifferencesOnly && draft && !hasUnsavedLocalChange(line, draft))
         return false;
       return true;
     });
@@ -364,34 +374,70 @@ export function ConfirmedNeedReviewWorkbench({
     setBusy(false);
   };
 
-  const release = async () => {
-    if (
-      !api ||
-      !authSubject ||
-      !workbench ||
-      !workbench.allowed_actions.release_confirmed_needs
-    )
+  const releaseHandoff = async (
+    request: ConfirmedNeedPurchaseHandoffRequest,
+  ) => {
+    if (!api) return;
+    setBusy(true);
+    const result = await api.releasePurchaseHandoff(request);
+    if (result.kind === "success") {
+      setPendingHandoff(null);
+      await load();
+      setNotice("Đã chuyển sang lên đơn.");
+      setBusy(false);
+      onPurchaseHandoffReleased?.();
       return;
+    }
+    setPendingHandoff(request);
+    setNotice(
+      `Nhu cầu đã được phát hành. Bàn giao mua hàng chưa hoàn tất. ${confirmedNeedResultMessage(result)}`,
+    );
+    setBusy(false);
+  };
+
+  const release = async () => {
+    if (!api || !authSubject || !workbench) return;
     setBusy(true);
     setReleaseConfirmation(false);
-    const result = await api.releaseSaved(
-      confirmedNeedReleaseV2Request(
+    const alreadyReleased =
+      workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
+    let releasedWorkbench = workbench;
+    if (!alreadyReleased) {
+      if (!workbench.allowed_actions.release_confirmed_needs) {
+        setBusy(false);
+        return;
+      }
+      const result = await api.releaseSaved(
+        confirmedNeedReleaseV2Request(
+          authSubject,
+          correlationId,
+          workbench.confirmed_need_batch_id,
+          workbench.batch_version,
+        ),
+      );
+      const readback = confirmedNeedReadbackFromResult(result);
+      if (!readback) {
+        if (confirmedNeedResultAllowsExactRetry(result)) {
+          setRefreshRequired(true);
+          setNotice(
+            "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
+          );
+        } else setNotice(confirmedNeedResultMessage(result));
+        setBusy(false);
+        return;
+      }
+      adopt(readback);
+      releasedWorkbench = readback;
+    }
+    const handoffRequest =
+      pendingHandoff ??
+      confirmedNeedPurchaseHandoffRequest(
         authSubject,
         correlationId,
-        workbench.confirmed_need_batch_id,
-        workbench.batch_version,
-      ),
-    );
-    const readback = confirmedNeedReadbackFromResult(result);
-    if (readback) adopt(readback);
-    else if (confirmedNeedResultAllowsExactRetry(result)) {
-      setRefreshRequired(true);
-      setNotice(
-        "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
+        releasedWorkbench.confirmed_need_batch_id,
+        releasedWorkbench.batch_version,
       );
-    } else setNotice(confirmedNeedResultMessage(result));
-    if (readback) setNotice("Đã chuyển sang lên đơn.");
-    setBusy(false);
+    await releaseHandoff(handoffRequest);
   };
 
   if (currentNeedResolution === "loading" || (busy && !workbench))
@@ -443,8 +489,7 @@ export function ConfirmedNeedReviewWorkbench({
     changedLines.length > 0 &&
     errors.length === 0;
   const canRelease =
-    backendCanRelease &&
-    !released &&
+    (backendCanRelease || released) &&
     !dirty &&
     !refreshRequired &&
     !busy &&
@@ -487,7 +532,7 @@ export function ConfirmedNeedReviewWorkbench({
               onClick={() => setReleaseConfirmation(true)}
               disabled={!canRelease}
               title={
-                backendCanRelease
+                backendCanRelease || released
                   ? undefined
                   : actionReason(
                       workbench.disabled_reason_codes.release_confirmed_needs,
@@ -531,6 +576,22 @@ export function ConfirmedNeedReviewWorkbench({
         <p className="confirmed-need-notice" role="status">
           {notice}
         </p>
+      )}
+      {pendingHandoff && (
+        <section
+          className="confirmed-need-notice confirmed-need-handoff-recovery"
+          aria-label="Khôi phục Bàn giao mua hàng"
+        >
+          <strong>Nhu cầu đã phát hành; Bàn giao mua hàng còn chờ.</strong>
+          <button
+            type="button"
+            className="primary"
+            disabled={busy}
+            onClick={() => void releaseHandoff(pendingHandoff)}
+          >
+            Thử lại bàn giao
+          </button>
+        </section>
       )}
       {refreshRequired && (
         <div className="confirmed-need-attention" role="alert">
@@ -602,7 +663,7 @@ export function ConfirmedNeedReviewWorkbench({
             checked={showDifferencesOnly}
             onChange={(event) => setShowDifferencesOnly(event.target.checked)}
           />
-          <span>Chỉ hiển thị dòng có chênh lệch</span>
+          <span>Chỉ hiển thị thay đổi chưa lưu</span>
         </label>
       </section>
 
@@ -619,7 +680,7 @@ export function ConfirmedNeedReviewWorkbench({
             "Đơn vị",
             "Nhu cầu tính",
             "Số lượng xác nhận",
-            "Chênh lệch",
+            "Thay đổi chưa lưu",
             "Lý do / ghi chú",
           ]}
         >
@@ -627,11 +688,17 @@ export function ConfirmedNeedReviewWorkbench({
             const draft =
               drafts[line.confirmed_need_line_id] ??
               initialConfirmedNeedDraft(line);
-            const adjusted = !exactDecimalEqual(
-              draft.exact_quantity,
-              line.proposed_confirmed_quantity,
-            );
-            const error = draftError(line, draft);
+            const initial = initialConfirmedNeedDraft(line);
+            const rowHasUnsavedChange = hasUnsavedLocalChange(line, draft);
+            const showsAdjustmentReason =
+              draft.reason_code !== "PROPOSAL_ACCEPTED";
+            const delta = rowHasUnsavedChange
+              ? subtractExactDecimals(
+                  draft.exact_quantity,
+                  initial.exact_quantity,
+                )
+              : null;
+            const error = rowHasUnsavedChange ? draftError(line, draft) : null;
             return (
               <tr key={line.confirmed_need_line_id}>
                 <td>
@@ -656,34 +723,32 @@ export function ConfirmedNeedReviewWorkbench({
                     disabled={released || !workbench.editing_allowed}
                     onChange={(event) => {
                       const exactQuantity = event.target.value;
-                      const returnsToProposal = exactDecimalEqual(
+                      const returnsToSavedBaseline = exactDecimalEqual(
                         exactQuantity,
-                        line.proposed_confirmed_quantity,
+                        initial.exact_quantity,
                       );
                       setDrafts((current) => ({
                         ...current,
                         [line.confirmed_need_line_id]: {
                           ...draft,
                           exact_quantity: exactQuantity,
-                          reason_code: returnsToProposal
-                            ? "PROPOSAL_ACCEPTED"
+                          reason_code: returnsToSavedBaseline
+                            ? initial.reason_code
                             : draft.reason_code === "PROPOSAL_ACCEPTED"
                               ? "PLANNING_STEP_ADJUSTMENT"
                               : draft.reason_code,
+                          reason_note: returnsToSavedBaseline
+                            ? initial.reason_note
+                            : draft.reason_note,
                         },
                       }));
                     }}
                   />
                   {error && <small className="field-error">{error}</small>}
                 </td>
+                <td>{delta && delta !== "0" ? delta : "—"}</td>
                 <td>
-                  {subtractExactDecimals(
-                    draft.exact_quantity,
-                    line.proposed_confirmed_quantity,
-                  ) ?? "—"}
-                </td>
-                <td>
-                  {adjusted ? (
+                  {showsAdjustmentReason ? (
                     <>
                       <select
                         aria-label={`Lý do điều chỉnh ${line.ingredient.name}`}
@@ -743,9 +808,9 @@ export function ConfirmedNeedReviewWorkbench({
         >
           <h3>Chuyển nhu cầu đã lưu sang bước lên đơn?</h3>
           <p>
-            Atlas sẽ kiểm tra toàn bộ dữ liệu và ghi nhận cam kết. Hành động này
-            chưa phân bổ nhà cung cấp, chưa tạo Bàn giao mua hàng và chưa tạo
-            Đơn mua hàng.
+            Atlas sẽ kiểm tra và phát hành nhu cầu đã lưu, sau đó tạo hoặc cập
+            nhật Bàn giao mua hàng sang Thu mua. Bước này chưa phân bổ nhà cung
+            cấp và chưa tạo Đơn mua.
           </p>
           <div>
             <button

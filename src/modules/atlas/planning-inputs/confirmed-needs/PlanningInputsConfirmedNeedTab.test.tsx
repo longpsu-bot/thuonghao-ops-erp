@@ -143,6 +143,71 @@ function confirmedNeedApiForDates(
 }
 
 describe("Planning Inputs Confirmed Need tab", () => {
+  it("threads the successful Purchase Handoff callback through the Planning workbench", async () => {
+    const serviceDate = "2026-08-03";
+    const readinessApi = readinessWithDailyNeeds({
+      [serviceDate]: { batchId: defaultBatchId },
+    });
+    const confirmedNeedApi = confirmedNeedApiForDates(
+      { [defaultBatchId]: serviceDate },
+      { releaseEligible: true },
+    );
+    const released = createReviewConfirmedNeedFixture();
+    released.confirmed_need_batch_id = defaultBatchId;
+    released.batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
+    released.authoritative_batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
+    released.batch_version = 4;
+    released.lines = released.lines.map((line, index) => ({
+      ...line,
+      service_date: serviceDate,
+      current_decision_id: `release-ready-decision-${index + 1}`,
+      current_decision_number: 1,
+      current_decision_kind: "PROPOSAL_ACCEPTED",
+      confirmed_quantity_after: line.proposed_confirmed_quantity,
+      confirmation_state: "CONFIRMED_CURRENT",
+    }));
+    released.line_counts = {
+      ...released.line_counts,
+      unreviewed: 0,
+      confirmed: released.lines.length,
+      needs_review: 0,
+      new: 0,
+    };
+    vi.spyOn(confirmedNeedApi, "releaseSaved").mockResolvedValue({
+      kind: "success",
+      response: {
+        success: true,
+        authoritative_readback: released as unknown as JsonValue,
+      },
+    });
+    vi.spyOn(confirmedNeedApi, "releasePurchaseHandoff").mockResolvedValue({
+      kind: "success",
+      response: { success: true },
+    });
+    const onPurchaseHandoffReleased = vi.fn();
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        readinessApi={readinessApi}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart={serviceDate}
+        mode="review"
+        onPurchaseHandoffReleased={onPurchaseHandoffReleased}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
+
+    await waitFor(() =>
+      expect(onPurchaseHandoffReleased).toHaveBeenCalledOnce(),
+    );
+  });
+
   it("keeps Xác nhận nhu cầu as the first downstream review tab", async () => {
     render(
       <PlanningInputsWorkbench
@@ -221,10 +286,13 @@ describe("Planning Inputs Confirmed Need tab", () => {
       },
       "2026-08-05": { batchId: wednesdayBatch },
     });
-    const confirmedNeedApi = confirmedNeedApiForDates({
-      [mondayBatch]: "2026-08-03",
-      [wednesdayBatch]: "2026-08-05",
-    });
+    const confirmedNeedApi = confirmedNeedApiForDates(
+      {
+        [mondayBatch]: "2026-08-03",
+        [wednesdayBatch]: "2026-08-05",
+      },
+      { releaseEligible: true },
+    );
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -473,25 +541,63 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
   });
 
-  it("keeps embedded Need Generation as navigation rather than command authority", async () => {
+  it("generates the selected day, opens the returned Draft Review batch, and preserves Save then release", async () => {
+    const needGenerationApi = createReviewNeedGenerationApi("ready");
+    const execute = vi.spyOn(needGenerationApi, "execute");
+    const confirmedNeedApi = createReviewConfirmedNeedApi("ready");
+    const getReview = vi.spyOn(confirmedNeedApi, "getReview");
+    const save = vi.spyOn(confirmedNeedApi, "save");
     render(
       <PlanningInputsWorkbench
         authState={authState}
-        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        needGenerationApi={needGenerationApi}
         readinessApi={createReviewPlanningInputReadinessApi("ready")}
-        confirmedNeedApi={createReviewConfirmedNeedApi("ready")}
+        confirmedNeedApi={confirmedNeedApi}
+        initialWeekStart="2026-08-31"
         mode="review"
       />,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    expect(
-      await screen.findByRole("region", {
-        name: "Tổng quan nhu cầu theo ngày",
+    const navigator = await screen.findByRole("region", {
+      name: "Tổng quan nhu cầu theo ngày",
+    });
+    fireEvent.click(
+      within(navigator).getByRole("button", {
+        name: "Rà soát 31/08/2026",
       }),
-    ).toBeVisible();
+    );
+    expect(execute).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
+    );
+
+    await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
+    expect(execute.mock.calls[0]?.[0]).toMatchObject({
+      contract_version: "RMVP-04.v3",
+      payload: { service_date: "2026-08-31" },
+    });
+    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
+      "31/08/2026",
+    );
+    expect(await screen.findByText("Gạo thơm")).toBeVisible();
+    expect(getReview).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      defaultBatchId,
+      expect.any(Object),
+      0,
+      10_000,
+    );
+
+    const saveButton = screen.getByRole("button", { name: "Lưu" });
+    expect(saveButton).toBeEnabled();
+    fireEvent.click(saveButton);
+    expect(await screen.findByText("Đã lưu thay đổi.")).toBeVisible();
+    expect(save).toHaveBeenCalledTimes(1);
     expect(
-      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).toBeEnabled();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();

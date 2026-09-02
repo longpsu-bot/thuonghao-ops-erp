@@ -6,6 +6,10 @@
 
 **Reviewed baseline:** `f3197bb5a7b571378a41ae5056a73a84ad57d583`
 
+**School-catering Procurement amendment:** PR-C connects the reviewed Procurement
+API boundary to the Atlas shell. The original inventory remains the authority for
+the earlier UI-quality program; this amendment records the newly connected surface.
+
 **Purpose:** identify the connected surfaces that should be stabilized before CMD-03 without redefining business behavior or polishing prototypes that will change later.
 
 ## 1. Evidence basis
@@ -132,6 +136,45 @@ Quality priorities:
 
 Planning delivery priority: **UI-QUALITY-02**.
 
+## 3A. Connected school-catering Procurement scope
+
+Primary path:
+
+```text
+src/modules/atlas/procurement/
+```
+
+The enabled sidebar destination is `Kế hoạch mua hàng`. It consumes the
+school-catering backend path only:
+
+```text
+Planning Confirmed Need release
+→ Purchase Handoff release
+→ Allocation Family
+→ complete supplier split
+→ supplier/date Purchase Order DRAFT
+→ immutable release with a backend-generated official number
+```
+
+The operator surface has exactly two stages, `Phân bổ nhà cung ứng` and `Đơn
+mua`. Allocation uses one row per authoritative family, keeps raw Handoff
+contributions behind disclosure, and treats recommendations and rebalance
+proposals as advisory until the operator explicitly confirms a complete family
+snapshot. The PO stage is read-only for supplier and quantity, materializes a
+bounded date range, preserves blocked-date exceptions beside usable dates,
+regenerates stale DRAFTs through the approved command, and releases one PO per
+independent command.
+
+Persistent command results own replay, retryable, stale, blocked and unknown
+outcome recovery. An unknown write outcome locks further mutation until an
+authoritative readback. The connected surface contains no direct table access,
+official-number input, automatic write retry, or automatic redistribution after
+supplier ineligibility.
+
+This school-catering path is separate from PA-05E supplier-direct wholesale.
+PA-05E keeps its whole-line allocation and wholesale CMD-06 contract; it is not
+adapted or replaced by this workbench.
+
 ## 4. Connected Admin scope
 
 ### Schools
@@ -184,7 +227,9 @@ Admin delivery priority: **UI-QUALITY-03**.
 
 ## 5. Explicitly deferred UI scope
 
-Procurement, Warehouse, Dispatch and other unconnected prototypes are not part of the pre-CMD-03 polish gate.
+Warehouse, Dispatch and other unconnected prototypes are not part of the
+pre-CMD-03 polish gate. The historical Procurement prototype remains excluded;
+only `src/modules/atlas/procurement/` is now a connected Atlas surface.
 
 They remain useful architecture and workflow evidence, but polishing them now would create rework before their backend contracts are connected. Their UI quality work should accompany later connected slices.
 

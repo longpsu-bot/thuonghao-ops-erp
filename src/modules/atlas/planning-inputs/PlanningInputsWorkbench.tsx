@@ -708,6 +708,7 @@ export function PlanningInputsWorkbenchView({
   readinessApi,
   needGenerationApi,
   confirmedNeedApi,
+  onPurchaseHandoffReleased,
   initialWeekStart,
   mode = "connected",
 }: {
@@ -720,6 +721,7 @@ export function PlanningInputsWorkbenchView({
   >;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
+  onPurchaseHandoffReleased?: () => void;
   initialWeekStart?: string;
   mode?: "connected" | "review";
 }) {
@@ -2321,6 +2323,7 @@ export function PlanningInputsWorkbenchView({
                     mode={mode}
                     schoolScopeIds={schoolScopeIds}
                     onDirtyChange={setConfirmedNeedDirty}
+                    onPurchaseHandoffReleased={onPurchaseHandoffReleased}
                   />
                 </section>
               </div>

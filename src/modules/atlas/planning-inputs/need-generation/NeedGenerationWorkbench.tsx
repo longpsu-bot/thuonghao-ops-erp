@@ -542,7 +542,7 @@ export function NeedGenerationWorkbench({
     setPreflight(nextPreflight);
     setDailyPreflights((current) =>
       nextPreflight
-        ? { ...current, [selectedServiceDate]: nextPreflight }
+        ? { ...current, [nextPreflight.period_start]: nextPreflight }
         : current,
     );
     setWorkbench(nextWorkbench);
@@ -566,7 +566,7 @@ export function NeedGenerationWorkbench({
       onConfirmedNeedMaterialized?.(nextBatchId);
       onConfirmedNeedSelected?.(
         nextBatchId,
-        selectedServiceDate,
+        nextPreflight.period_start,
         nextPreflight,
       );
     }
@@ -601,7 +601,7 @@ export function NeedGenerationWorkbench({
     serviceDate: string,
     state: PlanningInputPreflightData | undefined,
   ) => {
-    setLoading(true);
+    setLoading(selectedServiceDate !== serviceDate);
     setSelectedServiceDate(serviceDate);
     setPreflight(state ?? null);
     setOffset(0);
@@ -612,6 +612,13 @@ export function NeedGenerationWorkbench({
       onConfirmedNeedMaterialized?.(batchId);
       onConfirmedNeedSelected?.(batchId, serviceDate, state);
     }
+  };
+
+  const openSelectedConfirmedNeed = () => {
+    const batchId = preflight?.current_need?.confirmed_need_batch_id;
+    if (preflight?.downstream_currentness !== "CURRENT" || !batchId) return;
+    onConfirmedNeedMaterialized?.(batchId);
+    onConfirmedNeedSelected?.(batchId, selectedServiceDate, preflight);
   };
 
   if (embeddedInConfirmedNeed) {
@@ -652,6 +659,50 @@ export function NeedGenerationWorkbench({
             );
           })}
         </nav>
+        {preflight && (
+          <section
+            className="need-generation-daily-selected-action"
+            role="region"
+            aria-label="Việc cần làm cho ngày đã chọn"
+          >
+            <div className="need-generation-daily-selected-copy">
+              <span>Ngày đang xem</span>
+              <strong>{viDate(selectedServiceDate)}</strong>
+              <p>{planningStatusSentence(preflight)}</p>
+            </div>
+            {canExecute && (
+              <button
+                type="button"
+                className="primary-forward"
+                disabled={busy}
+                onClick={() => void executeNeed()}
+              >
+                <Lightning aria-hidden="true" size={18} />
+                {executionLabel}
+              </button>
+            )}
+            {preflight.downstream_currentness === "CURRENT" &&
+              preflight.current_need?.confirmed_need_batch_id && (
+                <button
+                  type="button"
+                  className="primary-forward"
+                  disabled={busy}
+                  onClick={openSelectedConfirmedNeed}
+                >
+                  <Eye aria-hidden="true" size={18} />
+                  Mở xác nhận
+                </button>
+              )}
+            {notice && (
+              <p
+                className="operator-notice need-generation-daily-selected-notice"
+                role={refreshRequired ? "alert" : "status"}
+              >
+                {notice}
+              </p>
+            )}
+          </section>
+        )}
       </section>
     );
   }
@@ -801,16 +852,7 @@ export function NeedGenerationWorkbench({
                 <button
                   type="button"
                   className="primary-forward"
-                  onClick={() => {
-                    const batchId =
-                      preflight.current_need!.confirmed_need_batch_id;
-                    onConfirmedNeedMaterialized?.(batchId);
-                    onConfirmedNeedSelected?.(
-                      batchId,
-                      selectedServiceDate,
-                      preflight,
-                    );
-                  }}
+                  onClick={openSelectedConfirmedNeed}
                 >
                   Mở Xác nhận nhu cầu
                 </button>

@@ -10,6 +10,8 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasApp } from "./AtlasApp";
 import { ATLAS_REVIEW_NOTICE } from "./review/reviewMode";
+import { createReviewProcurementWorkbenchFixture } from "./procurement/reviewSchoolCateringProcurementApi";
+import type { AtlasSupabaseClientResult } from "./connection/supabaseClient";
 import type { ReactNode } from "react";
 
 Object.defineProperty(window, "matchMedia", {
@@ -56,7 +58,7 @@ describe("Atlas master-data shell", () => {
     expect(document.body.textContent).not.toContain("Prototype");
   });
 
-  it("shows the four active RMVP pages and marks later modules unavailable", () => {
+  it("enables the five active Atlas pages while keeping Warehouse unavailable", () => {
     render(<AtlasApp reviewMode />);
 
     const navigation = screen.getByRole("navigation", {
@@ -76,12 +78,93 @@ describe("Atlas master-data shell", () => {
     expect(
       within(navigation).getByRole("button", { name: "Lập nhu cầu" }),
     ).toBeEnabled();
+    expect(
+      within(navigation).getByRole("button", { name: "Kế hoạch mua hàng" }),
+    ).toBeEnabled();
 
-    for (const label of [/^Tổng quan/, /^Kế hoạch mua hàng/, /^Kho/]) {
+    for (const label of [/^Tổng quan/, /^Kho/]) {
       expect(
         within(navigation).getByRole("button", { name: label }),
       ).toBeDisabled();
     }
+  });
+
+  it("renders the connected Procurement review workbench from Atlas navigation", async () => {
+    render(<AtlasApp reviewMode initialPage="procurement" />);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Kế hoạch mua hàng" }),
+    ).toBeVisible();
+    expect(
+      await screen.findByRole("table", { name: "Allocation Family" }),
+    ).toBeVisible();
+    expect(screen.getByText("Gạo thơm")).toBeVisible();
+  });
+
+  it("renders Procurement through the connected Atlas RPC transport", async () => {
+    const session = {
+      access_token: "test-only",
+      refresh_token: "test-only",
+      expires_in: 3600,
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      token_type: "bearer",
+      user: { id: "connected-procurement-operator" },
+    };
+    const getSession = vi.fn().mockResolvedValue({
+      data: { session },
+      error: null,
+    });
+    const rpc = vi.fn(() => ({
+      retry: vi.fn().mockResolvedValue({
+        data: createReviewProcurementWorkbenchFixture("default"),
+        error: null,
+      }),
+    }));
+    const connection = {
+      status: "configured",
+      environmentLabel: "Atlas connected test",
+      client: {
+        auth: {
+          getSession,
+          onAuthStateChange: vi.fn(() => ({
+            data: { subscription: { unsubscribe: vi.fn() } },
+          })),
+          signInWithPassword: vi.fn(),
+          signOut: vi.fn(),
+        },
+        schema: vi.fn(() => ({ rpc })),
+      },
+    } as unknown as AtlasSupabaseClientResult;
+
+    render(
+      <AtlasApp
+        reviewMode={false}
+        connection={connection}
+        initialPage="procurement"
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Kế hoạch mua hàng" }),
+    ).toBeVisible();
+    expect(
+      await screen.findByRole("table", { name: "Allocation Family" }),
+    ).toBeVisible();
+    await waitFor(() =>
+      expect(rpc).toHaveBeenCalledWith(
+        "get_school_catering_procurement_workbench",
+        expect.any(Object),
+      ),
+    );
+  });
+
+  it("does not route Atlas through the dormant Procurement prototype", async () => {
+    const { readFileSync } = await vi.importActual<{
+      readFileSync(path: string | URL, encoding: "utf8"): string;
+    }>("node:fs");
+    const source = readFileSync("src/modules/atlas/AtlasApp.tsx", "utf8");
+    expect(source).not.toContain("../procurement/ProcurementWorkbench");
+    expect(source).not.toContain("modules/procurement/ProcurementWorkbench");
   });
 
   it("returns focus to the mobile navigation control after navigation", () => {
@@ -132,8 +215,8 @@ describe("Atlas master-data shell", () => {
       }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("button", { name: /^Tạo nhu cầu$/ }),
-    ).not.toBeInTheDocument();
+      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
+    ).toBeEnabled();
   });
 
   it("runs the connected review journey for consequential menu and attendance saves", async () => {

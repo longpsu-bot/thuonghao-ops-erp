@@ -114,6 +114,20 @@ export const ATLAS_RPC_FUNCTIONS = {
     "release_confirmed_needs_for_purchase_handoff",
   "atlas_api.save_confirmed_needs": "save_confirmed_needs",
   "atlas_api.release_confirmed_needs": "release_confirmed_needs",
+  "atlas_api.release_school_catering_purchase_handoff":
+    "release_school_catering_purchase_handoff",
+  "atlas_api.save_school_catering_supplier_allocation":
+    "save_school_catering_supplier_allocation",
+  "atlas_api.confirm_school_catering_supplier_recommendations":
+    "confirm_school_catering_supplier_recommendations",
+  "atlas_api.create_school_catering_purchase_order_drafts":
+    "create_school_catering_purchase_order_drafts",
+  "atlas_api.release_school_catering_purchase_order":
+    "release_school_catering_purchase_order",
+  "atlas_api.get_school_catering_procurement_workbench":
+    "get_school_catering_procurement_workbench",
+  "atlas_api.get_school_catering_purchase_orders":
+    "get_school_catering_purchase_orders",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry": "save_pantry",
