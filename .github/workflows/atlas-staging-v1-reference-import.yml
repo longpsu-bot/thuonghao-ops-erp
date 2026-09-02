@@ -57,10 +57,11 @@ jobs:
       - name: Install frozen dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Extract read-only and print aggregate dry-run report
+      - name: Validate OPS v1 reference snapshot
+        if: ${{ inputs.mode == 'validate' }}
         run: pnpm atlas:staging:v1-reference:import -- --commit-sha "${{ inputs.commit_sha }}"
 
-      - name: Apply the validated reference manifest to Atlas Staging
+      - name: Validate and apply OPS v1 reference snapshot
         if: ${{ inputs.mode == 'apply' }}
         run: >-
           pnpm atlas:staging:v1-reference:import --
