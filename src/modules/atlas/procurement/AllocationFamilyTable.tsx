@@ -83,6 +83,7 @@ export function AllocationFamilyTable({
             <th>Còn lại / chênh lệch</th>
             <th>NCC</th>
             <th>Trạng thái</th>
+            <th aria-label="Thao tác phân bổ" />
           </tr>
         </thead>
         <tbody>
@@ -114,14 +115,7 @@ export function AllocationFamilyTable({
                   <small>{row.location_name}</small>
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    className="procurement-row-select"
-                    aria-label={`Mở phân bổ ${row.ingredient_name}`}
-                    onClick={() => onSelect(row)}
-                  >
-                    {row.ingredient_name}
-                  </button>
+                  <strong>{row.ingredient_name}</strong>
                   <small>{row.contribution_count} nguồn bàn giao</small>
                 </td>
                 <td>
@@ -140,6 +134,15 @@ export function AllocationFamilyTable({
                   >
                     {stateLabels[row.state]}
                   </span>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="secondary procurement-allocation-action"
+                    onClick={() => onSelect(row)}
+                  >
+                    {row.state === "BALANCED" ? "Xem phân bổ" : "Phân bổ NCC"}
+                  </button>
                 </td>
               </tr>
             );

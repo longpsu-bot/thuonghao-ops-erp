@@ -23,26 +23,24 @@ function displayScaled(value: bigint) {
 }
 
 function initialDraft(row: AllocationFamilyRow) {
-  const proposal = row.rebalance_proposal ?? [];
   return Object.fromEntries(
-    row.eligible_suppliers.map((supplier) => {
-      const split = row.splits.find(
-        (item) => item.supplier_id === supplier.supplier_id,
-      );
-      const proposed = proposal.find(
-        (item) => item.supplier_id === supplier.supplier_id,
-      );
-      const recommended =
-        row.recommendation?.supplier_id === supplier.supplier_id
-          ? row.recommendation.allocated_quantity
-          : "";
-      return [
-        supplier.supplier_id,
-        proposed?.allocated_quantity ??
-          split?.allocated_quantity ??
-          recommended,
-      ];
-    }),
+    row.splits.flatMap((split) =>
+      row.eligible_suppliers.some(
+        (supplier) => supplier.supplier_id === split.supplier_id,
+      )
+        ? [[split.supplier_id, split.allocated_quantity]]
+        : [],
+    ),
+  );
+}
+
+function initialParticipantIds(row: AllocationFamilyRow) {
+  return row.splits.flatMap((split) =>
+    row.eligible_suppliers.some(
+      (supplier) => supplier.supplier_id === split.supplier_id,
+    )
+      ? [split.supplier_id]
+      : [],
   );
 }
 
@@ -74,17 +72,41 @@ export function SupplierSplitPanel({
   onSave: (splits: SupplierSplitInput[]) => void;
 }) {
   const [traceOpen, setTraceOpen] = useState(false);
+  const [participantIds, setParticipantIds] = useState<string[]>(() =>
+    initialParticipantIds(row),
+  );
+  const [operatorAddedIds, setOperatorAddedIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [addingSupplier, setAddingSupplier] = useState(false);
+  const [supplierToAdd, setSupplierToAdd] = useState("");
   const [draft, setDraft] = useState<Record<string, string>>(() =>
     initialDraft(row),
   );
-  useEffect(() => setDraft(initialDraft(row)), [row]);
+  useEffect(() => {
+    setDraft(initialDraft(row));
+    setParticipantIds(initialParticipantIds(row));
+    setOperatorAddedIds(new Set());
+    setAddingSupplier(false);
+    setSupplierToAdd("");
+  }, [row]);
+  const availableSuppliers = row.eligible_suppliers.filter(
+    (supplier) => !participantIds.includes(supplier.supplier_id),
+  );
+  const participatingSuppliers = participantIds.flatMap((supplierId) => {
+    const supplier = row.eligible_suppliers.find(
+      (candidate) => candidate.supplier_id === supplierId,
+    );
+    return supplier ? [supplier] : [];
+  });
   const total = useMemo(
     () =>
-      Object.values(draft).reduce<bigint | null>((sum, value) => {
+      participantIds.reduce<bigint | null>((sum, supplierId) => {
+        const value = draft[supplierId] ?? "";
         const next = value ? scaled(value) : 0n;
         return sum === null || next === null ? null : sum + next;
       }, 0n),
-    [draft],
+    [draft, participantIds],
   );
   const authoritativeTotal = scaled(String(row.family_quantity));
   const difference =
@@ -102,7 +124,9 @@ export function SupplierSplitPanel({
     !busy &&
     !mutationLocked &&
     difference === 0n &&
-    Object.values(draft).some((value) => (scaled(value) ?? 0n) > 0n);
+    participantIds.some(
+      (supplierId) => (scaled(draft[supplierId] ?? "") ?? 0n) > 0n,
+    );
   const backendDisabledMessages = row.allowed_actions.save_allocation
     ? []
     : Array.from(new Set([...row.blockers, ...row.disabled_reasons])).map(
@@ -128,31 +152,103 @@ export function SupplierSplitPanel({
         </strong>
       </header>
 
+      {row.recommendation && (
+        <section
+          className="procurement-allocation-proposal"
+          aria-label="Đề xuất nhà cung ứng"
+        >
+          <strong>Đề xuất</strong>
+          <span>
+            {row.eligible_suppliers.find(
+              (supplier) =>
+                supplier.supplier_id === row.recommendation?.supplier_id,
+            )?.supplier_name ?? "Nhà cung ứng phù hợp"}{" "}
+            ·{" "}
+            {displayScaled(scaled(row.recommendation.allocated_quantity) ?? 0n)}{" "}
+            {row.unit_code}
+          </span>
+          <button
+            type="button"
+            className="secondary"
+            disabled={busy || mutationLocked}
+            onClick={() => {
+              const supplierId = row.recommendation!.supplier_id;
+              setParticipantIds([supplierId]);
+              setOperatorAddedIds(new Set([supplierId]));
+              setDraft({
+                [supplierId]: row.recommendation!.allocated_quantity,
+              });
+            }}
+          >
+            Dùng đề xuất
+          </button>
+        </section>
+      )}
       {row.rebalance_proposal && (
-        <p className="procurement-inline-guidance">
-          Atlas đề xuất giữ nguyên tỷ lệ trước đây. Hãy kiểm tra rồi lưu để xác
-          nhận số lượng mới.
-        </p>
+        <section
+          className="procurement-allocation-proposal"
+          aria-label="Đề xuất cân bằng lại"
+        >
+          <strong>Đề xuất cân bằng lại</strong>
+          <p>
+            Phân bổ đã lưu vẫn được giữ nguyên cho đến khi bạn áp dụng và lưu đề
+            xuất.
+          </p>
+          <ul>
+            {row.rebalance_proposal.map((split) => (
+              <li key={split.supplier_id}>
+                {row.eligible_suppliers.find(
+                  (supplier) => supplier.supplier_id === split.supplier_id,
+                )?.supplier_name ?? split.supplier_id}
+                : {displayScaled(scaled(split.allocated_quantity) ?? 0n)}{" "}
+                {row.unit_code}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="secondary"
+            disabled={busy || mutationLocked}
+            onClick={() => {
+              const proposal = row.rebalance_proposal ?? [];
+              setParticipantIds(proposal.map((split) => split.supplier_id));
+              setDraft(
+                Object.fromEntries(
+                  proposal.map((split) => [
+                    split.supplier_id,
+                    split.allocated_quantity,
+                  ]),
+                ),
+              );
+            }}
+          >
+            Áp dụng đề xuất
+          </button>
+        </section>
       )}
       {ineligibleSplits.map((split) => (
         <p className="procurement-inline-danger" key={split.supplier_id}>
-          {split.supplier_name} không còn phù hợp. Atlas không tự chuyển phần đã
-          phân bổ sang nhà cung ứng khác.
+          {split.supplier_name} không còn phù hợp (
+          {displayScaled(scaled(split.allocated_quantity) ?? 0n)}{" "}
+          {row.unit_code}). Atlas không tự chuyển phần đã phân bổ sang nhà cung
+          ứng khác; cần chọn NCC thay thế thủ công.
         </p>
       ))}
 
       <div className="procurement-split-list">
-        {row.eligible_suppliers.map((supplier) => {
+        {participatingSuppliers.map((supplier) => {
           const current = row.splits.find(
             (split) => split.supplier_id === supplier.supplier_id,
           );
           return (
-            <label key={supplier.supplier_id}>
+            <div className="procurement-split-row" key={supplier.supplier_id}>
               <span>
                 <strong>{supplier.supplier_name}</strong>
                 <small>
                   Ưu tiên {supplier.priority}
-                  {current ? ` · tỷ lệ trước ${current.split_ratio}` : ""}
+                  {current
+                    ? ` · tỷ lệ đã lưu ${current.split_ratio} (tham khảo)`
+                    : ""}
                 </small>
               </span>
               <input
@@ -168,19 +264,105 @@ export function SupplierSplitPanel({
                 disabled={busy || mutationLocked}
               />
               <span>{row.unit_code}</span>
-            </label>
+              {operatorAddedIds.has(supplier.supplier_id) && (
+                <button
+                  type="button"
+                  className="secondary"
+                  aria-label={`Xóa ${supplier.supplier_name}`}
+                  disabled={busy || mutationLocked}
+                  onClick={() => {
+                    setParticipantIds((ids) =>
+                      ids.filter((id) => id !== supplier.supplier_id),
+                    );
+                    setOperatorAddedIds((ids) => {
+                      const next = new Set(ids);
+                      next.delete(supplier.supplier_id);
+                      return next;
+                    });
+                    setDraft((values) => {
+                      const next = { ...values };
+                      delete next[supplier.supplier_id];
+                      return next;
+                    });
+                  }}
+                >
+                  Xóa
+                </button>
+              )}
+            </div>
           );
         })}
+        {participatingSuppliers.length === 0 && (
+          <p className="procurement-empty">
+            Chưa có nhà cung ứng trong bản nháp.
+          </p>
+        )}
+      </div>
+
+      <div className="procurement-add-supplier">
+        <button
+          type="button"
+          className="secondary"
+          disabled={availableSuppliers.length === 0 || busy || mutationLocked}
+          onClick={() => {
+            setAddingSupplier((current) => !current);
+            setSupplierToAdd("");
+          }}
+        >
+          + Thêm nhà cung ứng
+        </button>
+        {addingSupplier && availableSuppliers.length > 0 && (
+          <div>
+            <label>
+              Nhà cung ứng đủ điều kiện
+              <select
+                value={supplierToAdd}
+                onChange={(event) => setSupplierToAdd(event.target.value)}
+              >
+                <option value="">Chọn nhà cung ứng</option>
+                {availableSuppliers.map((supplier) => (
+                  <option
+                    key={supplier.supplier_id}
+                    value={supplier.supplier_id}
+                  >
+                    {supplier.supplier_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="secondary"
+              aria-label={`Thêm ${
+                availableSuppliers.find(
+                  (supplier) => supplier.supplier_id === supplierToAdd,
+                )?.supplier_name ?? "nhà cung ứng"
+              }`}
+              disabled={!supplierToAdd || busy || mutationLocked}
+              onClick={() => {
+                setParticipantIds((ids) => [...ids, supplierToAdd]);
+                setOperatorAddedIds((ids) => new Set(ids).add(supplierToAdd));
+                setDraft((values) => ({ ...values, [supplierToAdd]: "" }));
+                setAddingSupplier(false);
+                setSupplierToAdd("");
+              }}
+            >
+              Thêm
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="procurement-running-total" aria-live="polite">
         <span>
-          Tổng đang nhập:{" "}
-          {total === null ? "Không hợp lệ" : displayScaled(total)}{" "}
+          Nhu cầu: {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
+        </span>
+        <span>
+          Đã phân bổ: {total === null ? "Không hợp lệ" : displayScaled(total)}{" "}
           {row.unit_code}
         </span>
         <span>
-          Chênh lệch:{" "}
+          Còn lại:{" "}
           {difference === null ? "Không hợp lệ" : displayScaled(difference)}{" "}
           {row.unit_code}
         </span>
@@ -198,12 +380,12 @@ export function SupplierSplitPanel({
         disabled={!canSave}
         onClick={() =>
           onSave(
-            row.eligible_suppliers.flatMap((supplier) => {
-              const value = draft[supplier.supplier_id] ?? "";
+            participantIds.flatMap((supplierId) => {
+              const value = draft[supplierId] ?? "";
               return (scaled(value) ?? 0n) > 0n
                 ? [
                     {
-                      supplier_id: supplier.supplier_id,
+                      supplier_id: supplierId,
                       allocated_quantity: value,
                     },
                   ]

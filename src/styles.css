@@ -4483,7 +4483,7 @@ tbody tr.selected-row {
 
 .procurement-family-table {
   width: 100%;
-  min-width: 960px;
+  min-width: 1080px;
   border-collapse: collapse;
   font-size: 14px;
 }
@@ -4539,6 +4539,12 @@ tbody tr.selected-row {
   font: inherit;
   font-weight: 750;
   text-align: left;
+}
+
+.procurement-allocation-action {
+  min-height: 32px;
+  padding: 5px 9px;
+  white-space: nowrap;
 }
 
 .procurement-state {
@@ -4627,19 +4633,19 @@ tbody tr.selected-row {
   margin-top: 12px;
 }
 
-.procurement-split-list label {
+.procurement-split-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px auto;
+  grid-template-columns: minmax(0, 1fr) 110px auto auto;
   align-items: center;
   gap: 8px;
 }
 
-.procurement-split-list label span:first-child,
-.procurement-split-list label small {
+.procurement-split-row span:first-child,
+.procurement-split-row small {
   display: block;
 }
 
-.procurement-split-list label small {
+.procurement-split-row small {
   margin-top: 2px;
   color: var(--atlas-text-muted);
   font-size: 11px;
@@ -4654,6 +4660,68 @@ tbody tr.selected-row {
   font: inherit;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.procurement-allocation-proposal {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 9px;
+  border: 1px solid #b9d5ec;
+  border-radius: 7px;
+  background: #edf5ff;
+  color: #245a8d;
+  font-size: 12px;
+}
+
+.procurement-allocation-proposal p,
+.procurement-allocation-proposal ul {
+  margin: 0;
+}
+
+.procurement-allocation-proposal button,
+.procurement-add-supplier button,
+.procurement-split-row button {
+  min-height: 32px;
+  padding: 5px 9px;
+}
+
+.procurement-allocation-proposal button {
+  justify-self: start;
+}
+
+.procurement-add-supplier {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.procurement-add-supplier > button {
+  justify-self: start;
+}
+
+.procurement-add-supplier > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.procurement-add-supplier label {
+  display: grid;
+  gap: 4px;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+.procurement-add-supplier select {
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid #bdc8d0;
+  border-radius: 7px;
+  background: #fff;
+  color: var(--atlas-text);
+  font: inherit;
 }
 
 .procurement-running-total {
@@ -4892,8 +4960,16 @@ tbody tr.selected-row {
   gap: 8px;
 }
 
+.procurement-order-output-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .procurement-order-actions .secondary,
-.procurement-order-detail-actions .secondary {
+.procurement-order-detail-actions .secondary,
+.procurement-order-output-actions .secondary {
   min-height: 36px;
   padding: 7px 12px;
   border: 1px solid var(--atlas-primary);
@@ -4954,11 +5030,12 @@ tbody tr.selected-row {
     flex-direction: column;
   }
 
-  .procurement-split-list label {
-    grid-template-columns: minmax(0, 1fr) 100px auto;
+  .procurement-split-row {
+    grid-template-columns: minmax(0, 1fr) 100px auto auto;
   }
 
-  .procurement-order-detail-actions {
+  .procurement-order-detail-actions,
+  .procurement-order-output-actions {
     align-items: stretch;
     flex-direction: column;
   }

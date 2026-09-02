@@ -32,6 +32,8 @@ export function PurchaseOrderStage({
   search,
   onMaterialize,
   onRelease,
+  onExportXlsx,
+  onExportPdf,
 }: {
   data: PurchaseOrdersData | null;
   busy: boolean;
@@ -40,6 +42,8 @@ export function PurchaseOrderStage({
   search: string;
   onMaterialize: () => void;
   onRelease: (order: SchoolCateringPurchaseOrder) => void;
+  onExportXlsx: (order: SchoolCateringPurchaseOrder) => void;
+  onExportPdf: (order: SchoolCateringPurchaseOrder) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const visibleOrders = useMemo(() => {
@@ -270,6 +274,31 @@ export function PurchaseOrderStage({
                   </button>
                 </div>
               )}
+              {selected.status === "RELEASED_TO_SUPPLIER" &&
+                selected.export_ready &&
+                selected.allowed_actions.export && (
+                  <div
+                    className="procurement-order-output-actions"
+                    aria-label="Xuất đơn mua đã phát hành"
+                  >
+                    <button
+                      type="button"
+                      className="primary procurement-primary-action"
+                      disabled={busy || mutationLocked}
+                      onClick={() => onExportXlsx(selected)}
+                    >
+                      Xuất XLSX
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={busy || mutationLocked}
+                      onClick={() => onExportPdf(selected)}
+                    >
+                      Xuất PDF
+                    </button>
+                  </div>
+                )}
             </aside>
           )}
         </div>

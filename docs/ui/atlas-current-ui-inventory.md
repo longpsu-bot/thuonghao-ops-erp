@@ -171,6 +171,20 @@ authoritative readback. The connected surface contains no direct table access,
 official-number input, automatic write retry, or automatic redistribution after
 supplier ineligibility.
 
+PROCUREMENT-UX-CLOSEOUT-01 makes the family editor discoverable through an
+explicit `Phân bổ NCC` or `Xem phân bổ` row action. The attached editor renders
+only participating suppliers, adds eligible replacements explicitly, treats
+quantity as the operator input, and keeps recommendations plus rebalance values
+in visibly separate proposal surfaces until the operator applies and saves
+them. Successful saves always reload the authoritative family snapshot before
+the persisted allocation is shown again.
+
+For an immutable `RELEASED_TO_SUPPLIER` PO, `Xuất XLSX` is the primary output
+and `Xuất PDF` is secondary. Both are generated in a focused Procurement export
+module solely from the released PO read-model snapshot, including its official
+number, supplier, service date, released revision, exact line quantities and
+delivery-location breakdown. Draft and stale POs expose no output action.
+
 This school-catering path is separate from PA-05E supplier-direct wholesale.
 PA-05E keeps its whole-line allocation and wholesale CMD-06 contract; it is not
 adapted or replaced by this workbench.

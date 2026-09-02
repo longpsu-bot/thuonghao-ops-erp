@@ -28,6 +28,10 @@ import type {
   SupplierSplitInput,
 } from "./schoolCateringProcurementModel";
 import { SupplierSplitPanel } from "./SupplierSplitPanel";
+import {
+  downloadPurchaseOrderPdf,
+  downloadPurchaseOrderXlsx,
+} from "./purchaseOrderExports";
 
 type ProcurementReadCurrentness = "loading" | "current" | "unavailable";
 
@@ -201,6 +205,8 @@ export function SchoolCateringProcurementWorkbench({
   initialDateStart,
   initialDateEnd,
   initialStage = "allocation",
+  onExportPurchaseOrderXlsx = downloadPurchaseOrderXlsx,
+  onExportPurchaseOrderPdf = downloadPurchaseOrderPdf,
 }: {
   authState: AtlasAuthState;
   api?: SchoolCateringProcurementApi;
@@ -208,6 +214,12 @@ export function SchoolCateringProcurementWorkbench({
   initialDateEnd: string;
   initialStage?: ProcurementStage;
   mode?: "connected" | "review";
+  onExportPurchaseOrderXlsx?: (
+    order: SchoolCateringPurchaseOrder,
+  ) => void | Promise<void>;
+  onExportPurchaseOrderPdf?: (
+    order: SchoolCateringPurchaseOrder,
+  ) => void | Promise<void>;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [dateStart, setDateStart] = useState(initialDateStart);
@@ -692,6 +704,8 @@ export function SchoolCateringProcurementWorkbench({
           search={search}
           onMaterialize={() => void materializePurchaseOrders()}
           onRelease={(order) => void releasePurchaseOrder(order)}
+          onExportXlsx={(order) => void onExportPurchaseOrderXlsx(order)}
+          onExportPdf={(order) => void onExportPurchaseOrderPdf(order)}
         />
       )}
     </section>
