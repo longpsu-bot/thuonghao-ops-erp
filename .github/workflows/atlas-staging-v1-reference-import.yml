@@ -1,0 +1,69 @@
+name: Atlas Staging OPS v1 Reference Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full current-main SHA to import from
+        required: true
+        type: string
+      mode:
+        description: Validate only or explicitly apply to Atlas Staging
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - apply
+
+permissions:
+  contents: read
+
+jobs:
+  import-atlas-staging-v1-reference:
+    name: Guarded OPS v1 reference import
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    env:
+      OPS_V1_READONLY_DATABASE_URL: ${{ secrets.OPS_V1_READONLY_DATABASE_URL }}
+      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out the requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Fetch current main for exact-head verification
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract read-only and print aggregate dry-run report
+        run: pnpm atlas:staging:v1-reference:import -- --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Apply the validated reference manifest to Atlas Staging
+        if: ${{ inputs.mode == 'apply' }}
+        run: >-
+          pnpm atlas:staging:v1-reference:import --
+          --commit-sha "${{ inputs.commit_sha }}"
+          --apply
+          --target-project-ref "${ATLAS_STAGING_PROJECT_REF}"
