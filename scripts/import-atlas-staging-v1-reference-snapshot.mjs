@@ -103,10 +103,9 @@ export async function runAtlasStagingV1ReferenceImport({
   });
   verifyCheckout({ commitSha, cwd, runCommand });
   const snapshot = await extractSnapshot({
-    databaseUrl: request.sourceDatabaseUrl,
-    cwd,
-    environment,
-    runCommand,
+    projectRef: request.sourceProjectRef,
+    accessToken: request.targetAccessToken,
+    fetchImpl,
   });
   const manifest = transformV1ReferenceSnapshot(snapshot);
   const target = {
@@ -182,10 +181,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
         error instanceof Error
           ? error.message
           : "Atlas Staging OPS v1 reference import failed safely.",
-        [
-          process.env.OPS_V1_READONLY_DATABASE_URL,
-          process.env.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN,
-        ],
+        [process.env.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN],
       ),
     );
     process.exitCode = 1;

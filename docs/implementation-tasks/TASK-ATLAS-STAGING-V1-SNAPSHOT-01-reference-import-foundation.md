@@ -6,7 +6,7 @@
 
 ## Source and target boundary
 
-The source is live OPS v1 project `qnthofvccilhnefdcxnz`. It is read through the dedicated `OPS_V1_READONLY_DATABASE_URL` secret only. The extractor accepts no SQL input and executes one fixed `REPEATABLE READ READ ONLY` transaction over the six required `public` tables. It verifies `transaction_read_only = on`, a non-superuser/non-bypass role, required table reads, and absence of non-read table privileges before accepting the snapshot.
+The source is live OPS v1 project `qnthofvccilhnefdcxnz`. It is read through the Supabase Management API read-only query endpoint, which executes as `supabase_read_only_user`. The extractor accepts no SQL input and executes one fixed SELECT statement over the six required `public` tables. It verifies the read-only role, required table reads, and absence of non-read table privileges before accepting the snapshot. All subqueries share the single PostgreSQL statement snapshot, so no transaction wrapper is required.
 
 The only permitted target is Atlas Staging project `rnzxmxiiqgtdevzregff`. The target guard also rejects the live OPS project explicitly and requires source and target identities to differ. Target writes use the existing Supabase Management SQL convention and one transaction. This package creates no schema, relation, API, capability, role, scope kind, lifecycle, migration, Auth identity, or Edge Function.
 
@@ -91,8 +91,7 @@ Required protected values:
 
 - variable `ATLAS_STAGING_PROJECT_REF`;
 - variable `VITE_SUPABASE_URL`;
-- secret `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`;
-- secret `OPS_V1_READONLY_DATABASE_URL` for a dedicated OPS v1 read-only database role.
+- secret `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`, reused for both the live OPS read-only query and Atlas Staging Management API operations.
 
 The implementation PR does not execute this workflow or mutate either hosted project.
 

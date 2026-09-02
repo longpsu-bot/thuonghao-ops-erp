@@ -244,9 +244,6 @@ export function transformV1ReferenceSnapshot(snapshot) {
   if (snapshot?.sourceProjectRef !== "qnthofvccilhnefdcxnz") {
     throw new Error("OPS v1 source project identity is invalid.");
   }
-  if (snapshot.transactionReadOnly !== "on") {
-    throw new Error("OPS v1 extraction transaction was not read-only.");
-  }
   if (!text(snapshot.snapshotAt))
     throw new Error("Snapshot timestamp is missing.");
 

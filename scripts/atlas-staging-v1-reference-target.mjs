@@ -4,10 +4,7 @@ import {
   executeAtlasStagingManagementSql,
   validateApprovedAtlasStagingTarget,
 } from "./atlas-staging-contract.mjs";
-import {
-  OPS_V1_SOURCE_PROJECT_REF,
-  validateV1SourceDatabaseUrl,
-} from "./atlas-staging-v1-reference-source.mjs";
+import { OPS_V1_SOURCE_PROJECT_REF } from "./atlas-staging-v1-reference-source.mjs";
 
 const ELIGIBILITY_REASON =
   "Imported from OPS v1 reference snapshot; source relationship has no effective dating.";
@@ -166,15 +163,10 @@ export function validateV1ReferenceImportRequest({
   applyFlagPresent = false,
   targetConfirmation,
 } = {}) {
-  const sourceUrl = String(
-    environment.OPS_V1_READONLY_DATABASE_URL ?? "",
-  ).trim();
-  if (!sourceUrl) throw new Error("OPS_V1_READONLY_DATABASE_URL is required.");
-  const source = validateV1SourceDatabaseUrl(sourceUrl);
   const rawTarget = String(environment.ATLAS_STAGING_PROJECT_REF ?? "")
     .trim()
     .toLowerCase();
-  if (rawTarget === source.projectRef) {
+  if (rawTarget === OPS_V1_SOURCE_PROJECT_REF) {
     throw new Error(
       "The live OPS project is forbidden as a target; source and target must differ.",
     );
@@ -186,7 +178,7 @@ export function validateV1ReferenceImportRequest({
     rawTarget,
     environment.VITE_SUPABASE_URL,
   );
-  if (source.projectRef === target.projectRef) {
+  if (OPS_V1_SOURCE_PROJECT_REF === target.projectRef) {
     throw new Error("OPS v1 source and Atlas Staging target must differ.");
   }
   const accessToken = String(
@@ -208,8 +200,7 @@ export function validateV1ReferenceImportRequest({
   }
   return {
     apply: applyRequested,
-    sourceDatabaseUrl: source.databaseUrl,
-    sourceProjectRef: source.projectRef,
+    sourceProjectRef: OPS_V1_SOURCE_PROJECT_REF,
     targetProjectRef: target.projectRef,
     targetSupabaseUrl: target.supabaseUrl,
     targetAccessToken: accessToken,
