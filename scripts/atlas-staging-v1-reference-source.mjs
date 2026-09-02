@@ -1,9 +1,3 @@
-import {
-  defaultCommandRunner,
-  redactAtlasStagingDiagnostic,
-  repositorySupabaseCliInvocation,
-} from "./atlas-staging-contract.mjs";
-
 export const OPS_V1_SOURCE_PROJECT_REF = "qnthofvccilhnefdcxnz";
 
 const REQUIRED_SOURCE_TABLES = Object.freeze([
@@ -15,47 +9,13 @@ const REQUIRED_SOURCE_TABLES = Object.freeze([
   "ingredient_shopping_type",
 ]);
 
-export function validateV1SourceDatabaseUrl(value) {
-  let url;
-  try {
-    url = new URL(String(value ?? ""));
-  } catch {
-    throw new Error("OPS_V1_READONLY_DATABASE_URL is missing or malformed.");
-  }
-  if (
-    !["postgres:", "postgresql:"].includes(url.protocol) ||
-    !url.username ||
-    !url.password ||
-    !url.hostname ||
-    url.pathname !== "/postgres" ||
-    (url.port && url.port !== "5432")
-  ) {
-    throw new Error(
-      "OPS_V1_READONLY_DATABASE_URL must be a dedicated session connection.",
-    );
-  }
-  const direct = /^db\.([a-z0-9]{20})\.supabase\.co$/i.exec(url.hostname)?.[1];
-  const pooled = /^postgres\.([a-z0-9]{20})$/i.exec(
-    decodeURIComponent(url.username),
-  )?.[1];
-  const projectRef = String(direct ?? pooled ?? "").toLowerCase();
-  if (projectRef !== OPS_V1_SOURCE_PROJECT_REF) {
-    throw new Error(
-      "The database URL is not the approved OPS v1 source project.",
-    );
-  }
-  return { projectRef, databaseUrl: url.toString() };
-}
-
 export function buildV1SourceSnapshotSql() {
   const quotedTables = REQUIRED_SOURCE_TABLES.map((name) => `'${name}'`).join(
     ", ",
   );
-  return `begin transaction isolation level repeatable read read only;
-select jsonb_build_object(
+  return `select jsonb_build_object(
   'sourceProjectRef', '${OPS_V1_SOURCE_PROJECT_REF}',
   'snapshotAt', pg_catalog.clock_timestamp(),
-  'transactionReadOnly', pg_catalog.current_setting('transaction_read_only'),
   'sourceAccess', (
     select jsonb_build_object(
       'roleName', role.rolname,
@@ -132,8 +92,7 @@ select jsonb_build_object(
     ) order by relationship.ingredient_id, relationship.default_priority, relationship.supplier_id), '[]'::jsonb)
     from public.ingredient_suppliers relationship
   )
-) as snapshot;
-commit;`;
+) as snapshot;`;
 }
 
 function findSnapshot(value) {
@@ -165,8 +124,8 @@ function validateSourceAccess(snapshot) {
   const access = snapshot?.sourceAccess;
   if (
     snapshot?.sourceProjectRef !== OPS_V1_SOURCE_PROJECT_REF ||
-    snapshot?.transactionReadOnly !== "on" ||
     !access ||
+    access.roleName !== "supabase_read_only_user" ||
     access.superuser !== false ||
     access.bypassRls !== false ||
     access.createRole !== false ||
@@ -174,48 +133,57 @@ function validateSourceAccess(snapshot) {
     access.hasRequiredSelect !== true ||
     access.hasNonSelectTablePrivilege !== false
   ) {
-    throw new Error("The OPS v1 source credential is not proven read-only.");
+    throw new Error("The OPS v1 source response is not proven read-only.");
   }
   return snapshot;
 }
 
-export function extractV1ReferenceSnapshot({
-  databaseUrl,
-  cwd = process.cwd(),
-  environment = process.env,
-  runCommand = defaultCommandRunner,
+export async function extractV1ReferenceSnapshot({
+  projectRef = OPS_V1_SOURCE_PROJECT_REF,
+  accessToken,
+  fetchImpl = fetch,
 } = {}) {
-  const source = validateV1SourceDatabaseUrl(databaseUrl);
-  const invocation = repositorySupabaseCliInvocation(
-    [
-      "db",
-      "query",
-      buildV1SourceSnapshotSql(),
-      "--db-url",
-      source.databaseUrl,
-      "--output-format",
-      "json",
-      "--agent",
-      "yes",
-    ],
-    { cwd },
-  );
-  const result = runCommand(invocation.command, invocation.args, {
-    cwd,
-    shell: invocation.shell,
-    env: { ...environment, SUPABASE_TELEMETRY_DISABLED: "1" },
-  });
-  if (result.status !== 0) {
-    throw new Error(
-      redactAtlasStagingDiagnostic(
-        `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
-        [databaseUrl],
-      ).trim() || "OPS v1 read-only extraction failed safely.",
-    );
+  if (
+    String(projectRef ?? "")
+      .trim()
+      .toLowerCase() !== OPS_V1_SOURCE_PROJECT_REF
+  ) {
+    throw new Error("The project is not the approved OPS v1 source project.");
   }
+  const token = String(accessToken ?? "").trim();
+  if (!token)
+    throw new Error("OPS v1 read-only extraction requires an access token.");
+
+  let response;
+  try {
+    response = await fetchImpl(
+      `https://api.supabase.com/v1/projects/${OPS_V1_SOURCE_PROJECT_REF}/database/query/read-only`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ query: buildV1SourceSnapshotSql() }),
+      },
+    );
+  } catch {
+    throw new Error("OPS v1 read-only extraction failed safely.");
+  }
+  if (response.status !== 201) {
+    const safeStatus =
+      Number.isInteger(response.status) &&
+      response.status >= 100 &&
+      response.status <= 599
+        ? ` (HTTP ${response.status})`
+        : "";
+    throw new Error(`OPS v1 read-only extraction failed safely${safeStatus}.`);
+  }
+
   let output;
   try {
-    output = JSON.parse(String(result.stdout ?? ""));
+    output = JSON.parse(await response.text());
   } catch {
     throw new Error("OPS v1 read-only extraction returned malformed output.");
   }

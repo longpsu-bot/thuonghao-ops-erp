@@ -9,7 +9,6 @@ import {
 import {
   buildV1SourceSnapshotSql,
   extractV1ReferenceSnapshot,
-  validateV1SourceDatabaseUrl,
 } from "./atlas-staging-v1-reference-source.mjs";
 import {
   buildTargetApplySql,
@@ -25,12 +24,9 @@ import {
 
 const sourceRef = "qnthofvccilhnefdcxnz";
 const targetRef = "rnzxmxiiqgtdevzregff";
-const sourceUrl =
-  "postgresql://atlas_readonly:synthetic-password@db.qnthofvccilhnefdcxnz.supabase.co:5432/postgres";
 
 function environment(overrides = {}) {
   return {
-    OPS_V1_READONLY_DATABASE_URL: sourceUrl,
     ATLAS_STAGING_PROJECT_REF: targetRef,
     VITE_SUPABASE_URL: `https://${targetRef}.supabase.co`,
     ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: "synthetic-management-token",
@@ -42,9 +38,8 @@ function sourceSnapshot(overrides = {}) {
   return {
     sourceProjectRef: sourceRef,
     snapshotAt: "2026-09-02T01:02:03.000Z",
-    transactionReadOnly: "on",
     sourceAccess: {
-      roleName: "atlas_readonly",
+      roleName: "supabase_read_only_user",
       superuser: false,
       bypassRls: false,
       createRole: false,
@@ -353,60 +348,93 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
     );
   });
 
-  it("uses one fixed repeatable-read, read-only source transaction and exposes no source mutation operation", () => {
+  it("builds one SELECT-only source snapshot statement over the six approved tables", () => {
     const sql = buildV1SourceSnapshotSql();
-    expect(sql).toMatch(
-      /^begin transaction isolation level repeatable read read only;/i,
-    );
-    expect(sql).toContain("current_setting('transaction_read_only')");
-    expect(sql).not.toContain("pg_catalog.current_user");
+    expect(sql.trim()).toMatch(/^select\b/i);
+    expect(sql.trim()).toMatch(/;$/);
+    expect(sql.match(/\bselect\b/gi)?.length).toBeGreaterThan(1);
     expect(sql).toContain("from public.ingredient_suppliers");
     expect(sql).not.toMatch(
-      /\b(insert|update|delete|truncate|alter|drop|create)\b/i,
+      /\b(begin|commit|insert|update|delete|truncate|alter|drop|create)\b/i,
     );
-    expect(sql.trim().toLowerCase().endsWith("commit;")).toBe(true);
+    for (const table of [
+      "schools",
+      "ingredients",
+      "suppliers",
+      "ingredient_suppliers",
+      "ingredient_type",
+      "ingredient_shopping_type",
+    ]) {
+      expect(sql).toContain(`public.${table}`);
+    }
   });
 
-  it("runs the fixed extractor query with the dedicated credential and rejects any other source project", () => {
-    expect(validateV1SourceDatabaseUrl(sourceUrl)).toMatchObject({
-      projectRef: sourceRef,
-    });
-    expect(() =>
-      validateV1SourceDatabaseUrl(
-        "postgresql://readonly:x@db.rnzxmxiiqgtdevzregff.supabase.co:5432/postgres",
-      ),
-    ).toThrow(/source project/i);
-    expect(() =>
-      validateV1SourceDatabaseUrl(
-        "postgresql://postgres.qnthofvccilhnefdcxnz:x@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres",
-      ),
-    ).toThrow(/session connection/i);
-
-    const runCommand = vi.fn(() => ({
-      status: 0,
-      stdout: JSON.stringify([
-        {
-          snapshot: sourceSnapshot(),
-        },
-      ]),
-      stderr: "",
+  it("extracts only through the fixed live OPS read-only Management API endpoint", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      status: 201,
+      text: async () =>
+        JSON.stringify([
+          {
+            snapshot: sourceSnapshot(),
+          },
+        ]),
     }));
-    const result = extractV1ReferenceSnapshot({
-      databaseUrl: sourceUrl,
-      runCommand,
+    const result = await extractV1ReferenceSnapshot({
+      accessToken: "synthetic-management-token",
+      fetchImpl,
     });
     expect(result.sourceProjectRef).toBe(sourceRef);
-    expect(runCommand).toHaveBeenCalledOnce();
-    expect(runCommand.mock.calls[0][1]).toContain(sourceUrl);
-    expect(runCommand.mock.calls[0][1]).toContain("--output-format");
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(fetchImpl).toHaveBeenCalledWith(
+      `https://api.supabase.com/v1/projects/${sourceRef}/database/query/read-only`,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer synthetic-management-token",
+        }),
+      }),
+    );
+    const requestBody = JSON.parse(fetchImpl.mock.calls[0][1].body);
+    expect(requestBody).toEqual({ query: buildV1SourceSnapshotSql() });
   });
 
-  it("fails closed for missing source credentials, forbidden/wrong targets, same source and target, and implicit apply", () => {
-    expect(() =>
-      validateV1ReferenceImportRequest({
-        environment: environment({ OPS_V1_READONLY_DATABASE_URL: "" }),
+  it("rejects any Management API source project other than live OPS", async () => {
+    await expect(
+      extractV1ReferenceSnapshot({
+        projectRef: targetRef,
+        accessToken: "synthetic-management-token",
+        fetchImpl: vi.fn(),
       }),
-    ).toThrow(/OPS_V1_READONLY_DATABASE_URL/);
+    ).rejects.toThrow(/approved OPS v1 source project/i);
+  });
+
+  it("rejects a source response that was not executed as the Supabase read-only role", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      status: 201,
+      text: async () =>
+        JSON.stringify([
+          {
+            snapshot: sourceSnapshot({
+              sourceAccess: {
+                ...sourceSnapshot().sourceAccess,
+                roleName: "postgres",
+              },
+            }),
+          },
+        ]),
+    }));
+    await expect(
+      extractV1ReferenceSnapshot({
+        accessToken: "synthetic-management-token",
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/not proven read-only/i);
+  });
+
+  it("requires no direct source database URL and fails closed for forbidden/wrong targets and implicit apply", () => {
+    expect(
+      validateV1ReferenceImportRequest({ environment: environment() }),
+    ).toMatchObject({ sourceProjectRef: sourceRef });
     expect(() =>
       validateV1ReferenceImportRequest({
         environment: environment({
@@ -415,14 +443,6 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
         }),
       }),
     ).toThrow(/forbidden/i);
-    expect(() =>
-      validateV1ReferenceImportRequest({
-        environment: environment({
-          ATLAS_STAGING_PROJECT_REF: sourceRef,
-          VITE_SUPABASE_URL: `https://${sourceRef}.supabase.co`,
-        }),
-      }),
-    ).toThrow(/source and target must differ/i);
     expect(() =>
       validateV1ReferenceImportRequest({
         environment: environment({
@@ -639,6 +659,7 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
 
   it("keeps dry-run as the default and performs no target write", async () => {
     const executeTargetSql = vi.fn();
+    const extractSnapshot = vi.fn(() => sourceSnapshot());
     const manifest = transformV1ReferenceSnapshot(sourceSnapshot());
     const emptyTarget = {
       ...atlasPrerequisites(manifest),
@@ -654,12 +675,18 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
       commitSha: "b".repeat(40),
       environment: environment(),
       verifyCheckout: () => "b".repeat(40),
-      extractSnapshot: () => sourceSnapshot(),
+      extractSnapshot,
       readTarget: async () => emptyTarget,
       executeTargetSql,
     });
     expect(result.status).toBe("dry-run");
     expect(executeTargetSql).not.toHaveBeenCalled();
+    expect(extractSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectRef: sourceRef,
+        accessToken: "synthetic-management-token",
+      }),
+    );
     expect(result.report).toContain('"mode": "dry-run"');
   });
 
@@ -753,9 +780,7 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
     expect(workflow).toMatch(/commit_sha:[\s\S]*required: true/);
     expect(workflow).toMatch(/mode:[\s\S]*default: validate/);
     expect(workflow).toMatch(/environment: atlas-staging/);
-    expect(workflow).toContain(
-      "OPS_V1_READONLY_DATABASE_URL: ${{ secrets.OPS_V1_READONLY_DATABASE_URL }}",
-    );
+    expect(workflow).not.toContain("OPS_V1_READONLY_DATABASE_URL");
     expect(
       workflow.match(/pnpm atlas:staging:v1-reference:import --/g),
     ).toHaveLength(2);

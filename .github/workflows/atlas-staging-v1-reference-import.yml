@@ -26,7 +26,6 @@ jobs:
     timeout-minutes: 20
     environment: atlas-staging
     env:
-      OPS_V1_READONLY_DATABASE_URL: ${{ secrets.OPS_V1_READONLY_DATABASE_URL }}
       ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
