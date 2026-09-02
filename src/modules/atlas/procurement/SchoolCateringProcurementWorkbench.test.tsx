@@ -279,6 +279,17 @@ function createMultiSchoolWorkbenchFixture() {
 }
 
 describe("school-catering Procurement allocation workbench", () => {
+  it("starts with a full-width allocation master and no detail composition", async () => {
+    renderWorkbench();
+
+    const table = await screen.findByRole("table", {
+      name: "Allocation Family",
+    });
+    expect(table.closest(".procurement-allocation-layout")).not.toHaveClass(
+      "has-detail",
+    );
+  });
+
   it("uses a compact active-job title and changes it with the selected mode", async () => {
     renderWorkbench();
 
@@ -401,11 +412,14 @@ describe("school-catering Procurement allocation workbench", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
 
     const panel = screen.getByRole("region", { name: "Phân bổ Gạo thơm" });
+    const layout = panel.closest(".procurement-allocation-layout");
+    expect(layout).toHaveClass("has-detail");
     fireEvent.click(within(panel).getByRole("button", { name: "Đóng" }));
 
     expect(
       screen.queryByRole("region", { name: "Phân bổ Gạo thơm" }),
     ).not.toBeInTheDocument();
+    expect(layout).not.toHaveClass("has-detail");
     expect(save).not.toHaveBeenCalled();
   });
 
@@ -415,7 +429,9 @@ describe("school-catering Procurement allocation workbench", () => {
 
     const table = screen.getByRole("table", { name: "Allocation Family" });
     expect(table.parentElement).toHaveClass("procurement-family-table-scroll");
-    expect(table.closest(".procurement-allocation-layout")).not.toBeNull();
+    expect(table.closest(".procurement-allocation-layout")).toHaveClass(
+      "has-detail",
+    );
     expect(
       screen.getByRole("region", { name: "Phân bổ Gạo thơm" }),
     ).toHaveClass("procurement-split-panel");
@@ -1113,6 +1129,44 @@ describe("school-catering Procurement purchase-order stage", () => {
     expect(screen.queryByLabelText(/số đơn/i)).not.toBeInTheDocument();
   });
 
+  it("starts with a full-width PO master and no detail composition", async () => {
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={createReviewSchoolCateringProcurementApi("po_draft")}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    const table = await screen.findByRole("table", { name: "Đơn mua" });
+    expect(table.closest(".procurement-order-layout")).not.toHaveClass(
+      "has-detail",
+    );
+  });
+
+  it("enables the PO detail composition only after a PO resolves", async () => {
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={createReviewSchoolCateringProcurementApi("po_draft")}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    const table = await screen.findByRole("table", { name: "Đơn mua" });
+    fireEvent.click(within(table).getByRole("button", { name: "Xem đơn" }));
+
+    expect(table.closest(".procurement-order-layout")).toHaveClass(
+      "has-detail",
+    );
+  });
+
   it("closes PO detail and restores the range-level Create action", async () => {
     const api = createReviewSchoolCateringProcurementApi("po_draft");
     const materialize = vi.spyOn(api, "createPurchaseOrderDrafts");
@@ -1127,7 +1181,10 @@ describe("school-catering Procurement purchase-order stage", () => {
       />,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+    const table = await screen.findByRole("table", { name: "Đơn mua" });
+    const layout = table.closest(".procurement-order-layout");
+    fireEvent.click(within(table).getByRole("button", { name: "Xem đơn" }));
+    expect(layout).toHaveClass("has-detail");
     expect(
       screen.queryByRole("button", { name: "Tạo đơn mua" }),
     ).not.toBeInTheDocument();
@@ -1136,6 +1193,7 @@ describe("school-catering Procurement purchase-order stage", () => {
     expect(
       screen.queryByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
     ).not.toBeInTheDocument();
+    expect(layout).not.toHaveClass("has-detail");
     expect(screen.getByRole("button", { name: "Tạo đơn mua" })).toBeVisible();
     expect(materialize).not.toHaveBeenCalled();
   });

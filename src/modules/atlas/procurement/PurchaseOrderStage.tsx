@@ -114,7 +114,9 @@ export function PurchaseOrderStage({
       ) : data && data.purchase_orders.length === 0 ? (
         <p className="procurement-empty">Chưa có đơn mua trong phạm vi này.</p>
       ) : (
-        <div className="procurement-order-layout">
+        <div
+          className={`procurement-order-layout${selected ? " has-detail" : ""}`}
+        >
           <div className="procurement-order-table-scroll">
             <table className="procurement-order-table" aria-label="Đơn mua">
               <thead>

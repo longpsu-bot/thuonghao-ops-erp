@@ -654,7 +654,11 @@ export function SchoolCateringProcurementWorkbench({
               Không có nhu cầu mua trong phạm vi này.
             </p>
           ) : (
-            <div className="procurement-allocation-layout">
+            <div
+              className={`procurement-allocation-layout${
+                selectedFamily ? " has-detail" : ""
+              }`}
+            >
               <section
                 className="procurement-family-master"
                 aria-label="Danh sách Allocation Family"

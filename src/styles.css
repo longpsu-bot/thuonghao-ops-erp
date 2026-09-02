@@ -4489,9 +4489,13 @@ tbody tr.selected-row {
 
 .procurement-allocation-layout {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 0;
+}
+
+.procurement-allocation-layout.has-detail {
+  grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr);
 }
 
 .procurement-family-master,
@@ -4934,8 +4938,12 @@ tbody tr.selected-row {
   display: grid;
   width: 100%;
   min-width: 0;
-  grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+}
+
+.procurement-order-layout.has-detail {
+  grid-template-columns: minmax(0, 3fr) minmax(360px, 2fr);
 }
 
 .procurement-order-table-scroll {
@@ -5117,8 +5125,8 @@ tbody tr.selected-row {
     grid-template-columns: repeat(3, minmax(150px, 1fr));
   }
 
-  .procurement-allocation-layout {
-    grid-template-columns: 1fr;
+  .procurement-allocation-layout.has-detail {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .procurement-split-panel {
@@ -5128,12 +5136,12 @@ tbody tr.selected-row {
     border-radius: 0 0 10px 10px;
   }
 
-  .procurement-family-master {
+  .procurement-allocation-layout.has-detail .procurement-family-master {
     border-radius: 10px 10px 0 0;
   }
 
-  .procurement-order-layout {
-    grid-template-columns: 1fr;
+  .procurement-order-layout.has-detail {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .procurement-order-detail {
