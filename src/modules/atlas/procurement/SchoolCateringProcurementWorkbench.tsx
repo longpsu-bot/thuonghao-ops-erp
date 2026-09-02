@@ -18,7 +18,6 @@ import {
 import { purchaseOrderDraftReadinessMessages } from "./schoolCateringProcurementModel";
 import type {
   AllocationFamilyRow,
-  AllocationFamilyState,
   ProcurementCommandOutcome,
   ProcurementSchoolOption,
   ProcurementStage,
@@ -34,6 +33,8 @@ import {
 } from "./purchaseOrderExports";
 
 type ProcurementReadCurrentness = "loading" | "current" | "unavailable";
+type AllocationPresentationFilter =
+  "" | "unallocated" | "needs_update" | "blocked";
 
 const currentnessLabels: Record<ProcurementReadCurrentness, string> = {
   loading: "Đang cập nhật…",
@@ -226,9 +227,8 @@ export function SchoolCateringProcurementWorkbench({
   const [dateEnd, setDateEnd] = useState(initialDateEnd);
   const [stage, setStage] = useState<ProcurementStage>(initialStage);
   const [search, setSearch] = useState("");
-  const [stateFilter, setStateFilter] = useState<AllocationFamilyState | "">(
-    "",
-  );
+  const [stateFilter, setStateFilter] =
+    useState<AllocationPresentationFilter>("");
   const [selectedSchoolIds, setSelectedSchoolIds] = useState<string[]>([]);
   const [schoolCatalogue, setSchoolCatalogue] = useState<
     ProcurementSchoolOption[]
@@ -357,7 +357,15 @@ export function SchoolCateringProcurementWorkbench({
   const visibleRows = useMemo(() => {
     const query = fold(search.trim());
     return (workbench?.rows ?? []).filter((row) => {
-      if (stateFilter && row.state !== stateFilter) return false;
+      if (
+        (stateFilter === "unallocated" && row.state !== "UNALLOCATED") ||
+        (stateFilter === "needs_update" &&
+          !["STALE_REBALANCE_AVAILABLE", "NEEDS_REALLOCATION"].includes(
+            row.state,
+          )) ||
+        (stateFilter === "blocked" && row.state !== "BLOCKED")
+      )
+        return false;
       if (!query) return true;
       return fold(
         `${row.school_name ?? ""} ${row.location_name} ${row.ingredient_name} ${row.splits.map((split) => split.supplier_name).join(" ")} ${row.eligible_suppliers.map((supplier) => supplier.supplier_name).join(" ")}`,
@@ -530,8 +538,11 @@ export function SchoolCateringProcurementWorkbench({
     <section className="procurement-workbench" aria-label="Kế hoạch mua hàng">
       <header className="procurement-heading">
         <div>
-          <span>Suất ăn học đường</span>
-          <h1>Kế hoạch mua hàng</h1>
+          <div className="procurement-heading-context">
+            <span>Suất ăn học đường</span>
+            <span>Kế hoạch mua hàng</span>
+          </div>
+          <h1>{stage === "allocation" ? "Phân bổ nhà cung ứng" : "Đơn mua"}</h1>
           <p>Phân bổ nhu cầu đã bàn giao và phát hành đơn theo nhà cung cấp.</p>
         </div>
       </header>
@@ -578,19 +589,15 @@ export function SchoolCateringProcurementWorkbench({
             <select
               value={stateFilter}
               onChange={(event) =>
-                setStateFilter(event.target.value as AllocationFamilyState | "")
+                setStateFilter(
+                  event.target.value as AllocationPresentationFilter,
+                )
               }
             >
               <option value="">Tất cả</option>
-              <option value="UNALLOCATED">Chưa phân bổ</option>
-              <option value="BALANCED">Đã đủ</option>
-              <option value="STALE_REBALANCE_AVAILABLE">
-                Có thể cân bằng lại
-              </option>
-              <option value="NEEDS_REALLOCATION">
-                Cần phân bổ lại / NCC không phù hợp
-              </option>
-              <option value="BLOCKED">Đang bị chặn</option>
+              <option value="unallocated">Chưa phân bổ</option>
+              <option value="needs_update">Cần cập nhật</option>
+              <option value="blocked">Bị chặn</option>
             </select>
           </label>
         )}
@@ -612,13 +619,15 @@ export function SchoolCateringProcurementWorkbench({
       >
         <button
           type="button"
+          aria-label="Chế độ Phân bổ NCC"
           aria-current={stage === "allocation" ? "page" : undefined}
           onClick={() => setStage("allocation")}
         >
-          Phân bổ nhà cung ứng
+          Phân bổ NCC
         </button>
         <button
           type="button"
+          aria-label="Chế độ Đơn mua"
           aria-current={stage === "orders" ? "page" : undefined}
           onClick={() => setStage("orders")}
         >
@@ -690,6 +699,7 @@ export function SchoolCateringProcurementWorkbench({
                   onSave={(splits) =>
                     void saveAllocation(selectedFamily, splits)
                   }
+                  onClose={() => setSelectedFamilyKey(null)}
                 />
               )}
             </div>

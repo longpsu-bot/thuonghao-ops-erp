@@ -65,11 +65,13 @@ export function SupplierSplitPanel({
   busy,
   mutationLocked,
   onSave,
+  onClose,
 }: {
   row: AllocationFamilyRow;
   busy: boolean;
   mutationLocked: boolean;
   onSave: (splits: SupplierSplitInput[]) => void;
+  onClose: () => void;
 }) {
   const [traceOpen, setTraceOpen] = useState(false);
   const [participantIds, setParticipantIds] = useState<string[]>(() =>
@@ -141,23 +143,34 @@ export function SupplierSplitPanel({
     >
       <header>
         <div>
-          <span>Nhu cầu đã chọn</span>
-          <h3>{row.ingredient_name}</h3>
+          <h3>Phân bổ — {row.ingredient_name}</h3>
           <p>
             {row.school_name ?? row.location_name} · {row.location_name}
           </p>
         </div>
-        <strong>
-          {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
-        </strong>
       </header>
+
+      <div className="procurement-running-total" aria-live="polite">
+        <span>
+          Nhu cầu: {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
+        </span>
+        <span>
+          Đã phân bổ: {total === null ? "Không hợp lệ" : displayScaled(total)}{" "}
+          {row.unit_code}
+        </span>
+        <span>
+          Còn lại:{" "}
+          {difference === null ? "Không hợp lệ" : displayScaled(difference)}{" "}
+          {row.unit_code}
+        </span>
+      </div>
 
       {row.recommendation && (
         <section
           className="procurement-allocation-proposal"
           aria-label="Đề xuất nhà cung ứng"
         >
-          <strong>Đề xuất</strong>
+          <strong>Đề xuất của Atlas</strong>
           <span>
             {row.eligible_suppliers.find(
               (supplier) =>
@@ -189,7 +202,7 @@ export function SupplierSplitPanel({
           className="procurement-allocation-proposal"
           aria-label="Đề xuất cân bằng lại"
         >
-          <strong>Đề xuất cân bằng lại</strong>
+          <strong>Đề xuất cân bằng lại của Atlas</strong>
           <p>
             Phân bổ đã lưu vẫn được giữ nguyên cho đến khi bạn áp dụng và lưu đề
             xuất.
@@ -353,49 +366,39 @@ export function SupplierSplitPanel({
         )}
       </div>
 
-      <div className="procurement-running-total" aria-live="polite">
-        <span>
-          Nhu cầu: {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
-        </span>
-        <span>
-          Đã phân bổ: {total === null ? "Không hợp lệ" : displayScaled(total)}{" "}
-          {row.unit_code}
-        </span>
-        <span>
-          Còn lại:{" "}
-          {difference === null ? "Không hợp lệ" : displayScaled(difference)}{" "}
-          {row.unit_code}
-        </span>
-      </div>
-
       {backendDisabledMessages.map((message) => (
         <p className="procurement-inline-danger" key={message}>
           {message}
         </p>
       ))}
 
-      <button
-        type="button"
-        className="primary procurement-primary-action"
-        disabled={!canSave}
-        onClick={() =>
-          onSave(
-            participantIds.flatMap((supplierId) => {
-              const value = draft[supplierId] ?? "";
-              return (scaled(value) ?? 0n) > 0n
-                ? [
-                    {
-                      supplier_id: supplierId,
-                      allocated_quantity: value,
-                    },
-                  ]
-                : [];
-            }),
-          )
-        }
-      >
-        Lưu phân bổ
-      </button>
+      <footer className="procurement-detail-footer">
+        <button type="button" className="secondary" onClick={onClose}>
+          Đóng
+        </button>
+        <button
+          type="button"
+          className="primary procurement-primary-action"
+          disabled={!canSave}
+          onClick={() =>
+            onSave(
+              participantIds.flatMap((supplierId) => {
+                const value = draft[supplierId] ?? "";
+                return (scaled(value) ?? 0n) > 0n
+                  ? [
+                      {
+                        supplier_id: supplierId,
+                        allocated_quantity: value,
+                      },
+                    ]
+                  : [];
+              }),
+            )
+          }
+        >
+          Lưu phân bổ
+        </button>
+      </footer>
 
       <details className="procurement-trace" open={traceOpen}>
         <summary
@@ -404,7 +407,7 @@ export function SupplierSplitPanel({
             setTraceOpen((current) => !current);
           }}
         >
-          Dữ liệu truy vết
+          Nguồn & lịch sử
         </summary>
         {traceOpen && (
           <>

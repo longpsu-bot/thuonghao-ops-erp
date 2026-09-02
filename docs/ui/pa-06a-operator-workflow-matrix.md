@@ -44,6 +44,11 @@ Purchase Handoff release commands. It uses one Allocation Family row and one
 supplier/date PO row as its authoritative operator grains. The older
 `src/modules/procurement/ProcurementWorkbench.tsx` prototype is not part of this
 workflow, and PA-05E supplier-direct wholesale remains a separate command family.
+The connected PO surface presents one lifecycle mutation at a time: range
+materialization with no selection, stale-DRAFT regeneration, or clean-DRAFT
+release. Released output uses the immutable Supplier name snapshot and produces
+the primary three-view XLSX (`Tổng`, `Theo trường`, `Theo hàng`) plus secondary
+PDF without consulting mutable Supplier master data.
 
 ## 4. Evidence workflows
 

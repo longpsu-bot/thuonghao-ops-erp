@@ -156,8 +156,9 @@ Planning Confirmed Need release
 → immutable release with a backend-generated official number
 ```
 
-The operator surface has exactly two stages, `Phân bổ nhà cung ứng` and `Đơn
-mua`. Allocation uses one row per authoritative family, keeps raw Handoff
+The operator surface has exactly two modes, `Phân bổ NCC` and `Đơn mua`; its
+compact active title is `Phân bổ nhà cung ứng` or `Đơn mua`. Allocation uses one
+row per authoritative family, keeps raw Handoff
 contributions behind disclosure, and treats recommendations and rebalance
 proposals as advisory until the operator explicitly confirms a complete family
 snapshot. The PO stage is read-only for supplier and quantity, materializes a
@@ -177,13 +178,23 @@ only participating suppliers, adds eligible replacements explicitly, treats
 quantity as the operator input, and keeps recommendations plus rebalance values
 in visibly separate proposal surfaces until the operator applies and saves
 them. Successful saves always reload the authoritative family snapshot before
-the persisted allocation is shown again.
+the persisted allocation is shown again. `Đóng` dismisses the attached editor
+without mutation, and `Nguồn & lịch sử` retains collapsed lineage evidence.
+
+Each PO row exposes `Xem đơn`; the Supplier name is business content rather than
+the hidden navigation target. With no selected PO, the range-level action is
+`Tạo đơn mua`. A selected stale DRAFT exposes only regeneration, a selected
+clean DRAFT exposes only release, and a selected released PO exposes no lifecycle
+mutation. `Đóng` returns to range context.
 
 For an immutable `RELEASED_TO_SUPPLIER` PO, `Xuất XLSX` is the primary output
 and `Xuất PDF` is secondary. Both are generated in a focused Procurement export
 module solely from the released PO read-model snapshot, including its official
-number, supplier, service date, released revision, exact line quantities and
-delivery-location breakdown. Draft and stale POs expose no output action.
+number, immutable `supplier_name_snapshot`, service date, released revision,
+exact line quantities and delivery-location breakdown. The default workbook is
+an A4 portrait `PHIẾU ĐẶT HÀNG` with `Tổng`, `Theo trường`, and `Theo hàng`
+sheets. Exactly representable governed quantities are numeric cells; unsafe
+values remain exact text. Draft and stale POs expose no output action.
 
 This school-catering path is separate from PA-05E supplier-direct wholesale.
 PA-05E keeps its whole-line allocation and wholesale CMD-06 contract; it is not

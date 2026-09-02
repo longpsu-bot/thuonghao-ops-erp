@@ -76,7 +76,6 @@ export function PurchaseOrderStage({
   const selected = data?.purchase_orders.find(
     (order) => order.purchase_order_id === selectedId,
   );
-  const hasPurchaseOrders = (data?.purchase_orders.length ?? 0) > 0;
   const selectedMessages = selected
     ? procurementOperatorMessages(
         [...selected.blockers, ...selected.disabled_reasons].filter(
@@ -96,18 +95,16 @@ export function PurchaseOrderStage({
           <strong>Đơn mua theo nhà cung cấp và ngày giao</strong>
           <span>{visibleOrders.length} đơn trong phạm vi hiện tại</span>
         </div>
-        <button
-          type="button"
-          className={
-            hasPurchaseOrders
-              ? "secondary"
-              : "primary procurement-primary-action"
-          }
-          disabled={busy || mutationLocked}
-          onClick={onMaterialize}
-        >
-          Tạo đơn mua
-        </button>
+        {!selected && (
+          <button
+            type="button"
+            className="primary procurement-primary-action"
+            disabled={busy || mutationLocked}
+            onClick={onMaterialize}
+          >
+            Tạo đơn mua
+          </button>
+        )}
       </header>
 
       {loadMessage ? (
@@ -129,6 +126,7 @@ export function PurchaseOrderStage({
                   <th>Trạng thái</th>
                   <th>Số đơn</th>
                   <th>Cảnh báo</th>
+                  <th aria-label="Thao tác đơn mua" />
                 </tr>
               </thead>
               <tbody>
@@ -141,16 +139,7 @@ export function PurchaseOrderStage({
                         : undefined
                     }
                   >
-                    <td>
-                      <button
-                        type="button"
-                        className="procurement-row-select"
-                        aria-label={`Mở đơn mua ${order.supplier.supplier_name}`}
-                        onClick={() => setSelectedId(order.purchase_order_id)}
-                      >
-                        {order.supplier.supplier_name}
-                      </button>
-                    </td>
+                    <td>{order.supplier.supplier_name}</td>
                     <td>{dateLabel(order.service_date)}</td>
                     <td>{order.lines.length} dòng</td>
                     <td>{locationNames(order).join(", ")}</td>
@@ -175,6 +164,15 @@ export function PurchaseOrderStage({
                             order.warnings,
                             "Có cảnh báo cần kiểm tra.",
                           ).join(", ") || "—"}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="secondary procurement-order-view-action"
+                        onClick={() => setSelectedId(order.purchase_order_id)}
+                      >
+                        Xem đơn
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -246,7 +244,7 @@ export function PurchaseOrderStage({
 
               {selected.status === "DRAFT" && (
                 <div className="procurement-order-detail-actions">
-                  {selected.stale && (
+                  {selected.stale ? (
                     <button
                       type="button"
                       className="primary procurement-primary-action"
@@ -255,23 +253,20 @@ export function PurchaseOrderStage({
                     >
                       Tạo lại đơn cần cập nhật
                     </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary procurement-primary-action"
+                      disabled={
+                        busy ||
+                        mutationLocked ||
+                        !selected.allowed_actions.release
+                      }
+                      onClick={() => onRelease(selected)}
+                    >
+                      Phát hành cho NCC
+                    </button>
                   )}
-                  <button
-                    type="button"
-                    className={
-                      selected.stale
-                        ? "secondary"
-                        : "primary procurement-primary-action"
-                    }
-                    disabled={
-                      busy ||
-                      mutationLocked ||
-                      !selected.allowed_actions.release
-                    }
-                    onClick={() => onRelease(selected)}
-                  >
-                    Phát hành cho NCC
-                  </button>
                 </div>
               )}
               {selected.status === "RELEASED_TO_SUPPLIER" &&
@@ -299,6 +294,15 @@ export function PurchaseOrderStage({
                     </button>
                   </div>
                 )}
+              <footer className="procurement-detail-footer">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setSelectedId(null)}
+                >
+                  Đóng
+                </button>
+              </footer>
             </aside>
           )}
         </div>
