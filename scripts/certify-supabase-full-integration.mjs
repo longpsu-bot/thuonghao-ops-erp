@@ -4,6 +4,7 @@ import {
   defaultCommandRunner,
   redactAtlasStagingDiagnostic,
   repositorySupabaseCliInvocation,
+  throwPreferredFailure,
 } from "./atlas-staging-contract.mjs";
 
 const REDUCED_STACK_EXCLUSIONS =
@@ -465,36 +466,34 @@ export function certifySupabaseFullIntegration({
     } catch {
       console.warn("Local Supabase diagnostics could not complete safely.");
     }
-    throw error;
-  } finally {
-    console.log("Supabase Full Integration: stop local stack");
-    try {
-      const stopResult = runPinnedSupabaseCli({
-        runCommand,
-        cwd,
-        environment: certificationEnvironment,
-        args: ["stop", "--no-backup"],
-      });
-      if (stopResult.status !== 0 && !primaryError) {
-        requireCommandSuccess(
-          stopResult,
-          "local Supabase cleanup",
-          protectedValues,
-        );
-      }
-    } catch (error) {
-      if (!primaryError) {
-        throw new Error(
-          redactAtlasStagingDiagnostic(
-            error instanceof Error
-              ? error.message
-              : "Supabase Full Integration failed at local Supabase cleanup.",
-            protectedValues,
-          ),
-        );
-      }
-    }
   }
+  console.log("Supabase Full Integration: stop local stack");
+  let cleanupError;
+  try {
+    const stopResult = runPinnedSupabaseCli({
+      runCommand,
+      cwd,
+      environment: certificationEnvironment,
+      args: ["stop", "--no-backup"],
+    });
+    if (stopResult.status !== 0 && primaryError === undefined) {
+      requireCommandSuccess(
+        stopResult,
+        "local Supabase cleanup",
+        protectedValues,
+      );
+    }
+  } catch (error) {
+    cleanupError = new Error(
+      redactAtlasStagingDiagnostic(
+        error instanceof Error
+          ? error.message
+          : "Supabase Full Integration failed at local Supabase cleanup.",
+        protectedValues,
+      ),
+    );
+  }
+  throwPreferredFailure(primaryError, cleanupError);
   return {
     status: "certified",
     commands: SUPABASE_FULL_INTEGRATION_COMMANDS.length,

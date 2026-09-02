@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import { parseMenuMatrix } from "../src/modules/atlas/planning-inputs/planningInputsWorkbook.ts";
+// Node executes this verifier directly, so the Edge Function entry file must remain explicit.
+// noinspection ES6PreferShortImport
 import { createGoogleSyncHandler } from "../supabase/functions/atlas-weekly-menu-google-sync/index.ts";
 import {
   readLocalSupabaseStatus,

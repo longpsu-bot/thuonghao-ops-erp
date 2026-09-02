@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import { throwPreferredFailure } from "./atlas-staging-contract.mjs";
 import {
   buildFoundationPackageSql,
   buildFoundationVerificationSql,
@@ -407,20 +408,26 @@ async function applyOperatorSchoolPortionDefaults({
       updatedSchool?.default_student_portions !== 100 ||
       updatedSchool?.default_teacher_portions !== 10
     ) {
-      throw new Error(
+      workflowFailure = new Error(
         "The authoritative local School-default workflow did not produce exact 100/10 version-2 evidence.",
       );
     }
   } catch (error) {
     workflowFailure = error;
-  } finally {
+  }
+  let cleanupFailure;
+  try {
     const { error: signOutError } = await client.auth.signOut({
       scope: "local",
     });
     if (signOutError)
-      throw new Error("The local School-workflow session was not cleared.");
+      cleanupFailure = new Error(
+        "The local School-workflow session was not cleared.",
+      );
+  } catch (error) {
+    cleanupFailure = error;
   }
-  if (workflowFailure) throw workflowFailure;
+  throwPreferredFailure(workflowFailure, cleanupFailure);
 }
 
 async function verifyBrowserAuthorization({
@@ -464,20 +471,26 @@ async function verifyBrowserAuthorization({
       !Array.isArray(data.schools) ||
       data.schools.length !== 1
     ) {
-      throw new Error(
+      verificationFailure = new Error(
         "The approved local package read did not succeed exactly.",
       );
     }
   } catch (error) {
     verificationFailure = error;
-  } finally {
+  }
+  let cleanupFailure;
+  try {
     const { error: signOutError } = await client.auth.signOut({
       scope: "local",
     });
     if (signOutError)
-      throw new Error("The local certification session was not cleared.");
+      cleanupFailure = new Error(
+        "The local certification session was not cleared.",
+      );
+  } catch (error) {
+    cleanupFailure = error;
   }
-  if (verificationFailure) throw verificationFailure;
+  throwPreferredFailure(verificationFailure, cleanupFailure);
 }
 
 export async function certifyLocalAtlasStagingPackages() {

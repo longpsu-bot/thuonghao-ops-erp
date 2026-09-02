@@ -256,7 +256,13 @@ export function createGoogleSyncHandler(
     let body: Record<string, unknown>;
     try {
       const parsed = await request.json();
-      if (!isRecord(parsed)) throw new Error("invalid");
+      if (!isRecord(parsed))
+        return failure(
+          400,
+          "INVALID_REQUEST",
+          "The connector request is invalid.",
+          null,
+        );
       body = parsed;
     } catch {
       return failure(
@@ -430,7 +436,13 @@ export function createGoogleSyncHandler(
     let credential: Record<string, unknown>;
     try {
       const parsed = JSON.parse(credentialText);
-      if (!isRecord(parsed)) throw new Error("invalid");
+      if (!isRecord(parsed))
+        return failure(
+          503,
+          "GOOGLE_CREDENTIAL_INVALID",
+          "The read-only Google credential is invalid.",
+          correlationId,
+        );
       credential = parsed;
     } catch {
       return failure(

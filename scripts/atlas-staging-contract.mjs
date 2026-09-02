@@ -58,11 +58,16 @@ export function redactAtlasStagingDiagnostic(value, protectedValues = []) {
     safe = safe.split(String(secret)).join("[REDACTED]");
   }
   return safe
-    .replace(/postgres(?:ql)?:\/\/[^\s'\"]+/gi, "[REDACTED_DATABASE_URL]")
+    .replace(/postgres(?:ql)?:\/\/[^\s'"]+/gi, "[REDACTED_DATABASE_URL]")
     .replace(/sb_(?:secret|publishable)_[A-Za-z0-9._-]+/g, "[REDACTED_KEY]")
     .replace(/eyJ[A-Za-z0-9._-]+/g, "[REDACTED_JWT]")
     .replace(/(Bearer\s+)[A-Za-z0-9._-]+/gi, "$1[REDACTED]")
-    .replace(/\b(password|passwd)\s*([=:]\s*)[^\s'\"]+/gi, "$1$2[REDACTED]");
+    .replace(/\b(password|passwd)\s*([=:]\s*)[^\s'"]+/gi, "$1$2[REDACTED]");
+}
+
+export function throwPreferredFailure(primaryFailure, cleanupFailure) {
+  if (primaryFailure !== undefined) throw primaryFailure;
+  if (cleanupFailure !== undefined) throw cleanupFailure;
 }
 
 export function requireExactCommitSha(value) {

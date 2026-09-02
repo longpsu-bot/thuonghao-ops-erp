@@ -345,8 +345,7 @@ export async function createPurchaseOrderXlsx(
   byIngredient.getColumn(4).width = 18;
   applyDocumentFont(byIngredient);
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  return buffer;
+  return workbook.xlsx.writeBuffer();
 }
 
 export async function createPurchaseOrderPdf(

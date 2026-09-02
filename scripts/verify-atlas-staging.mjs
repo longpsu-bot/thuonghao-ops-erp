@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   executeAtlasStagingManagementSql,
   redactAtlasStagingDiagnostic,
+  throwPreferredFailure,
   validateAtlasStagingProtectedValues,
   verifyAtlasApiExposure,
 } from "./atlas-staging-contract.mjs";
@@ -379,21 +380,26 @@ export async function verifyAtlasStaging({
       !Array.isArray(readResult.schools) ||
       readResult.schools.length !== 1
     ) {
-      throw new Error("The approved authenticated Atlas read failed safely.");
+      verificationFailure = new Error(
+        "The approved authenticated Atlas read failed safely.",
+      );
     }
   } catch (error) {
     verificationFailure = error;
-  } finally {
+  }
+  let cleanupFailure;
+  try {
     const { error: signOutError } = await client.auth.signOut({
       scope: "local",
     });
     const { data: afterSignOut, error: sessionError } =
       await client.auth.getSession();
-    if (signOutError || sessionError || afterSignOut.session) {
-      throw new Error("The staging session was not cleared safely.");
-    }
+    if (signOutError || sessionError || afterSignOut.session)
+      cleanupFailure = new Error("The staging session was not cleared safely.");
+  } catch (error) {
+    cleanupFailure = error;
   }
-  if (verificationFailure) throw verificationFailure;
+  throwPreferredFailure(verificationFailure, cleanupFailure);
   return { status: "verified", phase: "acceptance" };
 }
 

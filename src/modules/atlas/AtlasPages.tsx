@@ -124,6 +124,8 @@ export function PlanningSourcesPage() {
       <Chip tone="warning">Cần kiểm tra</Chip>
     </div>
   );
+  // Vietnamese operator labels intentionally serve as closed local tab keys.
+  // noinspection JSNonASCIINames
   const content: Record<(typeof sourceTabs)[number], ReactNode> = {
     "Thực đơn tuần": <WeeklyMenuWorkbench />,
     "Sĩ số / suất ăn": <AttendanceWorkbench />,
@@ -414,6 +416,8 @@ export function DocumentReleasePage() {
     "Đối chiếu chứng từ",
   ] as const;
   const [tab, setTab] = useState<(typeof tabs)[number]>(tabs[0]);
+  // Vietnamese operator labels intentionally serve as closed local tab keys.
+  // noinspection JSNonASCIINames
   const body: Record<(typeof tabs)[number], ReactNode> = {
     "Đơn đặt NCC / PO": (
       <Panel

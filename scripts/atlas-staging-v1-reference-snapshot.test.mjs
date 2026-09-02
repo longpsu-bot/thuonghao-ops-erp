@@ -843,10 +843,10 @@ describe("Atlas Staging OPS v1 reference snapshot", () => {
       workflow.match(/pnpm atlas:staging:v1-reference:import --/g),
     ).toHaveLength(2);
     expect(workflow).toMatch(
-      /- name: Validate OPS v1 reference snapshot\s+if: \$\{\{ inputs\.mode == 'validate' \}\}\s+run: pnpm atlas:staging:v1-reference:import -- --commit-sha "\$\{\{ inputs\.commit_sha \}\}"/,
+      /- name: Validate OPS v1 reference snapshot\s+if: \$\{\{ inputs\.mode == 'validate' }}\s+run: pnpm atlas:staging:v1-reference:import -- --commit-sha "\$\{\{ inputs\.commit_sha }}"/,
     );
     expect(workflow).toMatch(
-      /- name: Validate and apply OPS v1 reference snapshot\s+if: \$\{\{ inputs\.mode == 'apply' \}\}\s+run: >-\s+pnpm atlas:staging:v1-reference:import --\s+--commit-sha "\$\{\{ inputs\.commit_sha \}\}"\s+--apply\s+--target-project-ref "\$\{ATLAS_STAGING_PROJECT_REF\}"/,
+      /- name: Validate and apply OPS v1 reference snapshot\s+if: \$\{\{ inputs\.mode == 'apply' }}\s+run: >-\s+pnpm atlas:staging:v1-reference:import --\s+--commit-sha "\$\{\{ inputs\.commit_sha }}"\s+--apply\s+--target-project-ref "\$\{ATLAS_STAGING_PROJECT_REF}"/,
     );
     expect(workflow).not.toMatch(/upload-artifact|artifacts?:/i);
     expect(workflow).not.toMatch(/\b(push|pull_request|schedule):/);
