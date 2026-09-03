@@ -18,6 +18,8 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "school_catering_handoff_allocation.sql",
   "school_catering_planning_correction.sql",
   "school_catering_purchase_orders.sql",
+  "purchase_handoff_clock_skew.sql",
+  "purchase_review_confirm_release.sql",
   "pa_04_supplier_direct_slice_1_foundation.sql",
   "pa_05b_h1_runtime_role_hardening_test.sql",
   "pa_05b_h2_multiline_dispatch_execution.sql",
@@ -73,7 +75,19 @@ function pnpm(...args) {
 }
 
 const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
-  pnpm("exec", "supabase", "test", "db", `supabase/tests/${file}`, "--local"),
+  file === "purchase_review_confirm_release.sql"
+    ? Object.freeze({
+        command: "node",
+        args: Object.freeze(["scripts/test-local-purchase-review.mjs", file]),
+      })
+    : pnpm(
+        "exec",
+        "supabase",
+        "test",
+        "db",
+        `supabase/tests/${file}`,
+        "--local",
+      ),
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
@@ -105,22 +119,22 @@ export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
     "supabase/tests/rmvp_06_connected_confirmed_need_validation.sql",
     "--local",
   ),
-  pnpm(
-    "exec",
-    "supabase",
-    "test",
-    "db",
-    "supabase/tests/rmvp_07_connected_confirmed_need_approval_release.sql",
-    "--local",
-  ),
-  pnpm(
-    "exec",
-    "supabase",
-    "test",
-    "db",
-    "supabase/tests/d037_confirmed_need_save_release_boundary.sql",
-    "--local",
-  ),
+  Object.freeze({
+    command: "node",
+    args: Object.freeze([
+      "scripts/test-local-purchase-review.mjs",
+      "rmvp_07_connected_confirmed_need_approval_release.sql",
+      "--existing-fixture",
+    ]),
+  }),
+  Object.freeze({
+    command: "node",
+    args: Object.freeze([
+      "scripts/test-local-purchase-review.mjs",
+      "d037_confirmed_need_save_release_boundary.sql",
+      "--existing-fixture",
+    ]),
+  }),
   pnpm("exec", "supabase", "db", "reset", "--local", "--no-seed"),
   pnpm(
     "exec",

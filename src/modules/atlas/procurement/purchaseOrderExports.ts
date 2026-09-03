@@ -374,7 +374,7 @@ export async function createPurchaseOrderPdf(
   });
 }
 
-function downloadBytes(
+export function downloadBytes(
   bytes: ArrayBuffer | Uint8Array,
   mimeType: string,
   fileName: string,

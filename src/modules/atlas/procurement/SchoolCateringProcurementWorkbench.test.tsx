@@ -1,3 +1,4 @@
+import type { PurchaseReviewApi } from "./purchaseReviewApi";
 import "@testing-library/jest-dom/vitest";
 import {
   act,
@@ -52,11 +53,11 @@ function createCrossStageJourney() {
   };
 
   procurementApi.getWorkbench = async () => {
-    if (handoff === "NONE")
-      return reviewSuccess(createReviewProcurementWorkbenchFixture("empty"));
+    if (handoff === "NONE" && allocation === "NONE")
+      return reviewSuccess(createReviewProcurementWorkbenchFixture("default"));
     if (handoff === "INITIAL_100" && allocation === "NONE")
       return reviewSuccess(createReviewProcurementWorkbenchFixture("default"));
-    if (handoff === "INITIAL_100")
+    if (handoff === "INITIAL_100" || handoff === "NONE")
       return reviewSuccess(
         createReviewProcurementWorkbenchFixture("manual_split"),
       );
@@ -78,7 +79,7 @@ function createCrossStageJourney() {
     const quantities = request.payload.splits.map(
       (split) => split.allocated_quantity,
     );
-    if (handoff === "INITIAL_100") {
+    if (handoff === "INITIAL_100" || handoff === "NONE") {
       if (quantities.join("/") !== "60.000000/40.000000")
         throw new Error(
           "Initial family must persist the exact 60/40 snapshot.",
@@ -135,9 +136,49 @@ function createCrossStageJourney() {
     });
   };
 
+  const purchaseReviewApi: PurchaseReviewApi = {
+    getGeneratedReview: async () => reviewSuccess({ success: true, rows: [] }),
+    getConfirmedAllocations: async () => {
+      const result = await procurementApi.getWorkbench({} as never);
+      if (result.kind !== "success") return result;
+      const data = structuredClone(result.response) as unknown as ReturnType<
+        typeof createReviewProcurementWorkbenchFixture
+      >;
+      for (const row of data.rows) {
+        row.family.source_kind =
+          handoff === "NONE" ? "CONFIRMED_NEED" : "PURCHASE_HANDOFF";
+        row.family.source_confirmed_need_batch_id = confirmedNeedBatchId;
+        row.family.source_confirmed_need_batch_version = 2;
+        row.allowed_actions.confirm_recommendation = false;
+      }
+      return reviewSuccess({
+        ...data,
+        contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+        preparation: {
+          service_date: "2026-09-02",
+          confirmed_need_batch_id: confirmedNeedBatchId,
+          expected_version: 2,
+          allowed: true,
+          ready: allocation !== "NONE",
+          blockers: [],
+        },
+      });
+    },
+    saveConfirmedAllocation: (request) =>
+      procurementApi.saveAllocation({
+        ...request,
+        contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
+        reason_code: "SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED",
+      } as never),
+    preparePurchaseOrders: async () => {
+      handoff = "INITIAL_100";
+      return procurementApi.createPurchaseOrderDrafts({} as never);
+    },
+  };
   return {
     confirmedNeedApi,
     procurementApi,
+    purchaseReviewApi,
     invalidateForPlanningCorrection() {
       if (purchaseOrder === "RELEASED")
         return {
@@ -197,7 +238,8 @@ function CrossStageJourney({
               api={journey.confirmedNeedApi}
               initialBatchId={confirmedNeedBatchId}
               mode="review"
-              onPurchaseHandoffReleased={() => {
+              workingServiceDate="2026-08-03"
+              onContinueAllocation={() => {
                 setInitialHandoffReleased(true);
                 setPage("procurement");
               }}
@@ -208,8 +250,9 @@ function CrossStageJourney({
         <SchoolCateringProcurementWorkbench
           authState={authState}
           api={journey.procurementApi}
-          initialDateStart="2026-09-01"
-          initialDateEnd="2026-09-07"
+          purchaseReviewApi={journey.purchaseReviewApi}
+          initialDateStart="2026-09-02"
+          initialDateEnd="2026-09-02"
           mode="review"
         />
       )}
@@ -1575,9 +1618,8 @@ describe("Planning to school-catering Procurement propagation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     await screen.findByText("Đã lưu thay đổi.");
     fireEvent.click(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
 
     expect(
       await screen.findByRole("heading", { name: "Phân bổ nhà cung ứng" }),
@@ -1603,8 +1645,10 @@ describe("Planning to school-catering Procurement propagation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     await screen.findByText("Đã lưu phân bổ nhà cung ứng.");
 
-    fireEvent.click(screen.getByRole("button", { name: "Chế độ Đơn mua" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Tạo đơn mua" }));
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Tiếp tục lên đơn" }),
+    );
     expect(
       await screen.findByRole("table", { name: "Đơn mua" }),
     ).toHaveTextContent("Bản nháp");

@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { saveLocalConfirmedAllocations } from "./local-confirmed-supplier-allocation.mjs";
 import { createClient } from "@supabase/supabase-js";
 import {
   readLocalSupabaseStatus,
@@ -214,6 +215,16 @@ async function main() {
     subject,
     initial.workbench,
   );
+  // The full upstream v1 release verifier needs allocations saved while Need
+  // is still editable; validation deliberately closes that editing boundary.
+  if (process.env.RMVP07_CONTRACT === "v1") {
+    await saveLocalConfirmedAllocations(
+      client,
+      subject,
+      confirmedWorkbench,
+      invokeSuccess,
+    );
+  }
   const command = validationCommand(subject, confirmedWorkbench);
   const validated = await invokeSuccess(
     client,

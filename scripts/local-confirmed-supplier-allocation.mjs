@@ -1,0 +1,94 @@
+import { runPinnedSupabase } from "./local-supabase-status.mjs";
+
+// Local verifier prerequisite only; never invoked by a hosted/Staging workflow.
+// Fixture evidence is seeded locally, but allocations use the real public command.
+export async function saveLocalConfirmedAllocations(
+  client,
+  subject,
+  workbench,
+  invoke,
+  seedLocal = (sql) =>
+    runPinnedSupabase(["db", "query", "--local", "--agent", "no", sql], {
+      stdio: ["ignore", "ignore", "inherit"],
+    }),
+) {
+  const uuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const batch = workbench.confirmed_need_batch_id;
+  if (!uuid.test(subject) || !uuid.test(batch))
+    throw new Error("Local allocation fixture requires exact UUIDs.");
+  const supplier = "c7100000-0000-4000-8000-000000000001";
+  // Reuse the binding identities owned by school_catering_procurement_verifier_fixture.sql.
+  // One prepared statement; one line also survives pnpm's Windows command shim.
+  seedLocal(
+    `do $local_confirmed_allocation$ begin
+    insert into atlas_core.role_capabilities(role_capability_id,role_id,capability_id,granted_by_actor_id)
+    select source.binding_id,'b6000000-0000-0000-0000-000000000003'::uuid,
+      capability.capability_id,'b6000000-0000-0000-0000-000000000001'::uuid
+    from (values
+      ('b6000000-0000-4000-8000-000000000035'::uuid,'procurement.school_catering.read'),
+      ('b6000000-0000-4000-8000-000000000036'::uuid,'procurement.school_catering.write')
+    ) source(binding_id,capability_code)
+    join atlas_core.capabilities capability using(capability_code)
+    where true
+    on conflict do nothing;
+    insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
+    values('${supplier}','PR-A-VERIFY-A','PR-A Verify Supplier A','ACTIVE') on conflict do nothing;
+    insert into atlas_admin.supplier_eligibilities(supplier_id,ingredient_id,effective_from,priority,reason_note)
+    select distinct '${supplier}'::uuid,line.ingredient_id,'2020-01-01'::date,1,'Local confirmed allocation verifier'
+    from atlas_planning.confirmed_need_lines line where line.confirmed_need_batch_id='${batch}'::uuid
+      and not exists(select 1 from atlas_admin.supplier_eligibilities existing
+        where existing.supplier_id='${supplier}'::uuid and existing.ingredient_id=line.ingredient_id)
+    on conflict do nothing;
+  end; $local_confirmed_allocation$;`.replace(/[\r\n]+/g, " "),
+  );
+  const read = await invoke(
+    client,
+    "get_confirmed_supplier_allocation_workbench",
+    {
+      contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+      requested_by_auth_subject: subject,
+      correlation_id: crypto.randomUUID(),
+      payload: {
+        date_start: workbench.service_period.period_start,
+        date_end: workbench.service_period.period_end,
+      },
+    },
+  );
+  for (const row of read.rows ?? []) {
+    if (
+      row.family.source_confirmed_need_batch_id !== batch ||
+      row.state === "BALANCED"
+    )
+      continue;
+    if (!row.complete || row.family_quantity === null)
+      throw new Error("Local confirmed source is incomplete.");
+    const commandId = crypto.randomUUID();
+    await invoke(client, "save_confirmed_supplier_allocation", {
+      contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+      command_id: commandId,
+      correlation_id: crypto.randomUUID(),
+      idempotency_key: `local-confirmed-allocation:${commandId}`,
+      expected_version: row.family.version,
+      requested_by_auth_subject: subject,
+      requested_at: new Date(Date.now() - 1_000).toISOString(),
+      reason_code: "CONFIRMED_SUPPLIER_ALLOCATION_SAVED",
+      reason_note: null,
+      payload: {
+        family: {
+          service_date: row.service_date,
+          delivery_location_id: row.delivery_location_id,
+          ingredient_id: row.ingredient_id,
+          unit_id: row.unit_id,
+          expected_source_fingerprint: row.family.source_fingerprint,
+          expected_source_batch_id: batch,
+          expected_source_batch_version:
+            row.family.source_confirmed_need_batch_version,
+        },
+        splits: [
+          { supplier_id: supplier, allocated_quantity: row.family_quantity },
+        ],
+      },
+    });
+  }
+}

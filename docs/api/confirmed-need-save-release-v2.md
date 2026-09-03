@@ -36,6 +36,14 @@ Save eligibility requires the active Actor's Save capability and GLOBAL scope pl
 
 Disabled messages contain concise Vietnamese operator meaning and expose no role, capability code, lifecycle enum, version, fingerprint, API, or SQL detail. React may make an authorized action stricter for local dirty/validity, unknown-outcome refresh, or busy state, but cannot turn backend `false` into UI `true`. Both commands re-authorize and recheck current facts atomically regardless of readback eligibility.
 
-## Selective-continuity compatibility
+## Purchase review and confirmed allocation amendment
+
+PURCHASE-REVIEW-CONFIRM-RELEASE-01 preserves the Save payload, exact quantities, reason/note policy, decision history and editable saved lifecycle. Planning's post-save `Tiếp tục phân bổ NCC` action now only navigates with the exact working service date; it invokes neither release nor Handoff.
+
+For NEED_GENERATION batches, both release versions and the defensive release transition additionally require complete, current, balanced saved confirmed-source supplier allocations for every positive family. Missing, stale or ineligible allocation returns `CONFIRMED_ALLOCATION_NOT_READY` and leaves Planning editable. Existing validation/approval lifecycle advances alone do not stale an allocation's lifecycle-neutral fingerprint. Authoritative release eligibility includes this same prerequisite.
+
+The normal operator path invokes one backend `prepare_school_catering_purchase_orders` command from Procurement. That command composes the existing release/Handoff/draft boundaries transactionally; React does not orchestrate internal lifecycle calls. The standalone Planning release command still creates zero Handoff, Procurement or PO facts. See the [amended Procurement contract](school-catering-procurement.md#purchase-review-confirm-release-01-amendment).
+
+## Selective-continuity compatibility (unchanged)
 
 PLANNING-CONTRACT-02B changes neither v2 envelope. `save_confirmed_needs` receives only rows actually changed by the operator; untouched `CARRIED_FORWARD` rows retain the original human decision and create no decision/event side effect. Reconfirmation after system invalidation continues the latest historical human chain, while a truly new line starts at decision `1`. `release_confirmed_needs` accepts carried authority only through exact private continuity evidence and snapshots the current successor revision/quantity. Any current `CHANGED`, `NEW`, or `UNREVIEWED` line without valid authority blocks release.

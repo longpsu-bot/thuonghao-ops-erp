@@ -18,6 +18,9 @@ export type AllocationFamilyReference = {
 };
 
 export type AllocationFamilyIdentity = {
+  source_kind?: "CONFIRMED_NEED" | "PURCHASE_HANDOFF";
+  source_confirmed_need_batch_id?: string;
+  source_confirmed_need_batch_version?: number;
   service_date: string;
   delivery_location_id: string;
   ingredient_id: string;
@@ -57,23 +60,27 @@ export type AllocationProposalSplit = {
 };
 
 export type AllocationContribution = {
-  purchase_handoff_line_revision_id: string;
+  purchase_handoff_line_revision_id?: string;
+  confirmed_need_line_revision_id?: string;
+  confirmed_need_line_decision_id?: string;
   contribution_quantity: ExactQuantity;
   [key: string]: unknown;
 };
 
 export type AllocationFamilyRow = {
+  complete?: boolean;
   family: AllocationFamilyIdentity;
   service_date: string;
   delivery_location_id: string;
   location_name: string;
   school_id: string | null;
   school_name: string | null;
+  schools?: ProcurementSchoolOption[];
   ingredient_id: string;
   ingredient_name: string;
   unit_id: string;
   unit_code: string;
-  family_quantity: ExactQuantity;
+  family_quantity: ExactQuantity | null;
   contributions: AllocationContribution[];
   contribution_count: number;
   splits: AllocationSupplierSplit[];

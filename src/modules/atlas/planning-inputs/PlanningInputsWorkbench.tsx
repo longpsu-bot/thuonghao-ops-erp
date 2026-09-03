@@ -1,3 +1,5 @@
+import { GeneratedPurchaseReview } from "../procurement/GeneratedPurchaseReview";
+import type { PurchaseReviewApi } from "../procurement/purchaseReviewApi";
 import {
   useCallback,
   createContext,
@@ -742,8 +744,10 @@ export function PlanningInputsWorkbenchView({
   readinessApi,
   needGenerationApi,
   confirmedNeedApi,
-  onPurchaseHandoffReleased,
+  purchaseReviewApi,
+  onContinueAllocation,
   initialWeekStart,
+  initialServiceDate,
   mode = "connected",
 }: {
   authState: AtlasAuthState;
@@ -755,13 +759,21 @@ export function PlanningInputsWorkbenchView({
   >;
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
-  onPurchaseHandoffReleased?: () => void;
+  purchaseReviewApi?: PurchaseReviewApi;
+  onContinueAllocation?: (serviceDate: string) => void;
   initialWeekStart?: string;
+  initialServiceDate?: string;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [weekStart, setWeekStart] = useState(
-    () => initialWeekStart ?? mondayOf(new Date()),
+    () =>
+      initialWeekStart ??
+      mondayOf(
+        initialServiceDate
+          ? new Date(`${initialServiceDate}T12:00:00`)
+          : new Date(),
+      ),
   );
   const [tab, setTab] = useState<TabId>("menu");
   const [schoolScopeIds, setSchoolScopeIds] = useState<string[]>([]);
@@ -811,7 +823,9 @@ export function PlanningInputsWorkbenchView({
   });
   const [attendancePaste, setAttendancePaste] = useState("");
   const [attendanceSearch, setAttendanceSearch] = useState("");
-  const [serviceDateFilter, setServiceDateFilter] = useState(weekStart);
+  const [serviceDateFilter, setServiceDateFilter] = useState(
+    initialServiceDate ?? weekStart,
+  );
   const generation = useRef(0);
   const confirmedNeedGeneration = useRef(0);
   const sourceActionRef = useRef<HTMLButtonElement>(null);
@@ -2306,6 +2320,15 @@ export function PlanningInputsWorkbenchView({
 
             {tab === "confirmed-needs" && (
               <div className="planning-confirmed-layout">
+                <GeneratedPurchaseReview
+                  api={purchaseReviewApi}
+                  authSubject={
+                    authState.status === "authenticated"
+                      ? authState.authSubject
+                      : null
+                  }
+                  serviceDate={serviceDateFilter}
+                />
                 {!visibleConfirmedNeed &&
                   confirmedNeedProjectionResolution === "ready" && (
                     <aside
@@ -2353,7 +2376,7 @@ export function PlanningInputsWorkbenchView({
                       schoolScopeIds={schoolScopeIds}
                       workingServiceDate={serviceDateFilter}
                       onDirtyChange={setConfirmedNeedDirty}
-                      onPurchaseHandoffReleased={onPurchaseHandoffReleased}
+                      onContinueAllocation={onContinueAllocation}
                     />
                   </section>
                 )}

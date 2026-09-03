@@ -303,7 +303,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       kind: "success",
       response: { success: true },
     });
-    const onPurchaseHandoffReleased = vi.fn();
+    const onContinueAllocation = vi.fn();
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -312,18 +312,17 @@ describe("Planning Inputs Confirmed Need tab", () => {
         confirmedNeedApi={confirmedNeedApi}
         initialWeekStart={serviceDate}
         mode="review"
-        onPurchaseHandoffReleased={onPurchaseHandoffReleased}
+        onContinueAllocation={onContinueAllocation}
       />,
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
     fireEvent.click(
-      await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
+      await screen.findByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
 
     await waitFor(() =>
-      expect(onPurchaseHandoffReleased).toHaveBeenCalledOnce(),
+      expect(onContinueAllocation).toHaveBeenCalledWith(serviceDate),
     );
   });
 
@@ -483,7 +482,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
   });
 
-  it("disarms Monday release confirmation when switching to Wednesday", async () => {
+  it("continues allocation for the selected day without releasing either day", async () => {
     const mondayBatch = "c4500000-0000-0000-0000-000000000021";
     const wednesdayBatch = "c4500000-0000-0000-0000-000000000023";
     const readinessApi = readinessWithDailyNeeds({
@@ -498,6 +497,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       { releaseEligible: true },
     );
     const release = vi.spyOn(confirmedNeedApi, "releaseSaved");
+    const navigate = vi.fn();
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -505,6 +505,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
         readinessApi={readinessApi}
         confirmedNeedApi={confirmedNeedApi}
         initialWeekStart="2026-08-03"
+        onContinueAllocation={navigate}
         mode="review"
       />,
     );
@@ -515,11 +516,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
       target: { value: "2026-08-03" },
     });
     fireEvent.click(
-      await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
+      await screen.findByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     );
-    expect(
-      screen.getByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
-    ).toBeVisible();
+    expect(navigate).toHaveBeenLastCalledWith("2026-08-03");
 
     fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
       target: { value: "2026-08-05" },
@@ -531,6 +530,15 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(
       screen.queryByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
     ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    );
+    expect(navigate).toHaveBeenLastCalledWith("2026-08-05");
     expect(release).not.toHaveBeenCalled();
   });
 
@@ -567,7 +575,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       }),
     ).toBeVisible();
     expect(
-      await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
+      await screen.findByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     ).toBeVisible();
 
     fireEvent.click(screen.getByRole("tab", { name: "Thực đơn" }));
@@ -582,7 +590,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       screen.queryByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Chuyển sang lên đơn" }),
+      screen.queryByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     ).not.toBeInTheDocument();
   });
 
@@ -649,7 +657,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     ).toBeVisible();
   });
 
-  it("generates the selected day, opens the returned Draft Review batch, and preserves Save then release", async () => {
+  it("generates the selected day, saves the returned batch, and continues allocation", async () => {
     const needGenerationApi = createReviewNeedGenerationApi("ready");
     const execute = vi.spyOn(needGenerationApi, "execute");
     const confirmedNeedApi = confirmedNeedApiForDates({
@@ -657,6 +665,8 @@ describe("Planning Inputs Confirmed Need tab", () => {
     });
     const getReview = vi.spyOn(confirmedNeedApi, "getReview");
     const save = vi.spyOn(confirmedNeedApi, "save");
+    const navigate = vi.fn();
+    const release = vi.spyOn(confirmedNeedApi, "releaseSaved");
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -664,6 +674,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
         readinessApi={createReviewPlanningInputReadinessApi("ready")}
         confirmedNeedApi={confirmedNeedApi}
         initialWeekStart="2026-08-31"
+        onContinueAllocation={navigate}
         mode="review"
       />,
     );
@@ -696,8 +707,13 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(await screen.findByText("Đã lưu thay đổi.")).toBeVisible();
     expect(save).toHaveBeenCalledTimes(1);
     expect(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     ).toBeEnabled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    );
+    expect(navigate).toHaveBeenCalledWith("2026-08-31");
+    expect(release).not.toHaveBeenCalled();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();

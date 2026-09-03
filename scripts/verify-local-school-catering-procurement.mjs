@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { saveLocalConfirmedAllocations } from "./local-confirmed-supplier-allocation.mjs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -205,6 +206,12 @@ async function releaseConfirmedNeed(client, subject) {
       "RMVP-05.v2",
     ),
   );
+  await saveLocalConfirmedAllocations(
+    client,
+    subject,
+    saved.authoritative_readback,
+    invoke,
+  );
   const released = await invoke(
     client,
     "release_confirmed_needs",
@@ -224,10 +231,17 @@ async function releaseConfirmedNeed(client, subject) {
   return released.authoritative_readback;
 }
 
+function quantityMicros(value) {
+  assert(
+    typeof value === "string" && /^\d+(?:\.\d{1,6})?$/.test(value),
+    "Expected an exact public quantity string with at most six decimals.",
+  );
+  const [whole, fraction = ""] = value.split(".");
+  return BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0"));
+}
+
 function quantityParts(value) {
-  const [whole, fraction = ""] = String(value).split(".");
-  const micros =
-    BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0").slice(0, 6));
+  const micros = quantityMicros(value);
   const first = (micros * 60n) / 100n;
   const second = micros - first;
   const format = (amount) =>
@@ -259,6 +273,41 @@ async function main() {
   const workbench = await releaseConfirmedNeed(client, subject);
   installProcurementFixture(releasedIngredientIds());
 
+  const readRequest = {
+    contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
+    requested_by_auth_subject: subject,
+    correlation_id: crypto.randomUUID(),
+    payload: {
+      date_start: workbench.service_period.period_start,
+      date_end: workbench.service_period.period_end,
+      school_ids: [],
+      states: [],
+      search: null,
+    },
+  };
+  const sourceRequest = {
+    ...readRequest,
+    contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+  };
+  const beforeHandoff = await invoke(
+    client,
+    "get_confirmed_supplier_allocation_workbench",
+    sourceRequest,
+  );
+  const confirmedRows = beforeHandoff.rows.filter(
+    (item) => item.family.source_confirmed_need_batch_id === batchId,
+  );
+  assert(
+    confirmedRows.length > 0 &&
+      confirmedRows.every(
+        (item) =>
+          item.state === "BALANCED" &&
+          item.family.source_kind === "CONFIRMED_NEED" &&
+          item.splits.length > 0,
+      ),
+    "Handoff prerequisite did not expose persisted Confirmed Need allocations.",
+  );
+
   const handoff = await invoke(
     client,
     "release_school_catering_purchase_handoff",
@@ -275,85 +324,82 @@ async function main() {
     "Handoff release returned no NEED_GENERATION demand references.",
   );
 
-  const readRequest = {
-    contract_version: "SCHOOL-CATERING-PROCUREMENT.v1",
-    requested_by_auth_subject: subject,
-    correlation_id: crypto.randomUUID(),
-    payload: {
-      date_start: workbench.service_period.period_start,
-      date_end: workbench.service_period.period_end,
-      school_ids: [],
-      states: [],
-      search: null,
-    },
-  };
   let readback = await invoke(
     client,
     "get_school_catering_procurement_workbench",
     readRequest,
   );
-  const row = readback.rows[0];
-  assert(
-    row?.state === "UNALLOCATED" &&
-      row.recommendation?.split_ratio === "1.000000000000",
-    "Workbench did not return the uncommitted 100% priority recommendation.",
-  );
-
-  const candidates = readback.rows.map((item) => {
-    const candidate = {
-      ...item.family,
-      expected_family_version: item.family.version,
-      expected_source_fingerprint: item.family.source_fingerprint,
-    };
-    delete candidate.family_id;
-    delete candidate.version;
-    delete candidate.source_fingerprint;
-    return candidate;
-  });
-  const confirmed = await invoke(
+  const afterHandoff = await invoke(
     client,
-    "confirm_school_catering_supplier_recommendations",
-    command(
-      subject,
-      "SCHOOL_CATERING_SUPPLIER_RECOMMENDATIONS_CONFIRMED",
-      1,
-      { candidates },
-      "SCHOOL-CATERING-PROCUREMENT.v1",
-    ),
+    "get_confirmed_supplier_allocation_workbench",
+    sourceRequest,
   );
-  assert(
-    confirmed.confirmed.length === candidates.length &&
-      confirmed.skipped.length === 0,
-    "The explicit 100% supplier recommendations were not all confirmed.",
+  for (const previous of confirmedRows) {
+    const current = readback.rows.find(
+      (item) => item.family.family_id === previous.family.family_id,
+    );
+    const source = afterHandoff.rows.find(
+      (item) => item.family.family_id === previous.family.family_id,
+    );
+    const promotion = handoff.allocation_promotions?.find(
+      (item) => item.family_id === previous.family.family_id,
+    );
+    assert(
+      current?.state === "BALANCED" &&
+        source?.state === "BALANCED" &&
+        source.family.source_kind === "PURCHASE_HANDOFF" &&
+        current.family.version === previous.family.version + 1 &&
+        source.family.version === current.family.version &&
+        source.family.source_fingerprint ===
+          current.family.source_fingerprint &&
+        promotion?.source_kind === "PURCHASE_HANDOFF" &&
+        promotion.family_version === current.family.version &&
+        promotion.source_fingerprint === current.family.source_fingerprint &&
+        uuidPattern.test(promotion.family_revision_id),
+      "Handoff did not expose the promoted successor through public readback.",
+    );
+    assert(
+      current.splits.length === previous.splits.length &&
+        current.splits.every((split) =>
+          previous.splits.some(
+            (prior) =>
+              prior.supplier_id === split.supplier_id &&
+              prior.allocated_quantity === split.allocated_quantity &&
+              prior.split_ratio === split.split_ratio &&
+              uuidPattern.test(split.supplier_split_id),
+          ),
+        ) &&
+        quantityMicros(current.family_quantity) ===
+          quantityMicros(previous.family_quantity) &&
+        current.splits.reduce(
+          (total, split) => total + quantityMicros(split.allocated_quantity),
+          0n,
+        ) === quantityMicros(current.family_quantity) &&
+        current.recommendation === null &&
+        source.recommendation === null &&
+        current.allowed_actions.confirm_recommendation === false,
+      "Promotion did not preserve the exact persisted supplier allocation.",
+    );
+  }
+  const promoted = readback.rows.find(
+    (item) => item.family.family_id === confirmedRows[0].family.family_id,
   );
-
-  readback = await invoke(
-    client,
-    "get_school_catering_procurement_workbench",
-    readRequest,
-  );
-  const recommended = readback.rows.find(
-    (item) => item.family.family_id === confirmed.confirmed[0].family_id,
-  );
-  assert(
-    recommended?.state === "BALANCED" && recommended.family.version === 1,
-    "Recommendation readback is not balanced at family version 1.",
-  );
-  const [quantityA, quantityB] = quantityParts(recommended.family_quantity);
+  const beforeVersion = promoted.family.version;
+  const [quantityA, quantityB] = quantityParts(promoted.family_quantity);
   const manual = await invoke(
     client,
     "save_school_catering_supplier_allocation",
     command(
       subject,
       "SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED",
-      1,
+      beforeVersion,
       {
         family: {
-          service_date: recommended.family.service_date,
-          delivery_location_id: recommended.family.delivery_location_id,
-          ingredient_id: recommended.family.ingredient_id,
-          unit_id: recommended.family.unit_id,
-          expected_source_fingerprint: recommended.family.source_fingerprint,
+          service_date: promoted.family.service_date,
+          delivery_location_id: promoted.family.delivery_location_id,
+          ingredient_id: promoted.family.ingredient_id,
+          unit_id: promoted.family.unit_id,
+          expected_source_fingerprint: promoted.family.source_fingerprint,
         },
         splits: [
           { supplier_id: supplierA, allocated_quantity: quantityA },
@@ -364,8 +410,8 @@ async function main() {
     ),
   );
   assert(
-    manual.family.family_version === 2,
-    "Manual split did not create family version 2.",
+    manual.family.family_version === beforeVersion + 1,
+    "Manual split did not advance the current family version exactly once.",
   );
 
   readback = await invoke(
@@ -377,20 +423,26 @@ async function main() {
     (item) => item.family.family_id === manual.family.family_id,
   );
   assert(
-    finalRow?.state === "BALANCED" && finalRow.splits.length === 2,
+    finalRow?.state === "BALANCED" &&
+      finalRow.family.version === beforeVersion + 1 &&
+      finalRow.splits.length === 2,
     "Final manual split readback is not balanced with two suppliers.",
   );
   assert(
     finalRow.splits.some(
       (split) =>
-        split.supplier_id === supplierA && Number(split.split_ratio) === 0.6,
+        split.supplier_id === supplierA &&
+        split.allocated_quantity === quantityA &&
+        split.split_ratio === "0.600000000000",
     ),
     "Final readback does not retain the server-calculated 60% split.",
   );
   assert(
     finalRow.splits.some(
       (split) =>
-        split.supplier_id === supplierB && Number(split.split_ratio) === 0.4,
+        split.supplier_id === supplierB &&
+        split.allocated_quantity === quantityB &&
+        split.split_ratio === "0.400000000000",
     ),
     "Final readback does not retain the server-calculated 40% split.",
   );
@@ -435,6 +487,27 @@ async function main() {
     "get_school_catering_purchase_orders",
     poReadRequest,
   );
+  for (const [supplierId, quantity] of [
+    [supplierA, quantityA],
+    [supplierB, quantityB],
+  ]) {
+    const order = purchaseOrders.purchase_orders.find(
+      (item) => item.supplier.supplier_id === supplierId,
+    );
+    const line = order?.lines.find(
+      (item) => item.source.family_id === manual.family.family_id,
+    );
+    const split = finalRow.splits.find(
+      (item) => item.supplier_id === supplierId,
+    );
+    assert(
+      order?.status === "DRAFT" &&
+        line?.ordered_quantity === quantity &&
+        line.source.family_revision_id === manual.family.family_revision_id &&
+        line.source.supplier_split_id === split.supplier_split_id,
+      "Supplier PO did not consume the current exact post-Handoff allocation.",
+    );
+  }
   const draft = purchaseOrders.purchase_orders.find(
     (purchaseOrder) =>
       purchaseOrder.supplier.supplier_id === supplierA &&
@@ -480,7 +553,7 @@ async function main() {
   );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified D-042 correction gates and removed-Handoff-family PO regeneration through public allocation/draft commands, plus authenticated Handoff, balanced allocation, PO draft, backend number release, and authoritative readback.",
+    `Verified D-042 correction gates and removed-Handoff-family PO regeneration, ${confirmedRows.length} preserved/promoted allocations, exact manual 60/40 edit at family version ${beforeVersion} -> ${manual.family.family_version}, current-split PO drafts, backend number release, and authoritative readback.`,
   );
 }
 

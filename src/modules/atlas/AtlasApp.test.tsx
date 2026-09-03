@@ -35,6 +35,46 @@ function render(children: ReactNode) {
 afterEach(cleanup);
 
 describe("Atlas master-data shell", () => {
+  it("carries saved 120 through Planning to supplier allocation and preserves the working date on return", async () => {
+    render(<AtlasApp reviewMode initialPage="planning-inputs" />);
+    const workingDate = (
+      screen.getByLabelText("Ngày phục vụ") as HTMLInputElement
+    ).value;
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    const quantity = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+    fireEvent.change(quantity, { target: { value: "120" } });
+    fireEvent.change(screen.getByLabelText("Ghi chú Gạo thơm"), {
+      target: { value: "Xác nhận số lượng thực tế" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await screen.findByText("Đã lưu thay đổi.");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    );
+    const allocations = await screen.findByRole("table", {
+      name: "Allocation Family",
+    });
+    expect(allocations).toHaveTextContent("120 kg");
+    expect(allocations).not.toHaveTextContent("100 kg");
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue(workingDate);
+    expect(
+      screen.getByRole("heading", { name: "Phân bổ nhà cung ứng", level: 1 }),
+    ).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
+    ).toBeDisabled();
+    fireEvent.click(
+      within(
+        screen.getByRole("navigation", { name: "Điều hướng Atlas" }),
+      ).getByRole("button", { name: "Lập nhu cầu" }),
+    );
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue(workingDate);
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    expect(
+      await screen.findByLabelText("Số lượng xác nhận Gạo thơm"),
+    ).toHaveValue("120");
+  });
+
   it("uses the explicit review adapter without constructing a Supabase connection", async () => {
     const connectionFactory = vi.fn(() => ({
       status: "configuration_error" as const,
@@ -119,7 +159,11 @@ describe("Atlas master-data shell", () => {
     });
     const rpc = vi.fn(() => ({
       retry: vi.fn().mockResolvedValue({
-        data: createReviewProcurementWorkbenchFixture("default"),
+        data: {
+          ...createReviewProcurementWorkbenchFixture("default"),
+          contract_version: "CONFIRMED-SUPPLIER-ALLOCATION.v1",
+          preparation: null,
+        },
         error: null,
       }),
     }));
@@ -158,7 +202,7 @@ describe("Atlas master-data shell", () => {
     ).toBeVisible();
     await waitFor(() =>
       expect(rpc).toHaveBeenCalledWith(
-        "get_school_catering_procurement_workbench",
+        "get_confirmed_supplier_allocation_workbench",
         expect.any(Object),
       ),
     );
@@ -221,7 +265,7 @@ describe("Atlas master-data shell", () => {
       }),
     ).not.toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
+      await screen.findByRole("button", { name: "In bản dự kiến" }),
     ).toBeEnabled();
   });
 

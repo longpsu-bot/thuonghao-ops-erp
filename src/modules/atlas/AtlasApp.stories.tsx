@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PurchaseReviewJourneyStory } from "./procurement/PurchaseReviewJourneyStory";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import { AtlasAppView as AtlasApp } from "./AtlasApp";
@@ -42,7 +43,7 @@ const confirmedNeedBatchId = "c4500000-0000-0000-0000-000000000001";
 function ConfirmedNeedStateStory({
   outcome = "ready",
 }: {
-  outcome?: "ready" | "unknown-save" | "unknown-release" | "handoff-pending";
+  outcome?: "ready" | "unknown-save";
 }) {
   const [api] = useState(() => {
     const next = createReviewConfirmedNeedApi("ready");
@@ -52,24 +53,6 @@ function ConfirmedNeedStateStory({
         diagnostic: {
           code: "NETWORK_FAILURE",
           safeMessage: "Chưa chắc chắn thay đổi đã được lưu.",
-        },
-      });
-    if (outcome === "unknown-release")
-      next.releaseSaved = async () => ({
-        kind: "transport_error",
-        diagnostic: {
-          code: "NETWORK_FAILURE",
-          safeMessage: "Chưa chắc chắn nhu cầu đã được phát hành.",
-        },
-      });
-    if (outcome === "handoff-pending")
-      next.releasePurchaseHandoff = async () => ({
-        kind: "backend_error",
-        error: {
-          success: false,
-          error_code: "RETRYABLE_CONCURRENCY_FAILURE",
-          safe_message: "Bàn giao mua hàng chưa được tạo.",
-          retryable: true,
         },
       });
     return next;
@@ -105,17 +88,6 @@ async function saveConfirmedNeed(canvasElement: HTMLElement) {
   await submitConfirmedNeedChanges(canvasElement);
   const canvas = within(canvasElement);
   await canvas.findByText("Đã lưu thay đổi.");
-}
-
-async function releaseConfirmedNeed(canvasElement: HTMLElement) {
-  await saveConfirmedNeed(canvasElement);
-  const canvas = within(canvasElement);
-  await userEvent.click(
-    canvas.getByRole("button", { name: "Chuyển sang lên đơn" }),
-  );
-  await userEvent.click(
-    await canvas.findByRole("button", { name: "Xác nhận chuyển" }),
-  );
 }
 
 function FirstTimeConfirmedNeedStory() {
@@ -459,13 +431,11 @@ export const ConfirmedNeedSaved: Story = {
 };
 
 export const ConfirmedNeedReleased: Story = {
-  name: "Xác nhận nhu cầu · đã chuyển sang lên đơn",
-  args: { initialPage: "planning-inputs", reviewMode: true },
-  render: () => <ConfirmedNeedStateStory />,
+  name: "Xác nhận nhu cầu · chỉ đọc sau chuẩn bị đơn mua",
+  render: () => <PurchaseReviewJourneyStory phase="prepared" planning />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await releaseConfirmedNeed(canvasElement);
-    await canvas.findByText("Đã chuyển sang lên đơn.");
+    await canvas.findByRole("button", { name: "Tiếp tục phân bổ NCC" });
     await expect(
       canvas.queryByRole("button", { name: "Lưu" }),
     ).not.toBeInTheDocument();
@@ -488,38 +458,38 @@ export const ConfirmedNeedUnknownWriteOutcome: Story = {
 };
 
 export const ConfirmedNeedRefreshRequired: Story = {
-  name: "Xác nhận nhu cầu · cần làm mới sau kết quả chuyển chưa rõ",
-  args: { initialPage: "planning-inputs", reviewMode: true },
-  render: () => <ConfirmedNeedStateStory outcome="unknown-release" />,
+  name: "Tiếp tục lên đơn · kết quả chưa rõ cần làm mới",
+  render: () => (
+    <PurchaseReviewJourneyStory phase="allocated" fault="unknown" />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await releaseConfirmedNeed(canvasElement);
-    await canvas.findByText(
-      "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Tiếp tục lên đơn" }),
     );
+    await canvas.findByText("Chưa xác nhận kết quả");
     await expect(
-      canvas.getByRole("button", { name: "Chuyển sang lên đơn" }),
+      canvas.getByRole("button", { name: "Tiếp tục lên đơn" }),
     ).toBeDisabled();
     await expect(
-      canvas.getByRole("button", { name: "Làm mới" }),
-    ).toHaveTextContent("Làm mới");
+      canvas.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
+    ).toBeEnabled();
   },
 };
 
 export const ConfirmedNeedHandoffPending: Story = {
-  name: "Xác nhận nhu cầu · đã phát hành, bàn giao còn chờ",
-  args: { initialPage: "planning-inputs", reviewMode: true },
-  render: () => <ConfirmedNeedStateStory outcome="handoff-pending" />,
+  name: "Tiếp tục lên đơn · có thể thử lại yêu cầu",
+  render: () => (
+    <PurchaseReviewJourneyStory phase="allocated" fault="retryable" />
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await releaseConfirmedNeed(canvasElement);
-    await canvas.findByText("Nhu cầu đã phát hành; Bàn giao mua hàng còn chờ.");
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Tiếp tục lên đơn" }),
+    );
     await expect(
-      canvas.getByRole("button", { name: "Thử lại bàn giao" }),
+      await canvas.findByRole("button", { name: "Thử lại thao tác" }),
     ).toBeEnabled();
-    await expect(
-      canvas.queryByRole("button", { name: "Lưu" }),
-    ).not.toBeInTheDocument();
   },
 };
 
@@ -611,4 +581,48 @@ export const ProcurementReleasedPurchaseOrder: Story = {
       await canvas.findByRole("button", { name: "Mở đơn mua NCC An Phú" }),
     );
   },
+};
+
+export const PurchaseReviewGenerated: Story = {
+  name: "Mua hàng mới · 1 dự kiến 100",
+  render: () => <PurchaseReviewJourneyStory />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "In bản dự kiến" }),
+    );
+    await canvas.findByRole("heading", { name: "DỰ KIẾN — CHƯA XÁC NHẬN" });
+  },
+};
+export const PurchaseReviewConfirmed: Story = {
+  name: "Mua hàng mới · 2 xác nhận 120",
+  render: () => <PurchaseReviewJourneyStory phase="confirmed" />,
+};
+export const PurchaseReviewAllocated: Story = {
+  name: "Mua hàng mới · 3 phân bổ 72 và 48",
+  render: () => <PurchaseReviewJourneyStory phase="allocated" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Xem phân bổ" }),
+    );
+  },
+};
+export const PurchaseReviewStale: Story = {
+  name: "Mua hàng mới · 4 nhu cầu 125 cần cập nhật",
+  render: () => <PurchaseReviewJourneyStory phase="stale" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Phân bổ NCC" }),
+    );
+  },
+};
+export const PurchaseReviewPrepared: Story = {
+  name: "Mua hàng mới · 5 đơn nháp 75 và 50",
+  render: () => <PurchaseReviewJourneyStory phase="prepared" />,
+};
+export const PurchaseReviewReleased: Story = {
+  name: "Mua hàng mới · 6 đơn phát hành 75 và 50",
+  render: () => <PurchaseReviewJourneyStory phase="released" />,
 };

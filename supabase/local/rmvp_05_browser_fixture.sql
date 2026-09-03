@@ -13,6 +13,9 @@ declare
   v_contract_revision_id uuid;
   v_contract_version bigint;
   v_now timestamptz := transaction_timestamp();
+  -- Optional local test input; default preserves every existing regression.
+  v_rice_quantity numeric := coalesce(nullif(current_setting(
+    'atlas.test_generated_rice_quantity', true), ''), '2.000000')::numeric;
 begin
   if not exists (
     select 1
@@ -325,7 +328,7 @@ begin
       'b6500000-0000-0000-0000-000000000006',
       'b6500000-0000-0000-0000-000000000005',
       'b6530000-0000-0000-0000-000000000001',
-      2.000000,
+      v_rice_quantity,
       'Rice supplement',
       'RMVP05-BROWSER',
       '1',
@@ -426,7 +429,7 @@ begin
       'Bo sung RMVP-05',
       'Disposable focused browser fixture.',
       'OPTIONAL',
-      2.000000,
+      v_rice_quantity,
       'Rice supplement',
       'RMVP05-BROWSER',
       '1'
@@ -734,7 +737,7 @@ begin
       null,
       null,
       'ACTIVE',
-      2.000000,
+      v_rice_quantity,
       v_now,
       'PANTRY_DIRECT',
       'b6500000-0000-0000-0000-000000000002',
@@ -957,8 +960,8 @@ begin
       1,
       null,
       'b6500000-0000-0000-0000-000000000006',
-      2.000000,
-      2.000000,
+      v_rice_quantity,
+      v_rice_quantity,
       'b6500000-0000-0000-0000-000000000005',
       'DRAFT',
       true,
@@ -1040,8 +1043,8 @@ begin
       'b6500000-0000-0000-0000-000000000006',
       'b6500000-0000-0000-0000-000000000005',
       'b6500000-0000-0000-0000-000000000005',
-      2.000000,
-      2.000000,
+      v_rice_quantity,
+      v_rice_quantity,
       v_now
     ),
     (

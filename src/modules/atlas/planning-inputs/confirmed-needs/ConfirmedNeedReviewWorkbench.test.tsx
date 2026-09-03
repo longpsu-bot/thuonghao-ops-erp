@@ -35,7 +35,7 @@ const batchId = "c4500000-0000-0000-0000-000000000001";
 function reviewTree(
   api: ReturnType<typeof createReviewConfirmedNeedApi>,
   schoolScopeIds: string[] = [],
-  onPurchaseHandoffReleased?: () => void,
+  onContinueAllocation: (serviceDate: string) => void = vi.fn(),
 ) {
   return (
     <PlanningRailActionProvider>
@@ -46,7 +46,7 @@ function reviewTree(
         initialBatchId={batchId}
         mode="review"
         schoolScopeIds={schoolScopeIds}
-        onPurchaseHandoffReleased={onPurchaseHandoffReleased}
+        onContinueAllocation={onContinueAllocation}
       />
     </PlanningRailActionProvider>
   );
@@ -54,9 +54,9 @@ function reviewTree(
 
 function renderReview(
   api = createReviewConfirmedNeedApi("ready"),
-  onPurchaseHandoffReleased?: () => void,
+  onContinueAllocation: (serviceDate: string) => void = vi.fn(),
 ) {
-  render(reviewTree(api, [], onPurchaseHandoffReleased));
+  render(reviewTree(api, [], onContinueAllocation));
   return api;
 }
 
@@ -145,9 +145,9 @@ function configureSavedAdjustmentFixture(
 
 async function saveAll(
   api = createReviewConfirmedNeedApi("ready"),
-  onPurchaseHandoffReleased?: () => void,
+  onContinueAllocation: (serviceDate: string) => void = vi.fn(),
 ) {
-  renderReview(api, onPurchaseHandoffReleased);
+  renderReview(api, onContinueAllocation);
   await screen.findByText("Gạo thơm");
   fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
   await screen.findByText("Đã lưu thay đổi.");
@@ -155,6 +155,33 @@ async function saveAll(
 }
 
 describe("Confirmed Need two-action workbench", () => {
+  it("continues to allocation for the same working date without release or Handoff commands", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const navigate = vi.fn();
+    const release = vi.spyOn(api, "releaseSaved");
+    const handoff = vi.spyOn(api, "releasePurchaseHandoff");
+    render(
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <ConfirmedNeedReviewWorkbench
+          authState={authState}
+          api={api}
+          initialBatchId={batchId}
+          workingServiceDate="2026-08-03"
+          onContinueAllocation={navigate}
+        />
+      </PlanningRailActionProvider>,
+    );
+    await screen.findByText("Gạo thơm");
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await screen.findByText("Đã lưu thay đổi.");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    );
+    expect(navigate).toHaveBeenCalledWith("2026-08-03");
+    expect(release).not.toHaveBeenCalled();
+    expect(handoff).not.toHaveBeenCalled();
+  });
   it.each(["10", "10.5", "10.25", "10,25", "99999999999999.25"])(
     "accepts %s and sends an exact decimal string",
     async (value) => {
@@ -213,8 +240,8 @@ describe("Confirmed Need two-action workbench", () => {
         screen.queryByRole("button", { name: "Lưu" }),
       ).not.toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-      ).toBeEnabled();
+        screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+      ).toBeDisabled();
       expect(save).not.toHaveBeenCalled();
     },
   );
@@ -449,8 +476,8 @@ describe("Confirmed Need two-action workbench", () => {
       screen.queryByText("Số lượng không đổi nên không cần lý do điều chỉnh."),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    ).toBeEnabled();
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    ).toBeDisabled();
   });
 
   it("shows the persisted adjustment reason and note instead of proposal acceptance", async () => {
@@ -507,8 +534,8 @@ describe("Confirmed Need two-action workbench", () => {
       screen.queryByText("Số lượng không đổi nên không cần lý do điều chỉnh."),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    ).toBeEnabled();
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    ).toBeDisabled();
   });
 
   it("treats a reason-note-only edit as an unsaved filtered and validated Save line", async () => {
@@ -572,32 +599,17 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByText("Hiển thị 2/3 dòng")).toBeVisible();
   });
 
-  it("executes Release directly for a clean saved adjustment", async () => {
-    const api = createReviewConfirmedNeedApi("ready");
-    const workbench = createReviewConfirmedNeedFixture();
-    configureSavedAdjustmentFixture(workbench);
-    vi.spyOn(api, "getReview").mockResolvedValue({
-      kind: "success",
-      response: { success: true, workbench },
-    } as never);
-    const releaseSaved = vi.spyOn(api, "releaseSaved").mockResolvedValue({
-      kind: "backend_error",
-      error: {
-        success: false,
-        error_code: "TEST_RELEASE_STOP",
-        safe_message: "Dừng sau khi xác nhận lệnh phát hành.",
-      },
-    });
-    renderReview(api);
+  it("requires a working date before leaving a historical multi-date batch", async () => {
+    const api = renderAuthoritativeFixture(configureSavedAdjustmentFixture);
+    const release = vi.spyOn(api, "releaseSaved");
     await screen.findByText("Gạo thơm");
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    const next = screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" });
+    expect(next).toBeDisabled();
+    expect(next).toHaveAttribute(
+      "title",
+      "Chọn ngày phục vụ trước khi phân bổ NCC.",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
-
-    await waitFor(() => expect(releaseSaved).toHaveBeenCalledTimes(1));
-    expect(releaseSaved.mock.calls[0]?.[0].expected_version).toBe(7);
+    expect(release).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -709,7 +721,7 @@ describe("Confirmed Need two-action workbench", () => {
     const rail = screen.getByLabelText("Hành động bước hiện tại");
     expect(within(rail).getByRole("button", { name: "Lưu" })).toBeVisible();
     expect(
-      within(rail).queryByRole("button", { name: "Chuyển sang lên đơn" }),
+      within(rail).queryByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
     expect(
@@ -813,41 +825,34 @@ describe("Confirmed Need two-action workbench", () => {
     expect(saveRequest).not.toHaveBeenCalled();
   });
 
-  it("does not promote Release when authoritative readback denies it", async () => {
-    renderAuthoritativeFixture((workbench) => {
-      workbench.lines = workbench.lines.map((line, index) => ({
-        ...line,
-        current_decision_id: `c4520000-0000-0000-0000-00000000000${index + 1}`,
-        current_decision_number: 1,
-        confirmed_quantity_after: line.proposed_confirmed_quantity,
-      }));
-      workbench.line_counts = {
-        total: workbench.lines.length,
-        unreviewed: 0,
-        confirmed: workbench.lines.length,
-        adjusted: 0,
-        carried_forward: 0,
-        needs_review: 0,
-        changed: 0,
-        new: 0,
-        removed: 0,
-      };
-      workbench.allowed_actions.release_confirmed_needs = false;
-      workbench.disabled_reason_codes.release_confirmed_needs =
-        "RELEASE_CAPABILITY_REQUIRED";
-      workbench.disabled_reasons.release_confirmed_needs =
-        "Bạn chưa có quyền thực hiện bước này.";
-    });
-    await screen.findByText("Gạo thơm");
-    const release = screen.getByRole("button", {
-      name: "Chuyển sang lên đơn",
-    });
-    expect(release).toBeDisabled();
-    expect(release).not.toHaveClass("primary");
-    expect(release).toHaveAttribute(
-      "title",
-      "Bạn chưa có quyền thực hiện bước này.",
+  it("does not require release permission for navigation to allocation", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const fixture = createReviewConfirmedNeedFixture();
+    configureSavedAdjustmentFixture(fixture);
+    fixture.allowed_actions.release_confirmed_needs = false;
+    vi.spyOn(api, "getReview").mockResolvedValue({
+      kind: "success",
+      response: { success: true, workbench: fixture },
+    } as never);
+    const navigate = vi.fn();
+    render(
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <ConfirmedNeedReviewWorkbench
+          authState={authState}
+          api={api}
+          initialBatchId={batchId}
+          workingServiceDate="2026-08-03"
+          onContinueAllocation={navigate}
+        />
+      </PlanningRailActionProvider>,
     );
+    const button = await screen.findByRole("button", {
+      name: "Tiếp tục phân bổ NCC",
+    });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(navigate).toHaveBeenCalledWith("2026-08-03");
   });
 
   it("uses backend eligibility as a ceiling and local validity as a stricter gate", async () => {
@@ -863,148 +868,45 @@ describe("Confirmed Need two-action workbench", () => {
     expect(save).not.toHaveClass("primary");
   });
 
-  it("truthfully confirms that release creates or updates Purchase Handoff before Procurement", async () => {
+  it("keeps saved Need editable and exposes no release confirmation dialog", async () => {
     const api = await saveAll();
     const release = vi.spyOn(api, "releaseSaved");
-    const releaseButton = screen.getByRole("button", {
-      name: "Chuyển sang lên đơn",
-    });
-    expect(releaseButton).toBeEnabled();
-    expect(releaseButton).toHaveClass("primary");
-    fireEvent.click(releaseButton);
-    const dialog = screen.getByRole("dialog", {
-      name: "Xác nhận chuyển sang lên đơn",
-    });
-    expect(dialog).toHaveTextContent(
-      "tạo hoặc cập nhật Bàn giao mua hàng sang Thu mua",
-    );
-    expect(dialog).toHaveTextContent("chưa phân bổ nhà cung cấp");
-    expect(dialog).toHaveTextContent("chưa tạo Đơn mua");
-    expect(dialog).not.toHaveTextContent("chưa tạo Bàn giao mua hàng");
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
-    await screen.findByText("Đã chuyển sang lên đơn.");
-    expect(release).toHaveBeenCalledTimes(1);
-    expect(
-      screen.getAllByText("Đã chuyển sang lên đơn").length,
-    ).toBeGreaterThan(0);
-    expect(
-      screen.queryByRole("button", { name: "Chuyển sang lên đơn" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Lưu" }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Số lượng xác nhận Cà rốt")).toBeDisabled();
+    const handoff = vi.spyOn(api, "releasePurchaseHandoff");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Số lượng xác nhận Cà rốt")).toBeEnabled();
+    expect(release).not.toHaveBeenCalled();
+    expect(handoff).not.toHaveBeenCalled();
   });
 
-  it("does not attempt the Purchase Handoff when Confirmed Need release fails", async () => {
+  it("allows returning to allocation after a historical release without retrying Handoff", async () => {
+    const fixture = createReviewConfirmedNeedFixture();
+    configureSavedAdjustmentFixture(fixture);
+    fixture.authoritative_batch_status = "RELEASED_FOR_PURCHASE_HANDOFF";
     const api = createReviewConfirmedNeedApi("ready");
-    const releasePurchaseHandoff = vi.fn().mockResolvedValue({
+    vi.spyOn(api, "getReview").mockResolvedValue({
       kind: "success",
-      response: { success: true },
-    });
-    Object.assign(api, { releasePurchaseHandoff });
-    await saveAll(api);
-    const releaseSaved = vi.spyOn(api, "releaseSaved").mockResolvedValue({
-      kind: "backend_error",
-      error: {
-        success: false,
-        error_code: "CONFIRMED_NEED_RELEASE_BLOCKED",
-        safe_message: "Nhu cầu chưa thể phát hành.",
-      },
-    });
-
+      response: { success: true, workbench: fixture },
+    } as never);
+    const handoff = vi.spyOn(api, "releasePurchaseHandoff");
+    const navigate = vi.fn();
+    render(
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <ConfirmedNeedReviewWorkbench
+          authState={authState}
+          api={api}
+          initialBatchId={batchId}
+          workingServiceDate="2026-08-03"
+          onContinueAllocation={navigate}
+        />
+      </PlanningRailActionProvider>,
+    );
     fireEvent.click(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+      await screen.findByRole("button", { name: "Tiếp tục phân bổ NCC" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
-
-    expect(
-      await screen.findByText("Nhu cầu chưa thể phát hành."),
-    ).toBeVisible();
-    expect(releaseSaved).toHaveBeenCalledTimes(1);
-    expect(releasePurchaseHandoff).not.toHaveBeenCalled();
-  });
-
-  it("keeps the durable intermediate state and retries only the same Handoff intent", async () => {
-    const api = createReviewConfirmedNeedApi("ready");
-    const onPurchaseHandoffReleased = vi.fn();
-    const handoffFailure = {
-      kind: "backend_error" as const,
-      error: {
-        success: false as const,
-        error_code: "RETRYABLE_CONCURRENCY_FAILURE",
-        safe_message: "Bàn giao mua hàng chưa được tạo.",
-        retryable: true,
-      },
-    };
-    const releasePurchaseHandoff = vi
-      .fn()
-      .mockResolvedValueOnce(handoffFailure)
-      .mockResolvedValue({
-        kind: "success",
-        response: {
-          success: true,
-          safe_operator_message: "Đã tạo Bàn giao mua hàng.",
-        },
-      });
-    Object.assign(api, { releasePurchaseHandoff });
-    await saveAll(api, onPurchaseHandoffReleased);
-    const releaseSaved = vi.spyOn(api, "releaseSaved");
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
-
-    expect(
-      await screen.findByText(/Nhu cầu đã được phát hành.*Bàn giao mua hàng/),
-    ).toBeVisible();
-    expect(
-      screen.getByRole("button", { name: "Thử lại bàn giao" }),
-    ).toBeEnabled();
-    expect(releaseSaved).toHaveBeenCalledTimes(1);
-    expect(releasePurchaseHandoff).toHaveBeenCalledTimes(1);
-    const firstIntent = releasePurchaseHandoff.mock.calls[0]?.[0];
-
-    fireEvent.click(screen.getByRole("button", { name: "Thử lại bàn giao" }));
-
-    await waitFor(() =>
-      expect(releasePurchaseHandoff).toHaveBeenCalledTimes(2),
-    );
-    expect(releasePurchaseHandoff.mock.calls[1]?.[0]).toBe(firstIntent);
-    expect(releaseSaved).toHaveBeenCalledTimes(1);
-    await waitFor(() =>
-      expect(onPurchaseHandoffReleased).toHaveBeenCalledOnce(),
-    );
-  });
-
-  it("refreshes authoritative Planning state and navigates after both commands succeed", async () => {
-    const api = createReviewConfirmedNeedApi("ready");
-    const onPurchaseHandoffReleased = vi.fn();
-    const releasePurchaseHandoff = vi.fn().mockResolvedValue({
-      kind: "success",
-      response: {
-        success: true,
-        safe_operator_message: "Đã tạo Bàn giao mua hàng.",
-      },
-    });
-    Object.assign(api, { releasePurchaseHandoff });
-    await saveAll(api, onPurchaseHandoffReleased);
-    const getReview = vi.spyOn(api, "getReview");
-    const releaseSaved = vi.spyOn(api, "releaseSaved");
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Xác nhận chuyển" }));
-
-    await waitFor(() =>
-      expect(onPurchaseHandoffReleased).toHaveBeenCalledOnce(),
-    );
-    expect(releaseSaved).toHaveBeenCalledTimes(1);
-    expect(releasePurchaseHandoff).toHaveBeenCalledTimes(1);
-    expect(getReview).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText("Đã chuyển sang lên đơn.")).toBeVisible();
+    expect(navigate).toHaveBeenCalledWith("2026-08-03");
+    expect(handoff).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Số lượng xác nhận Gạo thơm")).toBeDisabled();
   });
 
   it("requires authoritative refresh after an unknown Save outcome without automatic retry", async () => {

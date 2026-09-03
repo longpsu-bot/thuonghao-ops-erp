@@ -265,7 +265,10 @@ update atlas_planning.confirmed_need_batches set batch_status='VALIDATED' where 
 set local role authenticated; select set_config('request.jwt.claim.sub','cb300000-0000-0000-0000-000000000101',true);
 insert into h0cb_error_results values ('reopen',atlas_api.create_confirmed_needs_from_generation(pg_temp.h0cb_error_request('cb300000-0000-0000-0000-000000002100','cb300000-0000-0000-0000-000000008210','reopen','cb300000-0000-0000-0000-000000000101',1,(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from h0cb_error_results where result_name='global'),1)));
 reset role;
+-- Synthetic lifecycle seed for CMD-15 errors, not operational allocation readiness.
+set local session_replication_role=replica;
 update atlas_planning.confirmed_need_batches set batch_status='RELEASED_FOR_PURCHASE_HANDOFF' where confirmed_need_batch_id=(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from h0cb_error_results where result_name='global');
+set local session_replication_role=origin;
 set local role authenticated; select set_config('request.jwt.claim.sub','cb300000-0000-0000-0000-000000000101',true);
 insert into h0cb_error_results values ('downstream',atlas_api.create_confirmed_needs_from_generation(pg_temp.h0cb_error_request('cb300000-0000-0000-0000-000000002100','cb300000-0000-0000-0000-000000008211','downstream','cb300000-0000-0000-0000-000000000101',1,(select (response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from h0cb_error_results where result_name='global'),1)));
 reset role;

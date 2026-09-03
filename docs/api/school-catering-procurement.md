@@ -42,4 +42,68 @@ Safe failures include malformed requests, authentication/authorization denial, n
 
 D-042 remains blocked for WHOLESALE Handoffs. A school-catering Allocation Family plus DRAFT PO is not a supplier commitment: correction invalidates only the current Handoff revision/root state, retains all lineage and PO history, reopens Confirmed Need, and leaves the DRAFT to become derived-stale. A `RELEASED_TO_SUPPLIER` school-catering PO is a later-domain commitment and returns `BLOCKED_BY_DOWNSTREAM_COMMITMENT`; neither the Handoff nor released PO is mutated.
 
-Verification authority is `school_catering_handoff_allocation.sql`, `school_catering_planning_correction.sql`, `school_catering_purchase_orders.sql`, the unchanged PA-05D/PA-05E/PA-05G and issue-222 regressions, the exact 107-table/29-capability/99-API platform security catalog, and the authenticated local journey verifier.
+Verification authority includes `purchase_review_confirm_release.sql`, `purchase_handoff_clock_skew.sql`, `school_catering_handoff_allocation.sql`, `school_catering_planning_correction.sql`, `school_catering_purchase_orders.sql`, the unchanged PA-05D/PA-05E/PA-05G and issue-222 regressions, the exact 107-table/29-capability/103-API platform security catalog, and the authenticated local journey verifier.
+
+## PURCHASE-REVIEW-CONFIRM-RELEASE-01 amendment
+
+Authority: the explicitly approved [bounded design](../superpowers/specs/2026-09-03-purchase-review-confirm-release-design.md). The normal operator path is generated paper review → saved Confirmed Need → saved supplier allocation → atomic commitment preparation → independent PO release. This changes no module boundary, lifecycle vocabulary, Warehouse behavior or released-PO amendment policy.
+
+### Generated review — `PURCHASE-REVIEW.v1`
+
+`atlas_api.get_generated_purchase_review(request jsonb)` is a read-only, authenticated, scope-filtered API. Its closed envelope is `{ contract_version, requested_by_auth_subject, correlation_id, payload: { service_date } }`. It requires the existing `procurement.school_catering.read` capability and reads current released Need Generation evidence, never saved allocation or PO quantities.
+
+Response includes `success`, `contract_version`, `service_date`, `document_label: "DỰ KIẾN — CHƯA XÁC NHẬN"`, `rows`, `blockers` and `warnings`. Rows identify date, School, delivery location, Ingredient and Unit, exact `family_quantity`, eligible suppliers, nullable recommendation and warnings. Unique lowest non-null effective priority produces an uncommitted suggestion; absent eligibility, absent priority or a tie remains unresolved. Reads and XLSX export create zero allocation, Handoff, PO, receipt or acceptance-event facts.
+
+The separate preliminary XLSX uses the inspected Retool v1 `lib/js_exportPOZip.js` print geometry, Times New Roman typography, supplier/School bands and two sheets (`Tổng`, `Chi tiết`). Its single-date workbook is deliberately not the official supplier ZIP. Quantities remain exact text, correction space remains blank, unresolved suppliers are explicit, and no official document number or invented item code appears. Existing released PO XLSX/PDF exporters and their source guards remain unchanged.
+
+### Confirmed allocation — `CONFIRMED-SUPPLIER-ALLOCATION.v1`
+
+`atlas_api.get_confirmed_supplier_allocation_workbench(request jsonb)` accepts the same closed read envelope with payload `{ date_start, date_end, school_ids?, states?, search? }`. Dates are inclusive and bounded to 31 days; normal UI uses one working date. Optional filters must have the declared array/string types, UUIDs and supported states; explicit null or unknown state is rejected safely. Read/write authority uses the existing Procurement capabilities and relational School/location scope rules.
+
+Rows extend the existing allocation shape with `complete`, typed `family.source_kind`, source Confirmed Need batch/version, exact revision/decision contribution references and plural `schools`. Families shared by Schools remain searchable/filterable by any contributing School. Complete quantities derive solely from current saved Confirmed Need decisions that pass the canonical evaluator. Incomplete or ambiguous source returns `family_quantity: null` and `Hoàn tất xác nhận nhu cầu trước khi phân bổ NCC.`; generated quantities and zero are never fallback authority. Retired generation sources are excluded without deleting history. Current legacy Handoff rows remain available when no active Confirmed Need family supplies the same key.
+
+The response also includes nullable `preparation: { service_date, confirmed_need_batch_id, expected_version, ready, allowed, blockers }`. Backend readiness requires complete current exact saved splits and eligibility. The normal preparation action additionally requires both existing release/write capabilities and active GLOBAL scope, consistent with the existing v2 Planning release command. Frontend dirty, busy and unknown-outcome conditions may only make this stricter.
+
+`atlas_api.save_confirmed_supplier_allocation(request jsonb)` uses the normal closed command envelope, reason `CONFIRMED_SUPPLIER_ALLOCATION_SAVED`, expected Allocation Family version (`0` for a new family), and:
+
+```json
+{
+  "family": {
+    "service_date": "2026-09-03",
+    "delivery_location_id": "<uuid>",
+    "ingredient_id": "<uuid>",
+    "unit_id": "<uuid>",
+    "expected_source_fingerprint": "<authoritative fingerprint>",
+    "expected_source_batch_id": "<uuid>",
+    "expected_source_batch_version": 2
+  },
+  "splits": [
+    { "supplier_id": "<uuid>", "allocated_quantity": "72.000000" },
+    { "supplier_id": "<uuid>", "allocated_quantity": "48.000000" }
+  ]
+}
+```
+
+Save locks/rechecks the batch, current source, supplier evidence and family, and appends one immutable confirmed-source revision with exact contribution and split children. Positive quantities, at most six nonzero fractional places, numeric range, unique suppliers, exact total, active effective eligibility, source batch/version, fingerprint and expected family version are mandatory. It returns the family identity/revision/version and source kind plus receipt/event evidence. It creates neither Handoff nor PO. Exact replay returns the original result; conflicting replay, stale source or stale version cannot overwrite history.
+
+Changing saved Need retains old splits as stale. A prior-ratio exact-residual proposal is advisory until explicit Apply and Save. A previously released Need without a real Handoff can receive an explicit recovery allocation without reopening the immutable Need; after a current Handoff exists, legacy Handoff allocation commands remain the source-authoritative writer.
+
+### Atomic preparation — `PURCHASE-COMMITMENT.v1`
+
+`atlas_api.prepare_school_catering_purchase_orders(request jsonb)` uses the normal closed command envelope, reason `PURCHASE_ORDERS_PREPARED`, expected saved batch version and payload `{ confirmed_need_batch_id, service_date }`. It requires both `confirmed_need_release.release` and `procurement.school_catering.write`, checks every source scope, and only accepts an exact single-date NEED_GENERATION batch.
+
+One transactional backend command coordinates the existing authorized Planning release, real school-catering Handoff, allocation promotion and PO draft commands. Every child retains its own authorization and receipt checks. It can continue from already completed release/Handoff stages. A failed child, skipped date, incomplete/extra PO coverage or stale allocation aborts all newly performed child work. Retryable failures also roll back the outer receipt; unknown transport outcomes require authoritative refresh, not automatic replay. Explicit retry retains the complete original request and is discarded when date/stage intent changes.
+
+Success returns `contract_version`, command/correlation IDs, date/batch/version, `planning_release`, `handoff`, `purchase_order_drafts`, empty blockers and warnings. It never issues official PO numbers: each supplier PO still requires its independent existing release command. PO readback failure after successful preparation locks further mutations until refresh succeeds.
+
+### Typed lineage and compatibility
+
+The existing four Allocation Family relations are reused. Revision source is exactly one of `CONFIRMED_NEED` (batch/version) or `PURCHASE_HANDOFF` (Handoff revision), with strict XOR. Each contribution has either exact Confirmed Need line-revision/decision IDs or an exact Handoff line-revision ID, also strict XOR. Deferred relational guards check source agreement, family identity, Unit and exact totals. Existing rows default to Handoff; historical aggregate families may legitimately contain multiple Handoff headers, while every contribution remains individually bound and the header uses the first ordered contributing Handoff revision.
+
+Planning release and Handoff promotion recheck confirmed allocation readiness under locks. Promotion compares every-and-only actual Handoff membership, then appends a `PURCHASE_HANDOFF` successor preserving supplier IDs and quantities, with the confirmed revision as predecessor. It never recalculates or silently accepts advisory ratios. Official PO readiness, draft creation, release and defensive line guards explicitly require Handoff-source revisions. WHOLESALE remains unchanged.
+
+All four new public functions revoke public/anon/service-role execution and grant only authenticated execution; runtime roles remain unprivileged, private tables retain forced RLS, and temporary migration SET/CREATE privileges are removed. There are no new tables, application roles, capabilities or browser table grants.
+
+### B1 evidence boundary
+
+The local Handoff request regression reproduces rejection of modest browser clock skew. Handoff v1 now accepts `requested_at` up to transaction time +60 seconds; malformed identity, extra payload and +61 seconds still fail. The two new commands use the same bounded tolerance; internal preparation children use backend timestamps. This is a controlled local regression, not proof of the historical Staging B1 incident's cause. No Staging or live repair was performed.

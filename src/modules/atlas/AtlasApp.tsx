@@ -1,4 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import {
+  createPurchaseReviewApi,
+  type PurchaseReviewApi,
+} from "./procurement/purchaseReviewApi";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AppShell,
   Box,
@@ -46,6 +50,7 @@ import { createReviewRecipeAdjustmentApi } from "./recipe-adjustments/reviewReci
 import { createRecipeApi, type RecipeApi } from "./recipes/recipeApi";
 import { createReviewRecipeApi } from "./recipes/reviewRecipeApi";
 import { PlanningInputsWorkbenchView as PlanningInputsWorkbench } from "./planning-inputs/PlanningInputsWorkbench";
+import { createReviewPurchaseJourney } from "./procurement/reviewPurchaseReviewApi";
 import {
   createPlanningInputsApi,
   type PlanningInputsApi,
@@ -57,7 +62,6 @@ import {
 } from "./planning-inputs/pantry/pantryApi";
 import { createReviewPantryApi } from "./planning-inputs/pantry/reviewPantryApi";
 import { createPlanningInputReadinessApi } from "./planning-inputs/readiness/planningInputReadinessApi";
-import { createReviewPlanningInputReadinessApi } from "./planning-inputs/readiness/reviewPlanningInputReadinessApi";
 import {
   createNeedGenerationApi,
   type NeedGenerationApi,
@@ -67,7 +71,6 @@ import {
   createConfirmedNeedApi,
   type ConfirmedNeedApi,
 } from "./planning-inputs/confirmed-needs/confirmedNeedApi";
-import { createReviewConfirmedNeedApi } from "./planning-inputs/confirmed-needs/reviewConfirmedNeedApi";
 import { SchoolCateringProcurementWorkbench } from "./procurement/SchoolCateringProcurementWorkbench";
 import {
   createSchoolCateringProcurementApi,
@@ -214,21 +217,9 @@ function procurementReviewScenario(
   return procurementScenarios[scenario] ?? "default";
 }
 
-function currentProcurementScope() {
-  const today = new Date();
-  const day = today.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const start = new Date(today);
-  start.setDate(today.getDate() + mondayOffset);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const localDate = (value: Date) => {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, "0");
-    const date = String(value.getDate()).padStart(2, "0");
-    return `${year}-${month}-${date}`;
-  };
-  return { dateStart: localDate(start), dateEnd: localDate(end) };
+function currentProcurementScope(today = new Date()) {
+  const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return { dateStart: date, dateEnd: date };
 }
 
 function AtlasNavigation({
@@ -339,7 +330,9 @@ function MasterDataPage({
   needGenerationApi,
   confirmedNeedApi,
   procurementApi,
-  onPurchaseHandoffReleased,
+  purchaseReviewApi,
+  onContinueAllocation,
+  procurementDate,
   mode,
 }: {
   page: MasterDataPageId;
@@ -353,7 +346,9 @@ function MasterDataPage({
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
   procurementApi?: SchoolCateringProcurementApi;
-  onPurchaseHandoffReleased?: () => void;
+  purchaseReviewApi?: PurchaseReviewApi;
+  onContinueAllocation?: (serviceDate: string) => void;
+  procurementDate?: string;
   mode: "connected" | "review";
 }) {
   const schoolPage = page === "customers-schools";
@@ -361,6 +356,7 @@ function MasterDataPage({
   const planningPage = page === "planning-inputs";
   const procurementPage = page === "procurement";
   const procurementScope = currentProcurementScope();
+  const serviceDate = procurementDate ?? procurementScope.dateStart;
   return (
     <main className="atlas-page master-data-page">
       {!planningPage && !procurementPage && (
@@ -391,15 +387,18 @@ function MasterDataPage({
           readinessApi={readinessApi}
           needGenerationApi={needGenerationApi}
           confirmedNeedApi={confirmedNeedApi}
-          onPurchaseHandoffReleased={onPurchaseHandoffReleased}
+          purchaseReviewApi={purchaseReviewApi}
+          onContinueAllocation={onContinueAllocation}
+          initialServiceDate={procurementDate}
           mode={mode}
         />
       ) : procurementPage ? (
         <SchoolCateringProcurementWorkbench
           authState={authState}
           api={procurementApi}
-          initialDateStart={procurementScope.dateStart}
-          initialDateEnd={procurementScope.dateEnd}
+          purchaseReviewApi={purchaseReviewApi}
+          initialDateStart={serviceDate}
+          initialDateEnd={serviceDate}
           mode={mode}
         />
       ) : recipePage ? (
@@ -434,11 +433,13 @@ function AtlasShell({
   needGenerationApi,
   confirmedNeedApi,
   procurementApi,
+  purchaseReviewApi,
   mode,
   session,
   connection,
   reviewScenario,
   onReviewScenarioChange,
+  initialServiceDate,
 }: {
   initialPage: MasterDataPageId;
   authState: AtlasAuthState;
@@ -451,15 +452,29 @@ function AtlasShell({
   needGenerationApi?: NeedGenerationApi;
   confirmedNeedApi?: ConfirmedNeedApi;
   procurementApi?: SchoolCateringProcurementApi;
+  purchaseReviewApi?: PurchaseReviewApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   connection?: AtlasSupabaseClientResult;
   reviewScenario?: AtlasReviewScenario;
   onReviewScenarioChange?: (scenario: AtlasReviewScenario) => void;
+  initialServiceDate?: string;
 }) {
   const [active, setActive] = useState<MasterDataPageId>(initialPage);
+  const [procurementDate, setProcurementDate] = useState(initialServiceDate);
   const [mobileNavigationOpened, mobileNavigation] = useDisclosure(false);
   const mobileNavigationButtonRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLElement>(null);
+  const allocationNavigationPending = useRef(false);
+
+  useEffect(() => {
+    if (active !== "procurement" || !allocationNavigationPending.current)
+      return;
+    allocationNavigationPending.current = false;
+    contentRef.current
+      ?.querySelector<HTMLHeadingElement>(".procurement-heading h1")
+      ?.focus();
+  }, [active]);
 
   const completeNavigation = () => {
     if (!mobileNavigationOpened) return;
@@ -505,7 +520,7 @@ function AtlasShell({
           onNavigateComplete={completeNavigation}
         />
       </AppShell.Navbar>
-      <AppShell.Main className="atlas-content">
+      <AppShell.Main className="atlas-content" ref={contentRef}>
         {mode === "review" ? (
           <Box component="header" className="atlas-review-bar">
             <OperationalState
@@ -551,7 +566,13 @@ function AtlasShell({
           needGenerationApi={needGenerationApi}
           confirmedNeedApi={confirmedNeedApi}
           procurementApi={procurementApi}
-          onPurchaseHandoffReleased={() => setActive("procurement")}
+          purchaseReviewApi={purchaseReviewApi}
+          procurementDate={procurementDate}
+          onContinueAllocation={(date) => {
+            allocationNavigationPending.current = true;
+            setProcurementDate(date);
+            setActive("procurement");
+          }}
           mode={mode}
         />
       </AppShell.Main>
@@ -580,40 +601,50 @@ function ReviewAtlasApp({
     [scenario],
   );
   const pantryApi = useMemo(() => createReviewPantryApi(scenario), [scenario]);
-  const readinessApi = useMemo(
-    () => createReviewPlanningInputReadinessApi(scenario),
-    [scenario],
-  );
   const needGenerationApi = useMemo(
     () => createReviewNeedGenerationApi(scenario),
     [scenario],
   );
-  const confirmedNeedApi = useMemo(
-    () => createReviewConfirmedNeedApi(scenario),
-    [scenario],
+  const [reviewDate] = useState(() => {
+    const monday = new Date();
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    return currentProcurementScope(monday).dateStart;
+  });
+  const journey = useMemo(
+    () => createReviewPurchaseJourney(scenario, reviewDate),
+    [scenario, reviewDate],
   );
-  const procurementApi = useMemo(
+  const legacyProcurementApi = useMemo(
     () =>
       createReviewSchoolCateringProcurementApi(
         procurementReviewScenario(scenario),
       ),
     [scenario],
   );
+  const legacyProcurementScenario = scenario.startsWith("procurement_");
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
     <AtlasShell
       initialPage={initialPage}
+      initialServiceDate={reviewDate}
       authState={authState}
       api={api}
       recipeApi={recipeApi}
       recipeAdjustmentApi={recipeAdjustmentApi}
       planningApi={planningApi}
       pantryApi={pantryApi}
-      readinessApi={readinessApi}
+      readinessApi={journey.readinessApi}
       needGenerationApi={needGenerationApi}
-      confirmedNeedApi={confirmedNeedApi}
-      procurementApi={procurementApi}
+      confirmedNeedApi={journey.confirmedNeedApi}
+      procurementApi={
+        legacyProcurementScenario
+          ? legacyProcurementApi
+          : journey.procurementApi
+      }
+      purchaseReviewApi={
+        legacyProcurementScenario ? undefined : journey.purchaseReviewApi
+      }
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -674,6 +705,11 @@ function ConnectedAtlasApp({
     [transport],
   );
 
+  const purchaseReviewApi = useMemo(
+    () => (transport ? createPurchaseReviewApi(transport) : undefined),
+    [transport],
+  );
+
   return (
     <AtlasShell
       initialPage={initialPage}
@@ -687,6 +723,7 @@ function ConnectedAtlasApp({
       needGenerationApi={needGenerationApi}
       confirmedNeedApi={confirmedNeedApi}
       procurementApi={procurementApi}
+      purchaseReviewApi={purchaseReviewApi}
       mode="connected"
       session={auth}
       connection={connection}

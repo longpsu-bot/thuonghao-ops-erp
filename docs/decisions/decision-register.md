@@ -115,6 +115,10 @@ RMVP-06B implements accepted D-030 and merged through PR #171 at `c4d7970399f6b1
 
 RMVP-07A accepts D-031 as documentation authority. The decisions are recorded in [Decision RMVP-07](decision-rmvp-07-confirmed-need-approval-release.md), the [architecture contract](../architecture/rmvp-07-confirmed-need-approval-release-contract.md), and the [implementation handoff](../implementation-tasks/TASK-RMVP-07A-confirmed-need-approval-release-contract.md). RMVP-07B merged through PR #173 at `f3197bb5a7b571378a41ae5056a73a84ad57d583`; reopen, CMD-03, hosted activation and downstream mutation remain separately controlled.
 
+### Approved PURCHASE-REVIEW-CONFIRM-RELEASE-01 amendment
+
+The task-approved [design](../superpowers/specs/2026-09-03-purchase-review-confirm-release-design.md) and [API amendment](../api/school-catering-procurement.md#purchase-review-confirm-release-01-amendment) extend the existing school-catering allocation aggregate, not the module map or lifecycle vocabulary. Generated purchase review is read-only and exports the Retool v1-derived preliminary XLSX. Saved Confirmed Need owns pre-Handoff quantities; explicit exact supplier decisions use typed `CONFIRMED_NEED` lineage before commitment. One backend preparation command guards Planning release, creates real Handoff evidence, promotes saved splits to a `PURCHASE_HANDOFF` successor, and prepares official drafts atomically. Independent PO release remains the supplier commitment boundary. D-037 Save semantics and D-042 released-PO/correction constraints remain intact. No Warehouse, released-PO amendment, hosted rollout, new role/capability or new Allocation Family table is authorized.
+
 ## Change procedure
 
 A decision may be amended or superseded only when:

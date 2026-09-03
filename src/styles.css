@@ -5688,6 +5688,74 @@ button.secondary.planning-google-sync-button {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.generated-purchase-review {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.generated-purchase-review button.secondary {
+  min-height: 44px;
+  color: var(--atlas-text);
+  background: var(--atlas-surface);
+  border: 1px solid var(--atlas-border);
+}
+
+.generated-purchase-review-sheet {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 8px;
+  background: var(--atlas-surface);
+  overflow-wrap: anywhere;
+}
+
+.generated-purchase-review-sheet header,
+.procurement-preparation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.generated-purchase-review-sheet header > div {
+  flex: 1 1 300px;
+}
+
+.generated-purchase-review-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 8px;
+}
+
+.generated-purchase-review-rows article {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--atlas-border);
+}
+
+.procurement-preparation {
+  grid-column: 1 / -1;
+  padding: 12px 0;
+}
+
+.procurement-preparation button {
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 1px solid var(--atlas-primary);
+  border-radius: 6px;
+  background: var(--atlas-primary);
+  color: var(--atlas-surface);
+  font-weight: 700;
+}
+
+.procurement-preparation button:disabled {
+  background: var(--atlas-surface-soft);
+  border-color: var(--atlas-border);
+  color: var(--atlas-text-muted);
+  cursor: not-allowed;
+}
+
 .need-generation-current-date {
   display: flex;
   flex-wrap: wrap;

@@ -1,3 +1,11 @@
+import {
+  confirmedAllocationFromResult,
+  confirmedAllocationReadRequest,
+  confirmedAllocationRequest,
+  preparePurchaseOrdersRequest,
+  type PurchaseReviewApi,
+  type ConfirmedAllocationWorkbench,
+} from "./purchaseReviewApi";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasAuthState } from "../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
@@ -62,9 +70,13 @@ function schoolOptions(rows: AllocationFamilyRow[]) {
   return Array.from(
     new Map(
       rows.flatMap((row) =>
-        row.school_id && row.school_name
-          ? [[row.school_id, row.school_name] as const]
-          : [],
+        row.schools
+          ? row.schools.map(
+              (school) => [school.school_id, school.school_name] as const,
+            )
+          : row.school_id && row.school_name
+            ? [[row.school_id, row.school_name] as const]
+            : [],
       ),
     ),
     ([school_id, school_name]) => ({ school_id, school_name }),
@@ -204,6 +216,7 @@ function outcomeFromResult(
 export function SchoolCateringProcurementWorkbench({
   authState,
   api,
+  purchaseReviewApi,
   initialDateStart,
   initialDateEnd,
   initialStage = "allocation",
@@ -212,6 +225,7 @@ export function SchoolCateringProcurementWorkbench({
 }: {
   authState: AtlasAuthState;
   api?: SchoolCateringProcurementApi;
+  purchaseReviewApi?: PurchaseReviewApi;
   initialDateStart: string;
   initialDateEnd: string;
   initialStage?: ProcurementStage;
@@ -225,9 +239,15 @@ export function SchoolCateringProcurementWorkbench({
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const allocationTrigger = useRef<HTMLButtonElement | null>(null);
+  const stageHeading = useRef<HTMLHeadingElement>(null);
+  const previousStage = useRef(initialStage);
   const [dateStart, setDateStart] = useState(initialDateStart);
   const [dateEnd, setDateEnd] = useState(initialDateEnd);
   const [stage, setStage] = useState<ProcurementStage>(initialStage);
+  useEffect(() => {
+    if (previousStage.current !== stage) stageHeading.current?.focus();
+    previousStage.current = stage;
+  }, [stage]);
   const [search, setSearch] = useState("");
   const [stateFilter, setStateFilter] =
     useState<AllocationPresentationFilter>("");
@@ -235,9 +255,9 @@ export function SchoolCateringProcurementWorkbench({
   const [schoolCatalogue, setSchoolCatalogue] = useState<
     ProcurementSchoolOption[]
   >([]);
-  const [workbench, setWorkbench] = useState<ProcurementWorkbenchData | null>(
-    null,
-  );
+  const [workbench, setWorkbench] = useState<
+    ProcurementWorkbenchData | ConfirmedAllocationWorkbench | null
+  >(null);
   const [purchaseOrders, setPurchaseOrders] =
     useState<PurchaseOrdersData | null>(null);
   const [selectedFamilyKey, setSelectedFamilyKey] = useState<string | null>(
@@ -270,17 +290,24 @@ export function SchoolCateringProcurementWorkbench({
     const currentIntent = ++intent.current;
     setAllocationCurrentness("loading");
     setBusy(true);
-    const result = await api.getWorkbench(
-      procurementWorkbenchReadRequest(authSubject, correlationId, {
-        date_start: dateStart,
-        date_end: dateEnd,
-        school_ids: selectedSchoolIds,
-        states: [],
-        search: null,
-      }),
-    );
-    if (currentIntent !== intent.current) return false;
-    const next = procurementWorkbenchFromResult(result);
+    const scope = {
+      date_start: dateStart,
+      date_end: dateEnd,
+      school_ids: selectedSchoolIds,
+      states: [],
+      search: null,
+    };
+    const result = purchaseReviewApi
+      ? await purchaseReviewApi.getConfirmedAllocations(
+          confirmedAllocationReadRequest(authSubject, correlationId, scope),
+        )
+      : await api.getWorkbench(
+          procurementWorkbenchReadRequest(authSubject, correlationId, scope),
+        );
+    if (currentIntent !== intent.current) return null;
+    const next = purchaseReviewApi
+      ? confirmedAllocationFromResult(result)
+      : procurementWorkbenchFromResult(result);
     if (next) {
       setWorkbench(next);
       if (selectedSchoolIds.length === 0)
@@ -308,7 +335,15 @@ export function SchoolCateringProcurementWorkbench({
     }
     setBusy(false);
     return Boolean(next);
-  }, [api, authSubject, correlationId, dateEnd, dateStart, selectedSchoolIds]);
+  }, [
+    api,
+    purchaseReviewApi,
+    authSubject,
+    correlationId,
+    dateEnd,
+    dateStart,
+    selectedSchoolIds,
+  ]);
 
   const loadPurchaseOrders = useCallback(async () => {
     if (!api || !authSubject) return false;
@@ -324,7 +359,7 @@ export function SchoolCateringProcurementWorkbench({
         search: null,
       }),
     );
-    if (currentIntent !== intent.current) return false;
+    if (currentIntent !== intent.current) return null;
     const next = purchaseOrdersFromResult(result);
     if (next) {
       setPurchaseOrders(next);
@@ -349,6 +384,8 @@ export function SchoolCateringProcurementWorkbench({
   }, [api, authSubject, correlationId, dateEnd, dateStart]);
 
   useEffect(() => {
+    setRetryAction(null);
+    setCommandOutcome(null);
     if (stage === "allocation") void loadAllocation();
     else void loadPurchaseOrders();
     return () => {
@@ -382,60 +419,152 @@ export function SchoolCateringProcurementWorkbench({
     result: AtlasRpcResult,
     affectedLabels: string[],
     retry: () => Promise<void>,
-    authoritativeReadback: () => Promise<boolean>,
+    authoritativeReadback: () => Promise<boolean | null>,
     expectedIntent: number,
   ) => {
-    if (expectedIntent !== intent.current) return;
+    if (expectedIntent !== intent.current) return false;
     const outcome = outcomeFromResult(result, affectedLabels);
     setCommandOutcome(outcome);
     if (outcome.classification === "RETRYABLE_FAILURE") {
-      setRetryAction(() => retry);
+      setRetryAction(() => async () => {
+        if (expectedIntent !== intent.current) return;
+        setRetryAction(null);
+        await retry();
+      });
     } else setRetryAction(null);
     if (["STALE", "UNKNOWN_OUTCOME"].includes(outcome.classification)) {
       setMutationLocked(true);
       setBusy(false);
-      return;
+      return true;
     }
-    if (["SUCCESS", "REPLAY_SUCCESS"].includes(outcome.classification))
-      await authoritativeReadback();
+    if (["SUCCESS", "REPLAY_SUCCESS"].includes(outcome.classification)) {
+      const current = await authoritativeReadback();
+      // A newer scope/read owns the UI now. Supersession is not a failure.
+      if (current === null) return false;
+      if (!current) setMutationLocked(true);
+    }
     setBusy(false);
+    return true;
   };
+
+  const freshMutationLocked = mutationLocked || Boolean(retryAction);
 
   const saveAllocation = async (
     row: AllocationFamilyRow,
     splits: SupplierSplitInput[],
-    existingRequest?: ReturnType<typeof saveSupplierAllocationRequest>,
   ) => {
-    if (!api || !authSubject || mutationLocked) return;
-    const request =
-      existingRequest ??
-      saveSupplierAllocationRequest(
-        authSubject,
-        correlationId,
-        row.family.version,
-        {
-          service_date: row.service_date,
-          delivery_location_id: row.delivery_location_id,
-          ingredient_id: row.ingredient_id,
-          unit_id: row.unit_id,
-          expected_source_fingerprint: row.family.source_fingerprint,
-        },
-        splits,
+    if (
+      !api ||
+      !authSubject ||
+      freshMutationLocked ||
+      !row.allowed_actions.save_allocation
+    )
+      return;
+    const family = {
+      service_date: row.service_date,
+      delivery_location_id: row.delivery_location_id,
+      ingredient_id: row.ingredient_id,
+      unit_id: row.unit_id,
+      expected_source_fingerprint: row.family.source_fingerprint,
+    };
+    const isConfirmed = row.family.source_kind === "CONFIRMED_NEED";
+    if (
+      isConfirmed &&
+      (!purchaseReviewApi ||
+        !row.family.source_confirmed_need_batch_id ||
+        !row.family.source_confirmed_need_batch_version)
+    )
+      return;
+    const request = isConfirmed
+      ? confirmedAllocationRequest(
+          authSubject,
+          correlationId,
+          row.family.version,
+          {
+            ...family,
+            expected_source_batch_id:
+              row.family.source_confirmed_need_batch_id!,
+            expected_source_batch_version:
+              row.family.source_confirmed_need_batch_version!,
+          },
+          splits,
+        )
+      : saveSupplierAllocationRequest(
+          authSubject,
+          correlationId,
+          row.family.version,
+          family,
+          splits,
+        );
+    const run = async () => {
+      const mutationIntent = intent.current;
+      setBusy(true);
+      const result =
+        request.contract_version === "CONFIRMED-SUPPLIER-ALLOCATION.v1"
+          ? await purchaseReviewApi!.saveConfirmedAllocation(request)
+          : await api.saveAllocation(request);
+      await finishMutation(
+        result,
+        [row.ingredient_name],
+        run,
+        loadAllocation,
+        mutationIntent,
       );
-    const mutationIntent = intent.current;
-    setBusy(true);
-    const result = await api.saveAllocation(request);
-    await finishMutation(
-      result,
-      [row.ingredient_name],
-      () => saveAllocation(row, splits, request),
-      loadAllocation,
-      mutationIntent,
+    };
+    await run();
+  };
+
+  const preparation =
+    workbench?.contract_version === "CONFIRMED-SUPPLIER-ALLOCATION.v1"
+      ? workbench.preparation
+      : null;
+  const prepareOrders = async () => {
+    if (
+      !purchaseReviewApi ||
+      !authSubject ||
+      !preparation?.allowed ||
+      !preparation.ready ||
+      freshMutationLocked ||
+      busy ||
+      allocationCurrentness !== "current"
+    )
+      return;
+    const request = preparePurchaseOrdersRequest(
+      authSubject,
+      correlationId,
+      preparation,
     );
+    const run = async () => {
+      const mutationIntent = intent.current;
+      setBusy(true);
+      const result = await purchaseReviewApi.preparePurchaseOrders(request);
+      await finishMutation(
+        result,
+        [preparation.service_date],
+        run,
+        async () => {
+          setAllocationCurrentness("loading");
+          const current = await loadPurchaseOrders();
+          if (current === null) return null;
+          if (current) {
+            setSelectedFamilyKey(null);
+            setStage("orders");
+          } else {
+            setAllocationCurrentness("unavailable");
+            setLoadMessage(
+              "Chưa tải được đơn mua sau khi xử lý yêu cầu. Hãy tải lại dữ liệu hiện tại trước khi tiếp tục.",
+            );
+          }
+          return current;
+        },
+        mutationIntent,
+      );
+    };
+    await run();
   };
 
   const confirmRecommendations = async () => {
-    if (!api || !authSubject || mutationLocked || !workbench) return;
+    if (!api || !authSubject || freshMutationLocked || !workbench) return;
     const selected = workbench.rows.filter((row) =>
       selectedRecommendationKeys.has(row.family.source_fingerprint),
     );
@@ -456,14 +585,15 @@ export function SchoolCateringProcurementWorkbench({
       const mutationIntent = intent.current;
       setBusy(true);
       const result = await api.confirmRecommendations(request);
-      await finishMutation(
+      const handled = await finishMutation(
         result,
         selected.map((row) => row.ingredient_name),
         run,
         loadAllocation,
         mutationIntent,
       );
-      if (result.kind === "success") setSelectedRecommendationKeys(new Set());
+      if (handled && result.kind === "success")
+        setSelectedRecommendationKeys(new Set());
     };
     await run();
   };
@@ -471,7 +601,7 @@ export function SchoolCateringProcurementWorkbench({
   const materializePurchaseOrders = async (
     existingRequest?: ReturnType<typeof createPurchaseOrderDraftsRequest>,
   ) => {
-    if (!api || !authSubject || mutationLocked) return;
+    if (!api || !authSubject || freshMutationLocked) return;
     const request =
       existingRequest ??
       createPurchaseOrderDraftsRequest(
@@ -499,7 +629,7 @@ export function SchoolCateringProcurementWorkbench({
     order: SchoolCateringPurchaseOrder,
     existingRequest?: ReturnType<typeof releasePurchaseOrderRequest>,
   ) => {
-    if (!api || !authSubject || mutationLocked) return;
+    if (!api || !authSubject || freshMutationLocked) return;
     const request =
       existingRequest ??
       releasePurchaseOrderRequest(
@@ -524,8 +654,11 @@ export function SchoolCateringProcurementWorkbench({
     await run();
   };
 
-  const reloadAuthoritative = () =>
-    stage === "allocation" ? loadAllocation() : loadPurchaseOrders();
+  const reloadAuthoritative = () => {
+    setRetryAction(null);
+    setCommandOutcome(null);
+    return stage === "allocation" ? loadAllocation() : loadPurchaseOrders();
+  };
   const currentness =
     stage === "allocation" ? allocationCurrentness : purchaseOrderCurrentness;
 
@@ -544,8 +677,14 @@ export function SchoolCateringProcurementWorkbench({
             <span>Suất ăn học đường</span>
             <span>Kế hoạch mua hàng</span>
           </div>
-          <h1>{stage === "allocation" ? "Phân bổ nhà cung ứng" : "Đơn mua"}</h1>
-          <p>Phân bổ nhu cầu đã bàn giao và phát hành đơn theo nhà cung cấp.</p>
+          <h1 ref={stageHeading} tabIndex={-1}>
+            {stage === "allocation" ? "Phân bổ nhà cung ứng" : "Đơn mua"}
+          </h1>
+          <p>
+            {purchaseReviewApi
+              ? "Phân bổ nhu cầu đã xác nhận, sau đó chuẩn bị và phát hành đơn cho NCC."
+              : "Phân bổ nhu cầu đã bàn giao và phát hành đơn theo nhà cung cấp."}
+          </p>
         </div>
       </header>
 
@@ -554,21 +693,26 @@ export function SchoolCateringProcurementWorkbench({
         aria-label="Phạm vi Procurement"
       >
         <label>
-          Từ ngày
+          {purchaseReviewApi ? "Ngày phục vụ" : "Từ ngày"}
           <input
             type="date"
             value={dateStart}
-            onChange={(event) => setDateStart(event.target.value)}
+            onChange={(event) => {
+              setDateStart(event.target.value);
+              if (purchaseReviewApi) setDateEnd(event.target.value);
+            }}
           />
         </label>
-        <label>
-          Đến ngày
-          <input
-            type="date"
-            value={dateEnd}
-            onChange={(event) => setDateEnd(event.target.value)}
-          />
-        </label>
+        {!purchaseReviewApi && (
+          <label>
+            Đến ngày
+            <input
+              type="date"
+              value={dateEnd}
+              onChange={(event) => setDateEnd(event.target.value)}
+            />
+          </label>
+        )}
         {stage === "allocation" && (
           <SchoolScopeControl
             schools={schoolCatalogue}
@@ -641,6 +785,35 @@ export function SchoolCateringProcurementWorkbench({
 
       {stage === "allocation" ? (
         <>
+          {purchaseReviewApi && (
+            <section
+              className="procurement-preparation"
+              aria-label="Tiếp tục lên đơn"
+            >
+              <button
+                type="button"
+                className={selectedFamily ? "secondary" : "primary"}
+                disabled={
+                  busy ||
+                  freshMutationLocked ||
+                  Boolean(selectedFamily) ||
+                  allocationCurrentness !== "current" ||
+                  !preparation?.allowed ||
+                  !preparation.ready
+                }
+                onClick={() => void prepareOrders()}
+              >
+                Tiếp tục lên đơn
+              </button>
+              <small>
+                Atlas sẽ kiểm tra nhu cầu và phân bổ đã xác nhận, sau đó chuẩn
+                bị đơn mua để bạn rà soát trước khi phát hành.
+              </small>
+              {preparation?.blockers.map((message) => (
+                <small key={message}>{message}</small>
+              ))}
+            </section>
+          )}
           {loadMessage ? (
             <p className="procurement-load-message" role="alert">
               {loadMessage}
@@ -661,18 +834,20 @@ export function SchoolCateringProcurementWorkbench({
               >
                 <div className="procurement-family-actions">
                   <span>{visibleRows.length} nhóm nhu cầu</span>
-                  <button
-                    type="button"
-                    className="secondary procurement-bulk-action"
-                    disabled={
-                      busy ||
-                      mutationLocked ||
-                      selectedRecommendationKeys.size === 0
-                    }
-                    onClick={() => void confirmRecommendations()}
-                  >
-                    Xác nhận phân bổ đề xuất
-                  </button>
+                  {!purchaseReviewApi && (
+                    <button
+                      type="button"
+                      className="secondary procurement-bulk-action"
+                      disabled={
+                        busy ||
+                        freshMutationLocked ||
+                        selectedRecommendationKeys.size === 0
+                      }
+                      onClick={() => void confirmRecommendations()}
+                    >
+                      Xác nhận phân bổ đề xuất
+                    </button>
+                  )}
                 </div>
                 <AllocationFamilyTable
                   rows={visibleRows}
@@ -696,7 +871,7 @@ export function SchoolCateringProcurementWorkbench({
                 <SupplierSplitPanel
                   row={selectedFamily}
                   busy={busy}
-                  mutationLocked={mutationLocked}
+                  mutationLocked={freshMutationLocked}
                   onSave={(splits) =>
                     void saveAllocation(selectedFamily, splits)
                   }
@@ -713,7 +888,7 @@ export function SchoolCateringProcurementWorkbench({
         <PurchaseOrderStage
           data={purchaseOrders}
           busy={busy}
-          mutationLocked={mutationLocked}
+          mutationLocked={freshMutationLocked}
           loadMessage={purchaseOrderLoadMessage}
           search={search}
           onMaterialize={() => void materializePurchaseOrders()}

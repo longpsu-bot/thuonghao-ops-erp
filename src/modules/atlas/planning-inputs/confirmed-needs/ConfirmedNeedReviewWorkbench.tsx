@@ -7,12 +7,9 @@ import {
 } from "../planningSchoolScope";
 import { PlanningRailActionPortal } from "../PlanningRailActionPortal";
 import {
-  confirmedNeedPurchaseHandoffRequest,
-  confirmedNeedReleaseV2Request,
   confirmedNeedSaveV2Request,
   type ConfirmedNeedApi,
   type ConfirmedNeedLineRequest,
-  type ConfirmedNeedPurchaseHandoffRequest,
   type ConfirmedNeedSaveV2Request,
 } from "./confirmedNeedApi";
 import {
@@ -183,7 +180,7 @@ export function ConfirmedNeedReviewWorkbench({
   onDirtyChange,
   schoolScopeIds = [],
   workingServiceDate,
-  onPurchaseHandoffReleased,
+  onContinueAllocation,
 }: {
   authState: AtlasAuthState;
   api?: ConfirmedNeedApi;
@@ -200,7 +197,7 @@ export function ConfirmedNeedReviewWorkbench({
   onDirtyChange?: (dirty: boolean) => void;
   schoolScopeIds?: string[];
   workingServiceDate?: string;
-  onPurchaseHandoffReleased?: () => void;
+  onContinueAllocation?: (serviceDate: string) => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
@@ -216,12 +213,9 @@ export function ConfirmedNeedReviewWorkbench({
   const [showDifferencesOnly, setShowDifferencesOnly] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [releaseConfirmation, setReleaseConfirmation] = useState(false);
   const [refreshRequired, setRefreshRequired] = useState(false);
   const [pendingSave, setPendingSave] =
     useState<ConfirmedNeedSaveV2Request | null>(null);
-  const [pendingHandoff, setPendingHandoff] =
-    useState<ConfirmedNeedPurchaseHandoffRequest | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -259,10 +253,6 @@ export function ConfirmedNeedReviewWorkbench({
   }, [adopt, api, authSubject, correlationId, initialBatchId]);
 
   useEffect(() => void load(), [load]);
-  useEffect(() => {
-    setPendingHandoff(null);
-    setReleaseConfirmation(false);
-  }, [initialBatchId]);
 
   const changedLines = useMemo(() => {
     if (!workbench) return [];
@@ -383,72 +373,6 @@ export function ConfirmedNeedReviewWorkbench({
     setBusy(false);
   };
 
-  const releaseHandoff = async (
-    request: ConfirmedNeedPurchaseHandoffRequest,
-  ) => {
-    if (!api) return;
-    setBusy(true);
-    const result = await api.releasePurchaseHandoff(request);
-    if (result.kind === "success") {
-      setPendingHandoff(null);
-      await load();
-      setNotice("Đã chuyển sang lên đơn.");
-      setBusy(false);
-      onPurchaseHandoffReleased?.();
-      return;
-    }
-    setPendingHandoff(request);
-    setNotice(
-      `Nhu cầu đã được phát hành. Bàn giao mua hàng chưa hoàn tất. ${confirmedNeedResultMessage(result)}`,
-    );
-    setBusy(false);
-  };
-
-  const release = async () => {
-    if (!api || !authSubject || !workbench) return;
-    setBusy(true);
-    setReleaseConfirmation(false);
-    const alreadyReleased =
-      workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
-    let releasedWorkbench = workbench;
-    if (!alreadyReleased) {
-      if (!workbench.allowed_actions.release_confirmed_needs) {
-        setBusy(false);
-        return;
-      }
-      const result = await api.releaseSaved(
-        confirmedNeedReleaseV2Request(
-          authSubject,
-          correlationId,
-          workbench.confirmed_need_batch_id,
-          workbench.batch_version,
-        ),
-      );
-      const readback = confirmedNeedReadbackFromResult(result);
-      if (!readback) {
-        if (confirmedNeedResultAllowsExactRetry(result)) {
-          setRefreshRequired(true);
-          setNotice(
-            "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
-          );
-        } else setNotice(confirmedNeedResultMessage(result));
-        setBusy(false);
-        return;
-      }
-      adopt(readback);
-      releasedWorkbench = readback;
-    }
-    const handoffRequest =
-      pendingHandoff ??
-      confirmedNeedPurchaseHandoffRequest(
-        authSubject,
-        correlationId,
-        releasedWorkbench.confirmed_need_batch_id,
-        releasedWorkbench.batch_version,
-      );
-    await releaseHandoff(handoffRequest);
-  };
-
   if (currentNeedResolution === "loading" || (busy && !workbench))
     return (
       <Panel title="Trạng thái dữ liệu">
@@ -489,7 +413,6 @@ export function ConfirmedNeedReviewWorkbench({
   const released =
     workbench.authoritative_batch_status === "RELEASED_FOR_PURCHASE_HANDOFF";
   const backendCanSave = workbench.allowed_actions.save_confirmed_needs;
-  const backendCanRelease = workbench.allowed_actions.release_confirmed_needs;
   const canSave =
     backendCanSave &&
     !released &&
@@ -497,8 +420,14 @@ export function ConfirmedNeedReviewWorkbench({
     !refreshRequired &&
     changedLines.length > 0 &&
     errors.length === 0;
-  const canRelease =
-    (backendCanRelease || released) &&
+  const allocationDate =
+    workingServiceDate ||
+    (workbench.service_period.period_start ===
+    workbench.service_period.period_end
+      ? workbench.service_period.period_start
+      : "");
+  const canContinue =
+    Boolean(onContinueAllocation && allocationDate) &&
     !dirty &&
     !refreshRequired &&
     !busy &&
@@ -517,42 +446,38 @@ export function ConfirmedNeedReviewWorkbench({
     <section className="confirmed-need-shell" aria-label="Bàn xác nhận nhu cầu">
       <PlanningRailActionPortal>
         <div className="confirmed-need-rail-action">
-          {!released &&
-            (changedLines.length > 0 ? (
-              <button
-                type="button"
-                className={canSave ? "primary" : "secondary"}
-                onClick={() => void save()}
-                disabled={!canSave}
-                title={
-                  backendCanSave
-                    ? undefined
-                    : actionReason(
-                        workbench.disabled_reason_codes.save_confirmed_needs,
-                        workbench.disabled_reasons.save_confirmed_needs,
-                      )
-                }
-              >
-                Lưu
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={canRelease ? "primary" : "secondary"}
-                onClick={() => setReleaseConfirmation(true)}
-                disabled={!canRelease}
-                title={
-                  backendCanRelease || released
-                    ? undefined
-                    : actionReason(
-                        workbench.disabled_reason_codes.release_confirmed_needs,
-                        workbench.disabled_reasons.release_confirmed_needs,
-                      )
-                }
-              >
-                Chuyển sang lên đơn
-              </button>
-            ))}
+          {changedLines.length > 0 && !released ? (
+            <button
+              type="button"
+              className={canSave ? "primary" : "secondary"}
+              onClick={() => void save()}
+              disabled={!canSave}
+              title={
+                backendCanSave
+                  ? undefined
+                  : actionReason(
+                      workbench.disabled_reason_codes.save_confirmed_needs,
+                      workbench.disabled_reasons.save_confirmed_needs,
+                    )
+              }
+            >
+              Lưu
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={canContinue ? "primary" : "secondary"}
+              onClick={() => onContinueAllocation?.(allocationDate)}
+              disabled={!canContinue}
+              title={
+                !allocationDate
+                  ? "Chọn ngày phục vụ trước khi phân bổ NCC."
+                  : undefined
+              }
+            >
+              Tiếp tục phân bổ NCC
+            </button>
+          )}
         </div>
       </PlanningRailActionPortal>
 
@@ -594,22 +519,6 @@ export function ConfirmedNeedReviewWorkbench({
         <p className="confirmed-need-notice" role="status">
           {notice}
         </p>
-      )}
-      {pendingHandoff && (
-        <section
-          className="confirmed-need-notice confirmed-need-handoff-recovery"
-          aria-label="Khôi phục Bàn giao mua hàng"
-        >
-          <strong>Nhu cầu đã phát hành; Bàn giao mua hàng còn chờ.</strong>
-          <button
-            type="button"
-            className="primary"
-            disabled={busy}
-            onClick={() => void releaseHandoff(pendingHandoff)}
-          >
-            Thử lại bàn giao
-          </button>
-        </section>
       )}
       {refreshRequired && (
         <div className="confirmed-need-attention" role="alert">
@@ -836,38 +745,6 @@ export function ConfirmedNeedReviewWorkbench({
           })}
         </CompactTable>
       </section>
-
-      {releaseConfirmation && (
-        <section
-          className="confirmed-need-commitment"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Xác nhận chuyển sang lên đơn"
-        >
-          <h3>Chuyển nhu cầu đã lưu sang bước lên đơn?</h3>
-          <p>
-            Atlas sẽ kiểm tra và phát hành nhu cầu đã lưu, sau đó tạo hoặc cập
-            nhật Bàn giao mua hàng sang Thu mua. Bước này chưa phân bổ nhà cung
-            cấp và chưa tạo Đơn mua.
-          </p>
-          <div>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => setReleaseConfirmation(false)}
-            >
-              Quay lại
-            </button>
-            <button
-              type="button"
-              className="primary"
-              onClick={() => void release()}
-            >
-              Xác nhận chuyển
-            </button>
-          </div>
-        </section>
-      )}
 
       {workbench.lifecycle_history.length > 0 && (
         <details className="confirmed-need-history">

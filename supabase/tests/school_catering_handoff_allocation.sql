@@ -257,8 +257,7 @@ values
   ('23830000-0000-4000-8000-000000000093','23830000-0000-4000-8000-000000000083','23830000-0000-4000-8000-000000000193',30,'23820000-0000-4000-8000-000000000031','NEED_GENERATION'),
   ('23830000-0000-4000-8000-000000000094','23830000-0000-4000-8000-000000000084','23830000-0000-4000-8000-000000000194',20,'23820000-0000-4000-8000-000000000031','NEED_GENERATION');
 
--- Two released Confirmed Need snapshots prove Handoff complete-set scope:
--- one location-only batch and one mixed-location batch.
+-- Saved source fixtures for real release + Handoff complete-set scope.
 insert into atlas_planning.confirmed_need_batches(
   confirmed_need_batch_id,period_start,period_end,batch_status,version,created_by_actor_id,
   source_kind,origin_need_generation_run_id,origin_need_generation_run_version,
@@ -267,15 +266,15 @@ insert into atlas_planning.confirmed_need_batches(
   current_confirmed_need_approval_snapshot_id,current_confirmed_need_release_id)
 values
   ('23840000-0000-4000-8000-000000000101','2026-09-11','2026-09-11',
-   'RELEASED_FOR_PURCHASE_HANDOFF',7,'23800000-0000-4000-8000-000000000001','NEED_GENERATION',
+   'DRAFT_REVIEW',4,'23800000-0000-4000-8000-000000000001','NEED_GENERATION',
    '23840000-0000-4000-8000-000000000181',1,'23840000-0000-4000-8000-000000000191',
    '23840000-0000-4000-8000-000000000181',1,'23840000-0000-4000-8000-000000000191',
-   '23840000-0000-4000-8000-000000000111','23840000-0000-4000-8000-000000000121'),
+   null,null),
   ('23840000-0000-4000-8000-000000000102','2026-09-12','2026-09-12',
-   'RELEASED_FOR_PURCHASE_HANDOFF',7,'23800000-0000-4000-8000-000000000001','NEED_GENERATION',
+   'DRAFT_REVIEW',4,'23800000-0000-4000-8000-000000000001','NEED_GENERATION',
    '23840000-0000-4000-8000-000000000182',1,'23840000-0000-4000-8000-000000000192',
    '23840000-0000-4000-8000-000000000182',1,'23840000-0000-4000-8000-000000000192',
-   '23840000-0000-4000-8000-000000000112','23840000-0000-4000-8000-000000000122');
+   null,null);
 insert into atlas_planning.confirmed_need_lines(
   confirmed_need_line_id,confirmed_need_batch_id,source_kind,service_date,customer_id,
   school_id,delivery_location_id,ingredient_id,controlled_unit_id)
@@ -290,31 +289,75 @@ insert into atlas_planning.confirmed_need_line_revisions(
   school_id,delivery_location_id,need_generation_run_id,need_generation_run_version,
   need_generation_release_snapshot_id)
 values
-  ('23840000-0000-4000-8000-000000000141','23840000-0000-4000-8000-000000000131',1,'23820000-0000-4000-8000-000000000041',10,10,'23820000-0000-4000-8000-000000000031','RELEASED',true,'23800000-0000-4000-8000-000000000001','NEED_GENERATION','23840000-0000-4000-8000-000000000101','2026-09-11','23820000-0000-4000-8000-000000000001','23820000-0000-4000-8000-000000000021','23820000-0000-4000-8000-000000000011','23840000-0000-4000-8000-000000000181',1,'23840000-0000-4000-8000-000000000191'),
-  ('23840000-0000-4000-8000-000000000142','23840000-0000-4000-8000-000000000132',1,'23820000-0000-4000-8000-000000000041',10,10,'23820000-0000-4000-8000-000000000031','RELEASED',true,'23800000-0000-4000-8000-000000000001','NEED_GENERATION','23840000-0000-4000-8000-000000000102','2026-09-12','23820000-0000-4000-8000-000000000001','23820000-0000-4000-8000-000000000021','23820000-0000-4000-8000-000000000011','23840000-0000-4000-8000-000000000182',1,'23840000-0000-4000-8000-000000000192'),
-  ('23840000-0000-4000-8000-000000000143','23840000-0000-4000-8000-000000000133',1,'23820000-0000-4000-8000-000000000041',15,15,'23820000-0000-4000-8000-000000000031','RELEASED',true,'23800000-0000-4000-8000-000000000001','NEED_GENERATION','23840000-0000-4000-8000-000000000102','2026-09-12','23820000-0000-4000-8000-000000000001','23820000-0000-4000-8000-000000000022','23820000-0000-4000-8000-000000000012','23840000-0000-4000-8000-000000000182',1,'23840000-0000-4000-8000-000000000192');
-insert into atlas_planning.confirmed_need_approval_snapshots(
-  confirmed_need_approval_snapshot_id,confirmed_need_batch_id,approved_version,
-  approved_by_actor_id,approved_at,command_id,source_kind,
-  confirmed_need_validation_attempt_id,validated_fact_fingerprint)
-values
-  ('23840000-0000-4000-8000-000000000111','23840000-0000-4000-8000-000000000101',6,'23800000-0000-4000-8000-000000000001',transaction_timestamp(),'23840000-0000-4000-8000-000000000161','NEED_GENERATION','23840000-0000-4000-8000-000000000171',repeat('a',64)),
-  ('23840000-0000-4000-8000-000000000112','23840000-0000-4000-8000-000000000102',6,'23800000-0000-4000-8000-000000000001',transaction_timestamp(),'23840000-0000-4000-8000-000000000162','NEED_GENERATION','23840000-0000-4000-8000-000000000172',repeat('b',64));
-insert into atlas_planning.confirmed_need_snapshot_lines(
-  confirmed_need_snapshot_line_id,confirmed_need_approval_snapshot_id,
-  confirmed_need_line_revision_id,ingredient_id,approved_quantity,unit_id,
-  ingredient_name_snapshot)
-values
-  ('23840000-0000-4000-8000-000000000151','23840000-0000-4000-8000-000000000111','23840000-0000-4000-8000-000000000141','23820000-0000-4000-8000-000000000041',10,'23820000-0000-4000-8000-000000000031','PR-A Rice'),
-  ('23840000-0000-4000-8000-000000000152','23840000-0000-4000-8000-000000000112','23840000-0000-4000-8000-000000000142','23820000-0000-4000-8000-000000000041',10,'23820000-0000-4000-8000-000000000031','PR-A Rice'),
-  ('23840000-0000-4000-8000-000000000153','23840000-0000-4000-8000-000000000112','23840000-0000-4000-8000-000000000143','23820000-0000-4000-8000-000000000041',15,'23820000-0000-4000-8000-000000000031','PR-A Rice');
-insert into atlas_planning.confirmed_need_releases(
-  confirmed_need_release_id,confirmed_need_batch_id,source_kind,
-  confirmed_need_approval_snapshot_id,source_approved_batch_version,
-  resulting_released_batch_version,released_by_actor_id,released_at,command_id)
-values
-  ('23840000-0000-4000-8000-000000000121','23840000-0000-4000-8000-000000000101','NEED_GENERATION','23840000-0000-4000-8000-000000000111',6,7,'23800000-0000-4000-8000-000000000001',transaction_timestamp(),'23840000-0000-4000-8000-000000000171'),
-  ('23840000-0000-4000-8000-000000000122','23840000-0000-4000-8000-000000000102','NEED_GENERATION','23840000-0000-4000-8000-000000000112',6,7,'23800000-0000-4000-8000-000000000001',transaction_timestamp(),'23840000-0000-4000-8000-000000000172');
+  ('23840000-0000-4000-8000-000000000141','23840000-0000-4000-8000-000000000131',1,'23820000-0000-4000-8000-000000000041',10,10,'23820000-0000-4000-8000-000000000031','DRAFT',true,'23800000-0000-4000-8000-000000000001','NEED_GENERATION','23840000-0000-4000-8000-000000000101','2026-09-11','23820000-0000-4000-8000-000000000001','23820000-0000-4000-8000-000000000021','23820000-0000-4000-8000-000000000011','23840000-0000-4000-8000-000000000181',1,'23840000-0000-4000-8000-000000000191'),
+  ('23840000-0000-4000-8000-000000000142','23840000-0000-4000-8000-000000000132',1,'23820000-0000-4000-8000-000000000041',10,10,'23820000-0000-4000-8000-000000000031','DRAFT',true,'23800000-0000-4000-8000-000000000001','NEED_GENERATION','23840000-0000-4000-8000-000000000102','2026-09-12','23820000-0000-4000-8000-000000000001','23820000-0000-4000-8000-000000000021','23820000-0000-4000-8000-000000000011','23840000-0000-4000-8000-000000000182',1,'23840000-0000-4000-8000-000000000192'),
+  ('23840000-0000-4000-8000-000000000143','23840000-0000-4000-8000-000000000133',1,'23820000-0000-4000-8000-000000000041',15,15,'23820000-0000-4000-8000-000000000031','DRAFT',true,'23800000-0000-4000-8000-000000000001','NEED_GENERATION','23840000-0000-4000-8000-000000000102','2026-09-12','23820000-0000-4000-8000-000000000001','23820000-0000-4000-8000-000000000022','23820000-0000-4000-8000-000000000012','23840000-0000-4000-8000-000000000182',1,'23840000-0000-4000-8000-000000000192');
+
+-- Retained upstream source seeding only. Operational commands below run with
+-- ordinary triggers, policy checks, RLS and exact current-decision evidence.
+do $fixture$
+declare b record;r record;input_id uuid;theory_id uuid;member_id uuid;decision_id uuid;
+  policy_id uuid:=gen_random_uuid();policy_revision_id uuid:=gen_random_uuid();
+  actor_id uuid:='23800000-0000-4000-8000-000000000001';
+begin
+  insert into atlas_planning.planning_quantity_policies(planning_quantity_policy_id,unit_id,created_by_actor_id)
+    values(policy_id,'23820000-0000-4000-8000-000000000031',actor_id);
+  insert into atlas_planning.planning_quantity_policy_revisions(planning_quantity_policy_revision_id,
+    planning_quantity_policy_id,unit_id,revision_number,planning_step,effective_from,policy_revision_status,
+    created_by_actor_id,approved_by_actor_id,approved_at,activated_by_actor_id,activated_at)
+    values(policy_revision_id,policy_id,'23820000-0000-4000-8000-000000000031',1,1,'2026-01-01','ACTIVE',
+      actor_id,actor_id,transaction_timestamp(),actor_id,transaction_timestamp());
+  for b in select * from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id in ('23840000-0000-4000-8000-000000000101','23840000-0000-4000-8000-000000000102') loop
+    input_id:=gen_random_uuid();
+    insert into atlas_planning.need_generation_runs(need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,
+      evaluation_version,period_start,period_end,attempt_ordinal,input_snapshot_id,run_status,version,generated_line_count,
+      blocking_issue_count,warning_count,generated_by_actor_id,generated_at,validated_by_actor_id,validated_at,
+      released_by_actor_id,released_at,updated_at)
+      values(b.current_need_generation_run_id,gen_random_uuid(),gen_random_uuid(),1,b.period_start,b.period_end,1,
+        input_id,'RELEASED_FOR_CONFIRMATION',1,(select count(*) from atlas_planning.confirmed_need_lines
+          where confirmed_need_batch_id=b.confirmed_need_batch_id),0,0,actor_id,transaction_timestamp(),actor_id,
+        transaction_timestamp(),actor_id,transaction_timestamp(),transaction_timestamp());
+    insert into atlas_planning.need_generation_release_snapshots(need_generation_release_snapshot_id,need_generation_run_id,
+      released_run_version,need_generation_input_snapshot_id,released_by_actor_id,released_at,generated_line_count,
+      active_line_count,removed_line_count,blocking_issue_count,warning_count)
+      select b.current_need_generation_release_snapshot_id,b.current_need_generation_run_id,1,input_id,actor_id,
+        transaction_timestamp(),count(*),count(*),0,0,0 from atlas_planning.confirmed_need_lines
+        where confirmed_need_batch_id=b.confirmed_need_batch_id;
+    for r in select * from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=b.confirmed_need_batch_id loop
+      theory_id:=gen_random_uuid();member_id:=gen_random_uuid();decision_id:=gen_random_uuid();
+      insert into atlas_planning.theoretical_need_lines(theoretical_need_line_id,need_generation_run_id,need_generation_input_snapshot_id,
+        school_id,service_date,ingredient_id,unit_id,line_disposition,theoretical_quantity,contribution_family,
+        delivery_location_id,pantry_need_batch_id,pantry_need_batch_version,pantry_need_approval_snapshot_id,
+        pantry_need_line_id,pantry_active_snapshot_member_line_id,created_at)
+        values(theory_id,b.current_need_generation_run_id,input_id,r.school_id,r.service_date,r.ingredient_id,r.unit_id,
+          'ACTIVE',r.theoretical_quantity,'PANTRY_DIRECT',r.delivery_location_id,gen_random_uuid(),1,gen_random_uuid(),
+          theory_id,theory_id,transaction_timestamp());
+      insert into atlas_planning.need_generation_release_snapshot_lines(need_generation_release_snapshot_line_id,
+        need_generation_release_snapshot_id,need_generation_run_id,released_run_version,theoretical_need_line_id)
+        values(member_id,b.current_need_generation_release_snapshot_id,b.current_need_generation_run_id,1,theory_id);
+      insert into atlas_planning.confirmed_need_line_revision_contributions(confirmed_need_batch_id,confirmed_need_line_id,
+        confirmed_need_line_revision_id,need_generation_run_id,need_generation_run_version,need_generation_release_snapshot_id,
+        need_generation_release_snapshot_line_id,theoretical_need_line_id,service_date,customer_id,school_id,
+        delivery_location_id,ingredient_id,source_unit_id,controlled_unit_id,source_theoretical_quantity,controlled_contribution_quantity)
+        values(b.confirmed_need_batch_id,r.confirmed_need_line_id,r.confirmed_need_line_revision_id,b.current_need_generation_run_id,1,
+          b.current_need_generation_release_snapshot_id,member_id,theory_id,r.service_date,r.customer_id,r.school_id,r.delivery_location_id,
+          r.ingredient_id,r.unit_id,r.unit_id,r.theoretical_quantity,r.theoretical_quantity);
+      insert into atlas_planning.confirmed_need_line_decisions(confirmed_need_line_decision_id,confirmed_need_batch_id,
+        confirmed_need_line_id,confirmed_need_line_revision_id,source_kind,service_date,customer_id,school_id,delivery_location_id,
+        ingredient_id,unit_id,decision_number,decision_kind,planning_quantity_policy_id,planning_quantity_policy_revision_id,
+        theoretical_quantity_before,proposed_quantity_before,confirmed_quantity_after,planning_tick_count,reason_code,
+        decided_by_actor_id,decided_at,command_id,confirmed_need_batch_version)
+        values(decision_id,b.confirmed_need_batch_id,r.confirmed_need_line_id,r.confirmed_need_line_revision_id,'NEED_GENERATION',
+          r.service_date,r.customer_id,r.school_id,r.delivery_location_id,r.ingredient_id,r.unit_id,1,'UNCHANGED_PROPOSAL_ACCEPTED',
+          policy_id,policy_revision_id,r.theoretical_quantity,r.theoretical_quantity,r.confirmed_quantity,r.confirmed_quantity,
+          'PROPOSAL_ACCEPTED',actor_id,transaction_timestamp(),gen_random_uuid(),4);
+      update atlas_planning.confirmed_need_lines set current_confirmed_need_line_decision_id=decision_id
+        where confirmed_need_line_id=r.confirmed_need_line_id;
+    end loop;
+  end loop;
+end;
+$fixture$;
 set session_replication_role = origin;
 
 create temporary table sc_results(name text primary key,response jsonb not null);
@@ -611,6 +654,40 @@ select ok((select bool_and(jsonb_typeof(split -> 'allocated_quantity')='string'
     and row ->> 'delivery_location_id'='23820000-0000-4000-8000-000000000012'
     and row ->> 'ingredient_id'='23820000-0000-4000-8000-000000000041'),
   'workbench read serializes persisted allocation quantities and ratios as strings');
+
+-- Complete saved allocations before invoking the real release command.
+insert into atlas_core.role_capabilities(role_id,capability_id)
+  select '23810000-0000-4000-8000-000000000001',capability_id from atlas_core.capabilities
+  where capability_code in ('confirmed_need_review.read','confirmed_need_review.confirm','confirmed_need_validation.validate',
+    'confirmed_need_approval.approve','confirmed_need_release.release') on conflict do nothing;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','23800000-0000-4000-8000-000000000101',true);
+do $prepare$
+declare row_data jsonb;answer jsonb;batch_id uuid;request jsonb;
+  subject_id uuid:='23800000-0000-4000-8000-000000000101';
+begin
+  for row_data in select value from jsonb_array_elements(atlas_api.get_confirmed_supplier_allocation_workbench(
+    jsonb_build_object('contract_version','CONFIRMED-SUPPLIER-ALLOCATION.v1','correlation_id',gen_random_uuid(),
+      'requested_by_auth_subject',subject_id,'payload',jsonb_build_object('date_start','2026-09-11','date_end','2026-09-12')))->'rows') loop
+    request:=pg_temp.sc_command(subject_id,'CONFIRMED-SUPPLIER-ALLOCATION.v1',gen_random_uuid(),0,
+      'CONFIRMED_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object('family',jsonb_build_object(
+        'service_date',row_data->'service_date','delivery_location_id',row_data->'delivery_location_id',
+        'ingredient_id',row_data->'ingredient_id','unit_id',row_data->'unit_id',
+        'expected_source_fingerprint',row_data#>'{family,source_fingerprint}',
+        'expected_source_batch_id',row_data->'source_confirmed_need_batch_id',
+        'expected_source_batch_version',4),'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','23820000-0000-4000-8000-000000000051','allocated_quantity',row_data->'family_quantity'))));
+    answer:=atlas_api.save_confirmed_supplier_allocation(request);
+    if answer->>'success' is distinct from 'true' then raise exception 'Allocation fixture failed: %',answer;end if;
+  end loop;
+  foreach batch_id in array array['23840000-0000-4000-8000-000000000101'::uuid,'23840000-0000-4000-8000-000000000102'::uuid] loop
+    answer:=atlas_api.release_confirmed_needs(pg_temp.sc_command(subject_id,'RMVP-07.v2',gen_random_uuid(),4,
+      'CONFIRMED_NEED_RELEASED',jsonb_build_object('confirmed_need_batch_id',batch_id)));
+    if answer->>'success' is distinct from 'true' then raise exception 'Release fixture failed: %',answer;end if;
+  end loop;
+end;
+$prepare$;
+reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','23800000-0000-4000-8000-000000000102',true);

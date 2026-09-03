@@ -261,9 +261,15 @@ function backendError(code: string): AtlasRpcResult {
 
 export function createReviewConfirmedNeedApi(
   scenario: AtlasReviewScenario,
-  options: { lineCount?: number } = {},
+  options: {
+    lineCount?: number;
+    initialFixture?: ConfirmedNeedWorkbenchData;
+  } = {},
 ): ConfirmedNeedApi {
-  let state = createReviewConfirmedNeedFixture(options.lineCount ?? 2);
+  let state = structuredClone(
+    options.initialFixture ??
+      createReviewConfirmedNeedFixture(options.lineCount ?? 2),
+  );
   const receipts = new Map<string, AtlasRpcResult>();
 
   return {
