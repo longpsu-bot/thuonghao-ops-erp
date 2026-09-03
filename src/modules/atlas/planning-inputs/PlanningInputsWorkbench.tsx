@@ -494,6 +494,10 @@ function ReviewSummary<T>({
   previousAttendanceRows: AttendanceLine[];
   onBack: () => void;
 }) {
+  const reviewRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    reviewRef.current?.focus();
+  }, []);
   if (!preview) return null;
   const menuChanges =
     kind === "menu"
@@ -524,6 +528,8 @@ function ReviewSummary<T>({
 
   return (
     <section
+      ref={reviewRef}
+      tabIndex={-1}
       className="planning-review"
       aria-label={
         kind === "menu" ? "Xem thay đổi thực đơn" : "Xem thay đổi sĩ số"
@@ -808,6 +814,14 @@ export function PlanningInputsWorkbenchView({
   const [serviceDateFilter, setServiceDateFilter] = useState(weekStart);
   const generation = useRef(0);
   const confirmedNeedGeneration = useRef(0);
+  const sourceActionRef = useRef<HTMLButtonElement>(null);
+  const returnToSourceAction = useRef(false);
+  useEffect(() => {
+    if (returnToSourceAction.current) {
+      returnToSourceAction.current = false;
+      sourceActionRef.current?.focus();
+    }
+  }, [menuPreview, attendancePreview]);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
   const DatePickerInput = useContext(AtlasDatePickerInputContext);
@@ -1600,6 +1614,7 @@ export function PlanningInputsWorkbenchView({
           type="button"
           className="primary"
           onClick={() => void previewMenu()}
+          ref={sourceActionRef}
           disabled={saving || !menuRows.length}
         >
           <Eye size={17} aria-hidden="true" />
@@ -1623,6 +1638,7 @@ export function PlanningInputsWorkbenchView({
           type="button"
           className="primary"
           onClick={() => void previewAttendance()}
+          ref={sourceActionRef}
           disabled={saving || !attendanceRows.length}
         >
           <Eye size={17} aria-hidden="true" />
@@ -2022,6 +2038,7 @@ export function PlanningInputsWorkbenchView({
                         previousMenuRows={activeMenuRows(data.weekly_menu)}
                         previousAttendanceRows={[]}
                         onBack={() => {
+                          returnToSourceAction.current = true;
                           setMenuPreview(null);
                           setMenuCorrectionImpact(null);
                         }}
@@ -2311,6 +2328,7 @@ export function PlanningInputsWorkbenchView({
                           data.attendance,
                         )}
                         onBack={() => {
+                          returnToSourceAction.current = true;
                           setAttendancePreview(null);
                           setAttendanceCorrectionImpact(null);
                         }}

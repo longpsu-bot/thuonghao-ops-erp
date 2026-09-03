@@ -132,6 +132,16 @@ export function PantryWorkbench({
   const [saving, setSaving] = useState(false);
   const [refreshRequired, setRefreshRequired] = useState(false);
   const generation = useRef(0);
+  const reviewRef = useRef<HTMLElement>(null);
+  const reviewActionRef = useRef<HTMLButtonElement>(null);
+  const returnToReviewAction = useRef(false);
+  useEffect(() => {
+    if (preview) reviewRef.current?.focus();
+    else if (returnToReviewAction.current) {
+      returnToReviewAction.current = false;
+      reviewActionRef.current?.focus();
+    }
+  }, [preview]);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
   const serviceDates = useMemo(() => {
@@ -422,6 +432,7 @@ export function PantryWorkbench({
             type="button"
             className="primary"
             onClick={() => void previewRows()}
+            ref={reviewActionRef}
             disabled={!canEdit}
           >
             <Eye size={17} aria-hidden="true" />
@@ -766,6 +777,8 @@ export function PantryWorkbench({
           {preview && (
             <aside className="planning-decision-review">
               <section
+                ref={reviewRef}
+                tabIndex={-1}
                 className="planning-review pantry-review"
                 aria-label="Xem thay đổi Nhu cầu bổ sung"
               >
@@ -800,6 +813,7 @@ export function PantryWorkbench({
                   type="button"
                   className="secondary planning-review-back"
                   onClick={() => {
+                    returnToReviewAction.current = true;
                     setPreview(null);
                     setCorrectionImpact(null);
                   }}

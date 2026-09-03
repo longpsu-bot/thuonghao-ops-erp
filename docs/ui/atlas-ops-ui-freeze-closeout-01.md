@@ -28,6 +28,25 @@ mode. They do not certify hosted data or backend transactions.
 | F4    | Reviewed, unchanged    | Recommendation/rebalance remain visibly advisory. Supplier ineligibility requires explicit replacement. Clean/stale/released PO lifecycle and released-only XLSX/PDF remain governed by existing actions.                                                                                                                |
 | F5    | Reviewed, unchanged    | `Quay lại` returns from Planning review to editing; `Đóng` dismisses Procurement detail. The different labels describe different tasks.                                                                                                                                                                                  |
 
+Follow-up browser finding D3: opening the deployed Menu review with no changes
+leaves focus on the page body; populated local Attendance keeps focus on Save,
+and Pantry also loses focus. The attached review now receives focus on open;
+`Quay lại` restores its current rail action. Three regression tests failed first.
+This changes only focus and accessible review targeting, not review/save data.
+
+Follow-up finding A2 (blocked by scope): the deployed, current Confirmed Need
+renders the Need Generation `Mở xác nhận` button with primary styling alongside
+the rail's `Chuyển sang lên đơn` (or dirty `Lưu`). The brief explicitly prohibits
+Need Generation changes. Owner: Planning product owner; follow-up: authorize a
+bounded presentation-only adjustment to that embedded navigation action. No
+generation or lifecycle behavior should change. This prevents freeze readiness.
+
+The existing standalone Confirmed Need Storybook state helper also fails with
+`PlanningRailActionPortal requires PlanningRailActionProvider`. It predates this
+diff and is outside the specified production areas. Owner: Planning UI test
+maintainer; follow-up: restore the story's rail provider/host, then rerun released
+and unknown-outcome visual checks. Product checks use the actual workbench.
+
 ### Conditional supplier removal
 
 **BLOCKED — explicit persisted Supplier removal requires contract/product
@@ -59,7 +78,7 @@ restores the prior UI without changing persisted operational documents.
 - Test-first reproduction: five new cases failed for missing presentation/focus
   behavior; the released-state guidance assertion also failed before its fix.
 - Combined Planning/Procurement component, model, API, integration and export
-  regression: **258 tests passed across 26 files**.
+  regression: **261 tests passed across 26 files** after the D3 focus fix.
 - `pnpm typecheck` and `git diff --check`: passed.
 - Local browser: compact allocation and PO masters both fit 629px panes at
   1366 × 768; allocation demand/remainder 120/20 and applied 120/0 inspected;

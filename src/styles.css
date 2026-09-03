@@ -7872,6 +7872,11 @@ details.planning-source-group[open] {
   margin-bottom: 10px;
 }
 
+.planning-review:focus-visible {
+  outline: 2px solid var(--atlas-primary);
+  outline-offset: 2px;
+}
+
 .planning-review-heading strong {
   color: var(--atlas-primary);
   font-size: 15px;

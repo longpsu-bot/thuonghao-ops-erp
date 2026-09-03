@@ -77,6 +77,22 @@ function pantryApiWithHiddenFirstRow() {
 }
 
 describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
+  it("moves focus into review and returns to the rail action without saving", async () => {
+    const api = renderPantry();
+    const save = vi.spyOn(api, "saveCompleted");
+    const action = await screen.findByRole("button", { name: "Xem thay đổi" });
+    await waitFor(() => expect(action).toBeEnabled());
+    action.focus();
+    fireEvent.click(action);
+    const review = await screen.findByRole("region", {
+      name: "Xem thay đổi Nhu cầu bổ sung",
+    });
+    expect(review).toHaveFocus();
+    fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toHaveFocus();
+    expect(save).not.toHaveBeenCalled();
+  });
+
   it("uses the three canonical Planning review schools", async () => {
     renderPantry();
 
