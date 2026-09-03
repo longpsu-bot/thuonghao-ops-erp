@@ -69,6 +69,25 @@ function renderRail(children?: React.ReactNode) {
 }
 
 describe("PlanningOperatingRail", () => {
+  it("groups workflow tabs and actions together below the separate context group", () => {
+    renderRail();
+    const context = screen.getByRole("group", { name: "Phạm vi vận hành" });
+    const workflow = screen.getByRole("group", {
+      name: "Công việc lập nhu cầu",
+    });
+    expect(within(context).queryByRole("tab")).not.toBeInTheDocument();
+    expect(within(workflow).getAllByRole("tab")).toHaveLength(4);
+    expect(
+      within(workflow).getByRole("button", { name: "Làm mới" }),
+    ).toBeVisible();
+    expect(
+      within(workflow).getByRole("button", { name: "Xem thay đổi" }),
+    ).toBeVisible();
+    expect(
+      context.compareDocumentPosition(workflow) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
   it("keeps operating context, one workflow, and the parent action in one rail", () => {
     const onStepChange = renderRail();
     const rail = screen.getByRole("region", {

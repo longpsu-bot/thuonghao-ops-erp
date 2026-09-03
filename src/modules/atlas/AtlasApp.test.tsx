@@ -216,10 +216,10 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
     expect(
-      await screen.findByRole("navigation", {
+      screen.queryByRole("navigation", {
         name: "Chọn ngày xác nhận nhu cầu",
       }),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
     expect(
       await screen.findByRole("button", { name: "Tạo nhu cầu" }),
     ).toBeEnabled();

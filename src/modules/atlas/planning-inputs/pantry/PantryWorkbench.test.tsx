@@ -77,6 +77,50 @@ function pantryApiWithHiddenFirstRow() {
 }
 
 describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
+  it("uses the parent date for display and new rows while retaining weekly edits across date changes", async () => {
+    const api = createReviewPantryApi("ready");
+    const preview = vi.spyOn(api, "preview");
+    const tree = (date: string) => (
+      <PlanningRailActionProvider>
+        <PlanningRailActionHost />
+        <PantryWorkbench
+          authState={authState}
+          api={api}
+          weekStart="2026-08-03"
+          workingServiceDate={date}
+        />
+      </PlanningRailActionProvider>
+    );
+    const { rerender } = render(tree("2026-08-03"));
+    const quantity = await screen.findByLabelText("Số lượng dòng 1");
+    fireEvent.change(quantity, { target: { value: "13.5" } });
+    rerender(tree("2026-08-04"));
+    expect(screen.queryByLabelText("Số lượng dòng 1")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Thêm dòng" }));
+    expect(
+      screen.queryByLabelText(/Ngày phục vụ dòng/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("04/08/2026")).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Số lượng dòng 2"), {
+      target: { value: "2" },
+    });
+    rerender(tree("2026-08-03"));
+    expect(screen.getByLabelText("Số lượng dòng 1")).toHaveValue(13.5);
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() => expect(preview).toHaveBeenCalledOnce());
+    expect(preview.mock.calls[0]?.[4]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          service_date: "2026-08-03",
+          requested_quantity: "13.5",
+        }),
+        expect.objectContaining({
+          service_date: "2026-08-04",
+          requested_quantity: "2",
+        }),
+      ]),
+    );
+  });
   it("moves focus into review and returns to the rail action without saving", async () => {
     const api = renderPantry();
     const save = vi.spyOn(api, "saveCompleted");

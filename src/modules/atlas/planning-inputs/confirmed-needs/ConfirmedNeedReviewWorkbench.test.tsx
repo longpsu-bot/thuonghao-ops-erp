@@ -155,6 +155,108 @@ async function saveAll(
 }
 
 describe("Confirmed Need two-action workbench", () => {
+  it.each(["10", "10.5", "10.25", "10,25", "99999999999999.25"])(
+    "accepts %s and sends an exact decimal string",
+    async (value) => {
+      const api = renderAuthoritativeFixture((workbench) => {
+        workbench.lines[0]!.proposed_confirmed_quantity = "12.000000";
+      });
+      const save = vi.spyOn(api, "save");
+      const input = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+      fireEvent.change(input, { target: { value } });
+      expect(input).not.toHaveAttribute("aria-invalid", "true");
+      const button = screen.getByRole("button", { name: "Lưu" });
+      expect(button).toBeEnabled();
+      fireEvent.click(button);
+      await waitFor(() => expect(save).toHaveBeenCalledOnce());
+      expect(
+        save.mock.calls[0]?.[0].payload.lines[0]?.proposed_confirmed_quantity,
+      ).toBe(value.replace(",", "."));
+    },
+  );
+
+  it.each(["10.256", "1.234567", "10,256", "10.250", "10.250000"])(
+    "rejects %s without rounding or truncating and disables Save",
+    async (value) => {
+      const api = renderReview();
+      const save = vi.spyOn(api, "save");
+      const input = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+      fireEvent.change(input, { target: { value } });
+      expect(input).toHaveValue(value);
+      expect(input).toHaveAttribute("aria-invalid", "true");
+      expect(input).toHaveAccessibleDescription(
+        "Số lượng phải là số không âm, tối đa 2 chữ số thập phân.",
+      );
+      expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ["10.000000", "10"],
+    ["10.500000", "10,5"],
+    ["10.250000", "10,25"],
+  ])(
+    "displays backend %s as %s without changing saved authority",
+    async (exact, display) => {
+      const api = renderAuthoritativeFixture((workbench) => {
+        configureSavedAdjustmentFixture(workbench);
+        const line = workbench.lines[0]!;
+        line.confirmed_quantity_after = exact;
+        line.proposed_confirmed_quantity = exact;
+      });
+      const save = vi.spyOn(api, "save");
+      expect(
+        await screen.findByLabelText("Số lượng xác nhận Gạo thơm"),
+      ).toHaveValue(display);
+      expect(
+        screen.queryByRole("button", { name: "Lưu" }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Chuyển sang lên đơn" }),
+      ).toBeEnabled();
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+
+  it("preserves exceptional historical precision read-only and saves only other changed lines", async () => {
+    const api = renderAuthoritativeFixture((workbench) => {
+      configureSavedAdjustmentFixture(workbench);
+      workbench.lines[0]!.confirmed_quantity_after = "10.256700";
+      workbench.lines[0]!.proposed_confirmed_quantity = "10.256700";
+    });
+    const save = vi.spyOn(api, "save");
+    const exact = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+    expect(exact).toHaveAttribute("readonly");
+    expect(exact).toHaveValue("10,2567");
+    expect(exact).toHaveAccessibleDescription(/Vượt độ chính xác chỉnh sửa v1/);
+    fireEvent.change(screen.getByLabelText("Số lượng xác nhận Cà rốt"), {
+      target: { value: "5.25" },
+    });
+    fireEvent.change(screen.getByLabelText("Ghi chú Cà rốt"), {
+      target: { value: "Điều chỉnh thực tế" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(save.mock.calls[0]?.[0].payload.lines).toHaveLength(1);
+    expect(
+      save.mock.calls[0]?.[0].payload.lines[0]?.proposed_confirmed_quantity,
+    ).toBe("5.25");
+  });
+
+  it("has no duplicate date filter even when a historical batch spans days", async () => {
+    renderReview();
+    await screen.findByText("Gạo thơm");
+    const toolbar = screen.getByRole("region", {
+      name: "Bộ lọc xác nhận nhu cầu",
+    });
+    expect(within(toolbar).queryByLabelText("Ngày")).not.toBeInTheDocument();
+    expect(within(toolbar).getByRole("searchbox")).toBeVisible();
+    expect(within(toolbar).getByLabelText("Tình trạng")).toBeVisible();
+    expect(
+      within(toolbar).getByLabelText("Chỉ hiển thị thay đổi chưa lưu"),
+    ).toBeVisible();
+  });
   it("uses all three canonical Planning review schools", () => {
     const fixture = createReviewConfirmedNeedFixture(3);
 
@@ -340,7 +442,7 @@ describe("Confirmed Need two-action workbench", () => {
     expect(within(row).getByText("23,5")).toBeVisible();
     expect(
       within(row).getByLabelText("Số lượng xác nhận Gạo thơm"),
-    ).toHaveValue("30.000000");
+    ).toHaveValue("30");
     expect(within(row).getByText("Đã lưu")).toBeVisible();
     expect(screen.getByText("1 đã điều chỉnh")).toBeVisible();
     expect(
@@ -517,7 +619,7 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByText("Hiển thị 1/2 dòng")).toBeVisible();
   });
 
-  it("composes external school scope with search, date, and confirmation filters", async () => {
+  it("composes external school scope with search and confirmation filters", async () => {
     const api = createReviewConfirmedNeedApi("ready", { lineCount: 3 });
     renderScopedReview(api, ["review-planning-school-3"]);
     await screen.findByText("Gạo thơm 3");
@@ -532,9 +634,7 @@ describe("Confirmed Need two-action workbench", () => {
       ),
       { target: { value: "gạo thơm 3" } },
     );
-    fireEvent.change(within(toolbar).getByLabelText("Ngày"), {
-      target: { value: "2026-08-05" },
-    });
+    expect(within(toolbar).queryByLabelText("Ngày")).not.toBeInTheDocument();
     fireEvent.change(within(toolbar).getByLabelText("Tình trạng"), {
       target: { value: "needs_review" },
     });

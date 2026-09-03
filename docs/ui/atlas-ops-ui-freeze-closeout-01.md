@@ -81,6 +81,60 @@ rewriting any persisted operational facts. GitHub CI, immutable deployment URL
 and final head are recorded on the new Draft PR; product/architecture review
 remains required before merge.
 
+## Follow-up amendment: one Planning working date and Confirmed Need precision
+
+PLANNING-CONTEXT-AND-CONFIRMED-NEED-UX-REFINEMENT continues the existing Draft
+PR #250 from head `3bb13f8de664470685999eec8e7dc693e6e49871`. The owner's amendment
+supersedes the earlier seven-day navigator design. Prior evidence above and
+below remains historical; B1 Handoff recovery remains a separate task.
+
+- The rail has two semantic/layout groups: Week / working date / School, then
+  four equal workflow jobs with routine Refresh and the contextual CTA. The
+  working date is emphasized with weekday text, stronger border/background,
+  typography and an accessible current-context description.
+- One parent-owned service date determines all four Planning jobs. Confirmed
+  Need derives its current batch from that date's existing preflight. No local
+  date authority or effect-based two-way date synchronization remains. A batch
+  elsewhere in the week does not change the user's selected date.
+- Embedded daily navigation, seven selectable segments, the separate selected-
+  day panel and `Mở xác nhận` are removed. Existing current/released batches
+  open directly. Missing, no-need, outdated and blocked dates show only their
+  current state and supported Need Generation action. The duplicate Confirmed
+  Need Date filter is removed; Search/status/differences filters remain.
+- Pantry consumes the same parent date for display and new rows. Its full weekly
+  draft and preview/save payload remain intact across date changes. The embedded
+  row-date selector is replaced with date text. Menu's Google-only authoring,
+  read-only grid and fetch → review → save boundaries remain intact.
+- Confirmed Need date changes retain the existing discard confirmation. Cancel
+  preserves date, quantities and reasons. Accepted changes reload authority even
+  for two dates sharing a historical batch. Late generation responses cannot
+  reopen the prior date. Stale/unknown/retry/release and pending-Handoff behavior
+  retain their existing gates.
+- New confirmed-quantity entry allows at most two decimal places, including comma
+  input. The exact typed text remains visible when invalid and disables Save.
+  Typed six-place values are rejected even when numerically equal to the stored
+  value. Untouched backend values display without trailing zeroes. Historical
+  values exceeding meaningful two-place precision remain exact, flagged and
+  read-only, including reason/note controls. Untouched saved historical decisions
+  are not rewritten by another line's Save.
+- `numeric(20,6)`, six-place exact parsing/equality/BigInt arithmetic, Planning
+  Quantity Policy and API envelopes are unchanged. No Number/parseFloat business-
+  quantity conversion, rounding, migration, RLS, capability, dependency or hosted
+  data/configuration change is included. Standalone Need Generation stories
+  now provide controlled date props to preserve their existing review journeys.
+
+Verification: failing tests reproduced date divergence, missing dirty protection,
+precision/display failures, duplicate navigation, late-generation reopening and
+same-batch draft retention before implementation. The final combined Planning,
+Atlas journeys and shared-control suite passes **235 tests across 23 files**.
+The jsdom harness retains its existing Window.confirm diagnostic; product-browser
+console inspection is reported separately. Typecheck, touched-file formatting,
+whitespace, final browser matrix, CI and immutable preview evidence are recorded
+in the PR body. No full routine frontend suite is rerun locally.
+
+Rollback: revert this UI refinement commit; no data/schema rollback is required.
+PR #250 remains Draft and unmerged pending product/architecture review.
+
 ## Audit before implementation
 
 Inspected the current React product using its populated, session-only review

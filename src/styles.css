@@ -5393,14 +5393,11 @@ tbody tr.selected-row {
   z-index: 20;
   top: 0;
   display: grid;
-  grid-template-areas: "context workflow actions";
-  grid-template-columns: 552px minmax(440px, 1fr) max-content;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   box-sizing: border-box;
-  height: var(--planning-rail-height);
-  min-height: var(--planning-rail-height);
-  gap: 6px;
-  padding: 4px 7px;
+  gap: 10px;
+  padding: 10px;
   border: 1px solid var(--planning-border);
   border-radius: var(--planning-radius);
   background: var(--atlas-surface);
@@ -5421,7 +5418,37 @@ tbody tr.selected-row {
 }
 
 .planning-operating-context {
-  grid-area: context;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.planning-operating-workflow-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--planning-border);
+}
+
+.planning-operating-context > .planning-working-date {
+  flex-basis: 230px;
+  color: var(--atlas-primary);
+}
+
+.planning-operating-context .planning-working-date select {
+  border: 2px solid var(--atlas-primary);
+  background: var(--atlas-primary-soft);
+  color: var(--atlas-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.planning-working-date select:focus-visible {
+  outline: 2px solid var(--atlas-primary);
+  outline-offset: 2px;
 }
 
 .planning-operating-context > label,
@@ -5487,18 +5514,12 @@ tbody tr.selected-row {
   min-width: 0;
 }
 
-.planning-operating-workflow {
-  grid-area: workflow;
-}
-
 .planning-operating-workflow .planning-workflow-bar {
   width: 100%;
-  max-width: 840px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .planning-operating-action-zone {
-  grid-area: actions;
   justify-content: flex-end;
   flex-wrap: nowrap;
   white-space: nowrap;
@@ -5531,40 +5552,9 @@ tbody tr.selected-row {
   opacity: 0.5;
 }
 
-@container (max-width: 1240px) {
-  .planning-operating-rail {
-    grid-template-areas:
-      "context actions"
-      "workflow workflow";
-    grid-template-columns: minmax(0, 1fr) max-content;
-    height: auto;
-    min-height: 88px;
-    align-items: center;
-    overflow: visible;
-    padding: 6px 7px;
-  }
-
-  .planning-operating-workflow {
-    padding-top: 5px;
-    border-top: 1px solid var(--planning-border);
-  }
-}
-
-@container (max-width: 800px) {
-  .planning-operating-rail {
-    grid-template-areas:
-      "context"
-      "workflow"
-      "actions";
+@container (max-width: 720px) {
+  .planning-operating-workflow-row {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .planning-operating-context {
-    flex-wrap: wrap;
-  }
-
-  .planning-operating-action-zone {
-    justify-content: flex-end;
   }
 }
 
@@ -5646,9 +5636,10 @@ button.secondary.planning-google-sync-button {
 }
 
 @container (max-width: 400px) {
-  .planning-operating-context > label:not(:first-child),
+  .planning-operating-context > label,
+  .planning-operating-context > .mantine-DatePickerInput-root,
   .planning-school-context {
-    flex: 1 1 130px;
+    flex: 1 1 100%;
     min-width: 0;
   }
 
@@ -5697,192 +5688,32 @@ button.secondary.planning-google-sync-button {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.need-generation-daily-navigator {
-  overflow: hidden;
-  border: 1px solid var(--planning-border);
-  border-radius: var(--planning-radius) var(--planning-radius) 0 0;
-  background: var(--atlas-surface);
-}
-
-.need-generation-daily-heading {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--planning-border);
-  background: var(--atlas-surface-soft);
-  box-shadow: inset 3px 0 var(--atlas-accent);
-  color: var(--atlas-primary);
-}
-
-.need-generation-daily-heading span {
-  color: var(--atlas-text-muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.need-generation-daily-selector {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--atlas-border);
-}
-
-.need-generation-daily-option {
-  position: relative;
-  display: grid;
-  min-width: 0;
-  min-height: 58px;
-  align-content: center;
-  gap: 3px;
-  padding: 7px 9px;
-  border: 0;
-  background: var(--atlas-surface);
-  color: var(--atlas-text-muted);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.need-generation-daily-option:hover {
-  background: var(--atlas-surface-soft);
-}
-
-.need-generation-daily-option strong,
-.need-generation-daily-option span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.need-generation-daily-option strong {
-  color: var(--atlas-text);
-  font-size: 12px;
-}
-
-.need-generation-daily-option span {
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.need-generation-daily-option.selected {
-  background: var(--atlas-primary-soft);
-  box-shadow: inset 0 2px var(--atlas-accent);
-  color: var(--atlas-primary);
-}
-
-.need-generation-daily-option.selected::after {
-  position: absolute;
-  right: 8px;
-  bottom: 0;
-  left: 8px;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--atlas-primary);
-  content: "";
-}
-
-.need-generation-daily-option.selected strong,
-.need-generation-daily-option.selected span {
-  color: var(--atlas-primary);
-}
-
-.need-generation-daily-option:focus-visible {
-  z-index: 1;
-  outline: 2px solid var(--atlas-primary);
-  outline-offset: -2px;
-}
-
-.need-generation-daily-selected-action {
+.need-generation-current-date {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 8px 16px;
   padding: 12px;
-  border-top: 1px solid var(--planning-border);
+  border: 1px solid var(--planning-border);
+  border-radius: var(--planning-radius);
   background: var(--atlas-surface);
 }
 
-.need-generation-daily-selected-copy {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.need-generation-daily-selected-copy > span {
-  color: var(--atlas-text-muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.need-generation-daily-selected-copy > strong {
-  color: var(--atlas-primary);
-  font-size: 15px;
-}
-
-.need-generation-daily-selected-copy > p {
-  margin: 0;
-  color: var(--atlas-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.need-generation-daily-selected-action > button {
-  display: inline-flex;
-  min-height: 38px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px 13px;
-  border: 1px solid var(--atlas-primary);
-  border-radius: 6px;
-  background: var(--atlas-primary);
-  color: #fff;
-  font-weight: 800;
-}
-
-.need-generation-daily-selected-action > .secondary-forward {
-  border-color: var(--atlas-border);
-  background: var(--atlas-surface);
-  color: var(--atlas-primary);
-  font-weight: 600;
-}
-
-.need-generation-daily-selected-action > .secondary-forward:focus-visible {
-  outline: 2px solid var(--atlas-primary);
-  outline-offset: 2px;
-}
-
-.need-generation-open-state {
-  color: var(--atlas-text-muted);
-  font-size: 12px;
-}
-
-.need-generation-daily-selected-notice {
+.need-generation-current-date > strong {
   flex-basis: 100%;
-  margin: 0;
+  color: var(--atlas-primary);
 }
 
-@container (max-width: 720px) {
-  .need-generation-daily-selector {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.need-generation-current-date p {
+  margin: 0;
+  font-size: 13px;
+}
 
-  .need-generation-daily-selected-action {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .need-generation-daily-selected-action > button {
-    width: 100%;
-  }
+.need-generation-current-date > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
 }
 
 /* UI-QUALITY-02B — Planning readiness and Need Generation */
@@ -6894,7 +6725,6 @@ button.secondary.planning-google-sync-button {
 }
 
 @media (max-width: 900px) {
-  .confirmed-need-search,
   .confirmed-need-difference-filter {
     flex-basis: 100% !important;
   }
@@ -6905,6 +6735,9 @@ button.secondary.planning-google-sync-button {
 }
 
 @media (max-width: 520px) {
+  .confirmed-need-search {
+    flex-basis: 100% !important;
+  }
   .confirmed-need-toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -7960,17 +7793,6 @@ details.planning-source-group[open] {
 .planning-confirmed-daily,
 .planning-confirmed-review {
   min-width: 0;
-}
-
-.planning-confirmed-selection {
-  margin: 0;
-  padding: 7px 12px;
-  border: 1px solid var(--planning-border);
-  border-top: 0;
-  border-bottom: 0;
-  background: var(--atlas-primary-soft);
-  color: var(--atlas-text-muted);
-  font-size: 12px;
 }
 
 .planning-confirmed-review > .work-panel {

@@ -361,19 +361,19 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).not.toBeVisible();
   });
 
-  it("renders Confirmed Need as daily overview plus selected-date review without automation actions", async () => {
+  it("renders Confirmed Need for the shared current date without a daily navigator", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
 
     expect(
       await screen.findByRole("complementary", {
-        name: "Tổng quan nhu cầu theo ngày",
+        name: "Tình trạng nhu cầu ngày phục vụ",
       }),
     ).toBeVisible();
     expect(
-      screen.getByRole("region", { name: "Chi tiết xác nhận nhu cầu" }),
-    ).toBeVisible();
+      screen.queryByRole("navigation", { name: "Chọn ngày xác nhận nhu cầu" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
         name: /Bổ sung tự động|Pantry Rules|Đặt hàng tự động/i,
@@ -765,7 +765,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(weekInput).toHaveAttribute("data-business-value", nextWeek);
     await waitFor(() =>
       expect(
-        screen.getByRole("option", { name: formatIsoDate(nextWeekEnd) }),
+        screen.getByRole("option", {
+          name: `Chủ Nhật · ${formatIsoDate(nextWeekEnd)}`,
+        }),
       ).toBeInTheDocument(),
     );
     expect(screen.queryByText("Khoảng ngày")).not.toBeInTheDocument();

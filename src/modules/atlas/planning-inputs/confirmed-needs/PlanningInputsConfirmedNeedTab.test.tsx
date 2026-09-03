@@ -20,7 +20,10 @@ import {
   createReviewConfirmedNeedFixture,
 } from "./reviewConfirmedNeedApi";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const authState = {
   status: "authenticated",
@@ -143,6 +146,122 @@ function confirmedNeedApiForDates(
 }
 
 describe("Planning Inputs Confirmed Need tab", () => {
+  it("uses only the shared working date, including days without a batch", async () => {
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        readinessApi={readinessWithDailyNeeds(
+          {},
+          { noDemandDates: ["2026-09-03"] },
+        )}
+        confirmedNeedApi={createReviewConfirmedNeedApi("ready")}
+        initialWeekStart="2026-08-31"
+        mode="review"
+      />,
+    );
+    expect(screen.getByLabelText("Tuần phục vụ")).toHaveValue(
+      "31/08/2026 – 06/09/2026",
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    const sharedDate = screen.getByRole("combobox", { name: "Ngày phục vụ" });
+    expect(sharedDate).toHaveAccessibleDescription(
+      "Ngày làm việc hiện tại trong tuần phục vụ",
+    );
+    fireEvent.change(sharedDate, { target: { value: "2026-09-03" } });
+    expect(sharedDate).toHaveValue("2026-09-03");
+    expect(
+      within(sharedDate).getByRole("option", { selected: true }),
+    ).toHaveTextContent("Thứ Năm · 03/09/2026");
+    expect(await screen.findByText("Không có nhu cầu cần lập")).toBeVisible();
+    expect(
+      screen.getAllByRole("combobox", { name: "Ngày phục vụ" }),
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole("navigation", { name: "Chọn ngày xác nhận nhu cầu" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Chọn ngày xác nhận")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Bảng xác nhận nhu cầu"),
+    ).not.toBeInTheDocument();
+    fireEvent.change(sharedDate, { target: { value: "2026-09-04" } });
+    expect(
+      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText("Không có nhu cầu cần lập"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Ngày đang xem")).not.toBeInTheDocument();
+  });
+
+  it("keeps the working date and draft unchanged when a dirty date change is cancelled", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        needGenerationApi={createReviewNeedGenerationApi("ready")}
+        readinessApi={readinessWithDailyNeeds(
+          { "2026-08-31": { batchId: defaultBatchId } },
+          { noDemandDates: ["2026-09-03"] },
+        )}
+        confirmedNeedApi={confirmedNeedApiForDates({
+          [defaultBatchId]: "2026-08-31",
+        })}
+        initialWeekStart="2026-08-31"
+        mode="review"
+      />,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    const quantity = await screen.findByLabelText("Số lượng xác nhận Gạo thơm");
+    fireEvent.change(quantity, { target: { value: "10.25" } });
+    const changeDate = () =>
+      fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+        target: { value: "2026-09-03" },
+      });
+    changeDate();
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(quantity).toHaveValue("10.25");
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-08-31");
+    confirm.mockReturnValue(true);
+    changeDate();
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-09-03");
+    expect(await screen.findByText("Không có nhu cầu cần lập")).toBeVisible();
+    expect(
+      screen.queryByLabelText("Số lượng xác nhận Gạo thơm"),
+    ).not.toBeInTheDocument();
+  });
+  it("discards only with confirmation when two dates reference the same historical batch", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const api = confirmedNeedApiForDates({ [defaultBatchId]: "2026-08-03" });
+    render(
+      <PlanningInputsWorkbench
+        authState={authState}
+        readinessApi={readinessWithDailyNeeds({
+          "2026-08-03": { batchId: defaultBatchId },
+          "2026-08-04": { batchId: defaultBatchId },
+        })}
+        confirmedNeedApi={api}
+        initialWeekStart="2026-08-03"
+        mode="review"
+      />,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
+    fireEvent.change(
+      await screen.findByLabelText("Số lượng xác nhận Gạo thơm"),
+      { target: { value: "12.25" } },
+    );
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-04" },
+    });
+    await waitFor(() => expect(api.getReview).toHaveBeenCalledTimes(2));
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-03" },
+    });
+    expect(
+      await screen.findByLabelText("Số lượng xác nhận Gạo thơm"),
+    ).toHaveValue("10,25");
+  });
+
   it("threads the successful Purchase Handoff callback through the Planning workbench", async () => {
     const serviceDate = "2026-08-03";
     const readinessApi = readinessWithDailyNeeds({
@@ -223,18 +342,20 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(tabs[3]).toHaveTextContent("Xác nhận nhu cầu");
     fireEvent.click(tabs[3]!);
     expect(
-      await screen.findByText("Chưa có nhu cầu cho tuần đã chọn."),
+      await screen.findByText("Chưa có nhu cầu xác nhận cho ngày này."),
     ).toBeVisible();
     expect(
       screen.queryByLabelText("Mã lô Confirmed Need"),
     ).not.toBeInTheDocument();
   });
 
-  it("rediscovers one daily Confirmed Need after a fresh mount through seven date-scoped reads", async () => {
+  it("opens only the selected date from seven date-scoped reads without auto-switching to another candidate", async () => {
     const readinessApi = readinessWithDailyNeeds({
       "2026-08-04": { batchId: defaultBatchId },
     });
-    const confirmedNeedApi = createReviewConfirmedNeedApi("ready");
+    const confirmedNeedApi = confirmedNeedApiForDates({
+      [defaultBatchId]: "2026-08-04",
+    });
     const getReview = vi.spyOn(confirmedNeedApi, "getReview");
     render(
       <PlanningInputsWorkbench
@@ -252,9 +373,17 @@ describe("Planning Inputs Confirmed Need tab", () => {
     await waitFor(() =>
       expect(confirmedNeedTab).toHaveAttribute("aria-selected", "true"),
     );
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-08-03");
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-04" },
+    });
     expect(await screen.findByText("Gạo thơm")).toBeVisible();
-    expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("04/08/2026");
-    expect(readinessApi.preflight).toHaveBeenCalledTimes(7);
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-08-04");
+    expect(
+      new Set(
+        vi.mocked(readinessApi.preflight).mock.calls.map((call) => call[2]),
+      ).size,
+    ).toBe(7);
     expect(
       vi
         .mocked(readinessApi.preflight)
@@ -304,45 +433,35 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const dailySelector = await screen.findByRole("navigation", {
-      name: "Chọn ngày xác nhận nhu cầu",
-    });
-    expect(dailySelector).toHaveTextContent("03/08/2026");
-    expect(dailySelector).toHaveTextContent("05/08/2026");
-    expect(dailySelector).toHaveTextContent("Chờ xác nhận");
-    expect(dailySelector).toHaveTextContent("Mở xác nhận");
-    expect(
-      screen.getByText("Chọn ngày phục vụ ở trên để mở nhu cầu xác nhận."),
-    ).toBeVisible();
 
-    fireEvent.click(
-      within(dailySelector).getByRole("button", {
-        name: "Mở xác nhận 03/08/2026",
-      }),
-    );
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-03" },
+    });
     const search = await screen.findByPlaceholderText(
       "Tìm theo nguyên liệu, trường, điểm giao…",
     );
     fireEvent.change(search, { target: { value: "Nguyễn Du" } });
     expect(search).toHaveValue("Nguyễn Du");
-    expect(screen.getByText("Đang mở")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Mở xác nhận" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Mở xác nhận" }),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(
-      within(dailySelector).getByRole("button", {
-        name: "Mở xác nhận 05/08/2026",
-      }),
-    );
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-05" },
+    });
 
     await waitFor(() =>
       expect(
         screen.getByPlaceholderText("Tìm theo nguyên liệu, trường, điểm giao…"),
       ).toHaveValue(""),
     );
-    expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("05/08/2026");
-    expect(screen.getByText("Đang mở")).toBeVisible();
+    expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-08-05");
+    expect(
+      screen.queryByRole("button", { name: "Mở xác nhận" }),
+    ).not.toBeInTheDocument();
     expect(confirmedNeedApi.getReview).toHaveBeenCalledTimes(2);
     expect(confirmedNeedApi.getReview).toHaveBeenNthCalledWith(
       1,
@@ -391,14 +510,10 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const dailySelector = await screen.findByRole("navigation", {
-      name: "Chọn ngày xác nhận nhu cầu",
+
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-03" },
     });
-    fireEvent.click(
-      within(dailySelector).getByRole("button", {
-        name: "Mở xác nhận 03/08/2026",
-      }),
-    );
     fireEvent.click(
       await screen.findByRole("button", { name: "Chuyển sang lên đơn" }),
     );
@@ -406,14 +521,12 @@ describe("Planning Inputs Confirmed Need tab", () => {
       screen.getByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
     ).toBeVisible();
 
-    fireEvent.click(
-      within(dailySelector).getByRole("button", {
-        name: "Mở xác nhận 05/08/2026",
-      }),
-    );
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-05" },
+    });
 
     await waitFor(() =>
-      expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("05/08/2026"),
+      expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-08-05"),
     );
     expect(
       screen.queryByRole("dialog", { name: "Xác nhận chuyển sang lên đơn" }),
@@ -445,8 +558,8 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
 
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
-      "24/08/2026",
+    expect(await screen.findByLabelText("Ngày phục vụ")).toHaveValue(
+      "2026-08-24",
     );
     expect(
       await screen.findByRole("textbox", {
@@ -463,12 +576,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
     expect(serviceDate).toHaveValue("2026-08-25");
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
 
-    const dailySelector = await screen.findByRole("navigation", {
-      name: "Chọn ngày xác nhận nhu cầu",
-    });
-    expect(
-      within(dailySelector).getByRole("button", { name: "Xem 25/08/2026" }),
-    ).toHaveTextContent("Không có nhu cầu cần lập");
+    expect(await screen.findByText("Không có nhu cầu cần lập")).toBeVisible();
     expect(screen.queryByText(/Đang xem ngày/)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("textbox", { name: "Số lượng xác nhận Gạo thơm" }),
@@ -501,17 +609,13 @@ describe("Planning Inputs Confirmed Need tab", () => {
     fireEvent.change(serviceDate, { target: { value: "2026-08-25" } });
     expect(serviceDate).toHaveValue("2026-08-25");
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const dailySelector = await screen.findByRole("navigation", {
-      name: "Chọn ngày xác nhận nhu cầu",
-    });
-    fireEvent.click(
-      within(dailySelector).getByRole("button", {
-        name: "Mở xác nhận 24/08/2026",
-      }),
-    );
 
-    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
-      "24/08/2026",
+    fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
+      target: { value: "2026-08-24" },
+    });
+
+    expect(await screen.findByLabelText("Ngày phục vụ")).toHaveValue(
+      "2026-08-24",
     );
     expect(
       await screen.findByRole("textbox", {
@@ -548,7 +652,9 @@ describe("Planning Inputs Confirmed Need tab", () => {
   it("generates the selected day, opens the returned Draft Review batch, and preserves Save then release", async () => {
     const needGenerationApi = createReviewNeedGenerationApi("ready");
     const execute = vi.spyOn(needGenerationApi, "execute");
-    const confirmedNeedApi = createReviewConfirmedNeedApi("ready");
+    const confirmedNeedApi = confirmedNeedApiForDates({
+      [defaultBatchId]: "2026-08-31",
+    });
     const getReview = vi.spyOn(confirmedNeedApi, "getReview");
     const save = vi.spyOn(confirmedNeedApi, "save");
     render(
@@ -562,27 +668,17 @@ describe("Planning Inputs Confirmed Need tab", () => {
       />,
     );
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
-    const navigator = await screen.findByRole("region", {
-      name: "Tổng quan nhu cầu theo ngày",
-    });
-    fireEvent.click(
-      within(navigator).getByRole("button", {
-        name: "Rà soát 31/08/2026",
-      }),
-    );
     expect(execute).not.toHaveBeenCalled();
 
-    fireEvent.click(
-      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
 
     await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
     expect(execute.mock.calls[0]?.[0]).toMatchObject({
       contract_version: "RMVP-04.v3",
       payload: { service_date: "2026-08-31" },
     });
-    expect(await screen.findByText(/Đang xem ngày/)).toHaveTextContent(
-      "31/08/2026",
+    expect(await screen.findByLabelText("Ngày phục vụ")).toHaveValue(
+      "2026-08-31",
     );
     expect(await screen.findByText("Gạo thơm")).toBeVisible();
     expect(getReview).toHaveBeenCalledWith(

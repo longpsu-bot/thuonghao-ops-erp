@@ -42,19 +42,21 @@ export function PlanningOperatingRail<T extends string>({
         {schoolControl}
       </div>
       <div
-        className="planning-operating-workflow"
+        className="planning-operating-workflow-row"
         role="group"
         aria-label="Công việc lập nhu cầu"
       >
-        <PlanningWorkflowBar
-          items={workflowItems}
-          activeId={activeId}
-          onChange={onStepChange}
-        />
-      </div>
-      <div className="planning-operating-action-zone">
-        {secondaryActions}
-        <PlanningRailActionHost>{actions}</PlanningRailActionHost>
+        <div className="planning-operating-workflow">
+          <PlanningWorkflowBar
+            items={workflowItems}
+            activeId={activeId}
+            onChange={onStepChange}
+          />
+        </div>
+        <div className="planning-operating-action-zone">
+          {secondaryActions}
+          <PlanningRailActionHost>{actions}</PlanningRailActionHost>
+        </div>
       </div>
     </section>
   );

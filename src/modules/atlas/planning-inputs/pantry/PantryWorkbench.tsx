@@ -109,6 +109,7 @@ export function PantryWorkbench({
   weekStart,
   onDirtyChange,
   schoolScopeIds = [],
+  workingServiceDate,
 }: {
   authState: AtlasAuthState;
   api?: PantryApi;
@@ -116,6 +117,7 @@ export function PantryWorkbench({
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
   schoolScopeIds?: string[];
+  workingServiceDate?: string;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const [load, setLoad] = useState<LoadState>("idle");
@@ -230,10 +232,12 @@ export function PantryWorkbench({
     () =>
       rows
         .map((row, index) => ({ row, index }))
-        .filter(({ row }) =>
-          schoolInPlanningScope(row.school_id, schoolScopeIds),
+        .filter(
+          ({ row }) =>
+            schoolInPlanningScope(row.school_id, schoolScopeIds) &&
+            (!workingServiceDate || row.service_date === workingServiceDate),
         ),
-    [rows, schoolScopeIds],
+    [rows, schoolScopeIds, workingServiceDate],
   );
 
   const markEdited = (next: PantryDraftRow[]) => {
@@ -257,7 +261,7 @@ export function PantryWorkbench({
     markEdited([
       ...rows,
       {
-        service_date: weekStart,
+        service_date: workingServiceDate ?? weekStart,
         school_id: school.school_id,
         ingredient_id: ingredient.ingredient_id,
         pantry_need_purpose_id: purpose.pantry_need_purpose_id,
@@ -594,24 +598,28 @@ export function PantryWorkbench({
                       return (
                         <tr key={`${row.source_row_reference}:${index}`}>
                           <td>
-                            <select
-                              aria-label={`Ngày phục vụ dòng ${index + 1}`}
-                              value={row.service_date}
-                              disabled={!canEdit}
-                              onChange={(event) =>
-                                updateRow(
-                                  index,
-                                  "service_date",
-                                  event.target.value,
-                                )
-                              }
-                            >
-                              {serviceDates.map((date) => (
-                                <option value={date} key={date}>
-                                  {dateVi(date)}
-                                </option>
-                              ))}
-                            </select>
+                            {workingServiceDate ? (
+                              dateVi(row.service_date)
+                            ) : (
+                              <select
+                                aria-label={`Ngày phục vụ dòng ${index + 1}`}
+                                value={row.service_date}
+                                disabled={!canEdit}
+                                onChange={(event) =>
+                                  updateRow(
+                                    index,
+                                    "service_date",
+                                    event.target.value,
+                                  )
+                                }
+                              >
+                                {serviceDates.map((date) => (
+                                  <option value={date} key={date}>
+                                    {dateVi(date)}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                           </td>
                           <td>
                             <select

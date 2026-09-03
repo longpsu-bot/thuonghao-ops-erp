@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { useState, type ComponentProps } from "react";
 import {
   cleanup,
   fireEvent,
@@ -25,6 +26,19 @@ const authState = {
   session: { user: { id: "review-only-atlas-operator" } },
 } as unknown as AtlasAuthState;
 
+function ControlledWorkbench(
+  props: ComponentProps<typeof NeedGenerationWorkbench>,
+) {
+  const [date, setDate] = useState(props.selectedWeekStart);
+  return (
+    <NeedGenerationWorkbench
+      {...props}
+      selectedServiceDate={date}
+      onServiceDateChange={setDate}
+    />
+  );
+}
+
 function renderWorkbench(
   api = createReviewNeedGenerationApi("ready"),
   preflightApi = createReviewPlanningInputReadinessApi("ready"),
@@ -33,7 +47,7 @@ function renderWorkbench(
   onConfirmedNeedSelected = vi.fn(),
 ) {
   render(
-    <NeedGenerationWorkbench
+    <ControlledWorkbench
       authState={authState}
       api={api}
       preflightApi={preflightApi}
@@ -80,49 +94,55 @@ async function makePreflightCurrentness(
 }
 
 describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", () => {
-  it("renders embedded Confirmed Need navigation as an attached seven-day selector", async () => {
+  it("does not reopen the previous date when its generation response arrives after a parent date change", async () => {
     const api = createReviewNeedGenerationApi("ready");
-    const execute = vi.spyOn(api, "execute");
-    renderWorkbench(
+    const execute = api.execute.bind(api);
+    let complete!: () => void;
+    vi.spyOn(api, "execute").mockImplementation(async (request) => {
+      await new Promise<void>((resolve) => {
+        complete = resolve;
+      });
+      return execute(request);
+    });
+    const selected = vi.fn();
+    const props = {
+      authState,
       api,
+      preflightApi: createReviewPlanningInputReadinessApi("ready"),
+      selectedWeekStart: "2026-08-31",
+      selectedWeekEnd: "2026-09-06",
+      embeddedInConfirmedNeed: true,
+      onConfirmedNeedSelected: selected,
+    };
+    const { rerender } = render(
+      <NeedGenerationWorkbench {...props} selectedServiceDate="2026-08-31" />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
+    rerender(
+      <NeedGenerationWorkbench {...props} selectedServiceDate="2026-09-03" />,
+    );
+    await screen.findByText("Xác nhận nhu cầu · 03/09/2026");
+    complete();
+    await waitFor(() => expect(api.execute).toHaveResolved());
+    expect(selected).not.toHaveBeenCalled();
+    expect(screen.getByText("Xác nhận nhu cầu · 03/09/2026")).toBeVisible();
+  });
+  it("renders only the parent-selected current-date state without navigation", async () => {
+    renderWorkbench(
+      createReviewNeedGenerationApi("ready"),
       createReviewPlanningInputReadinessApi("ready"),
       vi.fn(),
       true,
     );
-
-    const navigator = await screen.findByRole("region", {
-      name: "Tổng quan nhu cầu theo ngày",
-    });
-    const selector = within(navigator).getByRole("navigation", {
-      name: "Chọn ngày xác nhận nhu cầu",
-    });
-    const selectedDay = within(selector).getByRole("button", {
-      name: "Rà soát 03/08/2026",
-    });
-    expect(selectedDay).toHaveAttribute("aria-current", "date");
-    expect(selectedDay).toHaveAttribute(
-      "aria-controls",
-      "planning-confirmed-review",
-    );
-    fireEvent.click(selectedDay);
-    expect(execute).not.toHaveBeenCalled();
     expect(
-      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
+      await screen.findByRole("button", { name: "Tạo nhu cầu" }),
     ).toBeEnabled();
-    expect(within(selector).getAllByRole("button")).toHaveLength(7);
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    expect(screen.queryByText("Chọn ngày xác nhận")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ngày đang xem")).not.toBeInTheDocument();
     expect(
-      within(navigator).queryByRole("table", {
-        name: "Tổng quan nhu cầu theo ngày",
-      }),
+      screen.queryByRole("button", { name: /03\/08\/2026/ }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { name: "Tình trạng nhu cầu" }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText(/Tuần đang xem:/)).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Làm mới" }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText("Chi tiết hỗ trợ")).not.toBeInTheDocument();
   });
 
   it("executes exactly one selected-day RMVP-04.v3 command and selects its returned batch", async () => {
@@ -145,19 +165,9 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       />,
     );
 
-    const navigator = await screen.findByRole("region", {
-      name: "Tổng quan nhu cầu theo ngày",
-    });
-    fireEvent.click(
-      within(navigator).getByRole("button", {
-        name: "Rà soát 31/08/2026",
-      }),
-    );
     expect(execute).not.toHaveBeenCalled();
 
-    fireEvent.click(
-      await within(navigator).findByRole("button", { name: "Tạo nhu cầu" }),
-    );
+    fireEvent.click(await screen.findByRole("button", { name: "Tạo nhu cầu" }));
 
     await waitFor(() => expect(execute).toHaveBeenCalledTimes(1));
     expect(execute.mock.calls[0]?.[0]).toMatchObject({
@@ -224,75 +234,23 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
     );
   });
 
-  it("opens the exact CURRENT Confirmed Need without executing generation", async () => {
+  it("renders a current-date status without a redundant open command", async () => {
     const api = createReviewNeedGenerationApi("ready");
     const execute = vi.spyOn(api, "execute");
-    const onConfirmedNeedSelected = vi.fn();
     renderWorkbench(
       api,
       await makePreflightCurrentness("CURRENT"),
       vi.fn(),
       true,
-      onConfirmedNeedSelected,
     );
-
-    const openConfirmedNeed = await screen.findByRole("button", {
-      name: "Mở xác nhận",
-    });
-    expect(openConfirmedNeed).toBeEnabled();
-    expect(openConfirmedNeed).toHaveClass("secondary-forward");
-    fireEvent.click(openConfirmedNeed);
-
+    expect(
+      await screen.findByText("Nhu cầu đã cập nhật từ dữ liệu hiện tại."),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Mở xác nhận" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     expect(execute).not.toHaveBeenCalled();
-    expect(onConfirmedNeedSelected).toHaveBeenCalledWith(
-      "current-batch",
-      "2026-08-03",
-      expect.objectContaining({ downstream_currentness: "CURRENT" }),
-    );
-  });
-
-  it("shows a quiet open state only for the same Confirmed Need batch and date", async () => {
-    const api = createReviewNeedGenerationApi("ready");
-    const preflightApi = await makePreflightCurrentness("CURRENT");
-    const props = {
-      authState,
-      api,
-      preflightApi,
-      selectedWeekStart: "2026-08-03",
-      selectedWeekEnd: "2026-08-09",
-      embeddedInConfirmedNeed: true,
-    };
-    const { rerender } = render(
-      <NeedGenerationWorkbench
-        {...props}
-        openConfirmedNeed={{
-          batchId: "current-batch",
-          serviceDate: "2026-08-03",
-        }}
-      />,
-    );
-    const action = await screen.findByRole("region", {
-      name: "Việc cần làm cho ngày đã chọn",
-    });
-    expect(within(action).getByRole("status")).toHaveTextContent("Đang mở");
-    expect(within(action).queryByRole("button")).not.toBeInTheDocument();
-
-    for (const openConfirmedNeed of [
-      { batchId: "another-batch", serviceDate: "2026-08-03" },
-      { batchId: "current-batch", serviceDate: "2026-08-04" },
-      null,
-    ]) {
-      rerender(
-        <NeedGenerationWorkbench
-          {...props}
-          openConfirmedNeed={openConfirmedNeed}
-        />,
-      );
-      expect(
-        within(action).getByRole("button", { name: "Mở xác nhận" }),
-      ).toHaveClass("secondary-forward");
-      expect(within(action).queryByText("Đang mở")).not.toBeInTheDocument();
-    }
   });
 
   it("keeps embedded BLOCKED state backend-driven with no execute action", async () => {
@@ -729,7 +687,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       api,
       await makePreflightCurrentness("OUTDATED"),
       vi.fn(),
-      true,
+      false,
     );
 
     expect(

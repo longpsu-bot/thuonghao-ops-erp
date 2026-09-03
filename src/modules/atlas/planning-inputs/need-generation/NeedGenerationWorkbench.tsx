@@ -324,7 +324,8 @@ export function NeedGenerationWorkbench({
   onConfirmedNeedMaterialized,
   onConfirmedNeedSelected,
   embeddedInConfirmedNeed = false,
-  openConfirmedNeed = null,
+  selectedServiceDate = selectedWeekStart,
+  onServiceDateChange,
 }: {
   authState: AtlasAuthState;
   api?: NeedGenerationApi;
@@ -341,16 +342,23 @@ export function NeedGenerationWorkbench({
     authoritativePreflight: PlanningInputPreflightData,
   ) => void;
   embeddedInConfirmedNeed?: boolean;
-  openConfirmedNeed?: { batchId: string; serviceDate: string } | null;
+  selectedServiceDate?: string;
+  onServiceDateChange?: (date: string) => void;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
   const days = useMemo(
-    () => serviceDates(selectedWeekStart, selectedWeekEnd),
-    [selectedWeekEnd, selectedWeekStart],
+    () =>
+      embeddedInConfirmedNeed
+        ? [selectedServiceDate]
+        : serviceDates(selectedWeekStart, selectedWeekEnd),
+    [
+      embeddedInConfirmedNeed,
+      selectedServiceDate,
+      selectedWeekEnd,
+      selectedWeekStart,
+    ],
   );
-  const [selectedServiceDate, setSelectedServiceDate] =
-    useState(selectedWeekStart);
   const [dailyPreflights, setDailyPreflights] = useState<
     Record<string, PlanningInputPreflightData>
   >({});
@@ -385,7 +393,7 @@ export function NeedGenerationWorkbench({
         nextRunId?: string | null;
       } = {},
     ) => {
-      if (!api || !preflightApi || !authSubject) return false;
+      if (!preflightApi || !authSubject) return false;
       const requestGeneration = ++generation.current;
       setLoading(true);
       setNotice(null);
@@ -400,7 +408,7 @@ export function NeedGenerationWorkbench({
             ),
           ),
         ),
-        api.getWorkbench(
+        api?.getWorkbench(
           authSubject,
           correlationId,
           selectedServiceDate,
@@ -437,7 +445,11 @@ export function NeedGenerationWorkbench({
       }
       setDailyPreflights(parsedDays);
       setPreflight(nextPreflight);
-      setWorkbench(needGenerationWorkbenchFromResult(workbenchResult));
+      setWorkbench(
+        workbenchResult
+          ? needGenerationWorkbenchFromResult(workbenchResult)
+          : null,
+      );
       setRefreshRequired(false);
       setExecutionBlocker(null);
       return true;
@@ -457,18 +469,26 @@ export function NeedGenerationWorkbench({
   );
 
   useEffect(() => {
-    setSelectedServiceDate(selectedWeekStart);
     setOffset(0);
     setSelectedRunId(null);
     setDetailGroup(null);
   }, [selectedWeekEnd, selectedWeekStart]);
 
   useEffect(() => {
-    if (authSubject) void loadAuthority();
+    setOffset(0);
+    setSelectedRunId(null);
+    setDetailGroup(null);
+    setPreflight(null);
+    setBusy(false);
+    if (authSubject)
+      void loadAuthority({ nextOffset: 0, nextRunId: null, nextDetail: null });
     else {
       setPreflight(null);
       setWorkbench(null);
     }
+    return () => {
+      generation.current += 1;
+    };
     // Loading is keyed by the authenticated week/day selection. The callback
     // also carries paging/detail state for explicit operator refreshes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -520,9 +540,11 @@ export function NeedGenerationWorkbench({
       selectedServiceDate,
       preflight.current_need?.need_generation_run_id ?? null,
     );
+    const requestGeneration = generation.current;
     setBusy(true);
     setNotice(null);
     const result = await api.execute(request);
+    if (requestGeneration !== generation.current) return;
     setBusy(false);
     if (
       result.kind === "transport_error" ||
@@ -591,6 +613,7 @@ export function NeedGenerationWorkbench({
     : false;
   const noNeedSource = preflight ? hasNoNeedSource(preflight) : false;
   const canExecute =
+    Boolean(api) &&
     preflight?.readiness_state === "READY" &&
     preflight.downstream_currentness !== "CURRENT" &&
     preflight.downstream_currentness !== "LEGACY_OVERLAP" &&
@@ -604,7 +627,7 @@ export function NeedGenerationWorkbench({
     state: PlanningInputPreflightData | undefined,
   ) => {
     setLoading(selectedServiceDate !== serviceDate);
-    setSelectedServiceDate(serviceDate);
+    onServiceDateChange?.(serviceDate);
     setPreflight(state ?? null);
     setOffset(0);
     setSelectedRunId(null);
@@ -626,52 +649,19 @@ export function NeedGenerationWorkbench({
   if (embeddedInConfirmedNeed) {
     return (
       <section
-        className="need-generation-daily-navigator"
+        className="need-generation-current-date"
         role="region"
-        aria-label="Tổng quan nhu cầu theo ngày"
+        aria-label="Việc cần làm cho ngày đã chọn"
         aria-busy={loading}
       >
-        <header className="need-generation-daily-heading">
-          <strong>Chọn ngày xác nhận</strong>
-          <span>{days.length} ngày phục vụ</span>
-        </header>
-        <nav
-          className="need-generation-daily-selector"
-          aria-label="Chọn ngày xác nhận nhu cầu"
-        >
-          {days.map((serviceDate) => {
-            const state = dailyPreflights[serviceDate];
-            const action = dailyReviewAction(state);
-            const selected = selectedServiceDate === serviceDate;
-            return (
-              <button
-                key={serviceDate}
-                type="button"
-                className={`need-generation-daily-option${selected ? " selected" : ""}`}
-                aria-label={`${action} ${viDate(serviceDate)}`}
-                aria-current={selected ? "date" : undefined}
-                aria-controls="planning-confirmed-review"
-                onClick={() => openDailyReview(serviceDate, state)}
-              >
-                <strong>{viDate(serviceDate)}</strong>
-                <span>
-                  {action} · {state ? dailyOperatorStatus(state) : "Đang tải…"}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+        <strong>Xác nhận nhu cầu · {viDate(selectedServiceDate)}</strong>
+        {loading && <p role="status">Đang tải dữ liệu…</p>}
         {preflight && (
-          <section
-            className="need-generation-daily-selected-action"
-            role="region"
-            aria-label="Việc cần làm cho ngày đã chọn"
-          >
-            <div className="need-generation-daily-selected-copy">
-              <span>Ngày đang xem</span>
-              <strong>{viDate(selectedServiceDate)}</strong>
-              <p>{planningStatusSentence(preflight)}</p>
-            </div>
+          <>
+            {!preflight.current_need && !hasNoNeedSource(preflight) && (
+              <p>Chưa có nhu cầu xác nhận cho ngày này.</p>
+            )}
+            <p>{planningStatusSentence(preflight)}</p>
             {canExecute && (
               <button
                 type="button"
@@ -683,34 +673,15 @@ export function NeedGenerationWorkbench({
                 {executionLabel}
               </button>
             )}
-            {preflight.downstream_currentness === "CURRENT" &&
-              preflight.current_need?.confirmed_need_batch_id &&
-              (openConfirmedNeed?.batchId ===
-                preflight.current_need.confirmed_need_batch_id &&
-              openConfirmedNeed.serviceDate === selectedServiceDate ? (
-                <span className="need-generation-open-state" role="status">
-                  Đang mở
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  className="secondary-forward"
-                  disabled={busy}
-                  onClick={openSelectedConfirmedNeed}
-                >
-                  <Eye aria-hidden="true" size={18} />
-                  Mở xác nhận
-                </button>
-              ))}
-            {notice && (
-              <p
-                className="operator-notice need-generation-daily-selected-notice"
-                role={refreshRequired ? "alert" : "status"}
-              >
-                {notice}
-              </p>
-            )}
-          </section>
+          </>
+        )}
+        {notice && (
+          <p
+            className="operator-notice"
+            role={refreshRequired ? "alert" : "status"}
+          >
+            {notice}
+          </p>
         )}
       </section>
     );
