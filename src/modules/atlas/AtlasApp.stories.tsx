@@ -458,18 +458,18 @@ export const ConfirmedNeedUnknownWriteOutcome: Story = {
 };
 
 export const ConfirmedNeedRefreshRequired: Story = {
-  name: "Chuẩn bị đơn mua · kết quả chưa rõ cần làm mới",
+  name: "Tiếp tục lên đơn · kết quả chưa rõ cần làm mới",
   render: () => (
     <PurchaseReviewJourneyStory phase="allocated" fault="unknown" />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(
-      await canvas.findByRole("button", { name: "Chuẩn bị đơn mua" }),
+      await canvas.findByRole("button", { name: "Tiếp tục lên đơn" }),
     );
     await canvas.findByText("Chưa xác nhận kết quả");
     await expect(
-      canvas.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+      canvas.getByRole("button", { name: "Tiếp tục lên đơn" }),
     ).toBeDisabled();
     await expect(
       canvas.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
@@ -478,14 +478,14 @@ export const ConfirmedNeedRefreshRequired: Story = {
 };
 
 export const ConfirmedNeedHandoffPending: Story = {
-  name: "Chuẩn bị đơn mua · có thể thử lại yêu cầu",
+  name: "Tiếp tục lên đơn · có thể thử lại yêu cầu",
   render: () => (
     <PurchaseReviewJourneyStory phase="allocated" fault="retryable" />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(
-      await canvas.findByRole("button", { name: "Chuẩn bị đơn mua" }),
+      await canvas.findByRole("button", { name: "Tiếp tục lên đơn" }),
     );
     await expect(
       await canvas.findByRole("button", { name: "Thử lại thao tác" }),

@@ -1647,7 +1647,7 @@ describe("Planning to school-catering Procurement propagation", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     fireEvent.click(
-      await screen.findByRole("button", { name: "Chuẩn bị đơn mua" }),
+      await screen.findByRole("button", { name: "Tiếp tục lên đơn" }),
     );
     expect(
       await screen.findByRole("table", { name: "Đơn mua" }),

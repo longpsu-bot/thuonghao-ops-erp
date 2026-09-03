@@ -61,7 +61,7 @@ describe("Atlas master-data shell", () => {
       screen.getByRole("heading", { name: "Phân bổ nhà cung ứng", level: 1 }),
     ).toHaveFocus();
     expect(
-      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+      screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
     ).toBeDisabled();
     fireEvent.click(
       within(

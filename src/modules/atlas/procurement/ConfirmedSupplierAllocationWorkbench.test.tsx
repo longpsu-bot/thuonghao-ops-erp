@@ -91,17 +91,36 @@ it("saves pre-Handoff exact splits with source batch/version and authoritative r
   );
   expect(legacySave).not.toHaveBeenCalled();
 });
-it("blocks preparation when the backend says allocations are incomplete", async () => {
-  setup();
-  expect(
-    await screen.findByRole("button", { name: "Chuẩn bị đơn mua" }),
-  ).toBeDisabled();
-});
+it.each([
+  "UNALLOCATED",
+  "STALE_REBALANCE_AVAILABLE",
+  "NEEDS_REALLOCATION",
+  "BLOCKED",
+] as const)(
+  "blocks continuation for backend allocation state %s",
+  async (state) => {
+    const { row, invoke } = setup(false, state !== "BLOCKED");
+    row.state = state;
+    const proceed = await screen.findByRole("button", {
+      name: "Tiếp tục lên đơn",
+    });
+    expect(proceed).toBeDisabled();
+    fireEvent.click(proceed);
+    expect(invoke).toHaveBeenCalledTimes(1);
+  },
+);
 it("prepares through one backend command then reads official drafts", async () => {
-  const { invoke, legacyDraft } = setup(true);
-  fireEvent.click(
-    await screen.findByRole("button", { name: "Chuẩn bị đơn mua" }),
-  );
+  const { invoke, legacyDraft, legacy } = setup(true);
+  const readOrders = vi.spyOn(legacy, "getPurchaseOrders");
+  const release = vi.spyOn(legacy, "releasePurchaseOrder");
+  const proceed = await screen.findByRole("button", {
+    name: "Tiếp tục lên đơn",
+  });
+  expect(proceed).toBeEnabled();
+  expect(
+    screen.getAllByRole("button", { name: "Tiếp tục lên đơn" }),
+  ).toHaveLength(1);
+  fireEvent.click(proceed);
   await screen.findByRole("heading", { name: "Đơn mua", level: 1 });
   expect(
     screen.getByRole("heading", { name: "Đơn mua", level: 1 }),
@@ -110,15 +129,38 @@ it("prepares through one backend command then reads official drafts", async () =
     "atlas_api.prepare_school_catering_purchase_orders",
   );
   expect(invoke.mock.calls[1]![1]).toMatchObject({
+    contract_version: "PURCHASE-COMMITMENT.v1",
+    reason_code: "PURCHASE_ORDERS_PREPARED",
     expected_version: 7,
     payload: { service_date: "2026-09-02", confirmed_need_batch_id: "batch" },
   });
+  expect(readOrders).toHaveBeenCalled();
+  expect(readOrders.mock.calls[0]![0].payload).toMatchObject({
+    date_start: "2026-09-02",
+    date_end: "2026-09-02",
+  });
+  expect(screen.getByLabelText("Ngày phục vụ")).toHaveValue("2026-09-02");
+  expect(screen.getByRole("table", { name: "Đơn mua" })).toHaveTextContent(
+    "Bản nháp",
+  );
+  expect(release).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Xem đơn" }));
+  const commit = screen.getByRole("button", { name: "Phát hành cho NCC" });
+  expect(commit).toBeEnabled();
+  expect(release).not.toHaveBeenCalled();
+  fireEvent.click(commit);
+  await waitFor(() => expect(release).toHaveBeenCalledOnce());
+  await waitFor(() =>
+    expect(screen.getByRole("table", { name: "Đơn mua" })).toHaveTextContent(
+      "Đã phát hành",
+    ),
+  );
   expect(legacyDraft).not.toHaveBeenCalled();
 });
 it("retries exactly the retained preparation request while its scope is current", async () => {
   const { invoke } = setup(true);
   const prepare = await screen.findByRole("button", {
-    name: "Chuẩn bị đơn mua",
+    name: "Tiếp tục lên đơn",
   });
   invoke.mockResolvedValueOnce({
     kind: "backend_error",
@@ -145,7 +187,7 @@ it("retries exactly the retained preparation request while its scope is current"
 it("discards preparation retry when the working date changes", async () => {
   const { invoke } = setup(true);
   const prepare = await screen.findByRole("button", {
-    name: "Chuẩn bị đơn mua",
+    name: "Tiếp tục lên đơn",
   });
   invoke.mockResolvedValueOnce({
     kind: "backend_error",
@@ -180,13 +222,13 @@ it("locks preparation after successful command but failed official readback", as
     diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Mất kết nối" },
   });
   fireEvent.click(
-    await screen.findByRole("button", { name: "Chuẩn bị đơn mua" }),
+    await screen.findByRole("button", { name: "Tiếp tục lên đơn" }),
   );
   expect(
     await screen.findByText(/Chưa tải được đơn mua sau khi xử lý/),
   ).toBeVisible();
   expect(
-    screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+    screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
   ).toBeDisabled();
 });
 it("discards old preparation readback after a new date's allocation read has completed", async () => {
@@ -201,9 +243,15 @@ it("discards old preparation readback after a new date's allocation read has com
       }),
   );
   fireEvent.click(
-    await screen.findByRole("button", { name: "Chuẩn bị đơn mua" }),
+    await screen.findByRole("button", { name: "Tiếp tục lên đơn" }),
   );
   await waitFor(() => expect(read).toHaveBeenCalledOnce());
+  expect(
+    screen.getByRole("heading", { name: "Phân bổ nhà cung ứng", level: 1 }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("heading", { name: "Đơn mua", level: 1 }),
+  ).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Ngày phục vụ"), {
     target: { value: "2026-09-03" },
   });
@@ -214,7 +262,7 @@ it("discards old preparation readback after a new date's allocation read has com
   );
   await waitFor(() =>
     expect(
-      screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+      screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
     ).toBeEnabled(),
   );
   await act(async () =>
@@ -228,7 +276,7 @@ it("discards old preparation readback after a new date's allocation read has com
     screen.queryByText(/Chưa tải được đơn mua sau khi xử lý/),
   ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Chuẩn bị đơn mua" }),
+    screen.getByRole("button", { name: "Tiếp tục lên đơn" }),
   ).toBeEnabled();
 });
 it("keeps exact retry as the only write action after a retryable allocation Save", async () => {

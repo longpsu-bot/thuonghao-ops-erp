@@ -159,7 +159,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       locale: "vi",
       firstDayOfWeek: 1,
       valueFormat: expect.stringMatching(
-        /^DD\/MM\/YYYY \[– \d{2}\/\d{2}\/\d{4}\]$/,
+        /^DD\/MM\/YYYY \[– \d{2}\/\d{2}\/\d{4}]$/,
       ),
     });
   });

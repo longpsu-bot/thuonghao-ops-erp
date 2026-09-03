@@ -788,7 +788,7 @@ export function SchoolCateringProcurementWorkbench({
           {purchaseReviewApi && (
             <section
               className="procurement-preparation"
-              aria-label="Chuẩn bị đơn mua"
+              aria-label="Tiếp tục lên đơn"
             >
               <button
                 type="button"
@@ -803,8 +803,12 @@ export function SchoolCateringProcurementWorkbench({
                 }
                 onClick={() => void prepareOrders()}
               >
-                Chuẩn bị đơn mua
+                Tiếp tục lên đơn
               </button>
+              <small>
+                Atlas sẽ kiểm tra nhu cầu và phân bổ đã xác nhận, sau đó chuẩn
+                bị đơn mua để bạn rà soát trước khi phát hành.
+              </small>
               {preparation?.blockers.map((message) => (
                 <small key={message}>{message}</small>
               ))}
