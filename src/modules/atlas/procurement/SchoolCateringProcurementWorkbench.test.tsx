@@ -279,6 +279,98 @@ function createMultiSchoolWorkbenchFixture() {
 }
 
 describe("school-catering Procurement allocation workbench", () => {
+  it("keeps bulk confirmation secondary when a family commitment is active", async () => {
+    const api = renderWorkbench();
+    const confirm = vi.spyOn(api, "confirmRecommendations");
+    const save = vi.spyOn(api, "saveAllocation");
+    fireEvent.click(
+      await screen.findByRole("checkbox", { name: "Chọn đề xuất Gạo thơm" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Phân bổ NCC" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    expect(
+      screen.getByRole("button", { name: "Xác nhận phân bổ đề xuất" }),
+    ).toHaveClass("secondary");
+    expect(
+      screen
+        .getAllByRole("button")
+        .filter((button) => button.classList.contains("primary")),
+    ).toEqual([screen.getByRole("button", { name: "Lưu phân bổ" })]);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("focuses allocation detail and returns to the selected row on close", async () => {
+    renderWorkbench();
+    const open = await screen.findByRole("button", { name: "Phân bổ NCC" });
+    fireEvent.click(open);
+    expect(open).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("heading", { name: "Phân bổ — Gạo thơm" }),
+    ).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    expect(open).toHaveFocus();
+    expect(open).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen
+        .getByRole("table", { name: "Allocation Family" })
+        .closest(".procurement-allocation-layout"),
+    ).not.toHaveClass("has-detail");
+  });
+
+  it("exposes exact remainder attention, settled and invalid states without saving", async () => {
+    const api = renderWorkbench(
+      createReviewSchoolCateringProcurementApi("rebalance"),
+    );
+    const save = vi.spyOn(api, "saveAllocation");
+    fireEvent.click(await screen.findByRole("button", { name: "Phân bổ NCC" }));
+    const balance = screen.getByRole("status", { name: "Cân đối phân bổ" });
+    expect(balance).toHaveTextContent("Còn lại: 20 kg");
+    expect(balance.querySelector(".procurement-remainder")).toHaveClass(
+      "attention",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng đề xuất" }));
+    expect(balance).toHaveTextContent("Còn lại: 0 kg");
+    expect(balance.querySelector(".procurement-remainder")).toHaveClass(
+      "settled",
+    );
+    fireEvent.change(screen.getByLabelText("Phân bổ NCC An Phú"), {
+      target: { value: "bad" },
+    });
+    expect(balance).toHaveTextContent("Còn lại: Không hợp lệ");
+    expect(balance.querySelector(".procurement-remainder")).toHaveClass(
+      "invalid",
+    );
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it("keeps PO technical context collapsed and restores row focus on close", async () => {
+    renderWorkbench(createReviewSchoolCateringProcurementApi("released_po"));
+    fireEvent.click(screen.getByRole("button", { name: "Chế độ Đơn mua" }));
+    const open = await screen.findByRole("button", { name: "Xem đơn" });
+    fireEvent.click(open);
+    expect(open).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("heading", { name: "NCC An Phú" })).toHaveFocus();
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    const evidence = within(detail)
+      .getByText("Nguồn & lịch sử")
+      .closest("details")!;
+    expect(evidence).not.toHaveAttribute("open");
+    expect(within(evidence).getByText("Phiên bản đơn 2")).not.toBeVisible();
+    expect(
+      within(detail).getByText("PO-20260902-2500000000004000"),
+    ).toBeVisible();
+    expect(
+      within(detail).getByText("Đơn đã được phát hành cho nhà cung cấp."),
+    ).toHaveClass("procurement-inline-guidance");
+    fireEvent.click(within(detail).getByRole("button", { name: "Đóng" }));
+    expect(open).toHaveFocus();
+    expect(open).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("starts with a full-width allocation master and no detail composition", async () => {
     renderWorkbench();
 
@@ -500,9 +592,15 @@ describe("school-catering Procurement allocation workbench", () => {
     fireEvent.change(screen.getByLabelText("Phân bổ NCC Bình Minh"), {
       target: { value: "30.000000" },
     });
-    expect(screen.getByText("Nhu cầu: 100 kg")).toBeVisible();
-    expect(screen.getByText("Đã phân bổ: 100 kg")).toBeVisible();
-    expect(screen.getByText("Còn lại: 0 kg")).toBeVisible();
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Nhu cầu: 100 kg");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Đã phân bổ: 100 kg");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Còn lại: 0 kg");
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
 
     await waitFor(() => expect(save).toHaveBeenCalledOnce());
@@ -796,7 +894,9 @@ describe("school-catering Procurement allocation workbench", () => {
       screen.getByText(/NCC Bình Minh.*không còn phù hợp/),
     ).toHaveTextContent("40 kg");
     expect(screen.queryByDisplayValue("100.000000")).not.toBeInTheDocument();
-    expect(screen.getByText("Còn lại: 40 kg")).toBeVisible();
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Còn lại: 40 kg");
     fireEvent.click(
       screen.getByRole("button", { name: "+ Thêm nhà cung ứng" }),
     );
@@ -1542,9 +1642,15 @@ describe("Planning to school-catering Procurement propagation", () => {
     expect(screen.getByLabelText("Phân bổ NCC Bình Minh")).toHaveValue(
       "48.000000",
     );
-    expect(screen.getByText("Nhu cầu: 120 kg")).toBeVisible();
-    expect(screen.getByText("Đã phân bổ: 120 kg")).toBeVisible();
-    expect(screen.getByText("Còn lại: 0 kg")).toBeVisible();
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Nhu cầu: 120 kg");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Đã phân bổ: 120 kg");
+    expect(
+      screen.getByRole("status", { name: "Cân đối phân bổ" }),
+    ).toHaveTextContent("Còn lại: 0 kg");
     fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
     await screen.findByText("Đã lưu phân bổ nhà cung ứng.");
     const familyTable = screen.getByRole("table", {

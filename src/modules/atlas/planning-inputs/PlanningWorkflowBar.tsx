@@ -35,13 +35,28 @@ export function PlanningWorkflowBar<T extends string>({
             aria-label={item.label}
             aria-describedby={statusId}
             aria-selected={active}
+            title={`${item.label} · ${item.status}`}
             className={`planning-workflow-tab ${item.tone}${active ? " active" : ""}`}
             onClick={() => onChange(item.id)}
           >
             <span className="planning-workflow-copy">
               <strong>{item.label}</strong>
-              <span id={statusId}>{item.status}</span>
+              <span
+                id={statusId}
+                className={
+                  item.tone === "ok" || item.tone === "neutral"
+                    ? "planning-workflow-status-quiet"
+                    : undefined
+                }
+              >
+                {item.status}
+              </span>
             </span>
+            {(item.tone === "ok" || item.tone === "neutral") && (
+              <span className="planning-workflow-marker" aria-hidden="true">
+                {item.tone === "ok" ? "✓" : "—"}
+              </span>
+            )}
           </button>
         );
       })}

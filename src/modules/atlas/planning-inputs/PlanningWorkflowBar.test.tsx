@@ -36,6 +36,23 @@ const items: PlanningWorkflowItem<
 ];
 
 describe("PlanningWorkflowBar", () => {
+  it("quiets healthy state copy but keeps status accessible and warnings explicit", () => {
+    render(
+      <PlanningWorkflowBar items={items} activeId="menu" onChange={vi.fn()} />,
+    );
+    const healthy = screen.getByRole("tab", { name: "Sĩ số" });
+    expect(healthy).toHaveAccessibleDescription("Sẵn sàng");
+    expect(healthy).toHaveAttribute("title", "Sĩ số · Sẵn sàng");
+    expect(within(healthy).getByText("Sẵn sàng")).toHaveClass(
+      "planning-workflow-status-quiet",
+    );
+    expect(
+      within(screen.getByRole("tab", { name: "Thực đơn" })).getByText(
+        "Cần lưu",
+      ),
+    ).not.toHaveClass("planning-workflow-status-quiet");
+  });
+
   it("renders one calm four-mode task navigation without wizard numbers", () => {
     render(
       <MantineProvider theme={atlasTheme} env="test">

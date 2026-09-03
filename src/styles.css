@@ -3065,7 +3065,7 @@ tbody tr.selected-row {
 }
 .planning-workflow-bar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(112px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(140px, 1.3fr);
   gap: 3px;
   max-width: 100%;
   overflow: hidden;
@@ -3105,9 +3105,6 @@ tbody tr.selected-row {
   outline: 2px solid var(--atlas-primary);
   outline-offset: -2px;
 }
-.planning-workflow-tab.active:focus-visible {
-  outline: 0;
-}
 .planning-workflow-copy {
   display: grid;
   min-width: 0;
@@ -3137,6 +3134,20 @@ tbody tr.selected-row {
 }
 .planning-workflow-tab.danger .planning-workflow-copy span {
   color: var(--atlas-danger);
+}
+.planning-workflow-copy .planning-workflow-status-quiet {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.planning-workflow-marker {
+  flex: 0 0 auto;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
 }
 .planning-school-scope-options {
   display: grid;
@@ -4530,6 +4541,7 @@ tbody tr.selected-row {
 }
 
 .procurement-primary-action:disabled,
+.procurement-bulk-action:disabled,
 .procurement-command-result button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
@@ -4569,6 +4581,19 @@ tbody tr.selected-row {
 
 .procurement-family-table tr.selected td {
   background: #f5f8fa;
+}
+
+.procurement-family-table tr.selected td:first-child,
+.procurement-order-table tr.selected td:first-child {
+  box-shadow: inset 3px 0 var(--atlas-primary);
+}
+
+.procurement-workbench button:focus-visible,
+.procurement-workbench summary:focus-visible,
+.procurement-split-panel h3:focus,
+.procurement-order-detail h3:focus {
+  outline: 2px solid var(--atlas-primary);
+  outline-offset: 2px;
 }
 
 .procurement-family-table td strong,
@@ -4686,6 +4711,11 @@ tbody tr.selected-row {
   color: #245a8d;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.procurement-order-detail .procurement-inline-guidance {
+  background: var(--atlas-surface-soft);
+  color: var(--atlas-text-muted);
 }
 
 .procurement-inline-danger {
@@ -4815,7 +4845,22 @@ tbody tr.selected-row {
 
 .procurement-running-total strong {
   margin-top: 2px;
-  font-size: 14px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.procurement-remainder.settled strong {
+  color: var(--atlas-success);
+}
+
+.procurement-remainder.attention strong,
+.procurement-remainder.attention small:last-child {
+  color: var(--atlas-warning-text);
+}
+
+.procurement-remainder.invalid strong,
+.procurement-remainder.invalid small:last-child {
+  color: var(--atlas-danger);
 }
 
 .procurement-detail-footer {
@@ -5097,6 +5142,7 @@ tbody tr.selected-row {
 .procurement-order-output-actions .secondary,
 .procurement-detail-footer .secondary,
 .procurement-order-view-action,
+.procurement-bulk-action,
 .procurement-split-panel .secondary,
 .procurement-allocation-action {
   min-height: 36px;
@@ -5118,6 +5164,130 @@ tbody tr.selected-row {
 .procurement-order-detail-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+/* Compact navigation projections only while an attached detail shares width.
+   Closed and stacked masters retain their full scanning columns/minimums. */
+.procurement-family-table .procurement-master-compact-copy,
+.procurement-order-table .procurement-master-compact-copy {
+  display: none;
+}
+
+@media (min-width: 75.01em) {
+  .procurement-allocation-layout.has-detail .procurement-family-table,
+  .procurement-order-layout.has-detail .procurement-order-table {
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 13px;
+  }
+
+  .procurement-allocation-layout.has-detail .procurement-family-table th,
+  .procurement-order-layout.has-detail .procurement-order-table th {
+    white-space: normal;
+  }
+
+  .procurement-allocation-layout.has-detail .procurement-family-table td,
+  .procurement-order-layout.has-detail .procurement-order-table td {
+    overflow-wrap: anywhere;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    :is(th, td):nth-child(6),
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    :is(th, td):nth-child(7),
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    :is(th, td):nth-child(8),
+  .procurement-allocation-layout.has-detail .procurement-master-support,
+  .procurement-order-layout.has-detail
+    .procurement-order-table
+    :is(th, td):nth-child(3),
+  .procurement-order-layout.has-detail
+    .procurement-order-table
+    :is(th, td):nth-child(4),
+  .procurement-order-layout.has-detail
+    .procurement-order-table
+    :is(th, td):nth-child(7) {
+    display: none;
+  }
+
+  .procurement-allocation-layout.has-detail .procurement-master-compact-copy,
+  .procurement-order-layout.has-detail .procurement-master-compact-copy {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    white-space: normal;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    th:first-child {
+    width: 28px;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    th:nth-child(2),
+  .procurement-order-layout.has-detail
+    .procurement-order-table
+    th:nth-child(2) {
+    width: 86px;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    th:nth-child(3) {
+    width: 26%;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    th:nth-child(5) {
+    width: 66px;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    th:last-child {
+    width: 112px;
+  }
+
+  .procurement-allocation-layout.has-detail
+    .procurement-family-table
+    th:nth-child(9),
+  .procurement-order-layout.has-detail
+    .procurement-order-table
+    th:nth-child(5) {
+    width: 94px;
+  }
+
+  .procurement-order-layout.has-detail
+    .procurement-order-table
+    th:nth-child(6) {
+    width: 29%;
+  }
+
+  .procurement-allocation-layout.has-detail .procurement-state,
+  .procurement-order-layout.has-detail .procurement-state {
+    white-space: normal;
+  }
+
+  .procurement-order-layout.has-detail .procurement-order-table th:last-child {
+    width: 90px;
+  }
+
+  .procurement-master-warning {
+    color: var(--atlas-warning-text);
+  }
+
+  .procurement-allocation-layout.has-detail .procurement-allocation-action {
+    max-width: 100%;
+    padding-inline: 7px;
+    font-size: 12px;
+    white-space: normal;
+  }
 }
 
 @media (max-width: 75em) {

@@ -223,6 +223,7 @@ export function SchoolCateringProcurementWorkbench({
   ) => void | Promise<void>;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
+  const allocationTrigger = useRef<HTMLButtonElement | null>(null);
   const [dateStart, setDateStart] = useState(initialDateStart);
   const [dateEnd, setDateEnd] = useState(initialDateEnd);
   const [stage, setStage] = useState<ProcurementStage>(initialStage);
@@ -667,7 +668,7 @@ export function SchoolCateringProcurementWorkbench({
                   <span>{visibleRows.length} nhóm nhu cầu</span>
                   <button
                     type="button"
-                    className="primary procurement-primary-action"
+                    className="secondary procurement-bulk-action"
                     disabled={
                       busy ||
                       mutationLocked ||
@@ -682,9 +683,10 @@ export function SchoolCateringProcurementWorkbench({
                   rows={visibleRows}
                   selectedFamilyKey={selectedFamilyKey}
                   selectedRecommendationKeys={selectedRecommendationKeys}
-                  onSelect={(row) =>
-                    setSelectedFamilyKey(row.family.source_fingerprint)
-                  }
+                  onSelect={(row, trigger) => {
+                    allocationTrigger.current = trigger;
+                    setSelectedFamilyKey(row.family.source_fingerprint);
+                  }}
                   onToggleRecommendation={(row, selected) =>
                     setSelectedRecommendationKeys((current) => {
                       const next = new Set(current);
@@ -703,7 +705,10 @@ export function SchoolCateringProcurementWorkbench({
                   onSave={(splits) =>
                     void saveAllocation(selectedFamily, splits)
                   }
-                  onClose={() => setSelectedFamilyKey(null)}
+                  onClose={() => {
+                    setSelectedFamilyKey(null);
+                    allocationTrigger.current?.focus();
+                  }}
                 />
               )}
             </div>

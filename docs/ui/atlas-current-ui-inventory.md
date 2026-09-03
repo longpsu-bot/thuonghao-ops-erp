@@ -195,6 +195,16 @@ the hidden navigation target. With no selected PO, the range-level action is
 clean DRAFT exposes only release, and a selected released PO exposes no lifecycle
 mutation. `Đóng` returns to range context.
 
+ATLAS-OPS-UI-FREEZE-CLOSEOUT-01 compacts only the Procurement masters sharing
+desktop width with an open detail. Closed and stacked tables retain their
+complete scanning projection. Bulk recommendation confirmation is secondary;
+the family editor emphasizes exact demand, assigned quantity and remainder.
+Row actions expose selection, focus the attached heading and restore focus on
+Close. PO version/numbering support stays under `Nguồn & lịch sử`, while the
+official released number and actionable warnings stay visible. Planning keeps
+four tasks with quieter healthy statuses and accessible state descriptions.
+See the [audit and conditional removal decision](atlas-ops-ui-freeze-closeout-01.md).
+
 For an immutable `RELEASED_TO_SUPPLIER` PO, `Xuất XLSX` is the primary output
 and `Xuất PDF` is secondary. Both are generated in a focused Procurement export
 module solely from the released PO read-model snapshot, including its official
