@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   PurchaseOrdersData,
   SchoolCateringPurchaseOrder,
@@ -24,6 +24,15 @@ function locationNames(order: SchoolCateringPurchaseOrder) {
   ];
 }
 
+function orderWarning(order: SchoolCateringPurchaseOrder) {
+  return order.stale
+    ? "Cần cập nhật"
+    : procurementOperatorMessages(
+        order.warnings,
+        "Có cảnh báo cần kiểm tra.",
+      ).join(", ");
+}
+
 export function PurchaseOrderStage({
   data,
   busy,
@@ -46,6 +55,8 @@ export function PurchaseOrderStage({
   onExportPdf: (order: SchoolCateringPurchaseOrder) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const heading = useRef<HTMLHeadingElement | null>(null);
+  const detailTrigger = useRef<HTMLButtonElement | null>(null);
   const visibleOrders = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("vi-VN");
     if (!query) return data?.purchase_orders ?? [];
@@ -76,10 +87,20 @@ export function PurchaseOrderStage({
   const selected = data?.purchase_orders.find(
     (order) => order.purchase_order_id === selectedId,
   );
+  useEffect(() => {
+    heading.current?.focus();
+  }, [selected?.purchase_order_id]);
+  const releasedReason =
+    selected?.status === "RELEASED_TO_SUPPLIER" &&
+    [...selected.blockers, ...selected.disabled_reasons].includes(
+      "PO_ALREADY_RELEASED",
+    );
   const selectedMessages = selected
     ? procurementOperatorMessages(
         [...selected.blockers, ...selected.disabled_reasons].filter(
-          (reason) => !(selected.stale && reason === "PO_DRAFT_STALE"),
+          (reason) =>
+            !(selected.stale && reason === "PO_DRAFT_STALE") &&
+            !(releasedReason && reason === "PO_ALREADY_RELEASED"),
         ),
         purchaseOrderFallback,
       )
@@ -157,21 +178,23 @@ export function PurchaseOrderStage({
                           ? "Đã phát hành"
                           : "Bản nháp"}
                       </span>
+                      {selected && orderWarning(order) && (
+                        <small className="procurement-master-compact-copy procurement-master-warning">
+                          {orderWarning(order)}
+                        </small>
+                      )}
                     </td>
                     <td>{order.document_number ?? "—"}</td>
-                    <td>
-                      {order.stale
-                        ? "Cần cập nhật"
-                        : procurementOperatorMessages(
-                            order.warnings,
-                            "Có cảnh báo cần kiểm tra.",
-                          ).join(", ") || "—"}
-                    </td>
+                    <td>{orderWarning(order) || "—"}</td>
                     <td>
                       <button
                         type="button"
                         className="secondary procurement-order-view-action"
-                        onClick={() => setSelectedId(order.purchase_order_id)}
+                        aria-expanded={selectedId === order.purchase_order_id}
+                        onClick={(event) => {
+                          detailTrigger.current = event.currentTarget;
+                          setSelectedId(order.purchase_order_id);
+                        }}
                       >
                         Xem đơn
                       </button>
@@ -191,7 +214,9 @@ export function PurchaseOrderStage({
               <header>
                 <div>
                   <span>Đơn mua đã chọn</span>
-                  <h3>{selected.supplier.supplier_name}</h3>
+                  <h3 ref={heading} tabIndex={-1}>
+                    {selected.supplier.supplier_name}
+                  </h3>
                   <p>Ngày giao {dateLabel(selected.service_date)}</p>
                 </div>
                 {selected.document_number && (
@@ -210,6 +235,11 @@ export function PurchaseOrderStage({
                   {message}
                 </p>
               ))}
+              {releasedReason && (
+                <p className="procurement-inline-guidance">
+                  Đơn đã được phát hành cho nhà cung cấp.
+                </p>
+              )}
 
               <table
                 aria-label={`Dòng đơn mua ${selected.supplier.supplier_name}`}
@@ -233,16 +263,6 @@ export function PurchaseOrderStage({
                   ))}
                 </tbody>
               </table>
-
-              <section className="procurement-release-context">
-                <strong>Bối cảnh phát hành</strong>
-                <span>Phiên bản đơn {selected.version}</span>
-                <span>
-                  {selected.status === "RELEASED_TO_SUPPLIER"
-                    ? "Đơn đã khóa để giữ nguyên chứng từ vận hành."
-                    : "Máy chủ sẽ cấp số đơn chính thức khi phát hành thành công."}
-                </span>
-              </section>
 
               {selected.status === "DRAFT" && (
                 <div className="procurement-order-detail-actions">
@@ -300,11 +320,28 @@ export function PurchaseOrderStage({
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() => setSelectedId(null)}
+                  onClick={() => {
+                    setSelectedId(null);
+                    detailTrigger.current?.focus();
+                  }}
                 >
                   Đóng
                 </button>
               </footer>
+              <details
+                className="procurement-trace"
+                key={selected.purchase_order_id}
+              >
+                <summary>Nguồn & lịch sử</summary>
+                <div className="procurement-release-context">
+                  <span>Phiên bản đơn {selected.version}</span>
+                  <span>
+                    {selected.status === "RELEASED_TO_SUPPLIER"
+                      ? "Đơn đã khóa để giữ nguyên chứng từ vận hành."
+                      : "Máy chủ sẽ cấp số đơn chính thức khi phát hành thành công."}
+                  </span>
+                </div>
+              </details>
             </aside>
           )}
         </div>

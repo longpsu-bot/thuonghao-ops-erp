@@ -3,7 +3,11 @@ import { MantineProvider } from "@mantine/core";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { atlasTheme } from "../../theme";
-import { OperationalState, WorkbenchHeader } from "./WorkbenchComponents";
+import {
+  OperationalState,
+  RefreshButton,
+  WorkbenchHeader,
+} from "./WorkbenchComponents";
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -28,6 +32,22 @@ function renderWithTheme(children: React.ReactNode) {
 }
 
 describe("Mantine-backed Atlas presentation", () => {
+  it("labels icon-only routine refresh and prevents activation while disabled", () => {
+    const refresh = vi.fn();
+    const { rerender } = render(<RefreshButton onClick={refresh} />);
+    const button = screen.getByRole("button", { name: "Làm mới dữ liệu" });
+    expect(button).toHaveAttribute("title", "Làm mới dữ liệu");
+    expect(button).toHaveAttribute("type", "button");
+    expect(button).toHaveTextContent(/^$/);
+    expect(button.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    fireEvent.click(button);
+    expect(refresh).toHaveBeenCalledOnce();
+    rerender(<RefreshButton onClick={refresh} disabled />);
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
   it("renders the shared Atlas theme with page and nested headings", () => {
     renderWithTheme(
       <>
@@ -103,11 +123,9 @@ describe("Mantine-backed Atlas presentation", () => {
       screen.queryByRole("button", { name: /thử lại|gửi lại/i }),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Tải lại dữ liệu",
-      }),
-    );
+    const recovery = screen.getByRole("button", { name: "Tải lại dữ liệu" });
+    expect(recovery).toHaveTextContent("Tải lại dữ liệu");
+    fireEvent.click(recovery);
     expect(refresh).toHaveBeenCalledOnce();
   });
 });

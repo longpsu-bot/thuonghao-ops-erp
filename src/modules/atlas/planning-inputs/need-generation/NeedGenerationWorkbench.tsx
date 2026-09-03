@@ -324,6 +324,7 @@ export function NeedGenerationWorkbench({
   onConfirmedNeedMaterialized,
   onConfirmedNeedSelected,
   embeddedInConfirmedNeed = false,
+  openConfirmedNeed = null,
 }: {
   authState: AtlasAuthState;
   api?: NeedGenerationApi;
@@ -340,6 +341,7 @@ export function NeedGenerationWorkbench({
     authoritativePreflight: PlanningInputPreflightData,
   ) => void;
   embeddedInConfirmedNeed?: boolean;
+  openConfirmedNeed?: { batchId: string; serviceDate: string } | null;
   mode?: "connected" | "review";
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -682,17 +684,24 @@ export function NeedGenerationWorkbench({
               </button>
             )}
             {preflight.downstream_currentness === "CURRENT" &&
-              preflight.current_need?.confirmed_need_batch_id && (
+              preflight.current_need?.confirmed_need_batch_id &&
+              (openConfirmedNeed?.batchId ===
+                preflight.current_need.confirmed_need_batch_id &&
+              openConfirmedNeed.serviceDate === selectedServiceDate ? (
+                <span className="need-generation-open-state" role="status">
+                  Đang mở
+                </span>
+              ) : (
                 <button
                   type="button"
-                  className="primary-forward"
+                  className="secondary-forward"
                   disabled={busy}
                   onClick={openSelectedConfirmedNeed}
                 >
                   <Eye aria-hidden="true" size={18} />
                   Mở xác nhận
                 </button>
-              )}
+              ))}
             {notice && (
               <p
                 className="operator-notice need-generation-daily-selected-notice"

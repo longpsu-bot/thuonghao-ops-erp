@@ -63,7 +63,7 @@ export function AllocationFamilyTable({
   rows: AllocationFamilyRow[];
   selectedFamilyKey: string | null;
   selectedRecommendationKeys: Set<string>;
-  onSelect: (row: AllocationFamilyRow) => void;
+  onSelect: (row: AllocationFamilyRow, trigger: HTMLButtonElement) => void;
   onToggleRecommendation: (row: AllocationFamilyRow, selected: boolean) => void;
 }) {
   return (
@@ -116,7 +116,9 @@ export function AllocationFamilyTable({
                 </td>
                 <td>
                   <strong>{row.ingredient_name}</strong>
-                  <small>{row.contribution_count} nguồn bàn giao</small>
+                  <small className="procurement-master-support">
+                    {row.contribution_count} nguồn bàn giao
+                  </small>
                 </td>
                 <td>
                   {quantity(row.family_quantity)} {row.unit_code}
@@ -139,7 +141,8 @@ export function AllocationFamilyTable({
                   <button
                     type="button"
                     className="secondary procurement-allocation-action"
-                    onClick={() => onSelect(row)}
+                    aria-expanded={selectedFamilyKey === key}
+                    onClick={(event) => onSelect(row, event.currentTarget)}
                   >
                     {row.state === "BALANCED" ? "Xem phân bổ" : "Phân bổ NCC"}
                   </button>

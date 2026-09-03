@@ -84,6 +84,32 @@ function followingWeekFrom(weekInput: HTMLInputElement) {
 }
 
 describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
+  it.each([
+    ["Thực đơn", "Xem thay đổi thực đơn"],
+    ["Sĩ số", "Xem thay đổi sĩ số"],
+  ])(
+    "moves focus into %s review and back to its rail action",
+    async (task, label) => {
+      renderWorkbench();
+      fireEvent.click(await screen.findByRole("tab", { name: task }));
+      const action = await screen.findByRole("button", {
+        name: "Xem thay đổi",
+      });
+      await waitFor(() => expect(action).toBeEnabled());
+      action.focus();
+      fireEvent.click(action);
+      const review = await screen.findByRole("region", { name: label });
+      expect(review).toHaveFocus();
+      fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
+      expect(
+        screen.getByRole("button", { name: "Xem thay đổi" }),
+      ).toHaveFocus();
+      expect(
+        screen.queryByRole("region", { name: label }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
   it("configures the real calendar surface for Vietnamese Monday-first use", async () => {
     let received: AtlasDatePickerInputProps | null = null;
     function CalendarProbe(props: AtlasDatePickerInputProps) {
@@ -168,8 +194,11 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(
       within(rail).getByRole("button", { name: "Phạm vi trường" }),
     ).toBeVisible();
-    const refresh = within(rail).getByRole("button", { name: "Làm mới" });
+    const refresh = within(rail).getByRole("button", {
+      name: "Làm mới dữ liệu",
+    });
     expect(refresh).toBeVisible();
+    expect(refresh).toHaveAttribute("title", "Làm mới dữ liệu");
     expect(refresh).not.toHaveTextContent("Làm mới");
     expect(
       within(rail).getByLabelText("Hành động bước hiện tại"),
@@ -801,7 +830,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       (await screen.findAllByRole("spinbutton", { name: /Suất học sinh/ }))[0],
     ).toHaveValue(500);
 
-    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
 
     await waitFor(() =>
       expect(
@@ -877,7 +906,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     )[0]!;
     fireEvent.change(studentInput, { target: { value: "487" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
 
     expect(confirm).toHaveBeenCalledWith(
       "Có thay đổi chưa lưu. Làm mới sẽ bỏ các thay đổi này. Tiếp tục?",

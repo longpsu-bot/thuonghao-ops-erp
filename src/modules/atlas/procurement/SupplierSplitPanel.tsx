@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   AllocationFamilyRow,
   SupplierSplitInput,
@@ -73,6 +73,10 @@ export function SupplierSplitPanel({
   onSave: (splits: SupplierSplitInput[]) => void;
   onClose: () => void;
 }) {
+  const heading = useRef<HTMLHeadingElement | null>(null);
+  useEffect(() => {
+    heading.current?.focus();
+  }, [row.family.source_fingerprint]);
   const [traceOpen, setTraceOpen] = useState(false);
   const [participantIds, setParticipantIds] = useState<string[]>(() =>
     initialParticipantIds(row),
@@ -143,25 +147,51 @@ export function SupplierSplitPanel({
     >
       <header>
         <div>
-          <h3>Phân bổ — {row.ingredient_name}</h3>
+          <h3 ref={heading} tabIndex={-1}>
+            Phân bổ — {row.ingredient_name}
+          </h3>
           <p>
             {row.school_name ?? row.location_name} · {row.location_name}
           </p>
         </div>
       </header>
 
-      <div className="procurement-running-total" aria-live="polite">
+      <div
+        className="procurement-running-total"
+        role="status"
+        aria-label="Cân đối phân bổ"
+        aria-live="polite"
+      >
         <span>
-          Nhu cầu: {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
+          <small>Nhu cầu: </small>
+          <strong>
+            {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
+          </strong>
         </span>
         <span>
-          Đã phân bổ: {total === null ? "Không hợp lệ" : displayScaled(total)}{" "}
-          {row.unit_code}
+          <small>Đã phân bổ: </small>
+          <strong>
+            {total === null
+              ? "Không hợp lệ"
+              : `${displayScaled(total)} ${row.unit_code}`}
+          </strong>
         </span>
-        <span>
-          Còn lại:{" "}
-          {difference === null ? "Không hợp lệ" : displayScaled(difference)}{" "}
-          {row.unit_code}
+        <span
+          className={`procurement-remainder ${difference === null ? "invalid" : difference === 0n ? "settled" : "attention"}`}
+        >
+          <small>Còn lại: </small>
+          <strong>
+            {difference === null
+              ? "Không hợp lệ"
+              : `${displayScaled(difference)} ${row.unit_code}`}
+          </strong>
+          <small>
+            {difference === null
+              ? "Kiểm tra số lượng"
+              : difference === 0n
+                ? "Đã đủ"
+                : "Chưa cân bằng"}
+          </small>
         </span>
       </div>
 
