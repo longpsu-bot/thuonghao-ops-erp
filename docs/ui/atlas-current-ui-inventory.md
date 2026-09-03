@@ -55,8 +55,8 @@ Thực đơn
 → Xác nhận nhu cầu
 ```
 
-PLANNING-UX-CLOSEOUT-01 completes the pre-freeze operational pass. Menu,
-Attendance, and Pantry are table-first editing jobs; Preview is attached beside
+PLANNING-UX-CLOSEOUT-01 completes the pre-freeze operational pass. Menu is a
+read-only source projection; Attendance and Pantry are table-first editing jobs. Preview is attached beside
 the active table on wide screens and stacks below it at 900 px. The operating
 rail owns the single contextual primary action. Search remains display-only so
 complete-write payloads retain hidden rows. Support evidence stays collapsed as
@@ -73,6 +73,48 @@ released, unknown save, refresh-required after uncertain release and pending
 handoff recovery with explicit text actions.
 
 ### Weekly Menu and Attendance
+
+WEEKLY-MENU-GOOGLE-AUTHORITY-UI (base `4b67d7af25a5b1a4acc57ad89f468b5370d655da`)
+records the approved v1 product-authority clarification: **Google Sheet is the
+sole Weekly Menu authoring authority. Atlas / Supabase owns the governed
+synchronized operational snapshot, validation, audit and downstream consumption.**
+
+The shared Planning rail contains only service week, service date, School scope,
+four equal workflow jobs, routine Refresh and the current contextual action.
+Service week displays Monday–Sunday while retaining the existing `week_start`
+contract. Selecting any date resolves to that governed week.
+
+Only `Thực đơn tuần` has a compact `Google Sheets · Nguồn chính thức` strip,
+immediately below the rail and above its table/issues. Zero configured active
+sources gives an explanatory disabled sync icon; one source fetches directly;
+multiple active sources open a compact chooser within the Menu strip. Workbook,
+file selection, the old `Nhập thực đơn` toolbar and manual Dish assignment are
+absent from the operator UI. Dish names are read-only business content. Other
+Planning jobs have no Google source control.
+
+Fetch parses a local canonical candidate without committing. `Xem thay đổi`
+requests backend preview/correction-impact evidence; `Lưu` invokes the existing
+authoritative completion command with the complete candidate and source
+signatures, then adopts authoritative readback. School/date display filters do
+not truncate that payload. `Bỏ bản đồng bộ` restores persisted rows. Technical
+source facts remain in `Nguồn & lịch sử`; historical source types and retained
+Workbook parsers/backend contracts remain readable and unchanged.
+
+**The physical Google Sheet layout is not the Atlas business contract.** Supported
+Sheet layouts are semantic adapters into one canonical Weekly Menu contract:
+School + service date + Dish Type/Menu slot + Dish. Required semantic headers
+such as `Tên trường` / `Ngày`, Dish Type names/codes, `source_header_aliases`,
+harmless leading-row tolerance and canonical validation remain the compatibility
+boundary. Explicit template version/profile hardening is deferred; this slice
+adds no template engine, profile metadata, migration or DB → Google writeback.
+
+Retained OPS v1 behavior is workflow evidence only: a Google source is normalized
+to stable rows, invalid references are surfaced, signatures distinguish unchanged
+content from drift, and synchronization is explicit. Atlas retains backend
+preview, signature checks and no-change command semantics; Retool client SQL and
+client write architecture are not copied. The historical RMVP-03A architecture
+spec remains a record of its earlier coexistence UI, not the current v1 Menu
+authoring policy.
 
 Primary paths:
 

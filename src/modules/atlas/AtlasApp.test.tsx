@@ -239,15 +239,20 @@ describe("Atlas master-data shell", () => {
       "true",
     );
 
-    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
-      target: { value: "review-planning-dish-3" },
+    const sync = await screen.findByRole("button", {
+      name: "Đồng bộ từ Google Sheet",
     });
+    await waitFor(() => expect(sync).toBeEnabled());
+    fireEvent.click(sync);
+    await screen.findByText("Có bản đồng bộ chờ xác nhận");
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     expect(
       await screen.findByRole("region", { name: "Xem thay đổi thực đơn" }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
-    await waitFor(() => expect(screen.getByText("ĐÃ LƯU")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText(/Đã lưu thực đơn\./)).toBeInTheDocument(),
+    );
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
     expect(
@@ -279,9 +284,12 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.change(scenario, { target: { value: "menu_stale" } });
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
-    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
-      target: { value: "review-planning-dish-3" },
+    const sync = await screen.findByRole("button", {
+      name: "Đồng bộ từ Google Sheet",
     });
+    await waitFor(() => expect(sync).toBeEnabled());
+    fireEvent.click(sync);
+    await screen.findByText("Có bản đồng bộ chờ xác nhận");
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -293,9 +301,12 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.change(scenario, { target: { value: "menu_retryable" } });
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
-    fireEvent.change(screen.getAllByLabelText(/Món canh ·/)[0], {
-      target: { value: "review-planning-dish-3" },
+    const retrySync = await screen.findByRole("button", {
+      name: "Đồng bộ từ Google Sheet",
     });
+    await waitFor(() => expect(retrySync).toBeEnabled());
+    fireEvent.click(retrySync);
+    await screen.findByText("Có bản đồng bộ chờ xác nhận");
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -313,16 +324,12 @@ describe("Atlas master-data shell", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Menu columns and Dish choices only from review Dish Type fixtures", async () => {
+  it("renders read-only Menu content and columns from review Dish Type fixtures", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
-    const soup = (await screen.findAllByLabelText(/^Món canh ·/))[0];
-    expect(soup).toBeDefined();
-    expect(
-      within(soup!).getByRole("option", { name: "Canh bí đỏ thịt bằm" }),
-    ).toBeInTheDocument();
-    expect(
-      within(soup!).queryByRole("option", { name: "Thịt lợn kho trứng" }),
-    ).not.toBeInTheDocument();
+    await screen.findAllByText("Canh bí đỏ thịt bằm");
+    const grid = screen.getByLabelText("Lưới thực đơn");
+    expect(grid).toHaveTextContent("Canh bí đỏ thịt bằm");
+    expect(within(grid).queryByRole("combobox")).not.toBeInTheDocument();
     expect(
       screen.getByRole("columnheader", { name: "Nước" }),
     ).toBeInTheDocument();
@@ -354,8 +361,6 @@ describe("Atlas master-data shell", () => {
     const scenario = screen.getByLabelText("Tình huống xem thử");
 
     fireEvent.change(scenario, { target: { value: "google_source_missing" } });
-    fireEvent.click(await screen.findByText("Nhập thực đơn"));
-    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
     expect(
       await screen.findByText(/Chưa cấu hình nguồn Google Sheet/),
     ).toBeInTheDocument();
@@ -364,15 +369,13 @@ describe("Atlas master-data shell", () => {
     ).toBeDisabled();
 
     fireEvent.change(scenario, { target: { value: "google_fetch_success" } });
-    fireEvent.click(await screen.findByText("Nhập thực đơn"));
-    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
     const sync = await screen.findByRole("button", {
       name: "Đồng bộ từ Google Sheet",
     });
     await waitFor(() => expect(sync).toBeEnabled());
     fireEvent.click(sync);
     expect(
-      await screen.findByText("Nguồn thực đơn xem thử"),
+      await screen.findByText("Có bản đồng bộ chờ xác nhận"),
     ).toBeInTheDocument();
     await screen.findByText("Bằng chứng Google Sheet vừa tải");
     expect(
@@ -389,8 +392,6 @@ describe("Atlas master-data shell", () => {
   it("renders safe Google source, empty, sheet, connector, denied, and retryable states", async () => {
     render(<AtlasApp reviewMode initialPage="planning-inputs" />);
     const scenario = screen.getByLabelText("Tình huống xem thử");
-    fireEvent.click(await screen.findByText("Nhập thực đơn"));
-    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
     const cases = [
       [
         "google_source_unavailable",
@@ -410,8 +411,6 @@ describe("Atlas master-data shell", () => {
     ] as const;
     for (const [value, message] of cases) {
       fireEvent.change(scenario, { target: { value } });
-      fireEvent.click(await screen.findByText("Nhập thực đơn"));
-      fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
       const sync = await screen.findByRole("button", {
         name: "Đồng bộ từ Google Sheet",
       });

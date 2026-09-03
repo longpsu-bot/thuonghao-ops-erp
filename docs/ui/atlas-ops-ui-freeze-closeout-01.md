@@ -11,6 +11,76 @@ Confirmed Need review-fixture repair below. Separately authorized staging
 inspection released one synthetic Confirmed Need; its pending Handoff and
 supported-command recovery belong to the separate task recorded below.
 
+## Follow-up: WEEKLY-MENU-GOOGLE-AUTHORITY-UI
+
+After #249 merged, the owner authorized this separate bounded Draft PR from
+`4b67d7af25a5b1a4acc57ad89f468b5370d655da` on
+`feat/weekly-menu-google-authority-ui`. The earlier closeout evidence below
+remains historical. B1 Handoff recovery and the freeze gate are not started.
+
+**Product authority:** Google Sheet is the sole v1 Weekly Menu authoring
+authority. Atlas / Supabase is the governed synchronized operational snapshot
+consumed by downstream Planning. Google owns authoring; Atlas retains validation,
+snapshot, audit, source-signature checks, correction safeguards and authoritative
+readback. No DB → Google writeback or two-way synchronization is introduced.
+
+| Finding                    | Implemented disposition                                                                                                                                                                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Implicit week start        | The existing calendar now displays the explicit Monday–Sunday range; selecting 02/09/2026 resolves to 31/08/2026 – 06/09/2026. `week_start` remains the only governed value.                                                                              |
+| Rail proportions           | Desktop context widths are 230/160/150px for week/date/School. The four jobs use equal flexible columns and reflow at smaller widths. Refresh remains the existing shared 36×36 `RefreshButton`.                                                          |
+| Google authority placement | One compact `Google Sheets · Nguồn chính thức` strip belongs only to Menu, directly below the domain-neutral rail and above Menu issues/table. No Google controls enter `PlanningOperatingRail`.                                                          |
+| Source configuration       | Zero active sources gives an explanatory disabled icon; one source fetches directly; multiple active sources use a compact Menu-local chooser. Only the existing configured-source identifier/week/correlation request is used.                           |
+| Competing Menu authorship  | Remove `Nhập thực đơn`, Workbook/file picker, source-mode buttons and manual Dish dropdowns from operator UI. The table displays read-only Dish names, including available historical/inactive Dish names.                                                |
+| Governed candidate         | Fetch only parses a local candidate. `Xem thay đổi` requests backend preview/correction impact; `Lưu` sends the full canonical candidate through the existing v2 command. Display filters do not narrow writes. `Bỏ bản đồng bộ` restores persisted rows. |
+| Async/stale safety         | Ignore late fetches after week change, job switch or authoritative refresh. Disable synchronization/commit while a write or fetch is pending, and require refresh after stale/unknown writes.                                                             |
+| Review containment         | Browser QA reproduced an inner review grid expanding beyond its assigned column. Constrain that grid within Menu so its table scrolls locally. Other source workbenches are unchanged.                                                                    |
+| Review fixture             | The session-only Menu completion response now retains the submitted Google source type/name and synthetic approval time, allowing post-save source status to be reviewed.                                                                                 |
+
+**Template boundary:** the physical Sheet layout is not the business contract.
+Supported layouts adapt into the canonical School + service date + Dish Type/Menu
+slot + Dish contract. Existing semantic headers (`Tên trường` / `Ngày`), Dish Type
+names/codes, `source_header_aliases`, harmless leading-row tolerance, normalization
+and validation remain intact. Future explicit template version/profile hardening
+is deferred; there is no generic template engine, migration or profile metadata.
+The historical RMVP-03A architecture spec is not rewritten. Historical source
+types and lower-level Workbook parsing/backend support remain compatible.
+
+Validation and review:
+
+- Test-first: 15 expected UI failures preceded implementation. Late-fetch
+  regressions reproduced week/refresh candidate contamination and job-switch
+  interference with the guards removed. A source-readback regression failed
+  before correcting the synthetic fixture metadata.
+- Combined focused Planning, parent Atlas journeys and shared Refresh suite:
+  **215 tests passed / 23 files**. Includes source requests/security, canonical
+  parser/model, correction, stale/unknown outcomes, complete payloads under
+  display filtering, discard, navigation guards and all four Planning jobs.
+- `pnpm typecheck`, touched-file Prettier and `git diff --check` pass. No full
+  routine frontend suite is run locally; GitHub Actions owns that gate.
+- Browser: Menu inspected at 1366×768, 1920×1080, 900×900, 650×900 and 360×800.
+  Four tab widths are equal at every measured size; page scroll width stays
+  within the viewport. Week/date/School measure 230/160/150px on desktop, and
+  Refresh/sync measure 36×36. Mobile date/School share a row where space permits.
+- Zero-source and configured synthetic-source states, fetched candidate,
+  review, simulated save/readback and discard are inspectable. Real calendar
+  selection of Wednesday 02/09 normalizes to the stated Monday–Sunday week.
+  The source strip is absent from Attendance, Pantry and Confirmed Need.
+  Keyboard Refresh focus has a 2px outline; no product console warnings/errors
+  were observed in the final local QA tab.
+- The combined test harness emits a jsdom `Window.confirm` not-implemented
+  diagnostic; all assertions pass. This is separate from the clean product
+  browser console. Multi-source choice is proven by the component regression;
+  no hosted source configuration is created.
+
+Changed files: `PlanningInputsWorkbench.tsx` and its test,
+`reviewPlanningInputsApi.ts`, parent `AtlasApp.test.tsx`, `src/styles.css`, this
+audit and `atlas-current-ui-inventory.md`. No schema, migration, RLS, capability,
+lifecycle, Edge security, dependency or other-domain implementation changes.
+No hosted writes. Reverting this UI commit restores prior presentation without
+rewriting any persisted operational facts. GitHub CI, immutable deployment URL
+and final head are recorded on the new Draft PR; product/architecture review
+remains required before merge.
+
 ## Audit before implementation
 
 Inspected the current React product using its populated, session-only review

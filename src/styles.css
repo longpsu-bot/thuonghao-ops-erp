@@ -3098,7 +3098,7 @@ tbody tr.selected-row {
 }
 .planning-workflow-bar {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(140px, 1.3fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 3px;
   max-width: 100%;
   overflow: hidden;
@@ -5394,7 +5394,7 @@ tbody tr.selected-row {
   top: 0;
   display: grid;
   grid-template-areas: "context workflow actions";
-  grid-template-columns: minmax(300px, 0.8fr) minmax(390px, 1fr) max-content;
+  grid-template-columns: 552px minmax(440px, 1fr) max-content;
   align-items: center;
   box-sizing: border-box;
   height: var(--planning-rail-height);
@@ -5427,10 +5427,15 @@ tbody tr.selected-row {
 .planning-operating-context > label,
 .planning-operating-context > .mantine-DatePickerInput-root {
   min-width: 0;
-  flex: 1 1 90px;
+  flex: 0 0 160px;
 }
 
-.planning-operating-context label {
+.planning-operating-context > :first-child {
+  flex: 0 0 230px;
+}
+
+.planning-operating-context label,
+.planning-context-label {
   display: grid;
   gap: 1px;
   color: var(--atlas-text-muted);
@@ -5468,8 +5473,13 @@ tbody tr.selected-row {
 }
 
 .planning-school-scope-control {
-  width: 108px;
+  width: 150px;
   min-width: 0;
+}
+
+.planning-school-context {
+  display: grid;
+  gap: 1px;
 }
 
 .planning-operating-workflow,
@@ -5521,7 +5531,7 @@ tbody tr.selected-row {
   opacity: 0.5;
 }
 
-@container (max-width: 960px) {
+@container (max-width: 1240px) {
   .planning-operating-rail {
     grid-template-areas:
       "context actions"
@@ -5540,7 +5550,7 @@ tbody tr.selected-row {
   }
 }
 
-@container (max-width: 680px) {
+@container (max-width: 800px) {
   .planning-operating-rail {
     grid-template-areas:
       "context"
@@ -5555,6 +5565,95 @@ tbody tr.selected-row {
 
   .planning-operating-action-zone {
     justify-content: flex-end;
+  }
+}
+
+.planning-menu-source-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--planning-border);
+  background: var(--atlas-surface);
+}
+
+.planning-menu-surface .planning-decision-review {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.planning-menu-source-identity,
+.planning-menu-source-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.planning-menu-source-identity > svg {
+  color: #188038;
+}
+
+.planning-menu-source-identity > div,
+.planning-menu-source-status {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.planning-menu-source-status {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.planning-menu-source-strip small {
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+}
+
+.planning-menu-source-actions {
+  margin-left: auto;
+}
+
+.planning-menu-source-actions > .quiet {
+  padding: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--atlas-text-muted);
+  font-size: 12px;
+}
+
+button.secondary.planning-google-sync-button {
+  color: #188038;
+}
+
+.planning-google-source-chooser {
+  display: grid;
+  gap: 6px;
+  max-width: calc(100vw - 32px);
+  font-size: 12px;
+}
+
+.planning-google-source-chooser button {
+  text-align: left;
+  white-space: normal;
+}
+
+.planning-menu-source-strip button:focus-visible {
+  outline: 2px solid var(--atlas-primary);
+  outline-offset: 2px;
+}
+
+@container (max-width: 400px) {
+  .planning-operating-context > label:not(:first-child),
+  .planning-school-context {
+    flex: 1 1 130px;
+    min-width: 0;
+  }
+
+  .planning-school-context .planning-school-scope-control {
+    width: 100%;
   }
 }
 

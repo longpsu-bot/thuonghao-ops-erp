@@ -9,13 +9,8 @@ import {
   type ComponentType,
   type ComponentProps,
 } from "react";
-import { MantineProvider } from "@mantine/core";
-import {
-  CloudArrowDown,
-  Eye,
-  FloppyDisk,
-  UploadSimple,
-} from "@phosphor-icons/react";
+import { MantineProvider, Popover } from "@mantine/core";
+import { Table, Eye, FloppyDisk } from "@phosphor-icons/react";
 import { atlasTheme } from "../../../theme";
 import type { AtlasAuthState } from "../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
@@ -57,7 +52,6 @@ import {
 import {
   parseAttendancePaste,
   parseMenuMatrix,
-  parseMenuWorkbook,
   type SourceMatrix,
 } from "./planningInputsWorkbook";
 import { PantryWorkbench } from "./pantry/PantryWorkbench";
@@ -111,7 +105,6 @@ type DailyConfirmedNeedSelection = {
   serviceDate: string;
   batchId: string;
 };
-type MenuSourceType = "MANUAL" | "WORKBOOK_IMPORT" | "GOOGLE_SHEET";
 type GoogleFetchState = {
   status: "idle" | "fetching" | "success" | "error";
   sourceName?: string;
@@ -792,20 +785,18 @@ export function PlanningInputsWorkbenchView({
     useState<PlanningCorrectionImpact | null>(null);
   const [attendanceCorrectionImpact, setAttendanceCorrectionImpact] =
     useState<PlanningCorrectionImpact | null>(null);
-  const [menuSourceName, setMenuSourceName] = useState(
-    "Chỉnh sửa trực tiếp Atlas",
-  );
+  const [menuSourceName, setMenuSourceName] = useState("Google Sheet");
   const [attendanceSourceName, setAttendanceSourceName] = useState(
     "Mặc định theo Thực đơn tuần",
   );
   const [attendanceSourceType, setAttendanceSourceType] =
     useState("SCHOOL_DEFAULTS");
-  const [menuSourceType, setMenuSourceType] =
-    useState<MenuSourceType>("MANUAL");
+  const [menuSourceType, setMenuSourceType] = useState("GOOGLE_SHEET");
   const [browserChecksum, setBrowserChecksum] = useState<string | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
-  const [selectedGoogleSourceId, setSelectedGoogleSourceId] = useState("");
+  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
+  const googleRequest = useRef(0);
   const [googleFetch, setGoogleFetch] = useState<GoogleFetchState>({
     status: "idle",
   });
@@ -902,6 +893,11 @@ export function PlanningInputsWorkbenchView({
   ]);
 
   const adopt = useCallback((workbench: PlanningInputsWorkbenchData) => {
+    googleRequest.current += 1;
+    setGoogleFetch({ status: "idle" });
+    setGoogleChooserOpen(false);
+    setMenuCorrectionImpact(null);
+    setMenuSourceType(workbench.weekly_menu?.source_type ?? "GOOGLE_SHEET");
     setData(workbench);
     setMenuRows(activeMenuRows(workbench.weekly_menu));
     setAttendanceRows(
@@ -910,9 +906,7 @@ export function PlanningInputsWorkbenchView({
         workbench.default_attendance_preview,
       ),
     );
-    setMenuSourceName(
-      workbench.weekly_menu?.source_name ?? "Chỉnh sửa trực tiếp Atlas",
-    );
+    setMenuSourceName(workbench.weekly_menu?.source_name ?? "Google Sheet");
     setAttendanceSourceType(
       workbench.attendance?.source_type ?? "SCHOOL_DEFAULTS",
     );
@@ -965,16 +959,6 @@ export function PlanningInputsWorkbenchView({
   }, [resolveCurrentConfirmedNeed]);
 
   useEffect(() => {
-    setSelectedGoogleSourceId((current) =>
-      data.google_sheet_sources.some(
-        (source) => source.weekly_menu_google_source_id === current,
-      )
-        ? current
-        : (data.google_sheet_sources[0]?.weekly_menu_google_source_id ?? ""),
-    );
-  }, [data.google_sheet_sources]);
-
-  useEffect(() => {
     if (!dirty && !pantryDirty && !confirmedNeedDirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
     window.addEventListener("beforeunload", warn);
@@ -982,10 +966,13 @@ export function PlanningInputsWorkbenchView({
   }, [dirty, pantryDirty, confirmedNeedDirty]);
 
   const discardMenuChanges = () => {
+    googleRequest.current += 1;
+    setMenuCorrectionImpact(null);
+    setNotice(null);
     setMenuRows(activeMenuRows(data.weekly_menu));
     setMenuPreview(null);
-    setMenuSourceType("MANUAL");
-    setMenuSourceName("Chỉnh sửa trực tiếp Atlas");
+    setMenuSourceType(data.weekly_menu?.source_type ?? "GOOGLE_SHEET");
+    setMenuSourceName(data.weekly_menu?.source_name ?? "Google Sheet");
     setBrowserChecksum(null);
     setImportErrors([]);
     setImportWarnings([]);
@@ -1049,6 +1036,11 @@ export function PlanningInputsWorkbenchView({
     )
       return;
     if (currentSourceDirty) discardCurrentSourceChanges();
+    if (tab === "menu") {
+      googleRequest.current += 1;
+      setGoogleFetch({ status: "idle" });
+      setGoogleChooserOpen(false);
+    }
     setTab(next);
   };
 
@@ -1061,6 +1053,9 @@ export function PlanningInputsWorkbenchView({
     if (dirty || pantryDirty || confirmedNeedDirty)
       discardCurrentSourceChanges();
     setSelectedConfirmedNeed(null);
+    googleRequest.current += 1;
+    setGoogleFetch({ status: "idle" });
+    setGoogleChooserOpen(false);
     setWeekStart(next);
     setServiceDateFilter(next);
     return true;
@@ -1452,34 +1447,35 @@ export function PlanningInputsWorkbenchView({
     }
   };
 
-  const onMenuFile = async (file?: File) => {
-    if (!file) return;
-    const review = await parseMenuWorkbook(
-      file,
-      data.dish_types,
-      data.schools,
-      data.dishes,
-    );
-    setMenuRows(review.rows);
-    setMenuPreview(null);
-    setMenuSourceName(review.fileName);
-    setMenuSourceType("WORKBOOK_IMPORT");
-    setBrowserChecksum(review.browserChecksum);
-    setImportErrors(review.errors);
-    setImportWarnings(review.warnings);
-    setGoogleFetch({ status: "idle" });
-    setDirty(true);
-  };
-
-  const onGoogleSync = async () => {
-    if (!api || !selectedGoogleSourceId) return;
+  const activeGoogleSources = data.google_sheet_sources.filter(
+    (source) => source.source_status === "ACTIVE",
+  );
+  const onGoogleSync = async (sourceId: string) => {
+    if (
+      !api ||
+      saving ||
+      refreshRequired ||
+      load !== "ready" ||
+      googleFetch.status === "fetching" ||
+      !activeGoogleSources.some(
+        (source) => source.weekly_menu_google_source_id === sourceId,
+      )
+    )
+      return;
+    const request = ++googleRequest.current;
+    const workbenchGeneration = generation.current;
+    const isCurrent = () =>
+      request === googleRequest.current &&
+      workbenchGeneration === generation.current;
+    setGoogleChooserOpen(false);
     setGoogleFetch({ status: "fetching" });
     setNotice(null);
     const result = await api.syncMenuFromGoogle(
-      selectedGoogleSourceId,
+      sourceId,
       weekStart,
       correlationId,
     );
+    if (!isCurrent()) return;
     if (result.kind !== "success") {
       setGoogleFetch({
         status: "error",
@@ -1518,6 +1514,9 @@ export function PlanningInputsWorkbenchView({
       data.schools,
       data.dishes,
     );
+    if (!isCurrent()) return;
+    setSourceOutcome(null);
+    setMenuCorrectionImpact(null);
     setMenuRows(review.rows);
     setMenuPreview(null);
     setMenuSourceName(review.sourceName);
@@ -1532,40 +1531,6 @@ export function PlanningInputsWorkbenchView({
       fetchedAt: result.response.fetched_at,
       sourceRowCount: review.sourceRowCount,
     });
-    setDirty(true);
-  };
-
-  const updateMenuCell = (
-    schoolId: string,
-    serviceDate: string,
-    slot: string,
-    dishId: string,
-  ) => {
-    setMenuSourceType("MANUAL");
-    setMenuSourceName("Chỉnh sửa trực tiếp Atlas");
-    setGoogleFetch({ status: "idle" });
-    setMenuRows((current) => {
-      const others = current.filter(
-        (line) =>
-          !(
-            line.school_id === schoolId &&
-            line.service_date === serviceDate &&
-            line.menu_slot_code === slot
-          ),
-      );
-      if (!dishId) return others;
-      return [
-        ...others,
-        {
-          school_id: schoolId,
-          service_date: serviceDate,
-          menu_slot_code: slot,
-          dish_id: dishId,
-          source_row_reference: `atlas:${schoolId}:${serviceDate}:${slot}`,
-        },
-      ];
-    });
-    setMenuPreview(null);
     setDirty(true);
   };
 
@@ -1597,6 +1562,123 @@ export function PlanningInputsWorkbenchView({
       ? "Phiên làm việc đã hết. Vui lòng đăng nhập lại để tiếp tục."
       : "Đăng nhập để xem và cập nhật nguồn kế hoạch.";
 
+  const menuSyncStatus = refreshRequired
+    ? "Cần làm mới dữ liệu"
+    : googleFetch.status === "fetching"
+      ? "Đang tải Google Sheet…"
+      : dirty
+        ? "Có bản đồng bộ chờ xác nhận"
+        : googleFetch.status === "error"
+          ? "Chưa tải được Google Sheet"
+          : data.weekly_menu?.source_type === "GOOGLE_SHEET"
+            ? [
+                "APPROVED",
+                "NEED_GENERATION_REQUESTED",
+                "USED_FOR_NEED_GENERATION",
+              ].includes(data.weekly_menu.weekly_menu_status)
+              ? `Đã đồng bộ${data.weekly_menu.latest_approved_at ? `: ${new Date(data.weekly_menu.latest_approved_at).toLocaleString("vi-VN")}` : ""}`
+              : "Cần cập nhật"
+            : "Chưa đồng bộ";
+  const menuSourceStrip = (
+    <section
+      className="planning-menu-source-strip"
+      aria-label="Nguồn thực đơn tuần"
+    >
+      <div className="planning-menu-source-identity">
+        <Table size={23} weight="duotone" aria-hidden="true" />
+        <div>
+          <strong>Google Sheets</strong>
+          <small>Nguồn chính thức</small>
+        </div>
+      </div>
+      <div className="planning-menu-source-status" role="status">
+        {activeGoogleSources.length === 0 ? (
+          <span>Chưa cấu hình nguồn Google Sheet</span>
+        ) : (
+          <>
+            <span>{menuSyncStatus}</span>
+            <small>
+              {dirty
+                ? (googleFetch.sourceName ?? menuSourceName)
+                : activeGoogleSources.length === 1
+                  ? activeGoogleSources[0]!.source_name
+                  : `${activeGoogleSources.length} nguồn đã cấu hình`}
+            </small>
+          </>
+        )}
+      </div>
+      <div className="planning-menu-source-actions">
+        {dirty && (
+          <button
+            type="button"
+            className="quiet"
+            onClick={discardMenuChanges}
+            disabled={
+              saving || refreshRequired || googleFetch.status === "fetching"
+            }
+          >
+            Bỏ bản đồng bộ
+          </button>
+        )}
+        <Popover
+          opened={googleChooserOpen}
+          onChange={setGoogleChooserOpen}
+          position="bottom-end"
+          width={280}
+          withinPortal={false}
+          trapFocus
+          returnFocus
+        >
+          <Popover.Target>
+            <button
+              type="button"
+              className="secondary workbench-refresh-button planning-google-sync-button"
+              aria-label="Đồng bộ từ Google Sheet"
+              title={
+                activeGoogleSources.length
+                  ? "Đồng bộ từ Google Sheet"
+                  : "Chưa cấu hình nguồn Google Sheet"
+              }
+              disabled={
+                !authSubject ||
+                !api ||
+                load !== "ready" ||
+                !activeGoogleSources.length ||
+                saving ||
+                refreshRequired ||
+                googleFetch.status === "fetching"
+              }
+              onClick={() => {
+                if (activeGoogleSources.length === 1)
+                  void onGoogleSync(
+                    activeGoogleSources[0]!.weekly_menu_google_source_id,
+                  );
+                else setGoogleChooserOpen((open) => !open);
+              }}
+            >
+              <Table size={19} aria-hidden="true" />
+            </button>
+          </Popover.Target>
+          <Popover.Dropdown className="planning-google-source-chooser">
+            <strong>Chọn nguồn Google Sheet</strong>
+            {activeGoogleSources.map((source) => (
+              <button
+                key={source.weekly_menu_google_source_id}
+                type="button"
+                className="quiet"
+                onClick={() =>
+                  void onGoogleSync(source.weekly_menu_google_source_id)
+                }
+              >
+                {source.source_name}
+              </button>
+            ))}
+          </Popover.Dropdown>
+        </Popover>
+      </div>
+    </section>
+  );
+
   const sourceRailAction =
     tab === "menu" ? (
       menuPreview?.can_save && menuCorrectionImpact?.save_allowed ? (
@@ -1604,7 +1686,13 @@ export function PlanningInputsWorkbenchView({
           type="button"
           className="primary"
           onClick={() => void saveMenu()}
-          disabled={saving || refreshRequired || !dirty || !menuRows.length}
+          disabled={
+            saving ||
+            refreshRequired ||
+            googleFetch.status === "fetching" ||
+            !dirty ||
+            !menuRows.length
+          }
         >
           <FloppyDisk size={17} aria-hidden="true" />
           Lưu
@@ -1615,7 +1703,12 @@ export function PlanningInputsWorkbenchView({
           className="primary"
           onClick={() => void previewMenu()}
           ref={sourceActionRef}
-          disabled={saving || !menuRows.length}
+          disabled={
+            saving ||
+            refreshRequired ||
+            googleFetch.status === "fetching" ||
+            !menuRows.length
+          }
         >
           <Eye size={17} aria-hidden="true" />
           Xem thay đổi
@@ -1666,7 +1759,7 @@ export function PlanningInputsWorkbenchView({
                 Tuần phục vụ
                 <input
                   aria-label="Tuần phục vụ"
-                  value={viDate(weekStart)}
+                  value={`${viDate(weekStart)} – ${viDate(selectedWeekEnd)}`}
                   data-business-value={weekStart}
                   onChange={(event) => {
                     const value = event.target.value;
@@ -1683,12 +1776,13 @@ export function PlanningInputsWorkbenchView({
                 label="Tuần phục vụ"
                 aria-label="Tuần phục vụ"
                 value={weekStart}
-                valueFormat="DD/MM/YYYY"
+                valueFormat={`DD/MM/YYYY [– ${viDate(selectedWeekEnd)}]`}
                 locale="vi"
                 firstDayOfWeek={1}
                 onChange={(value) => {
                   if (typeof value === "string" && value)
                     changeWeek(localMondayOfIso(value));
+                  else if (value instanceof Date) changeWeek(mondayOf(value));
                 }}
               />
             )
@@ -1712,11 +1806,14 @@ export function PlanningInputsWorkbenchView({
             </label>
           }
           schoolControl={
-            <PlanningSchoolScopeControl
-              schools={activeSchools}
-              selectedSchoolIds={schoolScopeIds}
-              onChange={setSchoolScopeIds}
-            />
+            <div className="planning-school-context">
+              <span className="planning-context-label">Trường</span>
+              <PlanningSchoolScopeControl
+                schools={activeSchools}
+                selectedSchoolIds={schoolScopeIds}
+                onChange={setSchoolScopeIds}
+              />
+            </div>
           }
           workflowItems={workflowItems}
           activeId={tab}
@@ -1777,19 +1874,7 @@ export function PlanningInputsWorkbenchView({
                 className="planning-job-surface planning-menu-surface"
                 aria-label="Bề mặt làm việc Thực đơn tuần"
               >
-                <div
-                  className="planning-job-status"
-                  aria-label="Trạng thái Thực đơn tuần"
-                >
-                  <Chip tone={statusTone(data.weekly_menu?.weekly_menu_status)}>
-                    {statusLabel(data.weekly_menu?.weekly_menu_status)}
-                  </Chip>
-                </div>
-                {dirty && (
-                  <p className="planning-dirty-notice" role="status">
-                    Có thay đổi chưa lưu trong nguồn đang làm việc.
-                  </p>
-                )}
+                {menuSourceStrip}
                 {importErrors.map((error) => (
                   <p className="operator-notice danger" key={error}>
                     {error}
@@ -1818,97 +1903,6 @@ export function PlanningInputsWorkbenchView({
                   ]}
                   tone="warning"
                 />
-                <div
-                  className="planning-workbench-toolbar"
-                  aria-label="Bộ lọc, nguồn và thao tác thực đơn"
-                >
-                  <details className="planning-toolbar-group planning-source-group">
-                    <summary>Nhập thực đơn</summary>
-                    <div className="planning-import-methods">
-                      <button
-                        type="button"
-                        className="secondary"
-                        onClick={() => setMenuSourceType("WORKBOOK_IMPORT")}
-                      >
-                        Workbook
-                      </button>
-                      <button
-                        type="button"
-                        className="secondary"
-                        onClick={() => setMenuSourceType("GOOGLE_SHEET")}
-                      >
-                        Google Sheet
-                      </button>
-                    </div>
-                    {menuSourceType === "WORKBOOK_IMPORT" && (
-                      <label className="file-action">
-                        <UploadSimple size={17} aria-hidden="true" />
-                        Chọn workbook
-                        <input
-                          type="file"
-                          accept=".xlsx"
-                          onChange={(event) =>
-                            void onMenuFile(event.target.files?.[0])
-                          }
-                        />
-                      </label>
-                    )}
-                    {menuSourceType === "GOOGLE_SHEET" && (
-                      <div className="planning-google-import">
-                        <label>
-                          Nguồn Google Sheet
-                          <select
-                            aria-label="Nguồn Google Sheet"
-                            value={selectedGoogleSourceId}
-                            onChange={(event) =>
-                              setSelectedGoogleSourceId(event.target.value)
-                            }
-                          >
-                            {data.google_sheet_sources.length === 0 && (
-                              <option value="">Chưa có nguồn cấu hình</option>
-                            )}
-                            {data.google_sheet_sources.map((source) => (
-                              <option
-                                value={source.weekly_menu_google_source_id}
-                                key={source.weekly_menu_google_source_id}
-                              >
-                                {source.source_name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          type="button"
-                          className="secondary"
-                          onClick={() => void onGoogleSync()}
-                          disabled={
-                            googleFetch.status === "fetching" ||
-                            !selectedGoogleSourceId
-                          }
-                        >
-                          <CloudArrowDown size={17} aria-hidden="true" />
-                          {googleFetch.status === "fetching"
-                            ? "Đang đồng bộ…"
-                            : "Đồng bộ từ Google Sheet"}
-                        </button>
-                        {data.google_sheet_sources.length === 0 && (
-                          <p className="operator-notice warning">
-                            Chưa cấu hình nguồn Google Sheet.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </details>
-                  {dirty && (
-                    <button
-                      type="button"
-                      className="quiet planning-toolbar-discard"
-                      onClick={discardMenuChanges}
-                    >
-                      Hủy thay đổi
-                    </button>
-                  )}
-                </div>
                 {unmappedDishes.length > 0 && (
                   <p className="operator-notice danger">
                     Có {unmappedDishes.length} món ăn đang hoạt động chưa được
@@ -1962,54 +1956,13 @@ export function PlanningInputsWorkbenchView({
                                       item.menu_slot_code ===
                                         dishType.dish_type_code,
                                   );
-                                  const matchingDishes = activeDishes.filter(
-                                    (dish) =>
-                                      dish.dish_type_id ===
-                                      dishType.dish_type_id,
+                                  const dish = data.dishes.find(
+                                    (item) => item.dish_id === line?.dish_id,
                                   );
-                                  const selectedDish = line
-                                    ? activeDishes.find(
-                                        (dish) => dish.dish_id === line.dish_id,
-                                      )
-                                    : undefined;
-                                  const selectedMismatch =
-                                    selectedDish &&
-                                    selectedDish.dish_type_id !==
-                                      dishType.dish_type_id;
                                   return (
                                     <td key={dishType.dish_type_code}>
-                                      <select
-                                        aria-label={`${dishType.dish_type_name} · ${school?.school_name ?? schoolId} · ${viDate(serviceDate)}`}
-                                        value={line?.dish_id ?? ""}
-                                        onChange={(event) =>
-                                          updateMenuCell(
-                                            schoolId,
-                                            serviceDate,
-                                            dishType.dish_type_code,
-                                            event.target.value,
-                                          )
-                                        }
-                                        disabled={saving || refreshRequired}
-                                      >
-                                        <option value="">—</option>
-                                        {selectedMismatch && selectedDish && (
-                                          <option
-                                            value={selectedDish.dish_id}
-                                            disabled
-                                          >
-                                            ⚠ {selectedDish.dish_name} — không
-                                            khớp Loại món
-                                          </option>
-                                        )}
-                                        {matchingDishes.map((dish) => (
-                                          <option
-                                            value={dish.dish_id}
-                                            key={dish.dish_id}
-                                          >
-                                            {dish.dish_name}
-                                          </option>
-                                        ))}
-                                      </select>
+                                      {dish?.dish_name ??
+                                        (line ? "Món chưa xác định" : "—")}
                                     </td>
                                   );
                                 })}
