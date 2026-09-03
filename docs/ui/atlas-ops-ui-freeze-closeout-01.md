@@ -11,6 +11,130 @@ Confirmed Need review-fixture repair below. Separately authorized staging
 inspection released one synthetic Confirmed Need; its pending Handoff and
 supported-command recovery belong to the separate task recorded below.
 
+## Follow-up: WEEKLY-MENU-GOOGLE-AUTHORITY-UI
+
+After #249 merged, the owner authorized this separate bounded Draft PR from
+`4b67d7af25a5b1a4acc57ad89f468b5370d655da` on
+`feat/weekly-menu-google-authority-ui`. The earlier closeout evidence below
+remains historical. B1 Handoff recovery and the freeze gate are not started.
+
+**Product authority:** Google Sheet is the sole v1 Weekly Menu authoring
+authority. Atlas / Supabase is the governed synchronized operational snapshot
+consumed by downstream Planning. Google owns authoring; Atlas retains validation,
+snapshot, audit, source-signature checks, correction safeguards and authoritative
+readback. No DB → Google writeback or two-way synchronization is introduced.
+
+| Finding                    | Implemented disposition                                                                                                                                                                                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Implicit week start        | The existing calendar now displays the explicit Monday–Sunday range; selecting 02/09/2026 resolves to 31/08/2026 – 06/09/2026. `week_start` remains the only governed value.                                                                              |
+| Rail proportions           | Desktop context widths are 230/160/150px for week/date/School. The four jobs use equal flexible columns and reflow at smaller widths. Refresh remains the existing shared 36×36 `RefreshButton`.                                                          |
+| Google authority placement | One compact `Google Sheets · Nguồn chính thức` strip belongs only to Menu, directly below the domain-neutral rail and above Menu issues/table. No Google controls enter `PlanningOperatingRail`.                                                          |
+| Source configuration       | Zero active sources gives an explanatory disabled icon; one source fetches directly; multiple active sources use a compact Menu-local chooser. Only the existing configured-source identifier/week/correlation request is used.                           |
+| Competing Menu authorship  | Remove `Nhập thực đơn`, Workbook/file picker, source-mode buttons and manual Dish dropdowns from operator UI. The table displays read-only Dish names, including available historical/inactive Dish names.                                                |
+| Governed candidate         | Fetch only parses a local candidate. `Xem thay đổi` requests backend preview/correction impact; `Lưu` sends the full canonical candidate through the existing v2 command. Display filters do not narrow writes. `Bỏ bản đồng bộ` restores persisted rows. |
+| Async/stale safety         | Ignore late fetches after week change, job switch or authoritative refresh. Disable synchronization/commit while a write or fetch is pending, and require refresh after stale/unknown writes.                                                             |
+| Review containment         | Browser QA reproduced an inner review grid expanding beyond its assigned column. Constrain that grid within Menu so its table scrolls locally. Other source workbenches are unchanged.                                                                    |
+| Review fixture             | The session-only Menu completion response now retains the submitted Google source type/name and synthetic approval time, allowing post-save source status to be reviewed.                                                                                 |
+
+**Template boundary:** the physical Sheet layout is not the business contract.
+Supported layouts adapt into the canonical School + service date + Dish Type/Menu
+slot + Dish contract. Existing semantic headers (`Tên trường` / `Ngày`), Dish Type
+names/codes, `source_header_aliases`, harmless leading-row tolerance, normalization
+and validation remain intact. Future explicit template version/profile hardening
+is deferred; there is no generic template engine, migration or profile metadata.
+The historical RMVP-03A architecture spec is not rewritten. Historical source
+types and lower-level Workbook parsing/backend support remain compatible.
+
+Validation and review:
+
+- Test-first: 15 expected UI failures preceded implementation. Late-fetch
+  regressions reproduced week/refresh candidate contamination and job-switch
+  interference with the guards removed. A source-readback regression failed
+  before correcting the synthetic fixture metadata.
+- Combined focused Planning, parent Atlas journeys and shared Refresh suite:
+  **215 tests passed / 23 files**. Includes source requests/security, canonical
+  parser/model, correction, stale/unknown outcomes, complete payloads under
+  display filtering, discard, navigation guards and all four Planning jobs.
+- `pnpm typecheck`, touched-file Prettier and `git diff --check` pass. No full
+  routine frontend suite is run locally; GitHub Actions owns that gate.
+- Browser: Menu inspected at 1366×768, 1920×1080, 900×900, 650×900 and 360×800.
+  Four tab widths are equal at every measured size; page scroll width stays
+  within the viewport. Week/date/School measure 230/160/150px on desktop, and
+  Refresh/sync measure 36×36. Mobile date/School share a row where space permits.
+- Zero-source and configured synthetic-source states, fetched candidate,
+  review, simulated save/readback and discard are inspectable. Real calendar
+  selection of Wednesday 02/09 normalizes to the stated Monday–Sunday week.
+  The source strip is absent from Attendance, Pantry and Confirmed Need.
+  Keyboard Refresh focus has a 2px outline; no product console warnings/errors
+  were observed in the final local QA tab.
+- The combined test harness emits a jsdom `Window.confirm` not-implemented
+  diagnostic; all assertions pass. This is separate from the clean product
+  browser console. Multi-source choice is proven by the component regression;
+  no hosted source configuration is created.
+
+Changed files: `PlanningInputsWorkbench.tsx` and its test,
+`reviewPlanningInputsApi.ts`, parent `AtlasApp.test.tsx`, `src/styles.css`, this
+audit and `atlas-current-ui-inventory.md`. No schema, migration, RLS, capability,
+lifecycle, Edge security, dependency or other-domain implementation changes.
+No hosted writes. Reverting this UI commit restores prior presentation without
+rewriting any persisted operational facts. GitHub CI, immutable deployment URL
+and final head are recorded on the new Draft PR; product/architecture review
+remains required before merge.
+
+## Follow-up amendment: one Planning working date and Confirmed Need precision
+
+PLANNING-CONTEXT-AND-CONFIRMED-NEED-UX-REFINEMENT continues the existing Draft
+PR #250 from head `3bb13f8de664470685999eec8e7dc693e6e49871`. The owner's amendment
+supersedes the earlier seven-day navigator design. Prior evidence above and
+below remains historical; B1 Handoff recovery remains a separate task.
+
+- The rail has two semantic/layout groups: Week / working date / School, then
+  four equal workflow jobs with routine Refresh and the contextual CTA. The
+  working date is emphasized with weekday text, stronger border/background,
+  typography and an accessible current-context description.
+- One parent-owned service date determines all four Planning jobs. Confirmed
+  Need derives its current batch from that date's existing preflight. No local
+  date authority or effect-based two-way date synchronization remains. A batch
+  elsewhere in the week does not change the user's selected date.
+- Embedded daily navigation, seven selectable segments, the separate selected-
+  day panel and `Mở xác nhận` are removed. Existing current/released batches
+  open directly. Missing, no-need, outdated and blocked dates show only their
+  current state and supported Need Generation action. The duplicate Confirmed
+  Need Date filter is removed; Search/status/differences filters remain.
+- Pantry consumes the same parent date for display and new rows. Its full weekly
+  draft and preview/save payload remain intact across date changes. The embedded
+  row-date selector is replaced with date text. Menu's Google-only authoring,
+  read-only grid and fetch → review → save boundaries remain intact.
+- Confirmed Need date changes retain the existing discard confirmation. Cancel
+  preserves date, quantities and reasons. Accepted changes reload authority even
+  for two dates sharing a historical batch. Late generation responses cannot
+  reopen the prior date. Stale/unknown/retry/release and pending-Handoff behavior
+  retain their existing gates.
+- New confirmed-quantity entry allows at most two decimal places, including comma
+  input. The exact typed text remains visible when invalid and disables Save.
+  Typed six-place values are rejected even when numerically equal to the stored
+  value. Untouched backend values display without trailing zeroes. Historical
+  values exceeding meaningful two-place precision remain exact, flagged and
+  read-only, including reason/note controls. Untouched saved historical decisions
+  are not rewritten by another line's Save.
+- `numeric(20,6)`, six-place exact parsing/equality/BigInt arithmetic, Planning
+  Quantity Policy and API envelopes are unchanged. No Number/parseFloat business-
+  quantity conversion, rounding, migration, RLS, capability, dependency or hosted
+  data/configuration change is included. Standalone Need Generation stories
+  now provide controlled date props to preserve their existing review journeys.
+
+Verification: failing tests reproduced date divergence, missing dirty protection,
+precision/display failures, duplicate navigation, late-generation reopening and
+same-batch draft retention before implementation. The final combined Planning,
+Atlas journeys and shared-control suite passes **235 tests across 23 files**.
+The jsdom harness retains its existing Window.confirm diagnostic; product-browser
+console inspection is reported separately. Typecheck, touched-file formatting,
+whitespace, final browser matrix, CI and immutable preview evidence are recorded
+in the PR body. No full routine frontend suite is rerun locally.
+
+Rollback: revert this UI refinement commit; no data/schema rollback is required.
+PR #250 remains Draft and unmerged pending product/architecture review.
+
 ## Audit before implementation
 
 Inspected the current React product using its populated, session-only review

@@ -110,6 +110,8 @@ export type ConfirmedNeedLifecycleHistoryItem = {
 export type ConfirmedNeedDraftLine = {
   selected: boolean;
   exact_quantity: string;
+  // Distinguishes typed precision from untouched authoritative numeric(20,6).
+  quantity_entered?: boolean;
   reason_code:
     | "PROPOSAL_ACCEPTED"
     | "PLANNING_STEP_ADJUSTMENT"
@@ -345,6 +347,20 @@ export function normalizeConfirmedNeedQuantity(value: string) {
       : trimmed;
   if (!/^(0|[1-9][0-9]{0,13})(\.[0-9]{1,6})?$/.test(normalized)) return null;
   return normalized;
+}
+
+// Operator entry is narrower than numeric(20,6) authority. Never round it.
+export function normalizeConfirmedNeedEntry(value: string) {
+  const normalized = normalizeConfirmedNeedQuantity(value);
+  return normalized && /^(0|[1-9][0-9]{0,13})(\.[0-9]{1,2})?$/.test(normalized)
+    ? normalized
+    : null;
+}
+
+export function confirmedNeedInputDisplay(value: string) {
+  const [integer, fraction] = value.split(".");
+  const significant = fraction?.replace(/0+$/, "");
+  return significant ? `${integer},${significant}` : integer!;
 }
 
 function decimalParts(value: string) {

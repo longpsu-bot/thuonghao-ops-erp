@@ -690,6 +690,9 @@ export function createReviewPlanningInputsApi(
       return mutateCompletion(request, () => {
         if (!current.weekly_menu) return;
         current.weekly_menu.weekly_menu_status = "APPROVED";
+        current.weekly_menu.source_type = request.payload.source_type;
+        current.weekly_menu.source_name = request.payload.source_name;
+        current.weekly_menu.latest_approved_at = now;
         current.weekly_menu.lines = clone(
           request.payload.rows as unknown as MenuLine[],
         );

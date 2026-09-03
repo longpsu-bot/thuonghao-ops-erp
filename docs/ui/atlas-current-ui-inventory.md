@@ -55,24 +55,99 @@ Thực đơn
 → Xác nhận nhu cầu
 ```
 
-PLANNING-UX-CLOSEOUT-01 completes the pre-freeze operational pass. Menu,
-Attendance, and Pantry are table-first editing jobs; Preview is attached beside
+PLANNING-UX-CLOSEOUT-01 completes the pre-freeze operational pass. Menu is a
+read-only source projection; Attendance and Pantry are table-first editing jobs. Preview is attached beside
 the active table on wide screens and stacks below it at 900 px. The operating
 rail owns the single contextual primary action. Search remains display-only so
 complete-write payloads retain hidden rows. Support evidence stays collapsed as
 `Nguồn & lịch sử`, and Need Generation remains embedded within the confirmed
 job instead of becoming a fifth destination.
 
-Need Generation remains a Planning domain and backend command boundary, but it is not a peer operator destination. Inside `Xác nhận nhu cầu`, the normal daily projection is limited to `Ngày phục vụ`, one translated `Trạng thái`, and `Việc cần làm`. A row control reviews/selects the date (or directly opens an existing current Confirmed Need); only the separate contextual `Tạo nhu cầu` / `Cập nhật nhu cầu` primary action invokes the command. The ordinary Confirmed Need table is the single operational quantity projection; source readiness/evidence, grouped theoretical Recipe/Pantry contributions, versions, and run history remain support detail.
+PLANNING-CONTEXT-AND-CONFIRMED-NEED-UX-REFINEMENT and its single-working-date
+amendment continue Draft PR #250. Planning follows **Week → working service date
+→ School scope → workflow job**. The parent owns the only working date. Its
+accessible `Ngày phục vụ` control shows weekday + date with stronger border,
+background and typography than Week/School. Context and workflow are separate
+semantic rows; four equal jobs, Refresh and the contextual CTA form the second
+row and reflow locally on narrow screens.
 
-The embedded daily `Mở xác nhận` control is secondary navigation. When the same
-Confirmed Need batch and service date are already visible, it becomes quiet
-`Đang mở` text, leaving `Lưu` / `Chuyển sang lên đơn` in the operating rail.
-Standalone Confirmed Need stories include the rail provider/host and cover
-released, unknown save, refresh-required after uncertain release and pending
-handoff recovery with explicit text actions.
+Menu, Attendance, Pantry and Confirmed Need consume that same date. Pantry adds
+rows on the working date and filters only presentation; its full weekly draft
+and preview/save payload survive date changes. Row-level date choosers are absent
+in the embedded Pantry surface. Menu remains read-only and Google-governed.
+
+Confirmed Need opens the current batch for the selected date directly. The
+embedded seven-day navigator, `Chọn ngày xác nhận`, separate selected-day panel,
+`Mở xác nhận` action and internal Date filter are removed. Missing/no-need,
+outdated, blocked and released states retain their existing authoritative
+meaning; the existing Need Generation action appears only when supported. No
+empty Confirmed Need table is added to a no-need date. Search, status and
+unsaved-differences filters remain. Backend preflight, calculations, lifecycle,
+Save, release and pending-Handoff recovery are unchanged.
+
+Date changes use the existing dirty confirmation. Cancelling retains quantities,
+reasons and the shared date. Accepting discards the old Confirmed Need draft,
+even when two dates refer to one historical batch. Late generation responses
+cannot reopen a previous date. A sole batch elsewhere in the week no longer
+silently changes the working date. Standalone Need Generation review stories
+supply their own controlled date props; there is no local selected-date state
+inside the workbench.
+
+Confirmed quantity entry permits at most **two decimal places**. Dot and comma
+input remain supported; invalid precision is preserved verbatim, explained and
+blocks Save. Outgoing quantities remain exact dot-decimal strings. Persisted
+`numeric(20,6)`, exact equality/BigInt arithmetic and Planning Quantity Policy
+are unchanged. Trailing zeroes are removed only for input presentation:
+`10.000000 → 10`, `10.500000 → 10,5`, `10.250000 → 10,25`. Historical values
+with greater meaningful precision remain exact and visibly read-only, including
+their adjustment controls; they are never rounded or silently rewritten.
+Untouched saved historical decisions do not enter another row's Save payload.
+Standalone Confirmed Need stories retain released, unknown-save,
+refresh-required and pending-handoff recovery coverage.
 
 ### Weekly Menu and Attendance
+
+WEEKLY-MENU-GOOGLE-AUTHORITY-UI (base `4b67d7af25a5b1a4acc57ad89f468b5370d655da`)
+records the approved v1 product-authority clarification: **Google Sheet is the
+sole Weekly Menu authoring authority. Atlas / Supabase owns the governed
+synchronized operational snapshot, validation, audit and downstream consumption.**
+
+The shared Planning rail contains only service week, service date, School scope,
+four equal workflow jobs, routine Refresh and the current contextual action.
+Service week displays Monday–Sunday while retaining the existing `week_start`
+contract. Selecting any date resolves to that governed week.
+
+Only `Thực đơn tuần` has a compact `Google Sheets · Nguồn chính thức` strip,
+immediately below the rail and above its table/issues. Zero configured active
+sources gives an explanatory disabled sync icon; one source fetches directly;
+multiple active sources open a compact chooser within the Menu strip. Workbook,
+file selection, the old `Nhập thực đơn` toolbar and manual Dish assignment are
+absent from the operator UI. Dish names are read-only business content. Other
+Planning jobs have no Google source control.
+
+Fetch parses a local canonical candidate without committing. `Xem thay đổi`
+requests backend preview/correction-impact evidence; `Lưu` invokes the existing
+authoritative completion command with the complete candidate and source
+signatures, then adopts authoritative readback. School/date display filters do
+not truncate that payload. `Bỏ bản đồng bộ` restores persisted rows. Technical
+source facts remain in `Nguồn & lịch sử`; historical source types and retained
+Workbook parsers/backend contracts remain readable and unchanged.
+
+**The physical Google Sheet layout is not the Atlas business contract.** Supported
+Sheet layouts are semantic adapters into one canonical Weekly Menu contract:
+School + service date + Dish Type/Menu slot + Dish. Required semantic headers
+such as `Tên trường` / `Ngày`, Dish Type names/codes, `source_header_aliases`,
+harmless leading-row tolerance and canonical validation remain the compatibility
+boundary. Explicit template version/profile hardening is deferred; this slice
+adds no template engine, profile metadata, migration or DB → Google writeback.
+
+Retained OPS v1 behavior is workflow evidence only: a Google source is normalized
+to stable rows, invalid references are surfaced, signatures distinguish unchanged
+content from drift, and synchronization is explicit. Atlas retains backend
+preview, signature checks and no-change command semantics; Retool client SQL and
+client write architecture are not copied. The historical RMVP-03A architecture
+spec remains a record of its earlier coexistence UI, not the current v1 Menu
+authoring policy.
 
 Primary paths:
 

@@ -168,6 +168,7 @@ function NeedGenerationStateStory({
     return next;
   });
 
+  const [serviceDate, setServiceDate] = useState("2026-08-03");
   return (
     <main className="atlas-page">
       <NeedGenerationWorkbench
@@ -176,6 +177,8 @@ function NeedGenerationStateStory({
         preflightApi={preflightApi}
         selectedWeekStart="2026-08-03"
         selectedWeekEnd="2026-08-09"
+        selectedServiceDate={serviceDate}
+        onServiceDateChange={setServiceDate}
         mode="review"
       />
     </main>
@@ -183,6 +186,7 @@ function NeedGenerationStateStory({
 }
 
 function NeedGenerationUnknownOutcomeStory() {
+  const [serviceDate, setServiceDate] = useState("2026-08-03");
   const [api] = useState(() => {
     const next = createReviewNeedGenerationApi("ready");
     next.execute = async () => ({
@@ -205,6 +209,8 @@ function NeedGenerationUnknownOutcomeStory() {
         preflightApi={preflightApi}
         selectedWeekStart="2026-08-03"
         selectedWeekEnd="2026-08-09"
+        selectedServiceDate={serviceDate}
+        onServiceDateChange={setServiceDate}
         mode="review"
       />
     </main>

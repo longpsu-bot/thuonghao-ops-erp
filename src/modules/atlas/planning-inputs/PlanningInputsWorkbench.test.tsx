@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -32,7 +33,31 @@ const authState = {
   session: { user: { id: "review-only-atlas-operator" } },
 } as unknown as AtlasAuthState;
 
-function renderWorkbench(api = createReviewPlanningInputsApi("ready")) {
+function createMenuApi() {
+  const api = createReviewPlanningInputsApi("ready");
+  const sync = api.syncMenuFromGoogle;
+  api.syncMenuFromGoogle = async (...args) => {
+    const result = await sync(...args);
+    if (result.kind === "success")
+      result.response.rows = [
+        ["Tên trường", "Ngày", "Món canh"],
+        ["TH001", args[1], "MON003"],
+      ];
+    return result;
+  };
+  return api;
+}
+
+async function fetchGoogleCandidate() {
+  const sync = await screen.findByRole("button", {
+    name: "Đồng bộ từ Google Sheet",
+  });
+  await waitFor(() => expect(sync).toBeEnabled());
+  fireEvent.click(sync);
+  await screen.findByText("Có bản đồng bộ chờ xác nhận");
+}
+
+function renderWorkbench(api = createMenuApi()) {
   return render(
     <PlanningInputsWorkbench
       authState={authState}
@@ -47,7 +72,7 @@ function renderWorkbench(api = createReviewPlanningInputsApi("ready")) {
 function withWorkbench(
   mutate: (workbench: PlanningInputsWorkbenchData) => void,
 ): PlanningInputsApi {
-  const api = createReviewPlanningInputsApi("ready");
+  const api = createMenuApi();
   const getWorkbench = api.getWorkbench.bind(api);
   api.getWorkbench = async (...args) => {
     const result = await getWorkbench(...args);
@@ -122,7 +147,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       <AtlasDatePickerInputContext.Provider value={CalendarProbe}>
         <PlanningInputsWorkbench
           authState={authState}
-          api={createReviewPlanningInputsApi("ready")}
+          api={createMenuApi()}
           pantryApi={createReviewPantryApi("ready")}
           readinessApi={createReviewPlanningInputReadinessApi("ready")}
           mode="review"
@@ -133,7 +158,9 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(received).toMatchObject({
       locale: "vi",
       firstDayOfWeek: 1,
-      valueFormat: "DD/MM/YYYY",
+      valueFormat: expect.stringMatching(
+        /^DD\/MM\/YYYY \[– \d{2}\/\d{2}\/\d{4}\]$/,
+      ),
     });
   });
 
@@ -222,30 +249,30 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).toHaveTextContent("Tất cả trường");
   });
 
-  it("keeps local source tools compact until an edit needs a discard action", async () => {
+  it("keeps Menu discard quiet in the source strip and preserves Attendance tools", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
-    const menuToolbar = screen.getByLabelText(
-      "Bộ lọc, nguồn và thao tác thực đơn",
-    );
+    const menuToolbar = screen.getByLabelText("Nguồn thực đơn tuần");
     expect(
       within(menuToolbar).queryByText("Thao tác cục bộ"),
     ).not.toBeInTheDocument();
     expect(
-      within(menuToolbar).queryByRole("button", { name: "Hủy thay đổi" }),
+      within(menuToolbar).queryByRole("button", { name: "Bỏ bản đồng bộ" }),
     ).not.toBeInTheDocument();
 
-    fireEvent.change(
-      screen.getAllByRole("combobox", { name: /Món canh ·/ })[0]!,
-      { target: { value: "review-planning-dish-3" } },
-    );
+    const persisted = screen.getByLabelText("Lưới thực đơn").textContent;
+    await fetchGoogleCandidate();
     expect(
-      within(menuToolbar).getByRole("button", { name: "Hủy thay đổi" }),
+      within(menuToolbar).getByRole("button", { name: "Bỏ bản đồng bộ" }),
     ).toBeVisible();
     fireEvent.click(
-      within(menuToolbar).getByRole("button", { name: "Hủy thay đổi" }),
+      within(menuToolbar).getByRole("button", { name: "Bỏ bản đồng bộ" }),
     );
+    expect(screen.getByLabelText("Lưới thực đơn").textContent).toBe(persisted);
+    expect(
+      screen.queryByText("Có bản đồng bộ chờ xác nhận"),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
     const attendanceToolbar = screen.getByLabelText(
@@ -283,12 +310,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     renderWorkbench(api);
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
-    fireEvent.change(
-      screen.getAllByRole("combobox", { name: /Món canh ·/ })[0]!,
-      {
-        target: { value: "review-planning-dish-3" },
-      },
-    );
+    await fetchGoogleCandidate();
     expect(
       screen.getByRole("tab", { name: "Thực đơn" }),
     ).toHaveAccessibleDescription("Cần lưu");
@@ -339,19 +361,19 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     ).not.toBeVisible();
   });
 
-  it("renders Confirmed Need as daily overview plus selected-date review without automation actions", async () => {
+  it("renders Confirmed Need for the shared current date without a daily navigator", async () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
     fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));
 
     expect(
       await screen.findByRole("complementary", {
-        name: "Tổng quan nhu cầu theo ngày",
+        name: "Tình trạng nhu cầu ngày phục vụ",
       }),
     ).toBeVisible();
     expect(
-      screen.getByRole("region", { name: "Chi tiết xác nhận nhu cầu" }),
-    ).toBeVisible();
+      screen.queryByRole("navigation", { name: "Chọn ngày xác nhận nhu cầu" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
         name: /Bổ sung tự động|Pantry Rules|Đặt hàng tự động/i,
@@ -421,6 +443,18 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       );
     });
     const previewMenu = vi.spyOn(api, "previewMenu");
+    const syncMenu = api.syncMenuFromGoogle;
+    api.syncMenuFromGoogle = async (...args) => {
+      const result = await syncMenu(...args);
+      if (result.kind === "success")
+        result.response.rows = [
+          ["Tên trường", "Ngày", "Món canh"],
+          ["TH001", args[1], "MON003"],
+          ["TH003", args[1], "MON003"],
+          ["TH001", hiddenServiceDate, "MON001"],
+        ];
+      return result;
+    };
     const previewAttendance = vi.spyOn(api, "previewAttendance");
     vi.spyOn(window, "confirm").mockReturnValue(true);
     renderWorkbench(api);
@@ -449,12 +483,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       screen.queryByRole("rowheader", { name: /Hoa Hồng/ }),
     ).not.toBeInTheDocument();
 
-    fireEvent.change(
-      screen.getByRole("combobox", {
-        name: /Món canh · Trường Tiểu học Nguyễn Du/,
-      }),
-      { target: { value: "review-planning-dish-3" } },
-    );
+    await fetchGoogleCandidate();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await waitFor(() => expect(previewMenu).toHaveBeenCalledTimes(1));
     expect(previewMenu.mock.calls[0]?.[3]).toEqual(
@@ -520,7 +549,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
   });
 
-  it("shows Google configuration only after the Google import flow is chosen", async () => {
+  it("shows the disabled Google authority strip only in Menu when no source is configured", async () => {
     renderWorkbench(
       withWorkbench((workbench) => {
         workbench.google_sheet_sources = [];
@@ -528,15 +557,197 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
 
+    const strip = screen.getByRole("region", { name: "Nguồn thực đơn tuần" });
+    expect(within(strip).getByText("Google Sheets")).toBeVisible();
+    expect(within(strip).getByText("Nguồn chính thức")).toBeVisible();
     expect(
-      screen.queryByText("Chưa cấu hình nguồn Google Sheet."),
-    ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText("Nhập thực đơn"));
+      within(strip).getByText("Chưa cấu hình nguồn Google Sheet"),
+    ).toBeVisible();
+    const sync = within(strip).getByRole("button", {
+      name: "Đồng bộ từ Google Sheet",
+    });
+    expect(sync).toBeDisabled();
+    expect(sync).toHaveAttribute("title", "Chưa cấu hình nguồn Google Sheet");
+    const rail = screen.getByRole("region", {
+      name: "Thanh điều hành Lập nhu cầu",
+    });
+    expect(rail).not.toContainElement(strip);
     expect(
-      screen.queryByText("Chưa cấu hình nguồn Google Sheet."),
+      within(rail).queryByLabelText("Đồng bộ từ Google Sheet"),
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Google Sheet" }));
-    expect(screen.getByText("Chưa cấu hình nguồn Google Sheet.")).toBeVisible();
+    expect(screen.queryByText("Nhập thực đơn")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Workbook" }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('input[type="file"]')).toBeNull();
+    for (const tab of ["Sĩ số", "Bổ sung", "Xác nhận nhu cầu"]) {
+      fireEvent.click(screen.getByRole("tab", { name: tab }));
+      expect(
+        screen.queryByLabelText("Nguồn thực đơn tuần"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText("Đồng bộ từ Google Sheet"),
+      ).not.toBeInTheDocument();
+    }
+  });
+
+  it("directly fetches the sole configured source without saving or offering Menu editors", async () => {
+    const api = createMenuApi();
+    const sync = vi.spyOn(api, "syncMenuFromGoogle");
+    const save = vi.spyOn(api, "saveCompletedMenu");
+    renderWorkbench(api);
+    await fetchGoogleCandidate();
+    expect(sync).toHaveBeenCalledWith(
+      "review-google-source",
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      expect.any(String),
+    );
+    expect(save).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Đồng bộ từ Google Sheet")).toHaveAttribute(
+      "title",
+      "Đồng bộ từ Google Sheet",
+    );
+    expect(screen.getByLabelText("Lưới thực đơn")).toHaveTextContent(
+      "Canh rau ngót",
+    );
+    expect(
+      within(screen.getByLabelText("Lưới thực đơn")).queryByRole("combobox"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "Xem thay đổi" }),
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('input[type="file"]')).toBeNull();
+  });
+
+  it("saves the complete Google candidate after School and date display filtering", async () => {
+    const api = createMenuApi();
+    const fetch = api.syncMenuFromGoogle;
+    api.syncMenuFromGoogle = async (...args) => {
+      const result = await fetch(...args);
+      if (result.kind === "success")
+        result.response.rows = [
+          ["Tên trường", "Ngày", "Món canh"],
+          ["TH001", args[1], "MON003"],
+          ["TH003", args[1], "MON001"],
+          ["TH001", addIsoCalendarDays(args[1], 2), "MON003"],
+        ];
+      return result;
+    };
+    const completed = vi.spyOn(api, "saveCompletedMenu");
+    renderWorkbench(api);
+    await fetchGoogleCandidate();
+    fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    const dates = screen.getByLabelText("Ngày phục vụ") as HTMLSelectElement;
+    fireEvent.change(dates, { target: { value: dates.options[2]!.value } });
+    expect(
+      screen.queryByRole("rowheader", { name: /Hoa Hồng/ }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const save = await screen.findByRole("button", { name: "Lưu" });
+    fireEvent.click(save);
+    await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
+    const payload = completed.mock.calls[0]![0].payload;
+    expect(payload.source_type).toBe("GOOGLE_SHEET");
+    expect(payload.expected_source_signature).toBe("review-menu-checksum");
+    expect(payload.rows).toHaveLength(3);
+    expect(payload.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ school_id: "review-planning-school-3" }),
+        expect.objectContaining({ service_date: dates.options[0]!.value }),
+        expect.objectContaining({ service_date: dates.options[2]!.value }),
+      ]),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Có bản đồng bộ chờ xác nhận"),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it.each(["week", "tab", "refresh"])(
+    "ignores a late Google response after changing %s context",
+    async (context) => {
+      vi.spyOn(crypto.subtle, "digest").mockResolvedValue(new ArrayBuffer(32));
+      const api = createMenuApi();
+      const fetch = api.syncMenuFromGoogle;
+      let finish!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      let pending!: ReturnType<typeof fetch>;
+      vi.spyOn(api, "syncMenuFromGoogle").mockImplementation((...args) => {
+        pending = gate.then(() => fetch(...args));
+        return pending;
+      });
+      renderWorkbench(api);
+      const sync = await screen.findByLabelText("Đồng bộ từ Google Sheet");
+      await waitFor(() => expect(sync).toBeEnabled());
+      fireEvent.click(sync);
+      await screen.findByText("Đang tải Google Sheet…");
+      if (context === "week") {
+        const week = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
+        fireEvent.change(week, {
+          target: { value: followingWeekFrom(week).nextWeek },
+        });
+      } else if (context === "tab")
+        fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
+      else fireEvent.click(screen.getByLabelText("Làm mới dữ liệu"));
+      await act(async () => {
+        finish();
+        await pending;
+      });
+      if (context === "tab")
+        fireEvent.click(screen.getByRole("tab", { name: "Thực đơn" }));
+      expect(
+        screen.queryByText("Có bản đồng bộ chờ xác nhận"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Bỏ bản đồng bộ" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Lưới thực đơn")).toHaveTextContent(
+        "Canh bí đỏ thịt bằm",
+      );
+    },
+  );
+
+  it("chooses among active sources inside the compact Menu strip", async () => {
+    const api = withWorkbench((data) => {
+      data.google_sheet_sources.unshift({
+        ...data.google_sheet_sources[0]!,
+        weekly_menu_google_source_id: "second-source",
+        source_name: "Nguồn thứ hai",
+      });
+      data.google_sheet_sources.push({
+        ...data.google_sheet_sources[0]!,
+        weekly_menu_google_source_id: "inactive-source",
+        source_name: "Nguồn đã ngừng",
+        source_status: "INACTIVE",
+      });
+    });
+    const sync = vi.spyOn(api, "syncMenuFromGoogle");
+    renderWorkbench(api);
+    const syncButton = await screen.findByLabelText("Đồng bộ từ Google Sheet");
+    await waitFor(() => expect(syncButton).toBeEnabled());
+    fireEvent.click(syncButton);
+    expect(sync).not.toHaveBeenCalled();
+    const strip = screen.getByLabelText("Nguồn thực đơn tuần");
+    fireEvent.click(
+      within(strip).getByRole("button", { name: "Nguồn thực đơn xem thử" }),
+    );
+    await screen.findByText("Có bản đồng bộ chờ xác nhận");
+    expect(sync).toHaveBeenCalledWith(
+      "review-google-source",
+      expect.any(String),
+      expect.any(String),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Nguồn đã ngừng" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Nhập thực đơn")).not.toBeInTheDocument();
   });
 
   it("derives the next rendered week from the active calendar", async () => {
@@ -548,11 +759,15 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const midweekSelection = addIsoCalendarDays(nextWeek, 2);
     fireEvent.change(weekInput, { target: { value: midweekSelection } });
 
-    expect(weekInput).toHaveValue(formatIsoDate(nextWeek));
+    expect(weekInput).toHaveValue(
+      `${formatIsoDate(nextWeek)} – ${formatIsoDate(nextWeekEnd)}`,
+    );
     expect(weekInput).toHaveAttribute("data-business-value", nextWeek);
     await waitFor(() =>
       expect(
-        screen.getByRole("option", { name: formatIsoDate(nextWeekEnd) }),
+        screen.getByRole("option", {
+          name: `Chủ Nhật · ${formatIsoDate(nextWeekEnd)}`,
+        }),
       ).toBeInTheDocument(),
     );
     expect(screen.queryByText("Khoảng ngày")).not.toBeInTheDocument();
@@ -560,7 +775,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("requires a current human-readable Menu Review before one v2 Save", async () => {
-    const api = createReviewPlanningInputsApi("ready");
+    const api = createMenuApi();
     const preview = vi.spyOn(api, "previewMenu");
     const completed = vi.spyOn(api, "saveCompletedMenu");
     const draft = vi.spyOn(api, "saveMenu");
@@ -568,10 +783,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     const approve = vi.spyOn(api, "approveMenu");
     renderWorkbench(api);
 
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
     expect(
       screen.queryByRole("button", { name: "Lưu" }),
     ).not.toBeInTheDocument();
@@ -615,14 +827,16 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       "Dữ liệu này sẽ được dùng khi tạo nhu cầu.",
     );
     expect(screen.queryByText(/trong một giao dịch/i)).not.toBeInTheDocument();
-    expect(await screen.findByText("ĐÃ LƯU")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Có bản đồng bộ chờ xác nhận"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Xác thực" }),
     ).not.toBeInTheDocument();
   });
 
   it("automatically presents Attendance defaults and preserves explicit zero in one reviewed v2 Save", async () => {
-    const api = createReviewPlanningInputsApi("ready");
+    const api = createMenuApi();
     const original = api.saveCompletedAttendance;
     vi.spyOn(api, "saveCompletedAttendance").mockImplementation(
       async (request) => {
@@ -840,7 +1054,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("does not coerce a blank Attendance quantity to zero", async () => {
-    const api = createReviewPlanningInputsApi("ready");
+    const api = createMenuApi();
     const preview = vi.spyOn(api, "previewAttendance");
     renderWorkbench(api);
     fireEvent.click(await screen.findByRole("tab", { name: "Sĩ số" }));
@@ -858,17 +1072,19 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(reviewedRows[0]?.student_portions).not.toBe(0);
   });
 
-  it("invalidates a reviewed Menu after a material edit", async () => {
+  it("invalidates a reviewed Menu after another Google fetch", async () => {
     renderWorkbench();
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
     expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
 
-    fireEvent.change(cell, { target: { value: "review-planning-dish-1" } });
+    await fetchGoogleCandidate();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "Lưu" }),
+      ).not.toBeInTheDocument(),
+    );
 
     expect(
       screen.queryByRole("button", { name: "Lưu" }),
@@ -896,7 +1112,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("does not replace a dirty Attendance edit when refresh is rejected", async () => {
-    const api = createReviewPlanningInputsApi("ready");
+    const api = createMenuApi();
     const read = vi.spyOn(api, "getWorkbench");
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     renderWorkbench(api);
@@ -916,7 +1132,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("surfaces the backend OUTDATED consequence after source Save", async () => {
-    const api = createReviewPlanningInputsApi("ready");
+    const api = createMenuApi();
     const original = api.saveCompletedMenu;
     vi.spyOn(api, "saveCompletedMenu").mockImplementation(async (request) => {
       const result = await original(request);
@@ -926,10 +1142,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     });
     renderWorkbench(api);
 
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
@@ -939,14 +1152,23 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     );
   });
 
+  it("shows synchronized source identity from authoritative Google save readback", async () => {
+    renderWorkbench();
+    await fetchGoogleCandidate();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Lưu" }));
+    const strip = screen.getByLabelText("Nguồn thực đơn tuần");
+    expect(await within(strip).findByText(/^Đã đồng bộ/)).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Bỏ bản đồng bộ" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("preserves a dirty Weekly Menu edit when a tab switch is rejected", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     renderWorkbench();
 
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
 
     expect(confirm).toHaveBeenCalledWith(
@@ -956,32 +1178,30 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       "aria-selected",
       "true",
     );
-    expect(cell).toHaveValue("review-planning-dish-3");
+    expect(screen.getByLabelText("Lưới thực đơn")).toHaveTextContent(
+      "Canh rau ngót",
+    );
   });
 
   it("preserves the current week and local source edit when week change is rejected", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     renderWorkbench();
 
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
     const weekInput = screen.getByLabelText("Tuần phục vụ") as HTMLInputElement;
     const currentWeek = weekInput.value;
     const { nextWeek } = followingWeekFrom(weekInput);
     fireEvent.change(weekInput, { target: { value: nextWeek } });
 
     expect(weekInput).toHaveValue(currentWeek);
-    expect(cell).toHaveValue("review-planning-dish-3");
+    expect(screen.getByLabelText("Lưới thực đơn")).toHaveTextContent(
+      "Canh rau ngót",
+    );
   });
 
   it("keeps beforeunload active while source work is unsaved", async () => {
     renderWorkbench();
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
 
     await waitFor(() => {
       const event = new Event("beforeunload", { cancelable: true });
@@ -1016,23 +1236,24 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
   });
 
   it("locks further source mutation after an unknown write outcome until refresh", async () => {
-    const api = createReviewPlanningInputsApi("ready");
+    const api = createMenuApi();
     vi.spyOn(api, "saveCompletedMenu").mockResolvedValue({
       kind: "transport_error",
       diagnostic: { code: "NETWORK_FAILURE", safeMessage: "Mất kết nối" },
     });
     renderWorkbench(api);
 
-    const cell = await screen.findByRole("combobox", {
-      name: /Món canh · Trường Tiểu học Nguyễn Du/,
-    });
-    fireEvent.change(cell, { target: { value: "review-planning-dish-3" } });
+    await fetchGoogleCandidate();
     fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
     await screen.findByRole("region", { name: "Xem thay đổi thực đơn" });
     const save = screen.getByRole("button", { name: "Lưu" });
     fireEvent.click(save);
 
-    await screen.findByText(/Cần làm mới dữ liệu/);
+    await screen.findByText("Cần làm mới dữ liệu trước khi tiếp tục.");
     expect(save).toBeDisabled();
+    expect(screen.getByLabelText("Đồng bộ từ Google Sheet")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Bỏ bản đồng bộ" }),
+    ).toBeDisabled();
   });
 });

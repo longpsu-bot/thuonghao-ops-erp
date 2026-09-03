@@ -26,6 +26,8 @@ import {
   exactQuantityDisplay,
   initialConfirmedNeedDraft,
   normalizeConfirmedNeedQuantity,
+  normalizeConfirmedNeedEntry,
+  confirmedNeedInputDisplay,
   subtractExactDecimals,
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedIssue,
@@ -109,7 +111,9 @@ export function confirmedNeedLineRequest(
     confirmed_need_line_id: line.confirmed_need_line_id,
     expected_current_revision_id: line.current_revision_id,
     expected_current_decision_id: line.current_decision_id,
-    proposed_confirmed_quantity: draft.exact_quantity,
+    proposed_confirmed_quantity:
+      normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
+      draft.exact_quantity,
     reason_code: draft.reason_code,
     reason_note: draft.reason_note.trim() || null,
   };
@@ -122,18 +126,28 @@ function hasUnsavedLocalChange(
   const initial = initialConfirmedNeedDraft(line);
   return (
     line.current_decision_id === null ||
-    !exactDecimalEqual(initial.exact_quantity, draft.exact_quantity) ||
+    (draft.quantity_entered === true &&
+      !normalizeConfirmedNeedEntry(draft.exact_quantity)) ||
+    !exactDecimalEqual(
+      initial.exact_quantity,
+      normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
+        draft.exact_quantity,
+    ) ||
     initial.reason_code !== draft.reason_code ||
     initial.reason_note.trim() !== draft.reason_note.trim()
   );
 }
 
 function draftError(line: ConfirmedNeedLine, draft: ConfirmedNeedDraftLine) {
-  if (!normalizeConfirmedNeedQuantity(draft.exact_quantity))
-    return "Số lượng phải là số không âm, tối đa 6 chữ số thập phân.";
   const initial = initialConfirmedNeedDraft(line);
+  const entry = draft.quantity_entered
+    ? draft.exact_quantity
+    : confirmedNeedInputDisplay(initial.exact_quantity);
+  if (!normalizeConfirmedNeedEntry(entry))
+    return "Số lượng phải là số không âm, tối đa 2 chữ số thập phân.";
   const unchanged = exactDecimalEqual(
-    draft.exact_quantity,
+    normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
+      draft.exact_quantity,
     line.proposed_confirmed_quantity,
   );
   const preservesSavedAdjustment =
@@ -168,6 +182,7 @@ export function ConfirmedNeedReviewWorkbench({
   currentNeedResolution = initialBatchId ? "available" : "idle",
   onDirtyChange,
   schoolScopeIds = [],
+  workingServiceDate,
   onPurchaseHandoffReleased,
 }: {
   authState: AtlasAuthState;
@@ -184,6 +199,7 @@ export function ConfirmedNeedReviewWorkbench({
   mode?: "connected" | "review";
   onDirtyChange?: (dirty: boolean) => void;
   schoolScopeIds?: string[];
+  workingServiceDate?: string;
   onPurchaseHandoffReleased?: () => void;
 }) {
   const [correlationId] = useState(() => crypto.randomUUID());
@@ -194,7 +210,6 @@ export function ConfirmedNeedReviewWorkbench({
     {},
   );
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
   const [confirmationFilter, setConfirmationFilter] = useState<
     "" | "needs_review" | "carried_forward"
   >("");
@@ -289,21 +304,13 @@ export function ConfirmedNeedReviewWorkbench({
         : [],
     [workbench],
   );
-  const dates = useMemo(
-    () =>
-      workbench
-        ? Array.from(
-            new Set(workbench.lines.map((line) => line.service_date)),
-          ).sort()
-        : [],
-    [workbench],
-  );
   const visibleLines = useMemo(() => {
     if (!workbench) return [];
     const query = foldSearch(search.trim());
     return workbench.lines.filter((line) => {
       if (!schoolInPlanningScope(line.school.id, schoolScopeIds)) return false;
-      if (dateFilter && line.service_date !== dateFilter) return false;
+      if (workingServiceDate && line.service_date !== workingServiceDate)
+        return false;
       if (
         confirmationFilter === "needs_review" &&
         !["CHANGED", "NEW", "UNREVIEWED"].includes(line.confirmation_state)
@@ -330,7 +337,7 @@ export function ConfirmedNeedReviewWorkbench({
     });
   }, [
     confirmationFilter,
-    dateFilter,
+    workingServiceDate,
     drafts,
     schoolScopeIds,
     search,
@@ -469,7 +476,7 @@ export function ConfirmedNeedReviewWorkbench({
   if (!initialBatchId || ["idle", "missing"].includes(currentNeedResolution))
     return (
       <Panel title="Trạng thái dữ liệu">
-        <p>Chưa có nhu cầu cho tuần đã chọn.</p>
+        <p>Chưa có nhu cầu xác nhận cho ngày này.</p>
       </Panel>
     );
   if (!workbench || workbench.confirmed_need_batch_id !== initialBatchId)
@@ -551,11 +558,19 @@ export function ConfirmedNeedReviewWorkbench({
 
       <header className="confirmed-need-heading">
         <div>
-          <span className="confirmed-need-job-label">Ngày đang xác nhận</span>
-          <p className="confirmed-need-period">
-            Tuần {viDate(workbench.service_period.period_start)}–
-            {viDate(workbench.service_period.period_end)}
-          </p>
+          {workingServiceDate ? (
+            <strong>Xác nhận nhu cầu · {viDate(workingServiceDate)}</strong>
+          ) : (
+            <>
+              <span className="confirmed-need-job-label">
+                Ngày đang xác nhận
+              </span>
+              <p className="confirmed-need-period">
+                Tuần {viDate(workbench.service_period.period_start)}–
+                {viDate(workbench.service_period.period_end)}
+              </p>
+            </>
+          )}
         </div>
       </header>
 
@@ -629,22 +644,6 @@ export function ConfirmedNeedReviewWorkbench({
             placeholder="Tìm theo nguyên liệu, trường, điểm giao…"
           />
         </label>
-        {dates.length > 1 && (
-          <label>
-            <span>Ngày</span>
-            <select
-              value={dateFilter}
-              onChange={(event) => setDateFilter(event.target.value)}
-            >
-              <option value="">Tất cả ngày</option>
-              {dates.map((date) => (
-                <option key={date} value={date}>
-                  {viDate(date)}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
         <label>
           <span>Tình trạng</span>
           <select
@@ -702,6 +701,10 @@ export function ConfirmedNeedReviewWorkbench({
                 )
               : null;
             const error = rowHasUnsavedChange ? draftError(line, draft) : null;
+            const historicalPrecision = !normalizeConfirmedNeedEntry(
+              confirmedNeedInputDisplay(initial.exact_quantity),
+            );
+            const quantityDescriptionId = `quantity-${line.confirmed_need_line_id}`;
             return (
               <tr key={line.confirmed_need_line_id}>
                 <td>
@@ -722,12 +725,24 @@ export function ConfirmedNeedReviewWorkbench({
                   <input
                     aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
                     inputMode="decimal"
-                    value={draft.exact_quantity}
+                    value={
+                      draft.quantity_entered
+                        ? draft.exact_quantity
+                        : confirmedNeedInputDisplay(draft.exact_quantity)
+                    }
+                    readOnly={historicalPrecision}
+                    aria-invalid={Boolean(error)}
+                    aria-describedby={
+                      historicalPrecision || error
+                        ? quantityDescriptionId
+                        : undefined
+                    }
                     disabled={released || !workbench.editing_allowed}
                     onChange={(event) => {
                       const exactQuantity = event.target.value;
                       const returnsToSavedBaseline = exactDecimalEqual(
-                        exactQuantity,
+                        normalizeConfirmedNeedQuantity(exactQuantity) ??
+                          exactQuantity,
                         initial.exact_quantity,
                       );
                       setDrafts((current) => ({
@@ -735,6 +750,7 @@ export function ConfirmedNeedReviewWorkbench({
                         [line.confirmed_need_line_id]: {
                           ...draft,
                           exact_quantity: exactQuantity,
+                          quantity_entered: true,
                           reason_code: returnsToSavedBaseline
                             ? initial.reason_code
                             : draft.reason_code === "PROPOSAL_ACCEPTED"
@@ -747,7 +763,18 @@ export function ConfirmedNeedReviewWorkbench({
                       }));
                     }}
                   />
-                  {error && <small className="field-error">{error}</small>}
+                  {historicalPrecision ? (
+                    <small id={quantityDescriptionId}>
+                      Vượt độ chính xác chỉnh sửa v1; giữ nguyên giá trị gốc,
+                      chỉ đọc.
+                    </small>
+                  ) : (
+                    error && (
+                      <small id={quantityDescriptionId} className="field-error">
+                        {error}
+                      </small>
+                    )
+                  )}
                 </td>
                 <td>{delta && delta !== "0" ? delta : "—"}</td>
                 <td>
@@ -756,7 +783,11 @@ export function ConfirmedNeedReviewWorkbench({
                       <select
                         aria-label={`Lý do điều chỉnh ${line.ingredient.name}`}
                         value={draft.reason_code}
-                        disabled={released || !workbench.editing_allowed}
+                        disabled={
+                          released ||
+                          !workbench.editing_allowed ||
+                          historicalPrecision
+                        }
                         onChange={(event) =>
                           setDrafts((current) => ({
                             ...current,
@@ -780,7 +811,11 @@ export function ConfirmedNeedReviewWorkbench({
                         aria-label={`Ghi chú ${line.ingredient.name}`}
                         placeholder="Ghi chú khi cần"
                         value={draft.reason_note}
-                        disabled={released || !workbench.editing_allowed}
+                        disabled={
+                          released ||
+                          !workbench.editing_allowed ||
+                          historicalPrecision
+                        }
                         onChange={(event) =>
                           setDrafts((current) => ({
                             ...current,

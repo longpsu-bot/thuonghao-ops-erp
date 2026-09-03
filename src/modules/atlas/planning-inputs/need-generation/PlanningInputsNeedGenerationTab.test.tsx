@@ -16,7 +16,7 @@ const authState = {
 } as unknown as AtlasAuthState;
 
 describe("Planning Inputs contextual generation", () => {
-  it("integrates automatic preflight into the compact daily navigator without a peer tab", async () => {
+  it("integrates current-date preflight without a duplicate date navigator or peer tab", async () => {
     render(
       <PlanningInputsWorkbench
         authState={authState}
@@ -34,10 +34,10 @@ describe("Planning Inputs contextual generation", () => {
     ).not.toBeInTheDocument();
     fireEvent.click(tabs[3]!);
     expect(
-      await screen.findByRole("navigation", {
+      screen.queryByRole("navigation", {
         name: "Chọn ngày xác nhận nhu cầu",
       }),
-    ).toBeVisible();
+    ).not.toBeInTheDocument();
     expect(
       await screen.findByRole("button", { name: "Tạo nhu cầu" }),
     ).toBeEnabled();
