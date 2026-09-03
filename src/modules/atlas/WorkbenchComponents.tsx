@@ -1,6 +1,29 @@
 import { useState, type ReactNode } from "react";
 import { Alert, Button, Group, Stack, Text, Title } from "@mantine/core";
+import { ArrowClockwise } from "@phosphor-icons/react";
 import type { AtlasPage } from "./atlasConfig";
+
+/** Routine refresh only; recovery actions keep their explicit text. */
+export function RefreshButton({
+  onClick,
+  disabled = false,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className="secondary workbench-refresh-button"
+      aria-label="Làm mới dữ liệu"
+      title="Làm mới dữ liệu"
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <ArrowClockwise size={17} aria-hidden="true" />
+    </button>
+  );
+}
 
 type HeadingLevel = 1 | 2 | 3;
 

@@ -5,7 +5,11 @@ Pinned base: `4fa5968daa00d7abadccdc2ae7ab154c2c0c4bb1`.
 This is the last authorized presentation completeness pass, not the freeze gate.
 The approved task brief and ARCH-002 govern scope. No backend, API, lifecycle,
 calculation, eligibility, allocation persistence, export contract, dependency,
-shell, hosted-data, Retool, or other-module changes are authorized.
+shell, Retool, or other-module changes are authorized. The user subsequently
+authorized a narrow embedded Need Generation presentation correction and the
+Confirmed Need review-fixture repair below. Separately authorized staging
+inspection released one synthetic Confirmed Need; its pending Handoff and
+supported-command recovery belong to the separate task recorded below.
 
 ## Audit before implementation
 
@@ -34,35 +38,83 @@ and Pantry also loses focus. The attached review now receives focus on open;
 `Quay lại` restores its current rail action. Three regression tests failed first.
 This changes only focus and accessible review targeting, not review/save data.
 
-Follow-up finding A2 (blocked by scope): the deployed, current Confirmed Need
-renders the Need Generation `Mở xác nhận` button with primary styling alongside
-the rail's `Chuyển sang lên đơn` (or dirty `Lưu`). The brief explicitly prohibits
-Need Generation changes. Owner: Planning product owner; follow-up: authorize a
-bounded presentation-only adjustment to that embedded navigation action. No
-generation or lifecycle behavior should change. This prevents freeze readiness.
+Follow-up finding A2 (**PR blocker B2, resolved**): the deployed, current
+Confirmed Need rendered `Mở xác nhận` with primary styling alongside the rail's
+`Chuyển sang lên đơn` (or dirty `Lưu`), even when that same batch was open.
+The user explicitly authorized this narrow exception to the original Need
+Generation boundary. The embedded action is now secondary navigation; matching
+the visible batch ID and service date replaces it with quiet `Đang mở` text.
+The date selector, generation commands, callbacks and lifecycle stay unchanged.
+Three focused assertions failed before correction, including the parent
+workbench's independent Monday/Wednesday batch navigation.
 
-The existing standalone Confirmed Need Storybook state helper also fails with
-`PlanningRailActionPortal requires PlanningRailActionProvider`. It predates this
-diff and is outside the specified production areas. Owner: Planning UI test
-maintainer; follow-up: restore the story's rail provider/host, then rerun released
-and unknown-outcome visual checks. Product checks use the actual workbench.
+**PR blocker B3, resolved:** the standalone Confirmed Need helper threw
+`PlanningRailActionPortal requires PlanningRailActionProvider`. The authorized
+fixture repair adds the existing provider/host and fixes the unknown-save play
+helper, which incorrectly waited for a successful save. Released, unknown-save,
+refresh-required after unknown release, and handoff-pending stories now exercise
+the real review component with session-only adapters. Play assertions verify
+commitment locks and explicit recovery text. The handoff fixture is simulated
+review evidence; it does not certify or repair the staging B1 failure.
 
 ### Conditional supplier removal
 
-**BLOCKED — explicit persisted Supplier removal requires contract/product
-confirmation.** Existing API describes positive complete splits and immutable
+**Deferred Product/Contract clarification — non-blocking for Planning + Procurement freeze.**
+Existing API describes positive complete splits and immutable
 successor revisions. The reviewed backend tests prove successor 60/40 and 30/20
 saves, but not omission of a previously persisted participant. No new removal
 action is implemented. Owner: Procurement contract/product owner; follow-up:
-explicitly approve omission semantics and establish a focused backend regression
-before authorizing a persisted-participant removal UI.
+establish a concrete MVP operator case that cannot be completed safely without
+removal, then approve omission semantics and a focused backend regression before
+authorizing a persisted-participant removal UI. This is PR item B4, an enhancement
+until that operator case is established; it must not hold the freeze.
+
+### Separate integration blocker B1
+
+The released staging synthetic Confirmed Need for **31/08/2026**, **Atlas Staging
+Synthetic School / Kitchen**, **Gà rehearsal Atlas**, **11 kg**, received:
+`The school-catering Purchase Handoff request is invalid.` No allocation or PO
+was created, and no direct SQL repair or retry was performed in this UI task.
+
+After #249 is reviewed and merged, the separate bounded task
+**PLANNING-PROCUREMENT-HANDOFF-RECOVERY-01** must reproduce that released need,
+inspect Atlas's exact Handoff request against the deployed authoritative
+contract, add a failing regression, and fix only the actual defect. Recover
+through supported commands, prove idempotency without duplicate Handoff,
+verify the expected Allocation Family, and continue Allocation → DRAFT PO on
+staging. Make the operator-facing message natural Vietnamese if the same failure
+can legitimately recur. No direct SQL repair. This task is not started here.
+
+The sequence is #249 review/merge → HANDOFF-RECOVERY-01 →
+PLANNING-PROCUREMENT-FREEZE-01 → frozen Planning/Procurement → Warehouse.
+PR #249 stays Draft/unmerged pending review. No further visual-polish round is
+planned; B1 is the remaining integration blocker, B4 is non-blocking.
+
+## Final routine-refresh consistency correction (B5)
+
+The user explicitly authorized this final shared presentation correction to
+PR #249. Rendered pre-change evidence at 1366 × 768: Planning had a 32 × 32
+icon with `aria-label="Làm mới"`; Procurement had an approximately 85 × 41 text
+button with no tooltip. Both routine workbars now use `RefreshButton` in
+`WorkbenchComponents.tsx`: the existing Phosphor `ArrowClockwise`, a 36 × 36
+circle, shared secondary outline/hover/focus/disabled styling, and
+`aria-label="Làm mới dữ liệu"` plus `title="Làm mới dữ liệu"`.
+
+Handlers and existing disabled conditions remain unchanged. No recovery
+control is converted: `Tải lại dữ liệu`, `Tải lại dữ liệu hiện tại`,
+`Thử tải lại`, `Thử lại bàn giao`, and other safety/retry actions keep text.
+No Admin, Warehouse or Dispatch adoption is included. One shared accessibility
+test is added; existing Planning/Procurement refresh and recovery tests verify
+the updated routine label, retained recovery text and authoritative readback.
+Final slice checks and preview evidence are recorded in the Draft PR body.
 
 ## Bounded execution and verification
 
 1. Add failing focused tests for D1/B2/D2, primary hierarchy and PO disclosure.
-2. Update only AllocationFamilyTable, SupplierSplitPanel,
-   SchoolCateringProcurementWorkbench, PurchaseOrderStage, PlanningWorkflowBar,
-   their focused tests and scoped rules in styles.css.
+2. Update the reproduced Planning/Procurement presentation findings, their
+   focused tests and scoped rules in styles.css. The final authorized slice
+   includes shared RefreshButton, embedded Need Generation navigation and the
+   standalone Confirmed Need stories.
 3. Browser-check the reproduced defects and required populated states at 1366,
    1920, 900, 650 and 360; inspect console, keyboard/focus and containment.
 4. Run combined Planning/Procurement tests, typecheck, touched-file formatting
@@ -70,15 +122,17 @@ before authorizing a persisted-participant removal UI.
 5. Use GitHub Actions for full validation and the exact-head Cloudflare preview
    for final visual QA. Report uninspected or unavailable checks as blocked.
 
-No migration or data rollback is needed. Reverting the presentation commit
-restores the prior UI without changing persisted operational documents.
+No migration is needed. Reverting the UI commits restores prior presentation;
+it does not undo the separately authorized synthetic staging release.
 
 ## Development validation
 
 - Test-first reproduction: five new cases failed for missing presentation/focus
   behavior; the released-state guidance assertion also failed before its fix.
-- Combined Planning/Procurement component, model, API, integration and export
-  regression: **261 tests passed across 26 files** after the D3 focus fix.
+- Combined Planning/Procurement component, model, API, integration, export and
+  shared presentation regression: **267 tests passed across 27 files** after
+  the final B2/B3/routine-refresh corrections. The four Confirmed Need recovery
+  stories also report **Pass** in Storybook's Interactions panel.
 - `pnpm typecheck` and `git diff --check`: passed.
 - Local browser: compact allocation and PO masters both fit 629px panes at
   1366 × 768; allocation demand/remainder 120/20 and applied 120/0 inspected;

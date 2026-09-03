@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AtlasAuthState } from "../connection/authSession";
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
+import { RefreshButton } from "../WorkbenchComponents";
 import { AllocationFamilyTable } from "./AllocationFamilyTable";
 import { ProcurementCommandResult } from "./ProcurementCommandResult";
 import { PurchaseOrderStage } from "./PurchaseOrderStage";
@@ -602,13 +603,7 @@ export function SchoolCateringProcurementWorkbench({
             </select>
           </label>
         )}
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => void reloadAuthoritative()}
-        >
-          Làm mới
-        </button>
+        <RefreshButton onClick={() => void reloadAuthoritative()} />
         <span className={`procurement-currentness ${currentness}`}>
           {currentnessLabels[currentness]}
         </span>

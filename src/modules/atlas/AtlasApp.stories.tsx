@@ -1,10 +1,14 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { userEvent, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import { AtlasAppView as AtlasApp } from "./AtlasApp";
 import { createReviewAuthState } from "./review/reviewMode";
 import { NeedGenerationWorkbench } from "./planning-inputs/need-generation/NeedGenerationWorkbench";
 import { PlanningInputsWorkbench } from "./planning-inputs/PlanningInputsWorkbench";
+import {
+  PlanningRailActionHost,
+  PlanningRailActionProvider,
+} from "./planning-inputs/PlanningRailActionPortal";
 import { createReviewNeedGenerationApi } from "./planning-inputs/need-generation/reviewNeedGenerationApi";
 import { createReviewPlanningInputReadinessApi } from "./planning-inputs/readiness/reviewPlanningInputReadinessApi";
 import { ConfirmedNeedReviewWorkbench } from "./planning-inputs/confirmed-needs/ConfirmedNeedReviewWorkbench";
@@ -36,13 +40,13 @@ async function selectPlanningTab(canvasElement: HTMLElement, name: string) {
 const confirmedNeedBatchId = "c4500000-0000-0000-0000-000000000001";
 
 function ConfirmedNeedStateStory({
-  unknownConfirm = false,
+  outcome = "ready",
 }: {
-  unknownConfirm?: boolean;
+  outcome?: "ready" | "unknown-save" | "unknown-release" | "handoff-pending";
 }) {
   const [api] = useState(() => {
     const next = createReviewConfirmedNeedApi("ready");
-    if (unknownConfirm)
+    if (outcome === "unknown-save")
       next.save = async () => ({
         kind: "transport_error",
         diagnostic: {
@@ -50,21 +54,42 @@ function ConfirmedNeedStateStory({
           safeMessage: "Chưa chắc chắn thay đổi đã được lưu.",
         },
       });
+    if (outcome === "unknown-release")
+      next.releaseSaved = async () => ({
+        kind: "transport_error",
+        diagnostic: {
+          code: "NETWORK_FAILURE",
+          safeMessage: "Chưa chắc chắn nhu cầu đã được phát hành.",
+        },
+      });
+    if (outcome === "handoff-pending")
+      next.releasePurchaseHandoff = async () => ({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "RETRYABLE_CONCURRENCY_FAILURE",
+          safe_message: "Bàn giao mua hàng chưa được tạo.",
+          retryable: true,
+        },
+      });
     return next;
   });
   return (
-    <main className="atlas-page">
-      <ConfirmedNeedReviewWorkbench
-        authState={createReviewAuthState("ready")}
-        api={api}
-        initialBatchId={confirmedNeedBatchId}
-        mode="review"
-      />
-    </main>
+    <PlanningRailActionProvider>
+      <main className="atlas-page">
+        <PlanningRailActionHost />
+        <ConfirmedNeedReviewWorkbench
+          authState={createReviewAuthState("ready")}
+          api={api}
+          initialBatchId={confirmedNeedBatchId}
+          mode="review"
+        />
+      </main>
+    </PlanningRailActionProvider>
   );
 }
 
-async function saveConfirmedNeed(canvasElement: HTMLElement) {
+async function submitConfirmedNeedChanges(canvasElement: HTMLElement) {
   const canvas = within(canvasElement);
   const quantity = await canvas.findByLabelText("Số lượng xác nhận Cà rốt");
   await userEvent.clear(quantity);
@@ -74,7 +99,23 @@ async function saveConfirmedNeed(canvasElement: HTMLElement) {
     "PLANNING_STEP_ADJUSTMENT",
   );
   await userEvent.click(canvas.getByRole("button", { name: "Lưu" }));
+}
+
+async function saveConfirmedNeed(canvasElement: HTMLElement) {
+  await submitConfirmedNeedChanges(canvasElement);
+  const canvas = within(canvasElement);
   await canvas.findByText("Đã lưu thay đổi.");
+}
+
+async function releaseConfirmedNeed(canvasElement: HTMLElement) {
+  await saveConfirmedNeed(canvasElement);
+  const canvas = within(canvasElement);
+  await userEvent.click(
+    canvas.getByRole("button", { name: "Chuyển sang lên đơn" }),
+  );
+  await userEvent.click(
+    await canvas.findByRole("button", { name: "Xác nhận chuyển" }),
+  );
 }
 
 function FirstTimeConfirmedNeedStory() {
@@ -417,25 +458,62 @@ export const ConfirmedNeedReleased: Story = {
   render: () => <ConfirmedNeedStateStory />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await saveConfirmedNeed(canvasElement);
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Chuyển sang lên đơn" }),
-    );
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Xác nhận chuyển" }),
-    );
+    await releaseConfirmedNeed(canvasElement);
     await canvas.findByText("Đã chuyển sang lên đơn.");
+    await expect(
+      canvas.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
   },
 };
 
 export const ConfirmedNeedUnknownWriteOutcome: Story = {
   name: "Xác nhận nhu cầu · kết quả ghi chưa xác định",
   args: { initialPage: "planning-inputs", reviewMode: true },
-  render: () => <ConfirmedNeedStateStory unknownConfirm />,
+  render: () => <ConfirmedNeedStateStory outcome="unknown-save" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await saveConfirmedNeed(canvasElement);
+    await submitConfirmedNeedChanges(canvasElement);
     await canvas.findByText(/Atlas sẽ không tự gửi lại/);
+    await expect(canvas.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    await expect(
+      canvas.getByRole("button", { name: "Làm mới" }),
+    ).toHaveTextContent("Làm mới");
+  },
+};
+
+export const ConfirmedNeedRefreshRequired: Story = {
+  name: "Xác nhận nhu cầu · cần làm mới sau kết quả chuyển chưa rõ",
+  args: { initialPage: "planning-inputs", reviewMode: true },
+  render: () => <ConfirmedNeedStateStory outcome="unknown-release" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await releaseConfirmedNeed(canvasElement);
+    await canvas.findByText(
+      "Chưa xác định được kết quả chuyển. Hãy làm mới dữ liệu trước khi tiếp tục.",
+    );
+    await expect(
+      canvas.getByRole("button", { name: "Chuyển sang lên đơn" }),
+    ).toBeDisabled();
+    await expect(
+      canvas.getByRole("button", { name: "Làm mới" }),
+    ).toHaveTextContent("Làm mới");
+  },
+};
+
+export const ConfirmedNeedHandoffPending: Story = {
+  name: "Xác nhận nhu cầu · đã phát hành, bàn giao còn chờ",
+  args: { initialPage: "planning-inputs", reviewMode: true },
+  render: () => <ConfirmedNeedStateStory outcome="handoff-pending" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await releaseConfirmedNeed(canvasElement);
+    await canvas.findByText("Nhu cầu đã phát hành; Bàn giao mua hàng còn chờ.");
+    await expect(
+      canvas.getByRole("button", { name: "Thử lại bàn giao" }),
+    ).toBeEnabled();
+    await expect(
+      canvas.queryByRole("button", { name: "Lưu" }),
+    ).not.toBeInTheDocument();
   },
 };
 

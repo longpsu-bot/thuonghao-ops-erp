@@ -9,9 +9,8 @@ import {
   type ComponentType,
   type ComponentProps,
 } from "react";
-import { Button, MantineProvider } from "@mantine/core";
+import { MantineProvider } from "@mantine/core";
 import {
-  ArrowClockwise,
   CloudArrowDown,
   Eye,
   FloppyDisk,
@@ -23,6 +22,7 @@ import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
 import {
   Chip,
   CompactTable,
+  RefreshButton,
   OperationalState,
   WorkbenchHeader,
 } from "../WorkbenchComponents";
@@ -1722,17 +1722,10 @@ export function PlanningInputsWorkbenchView({
           activeId={tab}
           onStepChange={changeTab}
           secondaryActions={
-            <Button
-              type="button"
-              className="planning-refresh-action"
-              variant="outline"
-              aria-label="Làm mới"
-              title="Làm mới dữ liệu"
+            <RefreshButton
               onClick={refreshAuthoritativeData}
               disabled={saving}
-            >
-              <ArrowClockwise size={17} aria-hidden="true" />
-            </Button>
+            />
           }
           actions={authSubject ? sourceRailAction : undefined}
         />
@@ -2398,6 +2391,7 @@ export function PlanningInputsWorkbenchView({
                     selectedWeekEnd={selectedWeekEnd}
                     mode={mode}
                     embeddedInConfirmedNeed
+                    openConfirmedNeed={visibleConfirmedNeed}
                     onConfirmedNeedSelected={(
                       nextBatchId,
                       serviceDate,

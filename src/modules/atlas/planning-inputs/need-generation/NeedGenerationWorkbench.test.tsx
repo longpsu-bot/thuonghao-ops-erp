@@ -240,6 +240,7 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       name: "Mở xác nhận",
     });
     expect(openConfirmedNeed).toBeEnabled();
+    expect(openConfirmedNeed).toHaveClass("secondary-forward");
     fireEvent.click(openConfirmedNeed);
 
     expect(execute).not.toHaveBeenCalled();
@@ -248,6 +249,50 @@ describe("UI-QUALITY-02AB-UX automatic preflight and atomic Need Generation", ()
       "2026-08-03",
       expect.objectContaining({ downstream_currentness: "CURRENT" }),
     );
+  });
+
+  it("shows a quiet open state only for the same Confirmed Need batch and date", async () => {
+    const api = createReviewNeedGenerationApi("ready");
+    const preflightApi = await makePreflightCurrentness("CURRENT");
+    const props = {
+      authState,
+      api,
+      preflightApi,
+      selectedWeekStart: "2026-08-03",
+      selectedWeekEnd: "2026-08-09",
+      embeddedInConfirmedNeed: true,
+    };
+    const { rerender } = render(
+      <NeedGenerationWorkbench
+        {...props}
+        openConfirmedNeed={{
+          batchId: "current-batch",
+          serviceDate: "2026-08-03",
+        }}
+      />,
+    );
+    const action = await screen.findByRole("region", {
+      name: "Việc cần làm cho ngày đã chọn",
+    });
+    expect(within(action).getByRole("status")).toHaveTextContent("Đang mở");
+    expect(within(action).queryByRole("button")).not.toBeInTheDocument();
+
+    for (const openConfirmedNeed of [
+      { batchId: "another-batch", serviceDate: "2026-08-03" },
+      { batchId: "current-batch", serviceDate: "2026-08-04" },
+      null,
+    ]) {
+      rerender(
+        <NeedGenerationWorkbench
+          {...props}
+          openConfirmedNeed={openConfirmedNeed}
+        />,
+      );
+      expect(
+        within(action).getByRole("button", { name: "Mở xác nhận" }),
+      ).toHaveClass("secondary-forward");
+      expect(within(action).queryByText("Đang mở")).not.toBeInTheDocument();
+    }
   });
 
   it("keeps embedded BLOCKED state backend-driven with no execute action", async () => {

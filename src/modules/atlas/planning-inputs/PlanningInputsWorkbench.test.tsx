@@ -194,8 +194,11 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     expect(
       within(rail).getByRole("button", { name: "Phạm vi trường" }),
     ).toBeVisible();
-    const refresh = within(rail).getByRole("button", { name: "Làm mới" });
+    const refresh = within(rail).getByRole("button", {
+      name: "Làm mới dữ liệu",
+    });
     expect(refresh).toBeVisible();
+    expect(refresh).toHaveAttribute("title", "Làm mới dữ liệu");
     expect(refresh).not.toHaveTextContent("Làm mới");
     expect(
       within(rail).getByLabelText("Hành động bước hiện tại"),
@@ -827,7 +830,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
       (await screen.findAllByRole("spinbutton", { name: /Suất học sinh/ }))[0],
     ).toHaveValue(500);
 
-    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
 
     await waitFor(() =>
       expect(
@@ -903,7 +906,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     )[0]!;
     fireEvent.change(studentInput, { target: { value: "487" } });
 
-    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
 
     expect(confirm).toHaveBeenCalledWith(
       "Có thay đổi chưa lưu. Làm mới sẽ bỏ các thay đổi này. Tiếp tục?",

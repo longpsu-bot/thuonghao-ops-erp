@@ -559,6 +559,39 @@ main {
   border-radius: 6px;
   padding: 9px 13px;
 }
+
+button.secondary.workbench-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid var(--atlas-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--atlas-text-muted);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+button.secondary.workbench-refresh-button:hover:not(:disabled) {
+  background: var(--atlas-primary-soft);
+  color: var(--atlas-primary);
+}
+
+button.secondary.workbench-refresh-button:focus-visible {
+  outline: 2px solid var(--atlas-primary);
+  outline-offset: 2px;
+}
+
+button.secondary.workbench-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 .planner-controls {
   display: grid;
   grid-template-columns: 310px 160px 1fr 145px 170px 1.3fr;
@@ -5478,8 +5511,7 @@ tbody tr.selected-row {
   background: #244c66;
 }
 
-.planning-operating-actions button:focus-visible,
-.planning-refresh-action:focus-visible {
+.planning-operating-actions button:focus-visible {
   outline: 2px solid var(--atlas-primary);
   outline-offset: 2px;
 }
@@ -5487,21 +5519,6 @@ tbody tr.selected-row {
 .planning-operating-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
-}
-
-.planning-refresh-action {
-  width: var(--planning-control-height);
-  min-width: var(--planning-control-height);
-  padding-inline: 0;
-  border-color: transparent;
-  background: transparent;
-  color: var(--atlas-text-muted);
-  box-shadow: none;
-}
-
-.planning-refresh-action:hover:not(:disabled) {
-  background: #edf1f4;
-  color: var(--atlas-primary);
 }
 
 @container (max-width: 960px) {
@@ -5730,6 +5747,23 @@ tbody tr.selected-row {
   background: var(--atlas-primary);
   color: #fff;
   font-weight: 800;
+}
+
+.need-generation-daily-selected-action > .secondary-forward {
+  border-color: var(--atlas-border);
+  background: var(--atlas-surface);
+  color: var(--atlas-primary);
+  font-weight: 600;
+}
+
+.need-generation-daily-selected-action > .secondary-forward:focus-visible {
+  outline: 2px solid var(--atlas-primary);
+  outline-offset: 2px;
+}
+
+.need-generation-open-state {
+  color: var(--atlas-text-muted);
+  font-size: 12px;
 }
 
 .need-generation-daily-selected-notice {

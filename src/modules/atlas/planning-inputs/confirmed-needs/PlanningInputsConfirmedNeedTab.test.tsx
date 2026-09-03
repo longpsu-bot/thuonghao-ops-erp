@@ -325,6 +325,10 @@ describe("Planning Inputs Confirmed Need tab", () => {
     );
     fireEvent.change(search, { target: { value: "Nguyễn Du" } });
     expect(search).toHaveValue("Nguyễn Du");
+    expect(screen.getByText("Đang mở")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Mở xác nhận" }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(
       within(dailySelector).getByRole("button", {
@@ -338,6 +342,7 @@ describe("Planning Inputs Confirmed Need tab", () => {
       ).toHaveValue(""),
     );
     expect(screen.getByText(/Đang xem ngày/)).toHaveTextContent("05/08/2026");
+    expect(screen.getByText("Đang mở")).toBeVisible();
     expect(confirmedNeedApi.getReview).toHaveBeenCalledTimes(2);
     expect(confirmedNeedApi.getReview).toHaveBeenNthCalledWith(
       1,

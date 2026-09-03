@@ -869,9 +869,11 @@ describe("school-catering Procurement allocation workbench", () => {
     expect(result).toHaveTextContent("Hãy tải lại dữ liệu hiện tại");
     expect(result).not.toHaveTextContent("dữ liệu có thẩm quyền");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeDisabled();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Tải lại dữ liệu hiện tại" }),
-    );
+    const recovery = screen.getByRole("button", {
+      name: "Tải lại dữ liệu hiện tại",
+    });
+    expect(recovery).toHaveTextContent("Tải lại dữ liệu hiện tại");
+    fireEvent.click(recovery);
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled(),
     );
@@ -1003,7 +1005,10 @@ describe("school-catering Procurement currentness", () => {
 
     renderWorkbench(api);
     await screen.findByText("Không thể tải phân bổ hiện tại.");
-    fireEvent.click(screen.getByRole("button", { name: "Làm mới" }));
+    const refresh = screen.getByRole("button", { name: "Làm mới dữ liệu" });
+    expect(refresh).toHaveAttribute("title", "Làm mới dữ liệu");
+    expect(refresh).toHaveTextContent(/^$/);
+    fireEvent.click(refresh);
 
     expect(await screen.findByText("Dữ liệu hiện tại")).toHaveClass("current");
     expect(screen.getByText("Gạo thơm")).toBeVisible();

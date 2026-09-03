@@ -65,6 +65,13 @@ job instead of becoming a fifth destination.
 
 Need Generation remains a Planning domain and backend command boundary, but it is not a peer operator destination. Inside `Xác nhận nhu cầu`, the normal daily projection is limited to `Ngày phục vụ`, one translated `Trạng thái`, and `Việc cần làm`. A row control reviews/selects the date (or directly opens an existing current Confirmed Need); only the separate contextual `Tạo nhu cầu` / `Cập nhật nhu cầu` primary action invokes the command. The ordinary Confirmed Need table is the single operational quantity projection; source readiness/evidence, grouped theoretical Recipe/Pantry contributions, versions, and run history remain support detail.
 
+The embedded daily `Mở xác nhận` control is secondary navigation. When the same
+Confirmed Need batch and service date are already visible, it becomes quiet
+`Đang mở` text, leaving `Lưu` / `Chuyển sang lên đơn` in the operating rail.
+Standalone Confirmed Need stories include the rail provider/host and cover
+released, unknown save, refresh-required after uncertain release and pending
+handoff recovery with explicit text actions.
+
 ### Weekly Menu and Attendance
 
 Primary paths:
@@ -203,7 +210,16 @@ Row actions expose selection, focus the attached heading and restore focus on
 Close. PO version/numbering support stays under `Nguồn & lịch sử`, while the
 official released number and actionable warnings stay visible. Planning keeps
 four tasks with quieter healthy statuses and accessible state descriptions.
-See the [audit and conditional removal decision](atlas-ops-ui-freeze-closeout-01.md).
+Planning and Procurement use the shared `RefreshButton` for routine workbar
+refresh: a secondary 36 × 36 circular `ArrowClockwise` control with
+`aria-label` and `title` set to `Làm mới dữ liệu`. Refresh handlers and existing
+disabled conditions stay in each workbench. Stale/unknown-outcome refresh,
+retry and handoff recovery actions retain explicit text.
+Persisted Supplier removal is **Deferred Product/Contract clarification —
+non-blocking for Planning + Procurement freeze**. It is not implemented.
+The staging Purchase Handoff failure remains a separate integration blocker
+for `PLANNING-PROCUREMENT-HANDOFF-RECOVERY-01` after #249.
+See the [audit and dispositions](atlas-ops-ui-freeze-closeout-01.md).
 
 For an immutable `RELEASED_TO_SUPPLIER` PO, `Xuất XLSX` is the primary output
 and `Xuất PDF` is secondary. Both are generated in a focused Procurement export
