@@ -9,7 +9,7 @@ export async function saveLocalConfirmedAllocations(
   invoke,
   seedLocal = (sql) =>
     runPinnedSupabase(["db", "query", "--local", "--agent", "no", sql], {
-      stdio: "ignore",
+      stdio: ["ignore", "ignore", "inherit"],
     }),
 ) {
   const uuid =
@@ -18,7 +18,10 @@ export async function saveLocalConfirmedAllocations(
   if (!uuid.test(subject) || !uuid.test(batch))
     throw new Error("Local allocation fixture requires exact UUIDs.");
   const supplier = "c7100000-0000-4000-8000-000000000001";
-  seedLocal(`insert into atlas_core.role_capabilities(role_id,capability_id)
+  // One prepared statement; one line also survives pnpm's Windows command shim.
+  seedLocal(
+    `do $local_confirmed_allocation$ begin
+    insert into atlas_core.role_capabilities(role_id,capability_id)
     select distinct membership.role_id,capability.capability_id
     from atlas_core.actor_auth_subjects identity
     join atlas_core.actor_role_memberships membership using(actor_id)
@@ -33,7 +36,9 @@ export async function saveLocalConfirmedAllocations(
     from atlas_planning.confirmed_need_lines line where line.confirmed_need_batch_id='${batch}'::uuid
       and not exists(select 1 from atlas_admin.supplier_eligibilities existing
         where existing.supplier_id='${supplier}'::uuid and existing.ingredient_id=line.ingredient_id)
-    on conflict do nothing;`);
+    on conflict do nothing;
+  end; $local_confirmed_allocation$;`.replace(/[\r\n]+/g, " "),
+  );
   const read = await invoke(
     client,
     "get_confirmed_supplier_allocation_workbench",

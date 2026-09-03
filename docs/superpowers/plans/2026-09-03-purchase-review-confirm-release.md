@@ -12,7 +12,7 @@
 
 ## Execution ledger — 2026-09-03
 
-The detailed task checklist below records the original TDD sequence; this ledger records actual delivery evidence. Delivery uses one reviewed commit instead of intermediate slice commits; no working change was placed on `main`.
+The detailed task checklist below records the original TDD sequence; this ledger records actual delivery evidence. Delivery uses one implementation commit plus a bounded CI-verifier follow-up instead of intermediate slice commits; no working change was placed on `main`.
 
 - [x] Task1: verified/authorized checkout and branch; local B1 boundary regression passes6 assertions. Historical Staging cause is not claimed proven.
 - [x] Task2: read-only generated review, canonical confirmed source bridge, strict typed source/contribution lineage and scope-filtered read models implemented.
@@ -21,7 +21,7 @@ The detailed task checklist below records the original TDD sequence; this ledger
 - [x] Task5: four typed APIs and separate Retool-v1-based XLSX preview implemented; both sheets visually rendered and exact quantity/blank correction tests pass.
 - [x] Task6: same-date navigation-only Planning continuation, source-aware supplier editor, coherent synthetic journey, focus/currentness/recovery behavior implemented;310 focused frontend tests and typecheck pass.
 - [x] Task7 local evidence: six populated states × five viewport sizes show no page overflow; keyboard focus checked; internal Storybook documentation diagnostic disclosed; both final read-only audits clear; API/decision/rollback evidence updated.
-- [ ] Task7 publication: commit, push and create the single unmerged Draft PR; report exact head and actual GitHub check status. Broad GitHub validation is not replaced by the local evidence.
+- [x] Task7 publication: committed, pushed and opened the single unmerged [Draft PR251](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/251). The first CI run passed Frontend CI and found a local fixture transport issue during Smoke; the bounded follow-up is covered by a red-first helper regression. Final head/check status is reported on the PR; broad GitHub validation is not replaced by local evidence.
 
 Full evidence and reproducible commands: [implementation record](../../implementation-tasks/TASK-PURCHASE-REVIEW-CONFIRM-RELEASE-01.md).
 

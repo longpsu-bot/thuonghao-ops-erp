@@ -32,6 +32,13 @@ describe("local-only confirmed allocation prerequisites", () => {
       .mockResolvedValue({ success: true });
     await saveLocalConfirmedAllocations({}, subject, workbench, invoke, seed);
     expect(seed).toHaveBeenCalledOnce();
+    expect(seed.mock.calls[0][0]).toMatch(
+      /^do \$local_confirmed_allocation\$\s+begin\b/,
+    );
+    expect(seed.mock.calls[0][0]).toMatch(
+      /end; \$local_confirmed_allocation\$;$/,
+    );
+    expect(seed.mock.calls[0][0]).not.toMatch(/[\r\n]/);
     expect(seed.mock.calls[0][0]).toContain("supplier_eligibilities");
     expect(seed.mock.calls[0][0]).not.toContain("allocation_family_revisions");
     expect(invoke.mock.calls[0][1]).toBe(
