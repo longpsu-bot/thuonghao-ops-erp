@@ -18,16 +18,19 @@ export async function saveLocalConfirmedAllocations(
   if (!uuid.test(subject) || !uuid.test(batch))
     throw new Error("Local allocation fixture requires exact UUIDs.");
   const supplier = "c7100000-0000-4000-8000-000000000001";
+  // Reuse the binding identities owned by school_catering_procurement_verifier_fixture.sql.
   // One prepared statement; one line also survives pnpm's Windows command shim.
   seedLocal(
     `do $local_confirmed_allocation$ begin
-    insert into atlas_core.role_capabilities(role_id,capability_id)
-    select distinct membership.role_id,capability.capability_id
-    from atlas_core.actor_auth_subjects identity
-    join atlas_core.actor_role_memberships membership using(actor_id)
-    cross join atlas_core.capabilities capability
-    where identity.auth_subject_id='${subject}'::uuid and membership.membership_status='ACTIVE'
-      and capability.capability_code in ('procurement.school_catering.read','procurement.school_catering.write')
+    insert into atlas_core.role_capabilities(role_capability_id,role_id,capability_id,granted_by_actor_id)
+    select source.binding_id,'b6000000-0000-0000-0000-000000000003'::uuid,
+      capability.capability_id,'b6000000-0000-0000-0000-000000000001'::uuid
+    from (values
+      ('b6000000-0000-4000-8000-000000000035'::uuid,'procurement.school_catering.read'),
+      ('b6000000-0000-4000-8000-000000000036'::uuid,'procurement.school_catering.write')
+    ) source(binding_id,capability_code)
+    join atlas_core.capabilities capability using(capability_code)
+    where true
     on conflict do nothing;
     insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
     values('${supplier}','PR-A-VERIFY-A','PR-A Verify Supplier A','ACTIVE') on conflict do nothing;

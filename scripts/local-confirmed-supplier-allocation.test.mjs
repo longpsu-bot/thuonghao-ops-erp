@@ -24,6 +24,40 @@ const row = {
 };
 
 describe("local-only confirmed allocation prerequisites", () => {
+  it("reuses canonical Procurement capability identities in one shim-safe statement", async () => {
+    const seed = vi.fn();
+    await saveLocalConfirmedAllocations(
+      {},
+      subject,
+      workbench,
+      vi.fn().mockResolvedValue({ rows: [] }),
+      seed,
+    );
+    const sql = seed.mock.calls[0][0];
+    expect(sql).not.toMatch(/[\r\n]/);
+    const capabilitySeed = sql
+      .match(/insert into atlas_core\.role_capabilities\([\s\S]*?;/)?.[0]
+      .replace(/\s+/g, " ");
+    expect(capabilitySeed).toContain(
+      "role_capability_id,role_id,capability_id,granted_by_actor_id",
+    );
+    expect(capabilitySeed).toContain(
+      "select source.binding_id,'b6000000-0000-0000-0000-000000000003'::uuid, capability.capability_id,'b6000000-0000-0000-0000-000000000001'::uuid",
+    );
+    expect(capabilitySeed).toContain(
+      "('b6000000-0000-4000-8000-000000000035'::uuid,'procurement.school_catering.read')",
+    );
+    expect(capabilitySeed).toContain(
+      "('b6000000-0000-4000-8000-000000000036'::uuid,'procurement.school_catering.write')",
+    );
+    expect(capabilitySeed).toContain(
+      "source(binding_id,capability_code) join atlas_core.capabilities capability using(capability_code)",
+    );
+    expect(capabilitySeed).toContain("on conflict do nothing;");
+    expect(
+      sql.match(/insert into atlas_core\.role_capabilities\(/g),
+    ).toHaveLength(1);
+  });
   it("seeds only local eligibility and saves exact authoritative quantities via the public command", async () => {
     const seed = vi.fn();
     const invoke = vi
