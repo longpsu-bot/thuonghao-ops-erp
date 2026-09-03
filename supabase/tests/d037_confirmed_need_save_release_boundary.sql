@@ -142,6 +142,8 @@ select 'save_replay', atlas_api.save_confirmed_needs(pg_temp.d037_command(
     from d037_results where name = 'read'))));
 reset role;
 
+\ir ../local/purchase_review_saved_allocations_fixture.sql
+
 -- D-042 retains the invalidated school-catering Handoff root so the corrected
 -- Planning release can reuse it. This fixture reproduces that retained state;
 -- the following calls exercise both public commands across the boundary.
@@ -260,9 +262,9 @@ select ok((select response #>> '{workbench,allowed_actions,save_confirmed_needs}
 select ok((select response #>>
     '{authoritative_readback,allowed_actions,save_confirmed_needs}' = 'true'
   and response #>>
-    '{authoritative_readback,allowed_actions,release_confirmed_needs}' = 'true'
+    '{authoritative_readback,allowed_actions,release_confirmed_needs}' = 'false'
   from d037_results where name = 'save'),
-  'D037-28 a complete saved batch authorizes both editable Save and Release');
+  'D037-28 saved Need remains editable but release waits for confirmed allocation');
 select ok((select response #>>
     '{authoritative_readback,allowed_actions,save_confirmed_needs}' = 'false'
   and response #>>

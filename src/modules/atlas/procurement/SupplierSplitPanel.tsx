@@ -54,6 +54,8 @@ const allocationDisabledReasonLabels: Record<string, string> = {
 };
 
 function allocationDisabledReasonLabel(reason: string) {
+  if (reason === "Hoàn tất xác nhận nhu cầu trước khi phân bổ NCC.")
+    return reason;
   return (
     allocationDisabledReasonLabels[reason] ??
     "Máy chủ hiện không cho phép lưu phân bổ này."
@@ -114,7 +116,8 @@ export function SupplierSplitPanel({
       }, 0n),
     [draft, participantIds],
   );
-  const authoritativeTotal = scaled(String(row.family_quantity));
+  const authoritativeTotal =
+    row.complete === false ? null : scaled(String(row.family_quantity));
   const difference =
     total === null || authoritativeTotal === null
       ? null
@@ -163,9 +166,16 @@ export function SupplierSplitPanel({
         aria-live="polite"
       >
         <span>
-          <small>Nhu cầu: </small>
+          <small>
+            {row.family.source_kind === "CONFIRMED_NEED"
+              ? "Nhu cầu đã xác nhận:"
+              : "Nhu cầu:"}{" "}
+          </small>
           <strong>
-            {displayScaled(authoritativeTotal ?? 0n)} {row.unit_code}
+            {authoritativeTotal === null
+              ? "—"
+              : displayScaled(authoritativeTotal)}{" "}
+            {row.unit_code}
           </strong>
         </span>
         <span>
@@ -213,7 +223,7 @@ export function SupplierSplitPanel({
           <button
             type="button"
             className="secondary"
-            disabled={busy || mutationLocked}
+            disabled={busy || mutationLocked || row.complete === false}
             onClick={() => {
               const supplierId = row.recommendation!.supplier_id;
               setParticipantIds([supplierId]);
@@ -251,7 +261,7 @@ export function SupplierSplitPanel({
           <button
             type="button"
             className="secondary"
-            disabled={busy || mutationLocked}
+            disabled={busy || mutationLocked || row.complete === false}
             onClick={() => {
               const proposal = row.rebalance_proposal ?? [];
               setParticipantIds(proposal.map((split) => split.supplier_id));
@@ -304,7 +314,7 @@ export function SupplierSplitPanel({
                     [supplier.supplier_id]: event.target.value,
                   }))
                 }
-                disabled={busy || mutationLocked}
+                disabled={busy || mutationLocked || row.complete === false}
               />
               <span>{row.unit_code}</span>
               {operatorAddedIds.has(supplier.supplier_id) && (
@@ -312,7 +322,7 @@ export function SupplierSplitPanel({
                   type="button"
                   className="secondary"
                   aria-label={`Xóa ${supplier.supplier_name}`}
-                  disabled={busy || mutationLocked}
+                  disabled={busy || mutationLocked || row.complete === false}
                   onClick={() => {
                     setParticipantIds((ids) =>
                       ids.filter((id) => id !== supplier.supplier_id),
@@ -346,7 +356,12 @@ export function SupplierSplitPanel({
         <button
           type="button"
           className="secondary"
-          disabled={availableSuppliers.length === 0 || busy || mutationLocked}
+          disabled={
+            availableSuppliers.length === 0 ||
+            busy ||
+            mutationLocked ||
+            row.complete === false
+          }
           onClick={() => {
             setAddingSupplier((current) => !current);
             setSupplierToAdd("");
@@ -381,7 +396,12 @@ export function SupplierSplitPanel({
                   (supplier) => supplier.supplier_id === supplierToAdd,
                 )?.supplier_name ?? "nhà cung ứng"
               }`}
-              disabled={!supplierToAdd || busy || mutationLocked}
+              disabled={
+                !supplierToAdd ||
+                busy ||
+                mutationLocked ||
+                row.complete === false
+              }
               onClick={() => {
                 setParticipantIds((ids) => [...ids, supplierToAdd]);
                 setOperatorAddedIds((ids) => new Set(ids).add(supplierToAdd));
@@ -449,8 +469,14 @@ export function SupplierSplitPanel({
             </dl>
             <ul>
               {row.contributions.map((contribution) => (
-                <li key={contribution.purchase_handoff_line_revision_id}>
-                  {contribution.purchase_handoff_line_revision_id}
+                <li
+                  key={
+                    contribution.purchase_handoff_line_revision_id ??
+                    contribution.confirmed_need_line_revision_id
+                  }
+                >
+                  {contribution.purchase_handoff_line_revision_id ??
+                    contribution.confirmed_need_line_revision_id}
                 </li>
               ))}
             </ul>

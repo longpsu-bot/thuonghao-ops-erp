@@ -923,7 +923,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(78);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(80);
     expect(
       SUPABASE_FULL_INTEGRATION_COMMANDS.some(({ args }) =>
         args.includes(
@@ -1594,8 +1594,8 @@ describe("Atlas staging hosted evidence", () => {
     const authority = readCatalogAuthority();
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(99);
-    expect(authority.apiOwners).toHaveLength(99);
+    expect(authority.apiSignatures).toHaveLength(103);
+    expect(authority.apiOwners).toHaveLength(103);
     expect(authority.policyCount).toBe(633);
     expect(authority.policyDigest).toBe("ca91300869ea6ba094dd897158607206");
   });

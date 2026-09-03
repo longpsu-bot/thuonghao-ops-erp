@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { saveLocalConfirmedAllocations } from "./local-confirmed-supplier-allocation.mjs";
 import {
   buildFoundationPackageSql,
   buildFoundationVerificationSql,
@@ -832,6 +833,12 @@ async function main() {
         saved.authoritative_readback.editing_allowed === true &&
         saved.authoritative_readback.line_counts.unreviewed === 0,
       "Confirmed Need Save did not remain editable and fully reviewed.",
+    );
+    await saveLocalConfirmedAllocations(
+      client,
+      subject,
+      saved.authoritative_readback,
+      invoke,
     );
     const released = await invoke(
       client,

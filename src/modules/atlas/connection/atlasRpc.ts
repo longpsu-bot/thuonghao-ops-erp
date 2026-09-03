@@ -128,6 +128,13 @@ export const ATLAS_RPC_FUNCTIONS = {
     "get_school_catering_procurement_workbench",
   "atlas_api.get_school_catering_purchase_orders":
     "get_school_catering_purchase_orders",
+  "atlas_api.get_generated_purchase_review": "get_generated_purchase_review",
+  "atlas_api.get_confirmed_supplier_allocation_workbench":
+    "get_confirmed_supplier_allocation_workbench",
+  "atlas_api.save_confirmed_supplier_allocation":
+    "save_confirmed_supplier_allocation",
+  "atlas_api.prepare_school_catering_purchase_orders":
+    "prepare_school_catering_purchase_orders",
   "atlas_api.get_pantry_source_workbench": "get_pantry_source_workbench",
   "atlas_api.preview_pantry_source": "preview_pantry_source",
   "atlas_api.save_pantry": "save_pantry",

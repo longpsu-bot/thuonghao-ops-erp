@@ -78,7 +78,11 @@ export function AllocationFamilyTable({
             <th>Ngày giao</th>
             <th>Trường / điểm giao</th>
             <th>Nguyên liệu</th>
-            <th>Nhu cầu</th>
+            <th>
+              {rows.some((row) => row.family.source_kind === "CONFIRMED_NEED")
+                ? "Nhu cầu đã xác nhận"
+                : "Nhu cầu"}
+            </th>
             <th>Đã phân bổ</th>
             <th>Còn lại / chênh lệch</th>
             <th>NCC</th>
@@ -90,7 +94,8 @@ export function AllocationFamilyTable({
           {rows.map((row) => {
             const key = row.family.source_fingerprint;
             const assigned = allocated(row);
-            const authoritative = scaledQuantity(row.family_quantity) ?? 0n;
+            const authoritative =
+              scaledQuantity(row.family_quantity ?? "") ?? 0n;
             const difference = authoritative - assigned;
             return (
               <tr
@@ -117,17 +122,24 @@ export function AllocationFamilyTable({
                 <td>
                   <strong>{row.ingredient_name}</strong>
                   <small className="procurement-master-support">
-                    {row.contribution_count} nguồn bàn giao
+                    {row.contribution_count}{" "}
+                    {row.family.source_kind === "CONFIRMED_NEED"
+                      ? "nguồn xác nhận"
+                      : "nguồn bàn giao"}
                   </small>
                 </td>
                 <td>
-                  {quantity(row.family_quantity)} {row.unit_code}
+                  {row.complete === false || row.family_quantity === null
+                    ? "—"
+                    : quantity(row.family_quantity)}{" "}
+                  {row.unit_code}
                 </td>
                 <td>
                   {displayQuantity(assigned)} {row.unit_code}
                 </td>
                 <td>
-                  {displayQuantity(difference)} {row.unit_code}
+                  {row.complete === false ? "—" : displayQuantity(difference)}{" "}
+                  {row.unit_code}
                 </td>
                 <td>{supplierLabel(row)}</td>
                 <td>

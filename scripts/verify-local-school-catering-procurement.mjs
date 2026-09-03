@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { saveLocalConfirmedAllocations } from "./local-confirmed-supplier-allocation.mjs";
 import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -204,6 +205,12 @@ async function releaseConfirmedNeed(client, subject) {
       { confirmed_need_batch_id: batchId, lines },
       "RMVP-05.v2",
     ),
+  );
+  await saveLocalConfirmedAllocations(
+    client,
+    subject,
+    saved.authoritative_readback,
+    invoke,
   );
   const released = await invoke(
     client,

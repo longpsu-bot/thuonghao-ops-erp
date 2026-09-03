@@ -18,6 +18,8 @@ on:
       - "scripts/deploy-atlas-staging.mjs"
       - "scripts/certify-frontend.mjs"
       - "scripts/certify-supabase-full-integration.mjs"
+      - "scripts/test-local-purchase-review.mjs"
+      - "scripts/local-confirmed-supplier-allocation.mjs"
       - "scripts/verify-atlas-staging.mjs"
       - "scripts/install-atlas-staging-package.mjs"
       - "scripts/install-local-foundation-need-generation-contract.mjs"
@@ -64,6 +66,8 @@ on:
       - "scripts/deploy-atlas-staging.mjs"
       - "scripts/certify-frontend.mjs"
       - "scripts/certify-supabase-full-integration.mjs"
+      - "scripts/test-local-purchase-review.mjs"
+      - "scripts/local-confirmed-supplier-allocation.mjs"
       - "scripts/verify-atlas-staging.mjs"
       - "scripts/install-atlas-staging-package.mjs"
       - "scripts/install-local-foundation-need-generation-contract.mjs"
@@ -168,6 +172,8 @@ jobs:
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
           pnpm exec supabase test db supabase/tests/school_catering_handoff_allocation.sql --local
           pnpm exec supabase test db supabase/tests/school_catering_planning_correction.sql --local
+          pnpm exec supabase test db supabase/tests/purchase_handoff_clock_skew.sql --local
+          node scripts/test-local-purchase-review.mjs purchase_review_confirm_release.sql
           pnpm exec supabase test db supabase/tests/pantry_02_connected_pantry_source.sql --local
           pnpm exec supabase test db supabase/tests/rmvp_03b_connected_planning_input_readiness.sql --local
           pnpm exec supabase test db supabase/tests/planning_contract_01_atomic_planning_boundaries.sql --local
@@ -175,8 +181,8 @@ jobs:
           pnpm exec supabase db query --local --file supabase/local/pa_06b_synthetic_identity.sql
           pnpm exec supabase db query --local --file supabase/local/rmvp_05_browser_fixture.sql
           pnpm exec supabase test db supabase/tests/rmvp_06_connected_confirmed_need_validation.sql --local
-          pnpm exec supabase test db supabase/tests/rmvp_07_connected_confirmed_need_approval_release.sql --local
-          pnpm exec supabase test db supabase/tests/d037_confirmed_need_save_release_boundary.sql --local
+          node scripts/test-local-purchase-review.mjs rmvp_07_connected_confirmed_need_approval_release.sql --existing-fixture
+          node scripts/test-local-purchase-review.mjs d037_confirmed_need_save_release_boundary.sql --existing-fixture
           pnpm exec supabase db reset --local --no-seed
 
       - name: Provision deterministic RMVP-07 browser identity

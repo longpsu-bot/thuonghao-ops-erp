@@ -559,6 +559,10 @@ select 'confirmed', atlas_api.confirm_need_quantities(jsonb_build_object(
 from rmvp07_results preview cross join rmvp07_results initial
 where preview.result_name = 'preview' and initial.result_name = 'initial_read';
 
+reset role;
+\ir ../local/purchase_review_saved_allocations_fixture.sql
+set local role authenticated;
+
 insert into rmvp07_results values (
   'validated', atlas_api.validate_confirmed_needs(
     pg_temp.rmvp07_validation(

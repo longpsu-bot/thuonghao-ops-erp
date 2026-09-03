@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { saveLocalConfirmedAllocations } from "./local-confirmed-supplier-allocation.mjs";
 import { createClient } from "@supabase/supabase-js";
 import {
   readLocalSupabaseStatus,
@@ -324,6 +325,12 @@ async function v1Main() {
     v1ReviewRequest(subject, batchId),
   );
   const confirmed = await ensureV1Confirmed(client, subject, initial.workbench);
+  await saveLocalConfirmedAllocations(
+    client,
+    subject,
+    confirmed,
+    invokeSuccess,
+  );
   const validated = await ensureV1Validated(client, subject, confirmed);
   assert(
     validated.allowed_actions.approve_confirmed_needs === true,
@@ -455,6 +462,12 @@ async function d037Main() {
     "D-037 Save replay did not return the original response.",
   );
 
+  await saveLocalConfirmedAllocations(
+    client,
+    subject,
+    saved.authoritative_readback,
+    invokeSuccess,
+  );
   const downstreamBefore = downstreamState();
   const releaseCommand = d037Command(
     subject,
