@@ -282,10 +282,12 @@ Same-date unchanged execution returns the established replay or `NO_CHANGE` resu
 Before reporting a daily state or creating its Planning Input Set, the backend checks every non-`INVALIDATED` historical multi-day Need run whose inclusive period contains the requested `service_date`. Any match returns `downstream_currentness = LEGACY_OVERLAP`, the stable blocker `ACTIVE_LEGACY_NEED_RANGE_OVERLAP`, and safe readback of the overlapping run/range and linked current Confirmed Need identity/status. The v3 command returns the same stable error and creates no `D..D` Planning Input Set, run, release, or Confirmed Need. An `INVALIDATED` multi-day chain and an active range that does not contain D do not block; an exact active `D..D` chain retains the normal current/replay/successor behavior. Historical multi-day rows are never rewritten by this guard.
 
 For initial daily generation, the same authoritative preflight also requires
-at least one Menu source for D that requires Need Generation or one positive
-Pantry snapshot line for D. An active Dish whose
-`requires_need_generation = false` is skipped and does not establish daily
-demand. A non-active Menu Dish is still execution-relevant so the existing
+an approved Menu Dish reference for D or one positive Pantry snapshot line for D.
+An ACTIVE Menu Dish with an eligible valid released Recipe generates demand
+regardless of persisted `requires_need_generation`; that column is legacy metadata.
+The presence gate does not replace Recipe or Attendance validation: execution
+retains the existing explicit missing/invalid-source blockers and Recipe selection
+precedence. A non-active Menu Dish is still execution-relevant so the existing
 `INACTIVE_OR_INVALID_DISH` generator validation remains authoritative rather
 than being relabeled as neutral no-demand. Attendance alone and an approved
 zero-line Pantry snapshot do not create demand. When neither demand source

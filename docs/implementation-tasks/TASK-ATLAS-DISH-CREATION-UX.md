@@ -1,85 +1,95 @@
-# Atlas Dish creation: business information only
+# Atlas Dish creation and lifecycle demand authority
 
 ## Scope and authority
 
-Owner-approved task, under OPS System Map v1.0, starting from
-`cb7500b8d79cdb6fa58ac900643a1ee2c6d89d76`. One agent; no delegation.
+Owner-approved task under OPS System Map v1.0, continued on PR #254 from
+`30561813854ef06008b21317bac25cbf24fb0745`. One agent; no delegation.
+The approved continuation establishes ACTIVE Dish + approved Menu + eligible
+valid released Recipe as the demand participation rule. Deactivation is the
+business lifecycle control; `requires_need_generation` is legacy metadata.
 
 The normal creation form contains Tên món, Loại món, optional Nhóm mô tả,
-optional Ghi chú vận hành, and Lưu món ăn. Code, ordering, and participation
-controls are removed completely. The submitted payload contains only these
-business fields. Authoritative affected Dish identity remains the primary
-selection source; legacy review readback selects only a single newly returned
-identity. The browser-only review adapter mirrors the new creation defaults.
+optional Ghi chú vận hành, and Lưu món ăn. It submits only these business fields.
+Affected Dish identity remains the primary selection source; legacy review
+readback selects only a single newly returned identity. The browser-only review
+adapter mirrors creation defaults.
 
-## Backend and compatibility
+## Backend and contracts
 
-The forward migration replaces only `atlas_api.create_dish(jsonb)` and its
-comment. It preserves ownership, privileges, RLS, authorization, request hashing,
-receipts, audit, events, lifecycle, and the v1 signature.
+The unmerged, undeployed migration
+`20260904042117_atlas_dish_creation_defaults.sql` is amended in the same PR.
+It changes exactly these functions:
 
-- Omitted code becomes `dish-` plus all 36 characters of
-  `pg_catalog.gen_random_uuid()::text`, generated after receipt replay resolution.
-  The existing unique constraint remains authoritative. No numbering subsystem
-  or name-derived identity is introduced.
-- Omitted ordering becomes `0`; omitted demand participation becomes `true`.
-- Explicit code/ordering/participation remain supported for controlled callers.
-  The audit found explicit codes in `verify-local-rmvp02a-recipes.mjs`,
-  `verify-local-rmvp02b-adjustments.mjs`, and
-  `verify-local-planning-assembly-acceptance.mjs`, including code-based lookup.
-  Snapshot import is a separate controlled path and is unchanged.
-- `requires_need_generation` remains persisted and still affects legacy Recipe
-  validation and Need Generation. Existing false values are not backfilled.
-  Normal new Dishes default true and participate once active, on an approved
-  Menu, and backed by a valid released Recipe.
-- Creation remains DRAFT. Initial Recipe Save, duplicate active normalized-name
-  conflict, Recipe locks, and inactive-Dish planning blockers remain unchanged.
+- `atlas_api.create_dish(jsonb)`: omitted code generates a complete opaque UUID
+  after authorization/replay resolution; ordering defaults to 0; omitted flag
+  defaults true; explicit true remains accepted; explicit false returns
+  `VALIDATION_FAILED` with field feedback and no Dish insertion.
+- `atlas_api.create_need_generation_run(jsonb)`: removes the legacy flag skip
+  while retaining inactive-Dish validation and every Recipe/Attendance check.
+- `atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()`: permits valid
+  legacy-false selections and requires explicit selection or blocker evidence
+  for every Menu Dish. Historical `v_initial_check` boundaries remain intact.
+- `atlas_core.rmvp_02b_resolve_effective_composition(date,uuid,uuid,jsonb,uuid,uuid)`:
+  Dish eligibility depends on ACTIVE status, not the legacy flag.
+- `atlas_core.rmvp_03a_menu_issues(date,jsonb)`: checks Recipe readiness for
+  every active assigned Dish, including legacy false.
+- `atlas_core.planning_contract_01_preflight_payload(date,date,jsonb)`: approved
+  Menu references establish daily source presence regardless of the flag;
+  inactive references still reach the explicit generator blocker.
 
-No calculation, Change Order, adjustment authorization, Menu authority,
-Attendance, Pantry, Confirmed Need, Procurement, Warehouse, Dispatch, Retool,
-staging configuration, or released historical fact changes are included.
+The five existing demand functions use guarded exact-fragment replacements,
+following repository migration precedent. Unknown predecessor bodies fail closed.
+Signatures, owners, privileges, RLS, authorization, receipts and audit remain
+unchanged. No table/column removal or historical row backfill occurs. Remaining
+readback/import and legacy Recipe-authoring references to the column are outside
+this bounded demand-participation change and cannot exclude a valid released
+Recipe from demand. Creation remains DRAFT; initial Recipe Save activation stays
+unchanged.
 
-## Acceptance and evidence
+Affected contracts: RMVP-02A creation, RMVP-02B effective composition, RMVP-03A
+Menu readiness, RMVP-04 daily generation, and the Planning-domain persistence
+contract. No quantity formula, Recipe selection precedence, Pantry, Attendance,
+rounding, Confirmed Need, Procurement, Warehouse, Dispatch or Retool change.
 
-Frontend regressions verify the absence of all three controls, the exact
-business-only payload, both affected-ID and legacy-readback selection, conflict
-retention, and successful initial Recipe Save on the new identity.
+## Acceptance and verification
 
-Database regressions verify each omitted field independently, generated code
-uniqueness/readback/stability, exact replay, explicit compatibility, existing
-duplicate constraints, initial Recipe activation, and inactive planning denial.
+- Creation tests cover omitted defaults, explicit true, rejected false without
+  insertion/coercion, generated identity, replay, uniqueness and name stability.
+- RMVP-04 uses a persisted false Dish with approved Menu and released Recipe;
+  existing exact quantity, lineage, ambiguity and materialization assertions
+  remain unchanged. Metadata remains false throughout.
+- PLANNING-CONTRACT-01 checks active legacy-false Recipe resolution and daily
+  source readiness without Pantry demand, missing Attendance as an explicit
+  blocker, and later deactivation against the same approved Menu evidence.
+- RMVP-03A checks missing-Recipe and blocked-composition warnings for legacy false.
+- Issue 213 preserves normal future-planning inactive denial. Frontend tests
+  preserve the exact business-only payload without a flag field.
 
-- Frontend RED: 3 failures / 19 assertions on the original implementation.
-- Database RED: RMVP-02A 11 failures / 40; Issue 213 10 failures / 18.
-- Frontend GREEN: workbench and Recipe API, 23 assertions.
-- Database GREEN: RMVP-02A 40, Issue 213 18, UI-QUALITY-03A 21, and
-  PLANNING-CONTRACT-01 195 assertions; 274 total.
-- Typecheck passed. Touched supported files are checked with Prettier; SQL uses
-  the existing migration style and `git diff --check`.
+Continuation RED: 18 failed assertions / 387 across RMVP-02A (2/42), RMVP-04
+(11/87), PLANNING-CONTRACT-01 (3/196), and RMVP-03A (2/62). Failures reproduced
+against predecessor functions before their changes.
 
-Docker Desktop could not start due to inaccessible local runtime sockets.
-Focused SQL ran through `psql` against disposable loopback PostgreSQL 17.6 with
-pgTAP 1.3.4 outside the repository. Baseline loading required temporary owner
-EXECUTE grants on three existing Dispatch functions for native function
-validation; their original ACLs were restored and checked before tests. No
-repository migration or test was weakened for this setup.
+Continuation GREEN: RMVP-02A 42, RMVP-02B 62, RMVP-03A 62, RMVP-04 87,
+PLANNING-CONTRACT-01 196, Issue 213 18, UI-QUALITY-03A 21: 588 SQL assertions.
+Focused frontend workbench/Recipe API: 23 assertions. Typecheck, touched supported
+Prettier files, and whitespace checks are required before push.
 
-An additional whole-platform security check passed 21/22 assertions. CAT-22's
-native-environment grant count/hash mismatch (1636 versus 1641) was reproduced
-identically with the original `create_dish` body and the new body. GitHub Actions
-remains authoritative for the full Supabase environment, Frontend CI, and Qodana.
-The Draft PR must not merge until CI and product/architecture review pass.
-
-The Supabase PR smoke job now includes the three focused Dish/Recipe suites so
-these regressions run on Draft PRs as well as on later review updates.
+Focused SQL uses disposable loopback PostgreSQL 17.6 with pgTAP 1.3.4 outside the
+repository because Docker Desktop cannot start. Native bootstrap required
+temporary owner EXECUTE grants on three baseline Dispatch functions; original
+ACLs were restored before tests. No repository security control was weakened.
+The earlier native whole-platform grant-catalog mismatch was reproduced unchanged
+on both prior and PR code; GitHub Linux Supabase remains the broad authority.
 
 ## Migration, rollback, and operational boundary
 
-No table, column, role, policy, or grant changes; no backfill or hosted database
-writes. Generated codes remain in persisted rows. Rollback, if later required,
-is a forward function replacement preserving all Dish identities, receipts,
-Recipe evidence, and history; do not drop the compatibility columns. Restoring
-the old mandatory payload contract would also require coordinating the UI.
+The migration only replaces functions and a comment. No data migration, role,
+policy, grant, column, or hosted database write. A later rollback requires forward
+function replacements preserving identities, receipts and evidence; restoring
+old payload requirements also requires coordinating the UI. Restoring legacy
+flag exclusion would reverse the approved business rule and is not an automatic
+rollback strategy.
 
-This task authorizes a Draft PR only, with no merge or deployment. Local tests
-use rolled-back synthetic data. Staging, live OPS, and Retool receive zero writes.
+After targeted GREEN and single-agent product/architecture review, push the same
+PR and mark Ready to trigger GitHub Linux Full Integration. Do not merge or deploy.
+Local test fixtures roll back. Staging, live OPS, and Retool receive zero writes.

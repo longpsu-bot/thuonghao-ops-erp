@@ -204,7 +204,7 @@ When the School has no SchoolType, the exact typed tier is empty and the general
 
 A candidate is eligible only when:
 
-- the exact Dish is `ACTIVE` and requires Need Generation;
+- the exact Dish is `ACTIVE`; persisted `requires_need_generation` is legacy metadata and cannot exclude approved Menu demand;
 - the Recipe belongs to that Dish, has the matching exact/null scope, and is `ACTIVE`;
 - one exact current RecipeVersion is `RELEASED_FOR_PLANNING`;
 - the basis is strictly positive;

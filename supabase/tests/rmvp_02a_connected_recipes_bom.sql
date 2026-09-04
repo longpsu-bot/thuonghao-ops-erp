@@ -393,7 +393,7 @@ from (values
   ('auto-code', jsonb_build_object('dish_name', 'Auto Code', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 4, 'requires_need_generation', true)),
   ('auto-order', jsonb_build_object('dish_code', 'auto-order', 'dish_name', 'Auto Order', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'requires_need_generation', true)),
   ('auto-requires', jsonb_build_object('dish_code', 'auto-requires', 'dish_name', 'Auto Requires', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 4)),
-  ('explicit-compat', jsonb_build_object('dish_code', '  EXPLICIT-COMPAT  ', 'dish_name', 'Explicit Compatibility', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 9, 'requires_need_generation', false))
+  ('explicit-compat', jsonb_build_object('dish_code', '  EXPLICIT-COMPAT  ', 'dish_name', 'Explicit Compatibility', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 9, 'requires_need_generation', true))
 ) fixture(fixture_name, payload);
 
 select is(response_payload ->> 'success', 'true', result_name || ' creates successfully')
@@ -437,7 +437,7 @@ select is((select requires_need_generation from atlas_admin.dishes where dish_na
 select is((select requires_need_generation from atlas_admin.dishes where dish_code = 'auto-requires'), true,
   'explicit-code creation can omit demand participation');
 select is((select jsonb_build_array(display_order, requires_need_generation)
-  from atlas_admin.dishes where dish_code = 'explicit-compat'), '[9, false]'::jsonb,
+  from atlas_admin.dishes where dish_code = 'explicit-compat'), '[9, true]'::jsonb,
   'controlled explicit metadata remains compatible without rewriting persisted history');
 select is((select item ->> 'dish_code'
   from rmvp02a_results result,
@@ -446,6 +446,22 @@ select is((select item ->> 'dish_code'
     and item ->> 'dish_id' = result.response_payload #>> '{affected_aggregate_ids,dish_id}'),
   (select dish_code from atlas_admin.dishes where dish_name = 'Auto Dish'),
   'server readback exposes the persisted generated code');
+
+set local role authenticated;
+insert into rmvp02a_results values ('explicit-false', atlas_api.create_dish(
+  pg_temp.rmvp02a_request('explicit-false', 1, jsonb_build_object(
+    'dish_name', 'Rejected False Dish',
+    'dish_type_id', 'd1500000-0000-4000-8000-000000000001',
+    'requires_need_generation', false
+  ))
+));
+select is((select response_payload ->> 'error_code' from rmvp02a_results
+  where result_name = 'explicit-false'), 'VALIDATION_FAILED',
+  'explicit false creation rejects the obsolete business decision');
+reset role;
+select is((select count(*) from atlas_admin.dishes
+  where dish_name = 'Rejected False Dish'), 0::bigint,
+  'explicit false is not silently coerced or persisted');
 
 -- A name edit must not regenerate permanent reference identity.
 create temporary table auto_dish_identity as

@@ -1945,7 +1945,25 @@ select is(
 
 reset role;
 
-select *
-from finish();
+select ok(exists (
+  select 1 from jsonb_array_elements(atlas_core.rmvp_03a_menu_issues(
+    '2026-08-03', jsonb_build_array(jsonb_build_object(
+      'school_id', 'e3100000-0000-0000-0000-000000000010',
+      'service_date', '2026-08-03', 'menu_slot_code', 'soup',
+      'dish_id', 'e3100000-0000-0000-0000-000000000020'
+    ))
+  ) -> 'warnings') issue where issue ->> 'code' = 'RECIPE_NOT_READY'
+), 'legacy false cannot hide missing Recipe readiness on an active Menu Dish');
+select ok(exists (
+  select 1 from jsonb_array_elements(atlas_core.rmvp_03a_menu_issues(
+    '2026-08-03', jsonb_build_array(jsonb_build_object(
+      'school_id', 'e3100000-0000-0000-0000-000000000010',
+      'service_date', '2026-08-03', 'menu_slot_code', 'soup',
+      'dish_id', 'e3100000-0000-0000-0000-000000000020'
+    ))
+  ) -> 'warnings') issue where issue ->> 'code' = 'EFFECTIVE_BOM_BLOCKED'
+), 'legacy false cannot hide an effective composition readiness warning');
+
+select * from finish();
 
 rollback;

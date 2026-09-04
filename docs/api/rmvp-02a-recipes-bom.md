@@ -93,8 +93,11 @@ does not derive from the editable Dish name. Explicit invalid/null metadata is
 still rejected rather than interpreted as omission.
 
 Controlled callers may continue supplying normalized unique codes and valid
-explicit metadata. Local RMVP-02A, RMVP-02B, and Planning assembly verifiers still
-use that path. Existing persisted participation flags and history are unchanged.
+ordering and explicit `requires_need_generation: true`. Explicit false returns
+`VALIDATION_FAILED` with `payload.requires_need_generation` field feedback; it is
+never silently coerced. Local RMVP-02A, RMVP-02B, and Planning assembly verifiers
+retain the explicit-code path. The historical column remains stored, but it is
+non-authoritative for demand participation; existing values are not rewritten.
 
 Creation remains `DRAFT`; the existing initial Recipe Save activates an eligible
 Dish and releases its Recipe atomically. Newly created active Dishes participate

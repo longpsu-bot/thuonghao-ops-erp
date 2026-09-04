@@ -1,6 +1,7 @@
 -- ATLAS DISH CREATION UX: business-only normal creation.
--- Additive v1 payload defaults; explicit controlled/import metadata remains valid.
--- No persisted-row rewrite, lifecycle, calculation, role, grant, or RLS change.
+-- Omitted v1 metadata receives defaults; explicit false creation is rejected.
+-- Dish lifecycle, approved Menu and eligible Recipe determine demand participation.
+-- No persisted-row rewrite, quantity, precedence, role, grant, or RLS change.
 
 create or replace function atlas_api.create_dish(request jsonb)
 returns jsonb
@@ -51,14 +52,24 @@ begin
   exception when others then
     v_requires := null;
   end;
+  if v_requires is distinct from true then
+    return atlas_core.pa_05b_command_error(
+      request, 'VALIDATION_FAILED',
+      'Dish demand participation is controlled by lifecycle, not a separate flag.',
+      'ADMIN', v_name, false,
+      pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+        'field', 'payload.requires_need_generation',
+        'message', 'Omit this legacy field or provide true; false is no longer supported.'
+      ))
+    );
+  end if;
   if atlas_core.pa_05b_safe_bigint(request ->> 'expected_version') <> 1
      or (v_payload ? 'dish_code' and v_code = '')
      or v_dish_name = ''
      or v_dish_type_id is null
      or v_display_order is null
      or v_display_order < 0
-     or v_display_order > 2147483647
-     or v_requires is null then
+     or v_display_order > 2147483647 then
     return atlas_core.pa_05b_command_error(
       request,
       'VALIDATION_FAILED',
@@ -188,4 +199,69 @@ end;
 $$;
 
 comment on function atlas_api.create_dish(jsonb) is
-  'RMVP-02A.v1 Dish creation: omitted code is an opaque server UUID code; omitted display order is 0 and demand participation is true. Explicit controlled metadata remains compatible.';
+  'RMVP-02A.v1 Dish creation: omitted code is an opaque server UUID code; omitted display order is 0 and legacy flag is true. Explicit false is rejected; lifecycle determines demand participation.';
+
+-- Surgical changes to existing authoritative paths preserve their current Recipe
+-- precedence, historical-evidence guards, quantity formulas and security settings.
+-- Fail closed if any predecessor fragment drifts; do not patch an unknown body.
+-- The daily presence gate retains inactive references so execution can return the
+-- existing explicit correction blocker instead of silently reporting no demand.
+do $dish_lifecycle$
+declare
+  v_patch record;
+  v_definition text;
+begin
+  for v_patch in
+    select * from (values
+      ('atlas_api.create_need_generation_run(jsonb)', $before$dish.dish_status, dish.requires_need_generation,$before$, $after$dish.dish_status,$after$),
+      ('atlas_api.create_need_generation_run(jsonb)', $before$    if not v_menu.requires_need_generation then
+      continue;
+    end if;
+$before$, $after$$after$),
+      ('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()', $before$        or not dish.requires_need_generation
+$before$, $after$$after$),
+      ('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()', $before$  if v_initial_check and exists (
+    select 1
+    from atlas_planning.weekly_menu_approval_snapshot_lines as menu_line
+    join atlas_admin.dishes as dish on dish.dish_id = menu_line.dish_id
+    where menu_line.weekly_menu_approval_snapshot_id = v_snapshot.weekly_menu_approval_snapshot_id
+      and menu_line.service_date between v_run.period_start and v_run.period_end
+      and not dish.requires_need_generation
+      and exists (
+        select 1
+        from atlas_planning.need_generation_recipe_selections as selection
+        where selection.need_generation_run_id = v_run.need_generation_run_id
+          and selection.weekly_menu_approval_snapshot_line_id = menu_line.weekly_menu_approval_snapshot_line_id
+      )
+  ) then
+    raise exception using
+      errcode = '23514',
+      message = 'Dishes excluded from Need Generation produce no selection';
+  end if;
+$before$, $after$$after$),
+      ('atlas_planning.pa_06e_h0a5b_need_generation_integrity_guard()', $before$      and dish.requires_need_generation
+$before$, $after$$after$),
+      ('atlas_core.rmvp_02b_resolve_effective_composition(date,uuid,uuid,jsonb,uuid,uuid)', $before$  elsif v_dish.dish_status <> 'ACTIVE'
+        or not v_dish.requires_need_generation then$before$, $after$  elsif v_dish.dish_status <> 'ACTIVE' then$after$),
+      ('atlas_core.rmvp_02b_resolve_effective_composition(date,uuid,uuid,jsonb,uuid,uuid)', $before$The Dish must be active and require Need Generation.$before$, $after$The Dish must be active.$after$),
+      ('atlas_core.rmvp_03a_menu_issues(date,jsonb)', $before$    where dish.requires_need_generation
+      and not exists ($before$, $after$    where not exists ($after$),
+      ('atlas_core.rmvp_03a_menu_issues(date,jsonb)', $before$    where dish.requires_need_generation
+      and resolution.result ->> 'status' = 'BLOCKED'$before$, $after$    where resolution.result ->> 'status' = 'BLOCKED'$after$),
+      ('atlas_core.planning_contract_01_preflight_payload(date,date,jsonb)', $before$        and (
+          dish.dish_status <> 'ACTIVE'
+          or dish.requires_need_generation
+        )
+$before$, $after$$after$)
+    ) as patches(signature, old_fragment, new_fragment)
+  loop
+    v_definition := pg_catalog.pg_get_functiondef(v_patch.signature::regprocedure);
+    if (pg_catalog.length(v_definition)
+        - pg_catalog.length(pg_catalog.replace(v_definition, v_patch.old_fragment, '')))
+        / pg_catalog.length(v_patch.old_fragment) <> 1 then
+      raise exception 'Dish lifecycle migration: unexpected predecessor for %', v_patch.signature;
+    end if;
+    execute pg_catalog.replace(v_definition, v_patch.old_fragment, v_patch.new_fragment);
+  end loop;
+end;
+$dish_lifecycle$;

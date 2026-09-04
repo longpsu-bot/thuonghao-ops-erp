@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(86);
+select plan(87);
 
 grant usage on schema extensions to authenticated;
 grant execute on all functions in schema extensions to authenticated;
@@ -342,7 +342,7 @@ values ('e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram',
 insert into atlas_admin.ingredients (ingredient_id, ingredient_code, ingredient_name)
 values ('e4100000-0000-0000-0000-000000000007', 'rmvp04-rice', 'RMVP-04 rice');
 insert into atlas_admin.dishes (dish_id, dish_code, dish_name, dish_status, display_order, requires_need_generation) values
-  ('e4100000-0000-0000-0000-000000000008', 'rmvp04-dish', 'RMVP-04 dish', 'ACTIVE', 10, true),
+  ('e4100000-0000-0000-0000-000000000008', 'rmvp04-dish', 'RMVP-04 dish', 'ACTIVE', 10, false),
   ('e4600000-0000-0000-0000-000000000001', 'rmvp04-typed-ambiguous', 'RMVP-04 typed ambiguity dish', 'ACTIVE', 20, true),
   ('e4700000-0000-0000-0000-000000000001', 'rmvp04-general-ambiguous', 'RMVP-04 general ambiguity dish', 'ACTIVE', 30, true);
 insert into atlas_admin.recipes (recipe_id, dish_id, school_type_id, recipe_status) values
@@ -3480,6 +3480,10 @@ select ok(
   ),
   'RMVP04-80 existing concurrency and idempotency fences remain present'
 );
+
+select is((select requires_need_generation from atlas_admin.dishes
+  where dish_id = 'e4100000-0000-0000-0000-000000000008'), false,
+  'legacy false metadata remains unchanged throughout generation and materialization');
 
 select * from finish();
 rollback;
