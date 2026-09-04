@@ -347,7 +347,8 @@ export function createReviewRecipeApi(
       return Promise.resolve(blocked ?? success(clone(data)));
     },
     createDish: mutate((request) => {
-      const code = payloadString(request, "dish_code");
+      const code =
+        payloadString(request, "dish_code") || `dish-${crypto.randomUUID()}`;
       const name = payloadString(request, "dish_name");
       const dishType = data.dish_types.find(
         (item) =>

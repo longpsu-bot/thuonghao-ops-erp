@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(195);
+select plan(196);
 
 select is(
   (
@@ -3129,18 +3129,45 @@ select ok(
   'PCT01-N12 an existing current daily Need remains current and openable'
 );
 
--- A valid Menu parent is not itself daily Need demand. The execution gate
--- follows the generator's Dish order: inactive is blocking, while an active
--- Dish that does not require Need Generation is skipped.
+-- A legacy false flag cannot hide an active Menu Dish with a released Recipe.
+-- Missing Attendance and later deactivation must still produce explicit blockers.
 set local session_replication_role = replica;
 insert into atlas_admin.dishes (
   dish_id,dish_code,dish_name,dish_type_id,dish_status,display_order,
   requires_need_generation
 ) values (
-  'e48c0000-0000-0000-0000-000000000001','pct01-non-generating',
-  'PCT01 non-generating Dish','d1500000-0000-4000-8000-000000000002',
+  'e48c0000-0000-0000-0000-000000000001','pct01-legacy-false',
+  'PCT01 legacy-false Dish','d1500000-0000-4000-8000-000000000001',
   'ACTIVE',40,false
 );
+insert into atlas_admin.recipes (recipe_id, dish_id, school_type_id, recipe_status)
+values ('e48c0000-0000-0000-0000-000000000020',
+  'e48c0000-0000-0000-0000-000000000001', null, 'ACTIVE');
+insert into atlas_admin.recipe_versions (
+  recipe_version_id, recipe_id, version_number, basis_portions,
+  recipe_version_status, created_by_actor_id, validated_by_actor_id,
+  validated_at, released_by_actor_id, released_at
+)
+select 'e48c0000-0000-0000-0000-000000000021',
+  'e48c0000-0000-0000-0000-000000000020', 1, basis_portions,
+  recipe_version_status, created_by_actor_id, validated_by_actor_id,
+  validated_at, released_by_actor_id, released_at
+from atlas_admin.recipe_versions
+where recipe_version_id='e4100000-0000-0000-0000-000000000010';
+insert into atlas_admin.recipe_lines (recipe_line_id, recipe_id, line_code)
+values ('e48c0000-0000-0000-0000-000000000022',
+  'e48c0000-0000-0000-0000-000000000020', 'rice');
+insert into atlas_admin.recipe_line_revisions (
+  recipe_line_revision_id, recipe_id, recipe_version_id, recipe_line_id,
+  line_revision_number, ingredient_id, quantity_per_basis, unit_id, created_by_actor_id
+)
+select 'e48c0000-0000-0000-0000-000000000023',
+  'e48c0000-0000-0000-0000-000000000020',
+  'e48c0000-0000-0000-0000-000000000021',
+  'e48c0000-0000-0000-0000-000000000022', 1,
+  ingredient_id, quantity_per_basis, unit_id, created_by_actor_id
+from atlas_admin.recipe_line_revisions
+where recipe_line_revision_id='e4100000-0000-0000-0000-000000000012';
 insert into atlas_planning.weekly_menu_lines (
   weekly_menu_line_id,weekly_menu_id,school_id,service_date,menu_slot_code,
   dish_id,created_by_actor_id,updated_by_actor_id
@@ -3171,9 +3198,15 @@ update atlas_planning.weekly_menus set row_count=row_count+1
 where weekly_menu_id='e4200000-0000-0000-0000-000000000001';
 set local session_replication_role = origin;
 
+select is(atlas_core.rmvp_02b_resolve_effective_composition(
+  '2026-11-07', 'e4100000-0000-0000-0000-000000000005',
+  'e48c0000-0000-0000-0000-000000000001', null, null, null
+) ->> 'status', 'READY',
+  'active legacy-false Dish resolves its valid released Recipe');
+
 set local role authenticated;
 insert into pct01_responses values (
-  'non-generating-menu-preflight',
+  'legacy-false-menu-preflight',
   atlas_api.get_planning_input_preflight(jsonb_build_object(
     'contract_version','RMVP-03B.v2',
     'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
@@ -3183,12 +3216,12 @@ insert into pct01_responses values (
     )
   ))
 ), (
-  'non-generating-menu-execute',
+  'legacy-false-menu-execute',
   atlas_api.execute_need_generation(jsonb_build_object(
     'contract_version','RMVP-04.v3',
     'command_id','e48c0000-0000-0000-0000-000000000005',
     'correlation_id','e48c0000-0000-0000-0000-000000000006',
-    'idempotency_key','pct01-non-generating-menu-execute',
+    'idempotency_key','pct01-legacy-false-menu-execute',
     'expected_version',1,
     'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
     'requested_at',transaction_timestamp(),
@@ -3202,28 +3235,28 @@ insert into pct01_responses values (
 reset role;
 
 select ok(
-  (select response->'preflight'->>'readiness_state'='BLOCKED'
-     and exists (
+  (select response->'preflight'->>'readiness_state'='READY'
+     and not exists (
        select 1 from jsonb_array_elements(response->'preflight'->'issues') issue
        where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
      )
-   from pct01_responses where response_name='non-generating-menu-preflight'),
-  'PCT01-N13 active non-generating Menu-only D is normal no-demand'
+   from pct01_responses where response_name='legacy-false-menu-preflight'),
+  'PCT01-N13 active legacy-false Menu Dish with a released Recipe establishes daily source readiness'
 );
 select ok(
-  (select response->>'error_code'='PLANNING_INPUTS_NOT_READY'
+  (select response->>'error_code'='NEED_GENERATION_HAS_BLOCKERS'
      and exists (
        select 1 from jsonb_array_elements(response->'blocking_references') issue
-       where issue->>'issue_code'='NO_NEED_SOURCE_FOR_SERVICE_DATE'
+       where issue->>'issue_code'='MISSING_ATTENDANCE_SNAPSHOT_LINE'
      )
-   from pct01_responses where response_name='non-generating-menu-execute'),
-  'PCT01-N14 active non-generating Menu-only D has no execute authority'
+   from pct01_responses where response_name='legacy-false-menu-execute'),
+  'PCT01-N14 legacy-false Menu execution reports missing Attendance instead of dropping demand'
 );
 select is(
   (select count(*) from atlas_planning.need_generation_runs
    where period_start='2026-11-07' and period_end='2026-11-07'),
   0::bigint,
-  'PCT01-N15 blocked non-generating Menu execution leaves no run'
+  'PCT01-N15 missing Attendance leaves no persisted run'
 );
 
 set local session_replication_role = replica;

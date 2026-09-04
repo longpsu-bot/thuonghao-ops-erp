@@ -123,3 +123,11 @@ The response retains the approved scope/action catalog, precedence and human-ref
 `temporal_state_date` supplies the scheduled first-effect, correction or cancellation date when relevant. React maps these states to Vietnamese operator labels but does not reconstruct temporal applicability from root lifecycle and revision dates.
 
 Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED`, `issued_at: null`, and a null issuer name. The Atlas import timestamp is not represented as business issuance, and the Atlas importer is not represented as the original business issuer.
+
+## Dish lifecycle eligibility amendment
+
+Effective composition resolution requires an ACTIVE Dish and the existing
+eligible released Recipe selection. The persisted `requires_need_generation`
+flag is legacy metadata and is not an eligibility condition. Inactive Dishes
+retain `DISH_NOT_ELIGIBLE`; Recipe selection precedence, adjustment resolution,
+quantities, and historical evidence rules are unchanged.

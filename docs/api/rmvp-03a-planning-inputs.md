@@ -233,3 +233,13 @@ Approve, and correction commands use PostgreSQL transaction time. The v1
 command timestamp contract is unchanged.
 
 The backend may compose the established v1 implementation internally, but a browser invokes only the one consequential Save. It must not chain Save Draft, Validate, and Approve. Existing v1 functions and grants remain callable during the UI coexistence window. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
+
+## Dish lifecycle and Recipe readiness amendment
+
+Every ACTIVE assigned Dish is checked for eligible released Recipe availability
+and effective composition readiness, regardless of the legacy
+`requires_need_generation` value. Missing Recipe and blocked composition retain
+`RECIPE_NOT_READY` and `EFFECTIVE_BOM_BLOCKED` warnings. Existing inactive-Dish
+future-planning blockers, Menu approval rules, and Attendance behavior remain
+unchanged. Committed inactive references are handled by Need Generation's
+explicit blocker/correction path; they are never silently omitted.

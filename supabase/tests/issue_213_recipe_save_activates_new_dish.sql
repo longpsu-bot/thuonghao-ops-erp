@@ -275,7 +275,9 @@ select
         'operational_notes', 'Rolled-back Issue 213 fixture',
         'display_order', fixture.display_order,
         'requires_need_generation', true
-      )
+      ) - case when fixture.fixture_name = 'primary'
+        then array['dish_code', 'display_order', 'requires_need_generation']
+        else array[]::text[] end
     )
   )
 from (
@@ -307,7 +309,10 @@ select is(
   (
     select count(*)::integer
     from atlas_admin.dishes
-    where dish_code like 'issue213-%'
+    where dish_id in (
+      select (response_payload #>> '{affected_aggregate_ids,dish_id}')::uuid
+      from issue213_results where result_name like 'create-%'
+    )
       and dish_status = 'DRAFT'
       and version = 1
   ),
@@ -490,6 +495,13 @@ insert into issue213_results values (
   )
 );
 
+insert into issue213_results values (
+  'inactive-menu-preview',
+  atlas_api.preview_weekly_menu_import(
+    pg_temp.issue213_menu_read(pg_temp.issue213_created_dish_id('inactive'))
+  )
+);
+
 reset role;
 
 select is(
@@ -516,7 +528,7 @@ select is(
       and recipe.school_type_id is null
     join atlas_admin.recipe_versions version
       on version.recipe_id = recipe.recipe_id
-    where dish.dish_code = 'issue213-primary'
+    where dish.dish_id = pg_temp.issue213_created_dish_id('primary')
   ),
   pg_catalog.jsonb_build_object(
     'dish_status', 'ACTIVE',
@@ -538,7 +550,7 @@ select ok(
       and pg_catalog.jsonb_path_exists(
         response_payload,
         '$.authoritative_readback.dishes[*] ? (
-          @.dish_code == "issue213-primary"
+          @.dish_name == "Issue 213 primary"
           && @.dish_status == "ACTIVE"
           && @.version == 2
         )'
@@ -662,7 +674,7 @@ select is(
       )
     )
     from atlas_admin.dishes dish
-    where dish.dish_code = 'issue213-primary'
+    where dish.dish_id = pg_temp.issue213_created_dish_id('primary')
   ),
   pg_catalog.jsonb_build_object(
     'dish_version', 2,
@@ -941,6 +953,21 @@ select is(
     select fact_counts from issue213_downstream_before
   ),
   'Admin Save and preview create no Menu, Need, Confirmed Need, Handoff, Procurement, Warehouse, or Dispatch facts'
+);
+
+select ok(
+  (select response_payload #>> '{preview,can_save}' = 'false'
+    and pg_catalog.jsonb_path_exists(response_payload,
+      '$.preview.issues.blockers[*] ? (@.code == "INACTIVE_DISH")')
+   from issue213_results where result_name = 'inactive-menu-preview'),
+  'inactive Dish remains explicitly blocked for future Menu planning'
+);
+
+select is(
+  (select requires_need_generation from atlas_admin.dishes
+   where dish_id = pg_temp.issue213_created_dish_id('primary')),
+  true,
+  'normal creation and initial Recipe Save retain demand participation'
 );
 
 select * from finish();

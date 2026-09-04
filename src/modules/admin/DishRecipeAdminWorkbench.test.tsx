@@ -234,7 +234,7 @@ describe("Recipe creation-and-lock workbench", () => {
           if (responseShape === "legacy-readback" || result.kind !== "success")
             return result;
           const dishes = result.response.dishes as Array<{
-            dish_code: string;
+            dish_name: string;
             dish_id: string;
           }>;
           return {
@@ -243,7 +243,7 @@ describe("Recipe creation-and-lock workbench", () => {
               ...result.response,
               affected_aggregate_ids: {
                 dish_id: dishes.find(
-                  (item) => item.dish_code === request.payload.dish_code,
+                  (item) => item.dish_name === request.payload.dish_name,
                 )!.dish_id,
               },
               dishes: [],
@@ -262,9 +262,9 @@ describe("Recipe creation-and-lock workbench", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
       expect(screen.queryByRole("alert")).toBeNull();
-      fireEvent.change(screen.getByLabelText("Mã món"), {
-        target: { value: "mon-moi-03a" },
-      });
+      expect(screen.queryByLabelText("Mã món")).toBeNull();
+      expect(screen.queryByLabelText("Thứ tự hiển thị")).toBeNull();
+      expect(screen.queryByLabelText("Tham gia sinh nhu cầu")).toBeNull();
       fireEvent.change(screen.getByLabelText("Tên món"), {
         target: { value: "Món mới 03A" },
       });
@@ -288,6 +288,12 @@ describe("Recipe creation-and-lock workbench", () => {
       ).toBeVisible();
       expect(screen.queryByRole("alert")).toBeNull();
       expect(createDish.mock.calls[0][0].payload).not.toHaveProperty("dish_id");
+      expect(createDish.mock.calls[0][0].payload).toEqual({
+        dish_name: "Món mới 03A",
+        dish_type_id: "80000000-0000-4000-8000-000000000001",
+        dish_category: "",
+        operational_notes: "",
+      });
 
       fireEvent.click(
         screen.getByRole("button", { name: "Sao chép công thức" }),
@@ -322,17 +328,23 @@ describe("Recipe creation-and-lock workbench", () => {
         throw new Error("Expected review readback");
       const workbench = (result.response.workbench ?? result.response) as {
         dishes: Array<{
+          dish_id: string;
           dish_code: string;
           dish_status: string;
+          requires_need_generation: boolean;
           version: number;
         }>;
         selected_recipe: { business_status: string };
       };
       expect(
-        workbench.dishes.find((item) => item.dish_code === "mon-moi-03a"),
+        workbench.dishes.find(
+          (item) =>
+            item.dish_id === saveRecipe.mock.calls[0][0].payload.dish_id,
+        ),
       ).toMatchObject({
         dish_status: "ACTIVE",
         version: 2,
+        requires_need_generation: true,
       });
       expect(workbench.selected_recipe.business_status).toBe("AVAILABLE");
 
@@ -361,7 +373,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(selector).not.toHaveTextContent("savory");
   });
 
-  it("keeps a duplicate-code failure in the new-dish form and restores the existing lock on cancel", async () => {
+  it("keeps a backend conflict in the new-dish form and restores the existing lock on cancel", async () => {
     const api = lockedDishApi();
     vi.spyOn(api, "createDish").mockResolvedValue({
       kind: "backend_error",
@@ -375,9 +387,6 @@ describe("Recipe creation-and-lock workbench", () => {
     renderWorkbench(api);
     await openCreation();
     fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
-    fireEvent.change(screen.getByLabelText("Mã món"), {
-      target: { value: "canh-bi-do-thit-bam" },
-    });
     fireEvent.change(screen.getByLabelText("Tên món"), {
       target: { value: "Món trùng mã" },
     });
@@ -385,7 +394,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(
       await screen.findByText(/Dữ liệu mục tiêu đang xung đột/),
     ).toBeVisible();
-    expect(screen.getByLabelText("Mã món")).toHaveValue("canh-bi-do-thit-bam");
+    expect(screen.getByLabelText("Tên món")).toHaveValue("Món trùng mã");
     expect(screen.queryByRole("alert")).toBeNull();
     expect(saveRecipe).not.toHaveBeenCalled();
     fireEvent.click(

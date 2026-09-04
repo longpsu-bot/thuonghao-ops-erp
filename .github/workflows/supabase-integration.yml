@@ -170,6 +170,7 @@ jobs:
         run: |
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
+          pnpm exec supabase test db supabase/tests/rmvp_02a_connected_recipes_bom.sql supabase/tests/issue_213_recipe_save_activates_new_dish.sql supabase/tests/ui_quality_03a_recipe_workflow.sql --local
           pnpm exec supabase test db supabase/tests/school_catering_handoff_allocation.sql --local
           pnpm exec supabase test db supabase/tests/school_catering_planning_correction.sql --local
           pnpm exec supabase test db supabase/tests/purchase_handoff_clock_skew.sql --local
