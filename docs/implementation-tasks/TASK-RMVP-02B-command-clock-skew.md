@@ -56,6 +56,9 @@ capability, even for an Actor holding read/write.
 - RMVP-02B envelope pgTAP: 29 passing assertions.
 - RMVP-02B effective BOM / command pgTAP: 70 passing assertions.
 - Workbench and recipeAdjustmentApi: 34 passing tests across two files.
+- Integration-runner contract: 85 passing tests. The first frontend CI run exposed
+  its old 80-command count; registering this additional suite requires 81. The
+  count and an explicit assertion for the new suite were updated together.
 - Typecheck, Prettier for supported touched files, and `git diff --check` pass.
 - +1s accepted; exactly +60s accepted; +61s and +60.000001s rejected; invalid
   timestamps rejected. Create at +1s, Supersede at +60s, Cancel at +1s, and normal
