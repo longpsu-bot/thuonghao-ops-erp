@@ -8,6 +8,16 @@ Reads require `contract_version`, `requested_by_auth_subject`, `correlation_id`,
 
 The authenticated JWT subject must equal `requested_by_auth_subject`. The backend resolves the active Actor, capability, and global scope; browser-supplied actor identity is never authoritative.
 
+Create, Supersede, and Cancel share `atlas_core.rmvp_02b_validate_command_request`.
+Its timestamp upper bound is inclusive:
+`requested_at <= transaction_timestamp() + interval '60 seconds'`.
+This permits small positive browser clock skew, matching the established Planning
+and Purchase Handoff policy. Invalid timestamps and timestamps beyond that bound
+remain `VALIDATION_FAILED` on `requested_at`. All other envelope, reason,
+authorization, version, predecessor, and receipt rules remain unchanged. The
+browser sends its original timestamp; the established request hash continues to
+exclude `requested_at` and correlation identity.
+
 Success returns the contract/correlation identity, shaped result or authoritative readback, safe operator message, warnings, and blockers. Command success also returns command, affected aggregate, version, domain-event, audit-event, and idempotency evidence.
 
 ## Reads

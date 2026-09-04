@@ -52,6 +52,7 @@ describe("Recipe adjustment API contract", () => {
       command_id: "10000000-0000-4000-8000-000000000001",
       idempotency_key: "rule_correction:10000000-0000-4000-8000-000000000001",
       expected_version: 3,
+      requested_at: "2026-07-27T02:00:00.000Z",
       reason_code: "RULE_CORRECTION",
       reason_note: "Điều chỉnh theo biên bản vận hành.",
       payload: { adjustment_id: "adjustment-1" },
@@ -90,6 +91,10 @@ describe("Recipe adjustment API contract", () => {
     await api.create(command);
     await api.supersede(command);
     await api.cancel(command);
+
+    for (const [, request] of calls.slice(-3)) {
+      expect(request).toBe(command);
+    }
 
     expect(calls.map(([name]) => name)).toEqual([
       RECIPE_ADJUSTMENT_RPC_FUNCTIONS.getWorkbench,
