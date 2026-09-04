@@ -31,26 +31,20 @@ type LoadState = {
   message?: string;
 };
 type DishDraft = {
-  code: string;
   name: string;
   category: string;
   dishTypeId: string;
   notes: string;
-  displayOrder: string;
-  requiresNeedGeneration: boolean;
 };
 type CopyDraft = {
   sourceVersionId: string;
 };
 
 const emptyDishDraft = (): DishDraft => ({
-  code: "",
   name: "",
   category: "",
   dishTypeId: "",
   notes: "",
-  displayOrder: "0",
-  requiresNeedGeneration: true,
 });
 const statusLabel: Record<string, string> = {
   DRAFT: "Nháp",
@@ -407,27 +401,15 @@ export function DishRecipeAdminWorkbench({
 
   const saveDish = async () => {
     if (!api || !dishEditorId) return;
-    const displayOrder = Number(dishDraft.displayOrder);
-    if (
-      !dishDraft.code.trim() ||
-      !dishDraft.name.trim() ||
-      !dishDraft.dishTypeId ||
-      !Number.isInteger(displayOrder) ||
-      displayOrder < 0
-    ) {
-      setNotice(
-        "Mã món, tên món, Loại món và thứ tự hiển thị không âm là bắt buộc.",
-      );
+    if (!dishDraft.name.trim() || !dishDraft.dishTypeId) {
+      setNotice("Tên món và Loại món là bắt buộc.");
       return;
     }
     const payload = {
-      dish_code: dishDraft.code,
       dish_name: dishDraft.name,
       dish_category: dishDraft.category,
       dish_type_id: dishDraft.dishTypeId,
       operational_notes: dishDraft.notes,
-      display_order: displayOrder,
-      requires_need_generation: dishDraft.requiresNeedGeneration,
     };
     const saved = await command(api.createDish, 1, "DISH_CREATE", payload);
     if (!saved) return;
@@ -442,10 +424,12 @@ export function DishRecipeAdminWorkbench({
     const returnedDishes = Array.isArray(saved.response.dishes)
       ? (saved.response.dishes as RecipeWorkbenchData["dishes"])
       : [];
+    const newDishes = returnedDishes.filter(
+      (item) =>
+        !load.data.dishes.some((existing) => existing.dish_id === item.dish_id),
+    );
     const createdDishId =
-      affectedDishId ??
-      returnedDishes.find((item) => item.dish_code === dishDraft.code.trim())
-        ?.dish_id;
+      affectedDishId ?? (newDishes.length === 1 ? newDishes[0].dish_id : null);
     setDishEditorId(null);
     setQuery("");
     setTab("recipes");
@@ -1523,27 +1507,18 @@ export function DishRecipeAdminWorkbench({
             </button>
           </div>
           <div className="master-data-drawer-body master-data-detail-form">
-            {(
-              [
-                ["code", "Mã món"],
-                ["name", "Tên món"],
-                ["category", "Nhóm mô tả (tương thích)"],
-                ["displayOrder", "Thứ tự hiển thị"],
-              ] as const
-            ).map(([key, label]) => (
-              <label className="evidence-field" key={key}>
-                {label}
-                <input
-                  value={dishDraft[key]}
-                  onChange={(event) =>
-                    setDishDraft((state) => ({
-                      ...state,
-                      [key]: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            ))}
+            <label className="evidence-field">
+              Tên món
+              <input
+                value={dishDraft.name}
+                onChange={(event) =>
+                  setDishDraft((state) => ({
+                    ...state,
+                    name: event.target.value,
+                  }))
+                }
+              />
+            </label>
             <label className="evidence-field">
               Loại món
               <select
@@ -1571,6 +1546,18 @@ export function DishRecipeAdminWorkbench({
               </select>
             </label>
             <label className="evidence-field">
+              Nhóm mô tả (không bắt buộc)
+              <input
+                value={dishDraft.category}
+                onChange={(event) =>
+                  setDishDraft((state) => ({
+                    ...state,
+                    category: event.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="evidence-field">
               Ghi chú vận hành
               <textarea
                 value={dishDraft.notes}
@@ -1581,19 +1568,6 @@ export function DishRecipeAdminWorkbench({
                   }))
                 }
               />
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={dishDraft.requiresNeedGeneration}
-                onChange={(event) =>
-                  setDishDraft((state) => ({
-                    ...state,
-                    requiresNeedGeneration: event.target.checked,
-                  }))
-                }
-              />{" "}
-              Tham gia sinh nhu cầu
             </label>
             <button
               type="button"

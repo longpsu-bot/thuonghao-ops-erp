@@ -382,6 +382,80 @@ select set_config(
   true
 );
 
+-- Normal creation omits operator-managed reference metadata. Each omission is
+-- independent so validation cannot accidentally hide a missing default.
+insert into rmvp02a_results
+select fixture_name, atlas_api.create_dish(pg_temp.rmvp02a_request(
+  fixture_name, 1, payload
+))
+from (values
+  ('auto-all', jsonb_build_object('dish_name', 'Auto Dish', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001')),
+  ('auto-code', jsonb_build_object('dish_name', 'Auto Code', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 4, 'requires_need_generation', true)),
+  ('auto-order', jsonb_build_object('dish_code', 'auto-order', 'dish_name', 'Auto Order', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'requires_need_generation', true)),
+  ('auto-requires', jsonb_build_object('dish_code', 'auto-requires', 'dish_name', 'Auto Requires', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 4)),
+  ('explicit-compat', jsonb_build_object('dish_code', '  EXPLICIT-COMPAT  ', 'dish_name', 'Explicit Compatibility', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001', 'display_order', 9, 'requires_need_generation', false))
+) fixture(fixture_name, payload);
+
+select is(response_payload ->> 'success', 'true', result_name || ' creates successfully')
+from rmvp02a_results where result_name in ('auto-all', 'auto-code', 'auto-order', 'auto-requires', 'explicit-compat')
+order by result_name;
+
+insert into rmvp02a_results values ('auto-replay', atlas_api.create_dish(
+  pg_temp.rmvp02a_request('auto-all', 1, jsonb_build_object(
+    'dish_name', 'Auto Dish', 'dish_type_id', 'd1500000-0000-4000-8000-000000000001'
+  ))
+));
+select is(
+  (select response_payload from rmvp02a_results where result_name = 'auto-replay'),
+  (select response_payload from rmvp02a_results where result_name = 'auto-all'),
+  'automatic-code replay returns the exact original identity and code readback'
+);
+
+insert into rmvp02a_results values ('explicit-code-conflict', atlas_api.create_dish(
+  pg_temp.rmvp02a_request('explicit-code-conflict', 1, jsonb_build_object(
+    'dish_code', 'explicit-compat', 'dish_name', 'Different name',
+    'dish_type_id', 'd1500000-0000-4000-8000-000000000001'
+  ))
+));
+select is((select response_payload ->> 'error_code' from rmvp02a_results
+  where result_name = 'explicit-code-conflict'), 'CONFLICT',
+  'explicit normalized code uniqueness remains enforced');
+
+reset role;
+select is((select count(*)::integer from atlas_admin.dishes
+  where dish_name in ('Auto Dish', 'Auto Code')), 2,
+  'two automatic creations persist exactly two Dishes despite replay');
+select is((select count(distinct dish_code)::integer from atlas_admin.dishes
+  where dish_name in ('Auto Dish', 'Auto Code') and dish_code ~ '^dish-[0-9a-f-]{36}$'), 2,
+  'generated codes are nonempty unique opaque UUID codes');
+select is((select display_order from atlas_admin.dishes where dish_name = 'Auto Dish'), 0,
+  'all-omitted creation defaults display order to zero');
+select is((select display_order from atlas_admin.dishes where dish_code = 'auto-order'), 0,
+  'explicit-code creation can omit display order');
+select is((select requires_need_generation from atlas_admin.dishes where dish_name = 'Auto Dish'), true,
+  'all-omitted creation participates in Need Generation');
+select is((select requires_need_generation from atlas_admin.dishes where dish_code = 'auto-requires'), true,
+  'explicit-code creation can omit demand participation');
+select is((select jsonb_build_array(display_order, requires_need_generation)
+  from atlas_admin.dishes where dish_code = 'explicit-compat'), '[9, false]'::jsonb,
+  'controlled explicit metadata remains compatible without rewriting persisted history');
+select is((select item ->> 'dish_code'
+  from rmvp02a_results result,
+  jsonb_array_elements(result.response_payload #> '{authoritative_readback,dishes}') item
+  where result.result_name = 'auto-all'
+    and item ->> 'dish_id' = result.response_payload #>> '{affected_aggregate_ids,dish_id}'),
+  (select dish_code from atlas_admin.dishes where dish_name = 'Auto Dish'),
+  'server readback exposes the persisted generated code');
+
+-- A name edit must not regenerate permanent reference identity.
+create temporary table auto_dish_identity as
+select dish_id, dish_code from atlas_admin.dishes where dish_name = 'Auto Dish';
+update atlas_admin.dishes set dish_name = 'Renamed Auto Dish' where dish_name = 'Auto Dish';
+select is((select dish.dish_code from atlas_admin.dishes dish
+  join auto_dish_identity original using (dish_id)),
+  (select dish_code from auto_dish_identity), 'renaming preserves the generated code');
+set local role authenticated;
+
 insert into rmvp02a_results values (
   'create-main-dish',
   atlas_api.create_dish(

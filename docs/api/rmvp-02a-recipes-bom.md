@@ -78,6 +78,31 @@ The bounded public errors include:
 
 No response returns credentials, SQL text, private row dumps, or an exception stack.
 
+## Business-only Dish creation amendment
+
+Normal `create_dish` calls supply `dish_name`, active `dish_type_id`, and optional
+`dish_category` and `operational_notes`. The connected Atlas form neither exposes
+nor submits `dish_code`, `display_order`, or `requires_need_generation`.
+
+For omitted keys, the v1 backend generates `dish-` followed by a complete random
+UUID, defaults `display_order` to `0`, and defaults `requires_need_generation` to
+`true`. Code generation happens after authorization and idempotency replay
+resolution. The existing unique code constraint protects the persisted code;
+replaying creation returns the original Dish identity and code readback. The code
+does not derive from the editable Dish name. Explicit invalid/null metadata is
+still rejected rather than interpreted as omission.
+
+Controlled callers may continue supplying normalized unique codes and valid
+explicit metadata. Local RMVP-02A, RMVP-02B, and Planning assembly verifiers still
+use that path. Existing persisted participation flags and history are unchanged.
+
+Creation remains `DRAFT`; the existing initial Recipe Save activates an eligible
+Dish and releases its Recipe atomically. Newly created active Dishes participate
+in Need Generation when used on an approved Menu with a valid released Recipe.
+Normal operators make no separate participation decision. Inactive Dishes remain
+unavailable for normal future planning; committed sources retain explicit
+inactive-Dish blockers and correction behavior, never silent demand removal.
+
 ## Additive RMVP-02A.v2 creation-and-lock contract
 
 D-038 preserves every v1 entry point above and adds the physically callable functions:
