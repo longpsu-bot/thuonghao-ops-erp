@@ -19,7 +19,7 @@ const PACKAGE_CLASSIFICATIONS = Object.freeze({
   foundation: "FOUNDATION_REFERENCE",
 });
 const PACKAGE_VERSIONS = Object.freeze({
-  identity: "1.0.0",
+  identity: "1.1.0",
   foundation: "1.1.0",
 });
 export const IDENTITY_CAPABILITY_CODES = Object.freeze([
@@ -40,6 +40,8 @@ export const IDENTITY_CAPABILITY_CODES = Object.freeze([
   "confirmed_need_release.release",
   "procurement.school_catering.read",
   "procurement.school_catering.write",
+  "master_data.recipe_adjustments.read",
+  "master_data.recipe_adjustments.write",
 ]);
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -112,6 +114,11 @@ export function validatePackageManifest(kind, manifest) {
 
   if (kind === "identity") {
     requireManifest(
+      manifest.auth_user?.app_metadata?.managed_by ===
+        `${manifest.package.name}@${manifest.package.version}`,
+      "Identity package managed version is inconsistent.",
+    );
+    requireManifest(
       manifest.auth_user?.email_env === "ATLAS_STAGING_TEST_EMAIL" &&
         manifest.auth_user?.password_env === "ATLAS_STAGING_TEST_PASSWORD",
       "Identity package credential references are invalid.",
@@ -123,7 +130,7 @@ export function validatePackageManifest(kind, manifest) {
     code(manifest.role?.role_code, "Role code");
     requireManifest(
       Array.isArray(manifest.role?.capabilities) &&
-        manifest.role.capabilities.length === 17,
+        manifest.role.capabilities.length === IDENTITY_CAPABILITY_CODES.length,
       "Identity package must contain the exact minimal capability set.",
     );
     const capabilityCodes = manifest.role.capabilities.map((item) =>

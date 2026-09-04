@@ -38,7 +38,7 @@ describe("Atlas Staging packages", () => {
   it("freezes the exact minimal Identity and Foundation manifests", () => {
     const identity = readAtlasStagingPackage("identity");
     const foundation = readAtlasStagingPackage("foundation");
-    expect(identity.package.version).toBe("1.0.0");
+    expect(identity.package.version).toBe("1.1.0");
     expect(foundation.package.version).toBe("1.1.0");
     expect(
       identity.role.capabilities.map((item) => item.capability_code),
@@ -77,6 +77,75 @@ describe("Atlas Staging packages", () => {
       final_coercion_mode: "POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO",
       evidence_timestamp: "2026-08-22T00:00:00Z",
     });
+  });
+
+  it("plans only the two existing adjustment grants while retaining the prior identity and scope", () => {
+    const identity = readAtlasStagingPackage("identity");
+    expect(identity.auth_user.app_metadata.managed_by).toBe(
+      "atlas-staging-identity@1.1.0",
+    );
+    expect(identity.role.capabilities.slice(-2)).toEqual([
+      {
+        role_capability_id: "a1010000-0000-4000-8000-000000000027",
+        capability_code: "master_data.recipe_adjustments.read",
+      },
+      {
+        role_capability_id: "a1010000-0000-4000-8000-000000000028",
+        capability_code: "master_data.recipe_adjustments.write",
+      },
+    ]);
+    expect(identity.role.capabilities).toHaveLength(19);
+    expect(
+      identity.role.capabilities
+        .slice(0, 17)
+        .map((item) => item.capability_code),
+    ).toEqual([
+      "master_data.read",
+      "master_data.schools.write",
+      "master_data.ingredients.write",
+      "master_data.suppliers.write",
+      "master_data.priorities.write",
+      "master_data.recipes.read",
+      "master_data.recipes.write",
+      "planning.inputs.read",
+      "planning.weekly_menu.write",
+      "planning.attendance.write",
+      "planning.pantry.write",
+      "planning.need_generation.write",
+      "confirmed_need_review.read",
+      "confirmed_need_quantities.confirm",
+      "confirmed_need_release.release",
+      "procurement.school_catering.read",
+      "procurement.school_catering.write",
+    ]);
+    const sql = buildIdentityPackageSql(identity);
+    expect(sql).toContain("capability_status = 'ACTIVE') <> 19");
+    expect(sql).not.toMatch(
+      /insert into atlas_core\.capabilities|\b(delete|update|truncate)\b/i,
+    );
+    const previousVersion = structuredClone(identity);
+    previousVersion.package.version = "1.0.0";
+    expect(() => validatePackageManifest("identity", previousVersion)).toThrow(
+      /qualification/i,
+    );
+    const staleMarker = structuredClone(identity);
+    staleMarker.auth_user.app_metadata.managed_by =
+      "atlas-staging-identity@1.0.0";
+    expect(() => validatePackageManifest("identity", staleMarker)).toThrow(
+      /managed version/i,
+    );
+    for (const capability of [
+      "master_data.recipe_adjustments.read",
+      "master_data.recipe_adjustments.write",
+    ]) {
+      const missing = structuredClone(identity);
+      missing.role.capabilities = missing.role.capabilities.filter(
+        (item) => item.capability_code !== capability,
+      );
+      expect(() => validatePackageManifest("identity", missing)).toThrow(
+        /minimal capability set/i,
+      );
+    }
   });
 
   it("contains secret names but no credential values in either manifest", () => {
