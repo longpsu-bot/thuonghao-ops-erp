@@ -10,6 +10,7 @@ import {
   NativeSelect,
   Paper,
   Radio,
+  Select,
   SimpleGrid,
   Stack,
   Table,
@@ -1582,18 +1583,19 @@ export function RecipeAdjustmentWorkbench({
                         <Text fw={600}>{selectedRecipeSchoolTypeName}</Text>
                       </Paper>
                     )}
-                    <NativeSelect
+                    <Select
                       label="Món"
-                      value={draft.dishId}
+                      searchable
+                      allowDeselect={false}
+                      placeholder="Chọn món"
+                      nothingFoundMessage="Không tìm thấy món"
+                      value={draft.dishId || null}
                       disabled={!!editing}
-                      data={[
-                        { value: "", label: "Chọn món" },
-                        ...load.data.dishes.map((dish) => ({
-                          value: dish.dish_id ?? "",
-                          label: dish.dish_name ?? "",
-                        })),
-                      ]}
-                      onChange={(event) => changeDish(event.target.value)}
+                      data={load.data.dishes.map((dish) => ({
+                        value: dish.dish_id ?? "",
+                        label: dish.dish_name ?? "",
+                      }))}
+                      onChange={(value) => changeDish(value ?? "")}
                     />
                   </>
                 )}
@@ -1860,18 +1862,19 @@ export function RecipeAdjustmentWorkbench({
                           updateDraft({ previewSchoolId: event.target.value })
                         }
                       />
-                      <NativeSelect
+                      <Select
                         label="Món đại diện"
-                        value={draft.previewDishId}
-                        data={[
-                          { value: "", label: "Chọn món" },
-                          ...load.data.dishes.map((dish) => ({
-                            value: dish.dish_id ?? "",
-                            label: dish.dish_name ?? "",
-                          })),
-                        ]}
-                        onChange={(event) =>
-                          updateDraft({ previewDishId: event.target.value })
+                        searchable
+                        allowDeselect={false}
+                        placeholder="Chọn món"
+                        nothingFoundMessage="Không tìm thấy món"
+                        value={draft.previewDishId || null}
+                        data={load.data.dishes.map((dish) => ({
+                          value: dish.dish_id ?? "",
+                          label: dish.dish_name ?? "",
+                        }))}
+                        onChange={(value) =>
+                          updateDraft({ previewDishId: value ?? "" })
                         }
                       />
                     </SimpleGrid>
@@ -1904,18 +1907,19 @@ export function RecipeAdjustmentWorkbench({
                   )}
 
                   {draft.scope === "SCHOOL" && (
-                    <NativeSelect
+                    <Select
                       label="Món dùng để xem"
-                      value={draft.previewDishId}
-                      data={[
-                        { value: "", label: "Chọn món" },
-                        ...load.data.dishes.map((dish) => ({
-                          value: dish.dish_id ?? "",
-                          label: dish.dish_name ?? "",
-                        })),
-                      ]}
-                      onChange={(event) =>
-                        updateDraft({ previewDishId: event.target.value })
+                      searchable
+                      allowDeselect={false}
+                      placeholder="Chọn món"
+                      nothingFoundMessage="Không tìm thấy món"
+                      value={draft.previewDishId || null}
+                      data={load.data.dishes.map((dish) => ({
+                        value: dish.dish_id ?? "",
+                        label: dish.dish_name ?? "",
+                      }))}
+                      onChange={(value) =>
+                        updateDraft({ previewDishId: value ?? "" })
                       }
                     />
                   )}

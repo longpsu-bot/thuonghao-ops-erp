@@ -1,13 +1,72 @@
 import { describe, expect, it } from "vitest";
 import {
+  commandRequest,
   responseArray,
   type IngredientMasterData,
   type IngredientOrderGroupMasterData,
   type IngredientTypeMasterData,
+  type SupplierMasterData,
+  type UnitMasterData,
 } from "../master-data/masterDataModel";
 import { createReviewMasterDataApi } from "./reviewMasterDataApi";
 
 describe("review-only master-data adapter", () => {
+  it("accepts code-free Ingredient and Supplier creation while preserving controlled explicit codes", async () => {
+    const api = createReviewMasterDataApi();
+    const initial = await api.getIngredientsAndSuppliers("reviewer", "review");
+    const unit = responseArray<UnitMasterData>(initial, "units")![0]!;
+    const type = responseArray<IngredientTypeMasterData>(
+      initial,
+      "ingredient_types",
+    )![0]!;
+    const group = responseArray<IngredientOrderGroupMasterData>(
+      initial,
+      "ingredient_order_groups",
+    )![0]!;
+    for (const code of [undefined, "controlled-import"]) {
+      const ingredientResult = await api.createIngredient(
+        commandRequest("reviewer", "review", 1, "CREATE", {
+          ingredient_name: "Bí đỏ mới",
+          purchase_unit_id: unit.unit_id,
+          ingredient_type_id: type.ingredient_type_id,
+          ingredient_order_group_id: group.ingredient_order_group_id,
+          order_step: 1,
+          ...(code ? { ingredient_code: code } : {}),
+        }),
+      );
+      expect(ingredientResult.kind).toBe("success");
+      const supplierResult = await api.createSupplier(
+        commandRequest("reviewer", "review", 1, "CREATE", {
+          supplier_name: "Nhà cung ứng mới",
+          ...(code ? { supplier_code: code } : {}),
+        }),
+      );
+      expect(supplierResult.kind).toBe("success");
+    }
+    const catalog = await api.getIngredientsAndSuppliers("reviewer", "review");
+    const ingredients = responseArray<IngredientMasterData>(
+      catalog,
+      "ingredients",
+    )!;
+    const suppliers = responseArray<SupplierMasterData>(catalog, "suppliers")!;
+    expect(ingredients[0]!.ingredient_code).toBe("controlled-import");
+    expect(suppliers[0]!.supplier_code).toBe("controlled-import");
+    expect(ingredients[1]!.ingredient_code).toMatch(
+      /^ingredient-[0-9a-f-]{36}$/,
+    );
+    expect(suppliers[1]!.supplier_code).toMatch(/^supplier-[0-9a-f-]{36}$/);
+    expect(ingredients[1]!.ingredient_name).toBe("Bí đỏ mới");
+    expect(suppliers[1]!.supplier_name).toBe("Nhà cung ứng mới");
+    const reread = await api.getIngredientsAndSuppliers("reviewer", "review");
+    expect(
+      responseArray<IngredientMasterData>(reread, "ingredients")![1]!
+        .ingredient_code,
+    ).toBe(ingredients[1]!.ingredient_code);
+    expect(
+      responseArray<SupplierMasterData>(reread, "suppliers")![1]!.supplier_code,
+    ).toBe(suppliers[1]!.supplier_code);
+  });
+
   it("provides realistic deterministic review volumes", async () => {
     const api = createReviewMasterDataApi();
     const schools = await api.getSchools("reviewer", "review");

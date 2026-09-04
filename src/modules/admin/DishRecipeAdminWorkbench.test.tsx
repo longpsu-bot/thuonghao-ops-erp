@@ -265,6 +265,9 @@ describe("Recipe creation-and-lock workbench", () => {
       expect(screen.queryByLabelText("Mã món")).toBeNull();
       expect(screen.queryByLabelText("Thứ tự hiển thị")).toBeNull();
       expect(screen.queryByLabelText("Tham gia sinh nhu cầu")).toBeNull();
+      const notes = screen.getByLabelText("Ghi chú vận hành (không bắt buộc)");
+      expect(notes).not.toBeRequired();
+      expect(notes).toHaveValue("");
       fireEvent.change(screen.getByLabelText("Tên món"), {
         target: { value: "Món mới 03A" },
       });

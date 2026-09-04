@@ -535,7 +535,10 @@ export function createReviewMasterDataApi(
     createIngredient(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
-      const code = payloadString(request, "ingredient_code").trim();
+      const code =
+        request.payload.ingredient_code === undefined
+          ? `ingredient-${crypto.randomUUID()}`
+          : payloadString(request, "ingredient_code").trim();
       if (
         !code ||
         ingredients.some(
@@ -656,7 +659,10 @@ export function createReviewMasterDataApi(
     createSupplier(request) {
       const blocked = writeBlock();
       if (blocked) return Promise.resolve(blocked);
-      const code = payloadString(request, "supplier_code").trim();
+      const code =
+        request.payload.supplier_code === undefined
+          ? `supplier-${crypto.randomUUID()}`
+          : payloadString(request, "supplier_code").trim();
       if (
         !code ||
         suppliers.some(

@@ -248,9 +248,6 @@ async function saveReview() {
 
 function fillIngredientCreate() {
   fireEvent.click(screen.getByRole("button", { name: "Tạo nguyên liệu" }));
-  fireEvent.change(screen.getByLabelText("Mã nguyên liệu"), {
-    target: { value: " PUMPKIN " },
-  });
   fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
     target: { value: "Bí đỏ" },
   });
@@ -269,6 +266,98 @@ function fillIngredientCreate() {
 }
 
 describe("Ingredient and Supplier operator workflow", () => {
+  it("keeps internal Ingredient and Supplier codes searchable without showing them in normal lists", async () => {
+    await renderReady();
+    fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
+      target: { value: "rice" },
+    });
+    expect(screen.getByText("Gạo Jasmine")).toBeVisible();
+    expect(screen.queryByText("rice")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /Nhà cung ứng/ }));
+    fireEvent.change(screen.getByLabelText("Tìm nhà cung ứng"), {
+      target: { value: "supplier-1" },
+    });
+    expect(screen.getByText("NCC Minh Tâm")).toBeVisible();
+    expect(screen.queryByText("supplier-1")).not.toBeInTheDocument();
+  });
+
+  it("shows only Vietnamese human Unit names in the catalog, create/edit choices, and Review", async () => {
+    const data = masterData();
+    data.units = [
+      {
+        unit_id: "unit-kg",
+        unit_code: "v1-unit-kg",
+        unit_name: "Kilogram",
+        unit_status: "ACTIVE",
+      },
+      {
+        unit_id: "unit-bo",
+        unit_code: "v1-unit-bo",
+        unit_name: "Bó",
+        unit_status: "ACTIVE",
+      },
+      {
+        unit_id: "unit-bich",
+        unit_code: "v1-unit-bich",
+        unit_name: "Bịch",
+        unit_status: "ACTIVE",
+      },
+      {
+        unit_id: "unit-hu-1",
+        unit_code: "v1-unit-hu-1",
+        unit_name: "Hũ",
+        unit_status: "ACTIVE",
+      },
+      {
+        unit_id: "unit-hu-2",
+        unit_code: "v1-unit-hu-2",
+        unit_name: "Hủ",
+        unit_status: "ACTIVE",
+      },
+    ];
+    data.ingredients[0]!.purchase_unit_code = "v1-unit-kg";
+    data.ingredients[0]!.purchase_unit_name = "Kilogram";
+    const connected = await renderReady(createApi({ data }));
+    expect(screen.queryByText(/v1-unit-/)).not.toBeInTheDocument();
+    fillIngredientCreate();
+    const choices = within(screen.getByLabelText("Đơn vị mua")).getAllByRole(
+      "option",
+    );
+    expect(choices.map((choice) => choice.textContent)).toEqual([
+      "Chọn đơn vị",
+      "Bịch",
+      "Bó",
+      "Hủ",
+      "Hũ",
+      "Kilogram",
+    ]);
+    expect(choices.map((choice) => choice.getAttribute("value"))).toEqual([
+      "",
+      "unit-bich",
+      "unit-bo",
+      "unit-hu-2",
+      "unit-hu-1",
+      "unit-kg",
+    ]);
+    const createReview = await openReview();
+    expect(within(createReview).getByText("Kilogram")).toBeVisible();
+    expect(screen.queryByText(/v1-unit-/)).not.toBeInTheDocument();
+    fireEvent.click(
+      within(createReview).getByRole("button", { name: "Quay lại" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
+    editIngredientName("Gạo mới");
+    expect(
+      within(screen.getByLabelText("Đơn vị mua")).getByRole("option", {
+        name: "Kilogram",
+      }),
+    ).toHaveValue("unit-kg");
+    const editReview = await openReview();
+    expect(within(editReview).getAllByText("Kilogram")).toHaveLength(2);
+    expect(screen.queryByText(/v1-unit-/)).not.toBeInTheDocument();
+    expect(connected.createIngredient).not.toHaveBeenCalled();
+  });
+
   it("renders both classifications as API-backed business selects with corrected labels", async () => {
     await renderReady();
     fireEvent.click(firstButton("Sửa"));
@@ -335,6 +424,7 @@ describe("Ingredient and Supplier operator workflow", () => {
     ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
     fillIngredientCreate();
+    expect(screen.queryByLabelText("Mã nguyên liệu")).not.toBeInTheDocument();
 
     let dialog = await openReview();
     expect(connected.createIngredient).not.toHaveBeenCalled();
@@ -342,7 +432,7 @@ describe("Ingredient and Supplier operator workflow", () => {
       expect(within(dialog).getByText("Nguyên liệu mới")).toBeVisible(),
     );
     expect(within(dialog).getByText("Bí đỏ")).toHaveClass("changed");
-    expect(within(dialog).getByText("Kilôgam (kg)")).toBeVisible();
+    expect(within(dialog).getByText("Kilôgam")).toBeVisible();
     fireEvent.click(within(dialog).getByRole("button", { name: "Quay lại" }));
     await waitFor(() =>
       expect(
@@ -368,7 +458,6 @@ describe("Ingredient and Supplier operator workflow", () => {
       expect.objectContaining({
         expected_version: 1,
         payload: {
-          ingredient_code: "pumpkin",
           ingredient_name: "Bí đỏ hồ lô",
           purchase_unit_id: "unit-kg",
           ingredient_type_id: "type-vegetable",
@@ -404,7 +493,7 @@ describe("Ingredient and Supplier operator workflow", () => {
     expect(connected.updateIngredient).not.toHaveBeenCalled();
     expect(within(dialog).getByText("Gạo Jasmine mới")).toHaveClass("changed");
     expect(within(dialog).getByText("10")).toHaveClass("changed");
-    expect(within(dialog).getAllByText("Kilôgam (kg)").at(-1)).toHaveClass(
+    expect(within(dialog).getAllByText("Kilôgam").at(-1)).toHaveClass(
       "unchanged",
     );
     fireEvent.click(within(dialog).getByRole("button", { name: "Lưu" }));
@@ -472,9 +561,7 @@ describe("Ingredient and Supplier operator workflow", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Nhà cung ứng/ }));
     fireEvent.click(screen.getByRole("button", { name: "Tạo nhà cung ứng" }));
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
-    fireEvent.change(screen.getByLabelText("Mã nhà cung ứng"), {
-      target: { value: "fresh" },
-    });
+    expect(screen.queryByLabelText("Mã nhà cung ứng")).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Tên nhà cung ứng"), {
       target: { value: "NCC Mới" },
     });
@@ -494,13 +581,15 @@ describe("Ingredient and Supplier operator workflow", () => {
     expect(connected.createSupplier.mock.calls[0]![0]).toMatchObject({
       expected_version: 1,
       payload: {
-        supplier_code: "fresh",
         supplier_name: "NCC Mới",
         contact_name: "",
         contact_phone: "",
         contact_email: "new@example.invalid",
       },
     });
+    expect(
+      connected.createSupplier.mock.calls[0]![0].payload,
+    ).not.toHaveProperty("supplier_code");
   });
 
   it("reviews and updates a Supplier with the reviewed expected version", async () => {

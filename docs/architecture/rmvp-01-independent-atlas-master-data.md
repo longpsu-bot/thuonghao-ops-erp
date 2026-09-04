@@ -43,6 +43,30 @@ UI-QUALITY-03C-B keeps `atlas_api.get_ingredient_supplier_master_data`, `atlas_a
 
 Create/update accept authoritative UUID identities. A legacy caller may instead submit `ingredient_type` and `shopping_type`; each value must resolve to one exact catalog display name after the existing trim/case normalization. Unknown text, inactive new assignment, invalid IDs, or conflicting ID/text pairs are rejected without implicit catalog creation. Existing inactive references remain readable and may be preserved on the same Ingredient, while activation requires complete active catalog references. The correction reuses `master_data.read`, `master_data.ingredients.write`, the existing runtimes and the existing public function names; it adds no capability, role, public API, catalog-write API, trigger, Planning behavior, or browser table access.
 
+## Business-facing creation amendment (MASTER-DATA-CREATION-UX-02)
+
+Normal connected Ingredient and Supplier creation supplies business fields only,
+omitting `ingredient_code` and `supplier_code`. The existing v1 commands accept
+omitted codes and generate `ingredient-<full-random-uuid>` or
+`supplier-<full-random-uuid>` after authorization and idempotency/replay resolution.
+Codes are independent of editable names, protected by the existing unique
+constraints, and stable across exact replay and later updates. Controlled/import
+and test callers retain the existing explicit normalized unique-code path;
+explicit invalid/null codes remain validation errors. No importer behavior changes.
+
+Ingredient name, purchase Unit, Ingredient Type, Order Group and order-rounding
+increment remain the normal business fields. Supplier contact name, phone, and
+email retain their existing optional behavior. Normal purchase-Unit selectors,
+review, and lists show `unit_name` only; choices sort by Vietnamese display name.
+`unit_code` stays in backend/read models. Source Unit names, including distinct
+`Hũ` and `Hủ`, are preserved without normalization or data rewrites.
+
+The RMVP-01 shared command validator accepts
+`requested_at <= transaction_timestamp() + interval '60 seconds'`, inclusive,
+matching the approved RMVP-02B policy. Invalid timestamps and larger future offsets
+remain `VALIDATION_FAILED` on `requested_at`. Request bytes, hashing, identity,
+authorization, versioning, receipt semantics, and client timestamps are unchanged.
+
 ## Authority cutover and rollback
 
 Import does not itself cut operational authority over. The operator must review the stored reconciliation and explicitly declare Atlas authoritative before directing users away from the legacy source. Until that declaration, the legacy export is source evidence and Atlas is a candidate target.

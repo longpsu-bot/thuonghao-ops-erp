@@ -8,6 +8,12 @@ Reads require `contract_version`, `requested_by_auth_subject`, `correlation_id`,
 
 The backend checks the authenticated subject against the requested subject, resolves an active Actor, capability, and global scope, and never trusts browser-supplied actor identity.
 
+MASTER-DATA-CREATION-UX-02 aligns the shared command validator with RMVP-02B:
+`requested_at <= transaction_timestamp() + interval '60 seconds'`.
+The upper bound is inclusive. Invalid timestamps and offsets greater than 60
+seconds return `VALIDATION_FAILED` on `requested_at`. Client timestamps, request
+bytes, hashing, authorization, versions, and receipt/replay semantics are unchanged.
+
 Successful commands return affected aggregate IDs, the new aggregate version, event IDs, audit IDs, authoritative workbench readback, warnings, blockers, and a safe operator message. Safe errors include an error code, message, retryability, field errors, blocking references, and actual version where relevant.
 
 ## Read
@@ -83,6 +89,9 @@ No response returns credentials, SQL text, private row dumps, or an exception st
 Normal `create_dish` calls supply `dish_name`, active `dish_type_id`, and optional
 `dish_category` and `operational_notes`. The connected Atlas form neither exposes
 nor submits `dish_code`, `display_order`, or `requires_need_generation`.
+
+The operational-note label explicitly says `Ghi chú vận hành (không bắt buộc)`.
+Blank notes remain valid; they do not block Dish creation.
 
 For omitted keys, the v1 backend generates `dish-` followed by a complete random
 UUID, defaults `display_order` to `0`, and defaults `requires_need_generation` to
