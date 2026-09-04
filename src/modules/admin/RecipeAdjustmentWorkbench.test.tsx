@@ -9,6 +9,8 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createRecipeAdjustmentApi } from "../atlas/recipe-adjustments/recipeAdjustmentApi";
+import type { AtlasRpcRequest, JsonValue } from "../atlas/connection/atlasRpc";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
 import { atlasTheme } from "../../theme";
@@ -37,11 +39,13 @@ const fixtureIds = {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 function renderWorkbench(
   view: "rules" | "effective" = "rules",
   api = createReviewRecipeAdjustmentApi("ready"),
+  mode: "review" | "connected" = "review",
 ) {
   return {
     api,
@@ -51,7 +55,7 @@ function renderWorkbench(
           authState={createReviewAuthState("ready")}
           api={api}
           view={view}
-          mode="review"
+          mode={mode}
         />
       </MantineProvider>,
     ),
@@ -142,6 +146,102 @@ function fillIngredientReplacement(dialog: HTMLElement) {
 }
 
 describe("Recipe Change Order first-user workbench", () => {
+  it.each([true, false])(
+    "connected quantity Save requires a current preview with can_save=%s",
+    async (canSave) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-09-04T07:00:01.000Z"));
+      const fixture = createReviewRecipeAdjustmentApi("ready");
+      const writes: AtlasRpcRequest[] = [];
+      // Replace only the external RPC transport; use the connected API and UI.
+      const api = createRecipeAdjustmentApi({
+        async invoke(name, request) {
+          if (name === "atlas_api.get_recipe_adjustment_operator_workbench")
+            return fixture.getOperatorWorkbench(
+              String(request.requested_by_auth_subject),
+              String(request.correlation_id),
+              "2026-09-04",
+            );
+          if (name === "atlas_api.preview_recipe_composition_adjustment") {
+            const result = await fixture.preview(
+              String(request.requested_by_auth_subject),
+              String(request.correlation_id),
+              request.payload as Record<string, JsonValue>,
+            );
+            if (result.kind !== "success")
+              throw new Error("Fixture preview failed");
+            return {
+              ...result,
+              response: {
+                ...result.response,
+                preview: {
+                  ...(result.response.preview as Record<string, JsonValue>),
+                  can_save: canSave,
+                },
+              },
+            };
+          }
+          if (name === "atlas_api.create_recipe_composition_adjustment") {
+            writes.push(request);
+            return { kind: "success", response: { success: true } };
+          }
+          throw new Error(`Unexpected RPC: ${name}`);
+        },
+      });
+      renderWorkbench("rules", api, "connected");
+      const dialog = await openCreateDialog();
+      selectRecipeTarget(dialog);
+      selectAction(dialog, "Đổi định lượng");
+      fireEvent.change(
+        within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+        {
+          target: { value: fixtureIds.porkLine },
+        },
+      );
+      fireEvent.change(within(dialog).getByLabelText("Định lượng mới"), {
+        target: { value: "7.5" },
+      });
+      fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+        target: { value: "Kiểm tra lưu điều chỉnh." },
+      });
+      fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
+        target: { value: fixtureIds.school },
+      });
+      expect(
+        within(dialog).queryByRole("button", { name: "Lưu điều chỉnh" }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+      );
+      const review = await screen.findByRole("dialog", {
+        name: "Thay đổi dự kiến",
+      });
+      expect(writes).toHaveLength(0);
+      const save = within(review).getByRole("button", {
+        name: "Lưu điều chỉnh",
+      });
+      if (!canSave) {
+        expect(save).toBeDisabled();
+        fireEvent.click(save);
+        expect(writes).toHaveLength(0);
+        return;
+      }
+      expect(save).toBeEnabled();
+      fireEvent.click(save);
+      await waitFor(() => expect(writes).toHaveLength(1));
+      expect(writes[0]).toMatchObject({
+        requested_at: "2026-09-04T07:00:01.000Z",
+        expected_version: 1,
+        payload: {
+          scope_kind: "SYSTEM_DISH",
+          action_kind: "ADJUST_QUANTITY",
+          quantity_per_basis: 7.5,
+        },
+      });
+      expect(await screen.findByText("Đã lưu điều chỉnh.")).toBeInTheDocument();
+    },
+  );
+
   it("uses the Vietnam-local calendar date shortly after local midnight", () => {
     const shortlyAfterMidnightInVietnam = new Date("2026-08-13T17:05:00.000Z");
 

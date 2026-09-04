@@ -1814,7 +1814,11 @@ as $$
     'idempotency_key', 'rmvp02b:' || p_name,
     'expected_version', p_expected_version,
     'requested_by_auth_subject', p_subject,
-    'requested_at', transaction_timestamp() - interval '1 second',
+    'requested_at', transaction_timestamp() + case
+      when p_name = 'create' then interval '1 second'
+      when p_name = 'supersede' then interval '60 seconds'
+      when p_name in ('cancel', 'cancel-with-write-only') then interval '1 second'
+      else interval '-1 second' end,
     'reason_code', 'RMVP02B_TEST',
     'reason_note', 'Rolled-back RMVP-02B acceptance test: ' || p_name,
     'payload', p_payload
@@ -1866,6 +1870,16 @@ insert into rmvp02b_results values (
   )
 );
 
+reset role;
+create temporary table rmvp02b_preview_counts as
+select
+  (select count(*) from atlas_admin.recipe_composition_adjustments) as roots,
+  (select count(*) from atlas_admin.recipe_composition_adjustment_revisions) as revisions,
+  (select count(*) from atlas_core.command_receipts) as receipts,
+  (select count(*) from atlas_audit.domain_events) as events,
+  (select count(*) from atlas_audit.audit_events) as audits;
+set local role authenticated;
+
 insert into rmvp02b_results values (
   'preview-create',
   atlas_api.preview_recipe_composition_adjustment(
@@ -1892,6 +1906,17 @@ insert into rmvp02b_results values (
   )
 );
 
+reset role;
+select ok(
+  roots = (select count(*) from atlas_admin.recipe_composition_adjustments)
+  and revisions = (select count(*) from atlas_admin.recipe_composition_adjustment_revisions)
+  and receipts = (select count(*) from atlas_core.command_receipts)
+  and events = (select count(*) from atlas_audit.domain_events)
+  and audits = (select count(*) from atlas_audit.audit_events),
+  'preview writes no adjustment, revision, receipt, domain event, or audit event'
+) from rmvp02b_preview_counts;
+set local role authenticated;
+
 insert into rmvp02b_results values (
   'create',
   atlas_api.create_recipe_composition_adjustment(
@@ -1916,6 +1941,13 @@ insert into rmvp02b_results values (
     )
   )
 );
+
+select is(
+  (select response_payload ->> 'success' from rmvp02b_results where result_name = 'create'),
+  'true', 'a one-second-ahead browser Create reaches and completes the command path'
+);
+select diag(response_payload::text) from rmvp02b_results
+where result_name = 'create' and response_payload ->> 'success' <> 'true';
 
 insert into rmvp02b_results values (
   'create-replay',
@@ -2010,6 +2042,45 @@ insert into rmvp02b_results values (
     )
   )
 );
+
+select is(atlas_api.supersede_recipe_composition_adjustment(
+  pg_temp.rmvp02b_command('stale-supersede', 1, jsonb_build_object(
+    'adjustment_id', 'b2400000-0000-0000-0000-000000000001',
+    'revision_id', 'b2410000-0000-0000-0000-000000000091',
+    'predecessor_revision_id', 'b2410000-0000-0000-0000-000000000002',
+    'effective_from', '2026-08-10', 'as_of_date', '2026-08-10',
+    'preview_school_id', 'b2100000-0000-0000-0000-000000000120',
+    'preview_dish_id', 'b2200000-0000-0000-0000-000000000100'
+  )))->>'error_code', 'STALE_VERSION', 'Supersede still requires current root version');
+select is(atlas_api.supersede_recipe_composition_adjustment(
+  pg_temp.rmvp02b_command('wrong-predecessor', 2, jsonb_build_object(
+    'adjustment_id', 'b2400000-0000-0000-0000-000000000001',
+    'revision_id', 'b2410000-0000-0000-0000-000000000092',
+    'predecessor_revision_id', 'b2410000-0000-0000-0000-000000000001',
+    'effective_from', '2026-08-10', 'as_of_date', '2026-08-10',
+    'preview_school_id', 'b2100000-0000-0000-0000-000000000120',
+    'preview_dish_id', 'b2200000-0000-0000-0000-000000000100'
+  )))->>'error_code', 'CONFLICT', 'Supersede still requires exact current predecessor');
+
+-- This fixture operator retains read/write but temporarily loses only cancel.
+reset role;
+delete from atlas_core.role_capabilities
+where role_id = 'b2000000-0000-0000-0000-000000000020'
+  and capability_id = (select capability_id from atlas_core.capabilities
+    where capability_code = 'master_data.recipe_adjustments.cancel');
+set local role authenticated;
+select is(atlas_api.cancel_recipe_composition_adjustment(
+  pg_temp.rmvp02b_command('cancel-with-write-only', 2, jsonb_build_object(
+    'adjustment_id', 'b2400000-0000-0000-0000-000000000001',
+    'revision_id', 'b2410000-0000-0000-0000-000000000093',
+    'predecessor_revision_id', 'b2410000-0000-0000-0000-000000000002',
+    'effective_from', '2026-08-15'
+  )))->>'error_code', 'CAPABILITY_DENIED', 'read/write does not grant Cancel authority');
+reset role;
+insert into atlas_core.role_capabilities(role_id, capability_id)
+select 'b2000000-0000-0000-0000-000000000020', capability_id
+from atlas_core.capabilities where capability_code = 'master_data.recipe_adjustments.cancel';
+set local role authenticated;
 
 insert into rmvp02b_results values (
   'cancel',
@@ -2398,6 +2469,62 @@ select throws_ok(
   'Recipe composition adjustment roots cannot be deleted',
   'stable adjustment roots cannot be hard-deleted'
 );
+
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'b2000000-0000-0000-0000-000000000101', true);
+select is(atlas_api.create_recipe_composition_adjustment(jsonb_set(
+  pg_temp.rmvp02b_command(
+      'create',
+      1,
+      jsonb_build_object(
+        'adjustment_id', 'b2400000-0000-0000-0000-000000000001',
+        'revision_id', 'b2410000-0000-0000-0000-000000000001',
+        'scope_kind', 'SYSTEM_DISH',
+        'action_kind', 'ADJUST_QUANTITY',
+        'dish_id', 'b2200000-0000-0000-0000-000000000100',
+        'target_recipe_line_id',
+          'b2200000-0000-0000-0000-000000000401',
+        'quantity_per_basis', 7,
+        'effective_from', '2026-07-01',
+        'as_of_date', '2026-07-15',
+        'preview_school_id', 'b2100000-0000-0000-0000-000000000120',
+        'preview_dish_id', 'b2200000-0000-0000-0000-000000000100',
+        'source_evidence', '{"source":"authenticated-test"}'::jsonb
+      )
+    ),
+  '{payload,quantity_per_basis}', '8'::jsonb
+))->>'error_code', 'IDEMPOTENCY_CONFLICT',
+  'changed command payload cannot replay under the same idempotency key');
+reset role;
+select is((select count(*)::integer from atlas_core.command_receipts
+  where idempotency_key = 'rmvp02b:create'), 1,
+  'exact replay and changed-payload rejection retain one Create receipt');
+
+set local role authenticated;
+select is(atlas_api.create_recipe_composition_adjustment(
+    pg_temp.rmvp02b_command(
+      'normal-create',
+      1,
+      jsonb_build_object(
+        'adjustment_id', 'b2400000-0000-0000-0000-000000000004',
+        'revision_id', 'b2410000-0000-0000-0000-000000000004',
+        'scope_kind', 'SYSTEM_DISH',
+        'action_kind', 'ADJUST_QUANTITY',
+        'dish_id', 'b2200000-0000-0000-0000-000000000100',
+        'target_recipe_line_id',
+          'b2200000-0000-0000-0000-000000000401',
+        'quantity_per_basis', 7,
+        'effective_from', '2027-07-01',
+        'as_of_date', '2027-07-15',
+        'preview_school_id', 'b2100000-0000-0000-0000-000000000120',
+        'preview_dish_id', 'b2200000-0000-0000-0000-000000000100',
+        'source_evidence', '{"source":"authenticated-test"}'::jsonb
+      )
+    )
+  )->>'success', 'true',
+  'normal past-timestamp Create still succeeds');
+reset role;
 
 select * from finish();
 rollback;
