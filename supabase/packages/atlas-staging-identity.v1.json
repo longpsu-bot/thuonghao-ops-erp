@@ -2,7 +2,7 @@
   "schema_version": 1,
   "package": {
     "name": "atlas-staging-identity",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "classification": "IDENTITY",
     "environment": "staging",
     "project_ref": "rnzxmxiiqgtdevzregff"
@@ -17,7 +17,7 @@
     },
     "app_metadata": {
       "environment": "atlas-staging",
-      "managed_by": "atlas-staging-identity@1.0.0"
+      "managed_by": "atlas-staging-identity@1.1.0"
     }
   },
   "actor": {
@@ -98,6 +98,14 @@
       {
         "role_capability_id": "a1010000-0000-4000-8000-000000000026",
         "capability_code": "procurement.school_catering.write"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000027",
+        "capability_code": "master_data.recipe_adjustments.read"
+      },
+      {
+        "role_capability_id": "a1010000-0000-4000-8000-000000000028",
+        "capability_code": "master_data.recipe_adjustments.write"
       }
     ]
   },

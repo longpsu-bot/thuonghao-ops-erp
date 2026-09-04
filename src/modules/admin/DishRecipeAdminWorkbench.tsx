@@ -210,8 +210,6 @@ export function DishRecipeAdminWorkbench({
       )
     )
       return;
-    setDishId(nextDishId);
-    setSchoolTypeId(nextSchoolTypeId);
     setNotice(null);
     await refresh({ dishId: nextDishId, schoolTypeId: nextSchoolTypeId });
   };
@@ -389,6 +387,14 @@ export function DishRecipeAdminWorkbench({
   };
 
   const beginDish = () => {
+    if (
+      isDirty &&
+      !window.confirm(
+        "Bạn có thay đổi chưa lưu. Bỏ các thay đổi này và tạo món mới?",
+      )
+    )
+      return;
+    setNotice(null);
     setDishEditorId("NEW");
     setDishDraft({
       ...emptyDishDraft(),
@@ -441,6 +447,7 @@ export function DishRecipeAdminWorkbench({
       returnedDishes.find((item) => item.dish_code === dishDraft.code.trim())
         ?.dish_id;
     setDishEditorId(null);
+    setQuery("");
     setTab("recipes");
     if (createdDishId) {
       await refresh({ dishId: createdDishId, schoolTypeId: null });
@@ -782,9 +789,9 @@ export function DishRecipeAdminWorkbench({
                       <div className="master-data-row-actions">
                         <button
                           className="inline-action"
-                          onClick={() => {
-                            setDishId(item.dish_id);
-                          }}
+                          onClick={() =>
+                            void selectRecipeContext(item.dish_id, null)
+                          }
                         >
                           Xem
                         </button>
@@ -905,7 +912,12 @@ export function DishRecipeAdminWorkbench({
             </aside>
 
             <section className="recipe-first-user-editor">
-              {dish ? (
+              {dishEditorId ? (
+                <p className="supporting-copy">
+                  Nhập thông tin món mới trong biểu mẫu. Sau khi lưu món, bạn có
+                  thể tạo công thức ban đầu cho món đó.
+                </p>
+              ) : dish ? (
                 <>
                   <header className="recipe-context-header">
                     <div>
@@ -1501,7 +1513,14 @@ export function DishRecipeAdminWorkbench({
               <span>Món ăn</span>
               <h3>Thêm món</h3>
             </div>
-            <button onClick={() => setDishEditorId(null)}>×</button>
+            <button
+              onClick={() => {
+                setDishEditorId(null);
+                setNotice(null);
+              }}
+            >
+              ×
+            </button>
           </div>
           <div className="master-data-drawer-body master-data-detail-form">
             {(
