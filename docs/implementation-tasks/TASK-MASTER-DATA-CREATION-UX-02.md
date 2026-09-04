@@ -96,6 +96,12 @@ supported touched files; and `git diff --check`.
 - Cross-review of files each reviewer did not implement found no actionable
   product, architecture, security, or code-quality issues.
 
+The first Frontend CI run found one additional AtlasApp integration test still
+trying to fill the removed Ingredient code input. Its setup now asserts that the
+input is absent and completes the same business-field creation, reviewed Save,
+internal-code search, and Supplier-priority validation journey. No assertion of
+those existing safeguards was removed.
+
 An additional historical Ingredient catalog suite has an unrelated capability
 count failure (expects 27, current main has 29). Restoring the four original
 function definitions inside a rolled-back local transaction reproduces the same

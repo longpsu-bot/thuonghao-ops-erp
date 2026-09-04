@@ -545,9 +545,7 @@ describe("Atlas master-data shell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tạo nguyên liệu" }));
     expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
-    fireEvent.change(screen.getByLabelText("Mã nguyên liệu"), {
-      target: { value: "NL9001" },
-    });
+    expect(screen.queryByLabelText("Mã nguyên liệu")).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
       target: { value: "Bí đỏ hữu cơ" },
     });
