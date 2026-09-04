@@ -54,6 +54,11 @@ const stagingIdentity = JSON.parse(
   readFileSync("supabase/packages/atlas-staging-identity.v1.json", "utf8"),
 );
 const managedStagingRole = stagingIdentity.role;
+const stagingFoundation = JSON.parse(
+  readFileSync("supabase/packages/atlas-staging-foundation.v1.json", "utf8"),
+);
+const managedSchool = { school_id: stagingFoundation.school.school_id };
+const importedSchool = { school_id: "11111111-1111-4111-8111-111111111112" };
 
 function applicationRoleStateAccepted(applicationRoles, { platformOnly }) {
   if (applicationRoles.length === 0) return platformOnly;
@@ -1377,85 +1382,129 @@ describe("Atlas staging hosted evidence", () => {
     expect(createClientFactory).toHaveBeenCalledOnce();
   });
 
-  it("posts every verifier SQL statement to the approved Management API endpoint", async () => {
-    const sqlCalls = [];
-    const migrationVersions = readdirSync("supabase/migrations")
-      .filter((name) => name.endsWith(".sql"))
-      .map((name) => name.slice(0, 14))
-      .sort();
-    const runCommand = vi.fn();
-    const endpoint = `https://api.supabase.com/v1/projects/${APPROVED_ATLAS_STAGING_PROJECT_REF}/database/query`;
-    const fetchImpl = vi.fn(async (url, options = {}) => {
-      if (url === endpoint) {
-        const body = JSON.parse(options.body);
-        sqlCalls.push({ url, options, statement: body.query });
-        const result = body.query.includes("ATLAS_MIGRATION_HISTORY=")
-          ? `ATLAS_MIGRATION_HISTORY=${JSON.stringify({
-              versions: migrationVersions,
-              row_count: migrationVersions.length,
-            })}`
-          : "safe";
+  it.each([
+    [
+      "one managed Foundation School",
+      { success: true, schools: [managedSchool] },
+      null,
+      true,
+    ],
+    [
+      "managed Foundation School plus imported Schools",
+      { success: true, schools: [importedSchool, managedSchool] },
+      null,
+      true,
+    ],
+    ["empty Schools", { success: true, schools: [] }, null, false],
+    [
+      "only an unrelated imported School",
+      { success: true, schools: [importedSchool] },
+      null,
+      false,
+    ],
+    [
+      "backend failure",
+      { success: false, schools: [managedSchool] },
+      null,
+      false,
+    ],
+    [
+      "read error",
+      { success: true, schools: [managedSchool] },
+      { message: "read failed" },
+      false,
+    ],
+    ["missing read result", null, null, false],
+    ["non-array Schools", { success: true, schools: {} }, null, false],
+    ["missing School identity", { success: true, schools: [{}] }, null, false],
+    [
+      "non-boolean success",
+      { success: "true", schools: [managedSchool] },
+      null,
+      false,
+    ],
+  ])(
+    "verifies %s through the approved endpoints and clears the session",
+    async (_label, readResult, readError, accepted) => {
+      const sqlCalls = [];
+      const migrationVersions = readdirSync("supabase/migrations")
+        .filter((name) => name.endsWith(".sql"))
+        .map((name) => name.slice(0, 14))
+        .sort();
+      const runCommand = vi.fn();
+      const endpoint = `https://api.supabase.com/v1/projects/${APPROVED_ATLAS_STAGING_PROJECT_REF}/database/query`;
+      const fetchImpl = vi.fn(async (url, options = {}) => {
+        if (url === endpoint) {
+          const body = JSON.parse(options.body);
+          sqlCalls.push({ url, options, statement: body.query });
+          const result = body.query.includes("ATLAS_MIGRATION_HISTORY=")
+            ? `ATLAS_MIGRATION_HISTORY=${JSON.stringify({
+                versions: migrationVersions,
+                row_count: migrationVersions.length,
+              })}`
+            : "safe";
+          return {
+            ok: true,
+            status: 201,
+            async text() {
+              return JSON.stringify([{ result }]);
+            },
+          };
+        }
         return {
           ok: true,
-          status: 201,
-          async text() {
-            return JSON.stringify([{ result }]);
+          status: 200,
+          async json() {
+            return String(url).includes("/postgrest")
+              ? { db_schema: "public,atlas_api" }
+              : {};
           },
         };
-      }
-      return {
-        ok: true,
-        status: 200,
-        async json() {
-          return String(url).includes("/postgrest")
-            ? { db_schema: "public,atlas_api" }
-            : {};
-        },
-      };
-    });
-    const authSubject = "11111111-1111-4111-8111-111111111111";
-    let clientCount = 0;
-    const createClientFactory = vi.fn(() => {
-      clientCount += 1;
-      if (clientCount === 1) {
+      });
+      const authSubject = "11111111-1111-4111-8111-111111111111";
+      const signOut = vi.fn(async () => ({ error: null }));
+      const getSession = vi.fn(async () => ({
+        data: { session: null },
+        error: null,
+      }));
+      let clientCount = 0;
+      const createClientFactory = vi.fn(() => {
+        clientCount += 1;
+        if (clientCount === 1) {
+          return {
+            schema: () => ({
+              rpc: () => ({
+                retry: async () => ({
+                  error: {
+                    code: "42501",
+                    message: "permission denied for schema atlas_api",
+                  },
+                }),
+              }),
+            }),
+          };
+        }
         return {
+          auth: {
+            signInWithPassword: async () => ({
+              data: { session: { user: { id: authSubject } } },
+              error: null,
+            }),
+            signOut,
+            getSession,
+          },
           schema: () => ({
             rpc: () => ({
               retry: async () => ({
-                error: {
-                  code: "42501",
-                  message: "permission denied for schema atlas_api",
-                },
+                data: readResult,
+                error: readError,
               }),
             }),
           }),
         };
-      }
-      return {
-        auth: {
-          signInWithPassword: async () => ({
-            data: { session: { user: { id: authSubject } } },
-            error: null,
-          }),
-          signOut: async () => ({ error: null }),
-          getSession: async () => ({
-            data: { session: null },
-            error: null,
-          }),
-        },
-        schema: () => ({
-          rpc: () => ({
-            retry: async () => ({
-              data: { success: true, schools: [{}] },
-              error: null,
-            }),
-          }),
-        }),
-      };
-    });
+      });
 
-    await expect(
-      verifyAtlasStaging({
+      const verification = verifyAtlasStaging({
         environment: environment({
           ATLAS_STAGING_PROJECT_REF: APPROVED_ATLAS_STAGING_PROJECT_REF,
           VITE_SUPABASE_URL: `https://${APPROVED_ATLAS_STAGING_PROJECT_REF}.supabase.co`,
@@ -1464,32 +1513,44 @@ describe("Atlas staging hosted evidence", () => {
         runCommand,
         fetchImpl,
         createClientFactory,
-      }),
-    ).resolves.toEqual({ status: "verified", phase: "acceptance" });
+      });
+      if (accepted) {
+        await expect(verification).resolves.toEqual({
+          status: "verified",
+          phase: "acceptance",
+        });
+      } else {
+        await expect(verification).rejects.toThrow(
+          "The approved authenticated Atlas read failed safely.",
+        );
+      }
+      expect(signOut).toHaveBeenCalledExactlyOnceWith({ scope: "local" });
+      expect(getSession).toHaveBeenCalledOnce();
 
-    expect(runCommand).not.toHaveBeenCalled();
-    expect(sqlCalls).toHaveLength(4);
-    for (const { url, options, statement } of sqlCalls) {
-      expect(url).toBe(endpoint);
-      expect(options.method).toBe("POST");
-      expect(options.headers.Authorization).toBe(
-        "Bearer synthetic-access-token",
+      expect(runCommand).not.toHaveBeenCalled();
+      expect(sqlCalls).toHaveLength(4);
+      for (const { url, options, statement } of sqlCalls) {
+        expect(url).toBe(endpoint);
+        expect(options.method).toBe("POST");
+        expect(options.headers.Authorization).toBe(
+          "Bearer synthetic-access-token",
+        );
+        expect(JSON.parse(options.body)).toEqual({ query: statement });
+      }
+      expect(sqlCalls.map(({ statement }) => statement)).toEqual([
+        expect.stringContaining("ATLAS_MIGRATION_HISTORY="),
+        expect.stringContaining("ATLAS_CATALOG_SCHEMA_MISMATCH"),
+        expect.stringContaining("ATLAS_STAGING_IDENTITY"),
+        expect.stringContaining("ATLAS_ACTIVE_ACTOR_MAPPING_MISMATCH"),
+      ]);
+      expect(sqlCalls[2].statement).toContain("ATLAS_STAGING_FOUNDATION");
+      expect(sqlCalls[1].statement).toContain(managedStagingRole.role_id);
+      expect(sqlCalls[1].statement).toContain(managedStagingRole.role_code);
+      expect(sqlCalls[1].statement).toContain(
+        "(select count(*) from atlas_core.roles) <> 1",
       );
-      expect(JSON.parse(options.body)).toEqual({ query: statement });
-    }
-    expect(sqlCalls.map(({ statement }) => statement)).toEqual([
-      expect.stringContaining("ATLAS_MIGRATION_HISTORY="),
-      expect.stringContaining("ATLAS_CATALOG_SCHEMA_MISMATCH"),
-      expect.stringContaining("ATLAS_STAGING_IDENTITY"),
-      expect.stringContaining("ATLAS_ACTIVE_ACTOR_MAPPING_MISMATCH"),
-    ]);
-    expect(sqlCalls[2].statement).toContain("ATLAS_STAGING_FOUNDATION");
-    expect(sqlCalls[1].statement).toContain(managedStagingRole.role_id);
-    expect(sqlCalls[1].statement).toContain(managedStagingRole.role_code);
-    expect(sqlCalls[1].statement).toContain(
-      "(select count(*) from atlas_core.roles) <> 1",
-    );
-  });
+    },
+  );
 
   it("preserves existing exposed schemas and adds atlas_api exactly once", async () => {
     let schemas = "public,graphql_public";

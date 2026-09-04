@@ -374,11 +374,14 @@ export async function verifyAtlasStaging({
         },
       })
       .retry(false);
+    // This authorization probe requires the managed School, not an exclusive catalog.
     if (
       readError ||
       readResult?.success !== true ||
       !Array.isArray(readResult.schools) ||
-      readResult.schools.length !== 1
+      !readResult.schools.some(
+        (school) => school?.school_id === foundationManifest.school.school_id,
+      )
     ) {
       verificationFailure = new Error(
         "The approved authenticated Atlas read failed safely.",
