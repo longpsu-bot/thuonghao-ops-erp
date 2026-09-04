@@ -1558,7 +1558,7 @@ export function DishRecipeAdminWorkbench({
               />
             </label>
             <label className="evidence-field">
-              Ghi chú vận hành
+              Ghi chú vận hành (không bắt buộc)
               <textarea
                 value={dishDraft.notes}
                 onChange={(event) =>

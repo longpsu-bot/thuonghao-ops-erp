@@ -8,7 +8,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRecipeAdjustmentApi } from "../atlas/recipe-adjustments/recipeAdjustmentApi";
 import type { AtlasRpcRequest, JsonValue } from "../atlas/connection/atlasRpc";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
@@ -36,9 +36,22 @@ const fixtureIds = {
   kilogram: "18000000-0000-4000-8000-000000000001",
 };
 
+beforeEach(() => {
+  // JSDOM has no layout observer; keep the real Mantine Select/filter behavior.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+});
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -73,15 +86,19 @@ function selectAction(dialog: HTMLElement, name: string) {
   fireEvent.click(within(dialog).getByLabelText(name));
 }
 
+function selectDish(picker: HTMLElement) {
+  fireEvent.click(picker);
+  fireEvent.change(picker, { target: { value: "bí đỏ" } });
+  fireEvent.click(screen.getByRole("option", { name: "Canh bí đỏ" }));
+}
+
 function selectRecipeTarget(dialog: HTMLElement) {
   const school = within(dialog).queryByLabelText("Trường");
   if (school)
     fireEvent.change(school, {
       target: { value: fixtureIds.school },
     });
-  fireEvent.change(within(dialog).getByLabelText("Món"), {
-    target: { value: fixtureIds.dish },
-  });
+  selectDish(within(dialog).getByLabelText("Món"));
   const recipeType = within(dialog).queryByRole("combobox", {
     name: /Loại công thức/,
   });
@@ -139,13 +156,76 @@ function fillIngredientReplacement(dialog: HTMLElement) {
   const representativeDish =
     within(dialog).queryByLabelText("Món đại diện") ??
     within(dialog).queryByLabelText("Món dùng để xem");
-  if (representativeDish)
-    fireEvent.change(representativeDish, {
-      target: { value: fixtureIds.dish },
-    });
+  if (representativeDish) selectDish(representativeDish);
 }
 
 describe("Recipe Change Order first-user workbench", () => {
+  it.each([
+    {
+      label: "Món",
+      object: "Công thức của một món",
+      authority: "Tất cả trường",
+    },
+    { label: "Món", object: "Công thức của một món", authority: "Một trường" },
+    {
+      label: "Món đại diện",
+      object: "Một nguyên liệu",
+      authority: "Tất cả trường",
+    },
+    {
+      label: "Món dùng để xem",
+      object: "Một nguyên liệu",
+      authority: "Một trường",
+    },
+  ])(
+    "filters $label by Dish name for $object / $authority",
+    async ({ label, object, authority }) => {
+      const api = createReviewRecipeAdjustmentApi("ready");
+      const getWorkbench = api.getOperatorWorkbench;
+      vi.spyOn(api, "getOperatorWorkbench").mockImplementation(
+        async (...args) => {
+          const result = await getWorkbench(...args);
+          if (result.kind !== "success")
+            throw new Error("Expected fixture workbench");
+          const workbench = result.response.workbench as Record<
+            string,
+            JsonValue
+          >;
+          workbench.dishes = [
+            ...(workbench.dishes as JsonValue[]),
+            ...Array.from({ length: 300 }, (_, index) => ({
+              dish_id: `23000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+              dish_name: `Món thử ${index}`,
+              dish_code: `dish-23000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+            })),
+          ];
+          return result;
+        },
+      );
+      renderWorkbench("rules", api);
+      const dialog = await openCreateDialog();
+      if (object !== "Công thức của một món")
+        fireEvent.click(within(dialog).getByLabelText(object));
+      if (authority !== "Tất cả trường")
+        fireEvent.click(within(dialog).getByLabelText(authority));
+      if (object === "Một nguyên liệu")
+        selectAction(dialog, "Thay nguyên liệu");
+      const picker = within(dialog).getByRole("combobox", {
+        name: label,
+      });
+      fireEvent.click(picker);
+      fireEvent.change(picker, { target: { value: "bí đỏ" } });
+      const options = within(screen.getByRole("listbox")).getAllByRole(
+        "option",
+      );
+      expect(options).toHaveLength(1);
+      expect(options[0]).toHaveTextContent("Canh bí đỏ");
+      expect(options[0]).not.toHaveTextContent(/dish-|13000000/);
+      fireEvent.click(options[0]);
+      expect(picker).toHaveValue("Canh bí đỏ");
+    },
+  );
+
   it.each([true, false])(
     "connected quantity Save requires a current preview with can_save=%s",
     async (canSave) => {
@@ -233,6 +313,8 @@ describe("Recipe Change Order first-user workbench", () => {
         requested_at: "2026-09-04T07:00:01.000Z",
         expected_version: 1,
         payload: {
+          dish_id: fixtureIds.dish,
+          preview_dish_id: fixtureIds.dish,
           scope_kind: "SYSTEM_DISH",
           action_kind: "ADJUST_QUANTITY",
           quantity_per_basis: 7.5,
@@ -694,9 +776,7 @@ describe("Recipe Change Order first-user workbench", () => {
     });
     expect(within(derivedType).getByText("Trung học")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Món")).toHaveValue("");
-    fireEvent.change(within(dialog).getByLabelText("Món"), {
-      target: { value: fixtureIds.dish },
-    });
+    selectDish(within(dialog).getByLabelText("Món"));
     selectAction(dialog, "Thay nguyên liệu");
     const recipeLine = within(dialog).getByLabelText(
       "Nguyên liệu trong công thức",
@@ -1218,6 +1298,7 @@ describe("Recipe Change Order first-user workbench", () => {
     ).toBeInTheDocument();
     expect(within(fixedContext).getByText("Tất cả trường")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Món")).toBeDisabled();
+    expect(within(dialog).getByLabelText("Món")).toHaveValue("Canh bí đỏ");
     expect(
       within(dialog).getByRole("combobox", { name: /Loại công thức/ }),
     ).toBeDisabled();

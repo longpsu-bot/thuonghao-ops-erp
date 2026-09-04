@@ -34,6 +34,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "rmvp_02a_connected_recipes_bom.sql",
   "rmvp_02b_recipe_adjustments_effective_bom.sql",
   "rmvp_02b_command_clock_skew.sql",
+  "master_data_creation_ux_02.sql",
   "rmvp_03a_connected_weekly_menu_attendance.sql",
   "pantry_02_connected_pantry_source.sql",
   "pa_06e_h1b1_line_decision_structure_security.sql",

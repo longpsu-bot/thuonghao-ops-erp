@@ -26,7 +26,6 @@ type MasterDataLoad = {
 };
 
 type IngredientDraft = {
-  ingredientCode: string;
   ingredientName: string;
   purchaseUnitId: string;
   ingredientTypeId: string;
@@ -35,7 +34,6 @@ type IngredientDraft = {
 };
 
 type SupplierDraft = {
-  supplierCode: string;
   supplierName: string;
   contactName: string;
   contactPhone: string;
@@ -97,7 +95,6 @@ type LifecycleIntent = {
 } | null;
 
 const emptyIngredient = (): IngredientDraft => ({
-  ingredientCode: "",
   ingredientName: "",
   purchaseUnitId: "",
   ingredientTypeId: "",
@@ -106,7 +103,6 @@ const emptyIngredient = (): IngredientDraft => ({
 });
 
 const emptySupplier = (): SupplierDraft => ({
-  supplierCode: "",
   supplierName: "",
   contactName: "",
   contactPhone: "",
@@ -132,7 +128,6 @@ const supplierStatusLabel = (status: SupplierMasterData["supplier_status"]) =>
 const ingredientDraftFor = (
   ingredient: IngredientMasterData,
 ): IngredientDraft => ({
-  ingredientCode: ingredient.ingredient_code,
   ingredientName: ingredient.ingredient_name,
   purchaseUnitId: ingredient.purchase_unit_id ?? "",
   ingredientTypeId: ingredient.ingredient_type_id ?? "",
@@ -141,7 +136,6 @@ const ingredientDraftFor = (
 });
 
 const supplierDraftFor = (supplier: SupplierMasterData): SupplierDraft => ({
-  supplierCode: supplier.supplier_code,
   supplierName: supplier.supplier_name,
   contactName: supplier.contact_name ?? "",
   contactPhone: supplier.contact_phone ?? "",
@@ -149,7 +143,6 @@ const supplierDraftFor = (supplier: SupplierMasterData): SupplierDraft => ({
 });
 
 const canonicalIngredientDraft = (draft: IngredientDraft): IngredientDraft => ({
-  ingredientCode: draft.ingredientCode.trim().toLocaleLowerCase("vi"),
   ingredientName: draft.ingredientName.trim(),
   purchaseUnitId: draft.purchaseUnitId,
   ingredientTypeId: draft.ingredientTypeId,
@@ -161,7 +154,6 @@ const canonicalIngredientDraft = (draft: IngredientDraft): IngredientDraft => ({
 });
 
 const canonicalSupplierDraft = (draft: SupplierDraft): SupplierDraft => ({
-  supplierCode: draft.supplierCode.trim().toLocaleLowerCase("vi"),
   supplierName: draft.supplierName.trim(),
   contactName: draft.contactName.trim(),
   contactPhone: draft.contactPhone.trim(),
@@ -379,7 +371,6 @@ export function IngredientSupplierAdminWorkbench({
   const ingredientOrderStep = Number(ingredientDraft.orderStep);
   const canonicalIngredient = canonicalIngredientDraft(ingredientDraft);
   const ingredientValid =
-    Boolean(canonicalIngredient.ingredientCode) &&
     Boolean(canonicalIngredient.ingredientName) &&
     Boolean(canonicalIngredient.purchaseUnitId) &&
     Boolean(canonicalIngredient.ingredientTypeId) &&
@@ -396,9 +387,7 @@ export function IngredientSupplierAdminWorkbench({
             ingredientDraftFor(editingIngredient),
           ),
         );
-  const supplierValid =
-    Boolean(supplierDraft.supplierCode.trim()) &&
-    Boolean(supplierDraft.supplierName.trim());
+  const supplierValid = Boolean(supplierDraft.supplierName.trim());
   const supplierDirty =
     supplierId === "NEW"
       ? Object.values(canonicalSupplierDraft(supplierDraft)).some(Boolean)
@@ -524,9 +513,7 @@ export function IngredientSupplierAdminWorkbench({
     const after: IngredientReviewValues = {
       ...canonicalIngredient,
       orderStepValue: ingredientOrderStep,
-      purchaseUnitLabel: unit
-        ? `${unit.unit_name} (${unit.unit_code})`
-        : "Chưa chọn",
+      purchaseUnitLabel: unit?.unit_name ?? "Chưa chọn",
       ingredientTypeLabel:
         ingredientType?.ingredient_type_name ??
         editingIngredient?.ingredient_type_name ??
@@ -541,9 +528,8 @@ export function IngredientSupplierAdminWorkbench({
       ? {
           ...ingredientDraftFor(editingIngredient),
           orderStepValue: Number(editingIngredient.order_step),
-          purchaseUnitLabel: editingIngredient.purchase_unit_name
-            ? `${editingIngredient.purchase_unit_name} (${editingIngredient.purchase_unit_code})`
-            : "Chưa chọn",
+          purchaseUnitLabel:
+            editingIngredient.purchase_unit_name ?? "Chưa chọn",
           ingredientTypeLabel:
             editingIngredient.ingredient_type_name ?? "Chưa chọn",
           ingredientOrderGroupLabel:
@@ -559,7 +545,6 @@ export function IngredientSupplierAdminWorkbench({
       after,
       payload: creating
         ? {
-            ingredient_code: after.ingredientCode,
             ingredient_name: after.ingredientName,
             purchase_unit_id: after.purchaseUnitId,
             ingredient_type_id: after.ingredientTypeId,
@@ -635,7 +620,7 @@ export function IngredientSupplierAdminWorkbench({
       before: editingSupplier ? supplierDraftFor(editingSupplier) : null,
       after,
       payload: creating
-        ? { supplier_code: after.supplierCode, ...commonPayload }
+        ? commonPayload
         : { supplier_id: supplierId, ...commonPayload },
     });
   };
@@ -926,7 +911,6 @@ export function IngredientSupplierAdminWorkbench({
                   <tr key={ingredient.ingredient_id}>
                     <td>
                       <b>{ingredient.ingredient_name}</b>
-                      <small>{ingredient.ingredient_code}</small>
                     </td>
                     <td>
                       <Chip
@@ -939,10 +923,7 @@ export function IngredientSupplierAdminWorkbench({
                         {ingredientStatusLabel(ingredient.ingredient_status)}
                       </Chip>
                     </td>
-                    <td>
-                      {ingredient.purchase_unit_name ?? "Chưa đặt"}
-                      <small>{ingredient.purchase_unit_code}</small>
-                    </td>
+                    <td>{ingredient.purchase_unit_name ?? "Chưa đặt"}</td>
                     <td>
                       {ingredient.ingredient_type_name ?? "Chưa đặt"}
                       <small>
@@ -1055,7 +1036,6 @@ export function IngredientSupplierAdminWorkbench({
                   <tr key={supplier.supplier_id}>
                     <td>
                       <b>{supplier.supplier_name}</b>
-                      <small>{supplier.supplier_code}</small>
                     </td>
                     <td>{supplierStatusLabel(supplier.supplier_status)}</td>
                     <td>{supplier.contact_name ?? "—"}</td>
@@ -1103,16 +1083,6 @@ export function IngredientSupplierAdminWorkbench({
           <div className="master-data-drawer-body">
             <div className="master-data-form-grid">
               <label className="evidence-field">
-                Mã nguyên liệu
-                <input
-                  disabled={busy || mutationLocked || ingredientId !== "NEW"}
-                  value={ingredientDraft.ingredientCode}
-                  onChange={(event) =>
-                    setIngredientField("ingredientCode", event.target.value)
-                  }
-                />
-              </label>
-              <label className="evidence-field">
                 Tên nguyên liệu
                 <input
                   disabled={busy || mutationLocked}
@@ -1134,9 +1104,12 @@ export function IngredientSupplierAdminWorkbench({
                   <option value="">Chọn đơn vị</option>
                   {load.units
                     .filter((unit) => unit.unit_status === "ACTIVE")
+                    .sort((left, right) =>
+                      left.unit_name.localeCompare(right.unit_name, "vi"),
+                    )
                     .map((unit) => (
                       <option key={unit.unit_id} value={unit.unit_id}>
-                        {unit.unit_name} ({unit.unit_code})
+                        {unit.unit_name}
                       </option>
                     ))}
                 </select>
@@ -1263,16 +1236,6 @@ export function IngredientSupplierAdminWorkbench({
           </div>
           <div className="master-data-drawer-body">
             <div className="master-data-form-grid">
-              <label className="evidence-field">
-                Mã nhà cung ứng
-                <input
-                  disabled={busy || mutationLocked || supplierId !== "NEW"}
-                  value={supplierDraft.supplierCode}
-                  onChange={(event) =>
-                    setSupplierField("supplierCode", event.target.value)
-                  }
-                />
-              </label>
               <label className="evidence-field">
                 Tên nhà cung ứng
                 <input
@@ -1579,11 +1542,6 @@ export function IngredientSupplierAdminWorkbench({
               <tbody>
                 {[
                   [
-                    "Mã nguyên liệu",
-                    reviewSnapshot.before?.ingredientCode,
-                    reviewSnapshot.after.ingredientCode,
-                  ],
-                  [
                     "Tên nguyên liệu",
                     reviewSnapshot.before?.ingredientName,
                     reviewSnapshot.after.ingredientName,
@@ -1651,11 +1609,6 @@ export function IngredientSupplierAdminWorkbench({
               </thead>
               <tbody>
                 {[
-                  [
-                    "Mã nhà cung ứng",
-                    reviewSnapshot.before?.supplierCode,
-                    reviewSnapshot.after.supplierCode,
-                  ],
                   [
                     "Tên nhà cung ứng",
                     reviewSnapshot.before?.supplierName,
