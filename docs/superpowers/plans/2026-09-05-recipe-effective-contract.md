@@ -22,7 +22,7 @@
 
 ## File map
 
-- Create `supabase/migrations/20260905090000_recipe_effective_contract_01.sql`: additive constraints, private helpers, resolver replacements, shaped reads, Dish copy command, ownership, grants, and comments.
+- Create `supabase/migrations/20260905105253_recipe_effective_contract_01.sql`: additive constraints, private helpers, resolver replacements, shaped reads, Dish copy command, ownership, grants, and comments.
 - Create `supabase/tests/recipe_effective_contract_01.sql`: synthetic pgTAP fixture and required A–AF regression matrix.
 - Modify `src/modules/atlas/connection/atlasRpc.ts`: allow-list the three additive reads and Dish-copy command.
 - Modify `src/modules/atlas/recipe-adjustments/recipeAdjustmentApi.ts`: explicit system/School resolver and target-context request builders.
@@ -42,7 +42,7 @@
 **Files:**
 
 - Create: `supabase/tests/recipe_effective_contract_01.sql`
-- Create: `supabase/migrations/20260905090000_recipe_effective_contract_01.sql`
+- Create: `supabase/migrations/20260905105253_recipe_effective_contract_01.sql`
 
 **Interfaces:**
 
@@ -137,7 +137,7 @@ Expected: A–D pass and existing RMVP-02B selection/resolution assertions remai
 - [ ] **Step 5: Commit centralized selection**
 
 ```powershell
-git add supabase/migrations/20260905090000_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
+git add supabase/migrations/20260905105253_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
 git commit -m "feat: centralize effective recipe selection"
 ```
 
@@ -145,7 +145,7 @@ git commit -m "feat: centralize effective recipe selection"
 
 **Files:**
 
-- Modify: `supabase/migrations/20260905090000_recipe_effective_contract_01.sql`
+- Modify: `supabase/migrations/20260905105253_recipe_effective_contract_01.sql`
 - Modify: `supabase/tests/recipe_effective_contract_01.sql`
 
 **Interfaces:**
@@ -194,7 +194,7 @@ Use the Task 1 two-file pgTAP command. Expected: system view excludes both Schoo
 - [ ] **Step 6: Commit system and target reads**
 
 ```powershell
-git add supabase/migrations/20260905090000_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
+git add supabase/migrations/20260905105253_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
 git commit -m "feat: add effective recipe target contexts"
 ```
 
@@ -202,7 +202,7 @@ git commit -m "feat: add effective recipe target contexts"
 
 **Files:**
 
-- Modify: `supabase/migrations/20260905090000_recipe_effective_contract_01.sql`
+- Modify: `supabase/migrations/20260905105253_recipe_effective_contract_01.sql`
 - Modify: `supabase/tests/recipe_effective_contract_01.sql`
 
 **Interfaces:**
@@ -275,7 +275,7 @@ Expected: new targeting cases pass with existing overlap, concurrency, correctio
 - [ ] **Step 8: Commit stable target identity**
 
 ```powershell
-git add supabase/migrations/20260905090000_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
+git add supabase/migrations/20260905105253_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
 git commit -m "feat: target effective adjustment lines"
 ```
 
@@ -283,7 +283,7 @@ git commit -m "feat: target effective adjustment lines"
 
 **Files:**
 
-- Modify: `supabase/migrations/20260905090000_recipe_effective_contract_01.sql`
+- Modify: `supabase/migrations/20260905105253_recipe_effective_contract_01.sql`
 - Modify: `supabase/tests/recipe_effective_contract_01.sql`
 
 **Interfaces:**
@@ -342,7 +342,7 @@ Run the new suite, existing RMVP-02B pgTAP, and `supabase/tests/ui_quality_03b_r
 - [ ] **Step 7: Commit history/operator reads**
 
 ```powershell
-git add supabase/migrations/20260905090000_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
+git add supabase/migrations/20260905105253_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
 git commit -m "feat: shape effective recipe history"
 ```
 
@@ -350,7 +350,7 @@ git commit -m "feat: shape effective recipe history"
 
 **Files:**
 
-- Modify: `supabase/migrations/20260905090000_recipe_effective_contract_01.sql`
+- Modify: `supabase/migrations/20260905105253_recipe_effective_contract_01.sql`
 - Modify: `supabase/tests/recipe_effective_contract_01.sql`
 
 **Interfaces:**
@@ -388,7 +388,7 @@ Run the new suite, RMVP-02A connected suite, UI-QUALITY-03A Recipe workflow suit
 - [ ] **Step 7: Commit Dish-level copy**
 
 ```powershell
-git add supabase/migrations/20260905090000_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
+git add supabase/migrations/20260905105253_recipe_effective_contract_01.sql supabase/tests/recipe_effective_contract_01.sql
 git commit -m "feat: copy dish recipes atomically"
 ```
 

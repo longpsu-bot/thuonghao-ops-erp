@@ -43,11 +43,22 @@ Successful commands return affected aggregate IDs, the new aggregate version, ev
 | `replace_recipe_draft_composition`    | `master_data.recipes.write`    |        Recipe Version version | Atomically replaces the complete draft basis and line set.                      |
 | `validate_recipe_version`             | `master_data.recipes.validate` |        Recipe Version version | Materializes immutable Recipe Line Revisions and marks the version `VALIDATED`. |
 | `release_recipe_version_for_planning` | `master_data.recipes.release`  |        Recipe Version version | Releases validated composition and locks the prior release.                     |
-| `copy_recipe_version`                 | `master_data.recipes.write`    |           target Dish version | Copies materialized composition into a traceable target draft.                  |
+| `copy_recipe_version`                 | `master_data.recipes.write`    |           target Dish version | Copies one materialized Recipe Version for controlled/support callers.          |
 
 Draft replacement accepts at most 500 lines. `PRESENT` requires an active Ingredient, active Unit, and positive exact numeric quantity. `REMOVED` requires the exact predecessor revision, predecessor Ingredient and Unit, and zero quantity. Every previously present predecessor line must be retained or explicitly removed.
 
 Copy accepts only validated, released, or locked materialized source composition. It never copies a mutable draft and never validates or releases the target automatically.
+
+### `copy_dish_recipes` — normal Dish-level copy
+
+- Contract: `RECIPE-EFFECTIVE.v1`.
+- Capability: existing `master_data.recipes.write`; owner: `atlas_master_data_command_runtime`.
+- Required command payload: `source_dish_id`, `target_dish_id`; the standard command envelope also requires caller-stable `command_id`, `idempotency_key`, target Dish `expected_version`, timestamp, reason code, and nonblank reason note.
+- Supported v1 scopes are the active School Types named `Tiểu học` and `Trung học`, evaluated in that deterministic order.
+
+For each supported scope, the backend uses the shared effective-base selector: an exact active released School-Type Recipe wins, otherwise the active released GENERAL Recipe is used. An absent source scope is returned as `SOURCE_NOT_AVAILABLE` and does not fabricate a target Recipe. Each available scope is copied through the retained support-level `copy_recipe_version` command and is returned as `COPIED` with its source selection scope and source/target Recipe identities.
+
+The outer command is the authority and one database transaction covers every scope it decides to copy. If any required child copy fails, the child subtransaction rolls back all Recipe, Recipe Version, line, receipt, event, and audit writes and the outer response is `ATOMIC_SCOPE_COPY_FAILED`. Approved-Menu use of the target Dish returns the existing operational-lock rejection before writes. Exact replay returns the stored authoritative result; reusing an idempotency key with changed request content returns `IDEMPOTENCY_CONFLICT`.
 
 `dish_type_id` is authoritative for Menu eligibility. Create/update rejects an unknown or inactive type. Dish activation also requires an active mapped type. `dish_category` remains optional compatibility text and is never interpreted as the authoritative type.
 
@@ -185,6 +196,6 @@ Both v2 commands use fixed empty `search_path`, least-privilege runtime ownershi
 
 ### Dish-wide lock coverage
 
-The single canonical predicate is `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and every relevant base Recipe/BOM mutation acquire the same deterministic transaction lock before the snapshot or mutation decision. Once the predicate is true, `create_recipe_draft`, `create_recipe_successor_version`, `replace_recipe_draft_composition`, `validate_recipe_version`, `release_recipe_version_for_planning`, `save_recipe`, `release_recipe`, `copy_recipe_version`, and any `apply_recipe_import` scope targeting that Dish return `INVARIANT_VIOLATION` with the safe Điều chỉnh direction before business writes.
+The single canonical predicate is `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and every relevant base Recipe/BOM mutation acquire the same deterministic transaction lock before the snapshot or mutation decision. Once the predicate is true, `create_recipe_draft`, `create_recipe_successor_version`, `replace_recipe_draft_composition`, `validate_recipe_version`, `release_recipe_version_for_planning`, `save_recipe`, `release_recipe`, `copy_recipe_version`, `copy_dish_recipes`, and any `apply_recipe_import` scope targeting that Dish return `INVARIANT_VIOLATION` with the safe Điều chỉnh direction before business writes.
 
 `update_dish`, `set_dish_lifecycle`, and `set_recipe_lifecycle` are not part of this generic composition lock. They retain the bounded metadata and lifecycle semantics, capability checks, optimistic concurrency, lifecycle validation, event, audit, and immutable-history guarantees already accepted in RMVP-02A.v1. The application still exposes no ordinary editing of existing catalog records, and this correction adds no Dish metadata Change Order. RMVP-02B adjustment APIs remain unchanged.

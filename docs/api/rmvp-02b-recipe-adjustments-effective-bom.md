@@ -38,6 +38,18 @@ Success returns the contract/correlation identity, shaped result or authoritativ
 
 Current authority always selects the exact School Type release before the general release and never accepts a caller-selected version. An explicitly named historical version is support-only and visibly warned.
 
+### Additive `RECIPE-EFFECTIVE.v1` reads
+
+All three reads require `contract_version: RECIPE-EFFECTIVE.v1`, `requested_by_auth_subject`, `correlation_id`, and an explicit payload. They use the existing `master_data.recipe_adjustments.read` capability, are owned by `atlas_read_runtime`, have fixed empty `search_path`, and expose no private relations.
+
+| Function                                      | Required payload                          | Shaped result                                                                                                                                                                                                   |
+| --------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolve_system_effective_recipe_composition` | `as_of_date`, `dish_id`, `school_type_id` | `resolution` using the exact School-Type/GENERAL base selector and only `SYSTEM_INGREDIENT` then `SYSTEM_DISH`; no representative School and no School layers.                                                  |
+| `get_recipe_effective_target_context`         | date, Dish, exactly one context identity  | `target_context` with selected Recipe, basis, warnings/blockers, and PRESENT effective lines containing names, quantity, Unit, source layer, `target_kind`, `target_id`, and the corresponding stable identity. |
+| `get_dish_recipe_operator_workbench`          | date, Dish, exactly one context identity  | Dish/name/type, context, selected base Recipe and basis, lock state, current effective BOM, school-exception count, actions, blockers/warnings, and backend-shaped full-BOM `history_periods`.                  |
+
+The exclusive context identity is `school_type_id` for a system view or `school_id` for a School view. Both or neither returns `VALIDATION_FAILED`. The School path derives School Type from the authoritative School. System resolution applies only system layers; School resolution applies the same system layers followed by `SCHOOL` and `SCHOOL_DISH`. React consumes the shaped result and does not select a Recipe, infer a date, replay revisions, or filter GENERAL-fallback rows by their nullable Recipe School Type.
+
 ### `preview_recipe_composition_adjustment`
 
 - Capability: `master_data.recipe_adjustments.write`
@@ -52,21 +64,23 @@ Current authority always selects the exact School Type release before the genera
 
 Every proposal includes stable `adjustment_id`, stable `revision_id`, `scope_kind`, `action_kind`, `effective_from`, optional half-open `effective_to`, reason evidence, and the typed fields required by its scope/action.
 
-| Scope/action                  | Required typed payload                                                                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `SYSTEM_INGREDIENT/REPLACE`   | `target_ingredient_id`, `substitute_ingredient_id`                                                                                       |
-| `SYSTEM_DISH/ADD`             | `dish_id`, optional `school_type_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`             |
-| `SYSTEM_DISH/REPLACE`         | `dish_id`, optional `school_type_id`, `target_recipe_line_id`, `substitute_ingredient_id`; optional positive quantity plus explicit Unit |
-| `SYSTEM_DISH/ADJUST_QUANTITY` | `dish_id`, optional `school_type_id`, `target_recipe_line_id`, positive `quantity_per_basis`                                             |
-| `SYSTEM_DISH/REMOVE`          | `dish_id`, optional `school_type_id`, `target_recipe_line_id`                                                                            |
-| `SCHOOL/REPLACE`              | `school_id`, `target_ingredient_id`, `substitute_ingredient_id`                                                                          |
-| `SCHOOL/REMOVE`               | `school_id`, `target_ingredient_id`                                                                                                      |
-| `SCHOOL_DISH/ADD`             | `school_id`, `dish_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                           |
-| `SCHOOL_DISH/REPLACE`         | `school_id`, `dish_id`, `target_recipe_line_id`, `substitute_ingredient_id`; optional positive quantity plus explicit Unit               |
-| `SCHOOL_DISH/ADJUST_QUANTITY` | `school_id`, `dish_id`, `target_recipe_line_id`, positive `quantity_per_basis`                                                           |
-| `SCHOOL_DISH/REMOVE`          | `school_id`, `dish_id`, `target_recipe_line_id`                                                                                          |
+| Scope/action                  | Required typed payload                                                                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SYSTEM_INGREDIENT/REPLACE`   | `target_ingredient_id`, `substitute_ingredient_id`                                                                                              |
+| `SYSTEM_DISH/ADD`             | `dish_id`, optional `school_type_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                    |
+| `SYSTEM_DISH/REPLACE`         | `dish_id`, optional `school_type_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit |
+| `SYSTEM_DISH/ADJUST_QUANTITY` | `dish_id`, optional `school_type_id`, exactly one stable line target, positive `quantity_per_basis`                                             |
+| `SYSTEM_DISH/REMOVE`          | `dish_id`, optional `school_type_id`, exactly one stable line target                                                                            |
+| `SCHOOL/REPLACE`              | `school_id`, `target_ingredient_id`, `substitute_ingredient_id`                                                                                 |
+| `SCHOOL/REMOVE`               | `school_id`, `target_ingredient_id`                                                                                                             |
+| `SCHOOL_DISH/ADD`             | `school_id`, `dish_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                                  |
+| `SCHOOL_DISH/REPLACE`         | `school_id`, `dish_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit               |
+| `SCHOOL_DISH/ADJUST_QUANTITY` | `school_id`, `dish_id`, exactly one stable line target, positive `quantity_per_basis`                                                           |
+| `SCHOOL_DISH/REMOVE`          | `school_id`, `dish_id`, exactly one stable line target                                                                                          |
 
 Omitted fields must be null. `REPLACE` preserves quantity and Unit unless both a positive quantity and explicit Unit are supplied. `ADJUST_QUANTITY` preserves Ingredient and Unit. `REMOVE` accepts no substitute, quantity, or Unit. All referenced master data must be active.
+
+For every non-ADD `SYSTEM_DISH` or `SCHOOL_DISH` proposal, “exactly one stable line target” means XOR: `target_recipe_line_id` for a base Recipe line or `adjustment_line_id` for a line created by an applicable prior ADD. Both or neither is invalid. Validation, advisory locking, active-rule duplicate/overlap identity, Preview, Create, Supersede, and resolution all use the same identity. Consequently a School-Dish rule can target a PRESENT system-added line, and a later School-Dish rule can target a PRESENT earlier School-Dish addition, without weakening conflict or concurrency guards.
 
 ## Commands
 
@@ -131,6 +145,12 @@ The response retains the approved scope/action catalog, precedence and human-ref
 - `CANCELLED`
 
 `temporal_state_date` supplies the scheduled first-effect, correction or cancellation date when relevant. React maps these states to Vietnamese operator labels but does not reconstruct temporal applicability from root lifecycle and revision dates.
+
+Each row also returns backend-derived `is_effective_now` independently from `effective_from` and `effective_to`. It is true for contributing `ACTIVE`, `ACTIVE_RESUMED`, `ACTIVE_CHANGE_SCHEDULED`, and `ACTIVE_CANCELLATION_SCHEDULED` states, and false for `SCHEDULED`, `EXPIRED`, and `CANCELLED`. React does not infer this boolean from dates.
+
+### Effective Recipe history shape
+
+`get_dish_recipe_operator_workbench` returns `history_periods[]`. Each period has `period_from`, half-open nullable `period_to`, `resolution_status`, the complete PRESENT `effective_bom`, applicable `change_orders`, warnings, and blockers. Boundaries are the selected Recipe release date plus the union of applicable immutable revision `effective_from` and nonnull `effective_to` dates, so simultaneous Change Orders share one boundary. Every Change Order tag includes adjustment/revision identity, revision and business-event status, scope, action, effective dates, reason code/text, issuer, and issued timestamp. System history contains system layers only; School history contains all applicable system and School layers. React never replays revision rows to manufacture a historical BOM.
 
 Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED`, `issued_at: null`, and a null issuer name. The Atlas import timestamp is not represented as business issuance, and the Atlas importer is not represented as the original business issuer.
 
