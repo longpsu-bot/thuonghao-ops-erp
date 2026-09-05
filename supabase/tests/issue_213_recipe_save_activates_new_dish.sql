@@ -99,11 +99,17 @@ insert into atlas_admin.delivery_locations (
 
 insert into atlas_admin.school_types (
   school_type_id, school_type_code, school_type_name
-) values (
-  '21310000-0000-4000-8000-000000000005',
-  'issue213-school-type',
-  'Issue 213 school type'
-);
+) values
+  (
+    '21310000-0000-4000-8000-000000000005',
+    'v1-school-type-1',
+    'TIỂU HỌC'
+  ),
+  (
+    '21310000-0000-4000-8000-000000000008',
+    'v1-school-type-2',
+    'TRUNG HỌC'
+  );
 
 insert into atlas_admin.schools (
   school_id, customer_id, school_code, school_name, school_type_id,
@@ -174,7 +180,7 @@ as $$
     'reason_note', null,
     'payload', pg_catalog.jsonb_build_object(
       'dish_id', p_dish_id,
-      'school_type_id', null,
+      'school_type_id', '21310000-0000-4000-8000-000000000005',
       'recipe_version_id', null,
       'basis_portions', 100,
       'lines', pg_catalog.jsonb_build_array(
@@ -362,7 +368,7 @@ insert into issue213_results values (
   atlas_api.save_recipe(
     pg_temp.issue213_save_request(
       'stale-save',
-      2,
+      99,
       pg_temp.issue213_created_dish_id('stale'),
       '21320000-0000-4000-8000-000000000002'
     )
@@ -525,7 +531,8 @@ select is(
     )
     from atlas_admin.dishes dish
     join atlas_admin.recipes recipe on recipe.dish_id = dish.dish_id
-      and recipe.school_type_id is null
+      and recipe.school_type_id =
+        '21310000-0000-4000-8000-000000000005'
     join atlas_admin.recipe_versions version
       on version.recipe_id = recipe.recipe_id
     where dish.dish_id = pg_temp.issue213_created_dish_id('primary')
@@ -716,11 +723,11 @@ select is(
     'stale_error', 'STALE_VERSION',
     'stale_status', 'DRAFT',
     'stale_version', 1,
-    'stale_recipes', 0,
+    'stale_recipes', 2,
     'invalid_error', 'VALIDATION_FAILED',
     'invalid_status', 'DRAFT',
     'invalid_version', 1,
-    'invalid_recipes', 0
+    'invalid_recipes', 2
   ),
   'stale and invalid Saves leave their Dishes and Recipe state unchanged'
 );
@@ -773,7 +780,7 @@ select is(
     'error_code', 'INVARIANT_VIOLATION',
     'dish_status', 'INACTIVE',
     'dish_version', 3,
-    'recipe_count', 0
+    'recipe_count', 2
   ),
   'existing INACTIVE-Dish Save denial remains unchanged'
 );
@@ -834,7 +841,7 @@ select is(
       'An active database-backed Dish Type is required before activation.',
     'dish_status', 'DRAFT',
     'dish_version', 1,
-    'recipe_roots', 0,
+    'recipe_roots', 2,
     'recipe_versions', 0,
     'recipe_lines', 0,
     'recipe_line_revisions', 0,
@@ -907,7 +914,7 @@ select is(
     'existing_version', 2,
     'draft_status', 'DRAFT',
     'draft_version', 1,
-    'recipe_roots', 0,
+    'recipe_roots', 2,
     'recipe_versions', 0,
     'recipe_lines', 0,
     'recipe_line_revisions', 0,

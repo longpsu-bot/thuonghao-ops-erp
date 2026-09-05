@@ -509,6 +509,51 @@ $$;
 comment on function atlas_api.create_dish(jsonb) is
   'RMVP-02A.v1 atomic Dish creation with two canonical typed Recipe roots and no RecipeVersion.';
 
+-- Root pre-provisioning makes the existing save path enter its "Recipe found"
+-- branch before a RecipeVersion exists. Add the missing Dish-version guard at
+-- that exact lifecycle boundary while preserving the reviewed command body,
+-- including authorization, replay, receipt and safe-error ordering.
+do $save_root_only_concurrency$
+declare
+  v_definition text;
+  v_marker constant text :=
+    '  if v_current.recipe_version_id is not null and (';
+  v_guard constant text := $guard$
+  if v_current.recipe_version_id is null
+    and v_dish.version <> atlas_core.pa_05b_safe_bigint(
+      request ->> 'expected_version'
+    )
+  then
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id,
+      atlas_core.uiq03a_error(
+        request, v_name, 'STALE_VERSION',
+        'Dữ liệu món ăn đã thay đổi. Hãy tải lại trước khi lưu.',
+        false, v_dish.version
+      ),
+      false
+    );
+  end if;
+
+$guard$;
+begin
+  select pg_catalog.pg_get_functiondef(
+    'atlas_api.save_recipe(jsonb)'::pg_catalog.regprocedure
+  ) into v_definition;
+
+  if pg_catalog.strpos(v_definition, v_marker) = 0 then
+    raise exception
+      'Expected save_recipe RecipeVersion concurrency marker was not found';
+  end if;
+
+  execute pg_catalog.replace(
+    v_definition,
+    v_marker,
+    v_guard || v_marker
+  );
+end;
+$save_root_only_concurrency$;
+
 set role atlas_owner;
 
 create or replace function atlas_core.recipe_effective_school_exception_count(
