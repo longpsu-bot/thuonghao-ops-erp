@@ -395,14 +395,14 @@ insert into atlas_admin.recipe_composition_adjustments (
 insert into atlas_admin.recipe_composition_adjustment_revisions (
   recipe_composition_adjustment_revision_id,
   recipe_composition_adjustment_id, scope_kind, action_kind,
-  revision_number, effective_from, substitute_ingredient_id,
+  revision_number, effective_from, effective_to, substitute_ingredient_id,
   quantity_per_basis, unit_id, reason_code, reason_note,
   source_evidence, created_by_actor_id
 ) values
   (
     'c1900000-0000-0000-0000-000000000001',
     'c1800000-0000-0000-0000-000000000001',
-    'SYSTEM_INGREDIENT', 'REPLACE', 1, '2026-09-01',
+    'SYSTEM_INGREDIENT', 'REPLACE', 1, '2026-09-01', null,
     'c1200000-0000-0000-0000-000000000011', null, null,
     'RECIPE_EFFECTIVE_TEST', 'Thay nguyên liệu hệ thống.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -410,7 +410,7 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
   (
     'c1900000-0000-0000-0000-000000000002',
     'c1800000-0000-0000-0000-000000000002',
-    'SYSTEM_DISH', 'ADJUST_QUANTITY', 1, '2026-09-01',
+    'SYSTEM_DISH', 'ADJUST_QUANTITY', 1, '2026-09-01', null,
     null, 2, null,
     'RECIPE_EFFECTIVE_TEST', 'Đổi định lượng hệ thống.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -418,7 +418,7 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
   (
     'c1900000-0000-0000-0000-000000000003',
     'c1800000-0000-0000-0000-000000000003',
-    'SYSTEM_DISH', 'ADD', 1, '2026-09-01',
+    'SYSTEM_DISH', 'ADD', 1, '2026-09-01', '2026-09-10',
     null, 0.5, 'c1200000-0000-0000-0000-000000000001',
     'RECIPE_EFFECTIVE_TEST', 'Thêm nguyên liệu hệ thống.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -426,7 +426,7 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
   (
     'c1900000-0000-0000-0000-000000000004',
     'c1800000-0000-0000-0000-000000000004',
-    'SCHOOL', 'REPLACE', 1, '2026-09-01',
+    'SCHOOL', 'REPLACE', 1, '2026-09-01', null,
     'c1200000-0000-0000-0000-000000000013', null, null,
     'RECIPE_EFFECTIVE_TEST', 'Thay nguyên liệu tại trường.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -434,7 +434,7 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
   (
     'c1900000-0000-0000-0000-000000000005',
     'c1800000-0000-0000-0000-000000000005',
-    'SCHOOL_DISH', 'ADJUST_QUANTITY', 1, '2026-09-01',
+    'SCHOOL_DISH', 'ADJUST_QUANTITY', 1, '2026-09-01', null,
     null, 4, null,
     'RECIPE_EFFECTIVE_TEST', 'Đổi định lượng món tại trường.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -442,7 +442,7 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
   (
     'c1900000-0000-0000-0000-000000000006',
     'c1800000-0000-0000-0000-000000000006',
-    'SCHOOL_DISH', 'ADD', 1, '2026-09-01',
+    'SCHOOL_DISH', 'ADD', 1, '2026-09-01', null,
     null, 0.25, 'c1200000-0000-0000-0000-000000000001',
     'RECIPE_EFFECTIVE_TEST', 'Thêm nguyên liệu tại trường.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -450,7 +450,7 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
   (
     'c1900000-0000-0000-0000-000000000007',
     'c1800000-0000-0000-0000-000000000007',
-    'SCHOOL_DISH', 'ADJUST_QUANTITY', 1, '2026-10-01',
+    'SCHOOL_DISH', 'ADJUST_QUANTITY', 1, '2026-10-20', null,
     null, 0.6, null,
     'RECIPE_EFFECTIVE_TEST', 'Đổi định lượng tương lai.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
@@ -462,6 +462,64 @@ set current_revision_id = revision.recipe_composition_adjustment_revision_id,
 from atlas_admin.recipe_composition_adjustment_revisions revision
 where revision.recipe_composition_adjustment_id =
   root.recipe_composition_adjustment_id;
+
+insert into atlas_admin.recipe_composition_adjustments (
+  recipe_composition_adjustment_id, scope_kind, action_kind, school_id,
+  dish_id, target_ingredient_id, adjustment_line_id,
+  created_by_actor_id, updated_by_actor_id
+) values (
+  'c1800000-0000-0000-0000-000000000008',
+  'SCHOOL_DISH', 'ADD',
+  'c1100000-0000-0000-0000-000000000020',
+  'c1300000-0000-0000-0000-000000000001',
+  'c1200000-0000-0000-0000-000000000012',
+  'c1a00000-0000-0000-0000-000000000003',
+  'c1000000-0000-0000-0000-000000000001',
+  'c1000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_admin.recipe_composition_adjustment_revisions (
+  recipe_composition_adjustment_revision_id,
+  recipe_composition_adjustment_id, scope_kind, action_kind,
+  revision_number, predecessor_revision_id, revision_status,
+  effective_from, effective_to, quantity_per_basis, unit_id,
+  reason_code, reason_note, source_evidence, created_by_actor_id
+) values
+  (
+    'c1900000-0000-0000-0000-000000000081',
+    'c1800000-0000-0000-0000-000000000008',
+    'SCHOOL_DISH', 'ADD', 1, null, 'ACTIVE',
+    '2026-10-20', '2026-10-25', 0.8,
+    'c1200000-0000-0000-0000-000000000001',
+    'RECIPE_EFFECTIVE_HISTORY', 'Thêm Tỏi tại trường.',
+    '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000082',
+    'c1800000-0000-0000-0000-000000000008',
+    'SCHOOL_DISH', 'ADD', 2,
+    'c1900000-0000-0000-0000-000000000081', 'CANCELLED',
+    '2026-10-25', '2026-10-30', null, null,
+    'RECIPE_EFFECTIVE_HISTORY', 'Tạm hủy thêm Tỏi.',
+    '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000083',
+    'c1800000-0000-0000-0000-000000000008',
+    'SCHOOL_DISH', 'ADD', 3,
+    'c1900000-0000-0000-0000-000000000082', 'ACTIVE',
+    '2026-10-30', null, 0.9,
+    'c1200000-0000-0000-0000-000000000001',
+    'RECIPE_EFFECTIVE_HISTORY', 'Khôi phục Tỏi với định lượng đúng.',
+    '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
+  );
+
+update atlas_admin.recipe_composition_adjustments
+set current_revision_id = 'c1900000-0000-0000-0000-000000000083',
+    current_revision_number = 3,
+    version = 3
+where recipe_composition_adjustment_id =
+  'c1800000-0000-0000-0000-000000000008';
 
 create function pg_temp.recipe_effective_modifier(
   p_scope text,
@@ -1057,6 +1115,222 @@ select ok(
         (select target_id::uuid from recipe_effective_roundtrip_target)
   ),
   'S. stable target identity round-trips through Preview and Create'
+);
+
+create function pg_temp.recipe_effective_rmvp_v2_read(payload jsonb)
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02B.v2',
+    'requested_by_auth_subject',
+      'c1000000-0000-0000-0000-000000000101',
+    'correlation_id', 'c1000000-0000-0000-0000-000000000203',
+    'payload', payload
+  );
+$$;
+
+set local role authenticated;
+
+insert into recipe_effective_results values
+(
+  'system-operator',
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_temp.recipe_effective_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+),
+(
+  'school-operator',
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_temp.recipe_effective_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_id', 'c1100000-0000-0000-0000-000000000020'
+      )
+    )
+  )
+),
+(
+  'adjustment-ledger',
+  atlas_api.get_recipe_adjustment_operator_workbench(
+    pg_temp.recipe_effective_rmvp_v2_read(
+      pg_catalog.jsonb_build_object('as_of_date', '2026-09-05')
+    )
+  )
+);
+
+reset role;
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'system-operator'
+      and period ->> 'period_from' = '2026-09-05'
+      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 2
+      and period -> 'effective_bom'
+        @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000001")'
+  )
+  and exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'system-operator'
+      and period ->> 'period_from' = '2026-09-10'
+      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 1
+  ),
+  'T. system history periods contain each complete effective BOM'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'school-operator'
+      and period ->> 'period_from' = '2026-09-05'
+      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 3
+      and period -> 'change_orders'
+        @? '$[*] ? (@.scope_kind == "SYSTEM_INGREDIENT")'
+      and period -> 'change_orders'
+        @? '$[*] ? (@.scope_kind == "SYSTEM_DISH")'
+      and period -> 'change_orders'
+        @? '$[*] ? (@.scope_kind == "SCHOOL")'
+      and period -> 'change_orders'
+        @? '$[*] ? (@.scope_kind == "SCHOOL_DISH")'
+  ),
+  'U. School history includes system and School-specific full-BOM changes'
+);
+
+select ok(
+  (
+    select pg_catalog.count(*) = 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'school-operator'
+      and period ->> 'period_from' = '2026-10-20'
+      and period -> 'change_orders'
+        @? '$[*] ? (@.adjustment_id == "c1800000-0000-0000-0000-000000000007")'
+      and period -> 'change_orders'
+        @? '$[*] ? (@.adjustment_id == "c1800000-0000-0000-0000-000000000008")'
+  ),
+  'V. simultaneous Change Orders share one effective history boundary'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'system-operator'
+      and period ->> 'period_from' = '2026-09-05'
+      and period ->> 'period_to' = '2026-09-10'
+  )
+  and exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'system-operator'
+      and period ->> 'period_from' = '2026-09-10'
+      and not (
+        period -> 'effective_bom'
+          @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000001")'
+      )
+  ),
+  'W. effective_to creates the next full-BOM history period'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'school-operator'
+      and period ->> 'period_from' = '2026-10-20'
+      and period -> 'effective_bom'
+        @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000003" && @.quantity_per_basis == 0.8)'
+  )
+  and exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'school-operator'
+      and period ->> 'period_from' = '2026-10-25'
+      and not (
+        period -> 'effective_bom'
+          @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000003")'
+      )
+      and period -> 'change_orders'
+        @? '$[*] ? (@.revision_status == "CANCELLED")'
+  )
+  and exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name = 'school-operator'
+      and period ->> 'period_from' = '2026-10-30'
+      and period -> 'effective_bom'
+        @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000003" && @.quantity_per_basis == 0.9)'
+  ),
+  'X. cancelled and corrected revisions preserve their historical BOM periods'
+);
+
+select is(
+  (
+    select pg_catalog.array_agg(
+      atlas_core.recipe_effective_is_effective_temporal_state(state_name)
+      order by ordinality
+    )
+    from pg_catalog.unnest(array[
+      'ACTIVE', 'ACTIVE_RESUMED', 'ACTIVE_CHANGE_SCHEDULED',
+      'ACTIVE_CANCELLATION_SCHEDULED', 'SCHEDULED', 'EXPIRED',
+      'CANCELLED'
+    ]) with ordinality as state(state_name, ordinality)
+  ),
+  array[true, true, true, true, false, false, false],
+  'Y. is_effective_now is backend-derived for every temporal state'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'operator_rows'
+    ) row
+    where result.result_name = 'adjustment-ledger'
+      and row ->> 'adjustment_id' =
+        'c1800000-0000-0000-0000-000000000003'
+      and row ->> 'is_effective_now' = 'true'
+      and row #>> '{display_revision,effective_to}' = '2026-09-10'
+  ),
+  'Z. backend effectiveness and effective_to remain independent ledger fields'
 );
 
 select * from finish();

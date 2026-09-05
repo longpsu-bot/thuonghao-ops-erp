@@ -1150,6 +1150,512 @@ exception when others then
 end;
 $$;
 
+create function atlas_core.recipe_effective_operator_lines(
+  resolution jsonb
+)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select coalesce(
+    pg_catalog.jsonb_agg(
+      pg_catalog.jsonb_build_object(
+        'ingredient_id', line ->> 'final_ingredient_id',
+        'ingredient_name', ingredient.ingredient_name,
+        'quantity_per_basis',
+          atlas_core.pa_05b_safe_numeric(
+            line ->> 'final_quantity_per_basis'
+          ),
+        'unit_id', line ->> 'final_unit_id',
+        'unit_name', unit.unit_name,
+        'target_kind', case
+          when line ->> 'base_recipe_line_id' is not null
+            then 'RECIPE_LINE'
+          else 'ADJUSTMENT_LINE'
+        end,
+        'target_id', coalesce(
+          line ->> 'base_recipe_line_id',
+          line ->> 'adjustment_line_id'
+        ),
+        'target_recipe_line_id', line ->> 'base_recipe_line_id',
+        'adjustment_line_id', line ->> 'adjustment_line_id',
+        'source_layer', line ->> 'source_layer',
+        'lineage', coalesce(line -> 'lineage', '[]'::jsonb)
+      )
+      order by ingredient.ingredient_name,
+        coalesce(
+          line ->> 'base_recipe_line_id',
+          line ->> 'adjustment_line_id'
+        )
+    ),
+    '[]'::jsonb
+  )
+  from pg_catalog.jsonb_array_elements(
+    coalesce(resolution -> 'lines', '[]'::jsonb)
+  ) line
+  join atlas_admin.ingredients ingredient
+    on ingredient.ingredient_id = atlas_core.pa_05b_safe_uuid(
+      line ->> 'final_ingredient_id'
+    )
+  join atlas_admin.units unit
+    on unit.unit_id = atlas_core.pa_05b_safe_uuid(
+      line ->> 'final_unit_id'
+    )
+  where line ->> 'final_disposition' = 'PRESENT';
+$$;
+
+create function atlas_core.recipe_effective_history(
+  reference_date date,
+  target_school_id uuid,
+  target_dish_id uuid,
+  target_school_type_id uuid
+)
+returns jsonb
+language plpgsql
+stable
+security invoker
+set search_path = ''
+as $$
+declare
+  v_selection jsonb;
+  v_release_date date;
+  v_period record;
+  v_resolution jsonb;
+  v_change_orders jsonb;
+  v_periods jsonb := '[]'::jsonb;
+begin
+  if target_school_id is not null then
+    select school.school_type_id
+    into target_school_type_id
+    from atlas_admin.schools school
+    where school.school_id = target_school_id
+      and school.school_status = 'ACTIVE';
+    if not found then return '[]'::jsonb; end if;
+  end if;
+
+  v_selection := atlas_core.recipe_effective_select_base_recipe(
+    target_dish_id,
+    target_school_type_id
+  );
+  if v_selection ->> 'status' <> 'READY' then
+    return '[]'::jsonb;
+  end if;
+  v_release_date := (
+    v_selection -> 'selected_recipe' ->> 'released_at'
+  )::timestamptz::date;
+
+  for v_period in
+    with applicable_roots as (
+      select root.recipe_composition_adjustment_id
+      from atlas_admin.recipe_composition_adjustments root
+      where root.scope_kind = 'SYSTEM_INGREDIENT'
+        or (
+          root.scope_kind = 'SYSTEM_DISH'
+          and root.dish_id = target_dish_id
+          and (
+            root.school_type_id is null
+            or root.school_type_id = target_school_type_id
+          )
+        )
+        or (
+          root.scope_kind = 'SCHOOL'
+          and target_school_id is not null
+          and root.school_id = target_school_id
+        )
+        or (
+          root.scope_kind = 'SCHOOL_DISH'
+          and target_school_id is not null
+          and root.school_id = target_school_id
+          and root.dish_id = target_dish_id
+        )
+    ),
+    boundaries as (
+      select v_release_date as boundary_date
+      union
+      select revision.effective_from
+      from atlas_admin.recipe_composition_adjustment_revisions revision
+      join applicable_roots root using (
+        recipe_composition_adjustment_id
+      )
+      union
+      select revision.effective_to
+      from atlas_admin.recipe_composition_adjustment_revisions revision
+      join applicable_roots root using (
+        recipe_composition_adjustment_id
+      )
+      where revision.effective_to is not null
+    )
+    select
+      boundary_date as period_from,
+      pg_catalog.lead(boundary_date) over (
+        order by boundary_date
+      ) as period_to
+    from boundaries
+    where boundary_date >= v_release_date
+    order by boundary_date
+  loop
+    v_resolution := atlas_core.recipe_effective_resolve_composition(
+      v_period.period_from,
+      target_school_id,
+      target_dish_id,
+      target_school_type_id
+    );
+
+    select coalesce(
+      pg_catalog.jsonb_agg(
+        pg_catalog.jsonb_build_object(
+          'adjustment_id', root.recipe_composition_adjustment_id,
+          'revision_id',
+            revision.recipe_composition_adjustment_revision_id,
+          'revision_number', revision.revision_number,
+          'revision_status', revision.revision_status,
+          'business_event_kind', case
+            when revision.revision_status = 'CANCELLED' then 'CANCELLED'
+            when revision.revision_number = 1 then 'CREATED'
+            else 'CORRECTED'
+          end,
+          'scope_kind', root.scope_kind,
+          'action_kind', root.action_kind,
+          'effective_from', revision.effective_from,
+          'effective_to', revision.effective_to,
+          'reason_code', revision.reason_code,
+          'reason', revision.reason_note,
+          'issuer', actor.display_name,
+          'issued_at', revision.created_at
+        )
+        order by
+          case root.scope_kind
+            when 'SYSTEM_INGREDIENT' then 1
+            when 'SYSTEM_DISH' then 2
+            when 'SCHOOL' then 3
+            when 'SCHOOL_DISH' then 4
+          end,
+          root.recipe_composition_adjustment_id
+      ),
+      '[]'::jsonb
+    )
+    into v_change_orders
+    from atlas_admin.recipe_composition_adjustments root
+    join lateral (
+      select candidate.*
+      from atlas_admin.recipe_composition_adjustment_revisions candidate
+      where candidate.recipe_composition_adjustment_id =
+          root.recipe_composition_adjustment_id
+        and v_period.period_from >= candidate.effective_from
+        and (
+          candidate.effective_to is null
+          or v_period.period_from < candidate.effective_to
+        )
+      order by candidate.revision_number desc
+      limit 1
+    ) revision on true
+    join atlas_core.actors actor
+      on actor.actor_id = revision.created_by_actor_id
+    where root.scope_kind = 'SYSTEM_INGREDIENT'
+      or (
+        root.scope_kind = 'SYSTEM_DISH'
+        and root.dish_id = target_dish_id
+        and (
+          root.school_type_id is null
+          or root.school_type_id = target_school_type_id
+        )
+      )
+      or (
+        root.scope_kind = 'SCHOOL'
+        and target_school_id is not null
+        and root.school_id = target_school_id
+      )
+      or (
+        root.scope_kind = 'SCHOOL_DISH'
+        and target_school_id is not null
+        and root.school_id = target_school_id
+        and root.dish_id = target_dish_id
+      );
+
+    v_periods := v_periods || pg_catalog.jsonb_build_array(
+      pg_catalog.jsonb_build_object(
+        'period_from', v_period.period_from,
+        'period_to', v_period.period_to,
+        'resolution_status', v_resolution ->> 'status',
+        'effective_bom',
+          atlas_core.recipe_effective_operator_lines(v_resolution),
+        'change_orders', v_change_orders,
+        'warnings', coalesce(v_resolution -> 'warnings', '[]'::jsonb),
+        'blockers', coalesce(v_resolution -> 'blockers', '[]'::jsonb)
+      )
+    );
+  end loop;
+
+  return v_periods;
+end;
+$$;
+
+create function atlas_core.recipe_effective_is_effective_temporal_state(
+  temporal_state text
+)
+returns boolean
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select temporal_state in (
+    'ACTIVE',
+    'ACTIVE_RESUMED',
+    'ACTIVE_CHANGE_SCHEDULED',
+    'ACTIVE_CANCELLATION_SCHEDULED'
+  );
+$$;
+
+alter function atlas_core.uiq03b_recipe_adjustment_operator_payload(date)
+  rename to uiq03b_recipe_adjustment_operator_payload_base;
+
+create function atlas_core.uiq03b_recipe_adjustment_operator_payload(
+  reference_date date
+)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  with base as (
+    select atlas_core.uiq03b_recipe_adjustment_operator_payload_base(
+      reference_date
+    ) as payload
+  ),
+  mapped as (
+    select coalesce(
+      pg_catalog.jsonb_agg(
+        row.value || pg_catalog.jsonb_build_object(
+          'is_effective_now',
+            atlas_core.recipe_effective_is_effective_temporal_state(
+              row.value ->> 'temporal_state'
+            )
+        )
+        order by row.ordinality
+      ),
+      '[]'::jsonb
+    ) as rows
+    from base
+    cross join lateral pg_catalog.jsonb_array_elements(
+      coalesce(base.payload -> 'operator_rows', '[]'::jsonb)
+    ) with ordinality as row(value, ordinality)
+  )
+  select (base.payload - 'operator_rows')
+    || pg_catalog.jsonb_build_object('operator_rows', mapped.rows)
+  from base, mapped;
+$$;
+
+create function atlas_api.get_dish_recipe_operator_workbench(
+  request jsonb
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'get_dish_recipe_operator_workbench';
+  v_error jsonb;
+  v_context jsonb;
+  v_as_of_date date;
+  v_dish_id uuid;
+  v_school_id uuid;
+  v_school_type_id uuid;
+  v_dish atlas_admin.dishes%rowtype;
+  v_dish_type_name text;
+  v_resolution jsonb;
+  v_exception_count bigint;
+  v_operational_lock boolean;
+begin
+  v_error := atlas_core.recipe_effective_validate_read_request(
+    request, v_name
+  );
+  if v_error is not null then return v_error; end if;
+
+  v_as_of_date := atlas_core.rmvp_02b_safe_date(
+    request -> 'payload' ->> 'as_of_date'
+  );
+  v_dish_id := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'dish_id'
+  );
+  v_school_id := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'school_id'
+  );
+  v_school_type_id := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'school_type_id'
+  );
+  if v_as_of_date is null
+     or v_dish_id is null
+     or (v_school_id is null) = (v_school_type_id is null) then
+    return pg_catalog.jsonb_build_object(
+      'success', false,
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'error_code', 'VALIDATION_FAILED',
+      'safe_message',
+        'Choose exactly one system School-Type or School Recipe context.',
+      'domain', 'ADMIN',
+      'read_name', v_name,
+      'field_errors', pg_catalog.jsonb_build_array(
+        pg_catalog.jsonb_build_object(
+          'field', 'payload',
+          'message',
+            'Supply as_of_date, dish_id, and exactly one context identity.'
+        )
+      ),
+      'blocking_references', '[]'::jsonb,
+      'correlation_id', request ->> 'correlation_id'
+    );
+  end if;
+
+  v_context := atlas_core.rmvp_01_authorize_global(
+    request,
+    'master_data.recipe_adjustments.read',
+    v_name
+  );
+  if v_context ? 'error' then
+    return pg_catalog.jsonb_set(
+      v_context -> 'error',
+      '{contract_version}',
+      '"RECIPE-EFFECTIVE.v1"'::jsonb
+    );
+  end if;
+
+  select *
+  into v_dish
+  from atlas_admin.dishes dish
+  where dish.dish_id = v_dish_id;
+  if not found then
+    return pg_catalog.jsonb_build_object(
+      'success', false,
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'error_code', 'NOT_FOUND',
+      'safe_message', 'The selected Dish was not found.',
+      'domain', 'ADMIN',
+      'read_name', v_name,
+      'field_errors', '[]'::jsonb,
+      'blocking_references', '[]'::jsonb,
+      'correlation_id', request ->> 'correlation_id'
+    );
+  end if;
+
+  select dish_type.dish_type_name
+  into v_dish_type_name
+  from atlas_admin.dish_types dish_type
+  where dish_type.dish_type_id = v_dish.dish_type_id;
+
+  if v_school_id is not null then
+    select school.school_type_id
+    into v_school_type_id
+    from atlas_admin.schools school
+    where school.school_id = v_school_id
+      and school.school_status = 'ACTIVE';
+  end if;
+
+  v_resolution := atlas_core.recipe_effective_resolve_composition(
+    v_as_of_date,
+    v_school_id,
+    v_dish_id,
+    v_school_type_id
+  );
+  v_operational_lock := atlas_core.uiq03a_dish_used_operationally(
+    v_dish_id
+  );
+
+  select pg_catalog.count(*)
+  into v_exception_count
+  from atlas_admin.recipe_composition_adjustments root
+  join atlas_admin.schools scoped_school
+    on scoped_school.school_id = root.school_id
+   and scoped_school.school_status = 'ACTIVE'
+  join lateral (
+    select revision.revision_status
+    from atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_id =
+        root.recipe_composition_adjustment_id
+      and v_as_of_date >= revision.effective_from
+      and (
+        revision.effective_to is null
+        or v_as_of_date < revision.effective_to
+      )
+    order by revision.revision_number desc
+    limit 1
+  ) applicable on applicable.revision_status = 'ACTIVE'
+  where root.scope_kind in ('SCHOOL', 'SCHOOL_DISH')
+    and (
+      root.scope_kind = 'SCHOOL'
+      or root.dish_id = v_dish_id
+    )
+    and scoped_school.school_type_id = v_school_type_id
+    and (
+      v_school_id is null
+      or root.school_id = v_school_id
+    );
+
+  return pg_catalog.jsonb_build_object(
+    'success', true,
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'correlation_id', request ->> 'correlation_id',
+    'workbench', pg_catalog.jsonb_build_object(
+      'dish', pg_catalog.jsonb_build_object(
+        'dish_id', v_dish.dish_id,
+        'dish_name', v_dish.dish_name,
+        'dish_type_name', v_dish_type_name,
+        'dish_status', v_dish.dish_status
+      ),
+      'context_kind', case when v_school_id is null
+        then 'SYSTEM_SCHOOL_TYPE' else 'SCHOOL' end,
+      'as_of_date', v_as_of_date,
+      'school_id', v_school_id,
+      'school_type_id', v_school_type_id,
+      'selected_recipe', v_resolution -> 'selected_recipe',
+      'basis_portions',
+        v_resolution -> 'selected_recipe' -> 'basis_portions',
+      'editable_state', 'LOCKED_RELEASED',
+      'is_editable', false,
+      'is_operationally_locked', v_operational_lock,
+      'current_effective_bom',
+        atlas_core.recipe_effective_operator_lines(v_resolution),
+      'school_exception_count', v_exception_count,
+      'allowed_actions', case
+        when v_resolution ->> 'status' = 'READY'
+          then pg_catalog.jsonb_build_array(
+            'CREATE_CHANGE_ORDER', 'COPY_DISH_RECIPES'
+          )
+        else '[]'::jsonb
+      end,
+      'blockers', coalesce(v_resolution -> 'blockers', '[]'::jsonb),
+      'warnings', coalesce(v_resolution -> 'warnings', '[]'::jsonb),
+      'history_periods', atlas_core.recipe_effective_history(
+        v_as_of_date,
+        v_school_id,
+        v_dish_id,
+        v_school_type_id
+      )
+    ),
+    'safe_operator_message',
+      'Authorized effective Dish Recipe workbench returned.'
+  );
+exception when others then
+  return pg_catalog.jsonb_build_object(
+    'success', false,
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'error_code', 'INTERNAL_READ_FAILURE',
+    'safe_message',
+      'The effective Dish Recipe workbench could not be returned safely.',
+    'domain', 'ADMIN',
+    'read_name', v_name,
+    'field_errors', '[]'::jsonb,
+    'blocking_references', '[]'::jsonb,
+    'correlation_id', request ->> 'correlation_id'
+  );
+end;
+$$;
+
 comment on function atlas_core.recipe_effective_select_base_recipe(uuid, uuid)
 is 'RECIPE-EFFECTIVE-CONTRACT-01 single School-Type then GENERAL released Recipe selector shared by explicit-type and School contexts.';
 comment on function atlas_core.recipe_effective_resolve_composition(date, uuid, uuid, uuid, jsonb, uuid, uuid)
@@ -1158,6 +1664,10 @@ comment on function atlas_api.resolve_system_effective_recipe_composition(jsonb)
 is 'RECIPE-EFFECTIVE.v1 explicit-date Dish and School-Type system-only effective BOM read.';
 comment on function atlas_api.get_recipe_effective_target_context(jsonb)
 is 'RECIPE-EFFECTIVE.v1 shaped present-line targets for system School-Type or authoritative School Change Order context.';
+comment on function atlas_core.recipe_effective_history(date, uuid, uuid, uuid)
+is 'RECIPE-EFFECTIVE-CONTRACT-01 full effective-BOM periods from immutable Recipe adjustment boundaries.';
+comment on function atlas_api.get_dish_recipe_operator_workbench(jsonb)
+is 'RECIPE-EFFECTIVE.v1 Dish operator truth with current effective BOM, exception count, actions, blockers, and full history.';
 
 revoke execute on function
   atlas_core.recipe_effective_select_base_recipe(uuid, uuid),
@@ -1165,6 +1675,11 @@ revoke execute on function
     date, uuid, uuid, uuid, jsonb, uuid, uuid
   ),
   atlas_core.recipe_effective_validate_read_request(jsonb, text),
+  atlas_core.recipe_effective_operator_lines(jsonb),
+  atlas_core.recipe_effective_history(date, uuid, uuid, uuid),
+  atlas_core.recipe_effective_is_effective_temporal_state(text),
+  atlas_core.uiq03b_recipe_adjustment_operator_payload_base(date),
+  atlas_core.uiq03b_recipe_adjustment_operator_payload(date),
   atlas_core.rmvp_02b_resolve_selected_composition(
     date, uuid, uuid, jsonb, uuid, uuid
   ),
@@ -1187,6 +1702,14 @@ grant execute on function
   )
 to atlas_read_runtime, atlas_master_data_command_runtime;
 
+grant execute on function
+  atlas_core.recipe_effective_operator_lines(jsonb),
+  atlas_core.recipe_effective_history(date, uuid, uuid, uuid),
+  atlas_core.recipe_effective_is_effective_temporal_state(text),
+  atlas_core.uiq03b_recipe_adjustment_operator_payload_base(date),
+  atlas_core.uiq03b_recipe_adjustment_operator_payload(date)
+to atlas_read_runtime;
+
 reset role;
 
 grant atlas_read_runtime to postgres with set true;
@@ -1196,16 +1719,20 @@ alter function atlas_api.resolve_system_effective_recipe_composition(jsonb)
   owner to atlas_read_runtime;
 alter function atlas_api.get_recipe_effective_target_context(jsonb)
   owner to atlas_read_runtime;
+alter function atlas_api.get_dish_recipe_operator_workbench(jsonb)
+  owner to atlas_read_runtime;
 
 revoke create on schema atlas_api from atlas_read_runtime;
 
 revoke execute on function
   atlas_api.resolve_system_effective_recipe_composition(jsonb),
-  atlas_api.get_recipe_effective_target_context(jsonb)
+  atlas_api.get_recipe_effective_target_context(jsonb),
+  atlas_api.get_dish_recipe_operator_workbench(jsonb)
 from public, anon, service_role;
 grant execute on function
   atlas_api.resolve_system_effective_recipe_composition(jsonb),
-  atlas_api.get_recipe_effective_target_context(jsonb)
+  atlas_api.get_recipe_effective_target_context(jsonb),
+  atlas_api.get_dish_recipe_operator_workbench(jsonb)
 to authenticated;
 
 revoke create on schema atlas_core, atlas_api from atlas_read_runtime;
