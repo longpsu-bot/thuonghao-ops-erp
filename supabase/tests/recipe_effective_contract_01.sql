@@ -75,12 +75,12 @@ insert into atlas_admin.school_types (
 ) values
   (
     'c1100000-0000-0000-0000-000000000010',
-    'recipe-effective-primary',
+    'v1-school-type-1',
     'Tiểu học'
   ),
   (
     'c1100000-0000-0000-0000-000000000011',
-    'recipe-effective-secondary',
+    'v1-school-type-2',
     'Trung học'
   );
 
@@ -198,7 +198,7 @@ insert into atlas_admin.recipes (
   (
     'c1400000-0000-0000-0000-000000000003',
     'c1300000-0000-0000-0000-000000000002',
-    null
+    'c1100000-0000-0000-0000-000000000010'
   ),
   (
     'c1400000-0000-0000-0000-000000000004',
@@ -575,8 +575,8 @@ select is(
     'c1300000-0000-0000-0000-000000000002',
     'c1100000-0000-0000-0000-000000000010'
   ) -> 'selected_recipe' ->> 'selection_scope',
-  'GENERAL',
-  'B. Tiểu học falls back to GENERAL'
+  'SCHOOL_TYPE',
+  'B. Tiểu học requires its exact typed Recipe'
 );
 
 select is(
@@ -989,8 +989,8 @@ select is(
     from recipe_effective_results
     where result_name = 'fallback-target-context'
   ),
-  'GENERAL',
-  'Q. GENERAL fallback lines appear for an explicit Tiểu học context'
+  'SCHOOL_TYPE',
+  'Q. typed lines appear for an explicit Tiểu học context'
 );
 
 select ok(

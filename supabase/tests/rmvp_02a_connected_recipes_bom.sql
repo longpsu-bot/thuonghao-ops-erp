@@ -228,11 +228,17 @@ insert into atlas_core.actor_scopes (actor_id, scope_kind) values
 
 insert into atlas_admin.school_types (
   school_type_id, school_type_code, school_type_name
-) values (
-  'e2100000-0000-0000-0000-000000000001',
-  'rmvp02a-primary',
-  'RMVP-02A Primary'
-);
+) values
+  (
+    'e2100000-0000-0000-0000-000000000001',
+    'v1-school-type-1',
+    'TIỂU HỌC'
+  ),
+  (
+    'e2100000-0000-0000-0000-000000000002',
+    'v1-school-type-2',
+    'TRUNG HỌC'
+  );
 
 insert into atlas_admin.units (
   unit_id, unit_code, unit_name, dimension_code, decimal_scale
