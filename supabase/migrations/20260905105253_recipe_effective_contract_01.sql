@@ -2073,3 +2073,7 @@ to authenticated;
 
 revoke create on schema atlas_core, atlas_api from
   atlas_read_runtime, atlas_master_data_command_runtime;
+
+-- Runtime SET membership is migration-only; restore the hardened posture.
+grant atlas_read_runtime, atlas_master_data_command_runtime
+  to postgres with set false;
