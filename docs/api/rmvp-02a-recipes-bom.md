@@ -29,7 +29,7 @@ Successful commands return affected aggregate IDs, the new aggregate version, ev
 
 | Command                | Capability                  | Expected version | Effect                                                                                                      |
 | ---------------------- | --------------------------- | ---------------: | ----------------------------------------------------------------------------------------------------------- |
-| `create_dish`          | `master_data.recipes.write` |              `1` | Creates one `DRAFT` Dish with unique normalized code and active `dish_type_id`.                             |
+| `create_dish`          | `master_data.recipes.write` |              `1` | Atomically creates one `DRAFT` Dish and its two active canonical typed Recipe roots, with no RecipeVersion. |
 | `update_dish`          | `master_data.recipes.write` |     Dish version | Updates bounded Dish attributes and active `dish_type_id`; stable code is immutable and there is no delete. |
 | `set_dish_lifecycle`   | `master_data.recipes.write` |     Dish version | Applies an allowed Dish lifecycle transition.                                                               |
 | `set_recipe_lifecycle` | `master_data.recipes.write` |   Recipe version | Activates or inactivates a Recipe root without rewriting history.                                           |
@@ -53,12 +53,12 @@ Copy accepts only validated, released, or locked materialized source composition
 
 - Contract: `RECIPE-EFFECTIVE.v1`.
 - Capability: existing `master_data.recipes.write`; owner: `atlas_master_data_command_runtime`.
-- Required command payload: `source_dish_id`, `target_dish_id`; the standard command envelope also requires caller-stable `command_id`, `idempotency_key`, target Dish `expected_version`, timestamp, reason code, and nonblank reason note.
-- Supported v1 scopes are the active School Types named `Tiểu học` and `Trung học`, evaluated in that deterministic order.
+- Required command payload: `source_dish_id`, `target_dish_id`, and explicit `as_of_date`; the standard command envelope also requires caller-stable `command_id`, `idempotency_key`, target Dish `expected_version`, timestamp, reason code, and nonblank reason note.
+- Supported v1 scopes are identified only by the active School-Type codes `v1-school-type-1` and `v1-school-type-2`, evaluated in that deterministic order. Display names and capitalization are not identity.
 
-For each supported scope, the backend uses the shared effective-base selector: an exact active released School-Type Recipe wins, otherwise the active released GENERAL Recipe is used. An absent source scope is returned as `SOURCE_NOT_AVAILABLE` and does not fabricate a target Recipe. Each available scope is copied through the retained support-level `copy_recipe_version` command and is returned as `COPIED` with its source selection scope and source/target Recipe identities.
+For each supported scope, the backend requires the exact active typed Recipe root and exactly one current `RELEASED_FOR_PLANNING` Recipe Version. It resolves the source BOM at `as_of_date` through the closed system path `typed base Recipe -> SYSTEM_INGREDIENT -> SYSTEM_DISH`; it never applies `SCHOOL` or `SCHOOL_DISH`. A nullable GENERAL Recipe is never a fallback for this contract. Both source scopes must be `READY`, and both active typed target Recipe roots must already exist.
 
-The outer command is the authority and one database transaction covers every scope it decides to copy. If any required child copy fails, the child subtransaction rolls back all Recipe, Recipe Version, line, receipt, event, and audit writes and the outer response is `ATOMIC_SCOPE_COPY_FAILED`. Approved-Menu use of the target Dish returns the existing operational-lock rejection before writes. Exact replay returns the stored authoritative result; reusing an idempotency key with changed request content returns `IDEMPOTENCY_CONFLICT`.
+The outer command is the sole transactional authority. It materializes both resolved PRESENT BOMs into new DRAFT Recipe Versions under the two pre-provisioned target roots, preserves prior version/line history, emits explicit removed-line successors when needed, and records source Recipe, date, system-adjustment lineage, outer command, and reason provenance. It does not invoke the retained support-level `copy_recipe_version` command and never copies source adjustment rows as target facts. Any missing scope, unfinished conflicting target version, reference failure, or write failure rolls back both scopes. Approved-Menu use of the target Dish returns the existing operational-lock rejection before writes. Exact replay returns the stored authoritative result; reusing an idempotency key with changed request content returns `IDEMPOTENCY_CONFLICT`.
 
 `dish_type_id` is authoritative for Menu eligibility. Create/update rejects an unknown or inactive type. Dish activation also requires an active mapped type. `dish_category` remains optional compatibility text and is never interpreted as the authoritative type.
 
@@ -112,6 +112,17 @@ replaying creation returns the original Dish identity and code readback. The cod
 does not derive from the editable Dish name. Explicit invalid/null metadata is
 still rejected rather than interpreted as omission.
 
+After authorization and replay resolution, creation resolves the active canonical
+School Types by stable code, transaction-locks their canonical identities, and
+inserts the Dish plus exactly one active Recipe root for each code in the same
+transaction. A missing/inactive canonical type or either root-insert failure rolls
+back the entire creation. No RecipeVersion is created. Successful
+`affected_aggregate_ids` includes the Dish ID and an ordered `recipe_ids` array
+with each `school_type_id`, `school_type_code`, and server-generated `recipe_id`.
+The exactly-two invariant applies to newly command-created Dishes and Dishes
+treated as valid by `RECIPE-EFFECTIVE.v1`; this change does not add a global
+constraint or rewrite legacy rows.
+
 Controlled callers may continue supplying normalized unique codes and valid
 ordering and explicit `requires_need_generation: true`. Explicit false returns
 `VALIDATION_FAILED` with `payload.requires_need_generation` field feedback; it is
@@ -125,6 +136,15 @@ in Need Generation when used on an approved Menu with a valid released Recipe.
 Normal operators make no separate participation decision. Inactive Dishes remain
 unavailable for normal future planning; committed sources retain explicit
 inactive-Dish blockers and correction behavior, never silent demand removal.
+
+For `RECIPE-EFFECTIVE.v1`, the canonical typed root is also the base-authoring
+context. An unlocked root with no RecipeVersion, a DRAFT or VALIDATED version, or
+an unlocked released version remains `EDITABLE_BASE`; strict effective readiness
+is not a prerequisite for first-time authoring. Once approved-Menu evidence locks
+the Dish, the state is `LOCKED_CHANGE_ORDER` and the strict typed selector must be
+`READY` before Change Order creation is advertised. Legacy nullable GENERAL or
+synthetic Recipe rows remain pre-cutover compatibility evidence and are ignored by
+the new contract until separately remediated.
 
 ## Additive RMVP-02A.v2 creation-and-lock contract
 

@@ -596,6 +596,7 @@ declare
   v_exception_count bigint;
   v_operational_lock boolean;
   v_root_ready boolean;
+  v_copy_eligible boolean;
   v_is_editable boolean;
   v_allowed_actions jsonb;
 begin
@@ -719,12 +720,32 @@ begin
       false
     );
 
+  v_copy_eligible := not v_operational_lock
+    and v_dish.dish_status = 'ACTIVE'
+    and (
+      select pg_catalog.count(*) = 2
+      from atlas_core.recipe_effective_canonical_school_types() canonical
+      join atlas_admin.recipes recipe
+        on recipe.school_type_id = canonical.school_type_id
+       and recipe.dish_id = v_dish_id
+       and recipe.recipe_status = 'ACTIVE'
+    )
+    and not exists (
+      select 1
+      from atlas_core.recipe_effective_canonical_school_types() canonical
+      join atlas_admin.recipes recipe
+        on recipe.school_type_id = canonical.school_type_id
+       and recipe.dish_id = v_dish_id
+       and recipe.recipe_status = 'ACTIVE'
+      join atlas_admin.recipe_versions version
+        on version.recipe_id = recipe.recipe_id
+       and version.recipe_version_status in ('DRAFT', 'VALIDATED')
+    );
+
   v_allowed_actions := case
     when v_operational_lock and v_resolution ->> 'status' = 'READY'
       then pg_catalog.jsonb_build_array('CREATE_CHANGE_ORDER')
-    when not v_operational_lock
-      and v_dish.dish_status = 'ACTIVE'
-      and v_root_ready
+    when v_copy_eligible
       then pg_catalog.jsonb_build_array('COPY_DISH_RECIPES')
     else '[]'::jsonb
   end;

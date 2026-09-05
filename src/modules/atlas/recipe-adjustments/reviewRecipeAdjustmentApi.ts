@@ -299,12 +299,12 @@ function fixtures(): ReviewWorkbenchData {
     school_types: [
       {
         school_type_id: ids.schoolType,
-        school_type_name: "Tiểu học",
+        school_type_name: "TIỂU HỌC",
         school_type_status: "ACTIVE",
       },
       {
         school_type_id: ids.secondarySchoolType,
-        school_type_name: "Trung học",
+        school_type_name: "TRUNG HỌC",
         school_type_status: "ACTIVE",
       },
     ],
@@ -605,13 +605,19 @@ export function createReviewRecipeAdjustmentApi(
           }),
       );
     },
-    resolveSystem(_auth, _correlation, _asOfDate, _dishId, _schoolTypeId) {
+    resolveSystem(_auth, _correlation, asOfDate, dishId, schoolTypeId) {
       const blocked = blockedRead();
+      const schoolId =
+        schoolTypeId === ids.secondarySchoolType
+          ? ids.secondarySchool
+          : ids.school;
       const resolution = resolutionScenario(
         "precedence",
-        ids.school,
+        schoolId,
       ) as EffectiveCompositionResult;
       resolution.school_id = null;
+      resolution.as_of_date = asOfDate;
+      resolution.dish_id = dishId;
       return Promise.resolve(
         blocked ??
           success({
@@ -626,6 +632,12 @@ export function createReviewRecipeAdjustmentApi(
         "precedence",
         context.kind === "school" ? context.schoolId : ids.school,
       );
+      const schoolTypeId =
+        context.kind === "system"
+          ? context.schoolTypeId
+          : context.schoolId === ids.secondarySchool
+            ? ids.secondarySchoolType
+            : ids.schoolType;
       return Promise.resolve(
         blocked ??
           success({
@@ -633,10 +645,7 @@ export function createReviewRecipeAdjustmentApi(
               as_of_date: asOfDate,
               dish_id: dishId,
               school_id: context.kind === "school" ? context.schoolId : null,
-              school_type_id:
-                context.kind === "system"
-                  ? context.schoolTypeId
-                  : ids.schoolType,
+              school_type_id: schoolTypeId,
               selected_recipe: resolution.selected_recipe,
               basis_portions:
                 resolution.selected_recipe?.basis_portions ?? null,

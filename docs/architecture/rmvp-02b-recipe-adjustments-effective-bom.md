@@ -33,7 +33,7 @@ Creation time, UUID order, UI order, and caller choice never decide precedence. 
 
 ## Recipe selection and effective resolution
 
-For an exact School and Dish, authoritative resolution selects:
+For an exact School and Dish, the retained `RMVP-02B.v1` compatibility resolution selects:
 
 ```text
 one active released Recipe for the School's exact SchoolType
@@ -47,7 +47,7 @@ An explicitly named materialized `VALIDATED`, `RELEASED_FOR_PLANNING`, or `LOCKE
 
 Each atomic effective line retains selected Dish, Recipe, Recipe Version, basis portions, stable base Recipe Line or adjustment-line identity, base values, final values and disposition, highest source layer, every applied adjustment and revision, before/after values, reason, period, actor, warnings, and blockers. Removed lines remain in audit output with `REMOVED`; the resolver does not aggregate away stable identity and performs no theoretical-need calculation.
 
-RECIPE-EFFECTIVE-CONTRACT-01 centralizes the first step in `atlas_core.recipe_effective_select_base_recipe(dish_id, school_type_id)`. Exact School-Type release wins, GENERAL release is fallback, and ambiguity or absence blocks. Both explicit School-Type resolution and School resolution call the same selector; the latter first derives School Type from the authoritative active School.
+RECIPE-EFFECTIVE-CONTRACT-01 centralizes its first step in `atlas_core.recipe_effective_select_base_recipe(dish_id, school_type_id)`. The selector accepts only the active canonical codes `v1-school-type-1` and `v1-school-type-2`, requires the exact typed active Recipe root and released version, never reads a nullable GENERAL Recipe, and blocks ambiguity or absence. Both explicit School-Type resolution and School resolution call the same selector; the latter first derives School Type from the authoritative active School. The renamed legacy resolver isolates the older RMVP-02B fallback behavior from this contract.
 
 The shared composition helper then has two closed layer sets:
 
@@ -95,11 +95,13 @@ Browser roles have no private-schema usage or table access. Public, `anon`, and 
 
 The RECIPE-EFFECTIVE-CONTRACT-01 extension adds no relation, role, runtime role, capability, RLS policy vocabulary, major dependency, or module boundary. It adds shaped reads under the existing adjustment-read capability and one Dish-level command under the existing Recipe-write capability. New public functions have fixed empty `search_path`, least-privilege runtime ownership, authenticated execution only, and revoked `PUBLIC`, `anon`, and `service_role` execution.
 
-The Dish-level copy command is one outer transactional boundary. It selects each supported source scope centrally, reports unavailable source scopes without fabrication, delegates actual materialized copying to the retained support API, and rolls back all child business, receipt, event, and audit writes if any required scope fails. Existing approved-Menu lock authority is reused for the target Dish. No Weekly Menu, Attendance, Need Generation, Pantry, Confirmed Need, Procurement, PO, Warehouse, Dispatch, hosted data, or deployment contract changes.
+The corrected Dish model provisions exactly two active typed Recipe roots at `create_dish`, one per canonical School-Type code, without creating a RecipeVersion. The invariant is command-scoped for new and contract-valid Dishes; legacy nullable/synthetic data is neither backfilled nor subjected to a new global constraint. Unlocked roots remain base-authoring contexts through no-version, DRAFT, VALIDATED, and released states. Effective readiness is a distinct released-Recipe requirement, and approved-Menu use changes the operator path to read-only `LOCKED_CHANGE_ORDER`.
+
+The Dish-level copy command is one outer transactional boundary. At the explicit `as_of_date`, it resolves both exact typed source scopes through `SYSTEM_INGREDIENT` and `SYSTEM_DISH`, excludes School-specific layers, and materializes each effective BOM into the corresponding pre-provisioned target root using stable version/line lineage. It preserves prior target history, stores source and system-adjustment provenance, never mutates the source, and does not invoke the support-level `copy_recipe_version` API. A missing source/target scope, unfinished target version, write failure, or approved-Menu target lock rolls back both scopes. No Weekly Menu, Attendance, Need Generation, Pantry, Confirmed Need, Procurement, PO, Warehouse, Dispatch, hosted data, or deployment contract changes.
 
 ## Operator history and temporal ledger
 
-Normal Recipe history is an immutable sequence of effective-BOM periods, not a raw Recipe Version list. Period boundaries are derived from release and applicable revision start/end dates. Each period contains a complete backend-resolved BOM and the applicable Change Order business tags. Simultaneous boundaries are coalesced, finite end dates create the next period, and corrected/cancelled revisions remain available as immutable historical evidence.
+Normal Recipe history is an immutable sequence of effective-BOM periods, not a raw Recipe Version list. Period boundaries are derived from release and potentially applicable revision start/end dates, but a Change Order belongs to a Dish history only when its adjustment identity occurs in actual resolver lineage for that Dish in at least one period. Each panel contains a complete backend-resolved BOM and relevant Change Order business tags. Adjacent identical BOM states may be coalesced; correction/cancellation evidence remains immutable and reachable in the Lệnh điều chỉnh ledger/detail even when it does not require a duplicate BOM panel. `school_exception_count` likewise counts distinct currently applicable School-layer roots that materially occur in this Dish's resolved lineage, not all School adjustments of the same School Type.
 
 The adjustment ledger retains `temporal_state`, exposes `effective_from` and `effective_to`, and adds backend-derived `is_effective_now`. The boolean is true only for states whose current revision contributes on the requested date. The frontend displays these fields and never calculates applicability.
 

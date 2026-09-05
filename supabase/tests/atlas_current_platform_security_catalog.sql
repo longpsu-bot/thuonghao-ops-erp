@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(23);
 
 -- Exact Atlas schema and relation posture.
 select is(
@@ -1209,6 +1209,62 @@ select ok(
   'CAT-21 no unreviewed atlas_api function or overload exists'
 );
 
+select ok(
+  (
+    select count(*) = 10
+      and bool_and(
+        p.proconfig = array['search_path=""']::text[]
+        and pg_get_userbyid(p.proowner) = expected.expected_owner
+        and p.prosecdef = expected.expected_definer
+        and not has_function_privilege('anon', p.oid, 'EXECUTE')
+        and not has_function_privilege('service_role', p.oid, 'EXECUTE')
+        and (
+          expected.schema_name = 'atlas_api'
+          or not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+        )
+        and has_function_privilege(
+          expected.runtime_role,
+          p.oid,
+          'EXECUTE'
+        )
+      )
+    from (
+      values
+        ('atlas_core', 'recipe_effective_canonical_school_types',
+          'atlas_owner', false, 'atlas_read_runtime'),
+        ('atlas_core', 'recipe_effective_lock_canonical_school_types',
+          'atlas_owner', false, 'atlas_master_data_command_runtime'),
+        ('atlas_core', 'recipe_effective_select_base_recipe',
+          'atlas_owner', false, 'atlas_read_runtime'),
+        ('atlas_core', 'recipe_effective_school_exception_count',
+          'atlas_owner', false, 'atlas_read_runtime'),
+        ('atlas_core', 'recipe_effective_materialize_copy_scope',
+          'atlas_owner', false, 'atlas_master_data_command_runtime'),
+        ('atlas_core', 'recipe_effective_history_candidate_base',
+          'atlas_owner', false, 'atlas_read_runtime'),
+        ('atlas_core', 'recipe_effective_history',
+          'atlas_owner', false, 'atlas_read_runtime'),
+        ('atlas_api', 'create_dish',
+          'atlas_master_data_command_runtime', true, 'authenticated'),
+        ('atlas_api', 'get_dish_recipe_operator_workbench',
+          'atlas_read_runtime', true, 'authenticated'),
+        ('atlas_api', 'copy_dish_recipes',
+          'atlas_master_data_command_runtime', true, 'authenticated')
+    ) expected(
+      schema_name,
+      function_name,
+      expected_owner,
+      expected_definer,
+      runtime_role
+    )
+    join pg_namespace n on n.nspname = expected.schema_name
+    join pg_proc p
+      on p.pronamespace = n.oid
+     and p.proname = expected.function_name
+  ),
+  'CAT-21A corrected Recipe functions retain fixed paths, intended owners, and revoke-first execution'
+);
+
 -- Bounded digest of the complete current platform catalog.
 select is(
   (
@@ -1548,12 +1604,12 @@ select is(
     'policy_count', 633,
     'policy_catalog_md5', 'ca91300869ea6ba094dd897158607206',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 267,
-    'private_function_catalog_md5', '12568581dfa451a5a92a9c36f91dd4cf',
+    'private_function_count', 272,
+    'private_function_catalog_md5', '200e9f7032dcb473e9503d12ec3a7944',
     'trigger_count', 103,
     'trigger_catalog_md5', '61df4c910da3cc1f70771084faa2ac10',
-    'positive_target_grant_count', 1664,
-    'positive_target_grant_md5', '2d52d6ced4a822847429f2ab30200102',
+    'positive_target_grant_count', 1671,
+    'positive_target_grant_md5', 'bd07ea5ace0ea14abad32047bd382eed',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 107,
     'pa_06a_write_count', 15,

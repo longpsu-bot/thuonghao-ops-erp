@@ -143,7 +143,9 @@ describe("recipe workbench response parsing", () => {
       },
       effective_readiness: {
         status: "BLOCKED",
-        blockers: [{ code: "RECIPE_SELECTION_BLOCKED", message: "No release." }],
+        blockers: [
+          { code: "RECIPE_SELECTION_BLOCKED", message: "No release." },
+        ],
         warnings: [],
       },
       editable_state: "EDITABLE_BASE",
@@ -192,6 +194,17 @@ describe("recipe workbench response parsing", () => {
           source_selection_scope: "SCHOOL_TYPE",
           target_recipe_id: "target-recipe-1",
           target_recipe_version_id: "target-version-1",
+        },
+        {
+          school_type_id: "school-type-2",
+          school_type_code: "v1-school-type-2",
+          scope_name: "Trung học",
+          status: "COPIED",
+          source_recipe_id: "source-recipe-2",
+          source_recipe_version_id: "source-version-2",
+          source_selection_scope: "SCHOOL_TYPE",
+          target_recipe_id: "target-recipe-2",
+          target_recipe_version_id: "target-version-2",
         },
       ],
     };

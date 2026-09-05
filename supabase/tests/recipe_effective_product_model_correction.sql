@@ -437,6 +437,16 @@ select is(
   'Q. root-only unlocked Recipe remains editable before effective readiness'
 );
 
+select is(
+  (
+    select response_payload #> '{workbench,allowed_actions}'
+    from recipe_correction_results
+    where result_name = 'root-only-workbench'
+  ),
+  '[]'::jsonb,
+  'Q. copy is not advertised until both canonical target roots exist'
+);
+
 insert into atlas_admin.recipe_versions (
   recipe_version_id, recipe_id, version_number, basis_portions,
   recipe_version_status, created_by_actor_id, source_evidence,

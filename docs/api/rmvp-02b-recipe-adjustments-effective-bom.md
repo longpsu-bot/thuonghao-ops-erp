@@ -44,11 +44,27 @@ All three reads require `contract_version: RECIPE-EFFECTIVE.v1`, `requested_by_a
 
 | Function                                      | Required payload                          | Shaped result                                                                                                                                                                                                   |
 | --------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resolve_system_effective_recipe_composition` | `as_of_date`, `dish_id`, `school_type_id` | `resolution` using the exact School-Type/GENERAL base selector and only `SYSTEM_INGREDIENT` then `SYSTEM_DISH`; no representative School and no School layers.                                                  |
+| `resolve_system_effective_recipe_composition` | `as_of_date`, `dish_id`, `school_type_id` | `resolution` using the exact canonical typed Recipe selector and only `SYSTEM_INGREDIENT` then `SYSTEM_DISH`; no nullable GENERAL fallback, representative School, or School layer.                             |
 | `get_recipe_effective_target_context`         | date, Dish, exactly one context identity  | `target_context` with selected Recipe, basis, warnings/blockers, and PRESENT effective lines containing names, quantity, Unit, source layer, `target_kind`, `target_id`, and the corresponding stable identity. |
 | `get_dish_recipe_operator_workbench`          | date, Dish, exactly one context identity  | Dish/name/type, context, selected base Recipe and basis, lock state, current effective BOM, school-exception count, actions, blockers/warnings, and backend-shaped full-BOM `history_periods`.                  |
 
-The exclusive context identity is `school_type_id` for a system view or `school_id` for a School view. Both or neither returns `VALIDATION_FAILED`. The School path derives School Type from the authoritative School. System resolution applies only system layers; School resolution applies the same system layers followed by `SCHOOL` and `SCHOOL_DISH`. React consumes the shaped result and does not select a Recipe, infer a date, replay revisions, or filter GENERAL-fallback rows by their nullable Recipe School Type.
+The exclusive context identity is `school_type_id` for a system view or `school_id` for a School view. Both or neither returns `VALIDATION_FAILED`. The School path derives School Type from the authoritative School. The shared selector accepts only active canonical codes `v1-school-type-1` and `v1-school-type-2`, requires the exact typed active root and released version, and returns a blocker rather than reading a nullable GENERAL Recipe. System resolution applies only system layers; School resolution applies the same system layers followed by `SCHOOL` and `SCHOOL_DISH`. React consumes the shaped result and does not select a Recipe, infer a date, or replay revisions.
+
+The operator workbench separates `base_authoring` from `effective_readiness`.
+Unlocked canonical roots remain `EDITABLE_BASE` through no-version, DRAFT,
+VALIDATED, and released authoring states. Approved-Menu use produces
+`LOCKED_CHANGE_ORDER`; that read-only path requires a `READY` released typed
+Recipe before `CREATE_CHANGE_ORDER` is offered. `school_exception_count` counts
+distinct currently applicable `SCHOOL` or `SCHOOL_DISH` roots whose identities
+materially occur in resolver lineage for the selected Dish context, not every
+adjustment associated with a School of the same type.
+
+The Dish-copy command requires an explicit `as_of_date`, resolves both canonical
+typed scopes through only `SYSTEM_INGREDIENT` and `SYSTEM_DISH`, and snapshots the
+result into the two existing target roots without overwriting RecipeVersion
+history. School-specific layers are excluded. Nullable GENERAL and synthetic
+legacy Recipes remain isolated behind the pre-existing RMVP-02B compatibility
+resolver and are never selected by `RECIPE-EFFECTIVE.v1`.
 
 ### `preview_recipe_composition_adjustment`
 
