@@ -508,3 +508,265 @@ $$;
 
 comment on function atlas_api.create_dish(jsonb) is
   'RMVP-02A.v1 atomic Dish creation with two canonical typed Recipe roots and no RecipeVersion.';
+
+create or replace function atlas_api.get_dish_recipe_operator_workbench(
+  request jsonb
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'get_dish_recipe_operator_workbench';
+  v_error jsonb;
+  v_context jsonb;
+  v_actor_id uuid;
+  v_as_of_date date;
+  v_dish_id uuid;
+  v_school_id uuid;
+  v_school_type_id uuid;
+  v_dish atlas_admin.dishes%rowtype;
+  v_dish_type_name text;
+  v_resolution jsonb;
+  v_base_authoring jsonb;
+  v_exception_count bigint;
+  v_operational_lock boolean;
+  v_root_ready boolean;
+  v_is_editable boolean;
+  v_allowed_actions jsonb;
+begin
+  v_error := atlas_core.recipe_effective_validate_read_request(
+    request, v_name
+  );
+  if v_error is not null then return v_error; end if;
+
+  v_as_of_date := atlas_core.rmvp_02b_safe_date(
+    request -> 'payload' ->> 'as_of_date'
+  );
+  v_dish_id := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'dish_id'
+  );
+  v_school_id := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'school_id'
+  );
+  v_school_type_id := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'school_type_id'
+  );
+  if v_as_of_date is null
+     or v_dish_id is null
+     or (v_school_id is null) = (v_school_type_id is null) then
+    return pg_catalog.jsonb_build_object(
+      'success', false,
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'error_code', 'VALIDATION_FAILED',
+      'safe_message',
+        'Choose exactly one system School-Type or School Recipe context.',
+      'domain', 'ADMIN',
+      'read_name', v_name,
+      'field_errors', pg_catalog.jsonb_build_array(
+        pg_catalog.jsonb_build_object(
+          'field', 'payload',
+          'message',
+            'Supply as_of_date, dish_id, and exactly one context identity.'
+        )
+      ),
+      'blocking_references', '[]'::jsonb,
+      'correlation_id', request ->> 'correlation_id'
+    );
+  end if;
+
+  v_context := atlas_core.rmvp_01_authorize_global(
+    request,
+    'master_data.recipe_adjustments.read',
+    v_name
+  );
+  if v_context ? 'error' then
+    return pg_catalog.jsonb_set(
+      v_context -> 'error',
+      '{contract_version}',
+      '"RECIPE-EFFECTIVE.v1"'::jsonb
+    );
+  end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_context ->> 'actor_id');
+
+  select *
+  into v_dish
+  from atlas_admin.dishes dish
+  where dish.dish_id = v_dish_id;
+  if not found then
+    return pg_catalog.jsonb_build_object(
+      'success', false,
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'error_code', 'NOT_FOUND',
+      'safe_message', 'The selected Dish was not found.',
+      'domain', 'ADMIN',
+      'read_name', v_name,
+      'field_errors', '[]'::jsonb,
+      'blocking_references', '[]'::jsonb,
+      'correlation_id', request ->> 'correlation_id'
+    );
+  end if;
+
+  select dish_type.dish_type_name
+  into v_dish_type_name
+  from atlas_admin.dish_types dish_type
+  where dish_type.dish_type_id = v_dish.dish_type_id;
+
+  if v_school_id is not null then
+    select school.school_type_id
+    into v_school_type_id
+    from atlas_admin.schools school
+    where school.school_id = v_school_id
+      and school.school_status = 'ACTIVE';
+  end if;
+
+  v_operational_lock := atlas_core.uiq03a_dish_used_operationally(
+    v_dish_id
+  );
+
+  -- Base authoring is resolved directly from the canonical typed root before
+  -- strict released-Recipe readiness is considered.
+  v_base_authoring := atlas_core.uiq03a_selection_payload(
+    v_actor_id,
+    v_dish_id,
+    v_school_type_id
+  );
+  v_root_ready := exists (
+    select 1
+    from atlas_core.recipe_effective_canonical_school_types() canonical
+    join atlas_admin.recipes recipe
+      on recipe.school_type_id = canonical.school_type_id
+     and recipe.dish_id = v_dish_id
+     and recipe.recipe_status = 'ACTIVE'
+    where canonical.school_type_id = v_school_type_id
+  );
+
+  v_resolution := atlas_core.recipe_effective_resolve_composition(
+    v_as_of_date,
+    v_school_id,
+    v_dish_id,
+    v_school_type_id
+  );
+
+  v_is_editable := not v_operational_lock
+    and v_root_ready
+    and coalesce(
+      (v_base_authoring #>> '{allowed_actions,save_recipe}')::boolean,
+      false
+    );
+
+  v_allowed_actions := case
+    when v_operational_lock and v_resolution ->> 'status' = 'READY'
+      then pg_catalog.jsonb_build_array('CREATE_CHANGE_ORDER')
+    when not v_operational_lock
+      and v_dish.dish_status = 'ACTIVE'
+      and v_root_ready
+      then pg_catalog.jsonb_build_array('COPY_DISH_RECIPES')
+    else '[]'::jsonb
+  end;
+
+  select pg_catalog.count(*)
+  into v_exception_count
+  from atlas_admin.recipe_composition_adjustments root
+  join atlas_admin.schools scoped_school
+    on scoped_school.school_id = root.school_id
+   and scoped_school.school_status = 'ACTIVE'
+  join lateral (
+    select revision.revision_status
+    from atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_id =
+        root.recipe_composition_adjustment_id
+      and v_as_of_date >= revision.effective_from
+      and (
+        revision.effective_to is null
+        or v_as_of_date < revision.effective_to
+      )
+    order by revision.revision_number desc
+    limit 1
+  ) applicable on applicable.revision_status = 'ACTIVE'
+  where root.scope_kind in ('SCHOOL', 'SCHOOL_DISH')
+    and (
+      root.scope_kind = 'SCHOOL'
+      or root.dish_id = v_dish_id
+    )
+    and scoped_school.school_type_id = v_school_type_id
+    and (
+      v_school_id is null
+      or root.school_id = v_school_id
+    );
+
+  return pg_catalog.jsonb_build_object(
+    'success', true,
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'correlation_id', request ->> 'correlation_id',
+    'workbench', pg_catalog.jsonb_build_object(
+      'dish', pg_catalog.jsonb_build_object(
+        'dish_id', v_dish.dish_id,
+        'dish_name', v_dish.dish_name,
+        'dish_type_name', v_dish_type_name,
+        'dish_status', v_dish.dish_status
+      ),
+      'context_kind', case when v_school_id is null
+        then 'SYSTEM_SCHOOL_TYPE' else 'SCHOOL' end,
+      'as_of_date', v_as_of_date,
+      'school_id', v_school_id,
+      'school_type_id', v_school_type_id,
+      'selected_recipe', v_resolution -> 'selected_recipe',
+      'basis_portions', case
+        when v_operational_lock
+          then v_resolution -> 'selected_recipe' -> 'basis_portions'
+        else v_base_authoring -> 'basis_portions'
+      end,
+      'base_authoring', v_base_authoring,
+      'effective_readiness', pg_catalog.jsonb_build_object(
+        'status', v_resolution ->> 'status',
+        'blockers', coalesce(v_resolution -> 'blockers', '[]'::jsonb),
+        'warnings', coalesce(v_resolution -> 'warnings', '[]'::jsonb)
+      ),
+      'editable_state', case when v_operational_lock
+        then 'LOCKED_CHANGE_ORDER' else 'EDITABLE_BASE' end,
+      'is_editable', v_is_editable,
+      'is_operationally_locked', v_operational_lock,
+      'current_effective_bom', case
+        when v_resolution ->> 'status' = 'READY'
+          then atlas_core.recipe_effective_operator_lines(v_resolution)
+        else '[]'::jsonb
+      end,
+      'school_exception_count', v_exception_count,
+      'allowed_actions', v_allowed_actions,
+      'blockers', coalesce(v_resolution -> 'blockers', '[]'::jsonb),
+      'warnings', coalesce(v_resolution -> 'warnings', '[]'::jsonb),
+      'history_periods', case
+        when v_resolution ->> 'status' = 'READY'
+          then atlas_core.recipe_effective_history(
+            v_as_of_date,
+            v_school_id,
+            v_dish_id,
+            v_school_type_id
+          )
+        else '[]'::jsonb
+      end
+    ),
+    'safe_operator_message',
+      'Authorized Dish Recipe operator workbench returned.'
+  );
+exception when others then
+  return pg_catalog.jsonb_build_object(
+    'success', false,
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'error_code', 'INTERNAL_READ_FAILURE',
+    'safe_message',
+      'The Dish Recipe operator workbench could not be returned safely.',
+    'domain', 'ADMIN',
+    'read_name', v_name,
+    'field_errors', '[]'::jsonb,
+    'blocking_references', '[]'::jsonb,
+    'correlation_id', request ->> 'correlation_id'
+  );
+end;
+$$;
+
+comment on function atlas_api.get_dish_recipe_operator_workbench(jsonb)
+is 'RECIPE-EFFECTIVE.v1 lifecycle-derived editable base or locked Change Order workbench with independent effective readiness.';

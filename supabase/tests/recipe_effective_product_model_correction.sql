@@ -75,6 +75,43 @@ from atlas_admin.school_types
 where school_type_code in ('v1-school-type-1', 'v1-school-type-2');
 grant select on recipe_canonical_types to authenticated;
 
+insert into atlas_admin.customers (
+  customer_id, customer_code, customer_name, customer_type
+) values (
+  'd1100000-0000-0000-0000-000000000010',
+  'recipe-correction-customer',
+  'Recipe correction customer',
+  'SCHOOL_CATERING'
+);
+
+insert into atlas_admin.delivery_locations (
+  delivery_location_id, customer_id, location_code, location_name,
+  address_text, timezone_name
+) values (
+  'd1100000-0000-0000-0000-000000000011',
+  'd1100000-0000-0000-0000-000000000010',
+  'recipe-correction-location',
+  'Recipe correction location',
+  'Synthetic local address',
+  'Asia/Ho_Chi_Minh'
+);
+
+insert into atlas_admin.schools (
+  school_id, customer_id, school_code, school_name, school_type_id,
+  default_delivery_location_id, display_order
+) values (
+  'd1100000-0000-0000-0000-000000000012',
+  'd1100000-0000-0000-0000-000000000010',
+  'recipe-correction-school',
+  'Recipe correction School',
+  (
+    select school_type_id from recipe_canonical_types
+    where school_type_code = 'v1-school-type-1'
+  ),
+  'd1100000-0000-0000-0000-000000000011',
+  1
+);
+
 insert into atlas_admin.units (
   unit_id, unit_code, unit_name, dimension_code, decimal_scale
 ) values (
@@ -398,6 +435,226 @@ select is(
   ),
   'true',
   'Q. root-only unlocked Recipe remains editable before effective readiness'
+);
+
+insert into atlas_admin.recipe_versions (
+  recipe_version_id, recipe_id, version_number, basis_portions,
+  recipe_version_status, created_by_actor_id, source_evidence,
+  draft_composition
+) values (
+  'd1500000-0000-0000-0000-000000000002',
+  'd1400000-0000-0000-0000-000000000002',
+  1,
+  100,
+  'DRAFT',
+  'd1000000-0000-0000-0000-000000000001',
+  '{"source_kind":"RECIPE_PRODUCT_MODEL_CORRECTION_TEST"}'::jsonb,
+  pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+    'recipe_line_id', 'd1600000-0000-0000-0000-000000000002',
+    'predecessor_recipe_line_revision_id', null,
+    'ingredient_id', 'd1200000-0000-0000-0000-000000000002',
+    'quantity_per_basis', 2,
+    'unit_id', 'd1200000-0000-0000-0000-000000000001',
+    'line_disposition', 'PRESENT',
+    'operational_note', null
+  ))
+);
+
+insert into atlas_admin.recipe_lines (
+  recipe_line_id, recipe_id, line_code
+) values (
+  'd1600000-0000-0000-0000-000000000002',
+  'd1400000-0000-0000-0000-000000000002',
+  'recipe-correction-typed-line'
+);
+
+insert into atlas_admin.recipe_line_revisions (
+  recipe_line_revision_id, recipe_id, recipe_version_id, recipe_line_id,
+  line_revision_number, ingredient_id, quantity_per_basis, unit_id,
+  created_by_actor_id
+) values (
+  'd1700000-0000-0000-0000-000000000002',
+  'd1400000-0000-0000-0000-000000000002',
+  'd1500000-0000-0000-0000-000000000002',
+  'd1600000-0000-0000-0000-000000000002',
+  1,
+  'd1200000-0000-0000-0000-000000000002',
+  2,
+  'd1200000-0000-0000-0000-000000000001',
+  'd1000000-0000-0000-0000-000000000001'
+);
+
+set local role authenticated;
+insert into recipe_correction_results values (
+  'draft-workbench',
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_temp.recipe_correction_read(pg_catalog.jsonb_build_object(
+      'as_of_date', '2026-09-05',
+      'dish_id', 'd1300000-0000-0000-0000-000000000002',
+      'school_type_id', (
+        select school_type_id from recipe_canonical_types
+        where school_type_code = 'v1-school-type-1'
+      )
+    ))
+  )
+);
+reset role;
+
+select ok(
+  (
+    select response_payload #>> '{workbench,editable_state}' = 'EDITABLE_BASE'
+      and response_payload #>> '{workbench,is_editable}' = 'true'
+      and response_payload #>> '{workbench,base_authoring,business_status}' = 'SAVED'
+    from recipe_correction_results
+    where result_name = 'draft-workbench'
+  ),
+  'Q. an unlocked DRAFT version remains in editable base authoring'
+);
+
+set constraints all immediate;
+update atlas_admin.recipe_versions
+set recipe_version_status = 'VALIDATED',
+    validated_by_actor_id = 'd1000000-0000-0000-0000-000000000001',
+    validated_at = pg_catalog.transaction_timestamp()
+where recipe_version_id = 'd1500000-0000-0000-0000-000000000002';
+set constraints all deferred;
+
+set local role authenticated;
+insert into recipe_correction_results values (
+  'validated-workbench',
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_temp.recipe_correction_read(pg_catalog.jsonb_build_object(
+      'as_of_date', '2026-09-05',
+      'dish_id', 'd1300000-0000-0000-0000-000000000002',
+      'school_type_id', (
+        select school_type_id from recipe_canonical_types
+        where school_type_code = 'v1-school-type-1'
+      )
+    ))
+  )
+);
+reset role;
+
+select ok(
+  (
+    select response_payload #>> '{workbench,editable_state}' = 'EDITABLE_BASE'
+      and response_payload #>> '{workbench,is_editable}' = 'true'
+    from recipe_correction_results
+    where result_name = 'validated-workbench'
+  ),
+  'Q. an unlocked VALIDATED version remains in editable base authoring'
+);
+
+set constraints all immediate;
+update atlas_admin.recipe_versions
+set recipe_version_status = 'RELEASED_FOR_PLANNING',
+    released_by_actor_id = 'd1000000-0000-0000-0000-000000000001',
+    released_at = pg_catalog.transaction_timestamp()
+where recipe_version_id = 'd1500000-0000-0000-0000-000000000002';
+set constraints all deferred;
+
+set local role authenticated;
+insert into recipe_correction_results values (
+  'released-workbench',
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_temp.recipe_correction_read(pg_catalog.jsonb_build_object(
+      'as_of_date', '2026-09-05',
+      'dish_id', 'd1300000-0000-0000-0000-000000000002',
+      'school_type_id', (
+        select school_type_id from recipe_canonical_types
+        where school_type_code = 'v1-school-type-1'
+      )
+    ))
+  )
+);
+reset role;
+
+select ok(
+  (
+    select response_payload #>> '{workbench,editable_state}' = 'EDITABLE_BASE'
+      and response_payload #>> '{workbench,is_editable}' = 'true'
+      and response_payload #>> '{workbench,effective_readiness,status}' = 'READY'
+    from recipe_correction_results
+    where result_name = 'released-workbench'
+  ),
+  'Q. an unlocked released version remains editable and effective-ready'
+);
+
+insert into atlas_planning.weekly_menus (
+  weekly_menu_id, week_start, week_end, source_type, source_name,
+  source_signature, weekly_menu_status, row_count, imported_by_actor_id
+) values (
+  'd1800000-0000-0000-0000-000000000001',
+  '2026-09-07', '2026-09-13', 'TEST', 'Recipe correction lock evidence',
+  'recipe-correction-lock', 'DRAFT', 1,
+  'd1000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_planning.weekly_menu_lines (
+  weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+  menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+) values (
+  'd1800000-0000-0000-0000-000000000002',
+  'd1800000-0000-0000-0000-000000000001',
+  'd1100000-0000-0000-0000-000000000012', '2026-09-08',
+  'soup', 'd1300000-0000-0000-0000-000000000002',
+  'd1000000-0000-0000-0000-000000000001',
+  'd1000000-0000-0000-0000-000000000001'
+);
+
+update atlas_planning.weekly_menus
+set weekly_menu_status = 'VALIDATED'
+where weekly_menu_id = 'd1800000-0000-0000-0000-000000000001';
+
+insert into atlas_planning.weekly_menu_approval_snapshots (
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  approved_by_actor_id, approved_at
+) values (
+  'd1800000-0000-0000-0000-000000000003',
+  'd1800000-0000-0000-0000-000000000001', 1,
+  'd1000000-0000-0000-0000-000000000001',
+  pg_catalog.transaction_timestamp()
+);
+
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id
+) values (
+  'd1800000-0000-0000-0000-000000000004',
+  'd1800000-0000-0000-0000-000000000003',
+  'd1800000-0000-0000-0000-000000000001', 1,
+  'd1800000-0000-0000-0000-000000000002',
+  'd1100000-0000-0000-0000-000000000012', '2026-09-08',
+  'soup', 'd1300000-0000-0000-0000-000000000002'
+);
+
+set local role authenticated;
+insert into recipe_correction_results values (
+  'locked-workbench',
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_temp.recipe_correction_read(pg_catalog.jsonb_build_object(
+      'as_of_date', '2026-09-05',
+      'dish_id', 'd1300000-0000-0000-0000-000000000002',
+      'school_type_id', (
+        select school_type_id from recipe_canonical_types
+        where school_type_code = 'v1-school-type-1'
+      )
+    ))
+  )
+);
+reset role;
+
+select ok(
+  (
+    select response_payload #>> '{workbench,editable_state}' = 'LOCKED_CHANGE_ORDER'
+      and response_payload #>> '{workbench,is_editable}' = 'false'
+      and response_payload #> '{workbench,allowed_actions}'
+        = '["CREATE_CHANGE_ORDER"]'::jsonb
+    from recipe_correction_results
+    where result_name = 'locked-workbench'
+  ),
+  'R. approved-Menu use locks base editing and exposes only Change Order action'
 );
 
 select * from finish();

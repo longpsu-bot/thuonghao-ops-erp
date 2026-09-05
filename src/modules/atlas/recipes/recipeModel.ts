@@ -182,7 +182,13 @@ export type DishRecipeOperatorWorkbench = {
   school_type_id: string;
   selected_recipe: EffectiveCompositionResult["selected_recipe"];
   basis_portions: number | null;
-  editable_state: "LOCKED_RELEASED";
+  base_authoring: RecipeWorkflowSelection;
+  effective_readiness: {
+    status: "READY" | "BLOCKED";
+    blockers: { code: string; message: string; [key: string]: JsonValue }[];
+    warnings: { code: string; message: string }[];
+  };
+  editable_state: "EDITABLE_BASE" | "LOCKED_CHANGE_ORDER";
   is_editable: boolean;
   is_operationally_locked: boolean;
   current_effective_bom: EffectiveTargetLine[];
@@ -291,6 +297,31 @@ function isHistoryPeriod(value: JsonValue): boolean {
   );
 }
 
+function isRecipeWorkflowSelection(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    (typeof value.dish_id === "string" || value.dish_id === null) &&
+    (typeof value.school_type_id === "string" ||
+      value.school_type_id === null) &&
+    (typeof value.recipe_id === "string" || value.recipe_id === null) &&
+    (typeof value.recipe_version_id === "string" ||
+      value.recipe_version_id === null) &&
+    (typeof value.expected_version === "number" ||
+      value.expected_version === null) &&
+    (typeof value.in_use_recipe_version_id === "string" ||
+      value.in_use_recipe_version_id === null) &&
+    typeof value.locked_for_normal_editing === "boolean" &&
+    (typeof value.lock_reason === "string" || value.lock_reason === null) &&
+    typeof value.basis_portions === "number" &&
+    Array.isArray(value.composition) &&
+    isRecord(value.allowed_actions) &&
+    typeof value.allowed_actions.save_recipe === "boolean" &&
+    typeof value.allowed_actions.release_recipe === "boolean" &&
+    isRecord(value.disabled_reason_codes) &&
+    isRecord(value.disabled_reasons)
+  );
+}
+
 function isCopyScopeResult(value: JsonValue): boolean {
   if (!isRecord(value)) return false;
   return (
@@ -374,7 +405,14 @@ export function dishRecipeOperatorWorkbenchFromResult(
     typeof source.school_type_id !== "string" ||
     (typeof source.basis_portions !== "number" &&
       source.basis_portions !== null) ||
-    source.editable_state !== "LOCKED_RELEASED" ||
+    !isRecipeWorkflowSelection(source.base_authoring) ||
+    !isRecord(source.effective_readiness) ||
+    (source.effective_readiness.status !== "READY" &&
+      source.effective_readiness.status !== "BLOCKED") ||
+    !Array.isArray(source.effective_readiness.blockers) ||
+    !Array.isArray(source.effective_readiness.warnings) ||
+    (source.editable_state !== "EDITABLE_BASE" &&
+      source.editable_state !== "LOCKED_CHANGE_ORDER") ||
     typeof source.is_editable !== "boolean" ||
     typeof source.is_operationally_locked !== "boolean" ||
     typeof source.school_exception_count !== "number" ||
@@ -385,6 +423,25 @@ export function dishRecipeOperatorWorkbenchFromResult(
     !Array.isArray(source.warnings) ||
     !Array.isArray(source.history_periods) ||
     !source.history_periods.every(isHistoryPeriod)
+  )
+    return null;
+  const allowedActions = source.allowed_actions as JsonValue[];
+  const baseAuthoring =
+    source.base_authoring as unknown as RecipeWorkflowSelection;
+  if (
+    !allowedActions.every(
+      (action) =>
+        action === "CREATE_CHANGE_ORDER" || action === "COPY_DISH_RECIPES",
+    ) ||
+    (source.editable_state === "EDITABLE_BASE" &&
+      (source.is_operationally_locked ||
+        source.is_editable !==
+          baseAuthoring.allowed_actions.save_recipe ||
+        allowedActions.includes("CREATE_CHANGE_ORDER"))) ||
+    (source.editable_state === "LOCKED_CHANGE_ORDER" &&
+      (!source.is_operationally_locked ||
+        source.is_editable ||
+        allowedActions.includes("COPY_DISH_RECIPES")))
   )
     return null;
   return source as unknown as DishRecipeOperatorWorkbench;

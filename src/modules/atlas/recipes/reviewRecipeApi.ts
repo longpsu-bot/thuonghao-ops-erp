@@ -358,6 +358,9 @@ export function createReviewRecipeApi(
         return new Promise<AtlasRpcResult>(() => undefined);
       const blocked = blockedRead();
       const dish = data.dishes.find((item) => item.dish_id === dishId);
+      const locked = dishId === ids.dish;
+      const schoolTypeId =
+        context.kind === "system" ? context.schoolTypeId : ids.schoolType;
       return Promise.resolve(
         blocked ??
           success({
@@ -373,18 +376,68 @@ export function createReviewRecipeApi(
               as_of_date: asOfDate,
               school_id: context.kind === "school" ? context.schoolId : null,
               school_type_id:
-                context.kind === "system"
-                  ? context.schoolTypeId
-                  : ids.schoolType,
+                schoolTypeId,
               selected_recipe: null,
-              basis_portions: null,
-              editable_state: "LOCKED_RELEASED",
-              is_editable: false,
-              is_operationally_locked: false,
+              basis_portions: 100,
+              base_authoring: {
+                dish_id: dishId,
+                school_type_id: schoolTypeId,
+                recipe_id: locked ? ids.recipe : crypto.randomUUID(),
+                recipe_version_id: locked ? ids.version : null,
+                expected_version: 1,
+                in_use_recipe_version_id: locked ? ids.version : null,
+                business_status: locked ? "LOCKED" : "NOT_SAVED",
+                locked_for_normal_editing: locked,
+                lock_reason: locked
+                  ? "Món này đã có trong thực đơn đã duyệt."
+                  : null,
+                basis_portions: 100,
+                composition: locked
+                  ? data.recipe_versions[0]?.composition ?? []
+                  : [],
+                allowed_actions: {
+                  save_recipe: !locked,
+                  release_recipe: false,
+                },
+                disabled_reason_codes: {
+                  save_recipe: locked ? "SAVE_OPERATIONALLY_LOCKED" : null,
+                  release_recipe: locked
+                    ? "RELEASE_ALREADY_IN_USE"
+                    : "RELEASE_SAVE_REQUIRED",
+                },
+                disabled_reasons: {
+                  save_recipe: locked
+                    ? "Muốn thay đổi công thức, hãy dùng Điều chỉnh."
+                    : null,
+                  release_recipe: locked
+                    ? "Công thức đã sẵn sàng cho Lập nhu cầu."
+                    : "Hãy lưu công thức trước.",
+                },
+              },
+              effective_readiness: {
+                status: "BLOCKED",
+                blockers: [
+                  {
+                    code: "RECIPE_SELECTION_BLOCKED",
+                    message: "Chưa có công thức đã phát hành.",
+                  },
+                ],
+                warnings: [],
+              },
+              editable_state: locked
+                ? "LOCKED_CHANGE_ORDER"
+                : "EDITABLE_BASE",
+              is_editable: !locked,
+              is_operationally_locked: locked,
               current_effective_bom: [],
               school_exception_count: 0,
-              allowed_actions: [],
-              blockers: [],
+              allowed_actions: locked ? [] : ["COPY_DISH_RECIPES"],
+              blockers: [
+                {
+                  code: "RECIPE_SELECTION_BLOCKED",
+                  message: "Chưa có công thức đã phát hành.",
+                },
+              ],
               warnings: [],
               history_periods: [],
             },
