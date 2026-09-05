@@ -3,6 +3,8 @@ import type { AtlasRpcName, AtlasRpcRequest } from "../connection/atlasRpc";
 import {
   RECIPE_RPC_FUNCTIONS,
   createRecipeApi,
+  dishRecipeCopyRequest,
+  dishRecipeOperatorRequest,
   recipeCommandRequest,
   recipeReadRequest,
   recipeWorkflowCommandRequest,
@@ -142,5 +144,97 @@ describe("recipe API contract", () => {
       RECIPE_RPC_FUNCTIONS.copyVersion,
       RECIPE_RPC_FUNCTIONS.applyImport,
     ]);
+  });
+
+  it("builds effective operator reads for exactly one context", () => {
+    expect(
+      dishRecipeOperatorRequest(
+        "subject-1",
+        "operator-1",
+        "2026-09-05",
+        "dish-1",
+        { kind: "system", schoolTypeId: "school-type-1" },
+      ),
+    ).toEqual({
+      contract_version: "RECIPE-EFFECTIVE.v1",
+      requested_by_auth_subject: "subject-1",
+      correlation_id: "operator-1",
+      payload: {
+        as_of_date: "2026-09-05",
+        dish_id: "dish-1",
+        school_type_id: "school-type-1",
+      },
+    });
+  });
+
+  it("preserves caller-supplied Dish-copy replay identities", () => {
+    expect(
+      dishRecipeCopyRequest({
+        authSubject: "subject-1",
+        correlationId: "copy-correlation",
+        commandId: "10000000-0000-4000-8000-000000000010",
+        idempotencyKey: "copy-dish:stable-key",
+        requestedAt: "2026-09-05T02:00:00.000Z",
+        expectedVersion: 4,
+        reasonCode: "COPY_DISH_RECIPES",
+        reasonNote: "Sao chép công thức đã xác nhận.",
+        sourceDishId: "dish-source",
+        targetDishId: "dish-target",
+      }),
+    ).toEqual({
+      contract_version: "RECIPE-EFFECTIVE.v1",
+      command_id: "10000000-0000-4000-8000-000000000010",
+      correlation_id: "copy-correlation",
+      idempotency_key: "copy-dish:stable-key",
+      expected_version: 4,
+      requested_by_auth_subject: "subject-1",
+      requested_at: "2026-09-05T02:00:00.000Z",
+      reason_code: "COPY_DISH_RECIPES",
+      reason_note: "Sao chép công thức đã xác nhận.",
+      payload: {
+        source_dish_id: "dish-source",
+        target_dish_id: "dish-target",
+      },
+    });
+  });
+
+  it("maps effective operator and Dish-copy calls to reviewed RPCs", async () => {
+    const calls: Array<[AtlasRpcName, AtlasRpcRequest]> = [];
+    const api = createRecipeApi({
+      invoke: vi.fn(async (name, request) => {
+        calls.push([name, request]);
+        return {
+          kind: "success" as const,
+          response: { success: true as const },
+        };
+      }),
+    });
+    const copyRequest = dishRecipeCopyRequest({
+      authSubject: "subject-1",
+      correlationId: "copy-correlation",
+      commandId: "10000000-0000-4000-8000-000000000010",
+      idempotencyKey: "copy-dish:stable-key",
+      requestedAt: "2026-09-05T02:00:00.000Z",
+      expectedVersion: 4,
+      reasonCode: "COPY_DISH_RECIPES",
+      reasonNote: "Sao chép công thức đã xác nhận.",
+      sourceDishId: "dish-source",
+      targetDishId: "dish-target",
+    });
+
+    await api.getEffectiveWorkbench(
+      "subject-1",
+      "operator-1",
+      "2026-09-05",
+      "dish-1",
+      { kind: "school", schoolId: "school-1" },
+    );
+    await api.copyDishRecipes(copyRequest);
+
+    expect(calls.map(([name]) => name)).toEqual([
+      RECIPE_RPC_FUNCTIONS.getEffectiveWorkbench,
+      RECIPE_RPC_FUNCTIONS.copyDishRecipes,
+    ]);
+    expect(calls[1]?.[1]).toBe(copyRequest);
   });
 });

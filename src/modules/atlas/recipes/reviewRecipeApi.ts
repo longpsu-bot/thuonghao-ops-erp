@@ -6,6 +6,7 @@ import type {
 } from "../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../review/reviewMode";
 import type {
+  DishRecipeCopyCommandRequest,
   RecipeApi,
   RecipeCommandRequest,
   RecipeWorkflowCommandRequest,
@@ -346,6 +347,50 @@ export function createReviewRecipeApi(
         );
       return Promise.resolve(blocked ?? success(clone(data)));
     },
+    getEffectiveWorkbench(
+      _authSubject,
+      _correlationId,
+      asOfDate,
+      dishId,
+      context,
+    ) {
+      if (scenario === "loading")
+        return new Promise<AtlasRpcResult>(() => undefined);
+      const blocked = blockedRead();
+      const dish = data.dishes.find((item) => item.dish_id === dishId);
+      return Promise.resolve(
+        blocked ??
+          success({
+            workbench: {
+              dish: {
+                dish_id: dishId,
+                dish_name: dish?.dish_name ?? "Món ăn xem thử",
+                dish_type_name: dish?.dish_type_name ?? null,
+                dish_status: dish?.dish_status ?? "ACTIVE",
+              },
+              context_kind:
+                context.kind === "system" ? "SYSTEM_SCHOOL_TYPE" : "SCHOOL",
+              as_of_date: asOfDate,
+              school_id: context.kind === "school" ? context.schoolId : null,
+              school_type_id:
+                context.kind === "system"
+                  ? context.schoolTypeId
+                  : ids.schoolType,
+              selected_recipe: null,
+              basis_portions: null,
+              editable_state: "LOCKED_RELEASED",
+              is_editable: false,
+              is_operationally_locked: false,
+              current_effective_bom: [],
+              school_exception_count: 0,
+              allowed_actions: [],
+              blockers: [],
+              warnings: [],
+              history_periods: [],
+            },
+          }),
+      );
+    },
     createDish: mutate((request) => {
       const code =
         payloadString(request, "dish_code") || `dish-${crypto.randomUUID()}`;
@@ -583,6 +628,21 @@ export function createReviewRecipeApi(
       );
       return true;
     }),
+    copyDishRecipes(request: DishRecipeCopyCommandRequest) {
+      const blocked = blockedWrite();
+      if (blocked) return Promise.resolve(blocked);
+      return Promise.resolve(
+        success({
+          contract_version: "RECIPE-EFFECTIVE.v1",
+          command_id: request.command_id,
+          correlation_id: request.correlation_id,
+          idempotency_status: "COMPLETED",
+          scope_results: [],
+          safe_operator_message:
+            "Đã mô phỏng sao chép công thức theo món trong trình duyệt.",
+        }),
+      );
+    },
     applyImport: mutate(() => true),
   };
 }

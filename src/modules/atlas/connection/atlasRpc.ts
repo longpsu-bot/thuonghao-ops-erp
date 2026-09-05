@@ -53,6 +53,7 @@ export const ATLAS_RPC_FUNCTIONS = {
   "atlas_api.save_recipe": "save_recipe",
   "atlas_api.release_recipe": "release_recipe",
   "atlas_api.copy_recipe_version": "copy_recipe_version",
+  "atlas_api.copy_dish_recipes": "copy_dish_recipes",
   "atlas_api.apply_recipe_import": "apply_recipe_import",
   "atlas_api.get_recipe_adjustment_workbench":
     "get_recipe_adjustment_workbench",
@@ -60,6 +61,12 @@ export const ATLAS_RPC_FUNCTIONS = {
     "get_recipe_adjustment_operator_workbench",
   "atlas_api.resolve_effective_recipe_composition":
     "resolve_effective_recipe_composition",
+  "atlas_api.resolve_system_effective_recipe_composition":
+    "resolve_system_effective_recipe_composition",
+  "atlas_api.get_recipe_effective_target_context":
+    "get_recipe_effective_target_context",
+  "atlas_api.get_dish_recipe_operator_workbench":
+    "get_dish_recipe_operator_workbench",
   "atlas_api.preview_recipe_composition_adjustment":
     "preview_recipe_composition_adjustment",
   "atlas_api.create_recipe_composition_adjustment":
