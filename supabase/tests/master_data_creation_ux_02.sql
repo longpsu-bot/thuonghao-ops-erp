@@ -70,6 +70,19 @@ insert into atlas_core.actor_scopes (actor_id, scope_kind) values
   ('cd020000-0000-4000-8000-000000000001', 'GLOBAL');
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code, decimal_scale) values
   ('cd020000-0000-4000-8000-000000000010', 'creation-ux-02-kg', 'Creation UX kilogram', 'MASS', 3);
+insert into atlas_admin.school_types (
+  school_type_id, school_type_code, school_type_name
+) values
+  (
+    'cd020000-0000-4000-8000-000000000011',
+    'v1-school-type-1',
+    'TIỂU HỌC'
+  ),
+  (
+    'cd020000-0000-4000-8000-000000000012',
+    'v1-school-type-2',
+    'TRUNG HỌC'
+  );
 
 create temporary table creation_cases (kind text primary key, payload jsonb);
 insert into creation_cases values
