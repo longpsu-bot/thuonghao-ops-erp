@@ -73,6 +73,387 @@ begin
 end;
 $patch$;
 
+alter table atlas_admin.recipe_composition_adjustments
+  drop constraint recipe_composition_adjustments_typed_scope_check;
+alter table atlas_admin.recipe_composition_adjustments
+  add constraint recipe_composition_adjustments_typed_scope_check check (
+    (
+      scope_kind = 'SYSTEM_INGREDIENT'
+      and school_id is null
+      and dish_id is null
+      and school_type_id is null
+      and target_ingredient_id is not null
+      and target_recipe_line_id is null
+      and adjustment_line_id is null
+    )
+    or (
+      scope_kind = 'SYSTEM_DISH'
+      and school_id is null
+      and dish_id is not null
+      and (
+        (
+          action_kind = 'ADD'
+          and target_ingredient_id is not null
+          and target_recipe_line_id is null
+          and adjustment_line_id is not null
+        )
+        or (
+          action_kind <> 'ADD'
+          and target_ingredient_id is null
+          and (
+            (target_recipe_line_id is not null)::integer
+            + (adjustment_line_id is not null)::integer = 1
+          )
+        )
+      )
+    )
+    or (
+      scope_kind = 'SCHOOL'
+      and school_id is not null
+      and dish_id is null
+      and school_type_id is null
+      and target_ingredient_id is not null
+      and target_recipe_line_id is null
+      and adjustment_line_id is null
+    )
+    or (
+      scope_kind = 'SCHOOL_DISH'
+      and school_id is not null
+      and dish_id is not null
+      and school_type_id is null
+      and (
+        (
+          action_kind = 'ADD'
+          and target_ingredient_id is not null
+          and target_recipe_line_id is null
+          and adjustment_line_id is not null
+        )
+        or (
+          action_kind <> 'ADD'
+          and target_ingredient_id is null
+          and (
+            (target_recipe_line_id is not null)::integer
+            + (adjustment_line_id is not null)::integer = 1
+          )
+        )
+      )
+    )
+  );
+
+create or replace function atlas_core.rmvp_02b_typed_target_lock_key(
+  target_scope_kind text,
+  target_action_kind text,
+  target_school_id uuid,
+  target_dish_id uuid,
+  target_school_type_id uuid,
+  target_ingredient_id uuid,
+  target_recipe_line_id uuid,
+  target_adjustment_line_id uuid
+)
+returns bigint
+language sql
+immutable
+security invoker
+set search_path = ''
+as $$
+  select pg_catalog.hashtextextended(
+    pg_catalog.jsonb_build_object(
+      'contract', 'RMVP-02B_TYPED_TARGET_V1',
+      'scope_kind', target_scope_kind,
+      'school_id', target_school_id,
+      'dish_id', target_dish_id,
+      'school_type_id', target_school_type_id,
+      'target_kind', case
+        when target_scope_kind in ('SYSTEM_INGREDIENT', 'SCHOOL')
+          then 'INGREDIENT'
+        when target_action_kind = 'ADD'
+          then 'OWNS_ADJUSTMENT_LINE'
+        when target_recipe_line_id is not null
+          then 'RECIPE_LINE'
+        else 'ADJUSTMENT_LINE'
+      end,
+      'target_id', case
+        when target_scope_kind in ('SYSTEM_INGREDIENT', 'SCHOOL')
+          then target_ingredient_id
+        when target_action_kind = 'ADD'
+          then target_adjustment_line_id
+        when target_recipe_line_id is not null
+          then target_recipe_line_id
+        else target_adjustment_line_id
+      end
+    )::text,
+    2002002
+  );
+$$;
+
+do $patch$
+declare
+  v_original text;
+  v_patched text;
+begin
+  v_original := pg_catalog.pg_get_functiondef(
+    'atlas_core.rmvp_02b_validate_proposed_adjustment(jsonb,date,uuid)'
+      ::pg_catalog.regprocedure
+  );
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$            and v_target_recipe_line_id is not null
+            and v_adjustment_line_id is null$old$,
+$new$            and (
+              (v_target_recipe_line_id is not null)::integer
+              + (v_adjustment_line_id is not null)::integer = 1
+            )$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE validator XOR patch did not match';
+  end if;
+  v_original := v_patched;
+
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$               and root.target_recipe_line_id = v_target_recipe_line_id$old$,
+$new$               and (
+                 (
+                   v_target_recipe_line_id is not null
+                   and root.target_recipe_line_id = v_target_recipe_line_id
+                 )
+                 or (
+                   v_adjustment_line_id is not null
+                   and root.adjustment_line_id = v_adjustment_line_id
+                 )
+               )$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE validator overlap patch did not match';
+  end if;
+  execute v_patched;
+
+  v_original := pg_catalog.pg_get_functiondef(
+    'atlas_core.rmvp_02b_resolve_selected_composition(date,uuid,uuid,jsonb,uuid,uuid)'
+      ::pg_catalog.regprocedure
+  );
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$      case
+        when item ->> 'action_kind' = 'ADD'
+          then 'ADJUSTMENT_LINE'
+        else 'RECIPE_LINE'
+      end as target_kind,$old$,
+$new$      case
+        when item ->> 'action_kind' = 'ADD'
+          then 'OWNS_ADJUSTMENT_LINE'
+        when item ->> 'target_recipe_line_id' is not null
+          then 'RECIPE_LINE'
+        else 'ADJUSTMENT_LINE'
+      end as target_kind,$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE duplicate target-kind patch did not match';
+  end if;
+  v_original := v_patched;
+
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$      case
+        when item ->> 'action_kind' = 'ADD'
+          then item ->> 'adjustment_line_id'
+        else item ->> 'target_recipe_line_id'
+      end as target_id,$old$,
+$new$      case
+        when item ->> 'action_kind' = 'ADD'
+          then item ->> 'adjustment_line_id'
+        when item ->> 'target_recipe_line_id' is not null
+          then item ->> 'target_recipe_line_id'
+        else item ->> 'adjustment_line_id'
+      end as target_id,$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE duplicate target-id patch did not match';
+  end if;
+  v_original := v_patched;
+
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$      case
+        when item ->> 'action_kind' = 'ADD'
+          then 'ADJUSTMENT_LINE'
+        else 'RECIPE_LINE'
+      end,
+      case
+        when item ->> 'action_kind' = 'ADD'
+          then item ->> 'adjustment_line_id'
+        else item ->> 'target_recipe_line_id'
+      end$old$,
+$new$      case
+        when item ->> 'action_kind' = 'ADD'
+          then 'OWNS_ADJUSTMENT_LINE'
+        when item ->> 'target_recipe_line_id' is not null
+          then 'RECIPE_LINE'
+        else 'ADJUSTMENT_LINE'
+      end,
+      case
+        when item ->> 'action_kind' = 'ADD'
+          then item ->> 'adjustment_line_id'
+        when item ->> 'target_recipe_line_id' is not null
+          then item ->> 'target_recipe_line_id'
+        else item ->> 'adjustment_line_id'
+      end$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE duplicate grouping patch did not match';
+  end if;
+  v_original := v_patched;
+
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$    order by item ->> 'adjustment_id'$old$,
+$new$    order by
+      case when item ->> 'action_kind' = 'ADD' then 0 else 1 end,
+      item ->> 'adjustment_id'$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE layer ordering patch did not match';
+  end if;
+  v_original := v_patched;
+
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$        if v_line ->> 'base_recipe_line_id'
+             = v_rule ->> 'target_recipe_line_id' then$old$,
+$new$        if (
+          v_rule ->> 'target_recipe_line_id' is not null
+          and v_line ->> 'base_recipe_line_id'
+            = v_rule ->> 'target_recipe_line_id'
+        ) or (
+          v_rule ->> 'target_recipe_line_id' is null
+          and v_line ->> 'adjustment_line_id'
+            = v_rule ->> 'adjustment_line_id'
+        ) then$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE modifier match patch did not match';
+  end if;
+  execute v_patched;
+end;
+$patch$;
+
+reset role;
+
+do $patch$
+declare
+  v_original text;
+  v_patched text;
+begin
+  v_original := pg_catalog.pg_get_functiondef(
+    'atlas_api.preview_recipe_composition_adjustment(jsonb)'
+      ::pg_catalog.regprocedure
+  );
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$  if v_proposal ->> 'action_kind' = 'REPLACE'
+     and v_proposal ->> 'target_recipe_line_id' is not null then$old$,
+$new$  if v_proposal ->> 'action_kind' = 'REPLACE'
+     and (
+       v_proposal ->> 'target_recipe_line_id' is not null
+       or v_proposal ->> 'adjustment_line_id' is not null
+     ) then$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Preview identity patch did not match';
+  end if;
+  v_original := v_patched;
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$    where line ->> 'base_recipe_line_id'
+      = v_proposal ->> 'target_recipe_line_id';$old$,
+$new$    where (
+      v_proposal ->> 'target_recipe_line_id' is not null
+      and line ->> 'base_recipe_line_id'
+        = v_proposal ->> 'target_recipe_line_id'
+    ) or (
+      v_proposal ->> 'target_recipe_line_id' is null
+      and line ->> 'adjustment_line_id'
+        = v_proposal ->> 'adjustment_line_id'
+    );$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Preview target lookup patch did not match';
+  end if;
+  execute v_patched;
+
+  v_original := pg_catalog.pg_get_functiondef(
+    'atlas_api.create_recipe_composition_adjustment(jsonb)'
+      ::pg_catalog.regprocedure
+  );
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$  if v_action = 'REPLACE'
+     and v_target_recipe_line_id is not null then$old$,
+$new$  if v_action = 'REPLACE'
+     and (
+       v_target_recipe_line_id is not null
+       or v_adjustment_line_id is not null
+     ) then$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Create identity patch did not match';
+  end if;
+  v_original := v_patched;
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$    where line ->> 'base_recipe_line_id' = v_target_recipe_line_id::text;$old$,
+$new$    where (
+      v_target_recipe_line_id is not null
+      and line ->> 'base_recipe_line_id' = v_target_recipe_line_id::text
+    ) or (
+      v_target_recipe_line_id is null
+      and line ->> 'adjustment_line_id' = v_adjustment_line_id::text
+    );$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Create target lookup patch did not match';
+  end if;
+  execute v_patched;
+
+  v_original := pg_catalog.pg_get_functiondef(
+    'atlas_api.supersede_recipe_composition_adjustment(jsonb)'
+      ::pg_catalog.regprocedure
+  );
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$  if v_root.action_kind = 'REPLACE'
+     and v_root.target_recipe_line_id is not null then$old$,
+$new$  if v_root.action_kind = 'REPLACE'
+     and (
+       v_root.target_recipe_line_id is not null
+       or v_root.adjustment_line_id is not null
+     ) then$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Supersede identity patch did not match';
+  end if;
+  v_original := v_patched;
+  v_patched := pg_catalog.replace(
+    v_original,
+$old$    where line ->> 'base_recipe_line_id'
+      = v_root.target_recipe_line_id::text;$old$,
+$new$    where (
+      v_root.target_recipe_line_id is not null
+      and line ->> 'base_recipe_line_id' = v_root.target_recipe_line_id::text
+    ) or (
+      v_root.target_recipe_line_id is null
+      and line ->> 'adjustment_line_id' = v_root.adjustment_line_id::text
+    );$new$
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Supersede target lookup patch did not match';
+  end if;
+  execute v_patched;
+end;
+$patch$;
+
+set role atlas_owner;
+
 create function atlas_core.recipe_effective_select_base_recipe(
   target_dish_id uuid,
   target_school_type_id uuid default null

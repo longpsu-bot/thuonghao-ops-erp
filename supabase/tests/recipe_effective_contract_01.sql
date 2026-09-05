@@ -371,6 +371,25 @@ insert into atlas_admin.recipe_composition_adjustments (
     null, 'c1600000-0000-0000-0000-000000000002', null,
     'c1000000-0000-0000-0000-000000000001',
     'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1800000-0000-0000-0000-000000000006',
+    'SCHOOL_DISH', 'ADD',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null,
+    'c1200000-0000-0000-0000-000000000010', null,
+    'c1a00000-0000-0000-0000-000000000002',
+    'c1000000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1800000-0000-0000-0000-000000000007',
+    'SCHOOL_DISH', 'ADJUST_QUANTITY',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null,
+    null, null, 'c1a00000-0000-0000-0000-000000000002',
+    'c1000000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'
   );
 
 insert into atlas_admin.recipe_composition_adjustment_revisions (
@@ -419,6 +438,22 @@ insert into atlas_admin.recipe_composition_adjustment_revisions (
     null, 4, null,
     'RECIPE_EFFECTIVE_TEST', 'Đổi định lượng món tại trường.',
     '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000006',
+    'c1800000-0000-0000-0000-000000000006',
+    'SCHOOL_DISH', 'ADD', 1, '2026-09-01',
+    null, 0.25, 'c1200000-0000-0000-0000-000000000001',
+    'RECIPE_EFFECTIVE_TEST', 'Thêm nguyên liệu tại trường.',
+    '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000007',
+    'c1800000-0000-0000-0000-000000000007',
+    'SCHOOL_DISH', 'ADJUST_QUANTITY', 1, '2026-10-01',
+    null, 0.6, null,
+    'RECIPE_EFFECTIVE_TEST', 'Đổi định lượng tương lai.',
+    '{}'::jsonb, 'c1000000-0000-0000-0000-000000000001'
   );
 
 update atlas_admin.recipe_composition_adjustments root
@@ -427,6 +462,46 @@ set current_revision_id = revision.recipe_composition_adjustment_revision_id,
 from atlas_admin.recipe_composition_adjustment_revisions revision
 where revision.recipe_composition_adjustment_id =
   root.recipe_composition_adjustment_id;
+
+create function pg_temp.recipe_effective_modifier(
+  p_scope text,
+  p_action text,
+  p_adjustment_id uuid,
+  p_revision_id uuid,
+  p_target_recipe_line_id uuid,
+  p_adjustment_line_id uuid,
+  p_dish_id uuid default 'c1300000-0000-0000-0000-000000000001'
+)
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_strip_nulls(
+    pg_catalog.jsonb_build_object(
+      'adjustment_id', p_adjustment_id,
+      'revision_id', p_revision_id,
+      'revision_number', 1,
+      'scope_kind', p_scope,
+      'action_kind', p_action,
+      'school_id', case when p_scope = 'SCHOOL_DISH'
+        then 'c1100000-0000-0000-0000-000000000020'::uuid end,
+      'dish_id', p_dish_id,
+      'school_type_id', case when p_scope = 'SYSTEM_DISH'
+        then 'c1100000-0000-0000-0000-000000000010'::uuid end,
+      'target_recipe_line_id', p_target_recipe_line_id,
+      'adjustment_line_id', p_adjustment_line_id,
+      'substitute_ingredient_id', case when p_action = 'REPLACE'
+        and p_scope = 'SYSTEM_DISH'
+          then 'c1200000-0000-0000-0000-000000000013'::uuid
+        when p_action = 'REPLACE'
+          then 'c1200000-0000-0000-0000-000000000011'::uuid end,
+      'quantity_per_basis', case when p_action = 'ADJUST_QUANTITY'
+        then 0.75 end,
+      'effective_from', '2026-09-01',
+      'reason_code', 'RECIPE_EFFECTIVE_TARGET_TEST',
+      'reason_note', 'Stable effective-line target regression.'
+    )
+  );
+$$;
 
 select is(
   atlas_core.recipe_effective_select_base_recipe(
@@ -471,6 +546,287 @@ select is(
     'c1300000-0000-0000-0000-000000000001'
   ) -> 'selected_recipe' ->> 'recipe_version_id',
   'D. School and explicit School-Type resolution select identically'
+);
+
+select ok(
+  (
+    select pg_catalog.bool_and(
+      exists (
+        select 1
+        from pg_catalog.jsonb_array_elements(
+          resolution.payload -> 'lines'
+        ) line
+        where line ->> 'base_recipe_line_id' =
+            'c1600000-0000-0000-0000-000000000003'
+          and line -> 'applied_adjustment_ids' ? case_row.adjustment_id::text
+      )
+    )
+    from (
+      values
+        ('REPLACE', 'c1b00000-0000-0000-0000-000000000101'::uuid,
+          'c1c00000-0000-0000-0000-000000000101'::uuid),
+        ('ADJUST_QUANTITY', 'c1b00000-0000-0000-0000-000000000102'::uuid,
+          'c1c00000-0000-0000-0000-000000000102'::uuid),
+        ('REMOVE', 'c1b00000-0000-0000-0000-000000000103'::uuid,
+          'c1c00000-0000-0000-0000-000000000103'::uuid)
+    ) case_row(action_kind, adjustment_id, revision_id)
+    cross join lateral (
+      select atlas_core.recipe_effective_resolve_composition(
+        '2026-09-05', null,
+        'c1300000-0000-0000-0000-000000000002',
+        'c1100000-0000-0000-0000-000000000010',
+        pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', case_row.action_kind,
+          case_row.adjustment_id, case_row.revision_id,
+          'c1600000-0000-0000-0000-000000000003', null,
+          'c1300000-0000-0000-0000-000000000002'
+        )
+      ) payload
+    ) resolution
+  ),
+  'H. SYSTEM_DISH modifiers target a base Recipe line'
+);
+
+select ok(
+  (
+    select pg_catalog.bool_and(
+      exists (
+        select 1
+        from pg_catalog.jsonb_array_elements(
+          resolution.payload -> 'lines'
+        ) line
+        where line ->> 'adjustment_line_id' =
+            'c1a00000-0000-0000-0000-000000000001'
+          and line -> 'applied_adjustment_ids' ? case_row.adjustment_id::text
+      )
+    )
+    from (
+      values
+        ('REPLACE', 'c1b00000-0000-0000-0000-000000000111'::uuid,
+          'c1c00000-0000-0000-0000-000000000111'::uuid),
+        ('ADJUST_QUANTITY', 'c1b00000-0000-0000-0000-000000000112'::uuid,
+          'c1c00000-0000-0000-0000-000000000112'::uuid),
+        ('REMOVE', 'c1b00000-0000-0000-0000-000000000113'::uuid,
+          'c1c00000-0000-0000-0000-000000000113'::uuid)
+    ) case_row(action_kind, adjustment_id, revision_id)
+    cross join lateral (
+      select atlas_core.recipe_effective_resolve_composition(
+        '2026-09-05', null,
+        'c1300000-0000-0000-0000-000000000001',
+        'c1100000-0000-0000-0000-000000000010',
+        pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', case_row.action_kind,
+          case_row.adjustment_id, case_row.revision_id, null,
+          'c1a00000-0000-0000-0000-000000000001'
+        )
+      ) payload
+    ) resolution
+  ),
+  'I. SYSTEM_DISH modifiers target a prior ADD adjustment line'
+);
+
+select ok(
+  (
+    select pg_catalog.bool_and(
+      exists (
+        select 1
+        from pg_catalog.jsonb_array_elements(
+          resolution.payload -> 'lines'
+        ) line
+        where line ->> 'base_recipe_line_id' =
+            'c1600000-0000-0000-0000-000000000003'
+          and line -> 'applied_adjustment_ids' ? case_row.adjustment_id::text
+      )
+    )
+    from (
+      values
+        ('REPLACE', 'c1b00000-0000-0000-0000-000000000121'::uuid,
+          'c1c00000-0000-0000-0000-000000000121'::uuid),
+        ('ADJUST_QUANTITY', 'c1b00000-0000-0000-0000-000000000122'::uuid,
+          'c1c00000-0000-0000-0000-000000000122'::uuid),
+        ('REMOVE', 'c1b00000-0000-0000-0000-000000000123'::uuid,
+          'c1c00000-0000-0000-0000-000000000123'::uuid)
+    ) case_row(action_kind, adjustment_id, revision_id)
+    cross join lateral (
+      select atlas_core.recipe_effective_resolve_composition(
+        '2026-09-05',
+        'c1100000-0000-0000-0000-000000000020',
+        'c1300000-0000-0000-0000-000000000002', null,
+        pg_temp.recipe_effective_modifier(
+          'SCHOOL_DISH', case_row.action_kind,
+          case_row.adjustment_id, case_row.revision_id,
+          'c1600000-0000-0000-0000-000000000003', null,
+          'c1300000-0000-0000-0000-000000000002'
+        )
+      ) payload
+    ) resolution
+  ),
+  'J. SCHOOL_DISH modifiers target a base Recipe line'
+);
+
+select ok(
+  (
+    select pg_catalog.bool_and(
+      exists (
+        select 1
+        from pg_catalog.jsonb_array_elements(
+          resolution.payload -> 'lines'
+        ) line
+        where line ->> 'adjustment_line_id' =
+            'c1a00000-0000-0000-0000-000000000001'
+          and line -> 'applied_adjustment_ids' ? case_row.adjustment_id::text
+      )
+    )
+    from (
+      values
+        ('REPLACE', 'c1b00000-0000-0000-0000-000000000131'::uuid,
+          'c1c00000-0000-0000-0000-000000000131'::uuid),
+        ('ADJUST_QUANTITY', 'c1b00000-0000-0000-0000-000000000132'::uuid,
+          'c1c00000-0000-0000-0000-000000000132'::uuid),
+        ('REMOVE', 'c1b00000-0000-0000-0000-000000000133'::uuid,
+          'c1c00000-0000-0000-0000-000000000133'::uuid)
+    ) case_row(action_kind, adjustment_id, revision_id)
+    cross join lateral (
+      select atlas_core.recipe_effective_resolve_composition(
+        '2026-09-05',
+        'c1100000-0000-0000-0000-000000000020',
+        'c1300000-0000-0000-0000-000000000001', null,
+        pg_temp.recipe_effective_modifier(
+          'SCHOOL_DISH', case_row.action_kind,
+          case_row.adjustment_id, case_row.revision_id, null,
+          'c1a00000-0000-0000-0000-000000000001'
+        )
+      ) payload
+    ) resolution
+  ),
+  'K. SCHOOL_DISH modifiers target a system ADD line'
+);
+
+select ok(
+  (
+    select pg_catalog.bool_and(
+      exists (
+        select 1
+        from pg_catalog.jsonb_array_elements(
+          resolution.payload -> 'lines'
+        ) line
+        where line ->> 'adjustment_line_id' =
+            'c1a00000-0000-0000-0000-000000000002'
+          and line -> 'applied_adjustment_ids' ? case_row.adjustment_id::text
+      )
+    )
+    from (
+      values
+        ('REPLACE', 'c1b00000-0000-0000-0000-000000000141'::uuid,
+          'c1c00000-0000-0000-0000-000000000141'::uuid),
+        ('ADJUST_QUANTITY', 'c1b00000-0000-0000-0000-000000000142'::uuid,
+          'c1c00000-0000-0000-0000-000000000142'::uuid),
+        ('REMOVE', 'c1b00000-0000-0000-0000-000000000143'::uuid,
+          'c1c00000-0000-0000-0000-000000000143'::uuid)
+    ) case_row(action_kind, adjustment_id, revision_id)
+    cross join lateral (
+      select atlas_core.recipe_effective_resolve_composition(
+        '2026-09-05',
+        'c1100000-0000-0000-0000-000000000020',
+        'c1300000-0000-0000-0000-000000000001', null,
+        pg_temp.recipe_effective_modifier(
+          'SCHOOL_DISH', case_row.action_kind,
+          case_row.adjustment_id, case_row.revision_id, null,
+          'c1a00000-0000-0000-0000-000000000002'
+        )
+      ) payload
+    ) resolution
+  ),
+  'L. SCHOOL_DISH modifiers target a prior applicable SCHOOL_DISH ADD line'
+);
+
+select ok(
+  atlas_core.rmvp_02b_validate_proposed_adjustment(
+    pg_temp.recipe_effective_modifier(
+      'SCHOOL_DISH', 'REMOVE',
+      'c1b00000-0000-0000-0000-000000000151',
+      'c1c00000-0000-0000-0000-000000000151',
+      'c1600000-0000-0000-0000-000000000002',
+      'c1a00000-0000-0000-0000-000000000001'
+    ),
+    '2026-09-05'
+  ) -> 'blockers' @? '$[*] ? (@.code == "TYPED_SCOPE_INVALID")',
+  'M. both stable target IDs fail typed validation'
+);
+
+select ok(
+  atlas_core.rmvp_02b_validate_proposed_adjustment(
+    pg_temp.recipe_effective_modifier(
+      'SCHOOL_DISH', 'REMOVE',
+      'c1b00000-0000-0000-0000-000000000152',
+      'c1c00000-0000-0000-0000-000000000152', null, null
+    ),
+    '2026-09-05'
+  ) -> 'blockers' @? '$[*] ? (@.code == "TYPED_SCOPE_INVALID")',
+  'N. a missing stable target ID fails typed validation'
+);
+
+select ok(
+  atlas_core.recipe_effective_resolve_composition(
+    '2026-09-05',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null,
+    pg_temp.recipe_effective_modifier(
+      'SCHOOL_DISH', 'REMOVE',
+      'c1b00000-0000-0000-0000-000000000153',
+      'c1c00000-0000-0000-0000-000000000153', null,
+      'c1afffff-0000-0000-0000-000000000099'
+    )
+  ) -> 'blockers' @? '$[*] ? (@.code == "TARGET_NOT_APPLICABLE")',
+  'O. a non-effective adjustment-line target is blocked'
+);
+
+select ok(
+  atlas_core.rmvp_02b_typed_target_lock_key(
+    'SCHOOL_DISH', 'ADD',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null, null, null,
+    'c1a00000-0000-0000-0000-000000000001'
+  ) <> atlas_core.rmvp_02b_typed_target_lock_key(
+    'SCHOOL_DISH', 'REMOVE',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null, null, null,
+    'c1a00000-0000-0000-0000-000000000001'
+  )
+  and atlas_core.rmvp_02b_typed_target_lock_key(
+    'SCHOOL_DISH', 'REMOVE',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null, null, null,
+    'c1a00000-0000-0000-0000-000000000001'
+  ) = atlas_core.rmvp_02b_typed_target_lock_key(
+    'SCHOOL_DISH', 'ADJUST_QUANTITY',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null, null, null,
+    'c1a00000-0000-0000-0000-000000000001'
+  )
+  and atlas_core.rmvp_02b_typed_target_lock_key(
+    'SCHOOL_DISH', 'REMOVE',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null, null, null,
+    'c1a00000-0000-0000-0000-000000000001'
+  ) <> atlas_core.rmvp_02b_typed_target_lock_key(
+    'SCHOOL_DISH', 'REMOVE',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1300000-0000-0000-0000-000000000001', null, null, null,
+    'c1a00000-0000-0000-0000-000000000002'
+  )
+  and atlas_core.rmvp_02b_validate_proposed_adjustment(
+    pg_temp.recipe_effective_modifier(
+      'SCHOOL_DISH', 'REMOVE',
+      'c1b00000-0000-0000-0000-000000000154',
+      'c1c00000-0000-0000-0000-000000000154', null,
+      'c1a00000-0000-0000-0000-000000000002'
+    ) || pg_catalog.jsonb_build_object(
+      'effective_from', '2026-10-15'
+    ),
+    '2026-10-15'
+  ) -> 'blockers' @? '$[*] ? (@.code == "OVERLAPPING_ACTIVE_RULE")',
+  'P. target locks distinguish owners and serialize modifiers by stable origin'
 );
 
 create function pg_temp.recipe_effective_read(payload jsonb)
@@ -587,6 +943,120 @@ select ok(
     where result_name = 'school-target-context'
   ),
   'R. School context returns the final currently visible effective lines'
+);
+
+create function pg_temp.recipe_effective_rmvp_read(payload jsonb)
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02B.v1',
+    'requested_by_auth_subject',
+      'c1000000-0000-0000-0000-000000000101',
+    'correlation_id', 'c1000000-0000-0000-0000-000000000202',
+    'payload', payload
+  );
+$$;
+
+create function pg_temp.recipe_effective_rmvp_command(payload jsonb)
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02B.v1',
+    'command_id', 'c1d00000-0000-0000-0000-000000000201',
+    'correlation_id', 'c1000000-0000-0000-0000-000000000202',
+    'idempotency_key', 'recipe-effective-target-roundtrip',
+    'expected_version', 1,
+    'requested_by_auth_subject',
+      'c1000000-0000-0000-0000-000000000101',
+    'requested_at', pg_catalog.transaction_timestamp() + interval '1 second',
+    'reason_code', 'RECIPE_EFFECTIVE_TARGET_TEST',
+    'reason_note', 'Preview and create stable target round-trip.',
+    'payload', payload
+  );
+$$;
+
+create temporary table recipe_effective_roundtrip_target as
+select line ->> 'target_id' as target_id
+from recipe_effective_results result
+cross join lateral pg_catalog.jsonb_array_elements(
+  result.response_payload -> 'target_context' -> 'effective_lines'
+) line
+where result.result_name = 'school-target-context'
+  and line ->> 'target_kind' = 'ADJUSTMENT_LINE'
+  and line ->> 'source_layer' = 'SYSTEM_DISH';
+grant select on recipe_effective_roundtrip_target to authenticated;
+
+set local role authenticated;
+
+insert into recipe_effective_results values (
+  'adjustment-target-preview',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'school_id', 'c1100000-0000-0000-0000-000000000020',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SCHOOL_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000201',
+          'c1c00000-0000-0000-0000-000000000201', null,
+          (select target_id::uuid from recipe_effective_roundtrip_target)
+        )
+      )
+    )
+  )
+),
+(
+  'adjustment-target-create',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_command(
+      pg_temp.recipe_effective_modifier(
+        'SCHOOL_DISH', 'ADJUST_QUANTITY',
+        'c1b00000-0000-0000-0000-000000000201',
+        'c1c00000-0000-0000-0000-000000000201', null,
+        (select target_id::uuid from recipe_effective_roundtrip_target)
+      ) || pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'preview_school_id',
+          'c1100000-0000-0000-0000-000000000020',
+        'preview_dish_id',
+          'c1300000-0000-0000-0000-000000000001',
+        'source_evidence', pg_catalog.jsonb_build_object(
+          'source', 'recipe-effective-contract-test'
+        )
+      )
+    )
+  )
+);
+
+reset role;
+
+select ok(
+  (
+    select response_payload #>> '{preview,can_save}' = 'true'
+      and response_payload #>>
+        '{preview,proposed_adjustment,adjustment_line_id}' =
+        (select target_id from recipe_effective_roundtrip_target)
+    from recipe_effective_results
+    where result_name = 'adjustment-target-preview'
+  )
+  and (
+    select response_payload ->> 'success' = 'true'
+    from recipe_effective_results
+    where result_name = 'adjustment-target-create'
+  )
+  and exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id =
+        'c1b00000-0000-0000-0000-000000000201'
+      and root.target_recipe_line_id is null
+      and root.adjustment_line_id =
+        (select target_id::uuid from recipe_effective_roundtrip_target)
+  ),
+  'S. stable target identity round-trips through Preview and Create'
 );
 
 select * from finish();
