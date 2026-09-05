@@ -443,8 +443,7 @@ export function dishRecipeOperatorWorkbenchFromResult(
     ) ||
     (source.editable_state === "EDITABLE_BASE" &&
       (source.is_operationally_locked ||
-        source.is_editable !==
-          baseAuthoring.allowed_actions.save_recipe ||
+        source.is_editable !== baseAuthoring.allowed_actions.save_recipe ||
         allowedActions.includes("CREATE_CHANGE_ORDER"))) ||
     (source.editable_state === "LOCKED_CHANGE_ORDER" &&
       (!source.is_operationally_locked ||
