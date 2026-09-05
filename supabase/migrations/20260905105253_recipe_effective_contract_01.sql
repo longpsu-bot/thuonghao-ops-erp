@@ -2031,6 +2031,23 @@ grant execute on function
   )
 to atlas_read_runtime, atlas_master_data_command_runtime;
 
+-- Weekly Menu validation is owned by the planning command runtime and has
+-- always resolved the effective Recipe through the RMVP-02B compatibility
+-- function. Recreating that function above drops its prior EXECUTE grant, and
+-- the centralized selector adds two new invoker-security dependencies.
+grant execute on function
+  atlas_core.recipe_effective_select_base_recipe(uuid, uuid),
+  atlas_core.recipe_effective_resolve_composition(
+    date, uuid, uuid, uuid, jsonb, uuid, uuid
+  ),
+  atlas_core.rmvp_02b_resolve_selected_composition(
+    date, uuid, uuid, jsonb, uuid, uuid
+  ),
+  atlas_core.rmvp_02b_resolve_effective_composition(
+    date, uuid, uuid, jsonb, uuid, uuid
+  )
+to atlas_planning_command_runtime;
+
 grant execute on function
   atlas_core.recipe_effective_operator_lines(jsonb),
   atlas_core.recipe_effective_history(date, uuid, uuid, uuid),
