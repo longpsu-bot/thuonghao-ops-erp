@@ -1333,5 +1333,273 @@ select ok(
   'Z. backend effectiveness and effective_to remain independent ledger fields'
 );
 
+insert into atlas_admin.ingredients (
+  ingredient_id, ingredient_code, ingredient_name, ingredient_group,
+  purchase_unit_id, ingredient_type, shopping_type, order_step,
+  ingredient_status
+) values (
+  'c1200000-0000-0000-0000-000000000014',
+  'recipe-effective-inactive', 'Nguyên liệu ngưng dùng', 'Food',
+  'c1200000-0000-0000-0000-000000000001', 'Food', 'Planned', 1,
+  'INACTIVE'
+);
+
+insert into atlas_admin.dishes (
+  dish_id, dish_code, dish_name, dish_status, display_order
+) values
+  ('c1300000-0000-0000-0000-000000000004',
+    'recipe-copy-primary-only', 'Món nguồn chỉ Tiểu học', 'ACTIVE', 4),
+  ('c1300000-0000-0000-0000-000000000005',
+    'recipe-copy-target-all', 'Món đích đủ phạm vi', 'ACTIVE', 5),
+  ('c1300000-0000-0000-0000-000000000006',
+    'recipe-copy-target-partial', 'Món đích thiếu phạm vi', 'ACTIVE', 6),
+  ('c1300000-0000-0000-0000-000000000007',
+    'recipe-copy-target-locked', 'Món đích đã khóa', 'ACTIVE', 7),
+  ('c1300000-0000-0000-0000-000000000008',
+    'recipe-copy-source-failure', 'Món nguồn lỗi phạm vi hai', 'ACTIVE', 8),
+  ('c1300000-0000-0000-0000-000000000009',
+    'recipe-copy-target-atomic', 'Món đích kiểm tra nguyên tử', 'ACTIVE', 9);
+
+insert into atlas_admin.recipes (recipe_id, dish_id, school_type_id) values
+  ('c1400000-0000-0000-0000-000000000006',
+    'c1300000-0000-0000-0000-000000000004',
+    'c1100000-0000-0000-0000-000000000010'),
+  ('c1400000-0000-0000-0000-000000000007',
+    'c1300000-0000-0000-0000-000000000008',
+    'c1100000-0000-0000-0000-000000000010'),
+  ('c1400000-0000-0000-0000-000000000008',
+    'c1300000-0000-0000-0000-000000000008',
+    'c1100000-0000-0000-0000-000000000011');
+
+insert into atlas_admin.recipe_versions (
+  recipe_version_id, recipe_id, version_number, basis_portions,
+  created_by_actor_id, source_evidence
+) values
+  ('c1500000-0000-0000-0000-000000000006',
+    'c1400000-0000-0000-0000-000000000006', 1, 100,
+    'c1000000-0000-0000-0000-000000000001', '{}'::jsonb),
+  ('c1500000-0000-0000-0000-000000000007',
+    'c1400000-0000-0000-0000-000000000007', 1, 100,
+    'c1000000-0000-0000-0000-000000000001', '{}'::jsonb),
+  ('c1500000-0000-0000-0000-000000000008',
+    'c1400000-0000-0000-0000-000000000008', 1, 100,
+    'c1000000-0000-0000-0000-000000000001', '{}'::jsonb);
+
+insert into atlas_admin.recipe_lines (recipe_line_id, recipe_id, line_code)
+values
+  ('c1600000-0000-0000-0000-000000000006',
+    'c1400000-0000-0000-0000-000000000006', 'copy-line-6'),
+  ('c1600000-0000-0000-0000-000000000007',
+    'c1400000-0000-0000-0000-000000000007', 'copy-line-7'),
+  ('c1600000-0000-0000-0000-000000000008',
+    'c1400000-0000-0000-0000-000000000008', 'copy-line-8');
+
+insert into atlas_admin.recipe_line_revisions (
+  recipe_line_revision_id, recipe_id, recipe_version_id, recipe_line_id,
+  line_revision_number, ingredient_id, quantity_per_basis, unit_id,
+  created_by_actor_id
+) values
+  ('c1700000-0000-0000-0000-000000000006',
+    'c1400000-0000-0000-0000-000000000006',
+    'c1500000-0000-0000-0000-000000000006',
+    'c1600000-0000-0000-0000-000000000006', 1,
+    'c1200000-0000-0000-0000-000000000010', 1,
+    'c1200000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'),
+  ('c1700000-0000-0000-0000-000000000007',
+    'c1400000-0000-0000-0000-000000000007',
+    'c1500000-0000-0000-0000-000000000007',
+    'c1600000-0000-0000-0000-000000000007', 1,
+    'c1200000-0000-0000-0000-000000000010', 1,
+    'c1200000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'),
+  ('c1700000-0000-0000-0000-000000000008',
+    'c1400000-0000-0000-0000-000000000008',
+    'c1500000-0000-0000-0000-000000000008',
+    'c1600000-0000-0000-0000-000000000008', 1,
+    'c1200000-0000-0000-0000-000000000014', 1,
+    'c1200000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001');
+
+update atlas_admin.recipe_versions
+set recipe_version_status = 'VALIDATED',
+    validated_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
+    validated_at = pg_catalog.transaction_timestamp()
+where recipe_version_id in (
+  'c1500000-0000-0000-0000-000000000006',
+  'c1500000-0000-0000-0000-000000000007',
+  'c1500000-0000-0000-0000-000000000008'
+);
+update atlas_admin.recipe_versions
+set recipe_version_status = 'RELEASED_FOR_PLANNING',
+    released_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
+    released_at = pg_catalog.transaction_timestamp()
+where recipe_version_id in (
+  'c1500000-0000-0000-0000-000000000006',
+  'c1500000-0000-0000-0000-000000000007',
+  'c1500000-0000-0000-0000-000000000008'
+);
+
+insert into atlas_planning.weekly_menus (
+  weekly_menu_id, week_start, week_end, source_type, source_name,
+  source_signature, weekly_menu_status, row_count, imported_by_actor_id
+) values (
+  'c1e00000-0000-0000-0000-000000000001',
+  '2026-09-07', '2026-09-13', 'TEST', 'Recipe copy lock evidence',
+  'recipe-effective-copy-lock', 'DRAFT', 1,
+  'c1000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.weekly_menu_lines (
+  weekly_menu_line_id, weekly_menu_id, school_id, service_date,
+  menu_slot_code, dish_id, created_by_actor_id, updated_by_actor_id
+) values (
+  'c1e00000-0000-0000-0000-000000000002',
+  'c1e00000-0000-0000-0000-000000000001',
+  'c1100000-0000-0000-0000-000000000020', '2026-09-08',
+  'soup', 'c1300000-0000-0000-0000-000000000007',
+  'c1000000-0000-0000-0000-000000000001',
+  'c1000000-0000-0000-0000-000000000001'
+);
+update atlas_planning.weekly_menus
+set weekly_menu_status = 'VALIDATED'
+where weekly_menu_id = 'c1e00000-0000-0000-0000-000000000001';
+insert into atlas_planning.weekly_menu_approval_snapshots (
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  approved_by_actor_id, approved_at
+) values (
+  'c1e00000-0000-0000-0000-000000000003',
+  'c1e00000-0000-0000-0000-000000000001', 1,
+  'c1000000-0000-0000-0000-000000000001',
+  pg_catalog.transaction_timestamp()
+);
+insert into atlas_planning.weekly_menu_approval_snapshot_lines (
+  weekly_menu_approval_snapshot_line_id,
+  weekly_menu_approval_snapshot_id, weekly_menu_id, weekly_menu_version,
+  weekly_menu_line_id, school_id, service_date, menu_slot_code, dish_id
+) values (
+  'c1e00000-0000-0000-0000-000000000004',
+  'c1e00000-0000-0000-0000-000000000003',
+  'c1e00000-0000-0000-0000-000000000001', 1,
+  'c1e00000-0000-0000-0000-000000000002',
+  'c1100000-0000-0000-0000-000000000020', '2026-09-08',
+  'soup', 'c1300000-0000-0000-0000-000000000007'
+);
+
+create function pg_temp.recipe_effective_copy_command(
+  command_id uuid,
+  idempotency_key text,
+  source_dish_id uuid,
+  target_dish_id uuid
+)
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'command_id', command_id,
+    'correlation_id', 'c1000000-0000-0000-0000-000000000204',
+    'idempotency_key', idempotency_key,
+    'expected_version', 1,
+    'requested_by_auth_subject',
+      'c1000000-0000-0000-0000-000000000101',
+    'requested_at', pg_catalog.transaction_timestamp(),
+    'reason_code', 'RECIPE_EFFECTIVE_COPY_TEST',
+    'reason_note', 'Atomic Dish-level Recipe copy regression.',
+    'payload', pg_catalog.jsonb_build_object(
+      'source_dish_id', source_dish_id,
+      'target_dish_id', target_dish_id
+    )
+  );
+$$;
+
+set local role authenticated;
+insert into recipe_effective_results values
+  ('copy-all', atlas_api.copy_dish_recipes(
+    pg_temp.recipe_effective_copy_command(
+      'c1d00000-0000-0000-0000-000000000301', 'copy-all',
+      'c1300000-0000-0000-0000-000000000001',
+      'c1300000-0000-0000-0000-000000000005'))),
+  ('copy-all-replay', atlas_api.copy_dish_recipes(
+    pg_temp.recipe_effective_copy_command(
+      'c1d00000-0000-0000-0000-000000000301', 'copy-all',
+      'c1300000-0000-0000-0000-000000000001',
+      'c1300000-0000-0000-0000-000000000005'))),
+  ('copy-all-conflict', atlas_api.copy_dish_recipes(
+    pg_temp.recipe_effective_copy_command(
+      'c1d00000-0000-0000-0000-000000000301', 'copy-all',
+      'c1300000-0000-0000-0000-000000000004',
+      'c1300000-0000-0000-0000-000000000005'))),
+  ('copy-missing', atlas_api.copy_dish_recipes(
+    pg_temp.recipe_effective_copy_command(
+      'c1d00000-0000-0000-0000-000000000302', 'copy-missing',
+      'c1300000-0000-0000-0000-000000000004',
+      'c1300000-0000-0000-0000-000000000006'))),
+  ('copy-locked', atlas_api.copy_dish_recipes(
+    pg_temp.recipe_effective_copy_command(
+      'c1d00000-0000-0000-0000-000000000303', 'copy-locked',
+      'c1300000-0000-0000-0000-000000000001',
+      'c1300000-0000-0000-0000-000000000007'))),
+  ('copy-atomic-failure', atlas_api.copy_dish_recipes(
+    pg_temp.recipe_effective_copy_command(
+      'c1d00000-0000-0000-0000-000000000304', 'copy-atomic-failure',
+      'c1300000-0000-0000-0000-000000000008',
+      'c1300000-0000-0000-0000-000000000009')));
+reset role;
+
+select ok(
+  (select response_payload ->> 'success' = 'true'
+   from recipe_effective_results where result_name = 'copy-all')
+  and (select response_payload -> 'scope_results'
+    @? '$[*] ? (@.scope_name == "Tiểu học" && @.status == "COPIED")'
+    from recipe_effective_results where result_name = 'copy-all')
+  and (select response_payload -> 'scope_results'
+    @? '$[*] ? (@.scope_name == "Trung học" && @.status == "COPIED")'
+    from recipe_effective_results where result_name = 'copy-all')
+  and (select pg_catalog.count(*) = 2 from atlas_admin.recipes
+    where dish_id = 'c1300000-0000-0000-0000-000000000005'),
+  'AA. one command copies Tiểu học and Trung học scopes'
+);
+
+select ok(
+  (select response_payload -> 'scope_results'
+    @? '$[*] ? (@.scope_name == "Trung học" && @.status == "SOURCE_NOT_AVAILABLE")'
+    from recipe_effective_results where result_name = 'copy-missing')
+  and not exists (select 1 from atlas_admin.recipes
+    where dish_id = 'c1300000-0000-0000-0000-000000000006'
+      and school_type_id = 'c1100000-0000-0000-0000-000000000011'),
+  'AB. a missing source scope is reported without fabricating a Recipe'
+);
+
+select ok(
+  (select response_payload ->> 'success' = 'false'
+   from recipe_effective_results where result_name = 'copy-locked')
+  and not exists (select 1 from atlas_admin.recipes
+    where dish_id = 'c1300000-0000-0000-0000-000000000007'),
+  'AC. an approved-menu-locked target rejects the command with no writes'
+);
+
+select ok(
+  (select response_payload ->> 'success' = 'false'
+   from recipe_effective_results where result_name = 'copy-atomic-failure')
+  and not exists (select 1 from atlas_admin.recipes
+    where dish_id = 'c1300000-0000-0000-0000-000000000009'),
+  'AD. a required second-scope failure rolls back the first scope atomically'
+);
+
+select is(
+  (select response_payload from recipe_effective_results
+   where result_name = 'copy-all-replay'),
+  (select response_payload from recipe_effective_results
+   where result_name = 'copy-all'),
+  'AE. an exact Dish-copy replay returns one authoritative result'
+);
+
+select is(
+  (select response_payload ->> 'error_code'
+   from recipe_effective_results where result_name = 'copy-all-conflict'),
+  'IDEMPOTENCY_CONFLICT',
+  'AF. changed payload with the same idempotency key remains protected'
+);
+
 select * from finish();
 rollback;

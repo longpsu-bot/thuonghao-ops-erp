@@ -1656,6 +1656,333 @@ exception when others then
 end;
 $$;
 
+reset role;
+
+do $patch$
+declare
+  v_original text;
+  v_patched text;
+begin
+  v_original := pg_catalog.pg_get_functiondef(
+    'atlas_core.uiq03a_rmvp_02a_target_dish_ids(jsonb,text)'
+      ::pg_catalog.regprocedure
+  );
+  v_patched := pg_catalog.replace(
+    v_original,
+    '    when ''copy_recipe_version'' then',
+    '    when ''copy_recipe_version'', ''copy_dish_recipes'' then'
+  );
+  if v_patched = v_original then
+    raise exception 'RECIPE-EFFECTIVE Dish-copy D-038 patch did not match';
+  end if;
+  execute v_patched;
+end;
+$patch$;
+
+set role atlas_owner;
+
+create function atlas_api.copy_dish_recipes(request jsonb)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'copy_dish_recipes';
+  v_normalized jsonb := request || pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02A.v1'
+  );
+  v_error jsonb;
+  v_prepare jsonb;
+  v_actor_id uuid;
+  v_receipt_id uuid;
+  v_source_dish_id uuid := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'source_dish_id'
+  );
+  v_target_dish_id uuid := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'target_dish_id'
+  );
+  v_target_dish atlas_admin.dishes%rowtype;
+  v_scope record;
+  v_selection jsonb;
+  v_child_request jsonb;
+  v_child_response jsonb;
+  v_scope_results jsonb := '[]'::jsonb;
+  v_child_failure jsonb;
+  v_events jsonb;
+  v_response jsonb;
+begin
+  v_error := atlas_core.rmvp_02a_validate_command_request(
+    v_normalized,
+    v_name
+  );
+  if v_error is not null then
+    return v_error || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  end if;
+  if v_source_dish_id is null
+     or v_target_dish_id is null
+     or v_source_dish_id = v_target_dish_id
+     or pg_catalog.btrim(coalesce(request ->> 'reason_note', '')) = '' then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'VALIDATION_FAILED',
+      'Distinct source and target Dishes plus a copy reason are required.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  end if;
+
+  v_prepare := atlas_core.rmvp_02a_prepare_command(
+    v_normalized,
+    v_name,
+    'master_data.recipes.write',
+    'dish-recipe-copy:' || v_target_dish_id::text
+  );
+  if v_prepare ->> 'status' = 'RETURN' then
+    return (v_prepare -> 'response') || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
+  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+
+  if not exists (
+    select 1
+    from atlas_admin.dishes source_dish
+    where source_dish.dish_id = v_source_dish_id
+      and source_dish.dish_status = 'ACTIVE'
+  ) then
+    v_response := atlas_core.pa_05b_command_error(
+      request, 'INVARIANT_VIOLATION',
+      'The source Dish must be active.', 'ADMIN', v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  select * into v_target_dish
+  from atlas_admin.dishes target_dish
+  where target_dish.dish_id = v_target_dish_id
+  for update;
+  if not found or v_target_dish.dish_status <> 'ACTIVE' then
+    v_response := atlas_core.pa_05b_command_error(
+      request, 'INVARIANT_VIOLATION',
+      'The target Dish must be active.', 'ADMIN', v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+  if v_target_dish.version <> atlas_core.pa_05b_safe_bigint(
+    request ->> 'expected_version'
+  ) then
+    v_response := atlas_core.pa_05b_command_error(
+      request, 'STALE_VERSION',
+      'The target Dish changed after preview. Refresh before copying.',
+      'ADMIN', v_name, false, '[]'::jsonb, '[]'::jsonb,
+      v_target_dish.version
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  begin
+    for v_scope in
+      select school_type.school_type_id, school_type.school_type_name
+      from atlas_admin.school_types school_type
+      where school_type.school_type_status = 'ACTIVE'
+        and school_type.school_type_name in ('Tiểu học', 'Trung học')
+      order by case school_type.school_type_name
+        when 'Tiểu học' then 1
+        when 'Trung học' then 2
+      end, school_type.school_type_id
+    loop
+      v_selection := atlas_core.recipe_effective_select_base_recipe(
+        v_source_dish_id,
+        v_scope.school_type_id
+      );
+      if v_selection ->> 'status' <> 'READY' then
+        if v_selection -> 'blockers'
+          @? '$[*] ? (@.code == "RECIPE_SELECTION_BLOCKED")' then
+          v_scope_results := v_scope_results || pg_catalog.jsonb_build_array(
+            pg_catalog.jsonb_build_object(
+              'school_type_id', v_scope.school_type_id,
+              'scope_name', v_scope.school_type_name,
+              'status', 'SOURCE_NOT_AVAILABLE'
+            )
+          );
+          continue;
+        end if;
+        v_child_failure := pg_catalog.jsonb_build_object(
+          'school_type_id', v_scope.school_type_id,
+          'scope_name', v_scope.school_type_name,
+          'error_code', 'SOURCE_RECIPE_AMBIGUOUS',
+          'blockers', v_selection -> 'blockers'
+        );
+        raise exception 'Dish-level Recipe source selection is blocked';
+      end if;
+
+      v_child_request := pg_catalog.jsonb_build_object(
+        'contract_version', 'RMVP-02A.v1',
+        'command_id', pg_catalog.md5(
+          request ->> 'command_id' || ':' || v_scope.school_type_id::text
+        )::uuid,
+        'correlation_id', request ->> 'correlation_id',
+        'idempotency_key',
+          request ->> 'idempotency_key' || ':scope:'
+            || v_scope.school_type_id::text,
+        'expected_version', request ->> 'expected_version',
+        'requested_by_auth_subject',
+          request ->> 'requested_by_auth_subject',
+        'requested_at', request ->> 'requested_at',
+        'reason_code', request ->> 'reason_code',
+        'reason_note', request ->> 'reason_note',
+        'payload', pg_catalog.jsonb_build_object(
+          'source_recipe_version_id',
+            v_selection -> 'selected_recipe' ->> 'recipe_version_id',
+          'target_dish_id', v_target_dish_id,
+          'target_school_type_id', v_scope.school_type_id
+        )
+      );
+      v_child_response := atlas_api.copy_recipe_version(v_child_request);
+      if not coalesce((v_child_response ->> 'success')::boolean, false) then
+        v_child_failure := pg_catalog.jsonb_build_object(
+          'school_type_id', v_scope.school_type_id,
+          'scope_name', v_scope.school_type_name,
+          'error_code', v_child_response ->> 'error_code',
+          'safe_message', v_child_response ->> 'safe_message'
+        );
+        raise exception 'Dish-level Recipe child copy failed';
+      end if;
+      v_scope_results := v_scope_results || pg_catalog.jsonb_build_array(
+        pg_catalog.jsonb_build_object(
+          'school_type_id', v_scope.school_type_id,
+          'scope_name', v_scope.school_type_name,
+          'source_recipe_id',
+            v_selection -> 'selected_recipe' ->> 'recipe_id',
+          'source_recipe_version_id',
+            v_selection -> 'selected_recipe' ->> 'recipe_version_id',
+          'source_selection_scope',
+            v_selection -> 'selected_recipe' ->> 'selection_scope',
+          'target_recipe_id',
+            v_child_response #>> '{affected_aggregate_ids,recipe_id}',
+          'target_recipe_version_id',
+            v_child_response #>> '{affected_aggregate_ids,recipe_version_id}',
+          'status', 'COPIED'
+        )
+      );
+    end loop;
+  exception when others then
+    if v_child_failure is null then
+      v_child_failure := pg_catalog.jsonb_build_object(
+        'error_code', 'INTERNAL_CHILD_COPY_FAILURE',
+        'safe_message', 'A required scope could not be copied safely.'
+      );
+    end if;
+  end;
+
+  if v_child_failure is not null then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'ATOMIC_SCOPE_COPY_FAILED',
+      'No Recipe scope was copied because one required scope failed.',
+      'ADMIN',
+      v_name,
+      false,
+      '[]'::jsonb,
+      pg_catalog.jsonb_build_array(v_child_failure)
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'scope_results', v_scope_results
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  v_events := atlas_core.rmvp_01_record_change(
+    request,
+    v_actor_id,
+    v_receipt_id,
+    'DishRecipesCopied',
+    'DishRecipeCopy',
+    atlas_core.pa_05b_safe_uuid(request ->> 'command_id'),
+    null,
+    1,
+    null,
+    pg_catalog.jsonb_build_object(
+      'source_dish_id', v_source_dish_id,
+      'target_dish_id', v_target_dish_id,
+      'scope_results', v_scope_results
+    )
+  );
+  v_response := pg_catalog.jsonb_build_object(
+    'success', true,
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'command_id', request ->> 'command_id',
+    'correlation_id', request ->> 'correlation_id',
+    'idempotency_status', 'COMPLETED',
+    'affected_aggregate_ids', pg_catalog.jsonb_build_object(
+      'source_dish_id', v_source_dish_id,
+      'target_dish_id', v_target_dish_id
+    ),
+    'new_versions', pg_catalog.jsonb_build_object(
+      'aggregate_version', 1
+    ),
+    'emitted_event_ids', pg_catalog.jsonb_build_array(
+      v_events -> 'domain_event_id'
+    ),
+    'audit_event_ids', pg_catalog.jsonb_build_array(
+      v_events -> 'audit_event_id'
+    ),
+    'scope_results', v_scope_results,
+    'safe_operator_message',
+      'Dish Recipes were copied atomically for every available supported scope.',
+    'warnings', '[]'::jsonb,
+    'blockers', '[]'::jsonb
+  );
+  return atlas_core.pa_05b_finish_command(
+    v_receipt_id, v_response, true
+  );
+exception
+  when serialization_failure or deadlock_detected then
+    return atlas_core.pa_05b_command_error(
+      request, 'RETRYABLE_CONCURRENCY_FAILURE',
+      'The Dish Recipe copy changed concurrently. Retry the exact request.',
+      'ADMIN', v_name, true
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  when others then
+    v_response := atlas_core.pa_05b_command_error(
+      request, 'INTERNAL_COMMAND_FAILURE',
+      'The Dish Recipe copy could not be completed safely.',
+      'ADMIN', v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    if v_receipt_id is not null then
+      return atlas_core.pa_05b_finish_command(
+        v_receipt_id, v_response, false
+      );
+    end if;
+    return v_response;
+end;
+$$;
+
 comment on function atlas_core.recipe_effective_select_base_recipe(uuid, uuid)
 is 'RECIPE-EFFECTIVE-CONTRACT-01 single School-Type then GENERAL released Recipe selector shared by explicit-type and School contexts.';
 comment on function atlas_core.recipe_effective_resolve_composition(date, uuid, uuid, uuid, jsonb, uuid, uuid)
@@ -1668,6 +1995,8 @@ comment on function atlas_core.recipe_effective_history(date, uuid, uuid, uuid)
 is 'RECIPE-EFFECTIVE-CONTRACT-01 full effective-BOM periods from immutable Recipe adjustment boundaries.';
 comment on function atlas_api.get_dish_recipe_operator_workbench(jsonb)
 is 'RECIPE-EFFECTIVE.v1 Dish operator truth with current effective BOM, exception count, actions, blockers, and full history.';
+comment on function atlas_api.copy_dish_recipes(jsonb)
+is 'RECIPE-EFFECTIVE.v1 atomic Dish-level copy of available Tiểu học and Trung học Recipe scopes using the lower-level RMVP-02A copy command.';
 
 revoke execute on function
   atlas_core.recipe_effective_select_base_recipe(uuid, uuid),
@@ -1712,8 +2041,10 @@ to atlas_read_runtime;
 
 reset role;
 
-grant atlas_read_runtime to postgres with set true;
-grant create on schema atlas_api to atlas_read_runtime;
+grant atlas_read_runtime, atlas_master_data_command_runtime
+  to postgres with set true;
+grant create on schema atlas_api to
+  atlas_read_runtime, atlas_master_data_command_runtime;
 
 alter function atlas_api.resolve_system_effective_recipe_composition(jsonb)
   owner to atlas_read_runtime;
@@ -1721,18 +2052,24 @@ alter function atlas_api.get_recipe_effective_target_context(jsonb)
   owner to atlas_read_runtime;
 alter function atlas_api.get_dish_recipe_operator_workbench(jsonb)
   owner to atlas_read_runtime;
+alter function atlas_api.copy_dish_recipes(jsonb)
+  owner to atlas_master_data_command_runtime;
 
-revoke create on schema atlas_api from atlas_read_runtime;
+revoke create on schema atlas_api from
+  atlas_read_runtime, atlas_master_data_command_runtime;
 
 revoke execute on function
   atlas_api.resolve_system_effective_recipe_composition(jsonb),
   atlas_api.get_recipe_effective_target_context(jsonb),
-  atlas_api.get_dish_recipe_operator_workbench(jsonb)
+  atlas_api.get_dish_recipe_operator_workbench(jsonb),
+  atlas_api.copy_dish_recipes(jsonb)
 from public, anon, service_role;
 grant execute on function
   atlas_api.resolve_system_effective_recipe_composition(jsonb),
   atlas_api.get_recipe_effective_target_context(jsonb),
-  atlas_api.get_dish_recipe_operator_workbench(jsonb)
+  atlas_api.get_dish_recipe_operator_workbench(jsonb),
+  atlas_api.copy_dish_recipes(jsonb)
 to authenticated;
 
-revoke create on schema atlas_core, atlas_api from atlas_read_runtime;
+revoke create on schema atlas_core, atlas_api from
+  atlas_read_runtime, atlas_master_data_command_runtime;
