@@ -770,3 +770,689 @@ $$;
 
 comment on function atlas_api.get_dish_recipe_operator_workbench(jsonb)
 is 'RECIPE-EFFECTIVE.v1 lifecycle-derived editable base or locked Change Order workbench with independent effective readiness.';
+
+set role atlas_owner;
+
+create or replace function atlas_core.recipe_effective_materialize_copy_scope(
+  target_recipe_id uuid,
+  source_resolution jsonb,
+  source_dish_id uuid,
+  source_school_type_id uuid,
+  source_school_type_code text,
+  copy_as_of_date date,
+  command_actor_id uuid,
+  outer_command_id uuid,
+  reason_note text
+)
+returns jsonb
+language plpgsql
+volatile
+security invoker
+set search_path = ''
+as $$
+declare
+  v_predecessor_id uuid;
+  v_next_number integer;
+  v_composition jsonb;
+  v_contributors jsonb;
+  v_new_version_id uuid;
+  v_line_count integer;
+begin
+  select version.recipe_version_id
+  into v_predecessor_id
+  from atlas_admin.recipe_versions version
+  where version.recipe_id = target_recipe_id
+    and version.recipe_version_status in (
+      'RELEASED_FOR_PLANNING', 'LOCKED'
+    )
+  order by
+    (version.recipe_version_status = 'RELEASED_FOR_PLANNING') desc,
+    version.version_number desc
+  limit 1;
+
+  select coalesce(pg_catalog.max(version.version_number), 0) + 1
+  into v_next_number
+  from atlas_admin.recipe_versions version
+  where version.recipe_id = target_recipe_id;
+
+  with source_lines as (
+    select
+      line.value,
+      atlas_core.pa_05b_safe_uuid(
+        line.value ->> 'final_ingredient_id'
+      ) as ingredient_id,
+      atlas_core.pa_05b_safe_numeric(
+        line.value ->> 'final_quantity_per_basis'
+      ) as quantity_per_basis,
+      atlas_core.pa_05b_safe_uuid(
+        line.value ->> 'final_unit_id'
+      ) as unit_id
+    from pg_catalog.jsonb_array_elements(
+      coalesce(source_resolution -> 'lines', '[]'::jsonb)
+    ) line(value)
+    where line.value ->> 'final_disposition' = 'PRESENT'
+  ),
+  target_lines as (
+    select
+      revision.recipe_line_revision_id,
+      revision.recipe_line_id,
+      revision.ingredient_id,
+      revision.quantity_per_basis,
+      revision.unit_id,
+      revision.operational_note,
+      line.line_code
+    from atlas_admin.recipe_line_revisions revision
+    join atlas_admin.recipe_lines line
+      on line.recipe_line_id = revision.recipe_line_id
+    where revision.recipe_version_id = v_predecessor_id
+      and revision.line_disposition = 'PRESENT'
+  ),
+  copied as (
+    select
+      coalesce(target.recipe_line_id, pg_catalog.gen_random_uuid())
+        as recipe_line_id,
+      target.recipe_line_revision_id
+        as predecessor_recipe_line_revision_id,
+      source.ingredient_id,
+      source.quantity_per_basis,
+      source.unit_id,
+      'PRESENT'::text as line_disposition,
+      target.operational_note,
+      coalesce(target.line_code, nullif(source.value ->> 'line_code', ''))
+        as line_code,
+      atlas_core.pa_05b_safe_uuid(
+        source.value ->> 'base_recipe_line_revision_id'
+      ) as source_recipe_line_revision_id,
+      source.value ->> 'source_layer' as source_layer,
+      coalesce(source.value -> 'lineage', '[]'::jsonb)
+        as source_lineage
+    from source_lines source
+    left join target_lines target
+      on target.ingredient_id = source.ingredient_id
+  ),
+  removed as (
+    select
+      target.recipe_line_id,
+      target.recipe_line_revision_id
+        as predecessor_recipe_line_revision_id,
+      target.ingredient_id,
+      0::numeric as quantity_per_basis,
+      target.unit_id,
+      'REMOVED'::text as line_disposition,
+      target.operational_note,
+      target.line_code,
+      null::uuid as source_recipe_line_revision_id,
+      'TARGET_PREDECESSOR'::text as source_layer,
+      '[]'::jsonb as source_lineage
+    from target_lines target
+    where not exists (
+      select 1
+      from source_lines source
+      where source.ingredient_id = target.ingredient_id
+    )
+  )
+  select coalesce(
+    pg_catalog.jsonb_agg(
+      pg_catalog.jsonb_build_object(
+        'recipe_line_id', composition.recipe_line_id,
+        'predecessor_recipe_line_revision_id',
+          composition.predecessor_recipe_line_revision_id,
+        'ingredient_id', composition.ingredient_id,
+        'quantity_per_basis', composition.quantity_per_basis,
+        'unit_id', composition.unit_id,
+        'line_disposition', composition.line_disposition,
+        'operational_note', composition.operational_note,
+        'line_code', composition.line_code,
+        'source_recipe_line_revision_id',
+          composition.source_recipe_line_revision_id,
+        'source_layer', composition.source_layer,
+        'source_lineage', composition.source_lineage
+      )
+      order by composition.line_disposition, composition.ingredient_id
+    ),
+    '[]'::jsonb
+  )
+  into v_composition
+  from (
+    select * from copied
+    union all
+    select * from removed
+  ) composition;
+
+  v_line_count := (
+    select pg_catalog.count(*)::integer
+    from pg_catalog.jsonb_array_elements(v_composition) item
+    where item ->> 'line_disposition' = 'PRESENT'
+  );
+
+  select coalesce(
+    pg_catalog.jsonb_agg(
+      pg_catalog.jsonb_build_object(
+        'adjustment_id', contributor.adjustment_id,
+        'revision_id', contributor.revision_id
+      )
+      order by contributor.adjustment_id, contributor.revision_id
+    ),
+    '[]'::jsonb
+  )
+  into v_contributors
+  from (
+    select distinct
+      lineage.value ->> 'adjustment_id' as adjustment_id,
+      lineage.value ->> 'revision_id' as revision_id
+    from pg_catalog.jsonb_array_elements(
+      coalesce(source_resolution -> 'lines', '[]'::jsonb)
+    ) line(value)
+    cross join lateral pg_catalog.jsonb_array_elements(
+      coalesce(line.value -> 'lineage', '[]'::jsonb)
+    ) lineage(value)
+    where lineage.value ->> 'scope_kind' in (
+        'SYSTEM_INGREDIENT', 'SYSTEM_DISH'
+      )
+      and nullif(lineage.value ->> 'adjustment_id', '') is not null
+      and nullif(lineage.value ->> 'revision_id', '') is not null
+  ) contributor;
+
+  insert into atlas_admin.recipe_lines (
+    recipe_line_id,
+    recipe_id,
+    line_code
+  )
+  select
+    atlas_core.pa_05b_safe_uuid(item ->> 'recipe_line_id'),
+    target_recipe_id,
+    nullif(item ->> 'line_code', '')
+  from pg_catalog.jsonb_array_elements(v_composition) item
+  where not exists (
+    select 1
+    from atlas_admin.recipe_lines line
+    where line.recipe_line_id = atlas_core.pa_05b_safe_uuid(
+      item ->> 'recipe_line_id'
+    )
+  );
+
+  insert into atlas_admin.recipe_versions (
+    recipe_id,
+    version_number,
+    predecessor_recipe_version_id,
+    basis_portions,
+    recipe_version_status,
+    created_by_actor_id,
+    draft_composition,
+    source_evidence
+  ) values (
+    target_recipe_id,
+    v_next_number,
+    v_predecessor_id,
+    (source_resolution -> 'selected_recipe' ->> 'basis_portions')::integer,
+    'DRAFT',
+    command_actor_id,
+    v_composition,
+    pg_catalog.jsonb_build_object(
+      'source_kind', 'RECIPE_EFFECTIVE_COPY',
+      'source_dish_id', source_dish_id,
+      'source_school_type_id', source_school_type_id,
+      'source_school_type_code', source_school_type_code,
+      'copy_as_of_date', copy_as_of_date,
+      'source_recipe_id',
+        source_resolution -> 'selected_recipe' ->> 'recipe_id',
+      'source_recipe_version_id',
+        source_resolution -> 'selected_recipe' ->> 'recipe_version_id',
+      'contributing_system_adjustments', v_contributors,
+      'outer_command_id', outer_command_id,
+      'reason_note', reason_note
+    )
+  )
+  returning recipe_version_id into v_new_version_id;
+
+  return pg_catalog.jsonb_build_object(
+    'target_recipe_id', target_recipe_id,
+    'target_recipe_version_id', v_new_version_id,
+    'predecessor_recipe_version_id', v_predecessor_id,
+    'line_count', v_line_count
+  );
+end;
+$$;
+
+revoke execute on function atlas_core.recipe_effective_materialize_copy_scope(
+  uuid, jsonb, uuid, uuid, text, date, uuid, uuid, text
+) from public, anon, authenticated, service_role;
+grant execute on function atlas_core.recipe_effective_materialize_copy_scope(
+  uuid, jsonb, uuid, uuid, text, date, uuid, uuid, text
+) to atlas_master_data_command_runtime;
+
+reset role;
+
+create or replace function atlas_api.copy_dish_recipes(request jsonb)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_name constant text := 'copy_dish_recipes';
+  v_normalized jsonb := request || pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02A.v1'
+  );
+  v_error jsonb;
+  v_prepare jsonb;
+  v_actor_id uuid;
+  v_receipt_id uuid;
+  v_source_dish_id uuid := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'source_dish_id'
+  );
+  v_target_dish_id uuid := atlas_core.pa_05b_safe_uuid(
+    request -> 'payload' ->> 'target_dish_id'
+  );
+  v_as_of_date date := atlas_core.rmvp_02b_safe_date(
+    request -> 'payload' ->> 'as_of_date'
+  );
+  v_target_dish atlas_admin.dishes%rowtype;
+  v_scope record;
+  v_target_recipe_id uuid;
+  v_resolution jsonb;
+  v_resolved_scopes jsonb := '[]'::jsonb;
+  v_scope_results jsonb := '[]'::jsonb;
+  v_materialized jsonb;
+  v_failure jsonb;
+  v_events jsonb;
+  v_response jsonb;
+  v_canonical_count bigint;
+begin
+  v_error := atlas_core.rmvp_02a_validate_command_request(
+    v_normalized,
+    v_name
+  );
+  if v_error is not null then
+    return v_error || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  end if;
+  if v_source_dish_id is null
+     or v_target_dish_id is null
+     or v_source_dish_id = v_target_dish_id
+     or v_as_of_date is null
+     or pg_catalog.btrim(coalesce(request ->> 'reason_note', '')) = '' then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'VALIDATION_FAILED',
+      'Distinct source and target Dishes, an explicit date, and a copy reason are required.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  end if;
+
+  v_prepare := atlas_core.rmvp_02a_prepare_command(
+    v_normalized,
+    v_name,
+    'master_data.recipes.write',
+    'dish-recipe-copy:' || v_target_dish_id::text
+  );
+  if v_prepare ->> 'status' = 'RETURN' then
+    return (v_prepare -> 'response') || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  end if;
+  v_actor_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'actor_id');
+  v_receipt_id := atlas_core.pa_05b_safe_uuid(v_prepare ->> 'receipt_id');
+
+  if not exists (
+    select 1
+    from atlas_admin.dishes source_dish
+    where source_dish.dish_id = v_source_dish_id
+      and source_dish.dish_status = 'ACTIVE'
+  ) then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'INVARIANT_VIOLATION',
+      'The source Dish must be active.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(v_target_dish_id::text, 17403)
+  );
+  select *
+  into v_target_dish
+  from atlas_admin.dishes target_dish
+  where target_dish.dish_id = v_target_dish_id
+  for update;
+  if not found or v_target_dish.dish_status <> 'ACTIVE' then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'INVARIANT_VIOLATION',
+      'The target Dish must be active.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+  if v_target_dish.version <> atlas_core.pa_05b_safe_bigint(
+    request ->> 'expected_version'
+  ) then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'STALE_VERSION',
+      'The target Dish changed after preview. Refresh before copying.',
+      'ADMIN',
+      v_name,
+      false,
+      '[]'::jsonb,
+      '[]'::jsonb,
+      v_target_dish.version
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+  if atlas_core.uiq03a_dish_used_operationally(v_target_dish_id) then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'INVARIANT_VIOLATION',
+      'The target Dish is locked by approved Menu evidence.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  select pg_catalog.count(*)
+  into v_canonical_count
+  from atlas_core.recipe_effective_lock_canonical_school_types();
+  if v_canonical_count <> 2 then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'INVARIANT_VIOLATION',
+      'The two canonical Recipe School Types are not ready.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  for v_scope in
+    select canonical.*
+    from atlas_core.recipe_effective_canonical_school_types() canonical
+    order by canonical.scope_order
+  loop
+    v_resolution := atlas_core.recipe_effective_resolve_composition(
+      v_as_of_date,
+      null,
+      v_source_dish_id,
+      v_scope.school_type_id
+    );
+    if v_resolution ->> 'status' <> 'READY' then
+      v_failure := pg_catalog.jsonb_build_object(
+        'school_type_id', v_scope.school_type_id,
+        'school_type_code', v_scope.school_type_code,
+        'error_code', 'SOURCE_RECIPE_NOT_READY',
+        'blockers', v_resolution -> 'blockers'
+      );
+      exit;
+    end if;
+
+    if coalesce(v_resolution -> 'lines', '[]'::jsonb)
+      @? '$[*].lineage[*] ? (@.scope_kind == "SCHOOL" || @.scope_kind == "SCHOOL_DISH")' then
+      v_failure := pg_catalog.jsonb_build_object(
+        'school_type_id', v_scope.school_type_id,
+        'school_type_code', v_scope.school_type_code,
+        'error_code', 'SCHOOL_LAYER_IN_SYSTEM_COPY'
+      );
+      exit;
+    end if;
+
+    select recipe.recipe_id
+    into v_target_recipe_id
+    from atlas_admin.recipes recipe
+    where recipe.dish_id = v_target_dish_id
+      and recipe.school_type_id = v_scope.school_type_id
+      and recipe.recipe_status = 'ACTIVE'
+    for update;
+    if not found then
+      v_failure := pg_catalog.jsonb_build_object(
+        'school_type_id', v_scope.school_type_id,
+        'school_type_code', v_scope.school_type_code,
+        'error_code', 'TARGET_RECIPE_ROOT_MISSING'
+      );
+      exit;
+    end if;
+
+    if exists (
+      select 1
+      from atlas_admin.recipe_versions version
+      where version.recipe_id = v_target_recipe_id
+        and version.recipe_version_status in ('DRAFT', 'VALIDATED')
+    ) then
+      v_failure := pg_catalog.jsonb_build_object(
+        'school_type_id', v_scope.school_type_id,
+        'school_type_code', v_scope.school_type_code,
+        'error_code', 'TARGET_RECIPE_UNFINISHED'
+      );
+      exit;
+    end if;
+
+    if exists (
+      select 1
+      from pg_catalog.jsonb_array_elements(
+        coalesce(v_resolution -> 'lines', '[]'::jsonb)
+      ) line(value)
+      left join atlas_admin.ingredients ingredient
+        on ingredient.ingredient_id = atlas_core.pa_05b_safe_uuid(
+          line.value ->> 'final_ingredient_id'
+        )
+      left join atlas_admin.units unit
+        on unit.unit_id = atlas_core.pa_05b_safe_uuid(
+          line.value ->> 'final_unit_id'
+        )
+      where line.value ->> 'final_disposition' = 'PRESENT'
+        and (
+          ingredient.ingredient_id is null
+          or ingredient.ingredient_status <> 'ACTIVE'
+          or unit.unit_id is null
+          or unit.unit_status <> 'ACTIVE'
+        )
+    ) then
+      v_failure := pg_catalog.jsonb_build_object(
+        'school_type_id', v_scope.school_type_id,
+        'school_type_code', v_scope.school_type_code,
+        'error_code', 'SOURCE_REFERENCE_INACTIVE'
+      );
+      exit;
+    end if;
+
+    v_resolved_scopes := v_resolved_scopes
+      || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+        'scope_order', v_scope.scope_order,
+        'school_type_id', v_scope.school_type_id,
+        'school_type_code', v_scope.school_type_code,
+        'school_type_name', v_scope.school_type_name,
+        'target_recipe_id', v_target_recipe_id,
+        'resolution', v_resolution
+      ));
+  end loop;
+
+  if v_failure is not null
+     or pg_catalog.jsonb_array_length(v_resolved_scopes) <> 2 then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'INVARIANT_VIOLATION',
+      'Both canonical source and target Recipe scopes must be ready before copying.',
+      'ADMIN',
+      v_name,
+      false,
+      '[]'::jsonb,
+      pg_catalog.jsonb_build_array(coalesce(
+        v_failure,
+        pg_catalog.jsonb_build_object('error_code', 'CANONICAL_SCOPE_GAP')
+      ))
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  begin
+    for v_scope in
+      select item.value
+      from pg_catalog.jsonb_array_elements(v_resolved_scopes) item(value)
+      order by (item.value ->> 'scope_order')::integer
+    loop
+      v_materialized := atlas_core.recipe_effective_materialize_copy_scope(
+        atlas_core.pa_05b_safe_uuid(
+          v_scope.value ->> 'target_recipe_id'
+        ),
+        v_scope.value -> 'resolution',
+        v_source_dish_id,
+        atlas_core.pa_05b_safe_uuid(
+          v_scope.value ->> 'school_type_id'
+        ),
+        v_scope.value ->> 'school_type_code',
+        v_as_of_date,
+        v_actor_id,
+        atlas_core.pa_05b_safe_uuid(request ->> 'command_id'),
+        request ->> 'reason_note'
+      );
+      v_scope_results := v_scope_results
+        || pg_catalog.jsonb_build_array(pg_catalog.jsonb_build_object(
+          'school_type_id', v_scope.value ->> 'school_type_id',
+          'school_type_code', v_scope.value ->> 'school_type_code',
+          'scope_name', v_scope.value ->> 'school_type_name',
+          'source_recipe_id',
+            v_scope.value #>> '{resolution,selected_recipe,recipe_id}',
+          'source_recipe_version_id',
+            v_scope.value #>> '{resolution,selected_recipe,recipe_version_id}',
+          'source_selection_scope', 'SCHOOL_TYPE',
+          'target_recipe_id', v_materialized ->> 'target_recipe_id',
+          'target_recipe_version_id',
+            v_materialized ->> 'target_recipe_version_id',
+          'status', 'COPIED'
+        ));
+    end loop;
+  exception when others then
+    v_failure := pg_catalog.jsonb_build_object(
+      'error_code', 'ATOMIC_SCOPE_MATERIALIZATION_FAILED'
+    );
+  end;
+
+  if v_failure is not null then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'ATOMIC_SCOPE_COPY_FAILED',
+      'No Recipe scope was copied because materialization failed.',
+      'ADMIN',
+      v_name,
+      false,
+      '[]'::jsonb,
+      pg_catalog.jsonb_build_array(v_failure)
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    return atlas_core.pa_05b_finish_command(
+      v_receipt_id, v_response, false
+    );
+  end if;
+
+  v_events := atlas_core.rmvp_01_record_change(
+    request,
+    v_actor_id,
+    v_receipt_id,
+    'DishRecipesCopied',
+    'DishRecipeCopy',
+    atlas_core.pa_05b_safe_uuid(request ->> 'command_id'),
+    null,
+    1,
+    null,
+    pg_catalog.jsonb_build_object(
+      'source_dish_id', v_source_dish_id,
+      'target_dish_id', v_target_dish_id,
+      'copy_as_of_date', v_as_of_date,
+      'scope_results', v_scope_results
+    )
+  );
+  v_response := pg_catalog.jsonb_build_object(
+    'success', true,
+    'contract_version', 'RECIPE-EFFECTIVE.v1',
+    'command_id', request ->> 'command_id',
+    'correlation_id', request ->> 'correlation_id',
+    'idempotency_status', 'COMPLETED',
+    'affected_aggregate_ids', pg_catalog.jsonb_build_object(
+      'source_dish_id', v_source_dish_id,
+      'target_dish_id', v_target_dish_id
+    ),
+    'new_versions', pg_catalog.jsonb_build_object(
+      'aggregate_version', 1
+    ),
+    'emitted_event_ids', pg_catalog.jsonb_build_array(
+      v_events -> 'domain_event_id'
+    ),
+    'audit_event_ids', pg_catalog.jsonb_build_array(
+      v_events -> 'audit_event_id'
+    ),
+    'scope_results', v_scope_results,
+    'safe_operator_message',
+      'Both canonical Recipe scopes were copied as dated system-effective snapshots.',
+    'warnings', '[]'::jsonb,
+    'blockers', '[]'::jsonb
+  );
+  return atlas_core.pa_05b_finish_command(
+    v_receipt_id, v_response, true
+  );
+exception
+  when serialization_failure or deadlock_detected then
+    return atlas_core.pa_05b_command_error(
+      request,
+      'RETRYABLE_CONCURRENCY_FAILURE',
+      'The Dish Recipe copy changed concurrently. Retry the exact request.',
+      'ADMIN',
+      v_name,
+      true
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+  when others then
+    v_response := atlas_core.pa_05b_command_error(
+      request,
+      'INTERNAL_COMMAND_FAILURE',
+      'The Dish Recipe copy could not be completed safely.',
+      'ADMIN',
+      v_name
+    ) || pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1'
+    );
+    if v_receipt_id is not null then
+      return atlas_core.pa_05b_finish_command(
+        v_receipt_id, v_response, false
+      );
+    end if;
+    return v_response;
+end;
+$$;
+
+comment on function atlas_api.copy_dish_recipes(jsonb)
+is 'RECIPE-EFFECTIVE.v1 atomic dated snapshot of both canonical system-effective BOMs into pre-provisioned target Recipe roots.';

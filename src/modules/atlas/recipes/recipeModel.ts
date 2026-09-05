@@ -201,13 +201,14 @@ export type DishRecipeOperatorWorkbench = {
 
 export type DishRecipeCopyScopeResult = {
   school_type_id: string;
+  school_type_code: "v1-school-type-1" | "v1-school-type-2";
   scope_name: string;
-  status: "COPIED" | "SOURCE_NOT_AVAILABLE";
-  source_recipe_id?: string;
-  source_recipe_version_id?: string;
-  source_selection_scope?: "SCHOOL_TYPE" | "GENERAL";
-  target_recipe_id?: string;
-  target_recipe_version_id?: string;
+  status: "COPIED";
+  source_recipe_id: string;
+  source_recipe_version_id: string;
+  source_selection_scope: "SCHOOL_TYPE";
+  target_recipe_id: string;
+  target_recipe_version_id: string;
 };
 
 export type DishRecipeCopyResult = {
@@ -326,8 +327,15 @@ function isCopyScopeResult(value: JsonValue): boolean {
   if (!isRecord(value)) return false;
   return (
     typeof value.school_type_id === "string" &&
+    (value.school_type_code === "v1-school-type-1" ||
+      value.school_type_code === "v1-school-type-2") &&
     typeof value.scope_name === "string" &&
-    (value.status === "COPIED" || value.status === "SOURCE_NOT_AVAILABLE")
+    value.status === "COPIED" &&
+    typeof value.source_recipe_id === "string" &&
+    typeof value.source_recipe_version_id === "string" &&
+    value.source_selection_scope === "SCHOOL_TYPE" &&
+    typeof value.target_recipe_id === "string" &&
+    typeof value.target_recipe_version_id === "string"
   );
 }
 

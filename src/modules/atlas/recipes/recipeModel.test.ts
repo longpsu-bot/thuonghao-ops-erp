@@ -184,11 +184,12 @@ describe("recipe workbench response parsing", () => {
       scope_results: [
         {
           school_type_id: "school-type-1",
+          school_type_code: "v1-school-type-1",
           scope_name: "Tiểu học",
           status: "COPIED",
           source_recipe_id: "source-recipe-1",
           source_recipe_version_id: "source-version-1",
-          source_selection_scope: "GENERAL",
+          source_selection_scope: "SCHOOL_TYPE",
           target_recipe_id: "target-recipe-1",
           target_recipe_version_id: "target-version-1",
         },
@@ -201,6 +202,20 @@ describe("recipe workbench response parsing", () => {
       dishRecipeCopyFromResult({
         kind: "success",
         response: { ...result, scope_results: [{ status: 1 }] },
+      }),
+    ).toBeNull();
+    expect(
+      dishRecipeCopyFromResult({
+        kind: "success",
+        response: {
+          ...result,
+          scope_results: [
+            {
+              ...result.scope_results[0],
+              status: "SOURCE_NOT_AVAILABLE",
+            },
+          ],
+        },
       }),
     ).toBeNull();
   });

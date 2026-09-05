@@ -1361,6 +1361,9 @@ insert into atlas_admin.dishes (
     'recipe-copy-target-atomic', 'Món đích kiểm tra nguyên tử', 'ACTIVE', 9);
 
 insert into atlas_admin.recipes (recipe_id, dish_id, school_type_id) values
+  ('c1400000-0000-0000-0000-000000000009',
+    'c1300000-0000-0000-0000-000000000001',
+    'c1100000-0000-0000-0000-000000000011'),
   ('c1400000-0000-0000-0000-000000000006',
     'c1300000-0000-0000-0000-000000000004',
     'c1100000-0000-0000-0000-000000000010'),
@@ -1369,12 +1372,36 @@ insert into atlas_admin.recipes (recipe_id, dish_id, school_type_id) values
     'c1100000-0000-0000-0000-000000000010'),
   ('c1400000-0000-0000-0000-000000000008',
     'c1300000-0000-0000-0000-000000000008',
+    'c1100000-0000-0000-0000-000000000011'),
+  ('c1400000-0000-0000-0000-000000000010',
+    'c1300000-0000-0000-0000-000000000005',
+    'c1100000-0000-0000-0000-000000000010'),
+  ('c1400000-0000-0000-0000-000000000011',
+    'c1300000-0000-0000-0000-000000000005',
+    'c1100000-0000-0000-0000-000000000011'),
+  ('c1400000-0000-0000-0000-000000000012',
+    'c1300000-0000-0000-0000-000000000006',
+    'c1100000-0000-0000-0000-000000000010'),
+  ('c1400000-0000-0000-0000-000000000013',
+    'c1300000-0000-0000-0000-000000000007',
+    'c1100000-0000-0000-0000-000000000010'),
+  ('c1400000-0000-0000-0000-000000000014',
+    'c1300000-0000-0000-0000-000000000007',
+    'c1100000-0000-0000-0000-000000000011'),
+  ('c1400000-0000-0000-0000-000000000015',
+    'c1300000-0000-0000-0000-000000000009',
+    'c1100000-0000-0000-0000-000000000010'),
+  ('c1400000-0000-0000-0000-000000000016',
+    'c1300000-0000-0000-0000-000000000009',
     'c1100000-0000-0000-0000-000000000011');
 
 insert into atlas_admin.recipe_versions (
   recipe_version_id, recipe_id, version_number, basis_portions,
   created_by_actor_id, source_evidence
 ) values
+  ('c1500000-0000-0000-0000-000000000009',
+    'c1400000-0000-0000-0000-000000000009', 1, 100,
+    'c1000000-0000-0000-0000-000000000001', '{}'::jsonb),
   ('c1500000-0000-0000-0000-000000000006',
     'c1400000-0000-0000-0000-000000000006', 1, 100,
     'c1000000-0000-0000-0000-000000000001', '{}'::jsonb),
@@ -1387,6 +1414,8 @@ insert into atlas_admin.recipe_versions (
 
 insert into atlas_admin.recipe_lines (recipe_line_id, recipe_id, line_code)
 values
+  ('c1600000-0000-0000-0000-000000000009',
+    'c1400000-0000-0000-0000-000000000009', 'copy-line-9'),
   ('c1600000-0000-0000-0000-000000000006',
     'c1400000-0000-0000-0000-000000000006', 'copy-line-6'),
   ('c1600000-0000-0000-0000-000000000007',
@@ -1399,6 +1428,13 @@ insert into atlas_admin.recipe_line_revisions (
   line_revision_number, ingredient_id, quantity_per_basis, unit_id,
   created_by_actor_id
 ) values
+  ('c1700000-0000-0000-0000-000000000009',
+    'c1400000-0000-0000-0000-000000000009',
+    'c1500000-0000-0000-0000-000000000009',
+    'c1600000-0000-0000-0000-000000000009', 1,
+    'c1200000-0000-0000-0000-000000000010', 9,
+    'c1200000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'),
   ('c1700000-0000-0000-0000-000000000006',
     'c1400000-0000-0000-0000-000000000006',
     'c1500000-0000-0000-0000-000000000006',
@@ -1426,6 +1462,7 @@ set recipe_version_status = 'VALIDATED',
     validated_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
     validated_at = pg_catalog.transaction_timestamp()
 where recipe_version_id in (
+  'c1500000-0000-0000-0000-000000000009',
   'c1500000-0000-0000-0000-000000000006',
   'c1500000-0000-0000-0000-000000000007',
   'c1500000-0000-0000-0000-000000000008'
@@ -1435,6 +1472,7 @@ set recipe_version_status = 'RELEASED_FOR_PLANNING',
     released_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
     released_at = pg_catalog.transaction_timestamp()
 where recipe_version_id in (
+  'c1500000-0000-0000-0000-000000000009',
   'c1500000-0000-0000-0000-000000000006',
   'c1500000-0000-0000-0000-000000000007',
   'c1500000-0000-0000-0000-000000000008'
@@ -1507,7 +1545,8 @@ as $$
     'reason_note', 'Atomic Dish-level Recipe copy regression.',
     'payload', pg_catalog.jsonb_build_object(
       'source_dish_id', source_dish_id,
-      'target_dish_id', target_dish_id
+      'target_dish_id', target_dish_id,
+      'as_of_date', '2026-09-05'
     )
   );
 $$;
@@ -1550,10 +1589,10 @@ select ok(
   (select response_payload ->> 'success' = 'true'
    from recipe_effective_results where result_name = 'copy-all')
   and (select response_payload -> 'scope_results'
-    @? '$[*] ? (@.scope_name == "Tiểu học" && @.status == "COPIED")'
+    @? '$[*] ? (@.school_type_code == "v1-school-type-1" && @.status == "COPIED")'
     from recipe_effective_results where result_name = 'copy-all')
   and (select response_payload -> 'scope_results'
-    @? '$[*] ? (@.scope_name == "Trung học" && @.status == "COPIED")'
+    @? '$[*] ? (@.school_type_code == "v1-school-type-2" && @.status == "COPIED")'
     from recipe_effective_results where result_name = 'copy-all')
   and (select pg_catalog.count(*) = 2 from atlas_admin.recipes
     where dish_id = 'c1300000-0000-0000-0000-000000000005'),
@@ -1561,29 +1600,64 @@ select ok(
 );
 
 select ok(
-  (select response_payload -> 'scope_results'
-    @? '$[*] ? (@.scope_name == "Trung học" && @.status == "SOURCE_NOT_AVAILABLE")'
-    from recipe_effective_results where result_name = 'copy-missing')
-  and not exists (select 1 from atlas_admin.recipes
-    where dish_id = 'c1300000-0000-0000-0000-000000000006'
-      and school_type_id = 'c1100000-0000-0000-0000-000000000011'),
-  'AB. a missing source scope is reported without fabricating a Recipe'
+  exists (
+    select 1
+    from atlas_admin.recipe_versions version
+    where version.recipe_id = 'c1400000-0000-0000-0000-000000000010'
+      and version.source_evidence ->> 'source_kind' = 'RECIPE_EFFECTIVE_COPY'
+      and version.source_evidence ->> 'copy_as_of_date' = '2026-09-05'
+      and version.draft_composition @? '$[*] ? (@.ingredient_id == "c1200000-0000-0000-0000-000000000011" && @.quantity_per_basis == 2)'
+      and version.draft_composition @? '$[*] ? (@.ingredient_id == "c1200000-0000-0000-0000-000000000012" && @.quantity_per_basis == 0.5)'
+      and not version.draft_composition @? '$[*] ? (@.ingredient_id == "c1200000-0000-0000-0000-000000000013")'
+  ),
+  'AB. Tiểu học copy snapshots system-effective BOM and excludes School layers'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_admin.recipe_versions version
+    where version.recipe_id = 'c1400000-0000-0000-0000-000000000011'
+      and version.source_evidence ->> 'source_kind' = 'RECIPE_EFFECTIVE_COPY'
+      and version.draft_composition @? '$[*] ? (@.ingredient_id == "c1200000-0000-0000-0000-000000000011" && @.quantity_per_basis == 9)'
+  ),
+  'AC. Trung học copy snapshots its independent system-effective BOM'
+);
+
+select ok(
+  (select response_payload ->> 'success' = 'false'
+   from recipe_effective_results where result_name = 'copy-missing')
+  and not exists (
+    select 1 from atlas_admin.recipe_versions version
+    where version.recipe_id = 'c1400000-0000-0000-0000-000000000012'
+  ),
+  'AD. a missing required source scope leaves every target scope unchanged'
 );
 
 select ok(
   (select response_payload ->> 'success' = 'false'
    from recipe_effective_results where result_name = 'copy-locked')
-  and not exists (select 1 from atlas_admin.recipes
-    where dish_id = 'c1300000-0000-0000-0000-000000000007'),
-  'AC. an approved-menu-locked target rejects the command with no writes'
+  and not exists (
+    select 1 from atlas_admin.recipe_versions version
+    where version.recipe_id in (
+      'c1400000-0000-0000-0000-000000000013',
+      'c1400000-0000-0000-0000-000000000014'
+    )
+  ),
+  'AE. an approved-menu-locked target rejects the command with no writes'
 );
 
 select ok(
   (select response_payload ->> 'success' = 'false'
    from recipe_effective_results where result_name = 'copy-atomic-failure')
-  and not exists (select 1 from atlas_admin.recipes
-    where dish_id = 'c1300000-0000-0000-0000-000000000009'),
-  'AD. a required second-scope failure rolls back the first scope atomically'
+  and not exists (
+    select 1 from atlas_admin.recipe_versions version
+    where version.recipe_id in (
+      'c1400000-0000-0000-0000-000000000015',
+      'c1400000-0000-0000-0000-000000000016'
+    )
+  ),
+  'AF. a required second-scope failure rolls back both target Recipes atomically'
 );
 
 select is(
@@ -1591,14 +1665,106 @@ select is(
    where result_name = 'copy-all-replay'),
   (select response_payload from recipe_effective_results
    where result_name = 'copy-all'),
-  'AE. an exact Dish-copy replay returns one authoritative result'
+  'AG. an exact Dish-copy replay returns one authoritative result'
 );
 
 select is(
   (select response_payload ->> 'error_code'
    from recipe_effective_results where result_name = 'copy-all-conflict'),
   'IDEMPOTENCY_CONFLICT',
-  'AF. changed payload with the same idempotency key remains protected'
+  'AH. changed payload with the same idempotency key remains protected'
+);
+
+select ok(
+  (select pg_catalog.count(*) = 1
+   from atlas_admin.recipe_versions version
+   where version.recipe_id = 'c1400000-0000-0000-0000-000000000002')
+  and exists (
+    select 1
+    from atlas_admin.recipe_line_revisions revision
+    where revision.recipe_version_id =
+        'c1500000-0000-0000-0000-000000000002'
+      and revision.ingredient_id =
+        'c1200000-0000-0000-0000-000000000010'
+      and revision.quantity_per_basis = 2
+  )
+  and exists (
+    select 1
+    from atlas_admin.recipe_line_revisions revision
+    where revision.recipe_version_id =
+        'c1500000-0000-0000-0000-000000000009'
+      and revision.ingredient_id =
+        'c1200000-0000-0000-0000-000000000010'
+      and revision.quantity_per_basis = 9
+  ),
+  'AI. Dish copy does not mutate either source base Recipe or BOM'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_admin.recipe_versions version
+    where version.recipe_id = 'c1400000-0000-0000-0000-000000000010'
+      and version.source_evidence -> 'contributing_system_adjustments'
+        @? '$[*] ? (@.adjustment_id == "c1800000-0000-0000-0000-000000000001")'
+      and version.source_evidence -> 'contributing_system_adjustments'
+        @? '$[*] ? (@.adjustment_id == "c1800000-0000-0000-0000-000000000002")'
+      and version.source_evidence -> 'contributing_system_adjustments'
+        @? '$[*] ? (@.adjustment_id == "c1800000-0000-0000-0000-000000000003")'
+  ),
+  'AJ. copied RecipeVersion records distinct contributing system provenance'
+);
+
+insert into atlas_admin.recipe_composition_adjustments (
+  recipe_composition_adjustment_id, scope_kind, action_kind, dish_id,
+  school_type_id, target_ingredient_id, adjustment_line_id,
+  created_by_actor_id, updated_by_actor_id
+) values (
+  'c1800000-0000-0000-0000-000000000099',
+  'SYSTEM_DISH', 'ADD',
+  'c1300000-0000-0000-0000-000000000001',
+  'c1100000-0000-0000-0000-000000000010',
+  'c1200000-0000-0000-0000-000000000013',
+  'c1a00000-0000-0000-0000-000000000099',
+  'c1000000-0000-0000-0000-000000000001',
+  'c1000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_admin.recipe_composition_adjustment_revisions (
+  recipe_composition_adjustment_revision_id,
+  recipe_composition_adjustment_id, scope_kind, action_kind,
+  revision_number, effective_from, quantity_per_basis, unit_id,
+  reason_code, reason_note, source_evidence, created_by_actor_id
+) values (
+  'c1900000-0000-0000-0000-000000000099',
+  'c1800000-0000-0000-0000-000000000099',
+  'SYSTEM_DISH', 'ADD', 1, '2026-09-05', 0.75,
+  'c1200000-0000-0000-0000-000000000001',
+  'RECIPE_EFFECTIVE_COPY_TEST', 'Later source rule.', '{}'::jsonb,
+  'c1000000-0000-0000-0000-000000000001'
+);
+
+update atlas_admin.recipe_composition_adjustments
+set current_revision_id = 'c1900000-0000-0000-0000-000000000099',
+    current_revision_number = 1
+where recipe_composition_adjustment_id =
+  'c1800000-0000-0000-0000-000000000099';
+
+select ok(
+  atlas_core.recipe_effective_resolve_composition(
+    '2026-09-05', null,
+    'c1300000-0000-0000-0000-000000000001',
+    'c1100000-0000-0000-0000-000000000010'
+  ) -> 'lines'
+    @? '$[*] ? (@.final_ingredient_id == "c1200000-0000-0000-0000-000000000013" && @.final_disposition == "PRESENT")'
+  and not exists (
+    select 1
+    from atlas_admin.recipe_versions version
+    where version.recipe_id = 'c1400000-0000-0000-0000-000000000010'
+      and version.draft_composition
+        @? '$[*] ? (@.ingredient_id == "c1200000-0000-0000-0000-000000000013")'
+  ),
+  'AK. a later source system rule cannot alter the copied target snapshot'
 );
 
 select * from finish();

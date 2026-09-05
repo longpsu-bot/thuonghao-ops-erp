@@ -180,6 +180,7 @@ describe("recipe API contract", () => {
         reasonNote: "Sao chép công thức đã xác nhận.",
         sourceDishId: "dish-source",
         targetDishId: "dish-target",
+        asOfDate: "2026-09-05",
       }),
     ).toEqual({
       contract_version: "RECIPE-EFFECTIVE.v1",
@@ -194,6 +195,7 @@ describe("recipe API contract", () => {
       payload: {
         source_dish_id: "dish-source",
         target_dish_id: "dish-target",
+        as_of_date: "2026-09-05",
       },
     });
   });
@@ -220,6 +222,7 @@ describe("recipe API contract", () => {
       reasonNote: "Sao chép công thức đã xác nhận.",
       sourceDishId: "dish-source",
       targetDishId: "dish-target",
+      asOfDate: "2026-09-05",
     });
 
     await api.getEffectiveWorkbench(

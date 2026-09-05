@@ -38,6 +38,7 @@ export type DishRecipeCopyCommandRequest = AtlasRpcRequest & {
   payload: {
     source_dish_id: string;
     target_dish_id: string;
+    as_of_date: string;
   };
 };
 
@@ -52,6 +53,7 @@ export type DishRecipeCopyRequestInput = {
   reasonNote: string;
   sourceDishId: string;
   targetDishId: string;
+  asOfDate: string;
 };
 
 export type RecipeCommandRequest = AtlasRpcRequest & {
@@ -188,6 +190,7 @@ export function dishRecipeCopyRequest(
     payload: {
       source_dish_id: input.sourceDishId,
       target_dish_id: input.targetDishId,
+      as_of_date: input.asOfDate,
     },
   };
 }
