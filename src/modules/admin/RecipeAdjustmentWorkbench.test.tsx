@@ -641,7 +641,7 @@ describe("Recipe Change Order first-user workbench", () => {
       within(recipeType)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["Chọn loại công thức", "Tiểu học", "Trung học"]);
+    ).toEqual(["Chọn loại công thức", "TIỂU HỌC", "TRUNG HỌC"]);
     expect(dialog.textContent).not.toMatch(
       /Không bắt buộc|Tất cả loại trường|Cả hai loại trường/,
     );
@@ -674,7 +674,7 @@ describe("Recipe Change Order first-user workbench", () => {
       school_type_id: fixtureIds.schoolType,
     });
     expect(
-      within(review).getByText("Canh bí đỏ · Tiểu học"),
+      within(review).getByText("Canh bí đỏ · TIỂU HỌC"),
     ).toBeInTheDocument();
     expect(within(review).getByText("Tất cả trường")).toBeInTheDocument();
 
@@ -774,7 +774,7 @@ describe("Recipe Change Order first-user workbench", () => {
     fireEvent.change(within(dialog).getByLabelText("Trường"), {
       target: { value: fixtureIds.secondarySchool },
     });
-    expect(within(derivedType).getByText("Trung học")).toBeInTheDocument();
+    expect(within(derivedType).getByText("TRUNG HỌC")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Món")).toHaveValue("");
     selectDish(within(dialog).getByLabelText("Món"));
     selectAction(dialog, "Thay nguyên liệu");
@@ -813,7 +813,7 @@ describe("Recipe Change Order first-user workbench", () => {
       target_recipe_line_id: fixtureIds.secondaryPorkLine,
     });
     expect(
-      within(review).getByText("Canh bí đỏ · Trung học"),
+      within(review).getByText("Canh bí đỏ · TRUNG HỌC"),
     ).toBeInTheDocument();
     expect(
       within(review).getByText("Trường Trung học Trần Phú"),
@@ -872,7 +872,7 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(
       within(
         within(dialog).getByLabelText("Loại công thức xác định từ trường"),
-      ).getByText("Trung học"),
+      ).getByText("TRUNG HỌC"),
     ).toBeInTheDocument();
     expect(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
@@ -1273,7 +1273,7 @@ describe("Recipe Change Order first-user workbench", () => {
       .find(
         (row) =>
           row.textContent?.includes(
-            "Canh bí đỏ · Tiểu học · Một món tại các trường",
+            "Canh bí đỏ · TIỂU HỌC · Một món tại các trường",
           ) && row.textContent?.includes("Thay nguyên liệu"),
       );
     expect(systemRecipeRow).toBeDefined();
@@ -1294,7 +1294,7 @@ describe("Recipe Change Order first-user workbench", () => {
       "Bối cảnh điều chỉnh cố định",
     );
     expect(
-      within(fixedContext).getByText("Canh bí đỏ · Tiểu học"),
+      within(fixedContext).getByText("Canh bí đỏ · TIỂU HỌC"),
     ).toBeInTheDocument();
     expect(within(fixedContext).getByText("Tất cả trường")).toBeInTheDocument();
     expect(within(dialog).getByLabelText("Món")).toBeDisabled();
