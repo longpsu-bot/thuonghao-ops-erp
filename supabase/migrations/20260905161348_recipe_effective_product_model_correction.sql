@@ -509,6 +509,68 @@ $$;
 comment on function atlas_api.create_dish(jsonb) is
   'RMVP-02A.v1 atomic Dish creation with two canonical typed Recipe roots and no RecipeVersion.';
 
+set role atlas_owner;
+
+create or replace function atlas_core.recipe_effective_school_exception_count(
+  reference_date date,
+  target_school_id uuid,
+  target_dish_id uuid,
+  target_school_type_id uuid
+)
+returns bigint
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  with context_schools as (
+    select school.school_id
+    from atlas_admin.schools school
+    where target_school_id is not null
+      and school.school_id = target_school_id
+      and school.school_status = 'ACTIVE'
+    union all
+    select school.school_id
+    from atlas_admin.schools school
+    where target_school_id is null
+      and school.school_type_id = target_school_type_id
+      and school.school_status = 'ACTIVE'
+  ),
+  resolutions as (
+    select atlas_core.recipe_effective_resolve_composition(
+      reference_date,
+      context_school.school_id,
+      target_dish_id,
+      target_school_type_id
+    ) as payload
+    from context_schools context_school
+  )
+  select pg_catalog.count(distinct lineage.value ->> 'adjustment_id')
+  from resolutions resolution
+  cross join lateral pg_catalog.jsonb_array_elements(
+    coalesce(resolution.payload -> 'lines', '[]'::jsonb)
+  ) line(value)
+  cross join lateral pg_catalog.jsonb_array_elements(
+    coalesce(line.value -> 'lineage', '[]'::jsonb)
+  ) lineage(value)
+  where resolution.payload ->> 'status' = 'READY'
+    and lineage.value ->> 'scope_kind' in ('SCHOOL', 'SCHOOL_DISH')
+    and nullif(lineage.value ->> 'adjustment_id', '') is not null;
+$$;
+
+revoke execute on function
+  atlas_core.recipe_effective_school_exception_count(
+    date, uuid, uuid, uuid
+  )
+from public, anon, authenticated, service_role;
+grant execute on function
+  atlas_core.recipe_effective_school_exception_count(
+    date, uuid, uuid, uuid
+  )
+to atlas_read_runtime;
+
+reset role;
+
 create or replace function atlas_api.get_dish_recipe_operator_workbench(
   request jsonb
 )
@@ -667,35 +729,12 @@ begin
     else '[]'::jsonb
   end;
 
-  select pg_catalog.count(*)
-  into v_exception_count
-  from atlas_admin.recipe_composition_adjustments root
-  join atlas_admin.schools scoped_school
-    on scoped_school.school_id = root.school_id
-   and scoped_school.school_status = 'ACTIVE'
-  join lateral (
-    select revision.revision_status
-    from atlas_admin.recipe_composition_adjustment_revisions revision
-    where revision.recipe_composition_adjustment_id =
-        root.recipe_composition_adjustment_id
-      and v_as_of_date >= revision.effective_from
-      and (
-        revision.effective_to is null
-        or v_as_of_date < revision.effective_to
-      )
-    order by revision.revision_number desc
-    limit 1
-  ) applicable on applicable.revision_status = 'ACTIVE'
-  where root.scope_kind in ('SCHOOL', 'SCHOOL_DISH')
-    and (
-      root.scope_kind = 'SCHOOL'
-      or root.dish_id = v_dish_id
-    )
-    and scoped_school.school_type_id = v_school_type_id
-    and (
-      v_school_id is null
-      or root.school_id = v_school_id
-    );
+  v_exception_count := atlas_core.recipe_effective_school_exception_count(
+    v_as_of_date,
+    v_school_id,
+    v_dish_id,
+    v_school_type_id
+  );
 
   return pg_catalog.jsonb_build_object(
     'success', true,
@@ -1456,3 +1495,151 @@ $$;
 
 comment on function atlas_api.copy_dish_recipes(jsonb)
 is 'RECIPE-EFFECTIVE.v1 atomic dated snapshot of both canonical system-effective BOMs into pre-provisioned target Recipe roots.';
+
+set role atlas_owner;
+
+do $history_base$
+begin
+  if pg_catalog.to_regprocedure(
+    'atlas_core.recipe_effective_history_candidate_base(date,uuid,uuid,uuid)'
+  ) is null then
+    alter function atlas_core.recipe_effective_history(
+      date, uuid, uuid, uuid
+    ) rename to recipe_effective_history_candidate_base;
+  end if;
+end;
+$history_base$;
+
+create or replace function atlas_core.recipe_effective_history(
+  reference_date date,
+  target_school_id uuid,
+  target_dish_id uuid,
+  target_school_type_id uuid
+)
+returns jsonb
+language plpgsql
+stable
+security invoker
+set search_path = ''
+as $$
+declare
+  v_candidate_periods jsonb;
+  v_relevant_adjustment_ids text[];
+  v_period record;
+  v_filtered_change_orders jsonb;
+  v_current jsonb;
+  v_last jsonb;
+  v_merged_change_orders jsonb;
+  v_periods jsonb := '[]'::jsonb;
+begin
+  v_candidate_periods :=
+    atlas_core.recipe_effective_history_candidate_base(
+      reference_date,
+      target_school_id,
+      target_dish_id,
+      target_school_type_id
+    );
+
+  select pg_catalog.array_agg(distinct lineage.value ->> 'adjustment_id')
+  into v_relevant_adjustment_ids
+  from pg_catalog.jsonb_array_elements(
+    coalesce(v_candidate_periods, '[]'::jsonb)
+  ) period(value)
+  cross join lateral pg_catalog.jsonb_array_elements(
+    coalesce(period.value -> 'effective_bom', '[]'::jsonb)
+  ) line(value)
+  cross join lateral pg_catalog.jsonb_array_elements(
+    coalesce(line.value -> 'lineage', '[]'::jsonb)
+  ) lineage(value)
+  where nullif(lineage.value ->> 'adjustment_id', '') is not null;
+
+  for v_period in
+    select period.value
+    from pg_catalog.jsonb_array_elements(
+      coalesce(v_candidate_periods, '[]'::jsonb)
+    ) period(value)
+    order by (period.value ->> 'period_from')::date
+  loop
+    select coalesce(
+      pg_catalog.jsonb_agg(change_order.value order by change_order.ordinality),
+      '[]'::jsonb
+    )
+    into v_filtered_change_orders
+    from pg_catalog.jsonb_array_elements(
+      coalesce(v_period.value -> 'change_orders', '[]'::jsonb)
+    ) with ordinality change_order(value, ordinality)
+    where change_order.value ->> 'adjustment_id'
+      = any(coalesce(v_relevant_adjustment_ids, array[]::text[]));
+
+    v_current := pg_catalog.jsonb_set(
+      v_period.value,
+      '{change_orders}',
+      v_filtered_change_orders
+    );
+
+    if v_last is null then
+      v_last := v_current;
+    elsif v_last -> 'effective_bom' = v_current -> 'effective_bom'
+      and v_last ->> 'resolution_status'
+        = v_current ->> 'resolution_status'
+      and v_last -> 'blockers' = v_current -> 'blockers'
+      and v_last -> 'warnings' = v_current -> 'warnings' then
+      select coalesce(
+        pg_catalog.jsonb_agg(
+          evidence.value
+          order by
+            evidence.value ->> 'effective_from',
+            (evidence.value ->> 'revision_number')::integer,
+            evidence.value ->> 'adjustment_id'
+        ),
+        '[]'::jsonb
+      )
+      into v_merged_change_orders
+      from (
+        select distinct on (
+          item.value ->> 'adjustment_id',
+          item.value ->> 'revision_id'
+        ) item.value
+        from pg_catalog.jsonb_array_elements(
+          coalesce(v_last -> 'change_orders', '[]'::jsonb)
+          || coalesce(v_current -> 'change_orders', '[]'::jsonb)
+        ) item(value)
+        order by
+          item.value ->> 'adjustment_id',
+          item.value ->> 'revision_id'
+      ) evidence;
+
+      v_last := pg_catalog.jsonb_set(
+        pg_catalog.jsonb_set(
+          v_last,
+          '{period_to}',
+          coalesce(v_current -> 'period_to', 'null'::jsonb)
+        ),
+        '{change_orders}',
+        v_merged_change_orders
+      );
+    else
+      v_periods := v_periods || pg_catalog.jsonb_build_array(v_last);
+      v_last := v_current;
+    end if;
+  end loop;
+
+  if v_last is not null then
+    v_periods := v_periods || pg_catalog.jsonb_build_array(v_last);
+  end if;
+  return v_periods;
+end;
+$$;
+
+comment on function atlas_core.recipe_effective_history(
+  date, uuid, uuid, uuid
+) is 'RECIPE-EFFECTIVE.v1 materially applicable Dish history with identical adjacent BOM periods coalesced and immutable revision evidence retained.';
+
+revoke execute on function
+  atlas_core.recipe_effective_history(date, uuid, uuid, uuid)
+from public, anon, authenticated, service_role;
+grant execute on function
+  atlas_core.recipe_effective_history(date, uuid, uuid, uuid)
+to atlas_read_runtime;
+
+reset role;

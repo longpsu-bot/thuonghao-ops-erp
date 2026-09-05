@@ -150,6 +150,16 @@ insert into atlas_admin.ingredients (
     'Food',
     'Planned',
     1
+  ),
+  (
+    'c1200000-0000-0000-0000-000000000015',
+    'recipe-effective-salt',
+    'Muối',
+    'Food',
+    'c1200000-0000-0000-0000-000000000001',
+    'Food',
+    'Planned',
+    1
   );
 
 insert into atlas_admin.dishes (
@@ -520,6 +530,62 @@ set current_revision_id = 'c1900000-0000-0000-0000-000000000083',
     version = 3
 where recipe_composition_adjustment_id =
   'c1800000-0000-0000-0000-000000000008';
+
+-- These active rules share the selected context but target an Ingredient that
+-- never occurs in this Dish. They are candidate boundaries only and must not
+-- become Dish history or School-exception evidence.
+insert into atlas_admin.recipe_composition_adjustments (
+  recipe_composition_adjustment_id, scope_kind, action_kind, school_id,
+  target_ingredient_id, created_by_actor_id, updated_by_actor_id
+) values
+  (
+    'c1800000-0000-0000-0000-000000000050',
+    'SYSTEM_INGREDIENT', 'REPLACE', null,
+    'c1200000-0000-0000-0000-000000000015',
+    'c1000000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1800000-0000-0000-0000-000000000051',
+    'SCHOOL', 'REMOVE',
+    'c1100000-0000-0000-0000-000000000020',
+    'c1200000-0000-0000-0000-000000000015',
+    'c1000000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000001'
+  );
+
+insert into atlas_admin.recipe_composition_adjustment_revisions (
+  recipe_composition_adjustment_revision_id,
+  recipe_composition_adjustment_id, scope_kind, action_kind,
+  revision_number, effective_from, substitute_ingredient_id,
+  reason_code, reason_note, source_evidence, created_by_actor_id
+) values
+  (
+    'c1900000-0000-0000-0000-000000000050',
+    'c1800000-0000-0000-0000-000000000050',
+    'SYSTEM_INGREDIENT', 'REPLACE', 1, '2026-09-06',
+    'c1200000-0000-0000-0000-000000000013',
+    'RECIPE_EFFECTIVE_RELEVANCE', 'Unrelated system rule.', '{}'::jsonb,
+    'c1000000-0000-0000-0000-000000000001'
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000051',
+    'c1800000-0000-0000-0000-000000000051',
+    'SCHOOL', 'REMOVE', 1, '2026-09-03', null,
+    'RECIPE_EFFECTIVE_RELEVANCE', 'Unrelated School rule.', '{}'::jsonb,
+    'c1000000-0000-0000-0000-000000000001'
+  );
+
+update atlas_admin.recipe_composition_adjustments root
+set current_revision_id = revision.recipe_composition_adjustment_revision_id,
+    current_revision_number = 1
+from atlas_admin.recipe_composition_adjustment_revisions revision
+where revision.recipe_composition_adjustment_id =
+    root.recipe_composition_adjustment_id
+  and root.recipe_composition_adjustment_id in (
+    'c1800000-0000-0000-0000-000000000050',
+    'c1800000-0000-0000-0000-000000000051'
+  );
 
 create function pg_temp.recipe_effective_modifier(
   p_scope text,
@@ -1169,6 +1235,48 @@ insert into recipe_effective_results values
 reset role;
 
 select ok(
+  not exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    cross join lateral pg_catalog.jsonb_array_elements(
+      period -> 'change_orders'
+    ) change_order
+    where result.result_name in ('system-operator', 'school-operator')
+      and change_order ->> 'adjustment_id' in (
+        'c1800000-0000-0000-0000-000000000050',
+        'c1800000-0000-0000-0000-000000000051'
+      )
+  )
+  and not exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    where result.result_name in ('system-operator', 'school-operator')
+      and period ->> 'period_from' = '2026-09-03'
+  ),
+  'T. unrelated system and School rules create no Dish history tag or panel'
+);
+
+select ok(
+  (
+    select response_payload #>> '{workbench,school_exception_count}' = '4'
+    from recipe_effective_results
+    where result_name = 'system-operator'
+  )
+  and (
+    select response_payload #>> '{workbench,school_exception_count}' = '4'
+    from recipe_effective_results
+    where result_name = 'school-operator'
+  ),
+  'U. School exception count includes only distinct materially applicable roots'
+);
+
+select ok(
   exists (
     select 1
     from recipe_effective_results result
@@ -1191,7 +1299,7 @@ select ok(
       and period ->> 'period_from' = '2026-09-10'
       and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 1
   ),
-  'T. system history periods contain each complete effective BOM'
+  'V. system history periods contain each complete effective BOM'
 );
 
 select ok(
@@ -1213,7 +1321,7 @@ select ok(
       and period -> 'change_orders'
         @? '$[*] ? (@.scope_kind == "SCHOOL_DISH")'
   ),
-  'U. School history includes system and School-specific full-BOM changes'
+  'W. School history includes system and School-specific full-BOM changes'
 );
 
 select ok(
@@ -1230,7 +1338,7 @@ select ok(
       and period -> 'change_orders'
         @? '$[*] ? (@.adjustment_id == "c1800000-0000-0000-0000-000000000008")'
   ),
-  'V. simultaneous Change Orders share one effective history boundary'
+  'X. simultaneous Change Orders share one effective history boundary'
 );
 
 select ok(
@@ -1257,7 +1365,7 @@ select ok(
           @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000001")'
       )
   ),
-  'W. effective_to creates the next full-BOM history period'
+  'Y. effective_to creates the next full-BOM history period'
 );
 
 select ok(
@@ -1298,7 +1406,7 @@ select ok(
       and period -> 'effective_bom'
         @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000003" && @.quantity_per_basis == 0.9)'
   ),
-  'X. cancelled and corrected revisions preserve their historical BOM periods'
+  'Z. cancelled and corrected revisions preserve their historical BOM periods'
 );
 
 select is(
@@ -1314,7 +1422,7 @@ select is(
     ]) with ordinality as state(state_name, ordinality)
   ),
   array[true, true, true, true, false, false, false],
-  'Y. is_effective_now is backend-derived for every temporal state'
+  'AA. is_effective_now is backend-derived for every temporal state'
 );
 
 select ok(
@@ -1330,7 +1438,7 @@ select ok(
       and row ->> 'is_effective_now' = 'true'
       and row #>> '{display_revision,effective_to}' = '2026-09-10'
   ),
-  'Z. backend effectiveness and effective_to remain independent ledger fields'
+  'AB. backend effectiveness and effective_to remain independent ledger fields'
 );
 
 insert into atlas_admin.ingredients (
