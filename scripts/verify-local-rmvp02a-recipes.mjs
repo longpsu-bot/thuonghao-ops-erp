@@ -198,9 +198,18 @@ async function main() {
   const dishType = initial.dish_types.find(
     (item) => item.dish_type_status === "ACTIVE",
   );
+  const canonicalSchoolTypes = ["v1-school-type-1", "v1-school-type-2"].map(
+    (schoolTypeCode) =>
+      initial.school_types.find(
+        (item) =>
+          item.school_type_code === schoolTypeCode &&
+          item.school_type_status === "ACTIVE",
+      ),
+  );
+  const [primarySchoolType, secondarySchoolType] = canonicalSchoolTypes;
   assert(
-    ingredient && unit && dishType,
-    "Active Recipe references are required.",
+    ingredient && unit && dishType && primarySchoolType && secondarySchoolType,
+    "Active Recipe references and both canonical School Types are required.",
   );
 
   const suffix = crypto.randomUUID().slice(0, 8);
@@ -219,6 +228,10 @@ async function main() {
     }),
   );
   const dishId = created.affected_aggregate_ids.dish_id;
+  assert(
+    created.affected_aggregate_ids.recipe_ids?.length === 2,
+    "Dish creation did not return both canonical typed Recipe roots.",
+  );
   await invoke(
     client,
     "set_dish_lifecycle",
@@ -230,7 +243,7 @@ async function main() {
 
   let workbench = await readWorkbench(client, subject, {
     dish_id: dishId,
-    school_type_id: null,
+    school_type_id: primarySchoolType.school_type_id,
   });
   let selected = workbench.selected_recipe;
   assert(
@@ -246,7 +259,7 @@ async function main() {
     "save_recipe",
     saveRequest(subject, selected.expected_version, {
       dish_id: dishId,
-      school_type_id: null,
+      school_type_id: primarySchoolType.school_type_id,
       recipe_version_id: null,
       basis_portions: 80,
       lines: [
@@ -281,7 +294,7 @@ async function main() {
     "save_recipe",
     saveRequest(subject, selected.expected_version, {
       dish_id: dishId,
-      school_type_id: null,
+      school_type_id: primarySchoolType.school_type_id,
       recipe_version_id: firstVersionId,
       basis_portions: 90,
       lines: [
@@ -327,7 +340,7 @@ async function main() {
   );
   const persisted = await readWorkbench(client, subject, {
     dish_id: dishId,
-    school_type_id: null,
+    school_type_id: primarySchoolType.school_type_id,
   });
   assert(
     persisted.selected_recipe.recipe_version_id === secondVersionId &&
@@ -398,7 +411,7 @@ async function main() {
 
   const locked = await readWorkbench(client, subject, {
     dish_id: dishId,
-    school_type_id: null,
+    school_type_id: primarySchoolType.school_type_id,
   });
   const lockedSelection = locked.selected_recipe;
   const lockedDish = locked.dishes.find((item) => item.dish_id === dishId);
@@ -426,7 +439,7 @@ async function main() {
     "save_recipe",
     saveRequest(subject, lockedSelection.expected_version, {
       dish_id: dishId,
-      school_type_id: null,
+      school_type_id: primarySchoolType.school_type_id,
       recipe_version_id: secondVersionId,
       basis_portions: 100,
       lines: [
@@ -446,7 +459,7 @@ async function main() {
     v1Request(subject, lockedDish.version, "RMVP02A_LOCK_COPY", {
       source_recipe_version_id: secondVersionId,
       target_dish_id: dishId,
-      target_school_type_id: null,
+      target_school_type_id: primarySchoolType.school_type_id,
     }),
   );
   const canonicalJson = JSON.stringify({
@@ -459,7 +472,7 @@ async function main() {
         dish_name: "must not change through import",
         dish_category: "Acceptance",
         requires_need_generation: true,
-        school_type_id: null,
+        school_type_id: primarySchoolType.school_type_id,
         basis_portions: 100,
         ingredient_id: ingredient.ingredient_id,
         quantity_per_basis: 99,
@@ -481,7 +494,7 @@ async function main() {
 
   const afterDenials = await readWorkbench(client, subject, {
     dish_id: dishId,
-    school_type_id: null,
+    school_type_id: primarySchoolType.school_type_id,
   });
   assert(
     JSON.stringify({
@@ -521,7 +534,7 @@ async function main() {
 
   const afterLifecycle = await readWorkbench(client, subject, {
     dish_id: dishId,
-    school_type_id: null,
+    school_type_id: primarySchoolType.school_type_id,
   });
   const afterLifecycleSelection = afterLifecycle.selected_recipe;
   const afterLifecycleRoot = afterLifecycle.recipes.find(
@@ -542,7 +555,7 @@ async function main() {
     "save_recipe",
     saveRequest(subject, afterLifecycleSelection.expected_version, {
       dish_id: dishId,
-      school_type_id: null,
+      school_type_id: primarySchoolType.school_type_id,
       recipe_version_id: secondVersionId,
       basis_portions: 100,
       lines: [
@@ -558,7 +571,7 @@ async function main() {
   );
   const finalLocked = await readWorkbench(client, subject, {
     dish_id: dishId,
-    school_type_id: null,
+    school_type_id: primarySchoolType.school_type_id,
   });
   assert(
     finalLocked.selected_recipe.locked_for_normal_editing === true &&
@@ -569,7 +582,7 @@ async function main() {
   );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified RMVP-02A browser-key pre-use creation/Save and availability, approved-menu Dish lock, Save/copy/import denial with zero base composition mutation, successful Recipe lifecycle administration with event/audit evidence, and the unchanged post-lifecycle composition lock.",
+    "Verified RMVP-02A browser-key canonical typed-pair creation, typed pre-use Save and availability, approved-menu Dish lock, Save/copy/import denial with zero base composition mutation, successful Recipe lifecycle administration with event/audit evidence, and the unchanged post-lifecycle composition lock.",
   );
 }
 
