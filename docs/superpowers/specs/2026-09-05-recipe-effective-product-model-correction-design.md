@@ -58,9 +58,54 @@ The selector never reads a Recipe whose `school_type_id is null`. It returns a b
 - missing eligible released typed Recipe Version; or
 - ambiguous eligible typed Recipe state.
 
-The selected scope is `SCHOOL_TYPE`. The system read, target-context read, Dish operator read, effective history, and Dish-level copy all use this selector. School context first derives School Type from the authoritative active School and then uses the same selector.
+The selected scope is `SCHOOL_TYPE`. The system-effective read, Change Order target-context read, effective history, locked Dish operator read, and Dish-level copy use this strict selector. School context first derives School Type from the authoritative active School and then uses the same selector.
 
 Existing RMVP-02B compatibility APIs may retain their pre-PR selection behavior through the renamed legacy resolver. Compatibility must not reintroduce NULL fallback into any `RECIPE-EFFECTIVE.v1` result or command.
+
+## Editable base Recipe context
+
+The strict `RECIPE-EFFECTIVE` selector is authoritative only where an effective Recipe is required. It is not a prerequisite for rendering or editing an unlocked Dish's base Recipe.
+
+For an unlocked Dish, `get_dish_recipe_operator_workbench` resolves the canonical typed Recipe root directly and returns `EDITABLE_BASE` even when that root does not yet have a `RELEASED_FOR_PLANNING` Recipe Version. This preserves the normal RMVP-02A authoring lifecycle instead of turning effective-read readiness into a prerequisite for first-time Recipe creation.
+
+The operator states are:
+
+1. **Recipe root exists, no Recipe Version yet**
+   - `EDITABLE_BASE`;
+   - `is_editable = true`;
+   - the base composition is empty;
+   - the operator may create the initial Recipe/BOM through the existing Recipe workflow.
+2. **A `DRAFT` or `VALIDATED` Recipe Version exists**
+   - `EDITABLE_BASE`;
+   - `is_editable = true`;
+   - the current editable composition is shown through the existing RMVP-02A authoring contract.
+3. **A `RELEASED_FOR_PLANNING` Recipe Version exists and the Dish has not been used operationally**
+   - `EDITABLE_BASE`;
+   - `is_editable = true` where existing backend allowed actions permit normal editing;
+   - the base Recipe editor remains the normal modification path.
+4. **The Dish has been used in an approved Menu**
+   - `LOCKED_CHANGE_ORDER`;
+   - `is_editable = false`;
+   - the strict typed `RECIPE-EFFECTIVE` selector must resolve `READY`;
+   - the current effective BOM is shown read-only;
+   - further modification uses Lệnh điều chỉnh.
+
+A missing released Recipe Version is therefore a readiness blocker for effective resolution, Change Order creation/preview, effective history, and source-side Dish copy. It is not a blocker to initial or pre-lock base Recipe authoring.
+
+The implementation must keep these two responsibilities distinct:
+
+```text
+BASE AUTHORING
+canonical typed Recipe root
+→ DRAFT / VALIDATED / RELEASED
+→ editable until operational lock
+
+EFFECTIVE RECIPE
+RELEASED canonical typed Recipe
++ system Change Orders
+(+ School Change Orders in School context)
+→ effective BOM
+```
 
 ## Existing data and cutover
 
@@ -110,12 +155,12 @@ The support-level `copy_recipe_version` API remains callable and unchanged; it i
 
 ## Operator edit and action state
 
-`get_dish_recipe_operator_workbench` derives state from the authoritative Dish lifecycle, active typed Recipe root/version, and `uiq03a_dish_used_operationally(dish_id)`.
+`get_dish_recipe_operator_workbench` derives state from the authoritative Dish lifecycle, canonical typed Recipe root/version state, existing Recipe allowed actions, and `uiq03a_dish_used_operationally(dish_id)`.
 
-- Before approved-Menu use, the state is `EDITABLE_BASE`, `is_editable` is true, and the base Recipe editor is the normal modification path.
+- Before approved-Menu use, the state is `EDITABLE_BASE`, `is_editable` reflects existing backend authoring eligibility, and the base Recipe editor is the normal modification path even when no released Recipe Version exists yet.
 - After approved-Menu use, the state is `LOCKED_CHANGE_ORDER`, `is_editable` is false, the current effective BOM is read-only, and Lệnh điều chỉnh is the normal modification path.
 
-`COPY_DISH_RECIPES` is advertised only when the Dish is an eligible unlocked target and the command would not be rejected by the D-038 lock. `CREATE_CHANGE_ORDER` is advertised only for a locked READY effective context. React may narrow these actions but never widen them.
+`COPY_DISH_RECIPES` is advertised only when the Dish is an eligible unlocked target and the command would not be rejected by the D-038 lock. `CREATE_CHANGE_ORDER` is advertised only for a locked `READY` effective context. React may narrow these actions but never widen them.
 
 ## Material history applicability
 
@@ -148,7 +193,7 @@ No Weekly Menu behavior, Attendance, Need Generation formula, Pantry, Confirmed 
 
 ## Acceptance and verification
 
-Test-first coverage must prove requirements A–P from the approved correction brief, including pair creation, code-based uppercase catalog handling, typed-only missing-scope blockers, two-scope system-effective snapshot copy, School-layer exclusion, source immutability, later-rule independence, transaction rollback, target lock, lifecycle-derived operator state, history relevance, exception-count relevance, and all preserved targeting behaviors.
+Test-first coverage must prove requirements A–P from the approved correction brief, including pair creation, code-based uppercase catalog handling, typed-only missing-scope blockers, unlocked no-version/DRAFT/VALIDATED/released authoring states, two-scope system-effective snapshot copy, School-layer exclusion, source immutability, later-rule independence, transaction rollback, target lock, lifecycle-derived operator state, history relevance, exception-count relevance, and all preserved targeting behaviors.
 
 Run the existing focused PR #257 pgTAP suites, affected Dish-creation suites, relevant API/model Vitest, typecheck, formatting, security-catalog checks, and `git diff --check`. After targeted GREEN and correction completion, transition PR #257 from Draft to Ready so the repository-owned Supabase Full Integration workflow runs. Do not merge or deploy.
 
@@ -157,6 +202,7 @@ Run the existing focused PR #257 pgTAP suites, affected Dish-creation suites, re
 - The two-root invariant applies to new command-created Dishes and Dishes treated as valid by the new contract, not as an immediate global cleanup constraint.
 - Stable School-Type codes are the only canonical scope identity.
 - Recipe Versions remain absent at Dish creation and immutable once materialized.
+- Base-authoring readiness and effective-Recipe readiness are explicitly separate.
 - Copy is a system-effective snapshot, not a base-version delegation or adjustment clone.
 - History panel coalescing is separate from immutable revision evidence.
 - Compatibility is isolated without mutating Staging or weakening the new typed-only contract.
