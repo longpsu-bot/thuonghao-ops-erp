@@ -400,7 +400,8 @@ language sql stable set search_path='' as $$
 $$;
 create temporary table before_failed_preparation as select
   pg_temp.preparation_business_snapshot() as business_snapshot,
-  (select count(*) from atlas_core.command_receipts) as receipt_count;
+  (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+    from atlas_core.command_receipts r) as receipt_snapshot;
 -- Sequence advancement survives the command's subtransaction rollback, proving
 -- the failure reached the PO child rather than an earlier validation branch.
 create temporary sequence preparation_po_attempt minvalue 0 start 0;
@@ -430,9 +431,10 @@ select is((select response->>'success' from review_results where name='prepare-c
 select is(pg_temp.preparation_business_snapshot(),
   (select business_snapshot from before_failed_preparation),
   'MC-Q04 failed PO child rolls back release, Handoff, promotion, PO and audit evidence');
-select is((select count(*) from atlas_core.command_receipts where command_id <>
+select is((select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+  from atlas_core.command_receipts r where command_id <>
   (select (request->>'command_id')::uuid from command_requests where name='prepare-child-failure')),
-  (select receipt_count from before_failed_preparation),
+  (select receipt_snapshot from before_failed_preparation),
   'MC-Q04 failed preparation retains no child receipt or accepted child command');
 
 set local role authenticated;
