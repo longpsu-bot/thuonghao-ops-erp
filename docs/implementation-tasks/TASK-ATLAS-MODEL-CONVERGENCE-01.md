@@ -1,11 +1,11 @@
 # ATLAS-MODEL-CONVERGENCE-01 implementation evidence
 
-Status: implementation in progress. Required P0/P1 acceptance is not complete.
+Status: bounded implementation prepared for independent review and exact-head CI. Required P0/P1 acceptance is not complete: A07/A12 remain blocked and A03 is partial.
 
 ## Execution and scope
 
 - Verified baseline: `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`, merged PR [#257](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/257).
-- Task branch: `codex/atlas-model-convergence-01`; final reviewed head and Draft PR pending.
+- Task branch: `codex/atlas-model-convergence-01`; the Draft PR records the final reviewed head, review disposition and post-freeze CI execution evidence.
 - Canonical checkout was explicitly confirmed after preflight found a historical second worktree. Initial checkout was clean; the old branch was retained intact. New task branch starts at the verified baseline.
 - Actual lead runtime: `gpt-6-astra / xhigh`, disclosed before user approval. Implementation workers requested `gpt-5.6-sol / xhigh`; no prompt-based runtime change claimed.
 - Seven supplied document hashes matched before integration. Formatting changed only Markdown layout. Product direction is approved; packet wording does not constitute a completed implementation/review/deployment.
@@ -13,9 +13,9 @@ Status: implementation in progress. Required P0/P1 acceptance is not complete.
 
 ## Authoritative paths and compatibility
 
-The frozen contract map uses the existing reference catalog for identity/search and target Dish version, `get_dish_recipe_operator_workbench` for selected effective/base-authoring context, `copy_dish_recipes` for one two-scope copy, and `get_recipe_effective_target_context` for exact effective target identity. Connected adoption evidence is pending integration.
+The frozen contract map uses the existing reference catalog for identity/search and target Dish version, `get_dish_recipe_operator_workbench` for selected effective/base-authoring context, `copy_dish_recipes` for one two-scope copy, and `get_recipe_effective_target_context` for exact effective target identity. Connected component tests deliberately separate base/effective contents and inspect exact API requests. The existing loopback-only authenticated Recipe verifier now also checks canonical reads and two-scope copy against disposable Supabase.
 
-Normal GENERAL fallback, browser effective selection, browser one-version copy and representative-School system context are retirement targets in the UI. Physical compatibility APIs and historical evidence remain retained. Do not interpret this target list as proof of completed adoption until the connected tests below pass.
+Normal GENERAL authoring fallback, browser effective selection and browser one-version copy are removed from this UI. System Dish target reads use explicit School Type context; unsupported system mutation fails closed. Physical compatibility APIs and historical evidence remain retained. Ingredient-wide operations preserve their existing explicitly named School/Dish impact Preview semantics.
 
 ## Required contract gaps
 
@@ -25,76 +25,76 @@ Normal GENERAL fallback, browser effective selection, browser one-version copy a
 
 ## Acceptance-to-evidence matrix
 
-Existing SQL/component evidence is reused where sufficient. An existing test listed here is not a new pass until the final exact-head run executes it. Mocked component tests show connected component adoption, while database atomicity/authentication needs disposable SQL/browser-key evidence.
+Local pass means the named connected component/parser tests passed; it is not database proof. Rows naming remote gates remain unverified at this committed snapshot. The Draft PR carries the final per-ID execution outcomes tied to its exact reviewed SHA; no report-only commit is made after CI merely to insert run links. Existing SQL/component evidence is reused where sufficient. An existing test listed here is not a new pass until the final exact-head run executes it. Mocked component tests show connected component adoption, while database atomicity/authentication needs disposable SQL/browser-key evidence.
 
-| ID  | Outcome                        | Actual test or artifact                                                                                                                                                    |
-| --- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R01 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R02 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R03 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R04 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R05 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R06 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R07 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R08 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R09 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R10 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R11 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R12 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R13 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R14 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| R15 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| C01 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| C02 | Pending final-head validation  | supabase/tests/recipe_effective_contract_01.sql — AB/AC system-only snapshot                                                                                               |
-| C03 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| C04 | Pending final-head validation  | supabase/tests/recipe_effective_contract_01.sql — missing scope/lock; product-model selector tests                                                                         |
-| C05 | Pending final-head validation  | supabase/tests/recipe_effective_contract_01.sql — AF second-scope rollback                                                                                                 |
-| C06 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| C07 | Pending final-head validation  | supabase/tests/recipe_effective_contract_01.sql — AG/AH exact replay/content conflict                                                                                      |
-| C08 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| C09 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| C10 | Pending final-head validation  | supabase/tests/recipe_effective_contract_01.sql — AI/AK source immutability/later-rule independence                                                                        |
-| C11 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A01 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A02 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A03 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A04 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A05 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A06 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A07 | BLOCKED — required backend gap | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A08 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A09 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A10 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A11 | Pending final-head validation  | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| A12 | BLOCKED — required backend gap | Worker connected component/parser evidence pending integration; canonical Recipe SQL reused where applicable                                                               |
-| P01 | Pending final-head validation  | planningInputsModel.test.ts persisted/default pair cases; PlanningInputsWorkbench.test.tsx explicit zero/blank; planningInputsWorkbook.test.ts                             |
-| P02 | Pending final-head validation  | PlanningInputsWorkbench.test.tsx reviewed Menu Save and Google fetch invalidation; complete canonical filtered Save                                                        |
-| P03 | Pending final-head validation  | PantryWorkbench.test.tsx explicit no-additions/review invalidation; supabase/tests/pantry_02_connected_pantry_source.sql                                                   |
-| P04 | Pending final-head validation  | supabase/tests/planning_contract_01_atomic_planning_boundaries.sql — PCT01-D01–D15; verify-local-planning-contract-01.mjs                                                  |
-| P05 | Pending final-head validation  | supabase/tests/planning_contract_01_atomic_planning_boundaries.sql — PCT01-D19/D20                                                                                         |
-| P06 | Pending final-head validation  | supabase/tests/planning_contract_01_atomic_planning_boundaries.sql — PCT02B-09/11/13/21/25/30/33/34/43; continuity SQL                                                     |
-| P07 | Pending final-head validation  | supabase/tests/school_catering_planning_correction.sql; SchoolCateringProcurementWorkbench.test.tsx correction-to-commitment journey                                       |
-| Q01 | Pending final-head validation  | GeneratedPurchaseReview.test.tsx read/export without commands; supabase/tests/purchase_review_confirm_release.sql before_preview counts                                    |
-| Q02 | Pending final-head validation  | ConfirmedSupplierAllocationWorkbench.test.tsx exact source/version/splits; SchoolCateringProcurementWorkbench.test.tsx; supabase/tests/purchase_review_confirm_release.sql |
-| Q03 | Pending final-head validation  | supabase/tests/purchase_review_confirm_release.sql rebalance60_40/stale125; connected explicit Apply/Save tests                                                            |
-| Q04 | Pending final-head validation  | supabase/tests/purchase_review_confirm_release.sql — new MC-Q04 final-child failure and existing prepare/replay; ConfirmedSupplierAllocationWorkbench.test.tsx             |
-| Q05 | Pending final-head validation  | supabase/tests/purchase_review_confirm_release.sql — promotion source/predecessor/exact125; school_catering_handoff_allocation.sql                                         |
-| Q06 | Pending final-head validation  | supabase/tests/school_catering_purchase_orders.sql; purchase_review_confirm_release.sql released snapshots; connected stale draft/release tests                            |
-| Q07 | Pending final-head validation  | purchaseOrderExports.test.ts unsafe-integer six-decimal and XLSX text preservation; GeneratedPurchaseReview.test.tsx decimal evidence                                      |
-| S01 | Pending final-head validation  | supabase/tests/atlas_current_platform_security_catalog.sql; Recipe/adjustment SQL authorization; local browser-key verifiers                                               |
-| S02 | Pending final-head validation  | supabase/tests/recipe_effective_contract_01.sql; recipe_active_on_create_lifecycle_correction.sql; RMVP-02A/B SQL                                                          |
-| S03 | Pending final-head validation  | New connected Recipe/adjustment fault tests (pending integration); existing preparation readback failure/late result cases                                                 |
-| S04 | Pending final-head validation  | Authority map, living documentation corrections, this report, independent review and Staging inventory                                                                     |
+| ID  | Outcome before remote gates          | Actual test or artifact                                                                                                                                                                                                           |
+| --- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R01 | Local pass; SQL gate                 | Recipe UI: creates from a locked Dish and saves the new identity; canonical returned scope IDs. recipe_active_on_create_lifecycle_correction.sql and authenticated verifyCanonicalCopy target-creation assertions.                |
+| R02 | Local pass                           | Recipe UI: uses only canonical returned scope IDs … root-only authoring writable while effective readiness is blocked; recipeModel root-only parser; recipe-root-only-authoring.png.                                              |
+| R03 | Local pass; SQL gate                 | Recipe UI parameterized uses backend base-authoring authority for versionStatus with Save=saveAllowed: DRAFT, VALIDATED, RELEASED_FOR_PLANNING and denied VALIDATED; lifecycle SQL.                                               |
+| R04 | Local pass; SQL gate                 | Recipe UI: renders an operationally used identity read-only and directs it to Change Order; recipe-locked-base.png; existing Recipe Menu-lock SQL.                                                                                |
+| R05 | Local pass                           | Recipe UI canonical returned scope ID / renamed-label tests; recipeModel stable canonical code validation.                                                                                                                        |
+| R06 | Local pass; SQL gate                 | Root-only connected UI and story; recipe_effective_product_model_correction.sql strict typed selector / GENERAL-only blockers.                                                                                                    |
+| R07 | Local pass; browser pass             | Recipe UI: loads one authoritative effective detail on demand and labels base-only catalog search truthfully; base Bí đỏ versus effective Hành lá; recipe-school-effective.png.                                                   |
+| R08 | Local pass; SQL gate                 | Recipe UI: navigates to a School effective context …; keeps a second same-type School free of another School exception; system12/exception14/unaffected12. recipe_effective_contract_01.sql system/School resolution.             |
+| R09 | Local pass                           | Recipe UI: keeps late effective reads from replacing the latest selected context; deferred context/date request.                                                                                                                  |
+| R10 | Local pass                           | Recipe UI: does not silently discard unsaved work when changing Dish or navigation; dirty-copy guard; failed Save/create readback draft preservation.                                                                             |
+| R11 | Local pass                           | Recipe UI backend Save=false parameterized case and operational lock case assert disabled Save and no command.                                                                                                                    |
+| R12 | Local pass; authenticated gate       | Recipe UI: does not issue Recipe reads or writes after the session expires; fails closed when the authoritative effective read is denied. Existing RMVP-02A browser-key denial journey plus new canonical authenticated reads.    |
+| R13 | Local pass                           | recipeModel rejects context-kind/identity mismatch, selected Recipe mismatch and malformed stable target XOR; connected effective read fails closed.                                                                              |
+| R14 | Local pass; browser pass             | Recipe UI lazy effective request-count test and base-labelled Ingredient search. Catalog remains useful without whole-catalog effective search or per-Dish history fanout.                                                        |
+| R15 | Local pass; SQL gate                 | Recipe UI: Save makes an eligible pre-use Recipe available through one backend command; exact-authoring readback recovery. Active-on-create lifecycle SQL; no extra lifecycle call.                                               |
+| C01 | Local pass; authenticated gate       | Recipe UI: copies both canonical scopes atomically into persisted DRAFT authoring identities without auto-saving; exactly one request/fresh target Dish version/date/reason. verifyCanonicalCopy.                                 |
+| C02 | SQL + authenticated gate             | recipe_effective_contract_01.sql AB/AC proves system snapshot and School-layer exclusion. verifyCanonicalCopy authenticates both canonical system snapshots (its fixture does not duplicate School layers).                       |
+| C03 | Local pass; SQL + authenticated gate | Recipe copy parser validates two distinct canonical COPIED results; connected two-DRAFT/source-evidence/readback assertions; verifyCanonicalCopy and canonical Recipe SQL.                                                        |
+| C04 | SQL gate                             | recipe_effective_contract_01.sql missing source scope, nonempty/locked target; recipe_effective_product_model_correction.sql strict root/reference selector cases.                                                                |
+| C05 | SQL gate                             | recipe_effective_contract_01.sql AF injects second-scope failure and asserts atomic rollback; component rejects malformed/partial results.                                                                                        |
+| C06 | Local pass; SQL gate                 | Recipe UI: refreshes after a known stale copy denial without retrying the request; locked copy disabled. Canonical Recipe SQL concurrent target version and Menu lock denial.                                                     |
+| C07 | Local pass; SQL + authenticated gate | Recipe UI retains exact retryable request; recipe_effective_contract_01.sql AG/AH exact replay/content conflict; verifyCanonicalCopy stable version IDs/count on replay.                                                          |
+| C08 | Local pass                           | Recipe UI: retains an unknown copy request across ordinary refresh and reconciles by persisted command evidence without resending.                                                                                                |
+| C09 | Local pass; browser pass             | Recipe UI: keeps a known successful copy blocked when a DRAFT readback fails …; reconciles a malformed success envelope …; copy recovery screenshots and story.                                                                   |
+| C10 | SQL gate                             | recipe_effective_contract_01.sql AI/AK source immutability and later-rule independence; verifyCanonicalCopy unchanged source version snapshots.                                                                                   |
+| C11 | Local pass                           | Recipe UI retry-intent supersession and does not discard dirty authoring when a copy is proposed.                                                                                                                                 |
+| A01 | Local pass                           | Adjustment UI: loads system Dish targets from the exact effective context …; preserves target Recipe-line Unit; getEffectiveTargetContext API spy.                                                                                |
+| A02 | Local pass; SQL gate                 | Adjustment UI preserves target Recipe-line Unit … asserts target_recipe_line_id with adjustment_line_id:null; RMVP-02B target validation SQL.                                                                                     |
+| A03 | PARTIAL — A07 blocks system mutation | Adjustment UI: round-trips a prior SYSTEM_DISH ADD target through exact School Preview and Create; true system target read also tested. System Preview/Create remains unsupported.                                                |
+| A04 | Local pass; SQL gate                 | Adjustment UI: preserves a prior SCHOOL_DISH ADD target through correction Preview and Supersede; review adapter exact prior ADD test; Recipe/adjustment SQL stable-origin cases.                                                 |
+| A05 | Local pass; SQL gate                 | Adjustment parser exact context and target XOR; mismatched Preview/malformed target denial; deterministic missing target; existing SQL inapplicable/removed target validation.                                                    |
+| A06 | Local pass                           | Adjustment UI: ignores a late Preview after the reviewed intent changes; exact changed-line review invalidated by editing.                                                                                                        |
+| A07 | BLOCKED — required backend gap       | True system target read has no matching system-only Preview/Create/Supersede envelope. Connected tests prove disabled action and no proxy School. See required gap above.                                                         |
+| A08 | Local pass; SQL gate                 | Existing scope/action matrix; ADD uses active Ingredient purchase Unit and missing Unit blocks. SYSTEM_INGREDIENT uses an explicitly named School/Dish impact context, not global proof; SYSTEM_DISH ADD is blocked by A07.       |
+| A09 | Local pass; browser pass             | Adjustment UI: uses backend applicability, half-open periods, and unattributed issuance in the ledger; malformed temporal boolean parser. adjustment-temporal-legacy-ledger.png.                                                  |
+| A10 | Local pass; SQL gate                 | Recipe UI: renders authoritative BOM periods while keeping imported attribution explicitly nullable; adjacent finite/open periods with complete BOM rows. recipe-full-bom-history.png and recipe_effective_contract_01.sql V/W/Y. |
+| A11 | Local pass; SQL gate                 | Recipe exact School count/component switching and adjustment conflicting same-type School targets; recipe_effective_contract_01.sql materially unrelated Ingredient/School rules excluded from periods/counts.                    |
+| A12 | BLOCKED — required backend gap       | Nullable history parser and conservative Recipe disclosure; adjustment LEGACY_UNATTRIBUTED renders neither importer nor import time. Backend original-issuance parity remains unavailable; screenshot is UI mitigation only.      |
+| P01 | Frontend CI gate                     | planningInputsModel.test.ts persisted/default pairs; PlanningInputsWorkbench.test.tsx automatic proposals, explicit zero and invalid blank; planningInputsWorkbook.test.ts.                                                       |
+| P02 | Frontend CI gate                     | PlanningInputsWorkbench.test.tsx reviewed Menu Save, Google-fetch review invalidation and complete canonical Save after filtering.                                                                                                |
+| P03 | Frontend + SQL gate                  | PantryWorkbench.test.tsx explicit no-additions and Review invalidation; pantry_02_connected_pantry_source.sql.                                                                                                                    |
+| P04 | SQL + authenticated gate             | planning_contract_01_atomic_planning_boundaries.sql PCT01-D01–D15; verify-local-planning-contract-01.mjs date-bound generation journey.                                                                                           |
+| P05 | SQL gate                             | planning_contract_01_atomic_planning_boundaries.sql PCT01-D19/D20 unrelated date changes preserve day currentness.                                                                                                                |
+| P06 | SQL gate                             | planning_contract_01_atomic_planning_boundaries.sql PCT02B-09/11/13/21/25/30/33/34/43; planning_contract_02b_selective_confirmation_continuity.sql.                                                                               |
+| P07 | Frontend + SQL gate                  | school_catering_planning_correction.sql; SchoolCateringProcurementWorkbench.test.tsx correction/rebalance/stale-draft/release/commitment journey.                                                                                 |
+| Q01 | Frontend + SQL gate                  | GeneratedPurchaseReview.test.tsx read/export without commands; purchase_review_confirm_release.sql before_preview counts.                                                                                                         |
+| Q02 | Frontend + SQL gate                  | ConfirmedSupplierAllocationWorkbench.test.tsx exact source/version/splits; SchoolCateringProcurementWorkbench.test.tsx; purchase_review_confirm_release.sql exact sum/eligibility/lineage.                                        |
+| Q03 | Frontend + SQL gate                  | purchase_review_confirm_release.sql rebalance60_40/stale125; connected explicit Apply/Save tests.                                                                                                                                 |
+| Q04 | SQL + authenticated gate             | purchase_review_confirm_release.sql MC-Q04 newly injects final PO-child failure, proves stage reached with sequence, and compares full before/after state; existing prepare/replay and browser-key procurement journey.           |
+| Q05 | SQL gate                             | purchase_review_confirm_release.sql promotion source/predecessor/exact125; school_catering_handoff_allocation.sql typed source/lineage.                                                                                           |
+| Q06 | Frontend + SQL gate                  | school_catering_purchase_orders.sql; purchase_review_confirm_release.sql immutable issued snapshot; connected stale draft/release tests.                                                                                          |
+| Q07 | Frontend CI gate                     | purchaseOrderExports.test.ts unsafe-integer six-decimal text/XLSX preservation; GeneratedPurchaseReview.test.tsx exact decimal evidence.                                                                                          |
+| S01 | Local pass; SQL + authenticated gate | Recipe denied/session tests and adjustment denied Preview; atlas_current_platform_security_catalog.sql; RMVP-02A/B Actor/scope/capability denial and browser-key journeys.                                                        |
+| S02 | Local pass; SQL + authenticated gate | Recipe/adjustment exact requests and mutation locks; canonical Recipe three suites, RMVP-02A/B SQL and authenticated copy replay.                                                                                                 |
+| S03 | Local pass; browser pass; CI gate    | Connected Recipe Save/create/copy and adjustment create/supersede/cancel successful/unknown/malformed readback cases; exact evidence required before unlock. Existing preparation recovery cases run in Frontend CI.              |
+| S04 | Review + CI gate                     | Adopted decision/authority map and living corrections; this 56-row map, changed-file inventory, synthetic browser artifacts, read-only Staging inventory, independent review and exact-head CI in Draft PR.                       |
 
 ## Validation and review
 
 - Baseline database RED: main run [34002629562](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/34002629562) failed Recipe history V/W/Y (22/23/25 of 39). The fixture mixed fixed September boundaries with a wall-clock base release; the history contract excludes boundaries before release. The fixture now uses fixed validation/release timestamps before the scenario boundaries. Assertions and production logic are unchanged; final CI outcome is pending.
-- Targeted test-first RED/GREEN: pending worker integration reports.
-- Touched-file formatting, TypeScript and whitespace: pending final integration.
+- Test-first development observed failures for authoritative base/effective divergence, root authoring, malformed contexts/target XOR, atomic copy, denied effective reads and exact mutation readback. Integrated focused run: **115/115 across 7 files**, default timeout, one local test worker; final follow-up-specific results are recorded in the Draft PR.
+- Integrated TypeScript passed. Touched-file Prettier and whitespace checks run before the review commit; final outcomes are recorded in the Draft PR. One earlier concurrent local run hit a 5-second test timeout; the affected test passed in isolation and the serial 115-test run passed without a timeout override. A mistaken local run that included ignored worker worktrees was cancelled and excluded from evidence. CI configuration was not weakened.
 - Fresh independent spec/authority and safety/correctness review: pending integrated head.
 - Frontend CI: pending Draft PR.
 - Supabase Full Integration: pending final reviewed head. Inspected workflow_dispatch runs a reduced disposable local Docker stack, ordered SQL suites and loopback-only authenticated verifiers. No hosted secrets/deployment job is present. Required canonical Recipe, Planning, Procurement and security suites are already registered; MC-Q04 extends an existing registered suite.
-- Browser artifacts: pending real component interactions using disclosed synthetic fixtures at desktop and narrow width; not a hosted rehearsal.
+- Browser evidence: real components rendered through Storybook with shaped synthetic APIs; desktop and 390px narrow views. Root-only editing, locked navigation, divergent effective context, full-BOM history, prior-ADD Preview/Save, denied read and unknown-result recovery were exercised. See [artifact index](../testing/artifacts/atlas-model-convergence/README.md). These are not hosted or authenticated database browser screenshots.
 
 ## Staging readiness — NOT READY
 
@@ -117,6 +117,44 @@ These are aggregate metadata observations, not security certification or hosted 
 
 ## Change, rollback and delivery status
 
-Changed-file inventory and final reviewed SHA are pending integration. No migrations or production database changes are planned; application rollback is a reviewed revert of the bounded frontend/docs change. Historical compatibility APIs remain available, with physical P2 cleanup deferred.
+Changed production files are confined to the two Recipe workbenches and their Recipe/adjustment adapters/models. Most added lines are approved packet documents, regression tests and synthetic review fixtures; no Planning/Procurement production file changed. The new purchase rollback regression and fixed-date Recipe history fixture are test-only. No migration or production database change is included; application rollback is a reviewed revert of the bounded frontend/docs change. Historical compatibility APIs remain available, with physical P2 cleanup deferred.
 
 No merge, Ready transition, hosted deployment, hosted fixture, data repair or hosted business write is authorized or performed. The delivery boundary is one Draft PR and evidence for review.
+
+## Changed-file inventory
+
+- `README.md`
+- `docs/api/rmvp-02a-recipes-bom.md`
+- `docs/api/rmvp-02b-recipe-adjustments-effective-bom.md`
+- `docs/api/rmvp-03a-planning-inputs.md`
+- `docs/api/rmvp-03b-planning-input-readiness.md`
+- `docs/api/school-catering-procurement.md`
+- `docs/architecture/atlas-authority-map-through-procurement.md`
+- `docs/architecture/atlas-model-convergence-evidence.md`
+- `docs/architecture/roadmap.md`
+- `docs/current-context.md`
+- `docs/decisions/decision-atlas-model-convergence.md`
+- `docs/decisions/decision-register.md`
+- `docs/implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md`
+- `docs/runbooks/atlas-model-convergence-staging-readiness.md`
+- `docs/superpowers/plans/2026-09-06-atlas-model-convergence.md`
+- `docs/superpowers/specs/2026-09-06-atlas-model-convergence-design.md`
+- `docs/testing/atlas-model-convergence-acceptance.md`
+- `scripts/verify-local-rmvp02a-recipes.mjs`
+- `src/modules/admin/DishRecipeAdminWorkbench.stories.tsx`
+- `src/modules/admin/DishRecipeAdminWorkbench.test.tsx`
+- `src/modules/admin/DishRecipeAdminWorkbench.tsx`
+- `src/modules/admin/RecipeAdjustmentWorkbench.stories.tsx`
+- `src/modules/admin/RecipeAdjustmentWorkbench.test.tsx`
+- `src/modules/admin/RecipeAdjustmentWorkbench.tsx`
+- `src/modules/atlas/recipe-adjustments/recipeAdjustmentApi.test.ts`
+- `src/modules/atlas/recipe-adjustments/recipeAdjustmentModel.ts`
+- `src/modules/atlas/recipe-adjustments/reviewRecipeAdjustmentApi.test.ts`
+- `src/modules/atlas/recipe-adjustments/reviewRecipeAdjustmentApi.ts`
+- `src/modules/atlas/recipes/recipeApi.ts`
+- `src/modules/atlas/recipes/recipeModel.test.ts`
+- `src/modules/atlas/recipes/recipeModel.ts`
+- `src/modules/atlas/recipes/reviewRecipeApi.ts`
+- `supabase/tests/purchase_review_confirm_release.sql`
+- `supabase/tests/recipe_effective_contract_01.sql`
+- `docs/testing/artifacts/atlas-model-convergence/` — disclosed synthetic browser screenshots and index.
