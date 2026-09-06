@@ -1453,7 +1453,7 @@ export function DishRecipeAdminWorkbench({
             >
               <div className="master-data-detail-heading">
                 <div>
-                  <span>Thông tin backend theo ngữ cảnh</span>
+                  <span>Công thức theo ngày và phạm vi áp dụng</span>
                   <h3>{dish?.dish_name ?? "Chọn một món"}</h3>
                 </div>
               </div>
@@ -1658,8 +1658,8 @@ export function DishRecipeAdminWorkbench({
                   )}
                   <p className="supporting-copy">
                     Bảng danh sách dùng công thức gốc để hỗ trợ tìm kiếm. Chi
-                    tiết bên trên là kết quả hiệu lực có thẩm quyền cho đúng
-                    ngày và ngữ cảnh đã chọn.
+                    tiết bên trên hiển thị công thức áp dụng cho đúng ngày và
+                    ngữ cảnh đã chọn.
                   </p>
                 </>
               )}
