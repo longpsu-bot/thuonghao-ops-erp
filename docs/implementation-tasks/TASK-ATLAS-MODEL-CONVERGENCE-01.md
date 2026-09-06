@@ -130,7 +130,7 @@ These are aggregate metadata observations, not security certification or hosted 
 
 Changed production files are confined to the two Recipe workbenches and their Recipe/adjustment adapters/models. Most added lines are approved packet documents, regression tests and synthetic review fixtures; no Planning/Procurement production file changed. The new purchase rollback regression and fixed-date Recipe history fixture are test-only. No migration or production database change is included; application rollback is a reviewed revert of the bounded frontend/docs change. Historical compatibility APIs remain available, with physical P2 cleanup deferred.
 
-No merge, Ready transition, hosted deployment, hosted fixture, data repair or hosted business write is authorized or performed. The delivery boundary is one Draft PR and evidence for review.
+No merge, Ready transition, manual hosted deployment, hosted fixture, data repair or hosted business write was performed. The existing Cloudflare Pages repository integration automatically published a branch preview after the authorized push; the Draft PR records that preview separately from disposable CI and Staging readiness. The delivery boundary remains one Draft PR and evidence for review.
 
 ## Changed-file inventory
 
