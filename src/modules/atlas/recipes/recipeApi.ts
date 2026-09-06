@@ -49,7 +49,7 @@ export type DishRecipeCopyRequestInput = {
   idempotencyKey: string;
   requestedAt: string;
   expectedVersion: number;
-  reasonCode: string;
+  reasonCode: "COPY_DISH_RECIPES";
   reasonNote: string;
   sourceDishId: string;
   targetDishId: string;

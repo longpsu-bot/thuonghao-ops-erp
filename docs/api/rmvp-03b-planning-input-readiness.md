@@ -634,10 +634,11 @@ The backend discovers current completed Weekly Menu, Attendance, and Pantry snap
 The four `RMVP-03B.v1` identities and their historical evaluation/issue behavior remain exact and callable during coexistence. Normal v2 execution no longer requires the browser to call evaluate or request-handoff commands. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
 
 For an exact automatic `D..D` preflight with no current Need, v2 additionally
-requires at least one Menu source for D that requires Need Generation or one
-positive Pantry approval-snapshot line for D before advertising executable
-generation. An active Dish with `requires_need_generation = false` does not
-establish daily demand. A non-active Menu Dish remains execution-relevant so
+requires at least one approved Menu Dish reference for D or one positive Pantry
+approval-snapshot line for D before advertising executable generation. An
+ACTIVE Menu Dish with an eligible released Recipe establishes daily demand
+regardless of persisted `requires_need_generation`; that column is legacy
+metadata and is not execution authority. A non-active Menu Dish remains execution-relevant so
 the existing `INACTIVE_OR_INVALID_DISH` generator validation is preserved and
 is not converted to neutral no-demand. Attendance alone is not a Need source.
 A selected approved zero-line Pantry snapshot remains valid source evidence
@@ -650,3 +651,5 @@ it creates no Planning Input Set, evaluation, persisted RMVP-03B.v1 issue, event
 audit, or historical-taxonomy change. The guard does not apply when a current
 Need already exists, because source disappearance then requires the separately
 governed correction/removal contract.
+
+This paragraph supersedes the earlier RMVP-03B demand-flag interpretation and aligns with the final [RMVP-03A Dish lifecycle and Recipe readiness amendment](rmvp-03a-planning-inputs.md#dish-lifecycle-and-recipe-readiness-amendment), [RMVP-04 daily generation contract](rmvp-04-connected-need-generation.md), and [Atlas authority map](../architecture/atlas-authority-map-through-procurement.md). The flag remains readable compatibility data but cannot silently suppress otherwise valid Recipe-derived demand.

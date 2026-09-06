@@ -354,6 +354,99 @@ insert into review_results values('released_recovery',pg_temp.test_released_allo
 reset role;
 select is((select response->>'success' from review_results where name='released_recovery'),'true',
   'released-before-Handoff source supports explicit allocation recovery without reopening Need');
+
+-- MC-Q04: catch a preparation implementation that leaves its successful release
+-- or Handoff/promotion children committed when the final PO write fails.
+create function pg_temp.preparation_business_snapshot() returns jsonb
+language sql stable set search_path='' as $$
+  select jsonb_build_object(
+    'batch', (select to_jsonb(b) from atlas_planning.confirmed_need_batches b
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+    'releases', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_releases r),
+    'approvals', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_approval_snapshots r),
+    'need_snapshot_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_snapshot_lines r),
+    'need_validation_attempts', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_validation_attempts r),
+    'need_validation_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_validation_lines r),
+    'need_validation_issues', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_validation_issues r),
+    'need_line_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_line_revisions r),
+    'purchase_demand_references', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_demand_references r),
+    'handoffs', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_batches r),
+    'handoff_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_revisions r),
+    'handoff_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_lines r),
+    'handoff_line_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_line_revisions r),
+    'allocation_families', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_families r),
+    'allocations', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_family_revisions r),
+    'allocation_contributions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_family_contributions r),
+    'splits', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_supplier_splits r),
+    'orders', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_orders r),
+    'order_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_order_revisions r),
+    'order_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_order_lines r),
+    'order_line_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_order_line_revisions r),
+    'events', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_audit.domain_events r),
+    'audit', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_audit.audit_events r)
+  );
+$$;
+create temporary table before_failed_preparation as select
+  pg_temp.preparation_business_snapshot() as business_snapshot,
+  (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+    from atlas_core.command_receipts r) as receipt_snapshot;
+-- Sequence advancement survives the command's subtransaction rollback, proving
+-- the failure reached the PO child rather than an earlier validation branch.
+create temporary sequence preparation_po_attempt minvalue 0 start 0;
+create function pg_temp.reject_preparation_po() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+  perform nextval('pg_temp.preparation_po_attempt'::regclass);
+  raise exception using errcode='PPR98', message='Synthetic final PO write failure';
+end;
+$$;
+create trigger convergence_reject_preparation_po
+  before insert on atlas_procurement.purchase_orders
+  for each row execute function pg_temp.reject_preparation_po();
+set local role authenticated;
+insert into command_requests values('prepare-child-failure',pg_temp.review_command(
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',3,
+  '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+insert into review_results values('prepare-child-failure',
+  pg_temp.review_invoke('prepare_school_catering_purchase_orders',
+    (select request from command_requests where name='prepare-child-failure')));
+reset role;
+drop trigger convergence_reject_preparation_po on atlas_procurement.purchase_orders;
+select ok((select is_called from preparation_po_attempt),
+  'MC-Q04 final PO write was reached before the injected failure');
+select is((select response->>'success' from review_results where name='prepare-child-failure'),
+  'false','MC-Q04 failed PO child is not a successful preparation');
+select is(pg_temp.preparation_business_snapshot(),
+  (select business_snapshot from before_failed_preparation),
+  'MC-Q04 failed PO child rolls back release, Handoff, promotion, PO and audit evidence');
+select is((select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+  from atlas_core.command_receipts r where command_id <>
+  (select (request->>'command_id')::uuid from command_requests where name='prepare-child-failure')),
+  (select receipt_snapshot from before_failed_preparation),
+  'MC-Q04 failed preparation retains no child receipt or accepted child command');
+
 set local role authenticated;
 insert into command_requests values('prepare',pg_temp.review_command('PURCHASE-COMMITMENT.v1',
   'PURCHASE_ORDERS_PREPARED',3,'{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));

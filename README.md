@@ -74,7 +74,7 @@ pnpm local:master-data:import -- --file supabase/local/rmvp_01_master_data_snaps
 pnpm local:rmvp02a:verify
 ```
 
-The application separates a read-only current-effective catalog, a creation workbench with Dish/Ingredient search and one `Tạo`/`Lưu` commitment, and the existing Change Order area. Copy fills the current unsaved creation form; Recipe history remains support disclosure. See [`RMVP-02A connected Dishes, Recipes, and BOM`](docs/architecture/rmvp-02a-connected-recipes-bom.md), the [`RMVP-02A API contract`](docs/api/rmvp-02a-recipes-bom.md), and [D-038](docs/decisions/decision-recipe-save-use-boundary.md).
+The application separates an identity/reference catalog, typed base authoring, selected effective detail, and the Change Order area. One `Tạo`/`Lưu` commitment authors a pre-use Recipe without a separate activation step. Normal Dish copy is one backend command that snapshots both canonical system-effective scopes at an explicit date into persisted target DRAFTs; the former browser-only form-copy interpretation is superseded. Recipe history and low-level lifecycle/copy APIs remain support disclosure. See [`RMVP-02A connected Dishes, Recipes, and BOM`](docs/architecture/rmvp-02a-connected-recipes-bom.md), the [`RMVP-02A API contract`](docs/api/rmvp-02a-recipes-bom.md), [D-038](docs/decisions/decision-recipe-save-use-boundary.md), and [ATLAS-MODEL-PRINCIPLE-01](docs/decisions/decision-atlas-model-convergence.md).
 
 ### RMVP-02B Recipe adjustments and effective BOM
 

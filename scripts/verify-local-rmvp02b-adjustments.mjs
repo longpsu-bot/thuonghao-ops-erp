@@ -7,7 +7,6 @@ import {
 
 const email = "atlas.pa06b.operator@local.test";
 const password = "Atlas-PA06B-local-only!";
-const schoolId = "b6200000-0000-0000-0000-000000000120";
 const baseIngredientId = "b6200000-0000-0000-0000-000000000210";
 const substituteIngredientId = "b6200000-0000-0000-0000-000000000211";
 const ingredientIds = {
@@ -141,16 +140,20 @@ async function previewAndCreateRule(
   subject,
   tag,
   schoolId,
+  schoolTypeId,
   dishId,
   asOfDate,
   proposedAdjustment,
 ) {
+  const isSystemDish = proposedAdjustment.scope_kind === "SYSTEM_DISH";
   const preview = await invoke(
     client,
     "preview_recipe_composition_adjustment",
     readRequest(subject, "RMVP-02B.v1", {
       as_of_date: asOfDate,
-      school_id: schoolId,
+      ...(isSystemDish
+        ? { school_type_id: schoolTypeId }
+        : { school_id: schoolId }),
       dish_id: dishId,
       proposed_adjustment: {
         ...proposedAdjustment,
@@ -175,7 +178,9 @@ async function previewAndCreateRule(
     commandRequest(subject, 1, `RMVP02B_MATRIX_${tag}`, {
       ...proposedAdjustment,
       as_of_date: asOfDate,
-      preview_school_id: schoolId,
+      ...(isSystemDish
+        ? { preview_school_type_id: schoolTypeId }
+        : { preview_school_id: schoolId }),
       preview_dish_id: dishId,
       source_evidence: {
         source: "browser-key-acceptance-matrix",
@@ -211,7 +216,15 @@ async function main() {
   const dishType = recipeSetup.workbench.dish_types.find(
     (item) => item.dish_type_status === "ACTIVE",
   );
-  assert(dishType, "RMVP-02B requires one active Dish Type reference.");
+  const schoolType = recipeSetup.workbench.school_types.find(
+    (item) =>
+      item.school_type_code === "v1-school-type-1" &&
+      item.school_type_status === "ACTIVE",
+  );
+  assert(
+    dishType && schoolType,
+    "RMVP-02B requires active Dish Type and canonical School Type references.",
+  );
 
   const createdDish = await invoke(
     client,
@@ -232,15 +245,18 @@ async function main() {
   );
   assert(
     createdDishReadback?.dish_status === "ACTIVE" &&
-      createdDishReadback.version === 1,
-    "RMVP-02B requires create_dish to return an ACTIVE version-1 Dish.",
+      createdDishReadback.version === 1 &&
+      createdDish.affected_aggregate_ids.recipe_ids?.some(
+        (item) => item.school_type_id === schoolType.school_type_id,
+      ),
+    "RMVP-02B requires an ACTIVE version-1 Dish with its canonical typed Recipe roots.",
   );
   const draft = await invoke(
     client,
     "create_recipe_draft",
     recipeCommandRequest(subject, 1, "RMVP02B_ACCEPT_CREATE_RECIPE", {
       dish_id: dishId,
-      school_type_id: null,
+      school_type_id: schoolType.school_type_id,
       basis_portions: 100,
     }),
   );
@@ -340,12 +356,16 @@ async function main() {
     "get_recipe_adjustment_workbench",
     readRequest(subject, "RMVP-02B.v1", {}),
   );
-  assert(
-    adjustmentRead.workbench.schools.some(
-      (school) => school.school_id === schoolId,
-    ),
-    "The acceptance School was not available to the adjustment workbench.",
+  const school = adjustmentRead.workbench.schools.find(
+    (item) =>
+      item.school_type_id === schoolType.school_type_id &&
+      item.school_status === "ACTIVE",
   );
+  assert(
+    school,
+    "A School in the canonical School Type was not available for School-path regression checks.",
+  );
+  const schoolId = school.school_id;
 
   const adjustmentId = crypto.randomUUID();
   const firstRevisionId = crypto.randomUUID();
@@ -358,6 +378,7 @@ async function main() {
     scope_kind: "SYSTEM_DISH",
     action_kind: "ADJUST_QUANTITY",
     dish_id: dishId,
+    school_type_id: schoolType.school_type_id,
     target_recipe_line_id: recipeLineId,
     quantity_per_basis: 7,
     effective_from: today,
@@ -370,7 +391,7 @@ async function main() {
     "preview_recipe_composition_adjustment",
     readRequest(subject, "RMVP-02B.v1", {
       as_of_date: today,
-      school_id: schoolId,
+      school_type_id: schoolType.school_type_id,
       dish_id: dishId,
       proposed_adjustment: proposal,
     }),
@@ -388,7 +409,7 @@ async function main() {
     reason_code: undefined,
     reason_note: undefined,
     as_of_date: today,
-    preview_school_id: schoolId,
+    preview_school_type_id: schoolType.school_type_id,
     preview_dish_id: dishId,
   });
   delete createRequest.payload.reason_code;
@@ -410,20 +431,40 @@ async function main() {
     "An exact create replay did not return the original durable receipt.",
   );
 
-  const firstResolution = await invoke(
+  await expectError(
     client,
-    "resolve_effective_recipe_composition",
+    "preview_recipe_composition_adjustment",
     readRequest(subject, "RMVP-02B.v1", {
       as_of_date: today,
       school_id: schoolId,
+      dish_id: dishId,
+      proposed_adjustment: proposal,
+    }),
+    "VALIDATION_FAILED",
+  );
+
+  const firstResolution = await invoke(
+    client,
+    "resolve_system_effective_recipe_composition",
+    readRequest(subject, "RECIPE-EFFECTIVE.v1", {
+      as_of_date: today,
+      school_type_id: schoolType.school_type_id,
       dish_id: dishId,
     }),
   );
   assert(
     Number(
       resolvedLine(firstResolution, recipeLineId).final_quantity_per_basis,
-    ) === 7,
-    "The created adjustment was not authoritative on its effective date.",
+    ) === 7 &&
+      firstResolution.resolution.school_id == null &&
+      firstResolution.resolution.school_type_id === schoolType.school_type_id &&
+      firstResolution.resolution.lines.every((line) =>
+        line.lineage.every(
+          (step) =>
+            step.scope_kind !== "SCHOOL" && step.scope_kind !== "SCHOOL_DISH",
+        ),
+      ),
+    "The created adjustment was not authoritative in its strict system-only School-Type context.",
   );
 
   const schoolAdjustmentId = crypto.randomUUID();
@@ -564,6 +605,7 @@ async function main() {
         scope_kind: "SYSTEM_DISH",
         action_kind: "ADD",
         dish_id: dishId,
+        school_type_id: schoolType.school_type_id,
         target_ingredient_id: ingredientIds.systemAdd,
         quantity_per_basis: 12,
         unit_id: unitId,
@@ -578,6 +620,7 @@ async function main() {
         scope_kind: "SYSTEM_DISH",
         action_kind: "REPLACE",
         dish_id: dishId,
+        school_type_id: schoolType.school_type_id,
         target_recipe_line_id: lineIds["acceptance-base-c"],
         substitute_ingredient_id: ingredientIds.substituteC,
         effective_from: today,
@@ -591,6 +634,7 @@ async function main() {
         scope_kind: "SYSTEM_DISH",
         action_kind: "REMOVE",
         dish_id: dishId,
+        school_type_id: schoolType.school_type_id,
         target_recipe_line_id: lineIds["acceptance-base-d"],
         effective_from: today,
       },
@@ -657,6 +701,7 @@ async function main() {
       subject,
       matrixRule.tag,
       schoolId,
+      schoolType.school_type_id,
       dishId,
       today,
       matrixRule.proposal,
@@ -674,10 +719,26 @@ async function main() {
       quantity_per_basis: 9,
       effective_from: tomorrow,
       as_of_date: tomorrow,
-      preview_school_id: schoolId,
+      preview_school_type_id: schoolType.school_type_id,
       preview_dish_id: dishId,
       source_evidence: { source: "browser-key-correction" },
     }),
+  );
+  const systemSuccessorResolution = await invoke(
+    client,
+    "resolve_system_effective_recipe_composition",
+    readRequest(subject, "RECIPE-EFFECTIVE.v1", {
+      as_of_date: tomorrow,
+      school_type_id: schoolType.school_type_id,
+      dish_id: dishId,
+    }),
+  );
+  assert(
+    Number(
+      resolvedLine(systemSuccessorResolution, recipeLineId)
+        .final_quantity_per_basis,
+    ) === 9,
+    "The direct successor was not authoritative in the strict system-only context.",
   );
   const successorResolution = await invoke(
     client,

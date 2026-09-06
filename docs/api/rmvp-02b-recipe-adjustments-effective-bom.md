@@ -8,6 +8,8 @@ Reads require `contract_version`, `requested_by_auth_subject`, `correlation_id`,
 
 The authenticated JWT subject must equal `requested_by_auth_subject`. The backend resolves the active Actor, capability, and global scope; browser-supplied actor identity is never authoritative.
 
+Current normal routing is governed by [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md), the [authority map through Procurement](../architecture/atlas-authority-map-through-procurement.md), and the final [Recipe Effective Product Model Correction](../superpowers/specs/2026-09-05-recipe-effective-product-model-correction-design.md). The `RECIPE-EFFECTIVE.v1` reads are the normal typed context authority. RMVP-02B.v1 resolution and command envelopes remain callable compatibility and must not reintroduce nullable GENERAL or a representative School into the normal system-effective view.
+
 Create, Supersede, and Cancel share `atlas_core.rmvp_02b_validate_command_request`.
 Its timestamp upper bound is inclusive:
 `requested_at <= transaction_timestamp() + interval '60 seconds'`.
@@ -71,28 +73,31 @@ resolver and are never selected by `RECIPE-EFFECTIVE.v1`.
 - Capability: `master_data.recipe_adjustments.write`
 - Owner: `atlas_read_runtime`
 - Required payload: `as_of_date`, `dish_id`, `proposed_adjustment`
-- Context payload: `school_id` when the proposal or operator outcome is School-specific
+- Context payload for `SYSTEM_DISH`: exact active canonical `school_type_id`; `school_id` must be absent or null
+- Context payload for `SYSTEM_INGREDIENT`, `SCHOOL`, and `SCHOOL_DISH`: existing explicit `school_id` impact-preview context
 - Optional correction payload: `replaces_adjustment_id`
 - Returns `preview` containing the normalized proposal, current `before`, hypothetical `after`, affected-line count, `can_save`, warnings, and blockers.
 - Effect: no write.
+
+For `SYSTEM_DISH`, the proposal's `dish_id` and `school_type_id` must exactly match the outer reviewed context. Preview resolves the exact typed released Recipe followed by `SYSTEM_INGREDIENT` and `SYSTEM_DISH` only. It does not select or accept a representative School, apply a School layer, or fall back to a nullable GENERAL Recipe. Both before and hypothetical after use this same system-only authority.
 
 ## Proposal contract
 
 Every proposal includes stable `adjustment_id`, stable `revision_id`, `scope_kind`, `action_kind`, `effective_from`, optional half-open `effective_to`, reason evidence, and the typed fields required by its scope/action.
 
-| Scope/action                  | Required typed payload                                                                                                                          |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SYSTEM_INGREDIENT/REPLACE`   | `target_ingredient_id`, `substitute_ingredient_id`                                                                                              |
-| `SYSTEM_DISH/ADD`             | `dish_id`, optional `school_type_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                    |
-| `SYSTEM_DISH/REPLACE`         | `dish_id`, optional `school_type_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit |
-| `SYSTEM_DISH/ADJUST_QUANTITY` | `dish_id`, optional `school_type_id`, exactly one stable line target, positive `quantity_per_basis`                                             |
-| `SYSTEM_DISH/REMOVE`          | `dish_id`, optional `school_type_id`, exactly one stable line target                                                                            |
-| `SCHOOL/REPLACE`              | `school_id`, `target_ingredient_id`, `substitute_ingredient_id`                                                                                 |
-| `SCHOOL/REMOVE`               | `school_id`, `target_ingredient_id`                                                                                                             |
-| `SCHOOL_DISH/ADD`             | `school_id`, `dish_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                                  |
-| `SCHOOL_DISH/REPLACE`         | `school_id`, `dish_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit               |
-| `SCHOOL_DISH/ADJUST_QUANTITY` | `school_id`, `dish_id`, exactly one stable line target, positive `quantity_per_basis`                                                           |
-| `SCHOOL_DISH/REMOVE`          | `school_id`, `dish_id`, exactly one stable line target                                                                                          |
+| Scope/action                  | Required typed payload                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SYSTEM_INGREDIENT/REPLACE`   | `target_ingredient_id`, `substitute_ingredient_id`                                                                                               |
+| `SYSTEM_DISH/ADD`             | `dish_id`, canonical `school_type_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                    |
+| `SYSTEM_DISH/REPLACE`         | `dish_id`, canonical `school_type_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit |
+| `SYSTEM_DISH/ADJUST_QUANTITY` | `dish_id`, canonical `school_type_id`, exactly one stable line target, positive `quantity_per_basis`                                             |
+| `SYSTEM_DISH/REMOVE`          | `dish_id`, canonical `school_type_id`, exactly one stable line target                                                                            |
+| `SCHOOL/REPLACE`              | `school_id`, `target_ingredient_id`, `substitute_ingredient_id`                                                                                  |
+| `SCHOOL/REMOVE`               | `school_id`, `target_ingredient_id`                                                                                                              |
+| `SCHOOL_DISH/ADD`             | `school_id`, `dish_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                                   |
+| `SCHOOL_DISH/REPLACE`         | `school_id`, `dish_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit                |
+| `SCHOOL_DISH/ADJUST_QUANTITY` | `school_id`, `dish_id`, exactly one stable line target, positive `quantity_per_basis`                                                            |
+| `SCHOOL_DISH/REMOVE`          | `school_id`, `dish_id`, exactly one stable line target                                                                                           |
 
 Omitted fields must be null. `REPLACE` preserves quantity and Unit unless both a positive quantity and explicit Unit are supplied. `ADJUST_QUANTITY` preserves Ingredient and Unit. `REMOVE` accepts no substitute, quantity, or Unit. All referenced master data must be active.
 
@@ -105,7 +110,8 @@ For every non-ADD `SYSTEM_DISH` or `SCHOOL_DISH` proposal, “exactly one stable
 - Capability: `master_data.recipe_adjustments.write`
 - Owner: `atlas_master_data_command_runtime`
 - Expected version: `1`
-- Payload: proposal fields plus required `as_of_date`, `preview_school_id`, and `preview_dish_id`
+- Payload for `SYSTEM_DISH`: proposal fields plus required `as_of_date`, `preview_school_type_id`, and `preview_dish_id`; `preview_school_id` must be absent or null
+- Payload for existing School-context paths: proposal fields plus required `as_of_date`, `preview_school_id`, and `preview_dish_id`
 - Effect: serializes the exact typed target, revalidates the preview context, resolves the hypothetical effective composition, creates one stable root and revision 1, then emits event/audit/readback.
 
 An exact request replay returns the original completed receipt. A reused idempotency key with different content fails closed.
@@ -115,10 +121,14 @@ An exact request replay returns the original completed receipt. A reused idempot
 - Capability: `master_data.recipe_adjustments.write`
 - Owner: `atlas_master_data_command_runtime`
 - Expected version: current root version
-- Required payload: `adjustment_id`, new `revision_id`, exact `predecessor_revision_id`, `effective_from`, optional `effective_to`, action payload, `as_of_date`, `preview_school_id`, `preview_dish_id`
+- Required common payload: `adjustment_id`, new `revision_id`, exact `predecessor_revision_id`, `effective_from`, optional `effective_to`, action payload, `as_of_date`, and `preview_dish_id`
+- Reviewed context for a `SYSTEM_DISH` root: exact `preview_school_type_id`; `preview_school_id` must be absent or null
+- Reviewed context for existing School-context roots: exact `preview_school_id`
 - Effect: serializes the exact typed target, then locks the root, verifies the exact current active predecessor, validates and resolves the successor, appends the next revision, and increments the root version.
 
 Scope, action, and stable target identity cannot change. One predecessor can have only one successor.
+
+Create and Supersede revalidate the system context inside the command transaction. The full request payload, including `preview_school_type_id`, remains covered by the established request hash, replay, conflict, locking, optimistic-version, receipt, event, audit, and safe-error behavior. Mixed School and School-Type preview identities fail closed. No new API family, business object, lifecycle, capability, table, role, or RLS policy is introduced. Existing `SCHOOL`, `SCHOOL_DISH`, and explicitly named `SYSTEM_INGREDIENT` impact-preview behavior remains unchanged.
 
 ### `cancel_recipe_composition_adjustment`
 
@@ -146,7 +156,11 @@ Responses never expose credentials, SQL, private relation dumps, or exception st
 - Owner: `atlas_read_runtime`
 - Required envelope contract: `RMVP-02B.v2`
 - Required payload: explicit `as_of_date`; the function does not use `CURRENT_DATE`
-- Compatibility: all six `RMVP-02B.v1` functions above remain unchanged and callable
+- Compatibility: all six `RMVP-02B.v1` functions remain callable; valid existing School contexts are unchanged, while Preview/Create/Supersede add the typed `SYSTEM_DISH` context described above
+
+**Approved current-date UX clarification (6 September 2026):** the normal Lệnh điều chỉnh ledger derives `as_of_date` from the current Vietnam-local business date and still sends that explicit ISO value in this envelope. It does not expose a routine `Ngày tham chiếu` input or require an operator to select a date to see current effectiveness. The Application refreshes the current ledger when the business date changes and renders returned `temporal_state`, `is_effective_now` and boundaries without reconstructing applicability.
+
+Explicit historical inspection belongs to the separate read-only effective-composition surface, labelled `Xem tại ngày`. Its selected date never controls the normal ledger or Create workflow. Business facts remain visible: `effective_from`, `effective_to`, original issuance where known, correction/cancellation dates and historical boundaries. Dish-copy `as_of_date` remains an explicit reviewed snapshot command date.
 
 The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. In `RMVP-02B.v2` only, each Ingredient catalog entry also exposes its configured `purchase_unit_id` and `purchase_unit_name`; the v1 read shape is unchanged. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity. The Application preserves a selected Recipe line's historical Unit, derives ADD and quantity-bearing REPLACE Units from the selected Ingredient purchase Unit, and blocks preview when that required master-data Unit is missing.
 
@@ -169,6 +183,14 @@ Each row also returns backend-derived `is_effective_now` independently from `eff
 `get_dish_recipe_operator_workbench` returns `history_periods[]`. Each period has `period_from`, half-open nullable `period_to`, `resolution_status`, the complete PRESENT `effective_bom`, applicable `change_orders`, warnings, and blockers. Boundaries are the selected Recipe release date plus the union of applicable immutable revision `effective_from` and nonnull `effective_to` dates, so simultaneous Change Orders share one boundary. Every Change Order tag includes adjustment/revision identity, revision and business-event status, scope, action, effective dates, reason code/text, issuer, and issued timestamp. System history contains system layers only; School history contains all applicable system and School layers. React never replays revision rows to manufacture a historical BOM.
 
 Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED`, `issued_at: null`, and a null issuer name. The Atlas import timestamp is not represented as business issuance, and the Atlas importer is not represented as the original business issuer.
+
+The effective-history read applies that rule to each immutable revision, using
+the same established classification as the normal adjustment ledger: a
+`reason_code` beginning with `LEGACY_`, or an explicitly false
+`source_evidence.historical_actor_approval_claimed`, means original issuance is
+unattributed. A later Atlas-native correction or cancellation on the same root
+retains its own Actor and immutable `created_at`. Read shaping does not rewrite
+the root, revision, technical importer, timestamp, or source evidence.
 
 ## Dish lifecycle eligibility amendment
 
