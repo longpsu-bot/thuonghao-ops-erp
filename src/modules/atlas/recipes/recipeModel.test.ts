@@ -1,10 +1,79 @@
 import { describe, expect, it } from "vitest";
+import type { AtlasSuccessEnvelope } from "../connection/atlasRpc";
 import {
   dishRecipeCopyFromResult,
   dishRecipeOperatorWorkbenchFromResult,
   emptyRecipeWorkbench,
   recipeWorkbenchFromResult,
 } from "./recipeModel";
+
+function editableOperatorWorkbench() {
+  return {
+    dish: {
+      dish_id: "dish-1",
+      dish_name: "Canh rau",
+      dish_type_name: "Canh",
+      dish_status: "ACTIVE",
+    },
+    context_kind: "SYSTEM_SCHOOL_TYPE",
+    as_of_date: "2026-09-05",
+    school_id: null,
+    school_type_id: "school-type-1",
+    selected_recipe: {
+      dish_id: "dish-1",
+      recipe_id: "recipe-1",
+      recipe_version_id: "recipe-version-1",
+      selection_scope: "SCHOOL_TYPE",
+      basis_portions: 100,
+    },
+    basis_portions: 100,
+    base_authoring: {
+      dish_id: "dish-1",
+      school_type_id: "school-type-1",
+      recipe_id: "recipe-1",
+      recipe_version_id: "recipe-version-1",
+      expected_version: 1,
+      in_use_recipe_version_id: "recipe-version-1",
+      business_status: "AVAILABLE",
+      locked_for_normal_editing: false,
+      lock_reason: null,
+      basis_portions: 100,
+      composition: [],
+      allowed_actions: { save_recipe: true, release_recipe: false },
+      disabled_reason_codes: {
+        save_recipe: null,
+        release_recipe: "RELEASE_ALREADY_IN_USE",
+      },
+      disabled_reasons: {
+        save_recipe: null,
+        release_recipe: "Already released.",
+      },
+    },
+    effective_readiness: { status: "READY", blockers: [], warnings: [] },
+    editable_state: "EDITABLE_BASE",
+    is_editable: true,
+    is_operationally_locked: false,
+    current_effective_bom: [
+      {
+        ingredient_id: "ingredient-effective",
+        ingredient_name: "Bí xanh hiệu lực",
+        quantity_per_basis: 12,
+        unit_id: "unit-1",
+        unit_name: "Kilôgam",
+        target_kind: "RECIPE_LINE",
+        target_recipe_line_id: "recipe-line-1",
+        adjustment_line_id: null,
+        target_id: "recipe-line-1",
+        source_layer: "SYSTEM_DISH",
+      },
+    ],
+    school_exception_count: 0,
+    allowed_actions: ["COPY_DISH_RECIPES"],
+    blockers: [],
+    warnings: [],
+    history_periods: [],
+  };
+}
 
 describe("recipe workbench response parsing", () => {
   it("reads the authoritative nested workbench envelope", () => {
@@ -176,6 +245,59 @@ describe("recipe workbench response parsing", () => {
     ).toBeNull();
   });
 
+  it("rejects an effective workbench whose context identity disagrees with its kind", () => {
+    const systemWithSchool = {
+      ...editableOperatorWorkbench(),
+      school_id: "school-1",
+    };
+    const schoolWithoutSchool = {
+      ...editableOperatorWorkbench(),
+      context_kind: "SCHOOL",
+      school_id: null,
+    };
+
+    expect(
+      dishRecipeOperatorWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench: systemWithSchool },
+      }),
+    ).toBeNull();
+    expect(
+      dishRecipeOperatorWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench: schoolWithoutSchool },
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects mismatched selected Recipe identity and malformed stable line targets", () => {
+    const selectedDishMismatch = editableOperatorWorkbench();
+    selectedDishMismatch.selected_recipe.dish_id = "dish-other";
+    const bothTargets = editableOperatorWorkbench();
+    const malformedTargets = {
+      ...bothTargets,
+      current_effective_bom: [
+        {
+          ...bothTargets.current_effective_bom[0],
+          adjustment_line_id: "adjustment-line-1",
+        },
+      ],
+    };
+
+    expect(
+      dishRecipeOperatorWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench: selectedDishMismatch },
+      }),
+    ).toBeNull();
+    expect(
+      dishRecipeOperatorWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench: malformedTargets },
+      }),
+    ).toBeNull();
+  });
+
   it("parses Dish-copy results and rejects malformed scope rows", () => {
     const result = {
       success: true as const,
@@ -226,6 +348,36 @@ describe("recipe workbench response parsing", () => {
             {
               ...result.scope_results[0],
               status: "SOURCE_NOT_AVAILABLE",
+            },
+          ],
+        },
+      }),
+    ).toBeNull();
+    expect(
+      dishRecipeCopyFromResult({
+        kind: "success",
+        response: {
+          ...result,
+          success: false,
+        } as unknown as AtlasSuccessEnvelope,
+      }),
+    ).toBeNull();
+    expect(
+      dishRecipeCopyFromResult({
+        kind: "success",
+        response: { ...result, scope_results: [] },
+      }),
+    ).toBeNull();
+    expect(
+      dishRecipeCopyFromResult({
+        kind: "success",
+        response: {
+          ...result,
+          scope_results: [
+            result.scope_results[0],
+            {
+              ...result.scope_results[1],
+              school_type_code: "v1-school-type-1",
             },
           ],
         },

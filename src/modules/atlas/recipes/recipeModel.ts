@@ -155,8 +155,8 @@ export type EffectiveHistoryChangeOrder = {
   effective_to: string | null;
   reason_code: string;
   reason: string;
-  issuer: string;
-  issued_at: string;
+  issuer: string | null;
+  issued_at: string | null;
 };
 
 export type EffectiveHistoryPeriod = {
@@ -270,16 +270,53 @@ function isRecord(
 
 function isEffectiveLine(value: JsonValue): boolean {
   if (!isRecord(value)) return false;
+  const hasRecipeLine = typeof value.target_recipe_line_id === "string";
+  const hasAdjustmentLine = typeof value.adjustment_line_id === "string";
   return (
     typeof value.ingredient_id === "string" &&
     typeof value.ingredient_name === "string" &&
     typeof value.quantity_per_basis === "number" &&
     typeof value.unit_id === "string" &&
     typeof value.unit_name === "string" &&
-    (value.target_kind === "RECIPE_LINE" ||
-      value.target_kind === "ADJUSTMENT_LINE") &&
     typeof value.target_id === "string" &&
-    typeof value.source_layer === "string"
+    typeof value.source_layer === "string" &&
+    ((value.target_kind === "RECIPE_LINE" &&
+      hasRecipeLine &&
+      value.adjustment_line_id === null &&
+      value.target_id === value.target_recipe_line_id) ||
+      (value.target_kind === "ADJUSTMENT_LINE" &&
+        hasAdjustmentLine &&
+        value.target_recipe_line_id === null &&
+        value.target_id === value.adjustment_line_id))
+  );
+}
+
+function isHistoryChangeOrder(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.adjustment_id === "string" &&
+    typeof value.revision_id === "string" &&
+    typeof value.revision_number === "number" &&
+    (value.revision_status === "ACTIVE" ||
+      value.revision_status === "SUPERSEDED" ||
+      value.revision_status === "CANCELLED") &&
+    (value.business_event_kind === "CREATED" ||
+      value.business_event_kind === "CORRECTED" ||
+      value.business_event_kind === "CANCELLED") &&
+    (value.scope_kind === "SYSTEM_INGREDIENT" ||
+      value.scope_kind === "SYSTEM_DISH" ||
+      value.scope_kind === "SCHOOL" ||
+      value.scope_kind === "SCHOOL_DISH") &&
+    (value.action_kind === "ADD" ||
+      value.action_kind === "REPLACE" ||
+      value.action_kind === "ADJUST_QUANTITY" ||
+      value.action_kind === "REMOVE") &&
+    typeof value.effective_from === "string" &&
+    (typeof value.effective_to === "string" || value.effective_to === null) &&
+    typeof value.reason_code === "string" &&
+    typeof value.reason === "string" &&
+    (typeof value.issuer === "string" || value.issuer === null) &&
+    (typeof value.issued_at === "string" || value.issued_at === null)
   );
 }
 
@@ -293,6 +330,7 @@ function isHistoryPeriod(value: JsonValue): boolean {
     Array.isArray(value.effective_bom) &&
     value.effective_bom.every(isEffectiveLine) &&
     Array.isArray(value.change_orders) &&
+    value.change_orders.every(isHistoryChangeOrder) &&
     Array.isArray(value.warnings) &&
     Array.isArray(value.blockers)
   );
@@ -336,6 +374,20 @@ function isCopyScopeResult(value: JsonValue): boolean {
     value.source_selection_scope === "SCHOOL_TYPE" &&
     typeof value.target_recipe_id === "string" &&
     typeof value.target_recipe_version_id === "string"
+  );
+}
+
+function isSelectedRecipe(
+  value: JsonValue,
+  dishId: string,
+): value is NonNullable<DishRecipeOperatorWorkbench["selected_recipe"]> {
+  if (!isRecord(value)) return false;
+  return (
+    value.dish_id === dishId &&
+    typeof value.recipe_id === "string" &&
+    typeof value.recipe_version_id === "string" &&
+    value.selection_scope === "SCHOOL_TYPE" &&
+    typeof value.basis_portions === "number"
   );
 }
 
@@ -400,7 +452,11 @@ export function recipeWorkbenchFromResult(
 export function dishRecipeOperatorWorkbenchFromResult(
   result: AtlasRpcResult,
 ): DishRecipeOperatorWorkbench | null {
-  if (result.kind !== "success" || !isRecord(result.response.workbench))
+  if (
+    result.kind !== "success" ||
+    result.response.success !== true ||
+    !isRecord(result.response.workbench)
+  )
     return null;
   const source = result.response.workbench;
   if (
@@ -411,6 +467,15 @@ export function dishRecipeOperatorWorkbenchFromResult(
       source.context_kind !== "SCHOOL") ||
     typeof source.as_of_date !== "string" ||
     typeof source.school_type_id !== "string" ||
+    !(
+      (source.context_kind === "SYSTEM_SCHOOL_TYPE" &&
+        source.school_id === null) ||
+      (source.context_kind === "SCHOOL" && typeof source.school_id === "string")
+    ) ||
+    !(
+      source.selected_recipe === null ||
+      isSelectedRecipe(source.selected_recipe, source.dish.dish_id)
+    ) ||
     (typeof source.basis_portions !== "number" &&
       source.basis_portions !== null) ||
     !isRecipeWorkflowSelection(source.base_authoring) ||
@@ -441,6 +506,8 @@ export function dishRecipeOperatorWorkbenchFromResult(
       (action) =>
         action === "CREATE_CHANGE_ORDER" || action === "COPY_DISH_RECIPES",
     ) ||
+    baseAuthoring.dish_id !== source.dish.dish_id ||
+    baseAuthoring.school_type_id !== source.school_type_id ||
     (source.editable_state === "EDITABLE_BASE" &&
       (source.is_operationally_locked ||
         source.is_editable !== baseAuthoring.allowed_actions.save_recipe ||
@@ -460,12 +527,19 @@ export function dishRecipeCopyFromResult(
   if (result.kind !== "success") return null;
   const source = result.response;
   if (
+    source.success !== true ||
     source.contract_version !== "RECIPE-EFFECTIVE.v1" ||
     typeof source.command_id !== "string" ||
     typeof source.correlation_id !== "string" ||
     typeof source.idempotency_status !== "string" ||
     !Array.isArray(source.scope_results) ||
-    !source.scope_results.every(isCopyScopeResult)
+    source.scope_results.length !== 2 ||
+    !source.scope_results.every(isCopyScopeResult) ||
+    new Set(
+      source.scope_results.map((scope) =>
+        isRecord(scope) ? scope.school_type_code : null,
+      ),
+    ).size !== 2
   )
     return null;
   return source as DishRecipeCopyResult;

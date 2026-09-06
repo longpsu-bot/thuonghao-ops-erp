@@ -10,7 +10,10 @@ import {
 import { MantineProvider } from "@mantine/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AtlasRpcResult } from "../atlas/connection/atlasRpc";
-import type { RecipeApi } from "../atlas/recipes/recipeApi";
+import type {
+  DishRecipeCopyCommandRequest,
+  RecipeApi,
+} from "../atlas/recipes/recipeApi";
 import { createReviewRecipeApi } from "../atlas/recipes/reviewRecipeApi";
 import * as recipeWorkbook from "../atlas/recipes/recipeWorkbook";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
@@ -36,6 +39,14 @@ function renderWorkbench(api: RecipeApi = createReviewRecipeApi("ready")) {
   );
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((next) => {
+    resolve = next;
+  });
+  return { promise, resolve };
+}
+
 function overrideSelection(
   change: (selected: {
     dish_id: string | null;
@@ -48,16 +59,28 @@ function overrideSelection(
   }) => void,
 ) {
   const base = createReviewRecipeApi("ready");
-  const getWorkbench = base.getWorkbench;
+  const getEffectiveWorkbench = base.getEffectiveWorkbench;
   return {
     ...base,
-    async getWorkbench(...args: Parameters<RecipeApi["getWorkbench"]>) {
-      const result = await getWorkbench(...args);
+    async getEffectiveWorkbench(
+      ...args: Parameters<RecipeApi["getEffectiveWorkbench"]>
+    ) {
+      const result = await getEffectiveWorkbench(...args);
       if (result.kind !== "success") return result;
       const workbench = (result.response.workbench ?? result.response) as {
-        selected_recipe: Parameters<typeof change>[0];
+        base_authoring: Parameters<typeof change>[0];
+        editable_state: string;
+        is_editable: boolean;
+        is_operationally_locked: boolean;
+        allowed_actions: string[];
       };
-      change(workbench.selected_recipe);
+      change(workbench.base_authoring);
+      if (workbench.base_authoring.locked_for_normal_editing) {
+        workbench.editable_state = "LOCKED_CHANGE_ORDER";
+        workbench.is_editable = false;
+        workbench.is_operationally_locked = true;
+        workbench.allowed_actions = ["CREATE_CHANGE_ORDER"];
+      }
       return result;
     },
   } satisfies RecipeApi;
@@ -86,6 +109,145 @@ function lockedDishApi() {
 }
 
 describe("Recipe creation-and-lock workbench", () => {
+  it("loads one authoritative effective detail on demand and labels base-only catalog search truthfully", async () => {
+    const api = createReviewRecipeApi("ready");
+    const getEffectiveWorkbench = vi.spyOn(api, "getEffectiveWorkbench");
+    renderWorkbench(api);
+
+    expect(
+      await screen.findByLabelText("Chi tiết công thức hiệu lực"),
+    ).toHaveTextContent("Hành lá hiệu lực");
+    expect(
+      (screen.getByLabelText("Ngày áp dụng") as HTMLInputElement).value,
+    ).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(screen.getByLabelText("Ngữ cảnh công thức")).toHaveValue(
+      "system:60000000-0000-4000-8000-000000000001",
+    );
+    expect(
+      screen.getByLabelText("Tìm món hoặc nguyên liệu trong công thức gốc"),
+    ).toBeVisible();
+    expect(getEffectiveWorkbench).toHaveBeenCalledTimes(1);
+
+    fireEvent.change(
+      screen.getByLabelText("Tìm món hoặc nguyên liệu trong công thức gốc"),
+      { target: { value: "thịt heo" } },
+    );
+    expect(getEffectiveWorkbench).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses only canonical returned scope IDs for normal authoring and keeps root-only authoring writable while effective readiness is blocked", async () => {
+    const api = createReviewRecipeApi("ready");
+    const saveRecipe = vi.spyOn(api, "saveRecipe");
+    renderWorkbench(api);
+    await screen.findByLabelText("Chi tiết công thức hiệu lực");
+    await openCreation();
+
+    const scope = screen.getByLabelText("Áp dụng cho");
+    expect(within(scope).queryByRole("option", { name: "Tất cả" })).toBeNull();
+    expect(scope).toHaveValue("60000000-0000-4000-8000-000000000001");
+
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    expect(
+      await screen.findByText(/Chưa có công thức typed đã phát hành/),
+    ).toBeVisible();
+    expect(
+      screen.getByPlaceholderText("Tìm nguyên liệu để thêm…"),
+    ).toBeEnabled();
+    fireEvent.change(screen.getByPlaceholderText("Tìm nguyên liệu để thêm…"), {
+      target: { value: "hành" },
+    });
+    fireEvent.click(screen.getByRole("option", { name: "Hành lá" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+    await waitFor(() => expect(saveRecipe).toHaveBeenCalledTimes(1));
+    expect(saveRecipe.mock.calls[0][0].payload).toMatchObject({
+      dish_id: "10000000-0000-4000-8000-000000000002",
+      school_type_id: "60000000-0000-4000-8000-000000000001",
+      recipe_version_id: null,
+    });
+  });
+
+  it("keeps late effective reads from replacing the latest selected context", async () => {
+    const base = createReviewRecipeApi("ready");
+    const first = await base.getEffectiveWorkbench(
+      "subject",
+      "correlation",
+      "2026-09-06",
+      "10000000-0000-4000-8000-000000000001",
+      { kind: "system", schoolTypeId: "60000000-0000-4000-8000-000000000001" },
+    );
+    const slow = deferred<AtlasRpcResult>();
+    const fast = deferred<AtlasRpcResult>();
+    let call = 0;
+    const getEffectiveWorkbench: RecipeApi["getEffectiveWorkbench"] = vi.fn(
+      async () => {
+        call += 1;
+        if (call === 1) return first;
+        return call === 2 ? slow.promise : fast.promise;
+      },
+    );
+    renderWorkbench({ ...base, getEffectiveWorkbench });
+    await screen.findByLabelText("Chi tiết công thức hiệu lực");
+
+    fireEvent.change(screen.getByLabelText("Ngày áp dụng"), {
+      target: { value: "2026-09-05" },
+    });
+    await waitFor(() => expect(getEffectiveWorkbench).toHaveBeenCalledTimes(2));
+    fireEvent.change(screen.getByLabelText("Ngày áp dụng"), {
+      target: { value: "2026-09-07" },
+    });
+    await waitFor(() => expect(getEffectiveWorkbench).toHaveBeenCalledTimes(3));
+    fast.resolve(
+      await base.getEffectiveWorkbench(
+        "subject",
+        "correlation",
+        "2026-09-07",
+        "10000000-0000-4000-8000-000000000001",
+        {
+          kind: "system",
+          schoolTypeId: "60000000-0000-4000-8000-000000000001",
+        },
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("Ngày áp dụng")).toHaveValue("2026-09-07"),
+    );
+    slow.resolve(
+      await base.getEffectiveWorkbench(
+        "subject",
+        "correlation",
+        "2026-09-05",
+        "10000000-0000-4000-8000-000000000001",
+        {
+          kind: "system",
+          schoolTypeId: "60000000-0000-4000-8000-000000000001",
+        },
+      ),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("Ngày áp dụng")).toHaveValue("2026-09-07"),
+    );
+  });
+
+  it("navigates to a School effective context as read-only authoritative data", async () => {
+    renderWorkbench();
+    await screen.findByRole("option", { name: /Trường Tiểu học Minh Khai/ });
+    fireEvent.change(screen.getByLabelText("Ngữ cảnh công thức"), {
+      target: {
+        value: "school:11000000-0000-4000-8000-000000000001",
+      },
+    });
+    await waitFor(() =>
+      expect(screen.getByLabelText("Ngữ cảnh công thức")).toHaveValue(
+        "school:11000000-0000-4000-8000-000000000001",
+      ),
+    );
+    expect(
+      screen.getByLabelText("Chi tiết công thức hiệu lực"),
+    ).toHaveTextContent("14");
+    await openCreation();
+    expect(screen.getByLabelText(/Định lượng Bí đỏ/)).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+  });
   it("opens on a read-only current-effective catalog with useful Recipe information", async () => {
     renderWorkbench();
 
@@ -97,7 +259,10 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(document.body).not.toHaveTextContent("canh-bi-do-thit-bam");
     expect(screen.getAllByText(/Bí đỏ.*Thịt heo xay/)).toHaveLength(2);
     expect(
-      screen.getByText(/Danh sách này chỉ để tra cứu/),
+      screen.getByLabelText("Chi tiết công thức hiệu lực"),
+    ).toHaveTextContent("Hành lá hiệu lực");
+    expect(
+      screen.getByText(/Bảng danh sách dùng công thức gốc/),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Xem" })).not.toHaveLength(0);
     for (const forbidden of [
@@ -113,10 +278,10 @@ describe("Recipe creation-and-lock workbench", () => {
   it("filters the catalog by Dish code and current Ingredient name", async () => {
     renderWorkbench();
     const search = await screen.findByPlaceholderText(
-      "Tìm theo tên món hoặc nguyên liệu…",
+      "Tìm theo món, mã món hoặc nguyên liệu gốc…",
     );
     fireEvent.change(search, { target: { value: "thịt heo" } });
-    const catalog = screen.getByRole("table");
+    const catalog = screen.getAllByRole("table")[0];
     expect(
       within(catalog).getByText("Canh bí đỏ thịt bằm"),
     ).toBeInTheDocument();
@@ -126,6 +291,36 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(within(catalog).getByText("Cơm trắng")).toBeInTheDocument();
     expect(within(catalog).queryByText("Canh bí đỏ thịt bằm")).toBeNull();
     expect(catalog).not.toHaveTextContent("com-trang");
+  });
+
+  it("renders authoritative BOM periods while keeping imported attribution explicitly nullable", async () => {
+    renderWorkbench();
+    const history = await screen.findByText("Lịch sử BOM hiệu lực");
+    fireEvent.click(history);
+
+    const previousPeriod = screen
+      .getByRole("heading", {
+        name: /Từ 2026-06-01 đến trước 2026-07-01/,
+      })
+      .closest("section")!;
+    expect(within(previousPeriod).getByText("Bí đỏ")).toBeVisible();
+    expect(within(previousPeriod).getByText("Thịt heo xay")).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: /Từ 2026-07-01 trở đi/ }),
+    ).toBeVisible();
+    expect(screen.getByText(/SYSTEM_INGREDIENT · từ 2026-07-01/)).toBeVisible();
+    expect(
+      screen.getByText("Không có thông tin người ban hành gốc"),
+    ).toBeVisible();
+    expect(screen.getByText("Không có thời điểm ban hành gốc")).toBeVisible();
+    expect(
+      screen.getByText(/không được coi là thông tin ban hành gốc/),
+    ).toBeVisible();
+    const period = screen
+      .getByRole("heading", { name: /Từ 2026-07-01 trở đi/ })
+      .closest("section")!;
+    expect(within(period).getByText("Hành lá hiệu lực")).toBeVisible();
+    expect(within(period).getByText("Thịt heo xay")).toBeVisible();
   });
 
   it("shows human Dish identity in the creation finder without normalized codes", async () => {
@@ -197,31 +392,351 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(table).not.toHaveTextContent("KG");
   });
 
-  it("uses Copy only as a helper that fills the current creation form", async () => {
-    renderWorkbench();
+  it("copies both canonical scopes atomically into persisted DRAFT authoring identities without auto-saving", async () => {
+    const api = createReviewRecipeApi("ready");
+    const copyDishRecipes = vi.spyOn(api, "copyDishRecipes");
+    const saveRecipe = vi.spyOn(api, "saveRecipe");
+    const copyVersion = vi.spyOn(api, "copyVersion");
+    const getEffectiveWorkbench = vi.spyOn(api, "getEffectiveWorkbench");
+    renderWorkbench(api);
     await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
     fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
 
     expect(
       screen.getByRole("dialog", { name: "Sao chép công thức" }),
     ).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Chọn công thức nguồn"), {
-      target: { value: "30000000-0000-4000-8000-000000000001" },
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
     });
+    fireEvent.change(screen.getByLabelText("Ngày chụp công thức nguồn"), {
+      target: { value: "2026-09-05" },
+    });
+    fireEvent.change(screen.getByLabelText("Lý do sao chép"), {
+      target: { value: "Dùng bộ công thức đã duyệt cho món đích." },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
 
-    const preview = screen.getByText("Xem trước thành phần").parentElement!;
-    expect(within(preview).getByText("Bí đỏ")).toBeVisible();
-    expect(within(preview).getAllByText("Kilôgam")).not.toHaveLength(0);
-    expect(preview).not.toHaveTextContent("bi-do");
-    expect(preview).not.toHaveTextContent("KG");
-    fireEvent.click(screen.getByRole("button", { name: "Dùng công thức này" }));
+    await waitFor(() => expect(copyDishRecipes).toHaveBeenCalledTimes(1));
+    const request = copyDishRecipes.mock.calls[0][0];
+    expect(request).toMatchObject({
+      contract_version: "RECIPE-EFFECTIVE.v1",
+      expected_version: 1,
+      reason_code: "COPY_DISH_RECIPES",
+      reason_note: "Dùng bộ công thức đã duyệt cho món đích.",
+      payload: {
+        source_dish_id: "10000000-0000-4000-8000-000000000001",
+        target_dish_id: "10000000-0000-4000-8000-000000000002",
+        as_of_date: "2026-09-05",
+      },
+    });
+    expect(request.command_id).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(request.idempotency_key).toContain(request.command_id);
+    expect(saveRecipe).not.toHaveBeenCalled();
+    expect(copyVersion).not.toHaveBeenCalled();
+    expect(await screen.findByText(/đã lưu hai công thức NHÁP/)).toBeVisible();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const copyReadbacks = getEffectiveWorkbench.mock.calls.filter(
+      ([, , date, dishId]) =>
+        date === "2026-09-05" &&
+        dishId === "10000000-0000-4000-8000-000000000002",
+    );
+    expect(copyReadbacks.map(([, , , , context]) => context)).toEqual(
+      expect.arrayContaining([
+        {
+          kind: "system",
+          schoolTypeId: "60000000-0000-4000-8000-000000000001",
+        },
+        {
+          kind: "system",
+          schoolTypeId: "60000000-0000-4000-8000-000000000002",
+        },
+      ]),
+    );
+  });
 
+  it("retains an unknown copy request across ordinary refresh and reconciles by persisted command evidence without resending", async () => {
+    const api = createReviewRecipeApi("ready");
+    const realCopy = api.copyDishRecipes;
+    const copyDishRecipes = vi
+      .spyOn(api, "copyDishRecipes")
+      .mockImplementation(async (request) => {
+        await realCopy(request);
+        return {
+          kind: "transport_error",
+          diagnostic: {
+            code: "NETWORK_FAILURE",
+            safeMessage: "Connection ended after dispatch.",
+          },
+        };
+      });
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+
+    expect(
+      await screen.findByText(/chưa xác định yêu cầu sao chép/),
+    ).toBeVisible();
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("tab", { name: "Danh sách" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+    await waitFor(() =>
+      expect(screen.getByText(/chưa xác định yêu cầu sao chép/)).toBeVisible(),
+    );
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đối soát kết quả sao chép" }),
+    );
+    expect(await screen.findByText(/đã lưu hai công thức NHÁP/)).toBeVisible();
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a known successful copy blocked when a DRAFT readback fails and recovers without a second copy", async () => {
+    const api = createReviewRecipeApi("ready");
+    const realEffective = api.getEffectiveWorkbench;
+    let copied = false;
+    let failReadback = true;
+    const realCopy = api.copyDishRecipes;
+    const copyDishRecipes = vi
+      .spyOn(api, "copyDishRecipes")
+      .mockImplementation(async (request) => {
+        const result = await realCopy(request);
+        copied = true;
+        return result;
+      });
+    vi.spyOn(api, "getEffectiveWorkbench").mockImplementation(
+      async (...args) => {
+        const context = args[4];
+        if (
+          copied &&
+          failReadback &&
+          context.kind === "system" &&
+          context.schoolTypeId === "60000000-0000-4000-8000-000000000002"
+        ) {
+          failReadback = false;
+          return {
+            kind: "transport_error",
+            diagnostic: {
+              code: "NETWORK_FAILURE",
+              safeMessage: "Readback unavailable.",
+            },
+          };
+        }
+        return realEffective(...args);
+      },
+    );
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+
+    expect(
+      await screen.findByText(/đã ghi nhận sao chép.*chưa đọc lại được/i),
+    ).toBeVisible();
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đối soát kết quả sao chép" }),
+    );
+    expect(await screen.findByText(/đã lưu hai công thức NHÁP/)).toBeVisible();
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+  });
+
+  it("reconciles a malformed success envelope from persisted copy evidence without resending", async () => {
+    const api = createReviewRecipeApi("ready");
+    const realCopy = api.copyDishRecipes;
+    const copyDishRecipes = vi
+      .spyOn(api, "copyDishRecipes")
+      .mockImplementation(async (request) => {
+        const result = await realCopy(request);
+        if (result.kind !== "success") return result;
+        return {
+          ...result,
+          response: {
+            ...result.response,
+            scope_results: (result.response.scope_results as unknown[]).slice(
+              0,
+              1,
+            ),
+          },
+        } as AtlasRpcResult;
+      });
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+
+    expect(await screen.findByText(/đã lưu hai công thức NHÁP/)).toBeVisible();
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries only a backend-authorized retryable copy with the exact retained request", async () => {
+    const api = createReviewRecipeApi("ready");
+    const realCopy = api.copyDishRecipes;
+    let rejected = false;
+    const copyDishRecipes = vi
+      .spyOn(api, "copyDishRecipes")
+      .mockImplementation(async (request) => {
+        if (!rejected) {
+          rejected = true;
+          return {
+            kind: "backend_error",
+            error: {
+              success: false,
+              error_code: "TEMPORARY_FAILURE",
+              safe_message: "Temporary failure.",
+              retryable: true,
+            },
+          };
+        }
+        return realCopy(request);
+      });
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+    await screen.findByRole("button", { name: "Thử lại yêu cầu cũ" });
+    const retained = copyDishRecipes.mock.calls[0][0];
+    fireEvent.click(screen.getByRole("button", { name: "Thử lại yêu cầu cũ" }));
+
+    expect(await screen.findByText(/đã lưu hai công thức NHÁP/)).toBeVisible();
+    expect(copyDishRecipes).toHaveBeenCalledTimes(2);
+    expect(copyDishRecipes.mock.calls[1][0]).toBe(retained);
+  });
+
+  it("refreshes after a known stale copy denial without retrying the request", async () => {
+    const api = createReviewRecipeApi("ready");
+    const copyDishRecipes = vi.spyOn(api, "copyDishRecipes").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "STALE_VERSION",
+        safe_message: "Món đích đã thay đổi. Hãy xem lại trước khi sao chép.",
+        retryable: false,
+      },
+    });
+    const getWorkbench = vi.spyOn(api, "getWorkbench");
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+
+    expect(await screen.findByText(/Dữ liệu đã thay đổi/)).toBeVisible();
+    await waitFor(() => expect(getWorkbench).toHaveBeenCalledTimes(3));
+    expect(copyDishRecipes).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(
-      screen.getByRole("heading", { name: "Tạo món & công thức" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Đã sao chép nội dung/)).toBeInTheDocument();
-    expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
+      screen.queryByRole("button", { name: "Thử lại yêu cầu cũ" }),
+    ).toBeNull();
+  });
+
+  it("supersedes only a confirmed non-committed retryable copy with a fresh intent", async () => {
+    const api = createReviewRecipeApi("ready");
+    const copyDishRecipes = vi.spyOn(api, "copyDishRecipes").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "TEMPORARY_FAILURE",
+        safe_message: "Temporary failure.",
+        retryable: true,
+      },
+    });
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+    await screen.findByRole("button", { name: "Bỏ yêu cầu cũ" });
+    fireEvent.click(screen.getByRole("button", { name: "Bỏ yêu cầu cũ" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.change(screen.getByLabelText("Ngày chụp công thức nguồn"), {
+      target: { value: "2026-09-08" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+    await waitFor(() => expect(copyDishRecipes).toHaveBeenCalledTimes(2));
+    expect(copyDishRecipes.mock.calls[1][0].command_id).not.toBe(
+      copyDishRecipes.mock.calls[0][0].command_id,
+    );
+    expect(copyDishRecipes.mock.calls[1][0].payload.as_of_date).toBe(
+      "2026-09-08",
+    );
+  });
+
+  it("does not discard dirty authoring when a copy is proposed", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const api = createReviewRecipeApi("ready");
+    const copyDishRecipes = vi.spyOn(api, "copyDishRecipes");
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("option", { name: /Cơm trắng/ }));
+    await screen.findByText(/Chưa có công thức typed đã phát hành/);
+    fireEvent.change(screen.getByPlaceholderText("Tìm nguyên liệu để thêm…"), {
+      target: { value: "hành" },
+    });
+    fireEvent.click(screen.getByRole("option", { name: "Hành lá" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    fireEvent.change(screen.getByLabelText("Món nguồn"), {
+      target: { value: "10000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sao chép hai công thức" }),
+    );
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(copyDishRecipes).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("dialog", { name: "Sao chép công thức" }),
+    ).toBeVisible();
   });
 
   it.each(["affected-id", "legacy-readback"])(
@@ -300,21 +815,17 @@ describe("Recipe creation-and-lock workbench", () => {
         operational_notes: "",
       });
 
-      fireEvent.click(
-        screen.getByRole("button", { name: "Sao chép công thức" }),
+      fireEvent.change(
+        screen.getByPlaceholderText("Tìm nguyên liệu để thêm…"),
+        { target: { value: "hành" } },
       );
-      fireEvent.change(screen.getByLabelText("Chọn công thức nguồn"), {
-        target: { value: "30000000-0000-4000-8000-000000000001" },
-      });
-      fireEvent.click(
-        screen.getByRole("button", { name: "Dùng công thức này" }),
-      );
+      fireEvent.click(screen.getByRole("option", { name: "Hành lá" }));
       expect(screen.getAllByText("Có thay đổi chưa lưu")).not.toHaveLength(0);
 
-      fireEvent.click(screen.getByRole("button", { name: "Tạo" }));
+      fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
       await waitFor(() => expect(saveRecipe).toHaveBeenCalledTimes(1));
       expect(saveRecipe.mock.calls[0][0].payload).toMatchObject({
-        school_type_id: null,
+        school_type_id: "60000000-0000-4000-8000-000000000001",
         recipe_version_id: null,
         basis_portions: 100,
       });
@@ -348,7 +859,7 @@ describe("Recipe creation-and-lock workbench", () => {
         ),
       ).toMatchObject({
         dish_status: "ACTIVE",
-        version: 2,
+        version: 1,
         requires_need_generation: true,
       });
       expect(workbench.selected_recipe.business_status).toBe("AVAILABLE");
@@ -364,6 +875,62 @@ describe("Recipe creation-and-lock workbench", () => {
       ).toBeInTheDocument();
     },
   );
+
+  it("keeps a successful Dish creation blocked when authoritative readback fails", async () => {
+    const api = createReviewRecipeApi("ready");
+    const realCreateDish = api.createDish;
+    const realGetWorkbench = api.getWorkbench;
+    let created = false;
+    let failReadback = true;
+    const createDish = vi
+      .spyOn(api, "createDish")
+      .mockImplementation(async (request) => {
+        const result = await realCreateDish(request);
+        created = result.kind === "success";
+        return result;
+      });
+    const getWorkbench = vi
+      .spyOn(api, "getWorkbench")
+      .mockImplementation(async (...args) => {
+        if (created && failReadback) {
+          failReadback = false;
+          return {
+            kind: "transport_error",
+            diagnostic: {
+              code: "NETWORK_FAILURE",
+              safeMessage: "Dish readback failed after commit.",
+            },
+          };
+        }
+        return realGetWorkbench(...args);
+      });
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    fireEvent.change(screen.getByLabelText("Tên món"), {
+      target: { value: "Món chờ đối soát" },
+    });
+    fireEvent.change(screen.getByLabelText("Loại món"), {
+      target: { value: "80000000-0000-4000-8000-000000000001" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu món ăn" }));
+
+    expect(
+      await screen.findByText(/đã ghi nhận tạo món.*chưa đọc lại được/i),
+    ).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      /Chưa xác định thao tác vừa rồi/,
+    );
+    expect(screen.getByLabelText("Tên món")).toHaveValue("Món chờ đối soát");
+    expect(screen.getByRole("button", { name: "Lưu món ăn" })).toBeDisabled();
+    expect(createDish).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+    await waitFor(() => expect(getWorkbench).toHaveBeenCalledTimes(3));
+    expect(screen.getByRole("button", { name: "Lưu món ăn" })).toBeDisabled();
+    expect(screen.getByLabelText("Tên món")).toHaveValue("Món chờ đối soát");
+    expect(createDish).toHaveBeenCalledTimes(1);
+  });
 
   it("shows Dish Type names without normalized codes", async () => {
     renderWorkbench();
@@ -498,6 +1065,9 @@ describe("Recipe creation-and-lock workbench", () => {
       screen.getByPlaceholderText("Tìm nguyên liệu để thêm…"),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Sao chép công thức" }),
+    ).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Đi đến Điều chỉnh" }));
     expect(
       await screen.findByRole("tab", { name: "Điều chỉnh", selected: true }),
@@ -544,7 +1114,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(screen.queryByLabelText(/Định lượng Bí đỏ/)).toBeNull();
   });
 
-  it("requires authoritative refresh after an unknown Save outcome and never retries", async () => {
+  it("keeps an unknown Save blocked when authoritative readback does not match and never retries", async () => {
     const base = createReviewRecipeApi("ready");
     const saveRecipe = vi.fn(async (): Promise<AtlasRpcResult> => ({
       kind: "transport_error",
@@ -561,17 +1131,73 @@ describe("Recipe creation-and-lock workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
 
     expect(
-      await screen.findByText(/Chưa xác định thao tác vừa rồi đã hoàn tất/),
+      await screen.findByText(/Chưa xác định thao tác Lưu vừa rồi/),
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     expect(saveRecipe).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "Tải lại" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đối soát kết quả Lưu" }),
+    );
+    expect(
+      await screen.findByText(/Dữ liệu đọc lại chưa khớp nội dung Lưu/),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/Chưa xác định thao tác Lưu vừa rồi đã hoàn tất/),
+    ).toBeVisible();
+    expect(screen.getByLabelText(/Định lượng Bí đỏ/)).toHaveValue(24);
+    expect(saveRecipe).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks a known successful Save until the exact authoring content can be read back", async () => {
+    const api = createReviewRecipeApi("ready");
+    const realSave = api.saveRecipe;
+    const realEffective = api.getEffectiveWorkbench;
+    let saved = false;
+    let failOnce = true;
+    const saveRecipe = vi
+      .spyOn(api, "saveRecipe")
+      .mockImplementation(async (request) => {
+        const result = await realSave(request);
+        saved = true;
+        return result;
+      });
+    vi.spyOn(api, "getEffectiveWorkbench").mockImplementation(
+      async (...args) => {
+        if (saved && failOnce) {
+          failOnce = false;
+          return {
+            kind: "transport_error",
+            diagnostic: {
+              code: "NETWORK_FAILURE",
+              safeMessage: "Readback failed after commit.",
+            },
+          };
+        }
+        return realEffective(...args);
+      },
+    );
+    renderWorkbench(api);
+    await openCreation();
+    fireEvent.change(screen.getByLabelText(/Định lượng Bí đỏ/), {
+      target: { value: "24" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(
+      (await screen.findAllByText(/đã ghi nhận Lưu.*chưa đọc lại được/i))[0],
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.getByLabelText(/Định lượng Bí đỏ/)).toHaveValue(24);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đối soát kết quả Lưu" }),
+    );
     await waitFor(() =>
       expect(
-        screen.queryByText(/Chưa xác định thao tác vừa rồi đã hoàn tất/),
-      ).not.toBeInTheDocument(),
+        screen.queryByRole("button", { name: "Đối soát kết quả Lưu" }),
+      ).toBeNull(),
     );
     expect(saveRecipe).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText(/Định lượng Bí đỏ/)).toHaveValue(24);
   });
 
   it("keeps technical version evidence behind support history disclosure", async () => {

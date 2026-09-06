@@ -5,6 +5,7 @@ import type {
   JsonValue,
 } from "../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../review/reviewMode";
+import type { EffectiveTargetLine } from "../recipe-adjustments/recipeAdjustmentModel";
 import type {
   DishRecipeCopyCommandRequest,
   RecipeApi,
@@ -93,7 +94,7 @@ function fixtures(): RecipeWorkbenchData {
         dish_type_code: "savory",
         dish_type_name: "Món mặn",
         operational_notes: null,
-        dish_status: "DRAFT",
+        dish_status: "ACTIVE",
         display_order: 20,
         requires_need_generation: true,
         version: 1,
@@ -291,48 +292,124 @@ function fixtures(): RecipeWorkbenchData {
 }
 
 const clone = <T>(value: T): T => structuredClone(value);
-const effectiveLines = (
-  data: RecipeWorkbenchData,
-  version: RecipeVersionRecord,
-  schoolSpecific: boolean,
-) =>
-  version.composition
-    .filter((line) => line.line_disposition === "PRESENT")
-    .map((line, index) => {
-      const ingredient = data.ingredients.find(
-        (item) => item.ingredient_id === line.ingredient_id,
-      );
-      const unit = data.units.find((item) => item.unit_id === line.unit_id);
-      return {
-        ingredient_id: line.ingredient_id,
-        ingredient_name: ingredient?.ingredient_name ?? "Nguyên liệu xem thử",
-        quantity_per_basis:
-          schoolSpecific && index === 0
-            ? line.quantity_per_basis + 2
-            : line.quantity_per_basis,
-        unit_id: line.unit_id,
-        unit_name: unit?.unit_name ?? "Đơn vị xem thử",
-        target_kind: "RECIPE_LINE" as const,
-        target_recipe_line_id: line.recipe_line_id,
-        adjustment_line_id: null,
-        target_id: line.recipe_line_id,
-        source_layer:
-          schoolSpecific && index === 0
-            ? "SCHOOL_DISH"
-            : "RELEASED_RECIPE_VERSION",
-        lineage:
-          schoolSpecific && index === 0
-            ? [
-                {
-                  adjustment_id: "90000000-0000-4000-8000-000000000001",
-                  revision_id: "91000000-0000-4000-8000-000000000001",
-                  scope_kind: "SCHOOL_DISH",
-                  action_kind: "ADJUST_QUANTITY",
-                },
-              ]
-            : [],
-      };
-    });
+const shapedEffectiveLines: Record<
+  "basePrimary" | "systemPrimary" | "schoolPrimary" | "systemSecondary",
+  EffectiveTargetLine[]
+> = {
+  basePrimary: [
+    {
+      ingredient_id: ids.ingredient,
+      ingredient_name: "Bí đỏ",
+      quantity_per_basis: 25,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE",
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000001",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000001",
+      source_layer: "RELEASED_RECIPE_VERSION",
+      lineage: [],
+    },
+    {
+      ingredient_id: ids.ingredient2,
+      ingredient_name: "Thịt heo xay",
+      quantity_per_basis: 8,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE",
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000002",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000002",
+      source_layer: "RELEASED_RECIPE_VERSION",
+      lineage: [],
+    },
+  ],
+  systemPrimary: [
+    {
+      ingredient_id: "40000000-0000-4000-8000-000000000099",
+      ingredient_name: "Hành lá hiệu lực",
+      quantity_per_basis: 12,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE" as const,
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000001",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000001",
+      source_layer: "SYSTEM_INGREDIENT",
+      lineage: [
+        {
+          adjustment_id: "90000000-0000-4000-8000-000000000090",
+          revision_id: "91000000-0000-4000-8000-000000000090",
+          scope_kind: "SYSTEM_INGREDIENT",
+          action_kind: "REPLACE",
+        },
+      ],
+    },
+    {
+      ingredient_id: ids.ingredient2,
+      ingredient_name: "Thịt heo xay",
+      quantity_per_basis: 8,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE" as const,
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000002",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000002",
+      source_layer: "RELEASED_RECIPE_VERSION",
+      lineage: [],
+    },
+  ],
+  schoolPrimary: [
+    {
+      ingredient_id: "40000000-0000-4000-8000-000000000099",
+      ingredient_name: "Hành lá hiệu lực",
+      quantity_per_basis: 14,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE" as const,
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000001",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000001",
+      source_layer: "SCHOOL_DISH",
+      lineage: [
+        {
+          adjustment_id: "90000000-0000-4000-8000-000000000001",
+          revision_id: "91000000-0000-4000-8000-000000000001",
+          scope_kind: "SCHOOL_DISH",
+          action_kind: "ADJUST_QUANTITY",
+        },
+      ],
+    },
+    {
+      ingredient_id: ids.ingredient2,
+      ingredient_name: "Thịt heo xay",
+      quantity_per_basis: 8,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE" as const,
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000002",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000002",
+      source_layer: "RELEASED_RECIPE_VERSION",
+      lineage: [],
+    },
+  ],
+  systemSecondary: [
+    {
+      ingredient_id: ids.ingredient,
+      ingredient_name: "Bí đỏ",
+      quantity_per_basis: 27,
+      unit_id: ids.unit,
+      unit_name: "Kilôgam",
+      target_kind: "RECIPE_LINE" as const,
+      target_recipe_line_id: "70000000-0000-4000-8000-000000000003",
+      adjustment_line_id: null,
+      target_id: "70000000-0000-4000-8000-000000000003",
+      source_layer: "RELEASED_RECIPE_VERSION",
+      lineage: [],
+    },
+  ],
+};
 const success = (data: Record<string, JsonValue>): AtlasRpcResult => ({
   kind: "success",
   response: { success: true, ...data } as AtlasSuccessEnvelope,
@@ -424,6 +501,7 @@ export function createReviewRecipeApi(
   scenario: AtlasReviewScenario = "ready",
 ): RecipeApi {
   let data = scenario === "empty" ? emptyRecipeWorkbench() : fixtures();
+  const copyResults = new Map<string, AtlasSuccessEnvelope>();
   const blockedRead = () => {
     if (scenario === "permission_denied")
       return backendError("CAPABILITY_DENIED");
@@ -478,7 +556,7 @@ export function createReviewRecipeApi(
         return new Promise<AtlasRpcResult>(() => undefined);
       const blocked = blockedRead();
       const dish = data.dishes.find((item) => item.dish_id === dishId);
-      const locked = dishId === ids.dish;
+      const locked = false;
       const schoolTypeId =
         context.kind === "system" ? context.schoolTypeId : ids.schoolType;
       const recipe = data.recipes.find(
@@ -492,9 +570,17 @@ export function createReviewRecipeApi(
       );
       const schoolSpecific = context.kind === "school";
       const ready = Boolean(version);
-      const lines = version
-        ? effectiveLines(data, version, schoolSpecific)
-        : [];
+      const lines = !ready
+        ? []
+        : schoolTypeId === ids.schoolTypeSecondary
+          ? clone(shapedEffectiveLines.systemSecondary)
+          : clone(
+              schoolSpecific
+                ? shapedEffectiveLines.schoolPrimary
+                : shapedEffectiveLines.systemPrimary,
+            );
+      selectRecipe(data, dishId, schoolTypeId);
+      const baseAuthoring = clone(data.selected_recipe);
       const blockers = ready
         ? []
         : [
@@ -528,43 +614,27 @@ export function createReviewRecipeApi(
                   }
                 : null,
               basis_portions: version?.basis_portions ?? null,
-              base_authoring: {
-                dish_id: dishId,
-                school_type_id: schoolTypeId,
-                recipe_id: recipe?.recipe_id ?? null,
-                recipe_version_id: version?.recipe_version_id ?? null,
-                expected_version: version?.version ?? dish?.version ?? null,
-                in_use_recipe_version_id: version?.recipe_version_id ?? null,
-                business_status: locked
-                  ? "LOCKED"
-                  : version
-                    ? "AVAILABLE"
-                    : "NOT_SAVED",
-                locked_for_normal_editing: locked,
-                lock_reason: locked
-                  ? "Món này đã có trong thực đơn đã duyệt."
-                  : null,
-                basis_portions: 100,
-                composition: clone(version?.composition ?? []),
-                allowed_actions: {
-                  save_recipe: !locked,
-                  release_recipe: false,
-                },
-                disabled_reason_codes: {
-                  save_recipe: locked ? "SAVE_OPERATIONALLY_LOCKED" : null,
-                  release_recipe: locked
-                    ? "RELEASE_ALREADY_IN_USE"
-                    : "RELEASE_SAVE_REQUIRED",
-                },
-                disabled_reasons: {
-                  save_recipe: locked
-                    ? "Muốn thay đổi công thức, hãy dùng Điều chỉnh."
-                    : null,
-                  release_recipe: locked
-                    ? "Công thức đã sẵn sàng cho Lập nhu cầu."
-                    : "Hãy lưu công thức trước.",
-                },
-              },
+              base_authoring: locked
+                ? {
+                    ...baseAuthoring,
+                    business_status: "LOCKED",
+                    locked_for_normal_editing: true,
+                    lock_reason: "Món này đã có trong thực đơn đã duyệt.",
+                    allowed_actions: {
+                      save_recipe: false,
+                      release_recipe: false,
+                    },
+                    disabled_reason_codes: {
+                      save_recipe: "SAVE_OPERATIONALLY_LOCKED",
+                      release_recipe: "RELEASE_ALREADY_IN_USE",
+                    },
+                    disabled_reasons: {
+                      save_recipe:
+                        "Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+                      release_recipe: "Công thức đã sẵn sàng cho Lập nhu cầu.",
+                    },
+                  }
+                : baseAuthoring,
               effective_readiness: {
                 status: ready ? "READY" : "BLOCKED",
                 blockers,
@@ -575,17 +645,56 @@ export function createReviewRecipeApi(
               is_operationally_locked: locked,
               current_effective_bom: lines,
               school_exception_count: schoolSpecific && ready ? 1 : 0,
-              allowed_actions: locked && ready ? ["CREATE_CHANGE_ORDER"] : [],
+              allowed_actions:
+                locked && ready
+                  ? ["CREATE_CHANGE_ORDER"]
+                  : !locked
+                    ? ["COPY_DISH_RECIPES"]
+                    : [],
               blockers,
               warnings: [],
               history_periods: ready
                 ? [
                     {
+                      period_from: "2026-06-01",
+                      period_to: "2026-07-01",
+                      resolution_status: "READY",
+                      effective_bom:
+                        schoolTypeId === ids.schoolType && !schoolSpecific
+                          ? clone(shapedEffectiveLines.basePrimary)
+                          : lines,
+                      change_orders: [],
+                      warnings: [],
+                      blockers: [],
+                    },
+                    {
                       period_from: "2026-07-01",
                       period_to: null,
                       resolution_status: "READY",
                       effective_bom: lines,
-                      change_orders: [],
+                      change_orders:
+                        schoolTypeId === ids.schoolType && !schoolSpecific
+                          ? [
+                              {
+                                adjustment_id:
+                                  "90000000-0000-4000-8000-000000000090",
+                                revision_id:
+                                  "91000000-0000-4000-8000-000000000090",
+                                revision_number: 1,
+                                revision_status: "ACTIVE",
+                                business_event_kind: "CREATED",
+                                scope_kind: "SYSTEM_INGREDIENT",
+                                action_kind: "REPLACE",
+                                effective_from: "2026-07-01",
+                                effective_to: null,
+                                reason_code: "LEGACY_IMPORT",
+                                reason:
+                                  "Điều chỉnh nguồn cũ không có người ban hành gốc.",
+                                issuer: null,
+                                issued_at: null,
+                              },
+                            ]
+                          : [],
                       warnings: [],
                       blockers: [],
                     },
@@ -615,8 +724,7 @@ export function createReviewRecipeApi(
         dish_type_code: dishType.dish_type_code,
         dish_type_name: dishType.dish_type_name,
         operational_notes: payloadString(request, "operational_notes") || null,
-        dish_status:
-          request.payload.dish_status === "ACTIVE" ? "ACTIVE" : "DRAFT",
+        dish_status: "ACTIVE",
         display_order: payloadNumber(request, "display_order"),
         requires_need_generation:
           request.payload.requires_need_generation !== false,
@@ -802,10 +910,6 @@ export function createReviewRecipeApi(
       target.released_by_actor_id = actor;
       target.released_at = now;
       target.version += 3;
-      if (dish.dish_status === "DRAFT") {
-        dish.dish_status = "ACTIVE";
-        dish.version += 1;
-      }
       selectRecipe(data, dishId, schoolTypeId);
       return true;
     }),
@@ -851,40 +955,88 @@ export function createReviewRecipeApi(
     copyDishRecipes(request: DishRecipeCopyCommandRequest) {
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
-      return Promise.resolve(
-        success({
-          contract_version: "RECIPE-EFFECTIVE.v1",
-          command_id: request.command_id,
-          correlation_id: request.correlation_id,
-          idempotency_status: "COMPLETED",
-          scope_results: [
-            {
-              school_type_id: ids.schoolType,
-              school_type_code: "v1-school-type-1",
-              scope_name: "TIỂU HỌC",
-              status: "COPIED",
-              source_recipe_id: ids.recipe,
-              source_recipe_version_id: ids.version,
-              source_selection_scope: "SCHOOL_TYPE",
-              target_recipe_id: ids.dish2Recipe,
-              target_recipe_version_id: "31000000-0000-4000-8000-000000000001",
-            },
-            {
-              school_type_id: ids.schoolTypeSecondary,
-              school_type_code: "v1-school-type-2",
-              scope_name: "TRUNG HỌC",
-              status: "COPIED",
-              source_recipe_id: ids.recipeSecondary,
-              source_recipe_version_id: ids.versionSecondary,
-              source_selection_scope: "SCHOOL_TYPE",
-              target_recipe_id: ids.dish2RecipeSecondary,
-              target_recipe_version_id: "31000000-0000-4000-8000-000000000002",
-            },
-          ],
-          safe_operator_message:
-            "Đã mô phỏng sao chép công thức theo món trong trình duyệt.",
-        }),
+      const prior = copyResults.get(request.command_id);
+      if (prior) return Promise.resolve({ kind: "success", response: prior });
+      const sourceDish = data.dishes.find(
+        (item) => item.dish_id === request.payload.source_dish_id,
       );
+      const targetDish = data.dishes.find(
+        (item) => item.dish_id === request.payload.target_dish_id,
+      );
+      if (
+        request.reason_code !== "COPY_DISH_RECIPES" ||
+        !request.reason_note.trim() ||
+        !sourceDish ||
+        !targetDish ||
+        sourceDish.dish_id === targetDish.dish_id ||
+        request.expected_version !== targetDish.version
+      )
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+
+      const scopeResults = data.school_types.map((schoolType) => {
+        const sourceRecipe = data.recipes.find(
+          (recipe) =>
+            recipe.dish_id === sourceDish.dish_id &&
+            recipe.school_type_id === schoolType.school_type_id &&
+            recipe.recipe_status === "ACTIVE",
+        );
+        const sourceVersion = data.recipe_versions.find(
+          (version) =>
+            version.recipe_id === sourceRecipe?.recipe_id &&
+            version.recipe_version_status === "RELEASED_FOR_PLANNING",
+        );
+        const targetRecipe = data.recipes.find(
+          (recipe) =>
+            recipe.dish_id === targetDish.dish_id &&
+            recipe.school_type_id === schoolType.school_type_id &&
+            recipe.recipe_status === "ACTIVE",
+        );
+        if (!sourceRecipe || !sourceVersion || !targetRecipe) return null;
+        const targetVersion = newVersion(
+          targetRecipe.recipe_id,
+          sourceVersion.basis_portions,
+          sourceVersion,
+        );
+        targetVersion.version_number =
+          Math.max(
+            0,
+            ...data.recipe_versions
+              .filter((item) => item.recipe_id === targetRecipe.recipe_id)
+              .map((item) => item.version_number),
+          ) + 1;
+        targetVersion.source_evidence = {
+          source_kind: "RECIPE_EFFECTIVE_COPY",
+          outer_command_id: request.command_id,
+          source_dish_id: sourceDish.dish_id,
+          copy_as_of_date: request.payload.as_of_date,
+        };
+        data.recipe_versions.push(targetVersion);
+        return {
+          school_type_id: schoolType.school_type_id,
+          school_type_code: schoolType.school_type_code,
+          scope_name: schoolType.school_type_name,
+          status: "COPIED",
+          source_recipe_id: sourceRecipe.recipe_id,
+          source_recipe_version_id: sourceVersion.recipe_version_id,
+          source_selection_scope: "SCHOOL_TYPE",
+          target_recipe_id: targetRecipe.recipe_id,
+          target_recipe_version_id: targetVersion.recipe_version_id,
+        };
+      });
+      if (scopeResults.length !== 2 || scopeResults.some((item) => !item))
+        return Promise.resolve(backendError("VALIDATION_FAILED"));
+      const response = success({
+        contract_version: "RECIPE-EFFECTIVE.v1",
+        command_id: request.command_id,
+        correlation_id: request.correlation_id,
+        idempotency_status: "COMPLETED",
+        scope_results: scopeResults,
+        safe_operator_message:
+          "Đã mô phỏng sao chép hai công thức thành bản NHÁP.",
+      });
+      if (response.kind === "success")
+        copyResults.set(request.command_id, response.response);
+      return Promise.resolve(response);
     },
     applyImport: mutate(() => true),
   };
