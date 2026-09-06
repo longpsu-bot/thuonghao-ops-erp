@@ -6,7 +6,7 @@
 
 **Authority:** Working context summary
 
-**Current authoritative `main`:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`
+**Verified execution baseline (6 September 2026):** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`
 
 **Review required:** No — update whenever project direction, active scope, environment boundary, or blocking Product decisions change.
 

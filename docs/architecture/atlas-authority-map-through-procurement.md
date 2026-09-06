@@ -116,6 +116,18 @@ These are existing identities at the evidence baseline, not requests to introduc
 | Read/refresh generated PO drafts                 | `get_school_catering_purchase_orders`; existing draft generation command where already authorized                                                                           | No independent lifecycle invention or released-content mutation.                                                     |
 | Issue official PO                                | `release_school_catering_purchase_order`                                                                                                                                    | Independent final commitment; backend-only numbering.                                                                |
 
+### Execution contract gap at the pinned baseline
+
+The system-effective read and effective-target read are callable, but the retained
+Preview/Create/Supersede command path still requires School context and calls the
+RMVP-02B compatibility resolver. It cannot certify or commit an exact system-only
+typed proposal without a School proxy. That normal system mutation remains
+blocked under A07; the command-routing table does not authorize a proxy or imply
+that the new reads repaired the older command envelope. Effective-history
+original legacy attribution is also incomplete under A12. See the
+[execution evidence](atlas-model-convergence-evidence.md#7-execution-contract-mapping)
+and [implementation report](../implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md).
+
 ## 4. Compatibility is not automatically retired code
 
 Retain existing callable low-level Recipe, Planning and Procurement entry points unless a separate, approved compatibility retirement proves that all consumers are addressed. Normal UI must not call older deterministic stages as independent operator obligations or use them to bypass a canonical denial.

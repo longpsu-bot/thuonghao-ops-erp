@@ -101,3 +101,37 @@ Official documentation checked during preparation:
 - Configuration reference: https://developers.openai.com/codex/config-reference/
 
 The recommended session is Sol with extra-high reasoning and explicit bounded delegation. Set supported options in the actual installed client; verify availability rather than pretending a prompt changed runtime configuration. Agent-count limits in this packet are task policy, not an assertion about a particular release's TOML key. Do not enable unrestricted access or disable approval/sandbox protections to obtain sub-agents.
+
+## 7. Execution contract mapping
+
+Task execution reverified baseline `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`
+and confirmed PR #257 is merged. The following are implementation gaps against
+the intended accepted behavior, not amendments weakening that behavior:
+
+- **A07:** `20260727120000_rmvp_02b_recipe_adjustments_effective_bom.sql`
+  retains School-based Preview and mandatory `preview_school_id` in
+  Create/Supersede (Preview at lines 2727–2823; command validation and resolution
+  at 2957–3186 and 3332–3563).
+  `20260905161348_recipe_effective_product_model_correction.sql` lines 194–218
+  explicitly preserve the legacy resolver behind that compatibility path.
+  New system-effective/target reads do not supply a matching system-only command
+  envelope. Normal system mutation must remain blocked without a separately
+  approved backend amendment.
+- **A12:** `20260905105253_recipe_effective_contract_01.sql` lines 1306–1355
+  shape effective-history tags from Actor display name and revision `created_at`
+  without a legacy-issuance discriminator.
+  `20260814010928_ui_quality_03b_recipe_adjustment_operator_workbench.sql`
+  lines 107–149 and 229–275 identifies legacy unattributed ledger evidence and
+  nulls issuer name but still returns stored creation time. Original legacy
+  issuer/time cannot be certified by these outputs. React must preserve unknown
+  attribution rather than present the importer or import time as original
+  business issuance.
+- **Catalog:** the existing catalog supports identity/reference/base search;
+  canonical effective detail is available per selected Dish/context. No existing
+  read provides whole-catalog effective-Ingredient search. Truthfully labelled
+  base search and lazy selected detail are within this delivery.
+
+The exact acceptance outcomes, independent review, CI and separately rechecked
+Staging readiness are recorded in the
+[implementation report](../implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md).
+The dated preparation observations above remain historical evidence.
