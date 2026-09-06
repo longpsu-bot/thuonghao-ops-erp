@@ -184,7 +184,13 @@ Each row also returns backend-derived `is_effective_now` independently from `eff
 
 Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED`, `issued_at: null`, and a null issuer name. The Atlas import timestamp is not represented as business issuance, and the Atlas importer is not represented as the original business issuer.
 
-**Verified baseline limitation (`a6008516`, acceptance A12):** the RMVP-02B.v2 operator ledger marks legacy issuance as `LEGACY_UNATTRIBUTED` and nulls both issuer name and `issued_at` through the correction migration `20260814045038`. The effective `history_periods[].change_orders[]` SQL still returns Actor display name and revision `created_at` for every row and does not expose the same nullable legacy attribution shape. Clients must not fabricate an original issuer/time; full effective-history parity remains blocked pending a separately authorized backend correction.
+The effective-history read applies that rule to each immutable revision, using
+the same established classification as the normal adjustment ledger: a
+`reason_code` beginning with `LEGACY_`, or an explicitly false
+`source_evidence.historical_actor_approval_claimed`, means original issuance is
+unattributed. A later Atlas-native correction or cancellation on the same root
+retains its own Actor and immutable `created_at`. Read shaping does not rewrite
+the root, revision, technical importer, timestamp, or source evidence.
 
 ## Dish lifecycle eligibility amendment
 

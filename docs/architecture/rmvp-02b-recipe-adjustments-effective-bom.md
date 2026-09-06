@@ -109,6 +109,15 @@ Normal Recipe history is an immutable sequence of effective-BOM periods, not a r
 
 The adjustment ledger retains `temporal_state`, exposes `effective_from` and `effective_to`, and adds backend-derived `is_effective_now`. The boolean is true only for states whose current revision contributes on the requested date. The frontend displays these fields and never calculates applicability.
 
+Original business issuance provenance is exposed only when authoritative. The
+normal adjustment ledger and effective Recipe history classify each revision as
+legacy-unattributed when `reason_code LIKE 'LEGACY_%'` or immutable
+`source_evidence.historical_actor_approval_claimed` is explicitly false. Such a
+revision returns null business issuer/time while retaining its Atlas importer
+Actor and import timestamp as technical source evidence. Native corrections and
+cancellations on the same root retain their own Actor/time. This read rule is
+revision-specific and performs no source-row mutation or backfill.
+
 ## Preview and connected UI
 
 Preview is a no-write backend read. It validates one proposal, resolves current composition and hypothetical composition with the same resolver, and returns before/after atomic lines, affected-line count, warnings, blockers, and `can_save`. The final command repeats validation and resolution under transaction protection so stale or newly conflicting inputs fail closed.
