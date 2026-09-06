@@ -872,6 +872,10 @@ export function RecipeAdjustmentWorkbench({
     draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH"
       ? draft.dishId
       : draft.previewDishId;
+  const previewSchoolTypeId =
+    draft.scope === "SYSTEM_DISH"
+      ? draft.schoolTypeId
+      : schoolTypeIdForSchool(load.data, previewSchoolId);
   const selectedTargetIngredient = load.data.ingredients.find(
     (ingredient) => ingredient.ingredient_id === draft.targetIngredientId,
   );
@@ -957,6 +961,7 @@ export function RecipeAdjustmentWorkbench({
     draft,
     proposalUnitId,
     previewSchoolId,
+    previewSchoolTypeId,
     previewDishId,
   });
 
@@ -975,12 +980,13 @@ export function RecipeAdjustmentWorkbench({
     authorityReady &&
     !mutationLocked &&
     !!draft.action &&
-    !!previewSchoolId &&
     !!previewDishId &&
+    (draft.scope === "SYSTEM_DISH"
+      ? !!previewSchoolTypeId
+      : !!previewSchoolId) &&
     !!draft.effectiveFrom &&
     (!draft.effectiveTo || draft.effectiveTo > draft.effectiveFrom) &&
     !!draft.reason.trim() &&
-    draft.scope !== "SYSTEM_DISH" &&
     (draft.scope !== "SCHOOL_DISH" || !!selectedRecipeSchoolTypeId) &&
     (!needsRecipeLine ||
       (targetContextStatus === "ready" && !!selectedTargetLine)) &&
@@ -1002,15 +1008,18 @@ export function RecipeAdjustmentWorkbench({
     const requestFingerprint = materialFingerprint;
     const proposedAdjustment = proposal();
     const requestedSchoolId = previewSchoolId;
+    const requestedSchoolTypeId = previewSchoolTypeId;
     const requestedDishId = previewDishId;
     const requestedDate = draft.effectiveFrom;
     setBusy(true);
     setNotice("");
     const result = await api.preview(authSubject, correlationId, {
       as_of_date: requestedDate,
-      school_id: requestedSchoolId,
       dish_id: requestedDishId,
-      replaces_adjustment_id: editing?.adjustment_id ?? null,
+      ...(draft.scope === "SYSTEM_DISH"
+        ? { school_type_id: requestedSchoolTypeId }
+        : { school_id: requestedSchoolId }),
+      ...(editing ? { replaces_adjustment_id: editing.adjustment_id } : {}),
       proposed_adjustment: proposedAdjustment,
     });
     if (authSubjectRef.current !== authSubject) return;
@@ -1019,16 +1028,23 @@ export function RecipeAdjustmentWorkbench({
       return;
     }
     const parsed = adjustmentPreviewFromResult(result);
+    const systemContext = draft.scope === "SYSTEM_DISH";
     const matches =
       parsed?.as_of_date === requestedDate &&
-      parsed.school_id === requestedSchoolId &&
       parsed.dish_id === requestedDishId &&
+      (systemContext
+        ? parsed.school_id === null &&
+          parsed.school_type_id === requestedSchoolTypeId
+        : parsed.school_id === requestedSchoolId &&
+          parsed.school_type_id === null) &&
       parsed.before.as_of_date === requestedDate &&
-      parsed.before.school_id === requestedSchoolId &&
       parsed.before.dish_id === requestedDishId &&
+      parsed.before.school_id === (systemContext ? null : requestedSchoolId) &&
+      parsed.before.school_type_id === requestedSchoolTypeId &&
       parsed.after.as_of_date === requestedDate &&
-      parsed.after.school_id === requestedSchoolId &&
       parsed.after.dish_id === requestedDishId &&
+      parsed.after.school_id === (systemContext ? null : requestedSchoolId) &&
+      parsed.after.school_type_id === requestedSchoolTypeId &&
       JSON.stringify(parsed.proposed_adjustment) ===
         JSON.stringify(proposedAdjustment);
     setPreview(matches ? parsed : null);
@@ -1039,7 +1055,7 @@ export function RecipeAdjustmentWorkbench({
     setNotice(
       matches
         ? "Đã cập nhật phần xem ảnh hưởng."
-        : parsed
+        : parsed || result.kind === "success"
           ? "Kết quả xem ảnh hưởng không khớp bối cảnh đã gửi. Vui lòng xem lại."
           : adjustmentResultMessage(result),
     );
@@ -1097,8 +1113,10 @@ export function RecipeAdjustmentWorkbench({
     const payload = {
       ...proposedAdjustment,
       as_of_date: draft.effectiveFrom,
-      preview_school_id: previewSchoolId,
       preview_dish_id: previewDishId,
+      ...(draft.scope === "SYSTEM_DISH"
+        ? { preview_school_type_id: previewSchoolTypeId }
+        : { preview_school_id: previewSchoolId }),
       predecessor_revision_id: editing?.current_revision_id ?? null,
     };
     const request = recipeAdjustmentCommandRequest(
@@ -2236,9 +2254,9 @@ export function RecipeAdjustmentWorkbench({
                   )}
 
                   {draft.scope === "SYSTEM_DISH" && (
-                    <Text size="sm" c="red" role="alert">
-                      Atlas chưa hỗ trợ xem và lưu điều chỉnh cho toàn bộ loại
-                      trường trong hợp đồng hiện tại.
+                    <Text size="sm">
+                      Món và loại công thức đã được xác định trong phạm vi điều
+                      chỉnh.
                     </Text>
                   )}
 

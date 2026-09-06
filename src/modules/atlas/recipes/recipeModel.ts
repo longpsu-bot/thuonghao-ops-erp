@@ -155,6 +155,7 @@ export type EffectiveHistoryChangeOrder = {
   effective_to: string | null;
   reason_code: string;
   reason: string;
+  issuance_kind: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
   issuer: string | null;
   issued_at: string | null;
 };
@@ -321,6 +322,13 @@ function isEffectiveLine(value: JsonValue): boolean {
 
 function isHistoryChangeOrder(value: JsonValue): boolean {
   if (!isRecord(value)) return false;
+  const issuanceIsCoherent =
+    (value.issuance_kind === "LEGACY_UNATTRIBUTED" &&
+      value.issuer === null &&
+      value.issued_at === null) ||
+    (value.issuance_kind === "ATLAS_NATIVE" &&
+      isNonemptyString(value.issuer) &&
+      isNonemptyString(value.issued_at));
   return (
     typeof value.adjustment_id === "string" &&
     typeof value.revision_id === "string" &&
@@ -343,8 +351,7 @@ function isHistoryChangeOrder(value: JsonValue): boolean {
     (typeof value.effective_to === "string" || value.effective_to === null) &&
     typeof value.reason_code === "string" &&
     typeof value.reason === "string" &&
-    (typeof value.issuer === "string" || value.issuer === null) &&
-    (typeof value.issued_at === "string" || value.issued_at === null)
+    issuanceIsCoherent
   );
 }
 

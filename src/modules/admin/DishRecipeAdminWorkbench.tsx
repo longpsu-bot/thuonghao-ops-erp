@@ -141,6 +141,14 @@ const recipeBusinessStatusLabel = {
   NEEDS_ATTENTION: "Cần xử lý",
 } as const;
 
+function formatVietnamIssuedAt(value: string) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(new Date(value));
+}
+
 export function DishRecipeAdminWorkbench({
   authState = { status: "unauthenticated" },
   api,
@@ -1881,32 +1889,26 @@ export function DishRecipeAdminWorkbench({
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt>Người ghi nhận trong dữ liệu</dt>
+                                    <dt>Thông tin ban hành</dt>
                                     <dd>
-                                      {changeOrder.issuer ??
-                                        "Không có thông tin người ban hành gốc"}
-                                    </dd>
-                                  </div>
-                                  <div>
-                                    <dt>Thời điểm ghi nhận trong dữ liệu</dt>
-                                    <dd>
-                                      {changeOrder.issued_at
-                                        ? new Date(
-                                            changeOrder.issued_at,
-                                          ).toLocaleString("vi-VN")
-                                        : "Không có thời điểm ban hành gốc"}
+                                      {changeOrder.issuance_kind ===
+                                      "LEGACY_UNATTRIBUTED" ? (
+                                        "Không có dữ liệu từ OPS v1"
+                                      ) : (
+                                        <>
+                                          <strong>{changeOrder.issuer}</strong>
+                                          <br />
+                                          <span>
+                                            {formatVietnamIssuedAt(
+                                              changeOrder.issued_at!,
+                                            )}
+                                          </span>
+                                        </>
+                                      )}
                                     </dd>
                                   </div>
                                 </dl>
                               ))}
-                              {period.change_orders.length > 0 && (
-                                <p className="supporting-copy">
-                                  Với dữ liệu nhập hoặc dữ liệu cũ, Atlas chưa
-                                  có dấu hiệu tin cậy để xác nhận người và thời
-                                  điểm ban hành gốc. Thông tin ghi nhận bên trên
-                                  không được coi là thông tin ban hành gốc.
-                                </p>
-                              )}
                             </section>
                           ))
                         )}

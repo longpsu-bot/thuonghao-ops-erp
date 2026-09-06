@@ -214,13 +214,15 @@ ATLAS-UI-STANDARD-02
 → PLANNING-UX-01B Menu/Attendance operator correction (merged #197)
 → PURCHASE-REVIEW-CONFIRM-RELEASE-01 (merged #251)
 → RECIPE-EFFECTIVE-CONTRACT-01 backend contract (merged #257)
-→ ATLAS-MODEL-CONVERGENCE-01 normal Recipe consumer adoption and evidence (current bounded task)
+→ ATLAS-MODEL-CONVERGENCE-01 integrated Draft candidate, 56/56 repository acceptance (#258)
 → separately authorized hosted rehearsal
 ```
 
 The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
 
-The current Recipe contract separates an identity/reference catalog, typed base authoring, selected effective detail, and `Điều chỉnh`. New Dish creation returns one ACTIVE Dish plus the two canonical typed roots and no RecipeVersion. One `Tạo`/`Lưu` authors an eligible pre-use Recipe without a separate activation action. Normal Dish copy is one atomic backend command that snapshots both system-effective School-Type scopes at an explicit date into persisted DRAFT target versions; the prior browser-only form-copy interpretation is superseded. PostgreSQL uses one Dish-wide approved-Menu predicate and transaction boundary to deny base Dish/Recipe/BOM mutation after operational use, returning Change Order direction before business writes. Nullable GENERAL and low-level lifecycle/copy APIs remain support compatibility and do not define normal readiness.
+The current Recipe contract separates an identity/reference catalog, typed base authoring, selected effective detail, and `Điều chỉnh`. New Dish creation returns one ACTIVE Dish plus the two canonical typed roots and no RecipeVersion. One `Tạo`/`Lưu` authors an eligible pre-use Recipe without a separate activation action. Normal Dish copy is one atomic backend command that snapshots both system-effective School-Type scopes at an explicit date into persisted DRAFT target versions; the prior browser-only form-copy interpretation is superseded. PostgreSQL uses one Dish-wide approved-Menu predicate and transaction boundary to deny base Dish/Recipe/BOM mutation after operational use, returning Change Order direction before business writes. SYSTEM_DISH Preview/Create/Supersede uses exact Dish + canonical School-Type context and never a representative School; School paths retain their exact School context. Effective history classifies issuance per immutable revision, so imported legacy revisions remain unattributed while Atlas-native corrections and cancellations show their own Actor/time. Nullable GENERAL and low-level lifecycle/copy APIs remain support compatibility and do not define normal readiness.
+
+Draft PR #258 is the single integrated repository candidate. It contains the certified A07 and A12 migrations from Draft component PRs #259 and #260 plus the bounded Application adoption, with 56/56 acceptance rows passing locally. It remains unmerged and un-deployed. Atlas Staging was last verified at migration `20260904081048_master_data_creation_ux_02` with 0/4 new effective Recipe APIs, so hosted reconciliation remains a separate later gate.
 
 UI-QUALITY-03C-A merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`. It restores School defaults as one compact multi-School editing job and uses the Product Owner-approved `Edit → Xem thay đổi → Lưu` Application flow before one atomic `RMVP-01.v2` backend Save.
 

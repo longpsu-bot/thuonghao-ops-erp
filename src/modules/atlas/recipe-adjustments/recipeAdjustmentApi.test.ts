@@ -312,6 +312,7 @@ describe("Recipe adjustment API contract", () => {
       status: "READY",
       as_of_date: "2026-09-05",
       school_id: "school-1",
+      school_type_id: "school-type-1",
       dish_id: "dish-1",
       historical: false,
       selected_recipe: {
@@ -328,6 +329,7 @@ describe("Recipe adjustment API contract", () => {
     const preview = {
       as_of_date: "2026-09-05",
       school_id: "school-1",
+      school_type_id: null,
       dish_id: "dish-1",
       proposed_adjustment: {
         scope_kind: "SCHOOL_DISH",
@@ -367,6 +369,76 @@ describe("Recipe adjustment API contract", () => {
           },
         },
       }),
+    ).toBeNull();
+  });
+
+  it("parses exact School and system Preview identities and rejects ambiguous context", () => {
+    const composition = {
+      status: "READY" as const,
+      as_of_date: "2026-09-05",
+      school_id: null,
+      school_type_id: "school-type-1",
+      dish_id: "dish-1",
+      historical: false,
+      selected_recipe: {
+        dish_id: "dish-1",
+        recipe_id: "recipe-1",
+        recipe_version_id: "version-1",
+        selection_scope: "SCHOOL_TYPE" as const,
+        basis_portions: 100,
+      },
+      lines: [],
+      warnings: [],
+      blockers: [],
+    };
+    const systemPreview = {
+      as_of_date: "2026-09-05",
+      school_id: null,
+      school_type_id: "school-type-1",
+      dish_id: "dish-1",
+      proposed_adjustment: {
+        scope_kind: "SYSTEM_DISH",
+        school_id: null,
+        school_type_id: "school-type-1",
+        dish_id: "dish-1",
+      },
+      before: composition,
+      after: composition,
+      affected_line_count: 1,
+      can_save: true,
+      warnings: [],
+      blockers: [],
+    };
+    const parse = (preview: Record<string, JsonValue>) =>
+      adjustmentPreviewFromResult({
+        kind: "success",
+        response: { success: true, preview },
+      });
+
+    expect(parse(systemPreview)).toEqual(systemPreview);
+    expect(parse({ ...systemPreview, school_id: "proxy-school" })).toBeNull();
+    expect(parse({ ...systemPreview, school_type_id: null })).toBeNull();
+
+    const schoolComposition = {
+      ...composition,
+      school_id: "school-1",
+    };
+    const schoolPreview = {
+      ...systemPreview,
+      school_id: "school-1",
+      school_type_id: null,
+      proposed_adjustment: {
+        scope_kind: "SCHOOL_DISH",
+        school_id: "school-1",
+        school_type_id: null,
+        dish_id: "dish-1",
+      },
+      before: schoolComposition,
+      after: schoolComposition,
+    };
+    expect(parse(schoolPreview)).toEqual(schoolPreview);
+    expect(
+      parse({ ...schoolPreview, school_type_id: "school-type-1" }),
     ).toBeNull();
   });
 

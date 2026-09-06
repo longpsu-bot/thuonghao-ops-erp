@@ -10,6 +10,8 @@
 
 **Delivery:** One bounded implementation branch and Draft PR; separate hosted-readiness gate.
 
+> **Final integration amendment:** This specification records the original bounded design. The later authorized `ATLAS-MODEL-CONVERGENCE-FINAL-01` integration resolves A07 and A12 by incorporating the certified components from Draft PRs #259/#260 into Draft PR #258. The two added migrations establish exact Dish + School-Type system commands and per-revision issuance classification. The convergence implementation record is the current result authority.
+
 ## 1. Objective and success criterion
 
 Eliminate competing normal Recipe interpretations by connecting the existing authoritative contracts to catalog/detail, typed base authoring, copy, Change Order targeting, temporal state and history. Record the same explicit/derived/generated distinctions through Procurement without rebuilding working Planning or Procurement behavior.

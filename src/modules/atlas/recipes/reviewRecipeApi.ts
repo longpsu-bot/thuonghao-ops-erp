@@ -704,8 +704,45 @@ export function createReviewRecipeApi(
                                 reason_code: "LEGACY_IMPORT",
                                 reason:
                                   "Điều chỉnh nguồn cũ không có người ban hành gốc.",
+                                issuance_kind: "LEGACY_UNATTRIBUTED",
                                 issuer: null,
                                 issued_at: null,
+                              },
+                              {
+                                adjustment_id:
+                                  "90000000-0000-4000-8000-000000000090",
+                                revision_id:
+                                  "91000000-0000-4000-8000-000000000091",
+                                revision_number: 2,
+                                revision_status: "SUPERSEDED",
+                                business_event_kind: "CORRECTED",
+                                scope_kind: "SYSTEM_INGREDIENT",
+                                action_kind: "REPLACE",
+                                effective_from: "2026-07-01",
+                                effective_to: null,
+                                reason_code: "RULE_CORRECTION",
+                                reason: "Điều chỉnh được ban hành trong Atlas.",
+                                issuance_kind: "ATLAS_NATIVE",
+                                issuer: "Nguyễn Điều phối",
+                                issued_at: "2026-09-06T04:00:00.000Z",
+                              },
+                              {
+                                adjustment_id:
+                                  "90000000-0000-4000-8000-000000000090",
+                                revision_id:
+                                  "91000000-0000-4000-8000-000000000092",
+                                revision_number: 3,
+                                revision_status: "CANCELLED",
+                                business_event_kind: "CANCELLED",
+                                scope_kind: "SYSTEM_INGREDIENT",
+                                action_kind: "REPLACE",
+                                effective_from: "2026-09-07",
+                                effective_to: null,
+                                reason_code: "RULE_CANCELLATION",
+                                reason: "Hủy điều chỉnh trong Atlas.",
+                                issuance_kind: "ATLAS_NATIVE",
+                                issuer: "Trần Quản trị",
+                                issued_at: "2026-09-06T05:00:00.000Z",
                               },
                             ]
                           : [],

@@ -2,7 +2,7 @@
 
 **Prepared:** 6 September 2026.
 
-**Purpose:** Distinguish approved direction, repository evidence, dated hosted observation and implementation recommendations. This register is not a new business authority and not evidence of implementation completion.
+**Purpose:** Distinguish approved direction, repository evidence, dated hosted observation and implementation results. This register is not a new business authority. Final repository certification is recorded on Draft PR #258; it does not establish merge, deployment or Staging parity.
 
 ## 1. User-authorized basis
 
@@ -15,6 +15,8 @@ The original audit-only instruction not to create a Codex prompt is superseded b
 Repository: `longpsu-bot/thuonghao-ops-erp`.
 
 Rechecked main: `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`.
+
+Final integration started from Draft PR #258 head `3f43f17972886016b3139dbc92671c128edab064` and integrated certified A07 source `4ff1e0fa7b9a77a943364c8838bb5d0393138023` from Draft PR #259, then certified A12 source `372d5199cea338e8adf07089d2866b0f561f9329` from Draft PR #260.
 
 Parent: `0779daacb49635dab5b40503f5718dd5f577d6f3`.
 
@@ -105,33 +107,27 @@ The recommended session is Sol with extra-high reasoning and explicit bounded de
 ## 7. Execution contract mapping
 
 Task execution reverified baseline `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`
-and confirmed PR #257 is merged. The following are implementation gaps against
-the intended accepted behavior, not amendments weakening that behavior:
+and confirmed PR #257 is merged. Final integration resolves the two previously
+recorded contract gaps without weakening the intended behavior:
 
-- **A07:** `20260727120000_rmvp_02b_recipe_adjustments_effective_bom.sql`
-  retains School-based Preview and mandatory `preview_school_id` in
-  Create/Supersede (Preview at lines 2727–2823; command validation and resolution
-  at 2957–3186 and 3332–3563).
-  `20260905161348_recipe_effective_product_model_correction.sql` lines 194–218
-  explicitly preserve the legacy resolver behind that compatibility path.
-  New system-effective/target reads do not supply a matching system-only command
-  envelope. Normal system mutation must remain blocked without a separately
-  approved backend amendment.
-- **A12:** `20260905105253_recipe_effective_contract_01.sql` lines 1306–1355
-  shape effective-history tags from Actor display name and revision `created_at`
-  without a legacy-issuance discriminator.
-  The later `20260814045038_ui_quality_03b_recipe_adjustment_corrections.sql`
-  already nulls legacy issuer name and issuance time in the operator ledger;
-  the September wrapper retains that projection. Effective-history parity
-  remains unavailable. React must preserve unknown
-  attribution rather than present the importer or import time as original
-  business issuance.
+- **A07 PASS:** certified migration
+  `20260906085653_recipe_system_command_context_01.sql` provides the exact
+  SYSTEM_DISH command envelope. Preview uses `dish_id` + `school_type_id`;
+  Create/Supersede use `preview_dish_id` + `preview_school_type_id`; all omit a
+  School identity. School-based and SYSTEM_INGREDIENT impact-preview paths keep
+  their existing named School semantics. Application parsers require exact
+  echoed context and preserve Recipe-line XOR prior-ADD adjustment-line targets.
+- **A12 PASS:** certified migration
+  `20260906105509_recipe_legacy_issuance_read_01.sql` provides per-revision
+  `issuance_kind`. `LEGACY_UNATTRIBUTED` requires null issuer/time, while
+  `ATLAS_NATIVE` requires its immutable Actor/time. Application parsing fails
+  closed on contradictory shapes and renders mixed history per revision.
 - **Catalog:** the existing catalog supports identity/reference/base search;
   canonical effective detail is available per selected Dish/context. No existing
   read provides whole-catalog effective-Ingredient search. Truthfully labelled
   base search and lazy selected detail are within this delivery.
 
-The exact acceptance outcomes, independent review, CI and separately rechecked
+All **56 / 56** acceptance outcomes, independent review, CI and separately rechecked
 Staging readiness are recorded in the
 [implementation report](../implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md).
 The dated preparation observations above remain historical evidence.

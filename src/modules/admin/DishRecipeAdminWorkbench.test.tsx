@@ -911,7 +911,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(catalog).not.toHaveTextContent("com-trang");
   });
 
-  it("renders authoritative BOM periods while keeping imported attribution explicitly nullable", async () => {
+  it("renders authoritative BOM periods with revision-specific legacy and native issuance", async () => {
     renderWorkbench();
     const history = await screen.findByText("Lịch sử BOM hiệu lực");
     fireEvent.click(history);
@@ -926,14 +926,20 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(
       screen.getByRole("heading", { name: /Từ 2026-07-01 trở đi/ }),
     ).toBeVisible();
-    expect(screen.getByText(/SYSTEM_INGREDIENT · từ 2026-07-01/)).toBeVisible();
     expect(
-      screen.getByText("Không có thông tin người ban hành gốc"),
-    ).toBeVisible();
-    expect(screen.getByText("Không có thời điểm ban hành gốc")).toBeVisible();
+      screen.getAllByText(/SYSTEM_INGREDIENT · từ 2026-07-01/),
+    ).toHaveLength(2);
+    expect(screen.getByText("Không có dữ liệu từ OPS v1")).toBeVisible();
+    expect(screen.getByText("Nguyễn Điều phối")).toBeVisible();
+    expect(screen.getByText("Trần Quản trị")).toBeVisible();
+    expect(screen.getByText("11:00 6/9/26")).toBeVisible();
+    expect(screen.getByText("12:00 6/9/26")).toBeVisible();
     expect(
-      screen.getByText(/không được coi là thông tin ban hành gốc/),
-    ).toBeVisible();
+      screen.queryByText("Không có thông tin người ban hành gốc"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Không có thời điểm ban hành gốc"),
+    ).not.toBeInTheDocument();
     const period = screen
       .getByRole("heading", { name: /Từ 2026-07-01 trở đi/ })
       .closest("section")!;

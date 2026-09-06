@@ -379,6 +379,67 @@ describe("recipe workbench response parsing", () => {
     ).not.toBeNull();
   });
 
+  it("requires revision-specific coherent effective-history issuance", () => {
+    const workbench = editableOperatorWorkbench();
+    const legacy = {
+      adjustment_id: "adjustment-1",
+      revision_id: "revision-1",
+      revision_number: 1,
+      revision_status: "SUPERSEDED" as const,
+      business_event_kind: "CREATED" as const,
+      scope_kind: "SYSTEM_DISH" as const,
+      action_kind: "ADD" as const,
+      effective_from: "2026-07-01",
+      effective_to: null,
+      reason_code: "LEGACY_IMPORT",
+      reason: "Imported without original attribution.",
+      issuance_kind: "LEGACY_UNATTRIBUTED" as const,
+      issuer: null,
+      issued_at: null,
+    };
+    const native = {
+      ...legacy,
+      revision_id: "revision-2",
+      revision_number: 2,
+      revision_status: "ACTIVE" as const,
+      business_event_kind: "CORRECTED" as const,
+      reason_code: "RULE_CORRECTION",
+      reason: "Corrected in Atlas.",
+      issuance_kind: "ATLAS_NATIVE" as const,
+      issuer: "Nguyễn Điều phối",
+      issued_at: "2026-09-06T04:00:00.000Z",
+    };
+    workbench.history_periods = [
+      {
+        period_from: "2026-07-01",
+        period_to: null,
+        resolution_status: "READY",
+        effective_bom: workbench.current_effective_bom,
+        change_orders: [legacy, native],
+        warnings: [],
+        blockers: [],
+      },
+    ];
+    const parse = (changeOrders: Array<Record<string, JsonValue>>) =>
+      dishRecipeOperatorWorkbenchFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          workbench: {
+            ...workbench,
+            history_periods: [
+              { ...workbench.history_periods[0], change_orders: changeOrders },
+            ],
+          },
+        },
+      });
+
+    expect(parse([legacy, native])).not.toBeNull();
+    expect(parse([{ ...legacy, issuer: "Technical Importer" }])).toBeNull();
+    expect(parse([{ ...native, issued_at: null }])).toBeNull();
+    expect(parse([{ ...native, issuance_kind: "IMPORTER" }])).toBeNull();
+  });
+
   it.each([
     ["malformed School Type code", { school_type_code: null }],
     ["non-canonical School Type code", { school_type_code: "general" }],

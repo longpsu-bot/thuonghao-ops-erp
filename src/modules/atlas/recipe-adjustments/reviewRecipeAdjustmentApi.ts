@@ -703,6 +703,7 @@ function resolutionScenario(
     status: blockers.length ? "BLOCKED" : "READY",
     as_of_date: "2026-07-27",
     school_id: schoolId,
+    school_type_id: secondary ? ids.secondarySchoolType : ids.schoolType,
     dish_id: ids.dish,
     historical: false,
     selected_recipe: {
@@ -800,6 +801,7 @@ export function createReviewRecipeAdjustmentApi(
         schoolId,
       ) as EffectiveCompositionResult;
       resolution.school_id = null;
+      resolution.school_type_id = schoolTypeId;
       resolution.as_of_date = asOfDate;
       resolution.dish_id = dishId;
       return Promise.resolve(
@@ -881,20 +883,39 @@ export function createReviewRecipeAdjustmentApi(
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
       const proposal = payload.proposed_adjustment as Record<string, JsonValue>;
-      const previewSchoolId = String(payload.school_id ?? ids.school);
+      const systemContext = proposal.scope_kind === "SYSTEM_DISH";
+      const previewSchoolId = systemContext ? null : String(payload.school_id);
+      const previewSchoolTypeId = systemContext
+        ? String(payload.school_type_id)
+        : null;
+      const resolutionSchoolId: string = systemContext
+        ? previewSchoolTypeId === ids.secondarySchoolType
+          ? ids.secondarySchool
+          : ids.school
+        : (previewSchoolId ?? ids.school);
       const before = addPriorEffectiveLines(
         resolutionScenario(
-          previewSchoolId === ids.school ? "precedence" : "system",
-          previewSchoolId,
+          systemContext
+            ? "system"
+            : resolutionSchoolId === ids.school
+              ? "precedence"
+              : "system",
+          resolutionSchoolId,
         ),
         previewSchoolId,
       );
       const after = clone(before);
       before.as_of_date = String(payload.as_of_date);
       before.school_id = previewSchoolId;
+      before.school_type_id =
+        previewSchoolTypeId ??
+        (resolutionSchoolId === ids.secondarySchool
+          ? ids.secondarySchoolType
+          : ids.schoolType);
       before.dish_id = String(payload.dish_id);
       after.as_of_date = String(payload.as_of_date);
       after.school_id = previewSchoolId;
+      after.school_type_id = before.school_type_id;
       after.dish_id = String(payload.dish_id);
       const action = String(proposal.action_kind);
       const scope = String(proposal.scope_kind);
@@ -961,7 +982,8 @@ export function createReviewRecipeAdjustmentApi(
         success({
           preview: {
             as_of_date: String(payload.as_of_date),
-            school_id: String(payload.school_id),
+            school_id: previewSchoolId,
+            school_type_id: previewSchoolTypeId,
             dish_id: String(payload.dish_id),
             proposed_adjustment: proposal,
             before,

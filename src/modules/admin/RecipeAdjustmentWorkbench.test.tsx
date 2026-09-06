@@ -197,6 +197,28 @@ async function selectSchoolDishTarget(
   fireEvent.change(target, { target: { value: targetId } });
 }
 
+async function selectSystemDishTarget(
+  dialog: HTMLElement,
+  targetId: string,
+  schoolTypeId = fixtureIds.schoolType,
+) {
+  selectDish(within(dialog).getByLabelText("Món"));
+  fireEvent.change(
+    within(dialog).getByRole("combobox", { name: /Loại công thức/ }),
+    { target: { value: schoolTypeId } },
+  );
+  selectAction(dialog, "Thay nguyên liệu");
+  const target = within(dialog).getByLabelText("Nguyên liệu trong công thức");
+  await waitFor(() =>
+    expect(
+      within(target)
+        .getAllByRole("option")
+        .some((option) => option.getAttribute("value") === targetId),
+    ).toBe(true),
+  );
+  fireEvent.change(target, { target: { value: targetId } });
+}
+
 async function selectSchoolRecipeContext(dialog: HTMLElement, action: string) {
   fireEvent.click(within(dialog).getByLabelText("Một trường"));
   selectRecipeTarget(dialog);
@@ -215,18 +237,20 @@ async function selectSchoolRecipeContext(dialog: HTMLElement, action: string) {
 }
 
 describe("Recipe Change Order first-user workbench", () => {
-  it("loads system Dish targets from the exact effective context and blocks unsupported system Preview", async () => {
+  it("previews and creates a base SYSTEM_DISH target with Dish and School Type only", async () => {
     const { api } = renderWorkbench();
     const getTargets = vi.spyOn(api, "getEffectiveTargetContext");
     const preview = vi.spyOn(api, "preview");
+    const create = vi.spyOn(api, "create");
     const dialog = await openCreateDialog();
 
-    selectDish(within(dialog).getByLabelText("Món"));
-    fireEvent.change(
-      within(dialog).getByRole("combobox", { name: /Loại công thức/ }),
-      { target: { value: fixtureIds.schoolType } },
-    );
-    selectAction(dialog, "Thay nguyên liệu");
+    await selectSystemDishTarget(dialog, fixtureIds.pumpkinLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Thay dòng gốc trong đúng loại công thức." },
+    });
 
     await waitFor(() =>
       expect(getTargets).toHaveBeenCalledWith(
@@ -250,29 +274,53 @@ describe("Recipe Change Order first-user workbench", () => {
       within(dialog).queryByLabelText("Trường dùng để xem"),
     ).not.toBeInTheDocument();
     expect(
-      within(dialog).getByText(
-        /chưa hỗ trợ xem và lưu điều chỉnh cho toàn bộ loại trường/i,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
-    ).toBeDisabled();
-    expect(preview).not.toHaveBeenCalled();
+      within(dialog).queryByText(/chưa hỗ trợ xem và lưu điều chỉnh/i),
+    ).not.toBeInTheDocument();
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    expect(preview.mock.calls[0][2]).toMatchObject({
+      dish_id: fixtureIds.dish,
+      school_type_id: fixtureIds.schoolType,
+      proposed_adjustment: {
+        target_recipe_line_id: fixtureIds.pumpkinLine,
+        adjustment_line_id: null,
+      },
+    });
+    expect(preview.mock.calls[0][2]).not.toHaveProperty("school_id");
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(create.mock.calls[0][0].payload).toMatchObject({
+      preview_dish_id: fixtureIds.dish,
+      preview_school_type_id: fixtureIds.schoolType,
+      target_recipe_line_id: fixtureIds.pumpkinLine,
+      adjustment_line_id: null,
+    });
+    expect(create.mock.calls[0][0].payload).not.toHaveProperty(
+      "preview_school_id",
+    );
   });
 
-  it("round-trips a prior SYSTEM_DISH ADD target through exact School Preview and Create", async () => {
+  it("round-trips a prior SYSTEM_DISH ADD target through exact system Preview and Create", async () => {
     const { api } = renderWorkbench();
     const getTargets = vi.spyOn(api, "getEffectiveTargetContext");
     const preview = vi.spyOn(api, "preview");
     const create = vi.spyOn(api, "create");
     const dialog = await openCreateDialog();
 
-    await selectSchoolDishTarget(dialog, fixtureIds.systemAddLine);
+    await selectSystemDishTarget(dialog, fixtureIds.systemAddLine);
     fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
       target: { value: fixtureIds.potato },
     });
     fireEvent.change(within(dialog).getByLabelText("Lý do"), {
-      target: { value: "Thay dòng đã thêm trong đúng trường đã chọn." },
+      target: { value: "Thay dòng đã thêm trong đúng loại công thức." },
     });
 
     expect(getTargets).toHaveBeenCalledWith(
@@ -280,7 +328,7 @@ describe("Recipe Change Order first-user workbench", () => {
       expect.any(String),
       expect.any(String),
       fixtureIds.dish,
-      { kind: "school", schoolId: fixtureIds.school },
+      { kind: "system", schoolTypeId: fixtureIds.schoolType },
     );
     const previewButton = within(dialog).getByRole("button", {
       name: "Xem ảnh hưởng",
@@ -291,23 +339,27 @@ describe("Recipe Change Order first-user workbench", () => {
       name: "Thay đổi dự kiến",
     });
     expect(preview.mock.calls[0][2]).toMatchObject({
-      school_id: fixtureIds.school,
       dish_id: fixtureIds.dish,
+      school_type_id: fixtureIds.schoolType,
       proposed_adjustment: {
         target_recipe_line_id: null,
         adjustment_line_id: fixtureIds.systemAddLine,
       },
     });
+    expect(preview.mock.calls[0][2]).not.toHaveProperty("school_id");
     fireEvent.click(
       within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
     );
     await waitFor(() => expect(create).toHaveBeenCalledOnce());
     expect(create.mock.calls[0][0].payload).toMatchObject({
-      preview_school_id: fixtureIds.school,
       preview_dish_id: fixtureIds.dish,
+      preview_school_type_id: fixtureIds.schoolType,
       target_recipe_line_id: null,
       adjustment_line_id: fixtureIds.systemAddLine,
     });
+    expect(create.mock.calls[0][0].payload).not.toHaveProperty(
+      "preview_school_id",
+    );
   });
 
   it("preserves a prior SCHOOL_DISH ADD target through correction Preview and Supersede", async () => {
@@ -354,10 +406,174 @@ describe("Recipe Change Order first-user workbench", () => {
     );
     await waitFor(() => expect(supersede).toHaveBeenCalledOnce());
     expect(supersede.mock.calls[0][0].payload).toMatchObject({
+      preview_school_id: fixtureIds.school,
+      preview_dish_id: fixtureIds.dish,
       target_recipe_line_id: null,
       adjustment_line_id: fixtureIds.schoolAddLine,
     });
+    expect(supersede.mock.calls[0][0].payload).not.toHaveProperty(
+      "preview_school_type_id",
+    );
   });
+
+  it("supersedes SYSTEM_DISH with the exact Dish and School Type context", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const supersede = vi.spyOn(api, "supersede");
+    const table = await screen.findByRole("table");
+    const row = within(table)
+      .getAllByRole("row")
+      .find(
+        (candidate) =>
+          candidate.textContent?.includes(
+            "Canh bí đỏ · TIỂU HỌC · Một món tại các trường",
+          ) && candidate.textContent?.includes("Thay nguyên liệu"),
+      );
+    expect(row).toBeDefined();
+    fireEvent.click(within(row!).getByRole("button", { name: "Xem" }));
+    const drawer = await screen.findByRole("dialog", {
+      name: "Chi tiết điều chỉnh",
+    });
+    fireEvent.click(
+      within(drawer).getByRole("button", { name: "Điều chỉnh lại" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Điều chỉnh lại",
+    });
+    await waitFor(() =>
+      expect(
+        within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+      ).not.toHaveValue(""),
+    );
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Sửa điều chỉnh hệ thống đã ban hành." },
+    });
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    expect(preview.mock.calls[0][2]).toMatchObject({
+      dish_id: fixtureIds.dish,
+      school_type_id: fixtureIds.schoolType,
+      replaces_adjustment_id: expect.any(String),
+    });
+    expect(preview.mock.calls[0][2]).not.toHaveProperty("school_id");
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(supersede).toHaveBeenCalledOnce());
+    expect(supersede.mock.calls[0][0].payload).toMatchObject({
+      preview_dish_id: fixtureIds.dish,
+      preview_school_type_id: fixtureIds.schoolType,
+      predecessor_revision_id: expect.any(String),
+    });
+    expect(supersede.mock.calls[0][0].payload).not.toHaveProperty(
+      "preview_school_id",
+    );
+  });
+
+  it("invalidates a reviewed SYSTEM_DISH preview when School Type changes", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const create = vi.spyOn(api, "create");
+    const dialog = await openCreateDialog();
+    await selectSystemDishTarget(dialog, fixtureIds.pumpkinLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Xem trước trước khi đổi loại công thức." },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
+    const edit = await screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
+    fireEvent.change(
+      within(edit).getByRole("combobox", { name: /Loại công thức/ }),
+      { target: { value: fixtureIds.secondarySchoolType } },
+    );
+
+    expect(preview).toHaveBeenCalledOnce();
+    expect(create).not.toHaveBeenCalled();
+    expect(
+      within(edit).queryByRole("button", { name: "Lưu điều chỉnh" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(edit).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+  });
+
+  it.each([
+    ["a School identity", "school"],
+    ["the wrong School Type", "school_type"],
+  ] as const)(
+    "rejects SYSTEM_DISH Preview with %s",
+    async (_label, mismatch) => {
+      const fixture = createReviewRecipeAdjustmentApi("ready");
+      const api = {
+        ...fixture,
+        async preview(...args: Parameters<typeof fixture.preview>) {
+          const result = await fixture.preview(...args);
+          if (result.kind !== "success") return result;
+          const preview = result.response.preview as Record<string, JsonValue>;
+          const before = preview.before as Record<string, JsonValue>;
+          const after = preview.after as Record<string, JsonValue>;
+          return {
+            ...result,
+            response: {
+              ...result.response,
+              preview: {
+                ...preview,
+                ...(mismatch === "school"
+                  ? { school_id: fixtureIds.school }
+                  : { school_type_id: fixtureIds.secondarySchoolType }),
+                before: {
+                  ...before,
+                  ...(mismatch === "school"
+                    ? { school_id: fixtureIds.school }
+                    : { school_type_id: fixtureIds.secondarySchoolType }),
+                },
+                after: {
+                  ...after,
+                  ...(mismatch === "school"
+                    ? { school_id: fixtureIds.school }
+                    : { school_type_id: fixtureIds.secondarySchoolType }),
+                },
+              },
+            },
+          };
+        },
+      };
+      renderWorkbench("rules", api);
+      const dialog = await openCreateDialog();
+      await selectSystemDishTarget(dialog, fixtureIds.pumpkinLine);
+      fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+        target: { value: fixtureIds.potato },
+      });
+      fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+        target: { value: "Từ chối kết quả sai bối cảnh hệ thống." },
+      });
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+      );
+      await waitFor(() =>
+        expect(
+          screen.queryByRole("dialog", { name: "Thay đổi dự kiến" }),
+        ).not.toBeInTheDocument(),
+      );
+      expect(
+        screen.getByText(/không khớp bối cảnh đã gửi/i),
+      ).toBeInTheDocument();
+    },
+  );
 
   it("ignores a late Preview after the reviewed intent changes", async () => {
     const fixture = createReviewRecipeAdjustmentApi("ready");
@@ -1400,6 +1616,83 @@ describe("Recipe Change Order first-user workbench", () => {
     });
   });
 
+  it("keeps a generated SYSTEM_DISH ADD line stable through system Preview and Create", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const create = vi.spyOn(api, "create");
+    const dialog = await openCreateDialog();
+    selectRecipeTarget(dialog);
+    selectAction(dialog, "Thêm nguyên liệu");
+    fireEvent.change(within(dialog).getByLabelText("Nguyên liệu thêm"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Định lượng"), {
+      target: { value: "0.5" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Thêm nguyên liệu cho đúng loại công thức." },
+    });
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    const proposed = preview.mock.calls[0][2].proposed_adjustment as Record<
+      string,
+      JsonValue
+    >;
+    expect(preview.mock.calls[0][2]).toMatchObject({
+      dish_id: fixtureIds.dish,
+      school_type_id: fixtureIds.schoolType,
+    });
+    expect(preview.mock.calls[0][2]).not.toHaveProperty("school_id");
+    expect(proposed).toMatchObject({
+      action_kind: "ADD",
+      target_ingredient_id: fixtureIds.potato,
+      quantity_per_basis: 0.5,
+      unit_id: fixtureIds.kilogram,
+      adjustment_line_id: expect.any(String),
+    });
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(create.mock.calls[0][0].payload).toMatchObject({
+      adjustment_line_id: proposed.adjustment_line_id,
+      preview_dish_id: fixtureIds.dish,
+      preview_school_type_id: fixtureIds.schoolType,
+    });
+    expect(create.mock.calls[0][0].payload).not.toHaveProperty(
+      "preview_school_id",
+    );
+  });
+
+  it("blocks SYSTEM_DISH ADD before Preview when the Ingredient has no purchase Unit", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+    selectRecipeTarget(dialog);
+    selectAction(dialog, "Thêm nguyên liệu");
+    fireEvent.change(within(dialog).getByLabelText("Nguyên liệu thêm"), {
+      target: { value: fixtureIds.missingUnitIngredient },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Định lượng"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Không lưu khi thiếu đơn vị mua." },
+    });
+
+    expect(within(dialog).getByText(/chưa có đơn vị mua/i)).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+    expect(preview).not.toHaveBeenCalled();
+  });
+
   it("blocks ADD preview safely when the Ingredient has no purchase Unit", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
@@ -1549,10 +1842,8 @@ describe("Recipe Change Order first-user workbench", () => {
     );
     expect(within(dialog).queryByLabelText("Trường dùng để xem")).toBeNull();
     expect(
-      within(dialog).getByText(
-        /chưa hỗ trợ xem và lưu điều chỉnh cho toàn bộ loại trường/i,
-      ),
-    ).toBeInTheDocument();
+      within(dialog).queryByText(/chưa hỗ trợ xem và lưu điều chỉnh/i),
+    ).not.toBeInTheDocument();
     expect(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     ).toBeDisabled();

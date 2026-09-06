@@ -6,6 +6,8 @@ import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/rev
 import { RecipeAdjustmentWorkbench } from "./RecipeAdjustmentWorkbench";
 
 const schoolId = "11000000-0000-4000-8000-000000000001";
+const schoolTypeId = "12000000-0000-4000-8000-000000000001";
+const baseRecipeLineId = "16000000-0000-4000-8000-000000000001";
 const priorSystemAddLineId = "1a000000-0000-4000-8000-000000000002";
 const potatoId = "17000000-0000-4000-8000-000000000004";
 
@@ -80,12 +82,87 @@ async function openPriorAddTarget(canvasElement: HTMLElement) {
   return dialog;
 }
 
-export const PriorAddTarget: Story = {
+async function openSystemDishReview(
+  canvasElement: HTMLElement,
+  targetId: string,
+  reason: string,
+) {
+  const page = within(canvasElement.ownerDocument.body);
+  await userEvent.click(
+    await page.findByRole("button", { name: "Tạo điều chỉnh" }),
+  );
+  const dialog = await page.findByRole("dialog", { name: "Tạo điều chỉnh" });
+  const dish = within(dialog).getByLabelText("Món");
+  await userEvent.click(dish);
+  await userEvent.type(dish, "bí đỏ");
+  await userEvent.click(
+    await page.findByRole("option", { name: "Canh bí đỏ" }),
+  );
+  await userEvent.selectOptions(
+    within(dialog).getByRole("combobox", { name: /Loại công thức/ }),
+    schoolTypeId,
+  );
+  await userEvent.click(within(dialog).getByLabelText("Thay nguyên liệu"));
+  const target = within(dialog).getByLabelText("Nguyên liệu trong công thức");
+  await waitFor(() => {
+    expect(target).toBeEnabled();
+    expect(
+      within(target)
+        .getAllByRole("option")
+        .some((option) => option.getAttribute("value") === targetId),
+    ).toBe(true);
+  });
+  await userEvent.selectOptions(target, targetId);
+  await waitFor(() => {
+    expect(target).toBeEnabled();
+    expect(target).toHaveValue(targetId);
+  });
+  await userEvent.selectOptions(
+    within(dialog).getByLabelText("Thay bằng"),
+    potatoId,
+  );
+  await userEvent.type(within(dialog).getByLabelText("Lý do"), reason);
+  const previewButton = within(dialog).getByRole("button", {
+    name: "Xem ảnh hưởng",
+  });
+  await waitFor(() => expect(previewButton).toBeEnabled());
+  await userEvent.click(previewButton);
+  const review = await page.findByRole("dialog", {
+    name: "Thay đổi dự kiến",
+  });
+  await expect(within(review).getByText("Tất cả trường")).toBeVisible();
+  await expect(within(review).getByText(/Canh bí đỏ · TIỂU HỌC/)).toBeVisible();
+  await expect(
+    within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+  ).toBeEnabled();
+  review.scrollTop = 0;
+  return review;
+}
+
+export const SystemDishReview: Story = {
+  name: "SYSTEM_DISH Preview and Review",
   play: async ({ canvasElement }) => {
-    const dialog = await openPriorAddTarget(canvasElement);
+    await openSystemDishReview(
+      canvasElement,
+      baseRecipeLineId,
+      "Thay dòng gốc trong đúng loại công thức.",
+    );
+  },
+};
+
+export const PriorAddTarget: Story = {
+  name: "Prior SYSTEM_DISH ADD Preview and Review",
+  play: async ({ canvasElement }) => {
+    const review = await openSystemDishReview(
+      canvasElement,
+      priorSystemAddLineId,
+      "Thay dòng đã thêm trong đúng loại công thức.",
+    );
     await expect(
-      within(dialog).getByLabelText("Nguyên liệu trong công thức"),
-    ).toHaveValue(priorSystemAddLineId);
+      within(review).getByRole("table", {
+        name: "So sánh công thức trước và sau",
+      }),
+    ).toHaveTextContent("Gia vị thiếu đơn vị");
   },
 };
 

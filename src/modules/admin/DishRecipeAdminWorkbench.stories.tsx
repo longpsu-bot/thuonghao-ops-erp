@@ -190,6 +190,20 @@ export const SchoolEffectiveContext: Story = {
   },
 };
 
+export const MixedIssuanceHistory: Story = {
+  name: "Mixed legacy and Atlas-native effective history",
+  render: () => <RecipeScenarioStory scenario="school" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByText("Lịch sử BOM hiệu lực"));
+    await expect(
+      await canvas.findByText("Không có dữ liệu từ OPS v1"),
+    ).toBeVisible();
+    await expect(await canvas.findByText("Nguyễn Điều phối")).toBeVisible();
+    await expect(await canvas.findByText("Trần Quản trị")).toBeVisible();
+  },
+};
+
 export const CopyCommittedReadbackFailed: Story = {
   name: "Copy committed, one DRAFT readback failed",
   render: () => <RecipeScenarioStory scenario="copy-readback-failed" />,

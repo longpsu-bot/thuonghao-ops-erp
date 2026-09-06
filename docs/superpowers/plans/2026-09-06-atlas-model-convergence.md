@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-06-atlas-model-convergence-design.md`.
 
+> **Final integration amendment:** This plan records the original execution constraints. The later authorized `ATLAS-MODEL-CONVERGENCE-FINAL-01` integration adds the certified A07 and A12 components from Draft PRs #259/#260 to Draft PR #258, including migrations `20260906085653_recipe_system_command_context_01.sql` and `20260906105509_recipe_legacy_issuance_read_01.sql`. Current results and gates are recorded in `docs/implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md`.
+
 ## Global constraints
 
 - Repository: `longpsu-bot/thuonghao-ops-erp`.

@@ -222,6 +222,7 @@ export type EffectiveCompositionResult = {
   status: "READY" | "BLOCKED";
   as_of_date: string;
   school_id: string | null;
+  school_type_id: string | null;
   dish_id: string;
   historical: boolean;
   selected_recipe: {
@@ -238,7 +239,8 @@ export type EffectiveCompositionResult = {
 
 export type RecipeAdjustmentPreview = {
   as_of_date: string;
-  school_id: string;
+  school_id: string | null;
+  school_type_id: string | null;
   dish_id: string;
   proposed_adjustment: Record<string, JsonValue>;
   before: EffectiveCompositionResult;
@@ -504,6 +506,7 @@ function isEffectiveComposition(value: JsonValue | undefined): boolean {
     (value.status === "READY" || value.status === "BLOCKED") &&
     typeof value.as_of_date === "string" &&
     isNullableString(value.school_id) &&
+    isNullableString(value.school_type_id) &&
     typeof value.dish_id === "string" &&
     typeof value.historical === "boolean" &&
     isSelectedRecipe(value.selected_recipe) &&
@@ -531,13 +534,13 @@ function isOperatorContent(value: JsonValue | undefined): boolean {
 }
 
 function isOperatorRevision(value: JsonValue | undefined): boolean {
+  if (!isRecord(value) || !isOperatorContent(value)) return false;
+  if (value.issuance_kind === "LEGACY_UNATTRIBUTED")
+    return value.issued_at === null && value.issued_by_actor_name === null;
   return (
-    isRecord(value) &&
-    isOperatorContent(value) &&
-    isNullableString(value.issued_at) &&
-    (value.issuance_kind === "ATLAS_NATIVE" ||
-      value.issuance_kind === "LEGACY_UNATTRIBUTED") &&
-    isNullableString(value.issued_by_actor_name)
+    value.issuance_kind === "ATLAS_NATIVE" &&
+    isNonEmptyString(value.issued_at) &&
+    isNonEmptyString(value.issued_by_actor_name)
   );
 }
 
@@ -702,13 +705,21 @@ export function adjustmentPreviewFromResult(
   const afterComposition = after as unknown as EffectiveCompositionResult;
   if (
     typeof source.as_of_date !== "string" ||
-    typeof source.school_id !== "string" ||
+    !isNullableNonEmptyString(source.school_id) ||
+    !isNullableNonEmptyString(source.school_type_id) ||
+    (source.school_id === null) === (source.school_type_id === null) ||
     typeof source.dish_id !== "string" ||
     !isRecord(source.proposed_adjustment) ||
     beforeComposition.as_of_date !== source.as_of_date ||
     afterComposition.as_of_date !== source.as_of_date ||
     beforeComposition.school_id !== source.school_id ||
     afterComposition.school_id !== source.school_id ||
+    (source.school_id === null
+      ? beforeComposition.school_type_id !== source.school_type_id ||
+        afterComposition.school_type_id !== source.school_type_id
+      : beforeComposition.school_type_id === null ||
+        afterComposition.school_type_id === null ||
+        beforeComposition.school_type_id !== afterComposition.school_type_id) ||
     beforeComposition.dish_id !== source.dish_id ||
     afterComposition.dish_id !== source.dish_id ||
     typeof source.affected_line_count !== "number" ||
