@@ -261,6 +261,155 @@ function isNullableString(value: JsonValue | undefined) {
   return typeof value === "string" || value === null;
 }
 
+function isNonEmptyString(value: JsonValue | undefined) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isNullableNonEmptyString(value: JsonValue | undefined) {
+  return value === null || isNonEmptyString(value);
+}
+
+function isPositiveInteger(value: JsonValue | undefined) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+function isPositiveNumber(value: JsonValue | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function isAdjustmentScope(
+  value: JsonValue | undefined,
+): value is RecipeAdjustmentScope {
+  return (
+    value === "SYSTEM_INGREDIENT" ||
+    value === "SYSTEM_DISH" ||
+    value === "SCHOOL" ||
+    value === "SCHOOL_DISH"
+  );
+}
+
+function isAdjustmentAction(
+  value: JsonValue | undefined,
+): value is RecipeAdjustmentAction {
+  return (
+    value === "ADD" ||
+    value === "REPLACE" ||
+    value === "ADJUST_QUANTITY" ||
+    value === "REMOVE"
+  );
+}
+
+const contractActionsByScope: Record<
+  RecipeAdjustmentScope,
+  RecipeAdjustmentAction[]
+> = {
+  SYSTEM_INGREDIENT: ["REPLACE"],
+  SYSTEM_DISH: ["ADD", "REPLACE", "ADJUST_QUANTITY", "REMOVE"],
+  SCHOOL: ["REPLACE", "REMOVE"],
+  SCHOOL_DISH: ["ADD", "REPLACE", "ADJUST_QUANTITY", "REMOVE"],
+};
+
+function isScopeCatalog(value: JsonValue | undefined) {
+  if (!Array.isArray(value) || value.length !== 4) return false;
+  const scopes = new Set<RecipeAdjustmentScope>();
+  for (const row of value) {
+    if (!isRecord(row) || !isAdjustmentScope(row.scope_kind)) return false;
+    const actions = row.actions;
+    if (!Array.isArray(actions) || !actions.every(isAdjustmentAction))
+      return false;
+    const expectedActions = contractActionsByScope[row.scope_kind];
+    if (
+      actions.length !== expectedActions.length ||
+      new Set(actions).size !== expectedActions.length ||
+      !expectedActions.every((action) => actions.includes(action)) ||
+      scopes.has(row.scope_kind)
+    )
+      return false;
+    scopes.add(row.scope_kind);
+  }
+  return scopes.size === 4;
+}
+
+function isPrecedence(value: JsonValue | undefined) {
+  const expected = [
+    "RELEASED_RECIPE_VERSION",
+    "SYSTEM_INGREDIENT",
+    "SYSTEM_DISH",
+    "SCHOOL",
+    "SCHOOL_DISH",
+  ];
+  return (
+    Array.isArray(value) &&
+    value.length === expected.length &&
+    value.every((item, index) => item === expected[index])
+  );
+}
+
+function isSchoolReference(value: JsonValue) {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.school_id) &&
+    isNonEmptyString(value.school_name) &&
+    isNonEmptyString(value.school_type_id)
+  );
+}
+
+function isDishReference(value: JsonValue) {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.dish_id) &&
+    isNonEmptyString(value.dish_name)
+  );
+}
+
+function isSchoolTypeReference(value: JsonValue) {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.school_type_id) &&
+    isNonEmptyString(value.school_type_name)
+  );
+}
+
+function isIngredientReference(value: JsonValue) {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.ingredient_id) ||
+    !isNonEmptyString(value.ingredient_name) ||
+    !isNullableNonEmptyString(value.purchase_unit_id) ||
+    !isNullableNonEmptyString(value.purchase_unit_name)
+  )
+    return false;
+  return (
+    (value.purchase_unit_id === null && value.purchase_unit_name === null) ||
+    (isNonEmptyString(value.purchase_unit_id) &&
+      isNonEmptyString(value.purchase_unit_name))
+  );
+}
+
+function isUnitReference(value: JsonValue) {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.unit_id) &&
+    isNonEmptyString(value.unit_name)
+  );
+}
+
+function isRecipeLineReference(value: JsonValue) {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.recipe_line_id) &&
+    isNonEmptyString(value.recipe_id) &&
+    isNonEmptyString(value.dish_id) &&
+    isNullableNonEmptyString(value.school_type_id) &&
+    isNullableNonEmptyString(value.line_code) &&
+    isNonEmptyString(value.ingredient_id) &&
+    isNonEmptyString(value.ingredient_name) &&
+    isPositiveNumber(value.quantity_per_basis) &&
+    isNonEmptyString(value.unit_id) &&
+    isNonEmptyString(value.unit_name)
+  );
+}
+
 function isMessage(value: JsonValue): boolean {
   return (
     isRecord(value) &&
@@ -358,7 +507,7 @@ function isEffectiveComposition(value: JsonValue | undefined): boolean {
 function isOperatorRevision(value: JsonValue | undefined): boolean {
   return (
     isRecord(value) &&
-    typeof value.revision_id === "string" &&
+    isNonEmptyString(value.revision_id) &&
     (value.revision_status === "ACTIVE" ||
       value.revision_status === "SUPERSEDED" ||
       value.revision_status === "CANCELLED") &&
@@ -367,10 +516,10 @@ function isOperatorRevision(value: JsonValue | undefined): boolean {
       value.business_event_kind === "CANCELLED") &&
     typeof value.effective_from === "string" &&
     isNullableString(value.effective_to) &&
-    isNullableString(value.substitute_ingredient_id) &&
+    isNullableNonEmptyString(value.substitute_ingredient_id) &&
     (typeof value.quantity_per_basis === "number" ||
       value.quantity_per_basis === null) &&
-    isNullableString(value.unit_id) &&
+    isNullableNonEmptyString(value.unit_id) &&
     typeof value.reason_note === "string" &&
     isNullableString(value.issued_at) &&
     (value.issuance_kind === "ATLAS_NATIVE" ||
@@ -391,10 +540,10 @@ function isOperatorRecord(value: JsonValue): boolean {
     "CANCELLED",
   ];
   return (
-    typeof value.adjustment_id === "string" &&
-    typeof value.version === "number" &&
-    typeof value.current_revision_id === "string" &&
-    typeof value.current_revision_number === "number" &&
+    isNonEmptyString(value.adjustment_id) &&
+    isPositiveInteger(value.version) &&
+    isNonEmptyString(value.current_revision_id) &&
+    isPositiveInteger(value.current_revision_number) &&
     typeof value.can_correct === "boolean" &&
     typeof value.can_cancel === "boolean" &&
     (value.scope_kind === "SYSTEM_INGREDIENT" ||
@@ -405,12 +554,12 @@ function isOperatorRecord(value: JsonValue): boolean {
       value.action_kind === "REPLACE" ||
       value.action_kind === "ADJUST_QUANTITY" ||
       value.action_kind === "REMOVE") &&
-    isNullableString(value.school_id) &&
-    isNullableString(value.dish_id) &&
-    isNullableString(value.school_type_id) &&
-    isNullableString(value.target_ingredient_id) &&
-    isNullableString(value.target_recipe_line_id) &&
-    isNullableString(value.adjustment_line_id) &&
+    isNullableNonEmptyString(value.school_id) &&
+    isNullableNonEmptyString(value.dish_id) &&
+    isNullableNonEmptyString(value.school_type_id) &&
+    isNullableNonEmptyString(value.target_ingredient_id) &&
+    isNullableNonEmptyString(value.target_recipe_line_id) &&
+    isNullableNonEmptyString(value.adjustment_line_id) &&
     temporalStates.includes(
       value.temporal_state as RecipeAdjustmentTemporalState,
     ) &&
@@ -430,21 +579,25 @@ export function adjustmentWorkbenchFromResult(
   if (result.kind !== "success") return null;
   const source = result.response.workbench;
   if (!isRecord(source)) return null;
-  const keys = [
-    "scope_catalog",
-    "precedence",
-    "schools",
-    "dishes",
-    "school_types",
-    "ingredients",
-    "units",
-    "recipe_lines",
-    "operator_rows",
-  ] as const;
-  if (keys.some((key) => !Array.isArray(source[key]))) return null;
-  if (typeof source.reference_date !== "string") return null;
-  const operatorRows = source.operator_rows;
-  if (!Array.isArray(operatorRows) || !operatorRows.every(isOperatorRecord))
+  if (
+    typeof source.reference_date !== "string" ||
+    !isScopeCatalog(source.scope_catalog) ||
+    !isPrecedence(source.precedence) ||
+    !Array.isArray(source.schools) ||
+    !source.schools.every(isSchoolReference) ||
+    !Array.isArray(source.dishes) ||
+    !source.dishes.every(isDishReference) ||
+    !Array.isArray(source.school_types) ||
+    !source.school_types.every(isSchoolTypeReference) ||
+    !Array.isArray(source.ingredients) ||
+    !source.ingredients.every(isIngredientReference) ||
+    !Array.isArray(source.units) ||
+    !source.units.every(isUnitReference) ||
+    !Array.isArray(source.recipe_lines) ||
+    !source.recipe_lines.every(isRecipeLineReference) ||
+    !Array.isArray(source.operator_rows) ||
+    !source.operator_rows.every(isOperatorRecord)
+  )
     return null;
   return source as unknown as RecipeAdjustmentWorkbenchData;
 }

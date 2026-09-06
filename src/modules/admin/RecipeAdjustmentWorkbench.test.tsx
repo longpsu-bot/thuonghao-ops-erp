@@ -527,6 +527,39 @@ describe("Recipe Change Order first-user workbench", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("fails closed when an authoring reference used by the form is malformed", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    const api = {
+      ...fixture,
+      async getOperatorWorkbench(
+        ...args: Parameters<typeof fixture.getOperatorWorkbench>
+      ) {
+        const result = await fixture.getOperatorWorkbench(...args);
+        if (result.kind !== "success") return result;
+        const workbench = result.response.workbench as Record<
+          string,
+          JsonValue
+        >;
+        const ingredients = workbench.ingredients as Array<
+          Record<string, JsonValue>
+        >;
+        ingredients[0].purchase_unit_id = 42;
+        return result;
+      },
+    };
+
+    renderWorkbench("rules", api);
+
+    expect(
+      await screen.findByText(
+        "Dữ liệu tham chiếu điều chỉnh không hợp lệ. Hãy tải lại.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+    ).toBeDisabled();
+  });
+
   it("uses backend applicability, half-open periods, and unattributed issuance in the ledger", async () => {
     const api = createReviewRecipeAdjustmentApi("ready");
     const original = api.getOperatorWorkbench;
@@ -1848,5 +1881,74 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(document.body.textContent).not.toMatch(
       /recipe_version_id|applied_revision_ids|fingerprint/i,
     );
+  });
+
+  it("ignores a late effective composition after the selected date changes", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    let releaseResolve: (() => Promise<void>) | undefined;
+    const api = {
+      ...fixture,
+      resolve: vi.fn(
+        (...args: Parameters<typeof fixture.resolve>) =>
+          new Promise<Awaited<ReturnType<typeof fixture.resolve>>>(
+            (resolve) => {
+              releaseResolve = async () =>
+                resolve(await fixture.resolve(...args));
+            },
+          ),
+      ),
+    };
+    renderWorkbench("effective", api);
+    const viewButton = await screen.findByRole("button", {
+      name: "Xem công thức",
+    });
+    await waitFor(() => expect(viewButton).toBeEnabled());
+    fireEvent.click(viewButton);
+    await waitFor(() => expect(api.resolve).toHaveBeenCalledOnce());
+    fireEvent.change(screen.getByLabelText("Ngày xem"), {
+      target: { value: "2026-09-07" },
+    });
+    await act(async () => releaseResolve?.());
+
+    expect(
+      screen.queryByText(/Công thức theo loại trường/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Chọn ngày, trường và món để xem công thức đang áp dụng.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("rejects an effective composition that does not match its requested context", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    const api = {
+      ...fixture,
+      async resolve(...args: Parameters<typeof fixture.resolve>) {
+        const result = await fixture.resolve(...args);
+        if (result.kind !== "success") return result;
+        const resolution = result.response.resolution as Record<
+          string,
+          JsonValue
+        >;
+        resolution.dish_id = "dish-from-another-request";
+        return result;
+      },
+    };
+    renderWorkbench("effective", api);
+    const viewButton = await screen.findByRole("button", {
+      name: "Xem công thức",
+    });
+    await waitFor(() => expect(viewButton).toBeEnabled());
+    fireEvent.click(viewButton);
+
+    expect(
+      await screen.findByText(
+        "Kết quả công thức không khớp bối cảnh đã chọn. Vui lòng xem lại.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Công thức theo loại trường/),
+    ).not.toBeInTheDocument();
   });
 });

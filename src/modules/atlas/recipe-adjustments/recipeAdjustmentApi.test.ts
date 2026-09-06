@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import type { AtlasRpcName, AtlasRpcRequest } from "../connection/atlasRpc";
+import type {
+  AtlasRpcName,
+  AtlasRpcRequest,
+  JsonValue,
+} from "../connection/atlasRpc";
 import {
   RECIPE_ADJUSTMENT_RPC_FUNCTIONS,
   createRecipeAdjustmentApi,
@@ -390,6 +394,83 @@ describe("Recipe adjustment API contract", () => {
       adjustmentWorkbenchFromResult({
         kind: "success",
         response: { success: true, workbench } as never,
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects malformed scope, catalog, and Recipe-line references", async () => {
+    const result = await createReviewRecipeAdjustmentApi(
+      "ready",
+    ).getOperatorWorkbench("subject-1", "correlation-1", "2026-09-05");
+    if (result.kind !== "success") throw new Error("Expected review fixture");
+    const source = result.response.workbench;
+    if (typeof source !== "object" || source === null || Array.isArray(source))
+      throw new Error("Expected workbench object");
+
+    const malformedRows: Array<{
+      collection:
+        | "scope_catalog"
+        | "schools"
+        | "dishes"
+        | "school_types"
+        | "ingredients"
+        | "units"
+        | "recipe_lines";
+      field: string;
+      value: JsonValue;
+    }> = [
+      {
+        collection: "scope_catalog",
+        field: "actions",
+        value: ["REPLACE", "UPSERT"],
+      },
+      { collection: "schools", field: "school_id", value: 42 },
+      { collection: "dishes", field: "dish_name", value: 42 },
+      {
+        collection: "school_types",
+        field: "school_type_id",
+        value: 42,
+      },
+      {
+        collection: "ingredients",
+        field: "purchase_unit_id",
+        value: 42,
+      },
+      {
+        collection: "units",
+        field: "unit_id",
+        value: null,
+      },
+      {
+        collection: "recipe_lines",
+        field: "quantity_per_basis",
+        value: "8",
+      },
+    ];
+
+    for (const { collection, field, value } of malformedRows) {
+      const workbench = structuredClone(source);
+      const rows = workbench[collection];
+      if (!Array.isArray(rows) || rows.length === 0)
+        throw new Error(`Expected ${collection} rows`);
+      const row = rows[0];
+      if (typeof row !== "object" || row === null || Array.isArray(row))
+        throw new Error(`Expected ${collection} object row`);
+      row[field] = value;
+      expect(
+        adjustmentWorkbenchFromResult({
+          kind: "success",
+          response: { success: true, workbench },
+        }),
+      ).toBeNull();
+    }
+
+    const malformedPrecedence = structuredClone(source);
+    malformedPrecedence.precedence = ["RELEASED_RECIPE_VERSION", 7];
+    expect(
+      adjustmentWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench: malformedPrecedence },
       }),
     ).toBeNull();
   });

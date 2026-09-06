@@ -748,13 +748,17 @@ export function createReviewRecipeAdjustmentApi(
     },
     resolve(_auth, _correlation, payload) {
       const blocked = blockedRead();
+      const resolution = resolutionScenario(
+        String(payload.review_scenario ?? "precedence"),
+        String(payload.school_id ?? ids.school),
+      );
+      resolution.as_of_date = String(payload.as_of_date);
+      resolution.school_id = String(payload.school_id);
+      resolution.dish_id = String(payload.dish_id);
       return Promise.resolve(
         blocked ??
           success({
-            resolution: resolutionScenario(
-              String(payload.review_scenario ?? "precedence"),
-              String(payload.school_id ?? ids.school),
-            ) as unknown as JsonValue,
+            resolution: resolution as unknown as JsonValue,
             safe_operator_message: "Đã phân giải BOM hiệu lực xem thử.",
           }),
       );

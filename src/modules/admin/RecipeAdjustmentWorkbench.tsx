@@ -345,9 +345,24 @@ export function RecipeAdjustmentWorkbench({
   const generation = useRef(0);
   const targetGeneration = useRef(0);
   const previewGeneration = useRef(0);
+  const effectiveGeneration = useRef(0);
   const pendingMutation = useRef<PendingMutation | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const effectiveIntent = JSON.stringify({
+    authSubject,
+    effectiveDate,
+    effectiveSchoolId,
+    effectiveDishId,
+    reviewScenario: mode === "review" ? reviewScenario : null,
+  });
+  const effectiveIntentRef = useRef(effectiveIntent);
+  effectiveIntentRef.current = effectiveIntent;
+
+  useEffect(() => {
+    effectiveGeneration.current += 1;
+    setResolution(null);
+  }, [authSubject]);
 
   const refresh = useCallback(async () => {
     if (!api || !authSubject) return false;
@@ -364,7 +379,10 @@ export function RecipeAdjustmentWorkbench({
       setLoad((state) => ({
         ...state,
         status: "error",
-        message: adjustmentResultMessage(result),
+        message:
+          result.kind === "success"
+            ? "Dữ liệu tham chiếu điều chỉnh không hợp lệ. Hãy tải lại."
+            : adjustmentResultMessage(result),
       }));
       return false;
     }
@@ -1058,22 +1076,46 @@ export function RecipeAdjustmentWorkbench({
 
   async function resolveEffectiveComposition() {
     if (!api || !authSubject || !effectiveSchoolId || !effectiveDishId) return;
+    const requestGeneration = ++effectiveGeneration.current;
+    const requestIntent = effectiveIntent;
+    const requestedDate = effectiveDate;
+    const requestedSchoolId = effectiveSchoolId;
+    const requestedDishId = effectiveDishId;
+    const requestedReviewScenario = mode === "review" ? reviewScenario : null;
     setBusy(true);
     setNotice("");
     const result = await api.resolve(authSubject, correlationId, {
-      as_of_date: effectiveDate,
-      school_id: effectiveSchoolId,
-      dish_id: effectiveDishId,
-      review_scenario: mode === "review" ? reviewScenario : null,
+      as_of_date: requestedDate,
+      school_id: requestedSchoolId,
+      dish_id: requestedDishId,
+      review_scenario: requestedReviewScenario,
     });
+    if (
+      requestGeneration !== effectiveGeneration.current ||
+      requestIntent !== effectiveIntentRef.current
+    ) {
+      setBusy(false);
+      return;
+    }
     const parsed = effectiveCompositionFromResult(result);
-    setResolution(parsed);
+    const matches =
+      parsed?.as_of_date === requestedDate &&
+      parsed.school_id === requestedSchoolId &&
+      parsed.dish_id === requestedDishId;
+    setResolution(matches ? parsed : null);
     setNotice(
-      parsed
+      matches
         ? "Đã cập nhật công thức hiệu lực."
-        : adjustmentResultMessage(result),
+        : parsed
+          ? "Kết quả công thức không khớp bối cảnh đã chọn. Vui lòng xem lại."
+          : adjustmentResultMessage(result),
     );
     setBusy(false);
+  }
+
+  function invalidateEffectiveComposition() {
+    effectiveGeneration.current += 1;
+    setResolution(null);
   }
 
   function previewLineKey(line: EffectiveCompositionLine) {
@@ -1397,7 +1439,7 @@ export function RecipeAdjustmentWorkbench({
                 value={effectiveDate}
                 onChange={(event) => {
                   setEffectiveDate(event.target.value);
-                  setResolution(null);
+                  invalidateEffectiveComposition();
                 }}
               />
             </label>
@@ -1407,7 +1449,7 @@ export function RecipeAdjustmentWorkbench({
                 value={effectiveSchoolId}
                 onChange={(event) => {
                   setEffectiveSchoolId(event.target.value);
-                  setResolution(null);
+                  invalidateEffectiveComposition();
                 }}
               >
                 <option value="">Chọn trường</option>
@@ -1424,7 +1466,7 @@ export function RecipeAdjustmentWorkbench({
                 value={effectiveDishId}
                 onChange={(event) => {
                   setEffectiveDishId(event.target.value);
-                  setResolution(null);
+                  invalidateEffectiveComposition();
                 }}
               >
                 <option value="">Chọn món</option>
@@ -1442,7 +1484,7 @@ export function RecipeAdjustmentWorkbench({
                   value={reviewScenario}
                   onChange={(event) => {
                     setReviewScenario(event.target.value);
-                    setResolution(null);
+                    invalidateEffectiveComposition();
                   }}
                 >
                   <option value="precedence">Nhiều lớp điều chỉnh</option>
