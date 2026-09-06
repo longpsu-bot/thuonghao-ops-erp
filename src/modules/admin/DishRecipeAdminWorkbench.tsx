@@ -613,7 +613,10 @@ export function DishRecipeAdminWorkbench({
   const authoringReadOnly =
     creationLocked || effectiveSelection?.context.kind === "school";
   const mutationBlocked =
-    writeUncertain || saveRecovery !== null || copyRecovery !== null;
+    effectiveLoad.status === "error" ||
+    writeUncertain ||
+    saveRecovery !== null ||
+    copyRecovery !== null;
   const systemSelectionForDish = (
     targetDishId: string,
     targetSchoolTypeId = schoolTypeId ??
@@ -718,6 +721,7 @@ export function DishRecipeAdminWorkbench({
   };
 
   const beginDish = () => {
+    if (mutationBlocked) return;
     if (
       isDirty &&
       !window.confirm(
@@ -1453,6 +1457,12 @@ export function DishRecipeAdminWorkbench({
                   <h3>{dish?.dish_name ?? "Chọn một món"}</h3>
                 </div>
               </div>
+              {effectiveLoad.status === "error" &&
+                (!dish || !effectiveSelection) && (
+                  <p className="operator-notice warning" role="alert">
+                    {effectiveLoad.message}
+                  </p>
+                )}
               {dish && effectiveSelection && (
                 <>
                   <label className="evidence-field">
@@ -1668,7 +1678,11 @@ export function DishRecipeAdminWorkbench({
                 nhu cầu.
               </p>
             </div>
-            <button type="button" onClick={() => beginDish()}>
+            <button
+              type="button"
+              disabled={mutationBlocked}
+              onClick={() => beginDish()}
+            >
               Tạo món mới
             </button>
             <button

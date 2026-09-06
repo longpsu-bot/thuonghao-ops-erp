@@ -145,7 +145,9 @@ export const RootOnlyAuthoring: Story = {
       await canvas.findByRole("option", { name: /Cơm trắng/ }),
     );
     await expect(
-      await canvas.findByText(/Chưa có công thức typed đã phát hành/),
+      await canvas.findByText(
+        /Chưa có công thức đã phát hành cho loại trường này/,
+      ),
     ).toBeVisible();
     await expect(
       canvas.getByPlaceholderText("Tìm nguyên liệu để thêm…"),
@@ -196,7 +198,9 @@ export const CopyCommittedReadbackFailed: Story = {
     await userEvent.click(
       await canvas.findByRole("option", { name: /Cơm trắng/ }),
     );
-    await canvas.findByText(/Chưa có công thức typed đã phát hành/);
+    await canvas.findByText(
+      /Chưa có công thức đã phát hành cho loại trường này/,
+    );
     await userEvent.click(
       canvas.getByRole("button", { name: "Sao chép công thức" }),
     );

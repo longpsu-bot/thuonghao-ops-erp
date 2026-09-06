@@ -586,7 +586,7 @@ export function createReviewRecipeApi(
         : [
             {
               code: "RECIPE_SELECTION_BLOCKED",
-              message: "Chưa có công thức typed đã phát hành.",
+              message: "Chưa có công thức đã phát hành cho loại trường này.",
             },
           ];
       return Promise.resolve(
