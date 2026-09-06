@@ -314,6 +314,78 @@ describe("Recipe Change Order first-user workbench", () => {
     );
   });
 
+  it("keeps the SYSTEM_DISH result general and optionally inspects an active matching-type School", async () => {
+    const { api } = renderWorkbench();
+    const preview = vi.spyOn(api, "preview");
+    const resolve = vi.spyOn(api, "resolve");
+    const dialog = await openCreateDialog();
+
+    await selectSystemDishTarget(dialog, fixtureIds.pumpkinLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Kiểm tra công thức chung và tại một trường." },
+    });
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    expect(preview.mock.calls[0][2]).toMatchObject({
+      dish_id: fixtureIds.dish,
+      school_type_id: fixtureIds.schoolType,
+    });
+    expect(preview.mock.calls[0][2]).not.toHaveProperty("school_id");
+    expect(
+      within(review).getByRole("table", {
+        name: "So sánh công thức trước và sau",
+      }),
+    ).toHaveTextContent("Cà rốt");
+
+    const school = within(review).getByRole("combobox", {
+      name: "Xem tại trường",
+    });
+    expect(
+      within(school)
+        .getAllByRole("option")
+        .map((option) => option.textContent),
+    ).toEqual([
+      "Không chọn — giữ công thức chung",
+      "Trường Tiểu học Minh Khai",
+      "Trường Tiểu học Nguyễn Du",
+    ]);
+    expect(within(school).queryByText("Trường Trung học Trần Phú")).toBeNull();
+    expect(resolve).not.toHaveBeenCalled();
+
+    fireEvent.change(school, {
+      target: { value: fixtureIds.sameTypeSchool },
+    });
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Xem tại trường" }),
+    );
+    await waitFor(() =>
+      expect(resolve).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        {
+          as_of_date: expect.any(String),
+          school_id: fixtureIds.sameTypeSchool,
+          dish_id: fixtureIds.dish,
+        },
+      ),
+    );
+    expect(
+      await within(review).findByRole("region", {
+        name: "Công thức tại Trường Tiểu học Nguyễn Du",
+      }),
+    ).toHaveTextContent("Công thức tại Trường Tiểu học Nguyễn Du");
+  });
+
   it("round-trips a prior SYSTEM_DISH ADD target through exact system Preview and Create", async () => {
     const { api } = renderWorkbench();
     const getTargets = vi.spyOn(api, "getEffectiveTargetContext");

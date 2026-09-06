@@ -63,7 +63,7 @@ describe("PD-04 Admin integration conformance", () => {
     });
 
     render(<AtlasApp reviewMode initialPage="recipes" />);
-    for (const tab of ["Danh sách", "Tạo món & công thức", "Điều chỉnh"])
+    for (const tab of ["Công thức", "Lệnh điều chỉnh"])
       expect(screen.getByRole("tab", { name: tab })).toBeInTheDocument();
     expect(screen.queryByText(/Retool layer/i)).not.toBeInTheDocument();
   });

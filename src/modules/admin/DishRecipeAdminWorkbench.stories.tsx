@@ -39,7 +39,7 @@ function createLockedApi(): RecipeApi {
     workbench.base_authoring.business_status = "LOCKED";
     workbench.base_authoring.locked_for_normal_editing = true;
     workbench.base_authoring.lock_reason =
-      "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.";
+      "Món này đã xuất hiện trong thực đơn tuần đã duyệt nên toàn bộ món — gồm cả hai công thức theo loại trường — bị khóa chỉnh sửa thông thường. Muốn thay đổi thành phần, hãy dùng Lệnh điều chỉnh.";
     workbench.base_authoring.allowed_actions.save_recipe = false;
     workbench.base_authoring.disabled_reason_codes.save_recipe =
       "SAVE_OPERATIONALLY_LOCKED";
@@ -129,10 +129,8 @@ type Story = StoryObj<typeof meta>;
 
 async function openAuthoring(canvasElement: HTMLElement) {
   const canvas = within(canvasElement);
-  await userEvent.click(
-    await canvas.findByRole("tab", { name: "Tạo món & công thức" }),
-  );
-  await canvas.findByRole("heading", { name: "Tạo món & công thức" });
+  await userEvent.click(await canvas.findByRole("tab", { name: "Công thức" }));
+  await canvas.findByRole("heading", { name: "Công thức" });
   return canvas;
 }
 

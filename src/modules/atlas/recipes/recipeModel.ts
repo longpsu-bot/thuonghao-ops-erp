@@ -862,7 +862,7 @@ export function recipeResultMessage(result: AtlasRpcResult): string {
     VALIDATION_FAILED: "Dữ liệu chưa hợp lệ. Kiểm tra chi tiết và thử lại.",
     INVARIANT_VIOLATION: "Công thức hiện tại chưa cho phép thao tác này.",
     RECIPE_OPERATIONALLY_LOCKED:
-      "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+      "Món này đã xuất hiện trong thực đơn tuần đã duyệt nên toàn bộ món — gồm cả hai công thức theo loại trường — bị khóa chỉnh sửa thông thường. Muốn thay đổi thành phần, hãy dùng Lệnh điều chỉnh.",
     CONFLICT: "Dữ liệu mục tiêu đang xung đột với một bản ghi hiện có.",
   };
   return (

@@ -181,7 +181,7 @@ export function DishRecipeAdminWorkbench({
   const [schoolsAuthSubject, setSchoolsAuthSubject] = useState<string | null>(
     null,
   );
-  const [tab, setTab] = useState<Tab>("catalog");
+  const [tab, setTab] = useState<Tab>("recipes");
   const [adjustmentMounted, setAdjustmentMounted] = useState(false);
   const [adjustmentView, setAdjustmentView] = useState<"rules" | "effective">(
     "rules",
@@ -1496,7 +1496,7 @@ export function DishRecipeAdminWorkbench({
           aria-selected={adjustmentView === "rules"}
           onClick={() => navigateTab("adjustments")}
         >
-          Quy tắc điều chỉnh
+          Danh sách lệnh
         </button>
         <button
           type="button"
@@ -1546,9 +1546,8 @@ export function DishRecipeAdminWorkbench({
       <div className="master-data-tabs" role="tablist">
         {(
           [
-            ["catalog", "Danh sách"],
-            ["recipes", "Tạo món & công thức"],
-            ["adjustments", "Điều chỉnh"],
+            ["recipes", "Công thức"],
+            ["adjustments", "Lệnh điều chỉnh"],
           ] as const
         ).map(([value, label]) => (
           <button
@@ -1573,6 +1572,11 @@ export function DishRecipeAdminWorkbench({
           <button type="button" onClick={() => void refresh()}>
             Tải lại
           </button>
+        </p>
+      )}
+      {load.status === "ready" && effectiveLoad.status === "error" && (
+        <p className="operator-notice warning" role="alert">
+          {effectiveLoad.message}
         </p>
       )}
       {notice && <p className="operator-notice">{notice}</p>}
@@ -1931,10 +1935,10 @@ export function DishRecipeAdminWorkbench({
         <>
           <div className="master-data-toolbar recipe-creation-toolbar">
             <div>
-              <h2>Tạo món & công thức</h2>
+              <h2>Công thức</h2>
               <p>
-                Tạo món mới, nhập công thức ban đầu và lưu để sẵn sàng cho Lập
-                nhu cầu.
+                Chọn món, soạn công thức gốc theo loại trường và đối chiếu công
+                thức hiệu lực trong cùng một nơi.
               </p>
             </div>
             <button
@@ -1954,23 +1958,27 @@ export function DishRecipeAdminWorkbench({
             <button type="button" onClick={() => navigateTab("import")}>
               Nhập workbook
             </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void refresh()}
+            >
+              Làm mới công thức
+            </button>
           </div>
           <div className="recipe-first-user-layout">
-            <aside
-              className="recipe-dish-finder"
-              aria-label="Chọn món đang tạo"
-            >
+            <aside className="recipe-dish-finder" aria-label="Danh sách món">
               <label
                 className="recipe-field-label"
                 htmlFor="recipe-dish-search"
               >
-                Chọn món đang tạo
+                Tìm món hoặc nguyên liệu trong công thức gốc
               </label>
               <input
                 id="recipe-dish-search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Tìm theo tên món…"
+                placeholder="Tìm theo món, mã món hoặc nguyên liệu gốc…"
               />
               <div className="recipe-dish-results" role="listbox">
                 {shownDishes.map((item) => (
@@ -2035,13 +2043,13 @@ export function DishRecipeAdminWorkbench({
                       <strong>Đã dùng trong thực đơn đã duyệt</strong>
                       <p>
                         {authoring.lock_reason ??
-                          "Món này đã có trong thực đơn đã duyệt. Muốn thay đổi công thức, hãy dùng Điều chỉnh."}
+                          "Món này đã xuất hiện trong thực đơn tuần đã duyệt nên toàn bộ món — gồm cả hai công thức theo loại trường — bị khóa chỉnh sửa thông thường. Muốn thay đổi thành phần, hãy dùng Lệnh điều chỉnh."}
                       </p>
                       <button
                         type="button"
                         onClick={() => navigateTab("adjustments")}
                       >
-                        Đi đến Điều chỉnh
+                        Đi đến Lệnh điều chỉnh
                       </button>
                     </div>
                   )}
@@ -2060,6 +2068,16 @@ export function DishRecipeAdminWorkbench({
                       </p>
                     </div>
                   )}
+
+                  <div className="recipe-section-heading">
+                    <div>
+                      <h3>Công thức gốc</h3>
+                      <p>
+                        Nội dung được soạn trực tiếp cho loại trường chuẩn đang
+                        chọn.
+                      </p>
+                    </div>
+                  </div>
 
                   <div className="recipe-scope-row">
                     <label className="recipe-field-label">
@@ -2351,6 +2369,195 @@ export function DishRecipeAdminWorkbench({
                       {authoring.disabled_reasons.save_recipe}
                     </p>
                   )}
+
+                  <section
+                    className="recipe-effective-summary"
+                    aria-label="Chi tiết công thức hiệu lực"
+                  >
+                    <div className="recipe-section-heading">
+                      <div>
+                        <h3>Công thức hiệu lực</h3>
+                        <p>
+                          Kết quả Atlas áp dụng tại ngày và phạm vi hiện tại;
+                          phần này chỉ để đối chiếu.
+                        </p>
+                      </div>
+                    </div>
+                    {currentEffectiveSelection && (
+                      <div className="recipe-effective-context-row">
+                        <label className="recipe-field-label">
+                          Ngày áp dụng
+                          <input
+                            type="date"
+                            disabled={busy}
+                            value={currentEffectiveSelection.asOfDate}
+                            onChange={(event) =>
+                              void selectRecipeContext({
+                                ...currentEffectiveSelection,
+                                asOfDate: event.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="recipe-field-label">
+                          Ngữ cảnh công thức
+                          <select
+                            aria-label="Ngữ cảnh công thức"
+                            disabled={busy}
+                            value={effectiveContextValue}
+                            onChange={(event) =>
+                              changeEffectiveContext(event.target.value)
+                            }
+                          >
+                            {canonicalSchoolTypes.map((item) => (
+                              <option
+                                key={`system:${item.school_type_id}`}
+                                value={`system:${item.school_type_id}`}
+                              >
+                                Hệ thống · {item.school_type_name}
+                              </option>
+                            ))}
+                            {currentSchools.map((item) => (
+                              <option
+                                key={`school:${item.school_id}`}
+                                value={`school:${item.school_id}`}
+                              >
+                                Trường · {item.school_name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    )}
+                    {effectiveLoad.status === "loading" && (
+                      <p className="supporting-copy">
+                        Đang tải công thức hiệu lực cho ngữ cảnh đã chọn…
+                      </p>
+                    )}
+                    {effectiveData?.effective_readiness.status === "READY" ? (
+                      <>
+                        <p className="supporting-copy">
+                          {effectiveData.context_kind === "SCHOOL"
+                            ? "Ngữ cảnh Trường, bao gồm ngoại lệ áp dụng."
+                            : "Ngữ cảnh hệ thống, không bao gồm ngoại lệ Trường."}
+                        </p>
+                        <CompactTable
+                          headers={["Nguyên liệu", "Định lượng", "Đơn vị"]}
+                        >
+                          {effectiveData.current_effective_bom.map((line) => (
+                            <tr key={`${line.target_kind}:${line.target_id}`}>
+                              <td>{line.ingredient_name}</td>
+                              <td>{line.quantity_per_basis}</td>
+                              <td>{line.unit_name}</td>
+                            </tr>
+                          ))}
+                        </CompactTable>
+                        <p className="supporting-copy">
+                          Ngoại lệ Trường đang đóng góp:{" "}
+                          {effectiveData.school_exception_count}
+                        </p>
+                        <details className="recipe-history">
+                          <summary>Lịch sử BOM hiệu lực</summary>
+                          {!effectiveData.history_periods.length ? (
+                            <p>Chưa có kỳ hiệu lực để hiển thị.</p>
+                          ) : (
+                            effectiveData.history_periods.map((period) => (
+                              <section
+                                key={`${period.period_from}:${period.period_to ?? "open"}`}
+                              >
+                                <h4>
+                                  Từ {period.period_from}
+                                  {period.period_to
+                                    ? ` đến trước ${period.period_to}`
+                                    : " trở đi"}
+                                </h4>
+                                {period.resolution_status === "READY" ? (
+                                  <CompactTable
+                                    headers={[
+                                      "Nguyên liệu",
+                                      "Định lượng",
+                                      "Đơn vị",
+                                    ]}
+                                  >
+                                    {period.effective_bom.map((line) => (
+                                      <tr
+                                        key={`${period.period_from}:${line.target_kind}:${line.target_id}`}
+                                      >
+                                        <td>{line.ingredient_name}</td>
+                                        <td>{line.quantity_per_basis}</td>
+                                        <td>{line.unit_name}</td>
+                                      </tr>
+                                    ))}
+                                  </CompactTable>
+                                ) : (
+                                  period.blockers.map((blocker) => (
+                                    <p key={blocker.code}>{blocker.message}</p>
+                                  ))
+                                )}
+                                {period.change_orders.map((changeOrder) => (
+                                  <dl
+                                    className="master-data-detail-list"
+                                    key={changeOrder.revision_id}
+                                  >
+                                    <div>
+                                      <dt>Sự kiện thay đổi</dt>
+                                      <dd>
+                                        {changeOrder.business_event_kind} ·{" "}
+                                        {changeOrder.action_kind} · bản ghi{" "}
+                                        {changeOrder.revision_number}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt>Lý do ghi nhận</dt>
+                                      <dd>
+                                        {changeOrder.reason_code} ·{" "}
+                                        {changeOrder.reason}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt>Phạm vi và kỳ hiệu lực ghi nhận</dt>
+                                      <dd>
+                                        {changeOrder.scope_kind} · từ{" "}
+                                        {changeOrder.effective_from}
+                                        {changeOrder.effective_to
+                                          ? ` đến trước ${changeOrder.effective_to}`
+                                          : " trở đi"}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt>Thông tin ban hành</dt>
+                                      <dd>
+                                        {changeOrder.issuance_kind ===
+                                        "LEGACY_UNATTRIBUTED" ? (
+                                          "Không có dữ liệu từ OPS v1"
+                                        ) : (
+                                          <>
+                                            <strong>
+                                              {changeOrder.issuer}
+                                            </strong>
+                                            <br />
+                                            <span>
+                                              {formatVietnamIssuedAt(
+                                                changeOrder.issued_at!,
+                                              )}
+                                            </span>
+                                          </>
+                                        )}
+                                      </dd>
+                                    </div>
+                                  </dl>
+                                ))}
+                              </section>
+                            ))
+                          )}
+                        </details>
+                      </>
+                    ) : (
+                      <p className="supporting-copy">
+                        Công thức hiệu lực chưa sẵn sàng trong phạm vi này.
+                      </p>
+                    )}
+                  </section>
 
                   <details className="recipe-history">
                     <summary>Lịch sử công thức</summary>

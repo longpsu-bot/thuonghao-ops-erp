@@ -1794,7 +1794,12 @@ export function PlanningInputsWorkbenchView({
           }
           schoolControl={
             <div className="planning-school-context">
-              <span className="planning-context-label">Trường</span>
+              <label
+                className="planning-context-label"
+                htmlFor="planning-school-scope"
+              >
+                Trường / điểm giao
+              </label>
               <PlanningSchoolScopeControl
                 schools={activeSchools}
                 selectedSchoolIds={schoolScopeIds}

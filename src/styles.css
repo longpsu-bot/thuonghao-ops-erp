@@ -2945,6 +2945,29 @@ tbody tr.selected-row {
 .adjustment-period-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.recipe-adjustment-dialog-stack {
+  padding-bottom: 4px;
+}
+.recipe-adjustment-date-grid {
+  align-items: start;
+}
+.recipe-adjustment-action-footer {
+  position: sticky;
+  z-index: 2;
+  bottom: 0;
+  min-height: 60px;
+  margin: 6px -4px -4px;
+  padding: 12px 4px 4px;
+  border-top: 1px solid var(--atlas-border);
+  background: var(--mantine-color-body);
+}
+.recipe-adjustment-school-inspection {
+  background: var(--atlas-surface-soft);
+}
+.recipe-adjustment-school-inspection .mantine-NativeSelect-root {
+  min-width: min(320px, 100%);
+  flex: 1 1 280px;
+}
 .adjustment-preview-card {
   overflow: auto;
   background: #f7faf8;
@@ -3182,12 +3205,121 @@ tbody tr.selected-row {
   color: var(--atlas-text-muted);
   font-size: 11px;
 }
-.planning-school-scope-options {
-  display: grid;
+.school-scope-selector {
+  position: relative;
+  min-width: 0;
+}
+
+.school-scope-trigger {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  max-height: 280px;
-  margin-top: 8px;
+  text-align: left;
+}
+
+.school-scope-trigger span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.school-scope-dropdown {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  display: grid;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 48px));
+  max-width: calc(100vw - 48px);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--atlas-border);
+  border-radius: 9px;
+  background: var(--atlas-surface);
+  box-shadow: 0 10px 28px rgb(28 39 53 / 16%);
+}
+
+.school-scope-dropdown > label {
+  display: grid;
+  gap: 5px;
+  color: var(--atlas-text-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.school-scope-dropdown input[type="search"] {
+  width: 100%;
+  min-width: 0;
+}
+
+.school-scope-bulk-actions,
+.school-scope-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.school-scope-bulk-actions button {
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--atlas-primary);
+}
+
+.school-scope-options {
+  display: grid;
+  max-height: 248px;
+  gap: 2px;
   overflow-y: auto;
+}
+
+.school-scope-options label {
+  display: flex;
+  min-width: 0;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  color: var(--atlas-text);
+  font-size: 12px;
+  font-weight: 550;
+  text-transform: none;
+}
+
+.school-scope-options label:hover {
+  background: #f2f5f7;
+}
+
+.school-scope-options input[type="checkbox"] {
+  width: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.school-scope-options span {
+  overflow-wrap: anywhere;
+}
+
+.school-scope-guidance {
+  margin: 0;
+  color: var(--atlas-danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.school-scope-footer {
+  justify-content: flex-end;
+  padding-top: 2px;
+  border-top: 1px solid var(--atlas-border);
 }
 .planning-toolbar {
   margin-bottom: 12px;
@@ -4402,69 +4534,16 @@ tbody tr.selected-row {
   background: #fff;
 }
 
-.procurement-school-scope summary {
+.procurement-school-scope {
   display: grid;
-  gap: 2px;
-  list-style: none;
+  min-width: 180px;
+  gap: 4px;
 }
 
-.procurement-school-scope summary::-webkit-details-marker {
-  display: none;
-}
-
-.procurement-school-scope summary span {
+.procurement-school-scope > label {
   color: #42515d;
-  font-size: 10px;
-}
-
-.procurement-school-scope summary strong {
-  overflow: hidden;
-  color: var(--atlas-text);
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.procurement-school-scope-options {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% + 6px);
-  left: 0;
-  display: grid;
-  width: min(320px, 80vw);
-  max-height: 280px;
-  gap: 2px;
-  padding: 8px;
-  overflow-y: auto;
-  border: 1px solid var(--atlas-border);
-  border-radius: 8px;
-  background: var(--atlas-surface);
-  box-shadow: 0 8px 24px rgb(28 39 53 / 14%);
-}
-
-.procurement-school-scope:not([open]) .procurement-school-scope-options {
-  display: none;
-}
-
-.procurement-school-scope-options label {
-  display: flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
-  border-radius: 6px;
-  color: var(--atlas-text);
-  font-weight: 500;
-}
-
-.procurement-school-scope-options label:hover {
-  background: #f2f5f7;
-}
-
-.procurement-school-scope-options input {
-  width: 16px;
-  min-height: 16px;
-  padding: 0;
+  font-weight: 650;
 }
 
 .procurement-context-strip summary,
