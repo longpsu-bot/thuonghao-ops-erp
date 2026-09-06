@@ -6,29 +6,30 @@
 
 **Authority:** Working context summary
 
-**Verified execution baseline (6 September 2026):** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`
+**Verified repository baseline (6 September 2026):** `11408a0b0ed5d3938321c90f38fd8a2f9c1ad587`
 
 **Review required:** No — update whenever project direction, active scope, environment boundary, or blocking Product decisions change.
 
 ---
 
-## 1. Project identity
+## 1. Project identity and objective
 
 - Product name: OPS ERP
 - Internal codename: Project Atlas
 - Repository: `longpsu-bot/thuonghao-ops-erp`
 - Source of truth: GitHub repository
-- Primary development approach: **workflow-led, contract-constrained, backend-authoritative, Codex-assisted**
+- Primary stack: React + TypeScript + Supabase/PostgreSQL
+- Delivery approach: workflow-led, contract-constrained, backend-authoritative, Codex-assisted
 
-Atlas is intended to replace OPS v1 incrementally with the smallest stable system that preserves daily catering operations, improves process control, remains maintainable and transferable, and avoids unnecessary complexity or cost.
+Atlas replaces OPS v1 incrementally with the smallest stable system that preserves daily catering operations, improves control, remains maintainable and transferable, and avoids unnecessary ceremony or cost.
 
-The Application objective is now explicit: **keep the operator surface aggressively simple while allowing the backend to carry the necessary safety and workload complexity.**
+The Application objective is explicit: **keep the operator surface aggressively simple while the backend carries required safety, audit, concurrency, calculation and recovery complexity.**
 
 ---
 
 ## 2. Governing architecture
 
-Atlas continues to use `OPS_SYSTEM_MAP` v1.0:
+Atlas uses `OPS_SYSTEM_MAP` v1.0:
 
 ```text
 Mission
@@ -42,146 +43,75 @@ Mission
 → Technology
 ```
 
-The authority order is unchanged. Business architecture defines ownership and boundaries; technology remains subordinate.
+The active cross-domain principle is:
 
-Before freezing a detailed command contract, prove the operator job, necessary information, meaningful exceptions and genuine human decision boundaries through lightweight workflow/UI exploration.
+> **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.**
 
-Workflow sketches, fixtures, mock screens and prototypes are discovery artifacts, not authoritative Application behavior.
+[ATLAS-MODEL-PRINCIPLE-01](decisions/decision-atlas-model-convergence.md) and the [authority map through Procurement](architecture/atlas-authority-map-through-procurement.md) are implemented repository authority.
 
-The connected React Application follows accepted contracts and read models. React coordinates interaction and renders authoritative results; it does not own ERP authority.
-
-[ATLAS-MODEL-PRINCIPLE-01](decisions/decision-atlas-model-convergence.md) applies the current cross-domain rule **facts explicit, state derived, supporting objects generated** through Procurement. The [authority map](architecture/atlas-authority-map-through-procurement.md) identifies normal and support routes. It refines implementation and operator routing without changing domain ownership, removing immutable evidence, or authorizing Warehouse work.
-
----
-
-## 3. Preferred delivery cycle
-
-For a new capability, prefer:
+Operational gradient:
 
 ```text
-Mission / capability / domain ownership
-→ concrete operator job and workflow
-→ lightweight UI/workflow exploration
-→ genuine human decision boundaries
-→ minimum business contract
-→ authoritative backend boundary
-→ connected Application UI
-→ operator / Product review
-→ refinement from observed need
-→ next thin vertical slice
+upstream authored facts and generated support
+→ derived current state
+→ explicit human decisions
+→ explicit external commitments
 ```
 
-Do not build an entire backend domain before proving its operator command boundaries, and do not build an entire frontend domain with the intention of adding authority later.
+Do not add persisted lifecycle/status machinery where current state can be deterministically derived. Do not expose generated support objects as separate operator jobs unless a real business decision requires it.
 
-For later domains such as Warehouse, prefer one operational slice at a time: receiving workflow → exploration → contract → backend → connected UI → operator review, then proceed to discrepancy handling, stock intake, or another proven need.
+PostgreSQL owns business facts, calculations, invariants, authorization, currentness, concurrency, idempotency, transaction boundaries and immutable evidence. React renders shaped contracts and coordinates interaction; it does not reconstruct ERP authority.
 
----
-
-## 4. Backend gatekeeper / operator-surface rule
-
-The backend is the **gatekeeper and workload manager serving the operator**.
-
-Backend authority includes:
-
-- authentication and authorization;
-- authoritative validation and calculations;
-- currentness/concurrency;
-- lifecycle integrity;
-- audit, lineage and immutable evidence;
-- idempotency and recovery;
-- transaction integrity;
-- internal workload partitioning/chunking.
-
-Normal UI exposes:
-
-- the operator's business job;
-- current work context;
-- meaningful exceptions;
-- authored facts;
-- genuine business decisions/commitments;
-- necessary corrections or safety acknowledgements.
-
-A backend state does not automatically deserve a visible UI state. API limits, versions, fingerprints, capability codes, checksums, internal validation stages and other implementation detail remain out of the normal reading flow.
-
-React may make a backend-authorized action stricter because of local dirty/invalid/busy/unknown-outcome state, but it must never promote an action that the backend denies.
+OPS v1 / Retool remains behavioral evidence only. Preserve its useful operational simplicity, but do not copy direct browser SQL, client-owned rules, destructive historical rewrites or optimistic success without authoritative readback.
 
 ---
 
-## 5. Current UI/UX acceptance rules
+## 3. Current repository status through Procurement
 
-ATLAS-UI-STANDARD-02 refines D-034/D-035 without rewriting their history.
+PR #258, `feat(atlas): converge Recipe and adjustment model authority`, was squash-merged into `main` as:
 
-Current workbench rules are:
+`11408a0b0ed5d3938321c90f38fd8a2f9c1ad587`
 
-1. A first-time operator should understand the job, scope, editable target and main action within approximately five seconds.
-2. Every table-oriented workbench has useful text search/filter unless a documented reason shows search has no value.
-3. Work context is visible; users should not infer what they are working on from table rows or technical IDs.
-4. One business action is visually dominant at a normal state.
-5. `Lưu` preserves authored work; downstream commitment uses a separate action only when it is a genuine human business decision.
-6. Backend deterministic work remains internal rather than becoming extra operator ceremony.
-7. Evidence/history/support detail uses progressive disclosure unless it is directly needed for the current task.
-8. Vietnamese is authored as natural operational language, not translated from backend terminology.
-9. Normal body text is approximately 14–15 px, table text 13–14 px, labels 13–14 px, helper text 12–13 px, and normal desktop controls approximately 38–40 px; touch targets are approximately 44 px where practical.
-10. Use spacing, hierarchy and dividers before adding nested bordered cards.
-11. Export affordances may exist before XLSX/PDF contracts are finalized; do not freeze speculative file schemas while read models and templates are still moving.
-12. Green CI is necessary but not sufficient Product acceptance.
+Repository acceptance for ATLAS-MODEL-CONVERGENCE-01 is **56 / 56 PASS**.
 
-OPS v1 / Retool remains useful workflow evidence for explicit Save, fast search, dense practical tables, direct Vietnamese task language and familiar operator sequences. It is not architecture authority; do not copy direct SQL, JavaScript state authority, client-side calculations, hidden chained write authority or Retool component structure.
+Its certified component PRs are historical evidence only:
 
----
+- PR #259 — A07 typed SYSTEM_DISH command context — **closed as superseded by #258**.
+- PR #260 — A12 legacy Recipe issuance truth — **closed as superseded by #258**.
 
-## 6. Current technical/environment boundary
+The merged model through Procurement is:
 
-- React + TypeScript: connected Application UI
-- Supabase + PostgreSQL: authoritative backend and persistence
-- Supabase Auth: identity
-- PostgreSQL/RPC: authoritative validation, authorization, lifecycle, calculations, lineage, audit, idempotency and transaction integrity
-- GitHub: source of truth and bounded delivery workflow
-- Atlas Staging: separate hosted non-production environment
-- OPS v1 / Retool: retained operational continuity and workflow evidence
+| Area | Current authority |
+| --- | --- |
+| Dish availability | explicit governed fact |
+| Dish activation ceremony | legacy / not normal UI |
+| Canonical Recipe roots | generated by Dish creation |
+| Recipe content/version evidence | explicit |
+| Recipe readiness | derived |
+| Base-edit lock | derived from approved Menu use |
+| Effective BOM | derived by backend date/context resolution |
+| Change Order intent/history | explicit |
+| SYSTEM_DISH context | Dish + canonical School Type, never representative School |
+| Legacy issuance attribution | backend-shaped per revision; unknown stays unattributed |
+| Attendance defaults | generated working proposals |
+| Accepted Attendance/Pantry facts | explicit, including explicit zero/no-additions |
+| Planning readiness/currentness | derived |
+| Generated Need evidence | generated and persisted for reproducibility |
+| Confirmed Need | explicit human decision |
+| Supplier recommendation/rebalance | generated advisory proposal |
+| Accepted supplier splits | explicit human decision |
+| Allocation balance/staleness | derived |
+| PO drafts/successors | generated support |
+| PO freshness/release eligibility | derived |
+| PO release/official number | explicit external commitment |
 
-Read-only environment check on 11/08/2026:
-
-```text
-Atlas Staging rnzxmxiiqgtdevzregff
-migrations:              33
-atlas_api:               present
-atlas_api functions:     79
-
-Live OPS qnthofvccilhnefdcxnz
-atlas_api:               absent
-atlas_admin:             absent
-Atlas roles:             0
-```
-
-Atlas Staging is therefore not automatically assumed to match the current repository head. Hosted deployment remains a separate controlled action.
-
-The counts above are a dated historical observation rather than a claim that Staging matches repository `main`. The newer task-specific observation and its evidence limits are recorded in the [Atlas Model Convergence Staging runbook](runbooks/atlas-model-convergence-staging-readiness.md); deployment remains a separate controlled action.
-
-Live OPS remains a forbidden Atlas deployment target.
+Planning and Procurement production behavior was preserved during convergence. Warehouse has not started.
 
 ---
 
-## 7. Planning status
+## 4. Current operator workflow
 
-Current Planning governance and implementation:
-
-- D-034 — Atlas Modern Operations UI: visual direction.
-- D-035 — Workflow-First Operator UX: happy-path-first Application presentation.
-- D-036 — Planning Completion and Commitment Boundaries: source Save, deterministic preflight and atomic Need Generation boundary.
-- PLANNING-CONTRACT-01 — merged at `f8c5b36a1c9cf24d58f67bf2c82ed7c9d4715889`.
-- UI-QUALITY-02AB-UX — merged at `9818efe4ec1eda7b1b5879494a382921afc758b7`.
-- D-037 / UI-QUALITY-02C-B — merged through PR #189 at `e542e263e3bb672eb2967af0b3d54bfd8771df75`.
-- ATLAS-UI-STANDARD-02 — merged at `057a30ef30121fc50ef983acd91704d2bca8e82c` and governs first-user connected workbenches.
-- D-038 / UI-QUALITY-03A — merged through PR #191 at `0d66a3640811cfeac97d2f986b6c2a3d08da0a4b`.
-- UI-QUALITY-03B Recipe Change Order redesign — merged through PR #194 at `60316f59638e1c7c625700166e7c78d7b11e242a`.
-- UI-QUALITY-03C-A School default portions — merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; one compact inline School table submits only changed rows through one atomic backend Save.
-- UI-QUALITY-03C-B Ingredient/Supplier operator hardening — merged through PR #196 at `3376be46c9f061a91a662873faf67024fd50b233`.
-- PLANNING-UX-01B Menu/Attendance operator correction — merged through PR #197 at `80cdc2d`; default-derived Attendance now appears automatically for Menu-covered pairs and the manual setup action is removed.
-- PURCHASE-REVIEW-CONFIRM-RELEASE-01 — merged through PR #251 at `a398c22`; generated review remains advisory, exact saved supplier splits are explicit decisions, preparation composes supporting release/Handoff/draft work atomically, and each PO release is the supplier commitment.
-- RECIPE-EFFECTIVE-CONTRACT-01 — merged through PR #257 at `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`; canonical typed effective reads, effective targets, history, base-authoring context and atomic two-scope Dish copy are present in the repository.
-
-Current human-facing Planning intent:
+Planning:
 
 ```text
 Weekly Menu / Attendance / Pantry
@@ -191,71 +121,134 @@ automatic backend readiness/currentness
         ↓
 Tạo nhu cầu / Cập nhật nhu cầu
         ↓
-atomic backend generation + validation + release + Confirmed Need materialization
+atomic generation + bound evidence
         ↓
 Confirmed Need
 Edit quantities → Lưu → Chuyển sang lên đơn
 ```
 
-For Confirmed Need, backend readback authoritatively controls Save/Release eligibility; React may only restrict further. The current Procurement path keeps preliminary review advisory, stores exact supplier splits as explicit decisions, and uses one preparation command to compose existing release, Handoff, allocation-promotion and PO-draft boundaries. Each official PO release remains a separate commitment.
-
----
-
-## 8. Immediate roadmap
-
-Current Product/UI stabilization order:
+Procurement:
 
 ```text
-ATLAS-UI-STANDARD-02
-→ UI-QUALITY-03A Recipe / BOM first-user redesign (merged #191)
-→ UI-QUALITY-03B Recipe Change Order first-user redesign (merged #194)
-→ UI-QUALITY-03C-A School default portions (merged #195)
-→ UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening (merged #196)
-→ PLANNING-UX-01B Menu/Attendance operator correction (merged #197)
-→ PURCHASE-REVIEW-CONFIRM-RELEASE-01 (merged #251)
-→ RECIPE-EFFECTIVE-CONTRACT-01 backend contract (merged #257)
-→ ATLAS-MODEL-CONVERGENCE-01 integrated Draft candidate, 56/56 repository acceptance (#258)
-→ separately authorized hosted rehearsal
+Generated review (advisory)
+→ exact supplier allocation decision
+→ Save
+→ prepare purchase orders atomically
+→ review DRAFT PO
+→ release each supplier PO explicitly
 ```
 
-The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
+Recipe:
 
-The current Recipe contract separates an identity/reference catalog, typed base authoring, selected effective detail, and `Điều chỉnh`. New Dish creation returns one ACTIVE Dish plus the two canonical typed roots and no RecipeVersion. One `Tạo`/`Lưu` authors an eligible pre-use Recipe without a separate activation action. Normal Dish copy is one atomic backend command that snapshots both system-effective School-Type scopes at an explicit date into persisted DRAFT target versions; the prior browser-only form-copy interpretation is superseded. PostgreSQL uses one Dish-wide approved-Menu predicate and transaction boundary to deny base Dish/Recipe/BOM mutation after operational use, returning Change Order direction before business writes. SYSTEM_DISH Preview/Create/Supersede uses exact Dish + canonical School-Type context and never a representative School; School paths retain their exact School context. Effective history classifies issuance per immutable revision, so imported legacy revisions remain unattributed while Atlas-native corrections and cancellations show their own Actor/time. Nullable GENERAL and low-level lifecycle/copy APIs remain support compatibility and do not define normal readiness.
+```text
+Create Dish
+→ two canonical typed Recipe roots generated
+→ author/save Recipe
+→ approved Menu use derives normal base lock
+→ later change through Change Order
+```
 
-Draft PR #258 is the single integrated repository candidate. It contains the certified A07 and A12 migrations from Draft component PRs #259 and #260 plus the bounded Application adoption, with 56/56 acceptance rows passing locally. It remains unmerged and un-deployed. Atlas Staging was last verified at migration `20260904081048_master_data_creation_ux_02` with 0/4 new effective Recipe APIs, so hosted reconciliation remains a separate later gate.
-
-UI-QUALITY-03C-A merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`. It restores School defaults as one compact multi-School editing job and uses the Product Owner-approved `Edit → Xem thay đổi → Lưu` Application flow before one atomic `RMVP-01.v2` backend Save.
-
-UI-QUALITY-03C-B hardens the existing Ingredient/Supplier operator workflow without redesigning it. The separate tabs, search/filter catalogs, tables, detail drawers, Ingredient-contextual Supplier priorities and lifecycle confirmation remain. The hidden 60-Ingredient result cap is removed; Ingredient create/edit, Supplier create/edit and Supplier-priority changes require exact local Review before the existing authoritative `RMVP-01.v1` command. Formatting-only text, blank optional Supplier contacts, same catalog IDs and equivalent numeric `order_step` representations are canonical no-ops and never become Review/write evidence. A bounded Product correction restores private authoritative Ingredient Type and Ingredient Order Group catalogs, joins their IDs/display names through the existing shaped read, and changes the operator labels to `Nhóm đặt hàng` and `Mức làm tròn khi đặt hàng`. Existing public function names, capabilities and roles remain; no generic catalog framework, Planning behavior, XLSX, deployment, Atlas Staging, live OPS or Retool change is included.
-
-`DISH-RICE-01 — Menu-derived rice accompaniment` is recorded only for a later bounded Product/Planning contract after PLANNING-UX-01. Its operator concept is `Ăn kèm cơm`, distinct from Rice inside a Recipe/BOM. Menu + confirmed/current Attendance + the qualifying Dish fact should eventually derive one deterministic Rice accompaniment need, but per-meal deduplication, eligible Dish Types, rate authority, Atlas Rice Ingredient identity, correction/lock rules and fixed/manual Pantry double-count prevention remain unresolved. The illustrative `0.1 kg/portion` is not approved. UI-QUALITY-03C-B changes no Dish schema, Rice behavior, Planning calculation, Pantry behavior or XLSX/export implementation.
-
-PLANNING-UX-01B completed the bounded Menu/Attendance operator correction. Attendance and Confirmed Need XLSX-assisted bulk authoring remains deferred to later bounded contracts; Confirmed Need keeps `Chuyển sang lên đơn` as a separate business commitment.
-
-Menu-covered School/service-date pairs now expose default-derived working Attendance automatically. Persisted active Attendance overlays those defaults, including explicit zero; defaults fill only missing covered pairs. These visible defaults remain unconfirmed proposals until the operator reviews and uses the existing authoritative `Lưu`, and later default changes never rewrite persisted Attendance. The former manual `Tạo từ sĩ số mặc định` setup action is historical UI behavior, superseded by [PLANNING-UX-01B](implementation-tasks/TASK-PLANNING-UX-01B-menu-attendance-operator-correction.md).
-
-Atlas-wide typography and rhythm remain deferred to PLANNING-UX-01, after the complete Attendance → Menu → Need Generation → Confirmed Need route can be reviewed together.
-
-Further Procurement expansion, Warehouse, Production/QA and Dispatch expansion remain separately governed. The current school-catering allocation, preparation and PO-release contracts are already implemented and must not be described as deferred setup work.
+SYSTEM_DISH Change Orders use exact Dish + canonical School Type for Preview/Create/Supersede. School-specific paths retain exact School context.
 
 ---
 
-## 9. Complexity and validation discipline
+## 5. UI/UX and engineering discipline
 
-Do not design hypothetical capability families, lifecycle states, APIs, tables, abstractions, search frameworks, export frameworks or test frameworks merely because they may eventually be useful.
+Current UI rules:
 
-For cross-version backend consolidation or lifecycle-boundary changes, use the bounded integration discipline established by Planning, including affected SQL suites, browser-key journey verification and one ready-state Full Integration where warranted.
+1. A first-time operator should understand the job, work context and main action quickly.
+2. One business action is visually dominant at a normal state.
+3. `Lưu` preserves authored work; genuine downstream commitments remain separate explicit actions.
+4. Backend deterministic work stays internal instead of becoming operator ceremony.
+5. Evidence/history/support detail uses progressive disclosure unless needed for the current task.
+6. Vietnamese should read as natural operational language, not backend terminology.
+7. React may restrict an action further because of dirty/invalid/busy/unknown-outcome state, but may never promote an action the backend denies.
 
-UI-only work should use focused UI tests, typecheck, format/build, UI Review Export, accessibility/interaction review and the existing bounded CI appropriate to the changed surface.
+Engineering complexity is also subject to the model principle. Preserve necessary safeguards for concurrency, unknown outcomes and commitments, but do not turn every UI interaction into another protocol or add acceptance/test infrastructure without demonstrated risk.
 
-If a UI task reveals that the backend contract itself forces false human ceremony, stop the UI task and correct the workflow/business boundary instead of chaining lifecycle commands in React.
+**Hosted review/test data should be minimal and purpose-built.** Do not build a miniature copy of the full catering business model merely to exercise the UI. Reuse existing Staging identity/reference data where safe, and create only the smallest business facts required for the operator journey being reviewed. Missing canonical business data should be handled as a reconciliation need, not by inventing a larger synthetic seed graph.
 
-The objective is fewer correction loops and simpler operator work, not more testing or framework infrastructure.
+Storybook is developer/component evidence, not the preferred Product Owner review surface. Product review should use the persistent connected hosted Atlas Staging web app once the environment is reconciled and verified.
 
 ---
 
-## 10. Update rule
+## 6. Current environment boundary
 
-Keep this file concise and current. Update it when the authoritative baseline, delivery method, active roadmap, environment boundary or blocking Product decisions materially change.
+### Repository
 
-Historical recovery files, completed implementation records and old decisions remain historically accurate rather than being rewritten to match later methodology.
+`main`: `11408a0b0ed5d3938321c90f38fd8a2f9c1ad587`
+
+### Atlas Staging
+
+Project: `rnzxmxiiqgtdevzregff`
+
+Read-only inspection on 6 September 2026:
+
+```text
+migration tip:                    20260904081048_master_data_creation_ux_02
+new effective Recipe APIs:        0 / 4
+Atlas tables with RLS enabled:    107 / 107
+canonical School Types active:    2 / 2
+active Dishes:                    2
+canonical typed Recipe contexts:  0 / 4 ready roots
+legacy/general Recipe roots:      2
+synthetic-type Recipe roots:      1
+```
+
+Staging therefore remains **NOT READY** for the merged Recipe journey.
+
+The read-only inspection also found the managed Staging identity/foundation records already present, including one active Actor/Auth mapping, one active GLOBAL scope, the `atlas_staging_admin_planning_operator` role with its 19 reviewed capabilities, the managed synthetic School/customer/location/unit and the planning quantity policy. Do not reinstall or expand these merely to create more test data without a demonstrated need.
+
+Repository `main` contains five migrations newer than Staging through `20260906105509_recipe_legacy_issuance_read_01.sql`. Deployment and data reconciliation remain separately controlled actions.
+
+### Live OPS / Retool
+
+Live OPS project `qnthofvccilhnefdcxnz` is a forbidden Atlas deployment target and remains operational continuity only. Retool remains unchanged and is evidence, not Atlas architecture authority.
+
+---
+
+## 7. Immediate roadmap
+
+```text
+merged model convergence (#258, 56/56)
+→ Staging migration + Recipe-data reconciliation gate
+→ protected Staging deployment/verification when separately authorized
+→ persistent connected hosted Atlas web app
+→ Product Owner UI review on hosted app
+→ separate bounded UI/UX PR from observed findings
+→ connected Admin → Planning → Procurement rehearsal
+→ PLANNING-PROCUREMENT-FREEZE-01
+→ Warehouse receiving architecture/slice
+```
+
+Do not start another model-simplification audit now. The current repository model is aligned; the immediate risk is environment/documentation drift, not renewed domain over-modeling.
+
+Do not add further Recipe behavior until Staging parity/reconciliation is addressed unless a genuine correctness/security defect requires it.
+
+---
+
+## 8. Preferred delivery cycle for the next domain
+
+For new capabilities such as Warehouse:
+
+```text
+Mission / capability / domain ownership
+→ concrete operator job
+→ lightweight workflow/UI exploration
+→ genuine human decision boundary
+→ minimum contract
+→ authoritative backend
+→ connected hosted UI
+→ operator review
+→ next thin vertical slice
+```
+
+Do not build an entire backend domain before proving its operator command boundaries, and do not build an entire frontend domain with the intention of adding authority later.
+
+---
+
+## 9. Update rule
+
+Keep this file concise and current. Update it when the authoritative repository baseline, active roadmap, environment boundary or blocking Product decisions materially change.
+
+Historical implementation reports, acceptance artifacts and old decision execution notes remain historical evidence and should not be rewritten merely to make the past look like the current state.
