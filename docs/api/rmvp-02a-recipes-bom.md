@@ -27,12 +27,12 @@ Successful commands return affected aggregate IDs, the new aggregate version, ev
 
 ## Dish and Recipe-root commands
 
-| Command                | Capability                  | Expected version | Effect                                                                                                      |
-| ---------------------- | --------------------------- | ---------------: | ----------------------------------------------------------------------------------------------------------- |
-| `create_dish`          | `master_data.recipes.write` |              `1` | Creates one `DRAFT` Dish with unique normalized code and active `dish_type_id`.                             |
-| `update_dish`          | `master_data.recipes.write` |     Dish version | Updates bounded Dish attributes and active `dish_type_id`; stable code is immutable and there is no delete. |
-| `set_dish_lifecycle`   | `master_data.recipes.write` |     Dish version | Applies an allowed Dish lifecycle transition.                                                               |
-| `set_recipe_lifecycle` | `master_data.recipes.write` |   Recipe version | Activates or inactivates a Recipe root without rewriting history.                                           |
+| Command                | Capability                  | Expected version | Effect                                                                                                       |
+| ---------------------- | --------------------------- | ---------------: | ------------------------------------------------------------------------------------------------------------ |
+| `create_dish`          | `master_data.recipes.write` |              `1` | Atomically creates one `ACTIVE` Dish and its two active canonical typed Recipe roots, with no RecipeVersion. |
+| `update_dish`          | `master_data.recipes.write` |     Dish version | Updates bounded Dish attributes and active `dish_type_id`; stable code is immutable and there is no delete.  |
+| `set_dish_lifecycle`   | `master_data.recipes.write` |     Dish version | Applies an allowed Dish lifecycle transition.                                                                |
+| `set_recipe_lifecycle` | `master_data.recipes.write` |   Recipe version | Activates or inactivates a Recipe root without rewriting history.                                            |
 
 ## Recipe Version and BOM commands
 
@@ -43,13 +43,24 @@ Successful commands return affected aggregate IDs, the new aggregate version, ev
 | `replace_recipe_draft_composition`    | `master_data.recipes.write`    |        Recipe Version version | Atomically replaces the complete draft basis and line set.                      |
 | `validate_recipe_version`             | `master_data.recipes.validate` |        Recipe Version version | Materializes immutable Recipe Line Revisions and marks the version `VALIDATED`. |
 | `release_recipe_version_for_planning` | `master_data.recipes.release`  |        Recipe Version version | Releases validated composition and locks the prior release.                     |
-| `copy_recipe_version`                 | `master_data.recipes.write`    |           target Dish version | Copies materialized composition into a traceable target draft.                  |
+| `copy_recipe_version`                 | `master_data.recipes.write`    |           target Dish version | Copies one materialized Recipe Version for controlled/support callers.          |
 
 Draft replacement accepts at most 500 lines. `PRESENT` requires an active Ingredient, active Unit, and positive exact numeric quantity. `REMOVED` requires the exact predecessor revision, predecessor Ingredient and Unit, and zero quantity. Every previously present predecessor line must be retained or explicitly removed.
 
 Copy accepts only validated, released, or locked materialized source composition. It never copies a mutable draft and never validates or releases the target automatically.
 
-`dish_type_id` is authoritative for Menu eligibility. Create/update rejects an unknown or inactive type. Dish activation also requires an active mapped type. `dish_category` remains optional compatibility text and is never interpreted as the authoritative type.
+### `copy_dish_recipes` — normal Dish-level copy
+
+- Contract: `RECIPE-EFFECTIVE.v1`.
+- Capability: existing `master_data.recipes.write`; owner: `atlas_master_data_command_runtime`.
+- Required command payload: `source_dish_id`, `target_dish_id`, and explicit `as_of_date`; the standard command envelope also requires caller-stable `command_id`, `idempotency_key`, target Dish `expected_version`, timestamp, reason code, and nonblank reason note.
+- Supported v1 scopes are identified only by the active School-Type codes `v1-school-type-1` and `v1-school-type-2`, evaluated in that deterministic order. Display names and capitalization are not identity.
+
+For each supported scope, the backend requires the exact active typed Recipe root and exactly one current `RELEASED_FOR_PLANNING` Recipe Version. It resolves the source BOM at `as_of_date` through the closed system path `typed base Recipe -> SYSTEM_INGREDIENT -> SYSTEM_DISH`; it never applies `SCHOOL` or `SCHOOL_DISH`. A nullable GENERAL Recipe is never a fallback for this contract. Both source scopes must be `READY`, and both active typed target Recipe roots must already exist.
+
+The outer command is the sole transactional authority. It materializes both resolved PRESENT BOMs into new DRAFT Recipe Versions under the two pre-provisioned target roots, preserves prior version/line history, emits explicit removed-line successors when needed, and records source Recipe, date, system-adjustment lineage, outer command, and reason provenance. It does not invoke the retained support-level `copy_recipe_version` command and never copies source adjustment rows as target facts. Any missing scope, unfinished conflicting target version, reference failure, or write failure rolls back both scopes. Approved-Menu use of the target Dish returns the existing operational-lock rejection before writes. Exact replay returns the stored authoritative result; reusing an idempotency key with changed request content returns `IDEMPOTENCY_CONFLICT`.
+
+`dish_type_id` is authoritative for Menu eligibility. Create/update rejects an unknown or inactive type. Normal creation acquires a normalized-name transaction lock, and the partial unique index remains the final race-safe guard against duplicate active Dish names. The support lifecycle command also requires an active mapped type when activating a historical row. `dish_category` remains optional compatibility text and is never interpreted as the authoritative type.
 
 ## Workbook import command
 
@@ -101,6 +112,17 @@ replaying creation returns the original Dish identity and code readback. The cod
 does not derive from the editable Dish name. Explicit invalid/null metadata is
 still rejected rather than interpreted as omission.
 
+After authorization and replay resolution, creation resolves the active canonical
+School Types by stable code, transaction-locks their canonical identities, and
+inserts the Dish plus exactly one active Recipe root for each code in the same
+transaction. A missing/inactive canonical type or either root-insert failure rolls
+back the entire creation. No RecipeVersion is created. Successful
+`affected_aggregate_ids` includes the Dish ID and an ordered `recipe_ids` array
+with each `school_type_id`, `school_type_code`, and server-generated `recipe_id`.
+The exactly-two invariant applies to newly command-created Dishes and Dishes
+treated as valid by `RECIPE-EFFECTIVE.v1`; this change does not add a global
+constraint or rewrite legacy rows.
+
 Controlled callers may continue supplying normalized unique codes and valid
 ordering and explicit `requires_need_generation: true`. Explicit false returns
 `VALIDATION_FAILED` with `payload.requires_need_generation` field feedback; it is
@@ -108,12 +130,32 @@ never silently coerced. Local RMVP-02A, RMVP-02B, and Planning assembly verifier
 retain the explicit-code path. The historical column remains stored, but it is
 non-authoritative for demand participation; existing values are not rewritten.
 
-Creation remains `DRAFT`; the existing initial Recipe Save activates an eligible
-Dish and releases its Recipe atomically. Newly created active Dishes participate
-in Need Generation when used on an approved Menu with a valid released Recipe.
-Normal operators make no separate participation decision. Inactive Dishes remain
-unavailable for normal future planning; committed sources retain explicit
-inactive-Dish blockers and correction behavior, never silent demand removal.
+Normal creation persists the Dish as `ACTIVE` at version 1 and creates both
+canonical roots without creating a RecipeVersion. Initial and later Recipe Saves
+author RecipeVersion evidence only: they do not change Dish status, increment the
+Dish version, or emit `DishActivated`. Historical `DRAFT` remains schema-compatible
+for controlled support; normal authoring does not depend on a DRAFT-to-ACTIVE
+transition. `INACTIVE` is support/archive availability, not a Recipe editing
+state. Newly created active Dishes participate in Need Generation only when used
+on an approved Menu with a valid released Recipe. Committed sources retain
+explicit inactive-Dish blockers and correction behavior, never silent demand
+removal.
+
+For `RECIPE-EFFECTIVE.v1`, the canonical typed root is also the base-authoring
+context. An unlocked root with no RecipeVersion, a DRAFT or VALIDATED version, or
+an unlocked released version remains `EDITABLE_BASE`; strict effective readiness
+is not a prerequisite for first-time authoring. Once approved-Menu evidence locks
+the Dish, the state is `LOCKED_CHANGE_ORDER` and the strict typed selector must be
+`READY` before Change Order creation is advertised. Legacy nullable GENERAL or
+synthetic Recipe rows remain pre-cutover compatibility evidence and are ignored by
+the new contract until separately remediated.
+
+This is a derived operator model: the authoritative Dish remains `ACTIVE` in
+both editable and locked states. Recipe readiness comes from released typed
+Recipe evidence, while editability comes only from
+`atlas_core.uiq03a_dish_used_operationally(dish_id)` and approved Weekly Menu
+evidence. There is no persisted readiness or Recipe-lock flag and no normal
+Activate/Deactivate UI dependency.
 
 ## Additive RMVP-02A.v2 creation-and-lock contract
 
@@ -185,6 +227,6 @@ Both v2 commands use fixed empty `search_path`, least-privilege runtime ownershi
 
 ### Dish-wide lock coverage
 
-The single canonical predicate is `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and every relevant base Recipe/BOM mutation acquire the same deterministic transaction lock before the snapshot or mutation decision. Once the predicate is true, `create_recipe_draft`, `create_recipe_successor_version`, `replace_recipe_draft_composition`, `validate_recipe_version`, `release_recipe_version_for_planning`, `save_recipe`, `release_recipe`, `copy_recipe_version`, and any `apply_recipe_import` scope targeting that Dish return `INVARIANT_VIOLATION` with the safe Điều chỉnh direction before business writes.
+The single canonical predicate is `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and every relevant base Recipe/BOM mutation acquire the same deterministic transaction lock before the snapshot or mutation decision. Once the predicate is true, `create_recipe_draft`, `create_recipe_successor_version`, `replace_recipe_draft_composition`, `validate_recipe_version`, `release_recipe_version_for_planning`, `save_recipe`, `release_recipe`, `copy_recipe_version`, `copy_dish_recipes`, and any `apply_recipe_import` scope targeting that Dish return `INVARIANT_VIOLATION` with the safe Điều chỉnh direction before business writes.
 
-`update_dish`, `set_dish_lifecycle`, and `set_recipe_lifecycle` are not part of this generic composition lock. They retain the bounded metadata and lifecycle semantics, capability checks, optimistic concurrency, lifecycle validation, event, audit, and immutable-history guarantees already accepted in RMVP-02A.v1. The application still exposes no ordinary editing of existing catalog records, and this correction adds no Dish metadata Change Order. RMVP-02B adjustment APIs remain unchanged.
+`update_dish`, the support/legacy `set_dish_lifecycle`, and `set_recipe_lifecycle` are not part of this generic composition lock. They retain the bounded metadata and lifecycle semantics, capability checks, optimistic concurrency, lifecycle validation, event, audit, and immutable-history guarantees already accepted in RMVP-02A.v1. Normal Recipe UI does not depend on Dish lifecycle controls. The application still exposes no ordinary editing of existing catalog records, and this correction adds no Dish metadata Change Order. RMVP-02B adjustment APIs remain unchanged.

@@ -26,8 +26,14 @@
     "school_types": [
       {
         "legacy_id": "school-type-primary",
-        "school_type_code": "primary",
+        "school_type_code": "v1-school-type-1",
         "school_type_name": "Tiểu học",
+        "school_type_status": "ACTIVE"
+      },
+      {
+        "legacy_id": "school-type-secondary",
+        "school_type_code": "v1-school-type-2",
+        "school_type_name": "Trung học",
         "school_type_status": "ACTIVE"
       }
     ],

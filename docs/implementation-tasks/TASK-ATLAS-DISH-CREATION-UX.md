@@ -43,8 +43,9 @@ Signatures, owners, privileges, RLS, authorization, receipts and audit remain
 unchanged. No table/column removal or historical row backfill occurs. Remaining
 readback/import and legacy Recipe-authoring references to the column are outside
 this bounded demand-participation change and cannot exclude a valid released
-Recipe from demand. Creation remains DRAFT; initial Recipe Save activation stays
-unchanged.
+Recipe from demand. The later approved RECIPE-EFFECTIVE lifecycle correction
+supersedes the original creation note: normal creation is `ACTIVE` at version 1,
+and Recipe Save does not mutate Dish lifecycle.
 
 Affected contracts: RMVP-02A creation, RMVP-02B effective composition, RMVP-03A
 Menu readiness, RMVP-04 daily generation, and the Planning-domain persistence

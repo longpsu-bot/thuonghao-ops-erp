@@ -1,4 +1,10 @@
 import type { AtlasRpcResult, JsonValue } from "../connection/atlasRpc";
+import type {
+  EffectiveCompositionResult,
+  EffectiveTargetLine,
+  RecipeAdjustmentAction,
+  RecipeAdjustmentScope,
+} from "../recipe-adjustments/recipeAdjustmentModel";
 
 export type DishStatus = "DRAFT" | "ACTIVE" | "INACTIVE";
 export type RecipeStatus = "ACTIVE" | "INACTIVE";
@@ -137,6 +143,83 @@ export type RecipeWorkbenchData = {
   selected_recipe: RecipeWorkflowSelection;
 };
 
+export type EffectiveHistoryChangeOrder = {
+  adjustment_id: string;
+  revision_id: string;
+  revision_number: number;
+  revision_status: "ACTIVE" | "SUPERSEDED" | "CANCELLED";
+  business_event_kind: "CREATED" | "CORRECTED" | "CANCELLED";
+  scope_kind: RecipeAdjustmentScope;
+  action_kind: RecipeAdjustmentAction;
+  effective_from: string;
+  effective_to: string | null;
+  reason_code: string;
+  reason: string;
+  issuer: string;
+  issued_at: string;
+};
+
+export type EffectiveHistoryPeriod = {
+  period_from: string;
+  period_to: string | null;
+  resolution_status: "READY" | "BLOCKED";
+  effective_bom: EffectiveTargetLine[];
+  change_orders: EffectiveHistoryChangeOrder[];
+  warnings: { code: string; message: string }[];
+  blockers: { code: string; message: string; [key: string]: JsonValue }[];
+};
+
+export type DishRecipeOperatorWorkbench = {
+  dish: {
+    dish_id: string;
+    dish_name: string;
+    dish_type_name: string | null;
+    dish_status: DishStatus;
+  };
+  context_kind: "SYSTEM_SCHOOL_TYPE" | "SCHOOL";
+  as_of_date: string;
+  school_id: string | null;
+  school_type_id: string;
+  selected_recipe: EffectiveCompositionResult["selected_recipe"];
+  basis_portions: number | null;
+  base_authoring: RecipeWorkflowSelection;
+  effective_readiness: {
+    status: "READY" | "BLOCKED";
+    blockers: { code: string; message: string; [key: string]: JsonValue }[];
+    warnings: { code: string; message: string }[];
+  };
+  editable_state: "EDITABLE_BASE" | "LOCKED_CHANGE_ORDER";
+  is_editable: boolean;
+  is_operationally_locked: boolean;
+  current_effective_bom: EffectiveTargetLine[];
+  school_exception_count: number;
+  allowed_actions: ("CREATE_CHANGE_ORDER" | "COPY_DISH_RECIPES")[];
+  blockers: { code: string; message: string; [key: string]: JsonValue }[];
+  warnings: { code: string; message: string }[];
+  history_periods: EffectiveHistoryPeriod[];
+};
+
+export type DishRecipeCopyScopeResult = {
+  school_type_id: string;
+  school_type_code: "v1-school-type-1" | "v1-school-type-2";
+  scope_name: string;
+  status: "COPIED";
+  source_recipe_id: string;
+  source_recipe_version_id: string;
+  source_selection_scope: "SCHOOL_TYPE";
+  target_recipe_id: string;
+  target_recipe_version_id: string;
+};
+
+export type DishRecipeCopyResult = {
+  success: true;
+  contract_version: "RECIPE-EFFECTIVE.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_status: string;
+  scope_results: DishRecipeCopyScopeResult[];
+};
+
 export const emptyRecipeWorkbench = (): RecipeWorkbenchData => ({
   dish_types: [],
   dishes: [],
@@ -177,6 +260,83 @@ function responseArray<T>(
   if (result.kind !== "success") return null;
   const value = source[key];
   return Array.isArray(value) ? (value as T[]) : null;
+}
+
+function isRecord(
+  value: JsonValue | undefined,
+): value is Record<string, JsonValue> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isEffectiveLine(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.ingredient_id === "string" &&
+    typeof value.ingredient_name === "string" &&
+    typeof value.quantity_per_basis === "number" &&
+    typeof value.unit_id === "string" &&
+    typeof value.unit_name === "string" &&
+    (value.target_kind === "RECIPE_LINE" ||
+      value.target_kind === "ADJUSTMENT_LINE") &&
+    typeof value.target_id === "string" &&
+    typeof value.source_layer === "string"
+  );
+}
+
+function isHistoryPeriod(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.period_from === "string" &&
+    (typeof value.period_to === "string" || value.period_to === null) &&
+    (value.resolution_status === "READY" ||
+      value.resolution_status === "BLOCKED") &&
+    Array.isArray(value.effective_bom) &&
+    value.effective_bom.every(isEffectiveLine) &&
+    Array.isArray(value.change_orders) &&
+    Array.isArray(value.warnings) &&
+    Array.isArray(value.blockers)
+  );
+}
+
+function isRecipeWorkflowSelection(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    (typeof value.dish_id === "string" || value.dish_id === null) &&
+    (typeof value.school_type_id === "string" ||
+      value.school_type_id === null) &&
+    (typeof value.recipe_id === "string" || value.recipe_id === null) &&
+    (typeof value.recipe_version_id === "string" ||
+      value.recipe_version_id === null) &&
+    (typeof value.expected_version === "number" ||
+      value.expected_version === null) &&
+    (typeof value.in_use_recipe_version_id === "string" ||
+      value.in_use_recipe_version_id === null) &&
+    typeof value.locked_for_normal_editing === "boolean" &&
+    (typeof value.lock_reason === "string" || value.lock_reason === null) &&
+    typeof value.basis_portions === "number" &&
+    Array.isArray(value.composition) &&
+    isRecord(value.allowed_actions) &&
+    typeof value.allowed_actions.save_recipe === "boolean" &&
+    typeof value.allowed_actions.release_recipe === "boolean" &&
+    isRecord(value.disabled_reason_codes) &&
+    isRecord(value.disabled_reasons)
+  );
+}
+
+function isCopyScopeResult(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.school_type_id === "string" &&
+    (value.school_type_code === "v1-school-type-1" ||
+      value.school_type_code === "v1-school-type-2") &&
+    typeof value.scope_name === "string" &&
+    value.status === "COPIED" &&
+    typeof value.source_recipe_id === "string" &&
+    typeof value.source_recipe_version_id === "string" &&
+    value.source_selection_scope === "SCHOOL_TYPE" &&
+    typeof value.target_recipe_id === "string" &&
+    typeof value.target_recipe_version_id === "string"
+  );
 }
 
 export function recipeWorkbenchFromResult(
@@ -235,6 +395,80 @@ export function recipeWorkbenchFromResult(
     units,
     selected_recipe: selectedRecipe as unknown as RecipeWorkflowSelection,
   };
+}
+
+export function dishRecipeOperatorWorkbenchFromResult(
+  result: AtlasRpcResult,
+): DishRecipeOperatorWorkbench | null {
+  if (result.kind !== "success" || !isRecord(result.response.workbench))
+    return null;
+  const source = result.response.workbench;
+  if (
+    !isRecord(source.dish) ||
+    typeof source.dish.dish_id !== "string" ||
+    typeof source.dish.dish_name !== "string" ||
+    (source.context_kind !== "SYSTEM_SCHOOL_TYPE" &&
+      source.context_kind !== "SCHOOL") ||
+    typeof source.as_of_date !== "string" ||
+    typeof source.school_type_id !== "string" ||
+    (typeof source.basis_portions !== "number" &&
+      source.basis_portions !== null) ||
+    !isRecipeWorkflowSelection(source.base_authoring) ||
+    !isRecord(source.effective_readiness) ||
+    (source.effective_readiness.status !== "READY" &&
+      source.effective_readiness.status !== "BLOCKED") ||
+    !Array.isArray(source.effective_readiness.blockers) ||
+    !Array.isArray(source.effective_readiness.warnings) ||
+    (source.editable_state !== "EDITABLE_BASE" &&
+      source.editable_state !== "LOCKED_CHANGE_ORDER") ||
+    typeof source.is_editable !== "boolean" ||
+    typeof source.is_operationally_locked !== "boolean" ||
+    typeof source.school_exception_count !== "number" ||
+    !Array.isArray(source.current_effective_bom) ||
+    !source.current_effective_bom.every(isEffectiveLine) ||
+    !Array.isArray(source.allowed_actions) ||
+    !Array.isArray(source.blockers) ||
+    !Array.isArray(source.warnings) ||
+    !Array.isArray(source.history_periods) ||
+    !source.history_periods.every(isHistoryPeriod)
+  )
+    return null;
+  const allowedActions = source.allowed_actions as JsonValue[];
+  const baseAuthoring =
+    source.base_authoring as unknown as RecipeWorkflowSelection;
+  if (
+    !allowedActions.every(
+      (action) =>
+        action === "CREATE_CHANGE_ORDER" || action === "COPY_DISH_RECIPES",
+    ) ||
+    (source.editable_state === "EDITABLE_BASE" &&
+      (source.is_operationally_locked ||
+        source.is_editable !== baseAuthoring.allowed_actions.save_recipe ||
+        allowedActions.includes("CREATE_CHANGE_ORDER"))) ||
+    (source.editable_state === "LOCKED_CHANGE_ORDER" &&
+      (!source.is_operationally_locked ||
+        source.is_editable ||
+        allowedActions.includes("COPY_DISH_RECIPES")))
+  )
+    return null;
+  return source as unknown as DishRecipeOperatorWorkbench;
+}
+
+export function dishRecipeCopyFromResult(
+  result: AtlasRpcResult,
+): DishRecipeCopyResult | null {
+  if (result.kind !== "success") return null;
+  const source = result.response;
+  if (
+    source.contract_version !== "RECIPE-EFFECTIVE.v1" ||
+    typeof source.command_id !== "string" ||
+    typeof source.correlation_id !== "string" ||
+    typeof source.idempotency_status !== "string" ||
+    !Array.isArray(source.scope_results) ||
+    !source.scope_results.every(isCopyScopeResult)
+  )
+    return null;
+  return source as DishRecipeCopyResult;
 }
 
 export function recipeResultMessage(result: AtlasRpcResult): string {

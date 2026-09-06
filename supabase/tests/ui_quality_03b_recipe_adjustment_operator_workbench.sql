@@ -66,8 +66,8 @@ select ok(
 
 select is(
   (select count(*) from atlas_core.capabilities),
-  27::bigint,
-  'the v2 Ingredient enrichment introduces no new capability'
+  29::bigint,
+  'the operator enrichment introduces no capability beyond the current catalog'
 );
 
 insert into atlas_core.actors (

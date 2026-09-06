@@ -227,18 +227,18 @@ async function main() {
     }),
   );
   const dishId = createdDish.affected_aggregate_ids.dish_id;
-  await invoke(
-    client,
-    "set_dish_lifecycle",
-    recipeCommandRequest(subject, 1, "RMVP02B_ACCEPT_ACTIVATE_DISH", {
-      dish_id: dishId,
-      dish_status: "ACTIVE",
-    }),
+  const createdDishReadback = createdDish.authoritative_readback.dishes.find(
+    (item) => item.dish_id === dishId,
+  );
+  assert(
+    createdDishReadback?.dish_status === "ACTIVE" &&
+      createdDishReadback.version === 1,
+    "RMVP-02B requires create_dish to return an ACTIVE version-1 Dish.",
   );
   const draft = await invoke(
     client,
     "create_recipe_draft",
-    recipeCommandRequest(subject, 2, "RMVP02B_ACCEPT_CREATE_RECIPE", {
+    recipeCommandRequest(subject, 1, "RMVP02B_ACCEPT_CREATE_RECIPE", {
       dish_id: dishId,
       school_type_id: null,
       basis_portions: 100,

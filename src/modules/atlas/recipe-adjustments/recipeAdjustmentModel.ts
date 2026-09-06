@@ -120,10 +120,37 @@ export type RecipeAdjustmentOperatorRecord = {
   adjustment_line_id: string | null;
   temporal_state: RecipeAdjustmentTemporalState;
   temporal_state_date: string | null;
+  is_effective_now: boolean;
   display_revision: RecipeAdjustmentOperatorRevision;
   content_revision: RecipeAdjustmentOperatorRevision;
   command_revision: RecipeAdjustmentOperatorRevision;
   history: RecipeAdjustmentOperatorRevision[];
+};
+
+export type EffectiveTargetLine = {
+  ingredient_id: string;
+  ingredient_name: string;
+  quantity_per_basis: number;
+  unit_id: string;
+  unit_name: string;
+  target_kind: "RECIPE_LINE" | "ADJUSTMENT_LINE";
+  target_recipe_line_id: string | null;
+  adjustment_line_id: string | null;
+  target_id: string;
+  source_layer: string;
+  lineage?: Record<string, JsonValue>[];
+};
+
+export type EffectiveTargetContext = {
+  as_of_date: string;
+  dish_id: string;
+  school_id: string | null;
+  school_type_id: string | null;
+  selected_recipe: EffectiveCompositionResult["selected_recipe"];
+  basis_portions: number | null;
+  effective_lines: EffectiveTargetLine[];
+  warnings: { code: string; message: string }[];
+  blockers: { code: string; message: string; [key: string]: JsonValue }[];
 };
 
 export type RecipeAdjustmentWorkbenchData = {
@@ -182,7 +209,7 @@ export type EffectiveCompositionLine = {
 export type EffectiveCompositionResult = {
   status: "READY" | "BLOCKED";
   as_of_date: string;
-  school_id: string;
+  school_id: string | null;
   dish_id: string;
   historical: boolean;
   selected_recipe: {
@@ -230,6 +257,21 @@ function isRecord(
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isEffectiveTargetLine(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.ingredient_id === "string" &&
+    typeof value.ingredient_name === "string" &&
+    typeof value.quantity_per_basis === "number" &&
+    typeof value.unit_id === "string" &&
+    typeof value.unit_name === "string" &&
+    (value.target_kind === "RECIPE_LINE" ||
+      value.target_kind === "ADJUSTMENT_LINE") &&
+    typeof value.target_id === "string" &&
+    typeof value.source_layer === "string"
+  );
+}
+
 export function adjustmentWorkbenchFromResult(
   result: AtlasRpcResult,
 ): RecipeAdjustmentWorkbenchData | null {
@@ -257,7 +299,38 @@ export function effectiveCompositionFromResult(
 ): EffectiveCompositionResult | null {
   if (result.kind !== "success" || !isRecord(result.response.resolution))
     return null;
-  return result.response.resolution as unknown as EffectiveCompositionResult;
+  const source = result.response.resolution;
+  if (
+    (source.status !== "READY" && source.status !== "BLOCKED") ||
+    typeof source.as_of_date !== "string" ||
+    typeof source.dish_id !== "string" ||
+    typeof source.historical !== "boolean" ||
+    !Array.isArray(source.lines) ||
+    !Array.isArray(source.warnings) ||
+    !Array.isArray(source.blockers)
+  )
+    return null;
+  return source as unknown as EffectiveCompositionResult;
+}
+
+export function effectiveTargetContextFromResult(
+  result: AtlasRpcResult,
+): EffectiveTargetContext | null {
+  if (result.kind !== "success" || !isRecord(result.response.target_context))
+    return null;
+  const source = result.response.target_context;
+  if (
+    typeof source.as_of_date !== "string" ||
+    typeof source.dish_id !== "string" ||
+    !Array.isArray(source.effective_lines) ||
+    !source.effective_lines.every(isEffectiveTargetLine) ||
+    !Array.isArray(source.warnings) ||
+    !Array.isArray(source.blockers) ||
+    (typeof source.basis_portions !== "number" &&
+      source.basis_portions !== null)
+  )
+    return null;
+  return source as unknown as EffectiveTargetContext;
 }
 
 export function adjustmentPreviewFromResult(

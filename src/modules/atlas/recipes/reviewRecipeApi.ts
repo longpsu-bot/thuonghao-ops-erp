@@ -6,6 +6,7 @@ import type {
 } from "../connection/atlasRpc";
 import type { AtlasReviewScenario } from "../review/reviewMode";
 import type {
+  DishRecipeCopyCommandRequest,
   RecipeApi,
   RecipeCommandRequest,
   RecipeWorkflowCommandRequest,
@@ -25,12 +26,17 @@ const ids = {
   dish: "10000000-0000-4000-8000-000000000001",
   dish2: "10000000-0000-4000-8000-000000000002",
   recipe: "20000000-0000-4000-8000-000000000001",
+  recipeSecondary: "20000000-0000-4000-8000-000000000002",
+  dish2Recipe: "20000000-0000-4000-8000-000000000003",
+  dish2RecipeSecondary: "20000000-0000-4000-8000-000000000004",
   version: "30000000-0000-4000-8000-000000000001",
+  versionSecondary: "30000000-0000-4000-8000-000000000002",
   ingredient: "40000000-0000-4000-8000-000000000001",
   ingredient2: "40000000-0000-4000-8000-000000000002",
   ingredient3: "40000000-0000-4000-8000-000000000003",
   unit: "50000000-0000-4000-8000-000000000001",
   schoolType: "60000000-0000-4000-8000-000000000001",
+  schoolTypeSecondary: "60000000-0000-4000-8000-000000000002",
   dishTypeSoup: "80000000-0000-4000-8000-000000000001",
   dishTypeSavory: "80000000-0000-4000-8000-000000000002",
 };
@@ -99,7 +105,34 @@ function fixtures(): RecipeWorkbenchData {
       {
         recipe_id: ids.recipe,
         dish_id: ids.dish,
-        school_type_id: null,
+        school_type_id: ids.schoolType,
+        recipe_status: "ACTIVE",
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        recipe_id: ids.recipeSecondary,
+        dish_id: ids.dish,
+        school_type_id: ids.schoolTypeSecondary,
+        recipe_status: "ACTIVE",
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        recipe_id: ids.dish2Recipe,
+        dish_id: ids.dish2,
+        school_type_id: ids.schoolType,
+        recipe_status: "ACTIVE",
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        recipe_id: ids.dish2RecipeSecondary,
+        dish_id: ids.dish2,
+        school_type_id: ids.schoolTypeSecondary,
         recipe_status: "ACTIVE",
         version: 1,
         created_at: now,
@@ -147,12 +180,58 @@ function fixtures(): RecipeWorkbenchData {
           },
         ],
       },
+      {
+        recipe_version_id: ids.versionSecondary,
+        recipe_id: ids.recipeSecondary,
+        version_number: 1,
+        predecessor_recipe_version_id: null,
+        basis_portions: 100,
+        recipe_version_status: "RELEASED_FOR_PLANNING",
+        version: 1,
+        source_evidence: { source_kind: "MANUAL" },
+        created_by_actor_id: actor,
+        created_at: now,
+        validated_by_actor_id: actor,
+        validated_at: now,
+        released_by_actor_id: actor,
+        released_at: now,
+        locked_by_actor_id: null,
+        locked_at: null,
+        composition: [
+          {
+            recipe_line_id: "70000000-0000-4000-8000-000000000003",
+            predecessor_recipe_line_revision_id: null,
+            ingredient_id: ids.ingredient,
+            quantity_per_basis: 27,
+            unit_id: ids.unit,
+            line_disposition: "PRESENT",
+            operational_note: "Khẩu phần Trung học.",
+            line_code: "bi-do-trung-hoc",
+          },
+          {
+            recipe_line_id: "70000000-0000-4000-8000-000000000004",
+            predecessor_recipe_line_revision_id: null,
+            ingredient_id: ids.ingredient2,
+            quantity_per_basis: 10,
+            unit_id: ids.unit,
+            line_disposition: "PRESENT",
+            operational_note: null,
+            line_code: "thit-bam-trung-hoc",
+          },
+        ],
+      },
     ],
     school_types: [
       {
         school_type_id: ids.schoolType,
-        school_type_code: "tieu-hoc",
-        school_type_name: "Tiểu học",
+        school_type_code: "v1-school-type-1",
+        school_type_name: "TIỂU HỌC",
+        school_type_status: "ACTIVE",
+      },
+      {
+        school_type_id: ids.schoolTypeSecondary,
+        school_type_code: "v1-school-type-2",
+        school_type_name: "TRUNG HỌC",
         school_type_status: "ACTIVE",
       },
     ],
@@ -186,7 +265,7 @@ function fixtures(): RecipeWorkbenchData {
     ],
     selected_recipe: {
       dish_id: ids.dish,
-      school_type_id: null,
+      school_type_id: ids.schoolType,
       recipe_id: ids.recipe,
       recipe_version_id: ids.version,
       expected_version: 1,
@@ -212,6 +291,48 @@ function fixtures(): RecipeWorkbenchData {
 }
 
 const clone = <T>(value: T): T => structuredClone(value);
+const effectiveLines = (
+  data: RecipeWorkbenchData,
+  version: RecipeVersionRecord,
+  schoolSpecific: boolean,
+) =>
+  version.composition
+    .filter((line) => line.line_disposition === "PRESENT")
+    .map((line, index) => {
+      const ingredient = data.ingredients.find(
+        (item) => item.ingredient_id === line.ingredient_id,
+      );
+      const unit = data.units.find((item) => item.unit_id === line.unit_id);
+      return {
+        ingredient_id: line.ingredient_id,
+        ingredient_name: ingredient?.ingredient_name ?? "Nguyên liệu xem thử",
+        quantity_per_basis:
+          schoolSpecific && index === 0
+            ? line.quantity_per_basis + 2
+            : line.quantity_per_basis,
+        unit_id: line.unit_id,
+        unit_name: unit?.unit_name ?? "Đơn vị xem thử",
+        target_kind: "RECIPE_LINE" as const,
+        target_recipe_line_id: line.recipe_line_id,
+        adjustment_line_id: null,
+        target_id: line.recipe_line_id,
+        source_layer:
+          schoolSpecific && index === 0
+            ? "SCHOOL_DISH"
+            : "RELEASED_RECIPE_VERSION",
+        lineage:
+          schoolSpecific && index === 0
+            ? [
+                {
+                  adjustment_id: "90000000-0000-4000-8000-000000000001",
+                  revision_id: "91000000-0000-4000-8000-000000000001",
+                  scope_kind: "SCHOOL_DISH",
+                  action_kind: "ADJUST_QUANTITY",
+                },
+              ]
+            : [],
+      };
+    });
 const success = (data: Record<string, JsonValue>): AtlasRpcResult => ({
   kind: "success",
   response: { success: true, ...data } as AtlasSuccessEnvelope,
@@ -346,6 +467,134 @@ export function createReviewRecipeApi(
         );
       return Promise.resolve(blocked ?? success(clone(data)));
     },
+    getEffectiveWorkbench(
+      _authSubject,
+      _correlationId,
+      asOfDate,
+      dishId,
+      context,
+    ) {
+      if (scenario === "loading")
+        return new Promise<AtlasRpcResult>(() => undefined);
+      const blocked = blockedRead();
+      const dish = data.dishes.find((item) => item.dish_id === dishId);
+      const locked = dishId === ids.dish;
+      const schoolTypeId =
+        context.kind === "system" ? context.schoolTypeId : ids.schoolType;
+      const recipe = data.recipes.find(
+        (item) =>
+          item.dish_id === dishId && item.school_type_id === schoolTypeId,
+      );
+      const version = data.recipe_versions.find(
+        (item) =>
+          item.recipe_id === recipe?.recipe_id &&
+          item.recipe_version_status === "RELEASED_FOR_PLANNING",
+      );
+      const schoolSpecific = context.kind === "school";
+      const ready = Boolean(version);
+      const lines = version
+        ? effectiveLines(data, version, schoolSpecific)
+        : [];
+      const blockers = ready
+        ? []
+        : [
+            {
+              code: "RECIPE_SELECTION_BLOCKED",
+              message: "Chưa có công thức typed đã phát hành.",
+            },
+          ];
+      return Promise.resolve(
+        blocked ??
+          success({
+            workbench: {
+              dish: {
+                dish_id: dishId,
+                dish_name: dish?.dish_name ?? "Món ăn xem thử",
+                dish_type_name: dish?.dish_type_name ?? null,
+                dish_status: dish?.dish_status ?? "ACTIVE",
+              },
+              context_kind:
+                context.kind === "system" ? "SYSTEM_SCHOOL_TYPE" : "SCHOOL",
+              as_of_date: asOfDate,
+              school_id: context.kind === "school" ? context.schoolId : null,
+              school_type_id: schoolTypeId,
+              selected_recipe: version
+                ? {
+                    dish_id: dishId,
+                    recipe_id: version.recipe_id,
+                    recipe_version_id: version.recipe_version_id,
+                    selection_scope: "SCHOOL_TYPE",
+                    basis_portions: version.basis_portions,
+                  }
+                : null,
+              basis_portions: version?.basis_portions ?? null,
+              base_authoring: {
+                dish_id: dishId,
+                school_type_id: schoolTypeId,
+                recipe_id: recipe?.recipe_id ?? null,
+                recipe_version_id: version?.recipe_version_id ?? null,
+                expected_version: version?.version ?? dish?.version ?? null,
+                in_use_recipe_version_id: version?.recipe_version_id ?? null,
+                business_status: locked
+                  ? "LOCKED"
+                  : version
+                    ? "AVAILABLE"
+                    : "NOT_SAVED",
+                locked_for_normal_editing: locked,
+                lock_reason: locked
+                  ? "Món này đã có trong thực đơn đã duyệt."
+                  : null,
+                basis_portions: 100,
+                composition: clone(version?.composition ?? []),
+                allowed_actions: {
+                  save_recipe: !locked,
+                  release_recipe: false,
+                },
+                disabled_reason_codes: {
+                  save_recipe: locked ? "SAVE_OPERATIONALLY_LOCKED" : null,
+                  release_recipe: locked
+                    ? "RELEASE_ALREADY_IN_USE"
+                    : "RELEASE_SAVE_REQUIRED",
+                },
+                disabled_reasons: {
+                  save_recipe: locked
+                    ? "Muốn thay đổi công thức, hãy dùng Điều chỉnh."
+                    : null,
+                  release_recipe: locked
+                    ? "Công thức đã sẵn sàng cho Lập nhu cầu."
+                    : "Hãy lưu công thức trước.",
+                },
+              },
+              effective_readiness: {
+                status: ready ? "READY" : "BLOCKED",
+                blockers,
+                warnings: [],
+              },
+              editable_state: locked ? "LOCKED_CHANGE_ORDER" : "EDITABLE_BASE",
+              is_editable: !locked,
+              is_operationally_locked: locked,
+              current_effective_bom: lines,
+              school_exception_count: schoolSpecific && ready ? 1 : 0,
+              allowed_actions: locked && ready ? ["CREATE_CHANGE_ORDER"] : [],
+              blockers,
+              warnings: [],
+              history_periods: ready
+                ? [
+                    {
+                      period_from: "2026-07-01",
+                      period_to: null,
+                      resolution_status: "READY",
+                      effective_bom: lines,
+                      change_orders: [],
+                      warnings: [],
+                      blockers: [],
+                    },
+                  ]
+                : [],
+            },
+          }),
+      );
+    },
     createDish: mutate((request) => {
       const code =
         payloadString(request, "dish_code") || `dish-${crypto.randomUUID()}`;
@@ -356,8 +605,9 @@ export function createReviewRecipeApi(
           item.dish_type_status === "ACTIVE",
       );
       if (!code || !name || !dishType) return false;
+      const dishId = crypto.randomUUID();
       data.dishes.push({
-        dish_id: crypto.randomUUID(),
+        dish_id: dishId,
         dish_code: code,
         dish_name: name,
         dish_category: payloadString(request, "dish_category") || null,
@@ -374,6 +624,21 @@ export function createReviewRecipeApi(
         created_at: now,
         updated_at: now,
       });
+      for (const schoolType of data.school_types.filter((item) =>
+        ["v1-school-type-1", "v1-school-type-2"].includes(
+          item.school_type_code,
+        ),
+      )) {
+        data.recipes.push({
+          recipe_id: crypto.randomUUID(),
+          dish_id: dishId,
+          school_type_id: schoolType.school_type_id,
+          recipe_status: "ACTIVE",
+          version: 1,
+          created_at: now,
+          updated_at: now,
+        });
+      }
       return true;
     }),
     updateDish: mutate((request) => {
@@ -583,6 +848,44 @@ export function createReviewRecipeApi(
       );
       return true;
     }),
+    copyDishRecipes(request: DishRecipeCopyCommandRequest) {
+      const blocked = blockedWrite();
+      if (blocked) return Promise.resolve(blocked);
+      return Promise.resolve(
+        success({
+          contract_version: "RECIPE-EFFECTIVE.v1",
+          command_id: request.command_id,
+          correlation_id: request.correlation_id,
+          idempotency_status: "COMPLETED",
+          scope_results: [
+            {
+              school_type_id: ids.schoolType,
+              school_type_code: "v1-school-type-1",
+              scope_name: "TIỂU HỌC",
+              status: "COPIED",
+              source_recipe_id: ids.recipe,
+              source_recipe_version_id: ids.version,
+              source_selection_scope: "SCHOOL_TYPE",
+              target_recipe_id: ids.dish2Recipe,
+              target_recipe_version_id: "31000000-0000-4000-8000-000000000001",
+            },
+            {
+              school_type_id: ids.schoolTypeSecondary,
+              school_type_code: "v1-school-type-2",
+              scope_name: "TRUNG HỌC",
+              status: "COPIED",
+              source_recipe_id: ids.recipeSecondary,
+              source_recipe_version_id: ids.versionSecondary,
+              source_selection_scope: "SCHOOL_TYPE",
+              target_recipe_id: ids.dish2RecipeSecondary,
+              target_recipe_version_id: "31000000-0000-4000-8000-000000000002",
+            },
+          ],
+          safe_operator_message:
+            "Đã mô phỏng sao chép công thức theo món trong trình duyệt.",
+        }),
+      );
+    },
     applyImport: mutate(() => true),
   };
 }

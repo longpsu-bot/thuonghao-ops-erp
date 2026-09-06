@@ -9,11 +9,17 @@ export const RECIPE_ADJUSTMENT_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_recipe_adjustment_workbench",
   getOperatorWorkbench: "atlas_api.get_recipe_adjustment_operator_workbench",
   resolve: "atlas_api.resolve_effective_recipe_composition",
+  resolveSystem: "atlas_api.resolve_system_effective_recipe_composition",
+  getEffectiveTargetContext: "atlas_api.get_recipe_effective_target_context",
   preview: "atlas_api.preview_recipe_composition_adjustment",
   create: "atlas_api.create_recipe_composition_adjustment",
   supersede: "atlas_api.supersede_recipe_composition_adjustment",
   cancel: "atlas_api.cancel_recipe_composition_adjustment",
 } as const satisfies Record<string, AtlasRpcName>;
+
+export type RecipeEffectiveContext =
+  | { kind: "system"; schoolTypeId: string }
+  | { kind: "school"; schoolId: string };
 
 export type RecipeAdjustmentCommandRequest = AtlasRpcRequest & {
   contract_version: "RMVP-02B.v1";
@@ -58,6 +64,46 @@ export function recipeAdjustmentOperatorReadRequest(
     requested_by_auth_subject: authSubject,
     correlation_id: correlationId,
     payload: { as_of_date: asOfDate },
+  };
+}
+
+export function systemEffectiveRecipeRequest(
+  authSubject: string,
+  correlationId: string,
+  asOfDate: string,
+  dishId: string,
+  schoolTypeId: string,
+): AtlasRpcRequest {
+  return {
+    contract_version: "RECIPE-EFFECTIVE.v1",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      as_of_date: asOfDate,
+      dish_id: dishId,
+      school_type_id: schoolTypeId,
+    },
+  };
+}
+
+export function recipeEffectiveTargetContextRequest(
+  authSubject: string,
+  correlationId: string,
+  asOfDate: string,
+  dishId: string,
+  context: RecipeEffectiveContext,
+): AtlasRpcRequest {
+  return {
+    contract_version: "RECIPE-EFFECTIVE.v1",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      as_of_date: asOfDate,
+      dish_id: dishId,
+      ...(context.kind === "system"
+        ? { school_type_id: context.schoolTypeId }
+        : { school_id: context.schoolId }),
+    },
   };
 }
 
@@ -114,6 +160,42 @@ export function createRecipeAdjustmentApi(invoker: RecipeAdjustmentRpcInvoker) {
       return invoker.invoke(
         RECIPE_ADJUSTMENT_RPC_FUNCTIONS.resolve,
         recipeAdjustmentReadRequest(authSubject, correlationId, payload),
+      );
+    },
+    resolveSystem(
+      authSubject: string,
+      correlationId: string,
+      asOfDate: string,
+      dishId: string,
+      schoolTypeId: string,
+    ) {
+      return invoker.invoke(
+        RECIPE_ADJUSTMENT_RPC_FUNCTIONS.resolveSystem,
+        systemEffectiveRecipeRequest(
+          authSubject,
+          correlationId,
+          asOfDate,
+          dishId,
+          schoolTypeId,
+        ),
+      );
+    },
+    getEffectiveTargetContext(
+      authSubject: string,
+      correlationId: string,
+      asOfDate: string,
+      dishId: string,
+      context: RecipeEffectiveContext,
+    ) {
+      return invoker.invoke(
+        RECIPE_ADJUSTMENT_RPC_FUNCTIONS.getEffectiveTargetContext,
+        recipeEffectiveTargetContextRequest(
+          authSubject,
+          correlationId,
+          asOfDate,
+          dishId,
+          context,
+        ),
       );
     },
     preview(

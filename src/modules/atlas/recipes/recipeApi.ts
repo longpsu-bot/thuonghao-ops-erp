@@ -4,6 +4,7 @@ import type {
   AtlasRpcResult,
   JsonValue,
 } from "../connection/atlasRpc";
+import type { RecipeEffectiveContext } from "../recipe-adjustments/recipeAdjustmentApi";
 
 export const RECIPE_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_dish_recipe_workbench",
@@ -19,8 +20,41 @@ export const RECIPE_RPC_FUNCTIONS = {
   saveRecipe: "atlas_api.save_recipe",
   releaseRecipe: "atlas_api.release_recipe",
   copyVersion: "atlas_api.copy_recipe_version",
+  copyDishRecipes: "atlas_api.copy_dish_recipes",
+  getEffectiveWorkbench: "atlas_api.get_dish_recipe_operator_workbench",
   applyImport: "atlas_api.apply_recipe_import",
 } as const satisfies Record<string, AtlasRpcName>;
+
+export type DishRecipeCopyCommandRequest = AtlasRpcRequest & {
+  contract_version: "RECIPE-EFFECTIVE.v1";
+  command_id: string;
+  correlation_id: string;
+  idempotency_key: string;
+  expected_version: number;
+  requested_by_auth_subject: string;
+  requested_at: string;
+  reason_code: string;
+  reason_note: string;
+  payload: {
+    source_dish_id: string;
+    target_dish_id: string;
+    as_of_date: string;
+  };
+};
+
+export type DishRecipeCopyRequestInput = {
+  authSubject: string;
+  correlationId: string;
+  commandId: string;
+  idempotencyKey: string;
+  requestedAt: string;
+  expectedVersion: number;
+  reasonCode: string;
+  reasonNote: string;
+  sourceDishId: string;
+  targetDishId: string;
+  asOfDate: string;
+};
 
 export type RecipeCommandRequest = AtlasRpcRequest & {
   contract_version: "RMVP-02A.v1";
@@ -119,12 +153,58 @@ export function recipeWorkflowCommandRequest(
   };
 }
 
+export function dishRecipeOperatorRequest(
+  authSubject: string,
+  correlationId: string,
+  asOfDate: string,
+  dishId: string,
+  context: RecipeEffectiveContext,
+): AtlasRpcRequest {
+  return {
+    contract_version: "RECIPE-EFFECTIVE.v1",
+    requested_by_auth_subject: authSubject,
+    correlation_id: correlationId,
+    payload: {
+      as_of_date: asOfDate,
+      dish_id: dishId,
+      ...(context.kind === "system"
+        ? { school_type_id: context.schoolTypeId }
+        : { school_id: context.schoolId }),
+    },
+  };
+}
+
+export function dishRecipeCopyRequest(
+  input: DishRecipeCopyRequestInput,
+): DishRecipeCopyCommandRequest {
+  return {
+    contract_version: "RECIPE-EFFECTIVE.v1",
+    command_id: input.commandId,
+    correlation_id: input.correlationId,
+    idempotency_key: input.idempotencyKey,
+    expected_version: input.expectedVersion,
+    requested_by_auth_subject: input.authSubject,
+    requested_at: input.requestedAt,
+    reason_code: input.reasonCode,
+    reason_note: input.reasonNote,
+    payload: {
+      source_dish_id: input.sourceDishId,
+      target_dish_id: input.targetDishId,
+      as_of_date: input.asOfDate,
+    },
+  };
+}
+
 export function createRecipeApi(invoker: AtlasRpcInvoker) {
   const command =
     (
       name: Exclude<
         keyof typeof RECIPE_RPC_FUNCTIONS,
-        "getWorkbench" | "saveRecipe" | "releaseRecipe"
+        | "getWorkbench"
+        | "getEffectiveWorkbench"
+        | "copyDishRecipes"
+        | "saveRecipe"
+        | "releaseRecipe"
       >,
     ) =>
     (request: RecipeCommandRequest) =>
@@ -144,6 +224,24 @@ export function createRecipeApi(invoker: AtlasRpcInvoker) {
         recipeReadRequest(authSubject, correlationId, selection),
       );
     },
+    getEffectiveWorkbench(
+      authSubject: string,
+      correlationId: string,
+      asOfDate: string,
+      dishId: string,
+      context: RecipeEffectiveContext,
+    ) {
+      return invoker.invoke(
+        RECIPE_RPC_FUNCTIONS.getEffectiveWorkbench,
+        dishRecipeOperatorRequest(
+          authSubject,
+          correlationId,
+          asOfDate,
+          dishId,
+          context,
+        ),
+      );
+    },
     createDish: command("createDish"),
     updateDish: command("updateDish"),
     setDishLifecycle: command("setDishLifecycle"),
@@ -156,6 +254,9 @@ export function createRecipeApi(invoker: AtlasRpcInvoker) {
     saveRecipe: workflowCommand("saveRecipe"),
     releaseRecipe: workflowCommand("releaseRecipe"),
     copyVersion: command("copyVersion"),
+    copyDishRecipes(request: DishRecipeCopyCommandRequest) {
+      return invoker.invoke(RECIPE_RPC_FUNCTIONS.copyDishRecipes, request);
+    },
     applyImport: command("applyImport"),
   };
 }

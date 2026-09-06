@@ -95,7 +95,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(screen.getAllByText("Canh bí đỏ thịt bằm")).not.toHaveLength(0);
     expect(screen.getByText("Món canh")).toBeVisible();
     expect(document.body).not.toHaveTextContent("canh-bi-do-thit-bam");
-    expect(screen.getByText(/Bí đỏ.*Thịt heo xay/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Bí đỏ.*Thịt heo xay/)).toHaveLength(2);
     expect(
       screen.getByText(/Danh sách này chỉ để tra cứu/),
     ).toBeInTheDocument();
@@ -149,7 +149,9 @@ describe("Recipe creation-and-lock workbench", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/Loại món: Món canh/)).toBeVisible();
     expect(document.body).not.toHaveTextContent("canh-bi-do-thit-bam");
-    expect(screen.getByLabelText("Áp dụng cho")).toHaveValue("");
+    expect(screen.getByLabelText("Áp dụng cho")).toHaveValue(
+      "60000000-0000-4000-8000-000000000001",
+    );
     expect(screen.getByLabelText("Số suất áp dụng cho định lượng")).toHaveValue(
       100,
     );

@@ -70,6 +70,19 @@ insert into atlas_core.actor_scopes (actor_id, scope_kind) values
   ('cd020000-0000-4000-8000-000000000001', 'GLOBAL');
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code, decimal_scale) values
   ('cd020000-0000-4000-8000-000000000010', 'creation-ux-02-kg', 'Creation UX kilogram', 'MASS', 3);
+insert into atlas_admin.school_types (
+  school_type_id, school_type_code, school_type_name
+) values
+  (
+    'cd020000-0000-4000-8000-000000000011',
+    'v1-school-type-1',
+    'TIỂU HỌC'
+  ),
+  (
+    'cd020000-0000-4000-8000-000000000012',
+    'v1-school-type-2',
+    'TRUNG HỌC'
+  );
 
 create temporary table creation_cases (kind text primary key, payload jsonb);
 insert into creation_cases values
@@ -82,7 +95,13 @@ insert into creation_cases values
   ('supplier', '{"supplier_name":"Creation UX supplier"}');
 create temporary table creation_results (kind text, scenario text, request jsonb, response jsonb);
 insert into creation_results (kind, scenario, request)
-select kind, label, pg_temp.creation_request(kind, transaction_timestamp() + skew, payload)
+select kind, label, pg_temp.creation_request(
+  kind,
+  transaction_timestamp() + skew,
+  case when kind = 'dish' then
+    payload || jsonb_build_object('dish_name', payload->>'dish_name' || ' ' || label)
+  else payload end
+)
 from creation_cases cross join (values
   ('past', interval '-1 second'), ('near', interval '1 second'),
   ('boundary', interval '60 seconds'), ('over', interval '60.000001 seconds'),
@@ -90,7 +109,11 @@ from creation_cases cross join (values
 ) scenarios(label, skew);
 insert into creation_results (kind, scenario, request)
 select kind, 'explicit', pg_temp.creation_request(kind, transaction_timestamp() - interval '1 second',
-  payload || jsonb_build_object(kind || '_code', '  CONTROLLED-UX-02-' || kind || '  '))
+  payload || jsonb_build_object(
+    kind || '_code', '  CONTROLLED-UX-02-' || kind || '  ',
+    kind || '_name', case when kind = 'dish' then payload->>'dish_name' || ' explicit'
+      else payload->>(kind || '_name') end
+  ))
 from creation_cases;
 insert into creation_results (kind, scenario, request)
 select kind, label, pg_temp.creation_request(kind, transaction_timestamp() - interval '1 second',
@@ -142,7 +165,7 @@ select ok(code ~ ('^' || kind || '-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0
   kind || ': ' || scenario || ' uses full random UUID code')
 from created_codes where scenario in ('past', 'near', 'boundary');
 select is((select count(distinct code) from created_codes where kind = c.kind and scenario <> 'explicit'),
-  3::bigint, c.kind || ': same-name creations have unique opaque codes') from creation_cases c;
+  3::bigint, c.kind || ': generated creations have unique opaque codes') from creation_cases c;
 select is(code, 'controlled-ux-02-' || kind, kind || ': controlled explicit codes retain normalization')
 from created_codes where scenario = 'explicit';
 select is((select count(*) from atlas_core.command_receipts receipt

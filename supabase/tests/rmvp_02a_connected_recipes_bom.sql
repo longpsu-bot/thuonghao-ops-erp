@@ -228,11 +228,17 @@ insert into atlas_core.actor_scopes (actor_id, scope_kind) values
 
 insert into atlas_admin.school_types (
   school_type_id, school_type_code, school_type_name
-) values (
-  'e2100000-0000-0000-0000-000000000001',
-  'rmvp02a-primary',
-  'RMVP-02A Primary'
-);
+) values
+  (
+    'e2100000-0000-0000-0000-000000000001',
+    'v1-school-type-1',
+    'TIỂU HỌC'
+  ),
+  (
+    'e2100000-0000-0000-0000-000000000002',
+    'v1-school-type-2',
+    'TRUNG HỌC'
+  );
 
 insert into atlas_admin.units (
   unit_id, unit_code, unit_name, dimension_code, decimal_scale
@@ -525,32 +531,13 @@ insert into rmvp02a_results values (
   )
 );
 
-insert into rmvp02a_results values (
-  'activate-main-dish',
-  atlas_api.set_dish_lifecycle(
-    pg_temp.rmvp02a_request(
-      'activate-main-dish',
-      1,
-      jsonb_build_object(
-        'dish_id',
-        (
-          select response_payload #>> '{affected_aggregate_ids,dish_id}'
-          from rmvp02a_results
-          where result_name = 'create-main-dish'
-        ),
-        'dish_status', 'ACTIVE'
-      )
-    )
-  )
-);
-
 insert into rmvp02a_results
 select
   'update-main-to-inactive-type',
   atlas_api.update_dish(
     pg_temp.rmvp02a_request(
       'update-main-to-inactive-type',
-      2,
+      1,
       jsonb_build_object(
         'dish_id',
           created.response_payload #>> '{affected_aggregate_ids,dish_id}',
@@ -568,30 +555,11 @@ from rmvp02a_results created
 where created.result_name = 'create-main-dish';
 
 insert into rmvp02a_results values (
-  'activate-target-dish',
-  atlas_api.set_dish_lifecycle(
-    pg_temp.rmvp02a_request(
-      'activate-target-dish',
-      1,
-      jsonb_build_object(
-        'dish_id',
-        (
-          select response_payload #>> '{affected_aggregate_ids,dish_id}'
-          from rmvp02a_results
-          where result_name = 'create-target-dish'
-        ),
-        'dish_status', 'ACTIVE'
-      )
-    )
-  )
-);
-
-insert into rmvp02a_results values (
   'create-draft',
   atlas_api.create_recipe_draft(
     pg_temp.rmvp02a_request(
       'create-draft',
-      2,
+      1,
       jsonb_build_object(
         'dish_id',
         (
@@ -826,7 +794,7 @@ insert into rmvp02a_results values (
   atlas_api.copy_recipe_version(
     pg_temp.rmvp02a_request(
       'copy-locked-version',
-      2,
+      1,
       jsonb_build_object(
         'source_recipe_version_id',
         (
@@ -966,8 +934,6 @@ select ok(
     where result_name in (
       'create-main-dish',
       'create-target-dish',
-      'activate-main-dish',
-      'activate-target-dish',
       'create-draft',
       'replace-initial-bom',
       'validate-initial',

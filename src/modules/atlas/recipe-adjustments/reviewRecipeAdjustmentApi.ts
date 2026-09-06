@@ -203,6 +203,12 @@ function operatorRow(
           )!
       : current;
   const content = operatorRevision(item, contentItem);
+  const temporalState =
+    item.lifecycle_status === "CANCELLED"
+      ? "CANCELLED"
+      : item.revisions.length > 1
+        ? "ACTIVE_CHANGE_SCHEDULED"
+        : "ACTIVE";
   return {
     adjustment_id: item.adjustment_id,
     version: item.version,
@@ -218,14 +224,10 @@ function operatorRow(
     target_ingredient_id: item.target_ingredient_id,
     target_recipe_line_id: item.target_recipe_line_id,
     adjustment_line_id: item.adjustment_line_id,
-    temporal_state:
-      item.lifecycle_status === "CANCELLED"
-        ? "CANCELLED"
-        : item.revisions.length > 1
-          ? "ACTIVE_CHANGE_SCHEDULED"
-          : "ACTIVE",
+    temporal_state: temporalState,
     temporal_state_date:
       item.revisions.length > 1 ? current.effective_from : null,
+    is_effective_now: temporalState !== "CANCELLED",
     display_revision: display,
     content_revision: content,
     command_revision: display,
@@ -297,12 +299,12 @@ function fixtures(): ReviewWorkbenchData {
     school_types: [
       {
         school_type_id: ids.schoolType,
-        school_type_name: "Tiểu học",
+        school_type_name: "TIỂU HỌC",
         school_type_status: "ACTIVE",
       },
       {
         school_type_id: ids.secondarySchoolType,
-        school_type_name: "Trung học",
+        school_type_name: "TRUNG HỌC",
         school_type_status: "ACTIVE",
       },
     ],
@@ -600,6 +602,57 @@ export function createReviewRecipeAdjustmentApi(
               String(payload.school_id ?? ids.school),
             ) as unknown as JsonValue,
             safe_operator_message: "Đã phân giải BOM hiệu lực xem thử.",
+          }),
+      );
+    },
+    resolveSystem(_auth, _correlation, asOfDate, dishId, schoolTypeId) {
+      const blocked = blockedRead();
+      const schoolId =
+        schoolTypeId === ids.secondarySchoolType
+          ? ids.secondarySchool
+          : ids.school;
+      const resolution = resolutionScenario(
+        "precedence",
+        schoolId,
+      ) as EffectiveCompositionResult;
+      resolution.school_id = null;
+      resolution.as_of_date = asOfDate;
+      resolution.dish_id = dishId;
+      return Promise.resolve(
+        blocked ??
+          success({
+            resolution: resolution as unknown as JsonValue,
+            safe_operator_message: "Đã phân giải BOM hệ thống xem thử.",
+          }),
+      );
+    },
+    getEffectiveTargetContext(_auth, _correlation, asOfDate, dishId, context) {
+      const blocked = blockedRead();
+      const resolution = resolutionScenario(
+        "precedence",
+        context.kind === "school" ? context.schoolId : ids.school,
+      );
+      const schoolTypeId =
+        context.kind === "system"
+          ? context.schoolTypeId
+          : context.schoolId === ids.secondarySchool
+            ? ids.secondarySchoolType
+            : ids.schoolType;
+      return Promise.resolve(
+        blocked ??
+          success({
+            target_context: {
+              as_of_date: asOfDate,
+              dish_id: dishId,
+              school_id: context.kind === "school" ? context.schoolId : null,
+              school_type_id: schoolTypeId,
+              selected_recipe: resolution.selected_recipe,
+              basis_portions:
+                resolution.selected_recipe?.basis_portions ?? null,
+              effective_lines: [],
+              warnings: resolution.warnings,
+              blockers: resolution.blockers,
+            },
           }),
       );
     },
