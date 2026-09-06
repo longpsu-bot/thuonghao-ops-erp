@@ -650,8 +650,17 @@ describe("Recipe Change Order first-user workbench", () => {
           template.current_revision_number = 1;
           template.display_revision = revision;
           template.content_revision = structuredClone(revision);
-          template.command_revision = structuredClone(revision);
-          template.history = [structuredClone(revision)];
+          const { revision_status: _status, ...historyRevision } = revision;
+          const {
+            issued_at: _at,
+            issuance_kind: _kind,
+            issued_by_actor_name: _actor,
+            ...commandRevision
+          } = historyRevision;
+          template.command_revision = commandRevision;
+          template.history = [
+            { ...historyRevision, business_event_kind: "CREATED" },
+          ];
           rows.push(template);
           return result;
         },
