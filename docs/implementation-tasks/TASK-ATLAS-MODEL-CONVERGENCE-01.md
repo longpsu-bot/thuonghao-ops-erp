@@ -1,6 +1,6 @@
 # ATLAS-MODEL-CONVERGENCE-01 implementation evidence
 
-Status: final integrated Draft candidate. All 56 acceptance IDs pass; independent review and exact-head CI results are recorded on Draft PR #258 without moving the validated head.
+Status: final integrated Draft candidate. The implementation evidence maps all 56 acceptance IDs to PASS. Repository certification remains conditional on fresh independent review and the four required exact-head CI gates; Draft PR #258 is the mutable record for those results so the candidate commit does not move after validation.
 
 ## Execution and scope
 
@@ -8,7 +8,7 @@ Status: final integrated Draft candidate. All 56 acceptance IDs pass; independen
 - Starting convergence head: `3f43f17972886016b3139dbc92671c128edab064` on Draft PR [#258](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/258).
 - Certified A07 source: Draft PR [#259](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/259) at `4ff1e0fa7b9a77a943364c8838bb5d0393138023`; certified A12 source: Draft PR [#260](https://github.com/longpsu-bot/thuonghao-ops-erp/pull/260) at `372d5199cea338e8adf07089d2866b0f561f9329`.
 - Integration order was #258 → A07 → A12 → bounded Application adoption. Both certified migrations retain their original substantive SQL and filenames.
-- Task branch: `codex/atlas-model-convergence-01`; the Draft PR records the final reviewed head, review disposition and post-freeze CI execution evidence.
+- Task branch: `codex/atlas-model-convergence-01`; the Draft PR is the delivery record for the final reviewed head, review disposition and post-freeze CI execution evidence.
 - Canonical checkout was explicitly confirmed after preflight found a historical second worktree. Initial checkout was clean; the old branch was retained intact. New task branch starts at the verified baseline.
 - Actual lead runtime: `gpt-6-astra / xhigh`, disclosed before user approval. Implementation workers requested `gpt-5.6-sol / xhigh`; no prompt-based runtime change claimed.
 - Seven supplied document hashes matched before integration. Formatting changed only Markdown layout. Product direction is approved; packet wording does not constitute a completed implementation/review/deployment.
@@ -30,7 +30,7 @@ The approved reference-date UX amendment is included in this task: the normal L�
 
 ## Acceptance-to-evidence matrix
 
-Every row below is PASS on the integrated candidate. Focused component/parser tests prove Application adoption; local disposable SQL and authenticated verification prove the changed backend boundaries. Existing Planning/Procurement evidence is preserved and revalidated by exact-head CI. The Draft PR carries final run URLs tied to the immutable reviewed SHA; no report-only commit moves that head after CI.
+Every row below maps to passing implementation evidence on the integrated candidate. Focused component/parser tests prove Application adoption; local disposable SQL and authenticated verification prove the changed backend boundaries. Existing Planning/Procurement evidence is preserved and must be revalidated by exact-head CI before repository certification. Draft PR #258 is the exclusive record for final run URLs tied to the immutable reviewed SHA; no report-only commit will move that head after CI.
 
 | ID  | Outcome | Actual test or artifact                                                                                                                                                                                                           |
 | --- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -158,11 +158,13 @@ No merge, Ready transition, manual hosted deployment, hosted fixture, data repai
 - `docs/implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md`
 - `docs/implementation-tasks/TASK-RECIPE-SYSTEM-COMMAND-CONTEXT-01.md`
 - `docs/implementation-tasks/TASK-RECIPE-LEGACY-ISSUANCE-READ-01.md`
+- `docs/implementation-tasks/TASK-UI-QUALITY-03B-recipe-change-order-first-user.md`
 - `docs/runbooks/atlas-model-convergence-staging-readiness.md`
 - `docs/superpowers/plans/2026-09-06-atlas-model-convergence.md`
 - `docs/superpowers/specs/2026-09-06-atlas-model-convergence-design.md`
 - `docs/testing/atlas-model-convergence-acceptance.md`
 - `scripts/verify-local-rmvp02a-recipes.mjs`
+- `scripts/verify-local-rmvp02b-adjustments.mjs`
 - `src/modules/admin/DishRecipeAdminWorkbench.stories.tsx`
 - `src/modules/admin/DishRecipeAdminWorkbench.test.tsx`
 - `src/modules/admin/DishRecipeAdminWorkbench.tsx`
@@ -180,6 +182,7 @@ No merge, Ready transition, manual hosted deployment, hosted fixture, data repai
 - `src/modules/atlas/recipes/reviewRecipeApi.ts`
 - `supabase/tests/purchase_review_confirm_release.sql`
 - `supabase/tests/recipe_effective_contract_01.sql`
+- `supabase/tests/rmvp_02b_recipe_adjustments_effective_bom.sql`
 - `supabase/migrations/20260906085653_recipe_system_command_context_01.sql`
 - `supabase/migrations/20260906105509_recipe_legacy_issuance_read_01.sql`
 - `docs/testing/artifacts/atlas-model-convergence/` — disclosed synthetic browser screenshots and index.

@@ -127,7 +127,9 @@ recorded contract gaps without weakening the intended behavior:
   read provides whole-catalog effective-Ingredient search. Truthfully labelled
   base search and lazy selected detail are within this delivery.
 
-All **56 / 56** acceptance outcomes, independent review, CI and separately rechecked
-Staging readiness are recorded in the
+All **56 / 56** implementation outcomes and separately rechecked Staging
+readiness are mapped in the
 [implementation report](../implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md).
-The dated preparation observations above remain historical evidence.
+Repository certification additionally requires fresh independent review and the
+four exact-head CI gates; Draft PR #258 is the delivery record for those mutable
+results. The dated preparation observations above remain historical evidence.

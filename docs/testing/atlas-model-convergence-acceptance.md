@@ -1,6 +1,6 @@
 # ATLAS-MODEL-CONVERGENCE-01 — Acceptance and regression matrix
 
-**Status:** Final integration result: **56 / 56 PASS**, with exact-head CI links retained in Draft PR #258 so the certified commit does not move after validation.
+**Status:** Implementation evidence maps **56 / 56** outcomes to PASS. Repository certification additionally requires fresh independent review and the four exact-head CI gates; Draft PR #258 retains those mutable results so the candidate commit does not move after validation.
 
 **Spec:** [bounded convergence design](../superpowers/specs/2026-09-06-atlas-model-convergence-design.md).
 
