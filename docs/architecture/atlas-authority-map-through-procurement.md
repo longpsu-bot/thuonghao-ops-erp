@@ -1,7 +1,9 @@
 # Atlas authority map through Procurement
 
-**Baseline:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`.  
-**Meaning:** A source-backed summary of current approved contracts and the selected convergence target. It is not evidence that every consumer has adopted the target or that Staging matches the repository.  
+**Baseline:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`.
+
+**Meaning:** A source-backed summary of current approved contracts and the selected convergence target. It is not evidence that every consumer has adopted the target or that Staging matches the repository.
+
 **Principle:** [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md).
 
 ## 1. Owners and distinctions

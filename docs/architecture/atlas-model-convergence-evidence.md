@@ -1,6 +1,7 @@
 # Atlas Model Convergence — Evidence register
 
-**Prepared:** 6 September 2026.  
+**Prepared:** 6 September 2026.
+
 **Purpose:** Distinguish approved direction, repository evidence, dated hosted observation and implementation recommendations. This register is not a new business authority and not evidence of implementation completion.
 
 ## 1. User-authorized basis
@@ -11,9 +12,12 @@ The original audit-only instruction not to create a Codex prompt is superseded b
 
 ## 2. Repository baseline
 
-Repository: `longpsu-bot/thuonghao-ops-erp`.  
-Rechecked main: `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`.  
-Parent: `0779daacb49635dab5b40503f5718dd5f577d6f3`.  
+Repository: `longpsu-bot/thuonghao-ops-erp`.
+
+Rechecked main: `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`.
+
+Parent: `0779daacb49635dab5b40503f5718dd5f577d6f3`.
+
 Merge: PR #257, `RECIPE-EFFECTIVE-CONTRACT-01`.
 
 - Main metadata: https://api.github.com/repos/longpsu-bot/thuonghao-ops-erp/branches/main

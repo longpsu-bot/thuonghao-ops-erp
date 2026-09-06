@@ -1,10 +1,15 @@
 # ATLAS-MODEL-PRINCIPLE-01 — Facts explicit, state derived, supporting objects generated
 
-**Prepared:** 6 September 2026  
-**Product direction:** Approved in the OPS architecture-audit follow-up.  
-**Document status:** Prepared implementation brief; not yet committed, independently accepted in a PR, deployed, or certified.  
-**Scope:** Implemented Master Data / Recipe, Planning, and Procurement. Warehouse design is excluded.  
-**Parent authority:** OPS_SYSTEM_MAP v1.0 / ARCH-002.  
+**Prepared:** 6 September 2026
+
+**Product direction:** Approved in the OPS architecture-audit follow-up.
+
+**Document status:** Prepared implementation brief; not yet committed, independently accepted in a PR, deployed, or certified.
+
+**Scope:** Implemented Master Data / Recipe, Planning, and Procurement. Warehouse design is excluded.
+
+**Parent authority:** OPS_SYSTEM_MAP v1.0 / ARCH-002.
+
 **Evidence baseline:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`, rechecked on 6 September 2026.
 
 ## 1. Decision

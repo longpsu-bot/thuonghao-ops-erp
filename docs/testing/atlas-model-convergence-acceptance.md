@@ -1,7 +1,9 @@
 # ATLAS-MODEL-CONVERGENCE-01 — Acceptance and regression matrix
 
-**Status:** Required verification specification, not executed results.  
-**Spec:** [bounded convergence design](../superpowers/specs/2026-09-06-atlas-model-convergence-design.md).  
+**Status:** Required verification specification, not executed results.
+
+**Spec:** [bounded convergence design](../superpowers/specs/2026-09-06-atlas-model-convergence-design.md).
+
 **Evidence rule:** Every required row must name an actual test/artifact and outcome in the final implementation report. Existing sufficient tests may be reused; do not duplicate them for a new assertion count.
 
 ## 1. Required fixture set

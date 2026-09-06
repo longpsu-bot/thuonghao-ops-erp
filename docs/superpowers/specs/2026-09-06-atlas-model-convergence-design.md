@@ -1,9 +1,13 @@
 # ATLAS-MODEL-CONVERGENCE-01 — Canonical Recipe authority and domain-boundary convergence
 
-**Date:** 6 September 2026  
-**Status:** Prepared bounded specification implementing the approved architecture-audit direction. No implementation, merge or deployment is certified by this document.  
-**Parent:** [ATLAS-MODEL-PRINCIPLE-01](../../decisions/decision-atlas-model-convergence.md).  
-**Baseline:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60` after merged PR #257.  
+**Date:** 6 September 2026
+
+**Status:** Prepared bounded specification implementing the approved architecture-audit direction. No implementation, merge or deployment is certified by this document.
+
+**Parent:** [ATLAS-MODEL-PRINCIPLE-01](../../decisions/decision-atlas-model-convergence.md).
+
+**Baseline:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60` after merged PR #257.
+
 **Delivery:** One bounded implementation branch and Draft PR; separate hosted-readiness gate.
 
 ## 1. Objective and success criterion

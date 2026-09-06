@@ -1,8 +1,11 @@
 # Atlas Model Convergence — Staging readiness and later cutover gate
 
-**Current authorization:** Read-only inspection only.  
-**Permitted target for this inspection:** Atlas Staging `rnzxmxiiqgtdevzregff`.  
-**Forbidden write target:** live OPS `qnthofvccilhnefdcxnz`; Retool also remains unchanged.  
+**Current authorization:** Read-only inspection only.
+
+**Permitted target for this inspection:** Atlas Staging `rnzxmxiiqgtdevzregff`.
+
+**Forbidden write target:** live OPS `qnthofvccilhnefdcxnz`; Retool also remains unchanged.
+
 **No deployment, hosted fixtures, data repair, migration application, function invocation that writes, grant change, role binding, or hosted branch creation is authorized.**
 
 ## 1. Observed starting point
