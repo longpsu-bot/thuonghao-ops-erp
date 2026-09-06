@@ -68,11 +68,13 @@ type CopyDraft = {
 
 type CopyRecovery = {
   kind: "unknown" | "committed_unreadable" | "retryable";
+  authSubject: string;
   request: DishRecipeCopyCommandRequest;
   result: DishRecipeCopyResult | null;
 };
 type SaveRecovery = {
   kind: "unknown" | "committed_unreadable";
+  authSubject: string;
   request: RecipeWorkflowCommandRequest;
   selection: EffectiveSelection;
 };
@@ -165,6 +167,10 @@ export function DishRecipeAdminWorkbench({
     { school_id: string; school_name: string; school_code: string }[]
   >([]);
   const [tab, setTab] = useState<Tab>("catalog");
+  const [adjustmentMounted, setAdjustmentMounted] = useState(false);
+  const [adjustmentView, setAdjustmentView] = useState<"rules" | "effective">(
+    "rules",
+  );
   const [query, setQuery] = useState("");
   const [dishId, setDishId] = useState<string | null>(null);
   const [schoolTypeId, setSchoolTypeId] = useState<string | null>(null);
@@ -188,16 +194,29 @@ export function DishRecipeAdminWorkbench({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [writeUncertain, setWriteUncertain] = useState(false);
+  const [writeUncertainAuthSubject, setWriteUncertainAuthSubject] = useState<
+    string | null
+  >(null);
   const [saveRecovery, setSaveRecovery] = useState<SaveRecovery | null>(null);
   const [copyRecovery, setCopyRecovery] = useState<CopyRecovery | null>(null);
   const generation = useRef(0);
   const effectiveGeneration = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const authSubjectRef = useRef(authSubject);
+  authSubjectRef.current = authSubject;
 
   const loadEffective = useCallback(
-    async (selection: EffectiveSelection) => {
-      if (!api || !authSubject) return false;
+    async (
+      selection: EffectiveSelection,
+      expectedAuthSubject = authSubject,
+    ) => {
+      if (
+        !api ||
+        !expectedAuthSubject ||
+        authSubjectRef.current !== expectedAuthSubject
+      )
+        return false;
       const current = ++effectiveGeneration.current;
       setEffectiveLoad((state) => ({
         ...state,
@@ -205,13 +224,17 @@ export function DishRecipeAdminWorkbench({
         message: undefined,
       }));
       const result = await api.getEffectiveWorkbench(
-        authSubject,
+        expectedAuthSubject,
         correlationId,
         selection.asOfDate,
         selection.dishId,
         selection.context,
       );
-      if (current !== effectiveGeneration.current) return false;
+      if (
+        current !== effectiveGeneration.current ||
+        authSubjectRef.current !== expectedAuthSubject
+      )
+        return false;
       const data = dishRecipeOperatorWorkbenchFromResult(result);
       const matchesIntent =
         data?.dish.dish_id === selection.dishId &&
@@ -247,12 +270,24 @@ export function DishRecipeAdminWorkbench({
   );
 
   const refresh = useCallback(
-    async (selection?: EffectiveSelection) => {
-      if (!api || !authSubject) return false;
+    async (
+      selection?: EffectiveSelection,
+      expectedAuthSubject = authSubject,
+    ) => {
+      if (
+        !api ||
+        !expectedAuthSubject ||
+        authSubjectRef.current !== expectedAuthSubject
+      )
+        return false;
       const current = ++generation.current;
       setLoad((state) => ({ ...state, status: "loading", message: undefined }));
-      const result = await api.getWorkbench(authSubject, correlationId);
-      if (current !== generation.current) return false;
+      const result = await api.getWorkbench(expectedAuthSubject, correlationId);
+      if (
+        current !== generation.current ||
+        authSubjectRef.current !== expectedAuthSubject
+      )
+        return false;
       const data = recipeWorkbenchFromResult(result);
       if (!data) {
         setLoad((state) => ({
@@ -278,12 +313,29 @@ export function DishRecipeAdminWorkbench({
         selection?.dishId ??
         data.selected_recipe.dish_id ??
         data.dishes[0]?.dish_id;
-      if (!selectedDishId || canonicalTypes.length !== 2 || !defaultType) {
+      if (canonicalTypes.length !== 2 || !defaultType) {
         setEffectiveLoad({
           status: "error",
           data: null,
           message:
             "Atlas chưa trả về đủ hai phạm vi loại trường chuẩn để xem công thức.",
+        });
+        return false;
+      }
+      if (!selectedDishId) {
+        if (data.dishes.length === 0 && !selection) {
+          setEffectiveLoad({ status: "idle", data: null });
+          setEffectiveSelection(null);
+          setDishId(null);
+          setSchoolTypeId(defaultType.school_type_id);
+          setComposition([]);
+          setBasisPortions("100");
+          return true;
+        }
+        setEffectiveLoad({
+          status: "error",
+          data: null,
+          message: "Atlas không tìm thấy món ăn đã chọn để đọc công thức.",
         });
         return false;
       }
@@ -303,7 +355,7 @@ export function DishRecipeAdminWorkbench({
                 : defaultType.school_type_id,
           },
         } satisfies EffectiveSelection);
-      return loadEffective(nextSelection);
+      return loadEffective(nextSelection, expectedAuthSubject);
     },
     [api, authSubject, correlationId, loadEffective],
   );
@@ -376,10 +428,11 @@ export function DishRecipeAdminWorkbench({
     reasonNote?: string,
   ) => {
     if (!authSubject) return false;
+    const submittingAuthSubject = authSubject;
     setBusy(true);
     const result = await action(
       recipeCommandRequest(
-        authSubject,
+        submittingAuthSubject,
         correlationId,
         expectedVersion,
         reasonCode,
@@ -388,11 +441,22 @@ export function DishRecipeAdminWorkbench({
       ),
     );
     setBusy(false);
+    if (authSubjectRef.current !== submittingAuthSubject) {
+      if (result.kind === "success" || result.kind === "transport_error") {
+        setWriteUncertain(true);
+        setWriteUncertainAuthSubject(submittingAuthSubject);
+        setNotice(null);
+      }
+      return null;
+    }
     setNotice(recipeResultMessage(result));
     if (result.kind === "success") {
       return result;
     }
-    if (result.kind === "transport_error") setWriteUncertain(true);
+    if (result.kind === "transport_error") {
+      setWriteUncertain(true);
+      setWriteUncertainAuthSubject(submittingAuthSubject);
+    }
     return null;
   };
 
@@ -412,18 +476,20 @@ export function DishRecipeAdminWorkbench({
   const reconcileSave = async (
     request: RecipeWorkflowCommandRequest,
     selection: EffectiveSelection,
+    submittingAuthSubject: string,
   ) => {
-    if (!api || !authSubject) return false;
+    if (!api || authSubjectRef.current !== submittingAuthSubject) return false;
     const [catalogResult, effectiveResult] = await Promise.all([
-      api.getWorkbench(authSubject, correlationId),
+      api.getWorkbench(submittingAuthSubject, correlationId),
       api.getEffectiveWorkbench(
-        authSubject,
+        submittingAuthSubject,
         correlationId,
         selection.asOfDate,
         selection.dishId,
         selection.context,
       ),
     ]);
+    if (authSubjectRef.current !== submittingAuthSubject) return false;
     const catalog = recipeWorkbenchFromResult(catalogResult);
     const effective = dishRecipeOperatorWorkbenchFromResult(effectiveResult);
     const requestedLines = Array.isArray(request.payload.lines)
@@ -462,6 +528,7 @@ export function DishRecipeAdminWorkbench({
     setComposition(structuredClone(effective.base_authoring.composition));
     setBasisPortions(String(effective.base_authoring.basis_portions));
     setWriteUncertain(false);
+    setWriteUncertainAuthSubject(null);
     setSaveRecovery(null);
     setNotice("Atlas đã đối soát công thức đã Lưu theo đúng nội dung yêu cầu.");
     return true;
@@ -479,8 +546,9 @@ export function DishRecipeAdminWorkbench({
     )
       return false;
     const selection = effectiveSelection;
+    const submittingAuthSubject = authSubject;
     const request = recipeWorkflowCommandRequest(
-      authSubject,
+      submittingAuthSubject,
       correlationId,
       expectedVersion,
       "save",
@@ -488,22 +556,53 @@ export function DishRecipeAdminWorkbench({
     );
     setBusy(true);
     const result = await api.saveRecipe(request);
+    if (authSubjectRef.current !== submittingAuthSubject) {
+      setBusy(false);
+      if (result.kind === "success" || result.kind === "transport_error") {
+        setWriteUncertain(true);
+        setWriteUncertainAuthSubject(submittingAuthSubject);
+        setSaveRecovery({
+          kind: result.kind === "success" ? "committed_unreadable" : "unknown",
+          authSubject: submittingAuthSubject,
+          request,
+          selection,
+        });
+        setNotice(null);
+      }
+      return false;
+    }
     setNotice(recipeResultMessage(result));
     if (result.kind === "transport_error") {
       setBusy(false);
       setWriteUncertain(true);
-      setSaveRecovery({ kind: "unknown", request, selection });
+      setWriteUncertainAuthSubject(submittingAuthSubject);
+      setSaveRecovery({
+        kind: "unknown",
+        authSubject: submittingAuthSubject,
+        request,
+        selection,
+      });
       return false;
     }
     if (result.kind !== "success") {
       setBusy(false);
       return false;
     }
-    const reconciled = await reconcileSave(request, selection);
+    const reconciled = await reconcileSave(
+      request,
+      selection,
+      submittingAuthSubject,
+    );
     setBusy(false);
     if (!reconciled) {
       setWriteUncertain(true);
-      setSaveRecovery({ kind: "committed_unreadable", request, selection });
+      setWriteUncertainAuthSubject(submittingAuthSubject);
+      setSaveRecovery({
+        kind: "committed_unreadable",
+        authSubject: submittingAuthSubject,
+        request,
+        selection,
+      });
       setNotice(
         "Atlas đã ghi nhận Lưu nhưng chưa đọc lại được đúng ngữ cảnh. Hãy đối soát trước khi tiếp tục.",
       );
@@ -613,7 +712,10 @@ export function DishRecipeAdminWorkbench({
         : recipeBusinessStatusLabel[authoring.business_status];
   const creationLocked = authoring.locked_for_normal_editing ?? false;
   const authoringReadOnly =
-    creationLocked || effectiveSelection?.context.kind === "school";
+    creationLocked ||
+    effectiveLoad.data?.is_editable === false ||
+    authoring.allowed_actions.save_recipe === false ||
+    effectiveSelection?.context.kind === "school";
   const mutationBlocked =
     effectiveLoad.status === "error" ||
     writeUncertain ||
@@ -719,6 +821,10 @@ export function DishRecipeAdminWorkbench({
       )
     )
       return;
+    if (nextTab === "adjustments" || nextTab === "effective") {
+      setAdjustmentMounted(true);
+      setAdjustmentView(nextTab === "adjustments" ? "rules" : "effective");
+    }
     setTab(nextTab);
   };
 
@@ -743,7 +849,8 @@ export function DishRecipeAdminWorkbench({
   };
 
   const saveDish = async () => {
-    if (!api || !dishEditorId || mutationBlocked) return;
+    if (!api || !authSubject || !dishEditorId || mutationBlocked) return;
+    const submittingAuthSubject = authSubject;
     if (!dishDraft.name.trim() || !dishDraft.dishTypeId) {
       setNotice("Tên món và Loại món là bắt buộc.");
       return;
@@ -774,10 +881,14 @@ export function DishRecipeAdminWorkbench({
     const createdDishId =
       affectedDishId ?? (newDishes.length === 1 ? newDishes[0].dish_id : null);
     const readBack = createdDishId
-      ? await refresh(systemSelectionForDish(createdDishId))
+      ? await refresh(
+          systemSelectionForDish(createdDishId),
+          submittingAuthSubject,
+        )
       : false;
     if (!readBack) {
       setWriteUncertain(true);
+      setWriteUncertainAuthSubject(submittingAuthSubject);
       setNotice(
         "Atlas đã ghi nhận tạo món nhưng chưa đọc lại được đúng danh tính và hai phạm vi công thức. Hãy đối soát trước khi tiếp tục.",
       );
@@ -856,9 +967,14 @@ export function DishRecipeAdminWorkbench({
   const reconcileCopy = async (
     request: DishRecipeCopyCommandRequest,
     result: DishRecipeCopyResult | null,
+    submittingAuthSubject: string,
   ) => {
-    if (!api || !authSubject) return false;
-    const catalogResult = await api.getWorkbench(authSubject, correlationId);
+    if (!api || authSubjectRef.current !== submittingAuthSubject) return false;
+    const catalogResult = await api.getWorkbench(
+      submittingAuthSubject,
+      correlationId,
+    );
+    if (authSubjectRef.current !== submittingAuthSubject) return false;
     const catalog = recipeWorkbenchFromResult(catalogResult);
     const targetDish = catalog?.dishes.find(
       (item) => item.dish_id === request.payload.target_dish_id,
@@ -927,7 +1043,7 @@ export function DishRecipeAdminWorkbench({
     const readbacks = await Promise.all(
       matchedDrafts.map((item) =>
         api.getEffectiveWorkbench(
-          authSubject,
+          submittingAuthSubject,
           correlationId,
           request.payload.as_of_date,
           targetDish.dish_id,
@@ -938,6 +1054,7 @@ export function DishRecipeAdminWorkbench({
         ),
       ),
     );
+    if (authSubjectRef.current !== submittingAuthSubject) return false;
     const parsedReadbacks = readbacks.map(
       dishRecipeOperatorWorkbenchFromResult,
     );
@@ -989,8 +1106,11 @@ export function DishRecipeAdminWorkbench({
     return true;
   };
 
-  const executeCopyRequest = async (request: DishRecipeCopyCommandRequest) => {
-    if (!api) return;
+  const executeCopyRequest = async (
+    request: DishRecipeCopyCommandRequest,
+    submittingAuthSubject: string,
+  ) => {
+    if (!api || authSubjectRef.current !== submittingAuthSubject) return;
     setBusy(true);
     let rpcResult: AtlasRpcResult;
     try {
@@ -1006,31 +1126,82 @@ export function DishRecipeAdminWorkbench({
         },
       };
     }
+    if (authSubjectRef.current !== submittingAuthSubject) {
+      setBusy(false);
+      setCopyOpen(false);
+      setNotice(null);
+      if (rpcResult.kind === "success") {
+        const parsed = dishRecipeCopyFromResult(rpcResult);
+        setCopyRecovery({
+          kind: "committed_unreadable",
+          authSubject: submittingAuthSubject,
+          request,
+          result:
+            parsed?.command_id === request.command_id &&
+            parsed.correlation_id === request.correlation_id
+              ? parsed
+              : null,
+        });
+      } else if (rpcResult.kind === "transport_error") {
+        setCopyRecovery({
+          kind: "unknown",
+          authSubject: submittingAuthSubject,
+          request,
+          result: null,
+        });
+      } else if (
+        rpcResult.kind === "backend_error" &&
+        rpcResult.error.retryable === true
+      ) {
+        setCopyRecovery({
+          kind: "retryable",
+          authSubject: submittingAuthSubject,
+          request,
+          result: null,
+        });
+      }
+      return;
+    }
     if (rpcResult.kind === "backend_error") {
       const retryable = rpcResult.error.retryable === true;
       setCopyRecovery(
-        retryable ? { kind: "retryable", request, result: null } : null,
+        retryable
+          ? {
+              kind: "retryable",
+              authSubject: submittingAuthSubject,
+              request,
+              result: null,
+            }
+          : null,
       );
       setNotice(recipeResultMessage(rpcResult));
       setCopyOpen(false);
       const refreshSchoolTypeId =
         schoolTypeId ?? canonicalSchoolTypes[0]?.school_type_id;
       if (!retryable && refreshSchoolTypeId) {
-        await refresh({
-          dishId: request.payload.target_dish_id,
-          asOfDate: request.payload.as_of_date,
-          context: {
-            kind: "system",
-            schoolTypeId: refreshSchoolTypeId,
+        await refresh(
+          {
+            dishId: request.payload.target_dish_id,
+            asOfDate: request.payload.as_of_date,
+            context: {
+              kind: "system",
+              schoolTypeId: refreshSchoolTypeId,
+            },
           },
-        });
+          submittingAuthSubject,
+        );
       }
       setBusy(false);
       return;
     }
     if (rpcResult.kind !== "success") {
       setBusy(false);
-      setCopyRecovery({ kind: "unknown", request, result: null });
+      setCopyRecovery({
+        kind: "unknown",
+        authSubject: submittingAuthSubject,
+        request,
+        result: null,
+      });
       setNotice(null);
       setCopyOpen(false);
       return;
@@ -1042,11 +1213,16 @@ export function DishRecipeAdminWorkbench({
       parsed.correlation_id === request.correlation_id
         ? parsed
         : null;
-    const reconciled = await reconcileCopy(request, trusted);
+    const reconciled = await reconcileCopy(
+      request,
+      trusted,
+      submittingAuthSubject,
+    );
     setBusy(false);
     if (!reconciled) {
       setCopyRecovery({
         kind: "committed_unreadable",
+        authSubject: submittingAuthSubject,
         request,
         result: trusted,
       });
@@ -1076,7 +1252,15 @@ export function DishRecipeAdminWorkbench({
       return;
 
     setBusy(true);
-    const freshResult = await api.getWorkbench(authSubject, correlationId);
+    const submittingAuthSubject = authSubject;
+    const freshResult = await api.getWorkbench(
+      submittingAuthSubject,
+      correlationId,
+    );
+    if (authSubjectRef.current !== submittingAuthSubject) {
+      setBusy(false);
+      return;
+    }
     const fresh = recipeWorkbenchFromResult(freshResult);
     const freshTarget = fresh?.dishes.find(
       (item) => item.dish_id === dish.dish_id,
@@ -1103,19 +1287,21 @@ export function DishRecipeAdminWorkbench({
       asOfDate: copyDraft.asOfDate,
     });
     setBusy(false);
-    await executeCopyRequest(request);
+    await executeCopyRequest(request, submittingAuthSubject);
   };
 
   const recoverCopy = async () => {
-    if (!copyRecovery) return;
+    if (!copyRecovery || authSubjectRef.current !== copyRecovery.authSubject)
+      return;
     if (copyRecovery.kind === "retryable") {
-      await executeCopyRequest(copyRecovery.request);
+      await executeCopyRequest(copyRecovery.request, copyRecovery.authSubject);
       return;
     }
     setBusy(true);
     const reconciled = await reconcileCopy(
       copyRecovery.request,
       copyRecovery.result,
+      copyRecovery.authSubject,
     );
     setBusy(false);
     if (!reconciled)
@@ -1172,16 +1358,30 @@ export function DishRecipeAdminWorkbench({
     if (applied) await refresh();
   };
 
+  const copyRecoveryUnavailable = Boolean(
+    copyRecovery && copyRecovery.authSubject !== authSubject,
+  );
+  const writeRecoveryAuthSubject =
+    saveRecovery?.authSubject ?? writeUncertainAuthSubject;
+  const writeRecoveryUnavailable = Boolean(
+    writeRecoveryAuthSubject && writeRecoveryAuthSubject !== authSubject,
+  );
   const copyRecoveryNotice = copyRecovery ? (
     <div className="operator-notice warning" role="alert">
       <p>
-        {copyRecovery.kind === "unknown"
-          ? "Atlas chưa xác định yêu cầu sao chép đã hoàn tất hay chưa. Không gửi lại yêu cầu này trước khi đối soát."
-          : copyRecovery.kind === "retryable"
-            ? "Atlas xác nhận yêu cầu cũ có thể thử lại an toàn với cùng mã chống trùng."
-            : "Atlas đã ghi nhận sao chép nhưng chưa đọc lại được đủ hai công thức NHÁP."}
+        {copyRecoveryUnavailable
+          ? "Yêu cầu sao chép đang chờ đối soát thuộc phiên đăng nhập trước. Phiên hiện tại không thể gửi lại hoặc dùng dữ liệu đọc lại để gỡ chặn."
+          : copyRecovery.kind === "unknown"
+            ? "Atlas chưa xác định yêu cầu sao chép đã hoàn tất hay chưa. Không gửi lại yêu cầu này trước khi đối soát."
+            : copyRecovery.kind === "retryable"
+              ? "Atlas xác nhận yêu cầu cũ có thể thử lại an toàn với cùng mã chống trùng."
+              : "Atlas đã ghi nhận sao chép nhưng chưa đọc lại được đủ hai công thức NHÁP."}
       </p>
-      <button type="button" disabled={busy} onClick={() => void recoverCopy()}>
+      <button
+        type="button"
+        disabled={busy || copyRecoveryUnavailable}
+        onClick={() => void recoverCopy()}
+      >
         {copyRecovery.kind === "retryable"
           ? "Thử lại yêu cầu cũ"
           : "Đối soát kết quả sao chép"}
@@ -1189,7 +1389,7 @@ export function DishRecipeAdminWorkbench({
       {copyRecovery.kind === "retryable" && (
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || copyRecoveryUnavailable}
           onClick={() => {
             setCopyRecovery(null);
             setNotice(
@@ -1264,20 +1464,23 @@ export function DishRecipeAdminWorkbench({
       {notice && <p className="operator-notice">{notice}</p>}
       {writeUncertain && (
         <p className="operator-notice warning" role="alert">
-          {saveRecovery
-            ? saveRecovery.kind === "unknown"
-              ? "Chưa xác định thao tác Lưu vừa rồi đã hoàn tất hay chưa. Atlas sẽ chỉ gỡ chặn khi đọc lại đúng nội dung đã gửi."
-              : "Atlas đã ghi nhận Lưu nhưng chưa đọc lại được đúng nội dung đã gửi."
-            : "Chưa xác định thao tác vừa rồi đã hoàn tất hay chưa. Hãy tải lại trang và đối soát trước khi tiếp tục."}
+          {writeRecoveryUnavailable
+            ? "Thao tác đang chờ đối soát thuộc phiên đăng nhập trước. Phiên hiện tại không thể dùng dữ liệu đọc lại để gỡ chặn."
+            : saveRecovery
+              ? saveRecovery.kind === "unknown"
+                ? "Chưa xác định thao tác Lưu vừa rồi đã hoàn tất hay chưa. Atlas sẽ chỉ gỡ chặn khi đọc lại đúng nội dung đã gửi."
+                : "Atlas đã ghi nhận Lưu nhưng chưa đọc lại được đúng nội dung đã gửi."
+              : "Chưa xác định thao tác vừa rồi đã hoàn tất hay chưa. Hãy tải lại trang và đối soát trước khi tiếp tục."}
           {saveRecovery && (
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || writeRecoveryUnavailable}
               onClick={() => {
                 setBusy(true);
                 void reconcileSave(
                   saveRecovery.request,
                   saveRecovery.selection,
+                  saveRecovery.authSubject,
                 ).then((matched) => {
                   setBusy(false);
                   if (!matched)
@@ -1294,22 +1497,22 @@ export function DishRecipeAdminWorkbench({
       )}
       {!copyOpen && copyRecoveryNotice}
 
-      {tab === "adjustments" && (
-        <>
+      {adjustmentMounted && (
+        <div hidden={tab !== "adjustments" && tab !== "effective"}>
           <div className="recipe-secondary-tabs" role="tablist">
             <button
               type="button"
               role="tab"
-              aria-selected
-              onClick={() => setTab("adjustments")}
+              aria-selected={adjustmentView === "rules"}
+              onClick={() => navigateTab("adjustments")}
             >
               Quy tắc điều chỉnh
             </button>
             <button
               type="button"
               role="tab"
-              aria-selected={false}
-              onClick={() => setTab("effective")}
+              aria-selected={adjustmentView === "effective"}
+              onClick={() => navigateTab("effective")}
             >
               Công thức hiệu lực
             </button>
@@ -1317,34 +1520,10 @@ export function DishRecipeAdminWorkbench({
           <RecipeAdjustmentWorkbench
             authState={authState}
             api={adjustmentApi}
-            view="rules"
+            view={adjustmentView}
             mode={mode}
           />
-        </>
-      )}
-
-      {tab === "effective" && (
-        <>
-          <div className="recipe-secondary-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={false}
-              onClick={() => setTab("adjustments")}
-            >
-              Quy tắc điều chỉnh
-            </button>
-            <button type="button" role="tab" aria-selected>
-              Công thức hiệu lực
-            </button>
-          </div>
-          <RecipeAdjustmentWorkbench
-            authState={authState}
-            api={adjustmentApi}
-            view="effective"
-            mode={mode}
-          />
-        </>
+        </div>
       )}
 
       {tab === "catalog" && (

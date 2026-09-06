@@ -256,16 +256,41 @@ function responseArray<T>(
   result: AtlasRpcResult,
   source: Record<string, JsonValue>,
   key: string,
+  isItem: (value: unknown) => value is T,
 ): T[] | null {
   if (result.kind !== "success") return null;
   const value = source[key];
-  return Array.isArray(value) ? (value as T[]) : null;
+  if (!Array.isArray(value)) return null;
+  const parsed: T[] = [];
+  for (const item of value) {
+    if (!isItem(item)) return null;
+    parsed.push(item);
+  }
+  return parsed;
 }
 
-function isRecord(
-  value: JsonValue | undefined,
-): value is Record<string, JsonValue> {
+function isRecord(value: unknown): value is Record<string, JsonValue> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNonemptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return typeof value === "string" || value === null;
+}
+
+function isNonnegativeInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 0;
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) > 0;
+}
+
+function isPositiveNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 function isEffectiveLine(value: JsonValue): boolean {
@@ -336,7 +361,32 @@ function isHistoryPeriod(value: JsonValue): boolean {
   );
 }
 
-function isRecipeWorkflowSelection(value: JsonValue): boolean {
+function isRecipeCompositionLine(
+  value: unknown,
+): value is RecipeCompositionLine {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.recipe_line_id) &&
+    (value.recipe_line_revision_id === undefined ||
+      isNonemptyString(value.recipe_line_revision_id)) &&
+    isNullableString(value.predecessor_recipe_line_revision_id) &&
+    (value.line_revision_number === undefined ||
+      isPositiveInteger(value.line_revision_number)) &&
+    isNonemptyString(value.ingredient_id) &&
+    isPositiveNumber(value.quantity_per_basis) &&
+    isNonemptyString(value.unit_id) &&
+    (value.line_disposition === "PRESENT" ||
+      value.line_disposition === "REMOVED") &&
+    isNullableString(value.operational_note) &&
+    isNullableString(value.line_code) &&
+    (value.legacy_line_id === undefined ||
+      isNullableString(value.legacy_line_id))
+  );
+}
+
+function isRecipeWorkflowSelection(
+  value: unknown,
+): value is RecipeWorkflowSelection {
   if (!isRecord(value)) return false;
   return (
     (typeof value.dish_id === "string" || value.dish_id === null) &&
@@ -345,19 +395,145 @@ function isRecipeWorkflowSelection(value: JsonValue): boolean {
     (typeof value.recipe_id === "string" || value.recipe_id === null) &&
     (typeof value.recipe_version_id === "string" ||
       value.recipe_version_id === null) &&
-    (typeof value.expected_version === "number" ||
+    (isNonnegativeInteger(value.expected_version) ||
       value.expected_version === null) &&
     (typeof value.in_use_recipe_version_id === "string" ||
       value.in_use_recipe_version_id === null) &&
+    (value.business_status === "NOT_SAVED" ||
+      value.business_status === "SAVED" ||
+      value.business_status === "AVAILABLE" ||
+      value.business_status === "LOCKED" ||
+      value.business_status === "NEEDS_ATTENTION") &&
     typeof value.locked_for_normal_editing === "boolean" &&
     (typeof value.lock_reason === "string" || value.lock_reason === null) &&
-    typeof value.basis_portions === "number" &&
+    isPositiveNumber(value.basis_portions) &&
     Array.isArray(value.composition) &&
+    value.composition.every(isRecipeCompositionLine) &&
     isRecord(value.allowed_actions) &&
     typeof value.allowed_actions.save_recipe === "boolean" &&
     typeof value.allowed_actions.release_recipe === "boolean" &&
     isRecord(value.disabled_reason_codes) &&
-    isRecord(value.disabled_reasons)
+    isNullableString(value.disabled_reason_codes.save_recipe) &&
+    isNullableString(value.disabled_reason_codes.release_recipe) &&
+    isRecord(value.disabled_reasons) &&
+    isNullableString(value.disabled_reasons.save_recipe) &&
+    isNullableString(value.disabled_reasons.release_recipe)
+  );
+}
+
+function isDishTypeReference(value: unknown): value is DishTypeReference {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.dish_type_id) &&
+    isNonemptyString(value.dish_type_code) &&
+    isNonemptyString(value.dish_type_name) &&
+    Array.isArray(value.source_header_aliases) &&
+    value.source_header_aliases.every((alias) => typeof alias === "string") &&
+    typeof value.display_order === "number" &&
+    Number.isFinite(value.display_order) &&
+    (value.dish_type_status === "ACTIVE" ||
+      value.dish_type_status === "INACTIVE") &&
+    isNonnegativeInteger(value.version) &&
+    typeof value.created_at === "string" &&
+    typeof value.updated_at === "string"
+  );
+}
+
+function isDishRecord(value: unknown): value is DishRecord {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.dish_id) &&
+    isNonemptyString(value.dish_code) &&
+    isNonemptyString(value.dish_name) &&
+    isNullableString(value.dish_category) &&
+    isNullableString(value.dish_type_id) &&
+    isNullableString(value.dish_type_code) &&
+    isNullableString(value.dish_type_name) &&
+    isNullableString(value.operational_notes) &&
+    (value.dish_status === "DRAFT" ||
+      value.dish_status === "ACTIVE" ||
+      value.dish_status === "INACTIVE") &&
+    typeof value.display_order === "number" &&
+    Number.isFinite(value.display_order) &&
+    typeof value.requires_need_generation === "boolean" &&
+    isNonnegativeInteger(value.version) &&
+    typeof value.created_at === "string" &&
+    typeof value.updated_at === "string"
+  );
+}
+
+function isRecipeRecord(value: unknown): value is RecipeRecord {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.recipe_id) &&
+    isNonemptyString(value.dish_id) &&
+    isNullableString(value.school_type_id) &&
+    (value.recipe_status === "ACTIVE" || value.recipe_status === "INACTIVE") &&
+    isNonnegativeInteger(value.version) &&
+    typeof value.created_at === "string" &&
+    typeof value.updated_at === "string"
+  );
+}
+
+function isRecipeVersionRecord(value: unknown): value is RecipeVersionRecord {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.recipe_version_id) &&
+    isNonemptyString(value.recipe_id) &&
+    isPositiveInteger(value.version_number) &&
+    isNullableString(value.predecessor_recipe_version_id) &&
+    isPositiveNumber(value.basis_portions) &&
+    (value.recipe_version_status === "DRAFT" ||
+      value.recipe_version_status === "VALIDATED" ||
+      value.recipe_version_status === "RELEASED_FOR_PLANNING" ||
+      value.recipe_version_status === "LOCKED") &&
+    isNonnegativeInteger(value.version) &&
+    isRecord(value.source_evidence) &&
+    isNonemptyString(value.created_by_actor_id) &&
+    typeof value.created_at === "string" &&
+    isNullableString(value.validated_by_actor_id) &&
+    isNullableString(value.validated_at) &&
+    isNullableString(value.released_by_actor_id) &&
+    isNullableString(value.released_at) &&
+    isNullableString(value.locked_by_actor_id) &&
+    isNullableString(value.locked_at) &&
+    Array.isArray(value.composition) &&
+    value.composition.every(isRecipeCompositionLine)
+  );
+}
+
+function isRecipeReference(value: unknown): value is RecipeReference {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.school_type_id) &&
+    isNonemptyString(value.school_type_code) &&
+    isNonemptyString(value.school_type_name) &&
+    (value.school_type_status === "ACTIVE" ||
+      value.school_type_status === "INACTIVE")
+  );
+}
+
+function isRecipeIngredientReference(
+  value: unknown,
+): value is RecipeIngredientReference {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.ingredient_id) &&
+    isNonemptyString(value.ingredient_code) &&
+    isNonemptyString(value.ingredient_name) &&
+    (value.ingredient_status === "ACTIVE" ||
+      value.ingredient_status === "INACTIVE" ||
+      value.ingredient_status === "ARCHIVED")
+  );
+}
+
+function isRecipeUnitReference(value: unknown): value is RecipeUnitReference {
+  if (!isRecord(value)) return false;
+  return (
+    isNonemptyString(value.unit_id) &&
+    isNonemptyString(value.unit_code) &&
+    isNonemptyString(value.unit_name) &&
+    (value.unit_status === "ACTIVE" || value.unit_status === "INACTIVE")
   );
 }
 
@@ -400,29 +576,33 @@ export function recipeWorkbenchFromResult(
     typeof nested === "object" && nested !== null && !Array.isArray(nested)
       ? nested
       : result.response;
-  const dishes = responseArray<DishRecord>(result, source, "dishes");
+  const dishes = responseArray(result, source, "dishes", isDishRecord);
   const dishTypes = responseArray<DishTypeReference>(
     result,
     source,
     "dish_types",
+    isDishTypeReference,
   );
-  const recipes = responseArray<RecipeRecord>(result, source, "recipes");
+  const recipes = responseArray(result, source, "recipes", isRecipeRecord);
   const recipeVersions = responseArray<RecipeVersionRecord>(
     result,
     source,
     "recipe_versions",
+    isRecipeVersionRecord,
   );
   const schoolTypes = responseArray<RecipeReference>(
     result,
     source,
     "school_types",
+    isRecipeReference,
   );
   const ingredients = responseArray<RecipeIngredientReference>(
     result,
     source,
     "ingredients",
+    isRecipeIngredientReference,
   );
-  const units = responseArray<RecipeUnitReference>(result, source, "units");
+  const units = responseArray(result, source, "units", isRecipeUnitReference);
   const selectedRecipe = source.selected_recipe;
   if (
     !dishTypes ||
@@ -432,9 +612,62 @@ export function recipeWorkbenchFromResult(
     !schoolTypes ||
     !ingredients ||
     !units ||
-    typeof selectedRecipe !== "object" ||
-    selectedRecipe === null ||
-    Array.isArray(selectedRecipe)
+    !isRecipeWorkflowSelection(selectedRecipe)
+  )
+    return null;
+  const dishIds = new Set(dishes.map((item) => item.dish_id));
+  const dishTypeIds = new Set(dishTypes.map((item) => item.dish_type_id));
+  const schoolTypeIds = new Set(schoolTypes.map((item) => item.school_type_id));
+  const recipeIds = new Set(recipes.map((item) => item.recipe_id));
+  const ingredientIds = new Set(ingredients.map((item) => item.ingredient_id));
+  const unitIds = new Set(units.map((item) => item.unit_id));
+  const compositionReferencesExist = (lines: RecipeCompositionLine[]) =>
+    lines.every(
+      (line) =>
+        ingredientIds.has(line.ingredient_id) && unitIds.has(line.unit_id),
+    );
+  const selectedDish =
+    selectedRecipe.dish_id === null
+      ? null
+      : dishes.find((item) => item.dish_id === selectedRecipe.dish_id);
+  const selectedRecipeRecord =
+    selectedRecipe.recipe_id === null
+      ? null
+      : recipes.find((item) => item.recipe_id === selectedRecipe.recipe_id);
+  const selectedVersion =
+    selectedRecipe.recipe_version_id === null
+      ? null
+      : recipeVersions.find(
+          (item) => item.recipe_version_id === selectedRecipe.recipe_version_id,
+        );
+  if (
+    dishes.some(
+      (item) =>
+        item.dish_type_id !== null && !dishTypeIds.has(item.dish_type_id),
+    ) ||
+    recipes.some(
+      (item) =>
+        !dishIds.has(item.dish_id) ||
+        (item.school_type_id !== null &&
+          !schoolTypeIds.has(item.school_type_id)),
+    ) ||
+    recipeVersions.some(
+      (item) =>
+        !recipeIds.has(item.recipe_id) ||
+        !compositionReferencesExist(item.composition),
+    ) ||
+    !compositionReferencesExist(selectedRecipe.composition) ||
+    (selectedRecipe.dish_id !== null && !selectedDish) ||
+    (selectedRecipe.school_type_id !== null &&
+      !schoolTypeIds.has(selectedRecipe.school_type_id)) ||
+    (selectedRecipe.recipe_id !== null &&
+      (!selectedRecipeRecord ||
+        selectedRecipeRecord.dish_id !== selectedRecipe.dish_id ||
+        selectedRecipeRecord.school_type_id !==
+          selectedRecipe.school_type_id)) ||
+    (selectedRecipe.recipe_version_id !== null &&
+      (!selectedVersion ||
+        selectedVersion.recipe_id !== selectedRecipe.recipe_id))
   )
     return null;
   return {
@@ -445,7 +678,7 @@ export function recipeWorkbenchFromResult(
     school_types: schoolTypes,
     ingredients,
     units,
-    selected_recipe: selectedRecipe as unknown as RecipeWorkflowSelection,
+    selected_recipe: selectedRecipe,
   };
 }
 

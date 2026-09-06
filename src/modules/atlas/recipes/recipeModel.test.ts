@@ -6,6 +6,8 @@ import {
   emptyRecipeWorkbench,
   recipeWorkbenchFromResult,
 } from "./recipeModel";
+import type { RecipeWorkbenchData } from "./recipeModel";
+import { createReviewRecipeApi } from "./reviewRecipeApi";
 
 function editableOperatorWorkbench() {
   return {
@@ -75,6 +77,18 @@ function editableOperatorWorkbench() {
   };
 }
 
+async function createReviewCatalogFixture(): Promise<RecipeWorkbenchData> {
+  const result = await createReviewRecipeApi("ready").getWorkbench(
+    "subject",
+    "correlation",
+  );
+  if (result.kind !== "success") throw new Error("Review catalog unavailable");
+  return structuredClone(
+    (result.response.workbench ??
+      result.response) as unknown as RecipeWorkbenchData,
+  );
+}
+
 describe("recipe workbench response parsing", () => {
   it("reads the authoritative nested workbench envelope", () => {
     const workbench = emptyRecipeWorkbench();
@@ -99,6 +113,64 @@ describe("recipe workbench response parsing", () => {
             dishes: [],
           },
         },
+      }),
+    ).toBeNull();
+  });
+
+  it.each([
+    ["Dish version is not an integer", "dishes", "version", "1"],
+    ["Dish type identity is malformed", "dish_types", "dish_type_id", null],
+    ["Recipe Dish reference is malformed", "recipes", "dish_id", 9],
+    [
+      "Recipe Version composition is malformed",
+      "recipe_versions",
+      "composition",
+      [null],
+    ],
+    ["School Type identity is malformed", "school_types", "school_type_id", {}],
+    ["Ingredient identity is malformed", "ingredients", "ingredient_id", 4],
+    ["Unit status is malformed", "units", "unit_status", "ARCHIVED"],
+  ])(
+    "rejects catalog data when %s",
+    async (_label, collection, field, malformedValue) => {
+      const workbench = await createReviewCatalogFixture();
+      const rows = workbench[
+        collection as keyof Pick<
+          typeof workbench,
+          | "dishes"
+          | "dish_types"
+          | "recipes"
+          | "recipe_versions"
+          | "school_types"
+          | "ingredients"
+          | "units"
+        >
+      ] as unknown as Array<Record<string, unknown>>;
+      rows[0][String(field)] = malformedValue;
+
+      expect(
+        recipeWorkbenchFromResult({
+          kind: "success",
+          response: { success: true, workbench },
+        }),
+      ).toBeNull();
+    },
+  );
+
+  it.each([
+    ["fractional expected version", 1.5],
+    ["negative expected version", -1],
+    ["non-positive basis", 0],
+  ])("rejects catalog authoring with %s", async (_label, malformedValue) => {
+    const workbench = await createReviewCatalogFixture();
+    if (_label === "non-positive basis")
+      workbench.selected_recipe.basis_portions = malformedValue;
+    else workbench.selected_recipe.expected_version = malformedValue;
+
+    expect(
+      recipeWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench },
       }),
     ).toBeNull();
   });
@@ -294,6 +366,92 @@ describe("recipe workbench response parsing", () => {
       dishRecipeOperatorWorkbenchFromResult({
         kind: "success",
         response: { success: true, workbench: malformedTargets },
+      }),
+    ).toBeNull();
+  });
+
+  it.each([
+    ["unknown business status", { business_status: "PUBLISHED" }],
+    ["malformed composition row", { composition: [null] }],
+    [
+      "composition row missing stable identity",
+      {
+        composition: [
+          {
+            predecessor_recipe_line_revision_id: null,
+            ingredient_id: "ingredient-1",
+            quantity_per_basis: 12,
+            unit_id: "unit-1",
+            line_disposition: "PRESENT",
+            operational_note: null,
+            line_code: null,
+          },
+        ],
+      },
+    ],
+    [
+      "malformed composition quantity",
+      {
+        composition: [
+          {
+            recipe_line_id: "line-1",
+            predecessor_recipe_line_revision_id: null,
+            ingredient_id: "ingredient-1",
+            quantity_per_basis: "12",
+            unit_id: "unit-1",
+            line_disposition: "PRESENT",
+            operational_note: null,
+            line_code: null,
+          },
+        ],
+      },
+    ],
+    [
+      "non-finite composition quantity",
+      {
+        composition: [
+          {
+            recipe_line_id: "line-1",
+            predecessor_recipe_line_revision_id: null,
+            ingredient_id: "ingredient-1",
+            quantity_per_basis: Number.NaN,
+            unit_id: "unit-1",
+            line_disposition: "PRESENT",
+            operational_note: null,
+            line_code: null,
+          },
+        ],
+      },
+    ],
+    [
+      "malformed disabled reason code",
+      {
+        disabled_reason_codes: {
+          save_recipe: 7,
+          release_recipe: "RELEASE_ALREADY_IN_USE",
+        },
+      },
+    ],
+    [
+      "malformed disabled reason",
+      {
+        disabled_reasons: {
+          save_recipe: null,
+          release_recipe: { message: "Already released." },
+        },
+      },
+    ],
+  ])("rejects nested base authoring with %s", (_label, basePatch) => {
+    const workbench = editableOperatorWorkbench();
+    const malformed = {
+      ...workbench,
+      base_authoring: { ...workbench.base_authoring, ...basePatch },
+    };
+
+    expect(
+      dishRecipeOperatorWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench: malformed },
       }),
     ).toBeNull();
   });

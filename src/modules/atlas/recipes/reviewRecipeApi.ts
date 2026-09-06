@@ -903,7 +903,14 @@ export function createReviewRecipeApi(
       target.basis_portions = payloadNumber(request, "basis_portions");
       target.composition = clone(
         (request.payload.lines ?? []) as unknown as RecipeCompositionLine[],
-      ).map((line) => ({ ...line, line_disposition: "PRESENT" }));
+      ).map((line) => ({
+        ...line,
+        predecessor_recipe_line_revision_id:
+          line.predecessor_recipe_line_revision_id ?? null,
+        line_disposition: "PRESENT",
+        operational_note: line.operational_note ?? null,
+        line_code: line.line_code ?? null,
+      }));
       for (const prior of versions) {
         if (prior.recipe_version_status === "RELEASED_FOR_PLANNING") {
           prior.recipe_version_status = "LOCKED";
