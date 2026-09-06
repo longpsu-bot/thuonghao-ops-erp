@@ -566,6 +566,9 @@ export function createReviewRecipeApi(
       const locked = false;
       const schoolTypeId =
         context.kind === "system" ? context.schoolTypeId : ids.schoolType;
+      const schoolType = data.school_types.find(
+        (item) => item.school_type_id === schoolTypeId,
+      );
       const recipe = data.recipes.find(
         (item) =>
           item.dish_id === dishId && item.school_type_id === schoolTypeId,
@@ -614,10 +617,14 @@ export function createReviewRecipeApi(
               selected_recipe: version
                 ? {
                     dish_id: dishId,
+                    school_type_id: schoolTypeId,
+                    school_type_code:
+                      schoolType?.school_type_code ?? "v1-school-type-1",
                     recipe_id: version.recipe_id,
                     recipe_version_id: version.recipe_version_id,
                     selection_scope: "SCHOOL_TYPE",
                     basis_portions: version.basis_portions,
+                    released_at: version.released_at ?? now,
                   }
                 : null,
               basis_portions: version?.basis_portions ?? null,

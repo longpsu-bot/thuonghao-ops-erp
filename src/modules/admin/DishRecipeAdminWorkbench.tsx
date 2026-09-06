@@ -157,10 +157,14 @@ export function DishRecipeAdminWorkbench({
     status: "idle",
     data: emptyRecipeWorkbench(),
   });
+  const [loadAuthSubject, setLoadAuthSubject] = useState<string | null>(null);
   const [effectiveLoad, setEffectiveLoad] = useState<EffectiveLoadState>({
     status: "idle",
     data: null,
   });
+  const [effectiveLoadAuthSubject, setEffectiveLoadAuthSubject] = useState<
+    string | null
+  >(null);
   const [effectiveSelection, setEffectiveSelection] =
     useState<EffectiveSelection | null>(null);
   const [schools, setSchools] = useState<
@@ -246,9 +250,10 @@ export function DishRecipeAdminWorkbench({
           : data.context_kind === "SCHOOL" &&
             data.school_id === selection.context.schoolId);
       if (!data || !matchesIntent) {
+        setEffectiveLoadAuthSubject(null);
         setEffectiveLoad((state) => ({
-          ...state,
           status: "error",
+          data: null,
           message:
             result.kind === "success"
               ? "Atlas trả về ngữ cảnh công thức không khớp. Không thể cho phép thao tác ghi."
@@ -256,6 +261,7 @@ export function DishRecipeAdminWorkbench({
         }));
         return false;
       }
+      setEffectiveLoadAuthSubject(expectedAuthSubject);
       setEffectiveLoad({ status: "ready", data });
       setEffectiveSelection(selection);
       setDishId(data.dish.dish_id);
@@ -281,6 +287,8 @@ export function DishRecipeAdminWorkbench({
       )
         return false;
       const current = ++generation.current;
+      setLoadAuthSubject(null);
+      setEffectiveLoadAuthSubject(null);
       setLoad((state) => ({ ...state, status: "loading", message: undefined }));
       const result = await api.getWorkbench(expectedAuthSubject, correlationId);
       if (
@@ -290,13 +298,20 @@ export function DishRecipeAdminWorkbench({
         return false;
       const data = recipeWorkbenchFromResult(result);
       if (!data) {
-        setLoad((state) => ({
-          ...state,
+        setLoad({
           status: "error",
+          data: emptyRecipeWorkbench(),
           message: recipeResultMessage(result),
-        }));
+        });
+        setEffectiveLoad({
+          status: "error",
+          data: null,
+          message: recipeResultMessage(result),
+        });
+        setEffectiveSelection(null);
         return false;
       }
+      setLoadAuthSubject(expectedAuthSubject);
       setLoad({ status: "ready", data });
       const canonicalTypes = data.school_types.filter(
         (item) =>
@@ -320,11 +335,13 @@ export function DishRecipeAdminWorkbench({
           message:
             "Atlas chưa trả về đủ hai phạm vi loại trường chuẩn để xem công thức.",
         });
+        setEffectiveSelection(null);
         return false;
       }
       if (!selectedDishId) {
         if (data.dishes.length === 0 && !selection) {
           setEffectiveLoad({ status: "idle", data: null });
+          setEffectiveLoadAuthSubject(null);
           setEffectiveSelection(null);
           setDishId(null);
           setSchoolTypeId(defaultType.school_type_id);
@@ -337,6 +354,7 @@ export function DishRecipeAdminWorkbench({
           data: null,
           message: "Atlas không tìm thấy món ăn đã chọn để đọc công thức.",
         });
+        setEffectiveSelection(null);
         return false;
       }
       const nextSelection =
@@ -363,6 +381,8 @@ export function DishRecipeAdminWorkbench({
   useEffect(() => {
     generation.current += 1;
     effectiveGeneration.current += 1;
+    setLoadAuthSubject(null);
+    setEffectiveLoadAuthSubject(null);
     setNotice(null);
     if (authSubject) {
       void refresh();
@@ -389,13 +409,36 @@ export function DishRecipeAdminWorkbench({
               );
           });
       }
-    } else setLoad({ status: "idle", data: emptyRecipeWorkbench() });
+    } else {
+      setLoad({ status: "idle", data: emptyRecipeWorkbench() });
+      setEffectiveLoad({ status: "idle", data: null });
+      setEffectiveSelection(null);
+    }
   }, [adjustmentApi, authSubject, correlationId, refresh]);
 
-  const dish = load.data.dishes.find((item) => item.dish_id === dishId);
+  const catalogAuthorityReady =
+    Boolean(authSubject) &&
+    load.status === "ready" &&
+    loadAuthSubject === authSubject;
+  const effectiveAuthorityReady =
+    catalogAuthorityReady &&
+    effectiveLoad.status === "ready" &&
+    effectiveLoadAuthSubject === authSubject;
+  const catalogData = catalogAuthorityReady
+    ? load.data
+    : emptyRecipeWorkbench();
+  const effectiveBelongsToCurrentSubject =
+    Boolean(authSubject) && effectiveLoadAuthSubject === authSubject;
+  const effectiveData = effectiveBelongsToCurrentSubject
+    ? effectiveLoad.data
+    : null;
+  const currentEffectiveSelection = effectiveBelongsToCurrentSubject
+    ? effectiveSelection
+    : null;
+  const dish = catalogData.dishes.find((item) => item.dish_id === dishId);
   const canonicalSchoolTypes = useMemo(
     () =>
-      load.data.school_types
+      catalogData.school_types
         .filter(
           (item) =>
             item.school_type_status === "ACTIVE" &&
@@ -406,17 +449,16 @@ export function DishRecipeAdminWorkbench({
         .sort((left, right) =>
           left.school_type_code.localeCompare(right.school_type_code),
         ),
-    [load.data.school_types],
+    [catalogData.school_types],
   );
   const authoring =
-    effectiveLoad.data?.base_authoring ??
-    emptyRecipeWorkbench().selected_recipe;
+    effectiveData?.base_authoring ?? emptyRecipeWorkbench().selected_recipe;
   const versions = useMemo(
     () =>
-      load.data.recipe_versions
+      catalogData.recipe_versions
         .filter((version) => version.recipe_id === authoring.recipe_id)
         .sort((left, right) => right.version_number - left.version_number),
-    [authoring.recipe_id, load.data.recipe_versions],
+    [authoring.recipe_id, catalogData.recipe_versions],
   );
   const command = async (
     action: (
@@ -427,7 +469,7 @@ export function DishRecipeAdminWorkbench({
     payload: Record<string, JsonValue>,
     reasonNote?: string,
   ) => {
-    if (!authSubject) return false;
+    if (!authSubject || !catalogAuthorityReady) return false;
     const submittingAuthSubject = authSubject;
     setBusy(true);
     const result = await action(
@@ -520,6 +562,8 @@ export function DishRecipeAdminWorkbench({
     if (!matches) return false;
     generation.current += 1;
     effectiveGeneration.current += 1;
+    setLoadAuthSubject(submittingAuthSubject);
+    setEffectiveLoadAuthSubject(submittingAuthSubject);
     setLoad({ status: "ready", data: catalog });
     setEffectiveLoad({ status: "ready", data: effective });
     setEffectiveSelection(selection);
@@ -541,11 +585,12 @@ export function DishRecipeAdminWorkbench({
     if (
       !api ||
       !authSubject ||
-      !effectiveSelection ||
-      effectiveSelection.context.kind !== "system"
+      !effectiveAuthorityReady ||
+      !currentEffectiveSelection ||
+      currentEffectiveSelection.context.kind !== "system"
     )
       return false;
-    const selection = effectiveSelection;
+    const selection = currentEffectiveSelection;
     const submittingAuthSubject = authSubject;
     const request = recipeWorkflowCommandRequest(
       submittingAuthSubject,
@@ -612,14 +657,14 @@ export function DishRecipeAdminWorkbench({
   };
 
   const baseRecipesForDish = (targetDishId: string) =>
-    load.data.recipes
+    catalogData.recipes
       .filter(
         (recipe) =>
           recipe.dish_id === targetDishId && recipe.recipe_status === "ACTIVE",
       )
       .map((recipe) => ({
         recipe,
-        version: load.data.recipe_versions
+        version: catalogData.recipe_versions
           .filter(
             (version) =>
               version.recipe_id === recipe.recipe_id &&
@@ -635,14 +680,14 @@ export function DishRecipeAdminWorkbench({
         } => Boolean(item.version),
       );
 
-  const shownDishes = load.data.dishes.filter((item) => {
+  const shownDishes = catalogData.dishes.filter((item) => {
     const needle = query.trim().toLocaleLowerCase("vi");
     const baseIngredientNames = baseRecipesForDish(item.dish_id)
       .flatMap(({ version }) => version.composition)
       .filter((line) => line.line_disposition === "PRESENT")
       .map(
         (line) =>
-          load.data.ingredients.find(
+          catalogData.ingredients.find(
             (ingredient) => ingredient.ingredient_id === line.ingredient_id,
           )?.ingredient_name ?? "",
       );
@@ -658,7 +703,7 @@ export function DishRecipeAdminWorkbench({
     );
   });
 
-  const shownIngredients = load.data.ingredients
+  const shownIngredients = catalogData.ingredients
     .filter((item) => item.ingredient_status === "ACTIVE")
     .filter((item) => {
       const needle = ingredientQuery.trim().toLocaleLowerCase("vi");
@@ -713,14 +758,16 @@ export function DishRecipeAdminWorkbench({
   const creationLocked = authoring.locked_for_normal_editing ?? false;
   const authoringReadOnly =
     creationLocked ||
-    effectiveLoad.data?.is_editable === false ||
+    effectiveData?.is_editable === false ||
     authoring.allowed_actions.save_recipe === false ||
-    effectiveSelection?.context.kind === "school";
+    currentEffectiveSelection?.context.kind === "school";
   const mutationBlocked =
+    !catalogAuthorityReady ||
     effectiveLoad.status === "error" ||
     writeUncertain ||
     saveRecovery !== null ||
     copyRecovery !== null;
+  const effectiveMutationBlocked = mutationBlocked || !effectiveAuthorityReady;
   const systemSelectionForDish = (
     targetDishId: string,
     targetSchoolTypeId = schoolTypeId ??
@@ -728,16 +775,16 @@ export function DishRecipeAdminWorkbench({
       "",
   ): EffectiveSelection => ({
     dishId: targetDishId,
-    asOfDate: effectiveSelection?.asOfDate ?? vietnamLocalDate(),
+    asOfDate: currentEffectiveSelection?.asOfDate ?? vietnamLocalDate(),
     context: { kind: "system", schoolTypeId: targetSchoolTypeId },
   });
-  const effectiveContextValue = effectiveSelection
-    ? effectiveSelection.context.kind === "system"
-      ? `system:${effectiveSelection.context.schoolTypeId}`
-      : `school:${effectiveSelection.context.schoolId}`
+  const effectiveContextValue = currentEffectiveSelection
+    ? currentEffectiveSelection.context.kind === "system"
+      ? `system:${currentEffectiveSelection.context.schoolTypeId}`
+      : `school:${currentEffectiveSelection.context.schoolId}`
     : "";
   const changeEffectiveContext = (value: string) => {
-    if (!dish || !effectiveSelection) return;
+    if (!dish || !currentEffectiveSelection) return;
     const [kind, identity] = value.split(":", 2);
     const context =
       kind === "system" &&
@@ -750,16 +797,16 @@ export function DishRecipeAdminWorkbench({
     if (!context) return;
     void selectRecipeContext({
       dishId: dish.dish_id,
-      asOfDate: effectiveSelection.asOfDate,
+      asOfDate: currentEffectiveSelection.asOfDate,
       context,
     });
   };
-  const copySourceOptions = load.data.dishes.filter((sourceDish) => {
+  const copySourceOptions = catalogData.dishes.filter((sourceDish) => {
     if (sourceDish.dish_id === dish?.dish_id) return false;
     const releasedScopeCodes = new Set(
       baseRecipesForDish(sourceDish.dish_id)
         .map(({ recipe }) =>
-          load.data.school_types.find(
+          catalogData.school_types.find(
             (item) => item.school_type_id === recipe.school_type_id,
           ),
         )
@@ -774,7 +821,7 @@ export function DishRecipeAdminWorkbench({
       ({ version }) =>
         version.composition.map(
           (line) =>
-            load.data.ingredients.find(
+            catalogData.ingredients.find(
               (item) => item.ingredient_id === line.ingredient_id,
             )?.ingredient_name ?? "",
         ),
@@ -785,7 +832,7 @@ export function DishRecipeAdminWorkbench({
       ...ingredientNames,
     ].some((value) => value.toLocaleLowerCase("vi").includes(needle));
   });
-  const copySource = load.data.dishes.find(
+  const copySource = catalogData.dishes.find(
     (item) => item.dish_id === copyDraft.sourceDishId,
   );
   const copySourceVersions = copySource
@@ -842,7 +889,7 @@ export function DishRecipeAdminWorkbench({
     setDishDraft({
       ...emptyDishDraft(),
       dishTypeId:
-        load.data.dish_types.find(
+        catalogData.dish_types.find(
           (dishType) => dishType.dish_type_status === "ACTIVE",
         )?.dish_type_id ?? "",
     });
@@ -876,7 +923,9 @@ export function DishRecipeAdminWorkbench({
       : [];
     const newDishes = returnedDishes.filter(
       (item) =>
-        !load.data.dishes.some((existing) => existing.dish_id === item.dish_id),
+        !catalogData.dishes.some(
+          (existing) => existing.dish_id === item.dish_id,
+        ),
     );
     const createdDishId =
       affectedDishId ?? (newDishes.length === 1 ? newDishes[0].dish_id : null);
@@ -923,10 +972,12 @@ export function DishRecipeAdminWorkbench({
   };
 
   const chooseIngredient = (ingredientId: string) => {
-    const ingredient = load.data.ingredients.find(
+    const ingredient = catalogData.ingredients.find(
       (item) => item.ingredient_id === ingredientId,
     );
-    const unit = load.data.units.find((item) => item.unit_status === "ACTIVE");
+    const unit = catalogData.units.find(
+      (item) => item.unit_status === "ACTIVE",
+    );
     if (!ingredient || !unit) {
       setNotice("Không tìm thấy nguyên liệu hoặc đơn vị đang hoạt động.");
       return;
@@ -1090,6 +1141,8 @@ export function DishRecipeAdminWorkbench({
     };
     generation.current += 1;
     effectiveGeneration.current += 1;
+    setLoadAuthSubject(submittingAuthSubject);
+    setEffectiveLoadAuthSubject(submittingAuthSubject);
     setLoad({ status: "ready", data: catalog });
     setEffectiveLoad({ status: "ready", data: primary });
     setEffectiveSelection(selection);
@@ -1238,7 +1291,7 @@ export function DishRecipeAdminWorkbench({
       !copySource ||
       copySource.dish_id === dish.dish_id ||
       creationLocked ||
-      mutationBlocked ||
+      effectiveMutationBlocked ||
       !copyDraft.reasonNote.trim() ||
       !/^\d{4}-\d{2}-\d{2}$/.test(copyDraft.asOfDate)
     )
@@ -1294,6 +1347,7 @@ export function DishRecipeAdminWorkbench({
     if (!copyRecovery || authSubjectRef.current !== copyRecovery.authSubject)
       return;
     if (copyRecovery.kind === "retryable") {
+      if (!effectiveAuthorityReady) return;
       await executeCopyRequest(copyRecovery.request, copyRecovery.authSubject);
       return;
     }
@@ -1317,9 +1371,9 @@ export function DishRecipeAdminWorkbench({
     try {
       setWorkbook(
         await reviewRecipeWorkbook(file, {
-          schoolTypes: load.data.school_types,
-          ingredients: load.data.ingredients,
-          units: load.data.units,
+          schoolTypes: catalogData.school_types,
+          ingredients: catalogData.ingredients,
+          units: catalogData.units,
         }),
       );
     } catch {
@@ -1361,6 +1415,10 @@ export function DishRecipeAdminWorkbench({
   const copyRecoveryUnavailable = Boolean(
     copyRecovery && copyRecovery.authSubject !== authSubject,
   );
+  const copyRecoveryActionUnavailable = Boolean(
+    copyRecoveryUnavailable ||
+    (copyRecovery?.kind === "retryable" && !effectiveAuthorityReady),
+  );
   const writeRecoveryAuthSubject =
     saveRecovery?.authSubject ?? writeUncertainAuthSubject;
   const writeRecoveryUnavailable = Boolean(
@@ -1379,7 +1437,7 @@ export function DishRecipeAdminWorkbench({
       </p>
       <button
         type="button"
-        disabled={busy || copyRecoveryUnavailable}
+        disabled={busy || copyRecoveryActionUnavailable}
         onClick={() => void recoverCopy()}
       >
         {copyRecovery.kind === "retryable"
@@ -1389,7 +1447,7 @@ export function DishRecipeAdminWorkbench({
       {copyRecovery.kind === "retryable" && (
         <button
           type="button"
-          disabled={busy || copyRecoveryUnavailable}
+          disabled={busy || copyRecoveryActionUnavailable}
           onClick={() => {
             setCopyRecovery(null);
             setNotice(
@@ -1400,6 +1458,40 @@ export function DishRecipeAdminWorkbench({
           Bỏ yêu cầu cũ
         </button>
       )}
+    </div>
+  ) : null;
+
+  const adjustmentSurface = adjustmentMounted ? (
+    <div
+      key="adjustment-workbench"
+      hidden={
+        Boolean(authSubject) && tab !== "adjustments" && tab !== "effective"
+      }
+    >
+      <div className="recipe-secondary-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={adjustmentView === "rules"}
+          onClick={() => navigateTab("adjustments")}
+        >
+          Quy tắc điều chỉnh
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={adjustmentView === "effective"}
+          onClick={() => navigateTab("effective")}
+        >
+          Công thức hiệu lực
+        </button>
+      </div>
+      <RecipeAdjustmentWorkbench
+        authState={authState}
+        api={adjustmentApi}
+        view={adjustmentView}
+        mode={mode}
+      />
     </div>
   ) : null;
 
@@ -1415,6 +1507,7 @@ export function DishRecipeAdminWorkbench({
             ? "Phiên làm việc đã hết. Vui lòng đăng nhập lại."
             : "Đăng nhập để xem và cập nhật công thức món ăn."}
         </p>
+        {adjustmentSurface}
       </Panel>
     );
   }
@@ -1496,35 +1589,7 @@ export function DishRecipeAdminWorkbench({
         </p>
       )}
       {!copyOpen && copyRecoveryNotice}
-
-      {adjustmentMounted && (
-        <div hidden={tab !== "adjustments" && tab !== "effective"}>
-          <div className="recipe-secondary-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={adjustmentView === "rules"}
-              onClick={() => navigateTab("adjustments")}
-            >
-              Quy tắc điều chỉnh
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={adjustmentView === "effective"}
-              onClick={() => navigateTab("effective")}
-            >
-              Công thức hiệu lực
-            </button>
-          </div>
-          <RecipeAdjustmentWorkbench
-            authState={authState}
-            api={adjustmentApi}
-            view={adjustmentView}
-            mode={mode}
-          />
-        </div>
-      )}
+      {adjustmentSurface}
 
       {tab === "catalog" && (
         <>
@@ -1575,7 +1640,10 @@ export function DishRecipeAdminWorkbench({
                         baseRecipesForDish(item.dish_id).map(
                           ({ recipe, version }) => (
                             <small key={recipe.recipe_id}>
-                              {schoolScopeLabel(recipe, load.data.school_types)}
+                              {schoolScopeLabel(
+                                recipe,
+                                catalogData.school_types,
+                              )}
                               : {version.basis_portions} suất ·{" "}
                               {version.composition
                                 .filter(
@@ -1584,7 +1652,7 @@ export function DishRecipeAdminWorkbench({
                                 .map((line) =>
                                   ingredientLabel(
                                     line.ingredient_id,
-                                    load.data.ingredients,
+                                    catalogData.ingredients,
                                   ),
                                 )
                                 .join(", ") || "Chưa có nguyên liệu"}
@@ -1637,12 +1705,12 @@ export function DishRecipeAdminWorkbench({
                 </div>
               </div>
               {effectiveLoad.status === "error" &&
-                (!dish || !effectiveSelection) && (
+                (!dish || !currentEffectiveSelection) && (
                   <p className="operator-notice warning" role="alert">
                     {effectiveLoad.message}
                   </p>
                 )}
-              {dish && effectiveSelection && (
+              {dish && currentEffectiveSelection && (
                 <>
                   <label className="evidence-field">
                     Ngày áp dụng
@@ -1650,10 +1718,10 @@ export function DishRecipeAdminWorkbench({
                       aria-label="Ngày áp dụng"
                       type="date"
                       disabled={busy}
-                      value={effectiveSelection.asOfDate}
+                      value={currentEffectiveSelection.asOfDate}
                       onChange={(event) =>
                         void selectRecipeContext({
-                          ...effectiveSelection,
+                          ...currentEffectiveSelection,
                           asOfDate: event.target.value,
                         })
                       }
@@ -1697,33 +1765,30 @@ export function DishRecipeAdminWorkbench({
                       {effectiveLoad.message}
                     </p>
                   )}
-                  {effectiveLoad.data && (
+                  {effectiveData && (
                     <>
                       <h4>Công thức hiệu lực</h4>
                       <p className="supporting-copy">
-                        {effectiveLoad.data.context_kind === "SCHOOL"
+                        {effectiveData.context_kind === "SCHOOL"
                           ? "Ngữ cảnh Trường, bao gồm ngoại lệ áp dụng."
                           : "Ngữ cảnh hệ thống, không bao gồm ngoại lệ Trường."}
                       </p>
-                      {effectiveLoad.data.effective_readiness.status ===
-                      "READY" ? (
+                      {effectiveData.effective_readiness.status === "READY" ? (
                         <CompactTable
                           headers={["Nguyên liệu", "Định lượng", "Đơn vị"]}
                         >
-                          {effectiveLoad.data.current_effective_bom.map(
-                            (line) => (
-                              <tr key={`${line.target_kind}:${line.target_id}`}>
-                                <td>{line.ingredient_name}</td>
-                                <td>{line.quantity_per_basis}</td>
-                                <td>{line.unit_name}</td>
-                              </tr>
-                            ),
-                          )}
+                          {effectiveData.current_effective_bom.map((line) => (
+                            <tr key={`${line.target_kind}:${line.target_id}`}>
+                              <td>{line.ingredient_name}</td>
+                              <td>{line.quantity_per_basis}</td>
+                              <td>{line.unit_name}</td>
+                            </tr>
+                          ))}
                         </CompactTable>
                       ) : (
                         <div className="operator-notice warning" role="status">
                           <strong>Chưa sẵn sàng theo ngữ cảnh này</strong>
-                          {effectiveLoad.data.effective_readiness.blockers.map(
+                          {effectiveData.effective_readiness.blockers.map(
                             (blocker) => (
                               <p key={blocker.code}>{blocker.message}</p>
                             ),
@@ -1732,14 +1797,14 @@ export function DishRecipeAdminWorkbench({
                       )}
                       <p className="supporting-copy">
                         Ngoại lệ Trường đang đóng góp:{" "}
-                        {effectiveLoad.data.school_exception_count}
+                        {effectiveData.school_exception_count}
                       </p>
                       <details className="recipe-history">
                         <summary>Lịch sử BOM hiệu lực</summary>
-                        {!effectiveLoad.data.history_periods.length ? (
+                        {!effectiveData.history_periods.length ? (
                           <p>Chưa có kỳ hiệu lực để hiển thị.</p>
                         ) : (
-                          effectiveLoad.data.history_periods.map((period) => (
+                          effectiveData.history_periods.map((period) => (
                             <section
                               key={`${period.period_from}:${period.period_to ?? "open"}`}
                             >
@@ -1866,7 +1931,7 @@ export function DishRecipeAdminWorkbench({
             </button>
             <button
               type="button"
-              disabled={!dish || creationLocked || mutationBlocked}
+              disabled={!dish || creationLocked || effectiveMutationBlocked}
               onClick={() => setCopyOpen(true)}
             >
               Sao chép công thức
@@ -1966,11 +2031,10 @@ export function DishRecipeAdminWorkbench({
                     </div>
                   )}
 
-                  {effectiveLoad.data?.effective_readiness.status ===
-                    "BLOCKED" && (
+                  {effectiveData?.effective_readiness.status === "BLOCKED" && (
                     <div className="operator-notice warning">
                       <strong>Công thức hiệu lực đang bị chặn</strong>
-                      {effectiveLoad.data.effective_readiness.blockers.map(
+                      {effectiveData.effective_readiness.blockers.map(
                         (blocker) => (
                           <p key={blocker.code}>{blocker.message}</p>
                         ),
@@ -2105,7 +2169,7 @@ export function DishRecipeAdminWorkbench({
                             <strong>
                               {ingredientLabel(
                                 line.ingredient_id,
-                                load.data.ingredients,
+                                catalogData.ingredients,
                               )}
                             </strong>
                             <button
@@ -2125,7 +2189,7 @@ export function DishRecipeAdminWorkbench({
                               disabled={authoringReadOnly}
                               aria-label={`Định lượng ${ingredientLabel(
                                 line.ingredient_id,
-                                load.data.ingredients,
+                                catalogData.ingredients,
                               )}`}
                               type="number"
                               min="0"
@@ -2152,20 +2216,23 @@ export function DishRecipeAdminWorkbench({
                               disabled={authoringReadOnly}
                               aria-label={`Đơn vị ${ingredientLabel(
                                 line.ingredient_id,
-                                load.data.ingredients,
+                                catalogData.ingredients,
                               )}`}
                               value={line.unit_id}
                               onChange={(event) =>
                                 setComposition((lines) =>
                                   lines.map((item) =>
                                     item.recipe_line_id === line.recipe_line_id
-                                      ? { ...item, unit_id: event.target.value }
+                                      ? {
+                                          ...item,
+                                          unit_id: event.target.value,
+                                        }
                                       : item,
                                   ),
                                 )
                               }
                             >
-                              {load.data.units
+                              {catalogData.units
                                 .filter((item) => item.unit_status === "ACTIVE")
                                 .map((item) => (
                                   <option
@@ -2182,7 +2249,7 @@ export function DishRecipeAdminWorkbench({
                               disabled={authoringReadOnly}
                               aria-label={`Ghi chú ${ingredientLabel(
                                 line.ingredient_id,
-                                load.data.ingredients,
+                                catalogData.ingredients,
                               )}`}
                               value={line.operational_note ?? ""}
                               onChange={(event) =>
@@ -2246,7 +2313,7 @@ export function DishRecipeAdminWorkbench({
                         }
                         disabled={
                           busy ||
-                          mutationBlocked ||
+                          effectiveMutationBlocked ||
                           !api ||
                           !authoringReadyToSubmit ||
                           !compositionValid ||
@@ -2411,7 +2478,7 @@ export function DishRecipeAdminWorkbench({
                   {copySourceVersions.map(({ recipe, version }) => (
                     <tr key={version.recipe_version_id}>
                       <td>
-                        {schoolScopeLabel(recipe, load.data.school_types)}
+                        {schoolScopeLabel(recipe, catalogData.school_types)}
                       </td>
                       <td>
                         {version.composition
@@ -2419,7 +2486,7 @@ export function DishRecipeAdminWorkbench({
                           .map((line) =>
                             ingredientLabel(
                               line.ingredient_id,
-                              load.data.ingredients,
+                              catalogData.ingredients,
                             ),
                           )
                           .join(", ")}
@@ -2442,7 +2509,7 @@ export function DishRecipeAdminWorkbench({
                   !copySource ||
                   !dish ||
                   creationLocked ||
-                  mutationBlocked ||
+                  effectiveMutationBlocked ||
                   !copyDraft.reasonNote.trim() ||
                   !copyDraft.asOfDate
                 }
@@ -2612,7 +2679,7 @@ export function DishRecipeAdminWorkbench({
                 }
               >
                 <option value="">Chọn Loại món</option>
-                {load.data.dish_types.map((dishType) => (
+                {catalogData.dish_types.map((dishType) => (
                   <option
                     value={dishType.dish_type_id}
                     key={dishType.dish_type_id}

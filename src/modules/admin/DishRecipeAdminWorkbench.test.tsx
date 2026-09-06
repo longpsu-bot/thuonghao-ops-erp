@@ -290,23 +290,25 @@ describe("Recipe creation-and-lock workbench", () => {
       workbench.recipe_versions = [];
       Object.assign(workbench.selected_recipe, {
         dish_id: null,
-        dish_status: null,
+        school_type_id: null,
         recipe_id: null,
         recipe_version_id: null,
-        expected_version: null,
-        in_use_recipe_version_id: null,
-        business_status: "NOT_SAVED",
+        business_status: "NEEDS_ATTENTION",
         composition: [],
         allowed_actions: { save_recipe: false, release_recipe: false },
         disabled_reason_codes: {
-          save_recipe: "SELECT_DISH_REQUIRED",
-          release_recipe: "SELECT_DISH_REQUIRED",
+          save_recipe: "DISH_NOT_FOUND",
+          release_recipe: "DISH_NOT_FOUND",
         },
         disabled_reasons: {
-          save_recipe: "Chọn món trước khi lưu công thức.",
-          release_recipe: "Chọn món trước khi phát hành công thức.",
+          save_recipe: "Không tìm thấy món ăn đã chọn.",
+          release_recipe: "Không tìm thấy món ăn đã chọn.",
         },
       });
+      delete (workbench.selected_recipe as unknown as Record<string, unknown>)
+        .expected_version;
+      delete (workbench.selected_recipe as unknown as Record<string, unknown>)
+        .in_use_recipe_version_id;
       return result;
     });
 
@@ -315,7 +317,7 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(getEffectiveWorkbench).not.toHaveBeenCalled();
     await openCreation();
     const create = screen.getByRole("button", { name: "Tạo món mới" });
-    expect(create).toBeEnabled();
+    await waitFor(() => expect(create).toBeEnabled());
     fireEvent.click(create);
     expect(screen.getByLabelText("Biểu mẫu món ăn")).toBeVisible();
     expect(getEffectiveWorkbench).not.toHaveBeenCalled();
@@ -461,8 +463,29 @@ describe("Recipe creation-and-lock workbench", () => {
     },
   );
 
-  it("honors backend is_editable=false while keeping Recipe scope navigation available", async () => {
-    const api = lifecycleRecipeApi("VALIDATED", false);
+  it("honors backend is_editable=false independently from allowed Save while keeping Recipe scope navigation available", async () => {
+    const api = lifecycleRecipeApi("VALIDATED", true);
+    const getEffectiveWorkbench = api.getEffectiveWorkbench;
+    api.getEffectiveWorkbench = async (...args) => {
+      const result = await getEffectiveWorkbench(...args);
+      if (result.kind !== "success") return result;
+      const workbench = (result.response.workbench ??
+        result.response) as unknown as DishRecipeOperatorWorkbench;
+      workbench.is_editable = false;
+      const blockers = [
+        {
+          code: "TYPED_ROOT_NOT_READY",
+          message: "Chưa có công thức theo loại trường đang hoạt động.",
+        },
+      ];
+      workbench.effective_readiness = {
+        status: "BLOCKED",
+        blockers,
+        warnings: [],
+      };
+      workbench.blockers = blockers;
+      return result;
+    };
     const saveRecipe = vi.spyOn(api, "saveRecipe");
     renderWorkbench(api);
     await screen.findByLabelText("Chi tiết công thức hiệu lực");
@@ -478,6 +501,9 @@ describe("Recipe creation-and-lock workbench", () => {
     ).toBeDisabled();
     expect(screen.queryByText("Có thay đổi chưa lưu")).toBeNull();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(
+      screen.getByText(/Chưa có công thức theo loại trường đang hoạt động/),
+    ).toBeVisible();
 
     const scope = screen.getByLabelText("Áp dụng cho");
     expect(scope).toBeEnabled();
@@ -658,8 +684,10 @@ describe("Recipe creation-and-lock workbench", () => {
     await waitFor(() =>
       expect(context).toHaveValue(`school:${unaffectedSchoolId}`),
     );
-    expect(detail).toHaveTextContent("12");
-    expect(detail).toHaveTextContent("Ngoại lệ Trường đang đóng góp: 0");
+    await waitFor(() => {
+      expect(detail).toHaveTextContent("12");
+      expect(detail).toHaveTextContent("Ngoại lệ Trường đang đóng góp: 0");
+    });
     await openCreation();
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
   });
@@ -686,7 +714,13 @@ describe("Recipe creation-and-lock workbench", () => {
               },
             } as const),
       );
-      renderWorkbench(undefined, { ...fixture, create });
+      const operatorA = authenticatedState("operator-a");
+      const operatorB = authenticatedState("operator-b");
+      const view = renderWorkbench(
+        undefined,
+        { ...fixture, create },
+        operatorA,
+      );
 
       await screen.findByRole("tab", { name: "Danh sách", selected: true });
       expect(getOperatorWorkbench).not.toHaveBeenCalled();
@@ -746,6 +780,29 @@ describe("Recipe creation-and-lock workbench", () => {
         /Không gửi lại thao tác/i,
       );
       expect(retainedWarnings).not.toHaveLength(0);
+      expect(
+        screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+      ).toBeDisabled();
+      expect(create).toHaveBeenCalledTimes(1);
+
+      view.rerender(
+        workbenchElement(
+          createReviewRecipeApi("ready"),
+          { ...fixture, create },
+          createReviewAuthState("session_lost"),
+        ),
+      );
+      expect(await screen.findByText(/Phiên làm việc đã mất/)).toBeVisible();
+      view.rerender(
+        workbenchElement(
+          createReviewRecipeApi("ready"),
+          { ...fixture, create },
+          operatorB,
+        ),
+      );
+      expect(
+        await screen.findAllByText(/Không gửi lại thao tác/i),
+      ).not.toHaveLength(0);
       expect(
         screen.getByRole("button", { name: "Tạo điều chỉnh" }),
       ).toBeDisabled();
@@ -1612,6 +1669,74 @@ describe("Recipe creation-and-lock workbench", () => {
     );
     expect(createDish).toHaveBeenCalledTimes(1);
     expect(getWorkbench).toHaveBeenCalledTimes(readsBeforeSettlement);
+  });
+
+  it("invalidates prior-session Recipe authority while the next subject catalog is pending or denied", async () => {
+    const api = createReviewRecipeApi("ready");
+    const adjustmentApi = createReviewRecipeAdjustmentApi("ready");
+    const realGetWorkbench = api.getWorkbench;
+    const operatorBRead = deferred<AtlasRpcResult>();
+    const getWorkbench = vi
+      .spyOn(api, "getWorkbench")
+      .mockImplementation((subject, ...args) =>
+        subject === "operator-b"
+          ? operatorBRead.promise
+          : realGetWorkbench(subject, ...args),
+      );
+    const createDish = vi.spyOn(api, "createDish");
+    const saveRecipe = vi.spyOn(api, "saveRecipe");
+    const copyDishRecipes = vi.spyOn(api, "copyDishRecipes");
+    const operatorA = authenticatedState("operator-a");
+    const operatorB = authenticatedState("operator-b");
+    const view = renderWorkbench(api, adjustmentApi, operatorA);
+    await screen.findByLabelText("Chi tiết công thức hiệu lực");
+    await openCreation();
+    fireEvent.change(screen.getByLabelText(/Định lượng Bí đỏ/), {
+      target: { value: "24" },
+    });
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+
+    view.rerender(
+      workbenchElement(
+        api,
+        adjustmentApi,
+        createReviewAuthState("session_lost"),
+      ),
+    );
+    expect(await screen.findByText(/Phiên làm việc đã hết/)).toBeVisible();
+    view.rerender(workbenchElement(api, adjustmentApi, operatorB));
+
+    expect(
+      await screen.findByText("Đang tải dữ liệu công thức…"),
+    ).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Lưu" })).toBeNull();
+    const create = screen.getByRole("button", { name: "Tạo món mới" });
+    const copy = screen.getByRole("button", { name: "Sao chép công thức" });
+    expect(create).toBeDisabled();
+    expect(copy).toBeDisabled();
+    fireEvent.click(create);
+    fireEvent.click(copy);
+    expect(screen.queryByLabelText("Biểu mẫu món ăn")).toBeNull();
+    expect(
+      screen.queryByRole("dialog", { name: "Sao chép công thức" }),
+    ).toBeNull();
+    expect(createDish).not.toHaveBeenCalled();
+    expect(saveRecipe).not.toHaveBeenCalled();
+    expect(copyDishRecipes).not.toHaveBeenCalled();
+
+    const denied = await createReviewRecipeApi(
+      "permission_denied",
+    ).getWorkbench("operator-b", "correlation");
+    operatorBRead.resolve(denied);
+    expect(
+      await screen.findByText(/Bạn không có quyền thực hiện thao tác này/),
+    ).toBeVisible();
+    expect(create).toBeDisabled();
+    expect(copy).toBeDisabled();
+    expect(getWorkbench).toHaveBeenCalledTimes(2);
+    expect(createDish).not.toHaveBeenCalled();
+    expect(saveRecipe).not.toHaveBeenCalled();
+    expect(copyDishRecipes).not.toHaveBeenCalled();
   });
 
   it("shows Dish Type names without normalized codes", async () => {
