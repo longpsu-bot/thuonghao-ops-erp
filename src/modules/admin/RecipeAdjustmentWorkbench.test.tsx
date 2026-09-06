@@ -11,7 +11,12 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRecipeAdjustmentApi } from "../atlas/recipe-adjustments/recipeAdjustmentApi";
-import type { AtlasRpcRequest, JsonValue } from "../atlas/connection/atlasRpc";
+import type {
+  AtlasRpcRequest,
+  AtlasRpcResult,
+  JsonValue,
+} from "../atlas/connection/atlasRpc";
+import type { AtlasAuthState } from "../atlas/connection/authSession";
 import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/reviewRecipeAdjustmentApi";
 import { createReviewAuthState } from "../atlas/review/reviewMode";
 import { atlasTheme } from "../../theme";
@@ -676,9 +681,9 @@ describe("Recipe Change Order first-user workbench", () => {
       expect(lock).toHaveTextContent(/Không gửi lại thao tác/i);
       expect(within(review).getByText("Đang xác minh")).toBeInTheDocument();
       expect(within(review).queryByText("Có thể lưu")).not.toBeInTheDocument();
-      fireEvent.change(screen.getByLabelText("Ngày tham chiếu"), {
-        target: { value: "2026-09-07" },
-      });
+      fireEvent.click(
+        within(lock).getByRole("button", { name: "Tải lại dữ liệu" }),
+      );
       await waitFor(() =>
         expect(within(review).getByRole("alert")).toBeInTheDocument(),
       );
@@ -746,6 +751,248 @@ describe("Recipe Change Order first-user workbench", () => {
       ),
     );
     expect(within(dialog).getByRole("alert")).toBeInTheDocument();
+  });
+
+  it.each(["create", "cancel"] as const)(
+    "keeps a delayed %s bound to its original account across session expiry",
+    async (command) => {
+      const fixture = createReviewRecipeAdjustmentApi("ready");
+      const originalCommand = fixture[command];
+      let settle: (() => void) | undefined;
+      const mutation = vi.fn(
+        async (request: Parameters<typeof originalCommand>[0]) => {
+          const result = await originalCommand(request);
+          return new Promise<AtlasRpcResult>((resolve) => {
+            settle = () => resolve(result);
+          });
+        },
+      );
+      const reads = vi.fn(fixture.getOperatorWorkbench);
+      const api = {
+        ...fixture,
+        [command]: mutation,
+        getOperatorWorkbench: reads,
+      };
+      const authenticated = (subject: string): AtlasAuthState => {
+        const state = createReviewAuthState("ready");
+        if (state.status !== "authenticated")
+          throw new Error("Expected authenticated fixture");
+        return { ...state, authSubject: subject };
+      };
+      const element = (authState: AtlasAuthState) => (
+        <MantineProvider theme={atlasTheme}>
+          <RecipeAdjustmentWorkbench
+            authState={authState}
+            api={api}
+            view="rules"
+            mode="review"
+          />
+        </MantineProvider>
+      );
+      const view = render(element(authenticated("operator-a")));
+      if (command === "create") {
+        const dialog = await openCreateDialog();
+        await fillRecipeReplacement(dialog);
+        fireEvent.click(
+          within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+        );
+        const review = await screen.findByRole("dialog", {
+          name: "Thay đổi dự kiến",
+        });
+        fireEvent.click(
+          within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+        );
+      } else {
+        fireEvent.click(
+          (await screen.findAllByRole("button", { name: "Xem" }))[1],
+        );
+        const detail = await screen.findByRole("dialog", {
+          name: "Chi tiết điều chỉnh",
+        });
+        fireEvent.click(
+          within(detail).getByRole("button", { name: "Hủy điều chỉnh" }),
+        );
+        const dialog = await screen.findByRole("dialog", {
+          name: "Hủy điều chỉnh",
+        });
+        fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+          target: { value: "Hủy theo yêu cầu đã duyệt." },
+        });
+        fireEvent.click(
+          within(dialog).getByRole("button", { name: "Xác nhận hủy" }),
+        );
+      }
+      await waitFor(() => expect(settle).toBeDefined());
+      view.rerender(element(createReviewAuthState("session_lost")));
+      expect(screen.getByText(/Phiên làm việc đã mất/)).toBeVisible();
+      view.rerender(element(authenticated("operator-b")));
+      await waitFor(() =>
+        expect(
+          reads.mock.calls.some(([subject]) => subject === "operator-b"),
+        ).toBe(true),
+      );
+      // B can read the exact committed fixture, but cannot reconcile A's request.
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+        ).toBeDisabled(),
+      );
+      expect(
+        await screen.findByText(/thuộc phiên đăng nhập trước/),
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: "Tải lại dữ liệu" }),
+      ).toBeDisabled();
+      const countBeforeLateResult = reads.mock.calls.length;
+      await act(async () => settle!());
+      expect(reads).toHaveBeenCalledTimes(countBeforeLateResult);
+      expect(
+        screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+      ).toBeDisabled();
+      view.rerender(element(authenticated("operator-a")));
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+        ).toBeEnabled(),
+      );
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(mutation).toHaveBeenCalledTimes(1);
+      expect(mutation.mock.calls[0][0].requested_by_auth_subject).toBe(
+        "operator-a",
+      );
+    },
+  );
+
+  it("releases busy state when current-day readback confirms a command before its response arrives", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-06T16:59:00.000Z"));
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    let settle: (() => void) | undefined;
+    const api = {
+      ...fixture,
+      create: vi.fn(async (request: Parameters<typeof fixture.create>[0]) => {
+        const result = await fixture.create(request);
+        return new Promise<AtlasRpcResult>((resolve) => {
+          settle = () => resolve(result);
+        });
+      }),
+    };
+    renderWorkbench("rules", api);
+    const dialog = await openCreateDialog();
+    await fillRecipeReplacement(dialog);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(settle).toBeDefined());
+    vi.setSystemTime(new Date("2026-09-06T17:01:00.000Z"));
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+      ).toBeEnabled(),
+    );
+    await act(async () => settle!());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(api.create).toHaveBeenCalledOnce();
+  });
+
+  it("invalidates adjustment authoring while a new account read is pending or denied", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    const operatorA = createReviewAuthState("ready");
+    if (operatorA.status !== "authenticated")
+      throw new Error("Expected authenticated fixture");
+    let deny: ((result: AtlasRpcResult) => void) | undefined;
+    const create = vi.fn(fixture.create);
+    const api = {
+      ...fixture,
+      create,
+      getOperatorWorkbench: vi.fn(
+        (...args: Parameters<typeof fixture.getOperatorWorkbench>) =>
+          args[0] === "operator-b"
+            ? new Promise<AtlasRpcResult>((resolve) => {
+                deny = resolve;
+              })
+            : fixture.getOperatorWorkbench(...args),
+      ),
+    };
+    const element = (authState: AtlasAuthState) => (
+      <MantineProvider theme={atlasTheme}>
+        <RecipeAdjustmentWorkbench
+          authState={authState}
+          api={api}
+          view="rules"
+          mode="review"
+        />
+      </MantineProvider>
+    );
+    const view = render(element(operatorA));
+    const dialog = await openCreateDialog();
+    await fillRecipeReplacement(dialog);
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    await screen.findByRole("dialog", { name: "Thay đổi dự kiến" });
+    view.rerender(element({ ...operatorA, authSubject: "operator-b" }));
+    // A closing Mantine portal can still exist during its exit transition.
+    const staleSave = screen.queryByRole("button", { name: "Lưu điều chỉnh" });
+    if (staleSave) fireEvent.click(staleSave);
+    expect(create).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Thay đổi dự kiến" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+    ).toBeDisabled();
+    await act(async () =>
+      deny!({
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "FORBIDDEN",
+          safe_message: "Không được đọc điều chỉnh.",
+        },
+      }),
+    );
+    expect(await screen.findByText(/Không được đọc điều chỉnh/)).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Xem" }),
+    ).not.toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("derives the current Vietnam ledger date without a routine date input and preserves business dates", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-06T18:15:00.000Z"));
+    const api = createReviewRecipeAdjustmentApi("ready");
+    const read = vi.spyOn(api, "getOperatorWorkbench");
+    renderWorkbench("rules", api);
+    await screen.findByRole("table");
+    expect(read).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      "2026-09-07",
+    );
+    expect(screen.queryByLabelText("Ngày tham chiếu")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Trạng thái được tính tại ngày tham chiếu/),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Xem tại ngày")).not.toBeInTheDocument();
+    const dialog = await openCreateDialog();
+    await fillRecipeReplacement(dialog);
+    expect(within(dialog).getByLabelText("Hiệu lực từ")).toBeVisible();
+    expect(within(dialog).getByLabelText("Hiệu lực đến")).toBeVisible();
+    expect(screen.getByText("Ngày ban hành")).toBeInTheDocument();
   });
 
   it.each([
@@ -1870,7 +2117,7 @@ describe("Recipe Change Order first-user workbench", () => {
   it("keeps Công thức hiệu lực as a secondary explicit-context read surface", async () => {
     renderWorkbench("effective");
     expect(await screen.findByText("Công thức hiệu lực")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ngày xem")).not.toHaveValue("");
+    expect(screen.getByLabelText("Xem tại ngày")).not.toHaveValue("");
     expect(screen.getByLabelText("Trường")).toBeInTheDocument();
     expect(screen.getByLabelText("Món")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Xem công thức" }));
@@ -1881,6 +2128,76 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(document.body.textContent).not.toMatch(
       /recipe_version_id|applied_revision_ids|fingerprint/i,
     );
+  });
+
+  it("isolates historical inspection dates from the current adjustment ledger", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-06T18:15:00.000Z"));
+    const api = createReviewRecipeAdjustmentApi("ready");
+    const reads = vi.spyOn(api, "getOperatorWorkbench");
+    const resolve = vi.spyOn(api, "resolve");
+    const view = renderWorkbench("effective", api);
+    const inspect = await screen.findByRole("button", {
+      name: "Xem công thức",
+    });
+    await waitFor(() => expect(inspect).toBeEnabled());
+    fireEvent.change(screen.getByLabelText("Xem tại ngày"), {
+      target: { value: "2026-07-01" },
+    });
+    fireEvent.click(inspect);
+    await waitFor(() =>
+      expect(resolve).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.objectContaining({ as_of_date: "2026-07-01" }),
+      ),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Tạo điều chỉnh" }),
+    ).not.toBeInTheDocument();
+    view.rerender(
+      <MantineProvider theme={atlasTheme}>
+        <RecipeAdjustmentWorkbench
+          authState={createReviewAuthState("ready")}
+          api={api}
+          view="rules"
+          mode="review"
+        />
+      </MantineProvider>,
+    );
+    expect(screen.queryByLabelText("Xem tại ngày")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ngày tham chiếu")).not.toBeInTheDocument();
+    expect(reads.mock.calls.every((args) => args[2] === "2026-09-07")).toBe(
+      true,
+    );
+    expect(
+      await screen.findByRole("button", { name: "Tạo điều chỉnh" }),
+    ).toBeEnabled();
+  });
+
+  it("refreshes the current ledger with the Vietnam date after the business day changes", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-06T16:59:00.000Z"));
+    const api = createReviewRecipeAdjustmentApi("ready");
+    const reads = vi.spyOn(api, "getOperatorWorkbench");
+    renderWorkbench("rules", api);
+    await waitFor(() =>
+      expect(reads).toHaveBeenLastCalledWith(
+        expect.any(String),
+        expect.any(String),
+        "2026-09-06",
+      ),
+    );
+    vi.setSystemTime(new Date("2026-09-06T17:01:00.000Z"));
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(reads).toHaveBeenLastCalledWith(
+        expect.any(String),
+        expect.any(String),
+        "2026-09-07",
+      ),
+    );
+    expect(screen.queryByLabelText("Ngày tham chiếu")).not.toBeInTheDocument();
   });
 
   it("ignores a late effective composition after the selected date changes", async () => {
@@ -1905,7 +2222,7 @@ describe("Recipe Change Order first-user workbench", () => {
     await waitFor(() => expect(viewButton).toBeEnabled());
     fireEvent.click(viewButton);
     await waitFor(() => expect(api.resolve).toHaveBeenCalledOnce());
-    fireEvent.change(screen.getByLabelText("Ngày xem"), {
+    fireEvent.change(screen.getByLabelText("Xem tại ngày"), {
       target: { value: "2026-09-07" },
     });
     await act(async () => releaseResolve?.());

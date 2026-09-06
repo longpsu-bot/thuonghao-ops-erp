@@ -49,6 +49,7 @@ import { Chip, CompactTable, Panel } from "../atlas/WorkbenchComponents";
 type LoadState = {
   status: "idle" | "loading" | "ready" | "error";
   data: RecipeAdjustmentWorkbenchData;
+  authSubject?: string;
   message?: string;
 };
 
@@ -255,6 +256,8 @@ function hasUnknownWriteOutcome(result: AtlasRpcResult) {
 }
 
 type PendingMutation = {
+  authSubject: string;
+  outcome: "in_flight" | "unknown" | "committed" | "denied";
   adjustmentId: string;
   revisionId: string;
   predecessorRevisionId: string | null;
@@ -349,6 +352,13 @@ export function RecipeAdjustmentWorkbench({
   const pendingMutation = useRef<PendingMutation | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const authSubjectRef = useRef(authSubject);
+  authSubjectRef.current = authSubject;
+  const authorityOwned =
+    !!authSubject &&
+    load.authSubject === authSubject &&
+    load.status !== "error";
+  const authorityReady = authorityOwned && load.status === "ready";
   const effectiveIntent = JSON.stringify({
     authSubject,
     effectiveDate,
@@ -360,54 +370,104 @@ export function RecipeAdjustmentWorkbench({
   effectiveIntentRef.current = effectiveIntent;
 
   useEffect(() => {
+    generation.current += 1;
+    targetGeneration.current += 1;
+    previewGeneration.current += 1;
     effectiveGeneration.current += 1;
+    setLoad({ status: "idle", data: emptyRecipeAdjustmentWorkbench() });
+    setTargetContext(null);
+    setTargetContextStatus("idle");
+    setPreview(null);
+    setPreviewFingerprint("");
     setResolution(null);
+    setCreateOpened(false);
+    setDetail(null);
+    setEditing(null);
+    setCancelTarget(null);
+    setDraft(emptyDraft());
+    setNotice("");
+    setBusy(false);
+    setMutationLocked(pendingMutation.current !== null);
   }, [authSubject]);
 
-  const refresh = useCallback(async () => {
-    if (!api || !authSubject) return false;
-    const current = ++generation.current;
-    setLoad((state) => ({ ...state, status: "loading", message: undefined }));
-    const result = await api.getOperatorWorkbench(
-      authSubject,
-      correlationId,
-      referenceDate,
+  // Refresh current operation automatically at the Vietnam business-day boundary.
+  // The separate effective-inspection date never controls the current ledger.
+  useEffect(() => {
+    const updateDate = () => setReferenceDate(vietnamLocalDate());
+    const nextMidnight =
+      Date.parse(`${vietnamLocalDate()}T00:00:00+07:00`) + 86_400_000;
+    const timer = window.setTimeout(
+      updateDate,
+      Math.max(1, nextMidnight - Date.now() + 50),
     );
-    if (current !== generation.current) return false;
-    const data = adjustmentWorkbenchFromResult(result);
-    if (!data) {
-      setLoad((state) => ({
-        ...state,
-        status: "error",
-        message:
-          result.kind === "success"
-            ? "Dữ liệu tham chiếu điều chỉnh không hợp lệ. Hãy tải lại."
-            : adjustmentResultMessage(result),
-      }));
-      return false;
-    }
-    setLoad({ status: "ready", data });
-    setEffectiveSchoolId(
-      (value) => value || firstId(data.schools, "school_id"),
-    );
-    setEffectiveDishId((value) => value || firstId(data.dishes, "dish_id"));
-    const pending = pendingMutation.current;
-    if (pending && hasMutationEvidence(data, pending)) {
-      pendingMutation.current = null;
-      setMutationLocked(false);
-      setCreateOpened(false);
-      setEditing(null);
-      setPreview(null);
-      setPreviewFingerprint("");
-      setCancelTarget(null);
-      setCancelReason("");
-    }
-    return true;
-  }, [api, authSubject, correlationId, referenceDate]);
+    window.addEventListener("focus", updateDate);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("focus", updateDate);
+    };
+  }, [referenceDate]);
+
+  const refresh = useCallback(
+    async (expectedAuthSubject = authSubject) => {
+      if (
+        !api ||
+        !expectedAuthSubject ||
+        authSubjectRef.current !== expectedAuthSubject
+      )
+        return false;
+      const current = ++generation.current;
+      setLoad((state) => ({ ...state, status: "loading", message: undefined }));
+      const result = await api.getOperatorWorkbench(
+        expectedAuthSubject,
+        correlationId,
+        vietnamLocalDate(),
+      );
+      if (
+        current !== generation.current ||
+        authSubjectRef.current !== expectedAuthSubject
+      )
+        return false;
+      const data = adjustmentWorkbenchFromResult(result);
+      if (!data) {
+        setLoad({
+          data: emptyRecipeAdjustmentWorkbench(),
+          status: "error",
+          message:
+            result.kind === "success"
+              ? "Dữ liệu tham chiếu điều chỉnh không hợp lệ. Hãy tải lại."
+              : adjustmentResultMessage(result),
+        });
+        return false;
+      }
+      setLoad({ status: "ready", data, authSubject: expectedAuthSubject });
+      setEffectiveSchoolId(
+        (value) => value || firstId(data.schools, "school_id"),
+      );
+      setEffectiveDishId((value) => value || firstId(data.dishes, "dish_id"));
+      const pending = pendingMutation.current;
+      if (
+        pending &&
+        pending.authSubject === expectedAuthSubject &&
+        (pending.outcome === "denied" || hasMutationEvidence(data, pending))
+      ) {
+        pendingMutation.current = null;
+        setMutationLocked(false);
+        setBusy(false);
+        setCreateOpened(false);
+        setEditing(null);
+        setPreview(null);
+        setPreviewFingerprint("");
+        setCancelTarget(null);
+        setCancelReason("");
+      }
+      return true;
+    },
+    [api, authSubject, correlationId],
+  );
 
   useEffect(() => {
     if (authSubject && api) void refresh();
-  }, [api, authSubject, refresh]);
+  }, [api, authSubject, refresh, referenceDate]);
 
   const selectedRecipeSchoolTypeId =
     draft.scope === "SYSTEM_DISH"
@@ -432,6 +492,7 @@ export function RecipeAdjustmentWorkbench({
     const shouldLoad =
       !!api &&
       !!authSubject &&
+      authorityOwned &&
       createOpened &&
       recipeScope &&
       draft.action !== "" &&
@@ -462,7 +523,11 @@ export function RecipeAdjustmentWorkbench({
         context,
       )
       .then((result) => {
-        if (requestNumber !== targetGeneration.current) return;
+        if (
+          requestNumber !== targetGeneration.current ||
+          authSubjectRef.current !== authSubject
+        )
+          return;
         const parsed = effectiveTargetContextFromResult(result);
         const matches =
           parsed?.as_of_date === draft.effectiveFrom &&
@@ -486,6 +551,7 @@ export function RecipeAdjustmentWorkbench({
   }, [
     api,
     authSubject,
+    authorityOwned,
     correlationId,
     createOpened,
     draft.action,
@@ -630,6 +696,13 @@ export function RecipeAdjustmentWorkbench({
   }
 
   function openCreate() {
+    if (
+      authSubjectRef.current !== authSubject ||
+      !authorityReady ||
+      busy ||
+      mutationLocked
+    )
+      return;
     setEditing(null);
     setPreview(null);
     setPreviewFingerprint("");
@@ -640,6 +713,13 @@ export function RecipeAdjustmentWorkbench({
   }
 
   function openCorrection(row: RecipeAdjustmentOperatorRecord) {
+    if (
+      authSubjectRef.current !== authSubject ||
+      !authorityReady ||
+      busy ||
+      mutationLocked
+    )
+      return;
     const revision = row.command_revision;
     const schoolId = row.school_id ?? firstId(load.data.schools, "school_id");
     const schoolTypeId =
@@ -886,6 +966,8 @@ export function RecipeAdjustmentWorkbench({
     draft.action === "ADJUST_QUANTITY" ||
     (draft.action === "REPLACE" && draft.replaceQuantity);
   const canPreview =
+    authorityReady &&
+    !mutationLocked &&
     !!draft.action &&
     !!previewSchoolId &&
     !!previewDishId &&
@@ -902,7 +984,14 @@ export function RecipeAdjustmentWorkbench({
     (!requiresPurchaseUnit || (!!proposalUnitId && !missingPurchaseUnit));
 
   async function runPreview() {
-    if (!api || !authSubject || !canPreview) return;
+    if (
+      !api ||
+      !authSubject ||
+      authSubjectRef.current !== authSubject ||
+      !canPreview ||
+      busy
+    )
+      return;
     const requestGeneration = ++previewGeneration.current;
     const requestFingerprint = materialFingerprint;
     const proposedAdjustment = proposal();
@@ -918,6 +1007,7 @@ export function RecipeAdjustmentWorkbench({
       replaces_adjustment_id: editing?.adjustment_id ?? null,
       proposed_adjustment: proposedAdjustment,
     });
+    if (authSubjectRef.current !== authSubject) return;
     if (requestGeneration !== previewGeneration.current) {
       setBusy(false);
       return;
@@ -950,10 +1040,47 @@ export function RecipeAdjustmentWorkbench({
     setBusy(false);
   }
 
+  async function finishMutation(
+    result: AtlasRpcResult,
+    pending: PendingMutation,
+    message: string,
+  ) {
+    // An exact readback may have reconciled this command while its response was in flight.
+    if (pendingMutation.current !== pending) return;
+    pending.outcome =
+      result.kind === "success"
+        ? "committed"
+        : hasUnknownWriteOutcome(result)
+          ? "unknown"
+          : "denied";
+    // Retain the old account's result for its own recovery without applying it to another account.
+    if (authSubjectRef.current !== pending.authSubject) return;
+    setNotice(
+      result.kind === "success" ? message : adjustmentResultMessage(result),
+    );
+    if (pending.outcome === "denied") {
+      pendingMutation.current = null;
+      setMutationLocked(false);
+      setBusy(false);
+    } else if (result.kind === "success") {
+      await refresh(pending.authSubject);
+      if (authSubjectRef.current !== pending.authSubject) return;
+      if (pendingMutation.current === pending) {
+        setNotice(
+          "Đã nhận kết quả nhưng chưa đọc lại được đúng phiên bản. Không gửi lại thao tác.",
+        );
+      }
+    }
+    setBusy(false);
+  }
+
   async function saveAdjustment() {
     if (
       !api ||
       !authSubject ||
+      authSubjectRef.current !== authSubject ||
+      !authorityReady ||
+      busy ||
       mutationLocked ||
       !preview?.can_save ||
       previewFingerprint !== materialFingerprint
@@ -976,7 +1103,9 @@ export function RecipeAdjustmentWorkbench({
       draft.reason.trim(),
       payload,
     );
-    pendingMutation.current = {
+    const pending: PendingMutation = {
+      authSubject,
+      outcome: "in_flight",
       adjustmentId: String(proposedAdjustment.adjustment_id),
       revisionId: String(proposedAdjustment.revision_id),
       predecessorRevisionId:
@@ -984,34 +1113,22 @@ export function RecipeAdjustmentWorkbench({
           ? payload.predecessor_revision_id
           : null,
     };
+    pendingMutation.current = pending;
+    setMutationLocked(true);
     const result = editing
       ? await api.supersede(request)
       : await api.create(request);
-    setNotice(
-      result.kind === "success"
-        ? "Đã lưu điều chỉnh."
-        : adjustmentResultMessage(result),
-    );
-    if (hasUnknownWriteOutcome(result) || result.kind === "success")
-      setMutationLocked(true);
-    else pendingMutation.current = null;
-    if (result.kind === "success") {
-      await refresh();
-      if (!pendingMutation.current) {
-        setCreateOpened(false);
-        setEditing(null);
-        setPreview(null);
-        setPreviewFingerprint("");
-      } else {
-        setNotice(
-          "Đã nhận kết quả lưu nhưng chưa đọc lại được đúng phiên bản. Không gửi lại thao tác.",
-        );
-      }
-    }
-    setBusy(false);
+    await finishMutation(result, pending, "Đã lưu điều chỉnh.");
   }
 
   function openCancellation(row: RecipeAdjustmentOperatorRecord) {
+    if (
+      authSubjectRef.current !== authSubject ||
+      !authorityReady ||
+      busy ||
+      mutationLocked
+    )
+      return;
     const from = row.command_revision.effective_from;
     const localDate = vietnamLocalDate();
     setDetail(null);
@@ -1024,6 +1141,9 @@ export function RecipeAdjustmentWorkbench({
     if (
       !api ||
       !authSubject ||
+      authSubjectRef.current !== authSubject ||
+      !authorityReady ||
+      busy ||
       !cancelTarget ||
       !cancelDate ||
       !cancelReason.trim() ||
@@ -1046,36 +1166,34 @@ export function RecipeAdjustmentWorkbench({
         effective_from: cancelDate,
       },
     );
-    pendingMutation.current = {
+    const pending: PendingMutation = {
+      authSubject,
+      outcome: "in_flight",
       adjustmentId: cancelTarget.adjustment_id,
       revisionId,
       predecessorRevisionId,
     };
+    pendingMutation.current = pending;
+    setMutationLocked(true);
     const result = await api.cancel(request);
-    setNotice(
-      result.kind === "success"
-        ? "Đã ghi nhận hủy điều chỉnh theo ngày đã chọn."
-        : adjustmentResultMessage(result),
+    await finishMutation(
+      result,
+      pending,
+      "Đã ghi nhận hủy điều chỉnh theo ngày đã chọn.",
     );
-    if (hasUnknownWriteOutcome(result) || result.kind === "success")
-      setMutationLocked(true);
-    else pendingMutation.current = null;
-    if (result.kind === "success") {
-      await refresh();
-      if (!pendingMutation.current) {
-        setCancelTarget(null);
-        setCancelReason("");
-      } else {
-        setNotice(
-          "Đã nhận kết quả hủy nhưng chưa đọc lại được đúng phiên bản. Không gửi lại thao tác.",
-        );
-      }
-    }
-    setBusy(false);
   }
 
   async function resolveEffectiveComposition() {
-    if (!api || !authSubject || !effectiveSchoolId || !effectiveDishId) return;
+    if (
+      !api ||
+      !authSubject ||
+      authSubjectRef.current !== authSubject ||
+      !authorityReady ||
+      busy ||
+      !effectiveSchoolId ||
+      !effectiveDishId
+    )
+      return;
     const requestGeneration = ++effectiveGeneration.current;
     const requestIntent = effectiveIntent;
     const requestedDate = effectiveDate;
@@ -1090,6 +1208,7 @@ export function RecipeAdjustmentWorkbench({
       dish_id: requestedDishId,
       review_scenario: requestedReviewScenario,
     });
+    if (authSubjectRef.current !== authSubject) return;
     if (
       requestGeneration !== effectiveGeneration.current ||
       requestIntent !== effectiveIntentRef.current
@@ -1236,11 +1355,19 @@ export function RecipeAdjustmentWorkbench({
   const alignedPreviewRows = preview ? previewRows(preview) : [];
 
   function mutationRecoveryNotice() {
+    const differentAccount =
+      pendingMutation.current?.authSubject !== authSubject;
     return (
       <div className="operator-notice warning" role="alert">
-        Chưa xác định điều chỉnh đã được ghi nhận hay chưa. Không gửi lại thao
-        tác. Hãy tải lại dữ liệu trước khi tiếp tục.
-        <Button ml="sm" variant="outline" onClick={() => void refresh()}>
+        {differentAccount
+          ? "Thao tác đang chờ đối soát thuộc phiên đăng nhập trước. Phiên hiện tại không thể dùng dữ liệu đọc lại để gỡ chặn."
+          : "Chưa xác định điều chỉnh đã được ghi nhận hay chưa. Không gửi lại thao tác. Hãy tải lại dữ liệu trước khi tiếp tục."}
+        <Button
+          ml="sm"
+          variant="outline"
+          disabled={busy || differentAccount}
+          onClick={() => void refresh()}
+        >
           Tải lại dữ liệu
         </Button>
       </div>
@@ -1313,14 +1440,6 @@ export function RecipeAdjustmentWorkbench({
               />
             </label>
             <label>
-              Ngày tham chiếu
-              <input
-                type="date"
-                value={referenceDate}
-                onChange={(event) => setReferenceDate(event.target.value)}
-              />
-            </label>
-            <label>
               Trạng thái hiện tại
               <select
                 value={statusFilter}
@@ -1355,18 +1474,13 @@ export function RecipeAdjustmentWorkbench({
             <div className="table-actions">
               <Button
                 type="button"
-                disabled={load.status !== "ready" || mutationLocked}
+                disabled={!authorityReady || busy || mutationLocked}
                 onClick={openCreate}
               >
                 Tạo điều chỉnh
               </Button>
             </div>
           </div>
-
-          <Text size="sm" c="dimmed" mb="sm">
-            Trạng thái được tính tại ngày tham chiếu{" "}
-            {formatDate(load.data.reference_date)}.
-          </Text>
 
           <CompactTable
             headers={[
@@ -1433,7 +1547,7 @@ export function RecipeAdjustmentWorkbench({
         <section className="effective-bom-workbench">
           <div className="adjustment-context-bar">
             <label>
-              Ngày xem
+              Xem tại ngày
               <input
                 type="date"
                 value={effectiveDate}
@@ -1499,7 +1613,12 @@ export function RecipeAdjustmentWorkbench({
             )}
             <Button
               type="button"
-              disabled={busy || !effectiveSchoolId || !effectiveDishId}
+              disabled={
+                !authorityReady ||
+                busy ||
+                !effectiveSchoolId ||
+                !effectiveDishId
+              }
               onClick={() => void resolveEffectiveComposition()}
             >
               {busy ? "Đang xem…" : "Xem công thức"}
@@ -2351,6 +2470,7 @@ export function RecipeAdjustmentWorkbench({
                 <Button
                   type="button"
                   disabled={
+                    !authorityReady ||
                     busy ||
                     mutationLocked ||
                     !preview?.can_save ||
@@ -2448,7 +2568,7 @@ export function RecipeAdjustmentWorkbench({
             <Group>
               {detail.can_correct && (
                 <Button
-                  disabled={mutationLocked}
+                  disabled={!authorityReady || busy || mutationLocked}
                   onClick={() => openCorrection(detail)}
                 >
                   Điều chỉnh lại
@@ -2458,7 +2578,7 @@ export function RecipeAdjustmentWorkbench({
                 <Button
                   color="red"
                   variant="outline"
-                  disabled={mutationLocked}
+                  disabled={!authorityReady || busy || mutationLocked}
                   onClick={() => openCancellation(detail)}
                 >
                   Hủy điều chỉnh
@@ -2500,7 +2620,11 @@ export function RecipeAdjustmentWorkbench({
             <Button
               color="red"
               disabled={
-                busy || mutationLocked || !cancelDate || !cancelReason.trim()
+                !authorityReady ||
+                busy ||
+                mutationLocked ||
+                !cancelDate ||
+                !cancelReason.trim()
               }
               onClick={() => void cancelAdjustment()}
             >

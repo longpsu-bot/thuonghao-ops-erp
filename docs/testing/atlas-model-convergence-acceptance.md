@@ -94,6 +94,10 @@ These rows preserve existing behavior. Add tests only when current coverage is i
 
 ## 6. Evidence map and gates
 
+The approved 6 September reference-date UX amendment adds focused evidence under A09/S04 without changing the existing 56 acceptance IDs. The normal Lệnh điều chỉnh ledger has no routine `Ngày tham chiếu` input or reference-date explanatory text. Its read request carries the automatically derived current Vietnam-local ISO date; labels continue to follow backend temporal fields. Effective start/end, issuance and other business dates remain visible. Explicit historical date navigation is confined to the secondary read-only effective-inspection surface (`Xem tại ngày`), with no effect on the normal ledger date. R04's inspection navigation and Dish-copy's explicit snapshot date remain intact.
+
+Required focused component evidence: absence of the normal reference-date control, the explicit current Vietnam date in read calls (including a UTC/Vietnam date boundary), backend-provided temporal labels, visible business effective dates, and isolation of any retained historical inspection date from current operation.
+
 Reuse current suites for `recipe_effective_contract_01`, product-model correction, active-on-create lifecycle correction, RMVP-02A/RMVP-02B, adjustment operator, Issue #213, atomic Planning, daily Need, confirmation continuity, purchase review/preparation, Handoff/allocation, PO and platform-security catalog. Verify actual file names and registration from `supabase/tests` and the existing integration workflow; historical suite counts are not acceptance targets.
 
 **G0 — contract mapping:** Every required UI behavior is mapped to an existing field/command. A required unsupported context is BLOCKED, not inferred.

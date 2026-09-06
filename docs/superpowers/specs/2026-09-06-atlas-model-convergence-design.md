@@ -152,6 +152,12 @@ Legacy unattributed issuance remains visibly unattributed. Do not invent an issu
 
 ## 7. Shared UI safety and quality
 
+### Approved reference-date UX amendment — 6 September 2026
+
+The normal Lệnh điều chỉnh ledger uses the current Vietnam-local business date automatically, sending an explicit ISO `as_of_date` to the existing RPC. Remove the routine `Ngày tham chiếu` input and explanatory reference-date copy. Render backend temporal state and effectivity; do not calculate that state from lifecycle or dates in React.
+
+Keep actual business dates, including effective start/end, issuance, correction/cancellation dates and historical boundaries. The separate read-only effective-inspection surface may offer `Xem tại ngày`; it does not change the normal ledger's current-date operation. R04's read-only type/date navigation refers to explicit inspection, not a mandatory date control on the normal Change Order workspace. Dish copy remains an explicitly dated snapshot business command. This clarification changes neither migrations nor RPC contracts.
+
 Use the existing design system and operator conventions; no global restyling. Preserve fast search, compact readable tables, natural Vietnamese labels, explicit work context, progressive disclosure and one dominant business action appropriate to the current state.
 
 Use fresh authoritative action data. Unknown, loading, stale or conflicting responses cannot enable writes. Key asynchronous requests by auth/context/intent and reject superseded results. Keep dirty drafts through failed refreshes and require an explicit discard decision on context changes.

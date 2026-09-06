@@ -2,6 +2,8 @@
 
 Captured on 6 September 2026 from the real Recipe and adjustment components in local Storybook. Every response and command result is synthetic, shaped review data. These images establish connected rendering and interaction evidence only; they do not establish database atomicity, hosted authorization or Staging operability.
 
+The adjustment ledger evidence reflects the approved current-date UX amendment: no routine reference-date input or explanation. Its effective and issuance columns remain business facts; automated tests verify the explicit Vietnam-local current date sent to the backend and isolation of secondary historical inspection.
+
 | Artifact                                                                 | Interaction and observation                                                                                                                                    |
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Root-only authoring](recipe-root-only-authoring.png)                    | Selected the ACTIVE root-only Dish, added an available Ingredient, and observed allowed editing while effective readiness remained blocked.                    |
