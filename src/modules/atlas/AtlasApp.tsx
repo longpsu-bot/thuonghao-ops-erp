@@ -371,7 +371,7 @@ function MasterDataPage({
           }
           context={
             recipePage
-              ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Điều chỉnh khi món đã được sử dụng."
+              ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Lệnh điều chỉnh khi món đã được sử dụng."
               : schoolPage
                 ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
                 : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."

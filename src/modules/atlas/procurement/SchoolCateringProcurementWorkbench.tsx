@@ -25,6 +25,7 @@ import {
   type SchoolCateringProcurementApi,
 } from "./schoolCateringProcurementApi";
 import { purchaseOrderDraftReadinessMessages } from "./schoolCateringProcurementModel";
+import { SchoolScopeSelector } from "../SchoolScopeSelector";
 import type {
   AllocationFamilyRow,
   ProcurementCommandOutcome,
@@ -81,70 +82,6 @@ function schoolOptions(rows: AllocationFamilyRow[]) {
     ),
     ([school_id, school_name]) => ({ school_id, school_name }),
   ).sort((a, b) => a.school_name.localeCompare(b.school_name, "vi"));
-}
-
-function SchoolScopeControl({
-  schools,
-  selectedSchoolIds,
-  onChange,
-}: {
-  schools: ProcurementSchoolOption[];
-  selectedSchoolIds: string[];
-  onChange: (schoolIds: string[]) => void;
-}) {
-  const allSchoolIds = schools.map((school) => school.school_id);
-  const selected = new Set(
-    selectedSchoolIds.length ? selectedSchoolIds : allSchoolIds,
-  );
-  const label =
-    selectedSchoolIds.length === 0
-      ? "Tất cả trường"
-      : selectedSchoolIds.length === 1
-        ? (schools.find((school) => school.school_id === selectedSchoolIds[0])
-            ?.school_name ?? "1 trường")
-        : `${selectedSchoolIds.length} trường`;
-
-  const toggleSchool = (schoolId: string, checked: boolean) => {
-    const next = new Set(selected);
-    if (checked) next.add(schoolId);
-    else next.delete(schoolId);
-    const ordered = allSchoolIds.filter((id) => next.has(id));
-    onChange(
-      ordered.length === 0 || ordered.length === allSchoolIds.length
-        ? []
-        : ordered,
-    );
-  };
-
-  return (
-    <details className="procurement-school-scope">
-      <summary aria-label="Phạm vi trường">
-        <span>Trường / điểm giao</span>
-        <strong>{label}</strong>
-      </summary>
-      <div className="procurement-school-scope-options">
-        <button type="button" onClick={() => onChange([])}>
-          Tất cả trường
-        </button>
-        {schools.length === 0 ? (
-          <p>Chưa có trường trong dữ liệu hiện tại.</p>
-        ) : (
-          schools.map((school) => (
-            <label key={school.school_id}>
-              <input
-                type="checkbox"
-                checked={selected.has(school.school_id)}
-                onChange={(event) =>
-                  toggleSchool(school.school_id, event.currentTarget.checked)
-                }
-              />
-              <span>{school.school_name}</span>
-            </label>
-          ))
-        )}
-      </div>
-    </details>
-  );
 }
 
 function outcomeFromResult(
@@ -714,11 +651,15 @@ export function SchoolCateringProcurementWorkbench({
           </label>
         )}
         {stage === "allocation" && (
-          <SchoolScopeControl
-            schools={schoolCatalogue}
-            selectedSchoolIds={selectedSchoolIds}
-            onChange={changeSchoolScope}
-          />
+          <div className="procurement-school-scope">
+            <label htmlFor="procurement-school-scope">Trường / điểm giao</label>
+            <SchoolScopeSelector
+              id="procurement-school-scope"
+              schools={schoolCatalogue}
+              selectedSchoolIds={selectedSchoolIds}
+              onChange={changeSchoolScope}
+            />
+          </div>
         )}
         <label className="procurement-search">
           Tìm kiếm

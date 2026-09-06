@@ -817,22 +817,38 @@ describe("school-catering Procurement allocation workbench", () => {
       screen.getByRole("region", { name: "Phân bổ Gạo thơm" }),
     ).toBeVisible();
 
+    const schoolLabel = within(
+      screen.getByRole("region", { name: "Phạm vi Procurement" }),
+    ).getByText("Trường / điểm giao");
+    expect(schoolLabel.tagName).toBe("LABEL");
     fireEvent.click(screen.getByLabelText("Phạm vi trường"));
+    fireEvent.change(screen.getByRole("searchbox", { name: "Tìm trường" }), {
+      target: { value: "Nguyễn Du" },
+    });
+    expect(screen.getByRole("checkbox", { name: /Nguyễn Du/ })).toBeVisible();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Tìm trường" }), {
+      target: { value: "" },
+    });
+    const callsBeforeDraft = getWorkbench.mock.calls.length;
     fireEvent.click(
       screen.getByRole("checkbox", {
         name: "Trường Tiểu học Nguyễn Du",
       }),
     );
+    expect(getWorkbench).toHaveBeenCalledTimes(callsBeforeDraft);
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     await waitFor(() =>
       expect(getWorkbench.mock.calls.at(-1)?.[0].payload).toMatchObject({
         school_ids: [schoolC, schoolB],
       }),
     );
+    fireEvent.click(screen.getByLabelText("Phạm vi trường"));
     fireEvent.click(
       screen.getByRole("checkbox", {
         name: "Trường Tiểu học Trần Quốc Toản",
       }),
     );
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     await waitFor(() =>
       expect(getWorkbench.mock.calls.at(-1)?.[0].payload).toMatchObject({
         school_ids: [schoolC],

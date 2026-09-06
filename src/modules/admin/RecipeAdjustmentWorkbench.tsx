@@ -326,6 +326,14 @@ export function RecipeAdjustmentWorkbench({
   }));
   const [preview, setPreview] = useState<RecipeAdjustmentPreview | null>(null);
   const [previewFingerprint, setPreviewFingerprint] = useState("");
+  const [previewInspectionSchoolId, setPreviewInspectionSchoolId] =
+    useState("");
+  const [previewInspection, setPreviewInspection] =
+    useState<EffectiveCompositionResult | null>(null);
+  const [previewInspectionStatus, setPreviewInspectionStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [previewInspectionMessage, setPreviewInspectionMessage] = useState("");
   const [modalStep, setModalStep] = useState<"EDIT" | "REVIEW">("EDIT");
   const [cancelTarget, setCancelTarget] =
     useState<RecipeAdjustmentOperatorRecord | null>(null);
@@ -349,6 +357,7 @@ export function RecipeAdjustmentWorkbench({
   const generation = useRef(0);
   const targetGeneration = useRef(0);
   const previewGeneration = useRef(0);
+  const previewInspectionGeneration = useRef(0);
   const effectiveGeneration = useRef(0);
   const pendingMutation = useRef<PendingMutation | null>(null);
   const authSubject =
@@ -374,12 +383,17 @@ export function RecipeAdjustmentWorkbench({
     generation.current += 1;
     targetGeneration.current += 1;
     previewGeneration.current += 1;
+    previewInspectionGeneration.current += 1;
     effectiveGeneration.current += 1;
     setLoad({ status: "idle", data: emptyRecipeAdjustmentWorkbench() });
     setTargetContext(null);
     setTargetContextStatus("idle");
     setPreview(null);
     setPreviewFingerprint("");
+    setPreviewInspectionSchoolId("");
+    setPreviewInspection(null);
+    setPreviewInspectionStatus("idle");
+    setPreviewInspectionMessage("");
     setResolution(null);
     setCreateOpened(false);
     setDetail(null);
@@ -687,9 +701,14 @@ export function RecipeAdjustmentWorkbench({
 
   function updateDraft(patch: Partial<AdjustmentDraft>) {
     previewGeneration.current += 1;
+    previewInspectionGeneration.current += 1;
     setDraft((value) => ({ ...value, ...patch }));
     setPreview(null);
     setPreviewFingerprint("");
+    setPreviewInspectionSchoolId("");
+    setPreviewInspection(null);
+    setPreviewInspectionStatus("idle");
+    setPreviewInspectionMessage("");
     setModalStep("EDIT");
   }
 
@@ -712,6 +731,10 @@ export function RecipeAdjustmentWorkbench({
     setEditing(null);
     setPreview(null);
     setPreviewFingerprint("");
+    setPreviewInspectionSchoolId("");
+    setPreviewInspection(null);
+    setPreviewInspectionStatus("idle");
+    setPreviewInspectionMessage("");
     setModalStep("EDIT");
     setDraft(emptyDraft());
     resetDraftIdentity();
@@ -738,6 +761,10 @@ export function RecipeAdjustmentWorkbench({
     setEditing(row);
     setPreview(null);
     setPreviewFingerprint("");
+    setPreviewInspectionSchoolId("");
+    setPreviewInspection(null);
+    setPreviewInspectionStatus("idle");
+    setPreviewInspectionMessage("");
     setModalStep("EDIT");
     setDraft({
       action: row.action_kind,
@@ -994,6 +1021,25 @@ export function RecipeAdjustmentWorkbench({
     (draft.action !== "REPLACE" || !!draft.substituteIngredientId) &&
     (!quantityRequired || Number(draft.quantity) > 0) &&
     (!requiresPurchaseUnit || (!!proposalUnitId && !missingPurchaseUnit));
+  const previewInspectionSchools =
+    draft.scope === "SYSTEM_DISH" && preview?.school_type_id
+      ? load.data.schools
+          .filter(
+            (school) =>
+              school.school_status === "ACTIVE" &&
+              school.school_type_id === preview.school_type_id,
+          )
+          .slice()
+          .sort((left, right) =>
+            String(left.school_name).localeCompare(
+              String(right.school_name),
+              "vi",
+            ),
+          )
+      : [];
+  const previewInspectionSchool = previewInspectionSchools.find(
+    (school) => school.school_id === previewInspectionSchoolId,
+  );
 
   async function runPreview() {
     if (
@@ -1011,6 +1057,11 @@ export function RecipeAdjustmentWorkbench({
     const requestedSchoolTypeId = previewSchoolTypeId;
     const requestedDishId = previewDishId;
     const requestedDate = draft.effectiveFrom;
+    previewInspectionGeneration.current += 1;
+    setPreviewInspectionSchoolId("");
+    setPreviewInspection(null);
+    setPreviewInspectionStatus("idle");
+    setPreviewInspectionMessage("");
     setBusy(true);
     setNotice("");
     const result = await api.preview(authSubject, correlationId, {
@@ -1060,6 +1111,53 @@ export function RecipeAdjustmentWorkbench({
           : adjustmentResultMessage(result),
     );
     setBusy(false);
+  }
+
+  async function inspectPreviewAtSchool() {
+    if (
+      !api ||
+      !authSubject ||
+      authSubjectRef.current !== authSubject ||
+      draft.scope !== "SYSTEM_DISH" ||
+      !preview ||
+      !previewInspectionSchool ||
+      previewInspectionStatus === "loading"
+    )
+      return;
+    const requestGeneration = ++previewInspectionGeneration.current;
+    const requestedSchoolId = String(previewInspectionSchool.school_id);
+    const requestedSchoolTypeId = String(preview.school_type_id);
+    const requestedDate = preview.as_of_date;
+    const requestedDishId = preview.dish_id;
+    setPreviewInspection(null);
+    setPreviewInspectionStatus("loading");
+    setPreviewInspectionMessage("");
+    const result = await api.resolve(authSubject, correlationId, {
+      as_of_date: requestedDate,
+      school_id: requestedSchoolId,
+      dish_id: requestedDishId,
+    });
+    if (
+      requestGeneration !== previewInspectionGeneration.current ||
+      authSubjectRef.current !== authSubject
+    )
+      return;
+    const parsed = effectiveCompositionFromResult(result);
+    const matches =
+      parsed?.as_of_date === requestedDate &&
+      parsed.school_id === requestedSchoolId &&
+      parsed.school_type_id === requestedSchoolTypeId &&
+      parsed.dish_id === requestedDishId &&
+      previewInspectionSchool.school_type_id === requestedSchoolTypeId;
+    setPreviewInspection(matches ? parsed : null);
+    setPreviewInspectionStatus(matches ? "ready" : "error");
+    setPreviewInspectionMessage(
+      matches
+        ? ""
+        : parsed
+          ? "Kết quả tại trường không khớp bối cảnh đã chọn."
+          : adjustmentResultMessage(result),
+    );
   }
 
   async function finishMutation(
@@ -1748,7 +1846,7 @@ export function RecipeAdjustmentWorkbench({
         }}
         closeOnClickOutside={!busy}
       >
-        <Stack gap="md">
+        <Stack gap="lg" className="recipe-adjustment-dialog-stack">
           {mutationLocked && mutationRecoveryNotice()}
           {modalStep === "EDIT" ? (
             <>
@@ -2184,7 +2282,10 @@ export function RecipeAdjustmentWorkbench({
                     </SimpleGrid>
                   )}
 
-                  <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                  <SimpleGrid
+                    cols={{ base: 1, sm: 2 }}
+                    className="recipe-adjustment-date-grid"
+                  >
                     <TextInput
                       label="Hiệu lực từ"
                       type="date"
@@ -2195,7 +2296,6 @@ export function RecipeAdjustmentWorkbench({
                     />
                     <TextInput
                       label="Hiệu lực đến"
-                      description="Không bắt buộc"
                       type="date"
                       value={draft.effectiveTo}
                       onChange={(event) =>
@@ -2203,6 +2303,10 @@ export function RecipeAdjustmentWorkbench({
                       }
                     />
                   </SimpleGrid>
+                  <Text size="xs" c="dimmed" mt={-8}>
+                    Hiệu lực đến không bắt buộc. Để trống nếu lệnh tiếp tục áp
+                    dụng cho đến khi có thay đổi khác.
+                  </Text>
 
                   <Textarea
                     label="Lý do"
@@ -2279,14 +2383,8 @@ export function RecipeAdjustmentWorkbench({
               )}
 
               <Group
+                className="recipe-adjustment-action-footer"
                 justify="space-between"
-                style={{
-                  position: "sticky",
-                  bottom: 0,
-                  zIndex: 1,
-                  background: "var(--mantine-color-body)",
-                  paddingTop: "var(--mantine-spacing-sm)",
-                }}
               >
                 <Button
                   type="button"
@@ -2465,15 +2563,130 @@ export function RecipeAdjustmentWorkbench({
                 </Table>
               </section>
 
+              {draft.scope === "SYSTEM_DISH" && preview && (
+                <Paper
+                  withBorder
+                  radius="md"
+                  p="md"
+                  className="recipe-adjustment-school-inspection"
+                >
+                  <Stack gap="sm">
+                    <Box>
+                      <Text fw={700}>Xem tại trường (không bắt buộc)</Text>
+                      <Text size="sm" c="dimmed">
+                        Công thức chung ở trên vẫn là kết quả mặc định. Danh
+                        sách chỉ gồm trường đang hoạt động cùng loại công thức.
+                      </Text>
+                    </Box>
+                    <Group align="flex-end" wrap="wrap">
+                      <NativeSelect
+                        label="Xem tại trường"
+                        value={previewInspectionSchoolId}
+                        data={[
+                          {
+                            value: "",
+                            label: "Không chọn — giữ công thức chung",
+                          },
+                          ...previewInspectionSchools.map((school) => ({
+                            value: String(school.school_id ?? ""),
+                            label: String(school.school_name ?? ""),
+                          })),
+                        ]}
+                        onChange={(event) => {
+                          previewInspectionGeneration.current += 1;
+                          setPreviewInspectionSchoolId(event.target.value);
+                          setPreviewInspection(null);
+                          setPreviewInspectionStatus("idle");
+                          setPreviewInspectionMessage("");
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={
+                          !previewInspectionSchoolId ||
+                          previewInspectionStatus === "loading"
+                        }
+                        onClick={() => void inspectPreviewAtSchool()}
+                      >
+                        {previewInspectionStatus === "loading"
+                          ? "Đang xem…"
+                          : "Xem tại trường"}
+                      </Button>
+                    </Group>
+                    {previewInspectionStatus === "error" && (
+                      <Text size="sm" c="red" role="alert">
+                        {previewInspectionMessage}
+                      </Text>
+                    )}
+                    {previewInspection && previewInspectionSchool && (
+                      <section
+                        aria-label={`Công thức tại ${String(
+                          previewInspectionSchool.school_name,
+                        )}`}
+                      >
+                        <Text fw={700} mb="xs">
+                          Công thức tại{" "}
+                          {String(previewInspectionSchool.school_name)}
+                        </Text>
+                        {previewInspection.status === "READY" ? (
+                          <Table
+                            aria-label="Công thức hiệu lực tại trường"
+                            withTableBorder
+                            verticalSpacing="xs"
+                            horizontalSpacing="sm"
+                          >
+                            <Table.Thead>
+                              <Table.Tr>
+                                <Table.Th>Nguyên liệu</Table.Th>
+                                <Table.Th>Định lượng</Table.Th>
+                                <Table.Th>Đơn vị</Table.Th>
+                              </Table.Tr>
+                            </Table.Thead>
+                            <Table.Tbody>
+                              {previewInspection.lines.map((line) => (
+                                <Table.Tr key={previewLineKey(line)}>
+                                  <Table.Td>
+                                    {referenceName(
+                                      load.data.ingredients,
+                                      line.final_ingredient_id,
+                                      "ingredient_id",
+                                      "ingredient_name",
+                                    )}
+                                  </Table.Td>
+                                  <Table.Td>
+                                    {formatQuantity(
+                                      line.final_quantity_per_basis,
+                                    )}
+                                  </Table.Td>
+                                  <Table.Td>
+                                    {referenceName(
+                                      load.data.units,
+                                      line.final_unit_id,
+                                      "unit_id",
+                                      "unit_name",
+                                    )}
+                                  </Table.Td>
+                                </Table.Tr>
+                              ))}
+                            </Table.Tbody>
+                          </Table>
+                        ) : (
+                          previewInspection.blockers.map((blocker) => (
+                            <Text key={blocker.code} size="sm" c="red">
+                              {blocker.message}
+                            </Text>
+                          ))
+                        )}
+                      </section>
+                    )}
+                  </Stack>
+                </Paper>
+              )}
+
               <Group
+                className="recipe-adjustment-action-footer"
                 justify="space-between"
-                style={{
-                  position: "sticky",
-                  bottom: 0,
-                  zIndex: 1,
-                  background: "var(--mantine-color-body)",
-                  paddingTop: "var(--mantine-spacing-sm)",
-                }}
               >
                 <Button
                   type="button"

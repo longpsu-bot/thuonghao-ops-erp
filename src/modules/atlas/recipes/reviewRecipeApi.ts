@@ -633,7 +633,8 @@ export function createReviewRecipeApi(
                     ...baseAuthoring,
                     business_status: "LOCKED",
                     locked_for_normal_editing: true,
-                    lock_reason: "Món này đã có trong thực đơn đã duyệt.",
+                    lock_reason:
+                      "Món này đã xuất hiện trong thực đơn tuần đã duyệt nên toàn bộ món — gồm cả hai công thức theo loại trường — bị khóa chỉnh sửa thông thường. Muốn thay đổi thành phần, hãy dùng Lệnh điều chỉnh.",
                     allowed_actions: {
                       save_recipe: false,
                       release_recipe: false,
@@ -644,7 +645,7 @@ export function createReviewRecipeApi(
                     },
                     disabled_reasons: {
                       save_recipe:
-                        "Muốn thay đổi công thức, hãy dùng Điều chỉnh.",
+                        "Cả hai công thức theo loại trường đã khóa. Hãy dùng Lệnh điều chỉnh.",
                       release_recipe: "Công thức đã sẵn sàng cho Lập nhu cầu.",
                     },
                   }

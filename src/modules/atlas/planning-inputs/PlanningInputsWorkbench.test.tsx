@@ -386,6 +386,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     expect(
       screen.getByRole("button", { name: "Phạm vi trường" }),
     ).toHaveTextContent("2 trường");
@@ -479,6 +480,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     expect(
       screen.queryByRole("rowheader", { name: /Hoa Hồng/ }),
     ).not.toBeInTheDocument();
@@ -641,6 +643,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     await fetchGoogleCandidate();
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     const dates = screen.getByLabelText("Ngày phục vụ") as HTMLSelectElement;
     fireEvent.change(dates, { target: { value: dates.options[2]!.value } });
     expect(
@@ -1099,7 +1102,7 @@ describe("UI-QUALITY-02AB-UX Planning source cutover", () => {
     renderWorkbench();
     await screen.findByRole("heading", { name: "Thực đơn tuần" });
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "Tìm trường" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Tìm trường" }), {
       target: { value: "tran quoc toan" },
     });
 

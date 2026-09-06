@@ -80,7 +80,7 @@ describe("Planning school display scope", () => {
     renderControl();
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Tìm trường" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Tìm trường" }), {
       target: { value: "Hoa Hồng" },
     });
     expect(screen.getByRole("checkbox", { name: /Hoa Hồng/ })).toBeVisible();
@@ -88,16 +88,18 @@ describe("Planning school display scope", () => {
       screen.queryByRole("checkbox", { name: /Nguyễn Du/ }),
     ).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Tìm trường" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Tìm trường" }), {
       target: { value: "TH001" },
     });
     expect(screen.getByRole("checkbox", { name: /Nguyễn Du/ })).toBeVisible();
   });
 
-  it("emits an arbitrary subset and normalizes selecting every school", () => {
+  it("applies an arbitrary draft subset and normalizes every school to external all", () => {
     const onChange = renderControl(["review-planning-school-1"], vi.fn());
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Trần Quốc Toản/ }));
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     expect(onChange).toHaveBeenLastCalledWith([
       "review-planning-school-1",
       "review-planning-school-2",
@@ -110,10 +112,24 @@ describe("Planning school display scope", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Hoa Hồng/ }));
+    expect(selectLast).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     expect(selectLast).toHaveBeenLastCalledWith([]);
   });
 
-  it("returns to all-school scope through Chọn tất cả", () => {
+  it("keeps Bỏ chọn tất cả as invalid draft UI state", () => {
+    const onChange = renderControl([], vi.fn());
+    fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
+    fireEvent.click(screen.getByRole("button", { name: "Bỏ chọn tất cả" }));
+
+    expect(screen.getByText("Chọn ít nhất một trường")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Áp dụng" })).toBeDisabled();
+    expect(onChange).not.toHaveBeenCalled();
+    for (const checkbox of screen.getAllByRole("checkbox"))
+      expect(checkbox).not.toBeChecked();
+  });
+
+  it("returns to external all-school scope through Chọn tất cả and Áp dụng", () => {
     const onChange = renderControl(
       ["review-planning-school-1", "review-planning-school-3"],
       vi.fn(),
@@ -123,6 +139,8 @@ describe("Planning school display scope", () => {
     ).toHaveTextContent("2 trường");
     fireEvent.click(screen.getByRole("button", { name: "Phạm vi trường" }));
     fireEvent.click(screen.getByRole("button", { name: "Chọn tất cả" }));
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
     expect(onChange).toHaveBeenLastCalledWith([]);
   });
 });
