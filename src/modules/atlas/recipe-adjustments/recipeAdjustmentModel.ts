@@ -88,20 +88,32 @@ export type RecipeAdjustmentTemporalState =
   | "EXPIRED"
   | "CANCELLED";
 
-export type RecipeAdjustmentOperatorRevision = {
+export type RecipeAdjustmentOperatorContent = {
   revision_id: string;
-  revision_status: "ACTIVE" | "SUPERSEDED" | "CANCELLED";
-  business_event_kind: "CREATED" | "CORRECTED" | "CANCELLED";
   effective_from: string;
   effective_to: string | null;
   substitute_ingredient_id: string | null;
   quantity_per_basis: number | null;
   unit_id: string | null;
   reason_note: string;
-  issued_at: string | null;
-  issuance_kind: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
-  issued_by_actor_name: string | null;
 };
+
+export type RecipeAdjustmentOperatorRevision =
+  RecipeAdjustmentOperatorContent & {
+    issued_at: string | null;
+    issuance_kind: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
+    issued_by_actor_name: string | null;
+  };
+
+export type RecipeAdjustmentOperatorDisplayRevision =
+  RecipeAdjustmentOperatorRevision & {
+    revision_status: RecipeAdjustmentLifecycle;
+  };
+
+export type RecipeAdjustmentOperatorHistoryRevision =
+  RecipeAdjustmentOperatorRevision & {
+    business_event_kind: "CREATED" | "CORRECTED" | "CANCELLED";
+  };
 
 export type RecipeAdjustmentOperatorRecord = {
   adjustment_id: string;
@@ -121,10 +133,10 @@ export type RecipeAdjustmentOperatorRecord = {
   temporal_state: RecipeAdjustmentTemporalState;
   temporal_state_date: string | null;
   is_effective_now: boolean;
-  display_revision: RecipeAdjustmentOperatorRevision;
-  content_revision: RecipeAdjustmentOperatorRevision;
-  command_revision: RecipeAdjustmentOperatorRevision;
-  history: RecipeAdjustmentOperatorRevision[];
+  display_revision: RecipeAdjustmentOperatorDisplayRevision;
+  content_revision: RecipeAdjustmentOperatorDisplayRevision;
+  command_revision: RecipeAdjustmentOperatorContent;
+  history: RecipeAdjustmentOperatorHistoryRevision[];
 };
 
 export type EffectiveTargetLine = {
@@ -504,27 +516,48 @@ function isEffectiveComposition(value: JsonValue | undefined): boolean {
   );
 }
 
-function isOperatorRevision(value: JsonValue | undefined): boolean {
+function isOperatorContent(value: JsonValue | undefined): boolean {
   return (
     isRecord(value) &&
     isNonEmptyString(value.revision_id) &&
-    (value.revision_status === "ACTIVE" ||
-      value.revision_status === "SUPERSEDED" ||
-      value.revision_status === "CANCELLED") &&
-    (value.business_event_kind === "CREATED" ||
-      value.business_event_kind === "CORRECTED" ||
-      value.business_event_kind === "CANCELLED") &&
     typeof value.effective_from === "string" &&
     isNullableString(value.effective_to) &&
     isNullableNonEmptyString(value.substitute_ingredient_id) &&
     (typeof value.quantity_per_basis === "number" ||
       value.quantity_per_basis === null) &&
     isNullableNonEmptyString(value.unit_id) &&
-    typeof value.reason_note === "string" &&
+    typeof value.reason_note === "string"
+  );
+}
+
+function isOperatorRevision(value: JsonValue | undefined): boolean {
+  return (
+    isRecord(value) &&
+    isOperatorContent(value) &&
     isNullableString(value.issued_at) &&
     (value.issuance_kind === "ATLAS_NATIVE" ||
       value.issuance_kind === "LEGACY_UNATTRIBUTED") &&
     isNullableString(value.issued_by_actor_name)
+  );
+}
+
+function isOperatorDisplayRevision(value: JsonValue | undefined): boolean {
+  return (
+    isRecord(value) &&
+    isOperatorRevision(value) &&
+    (value.revision_status === "ACTIVE" ||
+      value.revision_status === "SUPERSEDED" ||
+      value.revision_status === "CANCELLED")
+  );
+}
+
+function isOperatorHistoryRevision(value: JsonValue): boolean {
+  return (
+    isRecord(value) &&
+    isOperatorRevision(value) &&
+    (value.business_event_kind === "CREATED" ||
+      value.business_event_kind === "CORRECTED" ||
+      value.business_event_kind === "CANCELLED")
   );
 }
 
@@ -565,12 +598,27 @@ function isOperatorRecord(value: JsonValue): boolean {
     ) &&
     isNullableString(value.temporal_state_date) &&
     typeof value.is_effective_now === "boolean" &&
-    isOperatorRevision(value.display_revision) &&
-    isOperatorRevision(value.content_revision) &&
-    isOperatorRevision(value.command_revision) &&
+    isOperatorDisplayRevision(value.display_revision) &&
+    isOperatorDisplayRevision(value.content_revision) &&
+    isOperatorContent(value.command_revision) &&
     Array.isArray(value.history) &&
-    value.history.every(isOperatorRevision)
+    value.history.every(isOperatorHistoryRevision)
   );
+}
+
+// The retained v1 catalog supplies School references without v2 operator revisions.
+export function adjustmentSchoolsFromResult(
+  result: AtlasRpcResult,
+): AdjustmentReference[] | null {
+  if (result.kind !== "success") return null;
+  const source = result.response.workbench;
+  if (
+    !isRecord(source) ||
+    !Array.isArray(source.schools) ||
+    !source.schools.every(isSchoolReference)
+  )
+    return null;
+  return source.schools as AdjustmentReference[];
 }
 
 export function adjustmentWorkbenchFromResult(

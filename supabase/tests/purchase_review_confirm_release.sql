@@ -368,6 +368,16 @@ language sql stable set search_path='' as $$
       from atlas_planning.confirmed_need_approval_snapshots r),
     'need_snapshot_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
       from atlas_planning.confirmed_need_snapshot_lines r),
+    'need_validation_attempts', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_validation_attempts r),
+    'need_validation_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_validation_lines r),
+    'need_validation_issues', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_validation_issues r),
+    'need_line_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_line_revisions r),
+    'purchase_demand_references', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_demand_references r),
     'handoffs', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
       from atlas_planning.purchase_handoff_batches r),
     'handoff_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)

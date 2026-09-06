@@ -971,6 +971,53 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it.each(["mismatched echo", "day changed"] as const)(
+    "rejects stale current-ledger authority when the %s",
+    async (scenario) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-09-06T16:59:00.000Z"));
+      const fixture = createReviewRecipeAdjustmentApi("ready");
+      let settle: (() => void) | undefined;
+      const api = {
+        ...fixture,
+        getOperatorWorkbench: vi.fn(
+          async (...args: Parameters<typeof fixture.getOperatorWorkbench>) => {
+            const result = await fixture.getOperatorWorkbench(...args);
+            if (result.kind !== "success") throw new Error("Expected fixture");
+            const workbench = result.response.workbench as Record<
+              string,
+              JsonValue
+            >;
+            if (scenario === "mismatched echo")
+              workbench.reference_date = "2026-09-05";
+            return new Promise<AtlasRpcResult>((resolve) => {
+              settle = () => resolve(result);
+            });
+          },
+        ),
+      };
+      renderWorkbench("rules", api);
+      await waitFor(() => expect(settle).toBeDefined());
+      if (scenario === "day changed")
+        vi.setSystemTime(new Date("2026-09-06T17:01:00.000Z"));
+      await act(async () => settle!());
+      expect(
+        await screen.findByText(/Dữ liệu tham chiếu điều chỉnh không hợp lệ/),
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: "Tạo điều chỉnh" }),
+      ).toBeDisabled();
+      expect(
+        screen.queryByRole("button", { name: "Xem" }),
+      ).not.toBeInTheDocument();
+      expect(api.getOperatorWorkbench).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        "2026-09-06",
+      );
+    },
+  );
+
   it("derives the current Vietnam ledger date without a routine date input and preserves business dates", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-09-06T18:15:00.000Z"));

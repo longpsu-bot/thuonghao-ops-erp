@@ -13,7 +13,7 @@ import type {
   RecipeAdjustmentApi,
   RecipeEffectiveContext,
 } from "../atlas/recipe-adjustments/recipeAdjustmentApi";
-import { adjustmentWorkbenchFromResult } from "../atlas/recipe-adjustments/recipeAdjustmentModel";
+import { adjustmentSchoolsFromResult } from "../atlas/recipe-adjustments/recipeAdjustmentModel";
 import {
   dishRecipeCopyFromResult,
   dishRecipeOperatorWorkbenchFromResult,
@@ -170,6 +170,9 @@ export function DishRecipeAdminWorkbench({
   const [schools, setSchools] = useState<
     { school_id: string; school_name: string; school_code: string }[]
   >([]);
+  const [schoolsAuthSubject, setSchoolsAuthSubject] = useState<string | null>(
+    null,
+  );
   const [tab, setTab] = useState<Tab>("catalog");
   const [adjustmentMounted, setAdjustmentMounted] = useState(false);
   const [adjustmentView, setAdjustmentView] = useState<"rules" | "effective">(
@@ -209,6 +212,7 @@ export function DishRecipeAdminWorkbench({
     authState.status === "authenticated" ? authState.authSubject : null;
   const authSubjectRef = useRef(authSubject);
   authSubjectRef.current = authSubject;
+  const currentSchools = schoolsAuthSubject === authSubject ? schools : [];
 
   const loadEffective = useCallback(
     async (
@@ -379,6 +383,9 @@ export function DishRecipeAdminWorkbench({
   );
 
   useEffect(() => {
+    let cancelled = false;
+    setSchools([]);
+    setSchoolsAuthSubject(null);
     generation.current += 1;
     effectiveGeneration.current += 1;
     setLoadAuthSubject(null);
@@ -390,10 +397,12 @@ export function DishRecipeAdminWorkbench({
         void adjustmentApi
           .getWorkbench(authSubject, correlationId)
           .then((result) => {
-            const data = adjustmentWorkbenchFromResult(result);
-            if (data)
+            if (cancelled || authSubjectRef.current !== authSubject) return;
+            const data = adjustmentSchoolsFromResult(result);
+            if (data) {
+              setSchoolsAuthSubject(authSubject);
               setSchools(
-                data.schools.filter(
+                data.filter(
                   (
                     item,
                   ): item is {
@@ -407,6 +416,7 @@ export function DishRecipeAdminWorkbench({
                     item.school_status === "ACTIVE",
                 ),
               );
+            }
           });
       }
     } else {
@@ -414,6 +424,9 @@ export function DishRecipeAdminWorkbench({
       setEffectiveLoad({ status: "idle", data: null });
       setEffectiveSelection(null);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [adjustmentApi, authSubject, correlationId, refresh]);
 
   const catalogAuthorityReady =
@@ -791,7 +804,7 @@ export function DishRecipeAdminWorkbench({
       canonicalSchoolTypes.some((item) => item.school_type_id === identity)
         ? ({ kind: "system", schoolTypeId: identity } as const)
         : kind === "school" &&
-            schools.some((item) => item.school_id === identity)
+            currentSchools.some((item) => item.school_id === identity)
           ? ({ kind: "school", schoolId: identity } as const)
           : null;
     if (!context) return;
@@ -1745,7 +1758,7 @@ export function DishRecipeAdminWorkbench({
                           Hệ thống · {item.school_type_name}
                         </option>
                       ))}
-                      {schools.map((item) => (
+                      {currentSchools.map((item) => (
                         <option
                           key={`school:${item.school_id}`}
                           value={`school:${item.school_id}`}

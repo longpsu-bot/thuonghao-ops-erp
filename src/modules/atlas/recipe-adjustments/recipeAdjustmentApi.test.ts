@@ -370,6 +370,65 @@ describe("Recipe adjustment API contract", () => {
     ).toBeNull();
   });
 
+  it("accepts the four exact SQL revision projections and validates each consumed slot", async () => {
+    const result = await createReviewRecipeAdjustmentApi(
+      "ready",
+    ).getOperatorWorkbench("subject", "correlation", "2026-09-06");
+    if (result.kind !== "success") throw new Error("Expected fixture");
+    const source = result.response.workbench as Record<string, JsonValue>;
+    const row = (source.operator_rows as Array<Record<string, JsonValue>>)[0];
+    // Exact JSON slots from 20260814045038_ui_quality_03b_recipe_adjustment_corrections.sql.
+    const command = {
+      revision_id: "10000000-0000-4000-8000-000000000001",
+      effective_from: "2026-09-01",
+      effective_to: null,
+      substitute_ingredient_id: "17000000-0000-4000-8000-000000000003",
+      quantity_per_basis: null,
+      unit_id: null,
+      reason_note: "Approved correction",
+    };
+    const issuance = {
+      issued_at: null,
+      issuance_kind: "LEGACY_UNATTRIBUTED",
+      issued_by_actor_name: null,
+    };
+    const exactRow = {
+      ...row,
+      current_revision_id: command.revision_id,
+      display_revision: { ...command, ...issuance, revision_status: "ACTIVE" },
+      content_revision: { ...command, ...issuance, revision_status: "ACTIVE" },
+      command_revision: command,
+      history: [{ ...command, ...issuance, business_event_kind: "CREATED" }],
+    };
+    const parse = (operatorRow: Record<string, JsonValue>) =>
+      adjustmentWorkbenchFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          workbench: { ...source, operator_rows: [operatorRow] },
+        },
+      });
+    expect(parse(exactRow)?.operator_rows[0]).toEqual(exactRow);
+    for (const [slot, field, value] of [
+      ["display_revision", "revision_status", "INVALID"],
+      ["display_revision", "issued_at", 42],
+      ["content_revision", "issuance_kind", "IMPORTER"],
+      ["content_revision", "quantity_per_basis", "12"],
+      ["command_revision", "revision_id", null],
+      ["command_revision", "effective_from", 42],
+      ["history", "business_event_kind", "UPSERT"],
+      ["history", "issued_by_actor_name", {}],
+    ] as const) {
+      const invalid = structuredClone(exactRow) as Record<string, JsonValue>;
+      const revision =
+        slot === "history"
+          ? (invalid.history as JsonValue[])[0]
+          : invalid[slot];
+      (revision as Record<string, JsonValue>)[field] = value;
+      expect(parse(invalid), `${slot}.${field}`).toBeNull();
+    }
+  });
+
   it("accepts nullable legacy issuance and rejects malformed temporal authority", async () => {
     const result = await createReviewRecipeAdjustmentApi(
       "ready",

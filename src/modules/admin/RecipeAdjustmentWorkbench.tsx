@@ -39,6 +39,7 @@ import {
   type RecipeAdjustmentAction,
   type RecipeAdjustmentOperatorRecord,
   type RecipeAdjustmentOperatorRevision,
+  type RecipeAdjustmentOperatorContent,
   type RecipeAdjustmentPreview,
   type RecipeAdjustmentScope,
   type RecipeAdjustmentTemporalState,
@@ -416,11 +417,12 @@ export function RecipeAdjustmentWorkbench({
       )
         return false;
       const current = ++generation.current;
+      const requestedReferenceDate = vietnamLocalDate();
       setLoad((state) => ({ ...state, status: "loading", message: undefined }));
       const result = await api.getOperatorWorkbench(
         expectedAuthSubject,
         correlationId,
-        vietnamLocalDate(),
+        requestedReferenceDate,
       );
       if (
         current !== generation.current ||
@@ -428,7 +430,11 @@ export function RecipeAdjustmentWorkbench({
       )
         return false;
       const data = adjustmentWorkbenchFromResult(result);
-      if (!data) {
+      if (
+        !data ||
+        data.reference_date !== requestedReferenceDate ||
+        vietnamLocalDate() !== requestedReferenceDate
+      ) {
         setLoad({
           data: emptyRecipeAdjustmentWorkbench(),
           status: "error",
@@ -623,7 +629,7 @@ export function RecipeAdjustmentWorkbench({
   const changeSummary = useCallback(
     (
       row: RecipeAdjustmentOperatorRecord,
-      revision: RecipeAdjustmentOperatorRevision = row.content_revision,
+      revision: RecipeAdjustmentOperatorContent = row.content_revision,
     ) => {
       const target = targetName(row);
       const substitute = referenceName(

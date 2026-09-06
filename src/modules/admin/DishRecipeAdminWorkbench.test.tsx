@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -578,6 +579,58 @@ describe("Recipe creation-and-lock workbench", () => {
     );
   });
 
+  it.each(["loaded", "deferred"] as const)(
+    "does not expose another account's %s School references after denial",
+    async (timing) => {
+      const api = createReviewRecipeApi("ready");
+      const fixture = createReviewRecipeAdjustmentApi("ready");
+      const pending = deferred<AtlasRpcResult>();
+      const resultA = await fixture.getWorkbench("operator-a", "catalog");
+      const denied = createReviewRecipeAdjustmentApi("permission_denied");
+      const adjustmentApi = {
+        ...fixture,
+        getWorkbench: vi.fn(async (subject: string, correlation: string) =>
+          subject === "operator-a"
+            ? timing === "deferred"
+              ? pending.promise
+              : resultA
+            : denied.getWorkbench(subject, correlation),
+        ),
+      };
+      const view = renderWorkbench(
+        api,
+        adjustmentApi,
+        authenticatedState("operator-a"),
+      );
+      await screen.findByLabelText("Chi tiết công thức hiệu lực");
+      if (timing === "loaded")
+        expect(
+          await screen.findByRole("option", {
+            name: /Trường Tiểu học Minh Khai/,
+          }),
+        ).toBeInTheDocument();
+      view.rerender(
+        workbenchElement(api, adjustmentApi, authenticatedState("operator-b")),
+      );
+      await waitFor(() =>
+        expect(adjustmentApi.getWorkbench).toHaveBeenCalledWith(
+          "operator-b",
+          expect.any(String),
+        ),
+      );
+      await act(async () => pending.resolve(resultA));
+      expect(
+        screen.queryByRole("option", { name: /Trường Tiểu học Minh Khai/ }),
+      ).not.toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText("Ngữ cảnh công thức"), {
+        target: { value: "school:11000000-0000-4000-8000-000000000001" },
+      });
+      expect(screen.getByLabelText("Ngữ cảnh công thức")).not.toHaveValue(
+        "school:11000000-0000-4000-8000-000000000001",
+      );
+    },
+  );
+
   it("navigates to a School effective context as read-only authoritative data", async () => {
     renderWorkbench();
     await screen.findByRole("option", { name: /Trường Tiểu học Minh Khai/ });
@@ -801,8 +854,11 @@ describe("Recipe creation-and-lock workbench", () => {
         ),
       );
       expect(
-        await screen.findAllByText(/Không gửi lại thao tác/i),
-      ).not.toHaveLength(0);
+        await screen.findByText(/thuộc phiên đăng nhập trước/),
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: "Tải lại dữ liệu" }),
+      ).toBeDisabled();
       expect(
         screen.getByRole("button", { name: "Tạo điều chỉnh" }),
       ).toBeDisabled();

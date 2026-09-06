@@ -120,7 +120,7 @@ Sao chép
 Nhập workbook
 ```
 
-The adjustment view filters scope, lifecycle, effective date, and School/Dish/Ingredient text; conditionally displays typed fields; requires preview and explicit confirmation; shows revision predecessor, actor, reason, and period; and offers successor or cancellation but no delete. The effective-BOM view compares base and final values, labels source layer, expands lineage and removed lines, reports blockers/warnings, and copies bounded support evidence.
+The normal adjustment ledger automatically uses the current Vietnam-local business date and filters scope, lifecycle, and School/Dish/Ingredient text. It conditionally displays typed fields, requires preview and explicit confirmation, shows revision predecessor, actor, reason, and business effective period, and offers successor or cancellation but no delete. Secondary read-only effective-BOM inspection owns historical `Xem tại ngày` navigation; it compares base and final values, labels source layer, expands lineage and removed lines, reports blockers/warnings, and copies bounded support evidence.
 
 Production uses the authenticated adapter. Review mode is deterministic, browser-only, visibly nonpersistent, and covers every scope/action, full precedence, replacement chain, superseded/cancelled history, removed lines, duplicate and cycle blockers, stale state, permission denial, retry, and session loss.
 

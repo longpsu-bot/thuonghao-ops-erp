@@ -14,7 +14,8 @@ import type {
   EffectiveCompositionResult,
   RecipeAdjustmentAction,
   RecipeAdjustmentOperatorRecord,
-  RecipeAdjustmentOperatorRevision,
+  RecipeAdjustmentOperatorDisplayRevision,
+  RecipeAdjustmentOperatorHistoryRevision,
   RecipeAdjustmentRecord,
   RecipeAdjustmentScope,
   RecipeAdjustmentWorkbenchData,
@@ -239,7 +240,8 @@ function ruleFromCommand(request: RecipeAdjustmentCommandRequest) {
 function operatorRevision(
   item: RecipeAdjustmentRecord,
   revisionItem: RecipeAdjustmentRecord["revisions"][number],
-): RecipeAdjustmentOperatorRevision {
+): RecipeAdjustmentOperatorDisplayRevision &
+  RecipeAdjustmentOperatorHistoryRevision {
   const isLegacy =
     item.legacy_source !== null &&
     revisionItem.reason_code.startsWith("LEGACY");
@@ -268,7 +270,10 @@ function operatorRow(
   item: RecipeAdjustmentRecord,
 ): RecipeAdjustmentOperatorRecord {
   const current = item.revisions.at(-1)!;
-  const display = operatorRevision(item, current);
+  const { business_event_kind: _displayEvent, ...display } = operatorRevision(
+    item,
+    current,
+  );
   const contentItem =
     current.lifecycle_status === "CANCELLED"
       ? item.revisions
@@ -278,7 +283,17 @@ function operatorRow(
             (revisionItem) => revisionItem.lifecycle_status !== "CANCELLED",
           )!
       : current;
-  const content = operatorRevision(item, contentItem);
+  const { business_event_kind: _contentEvent, ...content } = operatorRevision(
+    item,
+    contentItem,
+  );
+  const {
+    revision_status: _commandStatus,
+    issued_at: _issuedAt,
+    issuance_kind: _issuanceKind,
+    issued_by_actor_name: _issuedBy,
+    ...command
+  } = display;
   const temporalState =
     item.lifecycle_status === "CANCELLED"
       ? "CANCELLED"
@@ -306,9 +321,15 @@ function operatorRow(
     is_effective_now: temporalState !== "CANCELLED",
     display_revision: display,
     content_revision: content,
-    command_revision: display,
+    command_revision: command,
     history: item.revisions
-      .map((revisionItem) => operatorRevision(item, revisionItem))
+      .map((revisionItem) => {
+        const { revision_status: _status, ...history } = operatorRevision(
+          item,
+          revisionItem,
+        );
+        return history;
+      })
       .reverse(),
   };
 }
@@ -725,10 +746,15 @@ export function createReviewRecipeAdjustmentApi(
       if (scenario === "loading")
         return new Promise<AtlasRpcResult>(() => undefined);
       const blocked = blockedRead();
+      const {
+        operator_rows: _rows,
+        reference_date: _date,
+        ...referenceData
+      } = data;
       return Promise.resolve(
         blocked ??
           success({
-            workbench: clone(data) as unknown as JsonValue,
+            workbench: clone(referenceData) as unknown as JsonValue,
           }),
       );
     },
