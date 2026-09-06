@@ -452,7 +452,7 @@ function isRecipeWorkflowSelection(
       value.business_status === "NEEDS_ATTENTION") &&
     typeof value.locked_for_normal_editing === "boolean" &&
     (typeof value.lock_reason === "string" || value.lock_reason === null) &&
-    isPositiveNumber(value.basis_portions) &&
+    isPositiveInteger(value.basis_portions) &&
     Array.isArray(value.composition) &&
     value.composition.every(isRecipeCompositionLine) &&
     isRecord(value.allowed_actions) &&
@@ -528,7 +528,7 @@ function isRecipeVersionRecord(value: unknown): value is RecipeVersionRecord {
     isNonemptyString(value.recipe_id) &&
     isPositiveInteger(value.version_number) &&
     isNullableString(value.predecessor_recipe_version_id) &&
-    isPositiveNumber(value.basis_portions) &&
+    isPositiveInteger(value.basis_portions) &&
     (value.recipe_version_status === "DRAFT" ||
       value.recipe_version_status === "VALIDATED" ||
       value.recipe_version_status === "RELEASED_FOR_PLANNING" ||

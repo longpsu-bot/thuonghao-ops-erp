@@ -263,6 +263,10 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
   assert(
     targetDish?.dish_status === "ACTIVE" &&
       targetRoots.length === 2 &&
+      new Set(targetRoots.map((root) => root.recipe_id)).size === 2 &&
+      canonicalSchoolTypes.every((type) =>
+        targetRoots.some((root) => root.school_type_id === type.school_type_id),
+      ) &&
       !targetRead.recipe_versions.some((version) =>
         targetRoots.some((root) => root.recipe_id === version.recipe_id),
       ),
@@ -292,6 +296,8 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
     const selectedIdentity = (selected) =>
       JSON.stringify([
         selected?.dish_id,
+        selected?.school_type_id,
+        selected?.school_type_code,
         selected?.recipe_id,
         selected?.recipe_version_id,
         selected?.selection_scope,
@@ -344,9 +350,30 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
         targetContext.school_id === null &&
         targetContext.school_type_id === typeId &&
         workbench.selected_recipe?.dish_id === sourceDishId &&
+        workbench.selected_recipe.school_type_id === typeId &&
+        workbench.selected_recipe.school_type_code ===
+          schoolType.school_type_code &&
+        resolved.selected_recipe.school_type_id === typeId &&
+        resolved.selected_recipe.school_type_code ===
+          schoolType.school_type_code &&
+        targetContext.selected_recipe.school_type_id === typeId &&
+        targetContext.selected_recipe.school_type_code ===
+          schoolType.school_type_code &&
         typeof workbench.selected_recipe.recipe_id === "string" &&
         typeof workbench.selected_recipe.recipe_version_id === "string" &&
         workbench.selected_recipe.selection_scope === "SCHOOL_TYPE" &&
+        before.recipes.some(
+          (root) =>
+            root.recipe_id === workbench.selected_recipe.recipe_id &&
+            root.dish_id === sourceDishId &&
+            root.school_type_id === typeId,
+        ) &&
+        before.recipe_versions.some(
+          (version) =>
+            version.recipe_version_id ===
+              workbench.selected_recipe.recipe_version_id &&
+            version.recipe_id === workbench.selected_recipe.recipe_id,
+        ) &&
         selectedIdentity(workbench.selected_recipe) ===
           selectedIdentity(resolved.selected_recipe) &&
         selectedIdentity(workbench.selected_recipe) ===
@@ -369,11 +396,24 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
     );
     assert(
       rootOnly.workbench?.effective_readiness.status === "BLOCKED" &&
+        rootOnly.workbench.school_type_id === typeId &&
+        rootOnly.workbench.base_authoring.school_type_id === typeId &&
         rootOnly.workbench.base_authoring.recipe_version_id === null &&
         rootOnly.workbench.base_authoring.allowed_actions.save_recipe === true,
       "Root-only canonical read did not separate blocked effectiveness from permitted authoring.",
     );
   }
+  const sourceSelections = [...sourceContexts.values()].map(
+    (workbench) => workbench.selected_recipe,
+  );
+  assert(
+    sourceSelections.length === 2 &&
+      new Set(sourceSelections.map((selected) => selected?.recipe_id)).size ===
+        2 &&
+      new Set(sourceSelections.map((selected) => selected?.recipe_version_id))
+        .size === 2,
+    "Canonical source scopes did not resolve to distinct Recipe roots and versions.",
+  );
   const request = {
     ...v1Request(subject, targetDish.version, "COPY_DISH_RECIPES", {
       source_dish_id: sourceDishId,
@@ -389,15 +429,31 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
     copied.scope_results?.length === 2 &&
       new Set(copied.scope_results.map((scope) => scope.school_type_id))
         .size === 2 &&
+      new Set(copied.scope_results.map((scope) => scope.target_recipe_id))
+        .size === 2 &&
+      new Set(
+        copied.scope_results.map((scope) => scope.target_recipe_version_id),
+      ).size === 2 &&
       canonicalSchoolTypes.every((type) =>
         copied.scope_results.some(
           (scope) =>
             scope.school_type_id === type.school_type_id &&
             scope.school_type_code === type.school_type_code &&
+            scope.source_recipe_id ===
+              sourceContexts.get(type.school_type_id)?.selected_recipe
+                ?.recipe_id &&
+            scope.source_recipe_version_id ===
+              sourceContexts.get(type.school_type_id)?.selected_recipe
+                ?.recipe_version_id &&
+            scope.source_selection_scope === "SCHOOL_TYPE" &&
+            scope.target_recipe_id ===
+              targetRoots.find(
+                (root) => root.school_type_id === type.school_type_id,
+              )?.recipe_id &&
             scope.status === "COPIED",
         ),
       ),
-    "Canonical browser-key copy did not return both distinct canonical scopes.",
+    "Canonical browser-key copy did not bind distinct source and target identities to both canonical scopes.",
   );
   const after = await readWorkbench(client, subject);
   const normalized = (lines) =>
@@ -417,6 +473,13 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
       (row) => row.recipe_version_id === scope.target_recipe_version_id,
     );
     const source = sourceContexts.get(scope.school_type_id);
+    const selectedSource = source?.selected_recipe;
+    const schoolType = canonicalSchoolTypes.find(
+      (type) => type.school_type_id === scope.school_type_id,
+    );
+    const targetRoot = targetRoots.find(
+      (root) => root.school_type_id === scope.school_type_id,
+    );
     const readback = await invoke(
       client,
       "get_dish_recipe_operator_workbench",
@@ -425,13 +488,25 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
     assert(
       version?.recipe_version_status === "DRAFT" &&
         version.recipe_id === scope.target_recipe_id &&
+        version.recipe_id === targetRoot?.recipe_id &&
+        scope.school_type_code === schoolType?.school_type_code &&
+        scope.source_recipe_id === selectedSource?.recipe_id &&
+        scope.source_recipe_version_id === selectedSource?.recipe_version_id &&
         version.source_evidence?.source_kind === "RECIPE_EFFECTIVE_COPY" &&
         version.source_evidence?.outer_command_id === request.command_id &&
         version.source_evidence.source_dish_id === sourceDishId &&
+        version.source_evidence.source_school_type_id ===
+          scope.school_type_id &&
+        version.source_evidence.source_school_type_code ===
+          scope.school_type_code &&
+        version.source_evidence.source_recipe_id ===
+          selectedSource?.recipe_id &&
+        version.source_evidence.source_recipe_version_id ===
+          selectedSource?.recipe_version_id &&
         version.source_evidence.copy_as_of_date === asOfDate &&
-        version.basis_portions === source.basis_portions &&
+        version.basis_portions === source?.basis_portions &&
         normalized(version.composition) ===
-          normalized(source.current_effective_bom) &&
+          normalized(source?.current_effective_bom ?? []) &&
         readback.workbench?.base_authoring.recipe_version_id ===
           version.recipe_version_id &&
         readback.workbench.dish.dish_id === targetDishId &&
@@ -439,6 +514,8 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
         readback.workbench.school_id === null &&
         readback.workbench.school_type_id === scope.school_type_id &&
         readback.workbench.is_editable === true &&
+        readback.workbench.base_authoring.school_type_id ===
+          scope.school_type_id &&
         readback.workbench.base_authoring.recipe_id === version.recipe_id &&
         readback.workbench.base_authoring.business_status === "SAVED" &&
         readback.workbench.base_authoring.locked_for_normal_editing === false &&

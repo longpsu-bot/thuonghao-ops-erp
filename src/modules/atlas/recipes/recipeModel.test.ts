@@ -187,6 +187,12 @@ describe("recipe workbench response parsing", () => {
       0,
     ],
     [
+      "Recipe Version basis is fractional",
+      "recipe_versions",
+      "basis_portions",
+      1.5,
+    ],
+    [
       "Recipe Version composition is malformed",
       "recipe_versions",
       "composition",
@@ -227,9 +233,10 @@ describe("recipe workbench response parsing", () => {
     ["negative expected version", -1],
     ["zero expected version", 0],
     ["non-positive basis", 0],
+    ["fractional basis", 1.5],
   ])("rejects catalog authoring with %s", async (_label, malformedValue) => {
     const workbench = await createReviewCatalogFixture();
-    if (_label === "non-positive basis")
+    if (_label.includes("basis"))
       workbench.selected_recipe.basis_portions = malformedValue;
     else workbench.selected_recipe.expected_version = malformedValue;
 
@@ -575,6 +582,7 @@ describe("recipe workbench response parsing", () => {
 
   it.each([
     ["unknown business status", { business_status: "PUBLISHED" }],
+    ["fractional basis", { basis_portions: 1.5 }],
     ["malformed composition row", { composition: [null] }],
     [
       "composition row missing stable identity",
