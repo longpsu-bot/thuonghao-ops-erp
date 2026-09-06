@@ -179,6 +179,216 @@ async function findEmptyFutureMonday(client, subject) {
   throw new Error("RMVP-02A could not find an unused future Menu week.");
 }
 
+async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
+  const {
+    secondarySchoolType,
+    canonicalSchoolTypes,
+    ingredient,
+    unit,
+    dishType,
+  } = references;
+  const secondary = await readWorkbench(client, subject, {
+    dish_id: sourceDishId,
+    school_type_id: secondarySchoolType.school_type_id,
+  });
+  await invoke(
+    client,
+    "save_recipe",
+    saveRequest(subject, secondary.selected_recipe.expected_version, {
+      dish_id: sourceDishId,
+      school_type_id: secondarySchoolType.school_type_id,
+      recipe_version_id: null,
+      basis_portions: 100,
+      lines: [
+        {
+          recipe_line_id: crypto.randomUUID(),
+          ingredient_id: ingredient.ingredient_id,
+          quantity_per_basis: 20,
+          unit_id: unit.unit_id,
+          operational_note: "Canonical copy source scope",
+        },
+      ],
+    }),
+  );
+  const asOfDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const readRequest = (dishId, schoolTypeId) => ({
+    contract_version: "RECIPE-EFFECTIVE.v1",
+    requested_by_auth_subject: subject,
+    correlation_id: crypto.randomUUID(),
+    payload: {
+      as_of_date: asOfDate,
+      dish_id: dishId,
+      school_type_id: schoolTypeId,
+    },
+  });
+  const before = await readWorkbench(client, subject);
+  const sourceRootIds = new Set(
+    before.recipes
+      .filter((root) => root.dish_id === sourceDishId)
+      .map((root) => root.recipe_id),
+  );
+  const sourceEvidence = (data) =>
+    JSON.stringify(
+      data.recipe_versions.filter((version) =>
+        sourceRootIds.has(version.recipe_id),
+      ),
+    );
+  const sourceBefore = sourceEvidence(before);
+  const target = await invoke(
+    client,
+    "create_dish",
+    v1Request(subject, 1, "MODEL_CONVERGENCE_COPY_TARGET", {
+      dish_code: `convergence-copy-${crypto.randomUUID().slice(0, 8)}`,
+      dish_name: "Local canonical two-scope copy target",
+      dish_category: "Acceptance",
+      dish_type_id: dishType.dish_type_id,
+      operational_notes: "Disposable browser-key convergence evidence",
+      display_order: 9901,
+      requires_need_generation: true,
+    }),
+  );
+  const targetDishId = target.affected_aggregate_ids.dish_id;
+  const targetRead = await readWorkbench(client, subject);
+  const targetDish = targetRead.dishes.find(
+    (dish) => dish.dish_id === targetDishId,
+  );
+  const targetRoots = targetRead.recipes.filter(
+    (root) => root.dish_id === targetDishId,
+  );
+  assert(
+    targetDish?.dish_status === "ACTIVE" &&
+      targetRoots.length === 2 &&
+      !targetRead.recipe_versions.some((version) =>
+        targetRoots.some((root) => root.recipe_id === version.recipe_id),
+      ),
+    "Canonical browser-key copy target was not ACTIVE with two version-free roots.",
+  );
+  const sourceContexts = new Map();
+  for (const schoolType of canonicalSchoolTypes) {
+    const typeId = schoolType.school_type_id;
+    const source = await invoke(
+      client,
+      "get_dish_recipe_operator_workbench",
+      readRequest(sourceDishId, typeId),
+    );
+    const resolution = await invoke(
+      client,
+      "resolve_system_effective_recipe_composition",
+      readRequest(sourceDishId, typeId),
+    );
+    const targets = await invoke(
+      client,
+      "get_recipe_effective_target_context",
+      readRequest(sourceDishId, typeId),
+    );
+    assert(
+      source.workbench?.effective_readiness.status === "READY" &&
+        source.workbench.school_id === null &&
+        source.workbench.school_type_id === typeId &&
+        resolution.resolution?.status === "READY" &&
+        targets.target_context?.school_id === null &&
+        targets.target_context.school_type_id === typeId &&
+        targets.target_context.effective_lines.length > 0,
+      "Canonical browser-key system reads did not return the exact ready typed context.",
+    );
+    sourceContexts.set(typeId, source.workbench);
+    const rootOnly = await invoke(
+      client,
+      "get_dish_recipe_operator_workbench",
+      readRequest(targetDishId, typeId),
+    );
+    assert(
+      rootOnly.workbench?.effective_readiness.status === "BLOCKED" &&
+        rootOnly.workbench.base_authoring.recipe_version_id === null &&
+        rootOnly.workbench.base_authoring.allowed_actions.save_recipe === true,
+      "Root-only canonical read did not separate blocked effectiveness from permitted authoring.",
+    );
+  }
+  const request = {
+    ...v1Request(subject, targetDish.version, "COPY_DISH_RECIPES", {
+      source_dish_id: sourceDishId,
+      target_dish_id: targetDishId,
+      as_of_date: asOfDate,
+    }),
+    contract_version: "RECIPE-EFFECTIVE.v1",
+    reason_note:
+      "Verify both persisted DRAFT snapshots through a local browser key.",
+  };
+  const copied = await invoke(client, "copy_dish_recipes", request);
+  assert(
+    copied.scope_results?.length === 2 &&
+      new Set(copied.scope_results.map((scope) => scope.school_type_id))
+        .size === 2 &&
+      canonicalSchoolTypes.every((type) =>
+        copied.scope_results.some(
+          (scope) =>
+            scope.school_type_id === type.school_type_id &&
+            scope.school_type_code === type.school_type_code &&
+            scope.status === "COPIED",
+        ),
+      ),
+    "Canonical browser-key copy did not return both distinct canonical scopes.",
+  );
+  const after = await readWorkbench(client, subject);
+  const normalized = (lines) =>
+    JSON.stringify(
+      lines
+        .map((line) => ({
+          ingredient_id: line.ingredient_id,
+          quantity_per_basis: line.quantity_per_basis,
+          unit_id: line.unit_id,
+        }))
+        .sort((left, right) =>
+          JSON.stringify(left).localeCompare(JSON.stringify(right)),
+        ),
+    );
+  for (const scope of copied.scope_results) {
+    const version = after.recipe_versions.find(
+      (row) => row.recipe_version_id === scope.target_recipe_version_id,
+    );
+    const source = sourceContexts.get(scope.school_type_id);
+    const readback = await invoke(
+      client,
+      "get_dish_recipe_operator_workbench",
+      readRequest(targetDishId, scope.school_type_id),
+    );
+    assert(
+      version?.recipe_version_status === "DRAFT" &&
+        version.recipe_id === scope.target_recipe_id &&
+        version.source_evidence?.outer_command_id === request.command_id &&
+        version.source_evidence.source_dish_id === sourceDishId &&
+        version.source_evidence.copy_as_of_date === asOfDate &&
+        version.basis_portions === source.basis_portions &&
+        normalized(version.composition) ===
+          normalized(source.current_effective_bom) &&
+        readback.workbench?.base_authoring.recipe_version_id ===
+          version.recipe_version_id &&
+        readback.workbench.effective_readiness.status === "BLOCKED",
+      "Canonical copy scope was not the exact persisted, editable DRAFT system snapshot.",
+    );
+  }
+  assert(
+    sourceEvidence(after) === sourceBefore,
+    "Canonical copy changed immutable source Recipe evidence.",
+  );
+  const replay = await invoke(client, "copy_dish_recipes", request);
+  const replayRead = await readWorkbench(client, subject);
+  assert(
+    JSON.stringify(replay.scope_results) ===
+      JSON.stringify(copied.scope_results) &&
+      replayRead.recipe_versions.length === after.recipe_versions.length,
+    "Canonical browser-key exact replay duplicated or replaced copy versions.",
+  );
+  console.log(
+    "Verified MODEL-CONVERGENCE canonical authenticated system reads, root-only authoring, two-scope persisted DRAFT copy, exact source snapshots/command provenance, source immutability and exact replay.",
+  );
+}
+
 async function main() {
   const { apiUrl, browserKey } = readLocalSupabaseStatus();
   const client = createClient(apiUrl, browserKey, {
@@ -348,6 +558,14 @@ async function main() {
       persisted.selected_recipe.locked_for_normal_editing === false,
     "Creation Save did not persist authoritative readback across sign-in.",
   );
+
+  await verifyCanonicalCopy(client, subject, dishId, {
+    secondarySchoolType,
+    canonicalSchoolTypes,
+    ingredient,
+    unit,
+    dishType,
+  });
 
   const { weekStart, workbench: planning } = await findEmptyFutureMonday(
     client,
