@@ -29,6 +29,7 @@ const actor = "00000000-0000-4000-8000-000000000001";
 const ids = {
   school: "11000000-0000-4000-8000-000000000001",
   secondarySchool: "11000000-0000-4000-8000-000000000002",
+  sameTypeSchool: "11000000-0000-4000-8000-000000000003",
   schoolType: "12000000-0000-4000-8000-000000000001",
   secondarySchoolType: "12000000-0000-4000-8000-000000000002",
   dish: "13000000-0000-4000-8000-000000000001",
@@ -160,6 +161,81 @@ function rule(
   };
 }
 
+function commandRevision(
+  request: RecipeAdjustmentCommandRequest,
+  number: number,
+  lifecycle: "ACTIVE" | "CANCELLED",
+): RecipeAdjustmentRecord["revisions"][number] {
+  const payload = request.payload;
+  return {
+    ...revision(
+      String(payload.adjustment_id),
+      number,
+      lifecycle,
+      String(payload.action_kind ?? "REPLACE") as RecipeAdjustmentAction,
+    ),
+    revision_id: String(payload.revision_id),
+    predecessor_revision_id:
+      typeof payload.predecessor_revision_id === "string"
+        ? payload.predecessor_revision_id
+        : null,
+    effective_from: String(payload.effective_from),
+    effective_to:
+      typeof payload.effective_to === "string" ? payload.effective_to : null,
+    substitute_ingredient_id:
+      typeof payload.substitute_ingredient_id === "string"
+        ? payload.substitute_ingredient_id
+        : null,
+    quantity_per_basis:
+      typeof payload.quantity_per_basis === "number"
+        ? payload.quantity_per_basis
+        : null,
+    unit_id: typeof payload.unit_id === "string" ? payload.unit_id : null,
+    reason_code: request.reason_code,
+    reason_note: request.reason_note,
+    source_evidence:
+      typeof payload.source_evidence === "object" &&
+      payload.source_evidence !== null &&
+      !Array.isArray(payload.source_evidence)
+        ? payload.source_evidence
+        : {},
+  };
+}
+
+function ruleFromCommand(request: RecipeAdjustmentCommandRequest) {
+  const payload = request.payload;
+  const scope = String(payload.scope_kind) as RecipeAdjustmentScope;
+  const action = String(payload.action_kind) as RecipeAdjustmentAction;
+  const record = rule(90, scope, action);
+  const current = commandRevision(request, 1, "ACTIVE");
+  return {
+    ...record,
+    adjustment_id: String(payload.adjustment_id),
+    school_id: typeof payload.school_id === "string" ? payload.school_id : null,
+    dish_id: typeof payload.dish_id === "string" ? payload.dish_id : null,
+    school_type_id:
+      typeof payload.school_type_id === "string"
+        ? payload.school_type_id
+        : null,
+    target_ingredient_id:
+      typeof payload.target_ingredient_id === "string"
+        ? payload.target_ingredient_id
+        : null,
+    target_recipe_line_id:
+      typeof payload.target_recipe_line_id === "string"
+        ? payload.target_recipe_line_id
+        : null,
+    adjustment_line_id:
+      typeof payload.adjustment_line_id === "string"
+        ? payload.adjustment_line_id
+        : null,
+    current_revision_id: current.revision_id,
+    current_revision_number: 1,
+    version: 1,
+    revisions: [current],
+  } satisfies RecipeAdjustmentRecord;
+}
+
 function operatorRevision(
   item: RecipeAdjustmentRecord,
   revisionItem: RecipeAdjustmentRecord["revisions"][number],
@@ -258,6 +334,16 @@ function fixtures(): ReviewWorkbenchData {
       ),
     ),
   );
+  const schoolAdd = rule(12, "SCHOOL_DISH", "ADD");
+  const schoolDishReplacement = adjustments.find(
+    (item) =>
+      item.scope_kind === "SCHOOL_DISH" && item.action_kind === "REPLACE",
+  );
+  if (schoolDishReplacement) {
+    schoolDishReplacement.target_recipe_line_id = null;
+    schoolDishReplacement.adjustment_line_id = schoolAdd.adjustment_line_id;
+  }
+  adjustments.push(schoolAdd);
   return {
     reference_date: "2026-07-27",
     scope_catalog: catalog.map(([scope_kind, actions]) => ({
@@ -284,6 +370,13 @@ function fixtures(): ReviewWorkbenchData {
         school_code: "truong-tran-phu",
         school_name: "Trường Trung học Trần Phú",
         school_type_id: ids.secondarySchoolType,
+        school_status: "ACTIVE",
+      },
+      {
+        school_id: ids.sameTypeSchool,
+        school_code: "truong-nguyen-du",
+        school_name: "Trường Tiểu học Nguyễn Du",
+        school_type_id: ids.schoolType,
         school_status: "ACTIVE",
       },
     ],
@@ -464,7 +557,60 @@ function baseLine(
   };
 }
 
-function resolutionScenario(name = "precedence", schoolId = ids.school) {
+function addedLine(
+  adjustmentLineId: string,
+  ingredientId: string,
+  quantity: number,
+  sourceLayer: "SYSTEM_DISH" | "SCHOOL_DISH",
+): EffectiveCompositionLine {
+  return {
+    ...baseLine(
+      "1b000000-0000-4000-8000-000000000001",
+      ingredientId,
+      "dòng-thêm",
+    ),
+    base_recipe_line_id: null,
+    base_recipe_line_revision_id: null,
+    adjustment_line_id: adjustmentLineId,
+    line_code: null,
+    base_ingredient_id: null,
+    base_quantity_per_basis: null,
+    base_unit_id: null,
+    base_disposition: null,
+    final_quantity_per_basis: quantity,
+    source_layer: sourceLayer,
+  };
+}
+
+function addPriorEffectiveLines(
+  resolution: EffectiveCompositionResult,
+  schoolId: string | null,
+) {
+  resolution.lines.push(
+    addedLine(
+      "1a000000-0000-4000-8000-000000000002",
+      ids.ingredient5,
+      1.25,
+      "SYSTEM_DISH",
+    ),
+  );
+  if (schoolId === ids.school) {
+    resolution.lines.push(
+      addedLine(
+        "1a000000-0000-4000-8000-000000000012",
+        ids.ingredient3,
+        0.75,
+        "SCHOOL_DISH",
+      ),
+    );
+  }
+  return resolution;
+}
+
+function resolutionScenario(
+  name = "precedence",
+  schoolId = ids.school,
+): EffectiveCompositionResult {
   const secondary = schoolId === ids.secondarySchool;
   const recipeId = secondary ? ids.secondaryRecipe : ids.recipe;
   const versionId = secondary ? ids.secondaryVersion : ids.version;
@@ -494,6 +640,14 @@ function resolutionScenario(name = "precedence", schoolId = ids.school) {
       lineage("SYSTEM_DISH", "ADJUST_QUANTITY", 2),
       lineage("SCHOOL", "REPLACE", 3),
       lineage("SCHOOL_DISH", "REPLACE", 4),
+    ];
+  } else if (name === "system") {
+    first.final_ingredient_id = ids.ingredient3;
+    first.final_quantity_per_basis = 22;
+    first.source_layer = "SYSTEM_DISH";
+    first.lineage = [
+      lineage("SYSTEM_INGREDIENT", "REPLACE", 1),
+      lineage("SYSTEM_DISH", "ADJUST_QUANTITY", 2),
     ];
   } else if (name === "replacement_chain") {
     first.final_ingredient_id = ids.ingredient3;
@@ -628,9 +782,20 @@ export function createReviewRecipeAdjustmentApi(
     },
     getEffectiveTargetContext(_auth, _correlation, asOfDate, dishId, context) {
       const blocked = blockedRead();
-      const resolution = resolutionScenario(
-        "precedence",
-        context.kind === "school" ? context.schoolId : ids.school,
+      const selectedSchoolId =
+        context.kind === "school" ? context.schoolId : null;
+      const resolutionSchoolId =
+        selectedSchoolId ??
+        (context.kind === "system" &&
+        context.schoolTypeId === ids.secondarySchoolType
+          ? ids.secondarySchool
+          : ids.school);
+      const resolution = addPriorEffectiveLines(
+        resolutionScenario(
+          selectedSchoolId === ids.school ? "precedence" : "system",
+          resolutionSchoolId,
+        ),
+        selectedSchoolId,
       );
       const schoolTypeId =
         context.kind === "system"
@@ -649,7 +814,33 @@ export function createReviewRecipeAdjustmentApi(
               selected_recipe: resolution.selected_recipe,
               basis_portions:
                 resolution.selected_recipe?.basis_portions ?? null,
-              effective_lines: [],
+              effective_lines: resolution.lines
+                .filter((line) => line.final_disposition === "PRESENT")
+                .map((line) => {
+                  const adjustmentLineId = line.adjustment_line_id;
+                  const recipeLineId = line.base_recipe_line_id;
+                  const targetKind = adjustmentLineId
+                    ? "ADJUSTMENT_LINE"
+                    : "RECIPE_LINE";
+                  const ingredient = data.ingredients.find(
+                    (item) => item.ingredient_id === line.final_ingredient_id,
+                  );
+                  return {
+                    ingredient_id: line.final_ingredient_id,
+                    ingredient_name: ingredient?.ingredient_name ?? "—",
+                    quantity_per_basis: line.final_quantity_per_basis,
+                    unit_id: line.final_unit_id,
+                    unit_name:
+                      data.units.find(
+                        (unit) => unit.unit_id === line.final_unit_id,
+                      )?.unit_name ?? "—",
+                    target_kind: targetKind,
+                    target_recipe_line_id: recipeLineId,
+                    adjustment_line_id: adjustmentLineId,
+                    target_id: adjustmentLineId ?? recipeLineId ?? "",
+                    source_layer: line.source_layer,
+                  };
+                }),
               warnings: resolution.warnings,
               blockers: resolution.blockers,
             },
@@ -660,11 +851,21 @@ export function createReviewRecipeAdjustmentApi(
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
       const proposal = payload.proposed_adjustment as Record<string, JsonValue>;
-      const before = resolutionScenario(
-        "preview_base",
-        String(payload.school_id ?? ids.school),
+      const previewSchoolId = String(payload.school_id ?? ids.school);
+      const before = addPriorEffectiveLines(
+        resolutionScenario(
+          previewSchoolId === ids.school ? "precedence" : "system",
+          previewSchoolId,
+        ),
+        previewSchoolId,
       );
       const after = clone(before);
+      before.as_of_date = String(payload.as_of_date);
+      before.school_id = previewSchoolId;
+      before.dish_id = String(payload.dish_id);
+      after.as_of_date = String(payload.as_of_date);
+      after.school_id = previewSchoolId;
+      after.dish_id = String(payload.dish_id);
       const action = String(proposal.action_kind);
       const scope = String(proposal.scope_kind);
       const target =
@@ -674,12 +875,16 @@ export function createReviewRecipeAdjustmentApi(
             ? after.lines.find(
                 (line) =>
                   line.final_ingredient_id ===
-                  String(proposal.target_ingredient_id),
+                    String(proposal.target_ingredient_id) ||
+                  line.base_ingredient_id ===
+                    String(proposal.target_ingredient_id),
               )
-            : after.lines.find(
-                (line) =>
-                  line.base_recipe_line_id ===
-                  String(proposal.target_recipe_line_id),
+            : after.lines.find((line) =>
+                proposal.target_recipe_line_id
+                  ? line.base_recipe_line_id ===
+                    String(proposal.target_recipe_line_id)
+                  : line.adjustment_line_id ===
+                    String(proposal.adjustment_line_id),
               );
       const blockers =
         target || action === "ADD"
@@ -744,13 +949,7 @@ export function createReviewRecipeAdjustmentApi(
     create(request: RecipeAdjustmentCommandRequest) {
       const blocked = blockedWrite();
       if (blocked) return Promise.resolve(blocked);
-      data.adjustments.push(
-        rule(
-          data.adjustments.length + 20,
-          request.payload.scope_kind as RecipeAdjustmentScope,
-          request.payload.action_kind as RecipeAdjustmentAction,
-        ),
-      );
+      data.adjustments.push(ruleFromCommand(request));
       return Promise.resolve(saved());
     },
     supersede(request: RecipeAdjustmentCommandRequest) {
@@ -762,11 +961,10 @@ export function createReviewRecipeAdjustmentApi(
       if (!record) return Promise.resolve(backendError("NOT_FOUND"));
       const current = record.revisions.at(-1)!;
       current.lifecycle_status = "SUPERSEDED";
-      const next = revision(
-        record.adjustment_id,
+      const next = commandRevision(
+        request,
         current.revision_number + 1,
         "ACTIVE",
-        record.action_kind,
       );
       record.revisions.push(next);
       record.current_revision_id = next.revision_id;
@@ -782,14 +980,11 @@ export function createReviewRecipeAdjustmentApi(
       );
       if (!record) return Promise.resolve(backendError("NOT_FOUND"));
       record.revisions.at(-1)!.lifecycle_status = "SUPERSEDED";
-      const cancelled = revision(
-        record.adjustment_id,
+      const cancelled = commandRevision(
+        request,
         record.current_revision_number + 1,
         "CANCELLED",
-        record.action_kind,
       );
-      cancelled.effective_from = String(request.payload.effective_from);
-      cancelled.effective_to = null;
       record.revisions.push(cancelled);
       record.current_revision_id = cancelled.revision_id;
       record.current_revision_number = cancelled.revision_number;

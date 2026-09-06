@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { MantineProvider } from "@mantine/core";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -22,6 +23,7 @@ import {
 const fixtureIds = {
   school: "11000000-0000-4000-8000-000000000001",
   secondarySchool: "11000000-0000-4000-8000-000000000002",
+  sameTypeSchool: "11000000-0000-4000-8000-000000000003",
   schoolType: "12000000-0000-4000-8000-000000000001",
   secondarySchoolType: "12000000-0000-4000-8000-000000000002",
   dish: "13000000-0000-4000-8000-000000000001",
@@ -34,6 +36,8 @@ const fixtureIds = {
   potato: "17000000-0000-4000-8000-000000000004",
   missingUnitIngredient: "17000000-0000-4000-8000-000000000005",
   kilogram: "18000000-0000-4000-8000-000000000001",
+  systemAddLine: "1a000000-0000-4000-8000-000000000002",
+  schoolAddLine: "1a000000-0000-4000-8000-000000000012",
 };
 
 beforeEach(() => {
@@ -46,6 +50,10 @@ beforeEach(() => {
       disconnect() {}
     },
   );
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    value: vi.fn(),
+  });
 });
 
 afterEach(() => {
@@ -108,27 +116,30 @@ function selectRecipeTarget(dialog: HTMLElement) {
     });
 }
 
-function fillRecipeReplacement(dialog: HTMLElement) {
-  selectRecipeTarget(dialog);
+async function fillRecipeReplacement(dialog: HTMLElement) {
+  fireEvent.click(within(dialog).getByLabelText("Một trường"));
+  fireEvent.change(within(dialog).getByLabelText("Trường"), {
+    target: { value: fixtureIds.school },
+  });
+  selectDish(within(dialog).getByLabelText("Món"));
   selectAction(dialog, "Thay nguyên liệu");
-  fireEvent.change(
-    within(dialog).getByLabelText("Nguyên liệu trong công thức"),
-    {
-      target: { value: fixtureIds.porkLine },
-    },
+  const target = within(dialog).getByLabelText("Nguyên liệu trong công thức");
+  await waitFor(() =>
+    expect(
+      within(target)
+        .getAllByRole("option")
+        .some((option) => option.getAttribute("value") === fixtureIds.porkLine),
+    ).toBe(true),
   );
+  fireEvent.change(target, {
+    target: { value: fixtureIds.porkLine },
+  });
   fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
     target: { value: fixtureIds.potato },
   });
   fireEvent.change(within(dialog).getByLabelText("Lý do"), {
     target: { value: "Thay theo tiêu chuẩn nguyên liệu đã duyệt." },
   });
-  const representativeSchool =
-    within(dialog).queryByLabelText("Trường dùng để xem");
-  if (representativeSchool)
-    fireEvent.change(representativeSchool, {
-      target: { value: fixtureIds.school },
-    });
 }
 
 function fillIngredientReplacement(dialog: HTMLElement) {
@@ -159,7 +170,501 @@ function fillIngredientReplacement(dialog: HTMLElement) {
   if (representativeDish) selectDish(representativeDish);
 }
 
+async function selectSchoolDishTarget(
+  dialog: HTMLElement,
+  targetId: string,
+  schoolId = fixtureIds.school,
+) {
+  fireEvent.click(within(dialog).getByLabelText("Một trường"));
+  fireEvent.change(within(dialog).getByLabelText("Trường"), {
+    target: { value: schoolId },
+  });
+  selectDish(within(dialog).getByLabelText("Món"));
+  selectAction(dialog, "Thay nguyên liệu");
+  const target = within(dialog).getByLabelText("Nguyên liệu trong công thức");
+  await waitFor(() =>
+    expect(
+      within(target)
+        .getAllByRole("option")
+        .some((option) => option.getAttribute("value") === targetId),
+    ).toBe(true),
+  );
+  fireEvent.change(target, { target: { value: targetId } });
+}
+
+async function selectSchoolRecipeContext(dialog: HTMLElement, action: string) {
+  fireEvent.click(within(dialog).getByLabelText("Một trường"));
+  selectRecipeTarget(dialog);
+  selectAction(dialog, action);
+  if (action !== "Thêm nguyên liệu") {
+    await waitFor(() =>
+      expect(
+        within(dialog).getByLabelText(
+          action === "Bỏ nguyên liệu"
+            ? "Nguyên liệu cần bỏ"
+            : "Nguyên liệu trong công thức",
+        ),
+      ).toBeEnabled(),
+    );
+  }
+}
+
 describe("Recipe Change Order first-user workbench", () => {
+  it("loads system Dish targets from the exact effective context and blocks unsupported system Preview", async () => {
+    const { api } = renderWorkbench();
+    const getTargets = vi.spyOn(api, "getEffectiveTargetContext");
+    const preview = vi.spyOn(api, "preview");
+    const dialog = await openCreateDialog();
+
+    selectDish(within(dialog).getByLabelText("Món"));
+    fireEvent.change(
+      within(dialog).getByRole("combobox", { name: /Loại công thức/ }),
+      { target: { value: fixtureIds.schoolType } },
+    );
+    selectAction(dialog, "Thay nguyên liệu");
+
+    await waitFor(() =>
+      expect(getTargets).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.any(String),
+        fixtureIds.dish,
+        { kind: "system", schoolTypeId: fixtureIds.schoolType },
+      ),
+    );
+    const target = within(dialog).getByLabelText("Nguyên liệu trong công thức");
+    expect(
+      within(target).getByRole("option", { name: /Cà rốt · 22/ }),
+    ).toHaveValue(fixtureIds.pumpkinLine);
+    expect(
+      within(target).getByRole("option", {
+        name: /Gia vị thiếu đơn vị · 1,25/,
+      }),
+    ).toHaveValue(fixtureIds.systemAddLine);
+    expect(
+      within(dialog).queryByLabelText("Trường dùng để xem"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        /chưa hỗ trợ xem và lưu điều chỉnh cho toàn bộ loại trường/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+    expect(preview).not.toHaveBeenCalled();
+  });
+
+  it("round-trips a prior SYSTEM_DISH ADD target through exact School Preview and Create", async () => {
+    const { api } = renderWorkbench();
+    const getTargets = vi.spyOn(api, "getEffectiveTargetContext");
+    const preview = vi.spyOn(api, "preview");
+    const create = vi.spyOn(api, "create");
+    const dialog = await openCreateDialog();
+
+    await selectSchoolDishTarget(dialog, fixtureIds.systemAddLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Thay dòng đã thêm trong đúng trường đã chọn." },
+    });
+
+    expect(getTargets).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      expect.any(String),
+      fixtureIds.dish,
+      { kind: "school", schoolId: fixtureIds.school },
+    );
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    expect(preview.mock.calls[0][2]).toMatchObject({
+      school_id: fixtureIds.school,
+      dish_id: fixtureIds.dish,
+      proposed_adjustment: {
+        target_recipe_line_id: null,
+        adjustment_line_id: fixtureIds.systemAddLine,
+      },
+    });
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(create).toHaveBeenCalledOnce());
+    expect(create.mock.calls[0][0].payload).toMatchObject({
+      preview_school_id: fixtureIds.school,
+      preview_dish_id: fixtureIds.dish,
+      target_recipe_line_id: null,
+      adjustment_line_id: fixtureIds.systemAddLine,
+    });
+  });
+
+  it("preserves a prior SCHOOL_DISH ADD target through correction Preview and Supersede", async () => {
+    const { api } = renderWorkbench();
+    const supersede = vi.spyOn(api, "supersede");
+    const table = await screen.findByRole("table");
+    const row = within(table)
+      .getAllByRole("row")
+      .find(
+        (candidate) =>
+          candidate.textContent?.includes(
+            "Canh bí đỏ · Trường Tiểu học Minh Khai",
+          ) && candidate.textContent?.includes("Thay nguyên liệu"),
+      );
+    expect(row).toBeDefined();
+    fireEvent.click(within(row!).getByRole("button", { name: "Xem" }));
+    const drawer = await screen.findByRole("dialog", {
+      name: "Chi tiết điều chỉnh",
+    });
+    fireEvent.click(
+      within(drawer).getByRole("button", { name: "Điều chỉnh lại" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Điều chỉnh lại",
+    });
+    await waitFor(() =>
+      expect(
+        within(dialog).getByLabelText("Nguyên liệu trong công thức"),
+      ).toHaveValue(fixtureIds.schoolAddLine),
+    );
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Sửa dòng do trường đã thêm trước đó." },
+    });
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+    const review = await screen.findByRole("dialog", {
+      name: "Thay đổi dự kiến",
+    });
+    fireEvent.click(
+      within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+    );
+    await waitFor(() => expect(supersede).toHaveBeenCalledOnce());
+    expect(supersede.mock.calls[0][0].payload).toMatchObject({
+      target_recipe_line_id: null,
+      adjustment_line_id: fixtureIds.schoolAddLine,
+    });
+  });
+
+  it("ignores a late Preview after the reviewed intent changes", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    let releasePreview: (() => Promise<void>) | undefined;
+    const api = {
+      ...fixture,
+      preview: vi.fn(
+        (...args: Parameters<typeof fixture.preview>) =>
+          new Promise<Awaited<ReturnType<typeof fixture.preview>>>(
+            (resolve) => {
+              releasePreview = async () =>
+                resolve(await fixture.preview(...args));
+            },
+          ),
+      ),
+    };
+    renderWorkbench("rules", api);
+    const dialog = await openCreateDialog();
+    await selectSchoolDishTarget(dialog, fixtureIds.porkLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    const reason = within(dialog).getByLabelText("Lý do");
+    fireEvent.change(reason, { target: { value: "Lý do trước khi gửi." } });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    fireEvent.change(reason, { target: { value: "Lý do đã thay đổi." } });
+    await act(async () => releasePreview?.());
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Thay đổi dự kiến" }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      within(dialog).queryByRole("button", { name: "Lưu điều chỉnh" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("rejects a context-mismatched Preview and a malformed effective-target read", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    const mismatchApi = {
+      ...fixture,
+      async preview(...args: Parameters<typeof fixture.preview>) {
+        const result = await fixture.preview(...args);
+        if (result.kind !== "success") return result;
+        const preview = result.response.preview as Record<string, JsonValue>;
+        const wrongSchoolId = fixtureIds.sameTypeSchool;
+        return {
+          ...result,
+          response: {
+            ...result.response,
+            preview: {
+              ...preview,
+              school_id: wrongSchoolId,
+              before: {
+                ...(preview.before as Record<string, JsonValue>),
+                school_id: wrongSchoolId,
+              },
+              after: {
+                ...(preview.after as Record<string, JsonValue>),
+                school_id: wrongSchoolId,
+              },
+            },
+          },
+        };
+      },
+    };
+    renderWorkbench("rules", mismatchApi);
+    const dialog = await openCreateDialog();
+    await selectSchoolDishTarget(dialog, fixtureIds.porkLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Không chấp nhận Preview sai trường." },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Thay đổi dự kiến" }),
+      ).not.toBeInTheDocument(),
+    );
+
+    cleanup();
+    const malformedApi = {
+      ...fixture,
+      async getEffectiveTargetContext(
+        ...args: Parameters<typeof fixture.getEffectiveTargetContext>
+      ) {
+        const result = await fixture.getEffectiveTargetContext(...args);
+        if (result.kind !== "success") return result;
+        const targetContext = result.response.target_context as Record<
+          string,
+          JsonValue
+        >;
+        const lines = targetContext.effective_lines as Array<
+          Record<string, JsonValue>
+        >;
+        return {
+          ...result,
+          response: {
+            ...result.response,
+            target_context: {
+              ...targetContext,
+              effective_lines: [
+                {
+                  ...lines[0],
+                  adjustment_line_id: fixtureIds.systemAddLine,
+                },
+              ],
+            },
+          },
+        };
+      },
+    };
+    renderWorkbench("rules", malformedApi);
+    const malformedDialog = await openCreateDialog();
+    fireEvent.click(within(malformedDialog).getByLabelText("Một trường"));
+    fireEvent.change(within(malformedDialog).getByLabelText("Trường"), {
+      target: { value: fixtureIds.school },
+    });
+    selectDish(within(malformedDialog).getByLabelText("Món"));
+    selectAction(malformedDialog, "Thay nguyên liệu");
+    await waitFor(() =>
+      expect(
+        within(malformedDialog).getByText(/không thể tải mục tiêu hiệu lực/i),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      within(malformedDialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+  });
+
+  it("keeps a denied Preview out of review and exposes only the safe operator message", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    const api = {
+      ...fixture,
+      preview: vi.fn(async () => ({
+        kind: "backend_error" as const,
+        error: {
+          success: false as const,
+          error_code: "CAPABILITY_DENIED",
+          safe_message: "Bạn không có quyền xem ảnh hưởng điều chỉnh này.",
+        },
+      })),
+    };
+    renderWorkbench("rules", api as typeof fixture);
+    const dialog = await openCreateDialog();
+    await selectSchoolDishTarget(dialog, fixtureIds.porkLine);
+    fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+      target: { value: fixtureIds.potato },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Thử thao tác không được cấp quyền." },
+    });
+    const previewButton = within(dialog).getByRole("button", {
+      name: "Xem ảnh hưởng",
+    });
+    await waitFor(() => expect(previewButton).toBeEnabled());
+    fireEvent.click(previewButton);
+    expect(
+      await screen.findByText(
+        "Bạn không có quyền thực hiện điều chỉnh công thức.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Thay đổi dự kiến" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses backend applicability, half-open periods, and unattributed issuance in the ledger", async () => {
+    const api = createReviewRecipeAdjustmentApi("ready");
+    const original = api.getOperatorWorkbench;
+    vi.spyOn(api, "getOperatorWorkbench").mockImplementation(
+      async (...args) => {
+        const result = await original(...args);
+        if (result.kind !== "success") return result;
+        const workbench = result.response.workbench as Record<
+          string,
+          JsonValue
+        >;
+        const rows = workbench.operator_rows as Array<
+          Record<string, JsonValue>
+        >;
+        const legacy = rows[0];
+        const display = legacy.display_revision as Record<string, JsonValue>;
+        legacy.temporal_state = "ACTIVE";
+        legacy.is_effective_now = false;
+        legacy.display_revision = { ...display, effective_to: "2026-07-10" };
+        return result;
+      },
+    );
+    renderWorkbench("rules", api);
+    const table = await screen.findByRole("table");
+    const legacyRow = within(table)
+      .getAllByRole("row")
+      .find((row) => row.textContent?.includes("Không có dữ liệu từ OPS v1"));
+    expect(legacyRow).toBeDefined();
+    expect(legacyRow).toHaveTextContent("Không có trong BOM hiệu lực");
+    expect(legacyRow).toHaveTextContent("đến trước 10/07/2026");
+    expect(legacyRow).not.toHaveTextContent("27/07/2026");
+  });
+
+  it.each(["success", "transport_error"] as const)(
+    "keeps a %s mutation locked until exact adjustment and revision evidence is read back",
+    async (outcome) => {
+      const fixture = createReviewRecipeAdjustmentApi("ready");
+      const originalRead = fixture.getOperatorWorkbench;
+      let submitted: AtlasRpcRequest | null = null;
+      let revealExactEvidence = false;
+      const api = {
+        ...fixture,
+        create: vi.fn(async (request: AtlasRpcRequest) => {
+          submitted = request;
+          return outcome === "success"
+            ? ({
+                kind: "success" as const,
+                response: {
+                  success: true as const,
+                  safe_operator_message: "Đã ghi nhận.",
+                },
+              } as const)
+            : ({
+                kind: "transport_error" as const,
+                diagnostic: {
+                  code: "NETWORK_ERROR" as const,
+                  safeMessage: "Chưa xác định kết quả.",
+                },
+              } as const);
+        }),
+        async getOperatorWorkbench(
+          ...args: Parameters<typeof fixture.getOperatorWorkbench>
+        ) {
+          const result = await originalRead(...args);
+          if (!revealExactEvidence || !submitted || result.kind !== "success")
+            return result;
+          const workbench = result.response.workbench as Record<
+            string,
+            JsonValue
+          >;
+          const rows = workbench.operator_rows as Array<
+            Record<string, JsonValue>
+          >;
+          const payload = submitted.payload as Record<string, JsonValue>;
+          const template = structuredClone(rows[0]);
+          const revision = structuredClone(
+            template.display_revision as Record<string, JsonValue>,
+          );
+          revision.revision_id = String(payload.revision_id);
+          revision.predecessor_revision_id = null;
+          template.adjustment_id = String(payload.adjustment_id);
+          template.current_revision_id = String(payload.revision_id);
+          template.current_revision_number = 1;
+          template.display_revision = revision;
+          template.content_revision = structuredClone(revision);
+          template.command_revision = structuredClone(revision);
+          template.history = [structuredClone(revision)];
+          rows.push(template);
+          return result;
+        },
+      };
+      renderWorkbench("rules", api as typeof fixture);
+      const dialog = await openCreateDialog();
+      await selectSchoolDishTarget(dialog, fixtureIds.porkLine);
+      fireEvent.change(within(dialog).getByLabelText("Thay bằng"), {
+        target: { value: fixtureIds.potato },
+      });
+      fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+        target: { value: "Kiểm tra đối soát đúng định danh." },
+      });
+      const previewButton = within(dialog).getByRole("button", {
+        name: "Xem ảnh hưởng",
+      });
+      await waitFor(() => expect(previewButton).toBeEnabled());
+      fireEvent.click(previewButton);
+      const review = await screen.findByRole("dialog", {
+        name: "Thay đổi dự kiến",
+      });
+      fireEvent.click(
+        within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
+      );
+
+      const lock = await screen.findByRole("alert");
+      expect(lock).toHaveTextContent(/Không gửi lại thao tác/i);
+      fireEvent.change(screen.getByLabelText("Ngày tham chiếu"), {
+        target: { value: "2026-09-07" },
+      });
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toBeInTheDocument(),
+      );
+
+      revealExactEvidence = true;
+      fireEvent.click(
+        within(screen.getByRole("alert")).getByRole("button", {
+          name: "Tải lại dữ liệu",
+        }),
+      );
+      await waitFor(() =>
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
+      );
+      await waitFor(() =>
+        expect(
+          screen.queryByRole("dialog", { name: "Thay đổi dự kiến" }),
+        ).not.toBeInTheDocument(),
+      );
+    },
+  );
+
   it.each([
     {
       label: "Món",
@@ -242,6 +747,19 @@ describe("Recipe Change Order first-user workbench", () => {
               String(request.correlation_id),
               "2026-09-04",
             );
+          if (name === "atlas_api.get_recipe_effective_target_context")
+            return fixture.getEffectiveTargetContext(
+              String(request.requested_by_auth_subject),
+              String(request.correlation_id),
+              String((request.payload as Record<string, JsonValue>).as_of_date),
+              String((request.payload as Record<string, JsonValue>).dish_id),
+              {
+                kind: "school",
+                schoolId: String(
+                  (request.payload as Record<string, JsonValue>).school_id,
+                ),
+              },
+            );
           if (name === "atlas_api.preview_recipe_composition_adjustment") {
             const result = await fixture.preview(
               String(request.requested_by_auth_subject),
@@ -270,8 +788,7 @@ describe("Recipe Change Order first-user workbench", () => {
       });
       renderWorkbench("rules", api, "connected");
       const dialog = await openCreateDialog();
-      selectRecipeTarget(dialog);
-      selectAction(dialog, "Đổi định lượng");
+      await selectSchoolRecipeContext(dialog, "Đổi định lượng");
       fireEvent.change(
         within(dialog).getByLabelText("Nguyên liệu trong công thức"),
         {
@@ -283,9 +800,6 @@ describe("Recipe Change Order first-user workbench", () => {
       });
       fireEvent.change(within(dialog).getByLabelText("Lý do"), {
         target: { value: "Kiểm tra lưu điều chỉnh." },
-      });
-      fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
-        target: { value: fixtureIds.school },
       });
       expect(
         within(dialog).queryByRole("button", { name: "Lưu điều chỉnh" }),
@@ -315,12 +829,14 @@ describe("Recipe Change Order first-user workbench", () => {
         payload: {
           dish_id: fixtureIds.dish,
           preview_dish_id: fixtureIds.dish,
-          scope_kind: "SYSTEM_DISH",
+          scope_kind: "SCHOOL_DISH",
           action_kind: "ADJUST_QUANTITY",
           quantity_per_basis: 7.5,
         },
       });
-      expect(await screen.findByText("Đã lưu điều chỉnh.")).toBeInTheDocument();
+      expect(
+        await screen.findByText(/chưa đọc lại được đúng phiên bản/i),
+      ).toBeInTheDocument();
     },
   );
 
@@ -467,8 +983,7 @@ describe("Recipe Change Order first-user workbench", () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const dialog = await openCreateDialog();
-    selectRecipeTarget(dialog);
-    selectAction(dialog, "Thêm nguyên liệu");
+    await selectSchoolRecipeContext(dialog, "Thêm nguyên liệu");
     fireEvent.change(within(dialog).getByLabelText("Nguyên liệu thêm"), {
       target: { value: fixtureIds.potato },
     });
@@ -486,9 +1001,6 @@ describe("Recipe Change Order first-user workbench", () => {
     fireEvent.change(within(dialog).getByLabelText("Lý do"), {
       target: { value: "Bổ sung nguyên liệu theo thực đơn." },
     });
-    fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
-      target: { value: fixtureIds.school },
-    });
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
@@ -505,8 +1017,7 @@ describe("Recipe Change Order first-user workbench", () => {
   it("blocks ADD preview safely when the Ingredient has no purchase Unit", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
-    selectRecipeTarget(dialog);
-    selectAction(dialog, "Thêm nguyên liệu");
+    await selectSchoolRecipeContext(dialog, "Thêm nguyên liệu");
     fireEvent.change(within(dialog).getByLabelText("Nguyên liệu thêm"), {
       target: { value: fixtureIds.missingUnitIngredient },
     });
@@ -515,9 +1026,6 @@ describe("Recipe Change Order first-user workbench", () => {
     });
     fireEvent.change(within(dialog).getByLabelText("Lý do"), {
       target: { value: "Kiểm tra dữ liệu nguyên liệu thiếu đơn vị." },
-    });
-    fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
-      target: { value: fixtureIds.school },
     });
 
     expect(
@@ -534,8 +1042,7 @@ describe("Recipe Change Order first-user workbench", () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const dialog = await openCreateDialog();
-    selectRecipeTarget(dialog);
-    selectAction(dialog, "Đổi định lượng");
+    await selectSchoolRecipeContext(dialog, "Đổi định lượng");
     fireEvent.change(
       within(dialog).getByLabelText("Nguyên liệu trong công thức"),
       { target: { value: fixtureIds.porkLine } },
@@ -550,9 +1057,6 @@ describe("Recipe Change Order first-user workbench", () => {
     });
     fireEvent.change(within(dialog).getByLabelText("Lý do"), {
       target: { value: "Điều chỉnh theo định lượng công thức." },
-    });
-    fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
-      target: { value: fixtureIds.school },
     });
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
@@ -571,7 +1075,7 @@ describe("Recipe Change Order first-user workbench", () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const dialog = await openCreateDialog();
-    fillRecipeReplacement(dialog);
+    await fillRecipeReplacement(dialog);
     expect(within(dialog).queryByLabelText("Đơn vị")).not.toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByLabelText("Đổi cả định lượng"));
@@ -651,106 +1155,55 @@ describe("Recipe Change Order first-user workbench", () => {
 
     selectRecipeTarget(dialog);
     selectAction(dialog, "Thay nguyên liệu");
-    expect(within(dialog).getByLabelText("Trường dùng để xem")).toHaveValue("");
-    expect(
-      within(within(dialog).getByLabelText("Trường dùng để xem"))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["Chọn trường", "Trường Tiểu học Minh Khai"]);
-
-    fillRecipeReplacement(dialog);
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    await waitFor(() =>
+      expect(
+        within(dialog).getByRole("option", { name: /Cà rốt · 22/ }),
+      ).toBeInTheDocument(),
     );
-    const review = await screen.findByRole("dialog", {
-      name: "Thay đổi dự kiến",
-    });
-    const proposal = preview.mock.calls[0][2].proposed_adjustment as Record<
-      string,
-      unknown
-    >;
-    expect(proposal).toMatchObject({
-      scope_kind: "SYSTEM_DISH",
-      school_type_id: fixtureIds.schoolType,
-    });
+    expect(within(dialog).queryByLabelText("Trường dùng để xem")).toBeNull();
     expect(
-      within(review).getByText("Canh bí đỏ · TIỂU HỌC"),
+      within(dialog).getByText(
+        /chưa hỗ trợ xem và lưu điều chỉnh cho toàn bộ loại trường/i,
+      ),
     ).toBeInTheDocument();
-    expect(within(review).getByText("Tất cả trường")).toBeInTheDocument();
-
-    const comparison = within(review).getByRole("table", {
-      name: "So sánh công thức trước và sau",
-    });
-    expect(within(comparison).getAllByText("Bí đỏ · 20 Kilôgam")).toHaveLength(
-      2,
-    );
     expect(
-      within(comparison).queryByText(/25 Kilôgam/),
-    ).not.toBeInTheDocument();
-    expect(
-      within(comparison).queryByText(/10 Kilôgam/),
-    ).not.toBeInTheDocument();
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
+    ).toBeDisabled();
+    expect(preview).not.toHaveBeenCalled();
   });
 
-  it("filters Recipe lines and representative Schools by Recipe Type and clears stale preview", async () => {
+  it("reloads exact system targets when Recipe Type changes without a School proxy", async () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const dialog = await openCreateDialog();
-    fillRecipeReplacement(dialog);
-
-    const primaryLines = within(
-      within(dialog).getByLabelText("Nguyên liệu trong công thức"),
-    )
-      .getAllByRole("option")
-      .map((option) => option.textContent);
-    expect(primaryLines).toContain("Thịt heo · 8 Kilôgam");
-    expect(primaryLines).not.toContain("Thịt heo · 10 Kilôgam");
-    expect(
-      within(within(dialog).getByLabelText("Trường dùng để xem"))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["Chọn trường", "Trường Tiểu học Minh Khai"]);
-
-    fireEvent.click(
-      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
-    );
-    const review = await screen.findByRole("dialog", {
-      name: "Thay đổi dự kiến",
-    });
-    fireEvent.click(within(review).getByRole("button", { name: "Quay lại" }));
-    const edit = await screen.findByRole("dialog", { name: "Tạo điều chỉnh" });
+    selectRecipeTarget(dialog);
+    selectAction(dialog, "Thay nguyên liệu");
 
     fireEvent.change(
-      within(edit).getByRole("combobox", {
+      within(dialog).getByRole("combobox", {
         name: /Loại công thức/,
       }),
       {
         target: { value: fixtureIds.secondarySchoolType },
       },
     );
+    await waitFor(() =>
+      expect(
+        within(within(dialog).getByLabelText("Nguyên liệu trong công thức"))
+          .getAllByRole("option")
+          .map((option) => option.textContent),
+      ).toEqual([
+        "Chọn nguyên liệu trong món",
+        "Cà rốt · 22 Kilôgam",
+        "Thịt heo · 10 Kilôgam",
+        "Gia vị thiếu đơn vị · 1,25 Kilôgam",
+      ]),
+    );
+    expect(within(dialog).queryByLabelText("Trường dùng để xem")).toBeNull();
     expect(
-      within(edit).getByLabelText("Nguyên liệu trong công thức"),
-    ).toHaveValue("");
-    expect(within(edit).getByLabelText("Thay bằng")).toHaveValue("");
-    expect(
-      within(within(edit).getByLabelText("Nguyên liệu trong công thức"))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual([
-      "Chọn nguyên liệu trong món",
-      "Bí đỏ · 25 Kilôgam",
-      "Thịt heo · 10 Kilôgam",
-    ]);
-    expect(
-      within(within(edit).getByLabelText("Trường dùng để xem"))
-        .getAllByRole("option")
-        .map((option) => option.textContent),
-    ).toEqual(["Chọn trường", "Trường Trung học Trần Phú"]);
-    expect(within(edit).getByLabelText("Trường dùng để xem")).toHaveValue("");
-    expect(
-      within(edit).getByRole("button", { name: "Xem ảnh hưởng" }),
+      within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     ).toBeDisabled();
-    expect(preview).toHaveBeenCalledOnce();
+    expect(preview).not.toHaveBeenCalled();
   });
 
   it("derives Recipe Type from one School and prevents cross-type Recipe-line targets", async () => {
@@ -781,11 +1234,13 @@ describe("Recipe Change Order first-user workbench", () => {
     const recipeLine = within(dialog).getByLabelText(
       "Nguyên liệu trong công thức",
     );
-    const options = within(recipeLine)
-      .getAllByRole("option")
-      .map((option) => option.textContent);
-    expect(options).toContain("Thịt heo · 10 Kilôgam");
-    expect(options).not.toContain("Thịt heo · 8 Kilôgam");
+    await waitFor(() => {
+      const options = within(recipeLine)
+        .getAllByRole("option")
+        .map((option) => option.textContent);
+      expect(options).toContain("Thịt heo · 10 Kilôgam");
+      expect(options).not.toContain("Thịt heo · 8 Kilôgam");
+    });
 
     fireEvent.change(recipeLine, {
       target: { value: fixtureIds.secondaryPorkLine },
@@ -821,7 +1276,7 @@ describe("Recipe Change Order first-user workbench", () => {
     const comparison = within(review).getByRole("table", {
       name: "So sánh công thức trước và sau",
     });
-    expect(within(comparison).getAllByText("Bí đỏ · 25 Kilôgam")).toHaveLength(
+    expect(within(comparison).getAllByText("Cà rốt · 22 Kilôgam")).toHaveLength(
       2,
     );
     expect(
@@ -922,11 +1377,6 @@ describe("Recipe Change Order first-user workbench", () => {
   it.each([
     {
       businessObject: "Công thức của một món",
-      authority: "Tất cả trường",
-      expectedScope: "SYSTEM_DISH",
-    },
-    {
-      businessObject: "Công thức của một món",
       authority: "Một trường",
       expectedScope: "SCHOOL_DISH",
     },
@@ -952,7 +1402,7 @@ describe("Recipe Change Order first-user workbench", () => {
       if (authority !== "Tất cả trường")
         fireEvent.click(within(dialog).getByLabelText(authority));
       if (businessObject === "Công thức của một món")
-        fillRecipeReplacement(dialog);
+        await fillRecipeReplacement(dialog);
       else fillIngredientReplacement(dialog);
 
       expect(dialog.textContent).not.toContain(expectedScope);
@@ -972,7 +1422,7 @@ describe("Recipe Change Order first-user workbench", () => {
     const preview = vi.spyOn(api, "preview");
     const create = vi.spyOn(api, "create");
     const dialog = await openCreateDialog();
-    fillRecipeReplacement(dialog);
+    await fillRecipeReplacement(dialog);
 
     expect(
       within(dialog).queryByRole("button", { name: "Lưu điều chỉnh" }),
@@ -993,9 +1443,9 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(
       within(comparison).getByText("Khoai tây · 8 Kilôgam"),
     ).toBeInTheDocument();
-    expect(within(comparison).getAllByText("Bí đỏ · 20 Kilôgam")).toHaveLength(
-      2,
-    );
+    expect(
+      within(comparison).getAllByText("Khoai tây · 24 Kilôgam"),
+    ).toHaveLength(2);
     const changedRow = within(comparison)
       .getAllByRole("row")
       .find((row) => row.textContent?.includes("Thịt heo"));
@@ -1005,7 +1455,7 @@ describe("Recipe Change Order first-user workbench", () => {
     );
     const unchangedRow = within(comparison)
       .getAllByRole("row")
-      .find((row) => row.textContent?.includes("Bí đỏ"));
+      .find((row) => row.textContent?.includes("Khoai tây · 24"));
     expect(unchangedRow).toBeDefined();
     expect(
       within(unchangedRow!).queryByLabelText("Có thay đổi"),
@@ -1060,7 +1510,7 @@ describe("Recipe Change Order first-user workbench", () => {
     const { api } = renderWorkbench();
     const preview = vi.spyOn(api, "preview");
     const dialog = await openCreateDialog();
-    fillRecipeReplacement(dialog);
+    await fillRecipeReplacement(dialog);
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
     );
@@ -1092,7 +1542,7 @@ describe("Recipe Change Order first-user workbench", () => {
   it("does not carry Recipe targets across an Authority change", async () => {
     renderWorkbench();
     const dialog = await openCreateDialog();
-    fillRecipeReplacement(dialog);
+    await fillRecipeReplacement(dialog);
 
     fireEvent.click(within(dialog).getByLabelText("Một trường"));
 
@@ -1141,8 +1591,7 @@ describe("Recipe Change Order first-user workbench", () => {
     async ({ action, targetLabel, targetValue, quantity, before, after }) => {
       renderWorkbench();
       const dialog = await openCreateDialog();
-      selectRecipeTarget(dialog);
-      selectAction(dialog, action);
+      await selectSchoolRecipeContext(dialog, action);
       fireEvent.change(within(dialog).getByLabelText(targetLabel), {
         target: { value: targetValue },
       });
@@ -1155,9 +1604,6 @@ describe("Recipe Change Order first-user workbench", () => {
         );
       fireEvent.change(within(dialog).getByLabelText("Lý do"), {
         target: { value: `Kiểm tra ${action.toLocaleLowerCase("vi")}.` },
-      });
-      fireEvent.change(within(dialog).getByLabelText("Trường dùng để xem"), {
-        target: { value: fixtureIds.school },
       });
       fireEvent.click(
         within(dialog).getByRole("button", { name: "Xem ảnh hưởng" }),
@@ -1178,7 +1624,7 @@ describe("Recipe Change Order first-user workbench", () => {
         within(alignedRow!).getByLabelText("Có thay đổi"),
       ).toHaveTextContent("→");
       expect(
-        within(comparison).getAllByText("Bí đỏ · 20 Kilôgam"),
+        within(comparison).getAllByText("Khoai tây · 24 Kilôgam"),
       ).toHaveLength(2);
     },
   );

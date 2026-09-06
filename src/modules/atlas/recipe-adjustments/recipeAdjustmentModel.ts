@@ -90,17 +90,17 @@ export type RecipeAdjustmentTemporalState =
 
 export type RecipeAdjustmentOperatorRevision = {
   revision_id: string;
-  revision_status?: "ACTIVE" | "SUPERSEDED" | "CANCELLED";
-  business_event_kind?: "CREATED" | "CORRECTED" | "CANCELLED";
+  revision_status: "ACTIVE" | "SUPERSEDED" | "CANCELLED";
+  business_event_kind: "CREATED" | "CORRECTED" | "CANCELLED";
   effective_from: string;
   effective_to: string | null;
   substitute_ingredient_id: string | null;
   quantity_per_basis: number | null;
   unit_id: string | null;
   reason_note: string;
-  issued_at?: string | null;
-  issuance_kind?: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
-  issued_by_actor_name?: string | null;
+  issued_at: string | null;
+  issuance_kind: "ATLAS_NATIVE" | "LEGACY_UNATTRIBUTED";
+  issued_by_actor_name: string | null;
 };
 
 export type RecipeAdjustmentOperatorRecord = {
@@ -257,18 +257,170 @@ function isRecord(
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isNullableString(value: JsonValue | undefined) {
+  return typeof value === "string" || value === null;
+}
+
+function isMessage(value: JsonValue): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.code === "string" &&
+    typeof value.message === "string"
+  );
+}
+
+function isSelectedRecipe(value: JsonValue | undefined): boolean {
+  if (value === null) return true;
+  return (
+    isRecord(value) &&
+    typeof value.dish_id === "string" &&
+    typeof value.recipe_id === "string" &&
+    typeof value.recipe_version_id === "string" &&
+    (value.selection_scope === "SCHOOL_TYPE" ||
+      value.selection_scope === "GENERAL") &&
+    typeof value.basis_portions === "number"
+  );
+}
+
 function isEffectiveTargetLine(value: JsonValue): boolean {
   if (!isRecord(value)) return false;
+  const isRecipeLine = value.target_kind === "RECIPE_LINE";
+  const stableIdentityMatches = isRecipeLine
+    ? typeof value.target_recipe_line_id === "string" &&
+      value.adjustment_line_id === null &&
+      value.target_id === value.target_recipe_line_id
+    : value.target_kind === "ADJUSTMENT_LINE" &&
+      value.target_recipe_line_id === null &&
+      typeof value.adjustment_line_id === "string" &&
+      value.target_id === value.adjustment_line_id;
   return (
     typeof value.ingredient_id === "string" &&
     typeof value.ingredient_name === "string" &&
     typeof value.quantity_per_basis === "number" &&
     typeof value.unit_id === "string" &&
     typeof value.unit_name === "string" &&
-    (value.target_kind === "RECIPE_LINE" ||
-      value.target_kind === "ADJUSTMENT_LINE") &&
     typeof value.target_id === "string" &&
-    typeof value.source_layer === "string"
+    typeof value.source_layer === "string" &&
+    stableIdentityMatches
+  );
+}
+
+function isEffectiveCompositionLine(value: JsonValue): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.selected_dish_id === "string" &&
+    typeof value.selected_recipe_id === "string" &&
+    typeof value.selected_recipe_version_id === "string" &&
+    typeof value.basis_portions === "number" &&
+    isNullableString(value.base_recipe_line_id) &&
+    isNullableString(value.base_recipe_line_revision_id) &&
+    isNullableString(value.adjustment_line_id) &&
+    isNullableString(value.line_code) &&
+    isNullableString(value.base_ingredient_id) &&
+    (typeof value.base_quantity_per_basis === "number" ||
+      value.base_quantity_per_basis === null) &&
+    isNullableString(value.base_unit_id) &&
+    (value.base_disposition === "PRESENT" ||
+      value.base_disposition === "REMOVED" ||
+      value.base_disposition === null) &&
+    typeof value.final_ingredient_id === "string" &&
+    typeof value.final_quantity_per_basis === "number" &&
+    typeof value.final_unit_id === "string" &&
+    (value.final_disposition === "PRESENT" ||
+      value.final_disposition === "REMOVED") &&
+    typeof value.source_layer === "string" &&
+    Array.isArray(value.applied_adjustment_ids) &&
+    value.applied_adjustment_ids.every((item) => typeof item === "string") &&
+    Array.isArray(value.applied_revision_ids) &&
+    value.applied_revision_ids.every((item) => typeof item === "string") &&
+    Array.isArray(value.lineage)
+  );
+}
+
+function isEffectiveComposition(value: JsonValue | undefined): boolean {
+  return (
+    isRecord(value) &&
+    (value.status === "READY" || value.status === "BLOCKED") &&
+    typeof value.as_of_date === "string" &&
+    isNullableString(value.school_id) &&
+    typeof value.dish_id === "string" &&
+    typeof value.historical === "boolean" &&
+    isSelectedRecipe(value.selected_recipe) &&
+    Array.isArray(value.lines) &&
+    value.lines.every(isEffectiveCompositionLine) &&
+    Array.isArray(value.warnings) &&
+    value.warnings.every(isMessage) &&
+    Array.isArray(value.blockers) &&
+    value.blockers.every(isMessage)
+  );
+}
+
+function isOperatorRevision(value: JsonValue | undefined): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.revision_id === "string" &&
+    (value.revision_status === "ACTIVE" ||
+      value.revision_status === "SUPERSEDED" ||
+      value.revision_status === "CANCELLED") &&
+    (value.business_event_kind === "CREATED" ||
+      value.business_event_kind === "CORRECTED" ||
+      value.business_event_kind === "CANCELLED") &&
+    typeof value.effective_from === "string" &&
+    isNullableString(value.effective_to) &&
+    isNullableString(value.substitute_ingredient_id) &&
+    (typeof value.quantity_per_basis === "number" ||
+      value.quantity_per_basis === null) &&
+    isNullableString(value.unit_id) &&
+    typeof value.reason_note === "string" &&
+    isNullableString(value.issued_at) &&
+    (value.issuance_kind === "ATLAS_NATIVE" ||
+      value.issuance_kind === "LEGACY_UNATTRIBUTED") &&
+    isNullableString(value.issued_by_actor_name)
+  );
+}
+
+function isOperatorRecord(value: JsonValue): boolean {
+  if (!isRecord(value)) return false;
+  const temporalStates: RecipeAdjustmentTemporalState[] = [
+    "ACTIVE",
+    "SCHEDULED",
+    "ACTIVE_CHANGE_SCHEDULED",
+    "ACTIVE_CANCELLATION_SCHEDULED",
+    "ACTIVE_RESUMED",
+    "EXPIRED",
+    "CANCELLED",
+  ];
+  return (
+    typeof value.adjustment_id === "string" &&
+    typeof value.version === "number" &&
+    typeof value.current_revision_id === "string" &&
+    typeof value.current_revision_number === "number" &&
+    typeof value.can_correct === "boolean" &&
+    typeof value.can_cancel === "boolean" &&
+    (value.scope_kind === "SYSTEM_INGREDIENT" ||
+      value.scope_kind === "SYSTEM_DISH" ||
+      value.scope_kind === "SCHOOL" ||
+      value.scope_kind === "SCHOOL_DISH") &&
+    (value.action_kind === "ADD" ||
+      value.action_kind === "REPLACE" ||
+      value.action_kind === "ADJUST_QUANTITY" ||
+      value.action_kind === "REMOVE") &&
+    isNullableString(value.school_id) &&
+    isNullableString(value.dish_id) &&
+    isNullableString(value.school_type_id) &&
+    isNullableString(value.target_ingredient_id) &&
+    isNullableString(value.target_recipe_line_id) &&
+    isNullableString(value.adjustment_line_id) &&
+    temporalStates.includes(
+      value.temporal_state as RecipeAdjustmentTemporalState,
+    ) &&
+    isNullableString(value.temporal_state_date) &&
+    typeof value.is_effective_now === "boolean" &&
+    isOperatorRevision(value.display_revision) &&
+    isOperatorRevision(value.content_revision) &&
+    isOperatorRevision(value.command_revision) &&
+    Array.isArray(value.history) &&
+    value.history.every(isOperatorRevision)
   );
 }
 
@@ -291,6 +443,9 @@ export function adjustmentWorkbenchFromResult(
   ] as const;
   if (keys.some((key) => !Array.isArray(source[key]))) return null;
   if (typeof source.reference_date !== "string") return null;
+  const operatorRows = source.operator_rows;
+  if (!Array.isArray(operatorRows) || !operatorRows.every(isOperatorRecord))
+    return null;
   return source as unknown as RecipeAdjustmentWorkbenchData;
 }
 
@@ -300,16 +455,7 @@ export function effectiveCompositionFromResult(
   if (result.kind !== "success" || !isRecord(result.response.resolution))
     return null;
   const source = result.response.resolution;
-  if (
-    (source.status !== "READY" && source.status !== "BLOCKED") ||
-    typeof source.as_of_date !== "string" ||
-    typeof source.dish_id !== "string" ||
-    typeof source.historical !== "boolean" ||
-    !Array.isArray(source.lines) ||
-    !Array.isArray(source.warnings) ||
-    !Array.isArray(source.blockers)
-  )
-    return null;
+  if (!isEffectiveComposition(source)) return null;
   return source as unknown as EffectiveCompositionResult;
 }
 
@@ -322,10 +468,18 @@ export function effectiveTargetContextFromResult(
   if (
     typeof source.as_of_date !== "string" ||
     typeof source.dish_id !== "string" ||
+    !isNullableString(source.school_id) ||
+    typeof source.school_type_id !== "string" ||
+    !isSelectedRecipe(source.selected_recipe) ||
+    (isRecord(source.selected_recipe) &&
+      source.selected_recipe.selection_scope !== "SCHOOL_TYPE") ||
     !Array.isArray(source.effective_lines) ||
     !source.effective_lines.every(isEffectiveTargetLine) ||
+    (source.effective_lines.length > 0 && source.selected_recipe === null) ||
     !Array.isArray(source.warnings) ||
+    !source.warnings.every(isMessage) ||
     !Array.isArray(source.blockers) ||
+    !source.blockers.every(isMessage) ||
     (typeof source.basis_portions !== "number" &&
       source.basis_portions !== null)
   )
@@ -338,7 +492,35 @@ export function adjustmentPreviewFromResult(
 ): RecipeAdjustmentPreview | null {
   if (result.kind !== "success" || !isRecord(result.response.preview))
     return null;
-  return result.response.preview as unknown as RecipeAdjustmentPreview;
+  const source = result.response.preview;
+  const before = source.before;
+  const after = source.after;
+  if (!isEffectiveComposition(before) || !isEffectiveComposition(after))
+    return null;
+  const beforeComposition = before as unknown as EffectiveCompositionResult;
+  const afterComposition = after as unknown as EffectiveCompositionResult;
+  if (
+    typeof source.as_of_date !== "string" ||
+    typeof source.school_id !== "string" ||
+    typeof source.dish_id !== "string" ||
+    !isRecord(source.proposed_adjustment) ||
+    beforeComposition.as_of_date !== source.as_of_date ||
+    afterComposition.as_of_date !== source.as_of_date ||
+    beforeComposition.school_id !== source.school_id ||
+    afterComposition.school_id !== source.school_id ||
+    beforeComposition.dish_id !== source.dish_id ||
+    afterComposition.dish_id !== source.dish_id ||
+    typeof source.affected_line_count !== "number" ||
+    !Number.isInteger(source.affected_line_count) ||
+    source.affected_line_count < 0 ||
+    typeof source.can_save !== "boolean" ||
+    !Array.isArray(source.warnings) ||
+    !source.warnings.every(isMessage) ||
+    !Array.isArray(source.blockers) ||
+    !source.blockers.every(isMessage)
+  )
+    return null;
+  return source as unknown as RecipeAdjustmentPreview;
 }
 
 export function adjustmentResultMessage(result: AtlasRpcResult): string {

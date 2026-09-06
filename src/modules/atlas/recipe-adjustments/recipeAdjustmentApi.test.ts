@@ -9,7 +9,12 @@ import {
   recipeAdjustmentReadRequest,
   systemEffectiveRecipeRequest,
 } from "./recipeAdjustmentApi";
-import { effectiveTargetContextFromResult } from "./recipeAdjustmentModel";
+import {
+  adjustmentPreviewFromResult,
+  adjustmentWorkbenchFromResult,
+  effectiveTargetContextFromResult,
+} from "./recipeAdjustmentModel";
+import { createReviewRecipeAdjustmentApi } from "./reviewRecipeAdjustmentApi";
 
 describe("Recipe adjustment API contract", () => {
   it("builds explicit RMVP-02B read and command envelopes", () => {
@@ -183,15 +188,33 @@ describe("Recipe adjustment API contract", () => {
     ]);
   });
 
-  it("parses target rows only when required scalars and arrays are shaped", () => {
+  it("parses target rows only when exact context and stable target XOR are shaped", () => {
     const targetContext = {
       as_of_date: "2026-09-05",
       dish_id: "dish-1",
       school_id: null,
       school_type_id: "school-type-1",
-      selected_recipe: null,
-      basis_portions: null,
+      selected_recipe: {
+        dish_id: "dish-1",
+        recipe_id: "recipe-1",
+        recipe_version_id: "version-1",
+        selection_scope: "SCHOOL_TYPE",
+        basis_portions: 100,
+      },
+      basis_portions: 100,
       effective_lines: [
+        {
+          ingredient_id: "ingredient-base",
+          ingredient_name: "Thịt heo hiệu lực",
+          quantity_per_basis: 8,
+          unit_id: "unit-1",
+          unit_name: "kg",
+          target_kind: "RECIPE_LINE",
+          target_recipe_line_id: "recipe-line-1",
+          adjustment_line_id: null,
+          target_id: "recipe-line-1",
+          source_layer: "RELEASED_RECIPE_VERSION",
+        },
         {
           ingredient_id: "ingredient-1",
           ingredient_name: "Hành lá",
@@ -222,6 +245,151 @@ describe("Recipe adjustment API contract", () => {
           success: true,
           target_context: { ...targetContext, effective_lines: [{}] },
         },
+      }),
+    ).toBeNull();
+
+    for (const malformedLine of [
+      {
+        ...targetContext.effective_lines[0],
+        adjustment_line_id: "adjustment-line-conflict",
+      },
+      {
+        ...targetContext.effective_lines[1],
+        target_recipe_line_id: "recipe-line-conflict",
+      },
+      {
+        ...targetContext.effective_lines[1],
+        target_id: "wrong-target-id",
+      },
+    ]) {
+      expect(
+        effectiveTargetContextFromResult({
+          kind: "success",
+          response: {
+            success: true,
+            target_context: {
+              ...targetContext,
+              effective_lines: [malformedLine],
+            },
+          },
+        }),
+      ).toBeNull();
+    }
+
+    expect(
+      effectiveTargetContextFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          target_context: {
+            ...targetContext,
+            school_id: "school-1",
+            school_type_id: null,
+          },
+        },
+      }),
+    ).toBeNull();
+    expect(
+      effectiveTargetContextFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          target_context: {
+            ...targetContext,
+            selected_recipe: { recipe_id: "partial" },
+          },
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects malformed previews instead of authorizing a write", () => {
+    const composition = {
+      status: "READY",
+      as_of_date: "2026-09-05",
+      school_id: "school-1",
+      dish_id: "dish-1",
+      historical: false,
+      selected_recipe: {
+        dish_id: "dish-1",
+        recipe_id: "recipe-1",
+        recipe_version_id: "version-1",
+        selection_scope: "SCHOOL_TYPE",
+        basis_portions: 100,
+      },
+      lines: [],
+      warnings: [],
+      blockers: [],
+    };
+    const preview = {
+      as_of_date: "2026-09-05",
+      school_id: "school-1",
+      dish_id: "dish-1",
+      proposed_adjustment: {
+        scope_kind: "SCHOOL_DISH",
+        action_kind: "REMOVE",
+      },
+      before: composition,
+      after: composition,
+      affected_line_count: 1,
+      can_save: true,
+      warnings: [],
+      blockers: [],
+    };
+
+    expect(
+      adjustmentPreviewFromResult({
+        kind: "success",
+        response: { success: true, preview },
+      }),
+    ).toEqual(preview);
+    expect(
+      adjustmentPreviewFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          preview: { ...preview, can_save: "yes" },
+        },
+      }),
+    ).toBeNull();
+    expect(
+      adjustmentPreviewFromResult({
+        kind: "success",
+        response: {
+          success: true,
+          preview: {
+            ...preview,
+            before: { ...composition, lines: [{}] },
+          },
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("accepts nullable legacy issuance and rejects malformed temporal authority", async () => {
+    const result = await createReviewRecipeAdjustmentApi(
+      "ready",
+    ).getOperatorWorkbench("subject-1", "correlation-1", "2026-09-05");
+    const parsed = adjustmentWorkbenchFromResult(result);
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.operator_rows[0]?.display_revision).toMatchObject({
+      issuance_kind: "LEGACY_UNATTRIBUTED",
+      issued_at: null,
+      issued_by_actor_name: null,
+    });
+
+    if (result.kind !== "success") throw new Error("Expected review fixture");
+    const workbench = structuredClone(result.response.workbench) as Record<
+      string,
+      unknown
+    >;
+    const rows = workbench.operator_rows as Array<Record<string, unknown>>;
+    rows[0] = { ...rows[0], is_effective_now: "yes" };
+    expect(
+      adjustmentWorkbenchFromResult({
+        kind: "success",
+        response: { success: true, workbench } as never,
       }),
     ).toBeNull();
   });

@@ -29,11 +29,13 @@ import {
   adjustmentPreviewFromResult,
   adjustmentResultMessage,
   adjustmentWorkbenchFromResult,
+  effectiveTargetContextFromResult,
   effectiveCompositionFromResult,
   emptyRecipeAdjustmentWorkbench,
   type AdjustmentReference,
   type EffectiveCompositionLine,
   type EffectiveCompositionResult,
+  type EffectiveTargetContext,
   type RecipeAdjustmentAction,
   type RecipeAdjustmentOperatorRecord,
   type RecipeAdjustmentOperatorRevision,
@@ -58,6 +60,7 @@ type AdjustmentDraft = {
   schoolTypeId: string;
   targetIngredientId: string;
   targetRecipeLineId: string;
+  targetAdjustmentLineId: string;
   substituteIngredientId: string;
   quantity: string;
   replaceQuantity: boolean;
@@ -190,16 +193,6 @@ function schoolTypeIdForSchool(
   );
 }
 
-function firstSchoolIdForType(
-  data: RecipeAdjustmentWorkbenchData,
-  schoolTypeId: string,
-) {
-  return (
-    data.schools.find((school) => school.school_type_id === schoolTypeId)
-      ?.school_id ?? ""
-  );
-}
-
 function referenceName(
   records: AdjustmentReference[],
   id: string | null | undefined,
@@ -220,6 +213,7 @@ function emptyDraft(): AdjustmentDraft {
     schoolTypeId: "",
     targetIngredientId: "",
     targetRecipeLineId: "",
+    targetAdjustmentLineId: "",
     substituteIngredientId: "",
     quantity: "",
     replaceQuantity: false,
@@ -258,6 +252,35 @@ function temporalTone(row: RecipeAdjustmentOperatorRecord) {
 
 function hasUnknownWriteOutcome(result: AtlasRpcResult) {
   return result.kind === "transport_error";
+}
+
+type PendingMutation = {
+  adjustmentId: string;
+  revisionId: string;
+  predecessorRevisionId: string | null;
+};
+
+function hasMutationEvidence(
+  data: RecipeAdjustmentWorkbenchData,
+  pending: PendingMutation,
+) {
+  const row = data.operator_rows.find(
+    (candidate) => candidate.adjustment_id === pending.adjustmentId,
+  );
+  if (!row) return false;
+  const revisionIds = new Set([
+    row.current_revision_id,
+    ...row.history.map((revision) => revision.revision_id),
+  ]);
+  return (
+    revisionIds.has(pending.revisionId) &&
+    (!pending.predecessorRevisionId ||
+      revisionIds.has(pending.predecessorRevisionId))
+  );
+}
+
+function formatEffectivePeriod(from: string, to: string | null | undefined) {
+  return `${formatDate(from)}${to ? ` – đến trước ${formatDate(to)}` : " trở đi"}`;
 }
 
 export function RecipeAdjustmentWorkbench({
@@ -313,7 +336,16 @@ export function RecipeAdjustmentWorkbench({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [mutationLocked, setMutationLocked] = useState(false);
+  const [targetContext, setTargetContext] =
+    useState<EffectiveTargetContext | null>(null);
+  const [targetContextStatus, setTargetContextStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [targetContextMessage, setTargetContextMessage] = useState("");
   const generation = useRef(0);
+  const targetGeneration = useRef(0);
+  const previewGeneration = useRef(0);
+  const pendingMutation = useRef<PendingMutation | null>(null);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
 
@@ -341,7 +373,17 @@ export function RecipeAdjustmentWorkbench({
       (value) => value || firstId(data.schools, "school_id"),
     );
     setEffectiveDishId((value) => value || firstId(data.dishes, "dish_id"));
-    setMutationLocked(false);
+    const pending = pendingMutation.current;
+    if (pending && hasMutationEvidence(data, pending)) {
+      pendingMutation.current = null;
+      setMutationLocked(false);
+      setCreateOpened(false);
+      setEditing(null);
+      setPreview(null);
+      setPreviewFingerprint("");
+      setCancelTarget(null);
+      setCancelReason("");
+    }
     return true;
   }, [api, authSubject, correlationId, referenceDate]);
 
@@ -364,23 +406,78 @@ export function RecipeAdjustmentWorkbench({
           "school_type_id",
           "school_type_name",
         );
-  const compatiblePreviewSchools = useMemo(
-    () =>
-      load.data.schools.filter(
-        (school) => school.school_type_id === draft.schoolTypeId,
-      ),
-    [draft.schoolTypeId, load.data.schools],
-  );
-  const lineOptions = useMemo(
-    () =>
-      load.data.recipe_lines.filter(
-        (line) =>
-          (!draft.dishId || line.dish_id === draft.dishId) &&
-          !!selectedRecipeSchoolTypeId &&
-          line.school_type_id === selectedRecipeSchoolTypeId,
-      ),
-    [draft.dishId, load.data.recipe_lines, selectedRecipeSchoolTypeId],
-  );
+  const lineOptions = targetContext?.effective_lines ?? [];
+
+  useEffect(() => {
+    const recipeScope =
+      draft.scope === "SYSTEM_DISH" || draft.scope === "SCHOOL_DISH";
+    const shouldLoad =
+      !!api &&
+      !!authSubject &&
+      createOpened &&
+      recipeScope &&
+      draft.action !== "" &&
+      draft.action !== "ADD" &&
+      !!draft.dishId &&
+      !!draft.effectiveFrom &&
+      (draft.scope === "SYSTEM_DISH" ? !!draft.schoolTypeId : !!draft.schoolId);
+    const requestNumber = ++targetGeneration.current;
+    if (!shouldLoad) {
+      setTargetContext(null);
+      setTargetContextStatus("idle");
+      setTargetContextMessage("");
+      return;
+    }
+    const context =
+      draft.scope === "SYSTEM_DISH"
+        ? ({ kind: "system", schoolTypeId: draft.schoolTypeId } as const)
+        : ({ kind: "school", schoolId: draft.schoolId } as const);
+    setTargetContext(null);
+    setTargetContextStatus("loading");
+    setTargetContextMessage("");
+    void api
+      .getEffectiveTargetContext(
+        authSubject,
+        correlationId,
+        draft.effectiveFrom,
+        draft.dishId,
+        context,
+      )
+      .then((result) => {
+        if (requestNumber !== targetGeneration.current) return;
+        const parsed = effectiveTargetContextFromResult(result);
+        const matches =
+          parsed?.as_of_date === draft.effectiveFrom &&
+          parsed.dish_id === draft.dishId &&
+          (context.kind === "system"
+            ? parsed.school_id === null &&
+              parsed.school_type_id === context.schoolTypeId
+            : parsed.school_id === context.schoolId &&
+              parsed.school_type_id ===
+                schoolTypeIdForSchool(load.data, context.schoolId));
+        if (!parsed || !matches) {
+          setTargetContextStatus("error");
+          setTargetContextMessage(
+            `Không thể tải mục tiêu hiệu lực. ${adjustmentResultMessage(result)}`,
+          );
+          return;
+        }
+        setTargetContext(parsed);
+        setTargetContextStatus("ready");
+      });
+  }, [
+    api,
+    authSubject,
+    correlationId,
+    createOpened,
+    draft.action,
+    draft.dishId,
+    draft.effectiveFrom,
+    draft.schoolId,
+    draft.schoolTypeId,
+    draft.scope,
+    load.data,
+  ]);
 
   const targetLine = useCallback(
     (row: RecipeAdjustmentOperatorRecord) =>
@@ -499,6 +596,7 @@ export function RecipeAdjustmentWorkbench({
   ]);
 
   function updateDraft(patch: Partial<AdjustmentDraft>) {
+    previewGeneration.current += 1;
     setDraft((value) => ({ ...value, ...patch }));
     setPreview(null);
     setPreviewFingerprint("");
@@ -545,6 +643,7 @@ export function RecipeAdjustmentWorkbench({
       schoolTypeId,
       targetIngredientId: row.target_ingredient_id ?? "",
       targetRecipeLineId: row.target_recipe_line_id ?? "",
+      targetAdjustmentLineId: row.adjustment_line_id ?? "",
       substituteIngredientId: revision.substitute_ingredient_id ?? "",
       quantity: revision.quantity_per_basis?.toString() ?? "",
       replaceQuantity:
@@ -552,10 +651,7 @@ export function RecipeAdjustmentWorkbench({
       effectiveFrom: revision.effective_from,
       effectiveTo: revision.effective_to ?? "",
       reason: "",
-      previewSchoolId:
-        row.scope_kind === "SYSTEM_DISH"
-          ? firstSchoolIdForType(load.data, schoolTypeId)
-          : schoolId,
+      previewSchoolId: row.scope_kind === "SYSTEM_DISH" ? "" : schoolId,
       previewDishId: row.dish_id ?? firstId(load.data.dishes, "dish_id"),
     });
     setDraftIds({
@@ -581,6 +677,7 @@ export function RecipeAdjustmentWorkbench({
       schoolTypeId: "",
       targetIngredientId: "",
       targetRecipeLineId: "",
+      targetAdjustmentLineId: "",
       substituteIngredientId: "",
       quantity: "",
       replaceQuantity: false,
@@ -603,6 +700,7 @@ export function RecipeAdjustmentWorkbench({
       schoolTypeId: "",
       targetIngredientId: "",
       targetRecipeLineId: "",
+      targetAdjustmentLineId: "",
       substituteIngredientId: "",
       quantity: "",
       replaceQuantity: false,
@@ -618,6 +716,7 @@ export function RecipeAdjustmentWorkbench({
       action,
       targetIngredientId: ingredientScope ? draft.targetIngredientId : "",
       targetRecipeLineId: "",
+      targetAdjustmentLineId: "",
       substituteIngredientId: "",
       quantity: "",
       replaceQuantity: false,
@@ -629,6 +728,7 @@ export function RecipeAdjustmentWorkbench({
       ...patch,
       targetIngredientId: "",
       targetRecipeLineId: "",
+      targetAdjustmentLineId: "",
       substituteIngredientId: "",
       quantity: "",
       replaceQuantity: false,
@@ -674,8 +774,10 @@ export function RecipeAdjustmentWorkbench({
   const selectedSubstituteIngredient = load.data.ingredients.find(
     (ingredient) => ingredient.ingredient_id === draft.substituteIngredientId,
   );
-  const selectedTargetRecipeLine = lineOptions.find(
-    (line) => line.recipe_line_id === draft.targetRecipeLineId,
+  const selectedTargetLine = lineOptions.find(
+    (line) =>
+      (line.target_recipe_line_id ?? "") === draft.targetRecipeLineId &&
+      (line.adjustment_line_id ?? "") === draft.targetAdjustmentLineId,
   );
   const purchaseUnitIngredient =
     draft.action === "ADD"
@@ -686,7 +788,7 @@ export function RecipeAdjustmentWorkbench({
   const proposalUnitId = purchaseUnitIngredient?.purchase_unit_id ?? "";
   const draftUnitName =
     draft.action === "ADJUST_QUANTITY"
-      ? (selectedTargetRecipeLine?.unit_name ?? "—")
+      ? (selectedTargetLine?.unit_name ?? "—")
       : (purchaseUnitIngredient?.purchase_unit_name ?? "—");
   const requiresPurchaseUnit =
     draft.action === "ADD" ||
@@ -732,7 +834,9 @@ export function RecipeAdjustmentWorkbench({
           : null,
       adjustment_line_id: isAdd
         ? (editing?.adjustment_line_id ?? draftIds.adjustmentLineId)
-        : null,
+        : !ingredientTarget && draft.targetAdjustmentLineId
+          ? draft.targetAdjustmentLineId
+          : null,
       substitute_ingredient_id:
         draft.action === "REPLACE" ? draft.substituteIngredientId : null,
       quantity_per_basis: carriesQuantity ? Number(draft.quantity) : null,
@@ -770,13 +874,10 @@ export function RecipeAdjustmentWorkbench({
     !!draft.effectiveFrom &&
     (!draft.effectiveTo || draft.effectiveTo > draft.effectiveFrom) &&
     !!draft.reason.trim() &&
-    (draft.scope !== "SYSTEM_DISH" ||
-      (!!draft.schoolTypeId &&
-        compatiblePreviewSchools.some(
-          (school) => school.school_id === previewSchoolId,
-        ))) &&
+    draft.scope !== "SYSTEM_DISH" &&
     (draft.scope !== "SCHOOL_DISH" || !!selectedRecipeSchoolTypeId) &&
-    (!needsRecipeLine || !!draft.targetRecipeLineId) &&
+    (!needsRecipeLine ||
+      (targetContextStatus === "ready" && !!selectedTargetLine)) &&
     (!needsIngredientTarget || !!draft.targetIngredientId) &&
     (draft.action !== "REPLACE" || !!draft.substituteIngredientId) &&
     (!quantityRequired || Number(draft.quantity) > 0) &&
@@ -784,25 +885,49 @@ export function RecipeAdjustmentWorkbench({
 
   async function runPreview() {
     if (!api || !authSubject || !canPreview) return;
+    const requestGeneration = ++previewGeneration.current;
+    const requestFingerprint = materialFingerprint;
+    const proposedAdjustment = proposal();
+    const requestedSchoolId = previewSchoolId;
+    const requestedDishId = previewDishId;
+    const requestedDate = draft.effectiveFrom;
     setBusy(true);
     setNotice("");
     const result = await api.preview(authSubject, correlationId, {
-      as_of_date: draft.effectiveFrom,
-      school_id: previewSchoolId,
-      dish_id: previewDishId,
+      as_of_date: requestedDate,
+      school_id: requestedSchoolId,
+      dish_id: requestedDishId,
       replaces_adjustment_id: editing?.adjustment_id ?? null,
-      proposed_adjustment: proposal(),
+      proposed_adjustment: proposedAdjustment,
     });
+    if (requestGeneration !== previewGeneration.current) {
+      setBusy(false);
+      return;
+    }
     const parsed = adjustmentPreviewFromResult(result);
-    setPreview(parsed);
-    setPreviewFingerprint(parsed ? materialFingerprint : "");
-    if (parsed) {
+    const matches =
+      parsed?.as_of_date === requestedDate &&
+      parsed.school_id === requestedSchoolId &&
+      parsed.dish_id === requestedDishId &&
+      parsed.before.as_of_date === requestedDate &&
+      parsed.before.school_id === requestedSchoolId &&
+      parsed.before.dish_id === requestedDishId &&
+      parsed.after.as_of_date === requestedDate &&
+      parsed.after.school_id === requestedSchoolId &&
+      parsed.after.dish_id === requestedDishId &&
+      JSON.stringify(parsed.proposed_adjustment) ===
+        JSON.stringify(proposedAdjustment);
+    setPreview(matches ? parsed : null);
+    setPreviewFingerprint(matches ? requestFingerprint : "");
+    if (matches) {
       setModalStep("REVIEW");
     }
     setNotice(
-      parsed
+      matches
         ? "Đã cập nhật phần xem ảnh hưởng."
-        : adjustmentResultMessage(result),
+        : parsed
+          ? "Kết quả xem ảnh hưởng không khớp bối cảnh đã gửi. Vui lòng xem lại."
+          : adjustmentResultMessage(result),
     );
     setBusy(false);
   }
@@ -817,8 +942,9 @@ export function RecipeAdjustmentWorkbench({
     )
       return;
     setBusy(true);
+    const proposedAdjustment = proposal();
     const payload = {
-      ...proposal(),
+      ...proposedAdjustment,
       as_of_date: draft.effectiveFrom,
       preview_school_id: previewSchoolId,
       preview_dish_id: previewDishId,
@@ -832,6 +958,14 @@ export function RecipeAdjustmentWorkbench({
       draft.reason.trim(),
       payload,
     );
+    pendingMutation.current = {
+      adjustmentId: String(proposedAdjustment.adjustment_id),
+      revisionId: String(proposedAdjustment.revision_id),
+      predecessorRevisionId:
+        typeof payload.predecessor_revision_id === "string"
+          ? payload.predecessor_revision_id
+          : null,
+    };
     const result = editing
       ? await api.supersede(request)
       : await api.create(request);
@@ -840,13 +974,21 @@ export function RecipeAdjustmentWorkbench({
         ? "Đã lưu điều chỉnh."
         : adjustmentResultMessage(result),
     );
-    if (hasUnknownWriteOutcome(result)) setMutationLocked(true);
+    if (hasUnknownWriteOutcome(result) || result.kind === "success")
+      setMutationLocked(true);
+    else pendingMutation.current = null;
     if (result.kind === "success") {
-      setCreateOpened(false);
-      setEditing(null);
-      setPreview(null);
-      setPreviewFingerprint("");
       await refresh();
+      if (!pendingMutation.current) {
+        setCreateOpened(false);
+        setEditing(null);
+        setPreview(null);
+        setPreviewFingerprint("");
+      } else {
+        setNotice(
+          "Đã nhận kết quả lưu nhưng chưa đọc lại được đúng phiên bản. Không gửi lại thao tác.",
+        );
+      }
     }
     setBusy(false);
   }
@@ -871,31 +1013,45 @@ export function RecipeAdjustmentWorkbench({
     )
       return;
     setBusy(true);
-    const result = await api.cancel(
-      recipeAdjustmentCommandRequest(
-        authSubject,
-        correlationId,
-        cancelTarget.version,
-        "RULE_CANCELLATION",
-        cancelReason.trim(),
-        {
-          adjustment_id: cancelTarget.adjustment_id,
-          predecessor_revision_id: cancelTarget.current_revision_id,
-          revision_id: crypto.randomUUID(),
-          effective_from: cancelDate,
-        },
-      ),
+    const revisionId = crypto.randomUUID();
+    const predecessorRevisionId = cancelTarget.current_revision_id;
+    const request = recipeAdjustmentCommandRequest(
+      authSubject,
+      correlationId,
+      cancelTarget.version,
+      "RULE_CANCELLATION",
+      cancelReason.trim(),
+      {
+        adjustment_id: cancelTarget.adjustment_id,
+        predecessor_revision_id: predecessorRevisionId,
+        revision_id: revisionId,
+        effective_from: cancelDate,
+      },
     );
+    pendingMutation.current = {
+      adjustmentId: cancelTarget.adjustment_id,
+      revisionId,
+      predecessorRevisionId,
+    };
+    const result = await api.cancel(request);
     setNotice(
       result.kind === "success"
         ? "Đã ghi nhận hủy điều chỉnh theo ngày đã chọn."
         : adjustmentResultMessage(result),
     );
-    if (hasUnknownWriteOutcome(result)) setMutationLocked(true);
+    if (hasUnknownWriteOutcome(result) || result.kind === "success")
+      setMutationLocked(true);
+    else pendingMutation.current = null;
     if (result.kind === "success") {
-      setCancelTarget(null);
-      setCancelReason("");
       await refresh();
+      if (!pendingMutation.current) {
+        setCancelTarget(null);
+        setCancelReason("");
+      } else {
+        setNotice(
+          "Đã nhận kết quả hủy nhưng chưa đọc lại được đúng phiên bản. Không gửi lại thao tác.",
+        );
+      }
     }
     setBusy(false);
   }
@@ -984,9 +1140,7 @@ export function RecipeAdjustmentWorkbench({
         "ingredient_id",
         "ingredient_name",
       )
-    : (lineOptions.find(
-        (line) => line.recipe_line_id === draft.targetRecipeLineId,
-      )?.ingredient_name ?? "—");
+    : (selectedTargetLine?.ingredient_name ?? "—");
   const draftSubstituteName = referenceName(
     load.data.ingredients,
     draft.substituteIngredientId,
@@ -1183,15 +1337,20 @@ export function RecipeAdjustmentWorkbench({
                   <Badge color={temporalTone(row)} variant="light">
                     {temporalText(row)}
                   </Badge>
+                  <Text size="xs" c="dimmed">
+                    {row.is_effective_now
+                      ? "Có trong BOM hiệu lực"
+                      : "Không có trong BOM hiệu lực"}
+                  </Text>
                 </td>
                 <td>{scopeSummary(row)}</td>
                 <td>{actionLabel[row.action_kind]}</td>
                 <td>{changeSummary(row)}</td>
                 <td>
-                  {formatDate(row.display_revision.effective_from)}
-                  {row.display_revision.effective_to
-                    ? ` – ${formatDate(row.display_revision.effective_to)}`
-                    : ""}
+                  {formatEffectivePeriod(
+                    row.display_revision.effective_from,
+                    row.display_revision.effective_to,
+                  )}
                 </td>
                 <td>
                   {row.display_revision.issuance_kind === "LEGACY_UNATTRIBUTED"
@@ -1730,27 +1889,48 @@ export function RecipeAdjustmentWorkbench({
                   )}
 
                   {needsRecipeLine && (
-                    <NativeSelect
-                      label={
-                        draft.action === "REMOVE"
-                          ? "Nguyên liệu cần bỏ"
-                          : "Nguyên liệu trong công thức"
-                      }
-                      value={draft.targetRecipeLineId}
-                      disabled={!!editing}
-                      data={[
-                        { value: "", label: "Chọn nguyên liệu trong món" },
-                        ...lineOptions.map((line) => ({
-                          value: line.recipe_line_id ?? "",
-                          label: `${line.ingredient_name} · ${formatQuantity(
-                            line.quantity_per_basis,
-                          )} ${line.unit_name}`,
-                        })),
-                      ]}
-                      onChange={(event) =>
-                        updateDraft({ targetRecipeLineId: event.target.value })
-                      }
-                    />
+                    <>
+                      <NativeSelect
+                        label={
+                          draft.action === "REMOVE"
+                            ? "Nguyên liệu cần bỏ"
+                            : "Nguyên liệu trong công thức"
+                        }
+                        value={selectedTargetLine?.target_id ?? ""}
+                        disabled={!!editing || targetContextStatus !== "ready"}
+                        data={[
+                          { value: "", label: "Chọn nguyên liệu trong món" },
+                          ...lineOptions.map((line) => ({
+                            value: line.target_id,
+                            label: `${line.ingredient_name} · ${formatQuantity(
+                              line.quantity_per_basis,
+                            )} ${line.unit_name}`,
+                          })),
+                        ]}
+                        onChange={(event) => {
+                          const line = lineOptions.find(
+                            (candidate) =>
+                              candidate.target_id === event.target.value,
+                          );
+                          updateDraft({
+                            targetRecipeLineId:
+                              line?.target_recipe_line_id ?? "",
+                            targetAdjustmentLineId:
+                              line?.adjustment_line_id ?? "",
+                          });
+                        }}
+                      />
+                      {targetContextStatus === "loading" && (
+                        <Text size="sm" c="dimmed">
+                          Đang tải mục tiêu hiệu lực…
+                        </Text>
+                      )}
+                      {targetContextStatus === "error" && (
+                        <Text size="sm" c="red" role="alert">
+                          {targetContextMessage}
+                        </Text>
+                      )}
+                    </>
                   )}
 
                   {draft.action === "REPLACE" && (
@@ -1881,29 +2061,10 @@ export function RecipeAdjustmentWorkbench({
                   )}
 
                   {draft.scope === "SYSTEM_DISH" && (
-                    <>
-                      <NativeSelect
-                        label="Trường dùng để xem"
-                        value={draft.previewSchoolId}
-                        data={[
-                          { value: "", label: "Chọn trường" },
-                          ...compatiblePreviewSchools.map((school) => ({
-                            value: school.school_id ?? "",
-                            label: school.school_name ?? "",
-                          })),
-                        ]}
-                        onChange={(event) =>
-                          updateDraft({ previewSchoolId: event.target.value })
-                        }
-                      />
-                      {draft.schoolTypeId &&
-                        compatiblePreviewSchools.length === 0 && (
-                          <Text size="sm" c="red" role="alert">
-                            Không có trường phù hợp với loại công thức đã chọn
-                            để xem ảnh hưởng.
-                          </Text>
-                        )}
-                    </>
+                    <Text size="sm" c="red" role="alert">
+                      Atlas chưa hỗ trợ xem và lưu điều chỉnh cho toàn bộ loại
+                      trường trong hợp đồng hiện tại.
+                    </Text>
                   )}
 
                   {draft.scope === "SCHOOL" && (
@@ -2010,10 +2171,10 @@ export function RecipeAdjustmentWorkbench({
                         Hiệu lực
                       </Text>
                       <Text>
-                        {formatDate(draft.effectiveFrom)}
-                        {draft.effectiveTo
-                          ? ` – ${formatDate(draft.effectiveTo)}`
-                          : " trở đi"}
+                        {formatEffectivePeriod(
+                          draft.effectiveFrom,
+                          draft.effectiveTo,
+                        )}
                       </Text>
                     </Box>
                     <Box>
@@ -2174,10 +2335,10 @@ export function RecipeAdjustmentWorkbench({
                 Hiệu lực
               </Text>
               <Text>
-                {formatDate(detail.display_revision.effective_from)}
-                {detail.display_revision.effective_to
-                  ? ` – ${formatDate(detail.display_revision.effective_to)}`
-                  : " trở đi"}
+                {formatEffectivePeriod(
+                  detail.display_revision.effective_from,
+                  detail.display_revision.effective_to,
+                )}
               </Text>
             </div>
             <div>
@@ -2209,10 +2370,11 @@ export function RecipeAdjustmentWorkbench({
                       : changeSummary(detail, revision)}
                   </Text>
                   <Text size="sm">
-                    Hiệu lực từ {formatDate(revision.effective_from)}
-                    {revision.effective_to
-                      ? ` đến ${formatDate(revision.effective_to)}`
-                      : ""}
+                    Hiệu lực{" "}
+                    {formatEffectivePeriod(
+                      revision.effective_from,
+                      revision.effective_to,
+                    )}
                   </Text>
                   <Text size="sm">{revision.reason_note}</Text>
                   <Text size="sm" component="div">
