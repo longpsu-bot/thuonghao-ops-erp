@@ -143,9 +143,10 @@ describe("generated purchase review worksheet", () => {
     );
     const trigger = screen.getByRole("button", { name: "In bản dự kiến" });
     fireEvent.click(trigger);
-    expect(
-      await screen.findByRole("heading", { name: review.document_label }),
-    ).toHaveFocus();
+    const heading = await screen.findByRole("heading", {
+      name: review.document_label,
+    });
+    await waitFor(() => expect(heading).toHaveFocus());
     fireEvent.click(screen.getByRole("button", { name: "Đóng bản dự kiến" }));
     expect(trigger).toHaveFocus();
   });
