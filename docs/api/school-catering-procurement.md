@@ -1,6 +1,8 @@
 # School-Catering Procurement API Contract
 
-Status: PR A implements the Handoff and Allocation Family boundary. PR B implements supplier/date Purchase Order drafts, successor regeneration, release, numbering, and shaped reads. The approved connected design and implementation plan remain authoritative if this summary is incomplete.
+Status: Implemented and merged through the connected school-catering Procurement changes and PURCHASE-REVIEW-CONFIRM-RELEASE-01. The approved connected design and implementation records remain authoritative if this summary is incomplete.
+
+[ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md) and the [authority map through Procurement](../architecture/atlas-authority-map-through-procurement.md) clarify the current meaning without changing these APIs: generated review, recommendations, Handoff structures, Allocation Family identities, source promotion and PO drafts are supporting evidence beneath real commands; saved exact supplier splits are explicit human decisions; balance, freshness and eligibility are derived; released PO content and official number are explicit immutable supplier commitments. Existing source-specific Handoff allocation writers remain valid support/current-source routes and are not a second authority for the same source.
 
 ## Contract and security boundary
 

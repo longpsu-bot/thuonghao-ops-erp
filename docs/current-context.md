@@ -2,11 +2,11 @@
 
 **Status:** Active project memory
 
-**Last updated:** 2026-08-15
+**Last updated:** 2026-09-06
 
 **Authority:** Working context summary
 
-**Current authoritative `main`:** `60316f59638e1c7c625700166e7c78d7b11e242a`
+**Current authoritative `main`:** `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`
 
 **Review required:** No — update whenever project direction, active scope, environment boundary, or blocking Product decisions change.
 
@@ -49,6 +49,8 @@ Before freezing a detailed command contract, prove the operator job, necessary i
 Workflow sketches, fixtures, mock screens and prototypes are discovery artifacts, not authoritative Application behavior.
 
 The connected React Application follows accepted contracts and read models. React coordinates interaction and renders authoritative results; it does not own ERP authority.
+
+[ATLAS-MODEL-PRINCIPLE-01](decisions/decision-atlas-model-convergence.md) applies the current cross-domain rule **facts explicit, state derived, supporting objects generated** through Procurement. The [authority map](architecture/atlas-authority-map-through-procurement.md) identifies normal and support routes. It refines implementation and operator routing without changing domain ownership, removing immutable evidence, or authorizing Warehouse work.
 
 ---
 
@@ -154,7 +156,7 @@ Atlas roles:             0
 
 Atlas Staging is therefore not automatically assumed to match the current repository head. Hosted deployment remains a separate controlled action.
 
-UI-QUALITY-03C-A performs no Atlas Staging deployment; the counts above remain the last recorded hosted observation rather than a claim that staging matches repository `main`.
+The counts above are a dated historical observation rather than a claim that Staging matches repository `main`. The newer task-specific observation and its evidence limits are recorded in the [Atlas Model Convergence Staging runbook](runbooks/atlas-model-convergence-staging-readiness.md); deployment remains a separate controlled action.
 
 Live OPS remains a forbidden Atlas deployment target.
 
@@ -173,7 +175,11 @@ Current Planning governance and implementation:
 - ATLAS-UI-STANDARD-02 — merged at `057a30ef30121fc50ef983acd91704d2bca8e82c` and governs first-user connected workbenches.
 - D-038 / UI-QUALITY-03A — merged through PR #191 at `0d66a3640811cfeac97d2f986b6c2a3d08da0a4b`.
 - UI-QUALITY-03B Recipe Change Order redesign — merged through PR #194 at `60316f59638e1c7c625700166e7c78d7b11e242a`.
-- UI-QUALITY-03C-A School default portions — active and implemented from exact authoritative `main` `60316f59638e1c7c625700166e7c78d7b11e242a`; one compact inline School table submits only changed rows through one atomic backend Save.
+- UI-QUALITY-03C-A School default portions — merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`; one compact inline School table submits only changed rows through one atomic backend Save.
+- UI-QUALITY-03C-B Ingredient/Supplier operator hardening — merged through PR #196 at `3376be46c9f061a91a662873faf67024fd50b233`.
+- PLANNING-UX-01B Menu/Attendance operator correction — merged through PR #197 at `80cdc2d`; default-derived Attendance now appears automatically for Menu-covered pairs and the manual setup action is removed.
+- PURCHASE-REVIEW-CONFIRM-RELEASE-01 — merged through PR #251 at `a398c22`; generated review remains advisory, exact saved supplier splits are explicit decisions, preparation composes supporting release/Handoff/draft work atomically, and each PO release is the supplier commitment.
+- RECIPE-EFFECTIVE-CONTRACT-01 — merged through PR #257 at `a60085163ecbfde8dc5f7c2d97a454bc57ec0f60`; canonical typed effective reads, effective targets, history, base-authoring context and atomic two-scope Dish copy are present in the repository.
 
 Current human-facing Planning intent:
 
@@ -191,7 +197,7 @@ Confirmed Need
 Edit quantities → Lưu → Chuyển sang lên đơn
 ```
 
-For Confirmed Need, backend readback authoritatively controls Save/Release eligibility; React may only restrict further. Release creates no Purchase Handoff, supplier assignment or purchase order yet.
+For Confirmed Need, backend readback authoritatively controls Save/Release eligibility; React may only restrict further. The current Procurement path keeps preliminary review advisory, stores exact supplier splits as explicit decisions, and uses one preparation command to compose existing release, Handoff, allocation-promotion and PO-draft boundaries. Each official PO release remains a separate commitment.
 
 ---
 
@@ -204,15 +210,17 @@ ATLAS-UI-STANDARD-02
 → UI-QUALITY-03A Recipe / BOM first-user redesign (merged #191)
 → UI-QUALITY-03B Recipe Change Order first-user redesign (merged #194)
 → UI-QUALITY-03C-A School default portions (merged #195)
-→ UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening (active / implemented)
-→ PLANNING-UX-01 / cross-flow operator review
-→ hosted operator/security rehearsal
-→ explicit decision on CMD-03 / Purchase Handoff
+→ UI-QUALITY-03C-B Ingredient/Supplier operator workflow hardening (merged #196)
+→ PLANNING-UX-01B Menu/Attendance operator correction (merged #197)
+→ PURCHASE-REVIEW-CONFIRM-RELEASE-01 (merged #251)
+→ RECIPE-EFFECTIVE-CONTRACT-01 backend contract (merged #257)
+→ ATLAS-MODEL-CONVERGENCE-01 normal Recipe consumer adoption and evidence (current bounded task)
+→ separately authorized hosted rehearsal
 ```
 
 The Recipe/BOM and Recipe Change Order jobs are intentionally separate thin slices. Do not combine them into one broad Admin rewrite.
 
-The connected Recipe area now opens on a read-only current-effective catalog and separates `Tạo món & công thức` from `Điều chỉnh`. Creation uses Dish/Ingredient search, basis/composition, copy as a modal form helper, and one `Tạo`/`Lưu` commitment that makes valid pre-use composition available to Planning. PostgreSQL uses one Dish-wide predicate and transaction boundary to deny every applicable base Dish/Recipe/BOM mutation after the Dish appears in immutable approved Weekly Menu evidence, returning Change Order direction before business writes. Version evidence remains support disclosure.
+The current Recipe contract separates an identity/reference catalog, typed base authoring, selected effective detail, and `Điều chỉnh`. New Dish creation returns one ACTIVE Dish plus the two canonical typed roots and no RecipeVersion. One `Tạo`/`Lưu` authors an eligible pre-use Recipe without a separate activation action. Normal Dish copy is one atomic backend command that snapshots both system-effective School-Type scopes at an explicit date into persisted DRAFT target versions; the prior browser-only form-copy interpretation is superseded. PostgreSQL uses one Dish-wide approved-Menu predicate and transaction boundary to deny base Dish/Recipe/BOM mutation after operational use, returning Change Order direction before business writes. Nullable GENERAL and low-level lifecycle/copy APIs remain support compatibility and do not define normal readiness.
 
 UI-QUALITY-03C-A merged through PR #195 at `d9b8348a0394f2b924878e90ad6ab93aa200d9e6`. It restores School defaults as one compact multi-School editing job and uses the Product Owner-approved `Edit → Xem thay đổi → Lưu` Application flow before one atomic `RMVP-01.v2` backend Save.
 
@@ -220,13 +228,13 @@ UI-QUALITY-03C-B hardens the existing Ingredient/Supplier operator workflow with
 
 `DISH-RICE-01 — Menu-derived rice accompaniment` is recorded only for a later bounded Product/Planning contract after PLANNING-UX-01. Its operator concept is `Ăn kèm cơm`, distinct from Rice inside a Recipe/BOM. Menu + confirmed/current Attendance + the qualifying Dish fact should eventually derive one deterministic Rice accompaniment need, but per-meal deduplication, eligible Dish Types, rate authority, Atlas Rice Ingredient identity, correction/lock rules and fixed/manual Pantry double-count prevention remain unresolved. The illustrative `0.1 kg/portion` is not approved. UI-QUALITY-03C-B changes no Dish schema, Rice behavior, Planning calculation, Pantry behavior or XLSX/export implementation.
 
-PLANNING-UX-01 remains the bounded review of Attendance → Menu → Need Generation → Confirmed Need, typography/rhythm consistency, Preview-before-Save consistency, and final XLSX affordance placement. Attendance and Confirmed Need must later support XLSX-assisted bulk authoring through export → offline editing → import → difference/error review → local draft → `Xem thay đổi` → `Lưu`; Confirmed Need keeps `Chuyển sang lên đơn` as a separate business commitment. Workbook templates, schemas, parsers, generators, storage, RPCs, tests, and implementation remain explicitly deferred until that Product review establishes stable work surfaces and later bounded XLSX contract tasks.
+PLANNING-UX-01B completed the bounded Menu/Attendance operator correction. Attendance and Confirmed Need XLSX-assisted bulk authoring remains deferred to later bounded contracts; Confirmed Need keeps `Chuyển sang lên đơn` as a separate business commitment.
 
-Verified OPS v1 Attendance workflow is also mandatory PLANNING-UX-01 archaeology: Weekly Menu planning normally occurs well before Attendance is confirmed, typically about 2–3 days before service. Menu assignment seeds working Attendance only for corresponding School/service-date coverage, with initial Student/Teacher quantities derived from School defaults. Seeded means editable working data, not confirmed Attendance and not sufficient Need Generation evidence. A later School-default change may propagate only where a future Attendance value remains default-derived; operator-entered, confirmed, or otherwise explicitly authored Attendance must be protected. Atlas's current manual `Tạo từ sĩ số mặc định` interaction is therefore future Product debt: the normal operator surface should already contain the seeded rows and support review/edit, future XLSX assistance, `Xem thay đổi`, and authoritative `Lưu`. This is Product context only; no Attendance command, lifecycle, readiness, Need Generation, trigger, scheduler, XLSX contract, or implementation changes in UI-QUALITY-03C-A.
+Menu-covered School/service-date pairs now expose default-derived working Attendance automatically. Persisted active Attendance overlays those defaults, including explicit zero; defaults fill only missing covered pairs. These visible defaults remain unconfirmed proposals until the operator reviews and uses the existing authoritative `Lưu`, and later default changes never rewrite persisted Attendance. The former manual `Tạo từ sĩ số mặc định` setup action is historical UI behavior, superseded by [PLANNING-UX-01B](implementation-tasks/TASK-PLANNING-UX-01B-menu-attendance-operator-correction.md).
 
 Atlas-wide typography and rhythm remain deferred to PLANNING-UX-01, after the complete Attendance → Menu → Need Generation → Confirmed Need route can be reviewed together.
 
-CMD-03, supplier allocation, purchase-order creation, Warehouse, Production/QA and Dispatch expansion remain deferred until the current stabilization gates are accepted.
+Further Procurement expansion, Warehouse, Production/QA and Dispatch expansion remain separately governed. The current school-catering allocation, preparation and PO-release contracts are already implemented and must not be described as deferred setup work.
 
 ---
 

@@ -8,6 +8,8 @@ Reads require `contract_version`, `requested_by_auth_subject`, `correlation_id`,
 
 The backend checks the authenticated subject against the requested subject, resolves an active Actor, capability, and global scope, and never trusts browser-supplied actor identity.
 
+Current normal routing is governed by [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md), the [authority map through Procurement](../architecture/atlas-authority-map-through-procurement.md), and the final [Recipe Effective Product Model Correction](../superpowers/specs/2026-09-05-recipe-effective-product-model-correction-design.md). `get_dish_recipe_workbench` supplies the reference/base catalog and fresh Dish version; it is not effective truth. The selected typed base/effective context uses `get_dish_recipe_operator_workbench`. Nullable GENERAL, lifecycle commands, and `copy_recipe_version` remain support compatibility and do not define the normal workflow.
+
 MASTER-DATA-CREATION-UX-02 aligns the shared command validator with RMVP-02B:
 `requested_at <= transaction_timestamp() + interval '60 seconds'`.
 The upper bound is inclusive. Invalid timestamps and offsets greater than 60
@@ -55,6 +57,8 @@ Copy accepts only validated, released, or locked materialized source composition
 - Capability: existing `master_data.recipes.write`; owner: `atlas_master_data_command_runtime`.
 - Required command payload: `source_dish_id`, `target_dish_id`, and explicit `as_of_date`; the standard command envelope also requires caller-stable `command_id`, `idempotency_key`, target Dish `expected_version`, timestamp, reason code, and nonblank reason note.
 - Supported v1 scopes are identified only by the active School-Type codes `v1-school-type-1` and `v1-school-type-2`, evaluated in that deterministic order. Display names and capitalization are not identity.
+
+The current normal client uses reason code `COPY_DISH_RECIPES`; the backend contract validates a nonblank reason code and note rather than introducing a separate copy-reason enum. Success returns exactly two distinct ordered `scope_results`, one for each canonical code, with source Recipe/version provenance and persisted target Recipe/version IDs. Both outputs are DRAFT and require normal per-scope Save before becoming effective-ready.
 
 For each supported scope, the backend requires the exact active typed Recipe root and exactly one current `RELEASED_FOR_PLANNING` Recipe Version. It resolves the source BOM at `as_of_date` through the closed system path `typed base Recipe -> SYSTEM_INGREDIENT -> SYSTEM_DISH`; it never applies `SCHOOL` or `SCHOOL_DISH`. A nullable GENERAL Recipe is never a fallback for this contract. Both source scopes must be `READY`, and both active typed target Recipe roots must already exist.
 

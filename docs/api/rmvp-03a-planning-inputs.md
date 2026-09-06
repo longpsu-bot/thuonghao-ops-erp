@@ -234,6 +234,8 @@ command timestamp contract is unchanged.
 
 The backend may compose the established v1 implementation internally, but a browser invokes only the one consequential Save. It must not chain Save Draft, Validate, and Approve. Existing v1 functions and grants remain callable during the UI coexistence window. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).
 
+The current normal Attendance UI automatically overlays persisted active Attendance on Menu-covered default-derived working rows. Persisted values, including explicit zero, win; defaults fill only missing covered School/date pairs and remain unconfirmed until Review and consequential Save. The former manual `Tạo từ sĩ số mặc định` setup action is superseded by [PLANNING-UX-01B](../implementation-tasks/TASK-PLANNING-UX-01B-menu-attendance-operator-correction.md). The lower-level default-creation API remains callable support compatibility and does not represent a required operator stage.
+
 ## Dish lifecycle and Recipe readiness amendment
 
 Every ACTIVE assigned Dish is checked for eligible released Recipe availability

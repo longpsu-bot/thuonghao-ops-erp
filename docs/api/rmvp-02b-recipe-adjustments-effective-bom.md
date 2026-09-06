@@ -8,6 +8,8 @@ Reads require `contract_version`, `requested_by_auth_subject`, `correlation_id`,
 
 The authenticated JWT subject must equal `requested_by_auth_subject`. The backend resolves the active Actor, capability, and global scope; browser-supplied actor identity is never authoritative.
 
+Current normal routing is governed by [ATLAS-MODEL-PRINCIPLE-01](../decisions/decision-atlas-model-convergence.md), the [authority map through Procurement](../architecture/atlas-authority-map-through-procurement.md), and the final [Recipe Effective Product Model Correction](../superpowers/specs/2026-09-05-recipe-effective-product-model-correction-design.md). The `RECIPE-EFFECTIVE.v1` reads are the normal typed context authority. RMVP-02B.v1 resolution and command envelopes remain callable compatibility and must not reintroduce nullable GENERAL or a representative School into the normal system-effective view.
+
 Create, Supersede, and Cancel share `atlas_core.rmvp_02b_validate_command_request`.
 Its timestamp upper bound is inclusive:
 `requested_at <= transaction_timestamp() + interval '60 seconds'`.
@@ -75,6 +77,8 @@ resolver and are never selected by `RECIPE-EFFECTIVE.v1`.
 - Optional correction payload: `replaces_adjustment_id`
 - Returns `preview` containing the normalized proposal, current `before`, hypothetical `after`, affected-line count, `can_save`, warnings, and blockers.
 - Effect: no write.
+
+**Verified baseline limitation (`a6008516`, acceptance A07):** this preview and the Create/Supersede command recheck still use the retained RMVP-02B compatibility resolver. Create and Supersede require a nonnull `preview_school_id`; no existing command envelope binds Preview/Create to the exact typed system-only context used by `resolve_system_effective_recipe_composition` and `get_recipe_effective_target_context`. The normal UI must therefore keep system-only mutation blocked rather than supply a representative School or GENERAL fallback. A backend amendment requires separate authorization; the School-specific command path remains supported.
 
 ## Proposal contract
 
@@ -169,6 +173,8 @@ Each row also returns backend-derived `is_effective_now` independently from `eff
 `get_dish_recipe_operator_workbench` returns `history_periods[]`. Each period has `period_from`, half-open nullable `period_to`, `resolution_status`, the complete PRESENT `effective_bom`, applicable `change_orders`, warnings, and blockers. Boundaries are the selected Recipe release date plus the union of applicable immutable revision `effective_from` and nonnull `effective_to` dates, so simultaneous Change Orders share one boundary. Every Change Order tag includes adjustment/revision identity, revision and business-event status, scope, action, effective dates, reason code/text, issuer, and issued timestamp. System history contains system layers only; School history contains all applicable system and School layers. React never replays revision rows to manufacture a historical BOM.
 
 Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED`, `issued_at: null`, and a null issuer name. The Atlas import timestamp is not represented as business issuance, and the Atlas importer is not represented as the original business issuer.
+
+**Verified baseline limitation (`a6008516`, acceptance A12):** the RMVP-02B.v2 operator ledger marks legacy issuance as `LEGACY_UNATTRIBUTED` and nulls the issuer name, but its `issued_at` remains the stored revision creation/import time. The effective `history_periods[].change_orders[]` SQL currently returns Actor display name and revision `created_at` for every row and does not expose the stated nullable legacy attribution shape. Clients must not fabricate an original issuer/time; full effective-history parity remains blocked pending a separately authorized backend correction.
 
 ## Dish lifecycle eligibility amendment
 
