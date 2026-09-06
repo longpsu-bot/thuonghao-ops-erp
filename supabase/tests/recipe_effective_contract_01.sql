@@ -6,19 +6,31 @@ select no_plan();
 
 insert into atlas_core.actors (
   actor_id, actor_type, display_name
-) values (
-  'c1000000-0000-0000-0000-000000000001',
-  'HUMAN',
-  'Recipe effective contract operator'
-);
+) values
+  (
+    'c1000000-0000-0000-0000-000000000001',
+    'HUMAN',
+    'Recipe effective contract operator'
+  ),
+  (
+    'c1000000-0000-0000-0000-000000000009',
+    'HUMAN',
+    'Atlas legacy import operator'
+  );
 
 insert into atlas_core.actor_auth_subjects (
   actor_auth_subject_id, actor_id, auth_subject_id
-) values (
-  'c1000000-0000-0000-0000-000000000002',
-  'c1000000-0000-0000-0000-000000000001',
-  'c1000000-0000-0000-0000-000000000101'
-);
+) values
+  (
+    'c1000000-0000-0000-0000-000000000002',
+    'c1000000-0000-0000-0000-000000000001',
+    'c1000000-0000-0000-0000-000000000101'
+  ),
+  (
+    'c1000000-0000-0000-0000-00000000000a',
+    'c1000000-0000-0000-0000-000000000009',
+    'c1000000-0000-0000-0000-000000000109'
+  );
 
 insert into atlas_core.roles (
   role_id, role_code, role_name
@@ -155,6 +167,16 @@ insert into atlas_admin.ingredients (
     'c1200000-0000-0000-0000-000000000015',
     'recipe-effective-salt',
     'Muối',
+    'Food',
+    'c1200000-0000-0000-0000-000000000001',
+    'Food',
+    'Planned',
+    1
+  ),
+  (
+    'c1200000-0000-0000-0000-000000000016',
+    'recipe-effective-pepper',
+    'Tiêu',
     'Food',
     'c1200000-0000-0000-0000-000000000001',
     'Food',
@@ -325,12 +347,12 @@ set constraints all immediate;
 update atlas_admin.recipe_versions
 set recipe_version_status = 'VALIDATED',
     validated_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
-    validated_at = transaction_timestamp() - interval '2 hours';
+    validated_at = '2026-08-31 23:00:00+00'::timestamptz;
 
 update atlas_admin.recipe_versions
 set recipe_version_status = 'RELEASED_FOR_PLANNING',
     released_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
-    released_at = transaction_timestamp() - interval '1 hour';
+    released_at = '2026-09-05 00:00:00+00'::timestamptz;
 
 set constraints all deferred;
 
@@ -586,6 +608,75 @@ where revision.recipe_composition_adjustment_id =
     'c1800000-0000-0000-0000-000000000050',
     'c1800000-0000-0000-0000-000000000051'
   );
+
+-- One material root deliberately spans legacy import, native correction, and
+-- native cancellation so issuance truth is proven per immutable revision.
+insert into atlas_admin.recipe_composition_adjustments (
+  recipe_composition_adjustment_id, scope_kind, action_kind, dish_id,
+  school_type_id, target_ingredient_id, adjustment_line_id,
+  created_by_actor_id, updated_by_actor_id
+) values (
+  'c1800000-0000-0000-0000-000000000060',
+  'SYSTEM_DISH', 'ADD',
+  'c1300000-0000-0000-0000-000000000001',
+  'c1100000-0000-0000-0000-000000000010',
+  'c1200000-0000-0000-0000-000000000016',
+  'c1a00000-0000-0000-0000-000000000060',
+  'c1000000-0000-0000-0000-000000000009',
+  'c1000000-0000-0000-0000-000000000001'
+);
+
+insert into atlas_admin.recipe_composition_adjustment_revisions (
+  recipe_composition_adjustment_revision_id,
+  recipe_composition_adjustment_id, scope_kind, action_kind,
+  revision_number, predecessor_revision_id, revision_status,
+  effective_from, effective_to, quantity_per_basis, unit_id,
+  reason_code, reason_note, source_evidence, created_by_actor_id, created_at
+) values
+  (
+    'c1900000-0000-0000-0000-000000000060',
+    'c1800000-0000-0000-0000-000000000060',
+    'SYSTEM_DISH', 'ADD', 1, null, 'ACTIVE',
+    '2026-09-01', null, 0.7,
+    'c1200000-0000-0000-0000-000000000001',
+    'OPS_V1_SYSTEM_BOM_IMPORT',
+    'Imported without original business issuance attribution.',
+    '{"historical_actor_approval_claimed":false}'::jsonb,
+    'c1000000-0000-0000-0000-000000000009',
+    '2026-08-31 20:15:00+00'::timestamptz
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000061',
+    'c1800000-0000-0000-0000-000000000060',
+    'SYSTEM_DISH', 'ADD', 2,
+    'c1900000-0000-0000-0000-000000000060', 'ACTIVE',
+    '2026-09-12', null, 0.8,
+    'c1200000-0000-0000-0000-000000000001',
+    'A12_NATIVE_CORRECTION', 'Corrected natively in Atlas.',
+    '{"source":"A12_TEST"}'::jsonb,
+    'c1000000-0000-0000-0000-000000000001',
+    '2026-09-12 01:30:00+00'::timestamptz
+  ),
+  (
+    'c1900000-0000-0000-0000-000000000062',
+    'c1800000-0000-0000-0000-000000000060',
+    'SYSTEM_DISH', 'ADD', 3,
+    'c1900000-0000-0000-0000-000000000061', 'CANCELLED',
+    '2026-09-20', null, null, null,
+    'A12_NATIVE_CANCELLATION', 'Cancelled natively in Atlas.',
+    '{"cancellation_of_revision_id":"c1900000-0000-0000-0000-000000000061"}'::jsonb,
+    'c1000000-0000-0000-0000-000000000001',
+    '2026-09-20 02:45:00+00'::timestamptz
+  );
+
+update atlas_admin.recipe_composition_adjustments
+set current_revision_id = 'c1900000-0000-0000-0000-000000000062',
+    current_revision_number = 3,
+    lifecycle_status = 'CANCELLED',
+    version = 3,
+    updated_by_actor_id = 'c1000000-0000-0000-0000-000000000001'
+where recipe_composition_adjustment_id =
+  'c1800000-0000-0000-0000-000000000060';
 
 create function pg_temp.recipe_effective_modifier(
   p_scope text,
@@ -1109,7 +1200,9 @@ cross join lateral pg_catalog.jsonb_array_elements(
 ) line
 where result.result_name = 'school-target-context'
   and line ->> 'target_kind' = 'ADJUSTMENT_LINE'
-  and line ->> 'source_layer' = 'SYSTEM_DISH';
+  and line ->> 'source_layer' = 'SYSTEM_DISH'
+  and line ->> 'target_id' =
+    'c1a00000-0000-0000-0000-000000000001';
 grant select on recipe_effective_roundtrip_target to authenticated;
 
 set local role authenticated;
@@ -1195,6 +1288,23 @@ as $$
     'payload', payload
   );
 $$;
+
+create temporary table recipe_effective_a12_source_before as
+select pg_catalog.jsonb_build_object(
+  'root', pg_catalog.to_jsonb(root),
+  'revisions', (
+    select pg_catalog.jsonb_agg(
+      pg_catalog.to_jsonb(revision)
+      order by revision.revision_number
+    )
+    from atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_id =
+      root.recipe_composition_adjustment_id
+  )
+) as source_rows
+from atlas_admin.recipe_composition_adjustments root
+where root.recipe_composition_adjustment_id =
+  'c1800000-0000-0000-0000-000000000060';
 
 set local role authenticated;
 
@@ -1285,7 +1395,7 @@ select ok(
     ) period
     where result.result_name = 'system-operator'
       and period ->> 'period_from' = '2026-09-05'
-      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 2
+      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 3
       and period -> 'effective_bom'
         @? '$[*] ? (@.adjustment_line_id == "c1a00000-0000-0000-0000-000000000001")'
   )
@@ -1297,7 +1407,7 @@ select ok(
     ) period
     where result.result_name = 'system-operator'
       and period ->> 'period_from' = '2026-09-10'
-      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 1
+      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 2
   ),
   'V. system history periods contain each complete effective BOM'
 );
@@ -1311,7 +1421,7 @@ select ok(
     ) period
     where result.result_name = 'school-operator'
       and period ->> 'period_from' = '2026-09-05'
-      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 3
+      and pg_catalog.jsonb_array_length(period -> 'effective_bom') = 4
       and period -> 'change_orders'
         @? '$[*] ? (@.scope_kind == "SYSTEM_INGREDIENT")'
       and period -> 'change_orders'
@@ -1408,6 +1518,222 @@ select ok(
   ),
   'Z. cancelled and corrected revisions preserve their historical BOM periods'
 );
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    cross join lateral pg_catalog.jsonb_array_elements(
+      period -> 'change_orders'
+    ) change_order
+    where result.result_name = 'system-operator'
+      and change_order ->> 'revision_id' =
+        'c1900000-0000-0000-0000-000000000060'
+      and change_order ->> 'issuance_kind' = 'LEGACY_UNATTRIBUTED'
+      and change_order -> 'issuer' = 'null'::jsonb
+      and change_order -> 'issued_at' = 'null'::jsonb
+      and change_order ->> 'effective_from' = '2026-09-01'
+      and change_order ->> 'effective_to' is null
+  ),
+  'A12-1/2. legacy effective history keeps issuer and issued_at null'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_revision_id =
+        'c1900000-0000-0000-0000-000000000060'
+      and revision.created_by_actor_id =
+        'c1000000-0000-0000-0000-000000000009'
+      and revision.created_at =
+        '2026-08-31 20:15:00+00'::timestamptz
+  )
+  and not exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    cross join lateral pg_catalog.jsonb_array_elements(
+      period -> 'change_orders'
+    ) change_order
+    where result.result_name = 'system-operator'
+      and change_order ->> 'revision_id' =
+        'c1900000-0000-0000-0000-000000000060'
+      and (
+        change_order ->> 'issuer' = 'Atlas legacy import operator'
+        or (change_order ->> 'issued_at')::timestamptz =
+          '2026-08-31 20:15:00+00'::timestamptz
+      )
+  ),
+  'A12-3. technical importer Actor and timestamp are retained but not surfaced'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'operator_rows'
+    ) row
+    cross join lateral pg_catalog.jsonb_array_elements(
+      row -> 'history'
+    ) revision
+    where result.result_name = 'adjustment-ledger'
+      and row ->> 'adjustment_id' =
+        'c1800000-0000-0000-0000-000000000060'
+      and revision ->> 'revision_id' =
+        'c1900000-0000-0000-0000-000000000060'
+      and revision ->> 'issuance_kind' = 'LEGACY_UNATTRIBUTED'
+      and revision -> 'issued_by_actor_name' = 'null'::jsonb
+      and revision -> 'issued_at' = 'null'::jsonb
+  ),
+  'A12-5. adjustment ledger and effective history share legacy provenance truth'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    cross join lateral pg_catalog.jsonb_array_elements(
+      period -> 'change_orders'
+    ) change_order
+    where result.result_name = 'system-operator'
+      and change_order ->> 'revision_id' =
+        'c1900000-0000-0000-0000-000000000061'
+      and change_order ->> 'issuance_kind' = 'ATLAS_NATIVE'
+      and change_order ->> 'issuer' =
+        'Recipe effective contract operator'
+      and (change_order ->> 'issued_at')::timestamptz =
+        '2026-09-12 01:30:00+00'::timestamptz
+      and change_order ->> 'effective_from' = '2026-09-12'
+  ),
+  'A12-4/6. native correction retains its own Actor and immutable timestamp'
+);
+
+select ok(
+  exists (
+    select 1
+    from recipe_effective_results result
+    cross join lateral pg_catalog.jsonb_array_elements(
+      result.response_payload -> 'workbench' -> 'history_periods'
+    ) period
+    cross join lateral pg_catalog.jsonb_array_elements(
+      period -> 'change_orders'
+    ) change_order
+    where result.result_name = 'system-operator'
+      and change_order ->> 'revision_id' =
+        'c1900000-0000-0000-0000-000000000062'
+      and change_order ->> 'business_event_kind' = 'CANCELLED'
+      and change_order ->> 'issuance_kind' = 'ATLAS_NATIVE'
+      and change_order ->> 'issuer' =
+        'Recipe effective contract operator'
+      and (change_order ->> 'issued_at')::timestamptz =
+        '2026-09-20 02:45:00+00'::timestamptz
+      and change_order ->> 'effective_from' = '2026-09-20'
+  ),
+  'A12-7. native cancellation after legacy retains revision-specific provenance'
+);
+
+select is(
+  (select source_rows from recipe_effective_a12_source_before),
+  (
+    select pg_catalog.jsonb_build_object(
+      'root', pg_catalog.to_jsonb(root),
+      'revisions', (
+        select pg_catalog.jsonb_agg(
+          pg_catalog.to_jsonb(revision)
+          order by revision.revision_number
+        )
+        from atlas_admin.recipe_composition_adjustment_revisions revision
+        where revision.recipe_composition_adjustment_id =
+          root.recipe_composition_adjustment_id
+      )
+    )
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id =
+      'c1800000-0000-0000-0000-000000000060'
+  ),
+  'A12-11. authenticated history reads leave root and revision rows unchanged'
+);
+
+select ok(
+  not pg_catalog.has_function_privilege(
+    'anon',
+    'atlas_api.get_dish_recipe_operator_workbench(jsonb)',
+    'EXECUTE'
+  )
+  and not pg_catalog.has_function_privilege(
+    'authenticated',
+    'atlas_core.recipe_effective_history(date,uuid,uuid,uuid)',
+    'EXECUTE'
+  )
+  and pg_catalog.has_function_privilege(
+    'atlas_read_runtime',
+    'atlas_core.recipe_effective_history(date,uuid,uuid,uuid)',
+    'EXECUTE'
+  ),
+  'A12-10. history execution remains behind the authenticated read wrapper'
+);
+
+set local role authenticated;
+
+select is(
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'requested_by_auth_subject',
+        'c1000000-0000-0000-0000-000000000109',
+      'correlation_id', 'c1000000-0000-0000-0000-000000000209',
+      'payload', pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  ) ->> 'error_code',
+  'AUTH_SUBJECT_MISMATCH',
+  'A12-10. a caller cannot assert a different Actor'
+);
+
+select set_config(
+  'request.jwt.claim.sub',
+  'c1000000-0000-0000-0000-000000000109',
+  true
+);
+
+select is(
+  atlas_api.get_dish_recipe_operator_workbench(
+    pg_catalog.jsonb_build_object(
+      'contract_version', 'RECIPE-EFFECTIVE.v1',
+      'requested_by_auth_subject',
+        'c1000000-0000-0000-0000-000000000109',
+      'correlation_id', 'c1000000-0000-0000-0000-000000000210',
+      'payload', pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  ) ->> 'error_code',
+  'CAPABILITY_DENIED',
+  'A12-10. an authenticated Actor without Recipe read capability is denied'
+);
+
+select set_config(
+  'request.jwt.claim.sub',
+  'c1000000-0000-0000-0000-000000000101',
+  true
+);
+
+reset role;
 
 select is(
   (

@@ -170,6 +170,14 @@ Each row also returns backend-derived `is_effective_now` independently from `eff
 
 Native issuance uses the relevant immutable revision `created_at` and Actor display name. A revision imported without original OPS v1 attribution returns `issuance_kind: LEGACY_UNATTRIBUTED`, `issued_at: null`, and a null issuer name. The Atlas import timestamp is not represented as business issuance, and the Atlas importer is not represented as the original business issuer.
 
+The effective-history read applies that rule to each immutable revision, using
+the same established classification as the normal adjustment ledger: a
+`reason_code` beginning with `LEGACY_`, or an explicitly false
+`source_evidence.historical_actor_approval_claimed`, means original issuance is
+unattributed. A later Atlas-native correction or cancellation on the same root
+retains its own Actor and immutable `created_at`. Read shaping does not rewrite
+the root, revision, technical importer, timestamp, or source evidence.
+
 ## Dish lifecycle eligibility amendment
 
 Effective composition resolution requires an ACTIVE Dish and the existing
