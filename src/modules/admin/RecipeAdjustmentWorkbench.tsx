@@ -2213,11 +2213,16 @@ export function RecipeAdjustmentWorkbench({
                     }
                   />
 
-                  <Divider label="Xem ảnh hưởng tại" labelPosition="left" />
-                  <Text size="sm" c="dimmed">
-                    Đây là bối cảnh dùng để xem trước; phạm vi áp dụng vẫn theo
-                    lựa chọn ở trên.
-                  </Text>
+                  {(draft.scope === "SYSTEM_INGREDIENT" ||
+                    draft.scope === "SCHOOL") && (
+                    <>
+                      <Divider label="Xem ảnh hưởng tại" labelPosition="left" />
+                      <Text size="sm" c="dimmed">
+                        Đây là bối cảnh dùng để xem trước; phạm vi áp dụng vẫn
+                        theo lựa chọn ở trên.
+                      </Text>
+                    </>
+                  )}
 
                   {draft.scope === "SYSTEM_INGREDIENT" && (
                     <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -2253,13 +2258,6 @@ export function RecipeAdjustmentWorkbench({
                     </SimpleGrid>
                   )}
 
-                  {draft.scope === "SYSTEM_DISH" && (
-                    <Text size="sm">
-                      Món và loại công thức đã được xác định trong phạm vi điều
-                      chỉnh.
-                    </Text>
-                  )}
-
                   {draft.scope === "SCHOOL" && (
                     <Select
                       label="Món dùng để xem"
@@ -2276,12 +2274,6 @@ export function RecipeAdjustmentWorkbench({
                         updateDraft({ previewDishId: value ?? "" })
                       }
                     />
-                  )}
-
-                  {draft.scope === "SCHOOL_DISH" && (
-                    <Text size="sm">
-                      Trường và món đã được xác định trong phạm vi điều chỉnh.
-                    </Text>
                   )}
                 </Stack>
               )}
@@ -2382,18 +2374,18 @@ export function RecipeAdjustmentWorkbench({
                         )}
                       </Text>
                     </Box>
-                    <Box>
-                      <Text size="sm" c="dimmed">
-                        Xem ảnh hưởng tại
-                      </Text>
-                      <Text>{previewContextText}</Text>
-                      {draftBusinessObject === "INGREDIENT" && (
+                    {draftBusinessObject === "INGREDIENT" && (
+                      <Box>
+                        <Text size="sm" c="dimmed">
+                          Xem ảnh hưởng tại
+                        </Text>
+                        <Text>{previewContextText}</Text>
                         <Text size="xs" c="dimmed" mt={4}>
                           Đây là bối cảnh dùng để xem trước; phạm vi áp dụng vẫn
                           theo lựa chọn ở trên.
                         </Text>
-                      )}
-                    </Box>
+                      </Box>
+                    )}
                     <Box>
                       <Text size="sm" c="dimmed">
                         Lý do

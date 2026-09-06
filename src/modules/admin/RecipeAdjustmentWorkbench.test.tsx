@@ -276,6 +276,9 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(
       within(dialog).queryByText(/chưa hỗ trợ xem và lưu điều chỉnh/i),
     ).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByText("Xem ảnh hưởng tại"),
+    ).not.toBeInTheDocument();
     const previewButton = within(dialog).getByRole("button", {
       name: "Xem ảnh hưởng",
     });
@@ -284,6 +287,9 @@ describe("Recipe Change Order first-user workbench", () => {
     const review = await screen.findByRole("dialog", {
       name: "Thay đổi dự kiến",
     });
+    expect(
+      within(review).queryByText("Xem ảnh hưởng tại"),
+    ).not.toBeInTheDocument();
     expect(preview.mock.calls[0][2]).toMatchObject({
       dish_id: fixtureIds.dish,
       school_type_id: fixtureIds.schoolType,
