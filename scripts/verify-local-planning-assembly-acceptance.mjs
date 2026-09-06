@@ -464,9 +464,13 @@ async function main() {
         recipeWorkbench.recipe_versions.some(
           (item) => item.recipe_version_status === "RELEASED_FOR_PLANNING",
         ) &&
-        recipeWorkbench.dishes.find((item) => item.dish_id === dishId)
-          ?.dish_status === "ACTIVE",
-      "Initial Recipe Save did not activate the Dish and release a usable Recipe.",
+        recipeWorkbench.dishes.some(
+          (item) =>
+            item.dish_id === dishId &&
+            item.dish_status === "ACTIVE" &&
+            item.version === 1,
+        ),
+      "Initial Recipe Save did not release a usable Recipe while preserving the ACTIVE version-1 Dish.",
     );
 
     const planningRead = async () =>

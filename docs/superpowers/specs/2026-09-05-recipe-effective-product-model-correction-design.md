@@ -6,6 +6,42 @@ Reviewed head: `2eafafb2a312d9e7a8301809a2d42c303bae49ef`.
 
 This specification supersedes the conflicting Recipe-selection, Dish-copy, operator-state, and history-applicability parts of `2026-09-05-recipe-effective-workbench-design.md`. The stable effective-line targeting, precedence, temporal ledger, and backend-shaped history work already present on PR #257 remain authoritative unless changed explicitly below.
 
+## Approved final lifecycle amendment — 2026-09-06
+
+The governing principle is: **Store authoritative facts; derive current
+operational state; generate supporting technical objects automatically.** This
+section supersedes every statement below that implies normal Dish creation is
+`DRAFT` or that Recipe Save activates a Dish.
+
+Normal `create_dish` atomically creates an `ACTIVE` Dish at version 1, the two
+active canonical typed Recipe roots, and no RecipeVersion. The selected Dish
+Type must already be active, active normalized Dish-name uniqueness remains
+protected by a precheck plus the database unique index as the concurrent-race
+guard, and missing canonical types or root insertion failures roll back the
+whole command. The response readback reports `ACTIVE` immediately.
+
+Recipe Save authors RecipeVersion evidence only. It never changes Dish status,
+increments Dish version for lifecycle activation, emits `DishActivated`, or
+adds Dish lifecycle audit evidence. Existing command authorization,
+concurrency, idempotency, receipt, Recipe event/audit, and readback behavior is
+preserved. Historical `DRAFT` rows remain schema-compatible and may use the
+controlled support lifecycle API, but normal Recipe authoring does not depend
+on activation.
+
+Dish lifecycle and Recipe readiness remain independent. An `ACTIVE` Dish with
+zero, DRAFT, or VALIDATED RecipeVersions is valid editable master data but is
+not effective-ready. Effective Recipe resolution, Change Orders, source-side
+copy, and Need Generation still require an eligible released typed Recipe. No
+persisted readiness or lock flag is added.
+
+For normal active Dishes, `uiq03a_dish_used_operationally(dish_id)` is the only
+lock source: false derives `EDITABLE_BASE`; true derives
+`LOCKED_CHANGE_ORDER`. Approved Menu evidence changes derived state without
+changing Dish status or version. A new active unused Dish is immediately
+eligible as a copy target; a locked target remains blocked. Normal Recipe UI
+does not expose activate/deactivate controls, and later UI work owns presentation
+changes.
+
 ## Product model
 
 Every newly created Atlas Dish owns exactly two normal active Recipe roots:
@@ -39,7 +75,8 @@ After authorization and idempotency replay resolution, the command:
 
 1. resolves and locks the two active canonical School Types by code;
 2. fails without a Dish write unless both exist;
-3. inserts the Dish;
+3. inserts the Dish as `ACTIVE` at version 1 while preserving active Dish-Type
+   and active normalized-name invariants;
 4. inserts one active Recipe root for each canonical type; and
 5. completes the existing Dish-created receipt/event/audit transaction.
 

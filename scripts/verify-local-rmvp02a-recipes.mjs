@@ -228,17 +228,14 @@ async function main() {
     }),
   );
   const dishId = created.affected_aggregate_ids.dish_id;
-  assert(
-    created.affected_aggregate_ids.recipe_ids?.length === 2,
-    "Dish creation did not return both canonical typed Recipe roots.",
+  const createdDish = created.authoritative_readback.dishes.find(
+    (item) => item.dish_id === dishId,
   );
-  await invoke(
-    client,
-    "set_dish_lifecycle",
-    v1Request(subject, 1, "RMVP02A_V2_ACTIVATE_DISH", {
-      dish_id: dishId,
-      dish_status: "ACTIVE",
-    }),
+  assert(
+    createdDish?.dish_status === "ACTIVE" &&
+      createdDish.version === 1 &&
+      created.affected_aggregate_ids.recipe_ids?.length === 2,
+    "Dish creation did not return an ACTIVE version-1 Dish with both canonical typed Recipe roots.",
   );
 
   let workbench = await readWorkbench(client, subject, {
@@ -281,6 +278,9 @@ async function main() {
   );
   assert(
     firstVersionId &&
+      firstSave.new_versions?.dish_version === 1 &&
+      firstSave.emitted_event_ids?.length === 1 &&
+      firstSave.audit_event_ids?.length === 1 &&
       selected.business_status === "AVAILABLE" &&
       selected.locked_for_normal_editing === false &&
       selected.basis_portions === 80 &&
@@ -582,7 +582,7 @@ async function main() {
   );
   await client.auth.signOut({ scope: "local" });
   console.log(
-    "Verified RMVP-02A browser-key canonical typed-pair creation, typed pre-use Save and availability, approved-menu Dish lock, Save/copy/import denial with zero base composition mutation, successful Recipe lifecycle administration with event/audit evidence, and the unchanged post-lifecycle composition lock.",
+    "Verified RMVP-02A browser-key ACTIVE version-1 typed-pair creation, Recipe-only Save evidence without Dish lifecycle mutation, typed pre-use availability, approved-menu derived Dish lock, Save/copy/import denial with zero base composition mutation, successful Recipe lifecycle administration with event/audit evidence, and the unchanged post-lifecycle composition lock.",
   );
 }
 

@@ -4,11 +4,53 @@
 
 **Goal:** Correct Draft PR #257 so every new Dish owns exactly two canonical typed Recipe roots, unlocked base authoring remains possible before any released Recipe exists, RECIPE-EFFECTIVE uses typed-only selection, Dish-level copy snapshots the system-effective BOM for both scopes, and history/exception reads include only materially applicable Change Orders.
 
-**Architecture:** Add one forward correction migration after `20260905105253_recipe_effective_contract_01.sql`; do not rewrite the already-reviewed migration. PostgreSQL remains authoritative for canonical scope identity, Recipe lifecycle, effective selection, Change Order precedence, copy materialization, history relevance, and allowed actions. React/TypeScript only exposes and validates the corrected shaped contracts. Existing NULL-general and synthetic Recipe data remains compatibility evidence and is not backfilled by this task.
+**Architecture:** Preserve both reviewed #257 migrations, including the existing product-model correction after `20260905105253_recipe_effective_contract_01.sql`, and add the approved lifecycle correction as a new forward migration after `20260905161348_recipe_effective_product_model_correction.sql`. PostgreSQL remains authoritative for canonical scope identity, Recipe lifecycle, effective selection, Change Order precedence, copy materialization, history relevance, and allowed actions. React/TypeScript only exposes and validates the corrected shaped contracts. Existing NULL-general and synthetic Recipe data remains compatibility evidence and is not backfilled by this task.
 
 **Tech Stack:** PostgreSQL 17 / Supabase CLI 2.111.0, pgTAP, TypeScript 7, React 19, Vitest 4, pnpm 11.
 
 **Spec:** `docs/superpowers/specs/2026-09-05-recipe-effective-product-model-correction-design.md`
+
+## Approved final lifecycle amendment — execute after the existing tasks
+
+This amendment is authoritative over earlier plan text that makes a new Dish
+`DRAFT` or preserves Recipe-save activation. Do not rewrite reviewed migrations
+`20260905105253_recipe_effective_contract_01.sql` or
+`20260905161348_recipe_effective_product_model_correction.sql`. Generate one
+new forward correction migration after both.
+
+The implementation sequence is:
+
+1. Add a dedicated lifecycle-correction pgTAP suite and update the registered
+   Issue #213 suite first; run both against head
+   `e8899940efa923f5427246c82a00b5ea2ad3c52a` and retain the expected RED
+   evidence.
+2. In the new migration, replace `create_dish` so the atomic Dish/root command
+   persists and reads back `ACTIVE` at version 1, keeps the active Dish-Type
+   precondition, prechecks normalized active-name uniqueness, and relies on the
+   existing unique index as the final concurrent-race guard.
+3. Replace the Recipe command finalizer so Recipe Save records only Recipe
+   event/audit evidence and returns the unchanged Dish version without a Dish
+   lifecycle mutation or `DishActivated` evidence.
+4. Preserve strict released-Recipe readiness while proving root-only,
+   DRAFT/VALIDATED, and released unused states remain `EDITABLE_BASE`; prove
+   approved Menu evidence derives `LOCKED_CHANGE_ORDER` without changing Dish
+   status/version.
+5. Exercise a newly command-created Dish as the immediate two-scope copy target
+   and retain locked-target, Need readiness, and school-specific Change Order
+   regressions.
+6. Update only relevant RMVP-02A / Recipe-effective documentation and the local
+   browser verifier. Do not add an activate/deactivate UI control.
+7. Run focused pgTAP, Recipe API/model Vitest, typecheck, touched-file Prettier,
+   `git diff --check`, and the security catalog. Only after targeted GREEN,
+   push the same PR, mark it Ready, and wait for exact-head Full Integration.
+
+Final acceptance maps A–R to: ACTIVE persistence/readback; two canonical roots;
+zero versions; duplicate normalized-name and inactive Dish-Type protection;
+root-only editability with blocked readiness; no Save-time Dish mutation,
+activation event, or lifecycle version bump; released unused editability;
+approved-Menu-derived lock without lifecycle mutation; immediate new-Dish copy
+targeting; locked-target denial; released Recipe Need eligibility; and retained
+school-specific Change Order behavior.
 
 ## Global Constraints
 
@@ -16,7 +58,7 @@
 - Keep PR #257 Draft until all targeted checks are green.
 - OPS_SYSTEM_MAP v1.0 and repository authority override external skill guidance.
 - Single agent only; parallel work OFF; subagents OFF.
-- Add a forward correction migration; do not edit `20260905105253_recipe_effective_contract_01.sql`.
+- Add a forward correction migration; do not edit `20260905105253_recipe_effective_contract_01.sql` or `20260905161348_recipe_effective_product_model_correction.sql`.
 - Canonical Recipe scopes are identified only by `school_type_code = 'v1-school-type-1'` and `'v1-school-type-2'`; display-name capitalization is never identity.
 - Every newly command-created Dish owns exactly one active Recipe root for each canonical School Type; no RecipeVersion is created by `create_dish`.
 - `RECIPE-EFFECTIVE.v1` never falls back to `school_type_id IS NULL`.
@@ -34,12 +76,14 @@
 ### Task 1: Establish RED coverage for the corrected product model
 
 **Files:**
+
 - Create: `supabase/tests/recipe_effective_product_model_correction.sql`
 - Modify: `supabase/tests/recipe_effective_contract_01.sql`
 - Test: `supabase/tests/rmvp_02a_connected_recipes_bom.sql`
 - Test: `supabase/tests/ui_quality_03a_recipe_workflow.sql`
 
 **Interfaces:**
+
 - Consumes: existing #257 functions `atlas_core.recipe_effective_select_base_recipe`, `atlas_core.recipe_effective_resolve_composition`, `atlas_api.get_dish_recipe_operator_workbench`, `atlas_api.copy_dish_recipes`.
 - Produces: one failing pgTAP correction suite that proves the exact product-model gaps before the forward correction migration exists.
 
@@ -160,6 +204,7 @@ For N/O/P, assert both-scope atomicity, missing required source typed scope caus
 - [ ] **Step 5: Add RED assertions for history and exception relevance**
 
 Create:
+
 - an unrelated SYSTEM_INGREDIENT adjustment targeting an Ingredient absent from the Dish;
 - a relevant SYSTEM_INGREDIENT adjustment targeting an Ingredient present in the effective Dish;
 - an unrelated SCHOOL adjustment targeting an Ingredient absent from the selected Dish;
@@ -192,12 +237,14 @@ git commit -m "test(recipes): define corrected effective Recipe product model"
 ### Task 2: Add the forward correction migration for canonical Recipe roots and typed-only selection
 
 **Files:**
+
 - Create: `supabase/migrations/20260905170000_recipe_effective_product_model_correction.sql`
 - Modify: `supabase/tests/recipe_effective_product_model_correction.sql`
 - Test: `supabase/tests/rmvp_02a_connected_recipes_bom.sql`
 - Test: `supabase/tests/recipe_effective_contract_01.sql`
 
 **Interfaces:**
+
 - Produces: `atlas_core.recipe_effective_canonical_school_types()`, corrected `atlas_api.create_dish(jsonb)`, corrected `atlas_core.recipe_effective_select_base_recipe(uuid,uuid)`.
 - Consumes later: Tasks 3–5 use these canonical typed roots and selector.
 
@@ -269,6 +316,7 @@ Do not insert any RecipeVersion. Return `affected_aggregate_ids.recipe_ids` as a
 - [ ] **Step 3: Make the RECIPE-EFFECTIVE selector typed-only**
 
 Replace `atlas_core.recipe_effective_select_base_recipe(uuid,uuid)` so it:
+
 - rejects null/noncanonical/inactive School Type context;
 - requires exactly one active Recipe root for the exact `dish_id + school_type_id`;
 - requires exactly one `RELEASED_FOR_PLANNING` RecipeVersion for that root;
@@ -311,6 +359,7 @@ git commit -m "fix(recipes): provision canonical typed Recipe roots"
 ### Task 3: Correct Dish operator state so base authoring works before effective readiness
 
 **Files:**
+
 - Modify: `supabase/migrations/20260905170000_recipe_effective_product_model_correction.sql`
 - Modify: `supabase/tests/recipe_effective_product_model_correction.sql`
 - Modify: `src/modules/atlas/recipes/recipeModel.ts`
@@ -318,6 +367,7 @@ git commit -m "fix(recipes): provision canonical typed Recipe roots"
 - Modify: `src/modules/atlas/recipes/reviewRecipeApi.ts`
 
 **Interfaces:**
+
 - Consumes: canonical typed Recipe roots from Task 2.
 - Produces: corrected `get_dish_recipe_operator_workbench` states `EDITABLE_BASE` and `LOCKED_CHANGE_ORDER`; TypeScript parser accepts both states without inferring lifecycle in React.
 
@@ -340,6 +390,7 @@ else:
 ```
 
 For `EDITABLE_BASE`, return enough shaped base-authoring information to render:
+
 - root only / empty composition;
 - current DRAFT composition;
 - current VALIDATED composition;
@@ -383,6 +434,7 @@ Add typed optional/base-authoring fields matching the SQL response. Update `dish
 - [ ] **Step 4: Update review adapter fixtures**
 
 `reviewRecipeApi.ts` must expose at least:
+
 - one `EDITABLE_BASE` root-only scenario;
 - one unlocked released scenario;
 - one `LOCKED_CHANGE_ORDER` scenario.
@@ -415,6 +467,7 @@ git commit -m "fix(recipes): separate base authoring from effective readiness"
 ### Task 4: Rewrite Dish-level copy as an atomic system-effective snapshot
 
 **Files:**
+
 - Modify: `supabase/migrations/20260905170000_recipe_effective_product_model_correction.sql`
 - Modify: `supabase/tests/recipe_effective_product_model_correction.sql`
 - Modify: `src/modules/atlas/recipes/recipeApi.ts`
@@ -423,6 +476,7 @@ git commit -m "fix(recipes): separate base authoring from effective readiness"
 - Test: `src/modules/atlas/recipes/recipeModel.test.ts`
 
 **Interfaces:**
+
 - Consumes: typed-only selector and system-effective resolver.
 - Produces: `atlas_api.copy_dish_recipes(jsonb)` requiring `payload.as_of_date` and materializing two independent target RecipeVersion snapshots without delegating business semantics to `copy_recipe_version`.
 
@@ -456,6 +510,7 @@ v_resolution := atlas_core.recipe_effective_resolve_composition(
 Require `status = READY`. Verify lineage contains no `SCHOOL`/`SCHOOL_DISH` contribution; the system resolver itself should already guarantee this.
 
 Before any target RecipeVersion write, verify:
+
 - both canonical source scopes resolve READY;
 - both canonical target Recipe roots exist and are active;
 - target Dish version matches expected_version;
@@ -541,6 +596,7 @@ git commit -m "fix(recipes): copy system-effective BOM snapshots"
 ### Task 5: Make Recipe history and School exception counts materially applicable to the Dish
 
 **Files:**
+
 - Modify: `supabase/migrations/20260905170000_recipe_effective_product_model_correction.sql`
 - Modify: `supabase/tests/recipe_effective_product_model_correction.sql`
 - Test: `supabase/tests/ui_quality_03b_recipe_adjustment_operator_workbench.sql`
@@ -548,6 +604,7 @@ git commit -m "fix(recipes): copy system-effective BOM snapshots"
 - Test: `src/modules/atlas/recipes/recipeModel.test.ts`
 
 **Interfaces:**
+
 - Consumes: resolver `lineage`, history period shape from #257, typed-only selector.
 - Produces: history periods/tags limited to roots that actually contribute to the Dish; `school_exception_count` counts distinct materially applicable School-layer roots.
 
@@ -572,6 +629,7 @@ Coalesce adjacent periods only when their normalized effective BOM state is iden
 - [ ] **Step 3: Compute `school_exception_count` from actual School resolver lineage**
 
 For a system School-Type operator view:
+
 - enumerate active Schools of that exact canonical School Type;
 - resolve each School's current effective composition for the selected Dish/date;
 - collect distinct `SCHOOL`/`SCHOOL_DISH` adjustment IDs from line lineage;
@@ -609,6 +667,7 @@ git commit -m "fix(recipes): scope effective history to material changes"
 ### Task 6: Reconcile API docs, review adapters, security catalog and compatibility tests
 
 **Files:**
+
 - Modify: `docs/api/rmvp-02a-recipes-bom.md`
 - Modify: `docs/api/rmvp-02b-recipe-adjustments-effective-bom.md`
 - Modify: `docs/architecture/rmvp-02b-recipe-adjustments-effective-bom.md`
@@ -621,11 +680,13 @@ git commit -m "fix(recipes): scope effective history to material changes"
 - Test: `supabase/tests/atlas_current_platform_security_catalog.sql`
 
 **Interfaces:**
+
 - Produces: documentation and browser adapters that match the corrected backend contract exactly; no new capability/role/RLS concept.
 
 - [ ] **Step 1: Amend API docs with the canonical two-root invariant**
 
 Document:
+
 - `create_dish` provisions exactly two active typed Recipe roots and no RecipeVersion;
 - RECIPE-EFFECTIVE typed-only selection never uses NULL fallback;
 - root-only/DRAFT/VALIDATED/released unlocked authoring remains `EDITABLE_BASE`;
@@ -688,10 +749,12 @@ git commit -m "docs(recipes): align effective Recipe correction contracts"
 ### Task 7: Full targeted verification and Draft-to-Ready gate
 
 **Files:**
+
 - Verify only; modify files only to fix failures attributable to this correction.
 - PR: #257 remains the delivery surface.
 
 **Interfaces:**
+
 - Consumes: Tasks 1–6.
 - Produces: one reviewed branch head ready for broad GitHub Actions validation.
 
@@ -775,6 +838,7 @@ T  existing SCHOOL_DISH adjustment-line targeting remains green
 - [ ] **Step 5: Update PR #257 body with correction evidence**
 
 Amend the PR description to name:
+
 - forward correction migration filename;
 - exact previous and final branch SHAs;
 - two-root invariant;
