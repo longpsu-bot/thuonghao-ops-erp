@@ -88,6 +88,7 @@ Existing SQL/component evidence is reused where sufficient. An existing test lis
 
 ## Validation and review
 
+- Baseline database RED: main run [34002629562](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/34002629562) failed Recipe history V/W/Y (22/23/25 of 39). The fixture mixed fixed September boundaries with a wall-clock base release; the history contract excludes boundaries before release. The fixture now uses fixed validation/release timestamps before the scenario boundaries. Assertions and production logic are unchanged; final CI outcome is pending.
 - Targeted test-first RED/GREEN: pending worker integration reports.
 - Touched-file formatting, TypeScript and whitespace: pending final integration.
 - Fresh independent spec/authority and safety/correctness review: pending integrated head.

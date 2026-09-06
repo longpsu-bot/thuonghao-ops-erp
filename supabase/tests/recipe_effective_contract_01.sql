@@ -322,15 +322,18 @@ from (
 
 set constraints all immediate;
 
+-- The history scenarios below have a fixed September 2026 timeline. Anchor
+-- base release before those boundaries: a wall-clock release eventually hides
+-- the September 5 period and makes V/W/Y fail as the execution date advances.
 update atlas_admin.recipe_versions
 set recipe_version_status = 'VALIDATED',
     validated_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
-    validated_at = transaction_timestamp() - interval '2 hours';
+    validated_at = timestamptz '2026-08-31 23:00:00+00';
 
 update atlas_admin.recipe_versions
 set recipe_version_status = 'RELEASED_FOR_PLANNING',
     released_by_actor_id = 'c1000000-0000-0000-0000-000000000001',
-    released_at = transaction_timestamp() - interval '1 hour';
+    released_at = timestamptz '2026-09-01 00:00:00+00';
 
 set constraints all deferred;
 
