@@ -71,28 +71,31 @@ resolver and are never selected by `RECIPE-EFFECTIVE.v1`.
 - Capability: `master_data.recipe_adjustments.write`
 - Owner: `atlas_read_runtime`
 - Required payload: `as_of_date`, `dish_id`, `proposed_adjustment`
-- Context payload: `school_id` when the proposal or operator outcome is School-specific
+- Context payload for `SYSTEM_DISH`: exact active canonical `school_type_id`; `school_id` must be absent or null
+- Context payload for `SYSTEM_INGREDIENT`, `SCHOOL`, and `SCHOOL_DISH`: existing explicit `school_id` impact-preview context
 - Optional correction payload: `replaces_adjustment_id`
 - Returns `preview` containing the normalized proposal, current `before`, hypothetical `after`, affected-line count, `can_save`, warnings, and blockers.
 - Effect: no write.
+
+For `SYSTEM_DISH`, the proposal's `dish_id` and `school_type_id` must exactly match the outer reviewed context. Preview resolves the exact typed released Recipe followed by `SYSTEM_INGREDIENT` and `SYSTEM_DISH` only. It does not select or accept a representative School, apply a School layer, or fall back to a nullable GENERAL Recipe. Both before and hypothetical after use this same system-only authority.
 
 ## Proposal contract
 
 Every proposal includes stable `adjustment_id`, stable `revision_id`, `scope_kind`, `action_kind`, `effective_from`, optional half-open `effective_to`, reason evidence, and the typed fields required by its scope/action.
 
-| Scope/action                  | Required typed payload                                                                                                                          |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SYSTEM_INGREDIENT/REPLACE`   | `target_ingredient_id`, `substitute_ingredient_id`                                                                                              |
-| `SYSTEM_DISH/ADD`             | `dish_id`, optional `school_type_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                    |
-| `SYSTEM_DISH/REPLACE`         | `dish_id`, optional `school_type_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit |
-| `SYSTEM_DISH/ADJUST_QUANTITY` | `dish_id`, optional `school_type_id`, exactly one stable line target, positive `quantity_per_basis`                                             |
-| `SYSTEM_DISH/REMOVE`          | `dish_id`, optional `school_type_id`, exactly one stable line target                                                                            |
-| `SCHOOL/REPLACE`              | `school_id`, `target_ingredient_id`, `substitute_ingredient_id`                                                                                 |
-| `SCHOOL/REMOVE`               | `school_id`, `target_ingredient_id`                                                                                                             |
-| `SCHOOL_DISH/ADD`             | `school_id`, `dish_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                                  |
-| `SCHOOL_DISH/REPLACE`         | `school_id`, `dish_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit               |
-| `SCHOOL_DISH/ADJUST_QUANTITY` | `school_id`, `dish_id`, exactly one stable line target, positive `quantity_per_basis`                                                           |
-| `SCHOOL_DISH/REMOVE`          | `school_id`, `dish_id`, exactly one stable line target                                                                                          |
+| Scope/action                  | Required typed payload                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SYSTEM_INGREDIENT/REPLACE`   | `target_ingredient_id`, `substitute_ingredient_id`                                                                                               |
+| `SYSTEM_DISH/ADD`             | `dish_id`, canonical `school_type_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                    |
+| `SYSTEM_DISH/REPLACE`         | `dish_id`, canonical `school_type_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit |
+| `SYSTEM_DISH/ADJUST_QUANTITY` | `dish_id`, canonical `school_type_id`, exactly one stable line target, positive `quantity_per_basis`                                             |
+| `SYSTEM_DISH/REMOVE`          | `dish_id`, canonical `school_type_id`, exactly one stable line target                                                                            |
+| `SCHOOL/REPLACE`              | `school_id`, `target_ingredient_id`, `substitute_ingredient_id`                                                                                  |
+| `SCHOOL/REMOVE`               | `school_id`, `target_ingredient_id`                                                                                                              |
+| `SCHOOL_DISH/ADD`             | `school_id`, `dish_id`, `target_ingredient_id`, `adjustment_line_id`, positive `quantity_per_basis`, `unit_id`                                   |
+| `SCHOOL_DISH/REPLACE`         | `school_id`, `dish_id`, exactly one stable line target, `substitute_ingredient_id`; optional positive quantity plus explicit Unit                |
+| `SCHOOL_DISH/ADJUST_QUANTITY` | `school_id`, `dish_id`, exactly one stable line target, positive `quantity_per_basis`                                                            |
+| `SCHOOL_DISH/REMOVE`          | `school_id`, `dish_id`, exactly one stable line target                                                                                           |
 
 Omitted fields must be null. `REPLACE` preserves quantity and Unit unless both a positive quantity and explicit Unit are supplied. `ADJUST_QUANTITY` preserves Ingredient and Unit. `REMOVE` accepts no substitute, quantity, or Unit. All referenced master data must be active.
 
@@ -105,7 +108,8 @@ For every non-ADD `SYSTEM_DISH` or `SCHOOL_DISH` proposal, “exactly one stable
 - Capability: `master_data.recipe_adjustments.write`
 - Owner: `atlas_master_data_command_runtime`
 - Expected version: `1`
-- Payload: proposal fields plus required `as_of_date`, `preview_school_id`, and `preview_dish_id`
+- Payload for `SYSTEM_DISH`: proposal fields plus required `as_of_date`, `preview_school_type_id`, and `preview_dish_id`; `preview_school_id` must be absent or null
+- Payload for existing School-context paths: proposal fields plus required `as_of_date`, `preview_school_id`, and `preview_dish_id`
 - Effect: serializes the exact typed target, revalidates the preview context, resolves the hypothetical effective composition, creates one stable root and revision 1, then emits event/audit/readback.
 
 An exact request replay returns the original completed receipt. A reused idempotency key with different content fails closed.
@@ -115,10 +119,14 @@ An exact request replay returns the original completed receipt. A reused idempot
 - Capability: `master_data.recipe_adjustments.write`
 - Owner: `atlas_master_data_command_runtime`
 - Expected version: current root version
-- Required payload: `adjustment_id`, new `revision_id`, exact `predecessor_revision_id`, `effective_from`, optional `effective_to`, action payload, `as_of_date`, `preview_school_id`, `preview_dish_id`
+- Required common payload: `adjustment_id`, new `revision_id`, exact `predecessor_revision_id`, `effective_from`, optional `effective_to`, action payload, `as_of_date`, and `preview_dish_id`
+- Reviewed context for a `SYSTEM_DISH` root: exact `preview_school_type_id`; `preview_school_id` must be absent or null
+- Reviewed context for existing School-context roots: exact `preview_school_id`
 - Effect: serializes the exact typed target, then locks the root, verifies the exact current active predecessor, validates and resolves the successor, appends the next revision, and increments the root version.
 
 Scope, action, and stable target identity cannot change. One predecessor can have only one successor.
+
+Create and Supersede revalidate the system context inside the command transaction. The full request payload, including `preview_school_type_id`, remains covered by the established request hash, replay, conflict, locking, optimistic-version, receipt, event, audit, and safe-error behavior. Mixed School and School-Type preview identities fail closed. No new API family, business object, lifecycle, capability, table, role, or RLS policy is introduced. Existing `SCHOOL`, `SCHOOL_DISH`, and explicitly named `SYSTEM_INGREDIENT` impact-preview behavior remains unchanged.
 
 ### `cancel_recipe_composition_adjustment`
 
@@ -146,7 +154,7 @@ Responses never expose credentials, SQL, private relation dumps, or exception st
 - Owner: `atlas_read_runtime`
 - Required envelope contract: `RMVP-02B.v2`
 - Required payload: explicit `as_of_date`; the function does not use `CURRENT_DATE`
-- Compatibility: all six `RMVP-02B.v1` functions above remain unchanged and callable
+- Compatibility: all six `RMVP-02B.v1` functions remain callable; valid existing School contexts are unchanged, while Preview/Create/Supersede add the typed `SYSTEM_DISH` context described above
 
 The response retains the approved scope/action catalog, precedence and human-reference catalogs needed by the Application. In `RMVP-02B.v2` only, each Ingredient catalog entry also exposes its configured `purchase_unit_id` and `purchase_unit_name`; the v1 read shape is unchanged. Released Recipe lines are shaped with current Ingredient name, quantity and Unit so operators can select by business meaning rather than stable identity. The Application preserves a selected Recipe line's historical Unit, derives ADD and quantity-bearing REPLACE Units from the selected Ingredient purchase Unit, and blocks preview when that required master-data Unit is missing.
 

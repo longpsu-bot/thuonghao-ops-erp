@@ -10,12 +10,12 @@ Planning still owns Planning Input approval, Need Generation, and immutable per-
 
 The model uses typed nullable foreign keys and exactly four scopes:
 
-| Scope               | Typed target                                                                                                                             | Allowed actions                               |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `SYSTEM_INGREDIENT` | one Ingredient across Recipes                                                                                                            | `REPLACE`                                     |
-| `SYSTEM_DISH`       | one Dish, optionally one School Type; stable Recipe Line for an existing contribution or stable adjustment-line identity for an addition | `ADD`, `REPLACE`, `ADJUST_QUANTITY`, `REMOVE` |
-| `SCHOOL`            | one School and one Ingredient across Dishes                                                                                              | `REPLACE`, `REMOVE`                           |
-| `SCHOOL_DISH`       | one School and Dish; stable Recipe Line for an existing contribution or stable adjustment-line identity for an addition                  | `ADD`, `REPLACE`, `ADJUST_QUANTITY`, `REMOVE` |
+| Scope               | Typed target                                                                                                                                                            | Allowed actions                               |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `SYSTEM_INGREDIENT` | one Ingredient across Recipes                                                                                                                                           | `REPLACE`                                     |
+| `SYSTEM_DISH`       | one Dish; current normal commands require one canonical School Type; stable Recipe Line for an existing contribution or stable adjustment-line identity for an addition | `ADD`, `REPLACE`, `ADJUST_QUANTITY`, `REMOVE` |
+| `SCHOOL`            | one School and one Ingredient across Dishes                                                                                                                             | `REPLACE`, `REMOVE`                           |
+| `SCHOOL_DISH`       | one School and Dish; stable Recipe Line for an existing contribution or stable adjustment-line identity for an addition                                                 | `ADD`, `REPLACE`, `ADJUST_QUANTITY`, `REMOVE` |
 
 There is no relation, page, or command per legacy Retool layer and no generic rule or workflow engine.
 
@@ -57,6 +57,10 @@ School context: base → SYSTEM_INGREDIENT → SYSTEM_DISH → SCHOOL → SCHOOL
 ```
 
 No fake or representative School is used for system context. Need Generation keeps backend-owned School resolution semantics; React consumes shaped reads rather than reconstructing selection or precedence.
+
+RECIPE-SYSTEM-COMMAND-CONTEXT-01 applies that same authority to the existing `RMVP-02B.v1` command family. A normal `SYSTEM_DISH` Preview names the Dish, one active canonical School Type, and the explicit as-of date; Create and Supersede bind the reviewed context with `preview_dish_id` plus `preview_school_type_id`. A School identity is invalid for this path. The proposal and reviewed context must identify the same Dish and School Type, and command-time revalidation calls the shared strict resolver for both current and hypothetical composition. `SCHOOL` and `SCHOOL_DISH` retain their School-based context, while `SYSTEM_INGREDIENT` retains its explicitly named impact-preview behavior.
+
+This is an additive amendment to three existing JSONB RPCs. It adds no business object, lifecycle, table, role, capability, policy, module, or alternate precedence engine. Existing request hashing automatically binds the new context fields; the existing target locks, root lock, optimistic version, immutable revisions, idempotency receipts, events, audit, and safe errors remain authoritative. Legacy nullable GENERAL evidence stays isolated behind the compatibility resolver and is never used for a typed `SYSTEM_DISH` command.
 
 For Dish-scoped non-ADD rules, stable target identity is an XOR between the base `target_recipe_line_id` and an ADD-owned `adjustment_line_id`. The same identity is used by validation, locks, overlap and duplicate detection, transformation, Preview, Create, Supersede, and history. This preserves targetability through the layered BOM, including a School rule acting on a system-added line.
 

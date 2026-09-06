@@ -4,6 +4,10 @@
 **Baseline:** `931ef987b49f4024f5662c6bd8dc3f3864ea50d7`
 **Contracts:** `RMVP-02B.v1` unchanged; additive `RMVP-02B.v2` operator read
 
+## Later command-context amendment
+
+RECIPE-SYSTEM-COMMAND-CONTEXT-01 supersedes this task's representative-School guidance only for `SYSTEM_DISH`. The authoritative normal context is now Dish + one canonical School Type + explicit backend as-of date. Preview uses `school_type_id`; Create and Supersede use `preview_school_type_id`; none accepts a proxy `school_id`. The older text below is retained as implementation history and is not current authority for system Recipe commands. School-based `SCHOOL` and `SCHOOL_DISH` paths and the explicitly named `SYSTEM_INGREDIENT` impact-preview path remain unchanged.
+
 ## Bounded capability
 
 Present the accepted post-lock Recipe composition adjustment job as a Vietnamese business correction / Change Order workbench. The Application is table-first, collects a business intent and valid scope, requires the existing authoritative preview before commitment, and keeps correction, cancellation, history and effective composition subordinate to the ordinary operator job.
