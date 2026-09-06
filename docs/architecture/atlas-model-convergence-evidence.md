@@ -120,10 +120,10 @@ the intended accepted behavior, not amendments weakening that behavior:
 - **A12:** `20260905105253_recipe_effective_contract_01.sql` lines 1306–1355
   shape effective-history tags from Actor display name and revision `created_at`
   without a legacy-issuance discriminator.
-  `20260814010928_ui_quality_03b_recipe_adjustment_operator_workbench.sql`
-  lines 107–149 and 229–275 identifies legacy unattributed ledger evidence and
-  nulls issuer name but still returns stored creation time. Original legacy
-  issuer/time cannot be certified by these outputs. React must preserve unknown
+  The later `20260814045038_ui_quality_03b_recipe_adjustment_corrections.sql`
+  already nulls legacy issuer name and issuance time in the operator ledger;
+  the September wrapper retains that projection. Effective-history parity
+  remains unavailable. React must preserve unknown
   attribution rather than present the importer or import time as original
   business issuance.
 - **Catalog:** the existing catalog supports identity/reference/base search;
