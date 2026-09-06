@@ -1879,5 +1879,821 @@ select ok(
   'AK. a later source system rule cannot alter the copied target snapshot'
 );
 
+create function pg_temp.recipe_system_context_command(
+  p_name text,
+  p_expected_version bigint,
+  p_payload jsonb
+)
+returns jsonb
+language sql
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', 'RMVP-02B.v1',
+    'command_id', pg_catalog.md5(
+      'recipe-system-context:' || p_name
+    )::uuid,
+    'correlation_id', 'c1000000-0000-0000-0000-000000000205',
+    'idempotency_key', 'recipe-system-context:' || p_name,
+    'expected_version', p_expected_version,
+    'requested_by_auth_subject',
+      'c1000000-0000-0000-0000-000000000101',
+    'requested_at', pg_catalog.transaction_timestamp() + interval '2 seconds',
+    'reason_code', 'RECIPE_SYSTEM_COMMAND_CONTEXT_TEST',
+    'reason_note', 'System command context regression.',
+    'payload', p_payload
+  );
+$$;
+
+insert into atlas_admin.school_types (
+  school_type_id, school_type_code, school_type_name
+) values (
+  'c1100000-0000-0000-0000-000000000012',
+  'recipe-effective-noncanonical',
+  'Loại trường ngoài danh mục chuẩn'
+);
+
+set local role authenticated;
+
+insert into recipe_effective_results values
+(
+  'system-base-preview',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000401',
+          'c1c00000-0000-0000-0000-000000000401',
+          'c1600000-0000-0000-0000-000000000003', null,
+          'c1300000-0000-0000-0000-000000000002'
+        )
+      )
+    )
+  )
+),
+(
+  'system-add-origin-preview',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000402',
+          'c1c00000-0000-0000-0000-000000000402', null,
+          'c1a00000-0000-0000-0000-000000000001'
+        )
+      )
+    )
+  )
+),
+(
+  'system-no-school-preview',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000011',
+        'proposed_adjustment', pg_catalog.jsonb_set(
+          pg_temp.recipe_effective_modifier(
+            'SYSTEM_DISH', 'ADJUST_QUANTITY',
+            'c1b00000-0000-0000-0000-000000000403',
+            'c1c00000-0000-0000-0000-000000000403',
+            'c1600000-0000-0000-0000-000000000009', null
+          ),
+          '{school_type_id}',
+          '"c1100000-0000-0000-0000-000000000011"'::jsonb
+        )
+      )
+    )
+  )
+),
+(
+  'system-school-exception-authority',
+  atlas_api.resolve_system_effective_recipe_composition(
+    pg_temp.recipe_effective_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+);
+
+insert into recipe_effective_results values
+(
+  'system-base-create',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'base-create', 1,
+      pg_temp.recipe_effective_modifier(
+        'SYSTEM_DISH', 'ADJUST_QUANTITY',
+        'c1b00000-0000-0000-0000-000000000401',
+        'c1c00000-0000-0000-0000-000000000401',
+        'c1600000-0000-0000-0000-000000000003', null,
+        'c1300000-0000-0000-0000-000000000002'
+      ) || pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+),
+(
+  'system-add-origin-create',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'add-origin-create', 1,
+      pg_temp.recipe_effective_modifier(
+        'SYSTEM_DISH', 'ADJUST_QUANTITY',
+        'c1b00000-0000-0000-0000-000000000402',
+        'c1c00000-0000-0000-0000-000000000402', null,
+        'c1a00000-0000-0000-0000-000000000001'
+      ) || pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+),
+(
+  'system-base-create-replay',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'base-create', 1,
+      pg_temp.recipe_effective_modifier(
+        'SYSTEM_DISH', 'ADJUST_QUANTITY',
+        'c1b00000-0000-0000-0000-000000000401',
+        'c1c00000-0000-0000-0000-000000000401',
+        'c1600000-0000-0000-0000-000000000003', null,
+        'c1300000-0000-0000-0000-000000000002'
+      ) || pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+),
+(
+  'system-base-create-context-conflict',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'base-create', 1,
+      pg_catalog.jsonb_set(
+        pg_catalog.jsonb_set(
+          pg_temp.recipe_effective_modifier(
+            'SYSTEM_DISH', 'ADJUST_QUANTITY',
+            'c1b00000-0000-0000-0000-000000000401',
+            'c1c00000-0000-0000-0000-000000000401',
+            'c1600000-0000-0000-0000-000000000003', null,
+            'c1300000-0000-0000-0000-000000000002'
+          ) || pg_catalog.jsonb_build_object(
+            'as_of_date', '2026-09-05',
+            'preview_dish_id',
+              'c1300000-0000-0000-0000-000000000002',
+            'preview_school_type_id',
+              'c1100000-0000-0000-0000-000000000010'
+          ),
+          '{school_type_id}',
+          '"c1100000-0000-0000-0000-000000000011"'::jsonb
+        ),
+        '{preview_school_type_id}',
+        '"c1100000-0000-0000-0000-000000000011"'::jsonb
+      )
+    )
+  )
+),
+(
+  'system-create-context-mismatch',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'create-context-mismatch', 1,
+      pg_temp.recipe_effective_modifier(
+        'SYSTEM_DISH', 'ADJUST_QUANTITY',
+        'c1b00000-0000-0000-0000-000000000416',
+        'c1c00000-0000-0000-0000-000000000416',
+        'c1600000-0000-0000-0000-000000000003', null,
+        'c1300000-0000-0000-0000-000000000002'
+      ) || pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000011'
+      )
+    )
+  )
+),
+(
+  'system-create-proxy-school',
+  atlas_api.create_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'create-proxy-school', 1,
+      pg_temp.recipe_effective_modifier(
+        'SYSTEM_DISH', 'ADJUST_QUANTITY',
+        'c1b00000-0000-0000-0000-000000000417',
+        'c1c00000-0000-0000-0000-000000000417',
+        'c1600000-0000-0000-0000-000000000003', null,
+        'c1300000-0000-0000-0000-000000000002'
+      ) || pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'preview_school_id', 'c1100000-0000-0000-0000-000000000020',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002'
+      )
+    )
+  )
+);
+
+reset role;
+
+create temporary table recipe_system_old_revision as
+select pg_catalog.to_jsonb(revision) as revision_payload
+from atlas_admin.recipe_composition_adjustment_revisions revision
+where revision.recipe_composition_adjustment_revision_id =
+  'c1c00000-0000-0000-0000-000000000401';
+grant select on recipe_system_old_revision to authenticated;
+
+set local role authenticated;
+insert into recipe_effective_results values
+(
+  'system-base-supersede',
+  atlas_api.supersede_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'base-supersede', 1,
+      pg_catalog.jsonb_build_object(
+        'adjustment_id', 'c1b00000-0000-0000-0000-000000000401',
+        'revision_id', 'c1c00000-0000-0000-0000-000000000404',
+        'predecessor_revision_id',
+          'c1c00000-0000-0000-0000-000000000401',
+        'effective_from', '2026-09-06',
+        'quantity_per_basis', 0.85,
+        'as_of_date', '2026-09-06',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+),
+(
+  'system-base-supersede-stale',
+  atlas_api.supersede_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'base-supersede-stale', 1,
+      pg_catalog.jsonb_build_object(
+        'adjustment_id', 'c1b00000-0000-0000-0000-000000000401',
+        'revision_id', 'c1c00000-0000-0000-0000-000000000405',
+        'predecessor_revision_id',
+          'c1c00000-0000-0000-0000-000000000401',
+        'effective_from', '2026-09-07',
+        'quantity_per_basis', 0.95,
+        'as_of_date', '2026-09-07',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000010'
+      )
+    )
+  )
+),
+(
+  'system-base-supersede-context-mismatch',
+  atlas_api.supersede_recipe_composition_adjustment(
+    pg_temp.recipe_system_context_command(
+      'base-supersede-context-mismatch', 2,
+      pg_catalog.jsonb_build_object(
+        'adjustment_id', 'c1b00000-0000-0000-0000-000000000401',
+        'revision_id', 'c1c00000-0000-0000-0000-000000000406',
+        'predecessor_revision_id',
+          'c1c00000-0000-0000-0000-000000000404',
+        'effective_from', '2026-09-07',
+        'quantity_per_basis', 0.95,
+        'as_of_date', '2026-09-07',
+        'preview_dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'preview_school_type_id',
+          'c1100000-0000-0000-0000-000000000011'
+      )
+    )
+  )
+),
+(
+  'system-mismatched-type',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_catalog.jsonb_set(
+          pg_temp.recipe_effective_modifier(
+            'SYSTEM_DISH', 'ADJUST_QUANTITY',
+            'c1b00000-0000-0000-0000-000000000410',
+            'c1c00000-0000-0000-0000-000000000410',
+            'c1600000-0000-0000-0000-000000000002', null
+          ),
+          '{school_type_id}',
+          '"c1100000-0000-0000-0000-000000000011"'::jsonb
+        )
+      )
+    )
+  )
+),
+(
+  'system-noncanonical-type',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000012',
+        'proposed_adjustment', pg_catalog.jsonb_set(
+          pg_temp.recipe_effective_modifier(
+            'SYSTEM_DISH', 'ADJUST_QUANTITY',
+            'c1b00000-0000-0000-0000-000000000411',
+            'c1c00000-0000-0000-0000-000000000411',
+            'c1600000-0000-0000-0000-000000000002', null
+          ),
+          '{school_type_id}',
+          '"c1100000-0000-0000-0000-000000000012"'::jsonb
+        )
+      )
+    )
+  )
+),
+(
+  'system-mixed-context',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'school_id', 'c1100000-0000-0000-0000-000000000020',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000412',
+          'c1c00000-0000-0000-0000-000000000412',
+          'c1600000-0000-0000-0000-000000000002', null
+        )
+      )
+    )
+  )
+),
+(
+  'system-invalid-proxy-school',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'school_id', 'not-a-uuid',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000420',
+          'c1c00000-0000-0000-0000-000000000420',
+          'c1600000-0000-0000-0000-000000000002', null
+        )
+      )
+    )
+  )
+),
+(
+  'system-missing-context',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000413',
+          'c1c00000-0000-0000-0000-000000000413',
+          'c1600000-0000-0000-0000-000000000002', null
+        )
+      )
+    )
+  )
+),
+(
+  'system-wrong-dish',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000414',
+          'c1c00000-0000-0000-0000-000000000414',
+          'c1600000-0000-0000-0000-000000000003', null,
+          'c1300000-0000-0000-0000-000000000002'
+        )
+      )
+    )
+  )
+),
+(
+  'system-subject-mismatch',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_catalog.jsonb_set(
+      pg_temp.recipe_effective_rmvp_read(
+        pg_catalog.jsonb_build_object(
+          'as_of_date', '2026-09-05',
+          'dish_id', 'c1300000-0000-0000-0000-000000000002',
+          'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+          'proposed_adjustment', pg_temp.recipe_effective_modifier(
+            'SYSTEM_DISH', 'ADJUST_QUANTITY',
+            'c1b00000-0000-0000-0000-000000000418',
+            'c1c00000-0000-0000-0000-000000000418',
+            'c1600000-0000-0000-0000-000000000003', null,
+            'c1300000-0000-0000-0000-000000000002'
+          )
+        )
+      ),
+      '{requested_by_auth_subject}',
+      '"c1000000-0000-0000-0000-000000000999"'::jsonb
+    )
+  )
+);
+reset role;
+
+update atlas_admin.school_types
+set school_type_status = 'INACTIVE'
+where school_type_id = 'c1100000-0000-0000-0000-000000000011';
+
+set local role authenticated;
+insert into recipe_effective_results values (
+  'system-inactive-type',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000001',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000011',
+        'proposed_adjustment', pg_catalog.jsonb_set(
+          pg_temp.recipe_effective_modifier(
+            'SYSTEM_DISH', 'ADJUST_QUANTITY',
+            'c1b00000-0000-0000-0000-000000000415',
+            'c1c00000-0000-0000-0000-000000000415',
+            'c1600000-0000-0000-0000-000000000009', null
+          ),
+          '{school_type_id}',
+          '"c1100000-0000-0000-0000-000000000011"'::jsonb
+        )
+      )
+    )
+  )
+);
+reset role;
+
+delete from atlas_core.role_capabilities
+where role_id = 'c1000000-0000-0000-0000-000000000003'
+  and capability_id = (
+    select capability_id
+    from atlas_core.capabilities
+    where capability_code = 'master_data.recipe_adjustments.write'
+  );
+
+set local role authenticated;
+insert into recipe_effective_results values (
+  'system-capability-denied',
+  atlas_api.preview_recipe_composition_adjustment(
+    pg_temp.recipe_effective_rmvp_read(
+      pg_catalog.jsonb_build_object(
+        'as_of_date', '2026-09-05',
+        'dish_id', 'c1300000-0000-0000-0000-000000000002',
+        'school_type_id', 'c1100000-0000-0000-0000-000000000010',
+        'proposed_adjustment', pg_temp.recipe_effective_modifier(
+          'SYSTEM_DISH', 'ADJUST_QUANTITY',
+          'c1b00000-0000-0000-0000-000000000419',
+          'c1c00000-0000-0000-0000-000000000419',
+          'c1600000-0000-0000-0000-000000000003', null,
+          'c1300000-0000-0000-0000-000000000002'
+        )
+      )
+    )
+  )
+);
+reset role;
+
+select ok(
+  (select response_payload ->> 'success' = 'true'
+   from recipe_effective_results where result_name = 'system-base-preview')
+  and (select response_payload #>> '{preview,can_save}' = 'true'
+   from recipe_effective_results where result_name = 'system-base-preview')
+  and (select response_payload #>> '{preview,school_id}' is null
+   from recipe_effective_results where result_name = 'system-base-preview')
+  and (select response_payload #>> '{preview,school_type_id}' =
+    'c1100000-0000-0000-0000-000000000010'
+   from recipe_effective_results where result_name = 'system-base-preview'),
+  'A07-1. SYSTEM_DISH Preview accepts Dish plus School Type without School'
+);
+
+select ok(
+  exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.school_id = 'c1100000-0000-0000-0000-000000000020'
+      and (
+        root.scope_kind = 'SCHOOL'
+        or (
+          root.scope_kind = 'SCHOOL_DISH'
+          and root.dish_id = 'c1300000-0000-0000-0000-000000000001'
+        )
+      )
+  )
+  and (
+    select response_payload #> '{preview,before}' =
+      (select authority.response_payload -> 'resolution'
+       from recipe_effective_results authority
+       where authority.result_name = 'system-school-exception-authority')
+    from recipe_effective_results
+    where result_name = 'system-add-origin-preview'
+  )
+  and not (
+    select response_payload #> '{preview,before,lines}'
+      @? '$[*].lineage[*] ? (@.scope_kind == "SCHOOL" || @.scope_kind == "SCHOOL_DISH")'
+    from recipe_effective_results
+    where result_name = 'system-add-origin-preview'
+  ),
+  'A07-2. system Preview excludes School and School-Dish layers'
+);
+
+select ok(
+  not exists (
+    select 1 from atlas_admin.schools school
+    where school.school_type_id =
+      'c1100000-0000-0000-0000-000000000011'
+  )
+  and (select response_payload #>> '{preview,can_save}' = 'true'
+    from recipe_effective_results
+    where result_name = 'system-no-school-preview'),
+  'A07-3. a valid system Preview has no representative School dependency'
+);
+
+select ok(
+  (select response_payload #>>
+      '{preview,proposed_adjustment,target_recipe_line_id}' =
+      'c1600000-0000-0000-0000-000000000003'
+    and response_payload #>>
+      '{preview,proposed_adjustment,adjustment_line_id}' is null
+   from recipe_effective_results where result_name = 'system-base-preview')
+  and exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id =
+        'c1b00000-0000-0000-0000-000000000401'
+      and root.target_recipe_line_id =
+        'c1600000-0000-0000-0000-000000000003'
+      and root.adjustment_line_id is null
+  ),
+  'A07-4. base RecipeLine identity survives system Preview and Create'
+);
+
+select ok(
+  (select response_payload #>>
+      '{preview,proposed_adjustment,adjustment_line_id}' =
+      'c1a00000-0000-0000-0000-000000000001'
+    and response_payload #>>
+      '{preview,proposed_adjustment,target_recipe_line_id}' is null
+   from recipe_effective_results
+   where result_name = 'system-add-origin-preview')
+  and exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id =
+        'c1b00000-0000-0000-0000-000000000402'
+      and root.adjustment_line_id =
+        'c1a00000-0000-0000-0000-000000000001'
+      and root.target_recipe_line_id is null
+  ),
+  'A07-5. prior SYSTEM_DISH ADD identity survives system Preview and Create'
+);
+
+select ok(
+  (select response_payload ->> 'success' = 'true'
+   from recipe_effective_results where result_name = 'system-base-create')
+  and (select pg_catalog.count(*) = 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id =
+      'c1b00000-0000-0000-0000-000000000401')
+  and (select pg_catalog.count(*) = 1
+    from atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_id =
+      'c1b00000-0000-0000-0000-000000000401'
+      and revision.revision_number = 1)
+  and (select pg_catalog.count(*) = 1
+    from atlas_core.command_receipts receipt
+    where receipt.idempotency_key = 'recipe-system-context:base-create')
+  and (select pg_catalog.count(*) = 1
+    from atlas_audit.domain_events event
+    where event.aggregate_id =
+      'c1b00000-0000-0000-0000-000000000401'
+      and event.event_type = 'RecipeCompositionAdjustmentCreated')
+  and (select pg_catalog.count(*) = 1
+    from atlas_audit.audit_events event
+    where event.aggregate_id =
+      'c1b00000-0000-0000-0000-000000000401'
+      and event.event_type = 'RecipeCompositionAdjustmentCreated'),
+  'A07-6. Create persists one root, revision, receipt, event, and audit record'
+);
+
+select ok(
+  (select response_payload ->> 'success' = 'true'
+   from recipe_effective_results where result_name = 'system-base-supersede')
+  and exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id =
+        'c1b00000-0000-0000-0000-000000000401'
+      and root.version = 2
+      and root.current_revision_number = 2
+      and root.current_revision_id =
+        'c1c00000-0000-0000-0000-000000000404'
+      and root.target_recipe_line_id =
+        'c1600000-0000-0000-0000-000000000003'
+      and root.adjustment_line_id is null
+  )
+  and exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_revision_id =
+        'c1c00000-0000-0000-0000-000000000404'
+      and revision.predecessor_revision_id =
+        'c1c00000-0000-0000-0000-000000000401'
+  )
+  and (select revision_payload = pg_catalog.to_jsonb(revision)
+    from recipe_system_old_revision snapshot
+    cross join atlas_admin.recipe_composition_adjustment_revisions revision
+    where revision.recipe_composition_adjustment_revision_id =
+      'c1c00000-0000-0000-0000-000000000401')
+  and atlas_core.recipe_effective_resolve_composition(
+    '2026-09-06', null,
+    'c1300000-0000-0000-0000-000000000002',
+    'c1100000-0000-0000-0000-000000000010'
+  ) -> 'lines' @? '$[*] ? (@.base_recipe_line_id == "c1600000-0000-0000-0000-000000000003" && @.final_quantity_per_basis == 0.85)'
+  and not atlas_core.recipe_effective_resolve_composition(
+    '2026-09-06', null,
+    'c1300000-0000-0000-0000-000000000002',
+    'c1100000-0000-0000-0000-000000000010'
+  ) -> 'lines'
+    @? '$[*].lineage[*] ? (@.scope_kind == "SCHOOL" || @.scope_kind == "SCHOOL_DISH")',
+  'A07-7. Supersede preserves predecessor, version, target, system resolution, and old revision'
+);
+
+select ok(
+  (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results where result_name = 'system-mismatched-type')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results where result_name = 'system-noncanonical-type')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results where result_name = 'system-inactive-type')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results where result_name = 'system-mixed-context')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results
+   where result_name = 'system-invalid-proxy-school')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results where result_name = 'system-missing-context')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results where result_name = 'system-wrong-dish')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results
+   where result_name = 'system-create-context-mismatch')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results
+   where result_name = 'system-create-proxy-school')
+  and (select response_payload ->> 'error_code' = 'VALIDATION_FAILED'
+   from recipe_effective_results
+   where result_name = 'system-base-supersede-context-mismatch')
+  and not exists (
+    select 1
+    from atlas_admin.recipe_composition_adjustments root
+    where root.recipe_composition_adjustment_id in (
+      'c1b00000-0000-0000-0000-000000000416',
+      'c1b00000-0000-0000-0000-000000000417'
+    )
+  ),
+  'A07-8. mismatched, noncanonical, inactive, mixed, missing, and wrong-Dish contexts fail closed'
+);
+
+select ok(
+  (select response_payload ->> 'success' = 'true'
+   from recipe_effective_results where result_name = 'adjustment-target-create')
+  and (select response_payload #>> '{preview,can_save}' = 'true'
+   from recipe_effective_results where result_name = 'adjustment-target-preview'),
+  'A07-9. existing School and School-Dish context remains compatible'
+);
+
+select ok(
+  (select response_payload from recipe_effective_results
+   where result_name = 'system-base-create-replay') =
+  (select response_payload from recipe_effective_results
+   where result_name = 'system-base-create')
+  and (select response_payload ->> 'error_code' = 'IDEMPOTENCY_CONFLICT'
+   from recipe_effective_results
+   where result_name = 'system-base-create-context-conflict')
+  and (select response_payload ->> 'error_code' = 'STALE_VERSION'
+   from recipe_effective_results
+   where result_name = 'system-base-supersede-stale'),
+  'A07-10. exact replay, context-hash conflict, and stale version remain protected'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'atlas_api.preview_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'atlas_api.create_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'atlas_api.supersede_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'atlas_api.preview_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'atlas_api.create_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'anon',
+    'atlas_api.supersede_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'service_role',
+    'atlas_api.preview_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'service_role',
+    'atlas_api.create_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not has_function_privilege(
+    'service_role',
+    'atlas_api.supersede_recipe_composition_adjustment(jsonb)',
+    'EXECUTE'
+  )
+  and not exists (
+    select 1
+    from (values
+      ('preview_recipe_composition_adjustment', 'atlas_read_runtime', 's'),
+      ('create_recipe_composition_adjustment',
+        'atlas_master_data_command_runtime', 'v'),
+      ('supersede_recipe_composition_adjustment',
+        'atlas_master_data_command_runtime', 'v')
+    ) expected(function_name, owner_name, volatility)
+    left join pg_catalog.pg_proc procedure
+      on procedure.proname = expected.function_name
+    left join pg_catalog.pg_namespace namespace
+      on namespace.oid = procedure.pronamespace
+      and namespace.nspname = 'atlas_api'
+    where namespace.oid is null
+      or pg_catalog.pg_get_userbyid(procedure.proowner) <> expected.owner_name
+      or not procedure.prosecdef
+      or procedure.provolatile::text <> expected.volatility
+      or procedure.proconfig is distinct from array['search_path=""']::text[]
+  )
+  and (select response_payload ->> 'error_code' = 'AUTH_SUBJECT_MISMATCH'
+   from recipe_effective_results where result_name = 'system-subject-mismatch')
+  and (select response_payload ->> 'error_code' = 'CAPABILITY_DENIED'
+   from recipe_effective_results where result_name = 'system-capability-denied')
+  and not has_table_privilege(
+    'authenticated',
+    'atlas_admin.recipe_composition_adjustments',
+    'SELECT'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'atlas_admin.recipe_composition_adjustment_revisions',
+    'SELECT'
+  ),
+  'A07-11. browser-key execution retains authenticated-only RPC grants'
+);
+
 select * from finish();
 rollback;
