@@ -362,17 +362,40 @@ language sql stable set search_path='' as $$
   select jsonb_build_object(
     'batch', (select to_jsonb(b) from atlas_planning.confirmed_need_batches b
       where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
-    'releases', (select count(*) from atlas_planning.confirmed_need_releases),
-    'approvals', (select count(*) from atlas_planning.confirmed_need_approval_snapshots),
-    'handoffs', (select count(*) from atlas_planning.purchase_handoff_batches),
-    'handoff_revisions', (select count(*) from atlas_planning.purchase_handoff_revisions),
-    'allocations', (select jsonb_agg(to_jsonb(r) order by r.family_revision_id)
+    'releases', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_releases r),
+    'approvals', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_approval_snapshots r),
+    'need_snapshot_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.confirmed_need_snapshot_lines r),
+    'handoffs', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_batches r),
+    'handoff_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_revisions r),
+    'handoff_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_lines r),
+    'handoff_line_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_planning.purchase_handoff_line_revisions r),
+    'allocation_families', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_families r),
+    'allocations', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
       from atlas_procurement.school_catering_allocation_family_revisions r),
-    'splits', (select count(*) from atlas_procurement.school_catering_allocation_supplier_splits),
-    'orders', (select count(*) from atlas_procurement.purchase_orders),
-    'order_lines', (select count(*) from atlas_procurement.purchase_order_line_revisions),
-    'events', (select count(*) from atlas_audit.domain_events),
-    'audit', (select count(*) from atlas_audit.audit_events)
+    'allocation_contributions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_family_contributions r),
+    'splits', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.school_catering_allocation_supplier_splits r),
+    'orders', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_orders r),
+    'order_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_order_revisions r),
+    'order_lines', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_order_lines r),
+    'order_line_revisions', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_procurement.purchase_order_line_revisions r),
+    'events', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_audit.domain_events r),
+    'audit', (select jsonb_agg(to_jsonb(r) order by to_jsonb(r)::text)
+      from atlas_audit.audit_events r)
   );
 $$;
 create temporary table before_failed_preparation as select

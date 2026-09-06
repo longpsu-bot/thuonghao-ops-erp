@@ -4,16 +4,16 @@
 
 RMVP-02A connects the Vietnamese `Công thức` workspace to the existing private Atlas recipe foundation. It reuses `atlas_admin.dishes`, `recipes`, `recipe_versions`, `recipe_lines`, and `recipe_line_revisions`; it creates no new business relation, role, module, or operating stage.
 
-The supported recipe root scopes are:
+The retained foundation supports these historical root shapes:
 
 - one general Recipe per Dish;
 - one Recipe per active School Type and Dish.
 
-Customer-, School-, date-, and menu-specific applicability remain future decisions. Requirement Planning still owns applicability precedence and recipe use. RMVP-02A only governs reusable upstream recipe master data.
+Normal authoring now uses exactly the two canonical School-Type roots returned by Atlas, with no GENERAL fallback. Existing RMVP-02B and Recipe-effective contracts govern dated system and School composition; Requirement Planning consumes their authoritative result. The [6 September product-model amendment](../superpowers/specs/2026-09-05-recipe-effective-product-model-correction-design.md) and [model-convergence decision](../decisions/decision-atlas-model-convergence.md) supersede the earlier normal GENERAL, activation and browser-copy routing. Historical roots and compatibility APIs remain evidence, not normal UI choices.
 
 ## Lifecycle and lineage
 
-A Dish is created as `DRAFT` and can move through `ACTIVE` and `INACTIVE`; it is never deleted by this slice. The RMVP-03A correction extends the same existing Dish commands with authoritative `dish_type_id`. New Dishes and later type changes require an active `atlas_admin.dish_types` row. `dish_category` remains transitional descriptive text and does not drive Menu behavior. Historical Dishes may remain unmapped until reviewed. A Recipe root can be `ACTIVE` or `INACTIVE`.
+Current `create_dish` returns an `ACTIVE` Dish and its two canonical typed roots, with no Recipe Versions. No separate activation or root-provisioning UI is required. The existing lifecycle catalog and historical Dish states remain intact. The RMVP-03A correction extends the same existing Dish commands with authoritative `dish_type_id`. New Dishes and later type changes require an active `atlas_admin.dish_types` row. `dish_category` remains transitional descriptive text and does not drive Menu behavior. Historical Dishes may remain unmapped until reviewed. A Recipe root can be `ACTIVE` or `INACTIVE`.
 
 A Recipe Version follows:
 
@@ -21,7 +21,7 @@ A Recipe Version follows:
 DRAFT → VALIDATED → RELEASED_FOR_PLANNING → LOCKED
 ```
 
-Only a `DRAFT` composition can be replaced. The replacement is one transactional command over the full BOM, including the positive basis quantity and a concise reason. Draft composition is bounded JSON on the existing Recipe Version because a draft is editable proposal state, not yet an authoritative BOM fact.
+The retained v1 composition-replacement command accepts only a `DRAFT`. Its replacement is one transactional command over the full BOM, including the positive basis quantity and a concise reason. Draft composition is bounded JSON on the existing Recipe Version because a draft is editable proposal state, not yet an authoritative BOM fact. Normal `save_recipe` uses the additive boundary below and follows returned `base_authoring` permissions independently of effective readiness.
 
 Validation materializes stable Recipe Lines and immutable Recipe Line Revisions exactly once. Release makes that validated version available to Requirement Planning. Releasing a successor locks the prior planning release. Corrections create a successor draft with an exact Recipe Version predecessor and exact Recipe Line Revision predecessors. A removed ingredient remains an explicit `REMOVED` revision with zero quantity; it is never represented by silent omission.
 
@@ -39,7 +39,7 @@ Five backend-checked capabilities separate read, maintenance, validation, planni
 - `master_data.recipes.release`
 - `master_data.recipes.import`
 
-Every write uses the `RMVP-02A.v1` envelope, server-resolved actor identity, global scope, optimistic version checks, idempotent command receipts, one Admin domain event, one audit event, and authoritative workbench readback. `anon` and `service_role` execute no Atlas API.
+Retained v1 writes use the `RMVP-02A.v1` envelope; normal Save uses `RMVP-02A.v2`, and atomic Dish copy uses `RECIPE-EFFECTIVE.v1`. Existing server-resolved actor identity, scope, optimistic version checks, idempotent receipts, events, audit and authoritative readback remain enforced. `anon` and `service_role` execute no Atlas API.
 
 ### D-038 additive creation-and-lock boundary
 
@@ -71,17 +71,17 @@ Retool export `D:\Project\OPS v2\OPS - Công thức.json` was inspected as read-
 
 The connected React page separates three operator jobs:
 
-- `Danh sách`: default current-effective, read-only lookup with Dish name/type, Recipe scope/basis/Ingredients/status, Dish/Ingredient text search, `Xem`, and navigation to creation or adjustment. Stable Dish codes remain backend identity and search/support evidence; the normal catalog does not render them as operator-facing metadata. It has no edit, validation, release, successor, or lifecycle control.
+- `Danh sách`: read-only identity and explicitly base-labelled composition search. `Xem` lazily loads the selected date/system-or-School result through `get_dish_recipe_operator_workbench`, including effective BOM, readiness, lock, exceptions, history and actions. The catalog does not claim base composition is effective. Stable Dish codes remain backend identity and search/support evidence; the normal catalog does not render them as operator-facing metadata. It has no edit, validation, release, successor, or lifecycle control.
 - `Tạo món & công thức`: selected Dish/type/scope, editable basis and composition, active-Ingredient search, and one `Tạo`/`Lưu` action. Save makes the Recipe `Sẵn sàng cho Lập nhu cầu`; there is no normal release/lifecycle action.
-- `Điều chỉnh`: the existing separate RMVP-02B workbench for changes after committed approved-Menu use. Its business behavior is unchanged and its first-user redesign is deferred to UI-QUALITY-03B.
+- `Điều chỉnh`: the RMVP-02B workbench for changes after committed approved-Menu use. Non-ADD Dish targets come from `get_recipe_effective_target_context` and retain exact base-line or prior-ADD identity. System-Dish target reads work, while unsupported system-only Preview/Create/Supersede remains blocked as A07; no representative School is substituted.
 
-Recipe Copy is a modal creation helper. It searches/selects and previews a released source Recipe, then `Dùng công thức này` fills the current local creation form using new target line identities and closes the modal. It performs no backend write until the operator checks and saves. Workbook import remains an advanced creation utility with its existing reviewed contract.
+Recipe Copy sends one `copy_dish_recipes` command with source Dish, target Dish, explicit date, fresh target Dish version and reason. It snapshots both system-effective typed scopes into two persisted DRAFTs, verifies both returned identities and reloads both target authoring contexts. It does not auto-Save or release. This supersedes the browser-local `Dùng công thức này` helper. Workbook import remains an advanced creation utility with its existing reviewed contract.
 
 Every still-callable v1/v2 Recipe-Version, composition, copy, and import mutation that can change base Recipe/BOM truth reuses `atlas_core.uiq03a_dish_used_operationally(uuid)`. Weekly Menu approval and these mutations acquire the same deterministic transaction lock, so the first committed approved snapshot wins and later base composition mutation is denied before business writes. Dish details and Dish/Recipe-root lifecycle commands retain their accepted RMVP-02A administration semantics and do not become Change Orders merely because approved-Menu evidence exists. RMVP-02B adjustment commands are unchanged.
 
 When backend readback reports `locked_for_normal_editing`, basis, Ingredient search, composition controls, and Save are disabled, and the operator is directed to `Điều chỉnh`. Dish/scope/tab changes with dirty creation state require explicit discard confirmation; browser unload uses the native guard.
 
-Normal operator language avoids Recipe Version machinery. Technical number/identifier evidence remains under Recipe history/support disclosure. An unknown write outcome disables further writes until manual authoritative refresh. React invokes only `save_recipe` for the normal commitment and chains no v1 lifecycle calls.
+Normal operator language avoids Recipe Version machinery. Technical number/identifier evidence remains under Recipe history/support disclosure. Unknown or successful-but-unreadable writes remain blocked until exact retained-command evidence is reconciled; an unrelated refresh is insufficient. React invokes only `save_recipe` for normal base commitment and chains no v1 lifecycle calls.
 
 Review mode uses deterministic browser-only data and retains its non-persistence notice.
 

@@ -286,15 +286,80 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
       "get_recipe_effective_target_context",
       readRequest(sourceDishId, typeId),
     );
+    const workbench = source.workbench;
+    const resolved = resolution.resolution;
+    const targetContext = targets.target_context;
+    const selectedIdentity = (selected) =>
+      JSON.stringify([
+        selected?.dish_id,
+        selected?.recipe_id,
+        selected?.recipe_version_id,
+        selected?.selection_scope,
+        selected?.basis_portions,
+      ]);
+    const effectiveIdentity = (lines) =>
+      JSON.stringify(
+        lines
+          .map((line) => ({
+            ingredient_id: line.ingredient_id,
+            quantity_per_basis: line.quantity_per_basis,
+            unit_id: line.unit_id,
+            target_kind: line.target_kind,
+            target_id: line.target_id,
+            target_recipe_line_id: line.target_recipe_line_id,
+            adjustment_line_id: line.adjustment_line_id,
+            source_layer: line.source_layer,
+          }))
+          .sort((left, right) =>
+            JSON.stringify(left).localeCompare(JSON.stringify(right)),
+          ),
+      );
+    const resolvedPresent = (resolved?.lines ?? [])
+      .filter((line) => line.final_disposition === "PRESENT")
+      .map((line) => ({
+        ingredient_id: line.final_ingredient_id,
+        quantity_per_basis: line.final_quantity_per_basis,
+        unit_id: line.final_unit_id,
+        target_kind:
+          line.base_recipe_line_id === null ? "ADJUSTMENT_LINE" : "RECIPE_LINE",
+        target_id: line.base_recipe_line_id ?? line.adjustment_line_id,
+        target_recipe_line_id: line.base_recipe_line_id,
+        adjustment_line_id: line.adjustment_line_id,
+        source_layer: line.source_layer,
+      }));
     assert(
-      source.workbench?.effective_readiness.status === "READY" &&
-        source.workbench.school_id === null &&
-        source.workbench.school_type_id === typeId &&
-        resolution.resolution?.status === "READY" &&
-        targets.target_context?.school_id === null &&
-        targets.target_context.school_type_id === typeId &&
-        targets.target_context.effective_lines.length > 0,
-      "Canonical browser-key system reads did not return the exact ready typed context.",
+      workbench?.effective_readiness.status === "READY" &&
+        workbench.context_kind === "SYSTEM_SCHOOL_TYPE" &&
+        workbench.dish.dish_id === sourceDishId &&
+        workbench.as_of_date === asOfDate &&
+        workbench.school_id === null &&
+        workbench.school_type_id === typeId &&
+        resolved?.status === "READY" &&
+        resolved.dish_id === sourceDishId &&
+        resolved.as_of_date === asOfDate &&
+        resolved.school_id === null &&
+        resolved.school_type_id === typeId &&
+        targetContext?.dish_id === sourceDishId &&
+        targetContext.as_of_date === asOfDate &&
+        targetContext.school_id === null &&
+        targetContext.school_type_id === typeId &&
+        workbench.selected_recipe?.dish_id === sourceDishId &&
+        typeof workbench.selected_recipe.recipe_id === "string" &&
+        typeof workbench.selected_recipe.recipe_version_id === "string" &&
+        workbench.selected_recipe.selection_scope === "SCHOOL_TYPE" &&
+        selectedIdentity(workbench.selected_recipe) ===
+          selectedIdentity(resolved.selected_recipe) &&
+        selectedIdentity(workbench.selected_recipe) ===
+          selectedIdentity(targetContext.selected_recipe) &&
+        workbench.basis_portions > 0 &&
+        workbench.basis_portions === resolved.selected_recipe.basis_portions &&
+        workbench.basis_portions === targetContext.basis_portions &&
+        workbench.current_effective_bom.length > 0 &&
+        effectiveIdentity(workbench.current_effective_bom) ===
+          effectiveIdentity(resolvedPresent) &&
+        effectiveIdentity(workbench.current_effective_bom) ===
+          effectiveIdentity(targetContext.effective_lines),
+      "Canonical browser-key reads disagree on exact context, selected version, basis, effective composition or stable target identity.",
     );
     sourceContexts.set(typeId, source.workbench);
     const rootOnly = await invoke(
@@ -360,6 +425,7 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
     assert(
       version?.recipe_version_status === "DRAFT" &&
         version.recipe_id === scope.target_recipe_id &&
+        version.source_evidence?.source_kind === "RECIPE_EFFECTIVE_COPY" &&
         version.source_evidence?.outer_command_id === request.command_id &&
         version.source_evidence.source_dish_id === sourceDishId &&
         version.source_evidence.copy_as_of_date === asOfDate &&
@@ -368,6 +434,20 @@ async function verifyCanonicalCopy(client, subject, sourceDishId, references) {
           normalized(source.current_effective_bom) &&
         readback.workbench?.base_authoring.recipe_version_id ===
           version.recipe_version_id &&
+        readback.workbench.dish.dish_id === targetDishId &&
+        readback.workbench.as_of_date === asOfDate &&
+        readback.workbench.school_id === null &&
+        readback.workbench.school_type_id === scope.school_type_id &&
+        readback.workbench.is_editable === true &&
+        readback.workbench.base_authoring.recipe_id === version.recipe_id &&
+        readback.workbench.base_authoring.business_status === "SAVED" &&
+        readback.workbench.base_authoring.locked_for_normal_editing === false &&
+        readback.workbench.base_authoring.allowed_actions.save_recipe ===
+          true &&
+        readback.workbench.base_authoring.basis_portions ===
+          version.basis_portions &&
+        normalized(readback.workbench.base_authoring.composition) ===
+          normalized(version.composition) &&
         readback.workbench.effective_readiness.status === "BLOCKED",
       "Canonical copy scope was not the exact persisted, editable DRAFT system snapshot.",
     );

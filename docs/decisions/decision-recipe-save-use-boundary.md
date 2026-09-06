@@ -5,6 +5,8 @@
 **Owning domain:** Admin / Master Data
 **Contract:** `RMVP-02A.v2`
 
+**Partial supersession, 6 September 2026:** the [Recipe product-model amendment](../superpowers/specs/2026-09-05-recipe-effective-product-model-correction-design.md) and [model-convergence decision](decision-atlas-model-convergence.md) supersede this decision's original GENERAL/nullable normal-authoring, current-effective catalogue and browser-local copy descriptions. Normal creation now returns an ACTIVE Dish with two typed roots and zero versions; base-labelled catalogue search opens authoritative selected effective detail, and one `copy_dish_recipes` command persists two system-effective DRAFT snapshots. The original approval date, committed-Menu lock, normal Save and immutable-history decisions remain unchanged. The historical descriptions below are retained as the 11 August decision record, not current instructions for these superseded routes.
+
 ## Decision
 
 Recipe work has three separate operator jobs:
@@ -45,6 +47,8 @@ After first committed approved-Menu use:
 - No Recipe Adjustment relation/command, Planning calculation, Confirmed Need, Procurement, Warehouse, or Dispatch behavior changes.
 
 ## Application consequences
+
+The following two paragraphs record the original 11 August UI consequence and are superseded for catalogue/effective selection and copy by the amendment above. Current implementation guidance is the [updated RMVP-02A architecture boundary](../architecture/rmvp-02a-connected-recipes-bom.md#ui-boundary).
 
 The catalog exposes current-effective Dish name/type, Recipe scope/basis/Ingredients/status, text search, `Xem`, and clear navigation to creation or Change Order. Stable Dish codes remain backend identity and search/support evidence; the normal catalog does not present them as operator-facing metadata. It contains no edit, validation, release, successor, or lifecycle controls.
 
