@@ -1193,6 +1193,18 @@ export function RecipeAdjustmentWorkbench({
   ].join(" · ");
   const alignedPreviewRows = preview ? previewRows(preview) : [];
 
+  function mutationRecoveryNotice() {
+    return (
+      <div className="operator-notice warning" role="alert">
+        Chưa xác định điều chỉnh đã được ghi nhận hay chưa. Không gửi lại thao
+        tác. Hãy tải lại dữ liệu trước khi tiếp tục.
+        <Button ml="sm" variant="outline" onClick={() => void refresh()}>
+          Tải lại dữ liệu
+        </Button>
+      </div>
+    );
+  }
+
   if (authState.status !== "authenticated")
     return (
       <Panel
@@ -1241,15 +1253,10 @@ export function RecipeAdjustmentWorkbench({
         </p>
       )}
       {notice && <p className="operator-notice">{notice}</p>}
-      {mutationLocked && (
-        <div className="operator-notice warning" role="alert">
-          Chưa xác định điều chỉnh đã được ghi nhận hay chưa. Không gửi lại thao
-          tác. Hãy tải lại dữ liệu trước khi tiếp tục.
-          <Button ml="sm" variant="outline" onClick={() => void refresh()}>
-            Tải lại dữ liệu
-          </Button>
-        </div>
-      )}
+      {mutationLocked &&
+        !createOpened &&
+        !cancelTarget &&
+        mutationRecoveryNotice()}
 
       {view === "rules" ? (
         <section aria-label="Danh sách điều chỉnh công thức">
@@ -1557,6 +1564,7 @@ export function RecipeAdjustmentWorkbench({
         closeOnClickOutside={!busy}
       >
         <Stack gap="md">
+          {mutationLocked && mutationRecoveryNotice()}
           {modalStep === "EDIT" ? (
             <>
               {editing ? (
@@ -2140,8 +2148,20 @@ export function RecipeAdjustmentWorkbench({
                       </Text>
                       <Text>{draftChangeText}</Text>
                     </Box>
-                    <Badge color={preview?.can_save ? "green" : "red"}>
-                      {preview?.can_save ? "Có thể lưu" : "Cần kiểm tra"}
+                    <Badge
+                      color={
+                        mutationLocked
+                          ? "yellow"
+                          : preview?.can_save
+                            ? "green"
+                            : "red"
+                      }
+                    >
+                      {mutationLocked
+                        ? "Đang xác minh"
+                        : preview?.can_save
+                          ? "Có thể lưu"
+                          : "Cần kiểm tra"}
                     </Badge>
                   </Group>
                   <Divider />
@@ -2415,6 +2435,7 @@ export function RecipeAdjustmentWorkbench({
       >
         <Stack gap="md">
           <Text>Lịch sử điều chỉnh được giữ nguyên.</Text>
+          {mutationLocked && mutationRecoveryNotice()}
           <label>
             Hiệu lực hủy từ
             <input

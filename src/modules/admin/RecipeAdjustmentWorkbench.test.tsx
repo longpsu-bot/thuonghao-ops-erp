@@ -639,18 +639,20 @@ describe("Recipe Change Order first-user workbench", () => {
         within(review).getByRole("button", { name: "Lưu điều chỉnh" }),
       );
 
-      const lock = await screen.findByRole("alert");
+      const lock = await within(review).findByRole("alert");
       expect(lock).toHaveTextContent(/Không gửi lại thao tác/i);
+      expect(within(review).getByText("Đang xác minh")).toBeInTheDocument();
+      expect(within(review).queryByText("Có thể lưu")).not.toBeInTheDocument();
       fireEvent.change(screen.getByLabelText("Ngày tham chiếu"), {
         target: { value: "2026-09-07" },
       });
       await waitFor(() =>
-        expect(screen.getByRole("alert")).toBeInTheDocument(),
+        expect(within(review).getByRole("alert")).toBeInTheDocument(),
       );
 
       revealExactEvidence = true;
       fireEvent.click(
-        within(screen.getByRole("alert")).getByRole("button", {
+        within(lock).getByRole("button", {
           name: "Tải lại dữ liệu",
         }),
       );
@@ -664,6 +666,54 @@ describe("Recipe Change Order first-user workbench", () => {
       );
     },
   );
+
+  it("keeps unknown cancellation recovery visible inside the active dialog", async () => {
+    const fixture = createReviewRecipeAdjustmentApi("ready");
+    const getWorkbench = vi.spyOn(fixture, "getOperatorWorkbench");
+    const api = {
+      ...fixture,
+      cancel: vi.fn(async () => ({
+        kind: "transport_error" as const,
+        diagnostic: {
+          code: "NETWORK_FAILURE" as const,
+          safeMessage: "Chưa xác định kết quả.",
+        },
+      })),
+    };
+    renderWorkbench("rules", api as typeof fixture);
+    fireEvent.click((await screen.findAllByRole("button", { name: "Xem" }))[1]);
+    const drawer = await screen.findByRole("dialog", {
+      name: "Chi tiết điều chỉnh",
+    });
+    fireEvent.click(
+      within(drawer).getByRole("button", { name: "Hủy điều chỉnh" }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: "Hủy điều chỉnh",
+    });
+    fireEvent.change(within(dialog).getByLabelText("Lý do"), {
+      target: { value: "Dừng áp dụng nhưng chưa rõ kết quả ghi nhận." },
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Xác nhận hủy" }),
+    );
+
+    const lock = await within(dialog).findByRole("alert");
+    expect(lock).toHaveTextContent(/Không gửi lại thao tác/i);
+    expect(
+      within(dialog).getByRole("button", { name: "Xác nhận hủy" }),
+    ).toBeDisabled();
+    const readsBeforeRecovery = getWorkbench.mock.calls.length;
+    fireEvent.click(
+      within(lock).getByRole("button", { name: "Tải lại dữ liệu" }),
+    );
+    await waitFor(() =>
+      expect(getWorkbench.mock.calls.length).toBeGreaterThan(
+        readsBeforeRecovery,
+      ),
+    );
+    expect(within(dialog).getByRole("alert")).toBeInTheDocument();
+  });
 
   it.each([
     {
@@ -1066,6 +1116,7 @@ describe("Recipe Change Order first-user workbench", () => {
     expect(preview.mock.calls[0][2].proposed_adjustment).toMatchObject({
       action_kind: "ADJUST_QUANTITY",
       target_recipe_line_id: fixtureIds.porkLine,
+      adjustment_line_id: null,
       quantity_per_basis: 7.5,
       unit_id: null,
     });
