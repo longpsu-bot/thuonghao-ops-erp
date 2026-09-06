@@ -35,6 +35,7 @@ const ids = {
   ingredient: "40000000-0000-4000-8000-000000000001",
   ingredient2: "40000000-0000-4000-8000-000000000002",
   ingredient3: "40000000-0000-4000-8000-000000000003",
+  effectiveIngredient: "40000000-0000-4000-8000-000000000099",
   unit: "50000000-0000-4000-8000-000000000001",
   schoolType: "60000000-0000-4000-8000-000000000001",
   schoolTypeSecondary: "60000000-0000-4000-8000-000000000002",
@@ -255,6 +256,12 @@ function fixtures(): RecipeWorkbenchData {
         ingredient_name: "Hành lá",
         ingredient_status: "ACTIVE",
       },
+      {
+        ingredient_id: ids.effectiveIngredient,
+        ingredient_code: "hanh-la-hieu-luc",
+        ingredient_name: "Hành lá hiệu lực",
+        ingredient_status: "ACTIVE",
+      },
     ],
     units: [
       {
@@ -326,7 +333,7 @@ const shapedEffectiveLines: Record<
   ],
   systemPrimary: [
     {
-      ingredient_id: "40000000-0000-4000-8000-000000000099",
+      ingredient_id: ids.effectiveIngredient,
       ingredient_name: "Hành lá hiệu lực",
       quantity_per_basis: 12,
       unit_id: ids.unit,
@@ -361,7 +368,7 @@ const shapedEffectiveLines: Record<
   ],
   schoolPrimary: [
     {
-      ingredient_id: "40000000-0000-4000-8000-000000000099",
+      ingredient_id: ids.effectiveIngredient,
       ingredient_name: "Hành lá hiệu lực",
       quantity_per_basis: 14,
       unit_id: ids.unit,
@@ -997,6 +1004,20 @@ export function createReviewRecipeApi(
           sourceVersion.basis_portions,
           sourceVersion,
         );
+        const effectiveLines =
+          schoolType.school_type_id === ids.schoolType
+            ? shapedEffectiveLines.systemPrimary
+            : shapedEffectiveLines.systemSecondary;
+        targetVersion.composition = effectiveLines.map((line) => ({
+          recipe_line_id: crypto.randomUUID(),
+          predecessor_recipe_line_revision_id: null,
+          ingredient_id: line.ingredient_id,
+          quantity_per_basis: line.quantity_per_basis,
+          unit_id: line.unit_id,
+          line_disposition: "PRESENT",
+          operational_note: null,
+          line_code: null,
+        }));
         targetVersion.version_number =
           Math.max(
             0,

@@ -603,6 +603,8 @@ export function DishRecipeAdminWorkbench({
           (line) => line.line_disposition === "PRESENT",
         ),
       );
+  const authoringReadyToSubmit =
+    isDirty || authoring.business_status === "SAVED";
   const visibleRecipeStatus =
     writeUncertain || saveRecovery
       ? "Cần xử lý"
@@ -1170,6 +1172,37 @@ export function DishRecipeAdminWorkbench({
     if (applied) await refresh();
   };
 
+  const copyRecoveryNotice = copyRecovery ? (
+    <div className="operator-notice warning" role="alert">
+      <p>
+        {copyRecovery.kind === "unknown"
+          ? "Atlas chưa xác định yêu cầu sao chép đã hoàn tất hay chưa. Không gửi lại yêu cầu này trước khi đối soát."
+          : copyRecovery.kind === "retryable"
+            ? "Atlas xác nhận yêu cầu cũ có thể thử lại an toàn với cùng mã chống trùng."
+            : "Atlas đã ghi nhận sao chép nhưng chưa đọc lại được đủ hai công thức NHÁP."}
+      </p>
+      <button type="button" disabled={busy} onClick={() => void recoverCopy()}>
+        {copyRecovery.kind === "retryable"
+          ? "Thử lại yêu cầu cũ"
+          : "Đối soát kết quả sao chép"}
+      </button>
+      {copyRecovery.kind === "retryable" && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setCopyRecovery(null);
+            setNotice(
+              "Đã bỏ yêu cầu cũ chưa được Atlas ghi nhận. Lần sao chép tiếp theo sẽ dùng một mã yêu cầu mới.",
+            );
+          }}
+        >
+          Bỏ yêu cầu cũ
+        </button>
+      )}
+    </div>
+  ) : null;
+
   if (!authSubject) {
     return (
       <Panel
@@ -1259,40 +1292,7 @@ export function DishRecipeAdminWorkbench({
           )}
         </p>
       )}
-      {copyRecovery && (
-        <div className="operator-notice warning" role="alert">
-          <p>
-            {copyRecovery.kind === "unknown"
-              ? "Atlas chưa xác định yêu cầu sao chép đã hoàn tất hay chưa. Không gửi lại yêu cầu này trước khi đối soát."
-              : copyRecovery.kind === "retryable"
-                ? "Atlas xác nhận yêu cầu cũ có thể thử lại an toàn với cùng mã chống trùng."
-                : "Atlas đã ghi nhận sao chép nhưng chưa đọc lại được đủ hai công thức NHÁP."}
-          </p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void recoverCopy()}
-          >
-            {copyRecovery.kind === "retryable"
-              ? "Thử lại yêu cầu cũ"
-              : "Đối soát kết quả sao chép"}
-          </button>
-          {copyRecovery.kind === "retryable" && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                setCopyRecovery(null);
-                setNotice(
-                  "Đã bỏ yêu cầu cũ chưa được Atlas ghi nhận. Lần sao chép tiếp theo sẽ dùng một mã yêu cầu mới.",
-                );
-              }}
-            >
-              Bỏ yêu cầu cũ
-            </button>
-          )}
-        </div>
-      )}
+      {!copyOpen && copyRecoveryNotice}
 
       {tab === "adjustments" && (
         <>
@@ -2061,13 +2061,15 @@ export function DishRecipeAdminWorkbench({
                       <button
                         type="button"
                         className={
-                          isDirty && compositionValid ? "primary" : undefined
+                          authoringReadyToSubmit && compositionValid
+                            ? "primary"
+                            : undefined
                         }
                         disabled={
                           busy ||
                           mutationBlocked ||
                           !api ||
-                          !isDirty ||
+                          !authoringReadyToSubmit ||
                           !compositionValid ||
                           authoringReadOnly ||
                           effectiveLoad.status !== "ready" ||
@@ -2161,6 +2163,7 @@ export function DishRecipeAdminWorkbench({
               tạo đồng thời hai công thức NHÁP cho đúng hai loại trường chuẩn.
               Thao tác này chưa phát hành công thức.
             </p>
+            {copyRecoveryNotice}
             <label className="evidence-field">
               Tìm món nguồn hoặc nguyên liệu trong công thức gốc
               <input

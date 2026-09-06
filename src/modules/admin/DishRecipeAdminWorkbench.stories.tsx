@@ -211,11 +211,19 @@ export const CopyCommittedReadbackFailed: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Sao chép hai công thức" }),
     );
+    const dialog = canvas.getByRole("dialog", {
+      name: "Sao chép công thức",
+    });
     await expect(
-      await canvas.findByText(/đã ghi nhận sao chép.*chưa đọc lại được/i),
+      await within(dialog).findByText(
+        /đã ghi nhận sao chép.*chưa đọc lại được/i,
+      ),
     ).toBeVisible();
+    await expect(canvas.getAllByRole("alert")).toHaveLength(1);
     await expect(
-      canvas.getByRole("button", { name: "Đối soát kết quả sao chép" }),
+      within(dialog).getByRole("button", {
+        name: "Đối soát kết quả sao chép",
+      }),
     ).toBeVisible();
   },
 };

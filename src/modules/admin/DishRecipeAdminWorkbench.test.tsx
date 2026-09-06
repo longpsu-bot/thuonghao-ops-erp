@@ -653,7 +653,7 @@ describe("Recipe creation-and-lock workbench", () => {
     await openCreation();
     const search = screen.getByPlaceholderText("Tìm nguyên liệu để thêm…");
     fireEvent.change(search, { target: { value: "hành" } });
-    fireEvent.click(screen.getByRole("option", { name: /Hành lá/ }));
+    fireEvent.click(screen.getByRole("option", { name: "Hành lá" }));
 
     expect(screen.getByText("Hành lá")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("hanh-la");
@@ -684,10 +684,11 @@ describe("Recipe creation-and-lock workbench", () => {
     expect(table).not.toHaveTextContent("KG");
   });
 
-  it("copies both canonical scopes atomically into persisted DRAFT authoring identities without auto-saving", async () => {
+  it("copies both effective scopes into DRAFTs without auto-save and permits explicit unchanged Save", async () => {
     const api = createReviewRecipeApi("ready");
     const copyDishRecipes = vi.spyOn(api, "copyDishRecipes");
     const saveRecipe = vi.spyOn(api, "saveRecipe");
+    const releaseRecipe = vi.spyOn(api, "releaseRecipe");
     const copyVersion = vi.spyOn(api, "copyVersion");
     const getEffectiveWorkbench = vi.spyOn(api, "getEffectiveWorkbench");
     renderWorkbench(api);
@@ -750,6 +751,43 @@ describe("Recipe creation-and-lock workbench", () => {
         },
       ]),
     );
+    expect(screen.getByLabelText("Định lượng Hành lá hiệu lực")).toHaveValue(
+      12,
+    );
+    expect(screen.getByLabelText("Định lượng Thịt heo xay")).toHaveValue(8);
+    expect(screen.queryByLabelText("Định lượng Bí đỏ")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Áp dụng cho"), {
+      target: { value: "60000000-0000-4000-8000-000000000002" },
+    });
+    expect(await screen.findByLabelText("Định lượng Bí đỏ")).toHaveValue(27);
+    expect(screen.queryByLabelText("Định lượng Hành lá hiệu lực")).toBeNull();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+
+    fireEvent.change(screen.getByLabelText("Áp dụng cho"), {
+      target: { value: "60000000-0000-4000-8000-000000000001" },
+    });
+    expect(
+      await screen.findByLabelText("Định lượng Hành lá hiệu lực"),
+    ).toHaveValue(12);
+
+    const save = screen.getByRole("button", { name: "Lưu" });
+    expect(save).toBeEnabled();
+    fireEvent.click(save);
+    await waitFor(() => expect(saveRecipe).toHaveBeenCalledTimes(1));
+    expect(saveRecipe.mock.calls[0][0].payload.lines).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ingredient_id: "40000000-0000-4000-8000-000000000099",
+          quantity_per_basis: 12,
+        }),
+        expect.objectContaining({
+          ingredient_id: "40000000-0000-4000-8000-000000000002",
+          quantity_per_basis: 8,
+        }),
+      ]),
+    );
+    expect(releaseRecipe).not.toHaveBeenCalled();
   });
 
   it("retains an unknown copy request across ordinary refresh and reconciles by persisted command evidence without resending", async () => {
@@ -851,8 +889,15 @@ describe("Recipe creation-and-lock workbench", () => {
       await screen.findByText(/đã ghi nhận sao chép.*chưa đọc lại được/i),
     ).toBeVisible();
     expect(copyDishRecipes).toHaveBeenCalledTimes(1);
+    const dialog = screen.getByRole("dialog", { name: "Sao chép công thức" });
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      /đã ghi nhận sao chép.*chưa đọc lại được/i,
+    );
     fireEvent.click(
-      screen.getByRole("button", { name: "Đối soát kết quả sao chép" }),
+      within(dialog).getByRole("button", {
+        name: "Đối soát kết quả sao chép",
+      }),
     );
     expect(await screen.findByText(/đã lưu hai công thức NHÁP/)).toBeVisible();
     expect(copyDishRecipes).toHaveBeenCalledTimes(1);
