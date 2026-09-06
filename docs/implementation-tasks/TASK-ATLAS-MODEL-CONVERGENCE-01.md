@@ -91,10 +91,14 @@ Local pass means the named connected component/parser tests passed; it is not da
 - Baseline database RED: main run [34002629562](https://github.com/longpsu-bot/thuonghao-ops-erp/actions/runs/34002629562) failed Recipe history V/W/Y (22/23/25 of 39). The fixture mixed fixed September boundaries with a wall-clock base release; the history contract excludes boundaries before release. The fixture now uses fixed validation/release timestamps before the scenario boundaries. Assertions and production logic are unchanged; final CI outcome is pending.
 - Test-first development observed failures for authoritative base/effective divergence, root authoring, malformed contexts/target XOR, atomic copy, denied effective reads and exact mutation readback. Integrated focused run: **115/115 across 7 files**, default timeout, one local test worker; final follow-up-specific results are recorded in the Draft PR.
 - Integrated TypeScript passed. Touched-file Prettier and whitespace checks run before the review commit; final outcomes are recorded in the Draft PR. One earlier concurrent local run hit a 5-second test timeout; the affected test passed in isolation and the serial 115-test run passed without a timeout override. A mistaken local run that included ignored worker worktrees was cancelled and excluded from evidence. CI configuration was not weakened.
-- Fresh independent spec/authority and safety/correctness review: pending integrated head.
+- Fresh independent spec/authority and safety/correctness reviews at `277bf3f` found implementable gaps in runtime parsing, editability, session-bound recovery, preservation of adjustment recovery across parent navigation, late effective reads, living-document supersession and database-verifier evidence. The bounded fixes retain existing contracts; the Draft PR records the final closure review against the integrated head.
+- The canonical authenticated verifier compares requested context, selected Recipe/version, basis, PRESENT composition and stable target identity across all three reads. Each copied scope must also read back as the exact persisted, editable SAVED DRAFT with matching composition, basis and command provenance. MC-Q04 compares ordered full rows for every relation written by preparation children and retained command receipts, excluding only the failed outer request's receipt.
+- Adjustment follow-up tests cover a late result after date change, a response with mismatched context, malformed consumed scope/catalog/Recipe-line references, and a malformed authoring reference. The focused worker run passed 62/62 with default timeouts; final integrated results are recorded in the Draft PR. The prior-ADD synthetic Preview/Save browser journey was rechecked after this parser correction.
+- Recipe follow-up tests passed 78/78 with default timeouts. They cover complete catalog/base-authoring guards, backend-denied editability, an authorized empty catalog, stable adjustment recovery across parent navigation, and Save/copy/create results bound to the submitting account. The synthetic Save fixture now includes required nullable line fields from the existing contract. These corrections add evidence for R03/R12/R13/C07/S02/S03; final integrated outcomes are recorded in the Draft PR.
 - Frontend CI: pending Draft PR.
 - Supabase Full Integration: pending final reviewed head. Inspected workflow_dispatch runs a reduced disposable local Docker stack, ordered SQL suites and loopback-only authenticated verifiers. No hosted secrets/deployment job is present. Required canonical Recipe, Planning, Procurement and security suites are already registered; MC-Q04 extends an existing registered suite.
 - Browser evidence: real components rendered through Storybook with shaped synthetic APIs; desktop and 390px narrow views. Root-only editing, locked navigation, divergent effective context, full-BOM history, prior-ADD Preview/Save, denied read and unknown-result recovery were exercised. See [artifact index](../testing/artifacts/atlas-model-convergence/README.md). These are not hosted or authenticated database browser screenshots.
+- After integration of the final runtime guards, the prior-ADD Preview/Save and unknown-adjustment refresh were rechecked, as were exact two-DRAFT copy recovery and explicit unchanged DRAFT Save. The copied primary remains Hành lá 12 plus Thịt heo 8; only explicit Save makes it ready. The earlier screenshots remain representative of these unchanged visible states.
 
 ## Staging readiness — NOT READY
 
@@ -132,9 +136,11 @@ No merge, Ready transition, hosted deployment, hosted fixture, data repair or ho
 - `docs/architecture/atlas-authority-map-through-procurement.md`
 - `docs/architecture/atlas-model-convergence-evidence.md`
 - `docs/architecture/roadmap.md`
+- `docs/architecture/rmvp-02a-connected-recipes-bom.md`
 - `docs/current-context.md`
 - `docs/decisions/decision-atlas-model-convergence.md`
 - `docs/decisions/decision-register.md`
+- `docs/decisions/decision-recipe-save-use-boundary.md`
 - `docs/implementation-tasks/TASK-ATLAS-MODEL-CONVERGENCE-01.md`
 - `docs/runbooks/atlas-model-convergence-staging-readiness.md`
 - `docs/superpowers/plans/2026-09-06-atlas-model-convergence.md`
