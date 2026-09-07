@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(43);
+select plan(46);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -57,6 +57,10 @@ insert into atlas_core.role_capabilities(role_id,capability_id)
 select '26010000-0000-4000-8000-000000000001',capability_id
 from atlas_core.capabilities
 where capability_code in ('dispatch.school_release.read','dispatch.school_release.release');
+insert into atlas_core.role_capabilities(role_id,capability_id)
+select '26010000-0000-4000-8000-000000000001',capability_id
+from atlas_core.capabilities
+where capability_code='procurement.school_catering.write';
 insert into atlas_core.actor_role_memberships(actor_id,role_id)
 values('26000000-0000-4000-8000-000000000001','26010000-0000-4000-8000-000000000001');
 insert into atlas_core.actor_scopes(actor_id,scope_kind)
@@ -273,8 +277,55 @@ returns jsonb language sql stable security definer set search_path='' as $$
     '26020000-0000-4000-8000-000000000021',
     '26020000-0000-4000-8000-000000000011') preview) source;
 $$;
+create function pg_temp.pxk_procurement_command(
+  p_command uuid,p_expected bigint,p_reason text,p_payload jsonb
+) returns jsonb language sql stable set search_path='' as $$
+  select jsonb_build_object(
+    'contract_version','SCHOOL-CATERING-PROCUREMENT.v1',
+    'command_id',p_command,'correlation_id',p_command,
+    'idempotency_key','pxk-procurement:'||p_command,'expected_version',p_expected,
+    'requested_by_auth_subject','26000000-0000-4000-8000-000000000101'::uuid,
+    'requested_at',transaction_timestamp()-interval '1 second',
+    'reason_code',p_reason,'reason_note',null,'payload',p_payload);
+$$;
+create function pg_temp.pxk_procurement_family(p_location uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select jsonb_build_object(
+    'service_date','2026-09-25'::date,'delivery_location_id',p_location,
+    'ingredient_id','26020000-0000-4000-8000-000000000041'::uuid,
+    'unit_id','26020000-0000-4000-8000-000000000031'::uuid,
+    'expected_source_fingerprint',projection->>'source_fingerprint')
+  from (select atlas_core.school_catering_family_projection(
+    '2026-09-25',p_location,'26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031') projection) source;
+$$;
+create function pg_temp.pxk_po_replace(p_command uuid,p_replaced uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select pg_temp.pxk_procurement_command(p_command,po.version,
+    'SCHOOL_CATERING_PO_REPLACEMENT_CREATED',jsonb_build_object(
+      'replaced_purchase_order_id',po.purchase_order_id,
+      'expected_purchase_order_revision_id',revision.purchase_order_revision_id))
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions revision
+    on revision.purchase_order_id=po.purchase_order_id and revision.is_current
+  where po.purchase_order_id=p_replaced;
+$$;
+create function pg_temp.pxk_po_release(p_command uuid,p_purchase_order uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select pg_temp.pxk_procurement_command(p_command,po.version,
+    'SCHOOL_CATERING_PO_RELEASED',jsonb_build_object(
+      'purchase_order_id',po.purchase_order_id,
+      'expected_purchase_order_revision_id',revision.purchase_order_revision_id))
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions revision
+    on revision.purchase_order_id=po.purchase_order_id and revision.is_current
+  where po.purchase_order_id=p_purchase_order;
+$$;
 grant execute on function pg_temp.pxk_read(),
-  pg_temp.pxk_release(uuid,bigint,uuid,text)
+  pg_temp.pxk_release(uuid,bigint,uuid,text),
+  pg_temp.pxk_procurement_command(uuid,bigint,text,jsonb),
+  pg_temp.pxk_procurement_family(uuid),pg_temp.pxk_po_replace(uuid,uuid),
+  pg_temp.pxk_po_release(uuid,uuid)
   to authenticated;
 
 set local role authenticated;
@@ -841,7 +892,7 @@ select ok(coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
       '26020000-0000-4000-8000-000000000021',
       '26020000-0000-4000-8000-000000000011')->'blockers'
       ?| array['PROCUREMENT_NOT_CURRENT','PO_COVERAGE_INCOMPLETE','CANCELLATION_REQUIRED']),
-  'PXK-SCOPE-01 unrelated stale Supplier 2 PO does not block School A');
+  'PXK-SCOPE-01/PXK-SCOPE-05C unrelated replacement-required PO does not block A');
 select ok(not coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
     '26020000-0000-4000-8000-000000000022',
     '26020000-0000-4000-8000-000000000012')->>'ready')::boolean,false)
@@ -942,6 +993,127 @@ select ok(atlas_core.school_catering_po_commitment_state(
       '26020000-0000-4000-8000-000000000011')->'blockers'
       ?| array['PROCUREMENT_NOT_CURRENT','PO_COVERAGE_INCOMPLETE','CANCELLATION_REQUIRED']),
   'PXK-SCOPE-03 unrelated School B cancellation-required PO does not block School A');
+
+-- PXK-SCOPE-05: build one current Supplier 1 document containing A + B through the
+-- approved replacement commands, then move A to Supplier 2 and release its exact PO.
+-- The still-active Supplier 1 document remains an immutable duplicate instruction for A.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+insert into pxk_results values('scope05-b-to-s1',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.pxk_procurement_command('26200000-0000-4000-8000-000000000001',1,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.pxk_procurement_family(
+          '26020000-0000-4000-8000-000000000012'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','26020000-0000-4000-8000-000000000051',
+          'allocated_quantity',40))))));
+insert into pxk_results values('scope05-s1-shared-draft',
+  atlas_api.create_school_catering_purchase_order_replacement(
+    pg_temp.pxk_po_replace('26200000-0000-4000-8000-000000000002',
+      '26150000-0000-4000-8000-000000000011')));
+insert into pxk_results values('scope05-s1-shared-release',
+  atlas_api.release_school_catering_purchase_order(pg_temp.pxk_po_release(
+    '26200000-0000-4000-8000-000000000003',
+    (select (response->>'purchase_order_id')::uuid from pxk_results
+      where name='scope05-s1-shared-draft'))));
+insert into pxk_results values('scope05-a-to-s2',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.pxk_procurement_command('26200000-0000-4000-8000-000000000004',1,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.pxk_procurement_family(
+          '26020000-0000-4000-8000-000000000011'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','26020000-0000-4000-8000-000000000052',
+          'allocated_quantity',100))))));
+insert into pxk_results values('scope05-s2-a-draft',
+  atlas_api.create_school_catering_purchase_order_replacement(
+    pg_temp.pxk_po_replace('26200000-0000-4000-8000-000000000005',
+      '26150000-0000-4000-8000-000000000031')));
+insert into pxk_results values('scope05-s2-a-release',
+  atlas_api.release_school_catering_purchase_order(pg_temp.pxk_po_release(
+    '26200000-0000-4000-8000-000000000006',
+    (select (response->>'purchase_order_id')::uuid from pxk_results
+      where name='scope05-s2-a-draft'))));
+reset role;
+
+select ok((select bool_and((response->>'success')::boolean) from pxk_results
+    where name in ('scope05-b-to-s1','scope05-s1-shared-draft',
+      'scope05-s1-shared-release','scope05-a-to-s2','scope05-s2-a-draft',
+      'scope05-s2-a-release'))
+    and atlas_core.school_catering_po_commitment_state(
+      (select (response->>'purchase_order_id')::uuid from pxk_results
+        where name='scope05-s1-shared-draft'),
+      (select revision.purchase_order_revision_id
+       from atlas_procurement.purchase_order_revisions revision
+       where revision.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+         from pxk_results where name='scope05-s1-shared-draft')
+         and revision.is_current))='REPLACEMENT_REQUIRED'
+    and not coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->>'ready')::boolean,false)
+    and atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->'blockers'
+      @> '["PROCUREMENT_NOT_CURRENT"]'::jsonb
+    and not (atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->'blockers'
+      ? 'PO_COVERAGE_INCOMPLETE'),
+  'PXK-SCOPE-05A relevant active replacement-required PO blocks covered School A');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+insert into pxk_results values('scope05-s1-b-draft',
+  atlas_api.create_school_catering_purchase_order_replacement(
+    pg_temp.pxk_po_replace('26200000-0000-4000-8000-000000000007',
+      (select (response->>'purchase_order_id')::uuid from pxk_results
+        where name='scope05-s1-shared-draft'))));
+reset role;
+select ok((select (response->>'success')::boolean from pxk_results
+      where name='scope05-s1-b-draft')
+    and (select purchase_order_status='RELEASED_TO_SUPPLIER'
+      from atlas_procurement.purchase_orders
+      where purchase_order_id=(select (response->>'purchase_order_id')::uuid
+        from pxk_results where name='scope05-s1-shared-draft'))
+    and (select count(*)=1 and bool_and(line.delivery_location_id=
+        '26020000-0000-4000-8000-000000000012')
+      from atlas_procurement.purchase_order_revisions revision
+      join atlas_procurement.purchase_order_line_revisions line
+        on line.purchase_order_revision_id=revision.purchase_order_revision_id
+      where revision.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+        from pxk_results where name='scope05-s1-b-draft') and revision.is_current)
+    and not coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->>'ready')::boolean,false),
+  'PXK-SCOPE-05B replacement draft excludes A while old Supplier 1 PO stays active');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+insert into pxk_results values('scope05-s1-b-release',
+  atlas_api.release_school_catering_purchase_order(pg_temp.pxk_po_release(
+    '26200000-0000-4000-8000-000000000008',
+    (select (response->>'purchase_order_id')::uuid from pxk_results
+      where name='scope05-s1-b-draft'))));
+reset role;
+select ok((select (response->>'success')::boolean from pxk_results
+      where name='scope05-s1-b-release')
+    and (select purchase_order_status='SUPERSEDED'
+      from atlas_procurement.purchase_orders
+      where purchase_order_id=(select (response->>'purchase_order_id')::uuid
+        from pxk_results where name='scope05-s1-shared-draft'))
+    and (select purchase_order_status='RELEASED_TO_SUPPLIER'
+      from atlas_procurement.purchase_orders
+      where purchase_order_id=(select (response->>'purchase_order_id')::uuid
+        from pxk_results where name='scope05-s1-b-draft'))
+    and coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->>'ready')::boolean,false)
+    and not (atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->'blockers'
+      ? 'PROCUREMENT_NOT_CURRENT'),
+  'PXK-SCOPE-05B replacement release atomically resolves and unblocks School A');
 
 select * from finish();
 rollback;

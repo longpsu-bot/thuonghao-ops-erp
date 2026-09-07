@@ -99,7 +99,12 @@ date does not block this PXK. A shared supplier document is indivisible evidence
 staleness anywhere on a PO that covers the requested School invalidates that PO's
 coverage. `CANCELLATION_REQUIRED` blocks release when the affected historical PO
 lineage includes the requested School/date/location and its former supplier
-commitment remains active after allocation becomes zero.
+commitment remains active after allocation becomes zero. `PROCUREMENT_NOT_CURRENT`
+blocks release when current exact PO coverage exists but another still-active
+`REPLACEMENT_REQUIRED` PO has immutable lineage to the requested
+School/date/location. That historical conflict stops blocking only after the normal
+replacement release atomically supersedes its predecessor. Missing current exact PO
+coverage remains the distinct `PO_COVERAGE_INCOMPLETE` condition.
 
 Closed blocker codes are:
 

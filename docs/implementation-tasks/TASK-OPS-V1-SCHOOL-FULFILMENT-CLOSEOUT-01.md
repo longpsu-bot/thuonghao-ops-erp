@@ -192,7 +192,7 @@ Local evidence recorded before the Draft PR review gate:
       correction is saved.
 - [x] Slice 3 focused PO replacement/removal-safety evidence: 91/91 pgTAP and
       95/95 adjacent Procurement frontend tests.
-- [x] Slice 4 focused PXK evidence: 43/43 pgTAP and 48/48
+- [x] Slice 4 focused PXK evidence: 46/46 pgTAP and 48/48
       navigation/RPC/workbench/export frontend tests.
 - [x] Draft hardening preserves legacy `PANTRY-02.v2` as implicit `ADDITIVE` and
       restores the untouched Planning atomic suite to 196/196.
@@ -203,15 +203,18 @@ Local evidence recorded before the Draft PR review gate:
       argument-safe SQL string, so Windows execution cannot drop the batch filter.
 - [x] Mutable School-default regression: captured Location A remains releasable
       after the default changes to same-Customer Location B; B inherits no Need and
-      cross-Customer scope remains invalid. The expanded PXK suite passes 43/43.
+      cross-Customer scope remains invalid. The expanded PXK suite passes 46/46.
 - [x] PXK currentness is exact to service-date + School + captured location: an
       unrelated stale or cancellation-required School B PO does not block School A,
       while a shared stale PO and a cancellation-required commitment whose immutable
-      lineage covered School A still block School A.
-- [x] All four focused business database suites pass together: 181/181 assertions.
+      lineage covered School A still block School A. Current exact Supplier 2 coverage
+      also cannot override a still-active `REPLACEMENT_REQUIRED` Supplier 1 PO whose
+      immutable lineage includes School A; explicit replacement release supersedes
+      that predecessor and unblocks A.
+- [x] All four focused business database suites pass together: 184/184 assertions.
 - [x] Exact whole-platform security catalog passes 23/23 after its bounded five-table,
       two-capability, four-physical-API, and least-privilege grant update.
-- [x] The platform catalog and four business suites pass together: 204/204
+- [x] The platform catalog and four business suites pass together: 207/207
       assertions.
 - [x] Touched-file Prettier check passes.
 - [x] Typecheck and production build pass; the existing large-chunk advisory remains

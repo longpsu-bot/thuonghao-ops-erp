@@ -345,50 +345,51 @@ as $$
       covered_quantity,purchase_order_id,purchase_order_revision_id,
       purchase_order_line_revision_id),';' order by family_contribution_id,
       supplier_split_id),'') value from coverage
+  ), historical_commitments as materialized (
+    select distinct atlas_core.school_catering_po_commitment_state(
+      po.purchase_order_id,por.purchase_order_revision_id) commitment_state
+    from atlas_procurement.purchase_orders po
+    join atlas_procurement.purchase_order_revisions por
+      on por.purchase_order_id=po.purchase_order_id and por.is_current
+    join atlas_procurement.purchase_order_line_revisions po_line
+      on po_line.purchase_order_revision_id=por.purchase_order_revision_id
+    join atlas_procurement.school_catering_allocation_supplier_splits historical_split
+      on historical_split.supplier_split_id=
+        po_line.school_catering_allocation_supplier_split_id
+    join atlas_procurement.school_catering_allocation_family_revisions
+      historical_family_revision
+      on historical_family_revision.family_revision_id=historical_split.family_revision_id
+    join atlas_procurement.school_catering_allocation_family_contributions
+      historical_contribution
+      on historical_contribution.family_revision_id=
+        historical_family_revision.family_revision_id
+    join atlas_planning.purchase_handoff_line_revisions historical_handoff_line
+      on historical_handoff_line.purchase_handoff_line_revision_id=
+        historical_contribution.purchase_handoff_line_revision_id
+    join atlas_planning.confirmed_need_line_revisions historical_need_revision
+      on historical_need_revision.confirmed_need_line_revision_id=
+        historical_handoff_line.confirmed_need_line_revision_id
+    where po.purchase_order_kind='SCHOOL_CATERING'
+      and po.school_catering_service_date=p_service_date
+      and po.purchase_order_status='RELEASED_TO_SUPPLIER'
+      and po_line.service_date=p_service_date
+      and po_line.delivery_location_id=p_delivery_location_id
+      and historical_need_revision.service_date=p_service_date
+      and historical_need_revision.school_id=p_school_id
+      and historical_need_revision.delivery_location_id=p_delivery_location_id
   ), state_base as (
     select exists(select 1 from contribution_ranges where school_id=p_school_id)
         has_need,
       exists(select 1 from coverage where purchase_order_id is null) missing_po,
-      exists(
-        select 1 from atlas_procurement.purchase_orders po
-        join atlas_procurement.purchase_order_revisions por
-          on por.purchase_order_id=po.purchase_order_id and por.is_current
-        join atlas_procurement.purchase_order_line_revisions po_line
-          on po_line.purchase_order_revision_id=por.purchase_order_revision_id
-        join atlas_procurement.school_catering_allocation_supplier_splits
-          historical_split
-          on historical_split.supplier_split_id=
-            po_line.school_catering_allocation_supplier_split_id
-        join atlas_procurement.school_catering_allocation_family_revisions
-          historical_family_revision
-          on historical_family_revision.family_revision_id=
-            historical_split.family_revision_id
-        join atlas_procurement.school_catering_allocation_family_contributions
-          historical_contribution
-          on historical_contribution.family_revision_id=
-            historical_family_revision.family_revision_id
-        join atlas_planning.purchase_handoff_line_revisions historical_handoff_line
-          on historical_handoff_line.purchase_handoff_line_revision_id=
-            historical_contribution.purchase_handoff_line_revision_id
-        join atlas_planning.confirmed_need_line_revisions historical_need_revision
-          on historical_need_revision.confirmed_need_line_revision_id=
-            historical_handoff_line.confirmed_need_line_revision_id
-        where po.purchase_order_kind='SCHOOL_CATERING'
-          and po.school_catering_service_date=p_service_date
-          and po.purchase_order_status='RELEASED_TO_SUPPLIER'
-          and po_line.service_date=p_service_date
-          and po_line.delivery_location_id=p_delivery_location_id
-          and historical_need_revision.service_date=p_service_date
-          and historical_need_revision.school_id=p_school_id
-          and historical_need_revision.delivery_location_id=p_delivery_location_id
-          and atlas_core.school_catering_po_commitment_state(
-            po.purchase_order_id,por.purchase_order_revision_id)=
-            'CANCELLATION_REQUIRED'
-      ) cancellation_required
+      exists(select 1 from historical_commitments
+        where commitment_state='CANCELLATION_REQUIRED') relevant_cancellation_required,
+      exists(select 1 from historical_commitments
+        where commitment_state='REPLACEMENT_REQUIRED') relevant_replacement_required
   ), state as (
     select state_base.*,
-      not state_base.missing_po and not state_base.cancellation_required
-        procurement_current
+      not state_base.missing_po
+        and not state_base.relevant_cancellation_required
+        and not state_base.relevant_replacement_required procurement_current
     from state_base
   )
   select jsonb_build_object(
@@ -411,11 +412,11 @@ as $$
         then jsonb_build_array('SCHOOL_SCOPE_INVALID') else '[]'::jsonb end)
       || (case when not has_need
         then jsonb_build_array('NO_CURRENT_NEED') else '[]'::jsonb end)
-      || (case when cancellation_required
+      || (case when relevant_cancellation_required
         then jsonb_build_array('CANCELLATION_REQUIRED') else '[]'::jsonb end)
       || (case when missing_po
         then jsonb_build_array('PO_COVERAGE_INCOMPLETE') else '[]'::jsonb end)
-      || (case when not procurement_current and not cancellation_required
+      || (case when relevant_replacement_required
         then jsonb_build_array('PROCUREMENT_NOT_CURRENT') else '[]'::jsonb end)
       from state),
     'warnings','[]'::jsonb);
