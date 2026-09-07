@@ -3,6 +3,7 @@ import type { AtlasRpcResult } from "../connection/atlasRpc";
 import {
   confirmSupplierRecommendationsRequest,
   createPurchaseOrderDraftsRequest,
+  createPurchaseOrderReplacementRequest,
   createSchoolCateringProcurementApi,
   purchaseOrdersReadRequest,
   procurementWorkbenchReadRequest,
@@ -175,9 +176,25 @@ describe("school-catering Procurement API adapter", () => {
       "purchase_order_id",
       "expected_purchase_order_revision_id",
     ]);
+
+    const replacement = createPurchaseOrderReplacementRequest(
+      "subject",
+      "correlation-replacement",
+      4,
+      "released-po-1",
+      "released-revision-4",
+    );
+    expect(replacement).toMatchObject({
+      expected_version: 4,
+      reason_code: "SCHOOL_CATERING_PO_REPLACEMENT_CREATED",
+      payload: {
+        replaced_purchase_order_id: "released-po-1",
+        expected_purchase_order_revision_id: "released-revision-4",
+      },
+    });
   });
 
-  it("routes exactly the six Procurement operations through the reviewed RPC names", async () => {
+  it("routes exactly the seven Procurement operations through the reviewed RPC names", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createSchoolCateringProcurementApi({ invoke });
     const allocationRead = procurementWorkbenchReadRequest(
@@ -238,12 +255,20 @@ describe("school-catering Procurement API adapter", () => {
       "po-1",
       "revision-1",
     );
+    const replacement = createPurchaseOrderReplacementRequest(
+      "subject",
+      "replace-po",
+      2,
+      "released-po-1",
+      "released-revision-2",
+    );
 
     await api.getWorkbench(allocationRead);
     await api.saveAllocation(allocation);
     await api.confirmRecommendations(recommendations);
     await api.getPurchaseOrders(ordersRead);
     await api.createPurchaseOrderDrafts(drafts);
+    await api.createPurchaseOrderReplacement(replacement);
     await api.releasePurchaseOrder(release);
 
     expect(invoke.mock.calls).toEqual([
@@ -255,6 +280,10 @@ describe("school-catering Procurement API adapter", () => {
       ],
       ["atlas_api.get_school_catering_purchase_orders", ordersRead],
       ["atlas_api.create_school_catering_purchase_order_drafts", drafts],
+      [
+        "atlas_api.create_school_catering_purchase_order_replacement",
+        replacement,
+      ],
       ["atlas_api.release_school_catering_purchase_order", release],
     ]);
   });

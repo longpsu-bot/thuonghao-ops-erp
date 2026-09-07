@@ -25,12 +25,22 @@ function locationNames(order: SchoolCateringPurchaseOrder) {
 }
 
 function orderWarning(order: SchoolCateringPurchaseOrder) {
-  return order.stale
-    ? "Cần cập nhật"
-    : procurementOperatorMessages(
-        order.warnings,
-        "Có cảnh báo cần kiểm tra.",
-      ).join(", ");
+  return order.commitment_state === "CANCELLATION_REQUIRED"
+    ? "Cần xử lý hủy"
+    : order.commitment_state === "REPLACEMENT_REQUIRED"
+      ? "Cần thay thế"
+      : order.stale
+        ? "Cần cập nhật"
+        : procurementOperatorMessages(
+            order.warnings,
+            "Có cảnh báo cần kiểm tra.",
+          ).join(", ");
+}
+
+function statusLabel(order: SchoolCateringPurchaseOrder) {
+  if (order.status === "SUPERSEDED") return "Đã được thay thế";
+  if (order.status === "RELEASED_TO_SUPPLIER") return "Đã phát hành";
+  return order.replaces_purchase_order_id ? "Bản thay thế" : "Bản nháp";
 }
 
 export function PurchaseOrderStage({
@@ -40,6 +50,7 @@ export function PurchaseOrderStage({
   loadMessage,
   search,
   onMaterialize,
+  onCreateReplacement,
   onRelease,
   onExportXlsx,
   onExportPdf,
@@ -50,6 +61,7 @@ export function PurchaseOrderStage({
   loadMessage: string | null;
   search: string;
   onMaterialize: () => void;
+  onCreateReplacement: (order: SchoolCateringPurchaseOrder) => void;
   onRelease: (order: SchoolCateringPurchaseOrder) => void;
   onExportXlsx: (order: SchoolCateringPurchaseOrder) => void;
   onExportPdf: (order: SchoolCateringPurchaseOrder) => void;
@@ -100,6 +112,10 @@ export function PurchaseOrderStage({
         [...selected.blockers, ...selected.disabled_reasons].filter(
           (reason) =>
             !(selected.stale && reason === "PO_DRAFT_STALE") &&
+            !(
+              selected.commitment_state === "REPLACEMENT_REQUIRED" &&
+              reason === "PO_REPLACEMENT_REQUIRED"
+            ) &&
             !(releasedReason && reason === "PO_ALREADY_RELEASED"),
         ),
         purchaseOrderFallback,
@@ -169,14 +185,13 @@ export function PurchaseOrderStage({
                     <td>
                       <span
                         className={`procurement-state ${
-                          order.status === "RELEASED_TO_SUPPLIER"
+                          order.status === "RELEASED_TO_SUPPLIER" ||
+                          order.status === "SUPERSEDED"
                             ? "balanced"
                             : "unallocated"
                         }`}
                       >
-                        {order.status === "RELEASED_TO_SUPPLIER"
-                          ? "Đã phát hành"
-                          : "Bản nháp"}
+                        {statusLabel(order)}
                       </span>
                       {selected && orderWarning(order) && (
                         <small className="procurement-master-compact-copy procurement-master-warning">
@@ -224,10 +239,16 @@ export function PurchaseOrderStage({
                 )}
               </header>
 
-              {selected.stale && (
+              {selected.commitment_state === "DRAFT_STALE" && (
                 <p className="procurement-inline-danger">
                   Bản nháp không còn khớp nguồn phân bổ hiện tại. Phải tạo lại
                   trước khi phát hành.
+                </p>
+              )}
+              {selected.commitment_state === "REPLACEMENT_REQUIRED" && (
+                <p className="procurement-inline-danger">
+                  Đơn đã phát hành không còn khớp phân bổ hiện tại. Hãy tạo và
+                  kiểm tra một đơn thay thế đầy đủ.
                 </p>
               )}
               {selectedMessages.map((message) => (
@@ -292,6 +313,20 @@ export function PurchaseOrderStage({
                 </div>
               )}
               {selected.status === "RELEASED_TO_SUPPLIER" &&
+                selected.allowed_actions.create_replacement && (
+                  <div className="procurement-order-detail-actions">
+                    <button
+                      type="button"
+                      className="primary procurement-primary-action"
+                      disabled={busy || mutationLocked}
+                      onClick={() => onCreateReplacement(selected)}
+                    >
+                      Tạo đơn thay thế
+                    </button>
+                  </div>
+                )}
+              {(selected.status === "RELEASED_TO_SUPPLIER" ||
+                selected.status === "SUPERSEDED") &&
                 selected.export_ready &&
                 selected.allowed_actions.export && (
                   <div
@@ -336,7 +371,8 @@ export function PurchaseOrderStage({
                 <div className="procurement-release-context">
                   <span>Phiên bản đơn {selected.version}</span>
                   <span>
-                    {selected.status === "RELEASED_TO_SUPPLIER"
+                    {selected.status === "RELEASED_TO_SUPPLIER" ||
+                    selected.status === "SUPERSEDED"
                       ? "Đơn đã khóa để giữ nguyên chứng từ vận hành."
                       : "Máy chủ sẽ cấp số đơn chính thức khi phát hành thành công."}
                   </span>

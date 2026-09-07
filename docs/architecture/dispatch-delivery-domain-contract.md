@@ -685,3 +685,18 @@ It must also include at least two fulfilment examples:
 - warehouse-stock release evidence.
 
 No backend persistence or production-data integration should be added until the in-memory foundation and integration review prove the domain boundary.
+
+## D-044 bounded School PXK amendment
+
+The connected School workflow adds one pre-transport release aggregate at
+`service_date + school_id + delivery_location_id`. Its derived preview answers what
+the School must receive from current Confirmed Need, while exact allocation and
+released supplier-PO sources prove that current supplier commitments cover it.
+
+Explicit `ReleaseSchoolDispatchDocument` generates immutable header, line, display
+snapshot, and typed source evidence. A correction derives replacement-required; the
+prior PXK remains current until explicit successor release atomically supersedes it.
+Both numbers and contents remain exportable. This amendment does not invoke or
+require `DispatchPlan`, `DispatchTrip`, `DispatchLoad`, receipt, cross-dock, stock,
+lot, reservation, pick, vehicle, or driver facts and does not alter the older
+supplier-direct execution contracts above.

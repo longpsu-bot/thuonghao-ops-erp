@@ -4,15 +4,18 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(67);
+select plan(91);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
 select has_function('atlas_api', 'release_school_catering_purchase_order', array['jsonb']);
+select has_function('atlas_api', 'create_school_catering_purchase_order_replacement', array['jsonb']);
 select has_function('atlas_api', 'get_school_catering_purchase_orders', array['jsonb']);
 select function_owner_is('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb'],
   'atlas_procurement_command_runtime');
 select function_owner_is('atlas_api', 'release_school_catering_purchase_order', array['jsonb'],
+  'atlas_procurement_command_runtime');
+select function_owner_is('atlas_api', 'create_school_catering_purchase_order_replacement', array['jsonb'],
   'atlas_procurement_command_runtime');
 select function_owner_is('atlas_api', 'get_school_catering_purchase_orders', array['jsonb'],
   'atlas_read_runtime');
@@ -48,11 +51,15 @@ select function_privs_are('atlas_api', 'create_school_catering_purchase_order_dr
   array['jsonb'], 'authenticated', array['EXECUTE']);
 select function_privs_are('atlas_api', 'release_school_catering_purchase_order',
   array['jsonb'], 'authenticated', array['EXECUTE']);
+select function_privs_are('atlas_api', 'create_school_catering_purchase_order_replacement',
+  array['jsonb'], 'authenticated', array['EXECUTE']);
 select function_privs_are('atlas_api', 'get_school_catering_purchase_orders',
   array['jsonb'], 'authenticated', array['EXECUTE']);
 select function_privs_are('atlas_api', 'create_school_catering_purchase_order_drafts',
   array['jsonb'], 'anon', array[]::text[]);
 select function_privs_are('atlas_api', 'release_school_catering_purchase_order',
+  array['jsonb'], 'anon', array[]::text[]);
+select function_privs_are('atlas_api', 'create_school_catering_purchase_order_replacement',
   array['jsonb'], 'anon', array[]::text[]);
 select function_privs_are('atlas_api', 'get_school_catering_purchase_orders',
   array['jsonb'], 'anon', array[]::text[]);
@@ -62,6 +69,8 @@ select has_column('atlas_procurement','purchase_orders','purchase_order_kind',
   'shared PO root declares its source kind');
 select has_column('atlas_procurement','purchase_orders','school_catering_service_date',
   'school-catering root stores the supplier/date identity date');
+select has_column('atlas_procurement','purchase_orders','replaces_purchase_order_id',
+  'replacement roots point directly to the released commitment they replace');
 select col_default_is('atlas_procurement','purchase_orders','purchase_order_kind',
   'SUPPLIER_DIRECT_WHOLESALE',
   'legacy/wholesale inserts default to the existing PO kind');
@@ -256,11 +265,29 @@ create function pg_temp.prb_release(
   from atlas_procurement.purchase_orders po
   join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
   where po.supplier_id=p_supplier and po.purchase_order_kind='SCHOOL_CATERING'
-    and por.is_current;
+    and por.is_current
+  order by case when po.purchase_order_status='DRAFT' then 0 else 1 end,
+    po.created_at desc
+  limit 1;
+$$;
+create function pg_temp.prb_replace(p_command uuid,p_supplier uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select pg_temp.prb_command(p_command,po.version,
+    'SCHOOL_CATERING_PO_REPLACEMENT_CREATED',jsonb_build_object(
+      'replaced_purchase_order_id',po.purchase_order_id,
+      'expected_purchase_order_revision_id',por.purchase_order_revision_id))
+    || jsonb_build_object('correlation_id',p_command,
+      'requested_at',transaction_timestamp()+interval '30 seconds')
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_id)
+  where po.supplier_id=p_supplier and po.purchase_order_kind='SCHOOL_CATERING'
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER' and por.is_current
+  order by po.created_at desc limit 1;
 $$;
 grant execute on function pg_temp.prb_command(uuid,bigint,text,jsonb,uuid),
   pg_temp.prb_family(date,uuid,uuid),pg_temp.prb_read(),
-  pg_temp.prb_release(uuid,uuid,bigint,boolean,jsonb) to authenticated;
+  pg_temp.prb_release(uuid,uuid,bigint,boolean,jsonb),
+  pg_temp.prb_replace(uuid,uuid) to authenticated;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
@@ -775,6 +802,226 @@ select ok((
       pg_get_functiondef('atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure)
     )
 ), 'release and draft generation acquire uniqueness guards before deterministic ordered source locks');
+
+-- A released supplier commitment is replaced by a separate complete root. Exact
+-- School membership remains authoritative even when the supplier total is unchanged.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('release-b-before-replacement',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000030',
+    '24020000-0000-4000-8000-000000000052')));
+reset role;
+select ok((select (response ->> 'success')::boolean
+  from prb_results where name='release-b-before-replacement'),
+  'the second supplier commitment is released before the correction');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('replacement-correction-a',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000031',2,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-21',
+          '24020000-0000-4000-8000-000000000011',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(
+          jsonb_build_object('supplier_id','24020000-0000-4000-8000-000000000051','allocated_quantity',60),
+          jsonb_build_object('supplier_id','24020000-0000-4000-8000-000000000052','allocated_quantity',40))))));
+insert into prb_results values('replacement-correction-b',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000032',1,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-21',
+          '24020000-0000-4000-8000-000000000012',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(
+          jsonb_build_object('supplier_id','24020000-0000-4000-8000-000000000051','allocated_quantity',40),
+          jsonb_build_object('supplier_id','24020000-0000-4000-8000-000000000052','allocated_quantity',10))))));
+reset role;
+select ok((select bool_and((response ->> 'success')::boolean)
+  from prb_results where name in ('replacement-correction-a','replacement-correction-b')),
+  'allocation correction can redistribute exact School membership after PO release');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('replacement-a',
+  atlas_api.create_school_catering_purchase_order_replacement(
+    pg_temp.prb_replace('24050000-0000-4000-8000-000000000033',
+      '24020000-0000-4000-8000-000000000051')));
+insert into prb_results values('replacement-b',
+  atlas_api.create_school_catering_purchase_order_replacement(
+    pg_temp.prb_replace('24050000-0000-4000-8000-000000000034',
+      '24020000-0000-4000-8000-000000000052')));
+reset role;
+select ok((select bool_and((response ->> 'success')::boolean)
+  from prb_results where name in ('replacement-a','replacement-b')),
+  'each affected positive supplier receives a replacement draft');
+select ok((
+  select count(*) filter(where purchase_order_status='RELEASED_TO_SUPPLIER')=2
+    and count(*) filter(where purchase_order_status='DRAFT')=2
+  from atlas_procurement.purchase_orders
+  where purchase_order_kind='SCHOOL_CATERING'
+    and school_catering_service_date='2026-09-21'
+    and supplier_id in ('24020000-0000-4000-8000-000000000051',
+      '24020000-0000-4000-8000-000000000052')
+), 'old released roots stay active while separate replacement drafts exist');
+select ok(not exists(
+  select 1 from atlas_procurement.purchase_orders replacement
+  left join atlas_procurement.purchase_orders replaced
+    on replaced.purchase_order_id=replacement.replaces_purchase_order_id
+  where replacement.purchase_order_kind='SCHOOL_CATERING'
+    and replacement.purchase_order_status='DRAFT'
+    and replacement.replaces_purchase_order_id is not null
+    and (replaced.purchase_order_id is null
+      or replaced.supplier_id<>replacement.supplier_id
+      or replaced.school_catering_service_date<>replacement.school_catering_service_date
+      or replaced.purchase_order_status<>'RELEASED_TO_SUPPLIER')
+), 'every replacement root has direct same-supplier/date released-root lineage');
+select ok(not exists(
+  select 1 from atlas_procurement.purchase_orders
+  where replaces_purchase_order_id is not null
+    and (purchase_order_status<>'DRAFT' or document_number is not null)
+), 'replacement drafts carry no official number and no external status');
+select ok((
+  select count(*)=4 and count(distinct po.purchase_order_id)=2
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions por
+    on por.purchase_order_id=po.purchase_order_id and por.is_current
+  join atlas_procurement.purchase_order_line_revisions polr
+    on polr.purchase_order_revision_id=por.purchase_order_revision_id
+  where po.replaces_purchase_order_id is not null
+), 'replacement drafts contain the complete current supplier/date instruction set');
+select ok((
+  select sum(polr.ordered_quantity)=100
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions por
+    on por.purchase_order_id=po.purchase_order_id and por.is_current
+  join atlas_procurement.purchase_order_line_revisions polr
+    on polr.purchase_order_revision_id=por.purchase_order_revision_id
+  where po.supplier_id='24020000-0000-4000-8000-000000000051'
+    and po.replaces_purchase_order_id is not null
+    and po.school_catering_service_date='2026-09-21'
+) and (
+  select sum(polr.ordered_quantity)=100
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions por
+    on por.purchase_order_id=po.purchase_order_id and por.is_current
+  join atlas_procurement.purchase_order_line_revisions polr
+    on polr.purchase_order_revision_id=por.purchase_order_revision_id
+  where po.supplier_id='24020000-0000-4000-8000-000000000051'
+    and po.replaces_purchase_order_id is null
+    and po.school_catering_service_date='2026-09-21'
+), 'unchanged supplier total does not hide changed School-level commitment membership');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('read-replacement-required',
+  atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select ok((
+  select count(*)=2
+  from prb_results r
+  cross join lateral jsonb_array_elements(r.response -> 'purchase_orders') row
+  where r.name='read-replacement-required'
+    and row ->> 'commitment_state'='REPLACEMENT_REQUIRED'
+), 'read model derives replacement-required on both stale released commitments');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('release-replacement-a',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000035',
+    '24020000-0000-4000-8000-000000000051')));
+reset role;
+select ok((select (response ->> 'success')::boolean
+    and response ->> 'document_number' is not null
+  from prb_results where name='release-replacement-a'),
+  'explicit replacement release assigns a new official number');
+select ok((
+  select count(*) filter(where purchase_order_status='SUPERSEDED')=1
+    and count(*) filter(where purchase_order_status='RELEASED_TO_SUPPLIER')=1
+    and count(distinct document_number)=2
+  from atlas_procurement.purchase_orders
+  where supplier_id='24020000-0000-4000-8000-000000000051'
+    and school_catering_service_date='2026-09-21'
+), 'replacement release atomically supersedes the old root and preserves both numbers');
+select ok((select count(*)=1 from atlas_audit.domain_events
+    where event_type='SchoolCateringPurchaseOrderSuperseded') and
+  (select count(*)=1 from atlas_audit.audit_events
+    where event_type='SchoolCateringPurchaseOrderSuperseded'),
+  'atomic supersession records dedicated domain and audit evidence');
+
+-- Removing a supplier completely never manufactures a zero-line PO or silently
+-- changes the released external commitment.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('remove-supplier-family-a',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000036',3,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-21',
+          '24020000-0000-4000-8000-000000000011',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','24020000-0000-4000-8000-000000000051','allocated_quantity',100))))));
+insert into prb_results values('remove-supplier-family-b',
+  atlas_api.save_school_catering_supplier_allocation(
+    pg_temp.prb_command('24050000-0000-4000-8000-000000000037',2,
+      'SCHOOL_CATERING_SUPPLIER_ALLOCATION_SAVED',jsonb_build_object(
+        'family',pg_temp.prb_family('2026-09-21',
+          '24020000-0000-4000-8000-000000000012',
+          '24020000-0000-4000-8000-000000000041'),
+        'splits',jsonb_build_array(jsonb_build_object(
+          'supplier_id','24020000-0000-4000-8000-000000000051','allocated_quantity',50))))));
+reset role;
+select ok((select bool_and((response ->> 'success')::boolean)
+  from prb_results where name in ('remove-supplier-family-a','remove-supplier-family-b')),
+  'factual allocation correction remains saveable when a supplier becomes zero');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('removed-supplier-replacement-attempt',
+  atlas_api.create_school_catering_purchase_order_replacement(
+    pg_temp.prb_replace('24050000-0000-4000-8000-000000000038',
+      '24020000-0000-4000-8000-000000000052')));
+insert into prb_results values('removed-supplier-release-attempt',
+  atlas_api.release_school_catering_purchase_order(pg_temp.prb_release(
+    '24050000-0000-4000-8000-000000000039',
+    '24020000-0000-4000-8000-000000000052')));
+insert into prb_results values('read-cancellation-required',
+  atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select is((select response ->> 'error_code' from prb_results
+  where name='removed-supplier-replacement-attempt'),'CANCELLATION_REQUIRED',
+  'removed supplier derives cancellation-required instead of a replacement document');
+select ok((
+  select count(*) filter(where purchase_order_status='RELEASED_TO_SUPPLIER')=1
+    and count(*) filter(where purchase_order_status='DRAFT')=1
+  from atlas_procurement.purchase_orders
+  where supplier_id='24020000-0000-4000-8000-000000000052'
+    and school_catering_service_date='2026-09-21'
+) and not exists(
+  select 1 from atlas_procurement.purchase_orders po
+  where po.supplier_id='24020000-0000-4000-8000-000000000052'
+    and not exists(select 1 from atlas_procurement.purchase_order_lines pol
+      where pol.purchase_order_id=po.purchase_order_id)
+), 'removed supplier leaves the old PO active and creates no zero-line PO');
+select ok(not atlas_core.school_catering_procurement_date_current('2026-09-21'),
+  'an unresolved removed-supplier commitment makes Procurement not current');
+select ok((select not (response ->> 'procurement_current')::boolean
+    and exists(select 1 from jsonb_array_elements(response -> 'purchase_orders') row
+      where row #>> '{supplier,supplier_id}'='24020000-0000-4000-8000-000000000052'
+        and row ->> 'commitment_state'='CANCELLATION_REQUIRED')
+  from prb_results where name='read-cancellation-required'),
+  'read model exposes cancellation-required and the bounded currentness failure');
+select is((select response ->> 'error_code' from prb_results
+  where name='removed-supplier-release-attempt'),'PO_DRAFT_STALE',
+  'a stale replacement draft cannot bypass removed-supplier safety');
+select ok(not exists(
+  select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='atlas_api' and p.proname ilike '%school%catering%cancel%'
+), 'this slice introduces no School-catering cancellation command');
 
 select * from finish();
 rollback;

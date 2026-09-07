@@ -47,3 +47,16 @@ The normal operator path invokes one backend `prepare_school_catering_purchase_o
 ## Selective-continuity compatibility (unchanged)
 
 PLANNING-CONTRACT-02B changes neither v2 envelope. `save_confirmed_needs` receives only rows actually changed by the operator; untouched `CARRIED_FORWARD` rows retain the original human decision and create no decision/event side effect. Reconfirmation after system invalidation continues the latest historical human chain, while a truly new line starts at decision `1`. `release_confirmed_needs` accepts carried authority only through exact private continuity evidence and snapshots the current successor revision/quantity. Any current `CHANGED`, `NEW`, or `UNREVIEWED` line without valid authority blocks release.
+
+## D-044 downstream-correction amendment
+
+A released School-catering supplier PO or School PXK no longer rejects legitimate
+append-only Confirmed Need Save/reopen solely as
+`BLOCKED_BY_DOWNSTREAM_COMMITMENT`. The command still appends the new stable-line
+revision and decision, preserves all prior Need/Confirmed Need/approval/release and
+downstream evidence, and invalidates the current School-catering Handoff so later
+allocation currentness is derived as stale.
+
+The amendment does not edit or supersede any PO/PXK, does not automatically save a
+new allocation, and does not change the historical WHOLESALE/supplier-direct guard.
+New supplier and dispatch commitments remain separate explicit commands.

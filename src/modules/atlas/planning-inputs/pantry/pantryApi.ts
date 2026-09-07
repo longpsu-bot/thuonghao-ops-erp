@@ -5,6 +5,7 @@ import type {
   JsonValue,
 } from "../../connection/atlasRpc";
 import { createPlanningCorrectionApi } from "../planningCorrectionApi";
+import type { PantrySchoolDateMode } from "./pantryModel";
 
 export const PANTRY_RPC_FUNCTIONS = {
   getWorkbench: "atlas_api.get_pantry_source_workbench",
@@ -42,10 +43,11 @@ export type PantryCompletionPayload = Record<string, JsonValue> & {
   source_signature: string;
   expected_source_signature: string | null;
   rows: JsonValue[];
+  school_date_modes: PantrySchoolDateMode[];
 };
 
 export type PantryCompletionCommandRequest = AtlasRpcRequest & {
-  contract_version: "PANTRY-02.v2";
+  contract_version: "PANTRY-02.v3";
   command_id: string;
   correlation_id: string;
   idempotency_key: string;
@@ -102,7 +104,7 @@ export function pantryCompletionRequest(
 ): PantryCompletionCommandRequest {
   const commandId = crypto.randomUUID();
   return {
-    contract_version: "PANTRY-02.v2",
+    contract_version: "PANTRY-02.v3",
     command_id: commandId,
     correlation_id: correlationId,
     idempotency_key: `pantry_saved:${commandId}`,
@@ -138,17 +140,19 @@ export function createPantryApi(invoker: PantryRpcInvoker) {
       weekStart: string,
       noAdditionsConfirmed: boolean,
       rows: JsonValue[],
+      schoolDateModes: PantrySchoolDateMode[] = [],
       claimedSourceSignature?: string,
     ) {
-      return invoker.invoke(
-        PANTRY_RPC_FUNCTIONS.preview,
-        pantryReadRequest(authSubject, correlationId, {
+      return invoker.invoke(PANTRY_RPC_FUNCTIONS.preview, {
+        ...pantryReadRequest(authSubject, correlationId, {
           week_start: weekStart,
           no_additions_confirmed: noAdditionsConfirmed,
           rows,
           claimed_source_signature: claimedSourceSignature ?? null,
+          school_date_modes: schoolDateModes as unknown as JsonValue,
         }),
-      );
+        contract_version: "PANTRY-02.v3",
+      });
     },
     saveCompleted(request: PantryCompletionCommandRequest) {
       return invoker.invoke(PANTRY_RPC_FUNCTIONS.saveCompleted, request);

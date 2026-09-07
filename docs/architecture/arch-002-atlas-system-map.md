@@ -58,6 +58,11 @@ Weekly Menu
 
 Planning owns demand up to release to Procurement. It does not assign suppliers, create purchase orders, receive goods, dispatch goods, or perform accounting.
 
+For the connected School flow approved by D-044, School is the authoritative
+operational recipient for both catering-derived and direct Ingredient Need. Direct
+Need composition mode is an explicit fact at School + service date; it is not
+inferred from Purpose, customer compatibility data, or UI routing.
+
 ### Recipe
 
 Recipe owns dishes, recipes, recipe versions, BOMs, and controlled formula changes. Planning may reference recipe/BOM versions but must not edit them implicitly.
@@ -74,11 +79,21 @@ Procurement converts released purchase demand into supplier commitments. It owns
 
 Warehouse receives, stores, picks, fulfils, dispatches, and counts stock. It may fulfil demand from stock but may not redefine demand.
 
+D-044's first School Phiếu xuất kho is intentionally narrower than future stock
+execution. It releases immutable School/date/location fulfilment evidence from
+current Need, allocation, and released supplier commitments without requiring or
+creating stock, receipt, lot, reservation, pick, movement, trip, vehicle, driver, or
+load facts.
+
 ### Dispatch and Delivery
 
 **Owner:** Kho vận / Điều phối
 
 Dispatch and Delivery move released goods to kitchens, schools, and other destinations. They consume released fulfilment and replacement snapshots and must not infer substitutions silently.
+
+The bounded School Phiếu xuất kho does not activate the older DispatchPlan,
+DispatchTrip, DispatchLoad, or DeliveryStop lifecycle. Those remain separate future
+capabilities and are not prerequisites for the normal School PXK path.
 
 ### Production and Quality
 

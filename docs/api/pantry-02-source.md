@@ -145,3 +145,19 @@ The public v2 `requested_at` records client intent and permits no more than 60
 seconds of positive clock skew. After acceptance, all internally derived Pantry
 Save, Validate, Approve, and correction commands use PostgreSQL transaction
 time. The six v1 timestamp validators are unchanged.
+
+## D-044 forward amendment — Direct Ingredient Need mode
+
+`PANTRY-02.v3` at the existing preview, Save, and workbench names adds
+`school_date_modes`, containing exactly one `ADDITIVE | COMPLETE` choice for every
+School/date represented by positive direct lines. The backend continues to derive
+Delivery Location and Unit. Purpose remains explanatory and is not composition
+authority.
+
+The mode is stored privately at Pantry batch + School + date and copied into the
+immutable approval snapshot. Existing snapshots with no mode remain valid and are
+read as `ADDITIVE`; no history is backfilled. `COMPLETE` is available only through
+the v3 consequential Save and means that exact School/date requires no Recipe,
+Weekly Menu, or Attendance contribution. The common Pantry workbench remains the
+only normal direct-Ingredient input surface; no separate wholesale UI or recipient
+is added.

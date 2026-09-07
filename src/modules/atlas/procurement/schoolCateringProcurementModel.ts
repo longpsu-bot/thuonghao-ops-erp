@@ -112,7 +112,16 @@ export type ProcurementSchoolOption = {
   school_name: string;
 };
 
-export type PurchaseOrderStatus = "DRAFT" | "RELEASED_TO_SUPPLIER";
+export type PurchaseOrderStatus =
+  "DRAFT" | "RELEASED_TO_SUPPLIER" | "SUPERSEDED";
+
+export type PurchaseOrderCommitmentState =
+  | "DRAFT_CURRENT"
+  | "DRAFT_STALE"
+  | "CURRENT"
+  | "REPLACEMENT_REQUIRED"
+  | "CANCELLATION_REQUIRED"
+  | "SUPERSEDED";
 
 export type PurchaseOrderLine = {
   purchase_order_line_revision_id: string;
@@ -146,6 +155,9 @@ export type SchoolCateringPurchaseOrder = {
   status: PurchaseOrderStatus;
   version: number;
   document_number: string | null;
+  replaces_purchase_order_id: string | null;
+  replaced_by_purchase_order_id: string | null;
+  commitment_state: PurchaseOrderCommitmentState;
   current_revision: {
     purchase_order_revision_id: string;
     revision_number: number;
@@ -164,7 +176,11 @@ export type SchoolCateringPurchaseOrder = {
   export_ready: boolean;
   blockers: string[];
   warnings: string[];
-  allowed_actions: { release: boolean; export: boolean };
+  allowed_actions: {
+    release: boolean;
+    export: boolean;
+    create_replacement: boolean;
+  };
   disabled_reasons: string[];
 };
 
@@ -174,6 +190,7 @@ export type PurchaseOrdersData = {
   date_start: string;
   date_end: string;
   purchase_orders: SchoolCateringPurchaseOrder[];
+  procurement_current: boolean;
   warnings: string[];
   blockers: string[];
 };
