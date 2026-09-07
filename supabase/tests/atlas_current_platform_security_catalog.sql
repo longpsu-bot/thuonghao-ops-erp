@@ -116,6 +116,16 @@ select is(
       cross join pg_namespace n
       where n.nspname like 'atlas\_%' escape '\'
         and has_schema_privilege(runtime_role.role_name, n.nspname, 'CREATE')
+    ),
+    'postgres_set_role_runtime_links',
+    (
+      select count(*)
+      from pg_auth_members membership
+      join pg_roles granted_role on granted_role.oid = membership.roleid
+      join pg_roles member_role on member_role.oid = membership.member
+      where granted_role.rolname like 'atlas\_%\_runtime' escape '\'
+        and member_role.rolname = 'postgres'
+        and membership.set_option
     )
   ),
   jsonb_build_object(
@@ -136,7 +146,8 @@ select is(
       ]::text[]
     ),
     'application_role_rows', 0,
-    'runtime_schema_create_grants', 0
+    'runtime_schema_create_grants', 0,
+    'postgres_set_role_runtime_links', 0
   ),
   'CAT-04 exact Atlas role catalogs and runtime posture are retained'
 );

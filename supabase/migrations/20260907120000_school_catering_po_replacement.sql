@@ -1,7 +1,8 @@
 -- Complete School-catering Purchase Order replacement roots and removed-supplier safety.
 
 reset role;
-grant atlas_procurement_command_runtime,atlas_read_runtime to postgres with set true;
+grant atlas_owner,atlas_procurement_command_runtime,atlas_read_runtime
+  to postgres with set true;
 set role atlas_owner;
 
 alter table atlas_procurement.purchase_orders
@@ -694,3 +695,5 @@ set role atlas_owner;
 revoke create on schema atlas_api from atlas_read_runtime;
 
 reset role;
+grant atlas_procurement_command_runtime,atlas_read_runtime
+  to postgres with set false;

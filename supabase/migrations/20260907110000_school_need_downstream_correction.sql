@@ -135,3 +135,5 @@ set role atlas_owner;
 revoke create on schema atlas_core from atlas_planning_command_runtime,
   atlas_confirmed_need_review_runtime;
 reset role;
+grant atlas_planning_command_runtime,atlas_confirmed_need_review_runtime
+  to postgres with set false;

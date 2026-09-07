@@ -368,7 +368,6 @@ begin
   if e.planning_input_evaluation_id is null
     or e.evaluation_result<>'READY' or e.blocking_issue_count<>0
     or target_period_start is null or target_period_end is null
-    or target_period_start<>target_period_end
   then return false; end if;
 
   v_catering := e.weekly_menu_id is not null
@@ -392,13 +391,23 @@ begin
         and attendance.period_start<=target_period_start
         and attendance.period_end>=target_period_end)
     and exists(select 1 from atlas_planning.pantry_need_batches pantry
+      join atlas_planning.pantry_need_approval_snapshots pantry_snapshot
+        on pantry_snapshot.pantry_need_approval_snapshot_id=
+          e.pantry_need_approval_snapshot_id
+       and pantry_snapshot.pantry_need_batch_id=pantry.pantry_need_batch_id
+       and pantry_snapshot.approved_batch_version=pantry.version
       where pantry.pantry_need_batch_id=e.pantry_need_batch_id
         and pantry.version=e.pantry_need_batch_version
         and pantry.latest_approval_snapshot_id=e.pantry_need_approval_snapshot_id
         and pantry.pantry_need_batch_status='APPROVED'
-        and pantry.week_start<=target_period_start and pantry.week_end>=target_period_end);
+        and pantry.week_start<=target_period_start and pantry.week_end>=target_period_end
+        and pantry_snapshot.line_count=(select count(*)
+          from atlas_planning.pantry_need_approval_snapshot_lines pantry_member
+          where pantry_member.pantry_need_approval_snapshot_id=
+            pantry_snapshot.pantry_need_approval_snapshot_id));
 
-  v_direct := e.weekly_menu_id is null
+  v_direct := target_period_start=target_period_end
+    and e.weekly_menu_id is null
     and e.weekly_menu_version is null
     and e.weekly_menu_approval_snapshot_id is null
     and e.attendance_batch_id is null
@@ -406,11 +415,20 @@ begin
     and e.attendance_approval_snapshot_id is null
     and e.pantry_need_batch_id is not null
     and exists(select 1 from atlas_planning.pantry_need_batches pantry
+      join atlas_planning.pantry_need_approval_snapshots pantry_snapshot
+        on pantry_snapshot.pantry_need_approval_snapshot_id=
+          e.pantry_need_approval_snapshot_id
+       and pantry_snapshot.pantry_need_batch_id=pantry.pantry_need_batch_id
+       and pantry_snapshot.approved_batch_version=pantry.version
       where pantry.pantry_need_batch_id=e.pantry_need_batch_id
         and pantry.version=e.pantry_need_batch_version
         and pantry.latest_approval_snapshot_id=e.pantry_need_approval_snapshot_id
         and pantry.pantry_need_batch_status='APPROVED'
         and pantry.week_start<=target_period_start and pantry.week_end>=target_period_end
+        and pantry_snapshot.line_count=(select count(*)
+          from atlas_planning.pantry_need_approval_snapshot_lines pantry_member
+          where pantry_member.pantry_need_approval_snapshot_id=
+            pantry_snapshot.pantry_need_approval_snapshot_id)
         and atlas_core.direct_need_snapshot_complete_only(
           pantry.latest_approval_snapshot_id,target_period_start));
   return v_catering or v_direct;
@@ -1154,3 +1172,5 @@ revoke create on schema atlas_core,atlas_api
 from atlas_read_runtime,atlas_planning_command_runtime,
   atlas_need_generation_runtime;
 reset role;
+grant atlas_read_runtime,atlas_planning_command_runtime,
+  atlas_need_generation_runtime to postgres with set false;
