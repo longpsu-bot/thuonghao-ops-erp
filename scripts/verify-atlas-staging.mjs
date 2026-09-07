@@ -126,6 +126,7 @@ export function readCatalogAuthority(cwd = process.cwd()) {
     databaseRoles: expectedArrayBeforeLabel(source, "CAT-04"),
     apiSignatures: expectedArrayBeforeLabel(source, "CAT-15"),
     apiOwners: expectedArrayBeforeLabel(source, "CAT-17"),
+    authenticatedApiSignatures: expectedArrayBeforeLabel(source, "CAT-18"),
     policyCount,
     policyDigest,
   };
@@ -143,6 +144,9 @@ export function catalogVerificationSql(
   const roles = sqlArray(authority.databaseRoles);
   const signatures = sqlArray(authority.apiSignatures);
   const owners = sqlArray(authority.apiOwners);
+  const authenticatedSignatures = sqlArray(
+    authority.authenticatedApiSignatures,
+  );
   const managedRoleId = String(managedApplicationRole?.role_id ?? "");
   const managedRoleCode = String(managedApplicationRole?.role_code ?? "");
   if (
@@ -190,7 +194,7 @@ begin
     raise exception 'ATLAS_API_SECURITY_MODE_MISMATCH';
   end if;
   select array_agg(format('%s(%s)', p.proname, pg_get_function_identity_arguments(p.oid)) order by p.proname, pg_get_function_identity_arguments(p.oid))::text[] into actual from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE');
-  if actual is distinct from ${signatures} or exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and (has_function_privilege('anon', p.oid, 'EXECUTE') or has_function_privilege('service_role', p.oid, 'EXECUTE'))) then
+  if actual is distinct from ${authenticatedSignatures} or exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and (has_function_privilege('anon', p.oid, 'EXECUTE') or has_function_privilege('service_role', p.oid, 'EXECUTE'))) then
     raise exception 'ATLAS_API_EXECUTE_GRANT_MISMATCH';
   end if;
   if not has_schema_privilege('authenticated', 'atlas_api', 'USAGE') or has_schema_privilege('anon', 'atlas_api', 'USAGE') or has_schema_privilege('service_role', 'atlas_api', 'USAGE') then

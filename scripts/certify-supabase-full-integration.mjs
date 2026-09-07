@@ -19,6 +19,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "school_catering_planning_correction.sql",
   "school_catering_purchase_orders.sql",
   "school_dispatch_release.sql",
+  "school_fulfilment_reconciliation.sql",
   "purchase_handoff_clock_skew.sql",
   "purchase_review_confirm_release.sql",
   "pa_04_supplier_direct_slice_1_foundation.sql",

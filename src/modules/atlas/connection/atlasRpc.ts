@@ -139,6 +139,8 @@ export const ATLAS_RPC_FUNCTIONS = {
     "get_school_catering_purchase_orders",
   "atlas_api.get_school_dispatch_release_workbench":
     "get_school_dispatch_release_workbench",
+  "atlas_api.get_school_fulfilment_reconciliation_workbench":
+    "get_school_fulfilment_reconciliation_workbench",
   "atlas_api.release_school_dispatch_document":
     "release_school_dispatch_document",
   "atlas_api.get_generated_purchase_review": "get_generated_purchase_review",

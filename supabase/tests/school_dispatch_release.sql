@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(46);
+select plan(47);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -1114,6 +1114,26 @@ select ok((select (response->>'success')::boolean from pxk_results
       '26020000-0000-4000-8000-000000000011')->'blockers'
       ? 'PROCUREMENT_NOT_CURRENT'),
   'PXK-SCOPE-05B replacement release atomically resolves and unblocks School A');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+insert into pxk_results values('fulfilment-reconciliation',
+  atlas_api.get_school_fulfilment_reconciliation_workbench(jsonb_build_object(
+    'contract_version','SCHOOL-FULFILMENT-RECONCILIATION.v1',
+    'requested_by_auth_subject','26000000-0000-4000-8000-000000000101',
+    'correlation_id','26200000-0000-4000-8000-000000000009',
+    'payload',jsonb_build_object('date_start','2026-09-24','date_end','2026-09-24',
+      'school_ids',jsonb_build_array('26020000-0000-4000-8000-000000000021'),
+      'search',null))));
+reset role;
+select ok((select response->>'success'='true'
+    and response#>>'{rows,0,comparison_status}'='NO_PO'
+    and response#>'{rows,0,blockers}' @> '["CANCELLATION_REQUIRED"]'::jsonb
+    and jsonb_array_length(response#>'{rows,0,history}')=2
+    and response#>>'{rows,0,delivery_location_id}'=
+      '26020000-0000-4000-8000-000000000011'
+  from pxk_results where name='fulfilment-reconciliation'),
+  'reconciliation excludes stale PO quantity, retains PXK history and captured location');
 
 select * from finish();
 rollback;

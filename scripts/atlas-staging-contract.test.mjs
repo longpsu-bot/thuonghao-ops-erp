@@ -928,7 +928,7 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(88);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(89);
     for (const recipeContractTest of [
       "recipe_effective_contract_01.sql",
       "recipe_effective_product_model_correction.sql",
@@ -984,6 +984,7 @@ describe("Atlas staging dry-run and workflow", () => {
     for (const hardeningContractTest of [
       "direct_ingredient_need_convergence.sql",
       "school_dispatch_release.sql",
+      "school_fulfilment_reconciliation.sql",
     ]) {
       expect(
         SUPABASE_FULL_INTEGRATION_COMMANDS.filter(({ args }) =>
@@ -1703,12 +1704,40 @@ describe("Atlas staging hosted evidence", () => {
 
   it("loads exact catalog identity authority and CAT-22 policy digest", () => {
     const authority = readCatalogAuthority();
+    const compatibilityBase =
+      "get_school_catering_purchase_orders_v1_base(request jsonb)";
+    const reconciliationWorkbench =
+      "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(111);
-    expect(authority.apiOwners).toHaveLength(111);
+    expect(authority.apiSignatures).toHaveLength(112);
+    expect(authority.apiOwners).toHaveLength(112);
+    expect(authority.authenticatedApiSignatures).toHaveLength(111);
+    expect(authority.apiSignatures).toContain(compatibilityBase);
+    expect(authority.authenticatedApiSignatures).not.toContain(
+      compatibilityBase,
+    );
+    expect(authority.apiSignatures).toContain(reconciliationWorkbench);
+    expect(authority.authenticatedApiSignatures).toContain(
+      reconciliationWorkbench,
+    );
     expect(authority.policyCount).toBe(646);
     expect(authority.policyDigest).toBe("6748022ace668ecaf65879d09bbe2e38");
+  });
+
+  it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
+    const authority = readCatalogAuthority();
+    const sql = catalogVerificationSql(authority);
+    const authenticatedCheck = sql.match(
+      /where n\.nspname = 'atlas_api' and has_function_privilege\('authenticated',[\s\S]*?if actual is distinct from (array\[[\s\S]*?\]::text\[\])/,
+    );
+    expect(authenticatedCheck).not.toBeNull();
+    expect(authenticatedCheck?.[1]).toContain(
+      "get_school_fulfilment_reconciliation_workbench(request jsonb)",
+    );
+    expect(authenticatedCheck?.[1]).not.toContain(
+      "get_school_catering_purchase_orders_v1_base(request jsonb)",
+    );
   });
 
   it.each([

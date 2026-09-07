@@ -89,7 +89,12 @@ pnpm atlas:staging:verify -- --dry-run
 
 HOSTED-PLANNING-REHEARSAL-01A defines two repository-owned packages and does not install either one as part of its implementation PR.
 
-- **Identity `atlas-staging-identity@1.1.0` (prepared, unapplied)** manages the same protected synthetic Auth user, Actor/Auth mapping, Admin/Planning role, membership, and reviewed `GLOBAL` scope. Its 19 existing capabilities preserve the previous 17 grants and add only `master_data.recipe_adjustments.read` and `master_data.recipe_adjustments.write`. See the [bounded new-dish and testing-role proposal](../implementation-tasks/TASK-ATLAS-NEW-DISH-STAGING-ROLE.md). This repository version does not establish the installed hosted version.
+- **Identity `atlas-staging-identity@1.2.0` (prepared, unapplied)** manages the same protected synthetic Auth user, Actor/Auth mapping, Admin/Planning role, membership, and reviewed `GLOBAL` scope. Its 21 capabilities preserve the previous 19 grants and add only `dispatch.school_release.read` and `dispatch.school_release.release`. See the [School fulfilment cutover-readiness runbook](school-fulfilment-cutover-readiness.md). This repository version does not establish the installed hosted version.
+
+### School fulfilment 01B activation boundary
+
+The frozen order is: exact merged `main` → guarded Atlas Staging migration deployment → platform-only verification → Identity 1.2.0 reconciliation → unchanged Foundation replay → normal read-only `atlas:staging:verify` → controlled persistent connected Staging frontend → operator-authored Scenarios A/B/C → read-only `atlas:staging:school-fulfilment:verify` → Product/Architecture cutover decision. The 01A implementation task must not execute any hosted-mutating step in this sequence.
+
 - **Foundation `atlas-staging-foundation@1.1.0`** manages one synthetic School-catering Customer, one default Delivery Location, one School Type, one School whose creation defaults are zero Student/Teacher portions, one `kg` Unit, two OPTIONAL-note Pantry purposes, one active 0.01 kg Planning quantity-policy revision, and the exact H0A5b calculation-contract root/revision. After School creation, Student/Teacher defaults are operator-owned state: Foundation replay preserves their current values and School version and does not create School audit/business evidence. An exact unreferenced legacy REQUIRED version-1 managed Pantry purpose may transition once to OPTIONAL version 2; unexpected or referenced state fails closed.
 - **Synthetic rehearsal** contains synthetic transactional scenarios only through Confirmed Need release.
 

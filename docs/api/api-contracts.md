@@ -10,6 +10,8 @@
 
 This file indexes OPS ERP API contracts. Detailed contract definitions should be added before implementation of any business-write operation.
 
+The read-only `SCHOOL-FULFILMENT-RECONCILIATION.v1` contract is documented in [School fulfilment reconciliation](school-fulfilment-reconciliation.md). It compares exact School-attributed current PO coverage with current released PXK quantities at Ingredient + Unit grain and reports operational blockers separately.
+
 ---
 
 ## 2. API contract rule

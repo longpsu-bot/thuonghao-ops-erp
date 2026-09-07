@@ -148,6 +148,34 @@ end;
 $atlas_staging_fresh_foundation_probe$;`;
 }
 
+function conflictingIdentityBindingSql(manifest) {
+  const binding = manifest.role.capabilities.at(-1);
+  return `do $atlas_staging_identity_conflict_probe$
+declare conflict_rejected boolean := false;
+begin
+  begin
+    insert into atlas_core.roles(role_id,role_code,role_name)
+    values ('a1010000-0000-4000-8000-000000000099'::uuid,
+      'atlas_staging_conflict_probe','Atlas Staging conflict probe');
+    update atlas_core.role_capabilities
+      set role_id='a1010000-0000-4000-8000-000000000099'::uuid
+      where role_capability_id='${binding.role_capability_id}'::uuid;
+    execute $atlas_staging_identity_package_sql$
+${buildIdentityPackageSql(manifest)}
+$atlas_staging_identity_package_sql$;
+  exception when others then
+    if sqlerrm <> 'ATLAS_STAGING_IDENTITY_ROLE_CAPABILITY_MISMATCH' then raise; end if;
+    conflict_rejected := true;
+  end;
+  if not conflict_rejected
+    or exists(select 1 from atlas_core.roles
+      where role_id='a1010000-0000-4000-8000-000000000099'::uuid) then
+    raise exception 'ATLAS_STAGING_IDENTITY_CONFLICT_PROBE_FAILED';
+  end if;
+end;
+$atlas_staging_identity_conflict_probe$;`;
+}
+
 function legacyPantryPurposesSql(manifest) {
   const values = manifest.pantry_purposes
     .map(
@@ -534,6 +562,7 @@ export async function certifyLocalAtlasStagingPackages() {
   if (firstIdentity.replay || !replayIdentity.replay) {
     throw new Error("Identity package replay evidence is inconsistent.");
   }
+  runLocalSql(conflictingIdentityBindingSql(identity));
   runLocalSql(freshFoundationInstallProbeSql(foundation));
   runLocalSql(legacyPantryPurposesSql(foundation));
   runLocalSql(conflictingCalculationContractSql(foundation, "root"));

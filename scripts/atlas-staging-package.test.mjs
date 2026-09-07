@@ -38,7 +38,7 @@ describe("Atlas Staging packages", () => {
   it("freezes the exact minimal Identity and Foundation manifests", () => {
     const identity = readAtlasStagingPackage("identity");
     const foundation = readAtlasStagingPackage("foundation");
-    expect(identity.package.version).toBe("1.1.0");
+    expect(identity.package.version).toBe("1.2.0");
     expect(foundation.package.version).toBe("1.1.0");
     expect(
       identity.role.capabilities.map((item) => item.capability_code),
@@ -82,9 +82,9 @@ describe("Atlas Staging packages", () => {
   it("plans only the two existing adjustment grants while retaining the prior identity and scope", () => {
     const identity = readAtlasStagingPackage("identity");
     expect(identity.auth_user.app_metadata.managed_by).toBe(
-      "atlas-staging-identity@1.1.0",
+      "atlas-staging-identity@1.2.0",
     );
-    expect(identity.role.capabilities.slice(-2)).toEqual([
+    expect(identity.role.capabilities.slice(-4)).toEqual([
       {
         role_capability_id: "a1010000-0000-4000-8000-000000000027",
         capability_code: "master_data.recipe_adjustments.read",
@@ -93,8 +93,16 @@ describe("Atlas Staging packages", () => {
         role_capability_id: "a1010000-0000-4000-8000-000000000028",
         capability_code: "master_data.recipe_adjustments.write",
       },
+      {
+        role_capability_id: "a1010000-0000-4000-8000-000000000029",
+        capability_code: "dispatch.school_release.read",
+      },
+      {
+        role_capability_id: "a1010000-0000-4000-8000-000000000030",
+        capability_code: "dispatch.school_release.release",
+      },
     ]);
-    expect(identity.role.capabilities).toHaveLength(19);
+    expect(identity.role.capabilities).toHaveLength(21);
     expect(
       identity.role.capabilities
         .slice(0, 17)
@@ -119,7 +127,7 @@ describe("Atlas Staging packages", () => {
       "procurement.school_catering.write",
     ]);
     const sql = buildIdentityPackageSql(identity);
-    expect(sql).toContain("capability_status = 'ACTIVE') <> 19");
+    expect(sql).toContain("capability_status = 'ACTIVE') <> 21");
     expect(sql).not.toMatch(
       /insert into atlas_core\.capabilities|\b(delete|update|truncate)\b/i,
     );

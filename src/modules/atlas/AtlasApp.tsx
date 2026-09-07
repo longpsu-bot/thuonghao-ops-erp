@@ -86,6 +86,12 @@ import {
   type SchoolDispatchReleaseApi,
 } from "./dispatch/schoolDispatchReleaseApi";
 import { createReviewSchoolDispatchReleaseApi } from "./dispatch/reviewSchoolDispatchReleaseApi";
+import { SchoolFulfilmentReconciliationWorkbench } from "./dispatch/SchoolFulfilmentReconciliationWorkbench";
+import {
+  createSchoolFulfilmentReconciliationApi,
+  type SchoolFulfilmentReconciliationApi,
+} from "./dispatch/schoolFulfilmentReconciliationApi";
+import { createReviewSchoolFulfilmentReconciliationApi } from "./dispatch/reviewSchoolFulfilmentReconciliationApi";
 import { OperationalState, WorkbenchHeader } from "./WorkbenchComponents";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
@@ -101,7 +107,8 @@ export type MasterDataPageId =
   | "recipes"
   | "planning-inputs"
   | "procurement"
-  | "school-dispatch-release";
+  | "school-dispatch-release"
+  | "school-fulfilment-reconciliation";
 
 type AtlasAppProps = {
   initialPage?: MasterDataPageId;
@@ -323,6 +330,13 @@ function AtlasNavigation({
             active={active === "school-dispatch-release"}
             onClick={() => navigate("school-dispatch-release")}
           />
+          <NavLink
+            component="button"
+            type="button"
+            label="Đối chiếu PO / Phiếu xuất kho"
+            active={active === "school-fulfilment-reconciliation"}
+            onClick={() => navigate("school-fulfilment-reconciliation")}
+          />
         </Stack>
       </Stack>
     </Stack>
@@ -343,6 +357,7 @@ function MasterDataPage({
   procurementApi,
   purchaseReviewApi,
   dispatchReleaseApi,
+  fulfilmentReconciliationApi,
   onContinueAllocation,
   procurementDate,
   mode,
@@ -360,6 +375,7 @@ function MasterDataPage({
   procurementApi?: SchoolCateringProcurementApi;
   purchaseReviewApi?: PurchaseReviewApi;
   dispatchReleaseApi?: SchoolDispatchReleaseApi;
+  fulfilmentReconciliationApi?: SchoolFulfilmentReconciliationApi;
   onContinueAllocation?: (serviceDate: string) => void;
   procurementDate?: string;
   mode: "connected" | "review";
@@ -369,29 +385,34 @@ function MasterDataPage({
   const planningPage = page === "planning-inputs";
   const procurementPage = page === "procurement";
   const dispatchReleasePage = page === "school-dispatch-release";
+  const fulfilmentReconciliationPage =
+    page === "school-fulfilment-reconciliation";
   const procurementScope = currentProcurementScope();
   const serviceDate = procurementDate ?? procurementScope.dateStart;
   return (
     <main className="atlas-page master-data-page">
-      {!planningPage && !procurementPage && !dispatchReleasePage && (
-        <WorkbenchHeader
-          eyebrow={recipePage ? "Món ăn và công thức" : "Dữ liệu gốc"}
-          title={
-            recipePage
-              ? "Công thức món ăn"
-              : schoolPage
-                ? "Trường học"
-                : "Nguyên liệu và Nhà cung ứng"
-          }
-          context={
-            recipePage
-              ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Lệnh điều chỉnh khi món đã được sử dụng."
-              : schoolPage
-                ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
-                : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."
-          }
-        />
-      )}
+      {!planningPage &&
+        !procurementPage &&
+        !dispatchReleasePage &&
+        !fulfilmentReconciliationPage && (
+          <WorkbenchHeader
+            eyebrow={recipePage ? "Món ăn và công thức" : "Dữ liệu gốc"}
+            title={
+              recipePage
+                ? "Công thức món ăn"
+                : schoolPage
+                  ? "Trường học"
+                  : "Nguyên liệu và Nhà cung ứng"
+            }
+            context={
+              recipePage
+                ? "Tra cứu công thức hiện hành, tạo món và công thức mới, hoặc chuyển sang Lệnh điều chỉnh khi món đã được sử dụng."
+                : schoolPage
+                  ? "Quản lý thông tin vận hành và sĩ số mặc định của trường."
+                  : "Quản lý thông tin mua hàng, trạng thái nguyên liệu và thứ tự ưu tiên nhà cung ứng."
+            }
+          />
+        )}
 
       {planningPage ? (
         <PlanningInputsWorkbench
@@ -422,6 +443,13 @@ function MasterDataPage({
           initialDateStart={serviceDate}
           initialDateEnd={serviceDate}
           mode={mode}
+        />
+      ) : fulfilmentReconciliationPage ? (
+        <SchoolFulfilmentReconciliationWorkbench
+          authState={authState}
+          api={fulfilmentReconciliationApi}
+          initialDateStart={serviceDate}
+          initialDateEnd={serviceDate}
         />
       ) : recipePage ? (
         <DishRecipeAdminWorkbench
@@ -457,6 +485,7 @@ function AtlasShell({
   procurementApi,
   purchaseReviewApi,
   dispatchReleaseApi,
+  fulfilmentReconciliationApi,
   mode,
   session,
   connection,
@@ -477,6 +506,7 @@ function AtlasShell({
   procurementApi?: SchoolCateringProcurementApi;
   purchaseReviewApi?: PurchaseReviewApi;
   dispatchReleaseApi?: SchoolDispatchReleaseApi;
+  fulfilmentReconciliationApi?: SchoolFulfilmentReconciliationApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   connection?: AtlasSupabaseClientResult;
@@ -592,6 +622,7 @@ function AtlasShell({
           procurementApi={procurementApi}
           purchaseReviewApi={purchaseReviewApi}
           dispatchReleaseApi={dispatchReleaseApi}
+          fulfilmentReconciliationApi={fulfilmentReconciliationApi}
           procurementDate={procurementDate}
           onContinueAllocation={(date) => {
             allocationNavigationPending.current = true;
@@ -654,6 +685,10 @@ function ReviewAtlasApp({
       ),
     [scenario],
   );
+  const fulfilmentReconciliationApi = useMemo(
+    () => createReviewSchoolFulfilmentReconciliationApi(),
+    [],
+  );
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -678,6 +713,7 @@ function ReviewAtlasApp({
         legacyProcurementScenario ? undefined : journey.purchaseReviewApi
       }
       dispatchReleaseApi={dispatchReleaseApi}
+      fulfilmentReconciliationApi={fulfilmentReconciliationApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -746,6 +782,13 @@ function ConnectedAtlasApp({
     () => (transport ? createSchoolDispatchReleaseApi(transport) : undefined),
     [transport],
   );
+  const fulfilmentReconciliationApi = useMemo(
+    () =>
+      transport
+        ? createSchoolFulfilmentReconciliationApi(transport)
+        : undefined,
+    [transport],
+  );
 
   return (
     <AtlasShell
@@ -762,6 +805,7 @@ function ConnectedAtlasApp({
       procurementApi={procurementApi}
       purchaseReviewApi={purchaseReviewApi}
       dispatchReleaseApi={dispatchReleaseApi}
+      fulfilmentReconciliationApi={fulfilmentReconciliationApi}
       mode="connected"
       session={auth}
       connection={connection}

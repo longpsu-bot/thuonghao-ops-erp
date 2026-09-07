@@ -124,6 +124,11 @@ describe("Atlas master-data shell", () => {
     expect(
       within(navigation).getByRole("button", { name: "Phiếu xuất kho" }),
     ).toBeEnabled();
+    expect(
+      within(navigation).getByRole("button", {
+        name: "Đối chiếu PO / Phiếu xuất kho",
+      }),
+    ).toBeEnabled();
     expect(within(navigation).getByText("Kho")).toBeInTheDocument();
     expect(
       within(navigation).getByRole("button", { name: /^Tổng quan/ }),
@@ -137,6 +142,20 @@ describe("Atlas master-data shell", () => {
       await screen.findByRole("heading", { level: 1, name: "Phiếu xuất kho" }),
     ).toBeVisible();
     expect(screen.getByText(/Bản xem trước chỉ đọc/i)).toBeVisible();
+  });
+
+  it("opens the read-only PO/PXK reconciliation workbench from Kho navigation", async () => {
+    render(<AtlasApp reviewMode />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đối chiếu PO / Phiếu xuất kho" }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Đối chiếu PO / Phiếu xuất kho",
+      }),
+    ).toBeVisible();
+    expect(screen.getByText("Không có thao tác ghi")).toBeVisible();
   });
 
   it("renders the connected Procurement review workbench from Atlas navigation", async () => {
@@ -255,7 +274,7 @@ describe("Atlas master-data shell", () => {
     const navigation = screen.getByRole("navigation", {
       name: "Điều hướng Atlas",
     });
-    expect(within(navigation).getAllByRole("button")).toHaveLength(7);
+    expect(within(navigation).getAllByRole("button")).toHaveLength(8);
     expect(
       within(navigation).queryByRole("button", { name: "Sẵn sàng đầu vào" }),
     ).not.toBeInTheDocument();

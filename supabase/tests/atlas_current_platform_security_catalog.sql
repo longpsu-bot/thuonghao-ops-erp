@@ -627,8 +627,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  111,
-  'CAT-14 physical atlas_api function count is exactly one hundred eleven'
+  112,
+  'CAT-14 physical atlas_api function count is exactly one hundred twelve'
 );
 
 select is(
@@ -694,6 +694,7 @@ select is(
     'get_school_catering_purchase_orders(request jsonb)',
     'get_school_catering_purchase_orders_v1_base(request jsonb)',
     'get_school_dispatch_release_workbench(request jsonb)',
+    'get_school_fulfilment_reconciliation_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
@@ -912,6 +913,7 @@ select is(
     'get_school_catering_purchase_orders(request jsonb)=atlas_read_runtime',
     'get_school_catering_purchase_orders_v1_base(request jsonb)=atlas_read_runtime',
     'get_school_dispatch_release_workbench(request jsonb)=atlas_read_runtime',
+    'get_school_fulfilment_reconciliation_workbench(request jsonb)=atlas_read_runtime',
     'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
     'invalidate_need_generation_run(request jsonb)=atlas_need_generation_runtime',
@@ -1038,6 +1040,7 @@ select is(
     'get_school_catering_procurement_workbench(request jsonb)',
     'get_school_catering_purchase_orders(request jsonb)',
     'get_school_dispatch_release_workbench(request jsonb)',
+    'get_school_fulfilment_reconciliation_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
     'invalidate_need_generation_run(request jsonb)',
@@ -1183,6 +1186,7 @@ select ok(
           ('get_school_catering_purchase_orders', 'request jsonb'),
           ('get_school_catering_purchase_orders_v1_base', 'request jsonb'),
           ('get_school_dispatch_release_workbench', 'request jsonb'),
+          ('get_school_fulfilment_reconciliation_workbench', 'request jsonb'),
           ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
           ('invalidate_need_generation_run', 'request jsonb'),
@@ -1642,17 +1646,17 @@ select is(
     'policy_count', 646,
     'policy_catalog_md5', '6748022ace668ecaf65879d09bbe2e38',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 295,
-    'private_function_catalog_md5', 'fc6ff9b7526585b1052ef9199ffb7367',
+    'private_function_count', 297,
+    'private_function_catalog_md5', 'eb65ddb0197b8d263622cdb79f6a504f',
     'trigger_count', 109,
     'trigger_catalog_md5', '185fc04c15e719450a04da07eee76961',
-    'positive_target_grant_count', 1743,
-    'positive_target_grant_md5', 'd4629faa031c2499a4a5906772465ff5',
+    'positive_target_grant_count', 1747,
+    'positive_target_grant_md5', '4a87cb1b38d7a03e85ddfa44de442656',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 111,
+    'api_function_count', 112,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
-    'authenticated_execute_count', 110,
+    'authenticated_execute_count', 111,
     'anon_execute_count', 0,
     'service_role_execute_count', 0
   ),
