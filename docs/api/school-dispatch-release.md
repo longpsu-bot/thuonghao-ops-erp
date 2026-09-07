@@ -92,8 +92,14 @@ lineage. There is no Draft PXK lifecycle.
 
 Release requires current applicable released Confirmed Need, current explicitly
 saved balanced Allocation Families, and every exact supplier split covered by a
-current released School-catering PO. `CANCELLATION_REQUIRED` blocks release when a
-former supplier commitment remains active after its allocation becomes zero.
+current released School-catering PO. Currentness is evaluated at the requested
+service-date + School + delivery-location grain: an unrelated stale or
+`CANCELLATION_REQUIRED` supplier document for another School/location on the same
+date does not block this PXK. A shared supplier document is indivisible evidence, so
+staleness anywhere on a PO that covers the requested School invalidates that PO's
+coverage. `CANCELLATION_REQUIRED` blocks release when the affected historical PO
+lineage includes the requested School/date/location and its former supplier
+commitment remains active after allocation becomes zero.
 
 Closed blocker codes are:
 

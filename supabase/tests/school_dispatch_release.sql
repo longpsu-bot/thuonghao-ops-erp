@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(39);
+select plan(43);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -79,8 +79,11 @@ values
     'pxk-cross-customer','Bếp khác khách hàng','Số 3 Nguyễn Du');
 insert into atlas_admin.schools(
   school_id,customer_id,school_code,school_name,default_delivery_location_id,display_order)
-values('26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000001',
-  'pxk-school','Trường Tiểu học Nguyễn Du','26020000-0000-4000-8000-000000000011',1);
+values
+  ('26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000001',
+    'pxk-school','Trường Tiểu học Nguyễn Du','26020000-0000-4000-8000-000000000011',1),
+  ('26020000-0000-4000-8000-000000000022','26020000-0000-4000-8000-000000000001',
+    'pxk-school-b','Trường Tiểu học Trưng Vương','26020000-0000-4000-8000-000000000012',2);
 insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
 values('26020000-0000-4000-8000-000000000031','pxk-kg','Kilôgam','mass');
 insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id)
@@ -89,14 +92,17 @@ values('26020000-0000-4000-8000-000000000041','pxk-rice','Gạo thơm',
 insert into atlas_admin.suppliers(supplier_id,supplier_code,supplier_name,supplier_status)
 values
   ('26020000-0000-4000-8000-000000000051','pxk-supplier-a','NCC An Phú','ACTIVE'),
-  ('26020000-0000-4000-8000-000000000052','pxk-supplier-b','NCC Bình Minh','ACTIVE');
+  ('26020000-0000-4000-8000-000000000052','pxk-supplier-b','NCC Bình Minh','ACTIVE'),
+  ('26020000-0000-4000-8000-000000000053','pxk-supplier-c','NCC Cửu Long','ACTIVE');
 insert into atlas_admin.supplier_eligibilities(
   supplier_id,ingredient_id,effective_from,priority,reason_note)
 values
   ('26020000-0000-4000-8000-000000000051','26020000-0000-4000-8000-000000000041',
     '2026-01-01',1,'PXK test'),
   ('26020000-0000-4000-8000-000000000052','26020000-0000-4000-8000-000000000041',
-    '2026-01-01',2,'PXK test');
+    '2026-01-01',2,'PXK test'),
+  ('26020000-0000-4000-8000-000000000053','26020000-0000-4000-8000-000000000041',
+    '2026-01-01',3,'PXK test');
 
 -- Exact current Confirmed Need -> Handoff -> Allocation -> released PO evidence.
 set session_replication_role=replica;
@@ -484,7 +490,7 @@ reset role;
 select ok((select response #>> '{rows,0,state}'='BLOCKED'
     and response #> '{rows,0,blockers}' @> '["CANCELLATION_REQUIRED"]'::jsonb
   from pxk_results where name='read-cancellation-blocked'),
-  'removed-supplier commitment blocks PXK and exposes cancellation-required');
+  'PXK-SCOPE-04 relevant removed-supplier commitment blocks PXK');
 select is((select response->>'error_code' from pxk_results
   where name='release-cancellation-blocked'),'PXK_NOT_READY',
   'PXK command rechecks and rejects unresolved removed-supplier commitment');
@@ -498,6 +504,444 @@ select ok((select count(*)=2 from atlas_core.command_receipts
   and (select count(*)=2 from atlas_audit.audit_events
     where event_type='SchoolDispatchDocumentReleased'),
   'each successful PXK release records exactly one receipt, event, and audit record');
+
+-- Scope-currentness regression at one separate service date. School A and B start
+-- on one complete Supplier 1 PO, then only B's allocation/commitment changes.
+set session_replication_role=replica;
+insert into atlas_planning.confirmed_need_batches(
+  confirmed_need_batch_id,period_start,period_end,batch_status,version,
+  created_by_actor_id,source_kind,origin_need_generation_run_id,
+  origin_need_generation_run_version,origin_need_generation_release_snapshot_id,
+  current_need_generation_run_id,current_need_generation_run_version,
+  current_need_generation_release_snapshot_id)
+values('26130000-0000-4000-8000-000000000001','2026-09-25','2026-09-25',
+  'RELEASED_FOR_PURCHASE_HANDOFF',1,'26000000-0000-4000-8000-000000000001',
+  'NEED_GENERATION','26130000-0000-4000-8000-000000000002',1,
+  '26130000-0000-4000-8000-000000000003','26130000-0000-4000-8000-000000000002',1,
+  '26130000-0000-4000-8000-000000000003');
+insert into atlas_planning.confirmed_need_lines(
+  confirmed_need_line_id,confirmed_need_batch_id,source_kind,service_date,customer_id,
+  school_id,delivery_location_id,ingredient_id,controlled_unit_id,
+  current_confirmed_need_line_decision_id)
+values
+  ('26130000-0000-4000-8000-000000000011','26130000-0000-4000-8000-000000000001',
+    'NEED_GENERATION','2026-09-25','26020000-0000-4000-8000-000000000001',
+    '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011',
+    '26020000-0000-4000-8000-000000000041','26020000-0000-4000-8000-000000000031',
+    '26130000-0000-4000-8000-000000000013'),
+  ('26130000-0000-4000-8000-000000000021','26130000-0000-4000-8000-000000000001',
+    'NEED_GENERATION','2026-09-25','26020000-0000-4000-8000-000000000001',
+    '26020000-0000-4000-8000-000000000022','26020000-0000-4000-8000-000000000012',
+    '26020000-0000-4000-8000-000000000041','26020000-0000-4000-8000-000000000031',
+    '26130000-0000-4000-8000-000000000023');
+insert into atlas_planning.confirmed_need_line_revisions(
+  confirmed_need_line_revision_id,confirmed_need_line_id,revision_number,ingredient_id,
+  theoretical_quantity,confirmed_quantity,unit_id,revision_status,is_current,
+  created_by_actor_id,source_kind,confirmed_need_batch_id,need_generation_run_id,
+  need_generation_run_version,need_generation_release_snapshot_id,service_date,
+  customer_id,school_id,delivery_location_id)
+values
+  ('26130000-0000-4000-8000-000000000012','26130000-0000-4000-8000-000000000011',
+    1,'26020000-0000-4000-8000-000000000041',100,100,
+    '26020000-0000-4000-8000-000000000031','RELEASED',true,
+    '26000000-0000-4000-8000-000000000001','NEED_GENERATION',
+    '26130000-0000-4000-8000-000000000001','26130000-0000-4000-8000-000000000002',1,
+    '26130000-0000-4000-8000-000000000003','2026-09-25',
+    '26020000-0000-4000-8000-000000000001','26020000-0000-4000-8000-000000000021',
+    '26020000-0000-4000-8000-000000000011'),
+  ('26130000-0000-4000-8000-000000000022','26130000-0000-4000-8000-000000000021',
+    1,'26020000-0000-4000-8000-000000000041',40,40,
+    '26020000-0000-4000-8000-000000000031','RELEASED',true,
+    '26000000-0000-4000-8000-000000000001','NEED_GENERATION',
+    '26130000-0000-4000-8000-000000000001','26130000-0000-4000-8000-000000000002',1,
+    '26130000-0000-4000-8000-000000000003','2026-09-25',
+    '26020000-0000-4000-8000-000000000001','26020000-0000-4000-8000-000000000022',
+    '26020000-0000-4000-8000-000000000012');
+insert into atlas_planning.confirmed_need_line_decisions(
+  confirmed_need_line_decision_id,confirmed_need_batch_id,confirmed_need_line_id,
+  confirmed_need_line_revision_id,source_kind,service_date,customer_id,school_id,
+  delivery_location_id,ingredient_id,unit_id,decision_number,decision_kind,
+  planning_quantity_policy_id,planning_quantity_policy_revision_id,
+  theoretical_quantity_before,proposed_quantity_before,confirmed_quantity_after,
+  planning_tick_count,reason_code,decided_by_actor_id,decided_at,command_id,
+  confirmed_need_batch_version)
+values
+  ('26130000-0000-4000-8000-000000000013','26130000-0000-4000-8000-000000000001',
+    '26130000-0000-4000-8000-000000000011','26130000-0000-4000-8000-000000000012',
+    'NEED_GENERATION','2026-09-25','26020000-0000-4000-8000-000000000001',
+    '26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000011',
+    '26020000-0000-4000-8000-000000000041','26020000-0000-4000-8000-000000000031',
+    1,'UNCHANGED_PROPOSAL_ACCEPTED','26130000-0000-4000-8000-000000000014',
+    '26130000-0000-4000-8000-000000000015',100,100,100,100000000,
+    'PROPOSAL_ACCEPTED','26000000-0000-4000-8000-000000000001',transaction_timestamp(),
+    '26130000-0000-4000-8000-000000000016',1),
+  ('26130000-0000-4000-8000-000000000023','26130000-0000-4000-8000-000000000001',
+    '26130000-0000-4000-8000-000000000021','26130000-0000-4000-8000-000000000022',
+    'NEED_GENERATION','2026-09-25','26020000-0000-4000-8000-000000000001',
+    '26020000-0000-4000-8000-000000000022','26020000-0000-4000-8000-000000000012',
+    '26020000-0000-4000-8000-000000000041','26020000-0000-4000-8000-000000000031',
+    1,'UNCHANGED_PROPOSAL_ACCEPTED','26130000-0000-4000-8000-000000000024',
+    '26130000-0000-4000-8000-000000000025',40,40,40,40000000,
+    'PROPOSAL_ACCEPTED','26000000-0000-4000-8000-000000000001',transaction_timestamp(),
+    '26130000-0000-4000-8000-000000000026',1);
+insert into atlas_planning.purchase_handoff_batches(
+  purchase_handoff_batch_id,confirmed_need_batch_id,period_start,period_end,
+  handoff_status,created_by_actor_id)
+values('26130000-0000-4000-8000-000000000031','26130000-0000-4000-8000-000000000001',
+  '2026-09-25','2026-09-25','RELEASED_TO_PROCUREMENT',
+  '26000000-0000-4000-8000-000000000001');
+insert into atlas_planning.purchase_handoff_revisions(
+  purchase_handoff_revision_id,purchase_handoff_batch_id,revision_number,
+  revision_status,is_current,released_by_actor_id,released_at)
+values('26130000-0000-4000-8000-000000000032','26130000-0000-4000-8000-000000000031',
+  1,'RELEASED_TO_PROCUREMENT',true,'26000000-0000-4000-8000-000000000001',
+  transaction_timestamp());
+insert into atlas_planning.purchase_handoff_lines(
+  purchase_handoff_line_id,purchase_handoff_batch_id,confirmed_need_line_id)
+values
+  ('26130000-0000-4000-8000-000000000033','26130000-0000-4000-8000-000000000031',
+    '26130000-0000-4000-8000-000000000011'),
+  ('26130000-0000-4000-8000-000000000034','26130000-0000-4000-8000-000000000031',
+    '26130000-0000-4000-8000-000000000021');
+insert into atlas_planning.purchase_handoff_line_revisions(
+  purchase_handoff_line_revision_id,purchase_handoff_revision_id,purchase_handoff_line_id,
+  confirmed_need_line_revision_id,ingredient_id,handoff_quantity,unit_id,service_date,
+  delivery_location_id)
+values
+  ('26130000-0000-4000-8000-000000000035','26130000-0000-4000-8000-000000000032',
+    '26130000-0000-4000-8000-000000000033','26130000-0000-4000-8000-000000000012',
+    '26020000-0000-4000-8000-000000000041',100,'26020000-0000-4000-8000-000000000031',
+    '2026-09-25','26020000-0000-4000-8000-000000000011'),
+  ('26130000-0000-4000-8000-000000000036','26130000-0000-4000-8000-000000000032',
+    '26130000-0000-4000-8000-000000000034','26130000-0000-4000-8000-000000000022',
+    '26020000-0000-4000-8000-000000000041',40,'26020000-0000-4000-8000-000000000031',
+    '2026-09-25','26020000-0000-4000-8000-000000000012');
+insert into atlas_planning.purchase_demand_references(
+  purchase_demand_reference_id,purchase_handoff_line_revision_id,
+  confirmed_need_snapshot_line_id,approved_quantity,unit_id,source_kind)
+values
+  ('26130000-0000-4000-8000-000000000037','26130000-0000-4000-8000-000000000035',
+    '26130000-0000-4000-8000-000000000039',100,'26020000-0000-4000-8000-000000000031',
+    'NEED_GENERATION'),
+  ('26130000-0000-4000-8000-000000000038','26130000-0000-4000-8000-000000000036',
+    '26130000-0000-4000-8000-000000000040',40,'26020000-0000-4000-8000-000000000031',
+    'NEED_GENERATION');
+insert into atlas_procurement.school_catering_allocation_families(
+  family_id,service_date,delivery_location_id,ingredient_id,unit_id)
+values
+  ('26140000-0000-4000-8000-000000000001','2026-09-25',
+    '26020000-0000-4000-8000-000000000011','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031'),
+  ('26140000-0000-4000-8000-000000000011','2026-09-25',
+    '26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031');
+insert into atlas_procurement.school_catering_allocation_family_revisions(
+  family_revision_id,family_id,revision_number,is_current,
+  source_purchase_handoff_revision_id,source_fingerprint,family_quantity,unit_id,
+  accepted_by_actor_id,command_id,decision_origin,source_kind)
+select '26140000-0000-4000-8000-000000000002'::uuid,
+  '26140000-0000-4000-8000-000000000001'::uuid,
+  1,true,'26130000-0000-4000-8000-000000000032'::uuid,
+  atlas_core.school_catering_family_projection('2026-09-25',
+    '26020000-0000-4000-8000-000000000011','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031')->>'source_fingerprint',100,
+  '26020000-0000-4000-8000-000000000031'::uuid,
+  '26000000-0000-4000-8000-000000000001'::uuid,
+  '26140000-0000-4000-8000-000000000003'::uuid,'MANUAL','PURCHASE_HANDOFF'
+union all
+select '26140000-0000-4000-8000-000000000012','26140000-0000-4000-8000-000000000011',
+  1,true,'26130000-0000-4000-8000-000000000032',
+  atlas_core.school_catering_family_projection('2026-09-25',
+    '26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031')->>'source_fingerprint',40,
+  '26020000-0000-4000-8000-000000000031','26000000-0000-4000-8000-000000000001',
+  '26140000-0000-4000-8000-000000000013','MANUAL','PURCHASE_HANDOFF';
+insert into atlas_procurement.school_catering_allocation_family_contributions(
+  family_contribution_id,family_revision_id,purchase_handoff_line_revision_id,
+  contribution_quantity)
+values
+  ('26140000-0000-4000-8000-000000000003','26140000-0000-4000-8000-000000000002',
+    '26130000-0000-4000-8000-000000000035',100),
+  ('26140000-0000-4000-8000-000000000013','26140000-0000-4000-8000-000000000012',
+    '26130000-0000-4000-8000-000000000036',40);
+insert into atlas_procurement.school_catering_allocation_supplier_splits(
+  supplier_split_id,family_revision_id,supplier_id,allocated_quantity,split_ratio,
+  decision_origin)
+values
+  ('26140000-0000-4000-8000-000000000004','26140000-0000-4000-8000-000000000002',
+    '26020000-0000-4000-8000-000000000051',100,1,'MANUAL'),
+  ('26140000-0000-4000-8000-000000000014','26140000-0000-4000-8000-000000000012',
+    '26020000-0000-4000-8000-000000000051',40,1,'MANUAL');
+insert into atlas_procurement.purchase_orders(
+  purchase_order_id,supplier_id,document_number,purchase_order_status,version,
+  purchase_order_kind,school_catering_service_date)
+values('26150000-0000-4000-8000-000000000001','26020000-0000-4000-8000-000000000051',
+  'PO-20260925-SHARED','RELEASED_TO_SUPPLIER',2,'SCHOOL_CATERING','2026-09-25');
+insert into atlas_procurement.purchase_order_revisions(
+  purchase_order_revision_id,purchase_order_id,revision_number,revision_kind,
+  revision_status,is_current,service_date,delivery_location_id,supplier_name_snapshot,
+  delivery_location_snapshot,released_by_actor_id,released_at)
+values('26150000-0000-4000-8000-000000000002','26150000-0000-4000-8000-000000000001',
+  2,'SUPERSEDING','RELEASED_TO_SUPPLIER',true,'2026-09-25',null,'NCC An Phú',
+  'Nhiều điểm giao','26000000-0000-4000-8000-000000000001',transaction_timestamp());
+insert into atlas_procurement.purchase_order_lines(
+  purchase_order_line_id,purchase_order_id,school_catering_allocation_family_id)
+values
+  ('26150000-0000-4000-8000-000000000003','26150000-0000-4000-8000-000000000001',
+    '26140000-0000-4000-8000-000000000001'),
+  ('26150000-0000-4000-8000-000000000004','26150000-0000-4000-8000-000000000001',
+    '26140000-0000-4000-8000-000000000011');
+insert into atlas_procurement.purchase_order_line_revisions(
+  purchase_order_line_revision_id,purchase_order_revision_id,purchase_order_line_id,
+  school_catering_allocation_supplier_split_id,ingredient_id,ordered_quantity,unit_id,
+  delivery_location_id,service_date)
+values
+  ('26150000-0000-4000-8000-000000000005','26150000-0000-4000-8000-000000000002',
+    '26150000-0000-4000-8000-000000000003','26140000-0000-4000-8000-000000000004',
+    '26020000-0000-4000-8000-000000000041',100,'26020000-0000-4000-8000-000000000031',
+    '26020000-0000-4000-8000-000000000011','2026-09-25'),
+  ('26150000-0000-4000-8000-000000000006','26150000-0000-4000-8000-000000000002',
+    '26150000-0000-4000-8000-000000000004','26140000-0000-4000-8000-000000000014',
+    '26020000-0000-4000-8000-000000000041',40,'26020000-0000-4000-8000-000000000031',
+    '26020000-0000-4000-8000-000000000012','2026-09-25');
+
+-- PXK-SCOPE-02: only B changes, but A still depends on the same complete Supplier 1 PO.
+update atlas_procurement.school_catering_allocation_family_revisions set is_current=false
+where family_revision_id='26140000-0000-4000-8000-000000000012';
+insert into atlas_procurement.school_catering_allocation_family_revisions(
+  family_revision_id,family_id,revision_number,is_current,predecessor_revision_id,
+  source_purchase_handoff_revision_id,source_fingerprint,family_quantity,unit_id,
+  accepted_by_actor_id,command_id,decision_origin,source_kind)
+select '26140000-0000-4000-8000-000000000022','26140000-0000-4000-8000-000000000011',
+  2,true,'26140000-0000-4000-8000-000000000012',
+  '26130000-0000-4000-8000-000000000032',
+  atlas_core.school_catering_family_projection('2026-09-25',
+    '26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031')->>'source_fingerprint',40,
+  '26020000-0000-4000-8000-000000000031','26000000-0000-4000-8000-000000000001',
+  '26140000-0000-4000-8000-000000000023','MANUAL','PURCHASE_HANDOFF';
+insert into atlas_procurement.school_catering_allocation_family_contributions(
+  family_contribution_id,family_revision_id,purchase_handoff_line_revision_id,
+  contribution_quantity)
+values('26140000-0000-4000-8000-000000000023','26140000-0000-4000-8000-000000000022',
+  '26130000-0000-4000-8000-000000000036',40);
+insert into atlas_procurement.school_catering_allocation_supplier_splits(
+  supplier_split_id,family_revision_id,supplier_id,allocated_quantity,split_ratio,
+  decision_origin)
+values('26140000-0000-4000-8000-000000000024','26140000-0000-4000-8000-000000000022',
+  '26020000-0000-4000-8000-000000000051',40,1,'MANUAL');
+set session_replication_role=origin;
+select ok(not coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+    '26020000-0000-4000-8000-000000000021',
+    '26020000-0000-4000-8000-000000000011')->>'ready')::boolean,false)
+    and atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->'blockers'
+      @> '["PO_COVERAGE_INCOMPLETE"]'::jsonb,
+  'PXK-SCOPE-02 shared stale Supplier 1 PO blocks unchanged School A');
+
+-- Separate current documents for A and B, then make only B's Supplier 2 PO stale.
+set session_replication_role=replica;
+update atlas_procurement.school_catering_allocation_family_revisions set is_current=false
+where family_revision_id='26140000-0000-4000-8000-000000000022';
+insert into atlas_procurement.school_catering_allocation_family_revisions(
+  family_revision_id,family_id,revision_number,is_current,predecessor_revision_id,
+  source_purchase_handoff_revision_id,source_fingerprint,family_quantity,unit_id,
+  accepted_by_actor_id,command_id,decision_origin,source_kind)
+select '26140000-0000-4000-8000-000000000032','26140000-0000-4000-8000-000000000011',
+  3,true,'26140000-0000-4000-8000-000000000022',
+  '26130000-0000-4000-8000-000000000032',
+  atlas_core.school_catering_family_projection('2026-09-25',
+    '26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031')->>'source_fingerprint',40,
+  '26020000-0000-4000-8000-000000000031','26000000-0000-4000-8000-000000000001',
+  '26140000-0000-4000-8000-000000000033','MANUAL','PURCHASE_HANDOFF';
+insert into atlas_procurement.school_catering_allocation_family_contributions
+  (family_contribution_id,family_revision_id,purchase_handoff_line_revision_id,
+   contribution_quantity)
+values('26140000-0000-4000-8000-000000000033','26140000-0000-4000-8000-000000000032',
+  '26130000-0000-4000-8000-000000000036',40);
+insert into atlas_procurement.school_catering_allocation_supplier_splits
+  (supplier_split_id,family_revision_id,supplier_id,allocated_quantity,split_ratio,
+   decision_origin)
+values('26140000-0000-4000-8000-000000000034','26140000-0000-4000-8000-000000000032',
+  '26020000-0000-4000-8000-000000000052',40,1,'MANUAL');
+update atlas_procurement.purchase_orders set purchase_order_status='SUPERSEDED'
+where purchase_order_id='26150000-0000-4000-8000-000000000001';
+insert into atlas_procurement.purchase_orders(
+  purchase_order_id,supplier_id,document_number,purchase_order_status,version,
+  purchase_order_kind,school_catering_service_date,replaces_purchase_order_id)
+values
+  ('26150000-0000-4000-8000-000000000011','26020000-0000-4000-8000-000000000051',
+    'PO-20260925-A','RELEASED_TO_SUPPLIER',2,'SCHOOL_CATERING','2026-09-25',
+    '26150000-0000-4000-8000-000000000001'),
+  ('26150000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000052',
+    'PO-20260925-B1','RELEASED_TO_SUPPLIER',2,'SCHOOL_CATERING','2026-09-25',null);
+insert into atlas_procurement.purchase_order_revisions(
+  purchase_order_revision_id,purchase_order_id,revision_number,revision_kind,
+  revision_status,is_current,service_date,delivery_location_id,supplier_name_snapshot,
+  delivery_location_snapshot,released_by_actor_id,released_at)
+values
+  ('26150000-0000-4000-8000-000000000012','26150000-0000-4000-8000-000000000011',
+    2,'SUPERSEDING','RELEASED_TO_SUPPLIER',true,'2026-09-25',null,'NCC An Phú',
+    'Nhiều điểm giao','26000000-0000-4000-8000-000000000001',transaction_timestamp()),
+  ('26150000-0000-4000-8000-000000000022','26150000-0000-4000-8000-000000000021',
+    2,'SUPERSEDING','RELEASED_TO_SUPPLIER',true,'2026-09-25',null,'NCC Bình Minh',
+    'Bếp phụ Nguyễn Du','26000000-0000-4000-8000-000000000001',transaction_timestamp());
+insert into atlas_procurement.purchase_order_lines(
+  purchase_order_line_id,purchase_order_id,school_catering_allocation_family_id)
+values
+  ('26150000-0000-4000-8000-000000000013','26150000-0000-4000-8000-000000000011',
+    '26140000-0000-4000-8000-000000000001'),
+  ('26150000-0000-4000-8000-000000000023','26150000-0000-4000-8000-000000000021',
+    '26140000-0000-4000-8000-000000000011');
+insert into atlas_procurement.purchase_order_line_revisions(
+  purchase_order_line_revision_id,purchase_order_revision_id,purchase_order_line_id,
+  school_catering_allocation_supplier_split_id,ingredient_id,ordered_quantity,unit_id,
+  delivery_location_id,service_date)
+values
+  ('26150000-0000-4000-8000-000000000014','26150000-0000-4000-8000-000000000012',
+    '26150000-0000-4000-8000-000000000013','26140000-0000-4000-8000-000000000004',
+    '26020000-0000-4000-8000-000000000041',100,'26020000-0000-4000-8000-000000000031',
+    '26020000-0000-4000-8000-000000000011','2026-09-25'),
+  ('26150000-0000-4000-8000-000000000024','26150000-0000-4000-8000-000000000022',
+    '26150000-0000-4000-8000-000000000023','26140000-0000-4000-8000-000000000034',
+    '26020000-0000-4000-8000-000000000041',40,'26020000-0000-4000-8000-000000000031',
+    '26020000-0000-4000-8000-000000000012','2026-09-25');
+update atlas_procurement.school_catering_allocation_family_revisions set is_current=false
+where family_revision_id='26140000-0000-4000-8000-000000000032';
+insert into atlas_procurement.school_catering_allocation_family_revisions(
+  family_revision_id,family_id,revision_number,is_current,predecessor_revision_id,
+  source_purchase_handoff_revision_id,source_fingerprint,family_quantity,unit_id,
+  accepted_by_actor_id,command_id,decision_origin,source_kind)
+select '26140000-0000-4000-8000-000000000042','26140000-0000-4000-8000-000000000011',
+  4,true,'26140000-0000-4000-8000-000000000032',
+  '26130000-0000-4000-8000-000000000032',
+  atlas_core.school_catering_family_projection('2026-09-25',
+    '26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031')->>'source_fingerprint',40,
+  '26020000-0000-4000-8000-000000000031','26000000-0000-4000-8000-000000000001',
+  '26140000-0000-4000-8000-000000000043','MANUAL','PURCHASE_HANDOFF';
+insert into atlas_procurement.school_catering_allocation_family_contributions
+  (family_contribution_id,family_revision_id,purchase_handoff_line_revision_id,
+   contribution_quantity)
+values('26140000-0000-4000-8000-000000000043','26140000-0000-4000-8000-000000000042',
+  '26130000-0000-4000-8000-000000000036',40);
+insert into atlas_procurement.school_catering_allocation_supplier_splits
+  (supplier_split_id,family_revision_id,supplier_id,allocated_quantity,split_ratio,
+   decision_origin)
+values('26140000-0000-4000-8000-000000000044','26140000-0000-4000-8000-000000000042',
+  '26020000-0000-4000-8000-000000000052',40,1,'MANUAL');
+set session_replication_role=origin;
+
+select ok(coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+    '26020000-0000-4000-8000-000000000021',
+    '26020000-0000-4000-8000-000000000011')->>'ready')::boolean,false)
+    and not (atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->'blockers'
+      ?| array['PROCUREMENT_NOT_CURRENT','PO_COVERAGE_INCOMPLETE','CANCELLATION_REQUIRED']),
+  'PXK-SCOPE-01 unrelated stale Supplier 2 PO does not block School A');
+select ok(not coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+    '26020000-0000-4000-8000-000000000022',
+    '26020000-0000-4000-8000-000000000012')->>'ready')::boolean,false)
+    and atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000022',
+      '26020000-0000-4000-8000-000000000012')->'blockers'
+      @> '["PO_COVERAGE_INCOMPLETE"]'::jsonb,
+  'PXK-SCOPE-01 stale Supplier 2 PO still blocks School B');
+
+-- Repair B's Supplier 2 PO, then move B entirely to Supplier 3. Supplier 2 is an
+-- unresolved historical cancellation only for B and must not block A.
+set session_replication_role=replica;
+update atlas_procurement.purchase_orders set purchase_order_status='SUPERSEDED'
+where purchase_order_id='26150000-0000-4000-8000-000000000021';
+insert into atlas_procurement.purchase_orders(
+  purchase_order_id,supplier_id,document_number,purchase_order_status,version,
+  purchase_order_kind,school_catering_service_date,replaces_purchase_order_id)
+values('26150000-0000-4000-8000-000000000031','26020000-0000-4000-8000-000000000052',
+  'PO-20260925-B2','RELEASED_TO_SUPPLIER',2,'SCHOOL_CATERING','2026-09-25',
+  '26150000-0000-4000-8000-000000000021');
+insert into atlas_procurement.purchase_order_revisions(
+  purchase_order_revision_id,purchase_order_id,revision_number,revision_kind,
+  revision_status,is_current,service_date,delivery_location_id,supplier_name_snapshot,
+  delivery_location_snapshot,released_by_actor_id,released_at)
+values('26150000-0000-4000-8000-000000000032','26150000-0000-4000-8000-000000000031',
+  2,'SUPERSEDING','RELEASED_TO_SUPPLIER',true,'2026-09-25',null,'NCC Bình Minh',
+  'Bếp phụ Nguyễn Du','26000000-0000-4000-8000-000000000001',transaction_timestamp());
+insert into atlas_procurement.purchase_order_lines(
+  purchase_order_line_id,purchase_order_id,school_catering_allocation_family_id)
+values('26150000-0000-4000-8000-000000000033','26150000-0000-4000-8000-000000000031',
+  '26140000-0000-4000-8000-000000000011');
+insert into atlas_procurement.purchase_order_line_revisions(
+  purchase_order_line_revision_id,purchase_order_revision_id,purchase_order_line_id,
+  school_catering_allocation_supplier_split_id,ingredient_id,ordered_quantity,unit_id,
+  delivery_location_id,service_date)
+values('26150000-0000-4000-8000-000000000034','26150000-0000-4000-8000-000000000032',
+  '26150000-0000-4000-8000-000000000033','26140000-0000-4000-8000-000000000044',
+  '26020000-0000-4000-8000-000000000041',40,'26020000-0000-4000-8000-000000000031',
+  '26020000-0000-4000-8000-000000000012','2026-09-25');
+update atlas_procurement.school_catering_allocation_family_revisions set is_current=false
+where family_revision_id='26140000-0000-4000-8000-000000000042';
+insert into atlas_procurement.school_catering_allocation_family_revisions(
+  family_revision_id,family_id,revision_number,is_current,predecessor_revision_id,
+  source_purchase_handoff_revision_id,source_fingerprint,family_quantity,unit_id,
+  accepted_by_actor_id,command_id,decision_origin,source_kind)
+select '26140000-0000-4000-8000-000000000052','26140000-0000-4000-8000-000000000011',
+  5,true,'26140000-0000-4000-8000-000000000042',
+  '26130000-0000-4000-8000-000000000032',
+  atlas_core.school_catering_family_projection('2026-09-25',
+    '26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000041',
+    '26020000-0000-4000-8000-000000000031')->>'source_fingerprint',40,
+  '26020000-0000-4000-8000-000000000031','26000000-0000-4000-8000-000000000001',
+  '26140000-0000-4000-8000-000000000053','MANUAL','PURCHASE_HANDOFF';
+insert into atlas_procurement.school_catering_allocation_family_contributions
+  (family_contribution_id,family_revision_id,purchase_handoff_line_revision_id,
+   contribution_quantity)
+values('26140000-0000-4000-8000-000000000053','26140000-0000-4000-8000-000000000052',
+  '26130000-0000-4000-8000-000000000036',40);
+insert into atlas_procurement.school_catering_allocation_supplier_splits
+  (supplier_split_id,family_revision_id,supplier_id,allocated_quantity,split_ratio,
+   decision_origin)
+values('26140000-0000-4000-8000-000000000054','26140000-0000-4000-8000-000000000052',
+  '26020000-0000-4000-8000-000000000053',40,1,'MANUAL');
+insert into atlas_procurement.purchase_orders(
+  purchase_order_id,supplier_id,document_number,purchase_order_status,version,
+  purchase_order_kind,school_catering_service_date)
+values('26150000-0000-4000-8000-000000000041','26020000-0000-4000-8000-000000000053',
+  'PO-20260925-B3','RELEASED_TO_SUPPLIER',2,'SCHOOL_CATERING','2026-09-25');
+insert into atlas_procurement.purchase_order_revisions(
+  purchase_order_revision_id,purchase_order_id,revision_number,revision_kind,
+  revision_status,is_current,service_date,delivery_location_id,supplier_name_snapshot,
+  delivery_location_snapshot,released_by_actor_id,released_at)
+values('26150000-0000-4000-8000-000000000042','26150000-0000-4000-8000-000000000041',
+  2,'SUPERSEDING','RELEASED_TO_SUPPLIER',true,'2026-09-25',null,'NCC Cửu Long',
+  'Bếp phụ Nguyễn Du','26000000-0000-4000-8000-000000000001',transaction_timestamp());
+insert into atlas_procurement.purchase_order_lines(
+  purchase_order_line_id,purchase_order_id,school_catering_allocation_family_id)
+values('26150000-0000-4000-8000-000000000043','26150000-0000-4000-8000-000000000041',
+  '26140000-0000-4000-8000-000000000011');
+insert into atlas_procurement.purchase_order_line_revisions(
+  purchase_order_line_revision_id,purchase_order_revision_id,purchase_order_line_id,
+  school_catering_allocation_supplier_split_id,ingredient_id,ordered_quantity,unit_id,
+  delivery_location_id,service_date)
+values('26150000-0000-4000-8000-000000000044','26150000-0000-4000-8000-000000000042',
+  '26150000-0000-4000-8000-000000000043','26140000-0000-4000-8000-000000000054',
+  '26020000-0000-4000-8000-000000000041',40,'26020000-0000-4000-8000-000000000031',
+  '26020000-0000-4000-8000-000000000012','2026-09-25');
+set session_replication_role=origin;
+
+select ok(atlas_core.school_catering_po_commitment_state(
+    '26150000-0000-4000-8000-000000000031',
+    '26150000-0000-4000-8000-000000000032')='CANCELLATION_REQUIRED'
+    and coalesce((atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->>'ready')::boolean,false)
+    and not (atlas_core.school_dispatch_release_preview('2026-09-25',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000011')->'blockers'
+      ?| array['PROCUREMENT_NOT_CURRENT','PO_COVERAGE_INCOMPLETE','CANCELLATION_REQUIRED']),
+  'PXK-SCOPE-03 unrelated School B cancellation-required PO does not block School A');
 
 select * from finish();
 rollback;
