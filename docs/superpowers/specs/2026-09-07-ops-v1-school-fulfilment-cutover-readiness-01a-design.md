@@ -195,6 +195,11 @@ For a discovered reconciliation scope, derive in this order:
 
 Do not compare formatted strings or rounded display numbers. PostgreSQL numeric authority is exact; API quantities remain lossless strings at the browser boundary.
 
+Comparison is always derived from the exact normalized `(ingredient_id, unit_id)`
+details. Quantities from heterogeneous Units must never be added into one scalar PO,
+PXK, or delta total. Summary quantities are grouped by Unit only; cross-Unit
+arithmetic cannot influence `comparison_status`.
+
 ### 5.7 Operational blockers remain separate
 
 `comparison_status = OK` does not by itself mean the School is safe to dispatch.
@@ -259,9 +264,7 @@ school_name
 delivery_location_id
 delivery_location_name
 comparison_status
-po_quantity
-pxk_quantity
-delta_quantity
+quantity_totals_by_unit[]
 purchase_order_numbers[]
 pxk_document_number
 pxk_state
@@ -269,6 +272,11 @@ blockers[]
 warnings[]
 details[]
 ```
+
+Each `quantity_totals_by_unit` item contains `unit_id`, `unit_code`, exact
+`po_quantity`, exact `pxk_quantity`, and exact `delta_quantity` strings. The array
+is a display summary only; `comparison_status` remains derived from the normalized
+Ingredient + Unit detail set.
 
 Each detail contains Ingredient/Unit identity and display snapshots, exact PO/PXK quantities, exact delta, and source document identifiers sufficient for operator drill-down. Internal technical lineage IDs may be included only where they materially support traceability; the UI must not require operators to understand them.
 
@@ -293,8 +301,12 @@ Primary controls:
 Summary table:
 
 ```text
-Ngày | Trường / điểm giao | PO | PXK | SL PO | SL PXK | Δ | Đối chiếu | Vận hành
+Ngày | Trường / điểm giao | PO | PXK | Số lượng theo đơn vị | Đối chiếu | Vận hành
 ```
+
+The quantity summary renders one compact row per Unit, for example
+`kg: PO 120 / PXK 120 / Δ 0` and `cái: PO 45 / PXK 44 / Δ 1`. It never renders a
+grand total across different Units.
 
 Selecting a row shows Ingredient-level detail with:
 
@@ -474,7 +486,11 @@ Add focused pgTAP coverage for the reconciliation contract:
 9. mutable School default location does not move captured scope;
 10. superseded PO/PXK history is excluded from current totals but remains historical evidence;
 11. `comparison_status = OK` may coexist with `PROCUREMENT_NOT_CURRENT` / `CANCELLATION_REQUIRED` and is not treated as operationally current;
-12. actor/scope/RLS/API grant boundaries.
+12. actor/scope/RLS/API grant boundaries;
+13. equal naive cross-Unit totals cannot hide detail mismatches: PO `10 kg + 20
+piece` versus PXK `20 kg + 10 piece` derives `MISMATCH`;
+14. valid quantities in different Units remain separate in
+    `quantity_totals_by_unit`.
 
 Register the new suite exactly once in Supabase Full Integration.
 
@@ -486,6 +502,8 @@ Focused tests prove:
 - stale async responses cannot overwrite newer filters;
 - summary and detail exact quantities render losslessly;
 - the five comparison statuses render correctly;
+- quantity totals remain grouped by Unit and are never summed into one cross-Unit
+  grand total;
 - operational blockers are visually distinct from comparison status;
 - no reconciliation write action exists;
 - navigation exposes `Kho → Đối chiếu PO / Phiếu xuất kho` without regressing `Kho → Phiếu xuất kho`.
@@ -554,16 +572,19 @@ Stop and return to Product/Architecture review if implementation discovery shows
 
 1. PO ↔ PXK reconciliation is a read-only derived contract with no persisted QA lifecycle.
 2. PO quantity is attributable to exact School lineage, not supplier totals.
-3. Comparison statuses `OK | NO_PO | NO_PXK | INGREDIENT_CHANGED | MISMATCH` are deterministic and tested.
-4. Procurement/PXK blockers remain separate from quantity comparison status.
-5. The connected UI exposes a read-only `Đối chiếu PO / Phiếu xuất kho` workbench under `Kho`.
-6. Identity package `1.2.0` adds exactly `dispatch.school_release.read` and `dispatch.school_release.release`, preserving prior identities/scopes.
-7. Local package certification proves the upgraded Identity package first-install/replay/fail-closed behavior.
-8. The read-only post-rehearsal verifier deterministically checks Scenario A, B, and C and cannot mutate hosted state.
-9. The Staging runbook defines, but does not execute, the separate 01B protected activation sequence.
-10. Full repository certification remains green.
-11. Atlas Staging, live OPS, and Retool are unchanged by 01A.
-12. No supplier cancellation or Warehouse stock capability is introduced.
+3. Heterogeneous Units are never summed into one authoritative or displayed scalar
+   total; Unit summaries remain separate and comparison is derived from exact
+   Ingredient + Unit details.
+4. Comparison statuses `OK | NO_PO | NO_PXK | INGREDIENT_CHANGED | MISMATCH` are deterministic and tested.
+5. Procurement/PXK blockers remain separate from quantity comparison status.
+6. The connected UI exposes a read-only `Đối chiếu PO / Phiếu xuất kho` workbench under `Kho`.
+7. Identity package `1.2.0` adds exactly `dispatch.school_release.read` and `dispatch.school_release.release`, preserving prior identities/scopes.
+8. Local package certification proves the upgraded Identity package first-install/replay/fail-closed behavior.
+9. The read-only post-rehearsal verifier deterministically checks Scenario A, B, and C and cannot mutate hosted state.
+10. The Staging runbook defines, but does not execute, the separate 01B protected activation sequence.
+11. Full repository certification remains green.
+12. Atlas Staging, live OPS, and Retool are unchanged by 01A.
+13. No supplier cancellation or Warehouse stock capability is introduced.
 
 ## 15. Roadmap handoff after 01B
 
