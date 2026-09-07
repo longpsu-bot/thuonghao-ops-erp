@@ -278,7 +278,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     ).toBeVisible();
   });
 
-  it("keeps Location and Unit server-derived and performs one v2 Save", async () => {
+  it("keeps Location and Unit server-derived and performs one v3 Save with explicit composition authority", async () => {
     const api = createReviewPantryApi("ready");
     const preview = vi.spyOn(api, "preview");
     const completed = vi.spyOn(api, "saveCompleted");
@@ -306,6 +306,7 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
       "Ngày phục vụ",
       "Trường / điểm giao",
       "Nguyên liệu / đơn vị",
+      "Cách kết hợp",
       "Mục đích",
       "Số lượng",
       "Ghi chú",
@@ -318,6 +319,11 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     expect(
       within(serviceDate).getByRole("option", { name: "03/08/2026" }),
     ).toBeVisible();
+    const directNeedMode = within(table).getByRole("combobox", {
+      name: "Cách kết hợp dòng 1",
+    });
+    expect(directNeedMode).toHaveValue("ADDITIVE");
+    fireEvent.change(directNeedMode, { target: { value: "COMPLETE" } });
     fireEvent.change(
       screen.getByRole("spinbutton", { name: "Số lượng dòng 1" }),
       {
@@ -350,7 +356,14 @@ describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
     await waitFor(() => expect(completed).toHaveBeenCalledTimes(1));
     const request = completed.mock.calls[0]?.[0];
     expect(preview.mock.calls[0]?.[4]?.[0]).toMatchObject({ note: null });
-    expect(request?.contract_version).toBe("PANTRY-02.v2");
+    expect(request?.contract_version).toBe("PANTRY-02.v3");
+    expect(request?.payload.school_date_modes).toEqual([
+      {
+        school_id: "review-planning-school-1",
+        service_date: "2026-08-03",
+        direct_need_mode: "COMPLETE",
+      },
+    ]);
     expect(request?.payload.rows[0]).toMatchObject({ note: null });
     expect(request?.payload.rows[0]).not.toHaveProperty("delivery_location_id");
     expect(request?.payload.rows[0]).not.toHaveProperty("unit_id");

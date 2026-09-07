@@ -18,12 +18,14 @@ select is(
   ),
   array[
     'pantry_need_approval_snapshot_lines',
+    'pantry_need_approval_snapshot_school_date_modes',
     'pantry_need_approval_snapshots',
     'pantry_need_batches',
     'pantry_need_lines',
-    'pantry_need_purposes'
+    'pantry_need_purposes',
+    'pantry_need_school_date_modes'
   ]::text[],
-  'PANTRY-02 creates exactly five private Pantry relations'
+  'PANTRY-02 creates exactly seven private Pantry relations'
 );
 
 select is(

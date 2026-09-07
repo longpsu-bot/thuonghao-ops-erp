@@ -145,9 +145,7 @@ async function releaseConfirmedNeed(client, subject) {
       "no",
       "--output",
       "json",
-      `select count(*)::integer ready_count from atlas_planning.confirmed_need_batches
-       where confirmed_need_batch_id='${batchId}'::uuid
-         and batch_status='RELEASED_FOR_PURCHASE_HANDOFF'`,
+      `select count(*)::integer ready_count from atlas_planning.confirmed_need_batches where confirmed_need_batch_id='${batchId}'::uuid and batch_status='RELEASED_FOR_PURCHASE_HANDOFF'`,
     ],
     { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
   );

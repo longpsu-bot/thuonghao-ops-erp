@@ -28,6 +28,7 @@ import { createReviewRecipeAdjustmentApi } from "../atlas/recipe-adjustments/rev
 import { createReviewAuthState } from "../atlas/review/reviewMode";
 import { atlasTheme } from "../../theme";
 import { DishRecipeAdminWorkbench } from "./DishRecipeAdminWorkbench";
+import { vietnamLocalDate } from "./RecipeAdjustmentWorkbench";
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -537,10 +538,13 @@ describe("Recipe creation-and-lock workbench", () => {
 
   it("keeps late effective reads from replacing the latest selected context", async () => {
     const base = createReviewRecipeApi("ready");
+    const initialDate = vietnamLocalDate();
+    const slowDate = initialDate === "2026-09-05" ? "2026-09-04" : "2026-09-05";
+    const fastDate = initialDate === "2026-09-07" ? "2026-09-08" : "2026-09-07";
     const first = await base.getEffectiveWorkbench(
       "subject",
       "correlation",
-      "2026-09-06",
+      initialDate,
       "10000000-0000-4000-8000-000000000001",
       { kind: "system", schoolTypeId: "60000000-0000-4000-8000-000000000001" },
     );
@@ -558,18 +562,18 @@ describe("Recipe creation-and-lock workbench", () => {
     await screen.findByLabelText("Chi tiết công thức hiệu lực");
 
     fireEvent.change(screen.getByLabelText("Ngày áp dụng"), {
-      target: { value: "2026-09-05" },
+      target: { value: slowDate },
     });
     await waitFor(() => expect(getEffectiveWorkbench).toHaveBeenCalledTimes(2));
     fireEvent.change(screen.getByLabelText("Ngày áp dụng"), {
-      target: { value: "2026-09-07" },
+      target: { value: fastDate },
     });
     await waitFor(() => expect(getEffectiveWorkbench).toHaveBeenCalledTimes(3));
     fast.resolve(
       await base.getEffectiveWorkbench(
         "subject",
         "correlation",
-        "2026-09-07",
+        fastDate,
         "10000000-0000-4000-8000-000000000001",
         {
           kind: "system",
@@ -578,13 +582,13 @@ describe("Recipe creation-and-lock workbench", () => {
       ),
     );
     await waitFor(() =>
-      expect(screen.getByLabelText("Ngày áp dụng")).toHaveValue("2026-09-07"),
+      expect(screen.getByLabelText("Ngày áp dụng")).toHaveValue(fastDate),
     );
     slow.resolve(
       await base.getEffectiveWorkbench(
         "subject",
         "correlation",
-        "2026-09-05",
+        slowDate,
         "10000000-0000-4000-8000-000000000001",
         {
           kind: "system",
@@ -593,7 +597,7 @@ describe("Recipe creation-and-lock workbench", () => {
       ),
     );
     await waitFor(() =>
-      expect(screen.getByLabelText("Ngày áp dụng")).toHaveValue("2026-09-07"),
+      expect(screen.getByLabelText("Ngày áp dụng")).toHaveValue(fastDate),
     );
   });
 

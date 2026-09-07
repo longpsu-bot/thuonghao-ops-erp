@@ -306,3 +306,19 @@ generated contribution remain three distinct conditions.
 PLANNING-CONTRACT-02B keeps the `RMVP-04.v2` request and public function unchanged. On correction, the existing private materializer compares direct predecessor/successor Confirmed Need facts and returns additive backend-owned `result_counts`: `carried_forward_count`, `needs_review_count`, `changed_count`, `new_count`, and `removed_count` alongside the established materialization counts. `removed_count` is the number of distinct predecessor Confirmed Need business identities absent from the exact direct successor current set; it does not depend on whether a removed identity had a human decision or therefore produced invalidation evidence.
 
 Carry requires exact stable identity, exact PostgreSQL generated quantity equality, the same sole effective H1A policy revision, and valid current authority in the direct predecessor. Source/Dish/Recipe membership is deliberately not an equality predicate. System carry creates no human decision; proposal/policy/removal invalidation is immutable private evidence. `RELEASED_FOR_PURCHASE_HANDOFF` and other established correction blockers still return `DOWNSTREAM_CORRECTION_REQUIRED` before any continuity or rematerialization write.
+
+## 15. D-044 exact direct-complete generation
+
+`RMVP-04.v2` preflight/execute behavior accepts an exact current approved Pantry
+snapshot whose represented School/date modes are all `COMPLETE`. That closed case
+uses `direct_need_source_mode = COMPLETE_ONLY`, may omit Menu and Attendance input
+references, prepares the date evaluation inside the same command, and generates
+only exact `PANTRY_DIRECT` contributions. It fabricates no Menu, Attendance, Dish,
+Recipe, calculation, or customer-recipient evidence.
+
+For additive or mixed dates, the existing `COMPOSED` path remains authoritative.
+`COMPLETE` suppresses only Recipe contributions for that exact School/date;
+`ADDITIVE` retains `RECIPE_DERIVED + PANTRY_DIRECT`. Existing historical Pantry
+snapshots without mode behave as `ADDITIVE`. Fingerprints include the exact snapshot
+mode and source membership, while the closed `RECIPE_DERIVED | PANTRY_DIRECT`
+lineage families remain unchanged.

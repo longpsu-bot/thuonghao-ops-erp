@@ -18,11 +18,13 @@ import {
   pantryPreviewFromResult,
   pantryReadbackFromResult,
   pantryResultMessage,
+  pantryModesForRows,
   pantryRowsForWrite,
   pantryRowsFromBatch,
   pantryWorkbenchFromResult,
   type PantryDraftRow,
   type PantryIssue,
+  type PantrySchoolDateMode,
   type PantryWorkbenchData,
 } from "./pantryModel";
 
@@ -47,6 +49,7 @@ function emptyWorkbench(weekStart: string): PantryWorkbenchData {
     schools: [],
     ingredients: [],
     catalog_issues: { blockers: [], warnings: [] },
+    school_date_modes: [],
     batch: null,
     allowed_actions: {
       can_preview: false,
@@ -123,6 +126,9 @@ export function PantryWorkbench({
   const [load, setLoad] = useState<LoadState>("idle");
   const [data, setData] = useState(() => emptyWorkbench(weekStart));
   const [rows, setRows] = useState<PantryDraftRow[]>([]);
+  const [schoolDateModes, setSchoolDateModes] = useState<
+    PantrySchoolDateMode[]
+  >([]);
   const [noAdditions, setNoAdditions] = useState(false);
   const [preview, setPreview] =
     useState<ReturnType<typeof pantryPreviewFromResult>>(null);
@@ -157,7 +163,14 @@ export function PantryWorkbench({
 
   const adopt = useCallback((workbench: PantryWorkbenchData) => {
     setData(workbench);
-    setRows(pantryRowsFromBatch(workbench.batch));
+    const nextRows = pantryRowsFromBatch(workbench.batch);
+    setRows(nextRows);
+    setSchoolDateModes(
+      pantryModesForRows(
+        nextRows,
+        workbench.batch?.school_date_modes ?? workbench.school_date_modes ?? [],
+      ),
+    );
     setNoAdditions(workbench.batch?.no_additions_confirmed ?? false);
     setPreview(null);
     setDirty(false);
@@ -190,6 +203,7 @@ export function PantryWorkbench({
     generation.current += 1;
     setData(emptyWorkbench(weekStart));
     setRows([]);
+    setSchoolDateModes([]);
     setNoAdditions(false);
     setPreview(null);
     setDirty(false);
@@ -239,6 +253,10 @@ export function PantryWorkbench({
         ),
     [rows, schoolScopeIds, workingServiceDate],
   );
+  const effectiveSchoolDateModes = useMemo(
+    () => pantryModesForRows(rows, schoolDateModes),
+    [rows, schoolDateModes],
+  );
 
   const markEdited = (next: PantryDraftRow[]) => {
     setRows(next);
@@ -248,6 +266,12 @@ export function PantryWorkbench({
 
   const discardLocalChanges = () => {
     setRows(pantryRowsFromBatch(data.batch));
+    setSchoolDateModes(
+      pantryModesForRows(
+        pantryRowsFromBatch(data.batch),
+        data.batch?.school_date_modes ?? data.school_date_modes ?? [],
+      ),
+    );
     setNoAdditions(data.batch?.no_additions_confirmed ?? false);
     setPreview(null);
     setDirty(false);
@@ -285,6 +309,26 @@ export function PantryWorkbench({
     );
   };
 
+  const updateMode = (
+    schoolId: string,
+    serviceDate: string,
+    directNeedMode: PantrySchoolDateMode["direct_need_mode"],
+  ) => {
+    const key = `${schoolId}:${serviceDate}`;
+    setSchoolDateModes([
+      ...effectiveSchoolDateModes.filter(
+        (mode) => `${mode.school_id}:${mode.service_date}` !== key,
+      ),
+      {
+        school_id: schoolId,
+        service_date: serviceDate,
+        direct_need_mode: directNeedMode,
+      },
+    ]);
+    setPreview(null);
+    setDirty(true);
+  };
+
   const previewRows = async () => {
     if (!api || !authSubject) return;
     setSaving(true);
@@ -294,6 +338,7 @@ export function PantryWorkbench({
       weekStart,
       noAdditions,
       pantryRowsForWrite(rows),
+      effectiveSchoolDateModes,
     );
     const nextPreview = pantryPreviewFromResult(result);
     setPreview(nextPreview);
@@ -305,6 +350,7 @@ export function PantryWorkbench({
             source_signature: nextPreview.source_signature,
             expected_source_signature: data.batch?.source_signature ?? null,
             rows: pantryRowsForWrite(rows),
+            school_date_modes: effectiveSchoolDateModes,
           })
         : null;
     const impact = impactResult
@@ -375,6 +421,7 @@ export function PantryWorkbench({
         source_signature: preview.source_signature,
         expected_source_signature: data.batch?.source_signature ?? null,
         rows: pantryRowsForWrite(rows),
+        school_date_modes: effectiveSchoolDateModes,
       },
     );
     await runCompletion(() => api.saveCompleted(request));
@@ -541,7 +588,10 @@ export function PantryWorkbench({
                   )
                     return;
                   setNoAdditions(checked);
-                  if (checked) setRows([]);
+                  if (checked) {
+                    setRows([]);
+                    setSchoolDateModes([]);
+                  }
                   setPreview(null);
                   setDirty(true);
                 }}
@@ -575,6 +625,7 @@ export function PantryWorkbench({
                       <th>Ngày phục vụ</th>
                       <th>Trường / điểm giao</th>
                       <th>Nguyên liệu / đơn vị</th>
+                      <th>Cách kết hợp</th>
                       <th>Mục đích</th>
                       <th>Số lượng</th>
                       <th>Ghi chú</th>
@@ -620,6 +671,32 @@ export function PantryWorkbench({
                                 ))}
                               </select>
                             )}
+                          </td>
+                          <td>
+                            <select
+                              aria-label={`Cách kết hợp dòng ${index + 1}`}
+                              value={
+                                effectiveSchoolDateModes.find(
+                                  (mode) =>
+                                    mode.school_id === row.school_id &&
+                                    mode.service_date === row.service_date,
+                                )?.direct_need_mode ?? "ADDITIVE"
+                              }
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateMode(
+                                  row.school_id,
+                                  row.service_date,
+                                  event.target
+                                    .value as PantrySchoolDateMode["direct_need_mode"],
+                                )
+                              }
+                            >
+                              <option value="ADDITIVE">
+                                Cộng với thực đơn
+                              </option>
+                              <option value="COMPLETE">Danh sách đầy đủ</option>
+                            </select>
                           </td>
                           <td>
                             <select

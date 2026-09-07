@@ -21,6 +21,8 @@ export const SCHOOL_CATERING_PROCUREMENT_RPC_FUNCTIONS = {
   getPurchaseOrders: "atlas_api.get_school_catering_purchase_orders",
   createPurchaseOrderDrafts:
     "atlas_api.create_school_catering_purchase_order_drafts",
+  createPurchaseOrderReplacement:
+    "atlas_api.create_school_catering_purchase_order_replacement",
   releasePurchaseOrder: "atlas_api.release_school_catering_purchase_order",
 } as const satisfies Record<string, AtlasRpcName>;
 
@@ -73,6 +75,14 @@ export type ReleasePurchaseOrderRequest = ProcurementCommandBase & {
   reason_code: "SCHOOL_CATERING_PO_RELEASED";
   payload: {
     purchase_order_id: string;
+    expected_purchase_order_revision_id: string;
+  };
+};
+
+export type CreatePurchaseOrderReplacementRequest = ProcurementCommandBase & {
+  reason_code: "SCHOOL_CATERING_PO_REPLACEMENT_CREATED";
+  payload: {
+    replaced_purchase_order_id: string;
     expected_purchase_order_revision_id: string;
   };
 };
@@ -200,6 +210,28 @@ export function releasePurchaseOrderRequest(
   };
 }
 
+export function createPurchaseOrderReplacementRequest(
+  authSubject: string,
+  correlationId: string,
+  expectedVersion: number,
+  replacedPurchaseOrderId: string,
+  expectedPurchaseOrderRevisionId: string,
+): CreatePurchaseOrderReplacementRequest {
+  return {
+    ...commandBase(
+      authSubject,
+      correlationId,
+      expectedVersion,
+      "school-catering-po-replacement",
+    ),
+    reason_code: "SCHOOL_CATERING_PO_REPLACEMENT_CREATED",
+    payload: {
+      replaced_purchase_order_id: replacedPurchaseOrderId,
+      expected_purchase_order_revision_id: expectedPurchaseOrderRevisionId,
+    },
+  };
+}
+
 function record(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -253,6 +285,14 @@ export function createSchoolCateringProcurementApi(
     createPurchaseOrderDrafts(request: CreatePurchaseOrderDraftsRequest) {
       return invoker.invoke(
         SCHOOL_CATERING_PROCUREMENT_RPC_FUNCTIONS.createPurchaseOrderDrafts,
+        request,
+      );
+    },
+    createPurchaseOrderReplacement(
+      request: CreatePurchaseOrderReplacementRequest,
+    ) {
+      return invoker.invoke(
+        SCHOOL_CATERING_PROCUREMENT_RPC_FUNCTIONS.createPurchaseOrderReplacement,
         request,
       );
     },

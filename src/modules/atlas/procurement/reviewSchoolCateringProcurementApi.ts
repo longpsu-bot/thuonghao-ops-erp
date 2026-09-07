@@ -6,6 +6,7 @@ import type {
 import type {
   ConfirmSupplierRecommendationsRequest,
   CreatePurchaseOrderDraftsRequest,
+  CreatePurchaseOrderReplacementRequest,
   ReleasePurchaseOrderRequest,
   SaveSupplierAllocationRequest,
   SchoolCateringProcurementApi,
@@ -27,6 +28,8 @@ export type SchoolCateringProcurementReviewScenario =
   | "po_draft"
   | "stale_po"
   | "released_po"
+  | "replacement_required"
+  | "cancellation_required"
   | "permission_denied"
   | "retryable_failure"
   | "stale_version"
@@ -216,6 +219,9 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
     status: "DRAFT",
     version: 1,
     document_number: null,
+    replaces_purchase_order_id: null,
+    replaced_by_purchase_order_id: null,
+    commitment_state: "DRAFT_CURRENT",
     current_revision: {
       purchase_order_revision_id: purchaseOrderRevisionId,
       revision_number: 1,
@@ -275,7 +281,11 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
     export_ready: false,
     blockers: [],
     warnings: [],
-    allowed_actions: { release: true, export: false },
+    allowed_actions: {
+      release: true,
+      export: false,
+      create_replacement: false,
+    },
     disabled_reasons: [],
   };
 }
@@ -286,6 +296,7 @@ export function createReviewPurchaseOrdersFixture(
   const order = basePurchaseOrder();
   if (scenario === "stale_po") {
     order.stale = true;
+    order.commitment_state = "DRAFT_STALE";
     order.release_eligible = false;
     order.blockers = ["PO_DRAFT_STALE"];
     order.allowed_actions.release = false;
@@ -306,8 +317,34 @@ export function createReviewPurchaseOrdersFixture(
     };
     order.release_eligible = false;
     order.export_ready = true;
-    order.allowed_actions = { release: false, export: true };
+    order.commitment_state = "CURRENT";
+    order.allowed_actions = {
+      release: false,
+      export: true,
+      create_replacement: false,
+    };
     order.disabled_reasons = ["PO_ALREADY_RELEASED"];
+  } else if (
+    scenario === "replacement_required" ||
+    scenario === "cancellation_required"
+  ) {
+    Object.assign(
+      order,
+      createReviewPurchaseOrdersFixture("released_po").purchase_orders[0],
+    );
+    order.stale = true;
+    order.commitment_state =
+      scenario === "replacement_required"
+        ? "REPLACEMENT_REQUIRED"
+        : "CANCELLATION_REQUIRED";
+    order.blockers = [
+      scenario === "replacement_required"
+        ? "PO_REPLACEMENT_REQUIRED"
+        : "CANCELLATION_REQUIRED",
+    ];
+    order.disabled_reasons = [...order.blockers];
+    order.allowed_actions.create_replacement =
+      scenario === "replacement_required";
   }
   return {
     success: true,
@@ -315,6 +352,7 @@ export function createReviewPurchaseOrdersFixture(
     date_start: "2026-09-01",
     date_end: "2026-09-07",
     purchase_orders: scenario === "empty" ? [] : [order],
+    procurement_current: scenario !== "cancellation_required",
     warnings: [],
     blockers: [],
   };
@@ -325,7 +363,10 @@ export function createReviewSchoolCateringProcurementApi(
 ): SchoolCateringProcurementApi {
   let workbench = createReviewProcurementWorkbenchFixture(scenario);
   let purchaseOrders = createReviewPurchaseOrdersFixture(
-    scenario === "stale_po" || scenario === "released_po"
+    scenario === "stale_po" ||
+      scenario === "released_po" ||
+      scenario === "replacement_required" ||
+      scenario === "cancellation_required"
       ? scenario
       : "po_draft",
   );
@@ -481,6 +522,36 @@ export function createReviewSchoolCateringProcurementApi(
         safe_operator_message: "Đã tạo đơn mua cho ngày sẵn sàng.",
         warnings: [],
         blockers: skippedDates,
+      });
+    },
+    async createPurchaseOrderReplacement(
+      request: CreatePurchaseOrderReplacementRequest,
+    ) {
+      const failure = preflight();
+      if (failure) return failure;
+      const replacement = basePurchaseOrder();
+      replacement.purchase_order_id = "25000000-0000-4000-8000-000000000054";
+      replacement.replaces_purchase_order_id =
+        request.payload.replaced_purchase_order_id;
+      replacement.current_revision.purchase_order_revision_id =
+        "25000000-0000-4000-8000-000000000055";
+      const released = createReviewPurchaseOrdersFixture("replacement_required")
+        .purchase_orders[0]!;
+      released.replaced_by_purchase_order_id = replacement.purchase_order_id;
+      released.allowed_actions.create_replacement = false;
+      purchaseOrders = {
+        ...createReviewPurchaseOrdersFixture("replacement_required"),
+        purchase_orders: [released, replacement],
+      };
+      return success({
+        command_id: request.command_id,
+        correlation_id: request.correlation_id,
+        idempotency_status: "COMPLETED",
+        purchase_order_id: replacement.purchase_order_id,
+        replaces_purchase_order_id: request.payload.replaced_purchase_order_id,
+        safe_operator_message: "Đã tạo đơn mua thay thế đầy đủ để kiểm tra.",
+        warnings: [],
+        blockers: [],
       });
     },
     async releasePurchaseOrder(request: ReleasePurchaseOrderRequest) {

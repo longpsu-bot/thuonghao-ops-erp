@@ -109,3 +109,28 @@ All four new public functions revoke public/anon/service-role execution and gran
 ### B1 evidence boundary
 
 The local Handoff request regression reproduces rejection of modest browser clock skew. Handoff v1 now accepts `requested_at` up to transaction time +60 seconds; malformed identity, extra payload and +61 seconds still fail. The two new commands use the same bounded tolerance; internal preparation children use backend timestamps. This is a controlled local regression, not proof of the historical Staging B1 incident's cause. No Staging or live repair was performed.
+
+## D-044 released-PO replacement and removed-supplier currentness
+
+`atlas_api.create_school_catering_purchase_order_replacement(jsonb)` creates or
+regenerates one complete Draft replacement for one stale released supplier/date
+root. The request consumes the replaced root's current released revision and
+version. The Draft has direct `replaces_purchase_order_id`, no official number, and
+contains every current positive split for that supplier/date, including exact School
+delivery and Confirmed Need/allocation lineage. The old PO remains
+`RELEASED_TO_SUPPLIER` while the Draft is reviewed.
+
+The existing release command recognizes replacement roots. It locks and rechecks
+both roots and current exact allocation, assigns a new official number, releases the
+complete replacement, and atomically marks the predecessor `SUPERSEDED`. Old and new
+numbers, content, revisions, and exports are preserved. Supplier-level total equality
+does not imply currentness when School contribution membership changes.
+
+The PO read derives `CURRENT | REPLACEMENT_REQUIRED | CANCELLATION_REQUIRED` plus
+overall `procurement_current`. If a supplier has no positive current allocation,
+replacement creation returns `CANCELLATION_REQUIRED`; the old PO stays released and
+active, no zero-line document is created, and Procurement/PXK remain blocked. This
+contract adds no cancellation API. After D-044, the exact platform catalog contains
+112 private forced-RLS tables, 31 capabilities, 111 physical `atlas_api` functions,
+and 110 authenticated browser-callable functions; the non-callable extra function
+is the private predecessor PO-read implementation retained for compatibility.

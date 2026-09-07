@@ -147,6 +147,26 @@ The three existing consequential Saves retain their public names and contracts. 
 
 PR A implements school-catering Purchase Handoff release, manual Allocation Family save, explicit bulk recommendation confirmation, and the shaped Procurement workbench. PR B adds three callable functions for supplier/date PO draft materialization, one-PO release with backend-generated numbering, and authoritative PO reads. The completed backend has 99 public `atlas_api` functions, 107 authoritative tables, and 29 capabilities; it reuses the shared PA-05E PO aggregate without changing wholesale behavior. D-042 permits correction through derived-stale DRAFT POs but blocks released supplier commitments. Exact envelopes, security, lineage and verification are specified in [School-Catering Procurement API Contract](school-catering-procurement.md).
 
+## 4M. Direct-Need convergence, PO replacement, and School PXK
+
+D-044 extends the connected contracts without retiring compatibility APIs. Pantry
+Save/preview/read accepts exact School/date `ADDITIVE | COMPLETE` authority;
+Need Generation composes Recipe and direct evidence or exact direct-only evidence.
+School-catering Confirmed Need correction remains append-only after release;
+Procurement adds complete replacement-PO creation plus derived
+`REPLACEMENT_REQUIRED | CANCELLATION_REQUIRED` currentness.
+
+Dispatch adds exactly two browser-callable functions:
+`get_school_dispatch_release_workbench` and
+`release_school_dispatch_document`, taking the reviewed browser registry to 110
+functions. The physical `atlas_api` schema has 111 functions because the prior PO
+read implementation is retained as one non-browser-callable compatibility base.
+Together this slice adds two direct-mode relations, three PXK relations, two
+capabilities, and no role or scope kind; all 112 authoritative tables remain forced
+RLS. Existing read/Dispatch/Procurement runtimes are reused.
+The exact PXK envelope, lineage, readiness, security, immutable replacement and
+no-stock boundary are specified in [School Dispatch Release API Contract](school-dispatch-release.md).
+
 ## 5. Contract template
 
 ```md

@@ -27,8 +27,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_roles r on r.oid=p.proowner
    where r.rolname='atlas_dispatch_command_runtime'),
-  6,
-  'Dispatch runtime owns exactly the three H2, two PA-05F, and one H3 entry functions'
+  7,
+  'Dispatch runtime owns exactly the three H2, two PA-05F, one H3, and one School PXK release entry functions'
 );
 select ok(
   (select r.rolname from pg_proc p join pg_roles r on r.oid=p.proowner

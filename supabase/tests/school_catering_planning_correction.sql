@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(18);
+select plan(23);
 
 select ok(to_regprocedure('atlas_api.prepare_planning_source_correction(jsonb)') is not null,
   'D-042 keeps the existing public correction command');
@@ -167,6 +167,16 @@ values
  ('5b000000-0000-4000-8000-000000000003','5c000000-0000-4000-8000-000000000003',
   '59000000-0000-4000-8000-000000000003','55000000-0000-4000-8000-000000000021',100,
   '55000000-0000-4000-8000-000000000022','55000000-0000-4000-8000-000000000023','2026-09-04');
+insert into atlas_dispatch.school_dispatch_releases(
+  school_dispatch_release_id,service_date,school_id,delivery_location_id,
+  release_status,document_number,source_fingerprint,school_name_snapshot,
+  delivery_location_name_snapshot,delivery_address_snapshot,version,
+  released_by_actor_id,released_at,command_id)
+values('5d000000-0000-4000-8000-000000000003','2026-09-04',
+  '55000000-0000-4000-8000-000000000031','55000000-0000-4000-8000-000000000023',
+  'RELEASED','PXK-20260904-5D00000000004000',repeat('a',64),'D-044 School',
+  'D-044 Location','D-044 Address',1,'51000000-0000-4000-8000-000000000099',
+  transaction_timestamp(),'5d000000-0000-4000-8000-000000000013');
 set session_replication_role = origin;
 
 select is(atlas_core.school_catering_purchase_handoff_source_kind(
@@ -200,14 +210,33 @@ select ok(atlas_core.school_catering_po_draft_is_stale(
   '5a000000-0000-4000-8000-000000000001','5b000000-0000-4000-8000-000000000001'),
   'the untouched DRAFT PO becomes derived-stale after Handoff invalidation');
 set session_replication_role = replica;
-select throws_ok($$select atlas_core.issue_222_reopen_confirmed_need(
-  '51000000-0000-4000-8000-000000000003',7)$$,'P0001',
-  'Released school-catering PO blocks Planning correction',
-  'released school-catering supplier commitment blocks D-042');
+select atlas_core.issue_222_reopen_confirmed_need(
+  '51000000-0000-4000-8000-000000000003',7);
 set session_replication_role = origin;
+select is((select batch_status from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id='51000000-0000-4000-8000-000000000003'),'REOPENED',
+  'released supplier commitment does not block a factual Confirmed Need successor');
 select is((select handoff_status from atlas_planning.purchase_handoff_batches
   where purchase_handoff_batch_id='52000000-0000-4000-8000-000000000003'),
-  'RELEASED_TO_PROCUREMENT','released-PO blocker leaves the school-catering Handoff unchanged');
+  'INVALIDATED','correction invalidates only the old School-catering Handoff currentness');
+select is((select purchase_order_status from atlas_procurement.purchase_orders
+  where purchase_order_id='5a000000-0000-4000-8000-000000000003'),
+  'RELEASED_TO_SUPPLIER','old released PO stays externally active after upstream correction');
+select is((select document_number from atlas_procurement.purchase_orders
+  where purchase_order_id='5a000000-0000-4000-8000-000000000003'),
+  'PO-20260904-5A00000000004000','old released PO number is immutable');
+select ok((select revision_status='RELEASED_TO_SUPPLIER' and is_current
+  from atlas_procurement.purchase_order_revisions
+  where purchase_order_revision_id='5b000000-0000-4000-8000-000000000003'),
+  'old released PO revision remains current within its immutable root');
+select is((select ordered_quantity from atlas_procurement.purchase_order_line_revisions
+  where purchase_order_revision_id='5b000000-0000-4000-8000-000000000003'),
+  100::numeric,'old released PO line content is unchanged');
+select ok((select release_status='RELEASED'
+    and document_number='PXK-20260904-5D00000000004000'
+  from atlas_dispatch.school_dispatch_releases
+  where school_dispatch_release_id='5d000000-0000-4000-8000-000000000003'),
+  'released PXK remains current and immutable while the factual correction is saved');
 select throws_ok($$select atlas_core.issue_222_reopen_confirmed_need(
   '51000000-0000-4000-8000-000000000002',7)$$,'P0001',
   'Wholesale Purchase Handoff correction remains blocked',

@@ -2647,8 +2647,12 @@ describe("Recipe Change Order first-user workbench", () => {
     await waitFor(() => expect(viewButton).toBeEnabled());
     fireEvent.click(viewButton);
     await waitFor(() => expect(api.resolve).toHaveBeenCalledOnce());
-    fireEvent.change(screen.getByLabelText("Xem tại ngày"), {
-      target: { value: "2026-09-07" },
+    const dateInput = screen.getByLabelText("Xem tại ngày");
+    const selectedDate = (dateInput as HTMLInputElement).value;
+    fireEvent.change(dateInput, {
+      target: {
+        value: selectedDate === "2026-09-07" ? "2026-09-08" : "2026-09-07",
+      },
     });
     await act(async () => releaseResolve?.());
 

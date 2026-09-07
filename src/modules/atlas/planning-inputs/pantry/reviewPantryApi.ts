@@ -46,6 +46,13 @@ function fixture(weekStart: string): PantryWorkbenchData {
     source_name: "Nhập thủ công Atlas",
     source_signature: "a".repeat(64),
     no_additions_confirmed: false,
+    school_date_modes: [
+      {
+        school_id: "review-planning-school-1",
+        service_date: weekStart,
+        direct_need_mode: "ADDITIVE",
+      },
+    ],
     requesting_actor_id: "review-only-atlas-operator",
     requesting_actor_name: "Điều phối viên xem thử",
     creation_method: "MANUAL_ATLAS",
@@ -196,6 +203,7 @@ function fixture(weekStart: string): PantryWorkbenchData {
       },
     ],
     catalog_issues: { blockers: [], warnings: [] },
+    school_date_modes: clone(batch.school_date_modes),
     batch,
     allowed_actions: {
       can_preview: true,
@@ -288,6 +296,13 @@ export function createReviewPantryApi(
           lines: clone(state.batch.active_lines) as unknown as JsonValue[],
         });
       }
+      const requestedModes = request.payload.school_date_modes;
+      if (Array.isArray(requestedModes)) {
+        state.batch.school_date_modes = clone(
+          requestedModes as unknown as PantryBatch["school_date_modes"],
+        );
+        state.school_date_modes = clone(state.batch.school_date_modes);
+      }
       state.allowed_actions = {
         can_preview: true,
         can_save: status === "DRAFT" || status === "REOPENED",
@@ -333,6 +348,7 @@ export function createReviewPantryApi(
       weekStart,
       noAdditionsConfirmed,
       rows,
+      schoolDateModes,
     ) {
       const error = fail();
       if (error) return error;
@@ -346,6 +362,7 @@ export function createReviewPantryApi(
           : "b".repeat(64),
         no_additions_confirmed: noAdditionsConfirmed,
         canonical_rows: clone(rows),
+        school_date_modes: clone(schoolDateModes ?? []),
         issues: { blockers: [], warnings: [] },
         comparison: {
           status: state.batch ? "REPLACEMENT" : "NEW",

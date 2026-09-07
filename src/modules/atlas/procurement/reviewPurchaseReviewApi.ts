@@ -502,7 +502,11 @@ export function createReviewPurchaseJourney(
         released_by_actor_id: "review-operator",
         released_at: new Date().toISOString(),
       };
-      po.allowed_actions = { release: false, export: true };
+      po.allowed_actions = {
+        release: false,
+        export: true,
+        create_replacement: false,
+      };
       po.release_eligible = false;
       po.export_ready = true;
       return remember(

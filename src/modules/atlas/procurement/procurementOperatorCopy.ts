@@ -10,6 +10,11 @@ const reasonLabels: Record<string, string> = {
   SUPPLIER_INELIGIBLE: "Nhà cung cấp không còn phù hợp với nguyên liệu này.",
   PO_LINES_MISSING: "Đơn mua chưa có đủ dòng hàng để phát hành.",
   PO_ALREADY_RELEASED: "Đơn đã được phát hành cho nhà cung cấp.",
+  PO_REPLACEMENT_REQUIRED:
+    "Đơn đã phát hành không còn khớp phân bổ hiện tại; cần phát hành đơn thay thế.",
+  CANCELLATION_REQUIRED:
+    "Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.",
+  PO_SUPERSEDED: "Đơn này đã được thay thế nhưng vẫn được giữ để tra cứu.",
 };
 
 export function isTechnicalProcurementCode(value: string) {

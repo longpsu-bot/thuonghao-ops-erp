@@ -144,13 +144,13 @@ async function findApprovedPlanningWeek(client, subject) {
   throw new Error("RMVP-04 could not find the approved RMVP-03A local week.");
 }
 
-async function releasedRecipeDish(client, subject) {
+async function releasedRecipeDish(client, subject, schoolTypeId) {
   const result = await invoke(
     client,
     "get_dish_recipe_workbench",
     readRequest("RMVP-02A.v1", subject, {}),
   );
-  const candidate = result.workbench.recipe_versions
+  const candidates = result.workbench.recipe_versions
     .map((version) => {
       const recipe = result.workbench.recipes.find(
         (item) => item.recipe_id === version.recipe_id,
@@ -160,7 +160,7 @@ async function releasedRecipeDish(client, subject) {
       );
       return { version, recipe, dish };
     })
-    .find(
+    .filter(
       ({ version, recipe, dish }) =>
         version.recipe_version_status === "RELEASED_FOR_PLANNING" &&
         version.composition.some(
@@ -170,6 +170,9 @@ async function releasedRecipeDish(client, subject) {
         recipe?.recipe_status === "ACTIVE" &&
         dish?.dish_status === "ACTIVE",
     );
+  const candidate =
+    candidates.find(({ recipe }) => recipe?.school_type_id === schoolTypeId) ??
+    candidates.find(({ recipe }) => recipe?.school_type_id === null);
   assert(
     candidate,
     "RMVP-04 requires an active released Recipe with an active Dish and usable composition.",
@@ -264,6 +267,7 @@ async function approvePositivePantry(
   client,
   subject,
   weekStart,
+  serviceDate,
   schoolId,
   ingredientId,
 ) {
@@ -289,7 +293,7 @@ async function approvePositivePantry(
   );
   const rows = [
     {
-      service_date: weekStart,
+      service_date: serviceDate,
       school_id: school.school_id,
       ingredient_id: ingredient.ingredient_id,
       pantry_need_purpose_id: purpose.pantry_need_purpose_id,
@@ -371,7 +375,22 @@ async function main() {
   });
   const subject = await signIn(client);
   const approvedPlanning = await findApprovedPlanningWeek(client, subject);
-  const recipe = await releasedRecipeDish(client, subject);
+  const existingMenuLine = activeMenuRows(
+    approvedPlanning.workbench.weekly_menu,
+  )[0];
+  assert(existingMenuLine, "RMVP-04 approved Menu contains no active line.");
+  const menuSchool = approvedPlanning.workbench.schools.find(
+    (school) => school.school_id === existingMenuLine.school_id,
+  );
+  assert(
+    menuSchool,
+    "RMVP-04 Menu School is absent from the Planning catalog.",
+  );
+  const recipe = await releasedRecipeDish(
+    client,
+    subject,
+    menuSchool.school_type_id,
+  );
   const planning = await alignMenuToReleasedRecipe(
     client,
     subject,
@@ -394,6 +413,7 @@ async function main() {
     client,
     subject,
     approvedPlanning.weekStart,
+    menuLine.service_date,
     menuLine.school_id,
     rmvp05PantryIngredientId,
   );
