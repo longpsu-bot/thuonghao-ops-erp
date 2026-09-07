@@ -1325,6 +1325,158 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).not.toContain("install-atlas-staging-package.mjs");
   });
 
+  describe("Atlas Staging Foundation install workflow", () => {
+    const workflowPath =
+      ".github/workflows/atlas-staging-foundation-install.yml";
+    const readWorkflow = () =>
+      existsSync(workflowPath) ? readFileSync(workflowPath, "utf8") : "";
+
+    it("FND-WF-01 creates the dedicated Foundation workflow", () => {
+      expect(existsSync(workflowPath)).toBe(true);
+    });
+
+    it("FND-WF-02 permits workflow_dispatch only", () => {
+      const workflow = readWorkflow();
+      expect(workflow).toMatch(/on:\s*\n\s*workflow_dispatch:/);
+      expect(workflow).not.toMatch(
+        /\n\s+(push|pull_request|schedule|release|workflow_run):/,
+      );
+    });
+
+    it("FND-WF-03 uses the protected atlas-staging environment", () => {
+      const workflow = readWorkflow();
+      expect(workflow).toContain("name: Atlas Staging Foundation Install");
+      expect(workflow).toContain("install-atlas-staging-foundation:");
+      expect(workflow).toContain(
+        "name: Guarded Atlas staging Foundation installation",
+      );
+      expect(workflow).toContain("environment: atlas-staging");
+      expect(workflow).toContain("runs-on: ubuntu-latest");
+      expect(workflow).toContain("timeout-minutes: 20");
+      expect(workflow).toMatch(/permissions:\s*\n\s+contents: read\s*\n/);
+      expect(workflow).not.toMatch(/permissions:[\s\S]*\bwrite\b/);
+    });
+
+    it("FND-WF-04 requires an exact full commit_sha string input", () => {
+      const workflow = readWorkflow();
+      expect(workflow).toMatch(
+        /commit_sha:\s*\n\s+description: Exact full merged-main SHA[^\n]*\n\s+required: true\s*\n\s+type: string/,
+      );
+    });
+
+    it("FND-WF-05 checks out the requested commit with full history", () => {
+      const workflow = readWorkflow();
+      expect(workflow).toContain("uses: actions/checkout@v4");
+      expect(workflow).toContain("ref: ${{ inputs.commit_sha }}");
+      expect(workflow).toContain("fetch-depth: 0");
+    });
+
+    it("FND-WF-06 fetches origin/main for ancestry verification", () => {
+      const workflow = readWorkflow();
+      expect(workflow).toContain(
+        "git fetch --no-tags origin main:refs/remotes/origin/main",
+      );
+      expect(workflow).toContain("uses: pnpm/action-setup@v4");
+      expect(workflow).toContain("version: 11.7.0");
+      expect(workflow).toContain("run_install: false");
+      expect(workflow).toContain("uses: actions/setup-node@v4");
+      expect(workflow).toContain("node-version: 24");
+      expect(workflow).toContain("cache: pnpm");
+      expect(workflow).toContain("pnpm install --frozen-lockfile");
+    });
+
+    it("FND-WF-07 runs the Foundation dry-run before replay", () => {
+      const lines = readWorkflow()
+        .split(/\r?\n/)
+        .map((line) => line.trim());
+      const dryRun =
+        'run: pnpm atlas:staging:foundation:install -- --commit-sha "${{ inputs.commit_sha }}" --dry-run';
+      const replay =
+        'run: pnpm atlas:staging:foundation:install -- --commit-sha "${{ inputs.commit_sha }}"';
+      expect(lines.indexOf(dryRun)).toBeGreaterThan(-1);
+      expect(lines.indexOf(replay)).toBeGreaterThan(lines.indexOf(dryRun));
+    });
+
+    it("FND-WF-08 invokes the Foundation installer exactly twice", () => {
+      const commands = readWorkflow()
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) =>
+          line.startsWith("run: pnpm atlas:staging:foundation:install"),
+        );
+      expect(commands).toEqual([
+        'run: pnpm atlas:staging:foundation:install -- --commit-sha "${{ inputs.commit_sha }}" --dry-run',
+        'run: pnpm atlas:staging:foundation:install -- --commit-sha "${{ inputs.commit_sha }}"',
+      ]);
+    });
+
+    it("FND-WF-09 runs normal hosted verification after replay", () => {
+      const lines = readWorkflow()
+        .split(/\r?\n/)
+        .map((line) => line.trim());
+      const replay =
+        'run: pnpm atlas:staging:foundation:install -- --commit-sha "${{ inputs.commit_sha }}"';
+      const verify = "run: pnpm atlas:staging:verify";
+      expect(lines.indexOf(verify)).toBeGreaterThan(lines.indexOf(replay));
+    });
+
+    it("FND-WF-10 does not install Identity", () => {
+      expect(readWorkflow()).not.toContain(
+        "pnpm atlas:staging:identity:install",
+      );
+    });
+
+    it("FND-WF-11 does not deploy Staging or push the database", () => {
+      const workflow = readWorkflow();
+      expect(workflow).not.toContain("pnpm atlas:staging:deploy");
+      expect(workflow).not.toContain("supabase db push");
+    });
+
+    it("FND-WF-12 does not expose the database password", () => {
+      expect(readWorkflow()).not.toContain("ATLAS_STAGING_DB_PASSWORD");
+    });
+
+    it("FND-WF-13 does not expose the Supabase secret key", () => {
+      expect(readWorkflow()).not.toContain("ATLAS_STAGING_SUPABASE_SECRET_KEY");
+    });
+
+    it("FND-WF-14 exposes exactly the minimal protected values", () => {
+      const environmentNames = readWorkflow()
+        .split(/\r?\n/)
+        .map((line) => /^\s{6}([A-Z0-9_]+):/.exec(line)?.[1])
+        .filter(Boolean);
+      expect(environmentNames).toEqual([
+        "ATLAS_STAGING_PROJECT_REF",
+        "VITE_ATLAS_ENVIRONMENT",
+        "VITE_SUPABASE_URL",
+        "VITE_SUPABASE_PUBLISHABLE_KEY",
+        "ATLAS_STAGING_TEST_EMAIL",
+        "ATLAS_STAGING_SUPABASE_ACCESS_TOKEN",
+        "ATLAS_STAGING_TEST_PASSWORD",
+      ]);
+    });
+
+    it("FND-WF-15 excludes Live OPS and production targets", () => {
+      expect(readWorkflow()).not.toMatch(
+        /qnthofvccilhnefdcxnz|live[ -]ops|production/i,
+      );
+    });
+
+    it("FND-WF-16 keeps the existing Identity workflow isolated", () => {
+      const identityWorkflow = readFileSync(
+        ".github/workflows/atlas-staging-identity-install.yml",
+        "utf8",
+      );
+      expect(identityWorkflow).toContain("pnpm atlas:staging:identity:install");
+      expect(identityWorkflow).not.toContain(
+        "pnpm atlas:staging:foundation:install",
+      );
+      expect(readWorkflow()).not.toContain(
+        "pnpm atlas:staging:identity:install",
+      );
+    });
+  });
+
   it("classifies every Atlas staging boundary script for Supabase certification", () => {
     const workflow = readFileSync(
       ".github/workflows/supabase-integration.yml",
@@ -1339,6 +1491,7 @@ describe("Atlas staging dry-run and workflow", () => {
       workflow.indexOf("\n  workflow_dispatch:"),
     );
     const stagingBoundaryPaths = [
+      ".github/workflows/atlas-staging-foundation-install.yml",
       ".github/workflows/atlas-staging-identity-install.yml",
       "scripts/atlas-staging-contract.mjs",
       "scripts/atlas-staging-contract.test.mjs",
