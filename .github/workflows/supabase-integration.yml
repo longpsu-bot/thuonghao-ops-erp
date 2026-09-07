@@ -10,6 +10,7 @@ on:
       - reopened
       - ready_for_review
     paths:
+      - ".github/workflows/atlas-staging-foundation-install.yml"
       - ".github/workflows/atlas-staging-identity-install.yml"
       - ".github/workflows/supabase-integration.yml"
       - "supabase/**"
@@ -58,6 +59,7 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/atlas-staging-foundation-install.yml"
       - ".github/workflows/atlas-staging-identity-install.yml"
       - ".github/workflows/supabase-integration.yml"
       - "supabase/**"
