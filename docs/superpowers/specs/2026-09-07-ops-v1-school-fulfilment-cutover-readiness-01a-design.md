@@ -137,11 +137,13 @@ The captured operational `delivery_location_id` from Confirmed Need/Handoff/Allo
 
 ### 5.3 Scope discovery
 
-A summary scope is included when at least one relevant authoritative fact exists in the requested range:
+A current summary scope is included when at least one current/active authoritative fact exists in the requested range:
 
 - a current applicable Confirmed Need / current Allocation contribution for the School/date/location;
-- attributable released School-catering PO lineage for that School/date/location; or
-- a current or historical released School PXK for that School/date/location.
+- attributable still-active released School-catering PO lineage for that School/date/location; or
+- a current `RELEASED` School PXK for that School/date/location.
+
+Superseded PO/PXK history alone does **not** manufacture a current reconciliation row. When a current scope exists, immutable predecessor/superseded documents remain available for drill-down and audit/history.
 
 Purely empty School/date combinations are not manufactured.
 
@@ -379,7 +381,7 @@ Menu + Attendance + released Recipe
 → reconciliation OK
 ```
 
-Verification proves both `RECIPE_DERIVED` and `PANTRY_DIRECT` contribution membership where the scenario uses both sources, exact quantity continuity, current supplier commitment coverage, current PXK, and `comparison_status = OK` with no unresolved operational blocker.
+Scenario A must contain both `RECIPE_DERIVED` and `PANTRY_DIRECT` contribution membership for the same School/date so the additive composition boundary is exercised. Verification proves exact quantity continuity, current supplier commitment coverage, current PXK, and `comparison_status = OK` with no unresolved operational blocker.
 
 ### Scenario B — Direct COMPLETE
 
