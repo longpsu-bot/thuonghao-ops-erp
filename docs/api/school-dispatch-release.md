@@ -58,6 +58,14 @@ contribution/supplier ranges assign exact covered quantities without rounded-rat
 residuals; both School contribution totals and supplier split totals remain
 reconcilable.
 
+The operational delivery location is the location already captured by the current
+Confirmed Need → Purchase Handoff → Allocation Family → released PO lineage. A
+later change to `School.default_delivery_location_id` neither moves nor invalidates
+that chain. School master data still proves that the requested School exists and
+that the requested location belongs to the same Customer; another same-Customer
+location receives no Need without its own captured lineage, and a cross-Customer
+location remains invalid.
+
 ## Release command
 
 The standard command envelope requires:

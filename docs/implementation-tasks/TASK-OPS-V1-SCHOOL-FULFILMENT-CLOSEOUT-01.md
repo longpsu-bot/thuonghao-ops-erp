@@ -194,6 +194,16 @@ Local evidence recorded before the Draft PR review gate:
       95/95 adjacent Procurement frontend tests.
 - [x] Slice 4 focused PXK evidence: 36/36 pgTAP and 48/48
       navigation/RPC/workbench/export frontend tests.
+- [x] Draft hardening preserves legacy `PANTRY-02.v2` as implicit `ADDITIVE` and
+      restores the untouched Planning atomic suite to 196/196.
+- [x] Full Integration explicitly registers the Direct Need convergence and School
+      PXK suites exactly once without removing an existing suite.
+- [x] Full Integration passes all 88 registered commands end to end. Its final
+      Procurement verifier now scopes the existing-batch probe with one
+      argument-safe SQL string, so Windows execution cannot drop the batch filter.
+- [x] Mutable School-default regression: captured Location A remains releasable
+      after the default changes to same-Customer Location B; B inherits no Need and
+      cross-Customer scope remains invalid. The expanded PXK suite passes 39/39.
 - [x] All four focused database suites pass together: 174/174 assertions.
 - [x] Exact whole-platform security catalog passes 23/23 after its bounded five-table,
       two-capability, four-physical-API, and least-privilege grant update.

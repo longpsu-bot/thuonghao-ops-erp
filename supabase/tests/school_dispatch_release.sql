@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(36);
+select plan(39);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -63,12 +63,20 @@ insert into atlas_core.actor_scopes(actor_id,scope_kind)
 values('26000000-0000-4000-8000-000000000001','GLOBAL');
 
 insert into atlas_admin.customers(customer_id,customer_code,customer_name,customer_type)
-values('26020000-0000-4000-8000-000000000001','pxk-school-customer',
-  'PXK School Customer','SCHOOL_CATERING');
+values
+  ('26020000-0000-4000-8000-000000000001','pxk-school-customer',
+    'PXK School Customer','SCHOOL_CATERING'),
+  ('26020000-0000-4000-8000-000000000002','pxk-other-customer',
+    'PXK Other Customer','SCHOOL_CATERING');
 insert into atlas_admin.delivery_locations(
   delivery_location_id,customer_id,location_code,location_name,address_text)
-values('26020000-0000-4000-8000-000000000011','26020000-0000-4000-8000-000000000001',
-  'pxk-location','Bếp chính Nguyễn Du','Số 1 Nguyễn Du');
+values
+  ('26020000-0000-4000-8000-000000000011','26020000-0000-4000-8000-000000000001',
+    'pxk-location-a','Bếp chính Nguyễn Du','Số 1 Nguyễn Du'),
+  ('26020000-0000-4000-8000-000000000012','26020000-0000-4000-8000-000000000001',
+    'pxk-location-b','Bếp phụ Nguyễn Du','Số 2 Nguyễn Du'),
+  ('26020000-0000-4000-8000-000000000013','26020000-0000-4000-8000-000000000002',
+    'pxk-cross-customer','Bếp khác khách hàng','Số 3 Nguyễn Du');
 insert into atlas_admin.schools(
   school_id,customer_id,school_code,school_name,default_delivery_location_id,display_order)
 values('26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000001',
@@ -226,6 +234,12 @@ values('26050000-0000-4000-8000-000000000004','26050000-0000-4000-8000-000000000
   '26020000-0000-4000-8000-000000000011','2026-09-24');
 set session_replication_role=origin;
 
+-- The operational chain remains captured at Location A while mutable School
+-- master data later changes its default to same-Customer Location B.
+update atlas_admin.schools
+set default_delivery_location_id='26020000-0000-4000-8000-000000000012'
+where school_id='26020000-0000-4000-8000-000000000021';
+
 create temporary table pxk_results(name text primary key,response jsonb not null);
 grant select,insert on pxk_results to authenticated;
 create function pg_temp.pxk_read() returns jsonb language sql stable set search_path='' as $$
@@ -265,13 +279,33 @@ reset role;
 select ok((select (response->>'success')::boolean
     and response #>> '{rows,0,state}'='READY'
   from pxk_results where name='preview'),
-  'read-only School/date/location PXK preview is ready from current exact evidence');
+  'captured Location A PXK preview stays ready after the School default changes to B');
 select is((select count(*)::integer from atlas_dispatch.school_dispatch_releases),0,
   'preview creates no PXK draft or other supporting write');
 select ok((select response #>> '{rows,0,preview,lines,0,quantity}'='100.000000'
     and jsonb_array_length(response #> '{rows,0,preview,lines,0,sources}')=1
   from pxk_results where name='preview'),
   'preview returns lossless quantity and exact Confirmed Need/allocation/PO lineage');
+select ok(not coalesce((atlas_core.school_dispatch_release_preview('2026-09-24',
+    '26020000-0000-4000-8000-000000000021',
+    '26020000-0000-4000-8000-000000000012')->>'ready')::boolean,false)
+    and atlas_core.school_dispatch_release_preview('2026-09-24',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000012')->'blockers'
+      @> '["NO_CURRENT_NEED"]'::jsonb
+    and not (atlas_core.school_dispatch_release_preview('2026-09-24',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000012')->'blockers'
+      @> '["SCHOOL_SCOPE_INVALID"]'::jsonb),
+  'new same-Customer default Location B inherits no captured Location A Need');
+select ok(not coalesce((atlas_core.school_dispatch_release_preview('2026-09-24',
+    '26020000-0000-4000-8000-000000000021',
+    '26020000-0000-4000-8000-000000000013')->>'ready')::boolean,false)
+    and atlas_core.school_dispatch_release_preview('2026-09-24',
+      '26020000-0000-4000-8000-000000000021',
+      '26020000-0000-4000-8000-000000000013')->'blockers'
+      @> '["SCHOOL_SCOPE_INVALID"]'::jsonb,
+  'cross-Customer Delivery Location remains outside the School boundary');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
@@ -301,6 +335,10 @@ select ok((select release_status='RELEASED' and source_fingerprint is not null
     and note='Giao tại cổng phụ trước 06:00'
   from atlas_dispatch.school_dispatch_releases),
   'released PXK header stores immutable scope, display snapshots, and note');
+select ok((select delivery_location_id='26020000-0000-4000-8000-000000000011'
+    and delivery_location_id<>'26020000-0000-4000-8000-000000000012'
+  from atlas_dispatch.school_dispatch_releases),
+  'released PXK preserves captured Location A and never substitutes mutable default B');
 select ok((select count(*)=1 from atlas_dispatch.school_dispatch_release_lines)
     and (select count(*)=1 from atlas_dispatch.school_dispatch_release_line_sources),
   'released PXK stores one immutable line and its exact typed source coverage');

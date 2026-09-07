@@ -84,6 +84,12 @@ create policy direct_need_mode_runtime_select
   on atlas_planning.pantry_need_school_date_modes
   for select to atlas_read_runtime, atlas_planning_command_runtime,
     atlas_need_generation_runtime using (true);
+create policy direct_need_mode_command_insert
+  on atlas_planning.pantry_need_school_date_modes
+  for insert to atlas_planning_command_runtime with check (true);
+create policy direct_need_mode_command_delete
+  on atlas_planning.pantry_need_school_date_modes
+  for delete to atlas_planning_command_runtime using (true);
 create policy direct_need_snapshot_mode_owner_all
   on atlas_planning.pantry_need_approval_snapshot_school_date_modes
   for all to atlas_owner using (true) with check (true);
@@ -101,6 +107,9 @@ grant select on table
   atlas_planning.pantry_need_approval_snapshot_school_date_modes
 to atlas_read_runtime, atlas_planning_command_runtime,
   atlas_need_generation_runtime;
+grant insert, delete on table
+  atlas_planning.pantry_need_school_date_modes
+to atlas_planning_command_runtime;
 
 create function atlas_core.direct_need_canonical_modes(
   target_week_start date,
@@ -481,6 +490,13 @@ grant execute on function
   atlas_core.direct_need_replace_modes(date,jsonb,jsonb,uuid)
 to atlas_planning_command_runtime;
 
+reset role;
+grant create on schema atlas_core to atlas_planning_command_runtime;
+alter function atlas_core.direct_need_replace_modes(date,jsonb,jsonb,uuid)
+  owner to atlas_planning_command_runtime;
+revoke create on schema atlas_core from atlas_planning_command_runtime;
+set role atlas_owner;
+
 create function atlas_planning.direct_need_copy_snapshot_modes()
 returns trigger
 language plpgsql
@@ -778,6 +794,26 @@ to atlas_planning_command_runtime;
 reset role;
 set role atlas_planning_command_runtime;
 
+-- Issue #222 validates the consequential Pantry payload before the completion
+-- implementation runs. Accept the v3 mode fact at that existing boundary so
+-- v2 callers can be upgraded internally to deterministic ADDITIVE modes.
+do $patch_pantry_save_enforcement$
+declare
+  definition text := pg_get_functiondef(
+    'atlas_core.issue_222_enforce_source_save(jsonb,text,text,text,text)'::regprocedure
+  );
+  old_text text;
+  new_text text;
+begin
+  old_text := E'  else\n    if v_week_start is null\n      or v_payload - array[\n        \'week_start\', \'no_additions_confirmed\', \'source_signature\',\n        \'expected_source_signature\', \'rows\'\n      ] <> \'{}\'::jsonb\n      or not (v_payload ?& array[\n        \'week_start\', \'no_additions_confirmed\', \'source_signature\',\n        \'expected_source_signature\', \'rows\'\n      ])';
+  if position(old_text in definition)=0 then
+    raise exception 'Direct Need Issue #222 Pantry payload anchor changed';
+  end if;
+  new_text := E'  else\n    if v_week_start is null\n      or v_payload - array[\n        \'week_start\', \'no_additions_confirmed\', \'source_signature\',\n        \'expected_source_signature\', \'rows\', \'school_date_modes\'\n      ] <> \'{}\'::jsonb\n      or not (v_payload ?& array[\n        \'week_start\', \'no_additions_confirmed\', \'source_signature\',\n        \'expected_source_signature\', \'rows\', \'school_date_modes\'\n      ])';
+  execute replace(definition,old_text,new_text);
+end;
+$patch_pantry_save_enforcement$;
+
 -- Extend the existing atomic completion body. Its one top-level receipt hashes
 -- the v3 mode payload; compatibility child commands receive only their v1 rows.
 do $patch_pantry_save$
@@ -991,6 +1027,24 @@ set role atlas_read_runtime;
 alter function atlas_core.planning_contract_01_preflight_payload(date,date,jsonb)
   rename to direct_need_legacy_preflight_payload;
 
+-- PostgreSQL renames the function object but does not rewrite qualified
+-- parameter references embedded in its PL/pgSQL body. Repair those references
+-- before the wrapper delegates to the legacy implementation.
+do $patch_direct_need_legacy_preflight$
+declare
+  definition text := pg_get_functiondef(
+    'atlas_core.direct_need_legacy_preflight_payload(date,date,jsonb)'::regprocedure
+  );
+  old_text text := 'planning_contract_01_preflight_payload.period_start';
+  new_text text := 'direct_need_legacy_preflight_payload.period_start';
+begin
+  if position(old_text in definition)=0 then
+    raise exception 'Direct Need legacy preflight parameter anchor changed';
+  end if;
+  execute replace(definition,old_text,new_text);
+end;
+$patch_direct_need_legacy_preflight$;
+
 create function atlas_core.planning_contract_01_preflight_payload(
   period_start date,
   period_end date,
@@ -1054,11 +1108,9 @@ begin
   v_current_run:=atlas_core.pa_05b_safe_uuid(
     v_payload#>>'{current_need,need_generation_run_id}'
   );
-  select input.pantry_need_approval_snapshot_id into v_current_snapshot
-  from atlas_planning.need_generation_runs run
-  join atlas_planning.need_generation_input_snapshots input
-    on input.need_generation_input_snapshot_id=run.input_snapshot_id
-  where run.need_generation_run_id=v_current_run;
+  v_current_snapshot:=atlas_core.pa_05b_safe_uuid(
+    v_payload#>>'{current_need,pantry_need_approval_snapshot_id}'
+  );
   v_current_fingerprint:=atlas_core.direct_need_snapshot_fingerprint(
     v_current_snapshot,period_start
   );
@@ -1069,9 +1121,8 @@ begin
   if v_current_run is not null and v_selected_snapshot is not null then
     if v_selected_fingerprint is distinct from v_current_fingerprint then
       v_payload:=jsonb_set(v_payload,'{downstream_currentness}','"OUTDATED"'::jsonb,true);
-    elsif exists(select 1 from atlas_planning.need_generation_input_snapshots input
-      where input.need_generation_run_id=v_current_run
-        and input.weekly_menu_id is null and input.attendance_batch_id is null)
+    elsif v_payload#>>'{current_need,weekly_menu_id}' is null
+      and v_payload#>>'{current_need,attendance_batch_id}' is null
     then
       v_payload:=jsonb_set(v_payload,'{downstream_currentness}','"CURRENT"'::jsonb,true);
     end if;

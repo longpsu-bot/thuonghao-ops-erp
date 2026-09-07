@@ -137,6 +137,13 @@ The functions do not call `record_wholesale_source`, `release_wholesale_order`, 
 
 PLANNING-CONTRACT-01 adds `atlas_api.save_pantry(request jsonb)`. It requires the existing `planning.pantry.write` capability and the `PANTRY-02.v2` command envelope. Its payload is the complete v1 Pantry Save payload: `week_start`, `no_additions_confirmed`, authoritative preview signature, expected persisted signature, and raw operator rows.
 
+`PANTRY-02.v2` remains a forward-compatible implicit-`ADDITIVE` contract. The
+caller does not send `school_date_modes`; the backend derives exactly one
+`ADDITIVE` fact for each School/date represented by positive rows before entering
+the common consequential Save boundary. This internal projection does not change
+the v2 receipt, checksum, idempotency, stale-version, stale-signature, replay, or
+`NO_CHANGE` semantics.
+
 One transaction performs complete replacement, server derivation of Delivery Location and Unit, all Purpose/reference/blocker validation, stable-line handling, deterministic validation, immutable every-and-only approval snapshot creation, and current snapshot establishment. The browser cannot author Location, Unit, Purpose status, lifecycle, readiness, currentness, or routing. The response contains the authoritative Pantry workbench, automatic Planning preflight, and `CURRENT`, `OUTDATED`, or `NOT_GENERATED` downstream currentness as applicable.
 
 Exact replay returns the original durable response, changed reuse conflicts, stale version/signature requires refresh and a new intent, and already-completed identical content returns `NO_CHANGE`. Prior positive and explicit-zero snapshots remain immutable. The six v1 APIs remain exact and callable for the connected UI coexistence window; their behavior and assertions are not weakened. See [PLANNING-CONTRACT-01](../implementation-tasks/TASK-PLANNING-CONTRACT-01-atomic-planning-boundaries.md).

@@ -204,7 +204,6 @@ as $$
       on location.delivery_location_id=p_delivery_location_id
      and location.customer_id=school.customer_id
     where school.school_id=p_school_id
-      and school.default_delivery_location_id=p_delivery_location_id
   ), contributions as materialized (
     select contribution.family_contribution_id,
       contribution.contribution_quantity,revision.family_revision_id,
