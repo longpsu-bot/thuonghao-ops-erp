@@ -8,6 +8,14 @@ export type PantryIssue = {
   field: string | null;
 };
 
+export type DirectNeedMode = "ADDITIVE" | "COMPLETE";
+
+export type PantrySchoolDateMode = {
+  school_id: string;
+  service_date: string;
+  direct_need_mode: DirectNeedMode;
+};
+
 export type PantryPurpose = {
   pantry_need_purpose_id: string;
   purpose_code: string;
@@ -123,6 +131,7 @@ export type PantryBatch = {
   source_name: "Nhập thủ công Atlas";
   source_signature: string;
   no_additions_confirmed: boolean;
+  school_date_modes: PantrySchoolDateMode[];
   requesting_actor_id: string;
   requesting_actor_name: string;
   creation_method: "MANUAL_ATLAS";
@@ -149,6 +158,7 @@ export type PantryWorkbenchData = {
   schools: PantrySchool[];
   ingredients: PantryIngredient[];
   catalog_issues: { blockers: PantryIssue[]; warnings: PantryIssue[] };
+  school_date_modes?: PantrySchoolDateMode[];
   batch: PantryBatch | null;
   allowed_actions: {
     can_preview: boolean;
@@ -167,6 +177,7 @@ export type PantryPreview = {
   source_signature: string;
   no_additions_confirmed: boolean;
   canonical_rows: JsonValue[];
+  school_date_modes: PantrySchoolDateMode[];
   issues: { blockers: PantryIssue[]; warnings: PantryIssue[] };
   comparison: {
     status: "NEW" | "NO_CHANGE" | "REPLACEMENT";
@@ -261,4 +272,36 @@ export function pantryRowsFromBatch(
     source_request_reference: line.source_request_reference ?? "",
     source_row_reference: line.source_row_reference ?? "",
   }));
+}
+
+export function pantryModesForRows(
+  rows: PantryDraftRow[],
+  recordedModes: PantrySchoolDateMode[] = [],
+): PantrySchoolDateMode[] {
+  const recorded = new Map(
+    recordedModes.map((mode) => [
+      `${mode.school_id}:${mode.service_date}`,
+      mode.direct_need_mode,
+    ]),
+  );
+  return Array.from(
+    new Map(
+      rows.map((row) => {
+        const key = `${row.school_id}:${row.service_date}`;
+        return [
+          key,
+          {
+            school_id: row.school_id,
+            service_date: row.service_date,
+            // Historical Pantry batches predate this fact and remain additive.
+            direct_need_mode: recorded.get(key) ?? "ADDITIVE",
+          } satisfies PantrySchoolDateMode,
+        ];
+      }),
+    ).values(),
+  ).sort(
+    (left, right) =>
+      left.service_date.localeCompare(right.service_date) ||
+      left.school_id.localeCompare(right.school_id),
+  );
 }

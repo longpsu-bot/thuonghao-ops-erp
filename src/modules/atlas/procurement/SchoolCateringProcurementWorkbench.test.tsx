@@ -1498,6 +1498,70 @@ describe("school-catering Procurement purchase-order stage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("creates a complete replacement from the stale released root", async () => {
+    const api = createReviewSchoolCateringProcurementApi(
+      "replacement_required",
+    );
+    const replace = vi.spyOn(api, "createPurchaseOrderReplacement");
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+    expect(screen.getByText(/không còn khớp phân bổ hiện tại/i)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Tạo đơn thay thế" }));
+    await waitFor(() => expect(replace).toHaveBeenCalledOnce());
+    expect(replace.mock.calls[0]?.[0]).toMatchObject({
+      expected_version: 2,
+      payload: {
+        replaced_purchase_order_id: "25000000-0000-4000-8000-000000000051",
+        expected_purchase_order_revision_id:
+          "25000000-0000-4000-8000-000000000053",
+      },
+    });
+  });
+
+  it("keeps a removed supplier commitment exportable while clearly blocking downstream work", async () => {
+    const api = createReviewSchoolCateringProcurementApi(
+      "cancellation_required",
+    );
+    render(
+      <SchoolCateringProcurementWorkbench
+        authState={authState}
+        api={api}
+        initialDateStart="2026-09-01"
+        initialDateEnd="2026-09-07"
+        initialStage="orders"
+        mode="review"
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Xem đơn" }));
+    const detail = screen.getByRole("region", {
+      name: "Chi tiết đơn mua NCC An Phú",
+    });
+    expect(detail).toHaveTextContent(
+      "Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.",
+    );
+    expect(
+      within(detail).queryByRole("button", { name: "Tạo đơn thay thế" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(detail).queryByRole("button", { name: "Phát hành cho NCC" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(detail).getByRole("button", { name: "Xuất XLSX" }),
+    ).toBeEnabled();
+    expect(screen.getByText("Chưa xác nhận dữ liệu hiện tại")).toBeVisible();
+  });
+
   it("shows XLSX as the primary released output and PDF as secondary", async () => {
     const exportXlsx = vi.fn();
     const exportPdf = vi.fn();

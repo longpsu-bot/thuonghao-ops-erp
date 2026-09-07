@@ -16,6 +16,7 @@ import { PurchaseOrderStage } from "./PurchaseOrderStage";
 import {
   confirmSupplierRecommendationsRequest,
   createPurchaseOrderDraftsRequest,
+  createPurchaseOrderReplacementRequest,
   procurementWorkbenchFromResult,
   procurementWorkbenchReadRequest,
   purchaseOrdersFromResult,
@@ -301,7 +302,9 @@ export function SchoolCateringProcurementWorkbench({
     if (next) {
       setPurchaseOrders(next);
       setPurchaseOrderLoadMessage(null);
-      setPurchaseOrderCurrentness("current");
+      setPurchaseOrderCurrentness(
+        next.procurement_current === false ? "unavailable" : "current",
+      );
       setMutationLocked(false);
     } else {
       setPurchaseOrders(null);
@@ -591,6 +594,35 @@ export function SchoolCateringProcurementWorkbench({
     await run();
   };
 
+  const createPurchaseOrderReplacement = async (
+    order: SchoolCateringPurchaseOrder,
+    existingRequest?: ReturnType<typeof createPurchaseOrderReplacementRequest>,
+  ) => {
+    if (!api || !authSubject || freshMutationLocked) return;
+    const request =
+      existingRequest ??
+      createPurchaseOrderReplacementRequest(
+        authSubject,
+        correlationId,
+        order.version,
+        order.purchase_order_id,
+        order.current_revision.purchase_order_revision_id,
+      );
+    const run = async () => {
+      const mutationIntent = intent.current;
+      setBusy(true);
+      const result = await api.createPurchaseOrderReplacement(request);
+      await finishMutation(
+        result,
+        [order.supplier.supplier_name],
+        run,
+        loadPurchaseOrders,
+        mutationIntent,
+      );
+    };
+    await run();
+  };
+
   const reloadAuthoritative = () => {
     setRetryAction(null);
     setCommandOutcome(null);
@@ -833,6 +865,9 @@ export function SchoolCateringProcurementWorkbench({
           loadMessage={purchaseOrderLoadMessage}
           search={search}
           onMaterialize={() => void materializePurchaseOrders()}
+          onCreateReplacement={(order) =>
+            void createPurchaseOrderReplacement(order)
+          }
           onRelease={(order) => void releasePurchaseOrder(order)}
           onExportXlsx={(order) => void onExportPurchaseOrderXlsx(order)}
           onExportPdf={(order) => void onExportPurchaseOrderPdf(order)}

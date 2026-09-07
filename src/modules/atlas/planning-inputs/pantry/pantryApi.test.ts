@@ -78,7 +78,7 @@ describe("PANTRY-02 API adapter", () => {
     ]);
   });
 
-  it("builds PANTRY-02.v2 and routes consequential Save without lifecycle chaining", async () => {
+  it("builds PANTRY-02.v3 with explicit School/date modes and routes one consequential Save", async () => {
     const invoke = vi.fn().mockResolvedValue(success);
     const api = createPantryApi({ invoke });
     const request = pantryCompletionRequest("subject", "correlation", 4, {
@@ -87,16 +87,53 @@ describe("PANTRY-02 API adapter", () => {
       source_signature: "a".repeat(64),
       expected_source_signature: "b".repeat(64),
       rows: [],
+      school_date_modes: [],
     });
 
     await api.saveCompleted(request);
 
     expect(request).toMatchObject({
-      contract_version: "PANTRY-02.v2",
+      contract_version: "PANTRY-02.v3",
       expected_version: 4,
       reason_code: "PANTRY_SAVED",
     });
     expect(invoke.mock.calls).toEqual([["atlas_api.save_pantry", request]]);
+  });
+
+  it("sends explicit School/date composition authority with a v3 preview", async () => {
+    const invoke = vi.fn().mockResolvedValue(success);
+    const api = createPantryApi({ invoke });
+
+    await api.preview(
+      "subject",
+      "correlation",
+      "2026-08-03",
+      false,
+      [],
+      [
+        {
+          school_id: "school-1",
+          service_date: "2026-08-03",
+          direct_need_mode: "COMPLETE",
+        },
+      ],
+    );
+
+    expect(invoke).toHaveBeenCalledWith(
+      "atlas_api.preview_pantry_source",
+      expect.objectContaining({
+        contract_version: "PANTRY-02.v3",
+        payload: expect.objectContaining({
+          school_date_modes: [
+            {
+              school_id: "school-1",
+              service_date: "2026-08-03",
+              direct_need_mode: "COMPLETE",
+            },
+          ],
+        }),
+      }),
+    );
   });
 
   it("parses only authoritative success payloads and preserves safe errors", () => {

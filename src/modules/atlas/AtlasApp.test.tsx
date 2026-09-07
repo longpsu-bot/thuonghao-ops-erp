@@ -98,7 +98,7 @@ describe("Atlas master-data shell", () => {
     expect(document.body.textContent).not.toContain("Prototype");
   });
 
-  it("enables the five active Atlas pages while keeping Warehouse unavailable", () => {
+  it("enables the six active Atlas pages including Warehouse dispatch release", () => {
     render(<AtlasApp reviewMode />);
 
     const navigation = screen.getByRole("navigation", {
@@ -121,12 +121,22 @@ describe("Atlas master-data shell", () => {
     expect(
       within(navigation).getByRole("button", { name: "Kế hoạch mua hàng" }),
     ).toBeEnabled();
+    expect(
+      within(navigation).getByRole("button", { name: "Phiếu xuất kho" }),
+    ).toBeEnabled();
+    expect(within(navigation).getByText("Kho")).toBeInTheDocument();
+    expect(
+      within(navigation).getByRole("button", { name: /^Tổng quan/ }),
+    ).toBeDisabled();
+  });
 
-    for (const label of [/^Tổng quan/, /^Kho/]) {
-      expect(
-        within(navigation).getByRole("button", { name: label }),
-      ).toBeDisabled();
-    }
+  it("opens the read-only PXK workbench from Kho navigation", async () => {
+    render(<AtlasApp reviewMode />);
+    fireEvent.click(screen.getByRole("button", { name: "Phiếu xuất kho" }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Phiếu xuất kho" }),
+    ).toBeVisible();
+    expect(screen.getByText(/Bản xem trước chỉ đọc/i)).toBeVisible();
   });
 
   it("renders the connected Procurement review workbench from Atlas navigation", async () => {

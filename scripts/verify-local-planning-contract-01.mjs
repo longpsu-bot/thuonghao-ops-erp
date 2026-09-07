@@ -134,7 +134,7 @@ async function findEmptyWeek(client, subject) {
   );
 }
 
-async function releasedRecipeDish(client, subject) {
+async function releasedRecipeDish(client, subject, schoolTypeId) {
   const workbench = (
     await invoke(
       client,
@@ -160,6 +160,8 @@ async function releasedRecipeDish(client, subject) {
             line.line_disposition === "PRESENT" && line.quantity_per_basis > 0,
         ) &&
         recipe?.recipe_status === "ACTIVE" &&
+        (recipe.school_type_id === null ||
+          recipe.school_type_id === schoolTypeId) &&
         dish?.dish_status === "ACTIVE",
     );
   assert(
@@ -218,8 +220,13 @@ async function main() {
   });
   const subject = await signIn(client);
   const { weekStart, planning, pantry } = await findEmptyWeek(client, subject);
-  const { dish } = await releasedRecipeDish(client, subject);
   const school = planning.schools[0];
+  assert(school, "PLANNING-CONTRACT-01 lacks an eligible School fixture.");
+  const { dish } = await releasedRecipeDish(
+    client,
+    subject,
+    school.school_type_id,
+  );
   const ingredient = pantry.ingredients.find(
     (item) => item.ingredient_id === pantryIngredientId,
   );

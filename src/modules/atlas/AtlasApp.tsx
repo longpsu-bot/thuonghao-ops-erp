@@ -80,6 +80,12 @@ import {
   createReviewSchoolCateringProcurementApi,
   type SchoolCateringProcurementReviewScenario,
 } from "./procurement/reviewSchoolCateringProcurementApi";
+import { SchoolDispatchReleaseWorkbench } from "./dispatch/SchoolDispatchReleaseWorkbench";
+import {
+  createSchoolDispatchReleaseApi,
+  type SchoolDispatchReleaseApi,
+} from "./dispatch/schoolDispatchReleaseApi";
+import { createReviewSchoolDispatchReleaseApi } from "./dispatch/reviewSchoolDispatchReleaseApi";
 import { OperationalState, WorkbenchHeader } from "./WorkbenchComponents";
 import { createReviewMasterDataApi } from "./review/reviewMasterDataApi";
 import {
@@ -94,7 +100,8 @@ export type MasterDataPageId =
   | "ingredients-units"
   | "recipes"
   | "planning-inputs"
-  | "procurement";
+  | "procurement"
+  | "school-dispatch-release";
 
 type AtlasAppProps = {
   initialPage?: MasterDataPageId;
@@ -304,15 +311,19 @@ function AtlasNavigation({
           active={active === "procurement"}
           onClick={() => navigate("procurement")}
         />
-        <NavLink
-          renderRoot={(props) => <button {...props} type="button" disabled />}
-          label="Kho"
-          description="Chưa triển khai"
-          leftSection={
-            <Warehouse aria-hidden="true" size={19} weight="regular" />
-          }
-          disabled
-        />
+        <Stack className="nav-group" gap={3}>
+          <Group className="nav-group-label" gap={8}>
+            <Warehouse aria-hidden="true" size={16} weight="regular" />
+            <Text component="span">Kho</Text>
+          </Group>
+          <NavLink
+            component="button"
+            type="button"
+            label="Phiếu xuất kho"
+            active={active === "school-dispatch-release"}
+            onClick={() => navigate("school-dispatch-release")}
+          />
+        </Stack>
       </Stack>
     </Stack>
   );
@@ -331,6 +342,7 @@ function MasterDataPage({
   confirmedNeedApi,
   procurementApi,
   purchaseReviewApi,
+  dispatchReleaseApi,
   onContinueAllocation,
   procurementDate,
   mode,
@@ -347,6 +359,7 @@ function MasterDataPage({
   confirmedNeedApi?: ConfirmedNeedApi;
   procurementApi?: SchoolCateringProcurementApi;
   purchaseReviewApi?: PurchaseReviewApi;
+  dispatchReleaseApi?: SchoolDispatchReleaseApi;
   onContinueAllocation?: (serviceDate: string) => void;
   procurementDate?: string;
   mode: "connected" | "review";
@@ -355,11 +368,12 @@ function MasterDataPage({
   const recipePage = page === "recipes";
   const planningPage = page === "planning-inputs";
   const procurementPage = page === "procurement";
+  const dispatchReleasePage = page === "school-dispatch-release";
   const procurementScope = currentProcurementScope();
   const serviceDate = procurementDate ?? procurementScope.dateStart;
   return (
     <main className="atlas-page master-data-page">
-      {!planningPage && !procurementPage && (
+      {!planningPage && !procurementPage && !dispatchReleasePage && (
         <WorkbenchHeader
           eyebrow={recipePage ? "Món ăn và công thức" : "Dữ liệu gốc"}
           title={
@@ -401,6 +415,14 @@ function MasterDataPage({
           initialDateEnd={serviceDate}
           mode={mode}
         />
+      ) : dispatchReleasePage ? (
+        <SchoolDispatchReleaseWorkbench
+          authState={authState}
+          api={dispatchReleaseApi}
+          initialDateStart={serviceDate}
+          initialDateEnd={serviceDate}
+          mode={mode}
+        />
       ) : recipePage ? (
         <DishRecipeAdminWorkbench
           authState={authState}
@@ -434,6 +456,7 @@ function AtlasShell({
   confirmedNeedApi,
   procurementApi,
   purchaseReviewApi,
+  dispatchReleaseApi,
   mode,
   session,
   connection,
@@ -453,6 +476,7 @@ function AtlasShell({
   confirmedNeedApi?: ConfirmedNeedApi;
   procurementApi?: SchoolCateringProcurementApi;
   purchaseReviewApi?: PurchaseReviewApi;
+  dispatchReleaseApi?: SchoolDispatchReleaseApi;
   mode: "connected" | "review";
   session?: AtlasAuthSessionController;
   connection?: AtlasSupabaseClientResult;
@@ -567,6 +591,7 @@ function AtlasShell({
           confirmedNeedApi={confirmedNeedApi}
           procurementApi={procurementApi}
           purchaseReviewApi={purchaseReviewApi}
+          dispatchReleaseApi={dispatchReleaseApi}
           procurementDate={procurementDate}
           onContinueAllocation={(date) => {
             allocationNavigationPending.current = true;
@@ -622,6 +647,13 @@ function ReviewAtlasApp({
     [scenario],
   );
   const legacyProcurementScenario = scenario.startsWith("procurement_");
+  const dispatchReleaseApi = useMemo(
+    () =>
+      createReviewSchoolDispatchReleaseApi(
+        scenario === "permission_denied" ? "permission_denied" : "ready",
+      ),
+    [scenario],
+  );
   const authState = useMemo(() => createReviewAuthState(scenario), [scenario]);
 
   return (
@@ -645,6 +677,7 @@ function ReviewAtlasApp({
       purchaseReviewApi={
         legacyProcurementScenario ? undefined : journey.purchaseReviewApi
       }
+      dispatchReleaseApi={dispatchReleaseApi}
       mode="review"
       reviewScenario={scenario}
       onReviewScenarioChange={setScenario}
@@ -709,6 +742,10 @@ function ConnectedAtlasApp({
     () => (transport ? createPurchaseReviewApi(transport) : undefined),
     [transport],
   );
+  const dispatchReleaseApi = useMemo(
+    () => (transport ? createSchoolDispatchReleaseApi(transport) : undefined),
+    [transport],
+  );
 
   return (
     <AtlasShell
@@ -724,6 +761,7 @@ function ConnectedAtlasApp({
       confirmedNeedApi={confirmedNeedApi}
       procurementApi={procurementApi}
       purchaseReviewApi={purchaseReviewApi}
+      dispatchReleaseApi={dispatchReleaseApi}
       mode="connected"
       session={auth}
       connection={connection}

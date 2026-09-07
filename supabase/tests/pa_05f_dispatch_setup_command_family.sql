@@ -33,8 +33,8 @@ select ok(
 select is(
   (select count(*)::integer from pg_proc p join pg_roles r on r.oid=p.proowner
    where r.rolname='atlas_dispatch_command_runtime'),
-  6,
-  'Dispatch runtime owns only the three H2, two PA-05F, and one PA-05B-H3 entry functions'
+  7,
+  'Dispatch runtime owns only the three H2, two PA-05F, one PA-05B-H3, and one School PXK release entry functions'
 );
 select ok(
   not has_schema_privilege('atlas_dispatch_command_runtime','atlas_api','CREATE')
