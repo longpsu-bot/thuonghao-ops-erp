@@ -19,7 +19,7 @@ const PACKAGE_CLASSIFICATIONS = Object.freeze({
   foundation: "FOUNDATION_REFERENCE",
 });
 const PACKAGE_VERSIONS = Object.freeze({
-  identity: "1.1.0",
+  identity: "1.2.0",
   foundation: "1.1.0",
 });
 export const IDENTITY_CAPABILITY_CODES = Object.freeze([
@@ -42,6 +42,8 @@ export const IDENTITY_CAPABILITY_CODES = Object.freeze([
   "procurement.school_catering.write",
   "master_data.recipe_adjustments.read",
   "master_data.recipe_adjustments.write",
+  "dispatch.school_release.read",
+  "dispatch.school_release.release",
 ]);
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
