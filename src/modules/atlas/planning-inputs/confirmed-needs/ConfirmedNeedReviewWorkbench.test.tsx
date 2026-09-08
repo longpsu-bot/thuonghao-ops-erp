@@ -985,6 +985,36 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
   });
 
+  it("requires refresh for a definite no-business-write failure without calling it unknown", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const save = vi.spyOn(api, "save").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "CAPABILITY_DENIED",
+        safe_message: "Bạn không có quyền xác nhận nhu cầu.",
+        retryable: false,
+        write_certainty: "NO_BUSINESS_WRITE",
+      },
+    } as never);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(
+      await screen.findByText(
+        "Bạn không có quyền truy cập nhu cầu xác nhận này.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/Chưa xác định được kết quả lưu/),
+    ).not.toBeInTheDocument();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
+  });
+
   it("requires refresh when a Save backend error omits reviewed write certainty", async () => {
     const api = createReviewConfirmedNeedApi("ready");
     const save = vi.spyOn(api, "save").mockResolvedValue({

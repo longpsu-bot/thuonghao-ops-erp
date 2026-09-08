@@ -443,7 +443,18 @@ export function confirmedNeedResultHasUnknownWriteOutcome(
   if (result.kind === "transport_error") return true;
   return (
     result.kind === "backend_error" &&
-    result.error.write_certainty !== "NO_COMMITTED_CHANGE"
+    !["NO_COMMITTED_CHANGE", "NO_BUSINESS_WRITE"].includes(
+      result.error.write_certainty ?? "",
+    )
+  );
+}
+
+export function confirmedNeedResultRequiresEligibilityRefresh(
+  result: AtlasRpcResult,
+) {
+  return (
+    result.kind === "backend_error" &&
+    result.error.write_certainty === "NO_BUSINESS_WRITE"
   );
 }
 

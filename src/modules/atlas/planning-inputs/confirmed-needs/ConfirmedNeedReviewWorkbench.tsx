@@ -19,6 +19,7 @@ import {
   confirmedNeedResultHasUnknownWriteOutcome,
   confirmedNeedResultIsStale,
   confirmedNeedResultMessage,
+  confirmedNeedResultRequiresEligibilityRefresh,
   confirmedNeedWorkbenchFromResult,
   exactDecimalEqual,
   exactQuantityDisplay,
@@ -365,6 +366,9 @@ export function ConfirmedNeedReviewWorkbench({
     const readback = confirmedNeedReadbackFromResult(result);
     if (readback) adopt(readback);
     else if (confirmedNeedResultIsStale(result)) {
+      setRefreshRequired(true);
+      setNotice(confirmedNeedResultMessage(result));
+    } else if (confirmedNeedResultRequiresEligibilityRefresh(result)) {
       setRefreshRequired(true);
       setNotice(confirmedNeedResultMessage(result));
     } else if (confirmedNeedResultHasUnknownWriteOutcome(result)) {
