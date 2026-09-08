@@ -168,3 +168,11 @@ the v3 consequential Save and means that exact School/date requires no Recipe,
 Weekly Menu, or Attendance contribution. The common Pantry workbench remains the
 only normal direct-Ingredient input surface; no separate wholesale UI or recipient
 is added.
+
+For `PANTRY-02.v3`, a blocker-free `REPLACEMENT` of an `APPROVED` Pantry batch may
+return `preview.can_save = true` when the Actor holds `planning.pantry.write`. This
+only makes the proposal eligible for the separate Planning correction-impact read;
+`get_planning_source_correction_impact` remains the downstream Save-permission gate
+and may still return `save_allowed = false`. The `PANTRY-02.v1` compatibility
+preview retains its original lifecycle behavior and remains ineligible while the
+current batch is `APPROVED`.
