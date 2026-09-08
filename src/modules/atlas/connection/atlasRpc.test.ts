@@ -283,6 +283,29 @@ describe("Atlas RPC transport", () => {
     }
   });
 
+  it("preserves authoritative backend write certainty", async () => {
+    const fake = rpcClient({
+      data: {
+        success: false,
+        error_code: "RETRYABLE_CONCURRENCY_FAILURE",
+        safe_message: "No committed change was made.",
+        retryable: true,
+        write_certainty: "NO_COMMITTED_CHANGE",
+      },
+      error: null,
+    });
+
+    const result = await createAtlasRpcTransport(fake.client).invoke(
+      "atlas_api.save_confirmed_needs",
+      {},
+    );
+
+    expect(result.kind).toBe("backend_error");
+    if (result.kind === "backend_error") {
+      expect(result.error.write_certainty).toBe("NO_COMMITTED_CHANGE");
+    }
+  });
+
   it("preserves only reviewed PA-05C read error fields", async () => {
     const fake = rpcClient({
       data: {

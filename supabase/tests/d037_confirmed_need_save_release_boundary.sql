@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
-select plan(33);
+select plan(37);
 
 select has_function('atlas_api', 'save_confirmed_needs', array['jsonb'],
   'D037-01 Save v2 is public');
@@ -119,6 +119,16 @@ from atlas_core.capabilities capability
 where capability.capability_code = 'confirmed_need_release.release'
 on conflict (role_id, capability_id) do nothing;
 
+create function pg_temp.d037_force_save_exception()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  raise exception 'forced Save failure for write-certainty verification';
+end;
+$$;
+create trigger d037_force_save_exception
+before insert on atlas_planning.confirmed_need_line_decisions
+for each row execute function pg_temp.d037_force_save_exception();
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub',
   'b6000000-0000-0000-0000-000000000101', true);
@@ -128,6 +138,19 @@ insert into d037_results values ('incomplete_release',
   atlas_api.release_confirmed_needs(pg_temp.d037_command(
     'RMVP-07.v2', 'b6710000-0000-0000-0000-000000000001',
     'd037-incomplete', 1, 'CONFIRMED_NEED_RELEASED')));
+insert into d037_results
+select 'forced_save_failure', atlas_api.save_confirmed_needs(pg_temp.d037_command(
+  'RMVP-05.v2', 'b6710000-0000-0000-0000-000000000006',
+  'd037-forced-save-failure', 1, 'CONFIRMED_NEED_SAVED',
+  pg_temp.d037_lines(response -> 'workbench')))
+from d037_results where name = 'read';
+reset role;
+drop trigger d037_force_save_exception
+  on atlas_planning.confirmed_need_line_decisions;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub',
+  'b6000000-0000-0000-0000-000000000101', true);
 insert into d037_results
 select 'save', atlas_api.save_confirmed_needs(pg_temp.d037_command(
   'RMVP-05.v2', 'b6710000-0000-0000-0000-000000000002',
@@ -198,6 +221,19 @@ reset role;
 select is((select response ->> 'error_code' from d037_results
   where name = 'incomplete_release'), 'CONFIRMED_NEED_INCOMPLETE',
   'D037-13 Release requires complete saved decisions');
+select is((select response ->> 'write_certainty' from d037_results
+  where name = 'forced_save_failure'), 'NO_COMMITTED_CHANGE',
+  'D037-13A an unexpected Save failure reports authoritative no-commit certainty');
+select is((select response ->> 'safe_message' from d037_results
+  where name = 'forced_save_failure'),
+  'The Save failed safely. No changes were committed.',
+  'D037-13B the safe message agrees with authoritative no-commit certainty');
+select is((select count(*) from atlas_planning.confirmed_need_line_decisions
+  where command_id = 'b6710000-0000-0000-0000-000000000006'), 0::bigint,
+  'D037-13C the failed Save leaves no decision evidence');
+select is((select count(*) from atlas_core.command_receipts
+  where command_id = 'b6710000-0000-0000-0000-000000000006'), 0::bigint,
+  'D037-13D the failed Save rolls back its command receipt');
 select ok((select response ->> 'success' = 'true'
   and response ->> 'contract_version' = 'RMVP-05.v2'
   and response #>> '{authoritative_readback,authoritative_batch_status}'

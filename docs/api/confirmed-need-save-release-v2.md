@@ -28,6 +28,32 @@ D-042 correction history is not an active Handoff conflict. Both authoritative e
 
 RMVP-05/06/07 v1 functions remain callable. Both v2 functions reuse `atlas_confirmed_need_review_runtime`, fixed empty search paths, JWT-bound human Actor resolution, active GLOBAL scope, revoke-first execution, private forced-RLS persistence, and no browser table access or service-role credential.
 
+## Write certainty
+
+An RMVP-05.v2 error returned from the D037 Save command body carries the explicit
+reviewed `write_certainty = NO_COMMITTED_CHANGE` contract. This includes an
+unexpected exception handled after PostgreSQL has rolled back the command
+subtransaction; the safe message must therefore describe a failed Save with no
+committed change, not an unknown outcome. A failure returned earlier by
+`rmvp_05_authorize_global` carries `NO_BUSINESS_WRITE` because no business command
+has begun.
+
+React preserves that field at the transport boundary. A backend failure with
+`NO_COMMITTED_CHANGE` keeps a safe local operator draft available, displays the
+backend safe meaning, creates no authoritative readback, and is never retried
+automatically. `NO_BUSINESS_WRITE` is also a definite no-write result, not an
+unknown outcome, but it requires authoritative refresh because authorization or
+current action eligibility may have changed. Only a genuine `transport_error` is
+currently an unknown Save outcome under a valid response. A missing, unreviewed,
+or lifecycle-specific certainty on this Save path also fails closed and requires
+authoritative refresh rather than inferring safety from an error code, status, or
+retry hint. No separate uncertain backend write-certainty value is defined by
+this contract.
+
+A stale/version conflict still requires authoritative refresh because the local
+version is obsolete, while retaining the backend's definite no-commit meaning.
+This lifecycle decision is separate from write-outcome certainty.
+
 ## Authoritative action eligibility
 
 Every authoritative workbench readback extends the existing action shape with `allowed_actions.save_confirmed_needs` and `allowed_actions.release_confirmed_needs`, plus matching `disabled_reason_codes` and `disabled_reasons` fields.

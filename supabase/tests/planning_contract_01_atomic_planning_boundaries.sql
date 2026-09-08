@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(196);
+select plan(205);
 
 select is(
   (
@@ -394,7 +394,7 @@ values
   ('e4700000-0000-0000-0000-000000000009', 'e4700000-0000-0000-0000-000000000003', 'rice');
 insert into atlas_admin.recipe_line_revisions (recipe_line_revision_id, recipe_id, recipe_version_id, recipe_line_id, line_revision_number, ingredient_id, quantity_per_basis, unit_id, created_by_actor_id)
 values
-  ('e4100000-0000-0000-0000-000000000012', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000011', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
+  ('e4100000-0000-0000-0000-000000000012', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000011', 1, 'e4100000-0000-0000-0000-000000000007', 50, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
   ('e4100000-0000-0000-0000-000000000015', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000014', 1, 'e4100000-0000-0000-0000-000000000013', 500, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
   ('e4100000-0000-0000-0000-000000000018', 'e4100000-0000-0000-0000-000000000009', 'e4100000-0000-0000-0000-000000000010', 'e4100000-0000-0000-0000-000000000017', 1, 'e4100000-0000-0000-0000-000000000016', 2.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
   ('e4600000-0000-0000-0000-000000000011', 'e4600000-0000-0000-0000-000000000002', 'e4600000-0000-0000-0000-000000000005', 'e4600000-0000-0000-0000-000000000008', 1, 'e4100000-0000-0000-0000-000000000007', 12.5, 'e4100000-0000-0000-0000-000000000006', 'e4000000-0000-0000-0000-000000000001'),
@@ -677,7 +677,7 @@ select is((
   where need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-initial')
     and contribution_family='RECIPE_DERIVED' and line_disposition='ACTIVE'
     and ingredient_id='e4100000-0000-0000-0000-000000000007'
-),2.500000::numeric,'PCT01-30 Recipe quantity is exact');
+),10.000000::numeric,'PCT01-30 Recipe quantity is exact');
 select is((
   select sum(theoretical_quantity) from atlas_planning.theoretical_need_lines
   where need_generation_run_id=(select (response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid from pct01_responses where response_name='execute-initial')
@@ -897,7 +897,7 @@ with proposed(rows) as (
       'service_date','2026-11-02','school_id','e4100000-0000-0000-0000-000000000005',
       'ingredient_id','e4100000-0000-0000-0000-000000000007',
       'pantry_need_purpose_id','e4400000-0000-0000-0000-000000000001',
-      'requested_quantity','2.500000','note','Separate Pantry delivery corrected',
+      'requested_quantity','2.000000','note','Separate Pantry delivery corrected',
       'source_request_reference','RMVP04','source_row_reference','1'
     ),
     jsonb_build_object(
@@ -958,6 +958,518 @@ select 'pantry-source-correction', jsonb_build_object(
   )
 )
 from canonical;
+
+-- Scenario C A1 is isolated in a rolled-back subtransaction so the following
+-- A2 sequence can independently exercise two SYSTEM successors between HUMAN
+-- decisions. All business writes below use the reviewed public commands.
+insert into atlas_core.role_capabilities (role_id, capability_id)
+select 'e4000000-0000-0000-0000-000000000020', capability.capability_id
+from atlas_core.capabilities capability
+where capability.capability_code in (
+  'confirmed_need_release.release',
+  'procurement.school_catering.read',
+  'procurement.school_catering.write',
+  'dispatch.school_release.read',
+  'dispatch.school_release.release'
+)
+on conflict (role_id, capability_id) do nothing;
+
+insert into atlas_admin.suppliers (
+  supplier_id, supplier_code, supplier_name, supplier_status
+) values (
+  'e4900000-0000-0000-0000-000000000001',
+  'scenario-c-supplier', 'Scenario C Supplier', 'ACTIVE'
+);
+insert into atlas_admin.supplier_eligibilities (
+  supplier_id, ingredient_id, effective_from, priority, reason_note
+)
+select 'e4900000-0000-0000-0000-000000000001', ingredient_id,
+  date '2026-01-01', 1, 'Scenario C released commitment fixture'
+from (
+  select distinct line.ingredient_id
+  from atlas_planning.confirmed_need_lines line
+  where line.confirmed_need_batch_id = (
+    select (response -> 'affected_aggregate_ids' ->>
+      'confirmed_need_batch_id')::uuid
+    from pct01_responses where response_name = 'execute-initial'
+  )
+) ingredients;
+
+create function pg_temp.pct01_business_command(
+  p_contract text, p_reason text, p_expected_version bigint, p_payload jsonb
+)
+returns jsonb
+language sql
+volatile
+set search_path = ''
+as $$
+  select pg_catalog.jsonb_build_object(
+    'contract_version', p_contract,
+    'command_id', pg_catalog.gen_random_uuid(),
+    'correlation_id', pg_catalog.gen_random_uuid(),
+    'idempotency_key', pg_catalog.gen_random_uuid()::text,
+    'expected_version', p_expected_version,
+    'requested_by_auth_subject',
+      'e4000000-0000-0000-0000-000000000101'::uuid,
+    'requested_at', pg_catalog.transaction_timestamp(),
+    'reason_code', p_reason,
+    'reason_note', null,
+    'payload', p_payload
+  );
+$$;
+
+create function pg_temp.pct01_scenario_c_a1()
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_batch_id uuid;
+  v_batch_version bigint;
+  v_run_id uuid;
+  v_run_version bigint;
+  v_target_line_id uuid;
+  v_original_decision_id uuid;
+  v_original_before jsonb;
+  v_original_after jsonb;
+  v_allocation_read jsonb;
+  v_row jsonb;
+  v_result jsonb;
+  v_prepare jsonb;
+  v_po_release_count integer := 0;
+  v_pxk jsonb;
+  v_preview jsonb;
+  v_po_before jsonb;
+  v_po_after jsonb;
+  v_pxk_before jsonb;
+  v_pxk_after jsonb;
+  v_correction jsonb;
+  v_source_save jsonb;
+  v_generation jsonb;
+  v_reconfirm jsonb;
+  v_current_revision_id uuid;
+  v_current_quantity numeric;
+  v_current_pointer uuid;
+  v_system_decision_count bigint;
+  v_new_decision jsonb;
+  v_answer jsonb;
+begin
+  select batch.confirmed_need_batch_id, batch.version,
+    batch.current_need_generation_run_id
+  into strict v_batch_id, v_batch_version, v_run_id
+  from atlas_planning.confirmed_need_batches batch
+  where batch.confirmed_need_batch_id = (
+    select (response -> 'affected_aggregate_ids' ->>
+      'confirmed_need_batch_id')::uuid
+    from pg_temp.pct01_responses where response_name = 'execute-initial'
+  );
+  select line.confirmed_need_line_id,
+    line.current_confirmed_need_line_decision_id
+  into strict v_target_line_id, v_original_decision_id
+  from atlas_planning.confirmed_need_lines line
+  where line.confirmed_need_batch_id = v_batch_id
+    and line.ingredient_id = 'e4100000-0000-0000-0000-000000000007'
+    and line.delivery_location_id =
+      'e4100000-0000-0000-0000-000000000002';
+  select to_jsonb(decision) into strict v_original_before
+  from atlas_planning.confirmed_need_line_decisions decision
+  where decision.confirmed_need_line_decision_id = v_original_decision_id;
+
+  v_allocation_read := atlas_api.get_confirmed_supplier_allocation_workbench(
+    pg_catalog.jsonb_build_object(
+      'contract_version', 'CONFIRMED-SUPPLIER-ALLOCATION.v1',
+      'requested_by_auth_subject',
+        'e4000000-0000-0000-0000-000000000101'::uuid,
+      'correlation_id', pg_catalog.gen_random_uuid(),
+      'payload', pg_catalog.jsonb_build_object(
+        'date_start', '2026-11-02', 'date_end', '2026-11-02'
+      )
+    )
+  );
+  for v_row in
+    select value
+    from pg_catalog.jsonb_array_elements(v_allocation_read -> 'rows')
+    order by value ->> 'ingredient_id', value ->> 'delivery_location_id'
+  loop
+    v_result := atlas_api.save_confirmed_supplier_allocation(
+      pg_temp.pct01_business_command(
+        'CONFIRMED-SUPPLIER-ALLOCATION.v1',
+        'CONFIRMED_SUPPLIER_ALLOCATION_SAVED',
+        (v_row #>> '{family,version}')::bigint,
+        pg_catalog.jsonb_build_object(
+          'family', pg_catalog.jsonb_build_object(
+            'service_date', v_row -> 'service_date',
+            'delivery_location_id', v_row -> 'delivery_location_id',
+            'ingredient_id', v_row -> 'ingredient_id',
+            'unit_id', v_row -> 'unit_id',
+            'expected_source_fingerprint',
+              v_row #> '{family,source_fingerprint}',
+            'expected_source_batch_id',
+              v_row -> 'source_confirmed_need_batch_id',
+            'expected_source_batch_version',
+              v_row -> 'source_confirmed_need_batch_version'
+          ),
+          'splits', pg_catalog.jsonb_build_array(
+            pg_catalog.jsonb_build_object(
+              'supplier_id',
+                'e4900000-0000-0000-0000-000000000001',
+              'allocated_quantity', v_row -> 'family_quantity'
+            )
+          )
+        )
+      )
+    );
+    if not coalesce((v_result ->> 'success')::boolean, false) then
+      v_answer := pg_catalog.jsonb_build_object(
+        'stage', 'allocation', 'failure', v_result);
+      raise exception using errcode = 'PCT99';
+    end if;
+  end loop;
+
+  select version into strict v_batch_version
+  from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id = v_batch_id;
+  v_prepare := atlas_api.prepare_school_catering_purchase_orders(
+    pg_temp.pct01_business_command(
+      'PURCHASE-COMMITMENT.v1', 'PURCHASE_ORDERS_PREPARED',
+      v_batch_version, pg_catalog.jsonb_build_object(
+        'confirmed_need_batch_id', v_batch_id,
+        'service_date', '2026-11-02'
+      )
+    )
+  );
+  if not coalesce((v_prepare ->> 'success')::boolean, false) then
+    v_answer := pg_catalog.jsonb_build_object(
+      'stage', 'preparation', 'failure', v_prepare);
+    raise exception using errcode = 'PCT99';
+  end if;
+
+  for v_row in
+    select pg_catalog.jsonb_build_object(
+      'purchase_order_id', purchase_order.purchase_order_id,
+      'version', purchase_order.version,
+      'revision_id', revision.purchase_order_revision_id
+    )
+    from atlas_procurement.purchase_orders purchase_order
+    join atlas_procurement.purchase_order_revisions revision
+      on revision.purchase_order_id = purchase_order.purchase_order_id
+     and revision.is_current
+    where purchase_order.school_catering_service_date = '2026-11-02'
+    order by purchase_order.purchase_order_id
+  loop
+    v_result := atlas_api.release_school_catering_purchase_order(
+      pg_temp.pct01_business_command(
+        'SCHOOL-CATERING-PROCUREMENT.v1',
+        'SCHOOL_CATERING_PO_RELEASED',
+        (v_row ->> 'version')::bigint,
+        pg_catalog.jsonb_build_object(
+          'purchase_order_id', v_row -> 'purchase_order_id',
+          'expected_purchase_order_revision_id', v_row -> 'revision_id'
+        )
+      )
+    );
+    if not coalesce((v_result ->> 'success')::boolean, false) then
+      v_answer := pg_catalog.jsonb_build_object(
+        'stage', 'po_release', 'failure', v_result);
+      raise exception using errcode = 'PCT99';
+    end if;
+    v_po_release_count := v_po_release_count + 1;
+  end loop;
+
+  v_preview := atlas_core.school_dispatch_release_preview(
+    date '2026-11-02',
+    'e4100000-0000-0000-0000-000000000005',
+    'e4100000-0000-0000-0000-000000000002'
+  );
+  v_pxk := atlas_api.release_school_dispatch_document(
+    pg_temp.pct01_business_command(
+      'SCHOOL-DISPATCH-RELEASE.v1',
+      'SCHOOL_DISPATCH_DOCUMENT_RELEASED', 0,
+      pg_catalog.jsonb_build_object(
+        'service_date', '2026-11-02',
+        'school_id', 'e4100000-0000-0000-0000-000000000005',
+        'delivery_location_id',
+          'e4100000-0000-0000-0000-000000000002',
+        'expected_source_fingerprint', v_preview -> 'source_fingerprint',
+        'predecessor_release_id', null
+      )
+    )
+  );
+  if not coalesce((v_pxk ->> 'success')::boolean, false) then
+    v_answer := pg_catalog.jsonb_build_object(
+      'stage', 'pxk_release', 'failure', v_pxk, 'preview', v_preview);
+    raise exception using errcode = 'PCT99';
+  end if;
+
+  select pg_catalog.jsonb_build_object(
+    'orders', (select pg_catalog.jsonb_agg(to_jsonb(po)
+      order by po.purchase_order_id) from atlas_procurement.purchase_orders po
+      where po.school_catering_service_date = '2026-11-02'),
+    'revisions', (select pg_catalog.jsonb_agg(to_jsonb(revision)
+      order by revision.purchase_order_revision_id)
+      from atlas_procurement.purchase_order_revisions revision
+      join atlas_procurement.purchase_orders po using (purchase_order_id)
+      where po.school_catering_service_date = '2026-11-02'),
+    'lines', (select pg_catalog.jsonb_agg(to_jsonb(line)
+      order by line.purchase_order_line_revision_id)
+      from atlas_procurement.purchase_order_line_revisions line
+      where line.service_date = '2026-11-02')
+  ) into v_po_before;
+  select pg_catalog.jsonb_build_object(
+    'headers', (select pg_catalog.jsonb_agg(to_jsonb(header)
+      order by header.school_dispatch_release_id)
+      from atlas_dispatch.school_dispatch_releases header
+      where header.service_date = '2026-11-02'),
+    'lines', (select pg_catalog.jsonb_agg(to_jsonb(line)
+      order by line.school_dispatch_release_line_id)
+      from atlas_dispatch.school_dispatch_release_lines line
+      join atlas_dispatch.school_dispatch_releases header
+        using (school_dispatch_release_id)
+      where header.service_date = '2026-11-02'),
+    'sources', (select pg_catalog.jsonb_agg(to_jsonb(source)
+      order by source.school_dispatch_release_line_source_id)
+      from atlas_dispatch.school_dispatch_release_line_sources source
+      join atlas_dispatch.school_dispatch_release_lines line
+        using (school_dispatch_release_line_id)
+      join atlas_dispatch.school_dispatch_releases header
+        using (school_dispatch_release_id)
+      where header.service_date = '2026-11-02')
+  ) into v_pxk_before;
+
+  select run.version, batch.version into strict v_run_version, v_batch_version
+  from atlas_planning.confirmed_need_batches batch
+  join atlas_planning.need_generation_runs run
+    on run.need_generation_run_id = batch.current_need_generation_run_id
+  where batch.confirmed_need_batch_id = v_batch_id;
+  v_correction := atlas_api.prepare_planning_source_correction(
+    pg_temp.pct01_business_command(
+      'PLANNING-CORRECTION.v1',
+      'PLANNING_SOURCE_CORRECTION_PREPARED', v_run_version,
+      pg_catalog.jsonb_build_object(
+        'need_generation_run_id', v_run_id,
+        'confirmed_need_batch_id', v_batch_id,
+        'expected_confirmed_need_batch_version', v_batch_version
+      )
+    ) || pg_catalog.jsonb_build_object(
+      'reason_note', 'Scenario C governed source correction'
+    )
+  );
+  if not coalesce((v_correction ->> 'success')::boolean, false) then
+    v_answer := pg_catalog.jsonb_build_object(
+      'stage', 'correction_prepare', 'failure', v_correction);
+    raise exception using errcode = 'PCT99';
+  end if;
+
+  select request || pg_catalog.jsonb_build_object(
+    'command_id', 'e4830000-0000-0000-0000-000000000001',
+    'correlation_id', 'e4830000-0000-0000-0000-000000000002',
+    'idempotency_key', 'pct02b-scenario-c-a1-source'
+  ) into strict v_result
+  from pg_temp.pct01_requests
+  where request_name = 'pantry-source-correction';
+  v_source_save := atlas_api.save_pantry(v_result);
+  if not coalesce((v_source_save ->> 'success')::boolean, false) then
+    v_answer := pg_catalog.jsonb_build_object(
+      'stage', 'source_save', 'failure', v_source_save);
+    raise exception using errcode = 'PCT99';
+  end if;
+
+  select batch.current_need_generation_run_id, run.version
+  into strict v_run_id, v_run_version
+  from atlas_planning.confirmed_need_batches batch
+  join atlas_planning.need_generation_runs run
+    on run.need_generation_run_id = batch.current_need_generation_run_id
+  where batch.confirmed_need_batch_id = v_batch_id;
+  v_generation := atlas_api.execute_need_generation(
+    pg_temp.pct01_business_command(
+      'RMVP-04.v3', 'UPSTREAM_SOURCE_CHANGED', v_run_version,
+      pg_catalog.jsonb_build_object(
+        'service_date', '2026-11-02',
+        'expected_current_need_generation_run_id', v_run_id
+      )
+    ) || pg_catalog.jsonb_build_object(
+      'reason_note', 'Scenario C 10 to 12 source successor'
+    )
+  );
+  if not coalesce((v_generation ->> 'success')::boolean, false) then
+    v_answer := pg_catalog.jsonb_build_object(
+      'stage', 'generation', 'failure', v_generation);
+    raise exception using errcode = 'PCT99';
+  end if;
+
+  select revision.confirmed_need_line_revision_id,
+    revision.confirmed_quantity, line.current_confirmed_need_line_decision_id
+  into strict v_current_revision_id, v_current_quantity, v_current_pointer
+  from atlas_planning.confirmed_need_lines line
+  join atlas_planning.confirmed_need_line_revisions revision
+    on revision.confirmed_need_line_id = line.confirmed_need_line_id
+   and revision.is_current
+  where line.confirmed_need_line_id = v_target_line_id;
+  select count(*) into v_system_decision_count
+  from atlas_planning.confirmed_need_line_decisions decision
+  where decision.confirmed_need_line_id = v_target_line_id;
+
+  select version into strict v_batch_version
+  from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id = v_batch_id;
+  v_reconfirm := atlas_api.save_confirmed_needs(
+    pg_temp.pct01_business_command(
+      'RMVP-05.v2', 'CONFIRMED_NEED_SAVED', v_batch_version,
+      pg_catalog.jsonb_build_object(
+        'confirmed_need_batch_id', v_batch_id,
+        'lines', pg_catalog.jsonb_build_array(
+          pg_catalog.jsonb_build_object(
+            'confirmed_need_line_id', v_target_line_id,
+            'expected_current_revision_id', v_current_revision_id,
+            'expected_current_decision_id', null,
+            'proposed_confirmed_quantity', '12.000000',
+            'reason_code', 'PROPOSAL_ACCEPTED',
+            'reason_note', null
+          )
+        )
+      )
+    )
+  );
+
+  select pg_catalog.jsonb_build_object(
+    'decision_number', decision.decision_number,
+    'predecessor_decision_id', decision.predecessor_decision_id,
+    'revision_id', decision.confirmed_need_line_revision_id,
+    'quantity', decision.confirmed_quantity_after,
+    'is_current', line.current_confirmed_need_line_decision_id =
+      decision.confirmed_need_line_decision_id
+  ) into strict v_new_decision
+  from atlas_planning.confirmed_need_lines line
+  join atlas_planning.confirmed_need_line_decisions decision
+    on decision.confirmed_need_line_decision_id =
+      line.current_confirmed_need_line_decision_id
+  where line.confirmed_need_line_id = v_target_line_id;
+  select to_jsonb(decision) into strict v_original_after
+  from atlas_planning.confirmed_need_line_decisions decision
+  where decision.confirmed_need_line_decision_id = v_original_decision_id;
+
+  select pg_catalog.jsonb_build_object(
+    'orders', (select pg_catalog.jsonb_agg(to_jsonb(po)
+      order by po.purchase_order_id) from atlas_procurement.purchase_orders po
+      where po.school_catering_service_date = '2026-11-02'),
+    'revisions', (select pg_catalog.jsonb_agg(to_jsonb(revision)
+      order by revision.purchase_order_revision_id)
+      from atlas_procurement.purchase_order_revisions revision
+      join atlas_procurement.purchase_orders po using (purchase_order_id)
+      where po.school_catering_service_date = '2026-11-02'),
+    'lines', (select pg_catalog.jsonb_agg(to_jsonb(line)
+      order by line.purchase_order_line_revision_id)
+      from atlas_procurement.purchase_order_line_revisions line
+      where line.service_date = '2026-11-02')
+  ) into v_po_after;
+  select pg_catalog.jsonb_build_object(
+    'headers', (select pg_catalog.jsonb_agg(to_jsonb(header)
+      order by header.school_dispatch_release_id)
+      from atlas_dispatch.school_dispatch_releases header
+      where header.service_date = '2026-11-02'),
+    'lines', (select pg_catalog.jsonb_agg(to_jsonb(line)
+      order by line.school_dispatch_release_line_id)
+      from atlas_dispatch.school_dispatch_release_lines line
+      join atlas_dispatch.school_dispatch_releases header
+        using (school_dispatch_release_id)
+      where header.service_date = '2026-11-02'),
+    'sources', (select pg_catalog.jsonb_agg(to_jsonb(source)
+      order by source.school_dispatch_release_line_source_id)
+      from atlas_dispatch.school_dispatch_release_line_sources source
+      join atlas_dispatch.school_dispatch_release_lines line
+        using (school_dispatch_release_line_id)
+      join atlas_dispatch.school_dispatch_releases header
+        using (school_dispatch_release_id)
+      where header.service_date = '2026-11-02')
+  ) into v_pxk_after;
+
+  v_answer := pg_catalog.jsonb_build_object(
+    'stage', 'complete',
+    'allocation_count', pg_catalog.jsonb_array_length(
+      v_allocation_read -> 'rows'),
+    'preparation_success', v_prepare -> 'success',
+    'po_release_count', v_po_release_count,
+    'pxk_success', v_pxk -> 'success',
+    'correction_success', v_correction -> 'success',
+    'source_save_success', v_source_save -> 'success',
+    'generation_success', v_generation -> 'success',
+    'current_quantity_after_generation', v_current_quantity,
+    'pointer_cleared', v_current_pointer is null,
+    'system_decision_count', v_system_decision_count,
+    'invalidation_retained', exists (
+      select 1
+      from atlas_planning.confirmed_need_line_decision_continuity continuity
+      where continuity.confirmed_need_line_id = v_target_line_id
+        and continuity.source_confirmed_need_line_decision_id =
+          v_original_decision_id
+        and continuity.successor_confirmed_need_line_revision_id =
+          v_current_revision_id
+        and continuity.continuity_kind = 'INVALIDATED_PROPOSAL_CHANGE'
+    ),
+    'reconfirm_success', v_reconfirm -> 'success',
+    'new_decision', v_new_decision,
+    'expected_predecessor', v_original_decision_id,
+    'expected_revision', v_current_revision_id,
+    'original_unchanged', v_original_before = v_original_after,
+    'po_unchanged', v_po_before = v_po_after,
+    'pxk_unchanged', v_pxk_before = v_pxk_after
+  );
+  raise exception using errcode = 'PCT99';
+exception when sqlstate 'PCT99' then
+  return v_answer;
+end;
+$$;
+grant execute on function pg_temp.pct01_scenario_c_a1() to authenticated;
+
+set local role authenticated;
+insert into pct01_responses values (
+  'scenario-c-a1', pg_temp.pct01_scenario_c_a1()
+);
+reset role;
+
+select is((select response ->> 'stage' from pct01_responses
+  where response_name = 'scenario-c-a1'), 'complete',
+  'SC-A1-01 the real command sequence reaches reconfirmation');
+select is((select response ->> 'allocation_count' from pct01_responses
+  where response_name = 'scenario-c-a1'), '4',
+  'SC-A1-02 every current family is explicitly allocated');
+select ok((select response ->> 'preparation_success' = 'true'
+    and response ->> 'po_release_count' = '1'
+    and response ->> 'pxk_success' = 'true'
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-03 one released PO and PXK establish historical commitments');
+select ok((select response ->> 'correction_success' = 'true'
+    and response ->> 'source_save_success' = 'true'
+    and response ->> 'generation_success' = 'true'
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-04 governed source correction materializes the 12 kg successor');
+select ok((select response ->> 'current_quantity_after_generation' = '12.000000'
+    and (response ->> 'pointer_cleared')::boolean
+    and response ->> 'system_decision_count' = '1'
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-05 system correction clears authority without fabricating authorship');
+select ok((select (response ->> 'invalidation_retained')::boolean
+    and response ->> 'reconfirm_success' = 'true'
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-06 exact invalidation remains while human reconfirmation succeeds');
+select ok((select response #>> '{new_decision,decision_number}' = '2'
+    and response #>> '{new_decision,predecessor_decision_id}' =
+      response ->> 'expected_predecessor'
+    and response #>> '{new_decision,revision_id}' =
+      response ->> 'expected_revision'
+    and response #>> '{new_decision,quantity}' = '12.000000'
+    and (response #>> '{new_decision,is_current}')::boolean
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-07 decision #2 directly continues #1 and authorizes 12 kg');
+select ok((select (response ->> 'original_unchanged')::boolean
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-08 original human decision #1 remains byte-for-byte unchanged');
+select ok((select (response ->> 'po_unchanged')::boolean
+    and (response ->> 'pxk_unchanged')::boolean
+  from pct01_responses where response_name = 'scenario-c-a1'),
+  'SC-A1-09 Confirmed Need correction does not edit historical PO or PXK');
 
 set local role authenticated;
 insert into pct01_responses
@@ -1321,7 +1833,7 @@ select is((
   'PCT02B-22 two removals create only one invalidation row because the other predecessor was unreviewed');
 select ok((
   select line.current_confirmed_need_line_decision_id is null
-    and revision.theoretical_quantity=2.500000
+    and revision.theoretical_quantity=10.000000
   from atlas_planning.confirmed_need_lines line
   join atlas_planning.confirmed_need_line_revisions revision
     on revision.confirmed_need_line_id=line.confirmed_need_line_id
