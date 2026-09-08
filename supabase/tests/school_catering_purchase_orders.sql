@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(91);
+select plan(95);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -270,6 +270,17 @@ create function pg_temp.prb_release(
     po.created_at desc
   limit 1;
 $$;
+create function pg_temp.prb_release_isolated(p_request jsonb)
+returns jsonb language plpgsql volatile set search_path='' as $$
+declare
+  v_response jsonb;
+begin
+  v_response := atlas_api.release_school_catering_purchase_order(p_request);
+  raise exception using errcode='PBR99';
+exception when sqlstate 'PBR99' then
+  return v_response;
+end;
+$$;
 create function pg_temp.prb_replace(p_command uuid,p_supplier uuid)
 returns jsonb language sql stable security definer set search_path='' as $$
   select pg_temp.prb_command(p_command,po.version,
@@ -287,6 +298,7 @@ $$;
 grant execute on function pg_temp.prb_command(uuid,bigint,text,jsonb,uuid),
   pg_temp.prb_family(date,uuid,uuid),pg_temp.prb_read(),
   pg_temp.prb_release(uuid,uuid,bigint,boolean,jsonb),
+  pg_temp.prb_release_isolated(jsonb),
   pg_temp.prb_replace(uuid,uuid) to authenticated;
 
 set local role authenticated;
@@ -1022,6 +1034,38 @@ select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='atlas_api' and p.proname ilike '%school%catering%cancel%'
 ), 'this slice introduces no School-catering cancellation command');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('release-clock-plus-30',pg_temp.prb_release_isolated(
+  pg_temp.prb_release('24050000-0000-4000-8000-000000000110',
+    '24020000-0000-4000-8000-000000000053') || jsonb_build_object(
+      'requested_at',transaction_timestamp()+interval '30 seconds')));
+insert into prb_results values('release-clock-plus-60',pg_temp.prb_release_isolated(
+  pg_temp.prb_release('24050000-0000-4000-8000-000000000111',
+    '24020000-0000-4000-8000-000000000053') || jsonb_build_object(
+      'requested_at',transaction_timestamp()+interval '60 seconds')));
+insert into prb_results values('release-clock-plus-61',pg_temp.prb_release_isolated(
+  pg_temp.prb_release('24050000-0000-4000-8000-000000000112',
+    '24020000-0000-4000-8000-000000000053') || jsonb_build_object(
+      'requested_at',transaction_timestamp()+interval '61 seconds')));
+insert into prb_results values('release-clock-malformed',pg_temp.prb_release_isolated(
+  pg_temp.prb_release('24050000-0000-4000-8000-000000000113',
+    '24020000-0000-4000-8000-000000000053') || jsonb_build_object(
+      'requested_at','not-a-timestamp')));
+reset role;
+
+select diag('release +30s failure error_code=' || (response->>'error_code'))
+from prb_results
+where name='release-clock-plus-30' and response->>'success' is distinct from 'true';
+select is((select response->>'success' from prb_results where name='release-clock-plus-30'),
+  'true','release permits a browser command timestamp 30 seconds ahead of server time');
+select is((select response->>'success' from prb_results where name='release-clock-plus-60'),
+  'true','release permits the 60-second positive clock-skew boundary');
+select is((select response->>'error_code' from prb_results where name='release-clock-plus-61'),
+  'VALIDATION_FAILED','release rejects a command timestamp 61 seconds ahead of server time');
+select is((select response->>'error_code' from prb_results where name='release-clock-malformed'),
+  'VALIDATION_FAILED','release rejects a malformed command timestamp');
 
 select * from finish();
 rollback;

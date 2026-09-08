@@ -535,6 +535,46 @@ select is((select response from review_results where name='prepare_replay'),
 select ok((select bool_and(line->>'school_name' is not null) from review_results,
   lateral jsonb_array_elements(response->'rows') line where name='promoted_read'),
   'promoted allocation retains School evidence');
+select is((select line#>>'{family,source_kind}' from review_results,
+  lateral jsonb_array_elements(response->'rows') line where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'PURCHASE_HANDOFF','promoted allocation read uses Handoff authority');
+select is((select jsonb_typeof(line->'family_quantity') from review_results,
+  lateral jsonb_array_elements(response->'rows') line where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'string','promoted family quantity is a public exact-decimal string');
+select is((select line->>'family_quantity' from review_results,
+  lateral jsonb_array_elements(response->'rows') line where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  '125.000000','promoted family quantity retains exact six-decimal text');
+select is((select string_agg(distinct jsonb_typeof(contribution->'contribution_quantity'),',')
+  from review_results
+  cross join lateral jsonb_array_elements(response->'rows') line
+  cross join lateral jsonb_array_elements(line->'contributions') contribution
+  where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'string','every promoted contribution quantity has the public exact-decimal JSON type');
+select ok((select bool_and(contribution->>'contribution_quantity'='125.000000')
+  from review_results
+  cross join lateral jsonb_array_elements(response->'rows') line
+  cross join lateral jsonb_array_elements(line->'contributions') contribution
+  where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'every promoted contribution quantity retains exact six-decimal text');
+select ok((select bool_and(jsonb_typeof(split->'allocated_quantity')='string')
+  from review_results
+  cross join lateral jsonb_array_elements(response->'rows') line
+  cross join lateral jsonb_array_elements(line->'splits') split
+  where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'promoted split allocated quantities remain exact strings');
+select ok((select bool_and(jsonb_typeof(split->'split_ratio')='string')
+  from review_results
+  cross join lateral jsonb_array_elements(response->'rows') line
+  cross join lateral jsonb_array_elements(line->'splits') split
+  where name='promoted_read'
+    and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'),
+  'promoted split ratios remain exact strings');
 select is((select response->>'success' from review_results where name='allocate125'),'true','operator explicitly saves75/50');
 select is((select response->>'success' from review_results where name='allocate_beans'),'true','all positive families explicitly allocated');
 select is((select response->>'success' from review_results where name='release125'),'true','complete current allocation allows Planning release');
