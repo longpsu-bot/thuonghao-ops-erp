@@ -758,6 +758,8 @@ select is((select count(*) from atlas_procurement.purchase_orders
     where school_catering_service_date='2026-11-02'
       and replaces_purchase_order_id is not null),0::bigint,
   'Scenario C preparation creates no replacement Draft automatically');
+select is(atlas_core.purchase_review_po_coverage('2026-11-02'),false,
+  'Scenario C replacement frontier does not weaken the exact PO coverage predicate');
 select ok((select bool_and(atlas_core.school_catering_po_commitment_state(
       po.purchase_order_id,r.purchase_order_revision_id)='REPLACEMENT_REQUIRED')
     from atlas_procurement.purchase_orders po
