@@ -679,6 +679,9 @@ insert into review_results values('prepare-replacement-frontier',
   pg_temp.review_invoke('prepare_school_catering_purchase_orders',
     (select request from command_requests where name='prepare-replacement-frontier')));
 reset role;
+select diag('Scenario C preparation failure: '||response::text)
+  from review_results where name='prepare-replacement-frontier'
+    and response->>'success' is distinct from 'true';
 select is((select response->>'success' from review_results where name='correct130'),'true',
   'Scenario C governed correction remains append-only after released supplier POs');
 select ok((select bool_and(response->>'success'='true') from review_results
@@ -760,12 +763,16 @@ create function pg_temp.cancellation_frontier_case() returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare corrected jsonb;row_data jsonb;saved jsonb:='[]'::jsonb;prepared jsonb;current_version bigint;
 begin
-  set local session_replication_role=replica;
-  perform atlas_core.issue_222_reopen_confirmed_need(
-    'b6500000-0000-0000-0000-000000000050',
-    (select version from atlas_planning.confirmed_need_batches
-      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
-  set local session_replication_role=origin;
+  if (select batch_status from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050')
+      not in ('DRAFT_REVIEW','REOPENED') then
+    set local session_replication_role=replica;
+    perform atlas_core.issue_222_reopen_confirmed_need(
+      'b6500000-0000-0000-0000-000000000050',
+      (select version from atlas_planning.confirmed_need_batches
+        where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+    set local session_replication_role=origin;
+  end if;
   corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save('131.00'));
   for row_data in select value from jsonb_array_elements(pg_temp.review_read(
     'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
