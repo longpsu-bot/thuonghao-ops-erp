@@ -437,17 +437,13 @@ export function confirmedNeedResultIsStale(result: AtlasRpcResult) {
   );
 }
 
-export function confirmedNeedResultAllowsExactRetry(result: AtlasRpcResult) {
+export function confirmedNeedResultHasUnknownWriteOutcome(
+  result: AtlasRpcResult,
+) {
+  if (result.kind === "transport_error") return true;
   return (
-    result.kind === "transport_error" ||
-    (result.kind === "backend_error" && result.error.retryable === true)
-  );
-}
-
-export function confirmedNeedLifecycleRequiresRefresh(result: AtlasRpcResult) {
-  return (
-    result.kind === "transport_error" ||
-    (result.kind === "backend_error" && result.error.retryable === true)
+    result.kind === "backend_error" &&
+    result.error.write_certainty !== "NO_COMMITTED_CHANGE"
   );
 }
 

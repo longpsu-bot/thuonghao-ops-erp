@@ -926,6 +926,87 @@ describe("Confirmed Need two-action workbench", () => {
     expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
   });
 
+  it("keeps the local draft actionable after a definite no-commit Save failure", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const save = vi.spyOn(api, "save").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "RETRYABLE_CONCURRENCY_FAILURE",
+        safe_message: "Không có thay đổi nào được ghi nhận.",
+        retryable: true,
+        write_certainty: "NO_COMMITTED_CHANGE",
+      },
+    } as never);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+
+    const quantity = screen.getByLabelText("Số lượng xác nhận Gạo thơm");
+    const draftBeforeSave = (quantity as HTMLInputElement).value;
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(
+      await screen.findByText("Không có thay đổi nào được ghi nhận."),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/Atlas sẽ không tự gửi lại/),
+    ).not.toBeInTheDocument();
+    expect((quantity as HTMLInputElement).value).toBe(draftBeforeSave);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+  });
+
+  it("keeps stale-version refresh behavior without calling the write outcome unknown", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    vi.spyOn(api, "save").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "STALE_CONFIRMED_NEED_BATCH",
+        safe_message: "Dữ liệu đã thay đổi. Hãy làm mới trước khi lưu lại.",
+        retryable: true,
+        write_certainty: "NO_COMMITTED_CHANGE",
+      },
+    } as never);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(
+      await screen.findByText(
+        "Dữ liệu đã thay đổi. Hãy làm mới trước khi lưu lại.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(/Kết quả thao tác chưa rõ/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
+  });
+
+  it("requires refresh when a Save backend error omits reviewed write certainty", async () => {
+    const api = createReviewConfirmedNeedApi("ready");
+    const save = vi.spyOn(api, "save").mockResolvedValue({
+      kind: "backend_error",
+      error: {
+        success: false,
+        error_code: "RETRYABLE_CONCURRENCY_FAILURE",
+        safe_message: "Không thể xác định kết quả ghi.",
+        retryable: true,
+      },
+    } as never);
+    renderReview(api);
+    await screen.findByText("Gạo thơm");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+
+    expect(await screen.findByText(/Atlas sẽ không tự gửi lại/)).toBeVisible();
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Làm mới" })).toBeEnabled();
+  });
+
   it("does not show unsupported export UI", async () => {
     renderReview();
     await screen.findByText("Gạo thơm");

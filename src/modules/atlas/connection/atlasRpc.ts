@@ -199,7 +199,25 @@ export type AtlasSafeBackendError = {
   actual_version?: number;
   correlation_id?: string;
   command_id?: string;
+  write_certainty?: AtlasWriteCertainty;
 };
+
+export type AtlasWriteCertainty =
+  | "NO_WRITE"
+  | "NO_BUSINESS_WRITE"
+  | "NO_VALIDATION_EVIDENCE"
+  | "NO_APPROVAL_EVIDENCE"
+  | "NO_RELEASE_EVIDENCE"
+  | "NO_COMMITTED_CHANGE";
+
+const ATLAS_WRITE_CERTAINTIES = new Set<AtlasWriteCertainty>([
+  "NO_WRITE",
+  "NO_BUSINESS_WRITE",
+  "NO_VALIDATION_EVIDENCE",
+  "NO_APPROVAL_EVIDENCE",
+  "NO_RELEASE_EVIDENCE",
+  "NO_COMMITTED_CHANGE",
+]);
 
 type SafeDiagnostic = {
   code:
@@ -284,6 +302,11 @@ function safeBackendError(
     result.expected_version = value.expected_version;
   if (typeof value.actual_version === "number")
     result.actual_version = value.actual_version;
+  if (
+    typeof value.write_certainty === "string" &&
+    ATLAS_WRITE_CERTAINTIES.has(value.write_certainty as AtlasWriteCertainty)
+  )
+    result.write_certainty = value.write_certainty as AtlasWriteCertainty;
   return result;
 }
 

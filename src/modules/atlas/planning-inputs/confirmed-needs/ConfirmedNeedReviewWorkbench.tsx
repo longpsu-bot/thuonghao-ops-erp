@@ -16,7 +16,8 @@ import {
   confirmedNeedConfirmationStateLabel,
   confirmedNeedReadbackFromResult,
   confirmedNeedReasonLabel,
-  confirmedNeedResultAllowsExactRetry,
+  confirmedNeedResultHasUnknownWriteOutcome,
+  confirmedNeedResultIsStale,
   confirmedNeedResultMessage,
   confirmedNeedWorkbenchFromResult,
   exactDecimalEqual,
@@ -363,7 +364,10 @@ export function ConfirmedNeedReviewWorkbench({
     const result = await api.save(request);
     const readback = confirmedNeedReadbackFromResult(result);
     if (readback) adopt(readback);
-    else if (confirmedNeedResultAllowsExactRetry(result)) {
+    else if (confirmedNeedResultIsStale(result)) {
+      setRefreshRequired(true);
+      setNotice(confirmedNeedResultMessage(result));
+    } else if (confirmedNeedResultHasUnknownWriteOutcome(result)) {
       setRefreshRequired(true);
       setNotice(
         "Chưa xác định được kết quả lưu. Hãy làm mới dữ liệu trước khi tiếp tục.",
@@ -523,8 +527,7 @@ export function ConfirmedNeedReviewWorkbench({
       {refreshRequired && (
         <div className="confirmed-need-attention" role="alert">
           <span>
-            Kết quả thao tác chưa rõ. Atlas sẽ không tự gửi lại. Hãy làm mới dữ
-            liệu trước khi tiếp tục.
+            Atlas sẽ không tự gửi lại. Hãy làm mới dữ liệu trước khi tiếp tục.
           </span>
           <button type="button" onClick={() => void load()} disabled={busy}>
             Làm mới
