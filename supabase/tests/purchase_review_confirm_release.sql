@@ -644,6 +644,12 @@ create temporary table replacement_frontier_snapshot as select
 -- commit Planning release, Handoff and allocation promotion. Ordinary draft
 -- creation correctly skips the released roots; the preparation frontier must
 -- therefore accept their derived REPLACEMENT_REQUIRED state.
+set local session_replication_role=replica;
+select atlas_core.issue_222_reopen_confirmed_need(
+  'b6500000-0000-0000-0000-000000000050',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+set local session_replication_role=origin;
 insert into command_requests values('correct130',pg_temp.need_save('130.00'));
 set local role authenticated;
 insert into review_results values('correct130',atlas_api.save_confirmed_needs(
@@ -754,6 +760,12 @@ create function pg_temp.cancellation_frontier_case() returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare corrected jsonb;row_data jsonb;saved jsonb:='[]'::jsonb;prepared jsonb;current_version bigint;
 begin
+  set local session_replication_role=replica;
+  perform atlas_core.issue_222_reopen_confirmed_need(
+    'b6500000-0000-0000-0000-000000000050',
+    (select version from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+  set local session_replication_role=origin;
   corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save('131.00'));
   for row_data in select value from jsonb_array_elements(pg_temp.review_read(
     'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
@@ -890,12 +902,14 @@ select ok((select bool_and(line#>>'{family,source_kind}'='PURCHASE_HANDOFF') fro
 -- date, which must never be reported as successful commitment preparation.
 update atlas_admin.supplier_eligibilities set eligibility_status='INACTIVE'
   where supplier_id='c7100000-0000-4000-8000-000000000001';
+insert into command_requests values('ineligible-prepare',pg_temp.review_command(
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
 set local role authenticated;
 insert into review_results values('ineligible_prepare',pg_temp.review_invoke('prepare_school_catering_purchase_orders',
-  pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
-    (select version from atlas_planning.confirmed_need_batches
-      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
-    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}')));
+  (select request from command_requests where name='ineligible-prepare')));
 reset role;
 select is((select response->>'success' from review_results where name='ineligible_prepare'),'false',
   'skipped unready PO date cannot become successful preparation');
