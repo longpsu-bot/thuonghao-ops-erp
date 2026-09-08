@@ -34,6 +34,8 @@ All precision-sensitive workbench response values are JSON strings at the public
 
 `release_school_catering_purchase_order` uses reason `SCHOOL_CATERING_PO_RELEASED` and payload `{ purchase_order_id, expected_purchase_order_revision_id }`; callers cannot provide the supplier, status, actor, or document number. Under deterministic locks, the server revalidates root/revision versions, current family/split evidence, supplier activity, and effective eligibility. Success creates an immutable `RELEASED_TO_SUPPLIER` successor and the server-only number `PO-<YYYYMMDD>-<first 16 uppercase PO UUID hex characters>`.
 
+Its browser-facing command envelope accepts `requested_at` at most 60 seconds ahead of server transaction time; malformed timestamps and larger positive skew return `VALIDATION_FAILED`.
+
 `get_school_catering_purchase_orders` accepts payload `{ date_start, date_end, supplier_ids, statuses, search }`. It returns supplier/date roots, the current revision/version, multi-destination lines and exact family/split sources, server-derived stale/release/export state, the official number only after release, blockers/warnings, and backend-owned allowed/disabled actions.
 
 Every line `ordered_quantity` is serialized as a six-fractional-digit JSON string. Clients must parse or format that exact decimal text without first coercing it through an IEEE-754 number.
