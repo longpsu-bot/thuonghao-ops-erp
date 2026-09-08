@@ -644,25 +644,31 @@ create temporary table replacement_frontier_snapshot as select
 -- commit Planning release, Handoff and allocation promotion. Ordinary draft
 -- creation correctly skips the released roots; the preparation frontier must
 -- therefore accept their derived REPLACEMENT_REQUIRED state.
+insert into command_requests values('correct130',pg_temp.need_save('130.00'));
 set local role authenticated;
-insert into review_results values('correct130',atlas_api.save_confirmed_needs(pg_temp.need_save('130.00')));
+insert into review_results values('correct130',atlas_api.save_confirmed_needs(
+  (select request from command_requests where name='correct130')));
 insert into review_results values('corrected130',pg_temp.review_read('get_confirmed_supplier_allocation_workbench',
   'CONFIRMED-SUPPLIER-ALLOCATION.v1','{"date_start":"2026-11-02","date_end":"2026-11-02"}'));
+reset role;
 insert into command_requests select 'allocate130',pg_temp.allocation_request(line,'78.00','52.00')
   from review_results,lateral jsonb_array_elements(response->'rows') line
   where name='corrected130' and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
 insert into command_requests select 'reallocate_beans',pg_temp.allocation_request(line,'1.00','2.00')
   from review_results,lateral jsonb_array_elements(response->'rows') line
   where name='corrected130' and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+set local role authenticated;
 insert into review_results values('allocate130',pg_temp.review_invoke('save_confirmed_supplier_allocation',
   (select request from command_requests where name='allocate130')));
 insert into review_results values('reallocate_beans',pg_temp.review_invoke('save_confirmed_supplier_allocation',
   (select request from command_requests where name='reallocate_beans')));
+reset role;
 insert into command_requests values('prepare-replacement-frontier',pg_temp.review_command(
   'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
   (select version from atlas_planning.confirmed_need_batches
     where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
   '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+set local role authenticated;
 insert into review_results values('prepare-replacement-frontier',
   pg_temp.review_invoke('prepare_school_catering_purchase_orders',
     (select request from command_requests where name='prepare-replacement-frontier')));
@@ -745,7 +751,7 @@ returns jsonb language sql volatile set search_path='' as $$
         'allocated_quantity',quantity))));
 $$;
 create function pg_temp.cancellation_frontier_case() returns jsonb
-language plpgsql set search_path='' as $$
+language plpgsql security definer set search_path='' as $$
 declare corrected jsonb;row_data jsonb;saved jsonb:='[]'::jsonb;prepared jsonb;current_version bigint;
 begin
   corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save('131.00'));
@@ -830,7 +836,6 @@ select is((select response#>>'{blockers,0}' from review_results where name='miss
   'Thiếu bao phủ đơn mua hiện hành cho một hoặc nhiều nhà cung ứng.',
   'known missing coverage returns a non-empty operator blocker');
 
-set local role authenticated;
 insert into command_requests select 'create-explicit-replacement',pg_temp.review_command(
   'SCHOOL-CATERING-PROCUREMENT.v1','SCHOOL_CATERING_PO_REPLACEMENT_CREATED',po.version,
   jsonb_build_object('replaced_purchase_order_id',po.purchase_order_id,
@@ -840,6 +845,7 @@ insert into command_requests select 'create-explicit-replacement',pg_temp.review
   where po.school_catering_service_date='2026-11-02'
     and po.supplier_id='c7100000-0000-4000-8000-000000000001'
     and po.purchase_order_status='RELEASED_TO_SUPPLIER' and r.is_current;
+set local role authenticated;
 insert into review_results values('create-explicit-replacement',
   pg_temp.review_invoke('create_school_catering_purchase_order_replacement',
     (select request from command_requests where name='create-explicit-replacement')));
