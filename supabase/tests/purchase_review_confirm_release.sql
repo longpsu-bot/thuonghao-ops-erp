@@ -148,6 +148,36 @@ create function pg_temp.need_save(quantity text) returns jsonb language sql vola
         (l.ingredient_id='b6500000-0000-0000-0000-000000000006' or l.current_confirmed_need_line_decision_id is null))))
   from atlas_planning.confirmed_need_batches b where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
 $$;
+create function pg_temp.need_save_complete_review(quantity text) returns jsonb
+language sql volatile set search_path='' as $$
+  select pg_temp.review_command('RMVP-05.v2','CONFIRMED_NEED_SAVED',b.version,jsonb_build_object(
+    'confirmed_need_batch_id',b.confirmed_need_batch_id,'lines',(
+      select jsonb_agg(jsonb_build_object(
+        'confirmed_need_line_id',l.confirmed_need_line_id,
+        'expected_current_revision_id',r.confirmed_need_line_revision_id,
+        'expected_current_decision_id',l.current_confirmed_need_line_decision_id,
+        'proposed_confirmed_quantity',case
+          when l.ingredient_id='b6500000-0000-0000-0000-000000000006' then quantity
+          else r.confirmed_quantity::text
+        end,
+        'reason_code',case
+          when l.ingredient_id='b6500000-0000-0000-0000-000000000006'
+            then 'OPERATIONAL_QUANTITY_ADJUSTMENT'
+          else 'PROPOSAL_ACCEPTED'
+        end,
+        'reason_note',case
+          when l.ingredient_id='b6500000-0000-0000-0000-000000000006'
+            then 'Manual paper correction'
+          else null
+        end)
+        order by l.confirmed_need_line_id)
+      from atlas_planning.confirmed_need_lines l
+      join atlas_planning.confirmed_need_line_revisions r
+        on r.confirmed_need_line_id=l.confirmed_need_line_id and r.is_current
+      where l.confirmed_need_batch_id=b.confirmed_need_batch_id)))
+  from atlas_planning.confirmed_need_batches b
+  where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+$$;
 create function pg_temp.allocation_request(row_data jsonb,qa text,qb text) returns jsonb language sql volatile set search_path='' as $$
   select pg_temp.review_command('CONFIRMED-SUPPLIER-ALLOCATION.v1','CONFIRMED_SUPPLIER_ALLOCATION_SAVED',
     (row_data#>>'{family,version}')::bigint,jsonb_build_object('family',jsonb_build_object(
@@ -650,7 +680,7 @@ select atlas_core.issue_222_reopen_confirmed_need(
   (select version from atlas_planning.confirmed_need_batches
     where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
 set local session_replication_role=origin;
-insert into command_requests values('correct130',pg_temp.need_save('130.00'));
+insert into command_requests values('correct130',pg_temp.need_save_complete_review('130.00'));
 set local role authenticated;
 insert into review_results values('correct130',atlas_api.save_confirmed_needs(
   (select request from command_requests where name='correct130')));
@@ -773,7 +803,7 @@ begin
         where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
     set local session_replication_role=origin;
   end if;
-  corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save('131.00'));
+  corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save_complete_review('131.00'));
   for row_data in select value from jsonb_array_elements(pg_temp.review_read(
     'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
     '{"date_start":"2026-11-02","date_end":"2026-11-02"}')->'rows') order by value->>'ingredient_id'
