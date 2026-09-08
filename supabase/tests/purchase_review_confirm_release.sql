@@ -158,18 +158,10 @@ language sql volatile set search_path='' as $$
         'expected_current_decision_id',l.current_confirmed_need_line_decision_id,
         'proposed_confirmed_quantity',case
           when l.ingredient_id='b6500000-0000-0000-0000-000000000006' then quantity
-          else r.confirmed_quantity::text
+          else (r.confirmed_quantity+1)::text
         end,
-        'reason_code',case
-          when l.ingredient_id='b6500000-0000-0000-0000-000000000006'
-            then 'OPERATIONAL_QUANTITY_ADJUSTMENT'
-          else 'PROPOSAL_ACCEPTED'
-        end,
-        'reason_note',case
-          when l.ingredient_id='b6500000-0000-0000-0000-000000000006'
-            then 'Manual paper correction'
-          else null
-        end)
+        'reason_code','OPERATIONAL_QUANTITY_ADJUSTMENT',
+        'reason_note','Manual paper correction')
         order by l.confirmed_need_line_id)
       from atlas_planning.confirmed_need_lines l
       join atlas_planning.confirmed_need_line_revisions r
@@ -690,7 +682,7 @@ reset role;
 insert into command_requests select 'allocate130',pg_temp.allocation_request(line,'78.00','52.00')
   from review_results,lateral jsonb_array_elements(response->'rows') line
   where name='corrected130' and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
-insert into command_requests select 'reallocate_beans',pg_temp.allocation_request(line,'1.00','2.00')
+insert into command_requests select 'reallocate_beans',pg_temp.allocation_request(line,'2.00','2.00')
   from review_results,lateral jsonb_array_elements(response->'rows') line
   where name='corrected130' and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
 set local role authenticated;
@@ -811,7 +803,7 @@ begin
     saved:=saved||jsonb_build_array(atlas_api.save_confirmed_supplier_allocation(
       pg_temp.single_supplier_allocation_request(row_data,
         case when row_data->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'
-          then '131.00' else '3.00' end)));
+          then '131.00' else row_data->>'family_quantity' end)));
   end loop;
   select version into current_version from atlas_planning.confirmed_need_batches
     where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
