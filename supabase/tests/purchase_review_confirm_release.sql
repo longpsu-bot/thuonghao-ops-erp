@@ -6,6 +6,14 @@ select no_plan();
 
 select has_column('atlas_procurement','school_catering_allocation_family_revisions','source_kind','revision source is explicit');
 select has_column('atlas_procurement','school_catering_allocation_family_contributions','confirmed_need_line_revision_id','confirmed contribution lineage exists');
+select has_function('atlas_core','purchase_review_preparation_po_frontier',array['date'],
+  'replacement-aware preparation frontier is private backend logic');
+select function_owner_is('atlas_core','purchase_review_preparation_po_frontier',array['date'],
+  'atlas_procurement_command_runtime');
+select function_privs_are('atlas_core','purchase_review_preparation_po_frontier',array['date'],
+  'authenticated',array[]::text[]);
+select function_privs_are('atlas_core','purchase_review_preparation_po_frontier',array['date'],
+  'atlas_confirmed_need_review_runtime',array['EXECUTE']);
 create temporary table review_results(name text primary key,response jsonb);
 grant all on review_results to authenticated;
 -- Dynamic invocation keeps missing APIs as observable assertion failures during RED.
@@ -139,6 +147,28 @@ create function pg_temp.need_save(quantity text) returns jsonb language sql vola
       where l.confirmed_need_batch_id=b.confirmed_need_batch_id and
         (l.ingredient_id='b6500000-0000-0000-0000-000000000006' or l.current_confirmed_need_line_decision_id is null))))
   from atlas_planning.confirmed_need_batches b where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+$$;
+create function pg_temp.need_save_complete_review(quantity text) returns jsonb
+language sql volatile set search_path='' as $$
+  select pg_temp.review_command('RMVP-05.v2','CONFIRMED_NEED_SAVED',b.version,jsonb_build_object(
+    'confirmed_need_batch_id',b.confirmed_need_batch_id,'lines',(
+      select jsonb_agg(jsonb_build_object(
+        'confirmed_need_line_id',l.confirmed_need_line_id,
+        'expected_current_revision_id',r.confirmed_need_line_revision_id,
+        'expected_current_decision_id',l.current_confirmed_need_line_decision_id,
+        'proposed_confirmed_quantity',case
+          when l.ingredient_id='b6500000-0000-0000-0000-000000000006' then quantity
+          else (r.confirmed_quantity+1)::text
+        end,
+        'reason_code','OPERATIONAL_QUANTITY_ADJUSTMENT',
+        'reason_note','Manual paper correction')
+        order by l.confirmed_need_line_id)
+      from atlas_planning.confirmed_need_lines l
+      join atlas_planning.confirmed_need_line_revisions r
+        on r.confirmed_need_line_id=l.confirmed_need_line_id and r.is_current
+      where l.confirmed_need_batch_id=b.confirmed_need_batch_id)))
+  from atlas_planning.confirmed_need_batches b
+  where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
 $$;
 create function pg_temp.allocation_request(row_data jsonb,qa text,qb text) returns jsonb language sql volatile set search_path='' as $$
   select pg_temp.review_command('CONFIRMED-SUPPLIER-ALLOCATION.v1','CONFIRMED_SUPPLIER_ALLOCATION_SAVED',
@@ -619,6 +649,766 @@ select is((select count(*) from atlas_procurement.purchase_orders where school_c
 create temporary table released_snapshot as select to_jsonb(r) as revision,to_jsonb(l) as line
   from atlas_procurement.purchase_order_revisions r join atlas_procurement.purchase_order_line_revisions l using(purchase_order_revision_id)
   where r.is_current and r.revision_status='RELEASED_TO_SUPPLIER';
+create temporary table replacement_frontier_snapshot as select
+  (select purchase_handoff_batch_id from atlas_planning.purchase_handoff_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050') handoff_batch_id,
+  (select purchase_handoff_revision_id from atlas_planning.purchase_handoff_revisions
+    where purchase_handoff_batch_id=(select purchase_handoff_batch_id
+      from atlas_planning.purchase_handoff_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050') and is_current) handoff_revision_id,
+  (select jsonb_agg(to_jsonb(po) order by po.purchase_order_id)
+    from atlas_procurement.purchase_orders po
+    where po.school_catering_service_date='2026-11-02'
+      and po.purchase_order_status='RELEASED_TO_SUPPLIER') released_roots;
+
+-- Scenario C regression: after released 125 kg supplier commitments, a governed
+-- correction to 130 kg and exact same-supplier reallocation must be able to
+-- commit Planning release, Handoff and allocation promotion. Ordinary draft
+-- creation correctly skips the released roots; the preparation frontier must
+-- therefore accept their derived REPLACEMENT_REQUIRED state.
+set local session_replication_role=replica;
+select atlas_core.issue_222_reopen_confirmed_need(
+  'b6500000-0000-0000-0000-000000000050',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+set local session_replication_role=origin;
+insert into command_requests values('correct130',pg_temp.need_save_complete_review('130.00'));
+set local role authenticated;
+insert into review_results values('correct130',atlas_api.save_confirmed_needs(
+  (select request from command_requests where name='correct130')));
+insert into review_results values('corrected130',pg_temp.review_read('get_confirmed_supplier_allocation_workbench',
+  'CONFIRMED-SUPPLIER-ALLOCATION.v1','{"date_start":"2026-11-02","date_end":"2026-11-02"}'));
+reset role;
+insert into command_requests select 'allocate130',pg_temp.allocation_request(line,'78.00','52.00')
+  from review_results,lateral jsonb_array_elements(response->'rows') line
+  where name='corrected130' and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
+insert into command_requests select 'reallocate_beans',pg_temp.allocation_request(line,'2.00','2.00')
+  from review_results,lateral jsonb_array_elements(response->'rows') line
+  where name='corrected130' and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+set local role authenticated;
+insert into review_results values('allocate130',pg_temp.review_invoke('save_confirmed_supplier_allocation',
+  (select request from command_requests where name='allocate130')));
+insert into review_results values('reallocate_beans',pg_temp.review_invoke('save_confirmed_supplier_allocation',
+  (select request from command_requests where name='reallocate_beans')));
+reset role;
+insert into command_requests values('prepare-replacement-frontier',pg_temp.review_command(
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+set local role authenticated;
+insert into review_results values('prepare-replacement-frontier',
+  pg_temp.review_invoke('prepare_school_catering_purchase_orders',
+    (select request from command_requests where name='prepare-replacement-frontier')));
+reset role;
+select diag('Scenario C preparation failure: '||response::text)
+  from review_results where name='prepare-replacement-frontier'
+    and response->>'success' is distinct from 'true';
+select is((select response->>'success' from review_results where name='correct130'),'true',
+  'Scenario C governed correction remains append-only after released supplier POs');
+select ok((select bool_and(response->>'success'='true') from review_results
+    where name in ('allocate130','reallocate_beans')),
+  'Scenario C saves complete current same-supplier allocation after correction');
+select is((select response->>'success' from review_results where name='prepare-replacement-frontier'),'true',
+  'Scenario C preparation accepts a valid released-PO replacement frontier');
+select is((select batch_status from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  'RELEASED_FOR_PURCHASE_HANDOFF','Scenario C preparation commits the corrected Planning release');
+select is((select purchase_handoff_batch_id from atlas_planning.purchase_handoff_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  (select handoff_batch_id from replacement_frontier_snapshot),
+  'Scenario C preparation reuses the historical Handoff root');
+select ok((select r.revision_kind='SUPERSEDING'
+    and r.predecessor_revision_id=(select handoff_revision_id from replacement_frontier_snapshot)
+    and r.revision_status='RELEASED_TO_PROCUREMENT'
+  from atlas_planning.purchase_handoff_batches b
+  join atlas_planning.purchase_handoff_revisions r using(purchase_handoff_batch_id)
+  where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050' and r.is_current),
+  'Scenario C preparation appends a released SUPERSEDING Handoff revision');
+select is((select r.source_kind from atlas_procurement.school_catering_allocation_family_revisions r
+    where r.family_id=(select (response#>>'{family,family_id}')::uuid from review_results where name='allocate130')
+      and r.is_current),'PURCHASE_HANDOFF',
+  'Scenario C preparation promotes corrected allocation to Handoff authority');
+select is((select r.predecessor_revision_id from atlas_procurement.school_catering_allocation_family_revisions r
+    where r.family_id=(select (response#>>'{family,family_id}')::uuid from review_results where name='allocate130')
+      and r.is_current),
+  (select (response#>>'{family,family_revision_id}')::uuid from review_results where name='allocate130'),
+  'Scenario C promoted allocation retains its confirmed-source predecessor');
+select is((select sum(s.allocated_quantity)
+    from atlas_procurement.school_catering_allocation_supplier_splits s
+    join atlas_procurement.school_catering_allocation_family_revisions r using(family_revision_id)
+    where r.family_id=(select (response#>>'{family,family_id}')::uuid from review_results where name='allocate130')
+      and r.is_current),130::numeric,
+  'Scenario C promotion preserves the complete corrected quantity');
+select is((select jsonb_agg(to_jsonb(po) order by po.purchase_order_id)
+    from atlas_procurement.purchase_orders po
+    where po.school_catering_service_date='2026-11-02'
+      and po.purchase_order_status='RELEASED_TO_SUPPLIER'),
+  (select released_roots from replacement_frontier_snapshot),
+  'Scenario C preparation leaves released PO roots and document numbers byte-for-byte unchanged');
+select is((select jsonb_agg(jsonb_build_array(to_jsonb(r),to_jsonb(l))
+      order by l.purchase_order_line_revision_id::text)
+    from atlas_procurement.purchase_order_revisions r
+    join atlas_procurement.purchase_order_line_revisions l using(purchase_order_revision_id)
+    where r.is_current and r.revision_status='RELEASED_TO_SUPPLIER'),
+  (select jsonb_agg(jsonb_build_array(revision,line)
+      order by line->>'purchase_order_line_revision_id') from released_snapshot),
+  'Scenario C preparation leaves released PO commitment revisions and quantities unchanged');
+select is((select count(*) from atlas_procurement.purchase_orders
+    where school_catering_service_date='2026-11-02'
+      and replaces_purchase_order_id is not null),0::bigint,
+  'Scenario C preparation creates no replacement Draft automatically');
+select is(atlas_core.purchase_review_po_coverage('2026-11-02'),false,
+  'Scenario C replacement frontier does not weaken the exact PO coverage predicate');
+select ok((select bool_and(atlas_core.school_catering_po_commitment_state(
+      po.purchase_order_id,r.purchase_order_revision_id)='REPLACEMENT_REQUIRED')
+    from atlas_procurement.purchase_orders po
+    join atlas_procurement.purchase_order_revisions r using(purchase_order_id)
+    where po.school_catering_service_date='2026-11-02'
+      and po.purchase_order_status='RELEASED_TO_SUPPLIER' and r.is_current),
+  'Scenario C released POs derive REPLACEMENT_REQUIRED after preparation');
+
+create function pg_temp.purchase_order_state(p_purchase_order_id uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select jsonb_build_object(
+    'root',(select to_jsonb(po) from atlas_procurement.purchase_orders po
+      where po.purchase_order_id=p_purchase_order_id),
+    'revisions',coalesce((select jsonb_agg(to_jsonb(r) order by r.revision_number)
+      from atlas_procurement.purchase_order_revisions r
+      where r.purchase_order_id=p_purchase_order_id),'[]'::jsonb),
+    'line_roots',coalesce((select jsonb_agg(to_jsonb(l)
+        order by l.purchase_order_line_id)
+      from atlas_procurement.purchase_order_lines l
+      where l.purchase_order_id=p_purchase_order_id),'[]'::jsonb),
+    'line_revisions',coalesce((select jsonb_agg(to_jsonb(lr)
+        order by lr.purchase_order_line_revision_id)
+      from atlas_procurement.purchase_order_revisions r
+      join atlas_procurement.purchase_order_line_revisions lr
+        using(purchase_order_revision_id)
+      where r.purchase_order_id=p_purchase_order_id),'[]'::jsonb)
+  );
+$$;
+grant execute on function pg_temp.purchase_order_state(uuid) to authenticated;
+
+create function pg_temp.mixed_supplier_frontier_case() returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare
+  drafts jsonb; prepared jsonb; before_state jsonb; after_state jsonb;
+  ordinary_id uuid; released_id uuid; current_version bigint;
+  ordinary_revision_id uuid; released_revision_id uuid;
+  ordinary_status text; released_status text; replacement_count bigint;
+begin
+  set local session_replication_role=replica;
+  update atlas_procurement.purchase_orders
+  set purchase_order_status='SUPERSEDED',updated_at=transaction_timestamp()
+  where school_catering_service_date='2026-11-02'
+    and supplier_id='c7100000-0000-4000-8000-000000000001'
+    and purchase_order_status='RELEASED_TO_SUPPLIER';
+  set local session_replication_role=origin;
+
+  drafts:=atlas_api.create_school_catering_purchase_order_drafts(
+    pg_temp.review_command('SCHOOL-CATERING-PROCUREMENT.v1',
+      'SCHOOL_CATERING_PO_DRAFTS_CREATED',1,
+      '{"date_start":"2026-11-02","date_end":"2026-11-02"}'));
+  select po.purchase_order_id,r.purchase_order_revision_id
+  into strict ordinary_id,ordinary_revision_id
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions r
+    on r.purchase_order_id=po.purchase_order_id and r.is_current
+  where po.school_catering_service_date='2026-11-02'
+    and po.supplier_id='c7100000-0000-4000-8000-000000000001'
+    and po.purchase_order_status='DRAFT'
+    and po.replaces_purchase_order_id is null;
+  select po.purchase_order_id,r.purchase_order_revision_id
+  into strict released_id,released_revision_id
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions r
+    on r.purchase_order_id=po.purchase_order_id and r.is_current
+  where po.school_catering_service_date='2026-11-02'
+    and po.supplier_id='c7100000-0000-4000-8000-000000000002'
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER';
+
+  before_state:=jsonb_build_object(
+    'ordinary',pg_temp.purchase_order_state(ordinary_id),
+    'released',pg_temp.purchase_order_state(released_id));
+  select version into current_version
+  from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+  prepared:=atlas_api.prepare_school_catering_purchase_orders(
+    pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+      current_version,
+      '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+  after_state:=jsonb_build_object(
+    'ordinary',pg_temp.purchase_order_state(ordinary_id),
+    'released',pg_temp.purchase_order_state(released_id));
+  ordinary_status:=atlas_core.school_catering_po_commitment_state(
+    ordinary_id,ordinary_revision_id);
+  released_status:=atlas_core.school_catering_po_commitment_state(
+    released_id,released_revision_id);
+  select count(*) into replacement_count
+  from atlas_procurement.purchase_orders po
+  where po.school_catering_service_date='2026-11-02'
+    and po.replaces_purchase_order_id=released_id;
+  raise exception using errcode='PPR99';
+exception when sqlstate 'PPR99' then
+  return jsonb_build_object(
+    'drafts',drafts,'prepared',prepared,'before',before_state,'after',after_state,
+    'ordinary_status',ordinary_status,'released_status',released_status,
+    'replacement_count',replacement_count);
+end;
+$$;
+grant execute on function pg_temp.mixed_supplier_frontier_case() to authenticated;
+set local role authenticated;
+insert into review_results values('mixed-supplier-frontier',
+  pg_temp.mixed_supplier_frontier_case());
+reset role;
+select is((select response#>>'{drafts,success}' from review_results
+    where name='mixed-supplier-frontier'),'true',
+  'mixed frontier fixture materializes the exact ordinary supplier Draft');
+select is((select response->>'ordinary_status' from review_results
+    where name='mixed-supplier-frontier'),'DRAFT_CURRENT',
+  'mixed frontier ordinary Draft exactly covers its current supplier allocation');
+select is((select response->>'released_status' from review_results
+    where name='mixed-supplier-frontier'),'REPLACEMENT_REQUIRED',
+  'mixed frontier released supplier independently requires replacement');
+select is((select response#>>'{prepared,success}' from review_results
+    where name='mixed-supplier-frontier'),'true',
+  'preparation accepts an exact ordinary Draft beside a replacement frontier');
+select is((select response->'after' from review_results
+    where name='mixed-supplier-frontier'),
+  (select response->'before' from review_results
+    where name='mixed-supplier-frontier'),
+  'mixed frontier preparation leaves both supplier PO roots byte-for-byte unchanged');
+select is((select (response->>'replacement_count')::bigint from review_results
+    where name='mixed-supplier-frontier'),0::bigint,
+  'mixed frontier preparation creates no automatic replacement Draft');
+
+create function pg_temp.single_supplier_allocation_request(row_data jsonb,quantity text)
+returns jsonb language sql volatile set search_path='' as $$
+  select pg_temp.review_command('CONFIRMED-SUPPLIER-ALLOCATION.v1',
+    'CONFIRMED_SUPPLIER_ALLOCATION_SAVED',(row_data#>>'{family,version}')::bigint,
+    jsonb_build_object('family',jsonb_build_object(
+      'service_date',row_data->'service_date',
+      'delivery_location_id',row_data->'delivery_location_id',
+      'ingredient_id',row_data->'ingredient_id','unit_id',row_data->'unit_id',
+      'expected_source_fingerprint',row_data#>'{family,source_fingerprint}',
+      'expected_source_batch_id',row_data->'source_confirmed_need_batch_id',
+      'expected_source_batch_version',row_data->'source_confirmed_need_batch_version'),
+      'splits',jsonb_build_array(jsonb_build_object(
+        'supplier_id','c7100000-0000-4000-8000-000000000001',
+        'allocated_quantity',quantity))));
+$$;
+
+create function pg_temp.purchase_preparation_state(p_stale_draft_id uuid)
+returns jsonb language sql stable security definer set search_path='' as $$
+  select jsonb_build_object(
+    'confirmed_need',(select to_jsonb(b)
+      from atlas_planning.confirmed_need_batches b
+      where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+    'handoff',coalesce((select jsonb_agg(to_jsonb(r) order by r.revision_number)
+      from atlas_planning.purchase_handoff_batches b
+      join atlas_planning.purchase_handoff_revisions r using(purchase_handoff_batch_id)
+      where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+      '[]'::jsonb),
+    'allocations',coalesce((select jsonb_agg(to_jsonb(r) order by r.family_id,r.revision_number)
+      from atlas_procurement.school_catering_allocation_families f
+      join atlas_procurement.school_catering_allocation_family_revisions r using(family_id)
+      where f.service_date='2026-11-02'),'[]'::jsonb),
+    'released_supplier_a',jsonb_build_object(
+      'root',(select to_jsonb(po) from atlas_procurement.purchase_orders po
+        where po.school_catering_service_date='2026-11-02'
+          and po.supplier_id='c7100000-0000-4000-8000-000000000001'
+          and po.purchase_order_status='RELEASED_TO_SUPPLIER'),
+      'revisions',coalesce((select jsonb_agg(to_jsonb(r) order by r.revision_number)
+        from atlas_procurement.purchase_orders po
+        join atlas_procurement.purchase_order_revisions r using(purchase_order_id)
+        where po.school_catering_service_date='2026-11-02'
+          and po.supplier_id='c7100000-0000-4000-8000-000000000001'
+          and po.purchase_order_status='RELEASED_TO_SUPPLIER'),'[]'::jsonb),
+      'lines',coalesce((select jsonb_agg(to_jsonb(l)
+          order by l.purchase_order_line_revision_id)
+        from atlas_procurement.purchase_orders po
+        join atlas_procurement.purchase_order_revisions r using(purchase_order_id)
+        join atlas_procurement.purchase_order_line_revisions l
+          using(purchase_order_revision_id)
+        where po.school_catering_service_date='2026-11-02'
+          and po.supplier_id='c7100000-0000-4000-8000-000000000001'
+          and po.purchase_order_status='RELEASED_TO_SUPPLIER'),'[]'::jsonb)),
+    'stale_supplier_b_draft',jsonb_build_object(
+      'root',(select to_jsonb(po) from atlas_procurement.purchase_orders po
+        where po.purchase_order_id=p_stale_draft_id),
+      'revisions',coalesce((select jsonb_agg(to_jsonb(r) order by r.revision_number)
+        from atlas_procurement.purchase_order_revisions r
+        where r.purchase_order_id=p_stale_draft_id),'[]'::jsonb),
+      'lines',coalesce((select jsonb_agg(to_jsonb(l)
+          order by l.purchase_order_line_revision_id)
+        from atlas_procurement.purchase_order_revisions r
+        join atlas_procurement.purchase_order_line_revisions l
+          using(purchase_order_revision_id)
+        where r.purchase_order_id=p_stale_draft_id),'[]'::jsonb))
+  );
+$$;
+
+create function pg_temp.extra_active_draft_frontier_case() returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare
+  corrected jsonb; row_data jsonb; saved jsonb:='[]'::jsonb; prepared jsonb;
+  old_supplier_b atlas_procurement.purchase_orders%rowtype;
+  old_supplier_b_revision atlas_procurement.purchase_order_revisions%rowtype;
+  stale_draft_id uuid:=gen_random_uuid(); stale_revision_id uuid:=gen_random_uuid();
+  stale_line_id uuid; line_data record; current_version bigint;
+  before_state jsonb; after_state jsonb;
+begin
+  set local session_replication_role=replica;
+  perform atlas_core.issue_222_reopen_confirmed_need(
+    'b6500000-0000-0000-0000-000000000050',
+    (select version from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+  set local session_replication_role=origin;
+
+  corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save_complete_review('131.00'));
+  for row_data in select value from jsonb_array_elements(pg_temp.review_read(
+    'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
+    '{"date_start":"2026-11-02","date_end":"2026-11-02"}')->'rows')
+    order by value->>'ingredient_id'
+  loop
+    saved:=saved||jsonb_build_array(atlas_api.save_confirmed_supplier_allocation(
+      pg_temp.single_supplier_allocation_request(row_data,
+        case when row_data->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'
+          then '131.00' else row_data->>'family_quantity' end)));
+  end loop;
+
+  select po.* into strict old_supplier_b
+  from atlas_procurement.purchase_orders po
+  where po.school_catering_service_date='2026-11-02'
+    and po.supplier_id='c7100000-0000-4000-8000-000000000002'
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER';
+  select r.* into strict old_supplier_b_revision
+  from atlas_procurement.purchase_order_revisions r
+  where r.purchase_order_id=old_supplier_b.purchase_order_id and r.is_current;
+
+  set local session_replication_role=replica;
+  update atlas_procurement.purchase_orders
+  set purchase_order_status='SUPERSEDED',updated_at=transaction_timestamp()
+  where purchase_order_id=old_supplier_b.purchase_order_id;
+  insert into atlas_procurement.purchase_orders
+  select (jsonb_populate_record(null::atlas_procurement.purchase_orders,
+    to_jsonb(old_supplier_b)||jsonb_build_object(
+      'purchase_order_id',stale_draft_id,'purchase_order_status','DRAFT',
+      'document_number',null,'version',1,'replaces_purchase_order_id',null,
+      'created_at',transaction_timestamp(),'updated_at',transaction_timestamp()))).*;
+  insert into atlas_procurement.purchase_order_revisions
+  select (jsonb_populate_record(null::atlas_procurement.purchase_order_revisions,
+    to_jsonb(old_supplier_b_revision)||jsonb_build_object(
+      'purchase_order_revision_id',stale_revision_id,
+      'purchase_order_id',stale_draft_id,'revision_number',1,
+      'revision_kind','BASE','revision_status','DRAFT','is_current',true,
+      'predecessor_revision_id',null,'released_by_actor_id',null,
+      'released_at',null,'command_id',gen_random_uuid(),
+      'created_at',transaction_timestamp()))).*;
+  for line_data in
+    select to_jsonb(l) line_root,to_jsonb(lr) line_revision
+    from atlas_procurement.purchase_order_lines l
+    join atlas_procurement.purchase_order_line_revisions lr
+      using(purchase_order_line_id)
+    where l.purchase_order_id=old_supplier_b.purchase_order_id
+      and lr.purchase_order_revision_id=old_supplier_b_revision.purchase_order_revision_id
+  loop
+    stale_line_id:=gen_random_uuid();
+    insert into atlas_procurement.purchase_order_lines
+    select (jsonb_populate_record(null::atlas_procurement.purchase_order_lines,
+      line_data.line_root||jsonb_build_object(
+        'purchase_order_line_id',stale_line_id,
+        'purchase_order_id',stale_draft_id,
+        'created_at',transaction_timestamp()))).*;
+    insert into atlas_procurement.purchase_order_line_revisions
+    select (jsonb_populate_record(null::atlas_procurement.purchase_order_line_revisions,
+      line_data.line_revision||jsonb_build_object(
+        'purchase_order_line_revision_id',gen_random_uuid(),
+        'purchase_order_revision_id',stale_revision_id,
+        'purchase_order_line_id',stale_line_id,
+        'predecessor_revision_id',null,'created_at',transaction_timestamp()))).*;
+  end loop;
+  set local session_replication_role=origin;
+
+  before_state:=pg_temp.purchase_preparation_state(stale_draft_id);
+  select version into current_version from atlas_planning.confirmed_need_batches
+  where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+  prepared:=atlas_api.prepare_school_catering_purchase_orders(pg_temp.review_command(
+    'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',current_version,
+    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+  after_state:=pg_temp.purchase_preparation_state(stale_draft_id);
+  raise exception using errcode='PPR99';
+exception when sqlstate 'PPR99' then
+  return jsonb_build_object('corrected',corrected,'saved',saved,
+    'prepared',prepared,'before',before_state,'after',after_state,
+    'stale_draft_id',stale_draft_id);
+end;
+$$;
+grant execute on function pg_temp.purchase_preparation_state(uuid),
+  pg_temp.extra_active_draft_frontier_case() to authenticated;
+set local role authenticated;
+insert into review_results values('extra-active-draft-frontier',
+  pg_temp.extra_active_draft_frontier_case());
+reset role;
+select is((select response#>>'{prepared,success}' from review_results
+    where name='extra-active-draft-frontier'),'false',
+  'an extra active stale Draft outside current suppliers blocks preparation');
+select is((select response#>>'{prepared,error_code}' from review_results
+    where name='extra-active-draft-frontier'),'PREPARATION_BLOCKED',
+  'an extra active stale Draft returns the safe preparation error');
+select is((select response#>>'{prepared,blockers,0}' from review_results
+    where name='extra-active-draft-frontier'),
+  'Đơn mua nháp hiện có không còn khớp với phân bổ nhà cung ứng hiện hành. Hãy làm mới hoặc xử lý đơn nháp trước khi tiếp tục.',
+  'an extra active stale Draft returns a non-empty operator blocker');
+select is((select response->'after' from review_results
+    where name='extra-active-draft-frontier'),
+  (select response->'before' from review_results
+    where name='extra-active-draft-frontier'),
+  'blocked extra-Draft preparation rolls back Planning release, Handoff and allocation promotion');
+select is((select response#>'{after,released_supplier_a}' from review_results
+    where name='extra-active-draft-frontier'),
+  (select response#>'{before,released_supplier_a}' from review_results
+    where name='extra-active-draft-frontier'),
+  'blocked extra-Draft preparation leaves the old released PO unchanged');
+select is((select response#>'{after,stale_supplier_b_draft}' from review_results
+    where name='extra-active-draft-frontier'),
+  (select response#>'{before,stale_supplier_b_draft}' from review_results
+    where name='extra-active-draft-frontier'),
+  'blocked extra-Draft preparation leaves the stale Draft unchanged');
+
+create function pg_temp.cancellation_frontier_case() returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare corrected jsonb;row_data jsonb;saved jsonb:='[]'::jsonb;prepared jsonb;current_version bigint;
+begin
+  if (select batch_status from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050')
+      not in ('DRAFT_REVIEW','REOPENED') then
+    set local session_replication_role=replica;
+    perform atlas_core.issue_222_reopen_confirmed_need(
+      'b6500000-0000-0000-0000-000000000050',
+      (select version from atlas_planning.confirmed_need_batches
+        where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+    set local session_replication_role=origin;
+  end if;
+  corrected:=atlas_api.save_confirmed_needs(pg_temp.need_save_complete_review('131.00'));
+  for row_data in select value from jsonb_array_elements(pg_temp.review_read(
+    'get_confirmed_supplier_allocation_workbench','CONFIRMED-SUPPLIER-ALLOCATION.v1',
+    '{"date_start":"2026-11-02","date_end":"2026-11-02"}')->'rows') order by value->>'ingredient_id'
+  loop
+    saved:=saved||jsonb_build_array(atlas_api.save_confirmed_supplier_allocation(
+      pg_temp.single_supplier_allocation_request(row_data,
+        case when row_data->>'ingredient_id'='b6500000-0000-0000-0000-000000000006'
+          then '131.00' else row_data->>'family_quantity' end)));
+  end loop;
+  select version into current_version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+  prepared:=atlas_api.prepare_school_catering_purchase_orders(pg_temp.review_command(
+    'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',current_version,
+    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+  raise exception using errcode='PPR99';
+exception when sqlstate 'PPR99' then
+  return jsonb_build_object('corrected',corrected,'saved',saved,'prepared',prepared);
+end;
+$$;
+grant execute on function pg_temp.single_supplier_allocation_request(jsonb,text),
+  pg_temp.cancellation_frontier_case() to authenticated;
+set local role authenticated;
+insert into review_results values('cancellation-frontier',pg_temp.cancellation_frontier_case());
+reset role;
+select ok((select response#>>'{corrected,success}'='true'
+    and (select bool_and(value->>'success'='true')
+      from jsonb_array_elements(response->'saved') value)
+    and response#>>'{prepared,success}'='false'
+  from review_results where name='cancellation-frontier'),
+  'a removed supplier reaches the preparation frontier only after valid correction and allocation');
+select is((select response#>>'{prepared,error_code}' from review_results where name='cancellation-frontier'),
+  'PREPARATION_BLOCKED','CANCELLATION_REQUIRED remains fail-closed during atomic preparation');
+select is((select response#>>'{prepared,blockers,0}' from review_results where name='cancellation-frontier'),
+  'Có đơn mua đã phát hành cần quy trình hủy trước khi tiếp tục.',
+  'known cancellation frontier returns a non-empty operator blocker');
+
+create function pg_temp.hide_scenario_c_draft() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+  if new.revision_status='DRAFT' then
+    update atlas_procurement.purchase_orders po
+    set purchase_order_status='SUPERSEDED'
+    where po.purchase_order_id=new.purchase_order_id
+      and po.school_catering_service_date='2026-11-02'
+      and po.supplier_id='c7100000-0000-4000-8000-000000000001';
+  end if;
+  return new;
+end;
+$$;
+create function pg_temp.missing_frontier_case() returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare prepared jsonb;current_version bigint;
+begin
+  update atlas_procurement.purchase_orders po
+  set purchase_order_status='SUPERSEDED'
+  where po.school_catering_service_date='2026-11-02'
+    and po.supplier_id='c7100000-0000-4000-8000-000000000001'
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER';
+  create trigger scenario_c_hide_draft
+    after insert on atlas_procurement.purchase_order_revisions
+    for each row execute function pg_temp.hide_scenario_c_draft();
+  select version into current_version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050';
+  prepared:=atlas_api.prepare_school_catering_purchase_orders(pg_temp.review_command(
+    'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',current_version,
+    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+  drop trigger scenario_c_hide_draft on atlas_procurement.purchase_order_revisions;
+  raise exception using errcode='PPR99';
+exception when sqlstate 'PPR99' then return prepared;
+end;
+$$;
+grant execute on function pg_temp.missing_frontier_case() to authenticated;
+set local role authenticated;
+insert into review_results values('missing-frontier',pg_temp.missing_frontier_case());
+reset role;
+select is((select response->>'error_code' from review_results where name='missing-frontier'),
+  'PREPARATION_BLOCKED','missing supplier/date PO coverage remains fail-closed');
+select is((select response#>>'{blockers,0}' from review_results where name='missing-frontier'),
+  'Thiếu bao phủ đơn mua hiện hành cho một hoặc nhiều nhà cung ứng.',
+  'known missing coverage returns a non-empty operator blocker');
+
+insert into command_requests select 'create-explicit-replacement',pg_temp.review_command(
+  'SCHOOL-CATERING-PROCUREMENT.v1','SCHOOL_CATERING_PO_REPLACEMENT_CREATED',po.version,
+  jsonb_build_object('replaced_purchase_order_id',po.purchase_order_id,
+    'expected_purchase_order_revision_id',r.purchase_order_revision_id))
+  from atlas_procurement.purchase_orders po
+  join atlas_procurement.purchase_order_revisions r using(purchase_order_id)
+  where po.school_catering_service_date='2026-11-02'
+    and po.supplier_id='c7100000-0000-4000-8000-000000000001'
+    and po.purchase_order_status='RELEASED_TO_SUPPLIER' and r.is_current;
+set local role authenticated;
+insert into review_results values('create-explicit-replacement',
+  pg_temp.review_invoke('create_school_catering_purchase_order_replacement',
+    (select request from command_requests where name='create-explicit-replacement')));
+reset role;
+select is((select response->>'success' from review_results where name='create-explicit-replacement'),'true',
+  'Scenario C explicit replacement command remains independently available');
+select is((select po.replaces_purchase_order_id
+    from atlas_procurement.purchase_orders po
+    where po.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+      from review_results where name='create-explicit-replacement')),
+  (select (response->>'replaces_purchase_order_id')::uuid
+    from review_results where name='create-explicit-replacement'),
+  'Scenario C replacement Draft points directly to the old released PO');
+select is((select sum(l.ordered_quantity)
+    from atlas_procurement.purchase_order_revisions r
+    join atlas_procurement.purchase_order_line_revisions l using(purchase_order_revision_id)
+    where r.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+      from review_results where name='create-explicit-replacement') and r.is_current
+      and l.ingredient_id='b6500000-0000-0000-0000-000000000006'),78::numeric,
+  'Scenario C replacement Draft contains the complete corrected supplier quantity, not the delta');
+
+create temporary table existing_replacement_before as
+select replacement.purchase_order_id replacement_id,
+  replacement.replaces_purchase_order_id released_id,
+  pg_temp.purchase_order_state(replacement.purchase_order_id) replacement_state,
+  pg_temp.purchase_order_state(replacement.replaces_purchase_order_id) released_state,
+  (select count(*) from atlas_procurement.purchase_orders candidate
+    where candidate.replaces_purchase_order_id=replacement.replaces_purchase_order_id)
+    replacement_root_count
+from atlas_procurement.purchase_orders replacement
+where replacement.purchase_order_id=(select (response->>'purchase_order_id')::uuid
+  from review_results where name='create-explicit-replacement');
+insert into command_requests values('prepare-existing-replacement',pg_temp.review_command(
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+set local role authenticated;
+insert into review_results values('prepare-existing-replacement',
+  pg_temp.review_invoke('prepare_school_catering_purchase_orders',
+    (select request from command_requests where name='prepare-existing-replacement')));
+reset role;
+select is((select response->>'success' from review_results
+    where name='prepare-existing-replacement'),'true',
+  'preparation remains idempotently valid with a complete current replacement Draft');
+select is(pg_temp.purchase_order_state((select replacement_id from existing_replacement_before)),
+  (select replacement_state from existing_replacement_before),
+  'preparation leaves the existing replacement root, revision, lines and quantities byte-for-byte unchanged');
+select is(pg_temp.purchase_order_state((select released_id from existing_replacement_before)),
+  (select released_state from existing_replacement_before),
+  'preparation with an existing replacement leaves the old released PO unchanged');
+select is((select count(*) from atlas_procurement.purchase_orders candidate
+    where candidate.replaces_purchase_order_id=
+      (select released_id from existing_replacement_before)),
+  (select replacement_root_count from existing_replacement_before),
+  'preparation creates no second replacement root');
+select is((select replaces_purchase_order_id from atlas_procurement.purchase_orders
+    where purchase_order_id=(select replacement_id from existing_replacement_before)),
+  (select released_id from existing_replacement_before),
+  'preparation preserves the replacement predecessor lineage');
+
+create temporary table second_correction_before as
+select replacement_id,released_id,replacement_state,released_state,
+  replacement_root_count,
+  (select purchase_handoff_revision_id
+    from atlas_planning.purchase_handoff_batches b
+    join atlas_planning.purchase_handoff_revisions r
+      using(purchase_handoff_batch_id)
+    where b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'
+      and r.is_current) handoff_revision_id,
+  jsonb_array_length(replacement_state->'revisions') replacement_revision_count,
+  (replacement_state#>>'{root,version}')::bigint replacement_version
+from existing_replacement_before;
+
+set local session_replication_role=replica;
+select atlas_core.issue_222_reopen_confirmed_need(
+  'b6500000-0000-0000-0000-000000000050',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'));
+set local session_replication_role=origin;
+insert into command_requests values('correct134',
+  pg_temp.need_save_complete_review('134.00'));
+set local role authenticated;
+insert into review_results values('correct134',atlas_api.save_confirmed_needs(
+  (select request from command_requests where name='correct134')));
+insert into review_results values('corrected134',pg_temp.review_read(
+  'get_confirmed_supplier_allocation_workbench',
+  'CONFIRMED-SUPPLIER-ALLOCATION.v1',
+  '{"date_start":"2026-11-02","date_end":"2026-11-02"}'));
+reset role;
+insert into command_requests select 'allocate134',
+  pg_temp.allocation_request(line,'80.00','54.00')
+from review_results,lateral jsonb_array_elements(response->'rows') line
+where name='corrected134'
+  and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
+insert into command_requests select 'reallocate_beans134',
+  pg_temp.allocation_request(line,'3.00','2.00')
+from review_results,lateral jsonb_array_elements(response->'rows') line
+where name='corrected134'
+  and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
+set local role authenticated;
+insert into review_results values('allocate134',pg_temp.review_invoke(
+  'save_confirmed_supplier_allocation',
+  (select request from command_requests where name='allocate134')));
+insert into review_results values('reallocate_beans134',pg_temp.review_invoke(
+  'save_confirmed_supplier_allocation',
+  (select request from command_requests where name='reallocate_beans134')));
+reset role;
+select diag(name||' failure: '||response::text)
+from review_results
+where name in ('allocate134','reallocate_beans134')
+  and response->>'success' is distinct from 'true';
+insert into command_requests values('prepare-second-correction',
+  pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+    (select version from atlas_planning.confirmed_need_batches
+      where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
+set local role authenticated;
+insert into review_results values('prepare-second-correction',pg_temp.review_invoke(
+  'prepare_school_catering_purchase_orders',
+  (select request from command_requests where name='prepare-second-correction')));
+reset role;
+select is((select response->>'success' from review_results where name='correct134'),
+  'true','second correction appends a new complete Confirmed Need revision');
+select ok((select bool_and(response->>'success'='true') from review_results
+    where name in ('allocate134','reallocate_beans134')),
+  'second correction saves the complete revised supplier allocation');
+select is((select response->>'success' from review_results
+    where name='prepare-second-correction'),'true',
+  'second-correction preparation reaches the new Handoff authority');
+select is(pg_temp.purchase_order_state(
+    (select replacement_id from second_correction_before)),
+  (select replacement_state from second_correction_before),
+  'ordinary preparation never mutates the stale replacement Draft');
+select is(pg_temp.purchase_order_state(
+    (select released_id from second_correction_before)),
+  (select released_state from second_correction_before),
+  'second-correction preparation leaves the released predecessor unchanged');
+select is((select count(*) from atlas_procurement.purchase_orders candidate
+    where candidate.replaces_purchase_order_id=
+      (select released_id from second_correction_before)),
+  (select replacement_root_count from second_correction_before),
+  'second-correction preparation creates no replacement root');
+select ok((select r.revision_kind='SUPERSEDING'
+      and r.predecessor_revision_id=before.handoff_revision_id
+      and r.revision_status='RELEASED_TO_PROCUREMENT'
+    from second_correction_before before
+    join atlas_planning.purchase_handoff_batches b
+      on b.confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'
+    join atlas_planning.purchase_handoff_revisions r
+      using(purchase_handoff_batch_id)
+    where r.is_current),
+  'second-correction preparation appends the expected Handoff successor');
+select is((select r.source_kind
+    from atlas_procurement.school_catering_allocation_family_revisions r
+    where r.family_id=(select (response#>>'{family,family_id}')::uuid
+      from review_results where name='allocate134') and r.is_current),
+  'PURCHASE_HANDOFF',
+  'second-correction preparation promotes the new allocation to Handoff authority');
+select is((select sum(s.allocated_quantity)
+    from atlas_procurement.school_catering_allocation_supplier_splits s
+    join atlas_procurement.school_catering_allocation_family_revisions r
+      using(family_revision_id)
+    where r.family_id=(select (response#>>'{family,family_id}')::uuid
+      from review_results where name='allocate134') and r.is_current),
+  134::numeric,
+  'second-correction Handoff promotion preserves the complete new quantity');
+select is((select atlas_core.school_catering_po_commitment_state(
+      po.purchase_order_id,r.purchase_order_revision_id)
+    from atlas_procurement.purchase_orders po
+    join atlas_procurement.purchase_order_revisions r
+      on r.purchase_order_id=po.purchase_order_id and r.is_current
+    where po.purchase_order_id=(select replacement_id
+      from second_correction_before)),
+  'DRAFT_STALE',
+  'the untouched replacement Draft derives stale against the new Handoff authority');
+
+insert into command_requests select 'regenerate-explicit-replacement',
+  pg_temp.review_command('SCHOOL-CATERING-PROCUREMENT.v1',
+    'SCHOOL_CATERING_PO_REPLACEMENT_CREATED',po.version,
+    jsonb_build_object('replaced_purchase_order_id',po.purchase_order_id,
+      'expected_purchase_order_revision_id',r.purchase_order_revision_id))
+from atlas_procurement.purchase_orders po
+join atlas_procurement.purchase_order_revisions r
+  on r.purchase_order_id=po.purchase_order_id and r.is_current
+where po.purchase_order_id=(select released_id from second_correction_before);
+set local role authenticated;
+insert into review_results values('regenerate-explicit-replacement',
+  pg_temp.review_invoke('create_school_catering_purchase_order_replacement',
+    (select request from command_requests
+      where name='regenerate-explicit-replacement')));
+reset role;
+select is((select response->>'success' from review_results
+    where name='regenerate-explicit-replacement'),'true',
+  'the explicit replacement command regenerates after new Handoff authority');
+select is((select (response->>'purchase_order_id')::uuid from review_results
+    where name='regenerate-explicit-replacement'),
+  (select replacement_id from second_correction_before),
+  'explicit regeneration reuses the same replacement root');
+select is((select version from atlas_procurement.purchase_orders
+    where purchase_order_id=(select replacement_id from second_correction_before)),
+  (select replacement_version+1 from second_correction_before),
+  'explicit regeneration advances the replacement root version once');
+select is((select count(*) from atlas_procurement.purchase_order_revisions
+    where purchase_order_id=(select replacement_id from second_correction_before)),
+  (select (replacement_revision_count+1)::bigint from second_correction_before),
+  'explicit regeneration appends one replacement revision');
+select is((select sum(l.ordered_quantity)
+    from atlas_procurement.purchase_order_revisions r
+    join atlas_procurement.purchase_order_line_revisions l
+      using(purchase_order_revision_id)
+    where r.purchase_order_id=(select replacement_id
+        from second_correction_before)
+      and r.is_current
+      and l.ingredient_id='b6500000-0000-0000-0000-000000000006'),
+  80::numeric,
+  'explicit regeneration uses the new complete supplier quantity, not the delta');
+select is((select replaces_purchase_order_id
+    from atlas_procurement.purchase_orders
+    where purchase_order_id=(select replacement_id from second_correction_before)),
+  (select released_id from second_correction_before),
+  'explicit regeneration preserves direct predecessor lineage');
+select is(pg_temp.purchase_order_state(
+    (select released_id from second_correction_before)),
+  (select released_state from second_correction_before),
+  'explicit regeneration leaves the released predecessor unchanged');
 create function pg_temp.legacy_handoff_read() returns jsonb language plpgsql as $$
 declare answer jsonb;
 begin
@@ -643,10 +1433,14 @@ select ok((select bool_and(line#>>'{family,source_kind}'='PURCHASE_HANDOFF') fro
 -- date, which must never be reported as successful commitment preparation.
 update atlas_admin.supplier_eligibilities set eligibility_status='INACTIVE'
   where supplier_id='c7100000-0000-4000-8000-000000000001';
+insert into command_requests values('ineligible-prepare',pg_temp.review_command(
+  'PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
+  (select version from atlas_planning.confirmed_need_batches
+    where confirmed_need_batch_id='b6500000-0000-0000-0000-000000000050'),
+  '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}'));
 set local role authenticated;
 insert into review_results values('ineligible_prepare',pg_temp.review_invoke('prepare_school_catering_purchase_orders',
-  pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',6,
-    '{"confirmed_need_batch_id":"b6500000-0000-0000-0000-000000000050","service_date":"2026-11-02"}')));
+  (select request from command_requests where name='ineligible-prepare')));
 reset role;
 select is((select response->>'success' from review_results where name='ineligible_prepare'),'false',
   'skipped unready PO date cannot become successful preparation');
