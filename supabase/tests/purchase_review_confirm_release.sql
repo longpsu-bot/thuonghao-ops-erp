@@ -1279,7 +1279,7 @@ from review_results,lateral jsonb_array_elements(response->'rows') line
 where name='corrected134'
   and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000006';
 insert into command_requests select 'reallocate_beans134',
-  pg_temp.allocation_request(line,'2.00','2.00')
+  pg_temp.allocation_request(line,'3.00','2.00')
 from review_results,lateral jsonb_array_elements(response->'rows') line
 where name='corrected134'
   and line->>'ingredient_id'='b6500000-0000-0000-0000-000000000007';
