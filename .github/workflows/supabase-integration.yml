@@ -12,6 +12,7 @@ on:
     paths:
       - ".github/workflows/atlas-staging-foundation-install.yml"
       - ".github/workflows/atlas-staging-identity-install.yml"
+      - ".github/workflows/atlas-staging-school-fulfilment-verify.yml"
       - ".github/workflows/supabase-integration.yml"
       - "supabase/**"
       - "scripts/atlas-staging-contract.mjs"
@@ -61,6 +62,7 @@ on:
     paths:
       - ".github/workflows/atlas-staging-foundation-install.yml"
       - ".github/workflows/atlas-staging-identity-install.yml"
+      - ".github/workflows/atlas-staging-school-fulfilment-verify.yml"
       - ".github/workflows/supabase-integration.yml"
       - "supabase/**"
       - "scripts/atlas-staging-contract.mjs"

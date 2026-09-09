@@ -15,8 +15,8 @@ Before hosted action, require a clean exact commit, successful certifications, t
 5. Rehearse Scenario A on `2046-09-17`: Recipe-derived plus Pantry-direct membership through Need, allocation, released PO, released PXK, and reconciliation `OK`.
 6. Rehearse Scenario B on `2046-09-18`: complete Pantry-direct authority without fabricated Menu, Attendance, or Recipe bindings.
 7. Rehearse Scenario C on `2046-09-19`: retain old Need/PO/PXK evidence; release explicit PO and PXK successors; verify predecessors are superseded and successors current.
-8. Run `pnpm atlas:staging:school-fulfilment:verify`. It performs authenticated Data API reads only, without retry or writes.
-9. Record the exact commit, workflow results, operator, timestamps, and verifier output for the Product/Architecture cutover decision. Stop for review; do not activate production or cancel supplier commitments.
+8. Manually dispatch `Atlas Staging School Fulfilment Verify` with the exact deployed merged-main SHA. This formal certification is read-only: it must not replay Identity or Foundation, deploy migrations, retry, or write business data. Require `School fulfilment verifier passed (3 scenarios).`
+9. Record the verified commit SHA, workflow run URL/ID, verifier output, and timestamp, then proceed only to the Product/Architecture cutover decision. No production activation is implied.
 
 The Foundation workflow is manual-only and must be dispatched after merge from the exact merged-main SHA. Use `--dry-run` to validate guards and the read plan without constructing a client. On any missing scenario, mismatch, blocker, stale state, authorization failure, or unclear history, stop and preserve evidence. If a replay outcome is unknown, read current state before any retry; never add or perform an automatic retry.
 

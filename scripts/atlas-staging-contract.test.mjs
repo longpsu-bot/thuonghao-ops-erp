@@ -1325,6 +1325,95 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).not.toContain("install-atlas-staging-package.mjs");
   });
 
+  it("keeps School fulfilment verification manual, protected, exact-commit, and read-only", () => {
+    const workflowPath =
+      ".github/workflows/atlas-staging-school-fulfilment-verify.yml";
+    expect(existsSync(workflowPath)).toBe(true);
+    if (!existsSync(workflowPath)) return;
+
+    const workflow = readFileSync(workflowPath, "utf8");
+    const lines = workflow.split(/\r?\n/).map((line) => line.trim());
+    const permissions =
+      /permissions:\s*\n((?:\s{2}.+\n)+)/.exec(workflow)?.[1].trim() ?? "";
+    const jobEnvironment =
+      /    env:\n((?:      .*\n)+)\n    steps:/.exec(workflow)?.[1] ?? "";
+    const exposedNames = jobEnvironment
+      .split(/\r?\n/)
+      .map((line) => /^\s*([A-Z0-9_]+):/.exec(line)?.[1])
+      .filter(Boolean);
+
+    expect(workflow).toMatch(/on:\s*\n\s*workflow_dispatch:/);
+    expect(workflow).not.toMatch(
+      /\n\s+(push|pull_request|schedule|release|workflow_run):/,
+    );
+    expect(workflow).toMatch(
+      /commit_sha:\s*\n\s+description: Exact full merged-main SHA[^\n]*\n\s+required: true\s*\n\s+type: string/,
+    );
+    expect(workflow).toContain("environment: atlas-staging");
+    expect(permissions).toBe("contents: read");
+    expect(workflow).not.toMatch(/permissions:[\s\S]*\bwrite\b/);
+
+    expect(exposedNames).toEqual([
+      "ATLAS_STAGING_PROJECT_REF",
+      "VITE_ATLAS_ENVIRONMENT",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
+      "ATLAS_STAGING_TEST_EMAIL",
+      "ATLAS_STAGING_SUPABASE_ACCESS_TOKEN",
+      "ATLAS_STAGING_TEST_PASSWORD",
+      "SUPABASE_TELEMETRY_DISABLED",
+    ]);
+    for (const variableName of [
+      "ATLAS_STAGING_PROJECT_REF",
+      "VITE_ATLAS_ENVIRONMENT",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
+      "ATLAS_STAGING_TEST_EMAIL",
+    ]) {
+      expect(workflow).toContain(
+        `${variableName}: \${{ vars.${variableName} }}`,
+      );
+    }
+    for (const secretName of [
+      "ATLAS_STAGING_SUPABASE_ACCESS_TOKEN",
+      "ATLAS_STAGING_TEST_PASSWORD",
+    ]) {
+      expect(workflow).toContain(
+        `${secretName}: \${{ secrets.${secretName} }}`,
+      );
+    }
+    expect(workflow).toMatch(/SUPABASE_TELEMETRY_DISABLED:\s*"1"/);
+    expect(workflow).not.toMatch(
+      /ATLAS_STAGING_DB_PASSWORD|ATLAS_STAGING_SUPABASE_SECRET_KEY|SUPABASE_SERVICE_ROLE_KEY|service_role|DATABASE_URL/i,
+    );
+
+    expect(workflow).toContain("uses: actions/checkout@v4");
+    expect(workflow).toContain("ref: ${{ inputs.commit_sha }}");
+    expect(workflow).toContain("fetch-depth: 0");
+    expect(workflow).toContain(
+      "git fetch --no-tags origin main:refs/remotes/origin/main",
+    );
+    expect(workflow).toContain("set -euo pipefail");
+    expect(workflow).toContain("^[0-9a-f]{40}$");
+    expect(workflow).toContain("git rev-parse HEAD");
+    expect(workflow).toContain(
+      'git merge-base --is-ancestor "$requested" origin/main',
+    );
+    expect(workflow).toContain("git status --porcelain");
+
+    expect(workflow).toContain("version: 11.7.0");
+    expect(workflow).toContain("node-version: 24");
+    expect(workflow).toContain("cache: pnpm");
+    expect(lines.filter((line) => line.startsWith("run: pnpm"))).toEqual([
+      "run: pnpm install --frozen-lockfile",
+      "run: pnpm atlas:staging:school-fulfilment:verify -- --dry-run",
+      "run: pnpm atlas:staging:school-fulfilment:verify",
+    ]);
+    expect(workflow).not.toMatch(
+      /atlas:staging:deploy|atlas:staging:identity:install|atlas:staging:foundation:install|supabase db push|supabase migration|apply_migration|ensureAtlasApiExposure/i,
+    );
+  });
+
   describe("Atlas Staging Foundation install workflow", () => {
     const workflowPath =
       ".github/workflows/atlas-staging-foundation-install.yml";
@@ -1493,6 +1582,7 @@ describe("Atlas staging dry-run and workflow", () => {
     const stagingBoundaryPaths = [
       ".github/workflows/atlas-staging-foundation-install.yml",
       ".github/workflows/atlas-staging-identity-install.yml",
+      ".github/workflows/atlas-staging-school-fulfilment-verify.yml",
       "scripts/atlas-staging-contract.mjs",
       "scripts/atlas-staging-contract.test.mjs",
       "scripts/deploy-atlas-staging.mjs",

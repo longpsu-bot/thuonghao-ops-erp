@@ -1,0 +1,82 @@
+name: Atlas Staging School Fulfilment Verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full merged-main SHA to verify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify-school-fulfilment:
+    name: Read-only Atlas staging School fulfilment verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: atlas-staging
+    env:
+      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+      VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+      ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+      SUPABASE_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out the requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Fetch main for ancestry verification
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Verify the requested merged-main commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          requested="${{ inputs.commit_sha }}"
+          if [[ ! "$requested" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Requested commit must be a full lowercase SHA."
+            exit 1
+          fi
+          checked_out="$(git rev-parse HEAD)"
+          if [[ "$checked_out" != "$requested" ]]; then
+            echo "::error::Checked-out HEAD does not match the requested commit."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$requested" origin/main; then
+            echo "::error::Requested commit is not contained in origin/main."
+            exit 1
+          fi
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::Checked-out worktree is not clean."
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate the protected target and read plan
+        run: pnpm atlas:staging:school-fulfilment:verify -- --dry-run
+
+      - name: Verify School fulfilment scenarios
+        run: pnpm atlas:staging:school-fulfilment:verify
