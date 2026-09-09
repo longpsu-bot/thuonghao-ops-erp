@@ -3,8 +3,8 @@ name: Atlas Staging School Fulfilment Verify
 on:
   workflow_dispatch:
     inputs:
-      commit_sha:
-        description: Exact full merged-main SHA to verify
+      deployed_commit_sha:
+        description: Exact deployed merged-main business SHA being certified
         required: true
         type: string
 
@@ -14,6 +14,7 @@ permissions:
 jobs:
   verify-school-fulfilment:
     name: Read-only Atlas staging School fulfilment verification
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: atlas-staging
@@ -28,37 +29,46 @@ jobs:
       SUPABASE_TELEMETRY_DISABLED: "1"
 
     steps:
-      - name: Check out the requested exact commit
+      - name: Check out the verifier implementation
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.commit_sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Fetch main for ancestry verification
         run: git fetch --no-tags origin main:refs/remotes/origin/main
 
-      - name: Verify the requested merged-main commit
+      - name: Verify the deployed and verifier authorities
         shell: bash
+        env:
+          DEPLOYED_COMMIT_SHA: ${{ inputs.deployed_commit_sha }}
+          WORKFLOW_EXECUTION_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          requested="${{ inputs.commit_sha }}"
-          if [[ ! "$requested" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::Requested commit must be a full lowercase SHA."
+          deployed="$DEPLOYED_COMMIT_SHA"
+          verifier="$(git rev-parse HEAD)"
+          if [[ ! "$deployed" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Deployed business commit must be a full lowercase SHA."
             exit 1
           fi
-          checked_out="$(git rev-parse HEAD)"
-          if [[ "$checked_out" != "$requested" ]]; then
-            echo "::error::Checked-out HEAD does not match the requested commit."
+          if [[ "$verifier" != "$WORKFLOW_EXECUTION_SHA" ]]; then
+            echo "::error::Checked-out verifier does not match the workflow execution SHA."
             exit 1
           fi
-          if ! git merge-base --is-ancestor "$requested" origin/main; then
-            echo "::error::Requested commit is not contained in origin/main."
+          if ! git cat-file -e "${deployed}^{commit}" 2>/dev/null; then
+            echo "::error::Deployed business commit does not exist in the repository."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$deployed" origin/main; then
+            echo "::error::Deployed business commit is not contained in origin/main."
             exit 1
           fi
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "::error::Checked-out worktree is not clean."
             exit 1
           fi
+          echo "Deployed business SHA: $deployed"
+          echo "Verifier implementation SHA: $verifier"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4

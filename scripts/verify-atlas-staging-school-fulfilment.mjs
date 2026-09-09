@@ -230,7 +230,7 @@ export async function verifyAtlasStagingSchoolFulfilment({
               contribution_family: null,
             },
             group_offset: 0,
-            group_limit: 500,
+            group_limit: 250,
           }),
         ),
         readRpc(

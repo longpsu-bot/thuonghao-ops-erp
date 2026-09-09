@@ -1325,7 +1325,7 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(workflow).not.toContain("install-atlas-staging-package.mjs");
   });
 
-  it("keeps School fulfilment verification manual, protected, exact-commit, and read-only", () => {
+  it("keeps School fulfilment verification manual, protected, dual-authority, and read-only", () => {
     const workflowPath =
       ".github/workflows/atlas-staging-school-fulfilment-verify.yml";
     expect(existsSync(workflowPath)).toBe(true);
@@ -1347,9 +1347,10 @@ describe("Atlas staging dry-run and workflow", () => {
       /\n\s+(push|pull_request|schedule|release|workflow_run):/,
     );
     expect(workflow).toMatch(
-      /commit_sha:\s*\n\s+description: Exact full merged-main SHA[^\n]*\n\s+required: true\s*\n\s+type: string/,
+      /deployed_commit_sha:\s*\n\s+description: Exact deployed merged-main business SHA being certified\s*\n\s+required: true\s*\n\s+type: string/,
     );
     expect(workflow).toContain("environment: atlas-staging");
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
     expect(permissions).toBe("contents: read");
     expect(workflow).not.toMatch(/permissions:[\s\S]*\bwrite\b/);
 
@@ -1388,18 +1389,31 @@ describe("Atlas staging dry-run and workflow", () => {
     );
 
     expect(workflow).toContain("uses: actions/checkout@v4");
-    expect(workflow).toContain("ref: ${{ inputs.commit_sha }}");
+    expect(workflow).toContain("ref: ${{ github.sha }}");
+    expect(workflow).not.toContain("ref: ${{ inputs.deployed_commit_sha }}");
     expect(workflow).toContain("fetch-depth: 0");
     expect(workflow).toContain(
       "git fetch --no-tags origin main:refs/remotes/origin/main",
     );
     expect(workflow).toContain("set -euo pipefail");
     expect(workflow).toContain("^[0-9a-f]{40}$");
-    expect(workflow).toContain("git rev-parse HEAD");
     expect(workflow).toContain(
-      'git merge-base --is-ancestor "$requested" origin/main',
+      "DEPLOYED_COMMIT_SHA: ${{ inputs.deployed_commit_sha }}",
+    );
+    expect(workflow).toContain("WORKFLOW_EXECUTION_SHA: ${{ github.sha }}");
+    expect(workflow).toContain('deployed="$DEPLOYED_COMMIT_SHA"');
+    expect(workflow).toContain('verifier="$(git rev-parse HEAD)"');
+    expect(workflow).toContain(
+      '[[ "$verifier" != "$WORKFLOW_EXECUTION_SHA" ]]',
+    );
+    expect(workflow).toContain('git cat-file -e "${deployed}^{commit}"');
+    expect(workflow).toContain(
+      'git merge-base --is-ancestor "$deployed" origin/main',
     );
     expect(workflow).toContain("git status --porcelain");
+    expect(workflow).toContain('echo "Deployed business SHA: $deployed"');
+    expect(workflow).toContain('echo "Verifier implementation SHA: $verifier"');
+    expect(workflow).not.toContain('[[ "$deployed" != "$verifier" ]]');
 
     expect(workflow).toContain("version: 11.7.0");
     expect(workflow).toContain("node-version: 24");

@@ -6,6 +6,16 @@ import {
 import { redactAtlasStagingDiagnostic } from "./atlas-staging-contract.mjs";
 
 const dates = ["2046-09-17", "2046-09-18", "2046-09-19"];
+const environment = {
+  VITE_ATLAS_ENVIRONMENT: "staging",
+  ATLAS_STAGING_PROJECT_REF: "rnzxmxiiqgtdevzregff",
+  VITE_SUPABASE_URL: "https://rnzxmxiiqgtdevzregff.supabase.co",
+  VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_atlas_staging_test_value",
+  ATLAS_STAGING_TEST_EMAIL: "operator@example.test",
+  ATLAS_STAGING_TEST_PASSWORD: "a-secure-test-password",
+  ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: "test-access-token",
+};
+
 function evidence() {
   return {
     need: {
@@ -162,15 +172,6 @@ describe("School fulfilment Staging verifier", () => {
   });
   it("does not create a client during dry-run", async () => {
     const createClientFactory = vi.fn();
-    const environment = {
-      VITE_ATLAS_ENVIRONMENT: "staging",
-      ATLAS_STAGING_PROJECT_REF: "rnzxmxiiqgtdevzregff",
-      VITE_SUPABASE_URL: "https://rnzxmxiiqgtdevzregff.supabase.co",
-      VITE_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_atlas_staging_test_value",
-      ATLAS_STAGING_TEST_EMAIL: "operator@example.test",
-      ATLAS_STAGING_TEST_PASSWORD: "a-secure-test-password",
-      ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: "test-access-token",
-    };
     const result = await verifyAtlasStagingSchoolFulfilment({
       environment,
       createClientFactory,
@@ -178,6 +179,70 @@ describe("School fulfilment Staging verifier", () => {
     });
     expect(result.networkWrites).toBe(false);
     expect(createClientFactory).not.toHaveBeenCalled();
+  });
+  it("sends the exact contract-safe Need Generation request and clears the session", async () => {
+    const fixture = evidence();
+    const rpcCalls = [];
+    const responses = {
+      get_need_generation_workbench: fixture.need,
+      get_confirmed_supplier_allocation_workbench: {
+        rows: [
+          {
+            service_date: dates[2],
+            source_confirmed_need_batch_id: "confirmed-need-batch",
+          },
+        ],
+      },
+      get_school_catering_purchase_orders: fixture.purchaseOrders,
+      get_school_dispatch_release_workbench: { rows: [] },
+      get_school_fulfilment_reconciliation_workbench: fixture.reconciliation,
+      get_confirmed_need_review: fixture.confirmedNeeds.rows[0],
+    };
+    const signInWithPassword = vi.fn(async () => ({
+      data: { session: { user: { id: "atlas-staging-operator" } } },
+      error: null,
+    }));
+    const signOut = vi.fn(async () => ({ error: null }));
+    const client = {
+      auth: { signInWithPassword, signOut },
+      schema: vi.fn(() => ({
+        rpc: (name, { request }) => {
+          rpcCalls.push({ name, request });
+          return {
+            retry: async () => ({
+              data: { success: true, ...responses[name] },
+              error: null,
+            }),
+          };
+        },
+      })),
+    };
+
+    await expect(
+      verifyAtlasStagingSchoolFulfilment({
+        environment,
+        createClientFactory: () => client,
+      }),
+    ).resolves.toEqual({ status: "verified", scenarios: 3 });
+
+    const needCall = rpcCalls.find(
+      ({ name }) => name === "get_need_generation_workbench",
+    );
+    expect(needCall?.request).toMatchObject({
+      contract_version: "RMVP-04.v1",
+      payload: {
+        period_start: "2046-09-17",
+        period_end: "2046-09-19",
+        group_offset: 0,
+        group_limit: 250,
+      },
+    });
+    expect(rpcCalls.every(({ name }) => name.startsWith("get_"))).toBe(true);
+    expect(signInWithPassword).toHaveBeenCalledWith({
+      email: environment.ATLAS_STAGING_TEST_EMAIL,
+      password: environment.ATLAS_STAGING_TEST_PASSWORD,
+    });
+    expect(signOut).toHaveBeenCalledWith({ scope: "local" });
   });
   it("rejects missing values, a wrong project, and live OPS before client creation", async () => {
     const createClientFactory = vi.fn();
