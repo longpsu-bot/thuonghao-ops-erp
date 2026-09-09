@@ -63,6 +63,46 @@ begin
     );
   end if;
 
+  if exists(
+    select 1
+    from atlas_procurement.purchase_orders po
+    join atlas_procurement.purchase_order_revisions por
+      on por.purchase_order_id=po.purchase_order_id and por.is_current
+    where po.purchase_order_kind='SCHOOL_CATERING'
+      and po.school_catering_service_date=p_date
+      and po.purchase_order_status='DRAFT'
+      and (
+        por.revision_status<>'DRAFT'
+        or atlas_core.school_catering_po_commitment_state(
+          po.purchase_order_id,por.purchase_order_revision_id
+        )<>'DRAFT_CURRENT'
+        or not exists(
+          select 1
+          from atlas_procurement.purchase_orders predecessor
+          join atlas_procurement.purchase_order_revisions predecessor_revision
+            on predecessor_revision.purchase_order_id=predecessor.purchase_order_id
+           and predecessor_revision.is_current
+          where predecessor.purchase_order_id=po.replaces_purchase_order_id
+            and predecessor.purchase_order_kind='SCHOOL_CATERING'
+            and predecessor.supplier_id=po.supplier_id
+            and predecessor.school_catering_service_date=p_date
+            and predecessor.purchase_order_status='RELEASED_TO_SUPPLIER'
+            and atlas_core.school_catering_po_commitment_state(
+              predecessor.purchase_order_id,
+              predecessor_revision.purchase_order_revision_id
+            )='REPLACEMENT_REQUIRED'
+        )
+      )
+  ) then
+    return jsonb_build_object(
+      'acceptable',false,
+      'frontier','OTHER_INVALID_STATE',
+      'blockers',jsonb_build_array(
+        'Đơn mua nháp hiện có không còn khớp với phân bổ nhà cung ứng hiện hành. Hãy làm mới hoặc xử lý đơn nháp trước khi tiếp tục.'
+      )
+    );
+  end if;
+
   with expected as materialized (
     select f.service_date,f.delivery_location_id,f.ingredient_id,f.unit_id,
       s.supplier_split_id,s.supplier_id,s.allocated_quantity
