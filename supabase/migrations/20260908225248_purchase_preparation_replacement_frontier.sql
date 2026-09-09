@@ -6,7 +6,7 @@ grant atlas_owner,atlas_procurement_command_runtime,
   atlas_confirmed_need_review_runtime to postgres with set true;
 
 set role atlas_owner;
-grant create on schema atlas_core to atlas_procurement_command_runtime;
+grant create on schema atlas_core,atlas_api to atlas_procurement_command_runtime;
 reset role;
 
 set role atlas_procurement_command_runtime;
@@ -73,24 +73,40 @@ begin
       and po.purchase_order_status='DRAFT'
       and (
         por.revision_status<>'DRAFT'
-        or atlas_core.school_catering_po_commitment_state(
-          po.purchase_order_id,por.purchase_order_revision_id
-        )<>'DRAFT_CURRENT'
-        or not exists(
-          select 1
-          from atlas_procurement.purchase_orders predecessor
-          join atlas_procurement.purchase_order_revisions predecessor_revision
-            on predecessor_revision.purchase_order_id=predecessor.purchase_order_id
-           and predecessor_revision.is_current
-          where predecessor.purchase_order_id=po.replaces_purchase_order_id
-            and predecessor.purchase_order_kind='SCHOOL_CATERING'
-            and predecessor.supplier_id=po.supplier_id
-            and predecessor.school_catering_service_date=p_date
-            and predecessor.purchase_order_status='RELEASED_TO_SUPPLIER'
-            and atlas_core.school_catering_po_commitment_state(
-              predecessor.purchase_order_id,
-              predecessor_revision.purchase_order_revision_id
-            )='REPLACEMENT_REQUIRED'
+        or (
+          po.replaces_purchase_order_id is null
+          and (
+            atlas_core.school_catering_po_commitment_state(
+              po.purchase_order_id,por.purchase_order_revision_id
+            )<>'DRAFT_CURRENT'
+            or exists(
+              select 1
+              from atlas_procurement.purchase_orders released
+              where released.purchase_order_kind='SCHOOL_CATERING'
+                and released.supplier_id=po.supplier_id
+                and released.school_catering_service_date=p_date
+                and released.purchase_order_status='RELEASED_TO_SUPPLIER'
+            )
+          )
+        )
+        or (
+          po.replaces_purchase_order_id is not null
+          and not exists(
+            select 1
+            from atlas_procurement.purchase_orders predecessor
+            join atlas_procurement.purchase_order_revisions predecessor_revision
+              on predecessor_revision.purchase_order_id=predecessor.purchase_order_id
+             and predecessor_revision.is_current
+            where predecessor.purchase_order_id=po.replaces_purchase_order_id
+              and predecessor.purchase_order_kind='SCHOOL_CATERING'
+              and predecessor.supplier_id=po.supplier_id
+              and predecessor.school_catering_service_date=p_date
+              and predecessor.purchase_order_status='RELEASED_TO_SUPPLIER'
+              and atlas_core.school_catering_po_commitment_state(
+                predecessor.purchase_order_id,
+                predecessor_revision.purchase_order_revision_id
+              )='REPLACEMENT_REQUIRED'
+          )
         )
       )
   ) then
@@ -214,9 +230,47 @@ grant execute on function
   atlas_core.purchase_review_preparation_po_frontier(date)
 to atlas_confirmed_need_review_runtime;
 
+do $replace_replacement_aware_draft_materializer$
+declare
+  definition text := pg_get_functiondef(
+    'atlas_api.create_school_catering_purchase_order_drafts(jsonb)'::regprocedure
+  );
+  original_definition text := definition;
+begin
+  definition := replace(
+    definition,
+    E'    select null::uuid purchase_order_revision_id,0::integer revision_number into v_prior;\n    select po.purchase_order_id,po.purchase_order_status,po.version\n      into v_root',
+    E'    select null::uuid purchase_order_revision_id,0::integer revision_number into v_prior;\n\n    perform 1\n    from atlas_procurement.purchase_orders po\n    where po.purchase_order_kind=''SCHOOL_CATERING''\n      and po.supplier_id=v_supplier.supplier_id\n      and po.school_catering_service_date=v_supplier.service_date\n      and po.purchase_order_status=''RELEASED_TO_SUPPLIER''\n    for update;\n    if found then continue; end if;\n\n    perform 1\n    from atlas_procurement.purchase_orders po\n    where po.purchase_order_kind=''SCHOOL_CATERING''\n      and po.supplier_id=v_supplier.supplier_id\n      and po.school_catering_service_date=v_supplier.service_date\n      and po.purchase_order_status=''DRAFT''\n      and po.replaces_purchase_order_id is not null\n    for update;\n    if found then continue; end if;\n\n    select po.purchase_order_id,po.purchase_order_status,po.version\n      into v_root'
+  );
+  definition := replace(
+    definition,
+    E'      and po.purchase_order_status not in (''CANCELLED'',''SUPERSEDED'')\n    for update;',
+    E'      and po.purchase_order_status=''DRAFT''\n      and po.replaces_purchase_order_id is null\n    for update;'
+  );
+  definition := replace(
+    definition,
+    E'    elsif v_root.purchase_order_status=''RELEASED_TO_SUPPLIER'' then\n      continue;\n    else',
+    '    else'
+  );
+
+  if definition=original_definition
+     or position('purchase_order_status=''RELEASED_TO_SUPPLIER''' in definition)=0
+     or position('po.replaces_purchase_order_id is not null' in definition)=0
+     or position('po.replaces_purchase_order_id is null' in definition)=0
+     or position('purchase_order_status not in (''CANCELLED'',''SUPERSEDED'')'
+       in definition)<>0
+     or position('elsif v_root.purchase_order_status=''RELEASED_TO_SUPPLIER'''
+       in definition)<>0 then
+    raise exception 'Expected School-catering PO draft materializer definition changed';
+  end if;
+
+  execute definition;
+end;
+$replace_replacement_aware_draft_materializer$;
+
 reset role;
 set role atlas_owner;
-revoke create on schema atlas_core from atlas_procurement_command_runtime;
+revoke create on schema atlas_core,atlas_api from atlas_procurement_command_runtime;
 grant create on schema atlas_api to atlas_confirmed_need_review_runtime;
 reset role;
 
