@@ -796,6 +796,7 @@ declare
   drafts jsonb; prepared jsonb; before_state jsonb; after_state jsonb;
   ordinary_id uuid; released_id uuid; current_version bigint;
   ordinary_revision_id uuid; released_revision_id uuid;
+  ordinary_status text; released_status text; replacement_count bigint;
 begin
   set local session_replication_role=replica;
   update atlas_procurement.purchase_orders
@@ -840,18 +841,20 @@ begin
   after_state:=jsonb_build_object(
     'ordinary',pg_temp.purchase_order_state(ordinary_id),
     'released',pg_temp.purchase_order_state(released_id));
+  ordinary_status:=atlas_core.school_catering_po_commitment_state(
+    ordinary_id,ordinary_revision_id);
+  released_status:=atlas_core.school_catering_po_commitment_state(
+    released_id,released_revision_id);
+  select count(*) into replacement_count
+  from atlas_procurement.purchase_orders po
+  where po.school_catering_service_date='2026-11-02'
+    and po.replaces_purchase_order_id=released_id;
   raise exception using errcode='PPR99';
 exception when sqlstate 'PPR99' then
   return jsonb_build_object(
     'drafts',drafts,'prepared',prepared,'before',before_state,'after',after_state,
-    'ordinary_status',atlas_core.school_catering_po_commitment_state(
-      ordinary_id,ordinary_revision_id),
-    'released_status',atlas_core.school_catering_po_commitment_state(
-      released_id,released_revision_id),
-    'replacement_count',(select count(*)
-      from atlas_procurement.purchase_orders po
-      where po.school_catering_service_date='2026-11-02'
-        and po.replaces_purchase_order_id=released_id));
+    'ordinary_status',ordinary_status,'released_status',released_status,
+    'replacement_count',replacement_count);
 end;
 $$;
 grant execute on function pg_temp.mixed_supplier_frontier_case() to authenticated;
@@ -1288,6 +1291,10 @@ insert into review_results values('reallocate_beans134',pg_temp.review_invoke(
   'save_confirmed_supplier_allocation',
   (select request from command_requests where name='reallocate_beans134')));
 reset role;
+select diag(name||' failure: '||response::text)
+from review_results
+where name in ('allocate134','reallocate_beans134')
+  and response->>'success' is distinct from 'true';
 insert into command_requests values('prepare-second-correction',
   pg_temp.review_command('PURCHASE-COMMITMENT.v1','PURCHASE_ORDERS_PREPARED',
     (select version from atlas_planning.confirmed_need_batches
@@ -1381,7 +1388,7 @@ select is((select version from atlas_procurement.purchase_orders
   'explicit regeneration advances the replacement root version once');
 select is((select count(*) from atlas_procurement.purchase_order_revisions
     where purchase_order_id=(select replacement_id from second_correction_before)),
-  (select replacement_revision_count+1 from second_correction_before),
+  (select (replacement_revision_count+1)::bigint from second_correction_before),
   'explicit regeneration appends one replacement revision');
 select is((select sum(l.ordered_quantity)
     from atlas_procurement.purchase_order_revisions r
