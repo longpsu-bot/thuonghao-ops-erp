@@ -2,6 +2,39 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("permits reviewed Planning business dependencies only inside bridges", () => {
+    for (const module of [
+      "planningInputsApi",
+      "planningInputsModel",
+      "planningInputsWorkbook",
+      "planningCorrectionApi",
+      "planningSchoolScope",
+      "pantry/pantryApi",
+      "pantry/pantryModel",
+    ]) {
+      const source = `export * from "@/modules/atlas/planning-inputs/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/planning.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/planning/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+  });
+  it.each([
+    "PlanningInputsWorkbench",
+    "PlanningOperatingRail",
+    "PlanningRailActionPortal",
+    "PlanningCorrectionImpactPanel",
+    "PlanningSchoolScopeControl",
+    "pantry/PantryWorkbench",
+  ])("rejects Planning presentation %s through a bridge", (module) => {
+    expect(
+      checkSources({
+        "src/vnext/atlas/bridges/planning.ts": `export * from "@/modules/atlas/planning-inputs/${module}";`,
+      }),
+    ).toHaveLength(1);
+  });
   it("approves the five reviewed Procurement business modules only through bridges", () => {
     const modules = [
       "procurement/purchaseReviewApi",
