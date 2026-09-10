@@ -86,3 +86,50 @@ Approved task: **ATLAS-UI-VNEXT-01A-DESIGN-GATE-CORRECTIONS**. Continued the sam
 - [x] Product upload contact sheet (outside repo): `C:/Users/HOME/.codex/visualizations/2026/09/10/01a089fc-fd88-74f1-9530-14ac7fa6596e/vnext-01a-evidence/atlas-vnext-01a-contact-sheet.png`. Six critical views plus a labeled mobile continuation crop. Reproduction inputs and individual screenshots stay outside Git.
 - [x] Qodana at starting head: inspected check 102795786702 and compared all 29 annotations to the PR diff. **Zero introduced changed-line hygiene findings**; **16 duplicate-code notices and 13 hygiene notices** are on unchanged legacy lines, explicitly deferred as outside this bounded foundation correction. The only annotated file also touched by the PR is scripts/atlas-staging-contract.test.mjs: annotations at lines 1343/1995, while the PR adds only four certification assertions near lines 752/767. No unrelated legacy cleanup or deduplication. Raw annotations retained in external evidence as qodana-starting-head.json.
 - [x] Self-review: only date/reference/system, focused tests/checker and these two existing docs changed. D-045 unchanged in substance and file; no production rendering, dependency, API/model/auth, Supabase/migration/RLS/RPC/Edge Function, Retool, Google Sheets, live OPS or hosted business data changes. Zero hosted business writes. No migration; rollback remains presentation-only. Procurement not started. PR remains Draft and must not merge before Product visual approval.
+
+## ATLAS-UI-VNEXT-01B — Soft Mineral visual identity
+
+Approved bounded Product refinement, 10/09/2026. Staff reported fatigue during long operational sessions; Soft Mineral introduces calm mineral surfaces, slate/eucalyptus navigation and actions, and sparse clay identity cues. No theme study or workflow redesign. Exactly one agent, no subagents.
+
+- [x] Fetched origin; verified the authorized E:/Project/OPS ERP/thuonghao-ops-erp checkout, correct GitHub origin, existing feat/atlas-ui-vnext-01-chakra-foundation branch, clean worktree and exact starting head `7499f654da0bea1c5c04c169a07f6d50efb18696`. PR #274 open/Draft; expected base `40adf86db6dbe835c367478a4c933a3fbbd6cc34`. Starting Frontend CI, Qodana and Supabase Smoke succeeded (Full Integration skipped by existing workflow). `ops:workspace` passed with its historical other-machine path warning; the task explicitly authorizes this checkout.
+- [x] Exact palette implemented in system.ts; semantic tokens remain component authority. Raw token/value registry:
+
+| Raw token       | Exact value |
+| --------------- | ----------- |
+| workspace       | `#F2F4F2`   |
+| workbench       | `#FAFBFA`   |
+| toolbar         | `#F0F4F1`   |
+| subtle          | `#F6F8F6`   |
+| selected        | `#E7EFEB`   |
+| navigation      | `#31413E`   |
+| navigationHover | `#3B4D49`   |
+| navMuted        | `#C2CBC7`   |
+| primary         | `#35564C`   |
+| primaryHover    | `#2F4B43`   |
+| text            | `#2A3330`   |
+| muted           | `#66726D`   |
+| clay            | `#B47A56`   |
+| clayText        | `#915D3E`   |
+| border          | `#D8DFDB`   |
+| borderSoft      | `#E4E9E6`   |
+| focus           | `#567A71`   |
+| focusDark       | `#E0B589`   |
+| success         | `#3F755E`   |
+| successSoft     | `#EAF3ED`   |
+| warning         | `#80612A`   |
+| warningSoft     | `#F8F1DF`   |
+| danger          | `#A3493F`   |
+| dangerSoft      | `#F9ECEA`   |
+| info            | `#456D76`   |
+| infoSoft        | `#E9F0F1`   |
+| white           | `#FFFFFF`   |
+
+- [x] Enabled `strictTokens: true`, ran configured typegen, retained generated declarations exclusively in node_modules. Added a compile-time negative raw-color assertion. Typography uses shared text styles and existing font-weight tokens. Structural values use CSS variable fallbacks, without manufacturing Product tokens for every layout measurement. Browser evidence caught Chakra 3.37's type-only bracket escape emitting invalid CSS; explicit focus longhands also prevent inherited outline shorthand from resetting semantic focus colors; no bracket escape, cast, `any`, generated-type patch or strictness downgrade remains. The extra provider edit is only a zero-width structural literal; refresh logic is unchanged.
+- [x] Lighter 6px workbench boundary, no elevation; softly tinted table header and off-white shared outline controls; readable placeholders and date literals; eucalyptus primary default/independent hover; slate navigation with narrow clay active rail and stronger active icon weight. Shared table recipe owns selected background, clay geometric indicator and reduced-motion-aware 140ms transition. Detail remains attached with a single edge, no shadow. Semantic badges retain independent pale status surfaces. D-045 remains technically accurate and unchanged.
+- [x] TDD: four architecture assertions failed against the old palette/strictness/table convention before implementation. Final **7 files / 147 tests passed**: 22 vNext, 22 boundary, 103 certification-contract. Existing date editing/locale, refresh cleanup/motion, mobile navigation and unknown explicit recovery tests pass unchanged. Browser tests retain 62/38, ISO-to-dd/mm/yyyy, refresh spin/completion geometry and recovery behavior. No hosted business integrations invoked locally.
+- [x] `pnpm ui:vnext:check`, `pnpm ui:vnext:typegen`, `pnpm typecheck`, `pnpm build`, `pnpm build-storybook` passed. Touched-file Prettier and `git diff --check` passed. Only existing large-chunk and Storybook plugin timing warnings. GitHub Actions owns broad final-head certification.
+- [x] Final pure local evidence root: `C:/Users/HOME/.codex/visualizations/2026/09/10/01a08b23-5346-7b61-9067-e2664c213b14/vnext-01b-evidence/`. Chromium **151.0.7922.34**, DPR 1, English browser locale; **1366×768, 1440×900, 1920×1080, 360×800**, **47 captures**, eight local GET requests, **zero unexpected external requests / console errors / document-wide overflow**. Manifest and reproduction build/capture inputs retained outside Git. Includes default, selected/detail, attention, unknown, loading/completed refresh, keyboard focus, reduced motion, mobile navigation/full continuation and a 1366 close view of rails/header. Static captures allow the 140ms selection transition to settle; refresh animation evidence retains actual motion frames.
+- [x] Rendered CSS semantic pairs verified: body/workbench **12.54:1**, muted/workbench **4.83:1**, muted/toolbar **4.51:1**, inverse/navigation **10.73:1**, inverse/primary **8.12:1**, accent/workbench **5.27:1**. Status text/soft surfaces: success **4.73**, warning **5.09**, danger **5.08**, info **4.92**. Focus ring/workbench **4.58**, toolbar **4.28**; inverse focus/navigation **5.69**, active navigation **4.75**. All checked normal text pairs ≥4.5 and focus pairs ≥3. Muted text would fail on selected/warning rows, so shared row styling promotes secondary content/actions to fg.primary (**6.94 / 7.21**). Selection combines geometry and aria-selected; warnings retain explicit text/symbols; unknown is neither success nor failure.
+- [x] Contact sheet: `C:/Users/HOME/.codex/visualizations/2026/09/10/01a08b23-5346-7b61-9067-e2664c213b14/vnext-01b-evidence/atlas-vnext-01b-contact-sheet.png`. Matching 01A/01B comparison: `C:/Users/HOME/.codex/visualizations/2026/09/10/01a08b23-5346-7b61-9067-e2664c213b14/vnext-01b-evidence/atlas-vnext-01a-vs-01b-contact-sheet.png`. Screenshots remain outside the repository.
+- [x] Visual self-review at 1366×768: calmer sidebar/large surfaces, legible dense table, small clay rails, aligned off-white 40px/6px controls, obvious eucalyptus save action reachable within viewport. Six rows visible before local table scrolling; attached detail retains local scrolling at short desktop height. Remaining Product review: long-session comfort is a staff judgment on real displays; muted toolbar text is AA-compliant but deliberately near the threshold (4.51:1), so future opacity reductions are prohibited.
+- [x] Scope/security review: only vNext presentation, its tests and the two existing docs. No legacy Mantine presentation, production entrypoint, dependency, CI gate, business/API/quantity/lifecycle/auth change. No Procurement implementation. No backend, Supabase schema/migration/RLS/RPC/Edge Function, Retool, Google Sheets, live OPS or hosted business writes. No migration; rollback restores the prior presentation only. Continue the same Draft PR #274; do not merge. ATLAS-UI-VNEXT-02 remains unauthorized.

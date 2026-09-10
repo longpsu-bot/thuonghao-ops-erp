@@ -5,7 +5,7 @@ import { atlasSystem } from "./system";
 export function AtlasVNextProvider({ children }: { children: ReactNode }) {
   return (
     <ChakraProvider value={atlasSystem}>
-      <Box className="atlas-vnext" minW="0">
+      <Box className="atlas-vnext" minW="var(--atlas-layout-zero, 0)">
         {children}
       </Box>
     </ChakraProvider>

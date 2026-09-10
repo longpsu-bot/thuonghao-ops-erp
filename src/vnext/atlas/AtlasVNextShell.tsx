@@ -40,7 +40,7 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
 
   return (
     <Flex
-      minH="100dvh"
+      minH="var(--atlas-layout-viewport-height, 100dvh)"
       direction={{ base: "column", lg: "row" }}
       bg="bg.workspace"
     >
@@ -52,9 +52,7 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
         align="center"
         justify="space-between"
       >
-        <Text fontWeight="650" fontSize="20px">
-          Atlas
-        </Text>
+        <Text textStyle="brandCompact">Atlas</Text>
         <Button
           ref={toggleRef}
           variant="utility"
@@ -62,6 +60,7 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
           aria-label="Mở điều hướng"
           aria-expanded={menuOpen}
           aria-controls={menuId}
+          _focusVisible={{ outlineColor: "focus.inverse" }}
           onClick={() => setMenuOpen(!menuOpen)}
         >
           <Icon asChild boxSize="20px">
@@ -72,7 +71,7 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
       </Flex>
       <Box
         as="aside"
-        w={{ base: "full", lg: "224px" }}
+        w={{ base: "full", lg: "var(--atlas-layout-sidebar-width, 224px)" }}
         flexShrink="0"
         bg="bg.navigation"
         color="fg.inverse"
@@ -80,15 +79,13 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
       >
         <Stack
           position={{ lg: "sticky" }}
-          top="0"
-          minH={{ lg: "100dvh" }}
+          top="var(--atlas-layout-zero, 0)"
+          minH={{ lg: "var(--atlas-layout-viewport-height, 100dvh)" }}
           p="md"
           gap="lg"
         >
           <Box px="sm" pt="sm" hideBelow="lg">
-            <Heading fontSize="28px" fontWeight="650">
-              Atlas
-            </Heading>
+            <Heading textStyle="brand">Atlas</Heading>
             <Text textStyle="helper" color="fg.navMuted" mt="xs">
               Thượng Hảo · Điều hành cung ứng
             </Text>
@@ -116,24 +113,26 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
                 )}
                 <Button
                   w="full"
-                  h="auto"
-                  minH="44px"
+                  h="var(--atlas-layout-auto, auto)"
+                  minH="var(--atlas-layout-nav-height, 44px)"
                   px="sm"
                   py="sm"
-                  my="2px"
+                  my="0.5"
                   variant="utility"
                   color="fg.inverse"
                   justifyContent="flex-start"
                   textAlign="left"
                   whiteSpace="normal"
-                  fontSize="13px"
-                  fontWeight={label === "Kế hoạch mua hàng" ? "600" : "400"}
+                  textStyle="table"
+                  fontWeight={
+                    label === "Kế hoạch mua hàng" ? "semibold" : "normal"
+                  }
                   bg={
                     label === "Kế hoạch mua hàng"
                       ? "bg.navigationHover"
                       : "transparent"
                   }
-                  borderLeftWidth="3px"
+                  borderLeftWidth="var(--atlas-layout-rail, 3px)"
                   borderLeftColor={
                     label === "Kế hoạch mua hàng"
                       ? "border.accent"
@@ -147,39 +146,52 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
                   onClick={closeMenu}
                 >
                   <Icon asChild flexShrink="0" boxSize="18px">
-                    <NavIcon />
+                    <NavIcon
+                      weight={
+                        label === "Kế hoạch mua hàng" ? "bold" : "regular"
+                      }
+                    />
                   </Icon>
                   {label}
                 </Button>
               </Box>
             ))}
           </Box>
-          <Text mt="auto" px="sm" textStyle="helper" color="fg.navMuted">
+          <Text
+            mt="var(--atlas-layout-auto, auto)"
+            px="sm"
+            textStyle="helper"
+            color="fg.navMuted"
+          >
             Bản tham chiếu · Dữ liệu minh họa
           </Text>
         </Stack>
       </Box>
-      <Box flex="1" minW="0">
+      <Box flex="1" minW="var(--atlas-layout-zero, 0)">
         <Flex
           as="header"
-          minH="52px"
+          minH="var(--atlas-layout-header-height, 52px)"
           px={{ base: "md", lg: "lg" }}
           py="sm"
           bg="bg.workbench"
-          borderBottomWidth="1px"
+          borderBottomWidth="var(--atlas-layout-edge, 1px)"
           borderColor="border.subtle"
           justify="space-between"
           gap="md"
           wrap="wrap"
         >
-          <Text color="fg.primary" fontWeight="600">
+          <Text color="fg.primary" fontWeight="semibold">
             Vận hành trường học
           </Text>
           <Text textStyle="helper" color="fg.muted">
             Thứ năm, 10/09/2026
           </Text>
         </Flex>
-        <Box as="main" minW="0" p={{ base: "sm", md: "md", xl: "lg" }}>
+        <Box
+          as="main"
+          minW="var(--atlas-layout-zero, 0)"
+          p={{ base: "sm", md: "md", xl: "lg" }}
+        >
           {children}
         </Box>
       </Box>

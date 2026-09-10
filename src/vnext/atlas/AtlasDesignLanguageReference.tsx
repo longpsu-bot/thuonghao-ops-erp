@@ -135,15 +135,15 @@ export function AtlasDesignLanguageReference({
   };
 
   return (
-    <Stack gap="md" minW="0">
+    <Stack gap="md" minW="var(--atlas-layout-zero, 0)">
       <Box
         as="section"
         bg="bg.workbench"
         borderRadius="workbench"
-        minW="0"
+        minW="var(--atlas-layout-zero, 0)"
         overflow="hidden"
-        borderWidth="1px"
-        borderColor="border.default"
+        borderWidth="var(--atlas-layout-edge, 1px)"
+        borderColor="border.subtle"
         aria-labelledby="vnext-workbench-title"
       >
         <Box px="lg" py="md">
@@ -240,7 +240,7 @@ export function AtlasDesignLanguageReference({
               <Warning />
             </Icon>
             <Box>
-              <Text fontWeight="600">
+              <Text fontWeight="semibold">
                 {scenario === "unknown"
                   ? "Chưa xác định kết quả lưu"
                   : "Chưa thể lập đơn mua hàng"}
@@ -281,9 +281,9 @@ export function AtlasDesignLanguageReference({
               ? "minmax(0, 62fr) minmax(320px, 38fr)"
               : "minmax(0, 1fr)",
           }}
-          minW="0"
+          minW="var(--atlas-layout-zero, 0)"
         >
-          <Box minW="0">
+          <Box minW="var(--atlas-layout-zero, 0)">
             <Flex px="lg" py="sm" justify="space-between" align="center">
               <Heading as="h2" textStyle="section">
                 Nguyên liệu cần mua
@@ -294,11 +294,16 @@ export function AtlasDesignLanguageReference({
             </Flex>
             <Table.ScrollArea
               maxW="full"
-              maxH={{ xl: "calc(100dvh - 440px)" }}
+              maxH={{
+                xl: "var(--atlas-layout-table-max-height, calc(100dvh - 440px))",
+              }}
               tabIndex={0}
               aria-label="Bảng nguyên liệu, cuộn ngang khi cần"
             >
-              <Table.Root minW="650px" aria-label="Nguyên liệu cần mua">
+              <Table.Root
+                minW="var(--atlas-layout-table-min-width, 650px)"
+                aria-label="Nguyên liệu cần mua"
+              >
                 <Table.Header>
                   <Table.Row>
                     {[
@@ -323,37 +328,29 @@ export function AtlasDesignLanguageReference({
                     <Table.Row
                       key={row.name}
                       aria-selected={row.name === selected?.name}
+                      data-attention={row.attention || undefined}
                       bg={
-                        row.name === selected?.name
-                          ? "bg.selected"
-                          : row.attention
-                            ? "bg.warning"
-                            : undefined
+                        row.attention && row.name !== selected?.name
+                          ? "bg.warning"
+                          : undefined
                       }
-                      _hover={{
-                        bg:
-                          row.name === selected?.name
-                            ? "bg.selected"
-                            : "bg.subtle",
-                      }}
                     >
-                      <Table.Cell minW="138px" position="relative">
+                      <Table.Cell
+                        minW="var(--atlas-layout-identity-min-width, 138px)"
+                        position="relative"
+                      >
                         {row.name === selected?.name && (
-                          <Box
-                            data-selection-indicator=""
-                            aria-hidden="true"
-                            position="absolute"
-                            insetY="xs"
-                            left="0"
-                            width="3px"
-                            bg="fg.primary"
-                          />
+                          <Box data-selection-indicator="" aria-hidden="true" />
                         )}
-                        <Text fontWeight="600">{row.name}</Text>
+                        <Text fontWeight="semibold">{row.name}</Text>
                       </Table.Cell>
-                      <Table.Cell minW="138px">
+                      <Table.Cell minW="var(--atlas-layout-identity-min-width, 138px)">
                         {row.school}
-                        <Text textStyle="helper" color="fg.muted">
+                        <Text
+                          data-row-secondary=""
+                          textStyle="helper"
+                          color="fg.muted"
+                        >
                           Bếp ăn bán trú
                         </Text>
                       </Table.Cell>
@@ -365,13 +362,15 @@ export function AtlasDesignLanguageReference({
                         {row.quantity}
                       </Table.Cell>
                       <Table.Cell>{row.unit}</Table.Cell>
-                      <Table.Cell minW="110px">
+                      <Table.Cell minW="var(--atlas-layout-status-min-width, 110px)">
                         {row.attention ? (
-                          <Text color="status.warning" fontWeight="600">
+                          <Text color="status.warning" fontWeight="semibold">
                             ⚠ {row.status}
                           </Text>
                         ) : (
-                          <Text color="fg.muted">{row.status}</Text>
+                          <Text data-row-secondary="" color="fg.muted">
+                            {row.status}
+                          </Text>
                         )}
                       </Table.Cell>
                       <Table.Cell>
@@ -420,15 +419,23 @@ export function AtlasDesignLanguageReference({
               key={selected.name}
               role="region"
               aria-label={`Phân bổ ${selected.name}`}
-              maxH={{ xl: "calc(100dvh - 340px)" }}
+              maxH={{
+                xl: "var(--atlas-layout-detail-max-height, calc(100dvh - 340px))",
+              }}
               overflowY="auto"
               bg="bg.subtle"
-              borderLeftWidth={{ base: "0", xl: "1px" }}
-              borderTopWidth={{ base: "1px", xl: "0" }}
+              borderLeftWidth={{
+                base: "var(--atlas-layout-zero, 0)",
+                xl: "var(--atlas-layout-edge, 1px)",
+              }}
+              borderTopWidth={{
+                base: "var(--atlas-layout-edge, 1px)",
+                xl: "var(--atlas-layout-zero, 0)",
+              }}
               borderColor="border.subtle"
               p="md"
               gap="md"
-              minW="0"
+              minW="var(--atlas-layout-zero, 0)"
             >
               <Box>
                 <Text textStyle="helper" color="fg.muted">
@@ -445,8 +452,8 @@ export function AtlasDesignLanguageReference({
               <Box>
                 <Text textStyle="label">Số lượng cần mua</Text>
                 <Text
-                  fontSize="22px"
-                  fontWeight="600"
+                  textStyle="quantity"
+                  fontWeight="semibold"
                   color="fg.primary"
                   fontVariantNumeric="tabular-nums"
                 >
@@ -484,12 +491,12 @@ export function AtlasDesignLanguageReference({
                 Dữ liệu minh họa. Thao tác tại đây không tạo đơn mua hàng.
               </Text>
               <Flex
-                mt="auto"
+                mt="var(--atlas-layout-auto, auto)"
                 pt="sm"
                 gap="sm"
                 wrap="wrap"
                 position="sticky"
-                bottom="0"
+                bottom="var(--atlas-layout-zero, 0)"
                 bg="bg.subtle"
                 pb="xs"
               >
@@ -522,7 +529,7 @@ export function AtlasDesignLanguageReference({
       </Box>
       <Box px="xs">
         <Flex align="end" gap="md" wrap="wrap">
-          <Field.Root width="240px">
+          <Field.Root width="var(--atlas-layout-fixture-width, 240px)">
             <Field.Label>Tình huống minh họa</Field.Label>
             <NativeSelect.Root>
               <NativeSelect.Field

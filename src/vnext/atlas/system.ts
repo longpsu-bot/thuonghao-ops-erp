@@ -7,23 +7,26 @@ import {
 
 const fontFamily = 'Inter, "Segoe UI", Arial, sans-serif';
 const focus = {
-  outline: "2px solid",
+  outlineWidth: "var(--atlas-layout-focus-width, 2px)",
+  outlineStyle: "solid",
   outlineColor: "focus.ring",
-  outlineOffset: "2px",
-};
+  outlineOffset: "var(--atlas-layout-focus-offset, 2px)",
+} as const;
 const control = {
   borderRadius: "control",
   bg: "bg.workbench",
   borderColor: "border.default",
   color: "fg.default",
+  focusRingColor: "focus.ring",
+  _placeholder: { color: "fg.muted" },
   _focusVisible: focus,
-};
+} as const;
 
 const button = defineRecipe({
   base: {
     borderRadius: "control",
-    fontSize: "14px",
-    fontWeight: "600",
+    textStyle: "body",
+    fontWeight: "semibold",
     _focusVisible: focus,
   },
   variants: {
@@ -33,14 +36,14 @@ const button = defineRecipe({
     },
     variant: {
       businessPrimary: {
-        bg: "fg.primary",
+        bg: "action.primary.default",
         color: "fg.inverse",
         _hover: { bg: "action.primary.hover" },
       },
       secondary: {
         bg: "bg.workbench",
         color: "fg.primary",
-        borderWidth: "1px",
+        borderWidth: "var(--atlas-layout-edge, 1px)",
         borderColor: "border.default",
         _hover: { bg: "bg.subtle" },
       },
@@ -52,7 +55,7 @@ const button = defineRecipe({
       destructive: {
         bg: "status.danger",
         color: "fg.inverse",
-        _hover: { opacity: 0.9 },
+        _hover: { opacity: "var(--atlas-layout-hover-opacity, 0.9)" },
       },
     },
   },
@@ -68,6 +71,7 @@ export const atlasSystem = createSystem(
   chakraConfig,
   defineConfig({
     cssVarsPrefix: "atlas",
+    strictTokens: true,
     // Legacy Storybook loads unlayered element rules. Keep scoped Chakra classes
     // in that cascade so the new reference retains its own typography.
     disableLayers: true,
@@ -82,8 +86,8 @@ export const atlasSystem = createSystem(
       ".atlas-vnext": {
         ...rootStyles,
         ...descendantStyles,
-        fontFamily,
-        fontSize: "14px",
+        fontFamily: "body",
+        textStyle: "body",
         color: "fg.default",
         bg: "bg.workspace",
         colorScheme: "light",
@@ -95,28 +99,33 @@ export const atlasSystem = createSystem(
         fonts: { body: { value: fontFamily }, heading: { value: fontFamily } },
         colors: {
           atlas: {
-            navy: { value: "#1c2735" },
-            navyHover: { value: "#303e51" },
-            primary: { value: "#253246" },
-            workspace: { value: "#f4f1eb" },
-            white: { value: "#ffffff" },
-            subtle: { value: "#f8f6f2" },
-            selected: { value: "#edf3f7" },
-            text: { value: "#22272e" },
-            muted: { value: "#626b74" },
-            copper: { value: "#b66a3c" },
-            copperText: { value: "#a35b35" },
-            border: { value: "#ddd8cf" },
-            borderSoft: { value: "#e4e8ed" },
-            navMuted: { value: "#aeb8c4" },
-            success: { value: "#31745b" },
-            successSoft: { value: "#eaf4ef" },
-            warning: { value: "#714a0b" },
-            warningSoft: { value: "#fff8e8" },
-            danger: { value: "#b53e2e" },
-            dangerSoft: { value: "#fff1ef" },
-            info: { value: "#2f6594" },
-            focusDark: { value: "#f2c66d" },
+            workspace: { value: "#F2F4F2" },
+            workbench: { value: "#FAFBFA" },
+            toolbar: { value: "#F0F4F1" },
+            subtle: { value: "#F6F8F6" },
+            selected: { value: "#E7EFEB" },
+            navigation: { value: "#31413E" },
+            navigationHover: { value: "#3B4D49" },
+            navMuted: { value: "#C2CBC7" },
+            primary: { value: "#35564C" },
+            primaryHover: { value: "#2F4B43" },
+            text: { value: "#2A3330" },
+            muted: { value: "#66726D" },
+            clay: { value: "#B47A56" },
+            clayText: { value: "#915D3E" },
+            border: { value: "#D8DFDB" },
+            borderSoft: { value: "#E4E9E6" },
+            focus: { value: "#567A71" },
+            focusDark: { value: "#E0B589" },
+            success: { value: "#3F755E" },
+            successSoft: { value: "#EAF3ED" },
+            warning: { value: "#80612A" },
+            warningSoft: { value: "#F8F1DF" },
+            danger: { value: "#A3493F" },
+            dangerSoft: { value: "#F9ECEA" },
+            info: { value: "#456D76" },
+            infoSoft: { value: "#E9F0F1" },
+            white: { value: "#FFFFFF" },
           },
         },
         spacing: {
@@ -126,33 +135,37 @@ export const atlasSystem = createSystem(
           lg: { value: "24px" },
           xl: { value: "32px" },
         },
-        radii: { control: { value: "6px" }, workbench: { value: "9px" } },
+        radii: { control: { value: "6px" }, workbench: { value: "6px" } },
         sizes: { control: { value: "40px" }, compact: { value: "36px" } },
       },
       semanticTokens: {
         colors: {
           action: {
-            primary: { hover: { value: "{colors.atlas.navyHover}" } },
+            primary: {
+              default: { value: "{colors.atlas.primary}" },
+              hover: { value: "{colors.atlas.primaryHover}" },
+            },
           },
           bg: {
-            DEFAULT: { value: "{colors.atlas.white}" },
+            DEFAULT: { value: "{colors.atlas.workbench}" },
             workspace: { value: "{colors.atlas.workspace}" },
-            workbench: { value: "{colors.atlas.white}" },
-            toolbar: { value: "{colors.atlas.subtle}" },
+            workbench: { value: "{colors.atlas.workbench}" },
+            toolbar: { value: "{colors.atlas.toolbar}" },
             subtle: { value: "{colors.atlas.subtle}" },
             selected: { value: "{colors.atlas.selected}" },
-            navigation: { value: "{colors.atlas.navy}" },
-            navigationHover: { value: "{colors.atlas.navyHover}" },
+            navigation: { value: "{colors.atlas.navigation}" },
+            navigationHover: { value: "{colors.atlas.navigationHover}" },
             success: { value: "{colors.atlas.successSoft}" },
             warning: { value: "{colors.atlas.warningSoft}" },
             danger: { value: "{colors.atlas.dangerSoft}" },
+            info: { value: "{colors.atlas.infoSoft}" },
           },
           fg: {
             DEFAULT: { value: "{colors.atlas.text}" },
             default: { value: "{colors.atlas.text}" },
             muted: { value: "{colors.atlas.muted}" },
             primary: { value: "{colors.atlas.primary}" },
-            accent: { value: "{colors.atlas.copperText}" },
+            accent: { value: "{colors.atlas.clayText}" },
             inverse: { value: "{colors.atlas.white}" },
             navMuted: { value: "{colors.atlas.navMuted}" },
           },
@@ -160,7 +173,7 @@ export const atlasSystem = createSystem(
             DEFAULT: { value: "{colors.atlas.border}" },
             default: { value: "{colors.atlas.border}" },
             subtle: { value: "{colors.atlas.borderSoft}" },
-            accent: { value: "{colors.atlas.copper}" },
+            accent: { value: "{colors.atlas.clay}" },
           },
           status: {
             success: { value: "{colors.atlas.success}" },
@@ -169,22 +182,33 @@ export const atlasSystem = createSystem(
             info: { value: "{colors.atlas.info}" },
           },
           focus: {
-            ring: { value: "{colors.atlas.info}" },
+            ring: { value: "{colors.atlas.focus}" },
             inverse: { value: "{colors.atlas.focusDark}" },
           },
         },
       },
       textStyles: {
+        brand: { value: { fontSize: "28px", fontWeight: "650" } },
+        brandCompact: { value: { fontSize: "20px", fontWeight: "650" } },
+        quantity: { value: { fontSize: "22px", fontWeight: "600" } },
         workbenchTitle: {
           value: { fontSize: "24px", fontWeight: "650", lineHeight: "1.3" },
         },
         section: {
-          value: { fontSize: "17px", fontWeight: "600", lineHeight: "1.4" },
+          value: {
+            fontSize: "17px",
+            fontWeight: "semibold",
+            lineHeight: "1.4",
+          },
         },
         body: { value: { fontSize: "14px", lineHeight: "1.5" } },
         table: { value: { fontSize: "13px", lineHeight: "1.4" } },
         label: {
-          value: { fontSize: "13px", fontWeight: "600", lineHeight: "1.4" },
+          value: {
+            fontSize: "13px",
+            fontWeight: "semibold",
+            lineHeight: "1.4",
+          },
         },
         helper: { value: { fontSize: "12px", lineHeight: "1.5" } },
       },
@@ -214,6 +238,7 @@ export const atlasSystem = createSystem(
         input: {
           base: control,
           variants: {
+            variant: { outline: control },
             size: { md: { h: "control", px: "sm", textStyle: "body" } },
           },
           defaultVariants: { size: "md" },
@@ -221,10 +246,10 @@ export const atlasSystem = createSystem(
         badge: defineRecipe({
           base: {
             borderRadius: "control",
-            fontSize: "12px",
-            fontWeight: "500",
+            textStyle: "helper",
+            fontWeight: "medium",
             px: "xs",
-            py: "2px",
+            py: "0.5",
           },
           variants: {
             variant: {
@@ -232,7 +257,7 @@ export const atlasSystem = createSystem(
               success: { bg: "bg.success", color: "status.success" },
               warning: { bg: "bg.warning", color: "status.warning" },
               danger: { bg: "bg.danger", color: "status.danger" },
-              information: { bg: "bg.selected", color: "status.info" },
+              information: { bg: "bg.info", color: "status.info" },
             },
           },
           defaultVariants: { variant: "neutral" },
@@ -251,13 +276,26 @@ export const atlasSystem = createSystem(
               px: "sm",
               textStyle: "body",
             },
-            segment: { _focusVisible: focus },
+            segment: {
+              _focusVisible: focus,
+              _placeholderShown: { color: "fg.muted" },
+              "&[data-type=literal]": { color: "fg.muted" },
+            },
+          },
+          variants: {
+            variant: {
+              outline: {
+                segmentGroup: control,
+                segment: { _focus: { bg: "bg.selected", color: "fg.default" } },
+              },
+            },
           },
         },
         nativeSelect: {
           slots: ["root", "field", "indicator"],
           base: { field: control },
           variants: {
+            variant: { outline: { field: control } },
             size: {
               md: {
                 field: { h: "control", ps: "sm", pe: "xl", textStyle: "body" },
@@ -291,17 +329,36 @@ export const atlasSystem = createSystem(
             "caption",
           ],
           base: {
-            root: { textStyle: "table" },
+            root: { textStyle: "table", bg: "bg.workbench" },
             columnHeader: {
               textStyle: "table",
-              letterSpacing: "normal",
+              letterSpacing: "var(--atlas-layout-tracking, normal)",
               bg: "bg.toolbar",
+              borderColor: "border.subtle",
               color: "fg.muted",
-              fontWeight: "600",
+              fontWeight: "semibold",
               textTransform: "none",
             },
-            cell: { borderColor: "border.subtle" },
-            row: { _selected: { bg: "bg.selected" } },
+            cell: {
+              borderColor: "border.subtle",
+              "& [data-selection-indicator]": {
+                position: "absolute",
+                insetY: "xs",
+                left: "var(--atlas-layout-zero, 0)",
+                width: "var(--atlas-layout-rail, 3px)",
+                bg: "border.accent",
+              },
+            },
+            row: {
+              transition:
+                "var(--atlas-layout-row-transition, background-color 140ms ease-out)",
+              _hover: { bg: "bg.subtle" },
+              _selected: { bg: "bg.selected", _hover: { bg: "bg.selected" } },
+              _motionReduce: { transition: "var(--atlas-layout-motion, none)" },
+              "&[aria-selected=true], &[data-attention=true]": {
+                "& [data-row-secondary], & button": { color: "fg.primary" },
+              },
+            },
           },
           variants: {
             size: {

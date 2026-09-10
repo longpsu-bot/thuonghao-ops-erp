@@ -39,11 +39,12 @@ export function AtlasRefreshButton({
       h="compact"
       minW="compact"
       flexShrink="0"
-      p="0"
+      p="var(--atlas-layout-zero, 0)"
       rounded="full"
       bg="bg.selected"
       color="fg.muted"
-      border="0"
+      _hover={{ bg: "bg.selected", color: "fg.primary" }}
+      border="var(--atlas-layout-zero, 0)"
       animationStyle={complete && !loading ? "refreshComplete" : undefined}
     >
       <Icon

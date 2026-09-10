@@ -33,6 +33,14 @@ describe("Atlas vNext shell", () => {
     expect(
       within(nav).getByRole("button", { name: "Kế hoạch mua hàng" }),
     ).toHaveAttribute("aria-current", "page");
+    const activeStyle = getComputedStyle(
+      within(nav).getByRole("button", { name: "Kế hoạch mua hàng" }),
+    );
+    // jsdom retains CSS var fallbacks; browser verifies the resolved 3px rail.
+    expect(activeStyle.borderLeftWidth).toBe("var(--atlas-layout-rail, 3px)");
+    expect(activeStyle.borderLeftColor).toBe(
+      "var(--atlas-colors-border-accent)",
+    );
     expect(within(nav).queryByText("Tổng quan")).not.toBeInTheDocument();
   });
   it("provides a keyboard-reachable mobile toggle and returns focus on Escape", () => {
@@ -84,7 +92,7 @@ describe("Atlas vNext provider", () => {
     );
     const child = screen.getByText("var(--atlas-colors-bg-workspace)");
     expect(child.closest(".atlas-vnext")).toBeInTheDocument();
-    expect(atlasSystem.token("colors.atlas.workspace")).toBe("#f4f1eb");
+    expect(atlasSystem.token("colors.atlas.workspace")).toBe("#F2F4F2");
   });
 
   it("scopes resets, globals and variables without adopting global html/body selectors", () => {
