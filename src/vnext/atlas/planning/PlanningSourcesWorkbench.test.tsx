@@ -11,7 +11,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
-import { pantryPreview, success } from "./planningReviewFixtures";
+import {
+  pantryPreview,
+  success,
+  unknown,
+  stale,
+} from "./planningReviewFixtures";
 import {
   createPlanningReviewFixture,
   reviewWeek,
@@ -183,6 +188,17 @@ describe("Planning sources Chakra workbench", () => {
     expect(
       await screen.findByRole("button", { name: "Trường Nguyễn Du" }),
     ).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
+    expect(
+      await screen.findByRole("checkbox", {
+        name: "Xác nhận toàn tuần không có bổ sung",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Chuyển về Tất cả trường để thay đổi xác nhận toàn tuần.",
+      ),
+    ).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Trường Nguyễn Du" }));
     fireEvent.click(await screen.findByRole("button", { name: "Chọn tất cả" }));
     fireEvent.click(screen.getByRole("button", { name: "Áp dụng" }));
@@ -271,3 +287,98 @@ describe("Planning sources Chakra workbench", () => {
     expect(await screen.findByRole("dialog")).toBeVisible();
   });
 });
+
+it.each(["menu", "attendance", "pantry"] as const)(
+  "renders %s with only its source authority",
+  async (job) => {
+    const fixture = createPlanningReviewFixture();
+    (job === "pantry" ? fixture.api : fixture.pantryApi).getWorkbench =
+      async () => unknown;
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          initialJob={job}
+        />
+      </AtlasVNextProvider>,
+    );
+    await screen.findByRole("table");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    if (job === "menu")
+      expect(
+        screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+      ).toBeEnabled();
+    if (job === "attendance")
+      expect(
+        screen.getAllByRole("textbox").some((e) => !e.hasAttribute("disabled")),
+      ).toBe(true);
+    if (job === "pantry")
+      expect(
+        screen.getByRole("combobox", { name: "Trường thêm dòng" }),
+      ).toHaveTextContent(fixture.pantry.schools[0].school_name);
+    fireEvent.click(
+      screen.getByRole("tab", {
+        name: job === "pantry" ? "Thực đơn" : "Bổ sung",
+      }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Thử tải lại dữ liệu" }),
+    ).toBeEnabled();
+  },
+);
+
+it.each([
+  ["REQUIRED", "", "Cần ghi chú cho mục đích này."],
+  ["PROHIBITED", "Keep this note", "Mục đích này không cho phép ghi chú."],
+] as const)("renders inline %s note validation", async (rule, note, error) => {
+  const fixture = createPlanningStoryFixture("pantry_review");
+  fixture.pantry.purposes[0].note_rule = rule;
+  render(
+    <AtlasVNextProvider>
+      <PlanningSourcesWorkbench
+        {...fixture}
+        authSubject="operator"
+        initialWeek={reviewWeek}
+        initialJob="pantry"
+      />
+    </AtlasVNextProvider>,
+  );
+  const input = await screen.findByRole("textbox", { name: "Ghi chú dòng 1" });
+  fireEvent.change(input, { target: { value: note } });
+  expect(input).toHaveAttribute("aria-invalid", "true");
+  await waitFor(() => expect(input).toHaveAccessibleErrorMessage(error));
+  expect(input).toHaveValue(note);
+  expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+});
+
+it.each([
+  [stale, "Tải lại dữ liệu hiện tại"],
+  [unknown, "Tải lại để xác nhận"],
+] as const)(
+  "labels recovery by semantic result %s",
+  async (response, label) => {
+    const fixture = createPlanningReviewFixture();
+    fixture.api.saveCompletedMenu = async () => response;
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xem thay đổi" }),
+    );
+    const save = await screen.findByRole("button", { name: /Lưu/ });
+    await waitFor(() => expect(save).toBeEnabled());
+    fireEvent.click(save);
+    expect(await screen.findByRole("button", { name: label })).toBeEnabled();
+  },
+);

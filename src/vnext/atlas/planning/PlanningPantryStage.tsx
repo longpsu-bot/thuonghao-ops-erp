@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Field,
   Flex,
   Input,
   NativeSelect,
@@ -63,7 +64,7 @@ export function PlanningPantryStage({
         </Button>
         <Checkbox.Root
           checked={c.noAdditions}
-          disabled={!c.canEdit}
+          disabled={!c.canEdit || c.schoolIds.length > 0}
           onCheckedChange={(d) => c.requestNoAdditions(d.checked === true)}
         >
           <Checkbox.HiddenInput />
@@ -77,6 +78,11 @@ export function PlanningPantryStage({
             Xác nhận toàn tuần không có bổ sung
           </Checkbox.Label>
         </Checkbox.Root>
+        {c.schoolIds.length > 0 && (
+          <Text textStyle="helper" color="fg.muted">
+            Chuyển về Tất cả trường để thay đổi xác nhận toàn tuần.
+          </Text>
+        )}
       </Flex>
       {c.pantryData?.catalog_issues.blockers.map((i, n) => (
         <Text key={n} role="alert" p="sm" color="status.danger">
@@ -161,6 +167,7 @@ export function PlanningPantryStage({
                   {rows
                     .filter(({ r }) => r.school_id === s.school_id)
                     .map(({ r, index }) => {
+                      const errors = c.pantryRowErrors[index];
                       const purpose = c.pantryData?.purposes.find(
                         (p) =>
                           p.pantry_need_purpose_id === r.pantry_need_purpose_id,
@@ -171,98 +178,113 @@ export function PlanningPantryStage({
                       return (
                         <Table.Row key={r.source_row_reference || index}>
                           <Table.Cell>
-                            <NativeSelect.Root
-                              disabled={!c.canEdit}
-                              minW="var(--atlas-layout-ingredient-width, 180px)"
-                            >
-                              <NativeSelect.Field
-                                aria-label={`Nguyên liệu dòng ${index + 1}`}
-                                value={r.ingredient_id}
+                            <Field.Root invalid={!!errors.ingredient}>
+                              <NativeSelect.Root
+                                disabled={!c.canEdit}
+                                minW="var(--atlas-layout-ingredient-width, 180px)"
+                              >
+                                <NativeSelect.Field
+                                  aria-label={`Nguyên liệu dòng ${index + 1}`}
+                                  value={r.ingredient_id}
+                                  onChange={(e) =>
+                                    c.editPantryRow(index, {
+                                      ingredient_id: e.target.value,
+                                    })
+                                  }
+                                >
+                                  <option value="">Chọn nguyên liệu</option>
+                                  {c.pantryData?.ingredients
+                                    .filter(
+                                      (i) => i.ingredient_status === "ACTIVE",
+                                    )
+                                    .map((i) => (
+                                      <option
+                                        key={i.ingredient_id}
+                                        value={i.ingredient_id}
+                                      >
+                                        {i.ingredient_name}
+                                      </option>
+                                    ))}
+                                </NativeSelect.Field>
+                                <NativeSelect.Indicator />
+                              </NativeSelect.Root>
+                              {unit && <Text textStyle="helper">{unit}</Text>}
+                              <Field.ErrorText>
+                                {errors.ingredient}
+                              </Field.ErrorText>
+                            </Field.Root>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Field.Root invalid={!!errors.purpose}>
+                              <NativeSelect.Root
+                                disabled={!c.canEdit}
+                                minW="var(--atlas-layout-purpose-width, 170px)"
+                              >
+                                <NativeSelect.Field
+                                  aria-label={`Mục đích dòng ${index + 1}`}
+                                  value={r.pantry_need_purpose_id}
+                                  onChange={(e) =>
+                                    c.editPantryRow(index, {
+                                      pantry_need_purpose_id: e.target.value,
+                                    })
+                                  }
+                                >
+                                  <option value="">Chọn mục đích</option>
+                                  {c.pantryData?.purposes
+                                    .filter(
+                                      (p) => p.purpose_status === "ACTIVE",
+                                    )
+                                    .map((p) => (
+                                      <option
+                                        key={p.pantry_need_purpose_id}
+                                        value={p.pantry_need_purpose_id}
+                                      >
+                                        {p.purpose_name_vi}
+                                      </option>
+                                    ))}
+                                </NativeSelect.Field>
+                                <NativeSelect.Indicator />
+                              </NativeSelect.Root>
+                              <Field.ErrorText>
+                                {errors.purpose}
+                              </Field.ErrorText>
+                            </Field.Root>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <Field.Root invalid={!!errors.quantity}>
+                              <Input
+                                aria-label={`Số lượng dòng ${index + 1}`}
+                                inputMode="decimal"
+                                value={r.requested_quantity}
+                                disabled={!c.canEdit}
+                                minW="var(--atlas-layout-quantity-width, 90px)"
                                 onChange={(e) =>
                                   c.editPantryRow(index, {
-                                    ingredient_id: e.target.value,
+                                    requested_quantity: e.target.value,
                                   })
                                 }
-                              >
-                                <option value="">Chọn nguyên liệu</option>
-                                {c.pantryData?.ingredients
-                                  .filter(
-                                    (i) => i.ingredient_status === "ACTIVE",
-                                  )
-                                  .map((i) => (
-                                    <option
-                                      key={i.ingredient_id}
-                                      value={i.ingredient_id}
-                                    >
-                                      {i.ingredient_name}
-                                    </option>
-                                  ))}
-                              </NativeSelect.Field>
-                              <NativeSelect.Indicator />
-                            </NativeSelect.Root>
-                            {unit && <Text textStyle="helper">{unit}</Text>}
+                              />
+                              <Field.ErrorText>
+                                {errors.quantity}
+                              </Field.ErrorText>
+                            </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
-                            <NativeSelect.Root
-                              disabled={!c.canEdit}
-                              minW="var(--atlas-layout-purpose-width, 170px)"
-                            >
-                              <NativeSelect.Field
-                                aria-label={`Mục đích dòng ${index + 1}`}
-                                value={r.pantry_need_purpose_id}
+                            <Field.Root invalid={!!errors.note}>
+                              <Input
+                                aria-label={`Ghi chú dòng ${index + 1}`}
+                                value={r.note}
+                                required={purpose?.note_rule === "REQUIRED"}
+                                disabled={!c.canEdit}
+                                minW="var(--atlas-layout-note-width, 150px)"
                                 onChange={(e) =>
                                   c.editPantryRow(index, {
-                                    pantry_need_purpose_id: e.target.value,
+                                    note: e.target.value,
                                   })
                                 }
-                              >
-                                <option value="">Chọn mục đích</option>
-                                {c.pantryData?.purposes
-                                  .filter((p) => p.purpose_status === "ACTIVE")
-                                  .map((p) => (
-                                    <option
-                                      key={p.pantry_need_purpose_id}
-                                      value={p.pantry_need_purpose_id}
-                                    >
-                                      {p.purpose_name_vi}
-                                    </option>
-                                  ))}
-                              </NativeSelect.Field>
-                              <NativeSelect.Indicator />
-                            </NativeSelect.Root>
-                          </Table.Cell>
-                          <Table.Cell>
-                            <Input
-                              aria-label={`Số lượng dòng ${index + 1}`}
-                              inputMode="decimal"
-                              value={r.requested_quantity}
-                              disabled={!c.canEdit}
-                              minW="var(--atlas-layout-quantity-width, 90px)"
-                              onChange={(e) =>
-                                c.editPantryRow(index, {
-                                  requested_quantity: e.target.value,
-                                })
-                              }
-                            />
-                          </Table.Cell>
-                          <Table.Cell>
-                            <Input
-                              aria-label={`Ghi chú dòng ${index + 1}`}
-                              value={r.note}
-                              required={purpose?.note_rule === "REQUIRED"}
-                              disabled={!c.canEdit}
-                              minW="var(--atlas-layout-note-width, 150px)"
-                              onChange={(e) =>
-                                c.editPantryRow(index, { note: e.target.value })
-                              }
-                            />
-                            <Text textStyle="helper" color="fg.muted">
-                              {purpose?.note_rule === "REQUIRED"
-                                ? "Cần ghi chú"
-                                : purpose?.note_rule === "PROHIBITED"
-                                  ? "Không được có ghi chú"
-                                  : ""}
-                            </Text>
+                              />
+                              <Field.ErrorText>{errors.note}</Field.ErrorText>
+                            </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
                             <Input

@@ -40,6 +40,21 @@ import {
   type SourceMatrix,
 } from "../bridges/planning";
 
+type Source = "planning" | "pantry";
+export type PlanningRecoveryKind =
+  "READ_FAILURE" | "STALE" | "UNKNOWN_OR_MISSING_READBACK";
+type SourceState = {
+  loading: boolean;
+  error: string;
+  recovery: Exclude<PlanningRecoveryKind, "READ_FAILURE"> | null;
+  outcome: string;
+};
+const initialSourceState: SourceState = {
+  loading: true,
+  error: "",
+  recovery: null,
+  outcome: "",
+};
 export type PlanningJob = "menu" | "attendance" | "pantry";
 export type PlanningTransition = {
   job?: string;
@@ -150,97 +165,146 @@ export function usePlanningSources({
   >(null);
   const [impact, setImpact] = useState<PlanningCorrectionImpact | null>(null);
   const [pending, setPending] = useState<PlanningTransition | null>(null);
-  const [locked, setLocked] = useState(false);
-  const [outcome, setOutcome] = useState("");
-  const [readError, setReadError] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [sourceStates, setSourceStates] = useState<Record<Source, SourceState>>(
+    { planning: initialSourceState, pantry: initialSourceState },
+  );
+  const source: Source = job === "pantry" ? "pantry" : "planning";
+  const { loading, error: readError, recovery, outcome } = sourceStates[source];
+  const locked = recovery !== null;
+  const recoveryKind: PlanningRecoveryKind | null =
+    recovery ?? (readError ? "READ_FAILURE" : null);
+  const setOutcome = (outcome: string) =>
+    setSourceStates((states) => ({
+      ...states,
+      [source]: { ...states[source], outcome },
+    }));
+  const setRecovery = (recovery: SourceState["recovery"]) =>
+    setSourceStates((states) => ({
+      ...states,
+      [source]: { ...states[source], recovery },
+    }));
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const generation = useRef(0),
     googleGeneration = useRef(0),
-    readGeneration = useRef(0);
+    readGeneration = useRef({ planning: 0, pantry: 0 });
   const writeBusy = useRef(false);
   const clearReview = () => {
     setPreview(null);
     setImpact(null);
   };
-  const resetDrafts = useCallback(
-    (p: PlanningInputsWorkbenchData | null, b: PantryWorkbenchData | null) => {
-      setMenuRows(activeMenuRows(p?.weekly_menu ?? null));
-      setAttendanceRows(
-        attendanceDraft(
-          attendanceWorkingRows(
-            p?.attendance ?? null,
-            p?.default_attendance_preview ?? [],
-          ),
+  const resetPlanning = useCallback((p: PlanningInputsWorkbenchData | null) => {
+    setMenuRows(activeMenuRows(p?.weekly_menu ?? null));
+    setAttendanceRows(
+      attendanceDraft(
+        attendanceWorkingRows(
+          p?.attendance ?? null,
+          p?.default_attendance_preview ?? [],
         ),
-      );
-      setPantryRows(pantryRowsFromBatch(b?.batch ?? null));
-      setModes(b?.batch?.school_date_modes ?? b?.school_date_modes ?? []);
-      setNoAdditions(b?.batch?.no_additions_confirmed ?? false);
-      setMenuSource({
-        type: p?.weekly_menu?.source_type ?? "GOOGLE_SHEET",
-        name: p?.weekly_menu?.source_name ?? "",
-      });
-      setMenuCandidate(false);
-      setAttendanceSource({
-        type: p?.attendance?.source_type ?? "SCHOOL_DEFAULTS",
-        name: p?.attendance?.source_name ?? "Mặc định theo Thực đơn tuần",
-      });
-      setImportErrors([]);
-      setImportWarnings([]);
+      ),
+    );
+    setMenuSource({
+      type: p?.weekly_menu?.source_type ?? "GOOGLE_SHEET",
+      name: p?.weekly_menu?.source_name ?? "",
+    });
+    setMenuCandidate(false);
+    setAttendanceSource({
+      type: p?.attendance?.source_type ?? "SCHOOL_DEFAULTS",
+      name: p?.attendance?.source_name ?? "Mặc định theo Thực đơn tuần",
+    });
+    setImportErrors([]);
+    setImportWarnings([]);
+  }, []);
+  const resetPantry = useCallback((b: PantryWorkbenchData | null) => {
+    setPantryRows(pantryRowsFromBatch(b?.batch ?? null));
+    setModes(b?.batch?.school_date_modes ?? b?.school_date_modes ?? []);
+    setNoAdditions(b?.batch?.no_additions_confirmed ?? false);
+  }, []);
+  const resetDrafts = (
+    p: PlanningInputsWorkbenchData | null,
+    b: PantryWorkbenchData | null,
+  ) => {
+    resetPlanning(p);
+    resetPantry(b);
+    clearReview();
+  };
+  const load = useCallback(
+    async (targetWeek: string, target?: Source, recover = false) => {
       setPreview(null);
       setImpact(null);
-    },
-    [],
-  );
-  const load = useCallback(
-    async (targetWeek: string, recovery = false) => {
-      const token = ++readGeneration.current;
       ++generation.current;
       ++googleGeneration.current;
       setSyncing(false);
-      setLoading(true);
-      setReadError("");
-      const results = await Promise.all([
-        invoke(() =>
-          api.getWorkbench(authSubject, crypto.randomUUID(), targetWeek),
-        ),
-        invoke(() =>
-          pantryApi.getWorkbench(authSubject, crypto.randomUUID(), targetWeek),
-        ),
-      ]);
-      if (token !== readGeneration.current) return;
-      const p = planningWorkbenchFromResult(results[0]),
-        b = pantryWorkbenchFromResult(results[1]);
-      if (p?.week_start === targetWeek && b?.week_start === targetWeek) {
-        setData(p);
-        setPantryData(b);
-        resetDrafts(p, b);
-        setSchoolIds((ids) => normalizePlanningSchoolScope(ids, p.schools));
-        if (recovery) {
-          setLocked(false);
-          setOutcome("");
-        }
-      } else
-        setReadError(
-          "Không tải được dữ liệu nguồn cho tuần đã chọn. Hãy thử tải lại.",
-        );
-      setLoading(false);
+      const sources: Source[] = target ? [target] : ["planning", "pantry"];
+      await Promise.all(
+        sources.map(async (current) => {
+          const token = ++readGeneration.current[current];
+          setSourceStates((states) => ({
+            ...states,
+            [current]: { ...states[current], loading: true, error: "" },
+          }));
+          const result = await invoke(() =>
+            (current === "planning" ? api : pantryApi).getWorkbench(
+              authSubject,
+              crypto.randomUUID(),
+              targetWeek,
+            ),
+          );
+          if (token !== readGeneration.current[current]) return;
+          const p =
+            current === "planning" ? planningWorkbenchFromResult(result) : null;
+          const b =
+            current === "pantry" ? pantryWorkbenchFromResult(result) : null;
+          const valid = (p ?? b)?.week_start === targetWeek;
+          if (valid) {
+            if (p) {
+              setData(p);
+              resetPlanning(p);
+            }
+            if (b) {
+              setPantryData(b);
+              resetPantry(b);
+            }
+          }
+          setSourceStates((states) => ({
+            ...states,
+            [current]: {
+              ...states[current],
+              loading: false,
+              error: valid
+                ? ""
+                : "Không tải được dữ liệu nguồn cho tuần đã chọn. Hãy thử tải lại.",
+              ...(valid && recover ? { recovery: null, outcome: "" } : {}),
+            },
+          }));
+        }),
+      );
     },
-    [api, pantryApi, authSubject, resetDrafts],
+    [api, pantryApi, authSubject, resetPlanning, resetPantry],
   );
   useEffect(() => {
     setData(null);
     setPantryData(null);
-    resetDrafts(null, null);
+    resetPlanning(null);
+    resetPantry(null);
+    setPreview(null);
+    setImpact(null);
     void load(week);
     return () => {
-      ++readGeneration.current;
+      ++readGeneration.current.planning;
+      ++readGeneration.current.pantry;
       ++generation.current;
       ++googleGeneration.current;
     };
-  }, [week, load, resetDrafts]);
+  }, [week, load, resetPlanning, resetPantry]);
+  const authority = source === "planning" ? data : pantryData;
+  const schools = authority?.schools ?? [];
+  useEffect(() => {
+    if (authority && !loading && !readError)
+      setSchoolIds((ids) =>
+        normalizePlanningSchoolScope(ids, authority.schools),
+      );
+  }, [authority, loading, readError]);
 
   const dirty =
     job === "menu"
@@ -277,6 +341,22 @@ export function usePlanningSources({
         data?.attendance ?? null,
         data?.default_attendance_preview ?? [],
       ));
+  const pantryRowErrors = pantryRows.map((r) => {
+    const purpose = pantryData?.purposes.find(
+      (p) => p.pantry_need_purpose_id === r.pantry_need_purpose_id,
+    );
+    return {
+      ingredient: !r.ingredient_id ? "Chọn nguyên liệu." : "",
+      purpose: !r.pantry_need_purpose_id ? "Chọn mục đích." : "",
+      quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
+      note:
+        purpose?.note_rule === "REQUIRED" && !r.note.trim()
+          ? "Cần ghi chú cho mục đích này."
+          : purpose?.note_rule === "PROHIBITED" && r.note.trim()
+            ? "Mục đích này không cho phép ghi chú."
+            : "",
+    };
+  });
   const errors =
     job === "menu"
       ? importErrors
@@ -296,10 +376,13 @@ export function usePlanningSources({
               ? [`Dòng ${i + 1}: ngày phục vụ phải thuộc tuần đang chọn.`]
               : []),
           ])
-        : [];
+        : pantryRowErrors.flatMap((row, i) =>
+            Object.values(row)
+              .filter(Boolean)
+              .map((error) => `Dòng ${i + 1}: ${error}`),
+          );
   const effectiveModes = pantryModesForRows(pantryRows, modes);
-  const canEdit =
-    !locked && !busy && !loading && !readError && !!data && !!pantryData;
+  const canEdit = !locked && !busy && !loading && !readError && !!authority;
   const applyTransition = (next: PlanningTransition) => {
     ++generation.current;
     ++googleGeneration.current;
@@ -324,12 +407,14 @@ export function usePlanningSources({
       setWeek(w);
       setDate(w);
     }
-    if (next.date && next.date >= week && next.date <= (data?.week_end ?? week))
+    if (
+      next.date &&
+      next.date >= week &&
+      next.date <= (authority?.week_end ?? week)
+    )
       setDate(next.date);
-    if (next.schoolIds)
-      setSchoolIds(
-        normalizePlanningSchoolScope(next.schoolIds, data?.schools ?? []),
-      );
+    if (next.schoolIds && authority && !readError)
+      setSchoolIds(normalizePlanningSchoolScope(next.schoolIds, schools));
     if (next.refresh) void load(week);
   };
   const transition = (next: PlanningTransition) => {
@@ -409,7 +494,7 @@ export function usePlanningSources({
     ]);
   };
   const requestNoAdditions = (value: boolean) => {
-    if (!canEdit) return;
+    if (!canEdit || job !== "pantry" || schoolIds.length > 0) return;
     if (value && pantryRows.length) setPending({ noAdditions: true });
     else {
       markEdit();
@@ -505,14 +590,16 @@ export function usePlanningSources({
         };
   const recordFailure = (r: AtlasRpcResult) => {
     if (r.kind === "success") {
-      setLocked(true);
+      setRecovery("UNKNOWN_OR_MISSING_READBACK");
       setOutcome("Chưa có dữ liệu xác nhận hợp lệ. Tải lại để xác nhận.");
     } else if (requiresReload(r)) {
-      setLocked(true);
+      setRecovery(
+        r.kind === "transport_error" ? "UNKNOWN_OR_MISSING_READBACK" : "STALE",
+      );
       setOutcome(
         r.kind === "transport_error"
           ? "Chưa xác định kết quả thao tác. Tải lại để xác nhận."
-          : "Dữ liệu nguồn đã thay đổi. Tải lại để xác nhận.",
+          : "Dữ liệu nguồn đã thay đổi. Tải lại dữ liệu hiện tại.",
       );
     } else setOutcome(planningResultMessage(r));
   };
@@ -629,13 +716,19 @@ export function usePlanningSources({
         job !== "pantry" ? planningReadbackFromResult(result) : data;
       const bRead =
         job === "pantry" ? pantryReadbackFromResult(result) : pantryData;
-      if (pRead?.week_start === week && bRead?.week_start === week) {
-        setData(pRead);
-        setPantryData(bRead);
-        resetDrafts(pRead, bRead);
+      if ((job === "pantry" ? bRead : pRead)?.week_start === week) {
+        ++readGeneration.current[source];
+        if (job === "pantry") {
+          setPantryData(bRead);
+          resetPantry(bRead);
+        } else {
+          setData(pRead);
+          resetPlanning(pRead);
+        }
+        clearReview();
         setOutcome("Đã lưu.");
       } else {
-        setLocked(true);
+        setRecovery("UNKNOWN_OR_MISSING_READBACK");
         setOutcome(
           "Chưa có dữ liệu xác nhận sau khi lưu. Tải lại để xác nhận.",
         );
@@ -683,6 +776,10 @@ export function usePlanningSources({
     date,
     job,
     schoolIds,
+    schools,
+    authority,
+    recoveryKind,
+    pantryRowErrors,
     data,
     pantryData,
     menuRows,
@@ -723,7 +820,7 @@ export function usePlanningSources({
     save,
     prepareCorrection,
     closeReview: clearReview,
-    recover: () => load(week, true),
+    recover: () => load(week, source, true),
     previousAttendance: activeAttendanceRows(data?.attendance ?? null),
   };
 }

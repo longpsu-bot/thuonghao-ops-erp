@@ -169,6 +169,7 @@ describe("Planning source safety", () => {
         note: "Bữa phụ",
       }),
     );
+    act(() => result.current.removePantryRow(1));
     act(() => result.current.setMode("school-0", "COMPLETE"));
     expect(result.current.modes).toEqual([
       {

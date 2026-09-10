@@ -15,6 +15,13 @@ import {
   unknown,
 } from "./planningReviewFixtures";
 export type PlanningReviewScenario =
+  | "menu_pantry_failed"
+  | "attendance_pantry_failed"
+  | "pantry_planning_failed"
+  | "pantry_subset"
+  | "pantry_required"
+  | "pantry_prohibited"
+  | "menu_read_failure"
   | "menu"
   | "menu_dirty"
   | "menu_review"
@@ -225,5 +232,14 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
     fixture.api.saveCompletedAttendance = async () => response;
     fixture.pantryApi.saveCompleted = async () => response;
   }
+  if (
+    scenario === "menu_pantry_failed" ||
+    scenario === "attendance_pantry_failed"
+  )
+    fixture.pantryApi.getWorkbench = async () => unknown;
+  if (scenario === "pantry_planning_failed" || scenario === "menu_read_failure")
+    fixture.api.getWorkbench = async () => unknown;
+  if (scenario === "pantry_prohibited")
+    fixture.pantry.purposes[0].note_rule = "PROHIBITED";
   return fixture;
 }

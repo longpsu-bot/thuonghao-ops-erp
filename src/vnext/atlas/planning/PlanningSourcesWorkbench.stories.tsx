@@ -54,7 +54,33 @@ function story(scenario: PlanningReviewScenario): Story {
     args: { scenario },
     play: async ({ canvasElement }) => {
       const canvas = within(canvasElement);
+      if (scenario === "menu_read_failure") {
+        await canvas.findByRole("button", { name: "Thử tải lại dữ liệu" });
+        return;
+      }
       await canvas.findByRole("table");
+      if (scenario.endsWith("failed") || scenario === "pantry_prohibited")
+        return;
+      if (scenario === "pantry_required") {
+        await userEvent.clear(
+          canvas.getByRole("textbox", { name: "Ghi chú dòng 1" }),
+        );
+        return;
+      }
+      if (scenario === "pantry_subset") {
+        await userEvent.click(
+          canvas.getByRole("button", { name: "Tất cả trường" }),
+        );
+        const portal = within(document.body);
+        await userEvent.click(
+          await portal.findByRole("button", { name: "Bỏ chọn tất cả" }),
+        );
+        await userEvent.click(
+          portal.getByRole("checkbox", { name: "Trường Nguyễn Du" }),
+        );
+        await userEvent.click(portal.getByRole("button", { name: "Áp dụng" }));
+        return;
+      }
       if (
         [
           "menu",
@@ -113,7 +139,11 @@ function story(scenario: PlanningReviewScenario): Story {
             throw new Error("Waiting for authority");
         });
         await userEvent.click(canvas.getByRole("button", { name: "Lưu" }));
-        await canvas.findByRole("button", { name: "Tải lại để xác nhận" });
+        await canvas.findByRole("button", {
+          name: scenario.endsWith("stale")
+            ? "Tải lại dữ liệu hiện tại"
+            : "Tải lại để xác nhận",
+        });
       }
     },
   };
@@ -140,3 +170,11 @@ export const PantryReview = story("pantry_review");
 export const PantryCorrection = story("pantry_correction");
 export const PantryUnknown = story("pantry_unknown");
 export const DirtyContextDialog = story("dirty_dialog");
+
+export const MenuWithoutPantry = story("menu_pantry_failed");
+export const AttendanceWithoutPantry = story("attendance_pantry_failed");
+export const PantryWithoutPlanning = story("pantry_planning_failed");
+export const PantrySchoolSubset = story("pantry_subset");
+export const PantryRequiredNote = story("pantry_required");
+export const PantryProhibitedNote = story("pantry_prohibited");
+export const ReadFailure = story("menu_read_failure");

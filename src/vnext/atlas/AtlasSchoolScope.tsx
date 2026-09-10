@@ -1,4 +1,4 @@
-import { foldVietnameseSearch } from "./procurement/foldVietnameseSearch";
+import { foldVietnameseSearch } from "./foldVietnameseSearch";
 import {
   Box,
   Button,

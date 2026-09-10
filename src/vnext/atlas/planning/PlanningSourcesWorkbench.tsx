@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
-import { foldVietnameseSearch } from "../procurement/foldVietnameseSearch";
+import { foldVietnameseSearch } from "../foldVietnameseSearch";
 import { viDate } from "../bridges/planning";
 import { PlanningMenuStage } from "./PlanningMenuStage";
 import { PlanningAttendanceStage } from "./PlanningAttendanceStage";
@@ -41,16 +41,15 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
     d.setDate(d.getDate() + i);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
-  const visibleSchoolIds =
-    c.data?.schools
-      .filter(
-        (s) =>
-          (!c.schoolIds.length || c.schoolIds.includes(s.school_id)) &&
-          foldVietnameseSearch(s.school_name).includes(
-            foldVietnameseSearch(search.trim()),
-          ),
-      )
-      .map((s) => s.school_id) ?? [];
+  const visibleSchoolIds = c.schools
+    .filter(
+      (s) =>
+        (!c.schoolIds.length || c.schoolIds.includes(s.school_id)) &&
+        foldVietnameseSearch(s.school_name).includes(
+          foldVietnameseSearch(search.trim()),
+        ),
+    )
+    .map((s) => s.school_id);
   return (
     <Box
       as="section"
@@ -151,7 +150,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
               Trường / điểm giao
             </Text>
             <AtlasSchoolScope
-              schools={c.data?.schools ?? []}
+              schools={c.schools}
               value={c.schoolIds}
               onApply={(schoolIds) => c.transition({ schoolIds })}
             />
@@ -189,10 +188,14 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
         )}
         {(c.locked || c.readError) && (
           <Button m="sm" disabled={c.loading} onClick={() => void c.recover()}>
-            Tải lại để xác nhận
+            {c.recoveryKind === "READ_FAILURE"
+              ? "Thử tải lại dữ liệu"
+              : c.recoveryKind === "STALE"
+                ? "Tải lại dữ liệu hiện tại"
+                : "Tải lại để xác nhận"}
           </Button>
         )}
-        {c.errors.map((error, i) => (
+        {(c.job === "pantry" ? [] : c.errors).map((error, i) => (
           <Text
             role="alert"
             key={i}
@@ -210,7 +213,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             </Text>
           ))}
         <Tabs.Content value={c.job} p="var(--atlas-layout-zero, 0)">
-          {c.data && c.pantryData ? (
+          {c.authority ? (
             <Grid
               templateColumns={{
                 base: "minmax(0, 1fr)",

@@ -12,7 +12,7 @@ import { planningPantryReviewRows } from "./planningPantryReviewRows";
 export function PlanningSourceReview({ c }: { c: PlanningSourcesController }) {
   if (!c.preview) return null;
   const school = (id: string) =>
-    c.data?.schools.find((s) => s.school_id === id)?.school_name ??
+    c.schools.find((s) => s.school_id === id)?.school_name ??
     "Trường chưa nhận diện";
   const dish = (id: string | null) =>
     id
@@ -84,7 +84,11 @@ export function PlanningSourceReview({ c }: { c: PlanningSourcesController }) {
       <Box
         overflow="auto"
         flex="1"
-        maxH="var(--atlas-layout-review-height, max(240px, calc(100dvh - 510px)))"
+        maxH={
+          c.locked
+            ? "var(--atlas-layout-review-recovery-height, max(160px, calc(100dvh - 620px)))"
+            : "var(--atlas-layout-review-height, max(240px, calc(100dvh - 510px)))"
+        }
         px="sm"
       >
         {changes.length > 0 && (
