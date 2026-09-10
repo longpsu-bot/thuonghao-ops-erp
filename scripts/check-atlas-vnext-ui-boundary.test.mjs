@@ -2,6 +2,40 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("approves the five reviewed Procurement business modules only through bridges", () => {
+    const modules = [
+      "procurement/purchaseReviewApi",
+      "procurement/schoolCateringProcurementApi",
+      "procurement/schoolCateringProcurementModel",
+      "procurement/procurementOperatorCopy",
+      "connection/atlasRpc",
+    ];
+    for (const module of modules) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/procurement.ts": `export * from "@/modules/atlas/${module}";`,
+        }),
+      ).toEqual([]);
+      expect(
+        checkSources({
+          "src/vnext/atlas/procurement/View.tsx": `import type { Data } from "@/modules/atlas/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
+  it.each([
+    "AllocationFamilyTable",
+    "SupplierSplitPanel",
+    "PurchaseOrderStage",
+    "ProcurementCommandResult",
+    "purchaseOrderExports",
+  ])("does not approve %s through the Procurement bridge", (module) => {
+    expect(
+      checkSources({
+        "src/vnext/atlas/bridges/procurement.ts": `export * from "@/modules/atlas/procurement/${module}";`,
+      }),
+    ).toHaveLength(1);
+  });
   it("permits Chakra-only vNext and an explicitly approved API through a bridge", () => {
     expect(
       checkSources(
