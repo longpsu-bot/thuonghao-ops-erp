@@ -13,10 +13,48 @@ export const SCHOOL_FULFILMENT_SCENARIO_DATES = Object.freeze([
   "2046-09-19",
 ]);
 
-function objects(value) {
-  if (Array.isArray(value)) return value.flatMap(objects);
-  if (!value || typeof value !== "object") return [];
-  return [value, ...Object.values(value).flatMap(objects)];
+const NEED_QUANTITY_SCALE = 6;
+
+function needQuantity(value) {
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(value).trim());
+  if (!match || (match[3]?.length ?? 0) > NEED_QUANTITY_SCALE)
+    throw new Error(
+      "Need quantity evidence is not an exact supported decimal.",
+    );
+  const magnitude = BigInt(
+    `${match[2]}${(match[3] ?? "").padEnd(NEED_QUANTITY_SCALE, "0")}`,
+  );
+  return match[1] ? -magnitude : magnitude;
+}
+
+function sumNeedQuantities(rows, field) {
+  return rows.reduce((sum, row) => sum + needQuantity(row[field]), 0n);
+}
+
+function detailGroupFromRequirement(requirement) {
+  return {
+    service_date: requirement.service_date,
+    school_id: requirement.school_id,
+    delivery_location_id: requirement.delivery_location_id,
+    ingredient_id: requirement.ingredient_id,
+    unit_id: requirement.unit_id,
+  };
+}
+
+function uniqueDetailGroups(requirements) {
+  const groups = new Map();
+  for (const requirement of requirements) {
+    const detailGroup = detailGroupFromRequirement(requirement);
+    const key = JSON.stringify([
+      detailGroup.service_date,
+      detailGroup.school_id,
+      detailGroup.delivery_location_id,
+      detailGroup.ingredient_id,
+      detailGroup.unit_id,
+    ]);
+    groups.set(key, detailGroup);
+  }
+  return [...groups.values()];
 }
 
 export function assertSchoolFulfilmentScenarios(bundle) {
@@ -42,14 +80,54 @@ export function assertSchoolFulfilmentScenarios(bundle) {
         `Scenario ${serviceDate} has no unit-safe quantity evidence.`,
       );
   }
-  const needFacts = objects(bundle.need);
+  const dailyNeed = bundle?.needEvidence?.daily;
+  if (!Array.isArray(dailyNeed))
+    throw new Error("Daily Need workbench evidence is missing.");
+  const needDay = (serviceDate) => {
+    const day = dailyNeed.find(
+      (item) =>
+        item?.service_date === serviceDate &&
+        item.workbench?.period?.period_start === serviceDate &&
+        item.workbench?.period?.period_end === serviceDate,
+    );
+    if (!day) throw new Error(`Need workbench for ${serviceDate} is missing.`);
+    if (!Array.isArray(day.workbench.grouped_requirements))
+      throw new Error(
+        `Need workbench for ${serviceDate} has no grouped evidence.`,
+      );
+    if (!Array.isArray(day.atomic_detail))
+      throw new Error(
+        `Need workbench for ${serviceDate} has no atomic evidence.`,
+      );
+    return day;
+  };
+  const scenarioANeed = needDay(SCHOOL_FULFILMENT_SCENARIO_DATES[0]);
+  const scenarioAGroups = scenarioANeed.workbench.grouped_requirements;
+  const scenarioARecipe = sumNeedQuantities(
+    scenarioAGroups,
+    "recipe_derived_quantity",
+  );
+  const scenarioAPantry = sumNeedQuantities(
+    scenarioAGroups,
+    "pantry_direct_quantity",
+  );
+  const scenarioATotal = sumNeedQuantities(
+    scenarioAGroups,
+    "total_theoretical_quantity",
+  );
+  if (
+    scenarioARecipe !== needQuantity("11") ||
+    scenarioAPantry !== needQuantity("1.3") ||
+    scenarioATotal !== needQuantity("12.3") ||
+    scenarioATotal !== scenarioARecipe + scenarioAPantry
+  )
+    throw new Error(
+      "Scenario A does not prove additive Recipe and Pantry grouped quantities.",
+    );
   const scenarioAFamilies = new Set(
-    needFacts
-      .filter(
-        (item) => item.service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[0],
-      )
-      .map((item) => item.contribution_family ?? item.contribution_kind)
-      .filter(Boolean),
+    scenarioANeed.atomic_detail
+      .filter((item) => item.disposition === "ACTIVE")
+      .map((item) => item.contribution_family),
   );
   if (
     !scenarioAFamilies.has("RECIPE_DERIVED") ||
@@ -58,24 +136,50 @@ export function assertSchoolFulfilmentScenarios(bundle) {
     throw new Error(
       "Scenario A does not prove additive Recipe and Pantry contribution membership.",
     );
-  const scenarioB = needFacts.find(
-    (item) =>
-      item.service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[1] &&
-      (item.contribution_family ?? item.contribution_kind) === "PANTRY_DIRECT",
+  const scenarioBNeed = needDay(SCHOOL_FULFILMENT_SCENARIO_DATES[1]);
+  const scenarioBGroups = scenarioBNeed.workbench.grouped_requirements;
+  const scenarioBRecipe = sumNeedQuantities(
+    scenarioBGroups,
+    "recipe_derived_quantity",
+  );
+  const scenarioBPantry = sumNeedQuantities(
+    scenarioBGroups,
+    "pantry_direct_quantity",
+  );
+  const scenarioBTotal = sumNeedQuantities(
+    scenarioBGroups,
+    "total_theoretical_quantity",
   );
   if (
-    !scenarioB ||
-    scenarioB.weekly_menu_id ||
-    scenarioB.attendance_batch_id ||
-    scenarioB.recipe_version_id
+    scenarioBRecipe !== needQuantity("0") ||
+    scenarioBPantry !== needQuantity("7.75") ||
+    scenarioBTotal !== needQuantity("7.75") ||
+    scenarioBTotal !== scenarioBPantry
+  )
+    throw new Error(
+      "Scenario B does not prove COMPLETE Pantry-only grouped quantities.",
+    );
+  const scenarioBAtomic = scenarioBNeed.atomic_detail.filter(
+    (item) => item.disposition === "ACTIVE",
+  );
+  if (
+    !scenarioBAtomic.length ||
+    scenarioBAtomic.some(
+      (item) =>
+        item.contribution_family !== "PANTRY_DIRECT" || item.recipe_id != null,
+    )
   )
     throw new Error(
       "Scenario B does not prove COMPLETE Pantry authority without fabricated bindings.",
     );
+  needDay(SCHOOL_FULFILMENT_SCENARIO_DATES[2]);
   const scenarioC = rows.find(
     (item) => item.service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[2],
   );
-  const correctedNeedLine = objects(bundle.confirmedNeeds).find(
+  const confirmedNeedLines = (bundle?.confirmedNeeds?.rows ?? []).flatMap(
+    (response) => response?.workbench?.lines ?? [],
+  );
+  const correctedNeedLine = confirmedNeedLines.find(
     (item) =>
       item.service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[2] &&
       Array.isArray(item.decision_history),
@@ -111,7 +215,7 @@ export function assertSchoolFulfilmentScenarios(bundle) {
     currentPxk.predecessor_release_id !== oldPxk.school_dispatch_release_id
   )
     throw new Error("Scenario C does not retain superseded PXK evidence.");
-  const poFacts = objects(bundle.purchaseOrders).filter(
+  const poFacts = (bundle?.purchaseOrders?.purchase_orders ?? []).filter(
     (item) =>
       item.service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[2] ||
       item.school_catering_service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[2],
@@ -156,6 +260,70 @@ async function readRpc(client, name, request) {
   if (error || data?.success !== true)
     throw new Error(`Read-only ${name} verification failed.`);
   return data;
+}
+
+function needWorkbenchRequest(authSubject, serviceDate, detailGroup) {
+  return envelope("RMVP-04.v1", authSubject, {
+    period_start: serviceDate,
+    period_end: serviceDate,
+    need_generation_run_id: null,
+    filters: {
+      service_date: null,
+      school_id: null,
+      ingredient_id: null,
+      contribution_family: null,
+    },
+    group_offset: 0,
+    group_limit: 250,
+    ...(detailGroup ? { detail_group: detailGroup } : {}),
+  });
+}
+
+async function readDailyNeedEvidence(client, authSubject) {
+  const dailyBase = await Promise.all(
+    SCHOOL_FULFILMENT_SCENARIO_DATES.map(async (serviceDate) => ({
+      service_date: serviceDate,
+      response: await readRpc(
+        client,
+        "get_need_generation_workbench",
+        needWorkbenchRequest(authSubject, serviceDate),
+      ),
+    })),
+  );
+  return {
+    daily: await Promise.all(
+      dailyBase.map(async ({ service_date, response }) => {
+        const workbench = response?.workbench;
+        const requirements = Array.isArray(workbench?.grouped_requirements)
+          ? workbench.grouped_requirements
+          : [];
+        const needsAtomicDetail =
+          service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[0] ||
+          service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[1];
+        const detailGroups = needsAtomicDetail
+          ? uniqueDetailGroups(requirements)
+          : [];
+        const detailResponses = await Promise.all(
+          detailGroups.map((detailGroup) =>
+            readRpc(
+              client,
+              "get_need_generation_workbench",
+              needWorkbenchRequest(authSubject, service_date, detailGroup),
+            ),
+          ),
+        );
+        return {
+          service_date,
+          workbench,
+          atomic_detail: detailResponses.flatMap((detailResponse) =>
+            Array.isArray(detailResponse?.workbench?.atomic_detail)
+              ? detailResponse.workbench.atomic_detail
+              : [],
+          ),
+        };
+      }),
+    ),
+  };
 }
 
 export function planSchoolFulfilmentVerification(environment = process.env) {
@@ -214,25 +382,9 @@ export async function verifyAtlasStagingSchoolFulfilment({
       school_ids: [],
       search: null,
     };
-    const [need, allocation, purchaseOrders, dispatch, reconciliation] =
+    const [needEvidence, allocation, purchaseOrders, dispatch, reconciliation] =
       await Promise.all([
-        readRpc(
-          client,
-          "get_need_generation_workbench",
-          envelope("RMVP-04.v1", authSubject, {
-            period_start: dateStart,
-            period_end: dateEnd,
-            need_generation_run_id: null,
-            filters: {
-              service_date: null,
-              school_id: null,
-              ingredient_id: null,
-              contribution_family: null,
-            },
-            group_offset: 0,
-            group_limit: 250,
-          }),
-        ),
+        readDailyNeedEvidence(client, authSubject),
         readRpc(
           client,
           "get_confirmed_supplier_allocation_workbench",
@@ -265,7 +417,7 @@ export async function verifyAtlasStagingSchoolFulfilment({
       ]);
     const scenarioCBatchIds = [
       ...new Set(
-        objects(allocation)
+        (allocation?.rows ?? [])
           .filter(
             (item) => item.service_date === SCHOOL_FULFILMENT_SCENARIO_DATES[2],
           )
@@ -298,7 +450,7 @@ export async function verifyAtlasStagingSchoolFulfilment({
       ),
     );
     return assertSchoolFulfilmentScenarios({
-      need,
+      needEvidence,
       confirmedNeeds: { rows: confirmedNeeds },
       allocation,
       purchaseOrders,
