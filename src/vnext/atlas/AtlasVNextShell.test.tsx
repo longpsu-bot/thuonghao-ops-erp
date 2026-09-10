@@ -58,6 +58,9 @@ describe("Atlas vNext shell", () => {
 });
 
 describe("Atlas vNext provider", () => {
+  it("keeps scoped component styles above legacy unlayered element rules in Storybook", () => {
+    expect(atlasSystem._config.disableLayers).toBe(true);
+  });
   it("supplies the Atlas system to Chakra children inside the scoped root", () => {
     function Probe() {
       const system = useChakraContext();
@@ -77,11 +80,22 @@ describe("Atlas vNext provider", () => {
 
   it("scopes resets, globals and variables without adopting global html/body selectors", () => {
     expect(atlasSystem._config.cssVarsRoot).toBe(".atlas-vnext");
-    expect(atlasSystem._config.preflight).toEqual({ scope: ".atlas-vnext" });
+    expect(atlasSystem._config.preflight).toEqual({
+      scope: ":where(.atlas-vnext)",
+    });
     expect(Object.keys(atlasSystem._config.globalCss ?? {})).toEqual([
       ".atlas-vnext",
     ]);
-    const reset = atlasSystem.getPreflightCss()["@layer reset"];
-    expect(Object.keys(reset)).toEqual([".atlas-vnext", ".atlas-vnext "]);
+    const reset = atlasSystem.getPreflightCss();
+    expect(Object.keys(reset)).toEqual([
+      ":where(.atlas-vnext)",
+      ":where(.atlas-vnext) ",
+    ]);
+    const variables = atlasSystem.getTokenCss();
+    expect(
+      Object.keys(variables).every((selector) =>
+        selector.includes(".atlas-vnext"),
+      ),
+    ).toBe(true);
   });
 });

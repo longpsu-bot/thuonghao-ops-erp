@@ -276,6 +276,7 @@ export function AtlasDesignLanguageReference({
             </Flex>
             <Table.ScrollArea
               maxW="full"
+              maxH={{ xl: "calc(100dvh - 440px)" }}
               tabIndex={0}
               aria-label="Bảng nguyên liệu, cuộn ngang khi cần"
             >
@@ -401,6 +402,8 @@ export function AtlasDesignLanguageReference({
               key={selected.name}
               role="region"
               aria-label={`Phân bổ ${selected.name}`}
+              maxH={{ xl: "calc(100dvh - 340px)" }}
+              overflowY="auto"
               bg="bg.subtle"
               borderLeftWidth={{ base: "0", xl: "1px" }}
               borderTopWidth={{ base: "1px", xl: "0" }}
@@ -462,7 +465,16 @@ export function AtlasDesignLanguageReference({
               <Text textStyle="helper" color="fg.muted">
                 Dữ liệu minh họa. Thao tác tại đây không tạo đơn mua hàng.
               </Text>
-              <Flex mt="auto" pt="sm" gap="sm" wrap="wrap">
+              <Flex
+                mt="auto"
+                pt="sm"
+                gap="sm"
+                wrap="wrap"
+                position="sticky"
+                bottom="0"
+                bg="bg.subtle"
+                pb="xs"
+              >
                 <Button
                   variant="secondary"
                   onClick={() => setSelectedName(null)}

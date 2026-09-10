@@ -12,44 +12,62 @@
 
 ## Task 1 — Architecture decision and design-language specification
 
-- [ ] Check D-045 is unallocated; retain D-034/D-035 unchanged.
-- [ ] Create `docs/decisions/decision-atlas-chakra-ui-foundation.md` and `docs/ui/atlas-vnext-design-language-v1.md`; supersede only D-033 status and update decision register.
-- [ ] Verify links, status, explicit business exclusions and touched-file formatting; commit documentation.
+- [x] Check D-045 is unallocated; retain D-034/D-035 unchanged.
+- [x] Create `docs/decisions/decision-atlas-chakra-ui-foundation.md` and `docs/ui/atlas-vnext-design-language-v1.md`; supersede only D-033 status and update decision register.
+- [x] Verify links, status, explicit business exclusions and touched-file formatting; commit documentation.
 
 ## Task 2 — Dependencies and system/provider
 
-- [ ] Add provider tests in `src/vnext/atlas/AtlasVNextShell.test.tsx`: token context resolves workspace, provider renders Chakra child, reset/global selectors stay scoped. Observe failure before implementation.
-- [ ] Implement `system.ts` with defaultConfig, scoped variables/reset/global CSS, semantic tokens, recipes, text styles and animation styles; implement `AtlasVNextProvider.tsx`.
-- [ ] Run pinned Chakra CLI typegen through a deterministic package command before typecheck/build/Storybook and certification. Generated package declarations stay in node_modules, never hand-maintained unions.
-- [ ] Run focused tests and commit system/provider/dependencies.
+- [x] Add provider tests in `src/vnext/atlas/AtlasVNextShell.test.tsx`: token context resolves workspace, provider renders Chakra child, reset/global selectors stay scoped. Observe failure before implementation.
+- [x] Implement `system.ts` with defaultConfig, scoped variables/reset/global CSS, semantic tokens, recipes, text styles and animation styles; implement `AtlasVNextProvider.tsx`.
+- [x] Run pinned Chakra CLI typegen through a deterministic package command before typecheck/build/Storybook and certification. Generated package declarations stay in node_modules, never hand-maintained unions.
+- [x] Run focused tests and commit system/provider/dependencies.
 
 ## Task 3 — Refresh primitive and motion
 
-- [ ] Write `AtlasRefreshButton.test.tsx` for accessible name, enabled click, disabled/loading activation, persistent DOM identity, completion and bounded cleanup.
-- [ ] Observe red, implement `AtlasRefreshButton.tsx` with Phosphor ArrowClockwise, 36px geometry, 800ms spin and 200ms completion; reduced motion suppresses both.
-- [ ] Run focused tests and commit.
+- [x] Write `AtlasRefreshButton.test.tsx` for accessible name, enabled click, disabled/loading activation, persistent DOM identity, completion and bounded cleanup.
+- [x] Observe red, implement `AtlasRefreshButton.tsx` with Phosphor ArrowClockwise, 36px geometry, 800ms spin and 200ms completion; reduced motion suppresses both.
+- [x] Run focused tests and commit.
 
 ## Task 4 — vNext shell
 
-- [ ] Extend shell tests for navigation, one main, current page and mobile menu keyboard semantics; observe red.
-- [ ] Implement `AtlasVNextShell.tsx`, desktop sidebar and compact expandable navigation, flexible main with no document overflow. Labels remain fixture content.
-- [ ] Run focused tests and commit.
+- [x] Extend shell tests for navigation, one main, current page and mobile menu keyboard semantics; observe red.
+- [x] Implement `AtlasVNextShell.tsx`, desktop sidebar and compact expandable navigation, flexible main with no document overflow. Labels remain fixture content.
+- [x] Run focused tests and commit.
 
 ## Task 5 — Design-language reference
 
-- [ ] Write `AtlasDesignLanguageReference.test.tsx` for heading, toolbar order, table semantics, selection cue and action hierarchy; observe red.
-- [ ] Implement reference and Storybook story with explicit provider. Date → School → search → state → refresh; local table overflow, attached detail, one dominant action; ordinary/blocker/empty/loading/unknown fixtures.
-- [ ] Run focused tests and commit.
+- [x] Write `AtlasDesignLanguageReference.test.tsx` for heading, toolbar order, table semantics, selection cue and action hierarchy; observe red.
+- [x] Implement reference and Storybook story with explicit provider. Date → School → search → state → refresh; local table overflow, attached detail, one dominant action; ordinary/blocker/empty/loading/unknown fixtures.
+- [x] Run focused tests and commit.
 
 ## Task 6 — Boundary checker and certification
 
-- [ ] Write `scripts/check-atlas-vnext-ui-boundary.test.mjs` for Chakra-only acceptance, Mantine/theme/styles rejection, Chakra outside vNext rejection, model/API acceptance. Update certification-order assertion; observe red.
-- [ ] Implement deterministic source import checker and `ui:vnext:check`; preserve certification steps and add guard/typegen.
-- [ ] Run checker and focused certification tests; commit.
+- [x] Write `scripts/check-atlas-vnext-ui-boundary.test.mjs` for Chakra-only acceptance, Mantine/theme/styles rejection, Chakra outside vNext rejection, model/API acceptance. Update certification-order assertion; observe red.
+- [x] Implement deterministic source import checker and `ui:vnext:check`; preserve certification steps and add guard/typegen.
+- [x] Run checker and focused certification tests; commit.
 
 ## Task 7 — Visual evidence and final verification
 
-- [ ] Build temporary pure-Chakra local harness outside repository; block nonlocal HTTP/WebSocket traffic. Capture 1366×768, 1440×900, 1920×1080 and 360×800; default, detail, refreshing, completed and blocker/unknown.
-- [ ] Record browser version/DPR, console, requests, screenshot manifest; verify focus, no document overflow, local scrolling and reduced motion.
-- [ ] Run focused tests including representative legacy #273 tests, boundary checker, typecheck, build, build-storybook, touched-file Prettier and git diff --check.
-- [ ] Self-review scope/security, record results, commit clean branch, push and open one Draft PR. Stop without merging. Next: ATLAS-UI-VNEXT-02-CHAKRA-PROCUREMENT after visual approval.
+- [x] Build temporary pure-Chakra local harness outside repository; block nonlocal HTTP/WebSocket traffic. Capture 1366×768, 1440×900, 1920×1080 and 360×800; default, detail, refreshing, completed and blocker/unknown.
+- [x] Record browser version/DPR, console, requests, screenshot manifest; verify focus, no document overflow, local scrolling and reduced motion.
+- [x] Run focused tests including representative legacy #273 tests, boundary checker, typecheck, build, build-storybook, touched-source/document Prettier and git diff --check.
+- [x] Self-review scope/security and record results. Delivery follows final commit: push the clean branch and open one Draft PR, then stop without merging. Next: ATLAS-UI-VNEXT-02-CHAKRA-PROCUREMENT after visual approval.
+
+## Verification record — 10/09/2026
+
+- Exact dependency pins were accepted by the existing supply-chain policy; no substitution or policy exception. Local Node 24.18.0 / pnpm 11.19.0; CI retains its pinned pnpm 11.7.0 and Node 24 setup.
+- Task 1: D-045 was unallocated; links/status/format verified. D-034/D-035 unchanged. The approved attached task supplied the design; no separate speculative design process.
+- Tasks 2–5: provider, refresh, shell and reference tests were written and run before their implementations (missing-component red); all now pass. The provider's conditional-token isolation assertion independently demonstrated assertion-red then green after scoping inherited light/dark selectors. No separate color-mode subsystem. Scoped zero-specificity preflight and disabled cascade layers preserve VNext recipes against the legacy Storybook element styles. Browser assertions cover primary background, 13px table type and normal header casing.
+- Task 6: missing checker and certification-order assertion both failed before implementation; 18 boundary tests and 103 certification-contract tests now pass. The checker allows model/API imports and rejects literal forbidden imports, reexports, require and dynamic imports. No exceptions.
+- Final focused run: **8 files / 218 tests passed**: 13 VNext, 18 boundary, 103 certification-contract, 84 legacy #273 regression/smoke tests. No hosted integration invoked.
+- `pnpm ui:vnext:check`, `pnpm typecheck`, `pnpm build`, `pnpm build-storybook`, touched-source/document Prettier and `git diff --check` passed. Typegen uses pinned CLI output under node_modules, not tracked declarations. Build warnings concern large existing application/PDF/spreadsheet chunks and Storybook plugin timing; no failed gates.
+- Pure harness evidence directory (outside repository): `C:/Users/HOME/.codex/visualizations/2026/09/10/01a089fc-fd88-74f1-9530-14ac7fa6596e/vnext-evidence/`. Reproduction inputs: `main.ts`, `build.mjs`, `capture.mjs`; results: `manifest.json`, `storybook-check.json`.
+- Chromium **151.0.7922.34**, DPR **1**, viewports **1366×768 / 1440×900 / 1920×1080 / 360×800**. Manifest contains **42 captures**, **8 local requests**, **0 external requests**, **0 console errors**. Nonlocal HTTP and all WebSockets are blocked by default.
+- Each viewport captures selected-detail, default-table, loading-refresh, completed-refresh, blocker, unknown, empty, long-search-empty, keyboard-focus and reduced-motion. Mobile additionally captures navigation and the full stacked reference. Completion screenshot pauses the actual CSS animation at its lift apex; timer cleanup and semantics are separately tested.
+- Verified 40px filter controls / 6px corners; 36px refresh; 800ms spin; 200ms completion; stable layout geometry; reduced-motion suppression; no document-wide overflow; desktop action within viewport; mobile keyboard toggle/Escape and local table scrolling. Tight desktop heights use bounded table/detail scrolling. Native date input formatting follows browser/OS locale; adjacent scope copy always displays dd/mm/yyyy.
+- Storybook reference refresh and legacy Recipe smoke pass with no page errors. Screenshots: `storybook-vnext.png`, `storybook-legacy-recipe.png`. Storybook is not isolation evidence because its legacy global provider remains.
+- Self-review: no production `main.tsx`, legacy theme/styles, Atlas modules/navigation, D-034/D-035, workflow files, Supabase, Retool, API/model/business contracts changed. No database migration or hosted write; rollback is presentation/build-only. Product visual approval remains required before the next Procurement task.
+
+- One existing Pantry focus assertion failed during a run concurrent with builds; its unchanged useEffect-driven focus passed in the isolated 16-test file and the subsequent complete 218-test focused run without concurrent builds. No legacy test was modified or weakened. CI remains the broad certification authority.
+- Prettier was checked for all touched source/config/document files in the repository formatter's scope. The generated pnpm lockfile retains pnpm's native formatting; a broad formatting-only rewrite was reverted.

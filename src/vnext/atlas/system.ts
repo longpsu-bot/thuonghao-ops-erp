@@ -68,8 +68,16 @@ export const atlasSystem = createSystem(
   chakraConfig,
   defineConfig({
     cssVarsPrefix: "atlas",
+    // Legacy Storybook loads unlayered element rules. Keep scoped Chakra classes
+    // in that cascade so the new reference retains its own typography.
+    disableLayers: true,
     cssVarsRoot: ".atlas-vnext",
-    preflight: { scope: ".atlas-vnext" },
+    // Scope inherited conditional tokens too; Atlas currently renders light only.
+    conditions: {
+      light: "&.atlas-vnext",
+      dark: "&.atlas-vnext[data-atlas-color-mode=dark]",
+    },
+    preflight: { scope: ":where(.atlas-vnext)" },
     globalCss: {
       ".atlas-vnext": {
         ...rootStyles,
@@ -267,9 +275,12 @@ export const atlasSystem = createSystem(
           base: {
             root: { textStyle: "table" },
             columnHeader: {
+              textStyle: "table",
+              letterSpacing: "normal",
               bg: "bg.toolbar",
               color: "fg.muted",
               fontWeight: "600",
+              textTransform: "none",
             },
             cell: { borderColor: "border.subtle" },
             row: { _selected: { bg: "bg.selected" } },
@@ -277,6 +288,7 @@ export const atlasSystem = createSystem(
           variants: {
             size: {
               sm: {
+                root: { textStyle: "table" },
                 columnHeader: { px: "sm", py: "sm" },
                 cell: { px: "sm", py: "xs" },
               },
