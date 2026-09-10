@@ -101,6 +101,19 @@ export function SupplierSplitPanel({
   const availableSuppliers = row.eligible_suppliers.filter(
     (supplier) => !participantIds.includes(supplier.supplier_id),
   );
+  const savedDraft = initialDraft(row);
+  const savedParticipantIds = initialParticipantIds(row);
+  const dirty =
+    participantIds.length !== savedParticipantIds.length ||
+    participantIds.some((supplierId) => {
+      if (!savedParticipantIds.includes(supplierId)) return true;
+      const value = draft[supplierId] ?? "";
+      const saved = savedDraft[supplierId] ?? "";
+      return (
+        value !== saved &&
+        (scaled(value) === null || scaled(value) !== scaled(saved))
+      );
+    });
   const participatingSuppliers = participantIds.flatMap((supplierId) => {
     const supplier = row.eligible_suppliers.find(
       (candidate) => candidate.supplier_id === supplierId,
@@ -423,7 +436,19 @@ export function SupplierSplitPanel({
       ))}
 
       <footer className="procurement-detail-footer">
-        <button type="button" className="secondary" onClick={onClose}>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => {
+            if (
+              !dirty ||
+              window.confirm(
+                "Có thay đổi phân bổ chưa lưu. Đóng và bỏ các thay đổi này?",
+              )
+            )
+              onClose();
+          }}
+        >
           Đóng
         </button>
         <button

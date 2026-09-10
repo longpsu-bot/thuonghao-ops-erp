@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { MantineProvider } from "@mantine/core";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -45,6 +46,71 @@ function renderWorkbench(
 }
 
 describe("School dispatch release workbench", () => {
+  describe.each(["ready", "replacement_required"] as const)(
+    "%s scope safety",
+    (scenario) => {
+      it.each([
+        ["Từ ngày", "2026-09-23"],
+        ["Đến ngày", "2026-09-25"],
+        ["Trường", "26000000-0000-4000-8000-000000000001"],
+        ["Tìm kiếm", "Nguyễn"],
+      ])(
+        "locks release through pending and failed reads after changing %s",
+        async (label, value) => {
+          const reviewApi = createReviewSchoolDispatchReleaseApi(scenario);
+          let resolveRead!: (result: AtlasRpcResult) => void;
+          const pending = new Promise<AtlasRpcResult>((resolve) => {
+            resolveRead = resolve;
+          });
+          const getWorkbench = vi
+            .fn(reviewApi.getWorkbench)
+            .mockImplementationOnce(reviewApi.getWorkbench)
+            .mockReturnValueOnce(pending);
+          const releaseDocument = vi.fn(reviewApi.releaseDocument);
+          renderWorkbench({ getWorkbench, releaseDocument });
+          const release = await screen.findByRole("button", {
+            name:
+              scenario === "ready"
+                ? "Phát hành phiếu xuất kho"
+                : "Phát hành phiếu thay thế",
+          });
+          expect(release).toBeEnabled();
+          const note = screen.getByRole("textbox", {
+            name: "Ghi chú trên phiếu (không bắt buộc)",
+          });
+          fireEvent.change(note, { target: { value: "Ghi chú phạm vi cũ" } });
+          const control = screen.getByLabelText(label);
+          const nextValue =
+            label === "Trường"
+              ? (control as HTMLSelectElement).options[1]!.value
+              : value;
+          fireEvent.change(control, { target: { value: nextValue } });
+          expect(release).toBeDisabled();
+          expect(note).toBeDisabled();
+          fireEvent.click(release);
+          await act(async () => {
+            resolveRead(
+              await createReviewSchoolDispatchReleaseApi(
+                "permission_denied",
+              ).getWorkbench(getWorkbench.mock.calls[1]![0]),
+            );
+          });
+          expect(screen.getByText("Không thể tải dữ liệu")).toBeVisible();
+          expect(release).toBeDisabled();
+          expect(note).toBeDisabled();
+          fireEvent.click(release);
+          expect(releaseDocument).not.toHaveBeenCalled();
+          fireEvent.click(
+            screen.getByRole("button", { name: "Tải dữ liệu hiện hành" }),
+          );
+          await waitFor(() => expect(release).toBeEnabled());
+          expect(note).toBeEnabled();
+          expect(releaseDocument).not.toHaveBeenCalled();
+        },
+      );
+    },
+  );
+
   it("shows a read-only School PXK preview with no draft lifecycle", async () => {
     renderWorkbench();
     expect(

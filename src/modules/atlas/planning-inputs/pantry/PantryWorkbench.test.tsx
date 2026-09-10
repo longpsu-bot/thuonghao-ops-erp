@@ -77,6 +77,25 @@ function pantryApiWithHiddenFirstRow() {
 }
 
 describe("PLANNING-UX-01C Nhu cầu bổ sung", () => {
+  it("aligns School, Ingredient and combination controls with their column headers", async () => {
+    renderPantry();
+    const school = await screen.findByLabelText("Trường dòng 1");
+    const row = school.closest("tr")!;
+    const table = row.closest("table")!;
+    const cells = within(row).getAllByRole("cell");
+    const headers = within(table).getAllByRole("columnheader");
+    expect(headers[1]).toHaveTextContent("Trường / điểm giao");
+    expect(headers[2]).toHaveTextContent("Nguyên liệu / đơn vị");
+    expect(headers[3]).toHaveTextContent("Cách kết hợp");
+    expect(cells[1]).toContainElement(school);
+    expect(cells[2]).toContainElement(
+      screen.getByLabelText("Nguyên liệu dòng 1"),
+    );
+    expect(cells[3]).toContainElement(
+      screen.getByLabelText("Cách kết hợp dòng 1"),
+    );
+  });
+
   it("uses the parent date for display and new rows while retaining weekly edits across date changes", async () => {
     const api = createReviewPantryApi("ready");
     const preview = vi.spyOn(api, "preview");
