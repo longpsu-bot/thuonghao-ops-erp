@@ -1603,6 +1603,8 @@ describe("Atlas staging dry-run and workflow", () => {
       "scripts/certify-frontend.mjs",
       "scripts/certify-supabase-full-integration.mjs",
       "scripts/verify-atlas-staging.mjs",
+      "scripts/verify-atlas-staging-school-fulfilment.mjs",
+      "scripts/verify-atlas-staging-school-fulfilment.test.mjs",
       "scripts/install-atlas-staging-package.mjs",
       "scripts/install-local-foundation-need-generation-contract.mjs",
       "scripts/certify-local-atlas-staging-packages.mjs",
