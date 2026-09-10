@@ -9,6 +9,20 @@ import {
   stale,
 } from "./planningReviewFixtures";
 afterEach(cleanup);
+async function menuWithPreview() {
+  const fixture = createPlanningReviewFixture();
+  const hook = renderHook(() =>
+    usePlanningSources({
+      ...fixture,
+      authSubject: "operator",
+      initialWeek: reviewWeek,
+    }),
+  );
+  await waitFor(() => expect(hook.result.current.canEdit).toBe(true));
+  await act(() => hook.result.current.syncGoogle("google-1"));
+  await act(() => hook.result.current.previewChanges());
+  return { ...hook, fixture };
+}
 
 it.each(["menu", "attendance", "pantry"] as PlanningJob[])(
   "keeps %s actionable and confirms its save without sibling authority",
@@ -174,17 +188,7 @@ it.each([
 ] as const)(
   "retains semantic recovery %s through failed reads and job changes",
   async (failure, reason) => {
-    const f = createPlanningReviewFixture();
-    const { result } = renderHook(() =>
-      usePlanningSources({
-        ...f,
-        authSubject: "operator",
-        initialWeek: reviewWeek,
-      }),
-    );
-    await waitFor(() => expect(result.current.canEdit).toBe(true));
-    await act(() => result.current.syncGoogle("google-1"));
-    await act(() => result.current.previewChanges());
+    const { result, fixture: f } = await menuWithPreview();
     f.api.saveCompletedMenu = async () => failure;
     await act(() => result.current.save());
     expect(result.current.recoveryKind).toBe(reason);
@@ -255,17 +259,7 @@ it("recovers Planning alone and normalizes only invalid IDs against Pantry", asy
 });
 
 it("discards obsolete preview authority after successful uncertain-write recovery", async () => {
-  const f = createPlanningReviewFixture();
-  const { result } = renderHook(() =>
-    usePlanningSources({
-      ...f,
-      authSubject: "operator",
-      initialWeek: reviewWeek,
-    }),
-  );
-  await waitFor(() => expect(result.current.canEdit).toBe(true));
-  await act(() => result.current.syncGoogle("google-1"));
-  await act(() => result.current.previewChanges());
+  const { result, fixture: f } = await menuWithPreview();
   f.api.saveCompletedMenu = async () => unknown;
   await act(() => result.current.save());
   await act(() => result.current.recover());
