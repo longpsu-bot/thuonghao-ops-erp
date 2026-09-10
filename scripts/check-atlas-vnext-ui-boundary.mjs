@@ -5,8 +5,14 @@ import { fileURLToPath } from "node:url";
 // No exceptions currently. New exceptions require an explicit Product decision.
 const chakraSupportFiles = new Set();
 // Exact extensionless modules, reviewed for business-only dependencies before
-// adding a bridge. The design reference currently needs no legacy dependencies.
-const approvedLegacyBusinessModules = [];
+// adding a bridge. Procurement imports only request builders, models and safe copy.
+const approvedLegacyBusinessModules = [
+  "src/modules/atlas/procurement/purchaseReviewApi",
+  "src/modules/atlas/procurement/schoolCateringProcurementApi",
+  "src/modules/atlas/procurement/schoolCateringProcurementModel",
+  "src/modules/atlas/procurement/procurementOperatorCopy",
+  "src/modules/atlas/connection/atlasRpc",
+];
 const sourceExtension = /\.[cm]?[jt]sx?$/;
 
 function imports(source) {
