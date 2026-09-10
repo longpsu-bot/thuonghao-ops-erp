@@ -35,7 +35,7 @@ const button = defineRecipe({
       businessPrimary: {
         bg: "fg.primary",
         color: "fg.inverse",
-        _hover: { bg: "bg.navigationHover" },
+        _hover: { bg: "action.primary.hover" },
       },
       secondary: {
         bg: "bg.workbench",
@@ -131,6 +131,9 @@ export const atlasSystem = createSystem(
       },
       semanticTokens: {
         colors: {
+          action: {
+            primary: { hover: { value: "{colors.atlas.navyHover}" } },
+          },
           bg: {
             DEFAULT: { value: "{colors.atlas.white}" },
             workspace: { value: "{colors.atlas.workspace}" },
@@ -236,6 +239,21 @@ export const atlasSystem = createSystem(
         }),
       },
       slotRecipes: {
+        dateInput: {
+          slots: ["root", "label", "control", "segmentGroup", "segment"],
+          base: {
+            root: { gap: "xs", width: "full" },
+            label: { textStyle: "label", color: "fg.default" },
+            segmentGroup: {
+              ...control,
+              h: "control",
+              minH: "control",
+              px: "sm",
+              textStyle: "body",
+            },
+            segment: { _focusVisible: focus },
+          },
+        },
         nativeSelect: {
           slots: ["root", "field", "indicator"],
           base: { field: control },

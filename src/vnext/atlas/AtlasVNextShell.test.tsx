@@ -58,6 +58,15 @@ describe("Atlas vNext shell", () => {
 });
 
 describe("Atlas vNext provider", () => {
+  it("uses a primary-action hover semantic independent of navigation", () => {
+    const recipe = atlasSystem.getRecipe("button");
+    expect(recipe.variants?.variant?.businessPrimary).toMatchObject({
+      _hover: { bg: "action.primary.hover" },
+    });
+    expect(atlasSystem.token.var("colors.action.primary.hover")).not.toBe(
+      atlasSystem.token.var("colors.bg.navigationHover"),
+    );
+  });
   it("keeps scoped component styles above legacy unlayered element rules in Storybook", () => {
     expect(atlasSystem._config.disableLayers).toBe(true);
   });

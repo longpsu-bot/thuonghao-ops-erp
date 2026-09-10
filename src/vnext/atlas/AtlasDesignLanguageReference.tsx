@@ -14,9 +14,10 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { Check, Info, Warning } from "@phosphor-icons/react";
+import { Info, Warning } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { AtlasRefreshButton } from "./AtlasRefreshButton";
+import { AtlasDateInput } from "./AtlasDateInput";
 
 export type ReferenceScenario =
   "normal" | "blocker" | "empty" | "loading" | "unknown";
@@ -25,7 +26,7 @@ const rows = [
   {
     name: "Gạo thơm",
     school: "Tiểu học Nguyễn Du",
-    quantity: "120,000000",
+    quantity: "120",
     unit: "kg",
     status: "Đã phân bổ",
     attention: false,
@@ -33,7 +34,7 @@ const rows = [
   {
     name: "Thịt heo nạc",
     school: "Tiểu học Nguyễn Du",
-    quantity: "48,500000",
+    quantity: "48,5",
     unit: "kg",
     status: "Chưa đủ phân bổ",
     attention: true,
@@ -41,7 +42,7 @@ const rows = [
   {
     name: "Cà rốt Đà Lạt",
     school: "Mầm non Hoa Sen",
-    quantity: "32,000000",
+    quantity: "32",
     unit: "kg",
     status: "Đã phân bổ",
     attention: false,
@@ -49,7 +50,7 @@ const rows = [
   {
     name: "Rau cải ngọt",
     school: "Tiểu học Nguyễn Du",
-    quantity: "25,750000",
+    quantity: "25,75",
     unit: "kg",
     status: "Đã phân bổ",
     attention: false,
@@ -57,7 +58,7 @@ const rows = [
   {
     name: "Trứng gà",
     school: "Mầm non Hoa Sen",
-    quantity: "360,000000",
+    quantity: "360",
     unit: "quả",
     status: "Đã phân bổ",
     attention: false,
@@ -65,7 +66,7 @@ const rows = [
   {
     name: "Bí đỏ",
     school: "Tiểu học Nguyễn Du",
-    quantity: "42,000000",
+    quantity: "42",
     unit: "kg",
     status: "Đã phân bổ",
     attention: false,
@@ -73,7 +74,7 @@ const rows = [
   {
     name: "Dầu ăn đậu nành",
     school: "Mầm non Hoa Sen",
-    quantity: "8,500000",
+    quantity: "8,5",
     unit: "lít",
     status: "Chờ phân bổ",
     attention: false,
@@ -81,7 +82,7 @@ const rows = [
   {
     name: "Hành lá",
     school: "Tiểu học Nguyễn Du",
-    quantity: "2,250000",
+    quantity: "2,25",
     unit: "kg",
     status: "Đã phân bổ",
     attention: false,
@@ -118,13 +119,18 @@ export function AtlasDesignLanguageReference({
   const selected = visible.find((row) => row.name === selectedName);
   const busy = loading || scenario === "loading";
   const blocked = scenario === "unknown" || scenario === "blocker" || busy;
-  const refresh = () => {
+  const refresh = (recover = false) => {
     setLoading(true);
     setFeedback("");
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       setLoading(false);
-      setFeedback("Đã làm mới dữ liệu minh họa.");
+      if (recover) setScenario("normal");
+      setFeedback(
+        recover
+          ? "Đã tải lại trạng thái minh họa để xác nhận. Không có dữ liệu nghiệp vụ được lưu."
+          : "Đã làm mới dữ liệu minh họa.",
+      );
     }, 1200);
   };
 
@@ -140,14 +146,17 @@ export function AtlasDesignLanguageReference({
         borderColor="border.default"
         aria-labelledby="vnext-workbench-title"
       >
-        <Box p="lg" pb="md">
+        <Box px="lg" py="md">
+          <Text textStyle="helper" color="fg.muted">
+            Kế hoạch mua hàng
+          </Text>
           <Heading
             id="vnext-workbench-title"
             as="h1"
             textStyle="workbenchTitle"
             color="fg.primary"
           >
-            Kế hoạch mua hàng
+            Phân bổ nhà cung ứng
           </Heading>
           <Text mt="xs" color="fg.muted">
             Rà soát nguyên liệu và phân bổ nhà cung ứng cho bữa ăn ngày{" "}
@@ -168,15 +177,11 @@ export function AtlasDesignLanguageReference({
             xl: "154px minmax(180px, 1fr) minmax(180px, 1.2fr) 160px 36px",
           }}
         >
-          <Field.Root>
-            <Field.Label>Ngày phục vụ</Field.Label>
-            <Input
-              aria-label="Ngày phục vụ"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </Field.Root>
+          <AtlasDateInput
+            label="Ngày phục vụ"
+            value={date}
+            onValueChange={setDate}
+          />
           <Field.Root>
             <Field.Label>Trường</Field.Label>
             <NativeSelect.Root>
@@ -218,14 +223,14 @@ export function AtlasDesignLanguageReference({
             </NativeSelect.Root>
           </Field.Root>
           <Flex h="control" align="center">
-            <AtlasRefreshButton loading={busy} onClick={refresh} />
+            <AtlasRefreshButton loading={busy} onClick={() => refresh()} />
           </Flex>
         </Grid>
         {scenario === "blocker" || scenario === "unknown" ? (
           <Flex
             role="alert"
-            bg={scenario === "unknown" ? "bg.danger" : "bg.warning"}
-            color={scenario === "unknown" ? "status.danger" : "status.warning"}
+            bg="bg.warning"
+            color="status.warning"
             gap="sm"
             px="lg"
             py="sm"
@@ -245,6 +250,17 @@ export function AtlasDesignLanguageReference({
                   ? "Kiểm tra dữ liệu hiện hành trước khi lưu lại. Không gửi lặp thao tác."
                   : "Thịt heo nạc chưa được phân bổ đủ. Kiểm tra số lượng còn thiếu trước khi tiếp tục."}
               </Text>
+              {scenario === "unknown" && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  mt="sm"
+                  disabled={busy}
+                  onClick={() => refresh(true)}
+                >
+                  Tải lại để xác nhận
+                </Button>
+              )}
             </Box>
           </Flex>
         ) : (
@@ -261,7 +277,9 @@ export function AtlasDesignLanguageReference({
         <Grid
           templateColumns={{
             base: "minmax(0, 1fr)",
-            xl: selected ? "minmax(0, 1fr) 300px" : "minmax(0, 1fr)",
+            xl: selected
+              ? "minmax(0, 62fr) minmax(320px, 38fr)"
+              : "minmax(0, 1fr)",
           }}
           minW="0"
         >
@@ -319,21 +337,19 @@ export function AtlasDesignLanguageReference({
                             : "bg.subtle",
                       }}
                     >
-                      <Table.Cell minW="138px">
-                        <Text fontWeight="600">{row.name}</Text>
+                      <Table.Cell minW="138px" position="relative">
                         {row.name === selected?.name && (
-                          <Flex
-                            color="fg.primary"
-                            align="center"
-                            gap="2px"
-                            textStyle="helper"
-                          >
-                            <Icon asChild boxSize="12px">
-                              <Check />
-                            </Icon>
-                            Đang chọn
-                          </Flex>
+                          <Box
+                            data-selection-indicator=""
+                            aria-hidden="true"
+                            position="absolute"
+                            insetY="xs"
+                            left="0"
+                            width="3px"
+                            bg="fg.primary"
+                          />
                         )}
+                        <Text fontWeight="600">{row.name}</Text>
                       </Table.Cell>
                       <Table.Cell minW="138px">
                         {row.school}
@@ -362,13 +378,15 @@ export function AtlasDesignLanguageReference({
                         <Button
                           variant="utility"
                           size="sm"
-                          aria-label={`Phân bổ ${row.name}`}
+                          aria-label={`${row.status === "Đã phân bổ" ? "Xem phân bổ" : "Phân bổ NCC"} ${row.name}`}
                           onClick={() => {
                             setSelectedName(row.name);
                             setFeedback("");
                           }}
                         >
-                          Phân bổ
+                          {row.status === "Đã phân bổ"
+                            ? "Xem phân bổ"
+                            : "Phân bổ NCC"}
                         </Button>
                       </Table.Cell>
                     </Table.Row>

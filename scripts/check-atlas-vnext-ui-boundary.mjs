@@ -4,6 +4,9 @@ import { fileURLToPath } from "node:url";
 
 // No exceptions currently. New exceptions require an explicit Product decision.
 const chakraSupportFiles = new Set();
+// Exact extensionless modules, reviewed for business-only dependencies before
+// adding a bridge. The design reference currently needs no legacy dependencies.
+const approvedLegacyBusinessModules = [];
 const sourceExtension = /\.[cm]?[jt]sx?$/;
 
 function imports(source) {
@@ -20,7 +23,10 @@ function imports(source) {
   );
 }
 
-export function checkSources(sources) {
+export function checkSources(
+  sources,
+  approvedBusinessModules = approvedLegacyBusinessModules,
+) {
   const errors = [];
   for (const file of Object.keys(sources).sort()) {
     const vnext = file.startsWith("src/vnext/");
@@ -44,6 +50,18 @@ export function checkSources(sources) {
       )
         errors.push(
           `${file}: legacy presentation authority ${specifier} is forbidden`,
+        );
+      else if (
+        vnext &&
+        target.startsWith("src/") &&
+        !target.startsWith("src/vnext/") &&
+        !(
+          file.startsWith("src/vnext/atlas/bridges/") &&
+          approvedBusinessModules.includes(target.replace(sourceExtension, ""))
+        )
+      )
+        errors.push(
+          `${file}: legacy import ${specifier} requires an approved business-only bridge`,
         );
     }
   }

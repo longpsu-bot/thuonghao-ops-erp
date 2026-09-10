@@ -2,13 +2,55 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
-  it("permits Chakra-only vNext and existing business API/model imports", () => {
+  it("permits Chakra-only vNext and an explicitly approved API through a bridge", () => {
+    expect(
+      checkSources(
+        {
+          "src/vnext/atlas/View.tsx":
+            'import { Box } from "@chakra-ui/react"; import { api } from "./bridges/procurement";',
+          "src/vnext/atlas/bridges/procurement.ts":
+            'export { api } from "../../../modules/atlas/procurement/procurementApi";',
+        },
+        ["src/modules/atlas/procurement/procurementApi"],
+      ),
+    ).toEqual([]);
+  });
+  it("rejects direct legacy API reuse outside the bridge", () => {
+    expect(
+      checkSources(
+        {
+          "src/vnext/atlas/View.tsx":
+            'import { api } from "../../modules/atlas/procurement/procurementApi";',
+        },
+        ["src/modules/atlas/procurement/procurementApi"],
+      ),
+    ).toHaveLength(1);
+  });
+  it.each(["src/vnext/atlas/View.tsx", "src/vnext/atlas/bridges/unsafe.ts"])(
+    "rejects indirect legacy presentation from %s",
+    (file) => {
+      expect(
+        checkSources({
+          [file]:
+            'import { Workbench } from "@/modules/atlas/procurement/SchoolCateringProcurementWorkbench";',
+          "src/modules/atlas/procurement/SchoolCateringProcurementWorkbench.tsx":
+            'import { Button } from "@mantine/core";',
+        }),
+      ).toHaveLength(1);
+    },
+  );
+  it("does not permit unapproved business bridges or legacy CSS", () => {
     expect(
       checkSources({
-        "src/vnext/atlas/View.tsx":
-          'import { Box } from "@chakra-ui/react"; import type { Model } from "../../modules/atlas/procurement/model"; export { api } from "../../modules/atlas/api";',
+        "src/vnext/atlas/bridges/unapproved.ts":
+          'export { api } from "@/modules/atlas/api";',
       }),
-    ).toEqual([]);
+    ).toHaveLength(1);
+    expect(
+      checkSources({
+        "src/vnext/atlas/View.tsx": 'import "@/modules/atlas/workbench.css";',
+      }),
+    ).toHaveLength(1);
   });
   it.each([
     "@mantine/core",
