@@ -29,9 +29,9 @@ Files: `src/vnext/atlas/bridges/procurement.ts`, `procurement/procurementExactQu
 
 Bridge permits only reviewed `purchaseReviewApi`, `schoolCateringProcurementApi`, `schoolCateringProcurementModel`, `procurementOperatorCopy`, and type-only `connection/atlasRpc`. Their imports are non-presentation; the RPC module only imports the Supabase client type. Export libraries are excluded.
 
-- [ ] Write failing tests for six-place parsing, zero, large precision, invalid values, exact sum/difference, trimmed Vietnamese display and the exact bridge registry.
-- [ ] Run `pnpm exec vitest run src/vnext/atlas/procurement/procurementExactQuantity.test.ts scripts/check-atlas-vnext-ui-boundary.test.mjs` and observe red.
-- [ ] Implement `parseExactQuantity(string): bigint | null`, `formatExactQuantityForOperator(string | bigint | null): string`, and `sumExactQuantities(string[]): bigint | null`; run green and commit.
+- [x] Write failing tests for six-place parsing, zero, large precision, invalid values, exact sum/difference, trimmed Vietnamese display and the exact bridge registry.
+- [x] Run `pnpm exec vitest run src/vnext/atlas/procurement/procurementExactQuantity.test.ts scripts/check-atlas-vnext-ui-boundary.test.mjs` and observe red.
+- [x] Implement `parseExactQuantity(string): bigint | null`, `formatExactQuantityForOperator(string | bigint | null): string`, and `sumExactQuantities(string[]): bigint | null`; run green and commit.
 
 Example acceptance: `parseExactQuantity('9007199254740993.000001') === 9007199254740993000001n`; `sumExactQuantities(['0.1','0.2']) === 300000n`; invalid input never becomes zero.
 
@@ -41,10 +41,10 @@ Files: `ProcurementWorkbench.tsx`, `useProcurementWorkbench.ts`, `ProcurementAll
 
 Interface: workbench accepts `authSubject`, `purchaseReviewApi`, `procurementApi`, `initialServiceDate`, optional `schools`, `initialStage`, `onExportXlsx` and `onExportPdf`. Reads consume the unmodified confirmed read builder and PO read builder.
 
-- [ ] Write and observe failing tests for initial read, single date scope, explicit School Apply, all-selection normalization, cancelled/zero School drafts, local search/filter, read supersession and failed-read command locks.
-- [ ] Implement scope generation invalidation before initiating reads; clear obsolete detail/draft, preserve catalogue, discard stale responses and fail closed.
-- [ ] Build table with operator state labels, precise quantities, explicit actions and semantic selected rail. Test absence of technical identities and keyboard/focus behavior.
-- [ ] Run targeted green tests and commit.
+- [x] Write and observe failing tests for initial read, single date scope, explicit School Apply, all-selection normalization, cancelled/zero School drafts, local search/filter, read supersession and failed-read command locks.
+- [x] Implement scope generation invalidation before initiating reads; clear obsolete detail/draft, preserve catalogue, discard stale responses and fail closed.
+- [x] Build table with operator state labels, precise quantities, explicit actions and semantic selected rail. Test absence of technical identities and keyboard/focus behavior.
+- [x] Run targeted green tests and commit.
 
 ## Task 3 — supplier decisions and dirty dialog
 
@@ -52,41 +52,41 @@ Files: `ProcurementSupplierDetail.tsx`, `ProcurementSupplierDetail.test.tsx`.
 
 Interface: authoritative `row`, `disabled`, `onSave(SupplierSplitInput[])`, `onClose()`; controller owns post-save readback. Remount detail on authoritative read replacement.
 
-- [ ] Write/observe red tests for saved splits, exact balance, invalid/blank quantities, backend action denial, eligible additions/removal, advisory recommendation/rebalance, ineligible historical split visibility, exact Save payload and focus.
-- [ ] Implement participating supplier editor and compact running balance. Do not derive proposals locally.
-- [ ] Write/observe red dirty-close tests: clean closes immediately; dirty opens Chakra Dialog; cancel retains draft; discard closes; reopening restores authority. Portal content remains under `.atlas-vnext`.
-- [ ] Run green tests and commit.
+- [x] Write/observe red tests for saved splits, exact balance, invalid/blank quantities, backend action denial, eligible additions/removal, advisory recommendation/rebalance, ineligible historical split visibility, exact Save payload and focus.
+- [x] Implement participating supplier editor and compact running balance. Do not derive proposals locally.
+- [x] Write/observe red dirty-close tests: clean closes immediately; dirty opens Chakra Dialog; cancel retains draft; discard closes; reopening restores authority. Portal content remains under `.atlas-vnext`.
+- [x] Run green tests and commit.
 
 ## Task 4 — commands, recovery and preparation
 
 Files: controller, `ProcurementCommandFeedback.tsx`, workbench tests.
 
-- [ ] Write/observe red for source-qualified confirmed Save and Handoff Save compatibility, authoritative readback, stale locks, transport/rejected-promise unknown locks, explicit exact-request retry and cancellation of obsolete retries.
-- [ ] Map operator-safe feedback without diagnostic codes or versions. Distinguish uncertain completion from safe retryable failure.
-- [ ] Write/observe red for ready/allowed/current preparation with no active editor, exact preparation builder, PO readback before stage transition, failed readback uncertainty and recovery.
-- [ ] Implement one command runner with immediate duplicate suppression, generation guards, retained retry closure and successful-read-only unlock; run green and commit.
+- [x] Write/observe red for source-qualified confirmed Save and Handoff Save compatibility, authoritative readback, stale locks, transport/rejected-promise unknown locks, explicit exact-request retry and cancellation of obsolete retries.
+- [x] Map operator-safe feedback without diagnostic codes or versions. Distinguish uncertain completion from safe retryable failure.
+- [x] Write/observe red for ready/allowed/current preparation with no active editor, exact preparation builder, PO readback before stage transition, failed readback uncertainty and recovery.
+- [x] Implement one command runner with immediate duplicate suppression, generation guards, retained retry closure and successful-read-only unlock; run green and commit.
 
 ## Task 5 — purchase orders
 
 Files: `ProcurementOrdersStage.tsx`, `ProcurementOrdersStage.test.tsx`, controller tests.
 
-- [ ] Write/observe red for supplier table/detail, exact lines, focus return, DRAFT_CURRENT release, DRAFT_STALE materialization, released replacement, cancellation blocker, superseded history and immutable export eligibility.
-- [ ] Implement one dominant action per backend state. Use existing builders; never regenerate lines or mutate released snapshots in React.
-- [ ] Preserve warnings with state and secondary XLSX/PDF callback actions; test stale/unknown safety and exact request/readback semantics; run green and commit.
+- [x] Write/observe red for supplier table/detail, exact lines, focus return, DRAFT_CURRENT release, DRAFT_STALE materialization, released replacement, cancellation blocker, superseded history and immutable export eligibility.
+- [x] Implement one dominant action per backend state. Use existing builders; never regenerate lines or mutate released snapshots in React.
+- [x] Preserve warnings with state and secondary XLSX/PDF callback actions; test stale/unknown safety and exact request/readback semantics; run green and commit.
 
 ## Task 6 — deterministic review fixtures and stories
 
 Files: `procurementReviewFixtures.ts`, `ProcurementWorkbench.stories.tsx` and fixture tests.
 
-- [ ] Provide typed local API fixtures for normal, saved split, rebalance, reallocation, blocked, empty, read failure, retryable failure, unknown, ready, draft/stale/released/replacement/cancellation/superseded PO states. Fixtures return explicit snapshots, not duplicated backend algorithms.
-- [ ] Wrap every story with AtlasVNextProvider and AtlasVNextShell. Keep global Storybook untouched.
-- [ ] Verify fixture interactions with focused tests and commit.
+- [x] Provide typed local API fixtures for normal, saved split, rebalance, reallocation, blocked, empty, read failure, retryable failure, unknown, ready, draft/stale/released/replacement/cancellation/superseded PO states. Fixtures return explicit snapshots, not duplicated backend algorithms.
+- [x] Wrap every story with AtlasVNextProvider and AtlasVNextShell. Keep global Storybook untouched.
+- [x] Verify fixture interactions with focused tests and commit.
 
 ## Task 7 — visual verification and closeout
 
-- [ ] Create an external pure-vNext local harness. Block non-local HTTP/WebSocket traffic. Capture browser version/DPR, console, network, required scenarios and 1366×768, 1440×900, 1920×1080, 360×800 viewports.
-- [ ] Inspect desktop density, toolbar, local overflow, detail ratio/minimum, balance/footer reachability, Vietnamese wrapping, School/Dialog keyboard use, focus, reduced motion and selected rails. Fix verified defects with focused regression tests.
-- [ ] Produce the eight-panel contact sheet outside the repository and record exact paths.
-- [ ] Fresh `pnpm ui:vnext:check`, `pnpm ui:vnext:typegen`, `pnpm typecheck`, all vNext Procurement tests, unchanged legacy Procurement regression, `pnpm build`, `pnpm build-storybook`, touched-file Prettier and `git diff --check`.
-- [ ] Self-review security and scope, document files/bridge/parity/evidence/risks. No migration or rollback effects; removal of isolated vNext files rolls back this presentation.
+- [x] Create an external pure-vNext local harness. Block non-local HTTP/WebSocket traffic. Capture browser version/DPR, console, network, required scenarios and 1366×768, 1440×900, 1920×1080, 360×800 viewports.
+- [x] Inspect desktop density, toolbar, local overflow, detail ratio/minimum, balance/footer reachability, Vietnamese wrapping, School/Dialog keyboard use, focus, reduced motion and selected rails. Fix verified defects with focused regression tests.
+- [x] Produce the eight-panel contact sheet outside the repository and record exact paths.
+- [x] Fresh `pnpm ui:vnext:check`, `pnpm ui:vnext:typegen`, `pnpm typecheck`, all vNext Procurement tests, unchanged legacy Procurement regression, `pnpm build`, `pnpm build-storybook`, touched-file Prettier and `git diff --check`.
+- [x] Self-review security and scope, document files/bridge/parity/evidence/risks. No migration or rollback effects; removal of isolated vNext files rolls back this presentation.
 - [ ] Narrow commits, push branch, open one Draft PR with required evidence and exact start/final SHAs. Stop without merging; broad certification belongs to GitHub Actions.
