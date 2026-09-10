@@ -6,6 +6,8 @@ import {
 
 export const FRONTEND_CERTIFICATION_COMMANDS = Object.freeze([
   Object.freeze(["install", "--frozen-lockfile"]),
+  Object.freeze(["ui:vnext:check"]),
+  Object.freeze(["ui:vnext:typegen"]),
   Object.freeze(["format"]),
   Object.freeze(["typecheck"]),
   Object.freeze(["test"]),

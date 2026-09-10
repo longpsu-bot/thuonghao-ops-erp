@@ -1,6 +1,6 @@
 # Decision D-033 — Atlas UI Component Foundation
 
-**Status:** Accepted
+**Status:** SUPERSEDED BY [D-045](decision-atlas-chakra-ui-foundation.md)
 
 **Accepted on:** 07/08/2026
 
