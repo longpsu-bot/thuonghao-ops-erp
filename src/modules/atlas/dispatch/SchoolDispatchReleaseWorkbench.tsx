@@ -102,8 +102,18 @@ export function SchoolDispatchReleaseWorkbench({
   const readIntent = useRef(0);
   const authSubject =
     authState.status === "authenticated" ? authState.authSubject : null;
+  const requestedScope = JSON.stringify([
+    authSubject,
+    dateStart,
+    dateEnd,
+    schoolId,
+    search,
+  ]);
+  const [loadedScope, setLoadedScope] = useState<string | null>(null);
+  const currentScopeLoaded = loadedScope === requestedScope && !loading;
 
   const loadAuthoritative = useCallback(async () => {
+    setLoadedScope(null);
     if (!api || !authSubject) return false;
     const intent = ++readIntent.current;
     setLoading(true);
@@ -123,6 +133,7 @@ export function SchoolDispatchReleaseWorkbench({
       return false;
     }
     setData(next);
+    setLoadedScope(requestedScope);
     setLoadMessage(null);
     setSelectedKey((current) =>
       current && next.rows.some((row) => rowKey(row) === current)
@@ -132,10 +143,23 @@ export function SchoolDispatchReleaseWorkbench({
           : null,
     );
     return true;
-  }, [api, authSubject, correlationId, dateEnd, dateStart, schoolId, search]);
+  }, [
+    api,
+    authSubject,
+    correlationId,
+    dateEnd,
+    dateStart,
+    schoolId,
+    search,
+    requestedScope,
+  ]);
 
   useEffect(() => {
+    setReleaseNote("");
     void loadAuthoritative();
+    return () => {
+      readIntent.current += 1;
+    };
   }, [loadAuthoritative]);
 
   const selected =
@@ -164,7 +188,8 @@ export function SchoolDispatchReleaseWorkbench({
   };
 
   const release = async (row: SchoolDispatchWorkbenchRow) => {
-    if (!api || !authSubject || busy || unknownOutcome) return;
+    if (!api || !authSubject || busy || unknownOutcome || !currentScopeLoaded)
+      return;
     setBusy(true);
     setCommandMessage(null);
     setCommandFailed(false);
@@ -394,6 +419,7 @@ export function SchoolDispatchReleaseWorkbench({
                     label="Ghi chú trên phiếu (không bắt buộc)"
                     description="Ghi chú này được lưu nguyên trên chứng từ đã phát hành."
                     maxLength={500}
+                    disabled={!currentScopeLoaded}
                     value={releaseNote}
                     onChange={(event) =>
                       setReleaseNote(event.currentTarget.value)
@@ -402,7 +428,7 @@ export function SchoolDispatchReleaseWorkbench({
                   <Button
                     color={selected.allowed_actions.replace ? "orange" : "blue"}
                     loading={busy}
-                    disabled={unknownOutcome}
+                    disabled={unknownOutcome || !currentScopeLoaded}
                     onClick={() => void release(selected)}
                   >
                     {selected.allowed_actions.replace

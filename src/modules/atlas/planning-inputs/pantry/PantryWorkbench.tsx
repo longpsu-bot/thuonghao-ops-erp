@@ -674,32 +674,6 @@ export function PantryWorkbench({
                           </td>
                           <td>
                             <select
-                              aria-label={`Cách kết hợp dòng ${index + 1}`}
-                              value={
-                                effectiveSchoolDateModes.find(
-                                  (mode) =>
-                                    mode.school_id === row.school_id &&
-                                    mode.service_date === row.service_date,
-                                )?.direct_need_mode ?? "ADDITIVE"
-                              }
-                              disabled={!canEdit}
-                              onChange={(event) =>
-                                updateMode(
-                                  row.school_id,
-                                  row.service_date,
-                                  event.target
-                                    .value as PantrySchoolDateMode["direct_need_mode"],
-                                )
-                              }
-                            >
-                              <option value="ADDITIVE">
-                                Cộng với thực đơn
-                              </option>
-                              <option value="COMPLETE">Danh sách đầy đủ</option>
-                            </select>
-                          </td>
-                          <td>
-                            <select
                               aria-label={`Trường dòng ${index + 1}`}
                               value={row.school_id}
                               disabled={!canEdit}
@@ -757,6 +731,32 @@ export function PantryWorkbench({
                             >
                               {ingredient?.purchase_unit.unit_name ?? "—"}
                             </small>
+                          </td>
+                          <td>
+                            <select
+                              aria-label={`Cách kết hợp dòng ${index + 1}`}
+                              value={
+                                effectiveSchoolDateModes.find(
+                                  (mode) =>
+                                    mode.school_id === row.school_id &&
+                                    mode.service_date === row.service_date,
+                                )?.direct_need_mode ?? "ADDITIVE"
+                              }
+                              disabled={!canEdit}
+                              onChange={(event) =>
+                                updateMode(
+                                  row.school_id,
+                                  row.service_date,
+                                  event.target
+                                    .value as PantrySchoolDateMode["direct_need_mode"],
+                                )
+                              }
+                            >
+                              <option value="ADDITIVE">
+                                Cộng với thực đơn
+                              </option>
+                              <option value="COMPLETE">Danh sách đầy đủ</option>
+                            </select>
                           </td>
                           <td>
                             <select
