@@ -1,11 +1,61 @@
 import "@testing-library/jest-dom/vitest";
 import { Box, useChakraContext } from "@chakra-ui/react";
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { atlasSystem } from "./system";
+import { AtlasVNextShell } from "./AtlasVNextShell";
 
 afterEach(cleanup);
+
+describe("Atlas vNext shell", () => {
+  it("has one main and one semantic navigation with an explicit active page", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell>
+          <p>Phạm vi công việc</p>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(
+      within(screen.getByRole("main")).getByText("Phạm vi công việc"),
+    ).toBeInTheDocument();
+    // jsdom uses the base/mobile CSS; desktop visibility is verified in browser.
+    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    const nav = screen.getByRole("navigation", { name: "Điều hướng Atlas" });
+    expect(
+      within(nav).getByRole("button", { name: "Kế hoạch mua hàng" }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(within(nav).queryByText("Tổng quan")).not.toBeInTheDocument();
+  });
+  it("provides a keyboard-reachable mobile toggle and returns focus on Escape", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell>
+          <p>Nội dung</p>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    const toggle = screen.getByRole("button", { name: "Mở điều hướng" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    toggle.focus();
+    expect(toggle).toHaveFocus();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    const nav = screen.getByRole("navigation");
+    expect(toggle.getAttribute("aria-controls")).toBe(nav.id);
+    fireEvent.keyDown(nav, { key: "Escape" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveFocus();
+  });
+});
 
 describe("Atlas vNext provider", () => {
   it("supplies the Atlas system to Chakra children inside the scoped root", () => {
