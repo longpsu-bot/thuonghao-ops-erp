@@ -15,6 +15,23 @@ import { AtlasVNextShell } from "./AtlasVNextShell";
 afterEach(cleanup);
 
 describe("Atlas vNext shell", () => {
+  it("marks Planning active when composing its review workbench", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell activeModule="Lập nhu cầu">
+          <p>Thực đơn</p>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    expect(screen.getByRole("button", { name: "Lập nhu cầu" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(
+      screen.getByRole("button", { name: "Kế hoạch mua hàng" }),
+    ).not.toHaveAttribute("aria-current");
+  });
   it("has one main and one semantic navigation with an explicit active page", () => {
     render(
       <AtlasVNextProvider>
