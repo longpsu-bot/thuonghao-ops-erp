@@ -1,0 +1,79 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { posix, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// No exceptions currently. New exceptions require an explicit Product decision.
+const chakraSupportFiles = new Set();
+const sourceExtension = /\.[cm]?[jt]sx?$/;
+
+function imports(source) {
+  // Preserve quoted strings while removing comments, including comment examples.
+  const clean = source.replace(
+    /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`)|(\/\*[\s\S]*?\*\/|\/\/[^\r\n]*)/g,
+    (match, quoted) => quoted ?? " ".repeat(match.length),
+  );
+  return Array.from(
+    clean.matchAll(
+      /(?:\bfrom\s*|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']([^"']+)["']/g,
+    ),
+    (match) => match[1],
+  );
+}
+
+export function checkSources(sources) {
+  const errors = [];
+  for (const file of Object.keys(sources).sort()) {
+    const vnext = file.startsWith("src/vnext/");
+    for (const specifier of imports(sources[file])) {
+      if (vnext && specifier.startsWith("@mantine/"))
+        errors.push(`${file}: vNext cannot import ${specifier}`);
+      if (
+        (specifier === "@chakra-ui/react" ||
+          specifier.startsWith("@chakra-ui/react/")) &&
+        !vnext &&
+        !chakraSupportFiles.has(file)
+      )
+        errors.push(`${file}: Chakra belongs under src/vnext/`);
+      const clean = specifier.split(/[?#]/)[0];
+      const target = clean.startsWith(".")
+        ? posix.normalize(posix.join(posix.dirname(file), clean))
+        : clean.replace(/^@\//, "src/").replace(/^\//, "");
+      if (
+        vnext &&
+        /^(?:src\/theme(?:\.[cm]?[jt]sx?)?|src\/styles\.css)$/.test(target)
+      )
+        errors.push(
+          `${file}: legacy presentation authority ${specifier} is forbidden`,
+        );
+    }
+  }
+  return errors;
+}
+
+export function checkRepository(root = process.cwd()) {
+  const sources = {};
+  function visit(directory) {
+    for (const entry of readdirSync(resolve(root, directory), {
+      withFileTypes: true,
+    })) {
+      const file = `${directory}/${entry.name}`;
+      if (entry.isDirectory()) visit(file);
+      else if (sourceExtension.test(file))
+        sources[file] = readFileSync(resolve(root, file), "utf8");
+    }
+  }
+  visit("src");
+  visit(".storybook");
+  return checkSources(sources);
+}
+
+if (
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  const errors = checkRepository();
+  if (errors.length) {
+    console.error(errors.join("\n"));
+    process.exitCode = 1;
+  } else console.log("Atlas vNext UI boundary passed.");
+}

@@ -749,6 +749,8 @@ describe("Atlas staging dry-run and workflow", () => {
   it("shares the substantive frontend authority in repository order", () => {
     expect(FRONTEND_CERTIFICATION_COMMANDS).toEqual([
       ["install", "--frozen-lockfile"],
+      ["ui:vnext:check"],
+      ["ui:vnext:typegen"],
       ["format"],
       ["typecheck"],
       ["test"],
@@ -762,6 +764,8 @@ describe("Atlas staging dry-run and workflow", () => {
     expect(() => certifyFrontend({ runCommand })).toThrow(/typecheck/i);
     expect(runCommand.mock.calls.map(([_command, args]) => args)).toEqual([
       ["install", "--frozen-lockfile"],
+      ["ui:vnext:check"],
+      ["ui:vnext:typegen"],
       ["format"],
       ["typecheck"],
     ]);
