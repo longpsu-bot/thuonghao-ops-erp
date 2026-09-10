@@ -159,7 +159,10 @@ export function ProcurementSupplierDetail({
         base: "var(--atlas-layout-edge, 1px)",
         xl: "var(--atlas-layout-zero, 0)",
       }}
-      maxH={{ xl: "var(--atlas-layout-detail-height, calc(100dvh - 300px))" }}
+      maxH={{
+        base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
+        xl: "var(--atlas-layout-detail-height, calc(100dvh - 360px))",
+      }}
     >
       <Box p="md" pb="sm">
         <Heading as="h2" textStyle="section" tabIndex={-1} ref={heading}>

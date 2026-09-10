@@ -43,6 +43,21 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it("keeps scope-wide PO blockers visible without a selected order", () => {
+    const fixture = createProcurementReviewFixture("empty");
+    fixture.orders.blockers = ["CANCELLATION_REQUIRED"];
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    expect(screen.getByText(/Cần xử lý hủy cam kết/)).toBeVisible();
+  });
   it.each([
     ["po_draft", "Phát hành cho NCC"],
     ["po_stale", "Tạo lại đơn cần cập nhật"],

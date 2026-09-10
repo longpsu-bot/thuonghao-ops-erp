@@ -51,6 +51,29 @@ function show(
 const action = () =>
   screen.findByRole("button", { name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm$/ });
 describe("Procurement vNext operator workbench", () => {
+  it("shows preparation blockers even when ready but not permitted", async () => {
+    const fixture = createProcurementReviewFixture("ready");
+    fixture.allocation.preparation!.allowed = false;
+    fixture.allocation.preparation!.blockers = [
+      "Cần quyền phát hành nhu cầu để lên đơn.",
+    ];
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+        />
+      </AtlasVNextProvider>,
+    );
+    await action();
+    expect(
+      screen.getByText("Cần quyền phát hành nhu cầu để lên đơn."),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+    ).not.toBeInTheDocument();
+  });
   it("has one h1, two job tabs, canonical columns and no technical identity", async () => {
     show();
     await action();

@@ -132,6 +132,14 @@ export function ProcurementOrdersStage({
       <Text px="md" py="sm" textStyle="helper" color="fg.muted">
         {visible.length} đơn mua theo nhà cung cấp
       </Text>
+      {procurementOperatorMessages(
+        [...(data?.blockers ?? []), ...(data?.warnings ?? [])],
+        "Có điều kiện cần kiểm tra trước khi tiếp tục.",
+      ).map((message) => (
+        <Text key={message} px="md" pb="sm" color="status.warning">
+          ⚠ {message}
+        </Text>
+      ))}
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
@@ -144,7 +152,8 @@ export function ProcurementOrdersStage({
         <Box minW="var(--atlas-layout-zero, 0)">
           <Table.ScrollArea
             maxH={{
-              xl: "var(--atlas-layout-table-height, calc(100dvh - 300px))",
+              base: "var(--atlas-layout-table-mobile-height, 50dvh)",
+              xl: "var(--atlas-layout-table-height, calc(100dvh - 360px))",
             }}
             overflow="auto"
           >
@@ -267,7 +276,8 @@ export function ProcurementOrdersStage({
             }}
             borderColor="border.subtle"
             maxH={{
-              xl: "var(--atlas-layout-detail-height, calc(100dvh - 300px))",
+              base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
+              xl: "var(--atlas-layout-detail-height, calc(100dvh - 360px))",
             }}
           >
             <Box p="md">

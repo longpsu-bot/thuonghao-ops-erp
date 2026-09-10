@@ -27,7 +27,10 @@ export function ProcurementAllocationTable({
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
       <Table.ScrollArea
-        maxH={{ xl: "var(--atlas-layout-table-height, calc(100dvh - 300px))" }}
+        maxH={{
+          base: "var(--atlas-layout-table-mobile-height, 50dvh)",
+          xl: "var(--atlas-layout-table-height, calc(100dvh - 360px))",
+        }}
         overflow="auto"
       >
         <Table.Root aria-label="Phân bổ nhà cung ứng" size="sm" stickyHeader>

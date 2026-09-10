@@ -308,14 +308,16 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     Tiếp tục lên đơn
                   </Button>
                 )}
-                {!selected && !preparation?.ready && preparation && (
-                  <Text textStyle="helper" color="status.warning">
-                    {procurementOperatorMessages(
-                      preparation.blockers,
-                      "Hoàn tất phân bổ trước khi lên đơn.",
-                    ).join(" ")}
-                  </Text>
-                )}
+                {!selected &&
+                  !(preparation?.ready && preparation.allowed) &&
+                  preparation && (
+                    <Text textStyle="helper" color="status.warning">
+                      {procurementOperatorMessages(
+                        preparation.blockers,
+                        "Hoàn tất phân bổ trước khi lên đơn.",
+                      ).join(" ")}
+                    </Text>
+                  )}
               </Flex>
               {sourceMessages.map((message) => (
                 <Text px="md" pb="sm" key={message} color="status.warning">
