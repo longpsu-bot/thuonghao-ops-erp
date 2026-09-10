@@ -92,9 +92,13 @@ Keyboard checks cover opening/searching/toggling the School picker, zero-selecti
 ## Differences, risks and rollback
 
 - The visual composition is intentionally new: two job tabs, attached detail, quieter balanced rows, a Chakra dirty Dialog, no technical trace panel, and secondary export actions. No Product/design deviation requiring new approval was introduced.
-- Search/exception filters and other allocation row actions are disabled while supplier detail is active, keeping the originating row available for focus return and preserving the active local draft. Explicit authoritative scope changes still invalidate the editor as requested.
+- Search/exception filters and other allocation row actions are disabled while supplier detail is active, keeping the originating row available for focus return and preserving the active local draft. Superseded by [VNEXT-02A closeout](TASK-ATLAS-UI-VNEXT-02A-PROCUREMENT-DESIGN-SAFETY-CLOSEOUT.md): open supplier detail now disables authoritative date/School/stage changes until the existing Close boundary completes.
 - This task wires no default export library. Review callback actions explicitly announce a preview and do not create a real document. Real integration must inject the existing immutable-document exporter at its boundary. The legacy export helper currently accepts only `RELEASED_TO_SUPPLIER`; adapting that helper for historical `SUPERSEDED` exports is outside this isolated presentation slice. It was neither imported nor modified here.
 - Fixtures provide explicit snapshots; they are not a simulated backend and do not certify backend algorithms or hosted integration. Auth subject and API adapters remain the responsibility of a later production integration task.
 - No backend/Supabase schema, migration, RLS, RPC, Edge Function, authentication, contract, model, Retool, Google Sheets, Staging data or live OPS change. No hosted business write was performed.
 - Production entrypoint, AtlasApp routing, navigation and legacy Procurement remain unchanged. Soft Mineral raw values and `strictTokens: true` remain unchanged.
 - No migration/data rollback effects. Removing the isolated vNext Procurement files and its five bridge-registry entries rolls back this presentation, without affecting production routing or business facts.
+
+## VNEXT-02A closeout
+
+See the [closeout record](TASK-ATLAS-UI-VNEXT-02A-PROCUREMENT-DESIGN-SAFETY-CLOSEOUT.md) for current draft protection, localized exact quantities, recovery-read feedback, PO guidance, School search, Qodana disposition and regenerated evidence.

@@ -5,13 +5,16 @@ export function AtlasDateInput({
   label,
   value,
   onValueChange,
+  disabled,
 }: {
+  disabled?: boolean;
   label: string;
   value: string;
   onValueChange: (value: string) => void;
 }) {
   return (
     <DateInput.Root
+      disabled={disabled}
       locale="vi-VN"
       shouldForceLeadingZeros
       granularity="day"

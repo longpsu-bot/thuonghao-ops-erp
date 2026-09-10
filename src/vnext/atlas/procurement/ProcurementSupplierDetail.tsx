@@ -21,6 +21,7 @@ import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
   sumExactQuantities,
+  serializeExactQuantity,
 } from "./procurementExactQuantity";
 
 export function ProcurementSupplierDetail({
@@ -40,7 +41,7 @@ export function ProcurementSupplierDetail({
   const [draft, setDraft] = useState<SupplierSplitInput[]>(() =>
     saved.map(({ supplier_id, allocated_quantity }) => ({
       supplier_id,
-      allocated_quantity,
+      allocated_quantity: quantity(allocated_quantity),
     })),
   );
   const [added, setAdded] = useState<string[]>([]);
@@ -92,7 +93,7 @@ export function ProcurementSupplierDetail({
     setDraft(
       proposal.map(({ supplier_id, allocated_quantity }) => ({
         supplier_id,
-        allocated_quantity,
+        allocated_quantity: quantity(allocated_quantity),
       })),
     );
     setAdded(
@@ -283,7 +284,7 @@ export function ProcurementSupplierDetail({
               </Flex>
               {invalid && (
                 <Field.ErrorText>
-                  Nhập số không âm, tối đa 6 chữ số sau dấu chấm.
+                  Nhập số không âm, tối đa 6 chữ số thập phân.
                 </Field.ErrorText>
               )}
             </Field.Root>
@@ -360,6 +361,11 @@ export function ProcurementSupplierDetail({
           </Text>
         ))}
       </Stack>
+      {dirty && (
+        <Text px="md" pt="xs" textStyle="helper" color="fg.muted">
+          Đang chỉnh sửa · chưa lưu
+        </Text>
+      )}
       <Flex
         as="footer"
         justify="space-between"
@@ -380,10 +386,17 @@ export function ProcurementSupplierDetail({
           disabled={!canSave}
           onClick={() =>
             onSave(
-              draft.filter(
-                (split) =>
-                  (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
-              ),
+              draft
+                .filter(
+                  (split) =>
+                    (parseExactQuantity(split.allocated_quantity) ?? 0n) > 0n,
+                )
+                .map((split) => ({
+                  ...split,
+                  allocated_quantity: serializeExactQuantity(
+                    split.allocated_quantity,
+                  )!,
+                })),
             )
           }
         >

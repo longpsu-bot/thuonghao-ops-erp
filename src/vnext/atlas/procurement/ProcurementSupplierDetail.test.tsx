@@ -39,7 +39,7 @@ describe("Supplier decisions", () => {
     expect(screen.getByRole("heading", { name: "Gạo thơm" })).toHaveFocus();
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
-    ).toHaveValue("60.000000");
+    ).toHaveValue("60");
     quantity("NCC An Phú", "59.999999");
     expect(
       screen.getByRole("status", { name: "Cân đối phân bổ" }),
@@ -74,12 +74,12 @@ describe("Supplier decisions", () => {
     const { onSave } = show(reviewFamily("rebalance"));
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
-    ).toHaveValue("60.000000");
+    ).toHaveValue("60");
     click("Áp dụng đề xuất");
     expect(onSave).not.toHaveBeenCalled();
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
-    ).toHaveValue("72.000000");
+    ).toHaveValue("72");
     expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
   });
   it("shows ineligible saved supplier and quantity without transferring it", () => {

@@ -112,6 +112,33 @@ describe("Procurement authoritative scope", () => {
 });
 
 describe("Procurement command safety", () => {
+  it("retains UNKNOWN and safe read failure, never retries write, and recovers permissions", async () => {
+    const { result, read, save, fixture } = setup("unknown");
+    await ready(result);
+    await act(async () => result.current.save(reviewFamily(), splits));
+    const denied = reviewFailure("ACCESS_DENIED");
+    if (denied.kind === "backend_error")
+      denied.error.safe_message = "Bạn không có quyền xem dữ liệu này.";
+    read.mockResolvedValueOnce(denied);
+    await act(async () => result.current.reload());
+    expect(result.current.feedback?.kind).toBe("unknown");
+    expect(result.current.readError).toBe(
+      "Bạn không có quyền xem dữ liệu này.",
+    );
+    expect(result.current.locked).toBe(true);
+    await act(async () => result.current.save(reviewFamily(), splits));
+    expect(save).toHaveBeenCalledTimes(1);
+    fixture.allocation.rows[0]!.allowed_actions.save_allocation = false;
+    await act(async () => result.current.reload());
+    expect(result.current.feedback).toBeNull();
+    expect(result.current.readError).toBeNull();
+    expect(result.current.current).toBe(true);
+    expect(
+      result.current.allocation?.rows[0]?.allowed_actions.save_allocation,
+    ).toBe(false);
+    await act(async () => result.current.save(reviewFamily(), splits));
+    expect(save).toHaveBeenCalledTimes(1);
+  });
   it("saves the exact confirmed source request and replaces the read with authority", async () => {
     const { result, fixture, read, save } = setup();
     await ready(result);

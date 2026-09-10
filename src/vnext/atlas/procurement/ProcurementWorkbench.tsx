@@ -1,3 +1,4 @@
+import { foldVietnameseSearch as fold } from "./foldVietnameseSearch";
 import {
   Box,
   Button,
@@ -35,13 +36,6 @@ export type ProcurementWorkbenchProps = ProcurementControllerProps & {
   onExportXlsx?: ProcurementExport;
   onExportPdf?: ProcurementExport;
 };
-function fold(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[đĐ]/g, "d")
-    .toLocaleLowerCase("vi");
-}
 export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
   const [search, setSearch] = useState("");
@@ -134,6 +128,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       <Tabs.Root
         value={controller.stage}
         onValueChange={({ value }) => {
+          if (selected) return;
           setSelectedKey(null);
           setSearch("");
           controller.changeStage(value === "orders" ? "orders" : "allocation");
@@ -169,6 +164,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           >
             <Tabs.Trigger
               value="allocation"
+              disabled={Boolean(selected) && controller.stage !== "allocation"}
               color="fg.muted"
               _selected={{ color: "fg.primary", bg: "bg.selected" }}
               _before={{ bg: "border.accent" }}
@@ -177,6 +173,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             </Tabs.Trigger>
             <Tabs.Trigger
               value="orders"
+              disabled={Boolean(selected) && controller.stage !== "orders"}
               color="fg.muted"
               _selected={{ color: "fg.primary", bg: "bg.selected" }}
               _before={{ bg: "border.accent" }}
@@ -202,9 +199,11 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           }}
         >
           <AtlasDateInput
+            disabled={Boolean(selected)}
             label="Ngày phục vụ"
             value={controller.date}
             onValueChange={(value) => {
+              if (selected) return;
               setSelectedKey(null);
               controller.changeDate(value);
             }}
@@ -217,8 +216,9 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               <ProcurementSchoolScope
                 schools={catalogue}
                 value={controller.schoolIds}
-                disabled={controller.loading}
+                disabled={controller.loading || Boolean(selected)}
                 onApply={(ids) => {
+                  if (selected) return;
                   setSelectedKey(null);
                   controller.changeSchools(ids);
                 }}
@@ -236,7 +236,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             />
           </Field.Root>
           {controller.stage === "allocation" && (
-            <Field.Root>
+            <Field.Root disabled={Boolean(selected)}>
               <Field.Label>Ngoại lệ</Field.Label>
               <NativeSelect.Root disabled={Boolean(selected)}>
                 <NativeSelect.Field
@@ -267,16 +267,20 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
             onRetry={() => void controller.retry()}
           />
         )}
-        {controller.readError && controller.feedback?.kind !== "unknown" && (
+        {controller.readError && (
           <Box role="alert" p="md">
-            <Text color="status.warning">⚠ {controller.readError}</Text>
-            <Button
-              mt="sm"
-              disabled={controller.loading}
-              onClick={() => void controller.reload()}
-            >
-              Tải lại dữ liệu hiện tại
-            </Button>
+            <Text color="status.warning">
+              ⚠ Không tải được dữ liệu hiện tại: {controller.readError}
+            </Text>
+            {controller.feedback?.kind !== "unknown" && (
+              <Button
+                mt="sm"
+                disabled={controller.loading}
+                onClick={() => void controller.reload()}
+              >
+                Tải lại dữ liệu hiện tại
+              </Button>
+            )}
           </Box>
         )}
         {controller.loading && (

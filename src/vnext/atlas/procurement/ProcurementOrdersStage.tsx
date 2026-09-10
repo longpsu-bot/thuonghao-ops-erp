@@ -31,6 +31,18 @@ const stateLabel: Record<
   CANCELLATION_REQUIRED: "Cần xử lý hủy",
   SUPERSEDED: "Đã được thay thế",
 };
+// Suppress only meanings already expressed by the selected state's detail.
+function hasDedicatedGuidance(
+  state: SchoolCateringPurchaseOrder["commitment_state"],
+  code: string,
+) {
+  return (
+    (state === "DRAFT_STALE" && code === "PO_DRAFT_STALE") ||
+    (state === "REPLACEMENT_REQUIRED" &&
+      ["PO_REPLACEMENT_REQUIRED", "PO_ALREADY_RELEASED"].includes(code)) ||
+    (state === "CANCELLATION_REQUIRED" && code === "CANCELLATION_REQUIRED")
+  );
+}
 export function ProcurementOrdersStage({
   data,
   disabled,
@@ -123,7 +135,9 @@ export function ProcurementOrdersStage({
           ...selected.blockers,
           ...selected.disabled_reasons,
           ...selected.warnings,
-        ],
+        ].filter(
+          (code) => !hasDedicatedGuidance(selected.commitment_state, code),
+        ),
         "Đơn mua có điều kiện cần kiểm tra trước khi tiếp tục.",
       )
     : [];
@@ -220,7 +234,11 @@ export function ProcurementOrdersStage({
                         {stateLabel[order.commitment_state]}
                       </Text>
                       {procurementOperatorMessages(
-                        order.warnings,
+                        order.warnings.filter(
+                          (code) =>
+                            order.purchase_order_id !== selectedId ||
+                            !hasDedicatedGuidance(order.commitment_state, code),
+                        ),
                         "Có cảnh báo cần kiểm tra.",
                       ).map((message) => (
                         <Text
@@ -313,12 +331,11 @@ export function ProcurementOrdersStage({
                   thế đầy đủ.
                 </Text>
               )}
-              {selected.commitment_state === "CANCELLATION_REQUIRED" &&
-                !selected.blockers.includes("CANCELLATION_REQUIRED") && (
-                  <Text color="status.warning">
-                    ⚠ Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.
-                  </Text>
-                )}
+              {selected.commitment_state === "CANCELLATION_REQUIRED" && (
+                <Text color="status.warning">
+                  ⚠ Cần xử lý hủy cam kết với nhà cung cấp trước khi tiếp tục.
+                </Text>
+              )}
               {messages.map((message) => (
                 <Text key={message} color="status.warning">
                   ⚠ {message}

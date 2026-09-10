@@ -1,3 +1,4 @@
+import { foldVietnameseSearch } from "./foldVietnameseSearch";
 import {
   Box,
   Button,
@@ -130,9 +131,9 @@ export function ProcurementSchoolScope({
               >
                 {schools
                   .filter((school) =>
-                    school.school_name
-                      .toLocaleLowerCase("vi")
-                      .includes(search.toLocaleLowerCase("vi")),
+                    foldVietnameseSearch(school.school_name).includes(
+                      foldVietnameseSearch(search),
+                    ),
                   )
                   .map((school) => (
                     <Checkbox.Root

@@ -131,3 +131,7 @@ export const CancellationRequired: Story = {
   args: { scenario: "cancellation_required" },
 };
 export const SupersededOrder: Story = { args: { scenario: "superseded" } };
+
+export const UnknownRecoveryReadFailure: Story = {
+  args: { scenario: "unknown_recovery_failure" },
+};

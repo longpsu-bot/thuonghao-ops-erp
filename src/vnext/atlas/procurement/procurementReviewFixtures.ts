@@ -20,6 +20,7 @@ export type ProcurementReviewScenario =
   | "read_failure"
   | "retryable_failure"
   | "unknown"
+  | "unknown_recovery_failure"
   | "ready"
   | "po_draft"
   | "po_stale"
@@ -269,14 +270,23 @@ export function reviewOrder(
     release_eligible: !released && scenario !== "po_stale",
     export_ready: released,
     blockers:
-      scenario === "cancellation_required" ? ["CANCELLATION_REQUIRED"] : [],
+      scenario === "cancellation_required"
+        ? ["CANCELLATION_REQUIRED"]
+        : scenario === "po_stale"
+          ? ["PO_DRAFT_STALE"]
+          : scenario === "replacement_required"
+            ? ["PO_REPLACEMENT_REQUIRED"]
+            : [],
     warnings: [],
     allowed_actions: {
       release: !released && scenario !== "po_stale",
       export: released,
       create_replacement: scenario === "replacement_required",
     },
-    disabled_reasons: [],
+    disabled_reasons:
+      scenario === "replacement_required"
+        ? ["PO_REPLACEMENT_REQUIRED", "PO_ALREADY_RELEASED"]
+        : [],
   };
 }
 
@@ -312,20 +322,33 @@ export function createProcurementReviewFixture(
       blockers: [],
       warnings: [],
     } as PurchaseOrdersData,
-    commandResult:
-      scenario === "unknown"
-        ? reviewUnknown
-        : scenario === "retryable_failure"
-          ? reviewFailure("RETRYABLE_CONCURRENCY_FAILURE", true)
-          : reviewSuccess({ safe_operator_message: "Đã lưu theo yêu cầu." }),
+    commandResult: ["unknown", "unknown_recovery_failure"].includes(scenario)
+      ? reviewUnknown
+      : scenario === "retryable_failure"
+        ? reviewFailure("RETRYABLE_CONCURRENCY_FAILURE", true)
+        : reviewSuccess({ safe_operator_message: "Đã lưu theo yêu cầu." }),
   };
   const command = async () => fixture.commandResult;
+  let allocationReads = 0;
   const purchaseReviewApi: PurchaseReviewApi = {
     getGeneratedReview: async () => reviewFailure("NOT_AVAILABLE"),
-    getConfirmedAllocations: async () =>
-      scenario === "read_failure"
+    getConfirmedAllocations: async () => {
+      allocationReads += 1;
+      if (scenario === "unknown_recovery_failure" && allocationReads === 2) {
+        return {
+          kind: "backend_error",
+          error: {
+            success: false,
+            error_code: "ACCESS_DENIED",
+            retryable: false,
+            safe_message: "Bạn không có quyền xem dữ liệu này.",
+          },
+        };
+      }
+      return scenario === "read_failure"
         ? reviewFailure("ACCESS_DENIED")
-        : reviewSuccess(fixture.allocation),
+        : reviewSuccess(fixture.allocation);
+    },
     saveConfirmedAllocation: command,
     preparePurchaseOrders: command,
   };

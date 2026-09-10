@@ -43,6 +43,79 @@ function show(
   };
 }
 describe("Supplier purchase orders", () => {
+  it.each([
+    [
+      "po_stale",
+      "PO_DRAFT_STALE",
+      /Bản nháp cần tạo lại/,
+      /Đơn nháp cần cập nhật/,
+    ],
+    [
+      "replacement_required",
+      "PO_REPLACEMENT_REQUIRED",
+      /Đơn đã phát hành được giữ nguyên/,
+      /không còn khớp phân bổ|Đơn đã được phát hành/,
+    ],
+    [
+      "cancellation_required",
+      "CANCELLATION_REQUIRED",
+      /Cần xử lý hủy cam kết/,
+      /never-match/,
+    ],
+  ] as const)(
+    "renders %s guidance once and retains unrelated warnings",
+    (scenario, code, dedicated, duplicate) => {
+      const fixture = createProcurementReviewFixture(scenario);
+      const order = fixture.orders.purchase_orders[0]!;
+      order.blockers = [code];
+      order.disabled_reasons = [
+        code,
+        ...(scenario === "replacement_required" ? ["PO_ALREADY_RELEASED"] : []),
+      ];
+      order.warnings = [code, "SUPPLIER_INACTIVE", "SUPPLIER_INACTIVE"];
+      render(
+        <AtlasVNextProvider>
+          <ProcurementOrdersStage
+            data={fixture.orders}
+            disabled={false}
+            search=""
+            onAction={vi.fn()}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Xem đơn NCC An Phú" }),
+      );
+      const detail = within(
+        screen.getByRole("region", { name: "Chi tiết đơn mua NCC An Phú" }),
+      );
+      expect(screen.getAllByText(dedicated)).toHaveLength(1);
+      expect(screen.queryAllByText(duplicate)).toHaveLength(0);
+      expect(
+        detail.getAllByText(/Nhà cung cấp hiện không hoạt động/),
+      ).toHaveLength(1);
+    },
+  );
+  it("does not suppress a state reason without matching dedicated guidance", () => {
+    const fixture = createProcurementReviewFixture("po_draft");
+    fixture.orders.purchase_orders[0]!.disabled_reasons = [
+      "PO_ALREADY_RELEASED",
+      "PO_REPLACEMENT_REQUIRED",
+    ];
+    render(
+      <AtlasVNextProvider>
+        <ProcurementOrdersStage
+          data={fixture.orders}
+          disabled={false}
+          search=""
+          onAction={vi.fn()}
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Xem đơn NCC An Phú" }));
+    expect(screen.getByText(/Đơn đã được phát hành/)).toBeVisible();
+    expect(screen.getByText(/không còn khớp phân bổ/)).toBeVisible();
+  });
   it("keeps scope-wide PO blockers visible without a selected order", () => {
     const fixture = createProcurementReviewFixture("empty");
     fixture.orders.blockers = ["CANCELLATION_REQUIRED"];

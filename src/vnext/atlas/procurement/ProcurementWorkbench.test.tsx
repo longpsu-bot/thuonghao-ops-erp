@@ -13,7 +13,8 @@ import { ProcurementWorkbench } from "./ProcurementWorkbench";
 import {
   createProcurementReviewFixture,
   reviewDate,
-  reviewFamily,
+  reviewFailure,
+  reviewSuccess,
   reviewSchools,
 } from "./procurementReviewFixtures";
 beforeEach(() => {
@@ -73,6 +74,160 @@ describe("Procurement vNext operator workbench", () => {
     expect(
       screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
     ).not.toBeInTheDocument();
+  });
+  it("protects the editing context until explicit dirty Close completes", async () => {
+    const { read, fixture } = show("manual_split");
+    const poRead = vi.spyOn(fixture.procurementApi, "getPurchaseOrders");
+    fireEvent.click(await action());
+    const input = screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" });
+    fireEvent.change(input, { target: { value: "48,500001" } });
+    for (const segment of screen.getAllByRole("spinbutton")) {
+      expect(segment).toHaveAttribute("aria-disabled", "true");
+      fireEvent.keyDown(segment, { key: "ArrowUp" });
+    }
+    expect(
+      screen.getByRole("button", { name: "Tất cả trường" }),
+    ).toBeDisabled();
+    const orders = screen.getByRole("tab", { name: "Đơn mua" });
+    expect(orders).toBeDisabled();
+    fireEvent.click(orders);
+    expect(screen.getByRole("tab", { name: "Phân bổ NCC" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: "Ngoại lệ" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(poRead).not.toHaveBeenCalled();
+    expect(input).toHaveValue("48,500001");
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Tiếp tục chỉnh sửa",
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(input).toHaveValue("48,500001");
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Bỏ thay đổi và đóng",
+      }),
+    );
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tất cả trường" })).toBeEnabled();
+    expect(orders).toBeEnabled();
+    const day = screen.getAllByRole("spinbutton")[0]!;
+    expect(day).not.toHaveAttribute("aria-disabled", "true");
+    fireEvent.focus(day);
+    fireEvent.keyDown(day, { key: "ArrowUp" });
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+    expect(read.mock.lastCall![0].payload).toMatchObject({
+      date_start: "2026-09-11",
+    });
+    fireEvent.click(orders);
+    await waitFor(() => expect(poRead).toHaveBeenCalledTimes(1));
+  });
+  it("clean Close restores context without a discard Dialog", async () => {
+    show("manual_split");
+    fireEvent.click(await action());
+    expect(screen.getByRole("tab", { name: "Đơn mua" })).toBeDisabled();
+    expect(
+      screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Đơn mua" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Tất cả trường" })).toBeEnabled();
+    expect(screen.getAllByRole("spinbutton")[0]).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+  });
+  it("canonicalizes comma quantities before Save and clears dirty state after readback", async () => {
+    const { save, read, fixture } = show("manual_split");
+    fireEvent.click(await action());
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+      { target: { value: "48,5" } },
+    );
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Phân bổ NCC Bình Minh" }),
+      { target: { value: "51.5" } },
+    );
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeVisible();
+    const authority = structuredClone(fixture.allocation);
+    authority.rows[0]!.splits[0]!.allocated_quantity = "48.500000";
+    authority.rows[0]!.splits[1]!.allocated_quantity = "51.500000";
+    read.mockResolvedValueOnce(reviewSuccess(authority));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.lastCall![0].payload.splits).toEqual([
+      { supplier_id: "supplier-a", allocated_quantity: "48.500000" },
+      { supplier_id: "supplier-b", allocated_quantity: "51.500000" },
+    ]);
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Đang chỉnh sửa · chưa lưu"),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
+    ).toHaveValue("48,5");
+  });
+  it("shows a safe failed recovery read alongside UNKNOWN until authority returns", async () => {
+    const { read, save } = show("unknown");
+    fireEvent.click(await action());
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+    const recovery = await screen.findByRole("button", {
+      name: "Tải lại để xác nhận",
+    });
+    const denied = reviewFailure("ACCESS_DENIED");
+    if (denied.kind === "backend_error")
+      denied.error.safe_message = "Bạn không có quyền xem dữ liệu này.";
+    read.mockResolvedValueOnce(denied);
+    fireEvent.click(recovery);
+    expect(
+      await screen.findByText(
+        /Không tải được dữ liệu hiện tại: Bạn không có quyền/,
+      ),
+    ).toBeVisible();
+    expect(screen.getByText(/Chưa xác nhận kết quả/)).toBeVisible();
+    expect(recovery).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Lưu phân bổ" }),
+    ).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(
+      /ACCESS_DENIED|NETWORK_FAILURE|private-|fingerprint/,
+    );
+    expect(save).toHaveBeenCalledTimes(1);
+    fireEvent.click(recovery);
+    await action();
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Chưa xác nhận kết quả/),
+      ).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByText(/Không tải được dữ liệu hiện tại:/),
+    ).not.toBeInTheDocument();
+    fireEvent.click(await action());
+    fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    expect(save).toHaveBeenCalledTimes(1);
   });
   it("has one h1, two job tabs, canonical columns and no technical identity", async () => {
     show();
@@ -145,7 +300,7 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(await action());
     expect(
       screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" }),
-    ).toHaveValue("60.000000");
+    ).toHaveValue("60");
   });
   it("requires explicit School Apply, supports search, and prevents zero-scope application", async () => {
     const { read } = show();
@@ -164,7 +319,7 @@ describe("Procurement vNext operator workbench", () => {
     expect(read).toHaveBeenCalledTimes(1);
     fireEvent.change(
       within(picker).getByRole("textbox", { name: "Tìm trường" }),
-      { target: { value: "Nguyễn" } },
+      { target: { value: "NGUYEN" } },
     );
     expect(within(picker).getAllByRole("checkbox")).toHaveLength(1);
     fireEvent.click(
