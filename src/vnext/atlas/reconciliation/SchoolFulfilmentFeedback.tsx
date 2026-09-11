@@ -1,5 +1,10 @@
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { schoolDispatchBlockerLabel } from "../bridges/schoolDispatch";
+function schoolFulfilmentBlockerLabel(code: string) {
+  return code === "PXK_REPLACEMENT_REQUIRED"
+    ? "Phiếu xuất kho cần được thay thế để khớp với dữ liệu hiện tại."
+    : schoolDispatchBlockerLabel(code);
+}
 export function OperationalSignals({
   blockers,
   warnings,
@@ -16,7 +21,9 @@ export function OperationalSignals({
             Vướng mắc vận hành
           </Text>
           {blockers.map((code, i) => (
-            <Text key={`${code}:${i}`}>{schoolDispatchBlockerLabel(code)}</Text>
+            <Text key={`${code}:${i}`}>
+              {schoolFulfilmentBlockerLabel(code)}
+            </Text>
           ))}
         </Box>
       )}

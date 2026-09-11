@@ -207,7 +207,12 @@ function snapshots(scenario: SchoolFulfilmentScenario): SchoolFulfilmentRow[] {
     ];
   }
   if (scenario === "PXK_REPLACEMENT_REQUIRED")
-    return [fulfilmentRow({ pxk_state: "REPLACEMENT_REQUIRED" })];
+    return [
+      fulfilmentRow({
+        pxk_state: "REPLACEMENT_REQUIRED",
+        blockers: ["PXK_REPLACEMENT_REQUIRED"],
+      }),
+    ];
   if (scenario === "PXK_BLOCKED" || scenario === "OPERATIONAL_BLOCKER")
     return [
       { ...ok, pxk_state: "BLOCKED", blockers: ["PROCUREMENT_NOT_CURRENT"] },

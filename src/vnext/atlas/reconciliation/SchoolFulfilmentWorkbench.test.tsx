@@ -62,6 +62,68 @@ async function openFirst() {
   return buttons[0];
 }
 describe("read-only reconciliation operator workbench", () => {
+  it("opens the replacement-required fixture with specific blocker copy and independent comparison", async () => {
+    show("PXK_REPLACEMENT_REQUIRED");
+    await openFirst();
+    const detail = screen.getByRole("region", { name: "Chi tiết đối chiếu" });
+    expect(
+      within(detail).getByText(
+        "Phiếu xuất kho cần được thay thế để khớp với dữ liệu hiện tại.",
+      ),
+    ).toBeVisible();
+    expect(within(detail).getByText("Cần phiếu thay thế")).toBeVisible();
+    expect(within(detail).getByText("Lệch số lượng")).toBeVisible();
+    expect(detail).not.toHaveTextContent("PXK_REPLACEMENT_REQUIRED");
+    expect(detail).not.toHaveTextContent(
+      "Phiếu xuất kho chưa đủ điều kiện phát hành.",
+    );
+  });
+  it("uses reconciliation copy for global and row blockers while preserving shared labels and OK", async () => {
+    const data = fulfilmentData(
+      [
+        fulfilmentRow({
+          comparison_status: "OK",
+          pxk_state: "REPLACEMENT_REQUIRED",
+          blockers: ["PXK_REPLACEMENT_REQUIRED"],
+        }),
+      ],
+      "2026-09-24",
+      "2026-09-26",
+    );
+    data.blockers = [
+      "PXK_REPLACEMENT_REQUIRED",
+      "SCHOOL_SCOPE_INVALID",
+      "NO_CURRENT_NEED",
+      "PO_COVERAGE_INCOMPLETE",
+      "PROCUREMENT_NOT_CURRENT",
+      "CANCELLATION_REQUIRED",
+    ];
+    show("OK", {
+      getWorkbench: vi.fn().mockResolvedValue(fulfilmentSuccess(data)),
+    });
+    filter("all");
+    await openFirst();
+    expect(
+      screen.getAllByText(
+        "Phiếu xuất kho cần được thay thế để khớp với dữ liệu hiện tại.",
+      ),
+    ).toHaveLength(2);
+    for (const label of [
+      "Trường hoặc điểm giao không còn hợp lệ.",
+      "Chưa có nhu cầu hiện hành cho trường và ngày này.",
+      "Đơn mua đã phát hành chưa bao phủ đầy đủ nhu cầu của trường.",
+      "Kế hoạch mua hàng chưa khớp với nhu cầu và phân bổ hiện hành.",
+      "Cam kết nhà cung ứng cũ cần được xử lý trước khi phát hành Phiếu xuất kho.",
+    ])
+      expect(screen.getByText(label)).toBeVisible();
+    const detail = screen.getByRole("region", { name: "Chi tiết đối chiếu" });
+    expect(within(detail).getByText("Khớp")).toBeVisible();
+    expect(within(detail).getByText("Cần phiếu thay thế")).toBeVisible();
+    expect(screen.queryByText("PXK_REPLACEMENT_REQUIRED")).toBeNull();
+    expect(
+      screen.queryByText("Phiếu xuất kho chưa đủ điều kiện phát hành."),
+    ).toBeNull();
+  });
   it("lands on exceptions with one h1, result before documents, and no business commands", async () => {
     const h = show();
     await screen.findAllByRole("button", { name: "Xem đối chiếu" });
