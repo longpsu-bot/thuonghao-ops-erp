@@ -29,7 +29,13 @@ const navigation = [
   { label: "Đối chiếu PO / Phiếu xuất kho", icon: Scales },
 ];
 
-export function AtlasVNextShell({ children }: { children: ReactNode }) {
+export function AtlasVNextShell({
+  children,
+  activeModule = "Kế hoạch mua hàng",
+}: {
+  children: ReactNode;
+  activeModule?: "Kế hoạch mua hàng" | "Lập nhu cầu";
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -124,32 +130,24 @@ export function AtlasVNextShell({ children }: { children: ReactNode }) {
                   textAlign="left"
                   whiteSpace="normal"
                   textStyle="table"
-                  fontWeight={
-                    label === "Kế hoạch mua hàng" ? "semibold" : "normal"
-                  }
+                  fontWeight={label === activeModule ? "semibold" : "normal"}
                   bg={
-                    label === "Kế hoạch mua hàng"
+                    label === activeModule
                       ? "bg.navigationHover"
                       : "transparent"
                   }
                   borderLeftWidth="var(--atlas-layout-rail, 3px)"
                   borderLeftColor={
-                    label === "Kế hoạch mua hàng"
-                      ? "border.accent"
-                      : "transparent"
+                    label === activeModule ? "border.accent" : "transparent"
                   }
-                  aria-current={
-                    label === "Kế hoạch mua hàng" ? "page" : undefined
-                  }
+                  aria-current={label === activeModule ? "page" : undefined}
                   _hover={{ bg: "bg.navigationHover", color: "fg.inverse" }}
                   _focusVisible={{ outlineColor: "focus.inverse" }}
                   onClick={closeMenu}
                 >
                   <Icon asChild flexShrink="0" boxSize="18px">
                     <NavIcon
-                      weight={
-                        label === "Kế hoạch mua hàng" ? "bold" : "regular"
-                      }
+                      weight={label === activeModule ? "bold" : "regular"}
                     />
                   </Icon>
                   {label}
