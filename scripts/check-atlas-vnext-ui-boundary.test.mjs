@@ -2,6 +2,30 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("permits reconciliation business modules only through a bridge and rejects presentation", () => {
+    for (const module of [
+      "schoolFulfilmentReconciliationApi",
+      "schoolFulfilmentReconciliationModel",
+    ]) {
+      const source = `export * from "@/modules/atlas/dispatch/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/schoolFulfilment.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/reconciliation/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "SchoolFulfilmentReconciliationWorkbench",
+      "reviewSchoolFulfilmentReconciliationApi",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/schoolFulfilment.ts": `export * from "@/modules/atlas/dispatch/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
   it("permits only reviewed School PXK API/model bridge modules", () => {
     for (const module of [
       "schoolDispatchReleaseApi",
@@ -18,8 +42,6 @@ describe("Atlas vNext presentation boundary", () => {
     for (const module of [
       "SchoolDispatchReleaseWorkbench",
       "schoolDispatchReleaseExports",
-      "schoolFulfilmentReconciliationApi",
-      "schoolFulfilmentReconciliationModel",
       "SchoolFulfilmentReconciliationWorkbench",
     ]) {
       expect(

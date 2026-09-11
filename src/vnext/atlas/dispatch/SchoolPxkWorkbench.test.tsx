@@ -219,9 +219,12 @@ describe("School PXK operator table and attached detail", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
+    await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
     expect(note).toHaveValue("Chưa phát hành");
     expect(h.read).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Làm mới dữ liệu" }),
+    );
     fireEvent.click(await screen.findByRole("button", { name: "Bỏ ghi chú" }));
     await waitFor(() => expect(h.read).toHaveBeenCalledTimes(2));
     expect(note).toHaveValue("");
