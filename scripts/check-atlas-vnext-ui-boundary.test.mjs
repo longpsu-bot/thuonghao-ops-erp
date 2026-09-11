@@ -2,6 +2,33 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("permits only reviewed School PXK API/model bridge modules", () => {
+    for (const module of [
+      "schoolDispatchReleaseApi",
+      "schoolDispatchReleaseModel",
+    ]) {
+      const source = `export * from "@/modules/atlas/dispatch/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/schoolDispatch.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/dispatch/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "SchoolDispatchReleaseWorkbench",
+      "schoolDispatchReleaseExports",
+      "schoolFulfilmentReconciliationApi",
+      "schoolFulfilmentReconciliationModel",
+      "SchoolFulfilmentReconciliationWorkbench",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/schoolDispatch.ts": `export * from "@/modules/atlas/dispatch/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
   it("permits only the six downstream Planning business modules through a bridge", () => {
     for (const module of [
       "readiness/planningInputReadinessApi",
