@@ -141,9 +141,11 @@ export function useSchoolPxkWorkbench({
           return null;
         }
         const next = result.response as unknown as SchoolDispatchWorkbenchData;
+        // Runtime response validation must not rely on the envelope's literal type.
+        const success = (result.response as Record<string, unknown>).success;
         if (
           next.contract_version !== "SCHOOL-DISPATCH-RELEASE.v1" ||
-          next.success !== true ||
+          success !== true ||
           next.date_start !== date ||
           next.date_end !== date ||
           !Array.isArray(next.rows) ||

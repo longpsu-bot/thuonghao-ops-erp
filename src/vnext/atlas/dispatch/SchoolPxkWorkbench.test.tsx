@@ -57,6 +57,32 @@ async function open(label = "Phát hành") {
   return button;
 }
 describe("School PXK operator table and attached detail", () => {
+  it("Cancel restores the displayed date segments as well as the dirty note context", async () => {
+    const h = show();
+    await open();
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
+      { target: { value: "Giữ ngày" } },
+    );
+    fireEvent.focus(screen.getByRole("spinbutton", { name: "Day" }));
+    fireEvent.keyDown(screen.getByRole("spinbutton", { name: "Day" }), {
+      key: "ArrowUp",
+    });
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("spinbutton", { name: "Day" })).toHaveAttribute(
+        "aria-valuenow",
+        "24",
+      ),
+    );
+    expect(
+      screen.getByRole("textbox", { name: "Ghi chú trên phiếu" }),
+    ).toHaveValue("Giữ ngày");
+    expect(h.read).toHaveBeenCalledTimes(1);
+  });
   it("presents filters in operational order", async () => {
     show();
     await open();

@@ -7,7 +7,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -26,7 +26,9 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const lastKey = useRef<string | null>(null);
   const pendingTrigger = useRef<HTMLButtonElement | null>(null);
   const dialogTrigger = useRef<HTMLElement | null>(null);
-  const dialogDestination = useRef<"row" | "detail" | null>(null);
+  const dialogDestination = useRef<"row" | "detail" | "date" | null>(null);
+  const dateControl = useRef<HTMLDivElement>(null);
+  const [dateReset, setDateReset] = useState(0);
   const transition: typeof c.transition = (next) => {
     dialogTrigger.current =
       document.activeElement instanceof HTMLElement
@@ -69,12 +71,15 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
           xl: "minmax(150px, 0.9fr) minmax(180px, 1.4fr) minmax(160px, 1.3fr) minmax(140px, 1fr) auto",
         }}
       >
-        <AtlasDateInput
-          label="Ngày phục vụ"
-          value={c.date}
-          disabled={disabled}
-          onValueChange={(date) => transition({ date })}
-        />
+        <Box ref={dateControl}>
+          <AtlasDateInput
+            key={dateReset}
+            label="Ngày phục vụ"
+            value={c.date}
+            disabled={disabled}
+            onValueChange={(date) => transition({ date })}
+          />
+        </Box>
         <Box>
           <Text textStyle="label" mb="xs">
             Trường / điểm giao
@@ -198,7 +203,10 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
       <SchoolPxkDirtyExitDialog
         open={Boolean(c.pendingTransition)}
         onCancel={() => {
-          dialogDestination.current = null;
+          dialogDestination.current = c.pendingTransition?.date ? "date" : null;
+          // DateInput retains an edited segment internally when its controlled
+          // ISO value is unchanged. Remount only a cancelled date edit.
+          if (c.pendingTransition?.date) setDateReset((value) => value + 1);
           c.cancelTransition();
         }}
         onDiscard={() => {
@@ -215,7 +223,21 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
             ? trigger.current
             : dialogDestination.current === "detail"
               ? detail.current
-              : dialogTrigger.current
+              : dialogDestination.current === "date"
+                ? (Array.from(
+                    dateControl.current?.querySelectorAll<HTMLElement>(
+                      '[role="spinbutton"]',
+                    ) ?? [],
+                  ).find(
+                    (element) =>
+                      element.dataset.type ===
+                      dialogTrigger.current?.dataset.type,
+                  ) ??
+                  dateControl.current?.querySelector<HTMLElement>(
+                    '[role="spinbutton"]',
+                  ) ??
+                  null)
+                : dialogTrigger.current
         }
       />
     </Box>
