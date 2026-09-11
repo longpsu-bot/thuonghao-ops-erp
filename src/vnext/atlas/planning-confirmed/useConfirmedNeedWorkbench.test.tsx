@@ -33,6 +33,53 @@ async function ready(scenario: ConfirmedReviewScenario = "normal") {
   return h;
 }
 describe("Confirmed Need date authority and generation", () => {
+  it("ignores a delayed read failure from a previous authenticated context", async () => {
+    const fixture = createConfirmedNeedReviewFixture();
+    let finish!: (r: ReturnType<typeof reviewFailure>) => void;
+    vi.spyOn(fixture.preflightApi, "preflight").mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { result, rerender } = renderHook(
+      ({ authSubject }) =>
+        useConfirmedNeedWorkbench({
+          ...fixture,
+          authSubject,
+          initialServiceDate: reviewDate,
+          onContinueAllocation: vi.fn(),
+        }),
+      { initialProps: { authSubject: "first" } },
+    );
+    rerender({ authSubject: "second" });
+    await waitFor(() => expect(result.current.canContinue).toBe(true));
+    await act(async () => {
+      finish(reviewFailure());
+    });
+    expect(result.current.lock).toBeNull();
+    expect(result.current.readError).toBeNull();
+    expect(result.current.canContinue).toBe(true);
+  });
+  it("still reads the exact batch when sources become outdated during unknown Save recovery", async () => {
+    const h = await ready("unknown");
+    act(() =>
+      h.result.current.edit("line-0", {
+        exact_quantity: "12.5",
+        quantity_entered: true,
+        reason_code: "OTHER",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    await act(() => h.result.current.save());
+    h.fixture.preflight.downstream_currentness = "OUTDATED";
+    h.read.mockResolvedValue(reviewFailure());
+    await act(() => h.result.current.recover());
+    expect(h.read).toHaveBeenCalledTimes(2);
+    expect(h.result.current.lock).toBe("unknown");
+    expect(h.result.current.readError).toBeTruthy();
+    expect(h.result.current.canGenerate).toBe(false);
+  });
   it("does not offer an outdated update without current run identity", async () => {
     const h = await ready("outdated");
     h.fixture.preflight.current_need = null;

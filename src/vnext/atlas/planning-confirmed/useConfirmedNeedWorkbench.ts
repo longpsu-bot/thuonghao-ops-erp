@@ -73,6 +73,7 @@ export function useConfirmedNeedWorkbench({
   const [correlation] = useState(() => crypto.randomUUID());
   const epoch = useRef(0);
   const inFlight = useRef(false);
+  const saveNeedsReadback = useRef(false);
   const {
     drafts,
     setDrafts,
@@ -123,6 +124,10 @@ export function useConfirmedNeedWorkbench({
     },
     [authSubject, confirmedNeedApi, correlation, date],
   );
+  const failRead = useCallback((message: string) => {
+    setReadError(message);
+    setLock((current) => current ?? "eligibility");
+  }, []);
   const recover = useCallback(async () => {
     if (inFlight.current) return;
     const requestEpoch = ++epoch.current;
@@ -130,35 +135,44 @@ export function useConfirmedNeedWorkbench({
     setBusy(true);
     setReadError(null);
     try {
-      if (!authSubject) throw new Error("Vui lòng đăng nhập để xem nhu cầu.");
+      if (!authSubject) {
+        failRead("Vui lòng đăng nhập để xem nhu cầu.");
+        return;
+      }
       const r = await preflightApi.preflight(
         authSubject,
         correlation,
         date,
         date,
       );
+      if (epoch.current !== requestEpoch) return;
       const p = planningInputPreflightFromResult(r);
-      if (!validPreflight(p, date))
-        throw new Error(
+      if (!validPreflight(p, date)) {
+        failRead(
           r.kind === "success" ? readFailure : confirmedNeedResultMessage(r),
         );
-      const b =
-        p.downstream_currentness === "CURRENT" ? await loadBatch(p) : null;
-      if (p.downstream_currentness === "CURRENT" && !b)
-        throw new Error(readFailure);
+        return;
+      }
+      const requiresBatch =
+        p.downstream_currentness === "CURRENT" || saveNeedsReadback.current;
+      const b = requiresBatch ? await loadBatch(p) : null;
       if (epoch.current !== requestEpoch) return;
+      if (requiresBatch && !b) {
+        failRead(readFailure);
+        return;
+      }
       setPreflight(p);
-      if (b) adopt(b);
+      if (b && p.downstream_currentness === "CURRENT") adopt(b);
       else {
         setWorkbench(null);
         setDrafts({});
       }
       setLock(null);
+      saveNeedsReadback.current = false;
       setNotice(null);
     } catch (e) {
       if (epoch.current === requestEpoch) {
-        setReadError(e instanceof Error ? e.message : readFailure);
-        setLock((current) => current ?? "eligibility");
+        failRead(e instanceof Error ? e.message : readFailure);
       }
     } finally {
       if (epoch.current === requestEpoch) {
@@ -166,7 +180,15 @@ export function useConfirmedNeedWorkbench({
         setBusy(false);
       }
     }
-  }, [authSubject, preflightApi, correlation, date, loadBatch, adopt]);
+  }, [
+    authSubject,
+    preflightApi,
+    correlation,
+    date,
+    loadBatch,
+    adopt,
+    failRead,
+  ]);
   useEffect(() => {
     setPreflight(null);
     setWorkbench(null);
@@ -174,6 +196,7 @@ export function useConfirmedNeedWorkbench({
     setLock(null);
     setNotice(null);
     inFlight.current = false;
+    saveNeedsReadback.current = false;
     void recover();
     return () => {
       epoch.current++;
@@ -273,6 +296,7 @@ export function useConfirmedNeedWorkbench({
       ),
     );
     try {
+      saveNeedsReadback.current = true;
       const r = await confirmedNeedApi.save(request);
       if (epoch.current !== requestEpoch) return;
       const b = confirmedNeedReadbackFromResult(r);
@@ -281,6 +305,7 @@ export function useConfirmedNeedWorkbench({
         b.batch_version > workbench.batch_version
       ) {
         adopt(b);
+        saveNeedsReadback.current = false;
         setLock(null);
         setNotice("Đã lưu thay đổi.");
       } else classifyFailure(r);
