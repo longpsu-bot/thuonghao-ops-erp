@@ -2,6 +2,34 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("permits only the six downstream Planning business modules through a bridge", () => {
+    for (const module of [
+      "readiness/planningInputReadinessApi",
+      "readiness/planningInputReadinessModel",
+      "need-generation/needGenerationApi",
+      "need-generation/needGenerationModel",
+      "confirmed-needs/confirmedNeedApi",
+      "confirmed-needs/confirmedNeedModel",
+    ]) {
+      const source = `export * from "@/modules/atlas/planning-inputs/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/confirmedNeed.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/planning-confirmed/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "need-generation/NeedGenerationWorkbench",
+      "confirmed-needs/ConfirmedNeedReviewWorkbench",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/confirmedNeed.ts": `export * from "@/modules/atlas/planning-inputs/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
   it("permits reviewed Planning business dependencies only inside bridges", () => {
     for (const module of [
       "planningInputsApi",
