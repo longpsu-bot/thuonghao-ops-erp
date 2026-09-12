@@ -7,6 +7,8 @@ const chakraSupportFiles = new Set();
 // Exact extensionless modules, reviewed for business-only dependencies before
 // adding a bridge. Procurement imports only request builders, models and safe copy.
 const approvedLegacyBusinessModules = [
+  "src/modules/atlas/master-data/masterDataApi",
+  "src/modules/atlas/master-data/masterDataModel",
   "src/modules/atlas/dispatch/schoolFulfilmentReconciliationApi",
   "src/modules/atlas/dispatch/schoolFulfilmentReconciliationModel",
   "src/modules/atlas/dispatch/schoolDispatchReleaseApi",

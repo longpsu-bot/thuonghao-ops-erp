@@ -2,6 +2,27 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("permits only reviewed School master-data modules through its bridge", () => {
+    for (const module of ["masterDataApi", "masterDataModel"]) {
+      const source = `export * from "@/modules/atlas/master-data/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/schoolMasterData.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/schools/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "../../../modules/admin/SchoolAdminWorkbench",
+      "../../../modules/atlas/WorkbenchComponents",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/schoolMasterData.ts": `export * from "${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
   it("permits reconciliation business modules only through a bridge and rejects presentation", () => {
     for (const module of [
       "schoolFulfilmentReconciliationApi",
