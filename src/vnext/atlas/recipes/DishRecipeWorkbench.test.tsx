@@ -1,0 +1,312 @@
+import "@testing-library/jest-dom/vitest";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AtlasVNextProvider } from "../AtlasVNextProvider";
+import { DishRecipeWorkbench } from "./DishRecipeWorkbench";
+import {
+  createRecipeReviewFixture,
+  type RecipeScenario,
+} from "./recipeReviewFixtures";
+afterEach(cleanup);
+async function setup(scenario: RecipeScenario = "DISH_ACTIVE_EDITABLE") {
+  const fixture = createRecipeReviewFixture(scenario);
+  render(
+    <AtlasVNextProvider>
+      <DishRecipeWorkbench
+        authSubject="operator"
+        api={fixture.api}
+        initialDate="2026-09-12"
+      />
+    </AtlasVNextProvider>,
+  );
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Tạo món mới" })).toBeEnabled(),
+  );
+  return fixture;
+}
+async function select() {
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Xem công thức Canh bí đỏ thịt bằm",
+    }),
+  );
+  await screen.findByRole("heading", { name: "Công thức gốc" });
+}
+describe("Công thức operator workbench", () => {
+  it("keeps the mobile chooser available when a dirty Dish transition is cancelled", async () => {
+    await setup();
+    await select();
+    fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
+      target: { value: "2,25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Chọn món khác" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem công thức Thịt heo kho" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Thu gọn danh sách món" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: "Xem công thức Thịt heo kho" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
+  });
+  it("restores the full catalogue after closing the compact Dish navigator", async () => {
+    await setup();
+    const columns = () =>
+      within(screen.getByRole("table", { name: "Danh mục món" }))
+        .getAllByRole("columnheader", { hidden: true })
+        .map((h) => h.textContent);
+    expect(columns()).toEqual([
+      "Món",
+      "Loại món",
+      "Trạng thái",
+      "Công thức",
+      "Thao tác",
+    ]);
+    expect(
+      screen.queryByLabelText("Không gian công thức"),
+    ).not.toBeInTheDocument();
+    await select();
+    expect(columns()).toEqual(["Món", "Thao tác"]);
+    fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    expect(columns()).toEqual([
+      "Món",
+      "Loại món",
+      "Trạng thái",
+      "Công thức",
+      "Thao tác",
+    ]);
+  });
+  it.each(["DISH_ACTIVE_EDITABLE", "DISH_INACTIVE"] as const)(
+    "keeps %s status factual without promoting lifecycle actions",
+    async (scenario) => {
+      await setup(scenario);
+      await select();
+      const workspace = within(screen.getByLabelText("Không gian công thức"));
+      expect(
+        workspace.getByText(
+          scenario === "DISH_INACTIVE" ? "Ngừng dùng" : "Đang dùng",
+          { exact: true },
+        ),
+      ).toBeInTheDocument();
+      expect(
+        workspace.getByText("Món canh", { exact: true }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /^(Ngừng dùng|Kích hoạt)$/ }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", {
+          name: /Lệnh điều chỉnh|Tạo bản nháp|Xác thực|Duyệt|Đưa vào sử dụng/,
+        }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    },
+  );
+  it("keeps matching effective facts quiet while editing an unsaved base draft", async () => {
+    await setup();
+    await select();
+    expect(
+      screen.getByText("Đang trùng với công thức gốc"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "Công thức hiệu lực" }),
+    ).not.toBeVisible();
+    fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
+      target: { value: "40" },
+    });
+    expect(
+      screen.getByText("Đang trùng với công thức gốc"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Công thức hiệu lực có thay đổi so với công thức gốc"),
+    ).not.toBeInTheDocument();
+    const base = screen.getByRole("heading", { name: "Công thức gốc" });
+    const effective = screen.getByRole("heading", {
+      name: "Công thức hiệu lực",
+    });
+    expect(
+      base.compareDocumentPosition(effective) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+  it("preserves the original review comparison after successful Save loses readback", async () => {
+    await setup("SAVE_SUCCESS_READBACK_FAILURE");
+    await select();
+    fireEvent.change(screen.getByLabelText("Số suất áp dụng cho định lượng"), {
+      target: { value: "120" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    fireEvent.click(screen.getByRole("button", { name: "Lưu công thức" }));
+    await screen.findByRole("button", { name: "Tải lại để xác nhận" });
+    expect(screen.getByText("Số suất: 80 → 120")).toBeInTheDocument();
+  });
+  it("renders one h1, derived labels, local filters and hidden technical identities", async () => {
+    const f = await setup();
+    const read = vi.spyOn(f.api, "getWorkbench");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Công thức",
+    );
+    expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    expect(screen.queryByText(/hidden-/)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Tìm món"), {
+      target: { value: "thit heo kho" },
+    });
+    expect(
+      screen.getAllByRole("button", { name: /^Xem công thức / }),
+    ).toHaveLength(1);
+    fireEvent.change(screen.getByLabelText("Trạng thái"), {
+      target: { value: "INACTIVE" },
+    });
+    expect(
+      screen.queryByRole("button", { name: /^Xem công thức / }),
+    ).not.toBeInTheDocument();
+    expect(read).not.toHaveBeenCalled();
+  });
+  it("selects a row accessibly, opens base/effective and preserves focus on close", async () => {
+    await setup();
+    await select();
+    const button = screen.getByRole("button", {
+      name: "Xem công thức Canh bí đỏ thịt bằm",
+    });
+    expect(button.closest("tr")).toHaveAttribute("aria-selected", "true");
+    expect(
+      button.closest("tr")?.querySelector("[data-selection-indicator]"),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Công thức hiệu lực" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Loại công thức")).toHaveTextContent(
+      "Khối nhỏ",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    await waitFor(() => expect(button).toHaveFocus());
+  });
+  it("shows searchable active Ingredient add, validates quantity/basis and protects removal as a local draft", async () => {
+    const f = await setup();
+    await select();
+    const write = vi.spyOn(f.api, "saveRecipe");
+    fireEvent.change(screen.getByLabelText("Tìm nguyên liệu để thêm"), {
+      target: { value: "hanh la" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Thêm Hành lá" }));
+    fireEvent.change(screen.getByLabelText("Định lượng Hành lá"), {
+      target: { value: "0" },
+    });
+    expect(screen.getByLabelText("Định lượng Hành lá")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Định lượng Hành lá"), {
+      target: { value: "0,5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Bỏ Bí đỏ" }));
+    expect(write).not.toHaveBeenCalled();
+    expect(screen.getByText("Đang chỉnh sửa · chưa lưu")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    expect(
+      screen.getByRole("heading", { name: "Xem thay đổi" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lưu công thức" })).toBeEnabled();
+  });
+  it("requires dirty confirmation and cancel preserves the exact quantity draft", async () => {
+    await setup();
+    await select();
+    fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
+      target: { value: "2,25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sửa thông tin món" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Có thay đổi chưa lưu");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
+  });
+  it("locked base is read-only with future correction guidance and no lifecycle Recipe controls", async () => {
+    await setup("DISH_ACTIVE_LOCKED");
+    await select();
+    expect(
+      screen.getByText(
+        /Thay đổi tiếp theo được thực hiện trong Lệnh điều chỉnh/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Định lượng Bí đỏ")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: /Lưu công thức|Tạo bản nháp|Xác thực|Duyệt|Đưa vào sử dụng|kế nhiệm|Lệnh điều chỉnh/,
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "Công thức hiệu lực" }),
+    ).toBeInTheDocument();
+  });
+  it("displays authoritative effective differences", async () => {
+    await setup("RECIPE_EFFECTIVE_DIFFERS_FROM_BASE");
+    await select();
+    expect(
+      screen.getByText("Công thức hiệu lực có thay đổi so với công thức gốc"),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole("table", { name: "Công thức hiệu lực" }),
+      ).getByText("Cà rốt"),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole("table", { name: "Công thức hiệu lực" }),
+      ).getByText("19"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("22,5");
+  });
+  it("empty catalogue permits business-only Create with no technical fields", async () => {
+    await setup("EMPTY_CATALOG");
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món mới" }));
+    expect(screen.getByRole("button", { name: "Tạo món" })).toBeDisabled();
+    expect(
+      screen.queryByLabelText(/Mã món|display_order|requires_need_generation/),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Tên món"), {
+      target: { value: "Món mới" },
+    });
+    fireEvent.change(screen.getByLabelText("Loại món của món"), {
+      target: { value: "type-0" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Tạo món" }));
+    await screen.findByRole("heading", { name: "Công thức gốc" });
+    expect(
+      screen.queryByRole("button", { name: /Tạo công thức cho/ }),
+    ).not.toBeInTheDocument();
+  });
+  it("keeps copy and import secondary dialogs, never top-level jobs", async () => {
+    await setup();
+    await select();
+    fireEvent.click(screen.getByRole("button", { name: "Sao chép công thức" }));
+    expect(await screen.findByRole("dialog")).toHaveTextContent(
+      "Lý do sao chép",
+    );
+    expect(
+      screen.getByRole("button", { name: "Xác nhận sao chép" }),
+    ).toBeDisabled();
+  });
+});
