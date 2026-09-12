@@ -288,4 +288,29 @@ describe("Atlas vNext presentation boundary", () => {
     };
     expect(checkSources(sources)[0]).toContain("src/a.ts");
   });
+  it("permits only the reviewed Recipe business/parser bridge and rejects adjustment writers and legacy UI", () => {
+    for (const module of ["recipeApi", "recipeModel", "recipeWorkbook"]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/dishRecipe.ts": `export * from "@/modules/atlas/recipes/${module}";`,
+        }),
+      ).toEqual([]);
+      expect(
+        checkSources({
+          "src/vnext/atlas/recipes/View.tsx": `export * from "@/modules/atlas/recipes/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "admin/DishRecipeAdminWorkbench",
+      "atlas/recipe-adjustments/recipeAdjustmentApi",
+      "atlas/recipe-adjustments/RecipeAdjustmentWorkbench",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/dishRecipe.ts": `export * from "@/modules/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
 });

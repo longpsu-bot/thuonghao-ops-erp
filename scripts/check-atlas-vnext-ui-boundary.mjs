@@ -8,6 +8,9 @@ const chakraSupportFiles = new Set();
 // adding a bridge. Master-data vNext imports only request builders, models, types,
 // and safe copy; legacy Admin presentation remains forbidden.
 const approvedLegacyBusinessModules = [
+  "src/modules/atlas/recipes/recipeApi",
+  "src/modules/atlas/recipes/recipeModel",
+  "src/modules/atlas/recipes/recipeWorkbook",
   "src/modules/atlas/master-data/masterDataApi",
   "src/modules/atlas/master-data/masterDataModel",
   "src/modules/atlas/dispatch/schoolFulfilmentReconciliationApi",
