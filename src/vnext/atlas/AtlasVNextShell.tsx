@@ -36,6 +36,7 @@ export function AtlasVNextShell({
   children: ReactNode;
   activeModule?:
     | "Trường học"
+    | "Nguyên liệu và Nhà cung ứng"
     | "Kế hoạch mua hàng"
     | "Lập nhu cầu"
     | "Phiếu xuất kho"

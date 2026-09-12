@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 // No exceptions currently. New exceptions require an explicit Product decision.
 const chakraSupportFiles = new Set();
 // Exact extensionless modules, reviewed for business-only dependencies before
-// adding a bridge. Procurement imports only request builders, models and safe copy.
+// adding a bridge. Master-data vNext imports only request builders, models, types,
+// and safe copy; legacy Admin presentation remains forbidden.
 const approvedLegacyBusinessModules = [
   "src/modules/atlas/master-data/masterDataApi",
   "src/modules/atlas/master-data/masterDataModel",
