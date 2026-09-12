@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
+import { Box, Heading, Table, Text } from "@chakra-ui/react";
 import { ingredientLabel, unitLabel } from "../bridges/dishRecipe";
 import { recipeDraftFor } from "./recipeDraftModel";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
@@ -61,19 +61,6 @@ export function RecipeReview({ c }: { c: DishRecipeController }) {
           </Table.Body>
         </Table.Root>
       </Box>
-      <Flex mt="md" gap="sm" wrap="wrap" justify="flex-end">
-        <Button disabled={c.busy || Boolean(c.lock)} onClick={c.backToRecipe}>
-          Quay lại chỉnh sửa
-        </Button>
-        <Button
-          variant="businessPrimary"
-          loading={c.busy}
-          disabled={!c.canEdit || !c.validDraft}
-          onClick={() => void c.saveRecipe()}
-        >
-          Lưu công thức
-        </Button>
-      </Flex>
     </Box>
   );
 }

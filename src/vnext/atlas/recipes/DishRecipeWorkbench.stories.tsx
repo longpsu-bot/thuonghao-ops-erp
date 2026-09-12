@@ -160,14 +160,7 @@ export const DishNameConflict: Story = {
     await userEvent.click(c.getByRole("button", { name: "Tạo món" }));
   },
 };
-export const DishLifecycle: Story = {
-  play: async (context) => {
-    await select(context);
-    await userEvent.click(
-      within(context.canvasElement).getByRole("button", { name: "Ngừng dùng" }),
-    );
-  },
-};
+export const DishStatusReadOnly: Story = { play: select };
 export const RecipeEmptyScope: Story = {
   args: { scenario: "RECIPE_EMPTY_SCOPE" },
   play: select,

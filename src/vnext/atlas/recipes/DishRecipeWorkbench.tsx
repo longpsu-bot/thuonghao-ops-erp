@@ -37,6 +37,107 @@ export function DishRecipeWorkbench(props: {
     wasOpen.current = open;
   }, [open, c.context?.dishId, c.surface]);
   const modal = ["copy", "import", "lifecycle"].includes(c.surface ?? "");
+  const operationallyLocked =
+    c.effective?.is_operationally_locked ||
+    c.effective?.editable_state === "LOCKED_CHANGE_ORDER";
+  const catalogueToolbar = (
+    <Flex
+      display={{ base: open ? "none" : "flex", lg: "flex" }}
+      px="md"
+      py="sm"
+      bg="bg.toolbar"
+      gap="sm"
+      align="flex-end"
+      wrap="wrap"
+    >
+      <Field.Root flex="var(--atlas-layout-search-grow, 1 1 200px)">
+        <Field.Label>Tìm món</Field.Label>
+        <Input
+          value={c.query}
+          placeholder="Tên món, loại món, nguyên liệu…"
+          onChange={(e) => c.setQuery(e.target.value)}
+        />
+      </Field.Root>
+      <Field.Root
+        w={
+          open
+            ? "var(--atlas-layout-compact-filter, 119px)"
+            : "var(--atlas-layout-filter-width, 140px)"
+        }
+      >
+        <Field.Label>Trạng thái</Field.Label>
+        <NativeSelect.Root>
+          <NativeSelect.Field
+            value={c.statusFilter}
+            onChange={(e) => c.setStatusFilter(e.target.value)}
+          >
+            <option value="ALL">Tất cả</option>
+            {Object.entries(dishStatusLabel).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+      </Field.Root>
+      <Field.Root
+        w={
+          open
+            ? "var(--atlas-layout-compact-filter, 119px)"
+            : "var(--atlas-layout-filter-width, 160px)"
+        }
+      >
+        <Field.Label>Loại món</Field.Label>
+        <NativeSelect.Root>
+          <NativeSelect.Field
+            value={c.typeFilter}
+            onChange={(e) => c.setTypeFilter(e.target.value)}
+          >
+            <option value="">Tất cả</option>
+            {c.catalog.dish_types.map((t) => (
+              <option key={t.dish_type_id} value={t.dish_type_id}>
+                {t.dish_type_name}
+              </option>
+            ))}
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+      </Field.Root>
+      <AtlasRefreshButton
+        loading={c.loading}
+        disabled={c.refreshDisabled}
+        onClick={() => c.transition({ kind: "refresh" })}
+      />
+      <Button
+        variant="businessPrimary"
+        disabled={!c.canCommand}
+        onClick={() => c.transition({ kind: "create" })}
+      >
+        Tạo món mới
+      </Button>
+    </Flex>
+  );
+  const feedback = !modal && (c.notice || c.error) && (
+    <Box py="sm" role={c.lock || c.error ? "alert" : "status"}>
+      <Text
+        color={
+          c.lock ? "status.warning" : c.error ? "status.danger" : "fg.default"
+        }
+      >
+        {c.notice ?? c.error}
+      </Text>
+      {(c.lock || c.error) && (
+        <Button mt="xs" loading={c.loading} onClick={() => void c.recover()}>
+          {c.lock === "stale"
+            ? "Tải lại dữ liệu hiện tại"
+            : c.lock
+              ? "Tải lại để xác nhận"
+              : "Thử tải lại dữ liệu"}
+        </Button>
+      )}
+    </Box>
+  );
   return (
     <Box
       as="section"
@@ -48,104 +149,12 @@ export function DishRecipeWorkbench(props: {
       minW="var(--atlas-layout-zero, 0)"
     >
       <Box px="md" py="sm">
-        <Text textStyle="helper" color="fg.muted">
-          Công thức
-        </Text>
-        <Heading as="h1" textStyle="workbenchTitle" mt="xs">
+        <Heading as="h1" textStyle="workbenchTitle">
           Công thức
         </Heading>
       </Box>
-      <Flex
-        px="md"
-        py="sm"
-        bg="bg.toolbar"
-        gap="sm"
-        align="flex-end"
-        wrap="wrap"
-      >
-        <Field.Root flex="var(--atlas-layout-search-grow, 1 1 200px)">
-          <Field.Label>Tìm món</Field.Label>
-          <Input
-            value={c.query}
-            placeholder="Tên món, loại món, nguyên liệu…"
-            onChange={(e) => c.setQuery(e.target.value)}
-          />
-        </Field.Root>
-        <Field.Root w="var(--atlas-layout-filter-width, 140px)">
-          <Field.Label>Trạng thái</Field.Label>
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              value={c.statusFilter}
-              onChange={(e) => c.setStatusFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả</option>
-              {Object.entries(dishStatusLabel).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        <Field.Root w="var(--atlas-layout-filter-width, 160px)">
-          <Field.Label>Loại món</Field.Label>
-          <NativeSelect.Root>
-            <NativeSelect.Field
-              value={c.typeFilter}
-              onChange={(e) => c.setTypeFilter(e.target.value)}
-            >
-              <option value="">Tất cả</option>
-              {c.catalog.dish_types.map((t) => (
-                <option key={t.dish_type_id} value={t.dish_type_id}>
-                  {t.dish_type_name}
-                </option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
-        </Field.Root>
-        <AtlasRefreshButton
-          loading={c.loading}
-          disabled={c.refreshDisabled}
-          onClick={() => c.transition({ kind: "refresh" })}
-        />
-        <Button
-          variant="businessPrimary"
-          disabled={!c.canCommand}
-          onClick={() => c.transition({ kind: "create" })}
-        >
-          Tạo món mới
-        </Button>
-      </Flex>
-      {!modal && (c.notice || c.error) && (
-        <Box px="md" pt="sm" role={c.lock || c.error ? "alert" : "status"}>
-          <Text
-            color={
-              c.lock
-                ? "status.warning"
-                : c.error
-                  ? "status.danger"
-                  : "fg.default"
-            }
-          >
-            {c.notice ?? c.error}
-          </Text>
-          {(c.lock || c.error) && (
-            <Button
-              mt="xs"
-              loading={c.loading}
-              onClick={() => void c.recover()}
-            >
-              {c.lock === "stale"
-                ? "Tải lại dữ liệu hiện tại"
-                : c.lock
-                  ? "Tải lại để xác nhận"
-                  : "Thử tải lại dữ liệu"}
-            </Button>
-          )}
-        </Box>
-      )}
+      {!open && catalogueToolbar}
+      {!open && <Box px="md">{feedback}</Box>}
       <Flex px="md" py="xs" justify="space-between" align="center">
         <Text textStyle="helper" color="fg.muted">
           {c.visibleDishes.length} món
@@ -162,17 +171,21 @@ export function DishRecipeWorkbench(props: {
       <Grid
         templateColumns={{
           base: "minmax(0, 1fr)",
-          lg: open ? "minmax(0, 36fr) minmax(0, 64fr)" : "minmax(0, 1fr)",
+          lg: open ? "minmax(260px, 290px) minmax(0, 1fr)" : "minmax(0, 1fr)",
         }}
         minW="var(--atlas-layout-zero, 0)"
       >
-        <DishCatalogue
-          c={c}
-          onSelect={(id, button) => {
-            origin.current = button;
-            c.transition({ kind: "select", dishId: id });
-          }}
-        />
+        <Box minW="var(--atlas-layout-zero, 0)">
+          {open && catalogueToolbar}
+          <DishCatalogue
+            c={c}
+            compact={open}
+            onSelect={(id, button) => {
+              origin.current = button;
+              c.transition({ kind: "select", dishId: id });
+            }}
+          />
+        </Box>
         {open && (
           <Box
             ref={workspace}
@@ -185,9 +198,15 @@ export function DishRecipeWorkbench(props: {
           >
             <Flex justify="space-between" align="center" gap="sm">
               {!c.dishDraft && (
-                <Heading as="h2" textStyle="section">
-                  {c.dish?.dish_name}
-                </Heading>
+                <Box>
+                  <Heading as="h2" textStyle="section">
+                    {c.dish?.dish_name}
+                  </Heading>
+                  <Flex gap="sm" mt="xs" color="fg.muted" textStyle="helper">
+                    <Text>{c.dish?.dish_type_name ?? "Chưa phân loại"}</Text>
+                    <Text>{c.dish && dishStatusLabel[c.dish.dish_status]}</Text>
+                  </Flex>
+                </Box>
               )}
               <Button
                 variant="utility"
@@ -200,40 +219,14 @@ export function DishRecipeWorkbench(props: {
               </Button>
             </Flex>
             {c.dishDraft ? (
-              <DishEditor c={c} />
+              <>
+                {feedback}
+                <DishEditor c={c} />
+              </>
             ) : (
               <>
-                <Flex gap="xs" mt="xs" wrap="wrap">
-                  <Button
-                    size="sm"
-                    variant="utility"
-                    disabled={!c.canCommand}
-                    onClick={() => c.transition({ kind: "edit" })}
-                  >
-                    Sửa thông tin món
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="utility"
-                    disabled={!c.canCommand}
-                    onClick={() => c.transition({ kind: "lifecycle" })}
-                  >
-                    {c.dish?.dish_status === "ACTIVE"
-                      ? "Ngừng dùng"
-                      : "Kích hoạt"}
-                  </Button>
-                  {c.canCopy && (
-                    <Button
-                      size="sm"
-                      variant="utility"
-                      onClick={() => c.transition({ kind: "copy" })}
-                    >
-                      Sao chép công thức
-                    </Button>
-                  )}
-                </Flex>
                 <Flex mt="sm" gap="sm" wrap="wrap" align="flex-end">
-                  <Field.Root flex="var(--atlas-layout-context-flex, 1 1 160px)">
+                  <Field.Root w="var(--atlas-layout-context-width, 160px)">
                     <Field.Label>Loại công thức</Field.Label>
                     <NativeSelect.Root disabled={c.busy || Boolean(c.lock)}>
                       <NativeSelect.Field
@@ -257,7 +250,7 @@ export function DishRecipeWorkbench(props: {
                       <NativeSelect.Indicator />
                     </NativeSelect.Root>
                   </Field.Root>
-                  <Box flex="var(--atlas-layout-context-flex, 1 1 160px)">
+                  <Box w="var(--atlas-layout-context-width, 180px)">
                     <AtlasDateInput
                       label="Ngày áp dụng"
                       value={c.date}
@@ -267,7 +260,45 @@ export function DishRecipeWorkbench(props: {
                       }
                     />
                   </Box>
+                  <Flex
+                    gap="xs"
+                    wrap="wrap"
+                    ml={{
+                      base: "var(--atlas-layout-zero, 0)",
+                      lg: "var(--atlas-layout-utility-margin, auto)",
+                    }}
+                  >
+                    <Button
+                      size="sm"
+                      variant="utility"
+                      disabled={!c.canCommand}
+                      onClick={() => c.transition({ kind: "edit" })}
+                    >
+                      Sửa thông tin món
+                    </Button>
+                    {c.canCopy && (
+                      <Button
+                        size="sm"
+                        variant="utility"
+                        onClick={() => c.transition({ kind: "copy" })}
+                      >
+                        Sao chép công thức
+                      </Button>
+                    )}
+                  </Flex>
                 </Flex>
+                {feedback}
+                {operationallyLocked && (
+                  <Box mt="sm">
+                    <Text>
+                      Món này đã được sử dụng trong vận hành. Thành phần gốc
+                      không thể sửa trực tiếp.
+                    </Text>
+                    <Text textStyle="helper" color="fg.muted" mt="xs">
+                      Thay đổi tiếp theo được thực hiện trong Lệnh điều chỉnh.
+                    </Text>
+                  </Box>
+                )}
                 {c.loading && (
                   <Text mt="sm" role="status">
                     Đang tải công thức…
@@ -282,6 +313,36 @@ export function DishRecipeWorkbench(props: {
                   />
                 )}
                 <EffectiveRecipeView effective={c.effective} />
+                {c.recipeDraft && (c.review || c.canEdit) && (
+                  <Flex mt="md" gap="sm" wrap="wrap" justify="flex-end">
+                    {c.review ? (
+                      <>
+                        <Button
+                          disabled={c.busy || Boolean(c.lock)}
+                          onClick={c.backToRecipe}
+                        >
+                          Quay lại
+                        </Button>
+                        <Button
+                          variant="businessPrimary"
+                          loading={c.busy}
+                          disabled={!c.canEdit || !c.validDraft}
+                          onClick={() => void c.saveRecipe()}
+                        >
+                          Lưu công thức
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="businessPrimary"
+                        disabled={!c.validDraft}
+                        onClick={c.reviewRecipe}
+                      >
+                        Xem thay đổi
+                      </Button>
+                    )}
+                  </Flex>
+                )}
               </>
             )}
           </Box>

@@ -40,6 +40,111 @@ async function select() {
   await screen.findByRole("heading", { name: "Công thức gốc" });
 }
 describe("Công thức operator workbench", () => {
+  it("keeps the mobile chooser available when a dirty Dish transition is cancelled", async () => {
+    await setup();
+    await select();
+    fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
+      target: { value: "2,25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Chọn món khác" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Xem công thức Thịt heo kho" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Thu gọn danh sách món" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: "Xem công thức Thịt heo kho" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
+  });
+  it("restores the full catalogue after closing the compact Dish navigator", async () => {
+    await setup();
+    const columns = () =>
+      within(screen.getByRole("table", { name: "Danh mục món" }))
+        .getAllByRole("columnheader", { hidden: true })
+        .map((h) => h.textContent);
+    expect(columns()).toEqual([
+      "Món",
+      "Loại món",
+      "Trạng thái",
+      "Công thức",
+      "Thao tác",
+    ]);
+    expect(
+      screen.queryByLabelText("Không gian công thức"),
+    ).not.toBeInTheDocument();
+    await select();
+    expect(columns()).toEqual(["Món", "Thao tác"]);
+    fireEvent.click(screen.getByRole("button", { name: "Đóng công thức" }));
+    expect(columns()).toEqual([
+      "Món",
+      "Loại món",
+      "Trạng thái",
+      "Công thức",
+      "Thao tác",
+    ]);
+  });
+  it.each(["DISH_ACTIVE_EDITABLE", "DISH_INACTIVE"] as const)(
+    "keeps %s status factual without promoting lifecycle actions",
+    async (scenario) => {
+      await setup(scenario);
+      await select();
+      const workspace = within(screen.getByLabelText("Không gian công thức"));
+      expect(
+        workspace.getByText(
+          scenario === "DISH_INACTIVE" ? "Ngừng dùng" : "Đang dùng",
+          { exact: true },
+        ),
+      ).toBeInTheDocument();
+      expect(
+        workspace.getByText("Món canh", { exact: true }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /^(Ngừng dùng|Kích hoạt)$/ }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", {
+          name: /Lệnh điều chỉnh|Tạo bản nháp|Xác thực|Duyệt|Đưa vào sử dụng/,
+        }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+    },
+  );
+  it("keeps matching effective facts quiet while editing an unsaved base draft", async () => {
+    await setup();
+    await select();
+    expect(
+      screen.getByText("Đang trùng với công thức gốc"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "Công thức hiệu lực" }),
+    ).not.toBeVisible();
+    fireEvent.change(screen.getByLabelText("Định lượng Bí đỏ"), {
+      target: { value: "40" },
+    });
+    expect(
+      screen.getByText("Đang trùng với công thức gốc"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Công thức hiệu lực có thay đổi so với công thức gốc"),
+    ).not.toBeInTheDocument();
+    const base = screen.getByRole("heading", { name: "Công thức gốc" });
+    const effective = screen.getByRole("heading", {
+      name: "Công thức hiệu lực",
+    });
+    expect(
+      base.compareDocumentPosition(effective) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
   it("preserves the original review comparison after successful Save loses readback", async () => {
     await setup("SAVE_SUCCESS_READBACK_FAILURE");
     await select();
@@ -142,7 +247,9 @@ describe("Công thức operator workbench", () => {
     await setup("DISH_ACTIVE_LOCKED");
     await select();
     expect(
-      screen.getByText(/Thay đổi thành phần tiếp theo/),
+      screen.getByText(
+        /Thay đổi tiếp theo được thực hiện trong Lệnh điều chỉnh/,
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Định lượng Bí đỏ")).not.toBeInTheDocument();
     expect(
@@ -150,10 +257,16 @@ describe("Công thức operator workbench", () => {
         name: /Lưu công thức|Tạo bản nháp|Xác thực|Duyệt|Đưa vào sử dụng|kế nhiệm|Lệnh điều chỉnh/,
       }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("table", { name: "Công thức hiệu lực" }),
+    ).toBeInTheDocument();
   });
   it("displays authoritative effective differences", async () => {
     await setup("RECIPE_EFFECTIVE_DIFFERS_FROM_BASE");
     await select();
+    expect(
+      screen.getByText("Công thức hiệu lực có thay đổi so với công thức gốc"),
+    ).toBeInTheDocument();
     expect(
       within(
         screen.getByRole("table", { name: "Công thức hiệu lực" }),

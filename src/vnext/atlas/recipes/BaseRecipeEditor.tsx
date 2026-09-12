@@ -63,12 +63,6 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                   : "Chưa có nội dung"}
         </Text>
       </Flex>
-      {locked && (
-        <Text mt="sm">
-          Món này đã được sử dụng trong vận hành. Thay đổi thành phần tiếp theo
-          phải được thực hiện bằng Lệnh điều chỉnh.
-        </Text>
-      )}
       {editable ? (
         <Field.Root mt="sm" invalid={!basisValid}>
           <Field.Label>Số suất áp dụng cho định lượng</Field.Label>
@@ -265,15 +259,6 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
               đang dùng.
             </Text>
           )}
-          <Flex justify="flex-end" mt="sm">
-            <Button
-              variant="businessPrimary"
-              disabled={!c.validDraft}
-              onClick={c.reviewRecipe}
-            >
-              Xem thay đổi
-            </Button>
-          </Flex>
         </>
       )}
     </Box>
