@@ -33,6 +33,7 @@ export type DishDraft = {
 };
 type Context = { dishId: string; schoolTypeId: string; date: string };
 export type RecipeTransition =
+  | { kind: "job"; continue: () => void }
   | { kind: "select"; dishId: string }
   | { kind: "scope"; schoolTypeId: string }
   | { kind: "date"; date: string }
@@ -313,7 +314,8 @@ export function useDishRecipeWorkbench({
     setNotice(null);
     if (authority.effective)
       setRecipeDraft(recipeDraftFor(authority.effective.base_authoring));
-    if (next.kind === "select") {
+    if (next.kind === "job") next.continue();
+    else if (next.kind === "select") {
       if (scopes[0])
         void load({
           dishId: next.dishId,

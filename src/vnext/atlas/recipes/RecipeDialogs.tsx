@@ -11,7 +11,17 @@ import { useRef, useState } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
 
-export function RecipeDirtyExitDialog({ c }: { c: DishRecipeController }) {
+export function RecipeDirtyExitDialog({
+  c,
+}: {
+  c: Pick<
+    DishRecipeController,
+    | "discardOpen"
+    | "cancelDiscard"
+    | "confirmDiscard"
+    | "completeDiscardTransition"
+  >;
+}) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
     <Dialog.Root

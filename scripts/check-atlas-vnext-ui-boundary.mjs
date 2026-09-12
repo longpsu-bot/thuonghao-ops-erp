@@ -8,6 +8,8 @@ const chakraSupportFiles = new Set();
 // adding a bridge. Master-data vNext imports only request builders, models, types,
 // and safe copy; legacy Admin presentation remains forbidden.
 const approvedLegacyBusinessModules = [
+  "src/modules/atlas/recipe-adjustments/recipeAdjustmentApi",
+  "src/modules/atlas/recipe-adjustments/recipeAdjustmentModel",
   "src/modules/atlas/recipes/recipeApi",
   "src/modules/atlas/recipes/recipeModel",
   "src/modules/atlas/recipes/recipeWorkbook",
@@ -86,6 +88,8 @@ export function checkSources(
         !target.startsWith("src/vnext/") &&
         !(
           file.startsWith("src/vnext/atlas/bridges/") &&
+          (!target.includes("/recipe-adjustments/") ||
+            file === "src/vnext/atlas/bridges/recipeAdjustment.ts") &&
           approvedBusinessModules.includes(target.replace(sourceExtension, ""))
         )
       )

@@ -9,7 +9,8 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useImperativeHandle, type Ref } from "react";
+import type { RecipeJobHandle } from "./useChangeOrderWorkbench";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import type { DishRecipeApi } from "../bridges/dishRecipe";
@@ -25,8 +26,20 @@ export function DishRecipeWorkbench(props: {
   authSubject: string | null;
   api: DishRecipeApi;
   initialDate?: string;
+  embedded?: boolean;
+  exitRef?: Ref<RecipeJobHandle>;
 }) {
   const c = useDishRecipeWorkbench(props);
+  useImperativeHandle(props.exitRef, () => ({
+    requestExit: (next) => {
+      if (
+        !c.review &&
+        !c.loading &&
+        !["copy", "import", "lifecycle"].includes(c.surface ?? "")
+      )
+        c.transition({ kind: "job", continue: next });
+    },
+  }));
   const workspace = useRef<HTMLDivElement>(null),
     origin = useRef<HTMLButtonElement | null>(null);
   const open = Boolean(c.context || c.surface === "create");
@@ -148,11 +161,13 @@ export function DishRecipeWorkbench(props: {
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Box px="md" py="sm">
-        <Heading as="h1" textStyle="workbenchTitle">
-          Công thức
-        </Heading>
-      </Box>
+      {!props.embedded && (
+        <Box px="md" py="sm">
+          <Heading as="h1" textStyle="workbenchTitle">
+            Công thức
+          </Heading>
+        </Box>
+      )}
       {!open && catalogueToolbar}
       {!open && <Box px="md">{feedback}</Box>}
       <Flex px="md" py="xs" justify="space-between" align="center">

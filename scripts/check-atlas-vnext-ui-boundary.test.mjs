@@ -2,6 +2,30 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("allows only Recipe Adjustment business API/model through a bridge", () => {
+    for (const module of ["recipeAdjustmentApi", "recipeAdjustmentModel"]) {
+      const source = `export * from "@/modules/atlas/recipe-adjustments/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/recipeAdjustment.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/recipes/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "@/modules/admin/RecipeAdjustmentWorkbench",
+      "@/modules/atlas/recipe-adjustments/reviewRecipeAdjustmentApi",
+      "@/modules/atlas/WorkbenchComponents",
+      "@mantine/core",
+      "@/styles.css",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/recipeAdjustment.ts": `export * from "${module}";`,
+        }),
+      ).not.toEqual([]);
+    }
+  });
   it("permits only reviewed Ingredient/Supplier business modules through its bridge", () => {
     for (const module of ["masterDataApi", "masterDataModel"]) {
       const source = `export * from "@/modules/atlas/master-data/${module}";`;
