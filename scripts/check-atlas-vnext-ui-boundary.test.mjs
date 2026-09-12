@@ -2,6 +2,30 @@ import { describe, expect, it } from "vitest";
 import { checkSources } from "./check-atlas-vnext-ui-boundary.mjs";
 
 describe("Atlas vNext presentation boundary", () => {
+  it("allows only Recipe Adjustment business API/model through a bridge", () => {
+    for (const module of ["recipeAdjustmentApi", "recipeAdjustmentModel"]) {
+      const source = `export * from "@/modules/atlas/recipe-adjustments/${module}";`;
+      expect(
+        checkSources({ "src/vnext/atlas/bridges/recipeAdjustment.ts": source }),
+      ).toEqual([]);
+      expect(
+        checkSources({ "src/vnext/atlas/recipes/View.tsx": source }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "@/modules/admin/RecipeAdjustmentWorkbench",
+      "@/modules/atlas/recipe-adjustments/reviewRecipeAdjustmentApi",
+      "@/modules/atlas/WorkbenchComponents",
+      "@mantine/core",
+      "@/styles.css",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/recipeAdjustment.ts": `export * from "${module}";`,
+        }),
+      ).not.toEqual([]);
+    }
+  });
   it("permits only reviewed Ingredient/Supplier business modules through its bridge", () => {
     for (const module of ["masterDataApi", "masterDataModel"]) {
       const source = `export * from "@/modules/atlas/master-data/${module}";`;
@@ -287,5 +311,30 @@ describe("Atlas vNext presentation boundary", () => {
       "src/a.ts": 'import "@chakra-ui/react"',
     };
     expect(checkSources(sources)[0]).toContain("src/a.ts");
+  });
+  it("permits only the reviewed Recipe business/parser bridge and rejects adjustment writers and legacy UI", () => {
+    for (const module of ["recipeApi", "recipeModel", "recipeWorkbook"]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/dishRecipe.ts": `export * from "@/modules/atlas/recipes/${module}";`,
+        }),
+      ).toEqual([]);
+      expect(
+        checkSources({
+          "src/vnext/atlas/recipes/View.tsx": `export * from "@/modules/atlas/recipes/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
+    for (const module of [
+      "admin/DishRecipeAdminWorkbench",
+      "atlas/recipe-adjustments/recipeAdjustmentApi",
+      "atlas/recipe-adjustments/RecipeAdjustmentWorkbench",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/bridges/dishRecipe.ts": `export * from "@/modules/${module}";`,
+        }),
+      ).toHaveLength(1);
+    }
   });
 });
