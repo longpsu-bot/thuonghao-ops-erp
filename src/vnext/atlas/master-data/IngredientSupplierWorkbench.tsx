@@ -143,6 +143,7 @@ export function IngredientSupplierWorkbench({
         open={c.discardOpen}
         onCancel={c.cancelDiscard}
         onDiscard={c.confirmDiscard}
+        onExitComplete={c.completeDiscardTransition}
       />
     </Box>
   );

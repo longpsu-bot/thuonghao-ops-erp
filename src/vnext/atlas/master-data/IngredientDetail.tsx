@@ -209,7 +209,7 @@ export function IngredientDetail({
                 <Button
                   variant="destructive"
                   onClick={() =>
-                    c.openLifecycle(item.ingredient_id, "INACTIVE")
+                    c.requestLifecycle(item.ingredient_id, "INACTIVE")
                   }
                 >
                   Ngừng dùng
@@ -219,14 +219,16 @@ export function IngredientDetail({
             {item?.ingredient_status === "INACTIVE" && (
               <>
                 <Button
-                  onClick={() => c.openLifecycle(item.ingredient_id, "ACTIVE")}
+                  onClick={() =>
+                    c.requestLifecycle(item.ingredient_id, "ACTIVE")
+                  }
                 >
                   Kích hoạt
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={() =>
-                    c.openLifecycle(item.ingredient_id, "ARCHIVED")
+                    c.requestLifecycle(item.ingredient_id, "ARCHIVED")
                   }
                 >
                   Lưu trữ

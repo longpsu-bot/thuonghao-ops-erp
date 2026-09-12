@@ -5,10 +5,12 @@ export function MasterDataDirtyExitDialog({
   open,
   onCancel,
   onDiscard,
+  onExitComplete,
 }: {
   open: boolean;
   onCancel: () => void;
   onDiscard: () => void;
+  onExitComplete: () => void;
 }) {
   const cancel = useRef<HTMLButtonElement>(null);
   return (
@@ -16,6 +18,7 @@ export function MasterDataDirtyExitDialog({
       open={open}
       initialFocusEl={() => cancel.current}
       onOpenChange={({ open: next }) => !next && onCancel()}
+      onExitComplete={onExitComplete}
       placement="center"
       lazyMount
       unmountOnExit

@@ -49,7 +49,12 @@ type PendingTransition =
   | { kind: "job"; job: WorkbenchJob }
   | { kind: "ingredient"; id: string }
   | { kind: "supplier"; id: string }
-  | { kind: "priorities"; ingredientId: string };
+  | { kind: "priorities"; ingredientId: string }
+  | {
+      kind: "lifecycle";
+      ingredientId: string;
+      status: IngredientMasterData["ingredient_status"];
+    };
 
 type IngredientReview = {
   kind: "ingredient";
@@ -173,6 +178,7 @@ export function useIngredientSupplierWorkbench({
   const [review, setReview] = useState<WorkbenchReview | null>(null);
   const [pendingTransition, setPendingTransition] =
     useState<PendingTransition | null>(null);
+  const discardedTransition = useRef<PendingTransition | null>(null);
   const requestGeneration = useRef(0);
 
   const resetSurfaces = useCallback(() => {
@@ -602,6 +608,8 @@ export function useIngredientSupplierWorkbench({
     if (transition.kind === "supplier") openSupplier(transition.id);
     if (transition.kind === "priorities")
       openPriorities(transition.ingredientId);
+    if (transition.kind === "lifecycle")
+      openLifecycle(transition.ingredientId, transition.status);
   };
   const requestTransition = (transition: PendingTransition) => {
     if (dirty) setPendingTransition(transition);
@@ -611,7 +619,16 @@ export function useIngredientSupplierWorkbench({
     if (!pendingTransition) return;
     const transition = pendingTransition;
     setPendingTransition(null);
+    if (transition.kind === "lifecycle") {
+      discardedTransition.current = transition;
+      return;
+    }
     performTransition(transition);
+  };
+  const completeDiscardTransition = () => {
+    const transition = discardedTransition.current;
+    discardedTransition.current = null;
+    if (transition) performTransition(transition);
   };
 
   return {
@@ -663,11 +680,16 @@ export function useIngredientSupplierWorkbench({
       requestTransition({ kind: "supplier", id }),
     requestPriorities: (ingredientId: string) =>
       requestTransition({ kind: "priorities", ingredientId }),
+    requestLifecycle: (
+      ingredientId: string,
+      status: IngredientMasterData["ingredient_status"],
+    ) => requestTransition({ kind: "lifecycle", ingredientId, status }),
     requestJob: (nextJob: WorkbenchJob) =>
       requestTransition({ kind: "job", job: nextJob }),
     requestClose: () => requestTransition({ kind: "close" }),
     cancelDiscard: () => setPendingTransition(null),
     confirmDiscard,
+    completeDiscardTransition,
     closeReview: () => !saving && setReview(null),
     closeSurface: resetSurfaces,
     refresh,

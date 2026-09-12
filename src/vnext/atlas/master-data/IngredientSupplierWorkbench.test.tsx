@@ -266,6 +266,11 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
     fireEvent.click(screen.getByRole("button", { name: "Ngừng dùng" }));
     expect(
+      screen.queryByRole("dialog", {
+        name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
       await screen.findByRole("dialog", { name: "Ngừng dùng nguyên liệu?" }),
     ).toHaveTextContent("Các ưu tiên nhà cung ứng hiện tại sẽ được gỡ.");
     fireEvent.click(screen.getByRole("button", { name: "Hủy" }));
@@ -280,6 +285,95 @@ describe("IngredientSupplierWorkbench", () => {
       screen.queryByRole("button", { name: /Kích hoạt|Ngừng dùng|Lưu trữ/ }),
     ).not.toBeInTheDocument();
   });
+
+  it("guards a dirty ACTIVE lifecycle request and preserves or explicitly discards the draft", async () => {
+    renderWorkbench();
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+      target: { value: "Bí đỏ chưa lưu" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Ngừng dùng" }));
+    const firstDirtyDialog = await screen.findByRole("dialog", {
+      name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+    });
+    expect(
+      screen.queryByRole("dialog", { name: "Ngừng dùng nguyên liệu?" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(firstDirtyDialog).getByRole("button", {
+        name: "Tiếp tục chỉnh sửa",
+      }),
+    );
+    await waitFor(() =>
+      expect(firstDirtyDialog).toHaveAttribute("data-state", "closed"),
+    );
+    expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue(
+      "Bí đỏ chưa lưu",
+    );
+    expect(
+      screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "Ngừng dùng nguyên liệu?" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ngừng dùng" }));
+    const secondDirtyDialog = await screen.findByRole("dialog", {
+      name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+    });
+    fireEvent.click(
+      within(secondDirtyDialog).getByRole("button", { name: "Bỏ thay đổi" }),
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Ngừng dùng nguyên liệu?" }),
+    ).not.toBeInTheDocument();
+    fireEvent.animationEnd(secondDirtyDialog);
+    const lifecycleDialog = await screen.findByRole("dialog", {
+      name: "Ngừng dùng nguyên liệu?",
+    });
+    expect(secondDirtyDialog).toHaveAttribute("data-state", "closed");
+
+    fireEvent.click(
+      within(lifecycleDialog).getByRole("button", { name: "Hủy" }),
+    );
+    const restoredDetail = await screen.findByRole("complementary", {
+      name: "Chi tiết nguyên liệu",
+    });
+    await waitFor(() => expect(restoredDetail).toHaveFocus());
+    expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue("Bí mật");
+  });
+
+  it.each([
+    ["Kích hoạt", "Kích hoạt nguyên liệu?"],
+    ["Lưu trữ", "Lưu trữ nguyên liệu?"],
+  ])(
+    "guards a dirty INACTIVE Ingredient before %s",
+    async (action, lifecycleTitle) => {
+      renderWorkbench();
+      await ready();
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Xem / sửa Nguyên liệu ngừng dùng",
+        }),
+      );
+      fireEvent.change(screen.getByLabelText("Tên nguyên liệu"), {
+        target: { value: "Nguyên liệu ngừng dùng đã sửa" },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: action }));
+      expect(
+        await screen.findByRole("dialog", {
+          name: "Có thay đổi chưa lưu. Bỏ thay đổi và tiếp tục?",
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", { name: lifecycleTitle }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it("keeps inactive authoritative priority visible and blocks Review until removed", async () => {
     renderWorkbench();
@@ -347,9 +441,7 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Tiếp tục chỉnh sửa" }),
     );
-    await waitFor(() =>
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-    );
+    await waitFor(() => expect(dialog).toHaveAttribute("data-state", "closed"));
     expect(screen.getByLabelText("Tên nguyên liệu")).toHaveValue("Bí đỏ");
     fireEvent.click(screen.getByRole("tab", { name: "Nhà cung ứng" }));
     fireEvent.click(
