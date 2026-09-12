@@ -15,6 +15,19 @@ import { AtlasVNextShell } from "./AtlasVNextShell";
 afterEach(cleanup);
 
 describe("Atlas vNext shell", () => {
+  it("marks the review-only Ingredient and Supplier module active", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell activeModule="Nguyên liệu và Nhà cung ứng">
+          <p>Ingredient and Supplier review</p>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mở điều hướng" }));
+    expect(
+      screen.getByRole("button", { name: "Nguyên liệu và Nhà cung ứng" }),
+    ).toHaveAttribute("aria-current", "page");
+  });
   it("marks the review-only School module active", () => {
     render(
       <AtlasVNextProvider>
