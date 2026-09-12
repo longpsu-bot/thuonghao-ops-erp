@@ -34,7 +34,11 @@ export function AtlasVNextShell({
   activeModule = "Kế hoạch mua hàng",
 }: {
   children: ReactNode;
-  activeModule?: "Kế hoạch mua hàng" | "Lập nhu cầu" | "Phiếu xuất kho";
+  activeModule?:
+    | "Kế hoạch mua hàng"
+    | "Lập nhu cầu"
+    | "Phiếu xuất kho"
+    | "Đối chiếu PO / Phiếu xuất kho";
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
