@@ -234,9 +234,10 @@ export function useChangeOrderWorkbench({
     setSelected(null);
     setDiscardOpen(false);
     pendingExit.current = null;
+    pendingWrite.current = null;
     commandBusy.current = false;
     setBusy(false);
-    setLock(pendingWrite.current ? "unknown" : null);
+    setLock(null);
     setMessage("");
     if (authSubject) void read();
     else setMessage("Vui lòng đăng nhập để xem lệnh điều chỉnh.");
@@ -248,7 +249,7 @@ export function useChangeOrderWorkbench({
       inspectionId.current++;
       effectiveId.current++;
     };
-    // The account/API pair owns this complete session. Pending write proof survives account changes.
+    // Recovery state belongs only to this account/API session; new ownership reads fresh authority.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authSubject, api]);
   useEffect(() => {

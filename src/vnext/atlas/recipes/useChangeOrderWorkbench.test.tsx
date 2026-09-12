@@ -7,18 +7,26 @@ import {
   type ChangeOrderScenario,
 } from "./changeOrderReviewFixtures";
 import { fixtureError, fixtureSuccess } from "./recipeReviewFixtures";
-import type { AtlasRpcResult } from "../bridges/recipeAdjustment";
+import type {
+  AtlasRpcResult,
+  RecipeAdjustmentApi,
+} from "../bridges/recipeAdjustment";
 afterEach(cleanup);
 async function setup(scenario: ChangeOrderScenario = "ACTIVE") {
   const f = createChangeOrderFixture(scenario);
   const hook = renderHook(
-    ({ subject }) =>
+    ({ subject, api = f.api }) =>
       useChangeOrderWorkbench({
-        api: f.api,
+        api,
         authSubject: subject,
         initialDate: changeDate,
       }),
-    { initialProps: { subject: "operator" as string | null } },
+    {
+      initialProps: { subject: "operator" } as {
+        subject: string | null;
+        api?: RecipeAdjustmentApi;
+      },
+    },
   );
   await waitFor(() => expect(hook.result.current.ready).toBe(true));
   return { ...f, ...hook };
@@ -97,6 +105,9 @@ describe("Change Order authoritative controller", () => {
         );
       }
       expect(c.result.current.lock).toBe("unknown");
+      c.rerender({ subject: "operator" });
+      expect(c.result.current.lock).toBe("unknown");
+      expect(c.result.current.canAct).toBe(false);
       expect(c.result.current.message).toBe(
         "Atlas chưa thể xác nhận thao tác đã hoàn tất hay chưa.",
       );
@@ -354,27 +365,205 @@ describe("Change Order delayed authority and failure boundaries", () => {
     expect(c.result.current.inspection).toBeNull();
     expect(c.result.current.preview).toBeNull();
   });
-  it("retains an old account's uncertain mutation without adopting its late response", async () => {
+  it.each(["success", "denied", "unknown"] as const)(
+    "starts B clean while A's Create is delayed and ignores A's late %s",
+    async (outcome) => {
+      const c = await setup();
+      await prepare(c);
+      let finish!: (r: AtlasRpcResult) => void;
+      const create = vi.fn(
+        (): Promise<AtlasRpcResult> =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      c.api.create = create;
+      let pending!: Promise<void>;
+      act(() => {
+        pending = c.result.current.save();
+      });
+      expect(c.result.current.busy).toBe(true);
+      let finishRead!: (r: AtlasRpcResult) => void;
+      const read = vi.fn(
+        (): Promise<AtlasRpcResult> =>
+          new Promise((resolve) => {
+            finishRead = resolve;
+          }),
+      );
+      c.api.getOperatorWorkbench = read;
+      c.rerender({ subject: "another" });
+      expect(read).toHaveBeenCalledExactlyOnceWith(
+        "another",
+        expect.any(String),
+        changeDate,
+      );
+      expect(c.result.current).toMatchObject({
+        draft: null,
+        selected: null,
+        editing: null,
+        preview: null,
+        targets: null,
+        cancelTarget: null,
+        discardOpen: false,
+        busy: false,
+        lock: null,
+        ready: false,
+        canAct: false,
+      });
+      await act(async () =>
+        finishRead(fixtureSuccess({ workbench: structuredClone(c.data) })),
+      );
+      await waitFor(() => expect(c.result.current.ready).toBe(true));
+      expect(c.result.current.canAct).toBe(true);
+      act(() => c.result.current.openCreate());
+      act(() => c.result.current.updateDraft({ reason: "B's own draft" }));
+      const before = c.result.current;
+      await act(async () => {
+        finish(
+          outcome === "success"
+            ? fixtureSuccess()
+            : outcome === "denied"
+              ? fixtureError("CAPABILITY_DENIED")
+              : {
+                  kind: "transport_error",
+                  diagnostic: {
+                    code: "NETWORK_FAILURE",
+                    safeMessage: "Delayed connection failure",
+                  },
+                },
+        );
+        await pending;
+      });
+      expect(c.result.current).toBe(before);
+      expect(c.result.current.draft?.reason).toBe("B's own draft");
+      expect(create).toHaveBeenCalledOnce();
+      expect(read).toHaveBeenCalledOnce();
+    },
+  );
+  it("treats A's committed revision in B's read as ordinary ledger authority", async () => {
     const c = await setup();
     await prepare(c);
+    const adjustmentId = c.result.current.draft!.adjustmentId;
+    const revisionId = c.result.current.draft!.revisionId;
+    const original = c.api.create;
     let finish!: (r: AtlasRpcResult) => void;
-    c.api.create = async () =>
-      new Promise((resolve) => {
+    let response!: AtlasRpcResult;
+    c.api.create = async (request) => {
+      response = await original(request);
+      return new Promise((resolve) => {
         finish = resolve;
       });
+    };
     let pending!: Promise<void>;
     act(() => {
       pending = c.result.current.save();
     });
+    await waitFor(() => expect(finish).toBeTypeOf("function"));
     c.rerender({ subject: "another" });
     await waitFor(() => expect(c.result.current.ready).toBe(true));
+    expect(c.result.current).toMatchObject({
+      lock: null,
+      canAct: true,
+      selected: null,
+      draft: null,
+      preview: null,
+      message: "",
+    });
+    expect(
+      c.result.current.data.operator_rows.find(
+        (r) => r.adjustment_id === adjustmentId,
+      )?.current_revision_id,
+    ).toBe(revisionId);
+    const before = c.result.current;
     await act(async () => {
-      finish(fixtureSuccess());
+      finish(response);
       await pending;
     });
-    expect(c.result.current.lock).toBe("unknown");
-    expect(c.result.current.draft).toBeNull();
-    expect(c.result.current.selected).toBeNull();
+    expect(c.result.current).toBe(before);
+    expect(c.calls.filter((x) => x.name === "create")).toHaveLength(1);
+    expect(c.calls.filter((x) => x.name === "read")).toHaveLength(2);
+  });
+  it.each(["auth", "api"] as const)(
+    "clears same-session UNKNOWN only when %s ownership changes and obeys the fresh read",
+    async (ownership) => {
+      const c = await setup("UNKNOWN_CREATE");
+      await prepare(c);
+      await act(() => c.result.current.save());
+      expect(c.result.current.lock).toBe("unknown");
+      const read = vi.fn(async () => fixtureError("CAPABILITY_DENIED"));
+      const api = { ...c.api, getOperatorWorkbench: read };
+      if (ownership === "auth") c.api.getOperatorWorkbench = read;
+      c.rerender(
+        ownership === "auth"
+          ? { subject: "another" }
+          : { subject: "operator", api },
+      );
+      await waitFor(() => expect(c.result.current.loading).toBe(false));
+      expect(c.result.current).toMatchObject({
+        lock: null,
+        busy: false,
+        canAct: false,
+        ready: false,
+        draft: null,
+        selected: null,
+        preview: null,
+      });
+      const currentApi = ownership === "auth" ? c.api : api;
+      currentApi.getOperatorWorkbench = async () =>
+        fixtureSuccess({ workbench: structuredClone(c.data) });
+      await act(() => c.result.current.recover());
+      expect(c.result.current).toMatchObject({
+        lock: null,
+        canAct: true,
+        selected: null,
+      });
+      expect(c.calls.filter((x) => x.name === "create")).toHaveLength(1);
+    },
+  );
+  it("starts unauthenticated then authenticated ownership clean after an uncertain write", async () => {
+    const c = await setup("UNKNOWN_CREATE");
+    await prepare(c);
+    await act(() => c.result.current.save());
+    c.rerender({ subject: null });
+    expect(c.result.current).toMatchObject({
+      lock: null,
+      busy: false,
+      canAct: false,
+      draft: null,
+      selected: null,
+      preview: null,
+      cancelTarget: null,
+    });
+    const reads = c.calls.filter((x) => x.name === "read").length;
+    c.rerender({ subject: "another" });
+    await waitFor(() => expect(c.result.current.canAct).toBe(true));
+    expect(c.result.current).toMatchObject({
+      lock: null,
+      draft: null,
+      selected: null,
+      preview: null,
+    });
+    expect(c.calls.filter((x) => x.name === "read")).toHaveLength(reads + 1);
+    expect(c.calls.filter((x) => x.name === "create")).toHaveLength(1);
+  });
+  it("keeps clean account switches fresh and clears local dialogs without a pending write", async () => {
+    const c = await setup();
+    act(() => c.result.current.openCancel(c.data.operator_rows[0]));
+    expect(c.result.current.cancelTarget).not.toBeNull();
+    c.rerender({ subject: "another" });
+    await waitFor(() => expect(c.result.current.canAct).toBe(true));
+    expect(c.result.current).toMatchObject({
+      lock: null,
+      draft: null,
+      selected: null,
+      preview: null,
+      cancelTarget: null,
+      discardOpen: false,
+    });
+    expect(c.calls.filter((x) => x.name === "read")).toHaveLength(2);
+    expect(
+      c.calls.some((x) => ["create", "supersede", "cancel"].includes(x.name)),
+    ).toBe(false);
   });
   it("correction retains a fixed historical target even when the current PRESENT set no longer includes it", async () => {
     const c = await setup();
