@@ -32,6 +32,15 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const [search, setSearch] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
   const previousJob = useRef(c.job);
+  const reviewPanel = useRef<HTMLElement>(null);
+  const reviewTrigger = useRef<HTMLButtonElement>(null);
+  const wasReviewOpen = useRef(false);
+  const reviewOpen = Boolean(c.preview);
+  useEffect(() => {
+    if (reviewOpen) reviewPanel.current?.focus();
+    else if (wasReviewOpen.current) reviewTrigger.current?.focus();
+    wasReviewOpen.current = reviewOpen;
+  }, [reviewOpen]);
   useEffect(() => {
     setSearch("");
     if (previousJob.current !== c.job) heading.current?.focus();
@@ -168,7 +177,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
           <Box pt={{ xl: "lg" }}>
             <AtlasRefreshButton
               loading={c.loading}
-              disabled={c.busy || c.locked}
+              disabled={c.busy || c.locked || reviewOpen}
               onClick={() => c.transition({ refresh: true })}
             />
           </Box>
@@ -253,6 +262,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                   </Text>
                   {!c.preview && c.candidate && (
                     <Button
+                      ref={reviewTrigger}
                       variant="businessPrimary"
                       disabled={!c.canEdit || c.syncing || c.errors.length > 0}
                       onClick={() => void c.previewChanges()}
@@ -262,7 +272,9 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                   )}
                 </Flex>
               </Box>
-              {c.preview && <PlanningSourceReview c={c} />}
+              {c.preview && (
+                <PlanningSourceReview c={c} reviewRef={reviewPanel} />
+              )}
             </Grid>
           ) : (
             c.loading && <Text p="md">Đang tải nguồn kế hoạch…</Text>

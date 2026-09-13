@@ -4,11 +4,11 @@ import {
   Box,
   Button,
   Field,
-  Flex,
   Grid,
   Heading,
   Input,
   NativeSelect,
+  Tabs,
   Text,
 } from "@chakra-ui/react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -44,104 +44,104 @@ export function IngredientSupplierWorkbench({
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Box p="md">
-        <Text textStyle="helper" color="fg.muted">
-          Nguyên liệu và Nhà cung ứng
-        </Text>
-        <Flex
-          mt="xs"
-          gap="xs"
-          role="tablist"
-          aria-label="Công việc dữ liệu gốc"
-        >
-          <Button
-            role="tab"
-            aria-selected={c.job === "ingredients"}
-            variant={c.job === "ingredients" ? "businessPrimary" : "utility"}
-            onClick={() => c.requestJob("ingredients")}
-          >
-            Nguyên liệu
-          </Button>
-          <Button
-            role="tab"
-            aria-selected={c.job === "suppliers"}
-            variant={c.job === "suppliers" ? "businessPrimary" : "utility"}
-            onClick={() => c.requestJob("suppliers")}
-          >
-            Nhà cung ứng
-          </Button>
-        </Flex>
-        <Heading as="h1" textStyle="workbenchTitle" mt="sm">
-          {c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
-        </Heading>
-      </Box>
-      {c.job === "ingredients" ? (
-        <IngredientToolbar c={c} />
-      ) : (
-        <SupplierToolbar c={c} />
-      )}
-      {(c.notice || c.error) && (
-        <Box px="md" pt="sm" role={c.lock || c.error ? "alert" : "status"}>
-          <Text
-            color={
-              c.lock
-                ? "status.warning"
-                : c.error
-                  ? "status.danger"
-                  : "status.success"
-            }
-          >
-            {c.notice ?? c.error}
-          </Text>
-          {(c.lock || c.error) && (
-            <Button
-              mt="xs"
-              size="sm"
-              loading={c.loading}
-              onClick={() => void c.refresh()}
-            >
-              {c.lock === "stale"
-                ? "Tải lại dữ liệu hiện tại"
-                : c.lock
-                  ? "Tải lại để xác nhận"
-                  : "Thử tải lại dữ liệu"}
-            </Button>
-          )}
-        </Box>
-      )}
-      <Grid
-        mt="sm"
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          lg: detailOpen
-            ? "minmax(0, 62fr) minmax(320px, 38fr)"
-            : "minmax(0, 1fr)",
+      <Tabs.Root
+        value={c.job}
+        variant="line"
+        activationMode="manual"
+        onValueChange={({ value }) => {
+          if (
+            value !== c.job &&
+            (value === "ingredients" || value === "suppliers")
+          )
+            c.requestJob(value);
         }}
-        minW="var(--atlas-layout-zero, 0)"
       >
-        {c.job === "ingredients" ? (
-          <IngredientCatalogue
-            ingredients={c.visibleIngredients}
-            selectedId={c.selectedIngredient?.ingredient_id}
-            onSelect={c.requestIngredient}
-          />
-        ) : (
-          <SupplierCatalogue
-            suppliers={c.visibleSuppliers}
-            selectedId={c.selectedSupplier?.supplier_id}
-            onSelect={c.requestSupplier}
-          />
-        )}
-        {c.review ? (
-          <MasterDataReview c={c} />
-        ) : (
-          <>
-            <IngredientDetail c={c} />
-            <SupplierDetail c={c} />
-            <IngredientPriorityEditor c={c} />
-          </>
-        )}
-      </Grid>
+        <Box p="md">
+          <Text textStyle="helper" color="fg.muted">
+            Nguyên liệu và Nhà cung ứng
+          </Text>
+          <Tabs.List mt="xs" aria-label="Công việc dữ liệu gốc">
+            <Tabs.Trigger value="ingredients">Nguyên liệu</Tabs.Trigger>
+            <Tabs.Trigger value="suppliers">Nhà cung ứng</Tabs.Trigger>
+          </Tabs.List>
+          <Heading as="h1" textStyle="workbenchTitle" mt="sm">
+            {c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
+          </Heading>
+        </Box>
+        <Tabs.Content
+          value={c.job}
+          p="var(--atlas-layout-zero, 0)"
+          _horizontal={{ pt: "var(--atlas-layout-zero, 0)" }}
+        >
+          {c.job === "ingredients" ? (
+            <IngredientToolbar c={c} />
+          ) : (
+            <SupplierToolbar c={c} />
+          )}
+          {(c.notice || c.error) && (
+            <Box px="md" pt="sm" role={c.lock || c.error ? "alert" : "status"}>
+              <Text
+                color={
+                  c.lock
+                    ? "status.warning"
+                    : c.error
+                      ? "status.danger"
+                      : "status.success"
+                }
+              >
+                {c.notice ?? c.error}
+              </Text>
+              {(c.lock || c.error) && (
+                <Button
+                  mt="xs"
+                  size="sm"
+                  loading={c.loading}
+                  onClick={() => void c.refresh()}
+                >
+                  {c.lock === "stale"
+                    ? "Tải lại dữ liệu hiện tại"
+                    : c.lock
+                      ? "Tải lại để xác nhận"
+                      : "Thử tải lại dữ liệu"}
+                </Button>
+              )}
+            </Box>
+          )}
+          <Grid
+            mt="sm"
+            templateColumns={{
+              base: "minmax(0, 1fr)",
+              lg: detailOpen
+                ? "minmax(0, 62fr) minmax(320px, 38fr)"
+                : "minmax(0, 1fr)",
+            }}
+            minW="var(--atlas-layout-zero, 0)"
+          >
+            {c.job === "ingredients" ? (
+              <IngredientCatalogue
+                ingredients={c.visibleIngredients}
+                selectedId={c.selectedIngredient?.ingredient_id}
+                onSelect={c.requestIngredient}
+              />
+            ) : (
+              <SupplierCatalogue
+                suppliers={c.visibleSuppliers}
+                selectedId={c.selectedSupplier?.supplier_id}
+                onSelect={c.requestSupplier}
+              />
+            )}
+            {c.review ? (
+              <MasterDataReview c={c} />
+            ) : (
+              <>
+                <IngredientDetail c={c} />
+                <SupplierDetail c={c} />
+                <IngredientPriorityEditor c={c} />
+              </>
+            )}
+          </Grid>
+        </Tabs.Content>
+      </Tabs.Root>
       <IngredientLifecycleDialog c={c} />
       <MasterDataDirtyExitDialog
         open={c.discardOpen}
@@ -202,7 +202,7 @@ function IngredientToolbar({
         onClick={() => void c.refresh()}
       />
       <Button
-        variant="businessPrimary"
+        variant={c.activeSurface || c.review ? "secondary" : "businessPrimary"}
         disabled={Boolean(c.lock)}
         onClick={() => c.requestIngredient("NEW")}
       >
@@ -242,7 +242,7 @@ function SupplierToolbar({
         onClick={() => void c.refresh()}
       />
       <Button
-        variant="businessPrimary"
+        variant={c.activeSurface || c.review ? "secondary" : "businessPrimary"}
         disabled={Boolean(c.lock)}
         onClick={() => c.requestSupplier("NEW")}
       >

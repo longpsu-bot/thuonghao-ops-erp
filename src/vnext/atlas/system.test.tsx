@@ -38,6 +38,30 @@ const palette = {
 };
 
 describe("Soft Mineral architecture", () => {
+  it("gives disabled controls readable neutral surfaces instead of fading active colors", () => {
+    const disabled = {
+      bg: "bg.subtle",
+      color: "fg.muted",
+      borderColor: "border.subtle",
+      opacity: "var(--atlas-layout-disabled-opacity, 1)",
+      cursor: "disabled",
+    };
+    expect(atlasSystem.getRecipe("button").base?._disabled).toMatchObject(
+      disabled,
+    );
+    expect(atlasSystem.getRecipe("input").base?._disabled).toMatchObject(
+      disabled,
+    );
+    expect(
+      atlasSystem.getSlotRecipe("nativeSelect").base?.field?._disabled,
+    ).toMatchObject(disabled);
+    expect(
+      atlasSystem.getSlotRecipe("dateInput").base?.segmentGroup?._disabled,
+    ).toMatchObject(disabled);
+    expect(
+      atlasSystem.getSlotRecipe("dateInput").base?.root?._disabled,
+    ).toMatchObject({ opacity: "var(--atlas-layout-disabled-opacity, 1)" });
+  });
   it("owns the exact approved raw palette in the Chakra system", () => {
     for (const [name, value] of Object.entries(palette))
       expect(atlasSystem.token(`colors.atlas.${name}`), name).toBe(value);

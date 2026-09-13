@@ -1,4 +1,5 @@
 import { Box, Button, Flex, Heading, Table, Text } from "@chakra-ui/react";
+import type { Ref } from "react";
 import {
   activeMenuRows,
   attendanceReviewChanges,
@@ -9,7 +10,13 @@ import {
 } from "../bridges/planning";
 import type { PlanningSourcesController } from "./usePlanningSources";
 import { planningPantryReviewRows } from "./planningPantryReviewRows";
-export function PlanningSourceReview({ c }: { c: PlanningSourcesController }) {
+export function PlanningSourceReview({
+  c,
+  reviewRef,
+}: {
+  c: PlanningSourcesController;
+  reviewRef?: Ref<HTMLElement>;
+}) {
   if (!c.preview) return null;
   const school = (id: string) =>
     c.schools.find((s) => s.school_id === id)?.school_name ??
@@ -60,6 +67,8 @@ export function PlanningSourceReview({ c }: { c: PlanningSourcesController }) {
   return (
     <Box
       as="aside"
+      ref={reviewRef}
+      tabIndex={-1}
       aria-label="Xem thay đổi"
       bg="bg.subtle"
       borderLeftWidth="var(--atlas-layout-edge, 1px)"

@@ -171,7 +171,7 @@ export function AtlasSchoolScope({
                 </Text>
               )}
               <Button
-                variant="businessPrimary"
+                variant="secondary"
                 disabled={!draft.length}
                 onClick={() => {
                   onApply(
