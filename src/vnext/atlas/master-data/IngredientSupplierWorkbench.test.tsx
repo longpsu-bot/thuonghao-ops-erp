@@ -330,6 +330,9 @@ describe("IngredientSupplierWorkbench", () => {
     expect(
       screen.queryByRole("dialog", { name: "Ngừng dùng nguyên liệu?" }),
     ).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(secondDirtyDialog).toHaveAttribute("data-state", "closed"),
+    );
     fireEvent.animationEnd(secondDirtyDialog);
     const lifecycleDialog = await screen.findByRole("dialog", {
       name: "Ngừng dùng nguyên liệu?",
@@ -402,7 +405,7 @@ describe("IngredientSupplierWorkbench", () => {
     await ready();
     fireEvent.click(screen.getByRole("tab", { name: "Nhà cung ứng" }));
     expect(
-      screen.getByRole("heading", { level: 1, name: "Nhà cung ứng" }),
+      await screen.findByRole("heading", { level: 1, name: "Nhà cung ứng" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Đang hợp tác")).toBeInTheDocument();
     expect(screen.getByText("Ngừng hợp tác")).toBeInTheDocument();

@@ -97,7 +97,7 @@ export function ChangeOrderWorkbench(props: {
           onClick={c.refresh}
         />
         <Button
-          variant="businessPrimary"
+          variant={open ? "secondary" : "businessPrimary"}
           disabled={!c.canAct || Boolean(c.preview) || Boolean(c.cancelTarget)}
           onClick={(e) => {
             origin.current = e.currentTarget;

@@ -123,7 +123,7 @@ export function DishRecipeWorkbench(props: {
         onClick={() => c.transition({ kind: "refresh" })}
       />
       <Button
-        variant="businessPrimary"
+        variant={open ? "secondary" : "businessPrimary"}
         disabled={!c.canCommand}
         onClick={() => c.transition({ kind: "create" })}
       >

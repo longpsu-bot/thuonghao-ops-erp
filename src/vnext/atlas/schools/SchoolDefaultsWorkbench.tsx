@@ -25,8 +25,11 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const reviewPanel = useRef<HTMLElement>(null);
+  const wasReviewOpen = useRef(false);
   useEffect(() => {
     if (c.review) reviewPanel.current?.focus();
+    else if (wasReviewOpen.current) reviewTrigger.current?.focus();
+    wasReviewOpen.current = Boolean(c.review);
   }, [c.review]);
   const editingDisabled =
     c.saving ||
@@ -105,7 +108,12 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         </Field.Root>
         <AtlasRefreshButton
           loading={c.loading}
-          disabled={c.saving || c.lock === "unknown" || c.lock === "readback"}
+          disabled={
+            c.saving ||
+            c.lock === "unknown" ||
+            c.lock === "readback" ||
+            Boolean(c.review)
+          }
           onClick={() => void c.refresh()}
         />
       </Grid>
@@ -235,10 +243,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
                 size="sm"
                 variant="utility"
                 disabled={c.saving}
-                onClick={() => {
-                  c.closeReview();
-                  reviewTrigger.current?.focus();
-                }}
+                onClick={c.closeReview}
               >
                 Đóng
               </Button>

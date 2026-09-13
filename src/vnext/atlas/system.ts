@@ -12,6 +12,13 @@ const focus = {
   outlineColor: "focus.ring",
   outlineOffset: "var(--atlas-layout-focus-offset, 2px)",
 } as const;
+const disabledControl = {
+  bg: "bg.subtle",
+  color: "fg.muted",
+  borderColor: "border.subtle",
+  opacity: "var(--atlas-layout-disabled-opacity, 1)",
+  cursor: "disabled",
+} as const;
 const control = {
   borderRadius: "control",
   bg: "bg.workbench",
@@ -20,6 +27,7 @@ const control = {
   focusRingColor: "focus.ring",
   _placeholder: { color: "fg.muted" },
   _focusVisible: focus,
+  _disabled: disabledControl,
 } as const;
 
 const button = defineRecipe({
@@ -28,6 +36,7 @@ const button = defineRecipe({
     textStyle: "body",
     fontWeight: "semibold",
     _focusVisible: focus,
+    _disabled: disabledControl,
   },
   variants: {
     size: {
@@ -267,7 +276,11 @@ export const atlasSystem = createSystem(
         dateInput: {
           slots: ["root", "label", "control", "segmentGroup", "segment"],
           base: {
-            root: { gap: "xs", width: "full" },
+            root: {
+              gap: "xs",
+              width: "full",
+              _disabled: { opacity: "var(--atlas-layout-disabled-opacity, 1)" },
+            },
             label: { textStyle: "label", color: "fg.default" },
             segmentGroup: {
               ...control,
