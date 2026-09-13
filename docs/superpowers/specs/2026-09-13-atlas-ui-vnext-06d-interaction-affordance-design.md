@@ -69,7 +69,8 @@ The six-slide owner review is an explicit Product acceptance input. The six find
 - merge or modify PR #286 as part of this design slice;
 - introduce a generic dashboard, wizard, notification center, page builder, or new component framework;
 - replace Chakra UI;
-- copy Retool implementation patterns such as browser SQL.
+- copy Retool implementation patterns such as browser SQL;
+- introduce a new generic date-range interaction in 06D.
 
 ## 4. Global interaction grammar
 
@@ -94,7 +95,7 @@ Treatment:
 
 - solid eucalyptus background (`action.primary.default`);
 - white/inverse text;
-- approximately 8 px radius;
+- **8 px radius**;
 - semibold label;
 - clear hover and pressed states;
 - optional meaningful leading icon.
@@ -115,7 +116,7 @@ Treatment:
 
 - subtle filled or lightly tinted workbench surface;
 - visible border;
-- approximately 8 px radius;
+- **8 px radius**;
 - foreground primary/default text;
 - clear hover state.
 
@@ -134,7 +135,7 @@ Treatment:
 
 - non-transparent subtle surface at rest;
 - visible control shape;
-- approximately 8 px radius;
+- **8 px radius**;
 - stronger hover fill;
 - no plain-text appearance for a real button.
 
@@ -152,6 +153,7 @@ Treatment:
 
 - explicit compact shaped control at rest;
 - minimum 36×36 target where established;
+- 8 px radius unless the existing circular Refresh shape is deliberately retained;
 - icon-only controls require accessible labels/tooltips;
 - hover/pressed/focus states remain clear.
 
@@ -162,6 +164,7 @@ For destructive/cancellation commands only.
 Treatment:
 
 - restrained danger surface/border;
+- 8 px radius;
 - never used merely to attract attention.
 
 ### 4.2 Transparent actions
@@ -174,7 +177,7 @@ Do not mechanically convert shell navigation or row navigation that is intention
 
 ### 4.3 Geometry
 
-Change control radius from the current 6 px visual language toward approximately **8 px** for buttons and interactive controls.
+Set the normal interactive control radius token to **8 px** for buttons, inputs, date fields, selects, and comparable controls.
 
 Do not use pill-shaped controls by default.
 
@@ -221,11 +224,11 @@ Do not add cards around ordinary tables.
 
 ### 5.1 Problem
 
-Current `AtlasDateInput` is segmented `DateInput` with `locale="vi-VN"` and correct `dd/mm/yyyy` presentation, but no popup calendar exists.
+Current `AtlasDateInput` is segmented Chakra `DateInput` with `locale="vi-VN"` and correct `dd/mm/yyyy` presentation, but no popup calendar exists.
 
 ### 5.2 Target
 
-Replace the shared date interaction with a sanctioned Atlas date picker that keeps canonical business values as `YYYY-MM-DD` and presents a popup Vietnamese calendar.
+Keep `AtlasDateInput` as the sanctioned shared application interface, but make it a field with a popup Vietnamese calendar while preserving canonical business values as `YYYY-MM-DD`.
 
 Visible field example:
 
@@ -262,13 +265,12 @@ T2 T3 T4 T5 T6 T7 CN
 - focus returns correctly after selection/close;
 - disabled/frozen states follow neutral disabled grammar;
 - popup remains within viewport on desktop and mobile;
-- no date-framework replacement unless Chakra's supported primitives cannot satisfy the contract and a separate decision is approved.
+- use supported Chakra/date primitives already available to the project where possible;
+- no date-framework replacement or new major UI dependency without separate Product/Architecture approval.
 
-### 5.4 Date ranges
+### 5.4 Existing range scopes
 
-Where the business scope is truly a date range, the UI may use one coherent range picker rather than two unrelated primitive inputs, provided canonical `YYYY-MM-DD` boundaries and existing commands remain unchanged.
-
-Do not force a range picker onto single-day commands.
+06D does **not** invent a new shared range-picker abstraction. Existing start/end date scopes may remain two `AtlasDateInput` instances; each gets the same Vietnamese popup calendar behavior.
 
 ## 6. PPT Slide 1 — School Defaults
 
@@ -278,23 +280,36 @@ Maintain School default student/teacher portions and quickly understand which Sc
 
 ### 6.2 Required changes
 
-- remove repetitive explanatory copy under `Sĩ số mặc định` when it adds no decision value;
+- remove the repetitive explanatory sentence under `Sĩ số mặc định`;
 - expose a simple visible sequence/order column (`#`) based on presentation/display order, not database identity;
 - expose a visible `Trạng thái` column so inactive Schools are identifiable row-by-row;
-- use operator labels such as `Đang hoạt động` / `Ngừng hoạt động`;
+- use operator labels `Đang hoạt động` / `Ngừng hoạt động`;
 - retain dense table behavior.
 
 ### 6.3 Save interaction
 
-Preferred target:
+Remove the intermediate School Defaults Review panel.
 
-- dirty values → `Lưu thay đổi` → authoritative save → authoritative readback → success/error feedback.
+Target flow:
 
-Do not rename `Xem thay đổi` to `Lưu thay đổi` if the control still only opens another review stage.
+```text
+dirty values
+→ Lưu thay đổi
+→ existing authoritative bulk save command
+→ authoritative readback
+→ success / stale / unknown / error feedback
+```
 
-The extra Review step for ordinary School default bulk edits should be removed if implementation verification confirms no existing business contract requires it. This is a UI flow simplification only; the backend command/readback remains authoritative.
+`Lưu thay đổi` must be the truthful primary action and must directly invoke the existing save path.
 
-If removal of Review would violate an existing safety contract discovered during implementation, STOP and flag `DECISION_REQUIRED_SCHOOL_DEFAULTS_REVIEW` rather than silently changing authority.
+This is a UI flow simplification only. Keep:
+
+- draft validation;
+- dirty-exit protection;
+- stale/unknown/readback recovery semantics;
+- authoritative post-save readback.
+
+School Defaults no longer participates in the frozen Review-refresh rule because the Review surface is removed. Other workbenches that retain Review continue to obey the frozen Review-refresh contract.
 
 ## 7. PPT Slide 2 — Ingredient/Supplier master-detail
 
@@ -304,13 +319,13 @@ Selecting an Ingredient/Supplier currently causes a visually abrupt table compre
 
 ### 7.2 Target geometry
 
-Desktop:
+At desktop `lg` and above, use a stable attached **62/38** master/detail split while a detail is open:
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
 │ Search / Status / Refresh / + Tạo nguyên liệu                │
 ├───────────────────────────────────────┬──────────────────────┤
-│ Ingredient catalogue                  │ Chi tiết nguyên liệu │
+│ Ingredient catalogue (62%)            │ Chi tiết (38%)      │
 │ selected row highlighted              │ editor               │
 │                                       │                      │
 │                                       │ [Lưu thay đổi]       │
@@ -319,13 +334,12 @@ Desktop:
 
 Requirements:
 
-- stable attached master/detail geometry;
 - selected catalogue row remains visible/highlighted;
 - creation and editing use the same detail surface;
 - no full-workbench width animation;
-- local detail-content transition only: approximately 120–180 ms fade plus ~6 px movement;
+- local detail-content transition only: 120–180 ms fade plus ~6 px movement;
 - workbench shell stays stationary;
-- narrow view may stack catalogue/detail while preserving back/close context.
+- narrow view stacks catalogue/detail while preserving explicit back/close context.
 
 This refines the earlier geometry rule: master/detail is job-relative. Ingredient/Supplier is a genuine master/detail task, so an attached split is appropriate.
 
@@ -347,13 +361,13 @@ When an operator selects an Ingredient already present:
 - explain that the Ingredient already exists and show the current quantity;
 - offer `Chuyển sang Điều chỉnh định lượng`;
 - preselect the existing Recipe line/target when switching;
-- require the operator to explicitly confirm the command kind change.
+- require the operator to explicitly confirm the command-kind change.
 
 Do **not** silently convert `ADD` into `ADJUST_QUANTITY`.
 
-This may be stricter than the backend, which is acceptable for frontend safety.
+This is an intentionally stricter frontend safety rule; backend semantics remain unchanged.
 
-If real business evidence demonstrates a legitimate repeated-line use case for the same Ingredient, stop and raise a separate Product decision rather than weakening this rule during 06D.
+If real business evidence demonstrates a legitimate repeated-line use case for the same Ingredient, STOP with `DECISION_REQUIRED_RECIPE_DUPLICATE_LINE` rather than weakening this rule during 06D.
 
 ## 9. PPT Slide 4 — Recipe catalogue and lock semantics
 
@@ -383,7 +397,7 @@ Actions:
 - unused/editable Recipe: `Sửa công thức`;
 - locked Recipe: `Xem công thức` + `Tạo lệnh điều chỉnh`.
 
-Inside the locked editor/read view, clearly state:
+Inside the locked editor/read view, state:
 
 `Công thức này đã được sử dụng trong vận hành. Công thức gốc chỉ đọc; thay đổi tiếp theo được thực hiện bằng Lệnh điều chỉnh.`
 
@@ -413,7 +427,7 @@ Requirements:
 - active Dish Type catalogue is the rendering authority;
 - empty assignment displays an explicit empty cell/state;
 - School identity column remains sticky/preserved where practical;
-- Dish Type columns may scroll horizontally;
+- Dish Type columns scroll horizontally inside the working surface;
 - do not hide categories to fit width;
 - preserve existing Weekly Menu command/approval semantics.
 
@@ -441,7 +455,7 @@ The page-level School scope may remain as:
 
 But the authoritative visible line context must remain clear.
 
-Implementation must preserve the existing backend Pantry authority and line identity. No schema change is authorized.
+Implementation must preserve existing backend Pantry authority and line identity. No schema change is authorized.
 
 ### 11.2 Alignment
 
@@ -470,7 +484,7 @@ Do not overload optional `Ghi chú` as an implicit required reason.
 - table-first workbenches;
 - one dominant business action;
 - quiet healthy state / exception-first when relevant;
-- Review frozen-refresh semantics;
+- frozen Review-refresh semantics for workbenches that retain Review;
 - recovery message families;
 - shared Refresh 36×36 behavior, 800 ms spin, 200 ms completion lift;
 - `prefers-reduced-motion` behavior;
@@ -478,15 +492,17 @@ Do not overload optional `Ghi chú` as an implicit required reason.
 - frontend may be stricter than backend for safety, never looser;
 - disabled controls remain neutral/readable.
 
+Explicit 06D override: School Defaults removes its Review surface and therefore no longer uses Review-refresh freezing.
+
 ## 13. Component-level target map
 
 Expected shared components affected conceptually:
 
-- `src/vnext/atlas/system.ts`
-- `src/vnext/atlas/AtlasDateInput.tsx` (may be renamed/refactored only if imports remain bounded and migration is complete)
-- `src/vnext/atlas/AtlasRefreshButton.tsx`
-- shared button usages across vNext workbenches
-- shared table/component styling where appropriate.
+- `src/vnext/atlas/system.ts`;
+- `src/vnext/atlas/AtlasDateInput.tsx`;
+- `src/vnext/atlas/AtlasRefreshButton.tsx` only if shared icon-control styling requires it;
+- shared button usages across vNext workbenches;
+- shared table styling where appropriate.
 
 Expected domain surfaces:
 
@@ -508,7 +524,7 @@ The exact implementation file list must be derived from repository inspection. D
 
 - Vietnamese popup calendar;
 - button hierarchy and visible rest surfaces;
-- radius/state rules;
+- 8 px control radius/state rules;
 - table/header hierarchy;
 - targeted audit of utility-button usage.
 
@@ -539,9 +555,9 @@ The exact implementation file list must be derived from repository inspection. D
 
 Add or update focused tests for:
 
-- `AtlasDatePicker` Vietnamese labels, ISO round-trip, opening/closing, selection, keyboard focus, disabled behavior;
+- `AtlasDateInput` Vietnamese labels, ISO round-trip, opening/closing, selection, keyboard focus, disabled behavior;
 - button variant rest/hover/disabled contract where testable;
-- School status/order/save flow;
+- School status/order/direct-save flow and retained dirty/stale/unknown/readback safety;
 - stable Ingredient/Supplier selection/detail flow;
 - Recipe duplicate ADD block and explicit switch to quantity adjustment;
 - locked Recipe actions;
@@ -583,7 +599,7 @@ Check:
 
 At implementation completion require existing frontend certification commands, boundary checks, typegen/typecheck/build/Storybook, formatting and diff whitespace checks according to repository conventions.
 
-Supabase Full Integration is not required merely because 06D changes UI. It should be run only if the implementation unexpectedly touches shared connection/backend boundaries, which would itself be scope drift requiring review.
+Supabase Full Integration is not required merely because 06D changes UI. If implementation unexpectedly touches shared connection/backend boundaries, classify it as scope drift and stop before implementation continues.
 
 ## 16. Scope-drift gates
 
@@ -631,8 +647,8 @@ After 06D is merged to `main` and certified:
 - Vietnamese popup calendar replaces segmented-only date interaction across the sanctioned shared path;
 - real operator buttons visibly look like buttons at rest;
 - utility variant is no longer misused for ordinary textual commands;
-- School Defaults exposes row order/status and has a direct, truthful save flow;
-- Ingredient/Supplier uses stable attached master/detail geometry;
+- School Defaults exposes row order/status and has a direct, truthful save flow without the intermediate Review panel;
+- Ingredient/Supplier uses stable attached 62/38 master/detail geometry on desktop;
 - Recipe duplicate-Ingredient ADD is safely blocked with explicit route to quantity adjustment;
 - Recipe lock state and allowed actions are obvious;
 - Weekly Menu displays all active Dish Types in configured order;
