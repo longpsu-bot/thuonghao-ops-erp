@@ -21,7 +21,7 @@ function Review({
   );
   return (
     <AtlasVNextProvider>
-      <AtlasVNextShell activeModule="Nguyên liệu và Nhà cung ứng">
+      <AtlasVNextShell activeModule="ingredients-suppliers">
         <Text textStyle="helper" color="fg.muted" mb="sm">
           Chế độ xem thử giao diện — dữ liệu không được lưu
         </Text>

@@ -338,3 +338,49 @@ describe("Atlas vNext presentation boundary", () => {
     }
   });
 });
+
+it("enforces a separate exact connected-root integration allowlist", () => {
+  const root = "src/AtlasVNextConnectedApp.tsx";
+  for (const forbidden of [
+    "@mantine/core",
+    "@supabase/supabase-js",
+    "./modules/atlas/AtlasApp",
+    "./modules/atlas/WorkbenchComponents",
+    "./modules/admin/SchoolAdminWorkbench",
+    "./modules/atlas/review/reviewMasterDataApi",
+    "./modules/atlas/recipes/reviewRecipeApi",
+    "./styles.css",
+    "./theme",
+    "./modules/atlas/connection/browserSql",
+    "./modules/atlas/master-data/masterDataModel",
+    "./vnext/atlas/atlasApplicationReviewFixtures",
+  ]) {
+    expect(
+      checkSources({ [root]: `import x from "${forbidden}";` }),
+      forbidden,
+    ).not.toEqual([]);
+  }
+  for (const allowed of [
+    "react",
+    "./vnext/atlas/AtlasVNextApp",
+    "./vnext/atlas/AtlasVNextProvider",
+    "./vnext/atlas/AtlasSessionGate",
+    "./modules/atlas/connection/supabaseClient",
+    "./modules/atlas/connection/authSession",
+    "./modules/atlas/connection/atlasRpc",
+    "./modules/atlas/master-data/masterDataApi",
+    "./modules/atlas/procurement/purchaseOrderExports",
+    "./modules/atlas/dispatch/schoolDispatchReleaseExports",
+  ]) {
+    expect(
+      checkSources({ [root]: `import x from "${allowed}";` }),
+      allowed,
+    ).toEqual([]);
+  }
+  expect(
+    checkSources({
+      "src/vnext/atlas/View.tsx":
+        'import x from "../../modules/atlas/connection/authSession";',
+    }),
+  ).not.toEqual([]);
+});

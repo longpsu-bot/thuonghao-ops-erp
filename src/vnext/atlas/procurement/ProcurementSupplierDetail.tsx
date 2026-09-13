@@ -1,3 +1,4 @@
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -29,7 +30,8 @@ export function ProcurementSupplierDetail({
   disabled,
   onSave,
   onClose,
-}: {
+  exitRef,
+}: AtlasModuleExitProps & {
   row: AllocationFamilyRow;
   disabled: boolean;
   onSave: (splits: SupplierSplitInput[]) => void;
@@ -48,6 +50,7 @@ export function ProcurementSupplierDetail({
   const [adding, setAdding] = useState(false);
   const [supplierId, setSupplierId] = useState("");
   const [discardOpen, setDiscardOpen] = useState(false);
+  const pendingExit = useRef<(() => void) | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const cancelButton = useRef<HTMLButtonElement>(null);
@@ -83,6 +86,14 @@ export function ProcurementSupplierDetail({
         parsed !== parseExactQuantity(original.allocated_quantity)
       );
     });
+  const requestExit = (next: () => void) => {
+    if (disabled) return;
+    if (dirty) {
+      pendingExit.current = next;
+      setDiscardOpen(true);
+    } else next();
+  };
+  useImperativeHandle(exitRef, () => ({ requestExit }));
   const available = row.eligible_suppliers.filter(
     (supplier) =>
       !draft.some((split) => split.supplier_id === supplier.supplier_id),
@@ -375,10 +386,7 @@ export function ProcurementSupplierDetail({
         borderColor="border.subtle"
         flexShrink="0"
       >
-        <Button
-          ref={closeButton}
-          onClick={() => (dirty ? setDiscardOpen(true) : onClose())}
-        >
+        <Button ref={closeButton} onClick={() => requestExit(onClose)}>
           Đóng
         </Button>
         <Button
@@ -405,7 +413,10 @@ export function ProcurementSupplierDetail({
       </Flex>
       <Dialog.Root
         open={discardOpen}
-        onOpenChange={({ open }) => setDiscardOpen(open)}
+        onOpenChange={({ open }) => {
+          setDiscardOpen(open);
+          if (!open) pendingExit.current = null;
+        }}
         initialFocusEl={() => cancelButton.current}
         finalFocusEl={() => closeButton.current}
         placement="center"
@@ -439,7 +450,9 @@ export function ProcurementSupplierDetail({
                 variant="destructive"
                 onClick={() => {
                   setDiscardOpen(false);
-                  onClose();
+                  const next = pendingExit.current;
+                  pendingExit.current = null;
+                  if (!disabled) next?.();
                 }}
               >
                 Bỏ thay đổi và đóng

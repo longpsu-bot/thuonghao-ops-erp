@@ -45,6 +45,7 @@ export type ActiveSurface =
       status: IngredientMasterData["ingredient_status"];
     };
 type PendingTransition =
+  | { kind: "exit"; next: () => void }
   | { kind: "close" }
   | { kind: "job"; job: WorkbenchJob }
   | { kind: "ingredient"; id: string }
@@ -603,6 +604,7 @@ export function useIngredientSupplierWorkbench({
 
   const performTransition = (transition: PendingTransition) => {
     resetSurfaces();
+    if (transition.kind === "exit") transition.next();
     if (transition.kind === "job") setJob(transition.job);
     if (transition.kind === "ingredient") openIngredient(transition.id);
     if (transition.kind === "supplier") openSupplier(transition.id);
@@ -686,6 +688,10 @@ export function useIngredientSupplierWorkbench({
     ) => requestTransition({ kind: "lifecycle", ingredientId, status }),
     requestJob: (nextJob: WorkbenchJob) =>
       requestTransition({ kind: "job", job: nextJob }),
+    requestExit: (next: () => void) => {
+      if (saving || loading || lock) return;
+      requestTransition({ kind: "exit", next });
+    },
     requestClose: () => requestTransition({ kind: "close" }),
     cancelDiscard: () => setPendingTransition(null),
     confirmDiscard,

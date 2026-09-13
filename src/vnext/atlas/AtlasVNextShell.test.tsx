@@ -18,7 +18,7 @@ describe("Atlas vNext shell", () => {
   it("marks the review-only Ingredient and Supplier module active", () => {
     render(
       <AtlasVNextProvider>
-        <AtlasVNextShell activeModule="Nguyên liệu và Nhà cung ứng">
+        <AtlasVNextShell activeModule="ingredients-suppliers">
           <p>Ingredient and Supplier review</p>
         </AtlasVNextShell>
       </AtlasVNextProvider>,
@@ -31,7 +31,7 @@ describe("Atlas vNext shell", () => {
   it("marks the review-only School module active", () => {
     render(
       <AtlasVNextProvider>
-        <AtlasVNextShell activeModule="Trường học">
+        <AtlasVNextShell activeModule="schools">
           <p>School defaults review</p>
         </AtlasVNextShell>
       </AtlasVNextProvider>,
@@ -45,7 +45,7 @@ describe("Atlas vNext shell", () => {
   it("marks the review-only reconciliation job active", () => {
     render(
       <AtlasVNextProvider>
-        <AtlasVNextShell activeModule="Đối chiếu PO / Phiếu xuất kho">
+        <AtlasVNextShell activeModule="reconciliation">
           <p>Reconciliation review</p>
         </AtlasVNextShell>
       </AtlasVNextProvider>,
@@ -61,7 +61,7 @@ describe("Atlas vNext shell", () => {
   it("marks the review-only School PXK module active", () => {
     render(
       <AtlasVNextProvider>
-        <AtlasVNextShell activeModule="Phiếu xuất kho">
+        <AtlasVNextShell activeModule="pxk">
           <p>PXK review</p>
         </AtlasVNextShell>
       </AtlasVNextProvider>,
@@ -77,7 +77,7 @@ describe("Atlas vNext shell", () => {
   it("marks Planning active when composing its review workbench", () => {
     render(
       <AtlasVNextProvider>
-        <AtlasVNextShell activeModule="Lập nhu cầu">
+        <AtlasVNextShell activeModule="planning">
           <p>Thực đơn</p>
         </AtlasVNextShell>
       </AtlasVNextProvider>,

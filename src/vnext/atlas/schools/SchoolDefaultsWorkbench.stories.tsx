@@ -22,7 +22,7 @@ function SchoolDefaultsReview({
   );
   return (
     <AtlasVNextProvider>
-      <AtlasVNextShell activeModule="Trường học">
+      <AtlasVNextShell activeModule="schools">
         <Text textStyle="helper" color="fg.muted" mb="sm">
           Chế độ xem thử giao diện — dữ liệu không được lưu
         </Text>

@@ -38,6 +38,31 @@ const approvedLegacyBusinessModules = [
   "src/modules/atlas/procurement/procurementOperatorCopy",
   "src/modules/atlas/connection/atlasRpc",
 ];
+// Application-to-technology composition only; normal vNext bridge rules are unchanged.
+const connectedRootModules = new Set([
+  "react",
+  "src/vnext/atlas/AtlasVNextApp",
+  "src/vnext/atlas/AtlasVNextProvider",
+  "src/vnext/atlas/AtlasSessionGate",
+  "src/vnext/atlas/AtlasVNextApis",
+  "src/modules/atlas/connection/supabaseClient",
+  "src/modules/atlas/connection/authSession",
+  "src/modules/atlas/connection/atlasRpc",
+  "src/modules/atlas/procurement/purchaseOrderExports",
+  "src/modules/atlas/dispatch/schoolDispatchReleaseExports",
+  "src/modules/atlas/master-data/masterDataApi",
+  "src/modules/atlas/recipes/recipeApi",
+  "src/modules/atlas/recipe-adjustments/recipeAdjustmentApi",
+  "src/modules/atlas/planning-inputs/planningInputsApi",
+  "src/modules/atlas/planning-inputs/pantry/pantryApi",
+  "src/modules/atlas/planning-inputs/readiness/planningInputReadinessApi",
+  "src/modules/atlas/planning-inputs/need-generation/needGenerationApi",
+  "src/modules/atlas/planning-inputs/confirmed-needs/confirmedNeedApi",
+  "src/modules/atlas/procurement/purchaseReviewApi",
+  "src/modules/atlas/procurement/schoolCateringProcurementApi",
+  "src/modules/atlas/dispatch/schoolDispatchReleaseApi",
+  "src/modules/atlas/dispatch/schoolFulfilmentReconciliationApi",
+]);
 const sourceExtension = /\.[cm]?[jt]sx?$/;
 
 function imports(source) {
@@ -75,6 +100,13 @@ export function checkSources(
       const target = clean.startsWith(".")
         ? posix.normalize(posix.join(posix.dirname(file), clean))
         : clean.replace(/^@\//, "src/").replace(/^\//, "");
+      if (
+        file === "src/AtlasVNextConnectedApp.tsx" &&
+        !connectedRootModules.has(target.replace(sourceExtension, ""))
+      )
+        errors.push(
+          `${file}: connected root import ${specifier} is not an approved integration module`,
+        );
       if (
         vnext &&
         /^(?:src\/theme(?:\.[cm]?[jt]sx?)?|src\/styles\.css)$/.test(target)

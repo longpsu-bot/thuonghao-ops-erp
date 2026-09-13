@@ -1,3 +1,4 @@
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   activeMenuRows,
@@ -57,6 +58,7 @@ const initialSourceState: SourceState = {
 };
 export type PlanningJob = "menu" | "attendance" | "pantry";
 export type PlanningTransition = {
+  exit?: () => void;
   job?: string;
   week?: string;
   date?: string;
@@ -64,7 +66,7 @@ export type PlanningTransition = {
   refresh?: boolean;
   noAdditions?: boolean;
 };
-export type PlanningSourcesProps = {
+export type PlanningSourcesProps = AtlasModuleExitProps & {
   api: Pick<
     PlanningInputsApi,
     | "getWorkbench"
@@ -86,6 +88,8 @@ export type PlanningSourcesProps = {
   >;
   authSubject: string;
   initialWeek?: string;
+  initialServiceDate?: string;
+  onServiceDateChange?: (date: string) => void;
   initialJob?: PlanningJob;
 };
 export type AttendanceDraft = Omit<
@@ -133,11 +137,18 @@ export function usePlanningSources({
   api,
   pantryApi,
   authSubject,
-  initialWeek = mondayOf(new Date()),
+  initialServiceDate,
+  onServiceDateChange,
+  initialWeek = initialServiceDate ?? mondayOf(new Date()),
   initialJob = "menu",
 }: PlanningSourcesProps) {
   const [week, setWeek] = useState(() => normalizeWeek(initialWeek));
-  const [date, setDate] = useState(() => normalizeWeek(initialWeek));
+  const [date, setDate] = useState(
+    () => initialServiceDate ?? normalizeWeek(initialWeek),
+  );
+  useEffect(() => {
+    onServiceDateChange?.(date);
+  }, [date, onServiceDateChange]);
   const [job, setJob] = useState<PlanningJob>(initialJob);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [data, setData] = useState<PlanningInputsWorkbenchData | null>(null);
@@ -384,6 +395,10 @@ export function usePlanningSources({
   const effectiveModes = pantryModesForRows(pantryRows, modes);
   const canEdit = !locked && !busy && !loading && !readError && !!authority;
   const applyTransition = (next: PlanningTransition) => {
+    if (next.exit) {
+      next.exit();
+      return;
+    }
     ++generation.current;
     ++googleGeneration.current;
     setSyncing(false);
@@ -802,6 +817,15 @@ export function usePlanningSources({
     busy,
     syncing,
     canEdit,
+    requestExit: (exit: () => void) => {
+      if (
+        busy ||
+        writeBusy.current ||
+        Object.values(sourceStates).some((s) => s.recovery)
+      )
+        return;
+      transition({ exit });
+    },
     transition,
     cancelTransition: () => setPending(null),
     discardTransition: () => {

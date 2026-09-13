@@ -20,7 +20,7 @@ export function SchoolFulfilmentReview({
   );
   return (
     <AtlasVNextProvider>
-      <AtlasVNextShell activeModule="Đối chiếu PO / Phiếu xuất kho">
+      <AtlasVNextShell activeModule="reconciliation">
         <SchoolFulfilmentWorkbench
           key={scenario}
           api={api}

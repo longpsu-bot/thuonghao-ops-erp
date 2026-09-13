@@ -22,7 +22,7 @@ export function ConfirmedNeedReview({
   const [allocationDate, setAllocationDate] = useState<string | null>(null);
   return (
     <AtlasVNextProvider>
-      <AtlasVNextShell activeModule="Lập nhu cầu">
+      <AtlasVNextShell activeModule="planning">
         <Text textStyle="helper" color="fg.muted" mb="sm">
           Xem thử giao diện · Dữ liệu minh họa, không ghi lên hệ thống
         </Text>

@@ -1,3 +1,4 @@
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { useConfirmedNeedDraft } from "./useConfirmedNeedDraft";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -30,15 +31,17 @@ import {
   validPreflight,
 } from "./confirmedNeedAuthority";
 import { draftLineRequest, historicalQuantity } from "./confirmedNeedDraft";
-export type ConfirmedNeedWorkbenchProps = {
+export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   authSubject: string | null;
   initialServiceDate: string;
+  onServiceDateChange?: (date: string) => void;
   preflightApi: PreflightApi;
   needGenerationApi: NeedGenerationApi;
   confirmedNeedApi: ConfirmedNeedApi;
   onContinueAllocation?: (serviceDate: string) => void;
 };
 type Transition = {
+  exit?: () => void;
   date?: string;
   week?: string;
   schoolIds?: string[];
@@ -49,12 +52,16 @@ const readFailure = "Không thể tải dữ liệu hiện tại. Hãy thử t�
 export function useConfirmedNeedWorkbench({
   authSubject,
   initialServiceDate,
+  onServiceDateChange,
   preflightApi,
   needGenerationApi,
   confirmedNeedApi,
   onContinueAllocation,
 }: ConfirmedNeedWorkbenchProps) {
   const [date, setDate] = useState(initialServiceDate);
+  useEffect(() => {
+    onServiceDateChange?.(date);
+  }, [date, onServiceDateChange]);
   const week = mondayOf(date);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [preflight, setPreflight] = useState<PlanningInputPreflightData | null>(
@@ -388,6 +395,10 @@ export function useConfirmedNeedWorkbench({
     }
   };
   const applyTransition = (t: Transition) => {
+    if (t.exit) {
+      t.exit();
+      return;
+    }
     if (t.schoolIds) setSchoolIds(t.schoolIds);
     if (t.week) setDate(mondayOf(t.week));
     else if (t.date) setDate(t.date);
@@ -443,6 +454,10 @@ export function useConfirmedNeedWorkbench({
     save,
     generate,
     recover,
+    requestExit: (exit: () => void) => {
+      if (busy || inFlight.current || lock) return;
+      transition({ exit });
+    },
     transition,
     pendingTransition,
     cancelTransition: () => setPendingTransition(null),

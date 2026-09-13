@@ -38,6 +38,7 @@ export type ProcurementControllerProps = {
   purchaseReviewApi: PurchaseReviewApi;
   procurementApi: SchoolCateringProcurementApi;
   initialServiceDate: string;
+  onServiceDateChange?: (date: string) => void;
   initialStage?: ProcurementStage;
 };
 const uncertain = (): ProcurementFeedback => ({
@@ -97,9 +98,13 @@ export function useProcurementWorkbench({
   purchaseReviewApi,
   procurementApi,
   initialServiceDate,
+  onServiceDateChange,
   initialStage = "allocation",
 }: ProcurementControllerProps) {
   const [date, setDate] = useState(initialServiceDate);
+  useEffect(() => {
+    onServiceDateChange?.(date);
+  }, [date, onServiceDateChange]);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [stage, setStage] = useState<ProcurementStage>(initialStage);
   const [allocation, setAllocation] =
