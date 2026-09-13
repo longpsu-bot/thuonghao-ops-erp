@@ -1,3 +1,5 @@
+import { useImperativeHandle } from "react";
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import {
   Box,
   Button,
@@ -24,11 +26,13 @@ import { useIngredientSupplierWorkbench } from "./useIngredientSupplierWorkbench
 export function IngredientSupplierWorkbench({
   authSubject,
   api,
-}: {
+  exitRef,
+}: AtlasModuleExitProps & {
   authSubject: string | null;
   api: IngredientSupplierMasterDataApi;
 }) {
   const c = useIngredientSupplierWorkbench({ authSubject, api });
+  useImperativeHandle(exitRef, () => ({ requestExit: c.requestExit }));
   const detailOpen = Boolean(c.activeSurface || c.review);
   return (
     <Box

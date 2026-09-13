@@ -18,7 +18,7 @@ export function SchoolPxkReview({
   const api = useMemo(() => createSchoolPxkReviewFixture(scenario), [scenario]);
   return (
     <AtlasVNextProvider>
-      <AtlasVNextShell activeModule="Phiếu xuất kho">
+      <AtlasVNextShell activeModule="pxk">
         <Text textStyle="helper" color="fg.muted" mb="sm">
           Xem thử giao diện · Dữ liệu minh họa, không ghi lên hệ thống
         </Text>

@@ -10,7 +10,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useState, useImperativeHandle } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
@@ -26,6 +26,7 @@ import { ConfirmedNeedSupportDetail } from "./ConfirmedNeedSupportDetail";
 const viDate = (date: string) => date.split("-").reverse().join("/");
 export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const c = useConfirmedNeedWorkbench(props);
+  useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const days = weekDates(c.week);
   const contextKey = `${c.date}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;

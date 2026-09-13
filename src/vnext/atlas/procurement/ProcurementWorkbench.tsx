@@ -1,3 +1,7 @@
+import type {
+  AtlasModuleExitHandle,
+  AtlasModuleExitProps,
+} from "../AtlasModuleExit";
 import { foldVietnameseSearch as fold } from "../foldVietnameseSearch";
 import {
   Box,
@@ -11,7 +15,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import {
@@ -31,11 +35,12 @@ import {
   type ProcurementControllerProps,
 } from "./useProcurementWorkbench";
 
-export type ProcurementWorkbenchProps = ProcurementControllerProps & {
-  schools?: ProcurementSchoolOption[];
-  onExportXlsx?: ProcurementExport;
-  onExportPdf?: ProcurementExport;
-};
+export type ProcurementWorkbenchProps = ProcurementControllerProps &
+  AtlasModuleExitProps & {
+    schools?: ProcurementSchoolOption[];
+    onExportXlsx?: ProcurementExport;
+    onExportPdf?: ProcurementExport;
+  };
 export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
   const [search, setSearch] = useState("");
@@ -99,6 +104,14 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       ].join(" "),
     ).includes(fold(search.trim()));
   });
+  const detailExit = useRef<AtlasModuleExitHandle>(null);
+  useImperativeHandle(props.exitRef, () => ({
+    requestExit: (next) => {
+      if (controller.busy || controller.locked) return;
+      if (selected) detailExit.current?.requestExit(next);
+      else next();
+    },
+  }));
   const closeDetail = () => {
     setSelectedKey(null);
     rowTrigger.current?.focus();
@@ -348,6 +361,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 />
                 {selected && (
                   <ProcurementSupplierDetail
+                    exitRef={detailExit}
                     key={`${selected.family.source_fingerprint}:${controller.revision}`}
                     row={selected}
                     disabled={commandDisabled}

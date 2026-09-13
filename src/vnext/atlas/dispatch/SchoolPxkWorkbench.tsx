@@ -7,7 +7,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
@@ -21,6 +21,7 @@ import { SchoolPxkDirtyExitDialog } from "./SchoolPxkDirtyExitDialog";
 import { SchoolPxkCommandFeedback } from "./SchoolPxkCommandFeedback";
 export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const c = useSchoolPxkWorkbench(props);
+  useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const trigger = useRef<HTMLButtonElement | null>(null);
   const detail = useRef<HTMLDivElement>(null);
   const lastKey = useRef<string | null>(null);

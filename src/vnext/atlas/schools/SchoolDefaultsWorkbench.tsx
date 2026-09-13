@@ -1,3 +1,4 @@
+import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import {
   Box,
   Button,
@@ -10,7 +11,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useImperativeHandle } from "react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 import { parsePortionDraft } from "./schoolDefaultsModel";
@@ -21,6 +22,7 @@ import {
 
 export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const c = useSchoolDefaultsWorkbench(props);
+  useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const reviewPanel = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -45,6 +47,11 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
     >
+      <SchoolDefaultsExitDialog
+        open={c.exitPending}
+        onCancel={c.cancelExit}
+        onDiscard={c.discardExit}
+      />
       <Box p="md">
         <Text textStyle="helper" color="fg.muted">
           Trường học

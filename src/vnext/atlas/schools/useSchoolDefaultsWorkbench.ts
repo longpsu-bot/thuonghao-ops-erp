@@ -1,3 +1,4 @@
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   responseArray,
@@ -26,7 +27,7 @@ type LoadState = {
 
 export type SchoolDefaultsLock = "stale" | "unknown" | "readback" | null;
 
-export type SchoolDefaultsWorkbenchProps = {
+export type SchoolDefaultsWorkbenchProps = AtlasModuleExitProps & {
   authSubject: string | null;
   api: SchoolMasterDataApi;
 };
@@ -49,6 +50,9 @@ export function useSchoolDefaultsWorkbench({
   const [lock, setLock] = useState<SchoolDefaultsLock>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const requestGeneration = useRef(0);
+  const [pendingExit, setPendingExit] = useState<{ next: () => void } | null>(
+    null,
+  );
 
   const readAuthority = useCallback(
     async (purpose: "initial" | "routine" | "recovery" | "readback") => {
@@ -96,6 +100,7 @@ export function useSchoolDefaultsWorkbench({
     setSaving(false);
     setQuery("");
     setSchoolType("ALL");
+    setPendingExit(null);
     if (authSubject) void readAuthority("initial");
   }, [authSubject, readAuthority]);
 
@@ -186,6 +191,21 @@ export function useSchoolDefaultsWorkbench({
     visibleSchools,
     drafts,
     dirtyCount,
+    exitPending: pendingExit !== null,
+    requestExit: (next: () => void) => {
+      if (saving || load.loading || lock) return;
+      if (dirtyCount || review) setPendingExit({ next });
+      else next();
+    },
+    cancelExit: () => setPendingExit(null),
+    discardExit: () => {
+      if (!pendingExit || saving || lock) return;
+      const { next } = pendingExit;
+      setPendingExit(null);
+      setDrafts({});
+      setReview(null);
+      next();
+    },
     invalidDraftCount,
     hiddenDirtyCount,
     review,

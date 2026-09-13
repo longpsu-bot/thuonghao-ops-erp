@@ -28,7 +28,7 @@ function Review({
   }, [scenario]);
   return (
     <AtlasVNextProvider>
-      <AtlasVNextShell activeModule="Công thức">
+      <AtlasVNextShell activeModule="recipes">
         <Text textStyle="helper" color="fg.muted" mb="sm">
           Chế độ xem thử giao diện — dữ liệu không được lưu
         </Text>

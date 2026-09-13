@@ -10,7 +10,7 @@ import {
   Tabs,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
@@ -28,6 +28,7 @@ import {
 const jobs = { menu: "Thực đơn", attendance: "Sĩ số", pantry: "Bổ sung" };
 export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const c = usePlanningSources(props);
+  useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [search, setSearch] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
   const previousJob = useRef(c.job);

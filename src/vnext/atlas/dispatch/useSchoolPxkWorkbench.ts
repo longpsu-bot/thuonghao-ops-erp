@@ -1,3 +1,4 @@
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   releaseSchoolDispatchDocumentRequest,
@@ -10,15 +11,17 @@ import {
   type SchoolDispatchWorkbenchRow,
 } from "../bridges/schoolDispatch";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
-export type SchoolPxkWorkbenchProps = {
+export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
   api: SchoolDispatchReleaseApi;
   authSubject: string | null;
   initialServiceDate: string;
+  onServiceDateChange?: (date: string) => void;
   schools?: { school_id: string; school_name: string }[];
   onExportXlsx?: (document: SchoolDispatchDocument) => void | Promise<void>;
   onExportPdf?: (document: SchoolDispatchDocument) => void | Promise<void>;
 };
 type Transition = {
+  exit?: () => void;
   date?: string;
   schoolIds?: string[];
   selectedKey?: string | null;
@@ -65,9 +68,13 @@ export function useSchoolPxkWorkbench({
   api,
   authSubject,
   initialServiceDate,
+  onServiceDateChange,
   schools: externalSchools,
 }: SchoolPxkWorkbenchProps) {
   const [date, setDate] = useState(initialServiceDate);
+  useEffect(() => {
+    onServiceDateChange?.(date);
+  }, [date, onServiceDateChange]);
   const [schoolIds, setSchoolIds] = useState<string[]>([]);
   const [catalogue, setCatalogue] = useState<{
     subject: string;
@@ -240,6 +247,10 @@ export function useSchoolPxkWorkbench({
     )
     .sort((a, b) => priority[a.state] - priority[b.state]);
   const apply = (next: Transition) => {
+    if (next.exit) {
+      next.exit();
+      return;
+    }
     if (next.date || next.schoolIds || next.refresh) invalidate();
     if (next.date) {
       setDate(next.date);
@@ -398,6 +409,10 @@ export function useSchoolPxkWorkbench({
     actionAllowed,
     pendingTransition,
     key: schoolPxkRowKey,
+    requestExit: (exit: () => void) => {
+      if (busy || writing.current || locked.current) return;
+      transition({ exit });
+    },
     transition,
     release,
     recover,

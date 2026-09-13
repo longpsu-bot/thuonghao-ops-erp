@@ -1,20 +1,26 @@
+import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { Box, Heading, Tabs } from "@chakra-ui/react";
-import { useRef, useState } from "react";
+import { useRef, useState, useImperativeHandle } from "react";
 import type { DishRecipeApi } from "../bridges/dishRecipe";
 import type { RecipeAdjustmentApi } from "../bridges/recipeAdjustment";
 import { DishRecipeWorkbench } from "./DishRecipeWorkbench";
 import { ChangeOrderWorkbench } from "./ChangeOrderWorkbench";
 import type { RecipeJobHandle } from "./useChangeOrderWorkbench";
 
-export function RecipeCapability(props: {
-  authSubject: string | null;
-  recipeApi: DishRecipeApi;
-  adjustmentApi: RecipeAdjustmentApi;
-  initialDate?: string;
-  initialJob?: "recipes" | "changes";
-}) {
+export function RecipeCapability(
+  props: AtlasModuleExitProps & {
+    authSubject: string | null;
+    recipeApi: DishRecipeApi;
+    adjustmentApi: RecipeAdjustmentApi;
+    initialDate?: string;
+    initialJob?: "recipes" | "changes";
+  },
+) {
   const [job, setJob] = useState(props.initialJob ?? "recipes");
   const active = useRef<RecipeJobHandle>(null);
+  useImperativeHandle(props.exitRef, () => ({
+    requestExit: (next) => active.current?.requestExit(next),
+  }));
   return (
     <Box
       as="section"
