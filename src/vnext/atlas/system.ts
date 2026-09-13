@@ -6,6 +6,9 @@ import {
 } from "@chakra-ui/react";
 
 const fontFamily = 'Inter, "Segoe UI", Arial, sans-serif';
+const pressed = {
+  transform: "translateY(var(--atlas-layout-button-press, 1px))",
+} as const;
 const focus = {
   outlineWidth: "var(--atlas-layout-focus-width, 2px)",
   outlineStyle: "solid",
@@ -48,13 +51,23 @@ const button = defineRecipe({
         bg: "action.primary.default",
         color: "fg.inverse",
         _hover: { bg: "action.primary.hover" },
+        _active: { bg: "action.primary.hover", ...pressed },
       },
       secondary: {
-        bg: "bg.workbench",
+        bg: "bg.toolbar",
         color: "fg.primary",
         borderWidth: "var(--atlas-layout-edge, 1px)",
         borderColor: "border.default",
-        _hover: { bg: "bg.subtle" },
+        _hover: { bg: "bg.selected" },
+        _active: { bg: "bg.selected", ...pressed },
+      },
+      tertiary: {
+        bg: "bg.subtle",
+        color: "fg.default",
+        borderWidth: "var(--atlas-layout-edge, 1px)",
+        borderColor: "border.subtle",
+        _hover: { bg: "bg.selected", color: "fg.primary" },
+        _active: { bg: "bg.selected", ...pressed },
       },
       utility: {
         bg: "transparent",
@@ -65,6 +78,10 @@ const button = defineRecipe({
         bg: "status.danger",
         color: "fg.inverse",
         _hover: { opacity: "var(--atlas-layout-hover-opacity, 0.9)" },
+        _active: {
+          opacity: "var(--atlas-layout-pressed-opacity, 0.85)",
+          ...pressed,
+        },
       },
     },
   },
@@ -144,7 +161,7 @@ export const atlasSystem = createSystem(
           lg: { value: "24px" },
           xl: { value: "32px" },
         },
-        radii: { control: { value: "6px" }, workbench: { value: "6px" } },
+        radii: { control: { value: "8px" }, workbench: { value: "6px" } },
         sizes: { control: { value: "40px" }, compact: { value: "36px" } },
       },
       semanticTokens: {
@@ -222,6 +239,10 @@ export const atlasSystem = createSystem(
         helper: { value: { fontSize: "12px", lineHeight: "1.5" } },
       },
       keyframes: {
+        atlasDetailEnter: {
+          from: { opacity: 0, transform: "translateY(6px)" },
+          to: { opacity: 1, transform: "translateY(0)" },
+        },
         atlasRefreshSpin: { to: { transform: "rotate(360deg)" } },
         atlasRefreshComplete: {
           "0%, 100%": { transform: "translateY(0)" },
@@ -229,6 +250,12 @@ export const atlasSystem = createSystem(
         },
       },
       animationStyles: {
+        detailEnter: {
+          value: {
+            animation: "atlasDetailEnter 160ms ease-out",
+            _motionReduce: { animation: "none" },
+          },
+        },
         refreshSpin: {
           value: {
             animation: "atlasRefreshSpin 800ms linear infinite",

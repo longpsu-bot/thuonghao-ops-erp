@@ -560,6 +560,16 @@ export function AtlasDesignLanguageReference({
           <Text textStyle="helper" color="fg.muted">
             Thao tác bổ trợ:
           </Text>
+          <Button variant="secondary" size="sm">
+            Áp dụng bộ lọc
+          </Button>
+          <Button
+            variant="tertiary"
+            size="sm"
+            onClick={() => setSelectedName(null)}
+          >
+            Đóng chi tiết
+          </Button>
           <Button
             variant="utility"
             size="sm"
