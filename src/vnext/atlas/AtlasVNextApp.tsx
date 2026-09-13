@@ -1,5 +1,9 @@
-import { Box, Text } from "@chakra-ui/react";
-import { useEffect, useRef, useState } from "react";
+import { Text } from "@chakra-ui/react";
+import { useRef, useState } from "react";
+import {
+  AtlasPageTransition,
+  type AtlasPageTransitionHandle,
+} from "./AtlasPageTransition";
 import { AtlasVNextShell, type AtlasVNextModuleId } from "./AtlasVNextShell";
 import type { AtlasVNextApis } from "./AtlasVNextApis";
 import type { AtlasModuleExitHandle } from "./AtlasModuleExit";
@@ -46,22 +50,20 @@ function ApplicationSession({
     vietnamServiceDate(now ?? new Date()),
   );
   const active = useRef<AtlasModuleExitHandle>(null);
-  const content = useRef<HTMLDivElement>(null);
-  const previousModule = useRef(module);
-  useEffect(() => {
-    if (previousModule.current !== module) {
-      const heading = content.current?.querySelector("h1");
-      heading?.setAttribute("tabindex", "-1");
-      heading?.focus();
-    }
-    previousModule.current = module;
-  }, [module]);
+  const transition = useRef<AtlasPageTransitionHandle>(null);
   const requestExit = (next: () => void) => {
+    if (transition.current?.isActive()) return;
     if (module === "reconciliation") next();
     else active.current?.requestExit(next);
   };
-  const navigate = (next: AtlasVNextModuleId) => {
-    if (module !== next) requestExit(() => setModule(next));
+  const navigate = (next: AtlasVNextModuleId, date?: string) => {
+    if (module !== next)
+      requestExit(() =>
+        transition.current?.start(() => {
+          if (date) setServiceDate(date);
+          setModule(next);
+        }),
+      );
   };
   const context = { authSubject, exitRef: active };
   const dateContext = {
@@ -85,7 +87,7 @@ function ApplicationSession({
           {props.safeAuthError}
         </Text>
       )}
-      <Box ref={content}>
+      <AtlasPageTransition ref={transition}>
         {module === "schools" && (
           <SchoolDefaultsWorkbench {...context} api={apis.masterData} />
         )}
@@ -106,12 +108,7 @@ function ApplicationSession({
             apis={apis}
             serviceDate={serviceDate}
             onServiceDateChange={setServiceDate}
-            onContinueAllocation={(date) =>
-              requestExit(() => {
-                setServiceDate(date);
-                setModule("procurement");
-              })
-            }
+            onContinueAllocation={(date) => navigate("procurement", date)}
           />
         )}
         {module === "procurement" && (
@@ -142,7 +139,7 @@ function ApplicationSession({
             initialDateEnd={serviceDate}
           />
         )}
-      </Box>
+      </AtlasPageTransition>
     </AtlasVNextShell>
   );
 }
