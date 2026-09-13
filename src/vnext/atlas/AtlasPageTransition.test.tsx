@@ -120,21 +120,27 @@ it("keeps Schools through exit, mounts only Recipe during entry, then focuses it
     screen.queryByRole("heading", { level: 1, name: "Công thức" }),
   ).not.toBeInTheDocument();
   expect(animations).toHaveLength(1);
-  expect(animations[0]!.options.duration).toBe(80);
-  expect(animations[0]!.frames).toEqual([{ opacity: 1 }, { opacity: 0 }]);
+  expect(animations[0]!.options.duration).toBe(60);
+  expect(animations[0]!.frames).toEqual([{ opacity: 1 }, { opacity: 0.15 }]);
   complete();
   expect(old).not.toBeInTheDocument();
   expect(heading("Công thức")).not.toHaveFocus();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(animations).toHaveLength(2);
   expect(animations[1]!.options).toMatchObject({
-    duration: 200,
+    duration: 180,
     easing: "ease-out",
   });
   expect(animations[1]!.frames).toEqual([
-    { opacity: 0, transform: "translateY(8px)" },
+    { opacity: 0.15, transform: "translateY(6px)" },
     { opacity: 1, transform: "translateY(0)" },
   ]);
+  expect(animations[1]!.target).toBe(animations[0]!.target);
+  for (const animation of animations) {
+    for (const frame of animation.frames) {
+      expect(Number(frame.opacity)).toBeGreaterThanOrEqual(0.15);
+    }
+  }
   complete();
   expect(heading("Công thức")).toHaveFocus();
   expect(animations[1]!.target).not.toHaveAttribute("inert");

@@ -51,13 +51,13 @@ export function AtlasPageTransition({
     if (phase === "idle") return;
     const animation = surface.current!.animate(
       phase === "exiting"
-        ? [{ opacity: 1 }, { opacity: 0 }]
+        ? [{ opacity: 1 }, { opacity: 0.15 }]
         : [
-            { opacity: 0, transform: "translateY(8px)" },
+            { opacity: 0.15, transform: "translateY(6px)" },
             { opacity: 1, transform: "translateY(0)" },
           ],
       {
-        duration: phase === "exiting" ? 80 : 200,
+        duration: phase === "exiting" ? 60 : 180,
         easing: "ease-out",
         fill: "both",
       },
