@@ -43,7 +43,7 @@ Run:
 rg -n 'variant="utility"' src/vnext/atlas
 ```
 
-Classify every match into one of these categories in the working notes before editing:
+Classify every match before editing:
 
 ```text
 KEEP_UTILITY_NAVIGATION  — shell navigation, compact navigator-only affordance
@@ -53,7 +53,7 @@ CHANGE_SECONDARY         — supporting command: Xuất, Áp dụng, Xem trướ
 CHANGE_PRIMARY           — sole dominant current business command only
 ```
 
-Known baseline textual utility sites that require explicit review include:
+Known baseline textual utility sites requiring review include:
 
 ```text
 src/vnext/atlas/recipes/DishCatalogue.tsx
@@ -71,23 +71,23 @@ src/vnext/atlas/AtlasSchoolScope.tsx
 src/vnext/atlas/AtlasVNextShell.tsx
 ```
 
-Do not change a match merely because it appears in this list; apply the semantic categories above.
+Do not change a match merely because it appears in this list; apply operator semantics.
 
-- [ ] **Step 2: Add a convergence regression for real command surfaces**
+- [ ] **Step 2: Add convergence regression for real command surfaces**
 
-Extend `AtlasConvergence.test.tsx` with a helper that detects an enabled command's Chakra variant from emitted CSS/data attributes. Assert representative real commands use surfaced roles:
+Verify representative controls by accessible name plus emitted CSS/variant semantics:
 
 ```text
 School Defaults: Lưu thay đổi → businessPrimary
 Ingredient row: Xem / sửa → tertiary
 Recipe locked forward action: Tạo lệnh điều chỉnh → secondary
-Planning Review: Đóng/Quay lại → tertiary or secondary according to existing hierarchy
+Planning Review: Đóng/Quay lại → tertiary or secondary according to hierarchy
 PXK export → secondary
 ```
 
-Also assert shell navigation remains navigation and is not promoted to a business-primary surface.
+Also assert shell navigation remains navigation, not business-primary treatment.
 
-- [ ] **Step 3: Run convergence test and confirm the remaining failures**
+- [ ] **Step 3: Run convergence test and confirm remaining failures**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx
@@ -105,19 +105,13 @@ Examples:
 <Button variant="tertiary" size="sm">Đóng</Button>
 ```
 
-Do not add per-component background/radius props to simulate buttons; use shared recipes.
+Do not simulate buttons with per-component background/radius props; use shared recipes.
 
-- [ ] **Step 5: Re-run affected workbench tests and convergence**
+- [ ] **Step 5: Re-run affected tests and commit**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx src/vnext/atlas/master-data src/vnext/atlas/recipes src/vnext/atlas/planning src/vnext/atlas/dispatch src/vnext/atlas/reconciliation
-```
-
-Expected: PASS.
-
-- [ ] **Step 6: Commit**
-
-```bash
+pnpm typecheck
 git add src/vnext/atlas
 git commit -m "refactor(atlas): converge operator command affordance"
 ```
@@ -129,7 +123,7 @@ git commit -m "refactor(atlas): converge operator command affordance"
 **Files:**
 - No source edits unless a failure is proven to originate in 06D changes.
 
-- [ ] **Step 1: Run focused 06D regressions first**
+- [ ] **Step 1: Run focused 06D regressions**
 
 ```bash
 pnpm exec vitest run \
@@ -149,15 +143,15 @@ pnpm exec vitest run \
 
 Expected: PASS.
 
-- [ ] **Step 2: Run the repository's authoritative frontend certification**
+- [ ] **Step 2: Run authoritative frontend certification once**
 
 ```bash
 pnpm certify:frontend
 ```
 
-Expected: PASS. If local resource-sensitive tests time out, do not increase timeout budgets or edit unrelated tests. Reproduce against the pre-06D baseline under equivalent conditions and classify environment vs regression using the same differential method proven in 06C1.
+Expected: PASS. If local resource-sensitive tests time out, do not raise timeout budgets or edit unrelated tests. Differentially reproduce against the pre-06D baseline under equivalent conditions before classifying a regression.
 
-- [ ] **Step 3: Run explicit build/format boundaries**
+- [ ] **Step 3: Run explicit structural/build checks**
 
 ```bash
 pnpm ui:vnext:typegen
@@ -171,9 +165,9 @@ git diff --check
 
 Expected: PASS.
 
-- [ ] **Step 4: Audit the built browser assets for secrets and legacy presentation leakage**
+- [ ] **Step 4: Audit browser assets**
 
-Inspect `dist/assets` and confirm:
+Require:
 
 ```text
 no service-role/secret key patterns
@@ -182,30 +176,30 @@ no unexpected staging credential material
 no Mantine presentation dependency newly introduced by 06D
 ```
 
-Project refs/publishable browser configuration are not treated as secret credentials; privileged keys are.
+Publishable browser configuration/project refs are not privileged secrets; service-role/secret keys are.
 
 ---
 
-### Task 3: Capture final Product visual acceptance across all seven modules
+### Task 3: Capture final Product visual acceptance across the seven shell modules
 
 **Files:**
 - No repository screenshot commits. Store review evidence outside the public repo or as safe CI artifacts only.
 
-- [ ] **Step 1: Build/use the existing local vNext review harness**
+- [ ] **Step 1: Use the existing local vNext review harness**
 
-Run the normal development/review entry and inspect:
+Review shell modules:
 
 ```text
 schools
 ingredients-suppliers
 recipes
-planning / confirmed need
+planning
 procurement
 pxk
 reconciliation
 ```
 
-Use viewports:
+Within Planning, cover both `Nguồn lập nhu cầu` and `Xác nhận nhu cầu` peer phases. Use:
 
 ```text
 1366×768
@@ -214,28 +208,25 @@ Use viewports:
 360×800
 ```
 
-- [ ] **Step 2: Verify the owner PPT findings explicitly**
-
-Record PASS/FAIL for:
+- [ ] **Step 2: Verify the six owner PPT findings**
 
 ```text
 PPT-1 School Defaults: direct Lưu, #, explicit status
 PPT-2 Ingredient/Supplier: stable attached 62/38 detail
-PPT-3 Recipe: duplicate ADD blocked with explicit adjustment transition
+PPT-3 Recipe: new duplicate ADD blocked with explicit adjustment transition
 PPT-4 Recipe: lock state and forward action unmistakable
 PPT-5 Menu: complete active Dish Type columns, local horizontal scroll
 PPT-6 Pantry: School on every line, aligned fields, Ghi chú/Lý do semantics
 ```
 
-- [ ] **Step 3: Verify the cross-cutting 06D interaction grammar**
-
-Record:
+- [ ] **Step 3: Verify cross-cutting 06D interaction grammar**
 
 ```text
-Vietnamese calendar opens from field/icon
-month/day labels Vietnamese; week Monday-first
+Vietnamese calendar opens from field and icon
+Vietnamese month/day labels; Monday-first week
 dd/mm/yyyy visible; ISO state retained
 selected date and today visually distinct
+calendar overlay not clipped and remains under Atlas portal/theme scope
 button roles visibly surfaced at rest
 8px normal controls; Refresh remains circular
 hover/pressed/focus/disabled states distinct
@@ -246,7 +237,7 @@ no console warnings/errors attributable to 06D
 
 - [ ] **Step 4: Stop on any Product acceptance failure**
 
-Do not paper over visual failures with screenshots or notes. Fix only within the relevant 06D plan boundary, rerun focused tests, then repeat the affected viewport review.
+Fix only inside the relevant 06D boundary, rerun focused tests, then repeat the affected viewport review.
 
 ---
 
@@ -255,67 +246,67 @@ Do not paper over visual failures with screenshots or notes. Fix only within the
 **Files:**
 - No backend/source changes expected.
 
-- [ ] **Step 1: Run disposable local Supabase Full Integration once on exact final 06D head**
+- [ ] **Step 1: Run disposable Supabase Full Integration once on exact final 06D head**
 
 ```bash
 pnpm certify:supabase:full-integration
 ```
 
-Expected: PASS with zero repository/backend changes.
+Expected: PASS with zero backend changes.
 
-If Docker cannot start, first prove the Docker/Linux engine is unavailable (`docker info` fails for environment reasons). Then use the existing GitHub Supabase Integration workflow on the exact 06D head; do not modify scripts or workflow to bypass local infrastructure.
+If Docker cannot start, prove the local Docker/Linux engine is unavailable, then use the repository's existing GitHub Supabase Integration workflow on the exact 06D head. Do not modify scripts/workflow to bypass infrastructure.
 
 - [ ] **Step 2: Recheck Staging read-only**
 
-Run the existing read-only Staging verifier or equivalent protected metadata check and require:
+Require:
 
 ```text
 migration count: 72
 frontier: 20260908225248_purchase_preparation_replacement_frontier
 ```
 
-No migration, fixture import, business command, or Auth mutation is authorized.
+No migration, fixture import, business command, Auth mutation, or staging data repair is authorized.
 
 - [ ] **Step 3: Confirm live OPS isolation**
 
-Require environment guards still reject project ref:
+Require environment guards still reject:
 
 ```text
 qnthofvccilhnefdcxnz
 ```
 
-No connection from Atlas code to live OPS is added.
+No Atlas connection to live OPS is added.
 
 ---
 
-### Task 5: Exact-head branch preview and final status
+### Task 5: Exact-head branch preview and final 06D state
 
 **Files:**
-- No production deployment file changes unless an existing preview configuration is demonstrably broken by 06D.
+- No production deployment changes unless the existing branch-preview path is demonstrably broken by 06D.
 
-- [ ] **Step 1: Push the exact 06D head and wait for Frontend CI**
+- [ ] **Step 1: Push exact 06D head and wait for Frontend CI**
 
 ```bash
 git status --short
 git push origin HEAD
 ```
 
-Require the exact pushed SHA to be clean locally and on origin. Require Frontend CI success.
+Require local/origin SHA equality, clean worktree, and exact-head Frontend CI success.
 
-- [ ] **Step 2: Inspect the Cloudflare branch preview**
+- [ ] **Step 2: Inspect Cloudflare branch preview**
 
-The branch preview must boot the Chakra vNext review/connected surface appropriate to current entrypoint state, with:
+Require:
 
 ```text
 correct 06D styles
 no console errors
-no horizontal overflow on desktop/mobile
-no privileged secrets in assets
+no document-wide overflow desktop/mobile
+no privileged secrets in browser assets
 ```
 
-If staging browser credentials remain unavailable, record `STAGING_BROWSER_AUTH_NOT_AVAILABLE`; do not request or expose passwords merely to clear 06D.
+If staging browser credentials remain unavailable, record `STAGING_BROWSER_AUTH_NOT_AVAILABLE`; do not request/expose passwords just to clear 06D.
 
-- [ ] **Step 3: Record final 06D state**
+- [ ] **Step 3: Record final state**
 
 Use exactly one:
 
@@ -324,26 +315,22 @@ UI_PRODUCT_ACCEPTANCE_READY
 BLOCKED
 ```
 
-`UI_PRODUCT_ACCEPTANCE_READY` requires all focused tests, full frontend certification, exact-head Supabase integration, four-viewport visual acceptance, and zero unauthorized backend/hosted writes.
-
-- [ ] **Step 4: Commit only evidence/documentation that belongs in Git**
-
-Do not commit screenshots containing real production/staging business data. If a small implementation-task closeout record is added, it may contain only safe test counts, SHAs, CI URLs, and PASS/BLOCKED classifications.
+`UI_PRODUCT_ACCEPTANCE_READY` requires focused tests, full frontend certification, exact-head Supabase integration, four-viewport Product acceptance, and zero unauthorized backend/hosted writes.
 
 ---
 
 ### Task 6: Prepare #286 for a separate cutover re-certification; do not merge it
 
 **Files:**
-- Draft PR #286 branch only after 06D is merged to `main` and owner separately authorizes updating that candidate.
+- Draft PR #286 branch only after 06D is separately merged to `main` and owner explicitly authorizes updating that candidate.
 
 - [ ] **Step 1: Stop at the 06D merge gate**
 
-Do not rebase #286 while 06D is only a Draft implementation PR. Report the exact 06D head and wait for owner authorization to merge 06D.
+Do not rebase #286 while 06D remains a Draft implementation PR. Report exact 06D head and wait for explicit merge authorization.
 
-- [ ] **Step 2: After an authorized 06D merge, rebase/recreate #286 from the new exact `main`**
+- [ ] **Step 2: After authorized 06D merge, rebase/recreate #286 from new exact `main`**
 
-Preserve #286's three-file intent:
+Preserve its three-file intent:
 
 ```text
 src/main.tsx
@@ -351,11 +338,9 @@ index.html
 src/productionEntrypoint.test.ts
 ```
 
-If the rebase creates domain/workbench changes in #286, classify `VNEXT06C_SCOPE_DRIFT` and stop.
+If domain/workbench changes appear in #286, classify `VNEXT06C_SCOPE_DRIFT` and stop.
 
 - [ ] **Step 3: Re-run #286 cutover certification**
-
-Require:
 
 ```bash
 pnpm exec vitest run src/productionEntrypoint.test.ts src/vnext/atlas/AtlasPageTransition.test.tsx
@@ -363,7 +348,7 @@ pnpm certify:frontend
 pnpm build
 ```
 
-Also rerun exact-head Supabase Full Integration, preview, environment rejection, secret audit, and rollback proof as previously established in 06C/06C1.
+Also rerun exact-head Supabase Full Integration, preview, environment rejection, secret audit, and rollback proof as established in 06C/06C1.
 
 - [ ] **Step 4: Leave #286 Draft/open/unmerged**
 
