@@ -4,7 +4,7 @@
 
 **Goal:** Prevent confusing duplicate-Ingredient `ADD` Change Orders and make base Recipe lock state plus the correct forward action unmistakable in the Recipe workbench.
 
-**Architecture:** Add a pure frontend duplicate-target classifier over the already-authoritative `EffectiveTargetContext.effective_lines`; the backend command contract stays unchanged. For lock UX, derive catalogue lock state only from existing `RecipeVersionRecord` lifecycle facts, and route `Tạo lệnh điều chỉnh` through the existing Recipe capability peer-tab switch rather than creating a new navigation or command layer.
+**Architecture:** Add a pure frontend duplicate-target classifier over the already-authoritative `EffectiveTargetContext.effective_lines`; the backend command contract stays unchanged. The duplicate guard applies to **new** ADD commands only: correcting an already-issued ADD retains its immutable action identity and must remain correctable. For lock UX, derive catalogue lock state only from existing `RecipeVersionRecord` lifecycle facts, and route `Tạo lệnh điều chỉnh` through the existing Recipe capability peer-tab switch rather than creating a new navigation or command layer.
 
 **Tech Stack:** React 19.2.7, TypeScript 7.0.2, Chakra UI 3.37.0, Vitest 4.1.10, Testing Library, existing Recipe APIs/models, pnpm 11.7.0.
 
@@ -14,10 +14,11 @@
 
 - Requires 06D-A shared button/date grammar and the reviewed 06D-B head.
 - Frontend safety may be stricter than backend; backend Recipe/Adjustment commands, schema, RLS and RPC signatures are frozen.
-- `ADD` duplicate protection applies to Recipe Change Orders, not ordinary base-Recipe authoring.
+- Duplicate protection applies to new Recipe Change Order `ADD` commands, not base-Recipe authoring and not correction of an existing ADD root.
 - Never silently change an operator's action from `ADD` to `ADJUST_QUANTITY`.
 - A single exact duplicate target may be converted only after the operator clicks `Chuyển sang Điều chỉnh định lượng`.
-- Multiple effective target lines for the same Ingredient are ambiguous: block `ADD`, explain the ambiguity, and require manual target selection in `ADJUST_QUANTITY`; never guess.
+- Multiple effective target lines for the same Ingredient are ambiguous: block new `ADD`, explain the ambiguity, and require manual target selection in `ADJUST_QUANTITY`; never guess.
+- Existing ADD correction keeps `editing.action_kind === "ADD"`; it does not expose the duplicate-to-adjust transition.
 - Lock state comes from authoritative Recipe lifecycle/read data, not Menu history inference.
 - Keep Recipe navigator/editor geometry and existing command/currentness/UNKNOWN protections.
 - PR #286 remains untouched.
@@ -46,7 +47,7 @@ export function duplicateAddTarget(
 ): DuplicateAddTarget;
 ```
 
-- [ ] **Step 1: Write pure failing unit tests**
+- [ ] **Step 1: Write pure failing classifier tests**
 
 Use existing `changeOrderReviewFixtures.ts` effective targets, including Hành lá at `0.2` kg. Cover:
 
@@ -69,17 +70,29 @@ expect(
 });
 ```
 
-Create a local `EffectiveTargetContext` with two `effective_lines` sharing one `ingredient_id` and assert `kind: "ambiguous"` with both lines preserved in source order. Assert a non-ADD action always returns `none`.
+Create a local `EffectiveTargetContext` with two `effective_lines` sharing one `ingredient_id` and assert `kind: "ambiguous"` with both lines preserved in source order. Assert a non-ADD draft returns `none`.
 
-- [ ] **Step 2: Run the unit test and confirm red**
+- [ ] **Step 2: Add validity tests for new ADD versus ADD correction**
+
+`validChangeDraft` already accepts `editing`. Add tests proving:
+
+```text
+new ADD + targets not loaded                      → invalid
+new ADD + exact Ingredient absent                 → valid when all existing checks pass
+new ADD + one matching effective line             → invalid
+new ADD + multiple matching effective lines       → invalid
+editing existing ADD root + fixed immutable action → remains governed by existing correction rules, not rejected merely because its ingredient is now in effective_lines
+```
+
+- [ ] **Step 3: Run the unit test and confirm red**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/recipes/changeOrderModel.test.ts
 ```
 
-Expected: FAIL because `duplicateAddTarget` does not exist.
+Expected: FAIL because `duplicateAddTarget` and the new validity gate do not exist.
 
-- [ ] **Step 3: Implement the classifier against the real model field**
+- [ ] **Step 4: Implement the classifier against the real model field**
 
 ```ts
 export function duplicateAddTarget(
@@ -101,11 +114,20 @@ export function duplicateAddTarget(
 
 Do not alter `proposalFor`, `previewRequest`, `commandPayload`, server action enums, or target identity semantics.
 
-- [ ] **Step 4: Make `validChangeDraft` reject duplicate ADD**
+- [ ] **Step 5: Make `validChangeDraft` reject only duplicate/new ADD**
 
-`validChangeDraft` already receives `targets: EffectiveTargetContext | null`; do not change its signature. Add the requirement that `ADD` is valid only when targets are loaded and `duplicateAddTarget(d, targets).kind === "none"`. Preserve every existing active-Ingredient, unit, date, scope, blocker, target and quantity check.
+`validChangeDraft` already receives `targets` and `editing`; keep its signature. Add a condition equivalent to:
 
-- [ ] **Step 5: Run and commit**
+```ts
+const newAddIsUnique =
+  d.action !== "ADD" ||
+  Boolean(editing) ||
+  Boolean(targets && duplicateAddTarget(d, targets).kind === "none");
+```
+
+Include `newAddIsUnique` in the existing Boolean result without removing any active-Ingredient, unit, date, scope, blocker, target or quantity check.
+
+- [ ] **Step 6: Run and commit**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/recipes/changeOrderModel.test.ts
@@ -135,7 +157,7 @@ switchDuplicateAddToAdjust(): void;
 
 - [ ] **Step 1: Add an integration test for the single-target case**
 
-Render `RecipeCapability` in `initialJob="changes"` with `createChangeOrderFixture("ACTIVE")`. Select `ADD`, select Hành lá, enter `13`, and assert:
+Render `RecipeCapability` in `initialJob="changes"` with `createChangeOrderFixture("ACTIVE")`. Open a **new** command, select `ADD`, select Hành lá, enter `13`, wait for the existing effective-target read to finish, and assert:
 
 ```tsx
 expect(screen.getByText(/Hành lá đã có trong công thức/i)).toBeVisible();
@@ -153,31 +175,34 @@ fireEvent.click(
 );
 ```
 
-Then assert the action becomes `ADJUST_QUANTITY`, the exact existing target is selected, and the typed `13` remains the proposed quantity. Assert zero preview/create API calls occurred before the explicit transition.
+Then assert action becomes `ADJUST_QUANTITY`, the exact existing target is selected, and typed `13` remains the proposed quantity. Assert zero preview/create API calls occurred before the explicit transition.
 
 - [ ] **Step 2: Add an ambiguous-target test**
 
-Use an effective target list containing two rows for one Ingredient. Assert the UI says the Ingredient appears on multiple effective lines, `Xem tác động` remains disabled, and no automatic transition control selects one line. The operator must manually change to `Đổi định lượng` and choose the exact existing target.
+Use an effective target list containing two rows for one Ingredient. Assert the UI says the Ingredient appears on multiple effective lines, `Xem tác động` remains disabled, and no automatic transition control chooses one line. The operator must manually change to `Đổi định lượng` and select the exact target.
 
-- [ ] **Step 3: Run the integration tests and confirm red**
+- [ ] **Step 3: Add an existing-ADD-correction regression**
+
+Open correction for a correctable existing ADD root. Assert there is no duplicate warning/transition button solely because the added Ingredient is present in `effective_lines`, and the existing correction flow can still preview after its normal fields are valid.
+
+- [ ] **Step 4: Run the integration tests and confirm red**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx src/vnext/atlas/recipes/changeOrderModel.test.ts
 ```
 
-Expected: FAIL because the duplicate warning/controller transition does not exist.
+Expected: FAIL because the new duplicate warning/controller transition does not exist.
 
-- [ ] **Step 4: Expose duplicate state and the explicit transition**
+- [ ] **Step 5: Expose duplicate state only for a new ADD**
 
-Compute:
+In the controller:
 
 ```ts
-const duplicateAdd = duplicateAddTarget(draft, targets);
+const duplicateAdd =
+  editing || !draft ? { kind: "none" as const } : duplicateAddTarget(draft, targets);
 ```
 
-Implement `switchDuplicateAddToAdjust` using the existing draft updater. Preserve `draft.quantity` and set the exact target via `targetKey(duplicateAdd.line)`. Clear ADD-only fields that are not valid for `ADJUST_QUANTITY` (`ingredientId`, `substituteId`, `replaceQuantity`) using their actual draft types; `replaceQuantity` remains boolean `false`.
-
-Equivalent target state:
+Implement `switchDuplicateAddToAdjust` only for `duplicateAdd.kind === "single"`. Preserve `draft.quantity`, set the exact target with `targetKey(duplicateAdd.line)`, clear ADD-only fields using their actual types, and let `updateDraft` invalidate Preview:
 
 ```ts
 updateDraft({
@@ -187,12 +212,11 @@ updateDraft({
   substituteId: "",
   replaceQuantity: false,
 });
-setPreview(null);
 ```
 
 Do not regenerate adjustment/revision IDs merely to switch the local command kind.
 
-- [ ] **Step 5: Render the safety signal in the editor**
+- [ ] **Step 6: Render the safety signal in the editor**
 
 For `single`:
 
@@ -200,7 +224,7 @@ For `single`:
 <Text fontWeight="semibold">Nguyên liệu đã có trong công thức</Text>
 <Text>
   {duplicateAdd.line.ingredient_name} hiện có{" "}
-  {formatQuantity(duplicateAdd.line.quantity_per_basis)}{" "}
+  {duplicateAdd.line.quantity_per_basis.toLocaleString("vi-VN")} {" "}
   {duplicateAdd.line.unit_name}.
 </Text>
 <Button variant="secondary" onClick={c.switchDuplicateAddToAdjust}>
@@ -208,13 +232,13 @@ For `single`:
 </Button>
 ```
 
-For `ambiguous`, render:
+For `ambiguous`:
 
 `Nguyên liệu đã xuất hiện ở nhiều dòng hiệu lực. Chọn Đổi định lượng và chọn đúng thành phần cần sửa.`
 
 Do not fabricate a target.
 
-- [ ] **Step 6: Run and commit**
+- [ ] **Step 7: Run and commit**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx src/vnext/atlas/recipes/changeOrderModel.test.ts
@@ -244,7 +268,7 @@ function dishBaseRecipeState(
 ): DishBaseRecipeState;
 ```
 
-`LOCKED` means at least one active Recipe root for the Dish has its latest authoritative RecipeVersion in `LOCKED`. `EDITABLE` means Recipe data exists and no current latest version is LOCKED. `MISSING` means no active Recipe exists.
+`LOCKED` means at least one active Recipe root for the Dish has its latest authoritative RecipeVersion in `LOCKED`. `EDITABLE` means active Recipe data exists and no current latest version is LOCKED. `MISSING` means no active Recipe exists.
 
 - [ ] **Step 1: Add catalogue lock-state tests**
 
@@ -287,8 +311,9 @@ for (const version of c.catalog.recipe_versions) {
     latestByRecipe.set(version.recipe_id, version);
 }
 const recipeIds = c.catalog.recipes
-  .filter((recipe) =>
-    recipe.dish_id === dishId && recipe.recipe_status === "ACTIVE",
+  .filter(
+    (recipe) =>
+      recipe.dish_id === dishId && recipe.recipe_status === "ACTIVE",
   )
   .map((recipe) => recipe.recipe_id);
 ```
@@ -297,7 +322,7 @@ Return LOCKED if any current latest version for `recipeIds` is LOCKED, EDITABLE 
 
 - [ ] **Step 5: Render surfaced catalogue actions**
 
-Use `variant="tertiary"` for `Sửa công thức` / `Xem công thức`. Keep compact `Chọn món khác` as navigation only if it is semantically navigation; otherwise give it a surfaced tertiary control too.
+Use `variant="tertiary"` for `Sửa công thức` / `Xem công thức`. Keep compact `Chọn món khác` link-like only if it remains pure navigation; otherwise use tertiary there too.
 
 - [ ] **Step 6: Run and commit**
 
@@ -409,7 +434,8 @@ Expected: PASS.
 At 1366×768 and 360×800 verify:
 
 ```text
-Duplicate ADD → warning, preview blocked, explicit transition only
+New duplicate ADD → warning, preview blocked, explicit transition only
+Existing ADD correction → remains correctable; no false duplicate-transition prompt
 Locked catalogue row → lock is obvious before opening
 Locked editor → exact read-only explanation + Tạo lệnh điều chỉnh
 Editable row/editor → Sửa/Lưu remains available and not mislabeled
@@ -419,10 +445,11 @@ Business actions → surfaced button treatment, not plain text
 ## 06D-C Exit Gate
 
 ```text
-Duplicate ADD single target     PASS
-Duplicate ADD ambiguous target  PASS
-No silent command conversion    PASS
-Recipe lock catalogue/editor    PASS
-Peer Change Order navigation    PASS
-Backend/API/schema changes      ZERO
+New duplicate ADD single target       PASS
+New duplicate ADD ambiguous target    PASS
+Existing ADD correction continuity    PASS
+No silent command conversion          PASS
+Recipe lock catalogue/editor          PASS
+Peer Change Order navigation          PASS
+Backend/API/schema changes            ZERO
 ```
