@@ -147,10 +147,13 @@ trường` / `Theo hàng` hierarchy with the supplied logo; differences are fixt
   document `scrollWidth <= clientWidth` and zero application console/page errors.
   One repeatable `HTMLElement.focus` exception originates in Storybook's own
   instrumented iframe bundle and is retained separately as a harness-only warning.
-- The browser-asset audit found zero secret/service-role/JWT/database-URL patterns,
-  zero live OPS project references and zero embedded Supabase project URLs or
-  publishable keys in `dist` and `storybook-static`. Generic `service_role` strings
-  inside the bundled Supabase client library are not credentials.
+- The browser-asset audit found zero credential values, service-role keys, JWT
+  secrets, database URLs, configured Supabase endpoints or publishable keys in
+  `dist` and `storybook-static`. The bundles intentionally retain the literal
+  `sb_secret_` rejection prefix, the live OPS project denylist and the
+  `.supabase.co` URL validator as fail-closed safety code; those literals are not
+  credentials. Generic `service_role` strings inside the bundled Supabase client
+  library are likewise not credentials.
 - Direct Supabase CLI access from this worktree was unavailable because the stored
   management session returned 401. Read-only GitHub deployment evidence shows the
   latest Atlas Staging deployment is successful at
