@@ -300,6 +300,131 @@ export const atlasSystem = createSystem(
         }),
       },
       slotRecipes: {
+        datePicker: {
+          slots: [
+            "root",
+            "control",
+            "indicatorGroup",
+            "trigger",
+            "content",
+            "view",
+            "viewTrigger",
+            "prevTrigger",
+            "nextTrigger",
+            "table",
+            "tableCell",
+            "tableHeader",
+            "tableCellTrigger",
+          ],
+          base: {
+            root: {
+              minW: "var(--atlas-layout-zero, 0)",
+              _disabled: { opacity: "var(--atlas-layout-disabled-opacity, 1)" },
+            },
+            indicatorGroup: {
+              insetEnd: "var(--atlas-layout-calendar-trigger-offset, 2px)",
+            },
+            trigger: {
+              ...control,
+              bg: "bg.subtle",
+              w: "compact",
+              h: "compact",
+              borderWidth: "var(--atlas-layout-edge, 1px)",
+              _hover: { bg: "bg.selected", color: "fg.primary" },
+              _active: { bg: "bg.selected", ...pressed },
+            },
+            content: {
+              bg: "bg.workbench",
+              color: "fg.default",
+              borderRadius: "control",
+              borderWidth: "var(--atlas-layout-edge, 1px)",
+              borderColor: "border.default",
+              boxShadow: "var(--atlas-layout-shadow, none)",
+              minW: "var(--atlas-layout-zero, 0)",
+              w: "var(--atlas-layout-calendar-width, 292px)",
+              maxW: "var(--atlas-layout-calendar-max-width, calc(100vw - 20px))",
+              p: "sm",
+              _open: { animationName: "var(--atlas-layout-motion, none)" },
+              _closed: { animationName: "var(--atlas-layout-motion, none)" },
+              _motionReduce: { animation: "var(--atlas-layout-motion, none)" },
+            },
+            viewTrigger: {
+              ...control,
+              borderWidth: "var(--atlas-layout-zero, 0)",
+              h: "compact",
+              _hover: { bg: "bg.selected" },
+            },
+            prevTrigger: {
+              ...control,
+              w: "compact",
+              h: "compact",
+              _hover: { bg: "bg.selected" },
+              _focusVisible: {
+                ...focus,
+                boxShadow: "var(--atlas-layout-shadow, none)",
+              },
+            },
+            nextTrigger: {
+              ...control,
+              w: "compact",
+              h: "compact",
+              _hover: { bg: "bg.selected" },
+              _focusVisible: {
+                ...focus,
+                boxShadow: "var(--atlas-layout-shadow, none)",
+              },
+            },
+            table: {
+              minW: "var(--atlas-layout-zero, 0)",
+              w: "full",
+              tableLayout: "fixed",
+            },
+            tableCell: {
+              px: "var(--atlas-layout-zero, 0)",
+              borderWidth: "var(--atlas-layout-zero, 0)",
+              bg: "bg.workbench",
+            },
+            tableHeader: {
+              px: "var(--atlas-layout-zero, 0)",
+              position: "static",
+              borderWidth: "var(--atlas-layout-zero, 0)",
+              bg: "bg.workbench",
+              textStyle: "helper",
+              color: "fg.muted",
+              textTransform: "none",
+            },
+            tableCellTrigger: {
+              borderRadius: "control",
+              textStyle: "body",
+              color: "fg.default",
+              cursor: "var(--atlas-layout-cursor, pointer)",
+              _hover: { bg: "bg.selected" },
+              _active: { bg: "bg.selected", ...pressed },
+              _focusVisible: focus,
+              _today: {
+                color: "fg.primary",
+                fontWeight: "semibold",
+                textDecoration: "underline",
+              },
+              "&[data-selected]": {
+                bg: "action.primary.default",
+                color: "fg.inverse",
+                _hover: { bg: "action.primary.hover" },
+              },
+              _disabled: disabledControl,
+            },
+          },
+          variants: {
+            size: {
+              md: {
+                view: {
+                  "--table-cell-size": "sizes.compact",
+                  "--datepicker-nav-trigger-size": "sizes.compact",
+                },
+              },
+            },
+          },
+        },
         dateInput: {
           slots: ["root", "label", "control", "segmentGroup", "segment"],
           base: {
