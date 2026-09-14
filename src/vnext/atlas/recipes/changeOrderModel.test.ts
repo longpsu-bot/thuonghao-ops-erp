@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actionsFor,
+  duplicateAddTarget,
   scopeFromDecisions,
   newChangeDraft,
   previewRequest,
@@ -40,6 +41,21 @@ data.dishes = [{ dish_id: "dish", dish_status: "ACTIVE" }];
 data.ingredients = [
   {
     ingredient_id: "carrot",
+    ingredient_status: "ACTIVE",
+    purchase_unit_id: "kg",
+  },
+  {
+    ingredient_id: "ingredient-2",
+    ingredient_status: "ACTIVE",
+    purchase_unit_id: "kg",
+  },
+  {
+    ingredient_id: "ingredient-new",
+    ingredient_status: "ACTIVE",
+    purchase_unit_id: "kg",
+  },
+  {
+    ingredient_id: "pumpkin",
     ingredient_status: "ACTIVE",
     purchase_unit_id: "kg",
   },
@@ -93,6 +109,97 @@ function draft() {
   };
 }
 describe("Change Order business decisions and exact command identity", () => {
+  it("classifies exact Ingredient matches for a fresh ADD without collapsing line identity", () => {
+    const effective = fixtureTargets("2026-09-12", "dish", null, "type");
+
+    expect(
+      duplicateAddTarget(
+        {
+          ...draft(),
+          action: "ADD",
+          ingredientId: "ingredient-new",
+        },
+        effective,
+      ),
+    ).toEqual({ kind: "none" });
+    expect(
+      duplicateAddTarget(
+        { ...draft(), action: "ADD", ingredientId: "ingredient-2" },
+        effective,
+      ),
+    ).toMatchObject({
+      kind: "single",
+      line: { ingredient_id: "ingredient-2", quantity_per_basis: 0.2 },
+    });
+
+    const ambiguous = {
+      ...effective,
+      effective_lines: [
+        effective.effective_lines[1]!,
+        {
+          ...effective.effective_lines[1]!,
+          target_id: "second-add-line",
+          adjustment_line_id: "second-add-line",
+        },
+      ],
+    };
+    const result = duplicateAddTarget(
+      { ...draft(), action: "ADD", ingredientId: "ingredient-2" },
+      ambiguous,
+    );
+    expect(result.kind).toBe("ambiguous");
+    expect(
+      result.kind === "ambiguous" && result.lines.map((l) => l.target_id),
+    ).toEqual(["prior-add-line", "second-add-line"]);
+    expect(duplicateAddTarget(draft(), effective)).toEqual({ kind: "none" });
+  });
+
+  it("requires loaded unique targets only for a new ADD", () => {
+    const effective = fixtureTargets("2026-09-12", "dish", null, "type");
+    const add = {
+      ...draft(),
+      action: "ADD" as const,
+      ingredientId: "ingredient-new",
+      quantity: "1",
+    };
+    expect(validChangeDraft(add, data, null)).toBe(false);
+    expect(validChangeDraft(add, data, effective)).toBe(true);
+    expect(
+      validChangeDraft(
+        { ...add, ingredientId: "ingredient-2" },
+        data,
+        effective,
+      ),
+    ).toBe(false);
+    expect(
+      validChangeDraft({ ...add, ingredientId: "pumpkin" }, data, targets),
+    ).toBe(false);
+
+    const editing = {
+      ...changeOrderFixtureData().operator_rows[0]!,
+      adjustment_id: add.adjustmentId,
+      scope_kind: "SYSTEM_DISH" as const,
+      action_kind: "ADD" as const,
+      dish_id: "dish",
+      school_type_id: "type",
+      target_ingredient_id: "ingredient-2",
+      target_recipe_line_id: null,
+      adjustment_line_id: "prior-add-line",
+      can_correct: true,
+    };
+    expect(
+      validChangeDraft(
+        {
+          ...add,
+          ingredientId: "ingredient-2",
+          targetKey: "ADJUSTMENT_LINE:prior-add-line",
+        },
+        data,
+        effective,
+        editing,
+      ),
+    ).toBe(true);
+  });
   it.each([
     [
       "recipe",
@@ -239,7 +346,10 @@ describe("Change Order business decisions and exact command identity", () => {
 });
 
 import { ledgerRows, rowFacts } from "./changeOrderModel";
-import { changeOrderFixtureData } from "./changeOrderReviewFixtures";
+import {
+  changeOrderFixtureData,
+  fixtureTargets,
+} from "./changeOrderReviewFixtures";
 describe("Ledger search and deterministic temporal order", () => {
   it("searches Vietnamese human facts and attributed actors locally", () => {
     const d = changeOrderFixtureData();

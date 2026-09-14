@@ -115,6 +115,24 @@ export function newChangeDraft(date = vietnamLocalDate()): ChangeDraft {
 }
 export const targetKey = (line: EffectiveTargetLine) =>
   `${line.target_kind}:${line.target_id}`;
+export type DuplicateAddTarget =
+  | { kind: "none" }
+  | { kind: "single"; line: EffectiveTargetLine }
+  | { kind: "ambiguous"; lines: EffectiveTargetLine[] };
+export function duplicateAddTarget(
+  draft: ChangeDraft,
+  targets: EffectiveTargetContext | null,
+): DuplicateAddTarget {
+  if (draft.action !== "ADD" || !draft.ingredientId || !targets)
+    return { kind: "none" };
+
+  const lines = targets.effective_lines.filter(
+    (line) => line.ingredient_id === draft.ingredientId,
+  );
+  if (lines.length === 0) return { kind: "none" };
+  if (lines.length === 1) return { kind: "single", line: lines[0]! };
+  return { kind: "ambiguous", lines };
+}
 export function correctionDraft(
   row: RecipeAdjustmentOperatorRecord,
 ): ChangeDraft {
@@ -284,6 +302,10 @@ export function validChangeDraft(
       : editing.adjustment_line_id &&
         d.targetKey === `ADJUSTMENT_LINE:${editing.adjustment_line_id}`),
   );
+  const newAddIsUnique =
+    d.action !== "ADD" ||
+    Boolean(editing) ||
+    Boolean(targets && duplicateAddTarget(d, targets).kind === "none");
   return Boolean(
     d.action &&
     actionsFor(scope, data).includes(d.action) &&
@@ -294,6 +316,7 @@ export function validChangeDraft(
     data.dishes.some(
       (r) => r.dish_id === c.dishId && r.dish_status === "ACTIVE",
     ) &&
+    newAddIsUnique &&
     (c.system
       ? changeSchoolTypes(data).some((s) => s.school_type_id === c.schoolTypeId)
       : data.schools.some(
