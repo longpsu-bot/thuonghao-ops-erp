@@ -128,6 +128,29 @@ describe("Planning sources Chakra workbench", () => {
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     expect(sync).not.toHaveBeenCalled();
   });
+  it("renders every active Dish Type in authoritative order and keeps empty columns", async () => {
+    await show();
+    const table = screen.getByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      "Trường / điểm giao",
+      "Món mặn",
+      "Món canh",
+      "Món xào",
+      "Rau",
+      "Tráng miệng",
+    ]);
+    expect(within(table).queryByText("Loại cũ")).not.toBeInTheDocument();
+    const firstSchoolRow = within(table).getAllByRole("row")[1];
+    expect(within(firstSchoolRow).getAllByRole("cell")[5]).toHaveTextContent(
+      "—",
+    );
+  });
   it("has one h1, exactly three jobs, and local search without backend reads", async () => {
     const { read } = await show();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
