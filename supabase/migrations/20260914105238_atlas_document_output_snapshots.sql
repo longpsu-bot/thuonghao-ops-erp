@@ -386,3 +386,6 @@ reset role;
 set role atlas_owner;
 revoke create on schema atlas_api from atlas_read_runtime;
 reset role;
+grant atlas_read_runtime,atlas_procurement_command_runtime,
+  atlas_dispatch_command_runtime to postgres with set false;
+reset role;

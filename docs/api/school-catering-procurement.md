@@ -145,7 +145,8 @@ The PO read derives `CURRENT | REPLACEMENT_REQUIRED | CANCELLATION_REQUIRED` plu
 overall `procurement_current`. If a supplier has no positive current allocation,
 replacement creation returns `CANCELLATION_REQUIRED`; the old PO stays released and
 active, no zero-line document is created, and Procurement/PXK remain blocked. This
-contract adds no cancellation API. After D-044, the exact platform catalog contains
-112 private forced-RLS tables, 31 capabilities, 111 physical `atlas_api` functions,
-and 110 authenticated browser-callable functions; the non-callable extra function
-is the private predecessor PO-read implementation retained for compatibility.
+contract adds no cancellation API. After the 06D-E document-output amendment, the
+exact platform catalog contains 112 private forced-RLS tables, 31 capabilities, 114
+physical `atlas_api` functions, and 111 authenticated browser-callable functions.
+The three non-browser-callable functions are predecessor PO/PXK read
+implementations retained behind shaped public wrappers.

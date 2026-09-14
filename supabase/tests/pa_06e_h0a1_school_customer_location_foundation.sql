@@ -58,7 +58,9 @@ select is(
     'created_at',
     'updated_at',
     'default_student_portions',
-    'default_teacher_portions'
+    'default_teacher_portions',
+    'dispatch_document_issuer_name',
+    'dispatch_document_issuer_address'
   ]::text[],
   'schools has only the approved reference fields'
 );

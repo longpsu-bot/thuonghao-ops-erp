@@ -627,8 +627,8 @@ select is(
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'atlas_api'
   ),
-  112,
-  'CAT-14 physical atlas_api function count is exactly one hundred twelve'
+  114,
+  'CAT-14 physical atlas_api function count is exactly one hundred fourteen'
 );
 
 select is(
@@ -693,7 +693,9 @@ select is(
     'get_school_catering_procurement_workbench(request jsonb)',
     'get_school_catering_purchase_orders(request jsonb)',
     'get_school_catering_purchase_orders_v1_base(request jsonb)',
+    'get_school_catering_purchase_orders_v2_base(request jsonb)',
     'get_school_dispatch_release_workbench(request jsonb)',
+    'get_school_dispatch_release_workbench_v1_base(request jsonb)',
     'get_school_fulfilment_reconciliation_workbench(request jsonb)',
     'get_school_master_data(request jsonb)',
     'get_supplier_direct_trace(request jsonb)',
@@ -755,7 +757,7 @@ select is(
     'validate_recipe_version(request jsonb)',
     'validate_weekly_menu(request jsonb)'
   ]::text[],
-  'CAT-15 ordered atlas_api signature catalog is exactly one hundred eleven functions'
+  'CAT-15 ordered atlas_api signature catalog is exactly one hundred fourteen physical functions'
 );
 
 select is(
@@ -912,7 +914,9 @@ select is(
     'get_school_catering_procurement_workbench(request jsonb)=atlas_read_runtime',
     'get_school_catering_purchase_orders(request jsonb)=atlas_read_runtime',
     'get_school_catering_purchase_orders_v1_base(request jsonb)=atlas_read_runtime',
+    'get_school_catering_purchase_orders_v2_base(request jsonb)=atlas_read_runtime',
     'get_school_dispatch_release_workbench(request jsonb)=atlas_read_runtime',
+    'get_school_dispatch_release_workbench_v1_base(request jsonb)=atlas_read_runtime',
     'get_school_fulfilment_reconciliation_workbench(request jsonb)=atlas_read_runtime',
     'get_school_master_data(request jsonb)=atlas_read_runtime',
     'get_supplier_direct_trace(request jsonb)=atlas_read_runtime',
@@ -1185,7 +1189,9 @@ select ok(
           ('get_school_catering_procurement_workbench', 'request jsonb'),
           ('get_school_catering_purchase_orders', 'request jsonb'),
           ('get_school_catering_purchase_orders_v1_base', 'request jsonb'),
+          ('get_school_catering_purchase_orders_v2_base', 'request jsonb'),
           ('get_school_dispatch_release_workbench', 'request jsonb'),
+          ('get_school_dispatch_release_workbench_v1_base', 'request jsonb'),
           ('get_school_fulfilment_reconciliation_workbench', 'request jsonb'),
           ('get_school_master_data', 'request jsonb'),
           ('get_supplier_direct_trace', 'request jsonb'),
@@ -1646,14 +1652,14 @@ select is(
     'policy_count', 646,
     'policy_catalog_md5', '6748022ace668ecaf65879d09bbe2e38',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 298,
-    'private_function_catalog_md5', 'c1444e7fc5bb6eef69c400414ca75699',
-    'trigger_count', 109,
-    'trigger_catalog_md5', '185fc04c15e719450a04da07eee76961',
-    'positive_target_grant_count', 1749,
-    'positive_target_grant_md5', 'b84c938c4417bbafe835f0b01300a5f8',
+    'private_function_count', 301,
+    'private_function_catalog_md5', '661ce979e63fd5cbbfdafffdef4b7d22',
+    'trigger_count', 111,
+    'trigger_catalog_md5', 'bdb759709044a4d8d6f7a7ce3bad4ee1',
+    'positive_target_grant_count', 1755,
+    'positive_target_grant_md5', '1361a4c94e34bac3b956c8a42a204aa4',
     'rmvp_05_unit_lock_grant_count', 1,
-    'api_function_count', 112,
+    'api_function_count', 114,
     'pa_06a_write_count', 15,
     'pa_06a_read_count', 4,
     'authenticated_execute_count', 111,
