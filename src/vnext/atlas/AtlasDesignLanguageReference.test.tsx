@@ -84,7 +84,13 @@ describe("Atlas design language reference", () => {
     );
     expect(
       Array.from(fields, (field) => field.getAttribute("aria-label")),
-    ).toEqual(["Trường", "Tìm kiếm", "Trạng thái", "Làm mới dữ liệu"]);
+    ).toEqual([
+      "Mở lịch — Ngày phục vụ",
+      "Trường",
+      "Tìm kiếm",
+      "Trạng thái",
+      "Làm mới dữ liệu",
+    ]);
   });
   it("uses semantic columns, dense accessible selection and explicit row actions", () => {
     show();
