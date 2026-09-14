@@ -1,6 +1,7 @@
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import {
   Box,
+  Badge,
   Button,
   Field,
   Flex,
@@ -222,8 +223,12 @@ function SchoolDefaultsTable({
       >
         <Table.Header>
           <Table.Row>
+            <Table.ColumnHeader width="var(--atlas-layout-school-order-width, 56px)">
+              #
+            </Table.ColumnHeader>
             <Table.ColumnHeader>Trường</Table.ColumnHeader>
             <Table.ColumnHeader>Loại trường</Table.ColumnHeader>
+            <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
             <Table.ColumnHeader>Điểm giao</Table.ColumnHeader>
             <Table.ColumnHeader textAlign="right">
               Học sinh mặc định
@@ -250,20 +255,32 @@ function SchoolDefaultsTable({
                 <Table.Cell
                   borderLeftWidth="var(--atlas-layout-rail, 3px)"
                   borderLeftColor={dirty ? "border.accent" : "transparent"}
+                  fontVariantNumeric="tabular-nums"
                 >
+                  {school.display_order}
+                </Table.Cell>
+                <Table.Cell>
                   <Text fontWeight="semibold">{school.school_name}</Text>
                   <Text
                     textStyle="helper"
                     color={dirty ? "fg.primary" : "fg.muted"}
                   >
                     {school.school_code} · {school.customer_name}
-                    {school.school_status === "INACTIVE"
-                      ? " · Ngừng hoạt động"
-                      : ""}
                   </Text>
                 </Table.Cell>
                 <Table.Cell>
                   {school.school_type_name ?? "Chưa phân loại"}
+                </Table.Cell>
+                <Table.Cell>
+                  <Badge
+                    variant={
+                      school.school_status === "ACTIVE" ? "success" : "neutral"
+                    }
+                  >
+                    {school.school_status === "ACTIVE"
+                      ? "Đang hoạt động"
+                      : "Ngừng hoạt động"}
+                  </Badge>
                 </Table.Cell>
                 <Table.Cell>
                   <Text>{school.delivery_location_name}</Text>

@@ -116,9 +116,25 @@ describe("Chakra School default portions workbench", () => {
     const table = screen.getByRole("table", {
       name: "Sĩ số mặc định theo trường",
     });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual([
+      "#",
+      "Trường",
+      "Loại trường",
+      "Trạng thái",
+      "Điểm giao",
+      "Học sinh mặc định",
+      "Giáo viên mặc định",
+    ]);
     const rows = within(table).getAllByRole("row").slice(1);
+    expect(within(rows[0]!).getAllByRole("cell")[0]).toHaveTextContent("1");
     expect(rows[0]).toHaveTextContent("Trường Tiểu học Ánh Dương");
     expect(rows[0]).toHaveTextContent("Ngừng hoạt động");
+    expect(within(rows[1]!).getAllByRole("cell")[0]).toHaveTextContent("2");
+    expect(rows[1]).toHaveTextContent("Đang hoạt động");
     expect(screen.queryByText("school-1")).not.toBeInTheDocument();
     expect(screen.queryByText("customer-1")).not.toBeInTheDocument();
 
@@ -126,6 +142,8 @@ describe("Chakra School default portions workbench", () => {
       target: { value: "be van dan" },
     });
     expect(screen.getByText("Trường Trung học Beta")).toBeInTheDocument();
+    const filteredRow = within(table).getAllByRole("row")[1]!;
+    expect(within(filteredRow).getAllByRole("cell")[0]).toHaveTextContent("2");
     expect(
       screen.queryByText("Trường Tiểu học Ánh Dương"),
     ).not.toBeInTheDocument();
