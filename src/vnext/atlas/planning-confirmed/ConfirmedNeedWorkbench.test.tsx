@@ -67,7 +67,7 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
-  it("imports Shopping List changes into local drafts and leaves Save as the sole write", async () => {
+  it("imports Phiếu đi chợ changes into local drafts and leaves Save as the sole write", async () => {
     const onExportShoppingList = vi.fn().mockResolvedValue(undefined);
     const onImportShoppingList = vi
       .fn()
@@ -86,7 +86,7 @@ describe("Confirmed Need Chakra operator surface", () => {
               exact_quantity: "12,5",
               quantity_entered: true,
               reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT" as const,
-              reason_note: "Điều chỉnh từ Shopping List",
+              reason_note: "Điều chỉnh từ Phiếu đi chợ",
             },
           },
           changedLineIds: ["line-0"],
@@ -98,9 +98,9 @@ describe("Confirmed Need Chakra operator surface", () => {
     });
     await quantity();
 
-    fireEvent.click(screen.getByRole("button", { name: "Xuất Shopping List" }));
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Phiếu đi chợ" }));
     await waitFor(() => expect(onExportShoppingList).toHaveBeenCalledTimes(1));
-    fireEvent.change(screen.getByLabelText("Nhập Shopping List .xlsx"), {
+    fireEvent.change(screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"), {
       target: {
         files: [
           new File([new Uint8Array([1, 2, 3])], "shopping-list.xlsx", {

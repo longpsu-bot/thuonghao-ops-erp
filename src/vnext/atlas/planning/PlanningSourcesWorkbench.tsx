@@ -11,7 +11,12 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
-import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
+import {
+  atlasSecondaryTabList,
+  atlasSecondaryTabTrigger,
+  atlasVisuallyHidden,
+} from "../AtlasTaskTabs";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import { foldVietnameseSearch } from "../foldVietnameseSearch";
@@ -75,37 +80,26 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
         onValueChange={(d) => c.transition({ job: d.value })}
         variant="line"
       >
-        <Flex p="md" justify="space-between" align="end" gap="sm" wrap="wrap">
-          <Box>
-            <Text textStyle="helper" color="fg.muted">
-              Lập nhu cầu
-            </Text>
-            <Heading
-              as="h1"
-              textStyle="workbenchTitle"
-              tabIndex={-1}
-              ref={heading}
+        <Heading
+          as="h1"
+          tabIndex={-1}
+          ref={heading}
+          data-visually-hidden="true"
+          {...atlasVisuallyHidden}
+        >
+          {jobs[c.job]}
+        </Heading>
+        <Tabs.List aria-label="Nguồn lập nhu cầu" {...atlasSecondaryTabList}>
+          {Object.entries(jobs).map(([value, label]) => (
+            <Tabs.Trigger
+              key={value}
+              value={value}
+              {...atlasSecondaryTabTrigger}
             >
-              {jobs[c.job]}
-            </Heading>
-          </Box>
-          <Tabs.List
-            aria-label="Công việc lập nhu cầu"
-            borderColor="border.subtle"
-          >
-            {Object.entries(jobs).map(([value, label]) => (
-              <Tabs.Trigger
-                key={value}
-                value={value}
-                color="fg.muted"
-                _selected={{ color: "fg.primary", bg: "bg.selected" }}
-                _before={{ bg: "border.accent" }}
-              >
-                {label}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
-        </Flex>
+              {label}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
         <Grid
           bg="bg.toolbar"
           p="md"
@@ -117,16 +111,11 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
             xl: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
           }}
         >
-          <Box>
-            <AtlasDateInput
-              label="Tuần phục vụ"
-              value={c.week}
-              onValueChange={(week) => c.transition({ week })}
-            />
-            <Text textStyle="helper" color="fg.muted" mt="xs">
-              {viDate(c.week)} – {viDate(days[6])}
-            </Text>
-          </Box>
+          <AtlasWeekRangeInput
+            label="Tuần phục vụ"
+            value={c.week}
+            onValueChange={(week) => c.transition({ week })}
+          />
           <Field.Root>
             <Field.Label>Ngày phục vụ</Field.Label>
             <NativeSelect.Root>

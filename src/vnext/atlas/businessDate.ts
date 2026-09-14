@@ -13,11 +13,5 @@ export function vietnamServiceDate(now: Date): string {
 }
 
 export function formatVietnamBusinessDate(now: Date): string {
-  const weekday = new Intl.DateTimeFormat("vi-VN", {
-    timeZone,
-    weekday: "long",
-  })
-    .format(now)
-    .toLocaleLowerCase("vi-VN");
-  return `${weekday[0]!.toLocaleUpperCase("vi-VN")}${weekday.slice(1)}, ${vietnamServiceDate(now).split("-").reverse().join("/")}`;
+  return `Hôm nay: ${vietnamServiceDate(now).split("-").reverse().join("/")}`;
 }

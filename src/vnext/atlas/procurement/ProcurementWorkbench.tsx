@@ -34,6 +34,11 @@ import {
   useProcurementWorkbench,
   type ProcurementControllerProps,
 } from "./useProcurementWorkbench";
+import {
+  atlasPrimaryTabList,
+  atlasPrimaryTabTrigger,
+  atlasVisuallyHidden,
+} from "../AtlasTaskTabs";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
@@ -148,53 +153,35 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
         }}
         variant="line"
       >
-        <Flex
-          px="md"
-          py="md"
-          justify="space-between"
-          gap="sm"
-          wrap="wrap"
-          align="end"
+        <Heading
+          as="h1"
+          tabIndex={-1}
+          ref={heading}
+          data-visually-hidden="true"
+          {...atlasVisuallyHidden}
         >
-          <Box>
-            <Text textStyle="helper" color="fg.muted">
-              Kế hoạch mua hàng
-            </Text>
-            <Heading
-              as="h1"
-              textStyle="workbenchTitle"
-              tabIndex={-1}
-              ref={heading}
-            >
-              {controller.stage === "allocation"
-                ? "Phân bổ nhà cung ứng"
-                : "Đơn mua"}
-            </Heading>
-          </Box>
-          <Tabs.List
-            aria-label="Công việc mua hàng"
-            borderColor="border.subtle"
-          >
+          {controller.stage === "allocation"
+            ? "Phân bổ nhà cung ứng"
+            : "Đơn mua"}
+        </Heading>
+        <Box p="md">
+          <Tabs.List aria-label="Công việc mua hàng" {...atlasPrimaryTabList}>
             <Tabs.Trigger
               value="allocation"
               disabled={Boolean(selected) && controller.stage !== "allocation"}
-              color="fg.muted"
-              _selected={{ color: "fg.primary", bg: "bg.selected" }}
-              _before={{ bg: "border.accent" }}
+              {...atlasPrimaryTabTrigger}
             >
               Phân bổ NCC
             </Tabs.Trigger>
             <Tabs.Trigger
               value="orders"
               disabled={Boolean(selected) && controller.stage !== "orders"}
-              color="fg.muted"
-              _selected={{ color: "fg.primary", bg: "bg.selected" }}
-              _before={{ bg: "border.accent" }}
+              {...atlasPrimaryTabTrigger}
             >
               Đơn mua
             </Tabs.Trigger>
           </Tabs.List>
-        </Flex>
+        </Box>
         <Grid
           role="group"
           aria-label="Phạm vi mua hàng"

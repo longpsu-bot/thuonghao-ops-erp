@@ -11,7 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useRef, useState, useImperativeHandle } from "react";
-import { AtlasDateInput } from "../AtlasDateInput";
+import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
 import {
@@ -64,17 +64,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           xl: "minmax(150px, 1fr) minmax(140px, 0.9fr) minmax(160px, 1.1fr) minmax(145px, 1fr) minmax(130px, 0.8fr) auto",
         }}
       >
-        <Box>
-          <AtlasDateInput
-            label="Tuần phục vụ"
-            value={c.week}
-            disabled={contextDisabled}
-            onValueChange={(week) => c.transition({ week })}
-          />
-          <Text mt="xs" textStyle="helper" color="fg.muted">
-            {viDate(c.week)} – {viDate(days[6]!)}
-          </Text>
-        </Box>
+        <AtlasWeekRangeInput
+          label="Tuần phục vụ"
+          value={c.week}
+          disabled={contextDisabled}
+          onValueChange={(week) => c.transition({ week })}
+        />
         <Field.Root>
           <Field.Label>Ngày phục vụ</Field.Label>
           <NativeSelect.Root disabled={contextDisabled}>
@@ -206,26 +201,26 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                     void props.onExportShoppingList!(c.workbench!, c.drafts)
                       .catch(() =>
                         setWorkbookError(
-                          "Không thể xuất Shopping List. Hãy thử lại.",
+                          "Không thể xuất Phiếu đi chợ. Hãy thử lại.",
                         ),
                       )
                       .finally(() => setWorkbookBusy(false));
                   }}
                 >
-                  Xuất Shopping List
+                  Xuất Phiếu đi chợ
                 </Button>
                 <Button
                   variant="tertiary"
                   disabled={workbookBusy || c.released}
                   onClick={() => workbookInput.current?.click()}
                 >
-                  Nhập Shopping List
+                  Nhập Phiếu đi chợ
                 </Button>
                 <input
                   ref={workbookInput}
                   type="file"
                   accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                  aria-label="Nhập Shopping List .xlsx"
+                  aria-label="Nhập Phiếu đi chợ .xlsx"
                   style={{
                     position: "absolute",
                     width: 1,
@@ -253,7 +248,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                         setWorkbookError(
                           error instanceof Error
                             ? error.message
-                            : "Không thể nhập Shopping List.",
+                            : "Không thể nhập Phiếu đi chợ.",
                         ),
                       )
                       .finally(() => setWorkbookBusy(false));

@@ -10,6 +10,25 @@ import { afterEach, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasSessionGate } from "./AtlasSessionGate";
 afterEach(cleanup);
+it("shows Thượng Hảo branding without replacing the Atlas sign-in workflow", () => {
+  render(
+    <AtlasVNextProvider>
+      <AtlasSessionGate
+        session={{ status: "unauthenticated" }}
+        onSignIn={vi.fn()}
+      >
+        <h1>Private module</h1>
+      </AtlasSessionGate>
+    </AtlasVNextProvider>,
+  );
+  expect(screen.getByRole("heading", { name: "Atlas" })).toBeVisible();
+  expect(screen.getByText("CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO")).toBeVisible();
+  expect(screen.getByRole("img", { name: "Thượng Hảo" })).toBeVisible();
+  expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Email")).toBeEnabled();
+  expect(screen.getByLabelText("Mật khẩu")).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Đăng nhập" })).toBeEnabled();
+});
 it.each(["unauthenticated", "session_expired"] as const)(
   "%s signs in with labeled fields without mounting stale data",
   async (status) => {
