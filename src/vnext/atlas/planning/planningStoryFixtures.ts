@@ -4,6 +4,7 @@ import type {
   PantryPreview,
   PlanningCorrectionImpact,
 } from "../bridges/planning";
+import type { PlanningSourcesProps } from "./usePlanningSources";
 import {
   createPlanningReviewFixture,
   menuPreview,
@@ -194,7 +195,33 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
         ],
       },
     };
-    fixture.pantryApi.preview = async () => success({ preview });
+    (fixture.pantryApi as PlanningSourcesProps["pantryApi"]).preview = async (
+      _authSubject,
+      _correlationId,
+      _weekStart,
+      _noAdditionsConfirmed,
+      rows,
+      schoolDateModes,
+    ) => {
+      const requestedRows = rows as unknown as PantryDraftRow[];
+      const requestedFirstLine = requestedRows.find(
+        (row) =>
+          row.source_row_reference === directRows[0].source_row_reference,
+      );
+      return success({
+        preview: {
+          ...preview,
+          canonical_rows: requestedRows,
+          school_date_modes: schoolDateModes,
+          comparison: {
+            ...preview.comparison,
+            changed_lines: requestedFirstLine
+              ? [{ before: directRows[0], after: requestedFirstLine }]
+              : [],
+          },
+        },
+      });
+    };
   }
   if (scenario === "pantry_blocked")
     fixture.pantry.catalog_issues.blockers = [

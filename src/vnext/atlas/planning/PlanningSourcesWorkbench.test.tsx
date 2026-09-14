@@ -161,11 +161,13 @@ describe("Planning sources Chakra workbench", () => {
       "data-horizontal-scroll",
       "local",
     );
-    expect(
-      within(table).getByRole("columnheader", {
-        name: "Trường / điểm giao",
-      }),
-    ).toHaveAttribute("data-sticky-column", "school");
+    const schoolHeader = within(table).getByRole("columnheader", {
+      name: "Trường / điểm giao",
+    });
+    expect(schoolHeader).toHaveAttribute("data-sticky-column", "school");
+    expect(getComputedStyle(schoolHeader).zIndex).toBe(
+      "var(--atlas-layer-sticky-corner, 3)",
+    );
   });
   it("has one h1, exactly three jobs, and local search without backend reads", async () => {
     const { read } = await show();
@@ -373,6 +375,11 @@ describe("Planning sources Chakra workbench", () => {
         }),
       ]),
     );
+    expect(
+      within(
+        await screen.findByRole("table", { name: "So sánh thay đổi" }),
+      ).getByText("Trường Lê Lợi"),
+    ).toBeVisible();
   });
   it("regroups a Pantry line under the destination School mode", async () => {
     const fixture = createPlanningStoryFixture("pantry_review");
