@@ -19,6 +19,7 @@ export type PlanningReviewScenario =
   | "attendance_pantry_failed"
   | "pantry_planning_failed"
   | "pantry_subset"
+  | "pantry_optional"
   | "pantry_required"
   | "pantry_prohibited"
   | "menu_read_failure"
@@ -241,5 +242,7 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
     fixture.api.getWorkbench = async () => unknown;
   if (scenario === "pantry_prohibited")
     fixture.pantry.purposes[0].note_rule = "PROHIBITED";
+  if (scenario === "pantry_optional")
+    fixture.pantry.purposes[0].note_rule = "OPTIONAL";
   return fixture;
 }

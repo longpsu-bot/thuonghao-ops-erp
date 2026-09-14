@@ -63,7 +63,7 @@ function story(scenario: PlanningReviewScenario): Story {
         return;
       if (scenario === "pantry_required") {
         await userEvent.clear(
-          canvas.getByRole("textbox", { name: "Ghi chú dòng 1" }),
+          canvas.getByRole("textbox", { name: "Lý do dòng 1" }),
         );
         return;
       }
@@ -175,6 +175,7 @@ export const MenuWithoutPantry = story("menu_pantry_failed");
 export const AttendanceWithoutPantry = story("attendance_pantry_failed");
 export const PantryWithoutPlanning = story("pantry_planning_failed");
 export const PantrySchoolSubset = story("pantry_subset");
+export const PantryOptionalNote = story("pantry_optional");
 export const PantryRequiredNote = story("pantry_required");
 export const PantryProhibitedNote = story("pantry_prohibited");
 export const ReadFailure = story("menu_read_failure");
