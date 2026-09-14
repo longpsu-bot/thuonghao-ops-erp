@@ -33,7 +33,7 @@ import type { AtlasVNextApis } from "./vnext/atlas/AtlasVNextApis";
 import {
   downloadConfirmedNeedShoppingList,
   importConfirmedNeedShoppingList,
-} from "./vnext/atlas/planning-confirmed/confirmedNeedShoppingList";
+} from "./modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList";
 const exporters = {
   procurementXlsx: downloadPurchaseOrderXlsx,
   procurementPdf: downloadPurchaseOrderPdf,

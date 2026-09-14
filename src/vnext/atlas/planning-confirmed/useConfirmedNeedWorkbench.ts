@@ -31,7 +31,7 @@ import {
   validPreflight,
 } from "./confirmedNeedAuthority";
 import { draftLineRequest, historicalQuantity } from "./confirmedNeedDraft";
-import type { ConfirmedNeedShoppingListImport } from "./confirmedNeedShoppingList";
+import type { ConfirmedNeedShoppingListImport } from "../bridges/confirmedNeed";
 export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   authSubject: string | null;
   initialServiceDate: string;

@@ -46,6 +46,7 @@ export {
   confirmedNeedConfirmationStateLabel,
   confirmedNeedReasonLabels,
 } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedModel";
+export type { ConfirmedNeedShoppingListImport } from "../../../modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList";
 export type {
   ConfirmedNeedDraftLine,
   ConfirmedNeedLine,

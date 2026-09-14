@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
-import { initialConfirmedNeedDraft } from "../bridges/confirmedNeed";
-import { reviewBatch } from "./confirmedNeedReviewFixtures";
+import { initialConfirmedNeedDraft } from "./confirmedNeedModel";
+import { reviewBatch } from "../../../../vnext/atlas/planning-confirmed/confirmedNeedReviewFixtures";
 import {
   createConfirmedNeedShoppingListXlsx,
   parseConfirmedNeedShoppingListXlsx,

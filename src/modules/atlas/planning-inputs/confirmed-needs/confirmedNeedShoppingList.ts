@@ -7,7 +7,7 @@ import {
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedLine,
   type ConfirmedNeedWorkbenchData,
-} from "../bridges/confirmedNeed";
+} from "./confirmedNeedModel";
 
 const visibleHeaders = ["TRƯỜNG", "THÀNH PHẦN", "ĐVT", "SL", "GHI CHÚ"];
 const technicalHeaders = [
