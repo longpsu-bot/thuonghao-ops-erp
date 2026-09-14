@@ -335,7 +335,11 @@ export function createRecipeReviewFixture(
         })),
         school_exception_count: 0,
         allowed_actions:
-          locked || scenario === "COPY_INELIGIBLE" ? [] : ["COPY_DISH_RECIPES"],
+          scenario === "DISH_ACTIVE_LOCKED"
+            ? ["CREATE_CHANGE_ORDER"]
+            : locked || scenario === "COPY_INELIGIBLE"
+              ? []
+              : ["COPY_DISH_RECIPES"],
         blockers: [],
         warnings: [],
         history_periods: [],

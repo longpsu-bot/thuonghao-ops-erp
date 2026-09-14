@@ -305,7 +305,11 @@ export function validChangeDraft(
   const newAddIsUnique =
     d.action !== "ADD" ||
     Boolean(editing) ||
-    Boolean(targets && duplicateAddTarget(d, targets).kind === "none");
+    Boolean(
+      targets &&
+      targets.blockers.length === 0 &&
+      duplicateAddTarget(d, targets).kind === "none",
+    );
   return Boolean(
     d.action &&
     actionsFor(scope, data).includes(d.action) &&

@@ -54,6 +54,11 @@ export function DishRecipeWorkbench(props: {
   const operationallyLocked =
     c.effective?.is_operationally_locked ||
     c.effective?.editable_state === "LOCKED_CHANGE_ORDER";
+  const canOpenChangeOrders = Boolean(
+    operationallyLocked &&
+    c.effective?.allowed_actions.includes("CREATE_CHANGE_ORDER") &&
+    props.onOpenChangeOrders,
+  );
   const catalogueToolbar = (
     <Flex
       display={{ base: open ? "none" : "flex", lg: "flex" }}
@@ -311,11 +316,11 @@ export function DishRecipeWorkbench(props: {
                       gốc chỉ đọc; thay đổi tiếp theo được thực hiện bằng Lệnh
                       điều chỉnh.
                     </Text>
-                    {props.onOpenChangeOrders && (
+                    {canOpenChangeOrders && (
                       <Button
                         mt="sm"
                         variant="secondary"
-                        onClick={props.onOpenChangeOrders}
+                        onClick={() => props.onOpenChangeOrders?.()}
                       >
                         Tạo lệnh điều chỉnh
                       </Button>

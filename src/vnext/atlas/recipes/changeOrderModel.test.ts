@@ -165,6 +165,17 @@ describe("Change Order business decisions and exact command identity", () => {
     expect(validChangeDraft(add, data, null)).toBe(false);
     expect(validChangeDraft(add, data, effective)).toBe(true);
     expect(
+      validChangeDraft(add, data, {
+        ...effective,
+        blockers: [
+          {
+            code: "RECIPE_NOT_READY",
+            message: "Chưa thể xác định công thức hiệu lực.",
+          },
+        ],
+      }),
+    ).toBe(false);
+    expect(
       validChangeDraft(
         { ...add, ingredientId: "ingredient-2" },
         data,

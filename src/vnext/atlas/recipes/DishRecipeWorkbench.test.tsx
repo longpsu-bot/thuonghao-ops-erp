@@ -313,6 +313,16 @@ describe("Công thức operator workbench", () => {
       screen.getByRole("table", { name: "Công thức hiệu lực" }),
     ).toBeInTheDocument();
   });
+  it("does not widen locked peer navigation beyond backend-advertised actions", async () => {
+    const openChangeOrders = vi.fn();
+    await setup("RECIPE_OPERATIONALLY_LOCKED", undefined, openChangeOrders);
+    await select("Xem");
+
+    expect(
+      screen.queryByRole("button", { name: "Tạo lệnh điều chỉnh" }),
+    ).not.toBeInTheDocument();
+    expect(openChangeOrders).not.toHaveBeenCalled();
+  });
   it("displays authoritative effective differences", async () => {
     await setup("RECIPE_EFFECTIVE_DIFFERS_FROM_BASE");
     await select();
