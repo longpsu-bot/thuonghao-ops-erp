@@ -401,6 +401,43 @@ export function ChangeOrderEditor({ c }: { c: ChangeOrderController }) {
             onChange={(e) => update({ reason: e.target.value })}
           />
         </Field.Root>
+        {c.duplicateAdd.kind === "single" && (
+          <Box
+            gridColumn="1 / -1"
+            borderWidth="var(--atlas-layout-edge, 1px)"
+            borderColor="border.subtle"
+            borderRadius="control"
+            bg="bg.warning"
+            p="sm"
+          >
+            <Text fontWeight="semibold">
+              {c.duplicateAdd.line.ingredient_name} đã có trong công thức
+            </Text>
+            <Text mt="xs">
+              Hiện có{" "}
+              {c.duplicateAdd.line.quantity_per_basis.toLocaleString("vi-VN")}{" "}
+              {c.duplicateAdd.line.unit_name}.
+            </Text>
+            <Button
+              mt="sm"
+              variant="secondary"
+              onClick={c.switchDuplicateAddToAdjust}
+            >
+              Chuyển sang Điều chỉnh định lượng
+            </Button>
+          </Box>
+        )}
+        {c.duplicateAdd.kind === "ambiguous" && (
+          <Text
+            gridColumn="1 / -1"
+            role="alert"
+            color="status.danger"
+            textStyle="helper"
+          >
+            Nguyên liệu đã xuất hiện ở nhiều dòng hiệu lực. Chọn Đổi định lượng
+            và chọn đúng thành phần cần sửa.
+          </Text>
+        )}
       </Grid>
       {c.targets?.blockers.map((b, i) => (
         <Text key={i} role="alert" color="status.danger" textStyle="helper">

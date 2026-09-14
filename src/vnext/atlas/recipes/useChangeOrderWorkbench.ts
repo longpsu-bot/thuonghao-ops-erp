@@ -19,10 +19,12 @@ import {
 import {
   commandPayload,
   correctionDraft,
+  duplicateAddTarget,
   impactContext,
   newChangeDraft,
   previewRequest,
   proposalFor,
+  targetKey,
   validChangeDraft,
   validDate,
   vietnamLocalDate,
@@ -385,6 +387,20 @@ export function useChangeOrderWorkbench({
     setMessage("");
     setDraft({ ...draft, ...patch });
   }
+  const duplicateAdd =
+    editing || !draft
+      ? ({ kind: "none" } as const)
+      : duplicateAddTarget(draft, targets);
+  function switchDuplicateAddToAdjust() {
+    if (duplicateAdd.kind !== "single") return;
+    updateDraft({
+      action: "ADJUST_QUANTITY",
+      targetKey: targetKey(duplicateAdd.line),
+      ingredientId: "",
+      substituteId: "",
+      replaceQuantity: false,
+    });
+  }
   const canPreview = Boolean(
     canAct &&
     draft &&
@@ -634,6 +650,8 @@ export function useChangeOrderWorkbench({
     editing,
     targets,
     targetLoading,
+    duplicateAdd,
+    switchDuplicateAddToAdjust,
     preview,
     previewLoading,
     dirty,
