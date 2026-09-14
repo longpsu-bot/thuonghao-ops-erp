@@ -209,7 +209,7 @@ it("uses the injected business date for Recipe's independent initial as-of conte
   await nav("Công thức");
   fireEvent.click(
     await screen.findByRole("button", {
-      name: "Xem công thức Canh bí đỏ thịt bằm",
+      name: "Sửa công thức Canh bí đỏ thịt bằm",
     }),
   );
   await waitFor(() =>
