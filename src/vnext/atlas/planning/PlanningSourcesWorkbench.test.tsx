@@ -151,6 +151,21 @@ describe("Planning sources Chakra workbench", () => {
       "—",
     );
   });
+  it("keeps weekly Menu scrolling local with a sticky School column", async () => {
+    await show();
+    const table = screen.getByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    expect(screen.getByTestId("weekly-menu-scroll")).toHaveAttribute(
+      "data-horizontal-scroll",
+      "local",
+    );
+    expect(
+      within(table).getByRole("columnheader", {
+        name: "Trường / điểm giao",
+      }),
+    ).toHaveAttribute("data-sticky-column", "school");
+  });
   it("has one h1, exactly three jobs, and local search without backend reads", async () => {
     const { read } = await show();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
