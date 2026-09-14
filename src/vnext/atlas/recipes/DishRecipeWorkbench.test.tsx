@@ -15,8 +15,12 @@ import {
   type RecipeScenario,
 } from "./recipeReviewFixtures";
 afterEach(cleanup);
-async function setup(scenario: RecipeScenario = "DISH_ACTIVE_EDITABLE") {
+async function setup(
+  scenario: RecipeScenario = "DISH_ACTIVE_EDITABLE",
+  configure?: (fixture: ReturnType<typeof createRecipeReviewFixture>) => void,
+) {
   const fixture = createRecipeReviewFixture(scenario);
+  configure?.(fixture);
   render(
     <AtlasVNextProvider>
       <DishRecipeWorkbench
@@ -31,15 +35,50 @@ async function setup(scenario: RecipeScenario = "DISH_ACTIVE_EDITABLE") {
   );
   return fixture;
 }
-async function select() {
+async function select(action = "Sửa") {
   fireEvent.click(
     await screen.findByRole("button", {
-      name: "Xem công thức Canh bí đỏ thịt bằm",
+      name: `${action} công thức Canh bí đỏ thịt bằm`,
     }),
   );
   await screen.findByRole("heading", { name: "Công thức gốc" });
 }
 describe("Công thức operator workbench", () => {
+  it("surfaces latest-version lock state and catalogue action before selection", async () => {
+    await setup("DISH_ACTIVE_LOCKED", (fixture) => {
+      fixture.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
+    });
+    const row = screen
+      .getByText("Canh bí đỏ thịt bằm", { exact: true })
+      .closest("tr")!;
+    expect(within(row).getByText("🔒 Công thức gốc đã khóa")).toBeVisible();
+    expect(within(row).getByText("Chỉnh qua Lệnh điều chỉnh")).toBeVisible();
+    expect(
+      within(row).getByRole("button", { name: /Xem công thức/ }),
+    ).toHaveTextContent("Xem công thức");
+  });
+
+  it("keeps editable catalogue actions when only a historical predecessor was locked", async () => {
+    await setup("DISH_ACTIVE_EDITABLE", (fixture) => {
+      const current = fixture.data.recipe_versions[0]!;
+      current.recipe_version_status = "LOCKED";
+      fixture.data.recipe_versions.push({
+        ...structuredClone(current),
+        recipe_version_id: "newer-editable-version",
+        version_number: current.version_number + 1,
+        recipe_version_status: "RELEASED_FOR_PLANNING",
+      });
+    });
+    const row = screen
+      .getByText("Canh bí đỏ thịt bằm", { exact: true })
+      .closest("tr")!;
+    expect(
+      within(row).queryByText("🔒 Công thức gốc đã khóa"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(row).getByRole("button", { name: /Sửa công thức/ }),
+    ).toHaveTextContent("Sửa công thức");
+  });
   it("keeps the mobile chooser available when a dirty Dish transition is cancelled", async () => {
     await setup();
     await select();
@@ -48,7 +87,7 @@ describe("Công thức operator workbench", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Chọn món khác" }));
     fireEvent.click(
-      screen.getByRole("button", { name: "Xem công thức Thịt heo kho" }),
+      screen.getByRole("button", { name: "Sửa công thức Thịt heo kho" }),
     );
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(
@@ -61,7 +100,7 @@ describe("Công thức operator workbench", () => {
       screen.getByRole("button", { name: "Thu gọn danh sách món" }),
     ).toHaveAttribute("aria-expanded", "true");
     expect(
-      screen.getByRole("button", { name: "Xem công thức Thịt heo kho" }),
+      screen.getByRole("button", { name: "Sửa công thức Thịt heo kho" }),
     ).toBeVisible();
     expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
   });
@@ -169,13 +208,13 @@ describe("Công thức operator workbench", () => {
       target: { value: "thit heo kho" },
     });
     expect(
-      screen.getAllByRole("button", { name: /^Xem công thức / }),
+      screen.getAllByRole("button", { name: /^Sửa công thức / }),
     ).toHaveLength(1);
     fireEvent.change(screen.getByLabelText("Trạng thái"), {
       target: { value: "INACTIVE" },
     });
     expect(
-      screen.queryByRole("button", { name: /^Xem công thức / }),
+      screen.queryByRole("button", { name: /^Sửa công thức / }),
     ).not.toBeInTheDocument();
     expect(read).not.toHaveBeenCalled();
   });
@@ -183,7 +222,7 @@ describe("Công thức operator workbench", () => {
     await setup();
     await select();
     const button = screen.getByRole("button", {
-      name: "Xem công thức Canh bí đỏ thịt bằm",
+      name: "Sửa công thức Canh bí đỏ thịt bằm",
     });
     expect(button.closest("tr")).toHaveAttribute("aria-selected", "true");
     expect(
@@ -244,11 +283,13 @@ describe("Công thức operator workbench", () => {
     expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
   });
   it("locked base is read-only with future correction guidance and no lifecycle Recipe controls", async () => {
-    await setup("DISH_ACTIVE_LOCKED");
-    await select();
+    await setup("DISH_ACTIVE_LOCKED", (fixture) => {
+      fixture.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
+    });
+    await select("Xem");
     expect(
       screen.getByText(
-        /Thay đổi tiếp theo được thực hiện trong Lệnh điều chỉnh/,
+        "Công thức này đã được sử dụng trong vận hành. Công thức gốc chỉ đọc; thay đổi tiếp theo được thực hiện bằng Lệnh điều chỉnh.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText("Định lượng Bí đỏ")).not.toBeInTheDocument();

@@ -306,11 +306,9 @@ export function DishRecipeWorkbench(props: {
                 {operationallyLocked && (
                   <Box mt="sm">
                     <Text>
-                      Món này đã được sử dụng trong vận hành. Thành phần gốc
-                      không thể sửa trực tiếp.
-                    </Text>
-                    <Text textStyle="helper" color="fg.muted" mt="xs">
-                      Thay đổi tiếp theo được thực hiện trong Lệnh điều chỉnh.
+                      Công thức này đã được sử dụng trong vận hành. Công thức
+                      gốc chỉ đọc; thay đổi tiếp theo được thực hiện bằng Lệnh
+                      điều chỉnh.
                     </Text>
                   </Box>
                 )}

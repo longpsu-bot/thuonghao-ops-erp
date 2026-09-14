@@ -399,7 +399,7 @@ describe("06B peer navigation and action hierarchy", () => {
       fireEvent.click(
         job === "recipes"
           ? screen.getByRole("button", {
-              name: "Xem công thức Canh bí đỏ thịt bằm",
+              name: "Sửa công thức Canh bí đỏ thịt bằm",
             })
           : create,
       );

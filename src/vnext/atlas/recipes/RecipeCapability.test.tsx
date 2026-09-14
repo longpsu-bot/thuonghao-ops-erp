@@ -63,6 +63,9 @@ async function editor(action = "REPLACE") {
   }
   if (action === "ADJUST_QUANTITY") choose("Định lượng mới", "1,5");
   choose("Lý do điều chỉnh", "Điều chỉnh theo thực đơn");
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Xem tác động" })).toBeEnabled(),
+  );
 }
 describe("Unified Recipe capability and Change Order operator job", () => {
   it("has one capability heading and peer jobs above the full-width base catalogue", async () => {
@@ -91,7 +94,7 @@ describe("Unified Recipe capability and Change Order operator job", () => {
   it("protects dirty base switching and preserves the exact cancelled draft", async () => {
     await setup("ACTIVE", "recipes");
     fireEvent.click(
-      screen.getByRole("button", { name: "Xem công thức Canh bí đỏ thịt bằm" }),
+      screen.getByRole("button", { name: "Sửa công thức Canh bí đỏ thịt bằm" }),
     );
     const input = await screen.findByLabelText("Định lượng Bí đỏ");
     choose("Định lượng Bí đỏ", "2,25");

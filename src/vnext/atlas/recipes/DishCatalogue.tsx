@@ -6,6 +6,35 @@ export const dishStatusLabel = {
   INACTIVE: "Ngừng dùng",
   DRAFT: "Nháp",
 };
+export type DishBaseRecipeState = "LOCKED" | "EDITABLE" | "MISSING";
+export function dishBaseRecipeState(
+  c: DishRecipeController,
+  dishId: string,
+): DishBaseRecipeState {
+  const latestByRecipe = new Map<
+    string,
+    (typeof c.catalog.recipe_versions)[number]
+  >();
+  for (const version of c.catalog.recipe_versions) {
+    const current = latestByRecipe.get(version.recipe_id);
+    if (!current || version.version_number > current.version_number)
+      latestByRecipe.set(version.recipe_id, version);
+  }
+  const recipeIds = c.catalog.recipes
+    .filter(
+      (recipe) =>
+        recipe.dish_id === dishId && recipe.recipe_status === "ACTIVE",
+    )
+    .map((recipe) => recipe.recipe_id);
+  if (
+    recipeIds.some(
+      (recipeId) =>
+        latestByRecipe.get(recipeId)?.recipe_version_status === "LOCKED",
+    )
+  )
+    return "LOCKED";
+  return recipeIds.length ? "EDITABLE" : "MISSING";
+}
 export function DishCatalogue({
   c,
   onSelect,
@@ -69,74 +98,92 @@ export function DishCatalogue({
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {c.visibleDishes.map((dish) => (
-                <Table.Row
-                  key={dish.dish_id}
-                  aria-selected={dish.dish_id === c.context?.dishId}
-                  display={{
-                    base:
-                      compact &&
-                      c.context &&
-                      !expanded &&
-                      dish.dish_id !== c.context.dishId
-                        ? "none"
-                        : "table-row",
-                    lg: "table-row",
-                  }}
-                >
-                  <Table.Cell position="relative">
-                    {dish.dish_id === c.context?.dishId && (
-                      <Box data-selection-indicator aria-hidden="true" />
-                    )}
-                    <Text fontWeight="semibold">{dish.dish_name}</Text>
-                    {compact && (
-                      <Text textStyle="helper" color="fg.muted">
-                        {dish.dish_type_name ?? "Chưa phân loại"} ·{" "}
-                        {dishStatusLabel[dish.dish_status]}
-                      </Text>
-                    )}
-                  </Table.Cell>
-                  {!compact && (
-                    <>
-                      <Table.Cell>
-                        {dish.dish_type_name ?? "Chưa phân loại"}
-                      </Table.Cell>
-                      <Table.Cell>
-                        {dishStatusLabel[dish.dish_status]}
-                      </Table.Cell>
-                    </>
-                  )}
-                  {!compact && (
-                    <Table.Cell>
-                      <Text textStyle="helper">
-                        {c.scopes
-                          .filter((s) =>
-                            c.catalog.recipes.some(
-                              (r) =>
-                                r.dish_id === dish.dish_id &&
-                                r.school_type_id === s.school_type_id,
-                            ),
-                          )
-                          .map((s) => s.school_type_name)
-                          .join(" · ") || "Chưa có"}
-                      </Text>
+              {c.visibleDishes.map((dish) => {
+                const baseRecipeState = dishBaseRecipeState(c, dish.dish_id);
+                const actionLabel =
+                  baseRecipeState === "LOCKED"
+                    ? "Xem công thức"
+                    : "Sửa công thức";
+                return (
+                  <Table.Row
+                    key={dish.dish_id}
+                    aria-selected={dish.dish_id === c.context?.dishId}
+                    display={{
+                      base:
+                        compact &&
+                        c.context &&
+                        !expanded &&
+                        dish.dish_id !== c.context.dishId
+                          ? "none"
+                          : "table-row",
+                      lg: "table-row",
+                    }}
+                  >
+                    <Table.Cell position="relative">
+                      {dish.dish_id === c.context?.dishId && (
+                        <Box data-selection-indicator aria-hidden="true" />
+                      )}
+                      <Text fontWeight="semibold">{dish.dish_name}</Text>
+                      {compact && (
+                        <Text textStyle="helper" color="fg.muted">
+                          {dish.dish_type_name ?? "Chưa phân loại"} ·{" "}
+                          {dishStatusLabel[dish.dish_status]}
+                        </Text>
+                      )}
                     </Table.Cell>
-                  )}
-                  <Table.Cell>
-                    <Button
-                      size="sm"
-                      variant="utility"
-                      aria-label={`Xem công thức ${dish.dish_name}`}
-                      disabled={c.busy || Boolean(c.lock)}
-                      onClick={(e) => {
-                        onSelect(dish.dish_id, e.currentTarget);
-                      }}
-                    >
-                      {compact ? "Chọn" : "Xem công thức"}
-                    </Button>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
+                    {!compact && (
+                      <>
+                        <Table.Cell>
+                          {dish.dish_type_name ?? "Chưa phân loại"}
+                        </Table.Cell>
+                        <Table.Cell>
+                          {dishStatusLabel[dish.dish_status]}
+                        </Table.Cell>
+                      </>
+                    )}
+                    {!compact && (
+                      <Table.Cell>
+                        {baseRecipeState === "LOCKED" ? (
+                          <>
+                            <Text fontWeight="semibold">
+                              🔒 Công thức gốc đã khóa
+                            </Text>
+                            <Text textStyle="helper" color="fg.muted">
+                              Chỉnh qua Lệnh điều chỉnh
+                            </Text>
+                          </>
+                        ) : (
+                          <Text textStyle="helper">
+                            {c.scopes
+                              .filter((s) =>
+                                c.catalog.recipes.some(
+                                  (r) =>
+                                    r.dish_id === dish.dish_id &&
+                                    r.school_type_id === s.school_type_id,
+                                ),
+                              )
+                              .map((s) => s.school_type_name)
+                              .join(" · ") || "Chưa có"}
+                          </Text>
+                        )}
+                      </Table.Cell>
+                    )}
+                    <Table.Cell>
+                      <Button
+                        size="sm"
+                        variant="tertiary"
+                        aria-label={`${actionLabel} ${dish.dish_name}`}
+                        disabled={c.busy || Boolean(c.lock)}
+                        onClick={(e) => {
+                          onSelect(dish.dish_id, e.currentTarget);
+                        }}
+                      >
+                        {compact ? "Chọn" : actionLabel}
+                      </Button>
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })}
             </Table.Body>
           </Table.Root>
         )}
