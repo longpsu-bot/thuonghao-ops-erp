@@ -118,7 +118,15 @@ it("builds each reviewed API factory once, reuses its bundle, and supplies expor
   expect(apis.schoolDispatch).toBe(schoolDispatch.mock.results[0]!.value);
   expect(reconciliation).toHaveBeenCalledOnce();
   expect(apis.reconciliation).toBe(reconciliation.mock.results[0]!.value);
-  expect(Object.values(observed.props!.exporters!)).toHaveLength(4);
+  expect(Object.keys(observed.props!.exporters!).sort()).toEqual([
+    "procurementPdf",
+    "procurementXlsx",
+    "pxkGroupedXlsx",
+    "pxkPdf",
+    "pxkXlsx",
+    "shoppingListImport",
+    "shoppingListXlsx",
+  ]);
   expect(
     Object.values(observed.props!.exporters!).every(
       (v) => typeof v === "function",

@@ -1,7 +1,7 @@
 import type { SchoolCateringPurchaseOrder } from "./schoolCateringProcurementModel";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { Cell, Row, Worksheet } from "exceljs";
-import companyLogoDataUrl from "../../../assets/thuong-hao-logo.png?inline";
+import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
 
 const QUANTITY_SCALE = 1_000_000n;
 
@@ -382,7 +382,7 @@ export async function createPurchaseOrderXlsx(
   workbook.created = new Date();
   const logoId = workbook.addImage({
     base64: companyLogoDataUrl,
-    extension: "png",
+    extension: "jpeg",
   });
 
   const summary = workbook.addWorksheet("Tổng");

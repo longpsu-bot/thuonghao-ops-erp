@@ -1,7 +1,7 @@
 import type { Cell, Row, Workbook, Worksheet } from "exceljs";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { SchoolDispatchDocument } from "./schoolDispatchReleaseModel";
-import companyLogoDataUrl from "../../../assets/thuong-hao-logo.png?inline";
+import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
 
 const QUANTITY_SCALE = 1_000_000n;
 
@@ -282,7 +282,7 @@ export async function createSchoolDispatchXlsx(
   workbook.creator = "Atlas · Thượng Hảo";
   const logoId = workbook.addImage({
     base64: companyLogoDataUrl,
-    extension: "png",
+    extension: "jpeg",
   });
   addSchoolDispatchSheet(
     workbook,
@@ -303,7 +303,7 @@ export async function createGroupedSchoolDispatchXlsx(
   workbook.creator = "Atlas · Thượng Hảo";
   const logoId = workbook.addImage({
     base64: companyLogoDataUrl,
-    extension: "png",
+    extension: "jpeg",
   });
   const names = new Set<string>();
   const ordered = [...documents].sort(
