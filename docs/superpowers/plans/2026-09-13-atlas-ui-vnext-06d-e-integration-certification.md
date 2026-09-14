@@ -106,15 +106,15 @@ layouts override those legacy template choices.
 
 #### H. Backend/Supabase certification
 
-- [ ] Run focused pgTAP/security/currentness tests and
+- [x] Run focused pgTAP/security/currentness tests and
       `pnpm certify:supabase:full-integration` once on the exact final head.
-- [ ] Do not deploy the new migration to Staging in this task.
+- [x] Do not deploy the new migration to Staging in this task.
 
 #### I. Final four-viewport Product acceptance
 
-- [ ] Execute original Task 3 for all seven modules and additionally verify Shopping
+- [x] Execute original Task 3 for all seven modules and additionally verify Shopping
       List local-draft import, released-only PO/PXK exports and grouped PXK workflow.
-- [ ] Generate deterministic workbooks and visually compare them with the supplied
+- [x] Generate deterministic workbooks and visually compare them with the supplied
       right-hand targets; record current output, target, differences and disposition.
 
 #### J. Exact-head preview / PR closeout
@@ -132,6 +132,40 @@ layouts override those legacy template choices.
 
 ---
 
+### 2026-09-14 certification evidence
+
+- Deterministic document evidence is stored outside the repository under the
+  task-local `document-acceptance` directory. The Shopping List matches the
+  supplied right-hand continuous School-first layout; differences are fixture date
+  and row volume only. The PO retains `Tổng` and matches the continuous `Theo
+trường` / `Theo hàng` hierarchy with the supplied logo; differences are fixture
+  business values only. PXK matches the seven-column A4 portrait hierarchy,
+  sensory/processing columns, issuer header/logo, document number and signatures;
+  differences are fixture business values and row volume only. Disposition: PASS.
+- The review harness produced 32 captures: all seven shell modules plus both
+  Planning phases at 1366×768, 1440×900, 1920×1080 and 360×800. Every capture had
+  document `scrollWidth <= clientWidth` and zero application console/page errors.
+  One repeatable `HTMLElement.focus` exception originates in Storybook's own
+  instrumented iframe bundle and is retained separately as a harness-only warning.
+- The browser-asset audit found zero secret/service-role/JWT/database-URL patterns,
+  zero live OPS project references and zero embedded Supabase project URLs or
+  publishable keys in `dist` and `storybook-static`. Generic `service_role` strings
+  inside the bundled Supabase client library are not credentials.
+- Direct Supabase CLI access from this worktree was unavailable because the stored
+  management session returned 401. Read-only GitHub deployment evidence shows the
+  latest Atlas Staging deployment is successful at
+  `147648712ce57355d66773edd45a5e3ecd6458c9`; that deployed tree has exactly 72
+  migrations ending at
+  `20260908225248_purchase_preparation_replacement_frontier`, and no later Staging
+  deployment run exists. No Staging or live write was performed.
+- `pnpm certify:supabase:full-integration` passes. The exact `pnpm
+certify:frontend` command reaches its parallel Vitest phase but exceeds this
+  host's resource envelope; no timeout was weakened. The unchanged serial suite
+  passes 143 files / 1771 tests, and typecheck, Vite build and Storybook build pass.
+  Exact-head GitHub Frontend CI remains the authoritative parallel gate.
+
+---
+
 ### Task 1: Classify every remaining transparent utility control
 
 **Files:**
@@ -145,7 +179,7 @@ layouts override those legacy template choices.
 - Consumes: 06D-A button variants.
 - Produces: no ordinary operator command rendered as visually plain text by default.
 
-- [ ] **Step 1: Capture the exact remaining utility inventory**
+- [x] **Step 1: Capture the exact remaining utility inventory**
 
 Run:
 
@@ -183,7 +217,7 @@ src/vnext/atlas/AtlasVNextShell.tsx
 
 Do not change a match merely because it appears in this list; apply operator semantics.
 
-- [ ] **Step 2: Add convergence regression for real command surfaces**
+- [x] **Step 2: Add convergence regression for real command surfaces**
 
 Verify representative controls by accessible name plus emitted CSS/variant semantics:
 
@@ -197,7 +231,7 @@ PXK export → secondary
 
 Also assert shell navigation remains navigation, not business-primary treatment.
 
-- [ ] **Step 3: Run convergence test and confirm remaining failures**
+- [x] **Step 3: Run convergence test and confirm remaining failures**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx
@@ -205,7 +239,7 @@ pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx
 
 Expected: FAIL only where textual business commands still use transparent `utility`.
 
-- [ ] **Step 4: Apply the smallest semantic variant changes**
+- [x] **Step 4: Apply the smallest semantic variant changes**
 
 Examples:
 
@@ -217,7 +251,7 @@ Examples:
 
 Do not simulate buttons with per-component background/radius props; use shared recipes.
 
-- [ ] **Step 5: Re-run affected tests and commit**
+- [x] **Step 5: Re-run affected tests and commit**
 
 ```bash
 pnpm exec vitest run src/vnext/atlas/AtlasConvergence.test.tsx src/vnext/atlas/master-data src/vnext/atlas/recipes src/vnext/atlas/planning src/vnext/atlas/dispatch src/vnext/atlas/reconciliation
@@ -234,7 +268,7 @@ git commit -m "refactor(atlas): converge operator command affordance"
 
 - No source edits unless a failure is proven to originate in 06D changes.
 
-- [ ] **Step 1: Run focused 06D regressions**
+- [x] **Step 1: Run focused 06D regressions**
 
 ```bash
 pnpm exec vitest run \
@@ -262,7 +296,7 @@ pnpm certify:frontend
 
 Expected: PASS. If local resource-sensitive tests time out, do not raise timeout budgets or edit unrelated tests. Differentially reproduce against the pre-06D baseline under equivalent conditions before classifying a regression.
 
-- [ ] **Step 3: Run explicit structural/build checks**
+- [x] **Step 3: Run explicit structural/build checks**
 
 ```bash
 pnpm ui:vnext:typegen
@@ -276,7 +310,7 @@ git diff --check
 
 Expected: PASS.
 
-- [ ] **Step 4: Audit browser assets**
+- [x] **Step 4: Audit browser assets**
 
 Require:
 
@@ -297,7 +331,7 @@ Publishable browser configuration/project refs are not privileged secrets; servi
 
 - No repository screenshot commits. Store review evidence outside the public repo or as safe CI artifacts only.
 
-- [ ] **Step 1: Use the existing local vNext review harness**
+- [x] **Step 1: Use the existing local vNext review harness**
 
 Review shell modules:
 
@@ -320,7 +354,7 @@ Within Planning, cover both `Nguồn lập nhu cầu` and `Xác nhận nhu cầu
 360×800
 ```
 
-- [ ] **Step 2: Verify the six owner PPT findings**
+- [x] **Step 2: Verify the six owner PPT findings**
 
 ```text
 PPT-1 School Defaults: direct Lưu, #, explicit status
@@ -331,7 +365,7 @@ PPT-5 Menu: complete active Dish Type columns, local horizontal scroll
 PPT-6 Pantry: School on every line, aligned fields, Ghi chú/Lý do semantics
 ```
 
-- [ ] **Step 3: Verify cross-cutting 06D interaction grammar**
+- [x] **Step 3: Verify cross-cutting 06D interaction grammar**
 
 ```text
 Vietnamese calendar opens from field and icon
@@ -347,7 +381,7 @@ reduced motion suppresses sanctioned detail/page animations
 no console warnings/errors attributable to 06D
 ```
 
-- [ ] **Step 4: Stop on any Product acceptance failure**
+- [x] **Step 4: Stop on any Product acceptance failure**
 
 Fix only inside the relevant 06D boundary, rerun focused tests, then repeat the affected viewport review.
 
@@ -359,7 +393,7 @@ Fix only inside the relevant 06D boundary, rerun focused tests, then repeat the 
 
 - No backend/source changes expected.
 
-- [ ] **Step 1: Run disposable Supabase Full Integration once on exact final 06D head**
+- [x] **Step 1: Run disposable Supabase Full Integration once on exact final 06D head**
 
 ```bash
 pnpm certify:supabase:full-integration
@@ -369,7 +403,7 @@ Expected: PASS with zero backend changes.
 
 If Docker cannot start, prove the local Docker/Linux engine is unavailable, then use the repository's existing GitHub Supabase Integration workflow on the exact 06D head. Do not modify scripts/workflow to bypass infrastructure.
 
-- [ ] **Step 2: Recheck Staging read-only**
+- [x] **Step 2: Recheck Staging read-only**
 
 Require:
 
@@ -380,7 +414,7 @@ frontier: 20260908225248_purchase_preparation_replacement_frontier
 
 No migration, fixture import, business command, Auth mutation, or staging data repair is authorized.
 
-- [ ] **Step 3: Confirm live OPS isolation**
+- [x] **Step 3: Confirm live OPS isolation**
 
 Require environment guards still reject:
 
