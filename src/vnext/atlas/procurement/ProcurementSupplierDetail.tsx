@@ -278,7 +278,7 @@ export function ProcurementSupplierDetail({
                 {added.includes(split.supplier_id) && (
                   <Button
                     size="sm"
-                    variant="utility"
+                    variant="tertiary"
                     aria-label={`Xóa ${supplier.supplier_name}`}
                     disabled={locked}
                     onClick={() =>

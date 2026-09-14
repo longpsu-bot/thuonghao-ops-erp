@@ -63,6 +63,17 @@ const primary = () =>
           ),
         ),
     );
+const hasRestingBackground = (control: HTMLElement, background: string) =>
+  [...document.styleSheets].some((sheet) =>
+    [...sheet.cssRules].some(
+      (rule) =>
+        rule instanceof CSSStyleRule &&
+        [...control.classList].some(
+          (name) => rule.selectorText === `.${name}`,
+        ) &&
+        rule.style.background === background,
+    ),
+  );
 
 async function schools() {
   const api = createSchoolDefaultsReviewFixture();
@@ -280,9 +291,13 @@ describe("06D-C locked Recipe peer navigation", () => {
         name: "Xem công thức Canh bí đỏ thịt bằm",
       }),
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Tạo lệnh điều chỉnh" }),
-    );
+    const forwardAction = await screen.findByRole("button", {
+      name: "Tạo lệnh điều chỉnh",
+    });
+    expect(
+      hasRestingBackground(forwardAction, "var(--atlas-colors-bg-toolbar)"),
+    ).toBe(true);
+    fireEvent.click(forwardAction);
 
     expect(
       screen.getByRole("tab", { name: "Lệnh điều chỉnh" }),
@@ -314,6 +329,7 @@ describe("06B frozen Review safety and focus", () => {
     ).not.toBeInTheDocument();
     expect(button("Làm mới dữ liệu")).toBeEnabled();
     expect(button("Lưu thay đổi")).toBeEnabled();
+    expect(primary()).toContain(button("Lưu thay đổi"));
   });
   it.each(["menu", "attendance", "pantry"] as const)(
     "blocks routine refresh during %s Preview and restores it on back",
@@ -367,6 +383,12 @@ describe("06B peer navigation and action hierarchy", () => {
       document.getElementById(tab.getAttribute("aria-controls")!),
     ).toHaveAttribute("role", "tabpanel");
     expect(primary().map((b) => b.textContent)).toEqual(["Tạo nguyên liệu"]);
+    expect(
+      hasRestingBackground(
+        screen.getByRole("button", { name: /Xem.*Rau muống/ }),
+        "var(--atlas-colors-bg-subtle)",
+      ),
+    ).toBe(true);
   });
   it("keeps a dirty peer switch guarded through Cancel and Discard", async () => {
     await master();

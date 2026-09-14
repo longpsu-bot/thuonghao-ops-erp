@@ -98,7 +98,7 @@ export function SchoolPxkTable({
                 </Table.Cell>
                 <Table.Cell>
                   <Button
-                    variant="utility"
+                    variant="tertiary"
                     size="sm"
                     whiteSpace="normal"
                     disabled={disabled}

@@ -254,7 +254,7 @@ export function ProcurementOrdersStage({
                     <Table.Cell>
                       <Button
                         size="sm"
-                        variant="utility"
+                        variant="tertiary"
                         aria-label={`Xem đơn ${order.supplier.supplier_name}`}
                         aria-expanded={selectedId === order.purchase_order_id}
                         onClick={(event) => {
@@ -420,7 +420,7 @@ export function ProcurementOrdersStage({
                   )}
                   {onExportPdf && (
                     <Button
-                      variant="utility"
+                      variant="secondary"
                       disabled={disabled || exporting}
                       onClick={() => void exportOrder(onExportPdf)}
                     >

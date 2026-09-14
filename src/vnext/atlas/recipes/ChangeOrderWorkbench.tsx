@@ -203,7 +203,7 @@ export function ChangeOrderWorkbench(props: {
                   <Table.Cell>{temporalLabels[row.temporal_state]}</Table.Cell>
                   <Table.Cell>
                     <Button
-                      variant="utility"
+                      variant="tertiary"
                       size="sm"
                       disabled={
                         !c.canAct ||
@@ -254,7 +254,7 @@ export function ChangeOrderWorkbench(props: {
                   : "Chi tiết lệnh"}
               </Heading>
               <Button
-                variant="utility"
+                variant="tertiary"
                 size="sm"
                 aria-label="Đóng lệnh"
                 disabled={c.busy || Boolean(c.lock)}

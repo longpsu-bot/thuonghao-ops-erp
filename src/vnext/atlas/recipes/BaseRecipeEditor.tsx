@@ -181,7 +181,7 @@ export function BaseRecipeEditor({ c }: { c: DishRecipeController }) {
                     <Table.Cell>
                       <Button
                         size="sm"
-                        variant="utility"
+                        variant="tertiary"
                         aria-label={`Bỏ ${name}`}
                         onClick={() =>
                           c.setRecipeDraft({

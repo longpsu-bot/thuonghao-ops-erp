@@ -147,7 +147,7 @@ export function ProcurementAllocationTable({
                   </Table.Cell>
                   <Table.Cell>
                     <Button
-                      variant="utility"
+                      variant="tertiary"
                       size="sm"
                       aria-label={`${action} ${row.ingredient_name}`}
                       aria-expanded={selectedKey === key}

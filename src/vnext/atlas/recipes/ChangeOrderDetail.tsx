@@ -186,7 +186,7 @@ export function ChangeOrderDetail({ c }: { c: ChangeOrderController }) {
           )}
           <Button
             mt="sm"
-            variant="utility"
+            variant="secondary"
             loading={c.effectiveLoading}
             disabled={!dishId || !type}
             onClick={() => void c.inspectEffective(dishId, schoolId, type)}

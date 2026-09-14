@@ -181,7 +181,7 @@ export function DishRecipeWorkbench(props: {
           {c.visibleDishes.length} món
         </Text>
         <Button
-          variant="utility"
+          variant="secondary"
           size="sm"
           disabled={!c.canCommand}
           onClick={() => c.transition({ kind: "import" })}
@@ -230,7 +230,7 @@ export function DishRecipeWorkbench(props: {
                 </Box>
               )}
               <Button
-                variant="utility"
+                variant="tertiary"
                 size="sm"
                 aria-label="Đóng công thức"
                 disabled={c.busy || Boolean(c.lock)}
@@ -291,7 +291,7 @@ export function DishRecipeWorkbench(props: {
                   >
                     <Button
                       size="sm"
-                      variant="utility"
+                      variant="tertiary"
                       disabled={!c.canCommand}
                       onClick={() => c.transition({ kind: "edit" })}
                     >
@@ -300,7 +300,7 @@ export function DishRecipeWorkbench(props: {
                     {c.canCopy && (
                       <Button
                         size="sm"
-                        variant="utility"
+                        variant="secondary"
                         onClick={() => c.transition({ kind: "copy" })}
                       >
                         Sao chép công thức

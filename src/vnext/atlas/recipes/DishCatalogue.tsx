@@ -51,7 +51,7 @@ export function DishCatalogue({
       {compact && c.context && (
         <Box display={{ base: "block", lg: "none" }} px="sm" py="xs">
           <Button
-            variant="utility"
+            variant="tertiary"
             size="sm"
             aria-expanded={expanded}
             onClick={() => setExpanded(!expanded)}
