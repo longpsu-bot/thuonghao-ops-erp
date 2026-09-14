@@ -145,11 +145,11 @@ describe("Chakra School default portions workbench", () => {
     const connected = apiWith();
     await renderReady(connected.api);
     const input = student();
-    const review = screen.getByRole("button", { name: "Xem thay đổi" });
+    const save = screen.getByRole("button", { name: "Lưu thay đổi" });
 
     fireEvent.change(input, { target: { value: "0" } });
     expect(input).toHaveAttribute("aria-invalid", "false");
-    expect(review).toBeEnabled();
+    expect(save).toBeEnabled();
 
     for (const value of [
       "",
@@ -162,7 +162,7 @@ describe("Chakra School default portions workbench", () => {
     ]) {
       fireEvent.change(input, { target: { value } });
       expect(input).toHaveAttribute("aria-invalid", "true");
-      expect(review).toBeDisabled();
+      expect(save).toBeDisabled();
       expect(
         screen.getByText("1 trường có dữ liệu chưa hợp lệ"),
       ).toBeInTheDocument();
@@ -173,8 +173,17 @@ describe("Chakra School default portions workbench", () => {
     expect(screen.getByText(/0 thay đổi chưa lưu/)).toBeInTheDocument();
   });
 
-  it("keeps hidden dirty Schools and includes all of them in attached Review", async () => {
-    const connected = apiWith();
+  it("keeps hidden dirty Schools and includes all of them in the direct save", async () => {
+    const connected = apiWith({
+      write: {
+        kind: "backend_error",
+        error: {
+          success: false,
+          error_code: "CAPABILITY_DENIED",
+          safe_message: "Denied.",
+        },
+      },
+    });
     await renderReady(connected.api);
     fireEvent.change(student(), { target: { value: "421" } });
     fireEvent.change(teacher(), { target: { value: "46" } });
@@ -183,35 +192,37 @@ describe("Chakra School default portions workbench", () => {
     });
     expect(screen.getByText(/1 thay đổi ngoài bộ lọc/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    const review = await screen.findByRole("complementary", {
-      name: "Thay đổi sĩ số mặc định",
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
+    await waitFor(() =>
+      expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce(),
+    );
     expect(
-      within(review).getByText("Trường Tiểu học Ánh Dương"),
-    ).toBeInTheDocument();
+      connected.updateSchoolDefaultsBulk.mock.calls[0]?.[0].payload.changes,
+    ).toEqual([
+      {
+        school_id: "school-1",
+        expected_version: 3,
+        default_student_portions: 421,
+        default_teacher_portions: 32,
+      },
+      {
+        school_id: "school-2",
+        expected_version: 7,
+        default_student_portions: 840,
+        default_teacher_portions: 46,
+      },
+    ]);
     expect(
-      within(review).getByText("Trường Trung học Beta"),
-    ).toBeInTheDocument();
-    expect(within(review).getByText("Học sinh: 420 → 421")).toBeInTheDocument();
-    expect(within(review).getByText("Giáo viên: 45 → 46")).toBeInTheDocument();
-    const comparisonTable = within(review).getByRole("table", {
-      name: "So sánh thay đổi sĩ số mặc định",
-    });
-    expect(comparisonTable).toHaveStyle({ tableLayout: "fixed" });
-    expect(
-      screen.getByLabelText("Học sinh mặc định — Trường Trung học Beta"),
-    ).toBeDisabled();
-    expect(teacher()).toBeDisabled();
+      screen.queryByRole("complementary", {
+        name: "Thay đổi sĩ số mặc định",
+      }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/expected_version|version|school-1/),
     ).not.toBeInTheDocument();
-
-    fireEvent.click(within(review).getByRole("button", { name: "Đóng" }));
-    expect(await screen.findByDisplayValue("46")).toBeEnabled();
   });
 
-  it("sends one exact bulk command from the frozen Review and clears only proven drafts after readback", async () => {
+  it("sends one exact frozen bulk command directly and clears only proven drafts after readback", async () => {
     const readback = [
       { ...schools[0], version: 8, default_teacher_portions: 46 },
       { ...schools[1], version: 4, default_student_portions: 421 },
@@ -220,13 +231,12 @@ describe("Chakra School default portions workbench", () => {
     await renderReady(connected.api);
     fireEvent.change(student(), { target: { value: "421" } });
     fireEvent.change(teacher(), { target: { value: "46" } });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    const review = await screen.findByRole("complementary", {
-      name: "Thay đổi sĩ số mặc định",
-    });
-    fireEvent.click(
-      within(review).getByRole("button", { name: "Lưu thay đổi" }),
-    );
+    expect(
+      screen.queryByRole("complementary", {
+        name: "Thay đổi sĩ số mặc định",
+      }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
     await waitFor(() =>
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce(),
@@ -280,14 +290,7 @@ describe("Chakra School default portions workbench", () => {
     } as unknown as SchoolMasterDataApi;
     await renderReady(api);
     fireEvent.change(student(), { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    fireEvent.click(
-      within(
-        await screen.findByRole("complementary", {
-          name: "Thay đổi sĩ số mặc định",
-        }),
-      ).getByRole("button", { name: "Lưu thay đổi" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     await waitFor(() => expect(getSchools).toHaveBeenCalledTimes(2));
     expect(student()).toBeDisabled();
 
@@ -300,7 +303,7 @@ describe("Chakra School default portions workbench", () => {
     await waitFor(() => expect(student()).toBeEnabled());
   });
 
-  it("refreshes authority without discarding valid or invalid drafts and reviews the refreshed version", async () => {
+  it("refreshes authority without discarding valid or invalid drafts and saves with the refreshed version", async () => {
     const refreshed = [
       schools[0],
       { ...schools[1], version: 9, default_teacher_portions: 33 },
@@ -323,13 +326,7 @@ describe("Chakra School default portions workbench", () => {
     fireEvent.change(teacher("Trường Tiểu học Ánh Dương"), {
       target: { value: "34" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    const review = await screen.findByRole("complementary", {
-      name: "Thay đổi sĩ số mặc định",
-    });
-    fireEvent.click(
-      within(review).getByRole("button", { name: "Lưu thay đổi" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     await waitFor(() =>
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce(),
     );
@@ -416,14 +413,7 @@ describe("Chakra School default portions workbench", () => {
       await screen.findByText("Trường Tiểu học Ánh Dương"),
     ).toBeInTheDocument();
     fireEvent.change(student(), { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    fireEvent.click(
-      within(
-        await screen.findByRole("complementary", {
-          name: "Thay đổi sĩ số mặc định",
-        }),
-      ).getByRole("button", { name: "Lưu thay đổi" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
 
     rendered.rerender(
       <AtlasVNextProvider>
@@ -500,16 +490,10 @@ describe("Chakra School default portions workbench", () => {
       const connected = apiWith({ reads: [success(), success()], write });
       await renderReady(connected.api);
       fireEvent.change(student(), { target: { value: "421" } });
-      fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-      const review = await screen.findByRole("complementary", {
-        name: "Thay đổi sĩ số mặc định",
-      });
-      fireEvent.click(
-        within(review).getByRole("button", { name: "Lưu thay đổi" }),
-      );
+      fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
       expect(await screen.findByText(message)).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: "Xem thay đổi" }),
+        screen.getByRole("button", { name: "Lưu thay đổi" }),
       ).toBeDisabled();
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce();
 
@@ -526,7 +510,7 @@ describe("Chakra School default portions workbench", () => {
       expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce();
       expect(student()).toHaveValue("421");
       expect(
-        screen.getByRole("button", { name: "Xem thay đổi" }),
+        screen.getByRole("button", { name: "Lưu thay đổi" }),
       ).toBeEnabled();
     },
   );
@@ -544,14 +528,7 @@ describe("Chakra School default portions workbench", () => {
     });
     await renderReady(connected.api);
     fireEvent.change(student(), { target: { value: "421" } });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    fireEvent.click(
-      within(
-        await screen.findByRole("complementary", {
-          name: "Thay đổi sĩ số mặc định",
-        }),
-      ).getByRole("button", { name: "Lưu thay đổi" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(
       await screen.findByText(
         "Đã gửi lệnh lưu nhưng chưa tải lại được dữ liệu chính thức.",
@@ -560,7 +537,7 @@ describe("Chakra School default portions workbench", () => {
     expect(
       screen.getByRole("button", { name: "Tải lại để xác nhận" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Lưu thay đổi" })).toBeDisabled();
     expect(connected.updateSchoolDefaultsBulk).toHaveBeenCalledOnce();
   });
 
@@ -576,14 +553,7 @@ describe("Chakra School default portions workbench", () => {
     const connected = apiWith({ write: denied });
     await renderReady(connected.api);
     fireEvent.change(student(), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
-    fireEvent.click(
-      within(
-        await screen.findByRole("complementary", {
-          name: "Thay đổi sĩ số mặc định",
-        }),
-      ).getByRole("button", { name: "Lưu thay đổi" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Lưu thay đổi" }));
     expect(
       await screen.findByText("Bạn không có quyền thực hiện thao tác này."),
     ).toBeInTheDocument();

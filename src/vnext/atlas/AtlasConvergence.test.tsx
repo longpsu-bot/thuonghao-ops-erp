@@ -110,29 +110,20 @@ async function planning(job: "menu" | "attendance" | "pantry") {
 }
 
 describe("06B frozen Review safety and focus", () => {
-  it("preserves a School draft on normal refresh but cannot refresh its frozen Review", async () => {
+  it("preserves a School draft on normal refresh and saves directly without Review", async () => {
     const { input, read } = await schools();
     expect(button("Làm mới dữ liệu")).toBeEnabled();
     fireEvent.click(button("Làm mới dữ liệu"));
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(button("Làm mới dữ liệu")).toBeEnabled());
     expect(input).toHaveValue("123");
-    fireEvent.click(button("Xem thay đổi"));
-    expect(button("Làm mới dữ liệu")).toBeDisabled();
-    fireEvent.click(button("Làm mới dữ liệu"));
-    expect(read).toHaveBeenCalledTimes(2);
     expect(
-      screen.getByRole("complementary", { name: "Thay đổi sĩ số mặc định" }),
-    ).toHaveFocus();
-    fireEvent.click(button("Đóng"));
+      screen.queryByRole("complementary", {
+        name: "Thay đổi sĩ số mặc định",
+      }),
+    ).not.toBeInTheDocument();
     expect(button("Làm mới dữ liệu")).toBeEnabled();
-    expect(input).toHaveValue("123");
-  });
-  it("returns focus to the remounted School Review action on close", async () => {
-    await schools();
-    fireEvent.click(button("Xem thay đổi"));
-    fireEvent.click(button("Đóng"));
-    await waitFor(() => expect(button("Xem thay đổi")).toHaveFocus());
+    expect(button("Lưu thay đổi")).toBeEnabled();
   });
   it.each(["menu", "attendance", "pantry"] as const)(
     "blocks routine refresh during %s Preview and restores it on back",
