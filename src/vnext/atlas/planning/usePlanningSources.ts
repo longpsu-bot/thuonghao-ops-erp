@@ -362,7 +362,7 @@ export function usePlanningSources({
       quantity: !r.requested_quantity.trim() ? "Nhập số lượng." : "",
       note:
         purpose?.note_rule === "REQUIRED" && !r.note.trim()
-          ? "Cần ghi chú cho mục đích này."
+          ? "Nhập lý do cho mục đích này."
           : purpose?.note_rule === "PROHIBITED" && r.note.trim()
             ? "Mục đích này không cho phép ghi chú."
             : "",

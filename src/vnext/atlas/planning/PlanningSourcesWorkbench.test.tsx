@@ -456,12 +456,13 @@ it.each(["menu", "attendance", "pantry"] as const)(
   },
 );
 
-it.each([
-  ["REQUIRED", "", "Cần ghi chú cho mục đích này."],
-  ["PROHIBITED", "Keep this note", "Mục đích này không cho phép ghi chú."],
-] as const)("renders inline %s note validation", async (rule, note, error) => {
+async function renderPantryNoteRule(
+  rule: "OPTIONAL" | "REQUIRED" | "PROHIBITED",
+  note: string,
+) {
   const fixture = createPlanningStoryFixture("pantry_review");
   fixture.pantry.purposes[0].note_rule = rule;
+  fixture.pantry.batch!.active_lines[0].note = note;
   render(
     <AtlasVNextProvider>
       <PlanningSourcesWorkbench
@@ -472,12 +473,57 @@ it.each([
       />
     </AtlasVNextProvider>,
   );
-  const input = await screen.findByRole("textbox", { name: "Ghi chú dòng 1" });
-  fireEvent.change(input, { target: { value: note } });
+}
+
+it("keeps OPTIONAL Pantry notes optional", async () => {
+  await renderPantryNoteRule("OPTIONAL", "");
+  const input = await screen.findByRole("textbox", {
+    name: "Ghi chú dòng 1",
+  });
+  expect(input).not.toBeRequired();
+  expect(screen.queryByText(/Nhập lý do/)).not.toBeInTheDocument();
+});
+
+it("labels REQUIRED Pantry content as a required reason", async () => {
+  await renderPantryNoteRule("REQUIRED", "");
+  const input = await screen.findByRole("textbox", { name: "Lý do dòng 1" });
+  expect(input).toBeRequired();
   expect(input).toHaveAttribute("aria-invalid", "true");
-  await waitFor(() => expect(input).toHaveAccessibleErrorMessage(error));
-  expect(input).toHaveValue(note);
+  await waitFor(() =>
+    expect(input).toHaveAccessibleErrorMessage("Nhập lý do cho mục đích này."),
+  );
+  expect(
+    input.closest("tr")!.querySelectorAll("[data-pantry-feedback]"),
+  ).toHaveLength(6);
+  fireEvent.change(screen.getByRole("textbox", { name: "Số lượng dòng 1" }), {
+    target: { value: "25.7" },
+  });
   expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+});
+
+it("disables an empty PROHIBITED Pantry note with neutral guidance", async () => {
+  await renderPantryNoteRule("PROHIBITED", "");
+  expect(
+    await screen.findByRole("textbox", { name: "Ghi chú dòng 1" }),
+  ).toBeDisabled();
+  expect(screen.getByText("Không áp dụng cho mục đích này.")).toBeVisible();
+});
+
+it("keeps existing PROHIBITED note content editable until explicitly cleared", async () => {
+  await renderPantryNoteRule("PROHIBITED", "Nội dung cần xóa");
+  const input = await screen.findByRole("textbox", {
+    name: "Ghi chú dòng 1",
+  });
+  expect(input).toBeEnabled();
+  expect(input).toHaveValue("Nội dung cần xóa");
+  await waitFor(() =>
+    expect(input).toHaveAccessibleErrorMessage(
+      "Mục đích này không cho phép ghi chú.",
+    ),
+  );
+  fireEvent.change(input, { target: { value: "" } });
+  expect(input).toBeDisabled();
+  expect(screen.getByText("Không áp dụng cho mục đích này.")).toBeVisible();
 });
 
 it.each([

@@ -11,6 +11,30 @@ import {
 } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
+
+function PantryFeedback({
+  error,
+  helper,
+}: {
+  error?: string;
+  helper?: string;
+}) {
+  return (
+    <Box
+      data-pantry-feedback=""
+      minH="var(--atlas-layout-pantry-feedback, 18px)"
+    >
+      {error ? (
+        <Field.ErrorText>{error}</Field.ErrorText>
+      ) : helper ? (
+        <Text textStyle="helper" color="fg.muted">
+          {helper}
+        </Text>
+      ) : null}
+    </Box>
+  );
+}
+
 export function PlanningPantryStage({
   c,
   visibleSchoolIds,
@@ -179,6 +203,13 @@ export function PlanningPantryStage({
                       const selectedSchool = c.pantryData?.schools.find(
                         (school) => school.school_id === r.school_id,
                       );
+                      const noteRequired = purpose?.note_rule === "REQUIRED";
+                      const noteProhibited =
+                        purpose?.note_rule === "PROHIBITED";
+                      const hasExistingNote = Boolean(r.note.trim());
+                      const noteDisabled =
+                        !c.canEdit || (noteProhibited && !hasExistingNote);
+                      const noteLabel = noteRequired ? "Lý do" : "Ghi chú";
                       return (
                         <Table.Row key={r.source_row_reference || index}>
                           <Table.Cell>
@@ -209,12 +240,12 @@ export function PlanningPantryStage({
                               </NativeSelect.Field>
                               <NativeSelect.Indicator />
                             </NativeSelect.Root>
-                            <Text textStyle="helper" color="fg.muted">
-                              {
+                            <PantryFeedback
+                              helper={
                                 selectedSchool?.default_delivery_location
                                   .location_name
                               }
-                            </Text>
+                            />
                           </Table.Cell>
                           <Table.Cell>
                             <Field.Root invalid={!!errors.ingredient}>
@@ -247,10 +278,10 @@ export function PlanningPantryStage({
                                 </NativeSelect.Field>
                                 <NativeSelect.Indicator />
                               </NativeSelect.Root>
-                              {unit && <Text textStyle="helper">{unit}</Text>}
-                              <Field.ErrorText>
-                                {errors.ingredient}
-                              </Field.ErrorText>
+                              <PantryFeedback
+                                error={errors.ingredient}
+                                helper={unit}
+                              />
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
@@ -284,9 +315,7 @@ export function PlanningPantryStage({
                                 </NativeSelect.Field>
                                 <NativeSelect.Indicator />
                               </NativeSelect.Root>
-                              <Field.ErrorText>
-                                {errors.purpose}
-                              </Field.ErrorText>
+                              <PantryFeedback error={errors.purpose} />
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
@@ -303,18 +332,16 @@ export function PlanningPantryStage({
                                   })
                                 }
                               />
-                              <Field.ErrorText>
-                                {errors.quantity}
-                              </Field.ErrorText>
+                              <PantryFeedback error={errors.quantity} />
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
                             <Field.Root invalid={!!errors.note}>
                               <Input
-                                aria-label={`Ghi chú dòng ${index + 1}`}
+                                aria-label={`${noteLabel} dòng ${index + 1}`}
                                 value={r.note}
-                                required={purpose?.note_rule === "REQUIRED"}
-                                disabled={!c.canEdit}
+                                required={noteRequired}
+                                disabled={noteDisabled}
                                 minW="var(--atlas-layout-note-width, 150px)"
                                 onChange={(e) =>
                                   c.editPantryRow(index, {
@@ -322,7 +349,14 @@ export function PlanningPantryStage({
                                   })
                                 }
                               />
-                              <Field.ErrorText>{errors.note}</Field.ErrorText>
+                              <PantryFeedback
+                                error={errors.note}
+                                helper={
+                                  noteProhibited && !hasExistingNote
+                                    ? "Không áp dụng cho mục đích này."
+                                    : undefined
+                                }
+                              />
                             </Field.Root>
                           </Table.Cell>
                           <Table.Cell>
@@ -337,10 +371,11 @@ export function PlanningPantryStage({
                                 })
                               }
                             />
+                            <PantryFeedback />
                           </Table.Cell>
                           <Table.Cell>
                             <Button
-                              variant="utility"
+                              variant="tertiary"
                               size="sm"
                               aria-label={`Bỏ dòng ${index + 1}`}
                               disabled={!c.canEdit}
