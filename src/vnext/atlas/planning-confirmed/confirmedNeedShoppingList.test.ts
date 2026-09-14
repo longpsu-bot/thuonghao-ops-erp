@@ -42,7 +42,7 @@ describe("Confirmed Need Shopping List workbook", () => {
     });
     expect(sheet.getColumn(1).width).toBeCloseTo(17.57, 1);
     expect(sheet.getColumn(2).width).toBe(42);
-    expect(sheet.getColumn(4).width).toBe(8);
+    expect(sheet.getColumn(4).width).toBe(11);
     expect(sheet.getRow(1).height).toBe(36);
     expect(sheet.getRow(3).height).toBe(36);
     expect(sheet.getCell("A3").font).toMatchObject({
@@ -54,7 +54,10 @@ describe("Confirmed Need Shopping List workbook", () => {
       type: "pattern",
       pattern: "solid",
     });
+    expect(sheet.getCell("A1").value).toBe("Thứ Hai (07/09/2026)");
     expect(sheet.getCell("A4").value).toBe("Trường Nguyễn Du");
+    expect(sheet.getRow(4).height).toBe(42);
+    expect(sheet.getCell("A4").font.bold).toBe(true);
     expect(sheet.getCell("A5").value).toBeNull();
     expect(sheet.getCell("A4").border.top?.style).toBe("thick");
     expect(sheet.getCell("A5").border.top?.style).not.toBe("thick");

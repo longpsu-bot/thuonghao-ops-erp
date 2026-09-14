@@ -1,5 +1,7 @@
 import {
   Box,
+  Button,
+  Flex,
   Field,
   Grid,
   Heading,
@@ -30,6 +32,15 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
   const dialogDestination = useRef<"row" | "detail" | "date" | null>(null);
   const dateControl = useRef<HTMLDivElement>(null);
   const [dateReset, setDateReset] = useState(0);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const releasedDocuments = Array.from(
+    new Map(
+      c.rows
+        .flatMap((row) => row.history)
+        .filter((document) => document.export_ready)
+        .map((document) => [document.school_dispatch_release_id, document]),
+    ).values(),
+  );
   const transition: typeof c.transition = (next) => {
     dialogTrigger.current =
       document.activeElement instanceof HTMLElement
@@ -144,14 +155,44 @@ export function SchoolPxkWorkbench(props: SchoolPxkWorkbenchProps) {
           else transition({ refresh: true });
         }}
       />
-      <Text px="md" py="sm" textStyle="helper" color="fg.muted">
-        {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
-          .map(
-            (s) =>
-              `${pxkLabels[s]} ${c.rows.filter((r) => r.state === s).length}`,
-          )
-          .join(" · ")}
-      </Text>
+      <Flex
+        px="md"
+        py="sm"
+        gap="sm"
+        align="center"
+        justify="space-between"
+        wrap="wrap"
+      >
+        <Text textStyle="helper" color="fg.muted">
+          {(["READY", "REPLACEMENT_REQUIRED", "BLOCKED", "CURRENT"] as const)
+            .map(
+              (s) =>
+                `${pxkLabels[s]} ${c.rows.filter((r) => r.state === s).length}`,
+            )
+            .join(" · ")}
+        </Text>
+        {props.onExportGroupedXlsx && (
+          <Button
+            variant="tertiary"
+            disabled={disabled || !releasedDocuments.length}
+            onClick={() => {
+              setExportError(null);
+              void Promise.resolve(
+                props.onExportGroupedXlsx!(releasedDocuments),
+              ).catch(() =>
+                setExportError("Không thể xuất nhóm Phiếu xuất kho."),
+              );
+            }}
+          >
+            Xuất PXK đã phát hành
+          </Button>
+        )}
+      </Flex>
+      {exportError && (
+        <Text px="md" pb="sm" role="alert" color="status.danger">
+          {exportError}
+        </Text>
+      )}
       {c.loading && (
         <Text role="status" px="md" pb="sm">
           Đang tải phiếu xuất kho…

@@ -249,6 +249,16 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
           location_name: "Bếp chính Nguyễn Du",
         },
         service_date: "2026-09-02",
+        school_breakdown: [
+          {
+            school_id: "25000000-0000-4000-8000-000000000021",
+            school_name: "Trường Nguyễn Du",
+            school_display_order: 1,
+            delivery_location_id: locationId,
+            delivery_location_name: "Bếp chính Nguyễn Du",
+            ordered_quantity: "60.000000",
+          },
+        ],
         source: {
           family_id: familyId,
           family_revision_id: familyRevisionId,
@@ -269,6 +279,16 @@ function basePurchaseOrder(): SchoolCateringPurchaseOrder {
           location_name: "Bếp chính Trần Quốc Toản",
         },
         service_date: "2026-09-02",
+        school_breakdown: [
+          {
+            school_id: "25000000-0000-4000-8000-000000000022",
+            school_name: "Trường Trần Quốc Toản",
+            school_display_order: 2,
+            delivery_location_id: "25000000-0000-4000-8000-000000000012",
+            delivery_location_name: "Bếp chính Trần Quốc Toản",
+            ordered_quantity: "40.000000",
+          },
+        ],
         source: {
           family_id: familyId,
           family_revision_id: familyRevisionId,

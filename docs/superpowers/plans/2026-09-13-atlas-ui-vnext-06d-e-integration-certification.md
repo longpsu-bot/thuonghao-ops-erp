@@ -13,7 +13,9 @@
 ## Global Constraints
 
 - Requires 06D-A/B/C/D to be individually green before this plan begins.
-- No schema, migration, RLS, RPC, Edge Function, domain-contract, Retool, or hosted business-data change.
+- No broad schema, RLS, Edge Function, Retool, or hosted business-data change. The
+  Product Owner-approved document-freeze amendment below permits only the additive
+  snapshot/read-model fields proven necessary by the document audit.
 - Keep one dominant business action per active operator decision.
 - Real textual business commands use `businessPrimary`, `secondary`, `tertiary`, or `destructive`; transparent `utility` is not a generic text-button style.
 - Keep shell navigation, tabs, link-like navigation affordances, and the intentional circular Refresh behavior semantically intact.
@@ -33,11 +35,11 @@ workflow evidence and must not be copied as architecture.
 
 ### Document-contract audit matrix
 
-| Document                     | Current Atlas support                                                                                                                                                                         | Staff target requirement                                                                                                                                                                                                        | Existing authoritative field?                                                                                                                                         | Template-only change? | Read-model/snapshot change required?                                                                                                                                                                                          | Exact files/contracts affected                                                                                                                          |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Confirmed Need Shopping List | No staff Shopping List workbook exists. Confirmed Need already owns one canonical local draft and one authoritative `Lưu`; generated purchase review remains a separate preliminary artifact. | Per-date continuous table; School only on the first row of each group; no `X` markers or School-band rows; editable quantity/reason/note; hidden stable Atlas identities; whole-workbook validation and local-draft-only apply. | Yes: batch/version, line/revision/decision, date, School, location, Ingredient, Unit, quantity and policy are already present. Returned line order is deterministic.  | Yes.                  | No backend delta. Validate import against the complete current workbench and reject every stale, missing, duplicate or mismatched row.                                                                                        | New Confirmed Need workbook module/tests; Confirmed Need controller/workbench; exporter injection through `AtlasVNextConnectedApp` and `AtlasVNextApp`. |
-| Official supplier PO         | Released-only XLSX/PDF guard exists. `Tổng`, `Theo trường` and `Theo hàng` exist, but details use merged group bands/spacers and location text rather than immutable School facts.            | Preserve `Tổng` business structure; continuous detail tables; first-row School/Ingredient identity with blank continuation rows; dark headers; Supplier/date placement; exact quantities; authoritative School order.           | Supplier snapshot, date, Ingredient, Unit, exact quantity and location identity exist. Immutable School name/order and per-School released quantity breakdown do not. | No.                   | Add the smallest immutable released-line School breakdown snapshot and shaped read. Legacy released rows without the snapshot remain non-exportable; never reconstruct released School history from current masters in React. | `SCHOOL-CATERING-PROCUREMENT.v1`; one additive migration and focused pgTAP; procurement model, fixtures, exporters and tests.                           |
-| School Dispatch / PXK        | Released/superseded-only individual XLSX/PDF guard exists. The current workbook is a simple four-column sheet with no sensory/signature hierarchy and no grouped export.                      | Seven-column PXK hierarchy, target widths/heights, Times New Roman, A4 portrait, sensory and processing columns, three-party signatures, and grouped immutable-snapshot output ordered by date/School.                          | Document number/date, School, location/address, note and exact lines are immutable. Immutable School display order and document header/company identity are absent.   | No.                   | Add the smallest School document-header configuration and immutable released header/display-order snapshot. Missing legacy snapshot fails closed; no hardcoded or mutable React lookup.                                       | `SCHOOL-DISPATCH-RELEASE.v1`; one additive migration and focused pgTAP; dispatch model, fixtures, exporters/tests and grouped-export UI callback.       |
+| Document                     | Current Atlas support                                                                                                                                                                         | Staff target requirement                                                                                                                                                                                                 | Existing authoritative field?                                                                                                                                         | Template-only change? | Read-model/snapshot change required?                                                                                                                                                                                          | Exact files/contracts affected                                                                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confirmed Need Shopping List | No staff Shopping List workbook exists. Confirmed Need already owns one canonical local draft and one authoritative `Lưu`; generated purchase review remains a separate preliminary artifact. | Per-date continuous table; School only on the first row of each group; no `X` markers or School-band rows; editable quantity/note; hidden stable Atlas identities; whole-workbook validation and local-draft-only apply. | Yes: batch/version, line/revision/decision, date, School, location, Ingredient, Unit, quantity and policy are already present. Returned line order is deterministic.  | Yes.                  | No backend delta. Validate import against the complete current workbench and reject every stale, missing, duplicate or mismatched row.                                                                                        | New Confirmed Need workbook module/tests; Confirmed Need controller/workbench; exporter injection through `AtlasVNextConnectedApp` and `AtlasVNextApp`. |
+| Official supplier PO         | Released-only XLSX/PDF guard exists. `Tổng`, `Theo trường` and `Theo hàng` exist, but details use merged group bands/spacers and location text rather than immutable School facts.            | Preserve `Tổng` business structure; continuous detail tables; first-row School/Ingredient identity with blank continuation rows; dark headers; Supplier/date placement; exact quantities; authoritative School order.    | Supplier snapshot, date, Ingredient, Unit, exact quantity and location identity exist. Immutable School name/order and per-School released quantity breakdown do not. | No.                   | Add the smallest immutable released-line School breakdown snapshot and shaped read. Legacy released rows without the snapshot remain non-exportable; never reconstruct released School history from current masters in React. | `SCHOOL-CATERING-PROCUREMENT.v1`; one additive migration and focused pgTAP; procurement model, fixtures, exporters and tests.                           |
+| School Dispatch / PXK        | Released/superseded-only individual XLSX/PDF guard exists. The current workbook is a simple four-column sheet with no sensory/signature hierarchy and no grouped export.                      | Seven-column PXK hierarchy, target widths/heights, Times New Roman, A4 portrait, sensory and processing columns, three-party signatures, and grouped immutable-snapshot output ordered by date/School.                   | Document number/date, School, location/address, note and exact lines are immutable. Immutable School display order and document header/company identity are absent.   | No.                   | Add the smallest School document-header configuration and immutable released header/display-order snapshot. Missing legacy snapshot fails closed; no hardcoded or mutable React lookup.                                       | `SCHOOL-DISPATCH-RELEASE.v1`; one additive migration and focused pgTAP; dispatch model, fixtures, exporters/tests and grouped-export UI callback.       |
 
 The requested newer Retool `(2).json` was not present in the supplied attachment
 directory. The retained February ZIP was therefore inspected directly. Its
@@ -57,46 +59,46 @@ layouts override those legacy template choices.
 
 #### B. Confirmed Need Shopping List XLSX freeze
 
-- [ ] Write failing structural and round-trip tests first.
-- [ ] Implement exact full-batch export with staff-visible columns and hidden Atlas
+- [x] Write failing structural and round-trip tests first.
+- [x] Implement exact full-batch export with staff-visible columns and hidden Atlas
       identity/context columns.
-- [ ] Implement whole-workbook parse/validation and local-draft-only apply.
-- [ ] Integrate explicit `Xuất Excel` / `Nhập Excel` actions while retaining normal
+- [x] Implement whole-workbook parse/validation and local-draft-only apply.
+- [x] Integrate explicit `Xuất Excel` / `Nhập Excel` actions while retaining normal
       `Lưu` as the sole backend persistence command.
-- [ ] Preserve `generatedPurchaseReviewExport.ts` as a separate preliminary output.
+- [x] Preserve `generatedPurchaseReviewExport.ts` as a separate preliminary output.
 
 #### C. Official PO document freeze
 
-- [ ] Add focused failing pgTAP and TypeScript tests for immutable School breakdown
+- [x] Add focused failing pgTAP and TypeScript tests for immutable School breakdown
       authority and target workbook structure.
-- [ ] Add only the additive released-line School snapshot/read-model correction
+- [x] Add only the additive released-line School snapshot/read-model correction
       proven necessary by the audit.
-- [ ] Rebuild `Theo trường` and `Theo hàng` as compact continuous target layouts;
+- [x] Rebuild `Theo trường` and `Theo hàng` as compact continuous target layouts;
       retain the existing `Tổng` business structure.
-- [ ] Align PDF hierarchy with the same released facts and keep the released-only
+- [x] Align PDF hierarchy with the same released facts and keep the released-only
       guard unchanged.
 
 #### D. School Dispatch / PXK document freeze
 
-- [ ] Add focused failing pgTAP and TypeScript tests for document-header snapshot,
+- [x] Add focused failing pgTAP and TypeScript tests for document-header snapshot,
       School ordering, target XLSX geometry and released-only grouped export.
-- [ ] Add only the additive School header configuration and immutable released
+- [x] Add only the additive School header configuration and immutable released
       header/order snapshot proven necessary by the audit.
-- [ ] Match the supplied seven-column A4 portrait PXK layout and three-party
+- [x] Match the supplied seven-column A4 portrait PXK layout and three-party
       signature block deliberately.
-- [ ] Implement grouped workbook export over authoritative released/superseded
+- [x] Implement grouped workbook export over authoritative released/superseded
       snapshots ordered by service date and immutable School display order.
-- [ ] Align PDF hierarchy with the approved PXK document hierarchy.
+- [x] Align PDF hierarchy with the approved PXK document hierarchy.
 
 #### E. vNext exporter integration
 
-- [ ] Inject Shopping List, PO and PXK callbacks from `AtlasVNextConnectedApp`.
-- [ ] Keep presentation components free of heavy exporter imports and never run an
+- [x] Inject Shopping List, PO and PXK callbacks from `AtlasVNextConnectedApp`.
+- [x] Keep presentation components free of heavy exporter imports and never run an
       exporter automatically.
 
 #### F. Utility-command convergence
 
-- [ ] Execute original Task 1 below after document actions are integrated.
+- [x] Execute original Task 1 below after document actions are integrated.
 
 #### G. Full frontend certification
 

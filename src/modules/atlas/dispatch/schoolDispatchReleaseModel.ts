@@ -49,8 +49,11 @@ export type SchoolDispatchDocument = {
   source_fingerprint: string;
   predecessor_release_id: string | null;
   school_name: string;
+  school_display_order: number;
   delivery_location_name: string;
   delivery_address: string;
+  document_issuer_name: string;
+  document_issuer_address: string;
   note: string | null;
   version: number;
   released_by_actor_id: string;

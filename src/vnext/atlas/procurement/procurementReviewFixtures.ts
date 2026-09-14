@@ -259,6 +259,18 @@ export function reviewOrder(
           location_name: "Bếp chính Nguyễn Du",
         },
         service_date: reviewDate,
+        school_breakdown: released
+          ? [
+              {
+                school_id: "school-0",
+                school_name: "Trường Nguyễn Du",
+                school_display_order: 1,
+                delivery_location_id: "location-0",
+                delivery_location_name: "Bếp chính Nguyễn Du",
+                ordered_quantity: "60.000001",
+              },
+            ]
+          : [],
         source: {
           family_id: "private-family",
           family_revision_id: "private-family-revision",

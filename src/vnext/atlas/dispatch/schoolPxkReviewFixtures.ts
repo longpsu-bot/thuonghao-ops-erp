@@ -92,6 +92,10 @@ export function pxkRow(
         ? `source-old-${index}`
         : preview.source_fingerprint,
     predecessor_release_id: null,
+    school_display_order: index,
+    document_issuer_name: "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+    document_issuer_address:
+      "96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
     note: "Giao tại cổng phụ trước 06:00",
     version: 1,
     released_by_actor_id: "actor-1",

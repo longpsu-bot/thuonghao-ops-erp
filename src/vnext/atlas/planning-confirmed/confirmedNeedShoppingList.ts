@@ -67,6 +67,22 @@ function orderedLines(workbench: ConfirmedNeedWorkbenchData) {
     .map(({ line }) => line);
 }
 
+function staffDateTitle(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+  const weekdays = [
+    "Chủ Nhật",
+    "Thứ Hai",
+    "Thứ Ba",
+    "Thứ Tư",
+    "Thứ Năm",
+    "Thứ Sáu",
+    "Thứ Bảy",
+  ];
+  const weekday =
+    weekdays[new Date(Date.UTC(year!, month! - 1, day)).getUTCDay()];
+  return `${weekday} (${date.split("-").reverse().join("/")})`;
+}
+
 function addSheet(
   workbook: ExcelJS.Workbook,
   date: string,
@@ -96,13 +112,13 @@ function addSheet(
     { width: 17.57 },
     { width: 42 },
     { width: 8 },
-    { width: 8 },
+    { width: 11 },
     { width: 12 },
     ...technicalHeaders.map(() => ({ width: 1, hidden: true })),
   ];
   sheet.mergeCells("A1:E1");
   const title = sheet.getCell("A1");
-  title.value = `DANH SÁCH MUA HÀNG NGÀY ${date.split("-").reverse().join("/")}`;
+  title.value = staffDateTitle(date);
   title.font = { name: "Times New Roman", size: 20, bold: true };
   title.alignment = { horizontal: "center", vertical: "middle" };
   sheet.getRow(1).height = 36;
@@ -115,12 +131,12 @@ function addSheet(
     name: "Times New Roman",
     size: 18,
     bold: true,
-    color: { argb: "FFFFFFFF" },
+    color: { argb: "FF000000" },
   };
   header.fill = {
     type: "pattern",
     pattern: "solid",
-    fgColor: { argb: "FF1F4E78" },
+    fgColor: { argb: "FFB7B7B7" },
   };
   header.alignment = {
     horizontal: "center",
@@ -161,9 +177,15 @@ function addSheet(
       draft.reason_code,
       marker,
     ];
-    row.height = 30;
+    row.height = startsSchool ? 42 : 30;
     row.font = { name: "Times New Roman", size: 18 };
     row.alignment = { vertical: "middle", wrapText: true };
+    if (startsSchool)
+      row.getCell(1).font = {
+        name: "Times New Roman",
+        size: 18,
+        bold: true,
+      };
     for (let column = 1; column <= visibleHeaders.length; column += 1) {
       row.getCell(column).border = {
         top: {

@@ -34,6 +34,7 @@ export type AtlasVNextAppProps = {
     procurementPdf?: ProcurementWorkbenchProps["onExportPdf"];
     pxkXlsx?: SchoolPxkWorkbenchProps["onExportXlsx"];
     pxkPdf?: SchoolPxkWorkbenchProps["onExportPdf"];
+    pxkGroupedXlsx?: SchoolPxkWorkbenchProps["onExportGroupedXlsx"];
     shoppingListXlsx?: ConfirmedNeedWorkbenchProps["onExportShoppingList"];
     shoppingListImport?: ConfirmedNeedWorkbenchProps["onImportShoppingList"];
   };
@@ -134,6 +135,7 @@ function ApplicationSession({
             api={apis.schoolDispatch}
             onExportXlsx={props.exporters?.pxkXlsx}
             onExportPdf={props.exporters?.pxkPdf}
+            onExportGroupedXlsx={props.exporters?.pxkGroupedXlsx}
           />
         )}
         {module === "reconciliation" && (

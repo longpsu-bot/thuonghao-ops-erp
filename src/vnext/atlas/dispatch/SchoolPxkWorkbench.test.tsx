@@ -38,6 +38,7 @@ function show(scenario: SchoolPxkScenario = "READY") {
   const write = vi.spyOn(api, "releaseDocument");
   const xlsx = vi.fn();
   const pdf = vi.fn();
+  const groupedXlsx = vi.fn();
   render(
     <AtlasVNextProvider>
       <SchoolPxkWorkbench
@@ -46,10 +47,11 @@ function show(scenario: SchoolPxkScenario = "READY") {
         initialServiceDate={reviewDate}
         onExportXlsx={xlsx}
         onExportPdf={pdf}
+        onExportGroupedXlsx={groupedXlsx}
       />
     </AtlasVNextProvider>,
   );
-  return { api, read, write, xlsx, pdf };
+  return { api, read, write, xlsx, pdf, groupedXlsx };
 }
 async function open(label = "Phát hành") {
   const button = await screen.findByRole("button", { name: label });
@@ -363,6 +365,22 @@ describe("School PXK operator table and attached detail", () => {
       document_number: "PXK-20260924-0000",
     });
     expect(h.write).not.toHaveBeenCalled();
+  });
+  it("groups every unique export-ready released snapshot in operational order", async () => {
+    const h = show("HISTORY_WITH_SUPERSEDED");
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xuất PXK đã phát hành" }),
+    );
+    await waitFor(() => expect(h.groupedXlsx).toHaveBeenCalledOnce());
+    expect(h.groupedXlsx.mock.calls[0]![0]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          document_number: "PXK-20260924-0000",
+          status: "SUPERSEDED",
+        }),
+        expect.objectContaining({ status: "RELEASED" }),
+      ]),
+    );
   });
   it("empty scope shows a useful quiet message", async () => {
     show("EMPTY");

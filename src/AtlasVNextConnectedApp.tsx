@@ -24,6 +24,7 @@ import {
 import {
   downloadSchoolDispatchXlsx,
   downloadSchoolDispatchPdf,
+  downloadGroupedSchoolDispatchXlsx,
 } from "./modules/atlas/dispatch/schoolDispatchReleaseExports";
 import { AtlasVNextProvider } from "./vnext/atlas/AtlasVNextProvider";
 import { AtlasSessionGate } from "./vnext/atlas/AtlasSessionGate";
@@ -38,6 +39,7 @@ const exporters = {
   procurementPdf: downloadPurchaseOrderPdf,
   pxkXlsx: downloadSchoolDispatchXlsx,
   pxkPdf: downloadSchoolDispatchPdf,
+  pxkGroupedXlsx: downloadGroupedSchoolDispatchXlsx,
   shoppingListXlsx: downloadConfirmedNeedShoppingList,
   shoppingListImport: importConfirmedNeedShoppingList,
 };

@@ -297,7 +297,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             wrap="wrap"
           >
             <Button
-              variant="utility"
+              variant="tertiary"
               aria-expanded={detailOpen}
               onClick={() => setDetailKey(detailOpen ? null : contextKey)}
             >
