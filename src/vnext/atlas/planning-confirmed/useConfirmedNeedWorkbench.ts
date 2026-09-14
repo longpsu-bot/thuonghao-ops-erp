@@ -31,6 +31,7 @@ import {
   validPreflight,
 } from "./confirmedNeedAuthority";
 import { draftLineRequest, historicalQuantity } from "./confirmedNeedDraft";
+import type { ConfirmedNeedShoppingListImport } from "./confirmedNeedShoppingList";
 export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   authSubject: string | null;
   initialServiceDate: string;
@@ -39,6 +40,15 @@ export type ConfirmedNeedWorkbenchProps = AtlasModuleExitProps & {
   needGenerationApi: NeedGenerationApi;
   confirmedNeedApi: ConfirmedNeedApi;
   onContinueAllocation?: (serviceDate: string) => void;
+  onExportShoppingList?: (
+    workbench: ConfirmedNeedWorkbenchData,
+    drafts: Record<string, ConfirmedNeedDraftLine>,
+  ) => Promise<void>;
+  onImportShoppingList?: (
+    file: File,
+    workbench: ConfirmedNeedWorkbenchData,
+    drafts: Record<string, ConfirmedNeedDraftLine>,
+  ) => Promise<ConfirmedNeedShoppingListImport>;
 };
 type Transition = {
   exit?: () => void;
@@ -464,6 +474,12 @@ export function useConfirmedNeedWorkbench({
     discardTransition,
     continueAllocation: () => {
       if (canContinue && !inFlight.current) onContinueAllocation?.(date);
+    },
+    applyShoppingListImport: (imported: ConfirmedNeedShoppingListImport) => {
+      setDrafts(imported.drafts);
+      setNotice(
+        `Đã nhập ${imported.changedLineIds.length} thay đổi vào bản nháp.`,
+      );
     },
   };
 }

@@ -10,6 +10,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
+import type { ConfirmedNeedWorkbenchProps } from "./useConfirmedNeedWorkbench";
 import {
   createConfirmedNeedReviewFixture,
   reviewDate,
@@ -29,7 +30,13 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-function show(scenario: ConfirmedReviewScenario = "normal") {
+function show(
+  scenario: ConfirmedReviewScenario = "normal",
+  workbookProps: Pick<
+    ConfirmedNeedWorkbenchProps,
+    "onExportShoppingList" | "onImportShoppingList"
+  > = {},
+) {
   const f = createConfirmedNeedReviewFixture(scenario);
   const navigate = vi.fn();
   const detail = vi.spyOn(f.needGenerationApi, "getWorkbench");
@@ -41,6 +48,7 @@ function show(scenario: ConfirmedReviewScenario = "normal") {
         authSubject="operator"
         initialServiceDate={reviewDate}
         onContinueAllocation={navigate}
+        {...workbookProps}
       />
     </AtlasVNextProvider>,
   );
@@ -59,6 +67,56 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("imports Shopping List changes into local drafts and leaves Save as the sole write", async () => {
+    const onExportShoppingList = vi.fn().mockResolvedValue(undefined);
+    const onImportShoppingList = vi
+      .fn()
+      .mockImplementation(
+        async (
+          _file,
+          _workbench,
+          drafts: Parameters<
+            NonNullable<ConfirmedNeedWorkbenchProps["onImportShoppingList"]>
+          >[2],
+        ) => ({
+          drafts: {
+            ...drafts,
+            "line-0": {
+              ...drafts["line-0"]!,
+              exact_quantity: "12,5",
+              quantity_entered: true,
+              reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT" as const,
+              reason_note: "Điều chỉnh từ Shopping List",
+            },
+          },
+          changedLineIds: ["line-0"],
+        }),
+      );
+    const h = show("normal", {
+      onExportShoppingList,
+      onImportShoppingList,
+    });
+    await quantity();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xuất Shopping List" }));
+    await waitFor(() => expect(onExportShoppingList).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText("Nhập Shopping List .xlsx"), {
+      target: {
+        files: [
+          new File([new Uint8Array([1, 2, 3])], "shopping-list.xlsx", {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          }),
+        ],
+      },
+    });
+
+    expect(
+      await screen.findByText("Đã nhập 1 thay đổi vào bản nháp."),
+    ).toBeVisible();
+    expect(await quantity()).toHaveValue("12,5");
+    expect(h.save).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Lưu" })).toBeEnabled();
+  });
   it("displays an exact cent delta beyond binary floating-point precision", async () => {
     const h = show();
     await quantity();
