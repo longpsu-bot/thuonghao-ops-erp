@@ -24,14 +24,122 @@
 
 ---
 
+## 06D-E document-freeze amendment — 2026-09-14
+
+This amendment supersedes the original task order without removing the original
+convergence and certification tasks below. The Product Owner-provided right-hand
+workbook layouts are controlling document requirements. Retool remains read-only
+workflow evidence and must not be copied as architecture.
+
+### Document-contract audit matrix
+
+| Document                     | Current Atlas support                                                                                                                                                                         | Staff target requirement                                                                                                                                                                                                        | Existing authoritative field?                                                                                                                                         | Template-only change? | Read-model/snapshot change required?                                                                                                                                                                                          | Exact files/contracts affected                                                                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confirmed Need Shopping List | No staff Shopping List workbook exists. Confirmed Need already owns one canonical local draft and one authoritative `Lưu`; generated purchase review remains a separate preliminary artifact. | Per-date continuous table; School only on the first row of each group; no `X` markers or School-band rows; editable quantity/reason/note; hidden stable Atlas identities; whole-workbook validation and local-draft-only apply. | Yes: batch/version, line/revision/decision, date, School, location, Ingredient, Unit, quantity and policy are already present. Returned line order is deterministic.  | Yes.                  | No backend delta. Validate import against the complete current workbench and reject every stale, missing, duplicate or mismatched row.                                                                                        | New Confirmed Need workbook module/tests; Confirmed Need controller/workbench; exporter injection through `AtlasVNextConnectedApp` and `AtlasVNextApp`. |
+| Official supplier PO         | Released-only XLSX/PDF guard exists. `Tổng`, `Theo trường` and `Theo hàng` exist, but details use merged group bands/spacers and location text rather than immutable School facts.            | Preserve `Tổng` business structure; continuous detail tables; first-row School/Ingredient identity with blank continuation rows; dark headers; Supplier/date placement; exact quantities; authoritative School order.           | Supplier snapshot, date, Ingredient, Unit, exact quantity and location identity exist. Immutable School name/order and per-School released quantity breakdown do not. | No.                   | Add the smallest immutable released-line School breakdown snapshot and shaped read. Legacy released rows without the snapshot remain non-exportable; never reconstruct released School history from current masters in React. | `SCHOOL-CATERING-PROCUREMENT.v1`; one additive migration and focused pgTAP; procurement model, fixtures, exporters and tests.                           |
+| School Dispatch / PXK        | Released/superseded-only individual XLSX/PDF guard exists. The current workbook is a simple four-column sheet with no sensory/signature hierarchy and no grouped export.                      | Seven-column PXK hierarchy, target widths/heights, Times New Roman, A4 portrait, sensory and processing columns, three-party signatures, and grouped immutable-snapshot output ordered by date/School.                          | Document number/date, School, location/address, note and exact lines are immutable. Immutable School display order and document header/company identity are absent.   | No.                   | Add the smallest School document-header configuration and immutable released header/display-order snapshot. Missing legacy snapshot fails closed; no hardcoded or mutable React lookup.                                       | `SCHOOL-DISPATCH-RELEASE.v1`; one additive migration and focused pgTAP; dispatch model, fixtures, exporters/tests and grouped-export UI callback.       |
+
+The requested newer Retool `(2).json` was not present in the supplied attachment
+directory. The retained February ZIP was therefore inspected directly. Its
+`js_shop_Export.js`, Shopping List import, PO/PXK exporters and source SQL confirm
+School display ordering, supplier/date grouping, editable local import, grouped
+packaging and `contract_type`-selected PXK headers. The supplied right-hand XLSX
+layouts override those legacy template choices.
+
+### Amended execution order
+
+#### A. Document-contract audit
+
+- [x] Inspect the three left/current and right/staff-target workbook halves.
+- [x] Compare current Atlas exporters, retained Retool evidence and authoritative
+      read models.
+- [x] Freeze the matrix above before source changes.
+
+#### B. Confirmed Need Shopping List XLSX freeze
+
+- [ ] Write failing structural and round-trip tests first.
+- [ ] Implement exact full-batch export with staff-visible columns and hidden Atlas
+      identity/context columns.
+- [ ] Implement whole-workbook parse/validation and local-draft-only apply.
+- [ ] Integrate explicit `Xuất Excel` / `Nhập Excel` actions while retaining normal
+      `Lưu` as the sole backend persistence command.
+- [ ] Preserve `generatedPurchaseReviewExport.ts` as a separate preliminary output.
+
+#### C. Official PO document freeze
+
+- [ ] Add focused failing pgTAP and TypeScript tests for immutable School breakdown
+      authority and target workbook structure.
+- [ ] Add only the additive released-line School snapshot/read-model correction
+      proven necessary by the audit.
+- [ ] Rebuild `Theo trường` and `Theo hàng` as compact continuous target layouts;
+      retain the existing `Tổng` business structure.
+- [ ] Align PDF hierarchy with the same released facts and keep the released-only
+      guard unchanged.
+
+#### D. School Dispatch / PXK document freeze
+
+- [ ] Add focused failing pgTAP and TypeScript tests for document-header snapshot,
+      School ordering, target XLSX geometry and released-only grouped export.
+- [ ] Add only the additive School header configuration and immutable released
+      header/order snapshot proven necessary by the audit.
+- [ ] Match the supplied seven-column A4 portrait PXK layout and three-party
+      signature block deliberately.
+- [ ] Implement grouped workbook export over authoritative released/superseded
+      snapshots ordered by service date and immutable School display order.
+- [ ] Align PDF hierarchy with the approved PXK document hierarchy.
+
+#### E. vNext exporter integration
+
+- [ ] Inject Shopping List, PO and PXK callbacks from `AtlasVNextConnectedApp`.
+- [ ] Keep presentation components free of heavy exporter imports and never run an
+      exporter automatically.
+
+#### F. Utility-command convergence
+
+- [ ] Execute original Task 1 below after document actions are integrated.
+
+#### G. Full frontend certification
+
+- [ ] Execute original Task 2 plus focused document tests.
+
+#### H. Backend/Supabase certification
+
+- [ ] Run focused pgTAP/security/currentness tests and
+      `pnpm certify:supabase:full-integration` once on the exact final head.
+- [ ] Do not deploy the new migration to Staging in this task.
+
+#### I. Final four-viewport Product acceptance
+
+- [ ] Execute original Task 3 for all seven modules and additionally verify Shopping
+      List local-draft import, released-only PO/PXK exports and grouped PXK workflow.
+- [ ] Generate deterministic workbooks and visually compare them with the supplied
+      right-hand targets; record current output, target, differences and disposition.
+
+#### J. Exact-head preview / PR closeout
+
+- [ ] Execute original Task 5 for PR #288, require exact local/origin SHA equality,
+      Frontend CI and Cloudflare success, and update the PR body with document audit,
+      freezes, authority delta, certification, safety and limitations.
+- [ ] Keep PR #288 Draft/open/unmerged. Do not mark Ready.
+
+#### K. Stop before #288 merge
+
+- [ ] Do not merge #288 and do not start or modify #286.
+- [ ] End only as `UI_PRODUCT_ACCEPTANCE_READY` or `BLOCKED`, followed by
+      `NEXT_GATE: STOP_BEFORE_PR_288_MERGE`.
+
+---
+
 ### Task 1: Classify every remaining transparent utility control
 
 **Files:**
+
 - Modify as required under: `src/vnext/atlas/**`
 - Test: `src/vnext/atlas/AtlasConvergence.test.tsx`
 - Test: existing workbench tests touched by each variant change.
 
 **Interfaces:**
+
 - Consumes: 06D-A button variants.
 - Produces: no ordinary operator command rendered as visually plain text by default.
 
@@ -121,6 +229,7 @@ git commit -m "refactor(atlas): converge operator command affordance"
 ### Task 2: Run exact full frontend certification
 
 **Files:**
+
 - No source edits unless a failure is proven to originate in 06D changes.
 
 - [ ] **Step 1: Run focused 06D regressions**
@@ -183,6 +292,7 @@ Publishable browser configuration/project refs are not privileged secrets; servi
 ### Task 3: Capture final Product visual acceptance across the seven shell modules
 
 **Files:**
+
 - No repository screenshot commits. Store review evidence outside the public repo or as safe CI artifacts only.
 
 - [ ] **Step 1: Use the existing local vNext review harness**
@@ -244,6 +354,7 @@ Fix only inside the relevant 06D boundary, rerun focused tests, then repeat the 
 ### Task 4: Certify the backend boundary without changing it
 
 **Files:**
+
 - No backend/source changes expected.
 
 - [ ] **Step 1: Run disposable Supabase Full Integration once on exact final 06D head**
@@ -282,6 +393,7 @@ No Atlas connection to live OPS is added.
 ### Task 5: Exact-head branch preview and final 06D state
 
 **Files:**
+
 - No production deployment changes unless the existing branch-preview path is demonstrably broken by 06D.
 
 - [ ] **Step 1: Push exact 06D head and wait for Frontend CI**
@@ -322,6 +434,7 @@ BLOCKED
 ### Task 6: Prepare #286 for a separate cutover re-certification; do not merge it
 
 **Files:**
+
 - Draft PR #286 branch only after 06D is separately merged to `main` and owner explicitly authorizes updating that candidate.
 
 - [ ] **Step 1: Stop at the 06D merge gate**
