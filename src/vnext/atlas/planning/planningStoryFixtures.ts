@@ -244,5 +244,7 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
     fixture.pantry.purposes[0].note_rule = "PROHIBITED";
   if (scenario === "pantry_optional")
     fixture.pantry.purposes[0].note_rule = "OPTIONAL";
+  if (scenario === "pantry_required")
+    fixture.pantry.batch!.active_lines[0].note = "";
   return fixture;
 }

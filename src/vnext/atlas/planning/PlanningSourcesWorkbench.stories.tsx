@@ -59,14 +59,13 @@ function story(scenario: PlanningReviewScenario): Story {
         return;
       }
       await canvas.findByRole("table");
-      if (scenario.endsWith("failed") || scenario === "pantry_prohibited")
+      if (
+        scenario.endsWith("failed") ||
+        ["pantry_optional", "pantry_required", "pantry_prohibited"].includes(
+          scenario,
+        )
+      )
         return;
-      if (scenario === "pantry_required") {
-        await userEvent.clear(
-          canvas.getByRole("textbox", { name: "Lý do dòng 1" }),
-        );
-        return;
-      }
       if (scenario === "pantry_subset") {
         await userEvent.click(
           canvas.getByRole("button", { name: "Tất cả trường" }),
