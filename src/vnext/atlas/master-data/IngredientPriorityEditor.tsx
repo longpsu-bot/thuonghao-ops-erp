@@ -65,7 +65,7 @@ export function IngredientPriorityEditor({
         </Box>
         <Button
           size="sm"
-          variant="utility"
+          variant="tertiary"
           aria-label="Đóng chi tiết"
           onClick={c.requestClose}
         >
@@ -159,7 +159,7 @@ export function IngredientPriorityEditor({
               <Button
                 mt="sm"
                 size="sm"
-                variant="utility"
+                variant="tertiary"
                 aria-label={`Gỡ ${selected?.supplier_name ?? `nhà cung ứng ${index + 1}`}`}
                 onClick={() =>
                   c.setPriorities(
@@ -185,6 +185,7 @@ export function IngredientPriorityEditor({
       </Box>
       <Flex mt="var(--atlas-layout-auto, auto)" p="md" gap="sm" wrap="wrap">
         <Button
+          variant="secondary"
           disabled={
             c.priorities.length >= 6 || unusedActiveSuppliers.length === 0
           }

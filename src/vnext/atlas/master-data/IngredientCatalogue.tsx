@@ -87,7 +87,7 @@ export function IngredientCatalogue({
                 <Table.Cell>
                   <Button
                     size="sm"
-                    variant="utility"
+                    variant="tertiary"
                     onClick={() => onSelect(item.ingredient_id)}
                     aria-label={`${item.ingredient_status === "ARCHIVED" ? "Xem" : "Xem / sửa"} ${item.ingredient_name}`}
                   >

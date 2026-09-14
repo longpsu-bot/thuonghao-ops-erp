@@ -62,7 +62,7 @@ export function SupplierCatalogue({
               <Table.Cell>
                 <Button
                   size="sm"
-                  variant="utility"
+                  variant="tertiary"
                   aria-label={`Xem / sửa ${item.supplier_name}`}
                   onClick={() => onSelect(item.supplier_id)}
                 >
