@@ -39,7 +39,7 @@ it("Recipe UNKNOWN keeps its recovery context when the application requests exit
   );
   fireEvent.click(
     await screen.findByRole("button", {
-      name: "Xem công thức Canh bí đỏ thịt bằm",
+      name: "Sửa công thức Canh bí đỏ thịt bằm",
     }),
   );
   fireEvent.change(await screen.findByLabelText("Định lượng Bí đỏ"), {
