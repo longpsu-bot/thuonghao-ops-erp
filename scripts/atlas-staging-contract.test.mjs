@@ -1969,12 +1969,16 @@ describe("Atlas staging hosted evidence", () => {
     const authority = readCatalogAuthority();
     const compatibilityBase =
       "get_school_catering_purchase_orders_v1_base(request jsonb)";
+    const purchaseOrderSnapshotBase =
+      "get_school_catering_purchase_orders_v2_base(request jsonb)";
+    const dispatchSnapshotBase =
+      "get_school_dispatch_release_workbench_v1_base(request jsonb)";
     const reconciliationWorkbench =
       "get_school_fulfilment_reconciliation_workbench(request jsonb)";
     expect(authority.schemas).toHaveLength(10);
     expect(authority.databaseRoles).toHaveLength(11);
-    expect(authority.apiSignatures).toHaveLength(112);
-    expect(authority.apiOwners).toHaveLength(112);
+    expect(authority.apiSignatures).toHaveLength(114);
+    expect(authority.apiOwners).toHaveLength(114);
     expect(authority.authenticatedApiSignatures).toHaveLength(111);
     expect(authority.apiSignatures).toContain(compatibilityBase);
     expect(authority.authenticatedApiSignatures).not.toContain(
@@ -1983,6 +1987,14 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.apiSignatures).toContain(reconciliationWorkbench);
     expect(authority.authenticatedApiSignatures).toContain(
       reconciliationWorkbench,
+    );
+    expect(authority.apiSignatures).toContain(purchaseOrderSnapshotBase);
+    expect(authority.apiSignatures).toContain(dispatchSnapshotBase);
+    expect(authority.authenticatedApiSignatures).not.toContain(
+      purchaseOrderSnapshotBase,
+    );
+    expect(authority.authenticatedApiSignatures).not.toContain(
+      dispatchSnapshotBase,
     );
     expect(authority.policyCount).toBe(646);
     expect(authority.policyDigest).toBe("6748022ace668ecaf65879d09bbe2e38");
