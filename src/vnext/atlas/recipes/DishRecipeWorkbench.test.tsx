@@ -18,6 +18,7 @@ afterEach(cleanup);
 async function setup(
   scenario: RecipeScenario = "DISH_ACTIVE_EDITABLE",
   configure?: (fixture: ReturnType<typeof createRecipeReviewFixture>) => void,
+  onOpenChangeOrders?: () => void,
 ) {
   const fixture = createRecipeReviewFixture(scenario);
   configure?.(fixture);
@@ -27,6 +28,7 @@ async function setup(
         authSubject="operator"
         api={fixture.api}
         initialDate="2026-09-12"
+        onOpenChangeOrders={onOpenChangeOrders}
       />
     </AtlasVNextProvider>,
   );
@@ -283,9 +285,14 @@ describe("Công thức operator workbench", () => {
     expect(screen.getByLabelText("Định lượng Bí đỏ")).toHaveValue("2,25");
   });
   it("locked base is read-only with future correction guidance and no lifecycle Recipe controls", async () => {
-    await setup("DISH_ACTIVE_LOCKED", (fixture) => {
-      fixture.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
-    });
+    const openChangeOrders = vi.fn();
+    await setup(
+      "DISH_ACTIVE_LOCKED",
+      (fixture) => {
+        fixture.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
+      },
+      openChangeOrders,
+    );
     await select("Xem");
     expect(
       screen.getByText(
@@ -295,9 +302,13 @@ describe("Công thức operator workbench", () => {
     expect(screen.queryByLabelText("Định lượng Bí đỏ")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
-        name: /Lưu công thức|Tạo bản nháp|Xác thực|Duyệt|Đưa vào sử dụng|kế nhiệm|Lệnh điều chỉnh/,
+        name: /Lưu công thức|Tạo bản nháp|Xác thực|Duyệt|Đưa vào sử dụng|kế nhiệm/,
       }),
     ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Tạo lệnh điều chỉnh" }),
+    );
+    expect(openChangeOrders).toHaveBeenCalledTimes(1);
     expect(
       screen.getByRole("table", { name: "Công thức hiệu lực" }),
     ).toBeInTheDocument();

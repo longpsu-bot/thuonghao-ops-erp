@@ -258,6 +258,47 @@ describe("06D-C duplicate ADD operator safety", () => {
   });
 });
 
+describe("06D-C locked Recipe peer navigation", () => {
+  it("opens the existing Change Order job without a backend mutation", async () => {
+    const recipe = createRecipeReviewFixture("DISH_ACTIVE_LOCKED");
+    recipe.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
+    const adjustment = createChangeOrderFixture("ACTIVE");
+    const recipeWrite = vi.spyOn(recipe.api, "saveRecipe");
+    render(
+      <AtlasVNextProvider>
+        <RecipeCapability
+          authSubject="operator"
+          recipeApi={recipe.api}
+          adjustmentApi={adjustment.api}
+          initialDate="2026-09-12"
+          initialJob="recipes"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Xem công thức Canh bí đỏ thịt bằm",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Tạo lệnh điều chỉnh" }),
+    );
+
+    expect(
+      screen.getByRole("tab", { name: "Lệnh điều chỉnh" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      await screen.findByRole("table", { name: "Lệnh điều chỉnh" }),
+    ).toBeInTheDocument();
+    expect(recipeWrite).not.toHaveBeenCalled();
+    expect(
+      adjustment.calls.filter((call) =>
+        ["create", "supersede", "cancel"].includes(call.name),
+      ),
+    ).toHaveLength(0);
+  });
+});
+
 describe("06B frozen Review safety and focus", () => {
   it("preserves a School draft on normal refresh and saves directly without Review", async () => {
     const { input, read } = await schools();

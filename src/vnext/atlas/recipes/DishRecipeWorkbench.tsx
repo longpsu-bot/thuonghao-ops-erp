@@ -28,6 +28,7 @@ export function DishRecipeWorkbench(props: {
   initialDate?: string;
   embedded?: boolean;
   exitRef?: Ref<RecipeJobHandle>;
+  onOpenChangeOrders?: () => void;
 }) {
   const c = useDishRecipeWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({
@@ -310,6 +311,15 @@ export function DishRecipeWorkbench(props: {
                       gốc chỉ đọc; thay đổi tiếp theo được thực hiện bằng Lệnh
                       điều chỉnh.
                     </Text>
+                    {props.onOpenChangeOrders && (
+                      <Button
+                        mt="sm"
+                        variant="secondary"
+                        onClick={props.onOpenChangeOrders}
+                      >
+                        Tạo lệnh điều chỉnh
+                      </Button>
+                    )}
                   </Box>
                 )}
                 {c.loading && (
