@@ -25,9 +25,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const c = useSchoolDefaultsWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const editingDisabled =
-    c.saving ||
-    c.lock === "unknown" ||
-    c.lock === "readback";
+    c.saving || c.lock === "unknown" || c.lock === "readback";
   const activeCount = c.schools.filter(
     (school) => school.school_status === "ACTIVE",
   ).length;
@@ -96,11 +94,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         </Field.Root>
         <AtlasRefreshButton
           loading={c.loading}
-          disabled={
-            c.saving ||
-            c.lock === "unknown" ||
-            c.lock === "readback"
-          }
+          disabled={c.saving || c.lock === "unknown" || c.lock === "readback"}
           onClick={() => void c.refresh()}
         />
       </Grid>
