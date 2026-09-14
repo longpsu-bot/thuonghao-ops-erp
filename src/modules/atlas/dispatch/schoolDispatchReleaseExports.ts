@@ -174,8 +174,10 @@ function addSchoolDispatchSheet(
   });
   sheet.mergeCells("A1:G1");
   sheet.getCell("A1").value = data.issuerName;
+  sheet.getCell("A1").alignment = { horizontal: "center" };
   sheet.mergeCells("A2:G2");
   sheet.getCell("A2").value = `ĐC: ${data.issuerAddress}`;
+  sheet.getCell("A2").alignment = { horizontal: "center" };
   sheet.mergeCells("A4:G4");
   sheet.getCell("A4").value = "PHIẾU XUẤT KHO";
   sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 20 };

@@ -46,6 +46,8 @@ describe("School dispatch release exports", () => {
     expect(sheet.getColumn(1).width).toBeCloseTo(13, 1);
     expect(sheet.getColumn(2).width).toBeCloseTo(37.43, 1);
     expect(sheet.getColumn(7).width).toBe(14);
+    expect(sheet.getCell("A1").alignment.horizontal).toBe("center");
+    expect(sheet.getCell("A2").alignment.horizontal).toBe("center");
     expect(sheet.getCell("A9").value).toBe("Stt");
     expect(sheet.getCell("A5").value).toBe(
       "Số phiếu: PXK-20260924-2600000000004000",
