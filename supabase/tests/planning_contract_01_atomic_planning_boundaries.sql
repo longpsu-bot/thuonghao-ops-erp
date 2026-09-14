@@ -321,14 +321,16 @@ values ('e4100000-0000-0000-0000-000000000004', 'rmvp04-type', 'RMVP-04 Type');
 insert into atlas_admin.schools (
   school_id, customer_id, school_code, school_name, school_type_id,
   default_delivery_location_id, display_order,
-  default_student_portions, default_teacher_portions
+  default_student_portions, default_teacher_portions,
+  dispatch_document_issuer_name, dispatch_document_issuer_address
 )
 values (
   'e4100000-0000-0000-0000-000000000005',
   'e4100000-0000-0000-0000-000000000001',
   'rmvp04-school', 'RMVP-04 School',
   'e4100000-0000-0000-0000-000000000004',
-  'e4100000-0000-0000-0000-000000000002', 10, 100, 10
+  'e4100000-0000-0000-0000-000000000002', 10, 100, 10,
+  'RMVP-04 Issuer', 'Fixture issuer address'
 );
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram', 'mass');

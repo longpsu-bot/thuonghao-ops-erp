@@ -30,13 +30,15 @@ describe("released purchase-order exports", () => {
       ],
       schoolLines: [
         {
-          locationName: "Bếp chính Nguyễn Du",
+          schoolName: "Trường Nguyễn Du",
+          schoolDisplayOrder: 1,
           ingredientName: "Gạo thơm",
           orderedQuantity: "60.000000",
           unitCode: "kg",
         },
         {
-          locationName: "Bếp chính Trần Quốc Toản",
+          schoolName: "Trường Trần Quốc Toản",
+          schoolDisplayOrder: 2,
           ingredientName: "Gạo thơm",
           orderedQuantity: "40.000000",
           unitCode: "kg",
@@ -50,6 +52,9 @@ describe("released purchase-order exports", () => {
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
     order.lines[0]!.ordered_quantity = "9007199254740992.123455";
     order.lines[1]!.ordered_quantity = "1.000001";
+    order.lines[0]!.school_breakdown[0]!.ordered_quantity =
+      "9007199254740992.123455";
+    order.lines[1]!.school_breakdown[0]!.ordered_quantity = "1.000001";
 
     expect(
       buildPurchaseOrderExportData(order).summaryLines[0]!.orderedQuantity,
@@ -70,7 +75,7 @@ describe("released purchase-order exports", () => {
     expect(serialized).not.toContain("Tên NCC hiện tại đã đổi");
     expect(serialized).toContain("02/09/2026");
     expect(serialized).toContain("Gạo thơm");
-    expect(serialized).toContain("Bếp chính Nguyễn Du");
+    expect(serialized).toContain("Trường Nguyễn Du");
     expect(serialized).toContain("60.000000");
   });
 
@@ -104,13 +109,40 @@ describe("released purchase-order exports", () => {
     expect(summaryText).toContain("02/09/2026");
     expect(summaryText).not.toContain("Mã hàng");
     expect(summaryText).not.toContain("Mã NCC");
-    expect(schoolText).toContain("Bếp chính Nguyễn Du");
-    expect(ingredientText).toContain("Bếp chính Trần Quốc Toản");
+    expect(schoolText).toContain("Trường Nguyễn Du");
+    expect(ingredientText).toContain("Trường Trần Quốc Toản");
     expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(100);
-    expect(workbook.getWorksheet("Theo trường")!.getCell("D3").value).toBe(60);
-    expect(workbook.getWorksheet("Theo trường")!.getCell("D3").numFmt).toBe(
-      "0.######",
+    expect(workbook.getWorksheet("Theo trường")!.getCell("A10").value).toBe(
+      "Trường Nguyễn Du",
     );
+    expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
+      "A10:B10",
+    );
+    expect(workbook.getWorksheet("Theo trường")!.model.merges).toContain(
+      "F10:G10",
+    );
+    expect(workbook.getWorksheet("Theo trường")!.getCell("A11").value).toBe(
+      "Trường Trần Quốc Toản",
+    );
+    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(60);
+    expect(
+      workbook.getWorksheet("Theo trường")!.getCell("F10").numFmt ?? "General",
+    ).toBe("General");
+    expect(workbook.model.media).toHaveLength(1);
+    expect(
+      workbook.getWorksheet("Theo trường")!.getCell("A9").fill,
+    ).toMatchObject({
+      type: "pattern",
+      pattern: "solid",
+    });
+    expect(workbook.getWorksheet("Theo hàng")!.getCell("A10").value).toBe(
+      "Gạo thơm",
+    );
+    expect(workbook.getWorksheet("Theo hàng")!.model.merges).toContain(
+      "A10:B10",
+    );
+    expect(workbook.getWorksheet("Theo hàng")!.getCell("A11").value).toBeNull();
+    expect(workbook.getWorksheet("Theo hàng")!.getRow(10).height).toBe(30);
     expect(workbook.getWorksheet("Tổng")!.views[0]?.showGridLines).toBe(false);
     expect(workbook.getWorksheet("Tổng")!.pageSetup.orientation).toBe(
       "portrait",
@@ -122,6 +154,9 @@ describe("released purchase-order exports", () => {
       createReviewPurchaseOrdersFixture("released_po").purchase_orders[0]!;
     order.lines[0]!.ordered_quantity = "9007199254740992.123455";
     order.lines[1]!.ordered_quantity = "1.000001";
+    order.lines[0]!.school_breakdown[0]!.ordered_quantity =
+      "9007199254740992.123455";
+    order.lines[1]!.school_breakdown[0]!.ordered_quantity = "1.000001";
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await createPurchaseOrderXlsx(order));
@@ -129,7 +164,7 @@ describe("released purchase-order exports", () => {
     expect(workbook.getWorksheet("Tổng")!.getCell("D8").value).toBe(
       "9007199254740993.123456",
     );
-    expect(workbook.getWorksheet("Theo trường")!.getCell("D3").value).toBe(
+    expect(workbook.getWorksheet("Theo trường")!.getCell("F10").value).toBe(
       "9007199254740992.123455",
     );
   });

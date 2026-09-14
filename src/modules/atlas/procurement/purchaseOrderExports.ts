@@ -1,6 +1,7 @@
 import type { SchoolCateringPurchaseOrder } from "./schoolCateringProcurementModel";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
 import type { Cell, Row, Worksheet } from "exceljs";
+import companyLogoDataUrl from "../../../assets/thuong-hao-logo.jpg?inline";
 
 const QUANTITY_SCALE = 1_000_000n;
 
@@ -11,7 +12,8 @@ type PurchaseOrderExportLine = {
 };
 
 type PurchaseOrderSchoolExportLine = PurchaseOrderExportLine & {
-  locationName: string;
+  schoolName: string;
+  schoolDisplayOrder: number;
 };
 
 export type PurchaseOrderExportData = {
@@ -65,7 +67,8 @@ export function buildPurchaseOrderExportData(
     string,
     { ingredientName: string; unitCode: string; quantity: bigint }
   >();
-  const schoolLines = order.lines.map((line) => {
+  const schoolLines: PurchaseOrderSchoolExportLine[] = [];
+  for (const line of order.lines) {
     const key = `${line.ingredient.ingredient_id}\u0000${line.unit.unit_id}`;
     const current = summaries.get(key);
     const quantity = scaledQuantity(line.ordered_quantity);
@@ -74,13 +77,27 @@ export function buildPurchaseOrderExportData(
       unitCode: line.unit.unit_code,
       quantity: (current?.quantity ?? 0n) + quantity,
     });
-    return {
-      locationName: line.delivery_location.location_name,
-      ingredientName: line.ingredient.ingredient_name,
-      orderedQuantity: exactQuantity(quantity),
-      unitCode: line.unit.unit_code,
-    };
-  });
+    let breakdownTotal = 0n;
+    for (const school of line.school_breakdown) {
+      const schoolQuantity = scaledQuantity(school.ordered_quantity);
+      breakdownTotal += schoolQuantity;
+      schoolLines.push({
+        schoolName: school.school_name,
+        schoolDisplayOrder: school.school_display_order,
+        ingredientName: line.ingredient.ingredient_name,
+        orderedQuantity: exactQuantity(schoolQuantity),
+        unitCode: line.unit.unit_code,
+      });
+    }
+    if (!line.school_breakdown.length || breakdownTotal !== quantity)
+      throw new Error("Released PO School breakdown is incomplete.");
+  }
+  schoolLines.sort(
+    (left, right) =>
+      left.schoolDisplayOrder - right.schoolDisplayOrder ||
+      left.schoolName.localeCompare(right.schoolName, "vi") ||
+      left.ingredientName.localeCompare(right.ingredientName, "vi"),
+  );
 
   return {
     documentNumber: order.document_number,
@@ -103,7 +120,19 @@ export function buildPurchaseOrderPdfDefinition(
   return {
     info: { title: `Phiếu đặt hàng ${data.documentNumber}` },
     content: [
-      { text: "THƯỢNG HẢO", style: "company" },
+      {
+        columns: [
+          { image: companyLogoDataUrl, width: 54 },
+          {
+            stack: [
+              { text: companyName, style: "company" },
+              { text: companyAddress, style: "address" },
+            ],
+            alignment: "center",
+          },
+          { text: "", width: 54 },
+        ],
+      },
       { text: "PHIẾU ĐẶT HÀNG", style: "heading" },
       { text: `Số đơn: ${data.documentNumber}` },
       { text: `Nhà cung ứng: ${data.supplierName}` },
@@ -132,7 +161,7 @@ export function buildPurchaseOrderPdfDefinition(
           body: [
             ["Trường / điểm giao", "Nguyên liệu", "Số lượng", "Đơn vị"],
             ...data.schoolLines.map((line) => [
-              line.locationName,
+              line.schoolName,
               line.ingredientName,
               line.orderedQuantity,
               line.unitCode,
@@ -144,6 +173,7 @@ export function buildPurchaseOrderPdfDefinition(
     defaultStyle: { font: "Roboto", fontSize: 9 },
     styles: {
       company: { bold: true, fontSize: 9, margin: [0, 0, 0, 4] },
+      address: { italics: true, fontSize: 8, margin: [0, 0, 0, 6] },
       heading: { bold: true, fontSize: 16, margin: [0, 0, 0, 10] },
       section: { bold: true, fontSize: 11, margin: [0, 12, 0, 6] },
     },
@@ -187,7 +217,7 @@ function exactExcelQuantity(value: string): string | number {
 
 function setQuantity(cell: Cell, value: string) {
   cell.value = exactExcelQuantity(value);
-  if (typeof cell.value === "number") cell.numFmt = "0.######";
+  if (typeof cell.value === "number") cell.numFmt = "General";
   cell.alignment = { horizontal: "right" };
 }
 
@@ -214,22 +244,14 @@ function prepareWorksheet(worksheet: Worksheet) {
 function applyDocumentFont(worksheet: Worksheet) {
   worksheet.eachRow((row) => {
     row.eachCell((cell) => {
-      cell.font = { ...cell.font, name: "Times New Roman", size: 11 };
+      cell.font = {
+        name: "Times New Roman",
+        size: cell.font?.size ?? 11,
+        ...cell.font,
+      };
       cell.alignment = { vertical: "middle", ...cell.alignment };
     });
   });
-}
-
-function addGroupBand(worksheet: Worksheet, text: string) {
-  const row = worksheet.addRow([text]);
-  worksheet.mergeCells(row.number, 1, row.number, 4);
-  row.font = { name: "Times New Roman", bold: true };
-  row.fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FFE7E7E7" },
-  };
-  borderRow(row);
 }
 
 function groupBy<T>(items: T[], keyFor: (item: T) => string) {
@@ -241,6 +263,115 @@ function groupBy<T>(items: T[], keyFor: (item: T) => string) {
   return groups;
 }
 
+const companyName = "CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO";
+const companyAddress =
+  "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam";
+
+function prepareDetailSheet(
+  sheet: Worksheet,
+  title: string,
+  data: PurchaseOrderExportData,
+  firstHeader: string,
+  fourthHeader: string,
+  logoId: number,
+) {
+  prepareWorksheet(sheet);
+  sheet.addImage(logoId, {
+    tl: { col: 0, row: 0 },
+    ext: { width: 58, height: 58 },
+  });
+  sheet.pageSetup.orientation = "landscape";
+  sheet.mergeCells("A1:G1");
+  sheet.getCell("A1").value = companyName;
+  sheet.getCell("A1").alignment = { horizontal: "center" };
+  sheet.mergeCells("A2:G2");
+  sheet.getCell("A2").value = companyAddress;
+  sheet.getCell("A2").alignment = { horizontal: "center" };
+  sheet.mergeCells("A4:G4");
+  sheet.getCell("A4").value = title;
+  sheet.getCell("A4").font = { name: "Times New Roman", bold: true, size: 18 };
+  sheet.getCell("A4").alignment = { horizontal: "center" };
+  sheet.mergeCells("A6:D6");
+  sheet.getCell("A6").value = `Nhà cung cấp: ${data.supplierName}`;
+  sheet.getCell("A6").font = { name: "Times New Roman", size: 16 };
+  sheet.getCell("A7").value = "Ngày dùng:";
+  sheet.getCell("B7").value = data.serviceDate;
+  const header = sheet.getRow(9);
+  header.values = [
+    firstHeader,
+    null,
+    "STT",
+    fourthHeader,
+    "Đơn vị",
+    "Số lượng",
+  ];
+  sheet.mergeCells("A9:B9");
+  sheet.mergeCells("F9:G9");
+  header.height = 36;
+  header.font = {
+    name: "Times New Roman",
+    bold: true,
+    size: 16,
+    color: { argb: "FF000000" },
+  };
+  header.fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFB7B7B7" },
+  };
+  header.alignment = {
+    horizontal: "center",
+    vertical: "middle",
+    wrapText: true,
+  };
+  borderRow(header);
+  [15, 13, 8, 34, 11, 11, 14].forEach(
+    (width, index) => (sheet.getColumn(index + 1).width = width),
+  );
+}
+
+function addDetailRow(
+  sheet: Worksheet,
+  rowNumber: number,
+  groupLabel: string | null,
+  index: number,
+  detailLabel: string,
+  unitCode: string,
+  quantity: string,
+) {
+  sheet.mergeCells(rowNumber, 1, rowNumber, 2);
+  sheet.mergeCells(rowNumber, 6, rowNumber, 7);
+  const row = sheet.getRow(rowNumber);
+  row.getCell(1).value = groupLabel;
+  row.getCell(3).value = index;
+  row.getCell(4).value = detailLabel;
+  row.getCell(5).value = unitCode;
+  row.height = 30;
+  row.font = { name: "Times New Roman", size: 16 };
+  row.alignment = { vertical: "middle", wrapText: true };
+  if (groupLabel)
+    row.getCell(1).font = {
+      name: "Times New Roman",
+      size: 16,
+      bold: true,
+    };
+  if (rowNumber % 2 === 1)
+    row.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF2F2F2" },
+    };
+  setQuantity(row.getCell(6), quantity);
+  borderRow(row);
+  if (groupLabel)
+    row.eachCell((cell) => {
+      cell.border = {
+        ...cell.border,
+        top: { style: "medium", color: { argb: "FF000000" } },
+      };
+    });
+}
+
 export async function createPurchaseOrderXlsx(
   order: SchoolCateringPurchaseOrder,
 ) {
@@ -249,9 +380,17 @@ export async function createPurchaseOrderXlsx(
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Atlas · Thượng Hảo";
   workbook.created = new Date();
+  const logoId = workbook.addImage({
+    base64: companyLogoDataUrl,
+    extension: "jpeg",
+  });
 
   const summary = workbook.addWorksheet("Tổng");
   prepareWorksheet(summary);
+  summary.addImage(logoId, {
+    tl: { col: 0, row: 0 },
+    ext: { width: 58, height: 58 },
+  });
   summary.mergeCells("A1:D1");
   summary.getCell("A1").value = "THƯỢNG HẢO";
   summary.mergeCells("A2:D2");
@@ -290,59 +429,65 @@ export async function createPurchaseOrderXlsx(
   applyDocumentFont(summary);
 
   const bySchool = workbook.addWorksheet("Theo trường");
-  prepareWorksheet(bySchool);
-  const schools = groupBy(data.schoolLines, (line) => line.locationName);
-  for (const [locationName, lines] of schools) {
-    if (bySchool.rowCount) bySchool.addRow([]);
-    addGroupBand(bySchool, `TRƯỜNG / ĐIỂM GIAO: ${locationName}`);
-    styleWorksheetHeader(
-      bySchool.addRow(["STT", "Tên hàng", "Đơn vị", "Số lượng"]),
-    );
+  prepareDetailSheet(
+    bySchool,
+    "CHI TIẾT GIAO HÀNG",
+    data,
+    "Trường học",
+    "Tên hàng",
+    logoId,
+  );
+  const schools = groupBy(
+    data.schoolLines,
+    (line) =>
+      `${String(line.schoolDisplayOrder).padStart(10, "0")}\u0000${line.schoolName}`,
+  );
+  let schoolRow = 10;
+  for (const [, lines] of schools) {
     lines.forEach((line, index) => {
-      const row = bySchool.addRow([
+      addDetailRow(
+        bySchool,
+        schoolRow,
+        index === 0 ? line.schoolName : null,
         index + 1,
         line.ingredientName,
         line.unitCode,
-        null,
-      ]);
-      setQuantity(row.getCell(4), line.orderedQuantity);
-      borderRow(row);
+        line.orderedQuantity,
+      );
+      schoolRow += 1;
     });
   }
-  bySchool.getColumn(1).width = 8;
-  bySchool.getColumn(2).width = 38;
-  bySchool.getColumn(3).width = 13;
-  bySchool.getColumn(4).width = 18;
   applyDocumentFont(bySchool);
 
   const byIngredient = workbook.addWorksheet("Theo hàng");
-  prepareWorksheet(byIngredient);
+  prepareDetailSheet(
+    byIngredient,
+    "CHI TIẾT GIAO HÀNG (THEO HÀNG)",
+    data,
+    "Tên hàng",
+    "Trường học",
+    logoId,
+  );
   const ingredients = groupBy(
     data.schoolLines,
     (line) => `${line.ingredientName}\u0000${line.unitCode}`,
   );
+  let ingredientRow = 10;
   for (const [key, lines] of ingredients) {
-    if (byIngredient.rowCount) byIngredient.addRow([]);
     const [ingredientName, unitCode] = key.split("\u0000");
-    addGroupBand(byIngredient, `TÊN HÀNG: ${ingredientName}`);
-    styleWorksheetHeader(
-      byIngredient.addRow(["STT", "Trường / điểm giao", "Đơn vị", "Số lượng"]),
-    );
     lines.forEach((line, index) => {
-      const row = byIngredient.addRow([
+      addDetailRow(
+        byIngredient,
+        ingredientRow,
+        index === 0 ? ingredientName! : null,
         index + 1,
-        line.locationName,
-        unitCode,
-        null,
-      ]);
-      setQuantity(row.getCell(4), line.orderedQuantity);
-      borderRow(row);
+        line.schoolName,
+        unitCode!,
+        line.orderedQuantity,
+      );
+      ingredientRow += 1;
     });
   }
-  byIngredient.getColumn(1).width = 8;
-  byIngredient.getColumn(2).width = 38;
-  byIngredient.getColumn(3).width = 13;
-  byIngredient.getColumn(4).width = 18;
   applyDocumentFont(byIngredient);
 
   return workbook.xlsx.writeBuffer();

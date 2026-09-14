@@ -47,8 +47,12 @@ export function createReviewSchoolDispatchDocument(
     source_fingerprint: fingerprint,
     predecessor_release_id: null,
     school_name: "Trường Tiểu học Nguyễn Du",
+    school_display_order: 1,
     delivery_location_name: "Bếp chính Nguyễn Du",
     delivery_address: "Số 1 Nguyễn Du",
+    document_issuer_name: "CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO",
+    document_issuer_address:
+      "96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam",
     note: null,
     version: 1,
     released_by_actor_id: "26000000-0000-4000-8000-000000000004",

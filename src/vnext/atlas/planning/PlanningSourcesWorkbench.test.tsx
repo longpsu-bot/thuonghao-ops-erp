@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
+import type { PantryApi } from "../bridges/planning";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
 import {
@@ -127,6 +128,46 @@ describe("Planning sources Chakra workbench", () => {
     fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     expect(sync).not.toHaveBeenCalled();
+  });
+  it("renders every active Dish Type in authoritative order and keeps empty columns", async () => {
+    await show();
+    const table = screen.getByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      "Trường / điểm giao",
+      "Món mặn",
+      "Món canh",
+      "Món xào",
+      "Rau",
+      "Tráng miệng",
+    ]);
+    expect(within(table).queryByText("Loại cũ")).not.toBeInTheDocument();
+    const firstSchoolRow = within(table).getAllByRole("row")[1];
+    expect(within(firstSchoolRow).getAllByRole("cell")[5]).toHaveTextContent(
+      "—",
+    );
+  });
+  it("keeps weekly Menu scrolling local with a sticky School column", async () => {
+    await show();
+    const table = screen.getByRole("table", {
+      name: "Thực đơn theo trường",
+    });
+    expect(screen.getByTestId("weekly-menu-scroll")).toHaveAttribute(
+      "data-horizontal-scroll",
+      "local",
+    );
+    const schoolHeader = within(table).getByRole("columnheader", {
+      name: "Trường / điểm giao",
+    });
+    expect(schoolHeader).toHaveAttribute("data-sticky-column", "school");
+    expect(getComputedStyle(schoolHeader).zIndex).toBe(
+      "var(--atlas-layer-sticky-corner, 3)",
+    );
   });
   it("has one h1, exactly three jobs, and local search without backend reads", async () => {
     const { read } = await show();
@@ -278,13 +319,106 @@ describe("Planning sources Chakra workbench", () => {
       { target: { value: "ingredient-1" } },
     );
     expect(screen.getByText("kg")).toBeVisible();
-    expect(screen.getByText("Bếp Trường Nguyễn Du")).toBeVisible();
+    expect(screen.getAllByText("Bếp Trường Nguyễn Du")[0]).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", {
         name: "Xác nhận toàn tuần không có bổ sung",
       }),
     );
     expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+  it("keeps Pantry School edits local and sends the selected School to Preview", async () => {
+    const fixture = createPlanningStoryFixture("pantry_review");
+    const read = vi.spyOn(fixture.pantryApi, "getWorkbench");
+    const preview = vi.spyOn(fixture.pantryApi, "preview");
+    const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          initialJob="pantry"
+        />
+      </AtlasVNextProvider>,
+    );
+    const school = await screen.findByRole("combobox", {
+      name: "Trường dòng 1",
+    });
+    expect(school).toHaveValue("school-0");
+    expect(
+      within(school.closest("tr")!).getByText("Bếp Trường Nguyễn Du"),
+    ).toBeVisible();
+
+    const readsBefore = read.mock.calls.length;
+    fireEvent.change(school, { target: { value: "school-1" } });
+    expect(read).toHaveBeenCalledTimes(readsBefore);
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+    const regroupedSchool = screen.getByRole("combobox", {
+      name: "Trường dòng 1",
+    });
+    expect(
+      within(regroupedSchool.closest("tr")!).getByText("Bếp Trường Lê Lợi"),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    const previewCall = preview.mock.calls[0] as unknown as Parameters<
+      PantryApi["preview"]
+    >;
+    expect(previewCall[4]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source_row_reference: "fixture:1",
+          school_id: "school-1",
+        }),
+      ]),
+    );
+    expect(
+      within(
+        await screen.findByRole("table", { name: "So sánh thay đổi" }),
+      ).getByText("Trường Lê Lợi"),
+    ).toBeVisible();
+  });
+  it("regroups a Pantry line under the destination School mode", async () => {
+    const fixture = createPlanningStoryFixture("pantry_review");
+    fixture.pantry.batch!.school_date_modes = [
+      {
+        school_id: "school-0",
+        service_date: reviewWeek,
+        direct_need_mode: "COMPLETE",
+      },
+      {
+        school_id: "school-1",
+        service_date: reviewWeek,
+        direct_need_mode: "ADDITIVE",
+      },
+    ];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          initialJob="pantry"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.change(
+      await screen.findByRole("combobox", { name: "Trường dòng 1" }),
+      { target: { value: "school-1" } },
+    );
+    expect(
+      screen.getByRole("combobox", {
+        name: "Cách kết hợp Trường Lê Lợi",
+      }),
+    ).toHaveValue("ADDITIVE");
+    expect(
+      screen.queryByRole("combobox", {
+        name: "Cách kết hợp Trường Nguyễn Du",
+      }),
+    ).not.toBeInTheDocument();
   });
 });
 
@@ -329,12 +463,13 @@ it.each(["menu", "attendance", "pantry"] as const)(
   },
 );
 
-it.each([
-  ["REQUIRED", "", "Cần ghi chú cho mục đích này."],
-  ["PROHIBITED", "Keep this note", "Mục đích này không cho phép ghi chú."],
-] as const)("renders inline %s note validation", async (rule, note, error) => {
+async function renderPantryNoteRule(
+  rule: "OPTIONAL" | "REQUIRED" | "PROHIBITED",
+  note: string,
+) {
   const fixture = createPlanningStoryFixture("pantry_review");
   fixture.pantry.purposes[0].note_rule = rule;
+  fixture.pantry.batch!.active_lines[0].note = note;
   render(
     <AtlasVNextProvider>
       <PlanningSourcesWorkbench
@@ -345,12 +480,57 @@ it.each([
       />
     </AtlasVNextProvider>,
   );
-  const input = await screen.findByRole("textbox", { name: "Ghi chú dòng 1" });
-  fireEvent.change(input, { target: { value: note } });
+}
+
+it("keeps OPTIONAL Pantry notes optional", async () => {
+  await renderPantryNoteRule("OPTIONAL", "");
+  const input = await screen.findByRole("textbox", {
+    name: "Ghi chú dòng 1",
+  });
+  expect(input).not.toBeRequired();
+  expect(screen.queryByText(/Nhập lý do/)).not.toBeInTheDocument();
+});
+
+it("labels REQUIRED Pantry content as a required reason", async () => {
+  await renderPantryNoteRule("REQUIRED", "");
+  const input = await screen.findByRole("textbox", { name: "Lý do dòng 1" });
+  expect(input).toBeRequired();
   expect(input).toHaveAttribute("aria-invalid", "true");
-  await waitFor(() => expect(input).toHaveAccessibleErrorMessage(error));
-  expect(input).toHaveValue(note);
+  await waitFor(() =>
+    expect(input).toHaveAccessibleErrorMessage("Nhập lý do cho mục đích này."),
+  );
+  expect(
+    input.closest("tr")!.querySelectorAll("[data-pantry-feedback]"),
+  ).toHaveLength(6);
+  fireEvent.change(screen.getByRole("textbox", { name: "Số lượng dòng 1" }), {
+    target: { value: "25.7" },
+  });
   expect(screen.getByRole("button", { name: "Xem thay đổi" })).toBeDisabled();
+});
+
+it("disables an empty PROHIBITED Pantry note with neutral guidance", async () => {
+  await renderPantryNoteRule("PROHIBITED", "");
+  expect(
+    await screen.findByRole("textbox", { name: "Ghi chú dòng 1" }),
+  ).toBeDisabled();
+  expect(screen.getByText("Không áp dụng cho mục đích này.")).toBeVisible();
+});
+
+it("keeps existing PROHIBITED note content editable until explicitly cleared", async () => {
+  await renderPantryNoteRule("PROHIBITED", "Nội dung cần xóa");
+  const input = await screen.findByRole("textbox", {
+    name: "Ghi chú dòng 1",
+  });
+  expect(input).toBeEnabled();
+  expect(input).toHaveValue("Nội dung cần xóa");
+  await waitFor(() =>
+    expect(input).toHaveAccessibleErrorMessage(
+      "Mục đích này không cho phép ghi chú.",
+    ),
+  );
+  fireEvent.change(input, { target: { value: "" } });
+  expect(input).toBeDisabled();
+  expect(screen.getByText("Không áp dụng cho mục đích này.")).toBeVisible();
 });
 
 it.each([

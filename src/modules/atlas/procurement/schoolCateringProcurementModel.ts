@@ -137,6 +137,14 @@ export type PurchaseOrderLine = {
     location_name: string;
   };
   service_date: string;
+  school_breakdown: Array<{
+    school_id: string;
+    school_name: string;
+    school_display_order: number;
+    delivery_location_id: string;
+    delivery_location_name: string;
+    ordered_quantity: ExactQuantity;
+  }>;
   source: {
     family_id: string;
     family_revision_id: string;

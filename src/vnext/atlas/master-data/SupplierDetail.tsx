@@ -57,7 +57,7 @@ export function SupplierDetail({
         </Box>
         <Button
           size="sm"
-          variant="utility"
+          variant="tertiary"
           aria-label="Đóng chi tiết"
           onClick={c.requestClose}
         >

@@ -161,8 +161,11 @@ Procurement adds complete replacement-PO creation plus derived
 Dispatch adds exactly two browser-callable functions:
 `get_school_dispatch_release_workbench` and
 `release_school_dispatch_document`, taking the reviewed browser registry to 110
-functions. The physical `atlas_api` schema has 111 functions because the prior PO
-read implementation is retained as one non-browser-callable compatibility base.
+functions at the D-044 frontier. The 06D-E document-output amendment retains those
+entry-point names, brings the current reviewed browser registry to 111 functions,
+and brings the physical `atlas_api` schema to 114 functions. The three additional
+physical functions are non-browser-callable PO/PXK predecessor read implementations
+retained behind the shaped public wrappers.
 Together this slice adds two direct-mode relations, three PXK relations, two
 capabilities, and no role or scope kind; all 112 authoritative tables remain forced
 RLS. Existing read/Dispatch/Procurement runtimes are reused.

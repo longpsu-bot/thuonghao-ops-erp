@@ -28,6 +28,12 @@ function Review({
             procurementPdf: () => {},
             pxkXlsx: () => {},
             pxkPdf: () => {},
+            pxkGroupedXlsx: () => {},
+            shoppingListXlsx: async () => {},
+            shoppingListImport: async (_file, _workbench, drafts) => ({
+              drafts,
+              changedLineIds: [],
+            }),
           }}
         />
       </AtlasSessionGate>

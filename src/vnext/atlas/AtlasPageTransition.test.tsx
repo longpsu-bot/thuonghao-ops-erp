@@ -184,7 +184,7 @@ it("keeps UNKNOWN recovery intact with zero outgoing animation", async () => {
   await settle("Công thức");
   fireEvent.click(
     await screen.findByRole("button", {
-      name: "Xem công thức Canh bí đỏ thịt bằm",
+      name: "Sửa công thức Canh bí đỏ thịt bằm",
     }),
   );
   fireEvent.change(await screen.findByLabelText("Định lượng Bí đỏ"), {

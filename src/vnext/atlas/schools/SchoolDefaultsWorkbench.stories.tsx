@@ -64,9 +64,6 @@ async function dirtyFirst(canvas: ReturnType<typeof within>) {
 async function saveFirst(canvas: ReturnType<typeof within>) {
   await dirtyFirst(canvas);
   await userEvent.click(
-    await canvas.findByRole("button", { name: "Xem thay đổi" }),
-  );
-  await userEvent.click(
     await canvas.findByRole("button", { name: "Lưu thay đổi" }),
   );
 }
@@ -151,7 +148,7 @@ export const InvalidOverflow: Story = {
     );
   },
 };
-export const AttachedReview: Story = {
+export const DirectSaveReady: Story = {
   args: { scenario: "DIRTY_MANY" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -160,9 +157,6 @@ export const AttachedReview: Story = {
       canvas,
       `Giáo viên mặc định — ${schoolDefaultsFixtureSchools[1]!.school_name}`,
       String(schoolDefaultsFixtureSchools[1]!.default_teacher_portions + 2),
-    );
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Xem thay đổi" }),
     );
   },
 };

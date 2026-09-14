@@ -90,7 +90,7 @@ export function AtlasSchoolScope({
                 </Popover.Title>
                 <Button
                   size="sm"
-                  variant="utility"
+                  variant="tertiary"
                   aria-label="Đóng bộ chọn trường"
                   onClick={close}
                 >
@@ -115,7 +115,7 @@ export function AtlasSchoolScope({
                 </Button>
                 <Button
                   size="sm"
-                  variant="utility"
+                  variant="tertiary"
                   onClick={() => setDraft([])}
                 >
                   Bỏ chọn tất cả

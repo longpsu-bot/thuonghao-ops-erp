@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(47);
+select plan(54);
 
 select has_function('atlas_api','get_school_dispatch_release_workbench',array['jsonb']);
 select has_function('atlas_api','release_school_dispatch_document',array['jsonb']);
@@ -24,6 +24,16 @@ select function_privs_are('atlas_api','release_school_dispatch_document',array['
 select has_table('atlas_dispatch','school_dispatch_releases','School PXK headers exist');
 select has_table('atlas_dispatch','school_dispatch_release_lines','School PXK lines exist');
 select has_table('atlas_dispatch','school_dispatch_release_line_sources','School PXK lineage exists');
+select has_column('atlas_admin','schools','dispatch_document_issuer_name',
+  'School master configures the direct PXK issuer name');
+select has_column('atlas_admin','schools','dispatch_document_issuer_address',
+  'School master configures the direct PXK issuer address');
+select has_column('atlas_dispatch','school_dispatch_releases','school_display_order_snapshot',
+  'released PXK freezes School display order');
+select has_column('atlas_dispatch','school_dispatch_releases','document_issuer_name_snapshot',
+  'released PXK freezes its issuer name');
+select has_column('atlas_dispatch','school_dispatch_releases','document_issuer_address_snapshot',
+  'released PXK freezes its issuer address');
 select ok((select relrowsecurity and relforcerowsecurity from pg_class
   where oid='atlas_dispatch.school_dispatch_releases'::regclass),
   'School PXK headers have forced RLS');
@@ -82,12 +92,15 @@ values
   ('26020000-0000-4000-8000-000000000013','26020000-0000-4000-8000-000000000002',
     'pxk-cross-customer','Bếp khác khách hàng','Số 3 Nguyễn Du');
 insert into atlas_admin.schools(
-  school_id,customer_id,school_code,school_name,default_delivery_location_id,display_order)
+  school_id,customer_id,school_code,school_name,default_delivery_location_id,display_order,
+  dispatch_document_issuer_name,dispatch_document_issuer_address)
 values
   ('26020000-0000-4000-8000-000000000021','26020000-0000-4000-8000-000000000001',
-    'pxk-school','Trường Tiểu học Nguyễn Du','26020000-0000-4000-8000-000000000011',1),
+    'pxk-school','Trường Tiểu học Nguyễn Du','26020000-0000-4000-8000-000000000011',1,
+    'CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO','Địa chỉ PXK đã cấu hình'),
   ('26020000-0000-4000-8000-000000000022','26020000-0000-4000-8000-000000000001',
-    'pxk-school-b','Trường Tiểu học Trưng Vương','26020000-0000-4000-8000-000000000012',2);
+    'pxk-school-b','Trường Tiểu học Trưng Vương','26020000-0000-4000-8000-000000000012',2,
+    'CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO','Địa chỉ PXK đã cấu hình');
 insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
 values('26020000-0000-4000-8000-000000000031','pxk-kg','Kilôgam','mass');
 insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id)
@@ -389,6 +402,9 @@ select ok((select (response->>'success')::boolean
   'explicit PXK release succeeds and assigns a server-owned official number');
 select ok((select release_status='RELEASED' and source_fingerprint is not null
     and school_name_snapshot='Trường Tiểu học Nguyễn Du'
+    and school_display_order_snapshot=1
+    and document_issuer_name_snapshot='CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO'
+    and document_issuer_address_snapshot='Địa chỉ PXK đã cấu hình'
     and note='Giao tại cổng phụ trước 06:00'
   from atlas_dispatch.school_dispatch_releases),
   'released PXK header stores immutable scope, display snapshots, and note');
@@ -406,6 +422,48 @@ select ok((select response #>> '{rows,0,state}'='CURRENT'
     and (response #>> '{rows,0,current_release,export_ready}')::boolean
   from pxk_results where name='read-released'),
   'read model exposes the released immutable PXK as current and exportable');
+update atlas_admin.schools
+set school_name='Tên trường đã đổi',display_order=9,
+  dispatch_document_issuer_name='Tên đơn vị đã đổi',
+  dispatch_document_issuer_address='Địa chỉ đơn vị đã đổi'
+where school_id='26020000-0000-4000-8000-000000000021';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+insert into pxk_results values('read-released-after-school-change',
+  atlas_api.get_school_dispatch_release_workbench(pg_temp.pxk_read()));
+reset role;
+select ok((select
+    response#>>'{rows,0,current_release,school_name}'='Trường Tiểu học Nguyễn Du'
+    and response#>>'{rows,0,current_release,school_display_order}'='1'
+    and response#>>'{rows,0,current_release,document_issuer_name}'=
+      'CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO'
+    and response#>>'{rows,0,current_release,document_issuer_address}'=
+      'Địa chỉ PXK đã cấu hình'
+  from pxk_results where name='read-released-after-school-change'),
+  'released PXK header and School order do not follow later master changes');
+update atlas_admin.schools
+set school_name='Trường Tiểu học Nguyễn Du',display_order=1,
+  dispatch_document_issuer_name='CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO',
+  dispatch_document_issuer_address='Địa chỉ PXK đã cấu hình'
+where school_id='26020000-0000-4000-8000-000000000021';
+
+savepoint legacy_pxk_export_guard;
+set session_replication_role=replica;
+update atlas_dispatch.school_dispatch_releases
+set document_issuer_name_snapshot=null
+where release_status='RELEASED';
+set session_replication_role=origin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','26000000-0000-4000-8000-000000000101',true);
+insert into pxk_results values('read-legacy-release',
+  atlas_api.get_school_dispatch_release_workbench(pg_temp.pxk_read()));
+reset role;
+select ok((select
+    not (response#>>'{rows,0,current_release,export_ready}')::boolean
+    and not (response#>>'{rows,0,allowed_actions,export}')::boolean
+  from pxk_results where name='read-legacy-release'),
+  'legacy PXK without the direct header snapshot fails closed for export');
+rollback to savepoint legacy_pxk_export_guard;
 select ok((select pg_get_functiondef(
     'atlas_core.school_dispatch_release_preview(date,uuid,uuid)'::regprocedure)
     !~* '\m(stock|inventory|lot|reservation|pick|trip|vehicle|driver|load)\M'),

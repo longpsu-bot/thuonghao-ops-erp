@@ -16,7 +16,6 @@ import {
   filterAndOrderSchools,
   reconcileSchoolDrafts,
   type SchoolDefaultsDrafts,
-  type SchoolDefaultsReviewRow,
 } from "./schoolDefaultsModel";
 
 type LoadState = {
@@ -45,7 +44,6 @@ export function useSchoolDefaultsWorkbench({
   const [query, setQuery] = useState("");
   const [schoolType, setSchoolType] = useState("ALL");
   const [drafts, setDrafts] = useState<SchoolDefaultsDrafts>({});
-  const [review, setReview] = useState<SchoolDefaultsReviewRow[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [lock, setLock] = useState<SchoolDefaultsLock>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -78,7 +76,6 @@ export function useSchoolDefaultsWorkbench({
       }
       setLoad({ loading: false, schools, error: null });
       setDrafts((current) => reconcileSchoolDrafts(current, schools));
-      setReview(null);
       setLock(null);
       if (purpose === "routine" || purpose === "recovery") {
         setNotice(
@@ -94,7 +91,6 @@ export function useSchoolDefaultsWorkbench({
     requestGeneration.current += 1;
     setLoad({ loading: false, schools: [], error: null });
     setDrafts({});
-    setReview(null);
     setLock(null);
     setNotice(null);
     setSaving(false);
@@ -129,19 +125,20 @@ export function useSchoolDefaultsWorkbench({
     value: string,
   ) => {
     setNotice(null);
-    setReview(null);
     setDrafts((current) => applySchoolDraftEdit(current, school, field, value));
   };
 
-  const openReview = () => {
-    if (saving || lock || !dirtyCount || invalidDraftCount) return;
-    setReview(createSchoolDefaultsReview(load.schools, drafts));
-  };
-
   const save = async () => {
-    if (!authSubject || !review?.length || saving || lock) return;
-    const reviewed = review;
-    const changes = reviewed.map((row) => ({
+    const changes = createSchoolDefaultsReview(load.schools, drafts);
+    if (
+      !authSubject ||
+      !changes?.length ||
+      invalidDraftCount > 0 ||
+      saving ||
+      lock
+    )
+      return;
+    const payload = changes.map((row) => ({
       school_id: row.school_id,
       expected_version: row.expected_version,
       default_student_portions: row.new_student_portions,
@@ -151,10 +148,9 @@ export function useSchoolDefaultsWorkbench({
     setNotice(null);
     const saveGeneration = requestGeneration.current;
     const result: AtlasRpcResult = await api.updateSchoolDefaultsBulk(
-      schoolDefaultsBulkCommandRequest(authSubject, correlationId, changes),
+      schoolDefaultsBulkCommandRequest(authSubject, correlationId, payload),
     );
     if (saveGeneration !== requestGeneration.current) return;
-    setReview(null);
     if (result.kind === "transport_error") {
       setSaving(false);
       setLock("unknown");
@@ -164,7 +160,7 @@ export function useSchoolDefaultsWorkbench({
     if (result.kind === "success") {
       const current = await readAuthority("readback");
       setSaving(false);
-      if (current) setNotice(`Đã cập nhật ${changes.length} trường.`);
+      if (current) setNotice(`Đã cập nhật ${payload.length} trường.`);
       return;
     }
     setSaving(false);
@@ -194,7 +190,7 @@ export function useSchoolDefaultsWorkbench({
     exitPending: pendingExit !== null,
     requestExit: (next: () => void) => {
       if (saving || load.loading || lock) return;
-      if (dirtyCount || review) setPendingExit({ next });
+      if (dirtyCount) setPendingExit({ next });
       else next();
     },
     cancelExit: () => setPendingExit(null),
@@ -203,18 +199,14 @@ export function useSchoolDefaultsWorkbench({
       const { next } = pendingExit;
       setPendingExit(null);
       setDrafts({});
-      setReview(null);
       next();
     },
     invalidDraftCount,
     hiddenDirtyCount,
-    review,
     saving,
     lock,
     notice,
     edit,
-    openReview,
-    closeReview: () => !saving && setReview(null),
     refresh: () => readAuthority(lock ? "recovery" : "routine"),
     save,
   };

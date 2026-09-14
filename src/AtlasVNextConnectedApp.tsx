@@ -24,16 +24,24 @@ import {
 import {
   downloadSchoolDispatchXlsx,
   downloadSchoolDispatchPdf,
+  downloadGroupedSchoolDispatchXlsx,
 } from "./modules/atlas/dispatch/schoolDispatchReleaseExports";
 import { AtlasVNextProvider } from "./vnext/atlas/AtlasVNextProvider";
 import { AtlasSessionGate } from "./vnext/atlas/AtlasSessionGate";
 import { AtlasVNextApp } from "./vnext/atlas/AtlasVNextApp";
 import type { AtlasVNextApis } from "./vnext/atlas/AtlasVNextApis";
+import {
+  downloadConfirmedNeedShoppingList,
+  importConfirmedNeedShoppingList,
+} from "./modules/atlas/planning-inputs/confirmed-needs/confirmedNeedShoppingList";
 const exporters = {
   procurementXlsx: downloadPurchaseOrderXlsx,
   procurementPdf: downloadPurchaseOrderPdf,
   pxkXlsx: downloadSchoolDispatchXlsx,
   pxkPdf: downloadSchoolDispatchPdf,
+  pxkGroupedXlsx: downloadGroupedSchoolDispatchXlsx,
+  shoppingListXlsx: downloadConfirmedNeedShoppingList,
+  shoppingListImport: importConfirmedNeedShoppingList,
 };
 export function AtlasVNextConnectedApp({
   connection: suppliedConnection,

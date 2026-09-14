@@ -52,7 +52,7 @@ export function MasterDataReview({
             {reviewedName}
           </Heading>
         </Box>
-        <Button size="sm" variant="utility" onClick={c.closeReview}>
+        <Button size="sm" variant="tertiary" onClick={c.closeReview}>
           Quay lại chỉnh sửa
         </Button>
       </Flex>

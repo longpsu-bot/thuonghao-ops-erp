@@ -6,6 +6,7 @@ import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { AtlasVNextShell } from "../AtlasVNextShell";
 import { RecipeCapability } from "./RecipeCapability";
 import { createRecipeReviewFixture } from "./recipeReviewFixtures";
+import type { RecipeScenario } from "./recipeReviewFixtures";
 import {
   changeDate,
   createChangeOrderFixture,
@@ -14,13 +15,15 @@ import {
 function Review({
   scenario = "ACTIVE",
   job = "changes",
+  recipeScenario = "DISH_ACTIVE_EDITABLE",
 }: {
   scenario?: ChangeOrderScenario;
   job?: "recipes" | "changes";
+  recipeScenario?: RecipeScenario;
 }) {
   const base = useMemo(
-    () => createRecipeReviewFixture("DISH_ACTIVE_EDITABLE"),
-    [],
+    () => createRecipeReviewFixture(recipeScenario),
+    [recipeScenario],
   );
   const changes = useMemo(() => createChangeOrderFixture(scenario), [scenario]);
   const [subject, setSubject] = useState("review-operator");
@@ -174,6 +177,14 @@ const correction: Story["play"] = async (context) => {
   await userEvent.click(c.getByRole("button", { name: "Xem tác động" }));
   await c.findByRole("dialog", { name: "Xem tác động" });
 };
+const existingAddCorrection: Story["play"] = async ({ canvasElement }) => {
+  const c = within(canvasElement);
+  await userEvent.selectOptions(await c.findByLabelText("Tình trạng"), "all");
+  await userEvent.click(
+    (await c.findAllByRole("button", { name: /^Xem lệnh/ }))[0]!,
+  );
+  await userEvent.click(c.getByRole("button", { name: "Sửa lệnh" }));
+};
 const cancellation: Story["play"] = async (context) => {
   await detail!(context);
   const c = within(context.canvasElement);
@@ -190,10 +201,14 @@ export const BaseRecipe: Story = {
     const c = within(canvasElement);
     await userEvent.click(
       await c.findByRole("button", {
-        name: "Xem công thức Canh bí đỏ thịt bằm",
+        name: /^(Sửa|Xem) công thức Canh bí đỏ thịt bằm$/,
       }),
     );
   },
+};
+export const LockedBaseRecipe: Story = {
+  args: { job: "recipes", recipeScenario: "DISH_ACTIVE_LOCKED" },
+  play: BaseRecipe.play,
 };
 export const Landing: Story = {};
 export const Empty: Story = { args: { scenario: "EMPTY" } };
@@ -209,6 +224,10 @@ export const SystemDishSchoolInspection: Story = {
 export const SystemDishAdd: Story = { play: createEditor("SYSTEM_DISH_ADD") };
 export const SystemDishTargetPriorAdd: Story = {
   play: createEditor("SYSTEM_DISH_TARGET_PRIOR_ADD"),
+};
+export const ExistingAddCorrection: Story = {
+  args: { scenario: "EXISTING_ADD_CORRECTION" },
+  play: existingAddCorrection,
 };
 export const SchoolDishCreate: Story = {
   play: createEditor("SCHOOL_DISH_CREATE"),

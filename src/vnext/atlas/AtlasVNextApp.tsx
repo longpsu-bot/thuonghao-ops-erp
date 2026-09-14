@@ -19,6 +19,7 @@ import {
 import { SchoolPxkWorkbench } from "./dispatch/SchoolPxkWorkbench";
 import type { SchoolPxkWorkbenchProps } from "./dispatch/useSchoolPxkWorkbench";
 import { SchoolFulfilmentWorkbench } from "./reconciliation/SchoolFulfilmentWorkbench";
+import type { ConfirmedNeedWorkbenchProps } from "./planning-confirmed/useConfirmedNeedWorkbench";
 
 export type AtlasVNextAppProps = {
   authSubject: string;
@@ -33,6 +34,9 @@ export type AtlasVNextAppProps = {
     procurementPdf?: ProcurementWorkbenchProps["onExportPdf"];
     pxkXlsx?: SchoolPxkWorkbenchProps["onExportXlsx"];
     pxkPdf?: SchoolPxkWorkbenchProps["onExportPdf"];
+    pxkGroupedXlsx?: SchoolPxkWorkbenchProps["onExportGroupedXlsx"];
+    shoppingListXlsx?: ConfirmedNeedWorkbenchProps["onExportShoppingList"];
+    shoppingListImport?: ConfirmedNeedWorkbenchProps["onImportShoppingList"];
   };
 };
 export function AtlasVNextApp(props: AtlasVNextAppProps) {
@@ -109,6 +113,8 @@ function ApplicationSession({
             serviceDate={serviceDate}
             onServiceDateChange={setServiceDate}
             onContinueAllocation={(date) => navigate("procurement", date)}
+            onExportShoppingList={props.exporters?.shoppingListXlsx}
+            onImportShoppingList={props.exporters?.shoppingListImport}
           />
         )}
         {module === "procurement" && (
@@ -129,6 +135,7 @@ function ApplicationSession({
             api={apis.schoolDispatch}
             onExportXlsx={props.exporters?.pxkXlsx}
             onExportPdf={props.exporters?.pxkPdf}
+            onExportGroupedXlsx={props.exporters?.pxkGroupedXlsx}
           />
         )}
         {module === "reconciliation" && (

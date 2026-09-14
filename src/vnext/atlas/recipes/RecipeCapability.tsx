@@ -21,6 +21,9 @@ export function RecipeCapability(
   useImperativeHandle(props.exitRef, () => ({
     requestExit: (next) => active.current?.requestExit(next),
   }));
+  const switchJob = (next: "recipes" | "changes") => {
+    if (next !== job) active.current?.requestExit(() => setJob(next));
+  };
   return (
     <Box
       as="section"
@@ -38,7 +41,7 @@ export function RecipeCapability(
         activationMode="manual"
         onValueChange={({ value }) => {
           if (value !== job && (value === "recipes" || value === "changes"))
-            active.current?.requestExit(() => setJob(value));
+            switchJob(value);
         }}
       >
         <Tabs.List px="md" aria-label="Công việc công thức">
@@ -53,6 +56,7 @@ export function RecipeCapability(
               authSubject={props.authSubject}
               api={props.recipeApi}
               initialDate={props.initialDate}
+              onOpenChangeOrders={() => switchJob("changes")}
             />
           )}
         </Tabs.Content>

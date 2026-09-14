@@ -218,6 +218,44 @@ describe("IngredientSupplierWorkbench", () => {
     expect(api.getIngredientsAndSuppliers).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the selected Ingredient catalogue row visible in a stationary attached detail split", async () => {
+    renderWorkbench();
+    await ready();
+    const selectedName = screen.getByText("Bí mật");
+
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+
+    const split = screen.getByTestId("ingredient-supplier-master-detail");
+    expect(split).toHaveAttribute("data-detail-open", "true");
+    expect(split).not.toHaveAttribute("data-detail-animation", "true");
+    expect(
+      screen.getByRole("table", { name: "Danh mục nguyên liệu" }),
+    ).toBeVisible();
+    expect(selectedName.closest("tr")).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("region", { name: "Chi tiết nguyên liệu" }),
+    ).toBeVisible();
+    expect(screen.getByTestId("master-detail-content")).toHaveAttribute(
+      "data-detail-animation",
+      "true",
+    );
+  });
+
+  it("opens Ingredient creation in the same attached detail region with the catalogue mounted", async () => {
+    renderWorkbench();
+    await ready();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tạo nguyên liệu" }));
+
+    expect(
+      screen.getByRole("table", { name: "Danh mục nguyên liệu" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("region", { name: "Chi tiết nguyên liệu" }),
+    ).toHaveTextContent("Tạo nguyên liệu");
+    expect(screen.getByRole("button", { name: "Đóng chi tiết" })).toBeVisible();
+  });
+
   it("creates an Ingredient from business fields only and offers active catalogues", async () => {
     renderWorkbench();
     await ready();

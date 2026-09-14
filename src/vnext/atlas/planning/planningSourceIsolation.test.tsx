@@ -140,7 +140,7 @@ it("guards the whole-week decision under a subset, including clearing it", async
 });
 
 it.each([
-  ["REQUIRED", "   ", "Cần ghi chú cho mục đích này."],
+  ["REQUIRED", "   ", "Nhập lý do cho mục đích này."],
   ["PROHIBITED", "Operator text", "Mục đích này không cho phép ghi chú."],
 ] as const)(
   "blocks %s notes without erasing text",
@@ -173,7 +173,7 @@ it.each([
     expect(result.current.pantryRows[0].note).toBe(note);
     act(() =>
       result.current.editPantryRow(0, {
-        note: rule === "REQUIRED" ? "Explicit note" : "",
+        note: rule === "REQUIRED" ? "Explicit reason" : "",
       }),
     );
     expect(result.current.errors).toEqual([]);

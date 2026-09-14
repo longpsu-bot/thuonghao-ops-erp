@@ -28,6 +28,7 @@ export function DishRecipeWorkbench(props: {
   initialDate?: string;
   embedded?: boolean;
   exitRef?: Ref<RecipeJobHandle>;
+  onOpenChangeOrders?: () => void;
 }) {
   const c = useDishRecipeWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({
@@ -53,6 +54,11 @@ export function DishRecipeWorkbench(props: {
   const operationallyLocked =
     c.effective?.is_operationally_locked ||
     c.effective?.editable_state === "LOCKED_CHANGE_ORDER";
+  const canOpenChangeOrders = Boolean(
+    operationallyLocked &&
+    c.effective?.allowed_actions.includes("CREATE_CHANGE_ORDER") &&
+    props.onOpenChangeOrders,
+  );
   const catalogueToolbar = (
     <Flex
       display={{ base: open ? "none" : "flex", lg: "flex" }}
@@ -175,7 +181,7 @@ export function DishRecipeWorkbench(props: {
           {c.visibleDishes.length} món
         </Text>
         <Button
-          variant="utility"
+          variant="secondary"
           size="sm"
           disabled={!c.canCommand}
           onClick={() => c.transition({ kind: "import" })}
@@ -224,7 +230,7 @@ export function DishRecipeWorkbench(props: {
                 </Box>
               )}
               <Button
-                variant="utility"
+                variant="tertiary"
                 size="sm"
                 aria-label="Đóng công thức"
                 disabled={c.busy || Boolean(c.lock)}
@@ -285,7 +291,7 @@ export function DishRecipeWorkbench(props: {
                   >
                     <Button
                       size="sm"
-                      variant="utility"
+                      variant="tertiary"
                       disabled={!c.canCommand}
                       onClick={() => c.transition({ kind: "edit" })}
                     >
@@ -294,7 +300,7 @@ export function DishRecipeWorkbench(props: {
                     {c.canCopy && (
                       <Button
                         size="sm"
-                        variant="utility"
+                        variant="secondary"
                         onClick={() => c.transition({ kind: "copy" })}
                       >
                         Sao chép công thức
@@ -306,12 +312,19 @@ export function DishRecipeWorkbench(props: {
                 {operationallyLocked && (
                   <Box mt="sm">
                     <Text>
-                      Món này đã được sử dụng trong vận hành. Thành phần gốc
-                      không thể sửa trực tiếp.
+                      Công thức này đã được sử dụng trong vận hành. Công thức
+                      gốc chỉ đọc; thay đổi tiếp theo được thực hiện bằng Lệnh
+                      điều chỉnh.
                     </Text>
-                    <Text textStyle="helper" color="fg.muted" mt="xs">
-                      Thay đổi tiếp theo được thực hiện trong Lệnh điều chỉnh.
-                    </Text>
+                    {canOpenChangeOrders && (
+                      <Button
+                        mt="sm"
+                        variant="secondary"
+                        onClick={() => props.onOpenChangeOrders?.()}
+                      >
+                        Tạo lệnh điều chỉnh
+                      </Button>
+                    )}
                   </Box>
                 )}
                 {c.loading && (

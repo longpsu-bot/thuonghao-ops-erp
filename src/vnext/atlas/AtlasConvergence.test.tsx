@@ -17,8 +17,14 @@ import { createIngredientSupplierReviewFixture } from "./master-data/ingredientS
 import { PlanningSourcesWorkbench } from "./planning/PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planning/planningStoryFixtures";
 import { RecipeCapability } from "./recipes/RecipeCapability";
-import { createRecipeReviewFixture } from "./recipes/recipeReviewFixtures";
-import { createChangeOrderFixture } from "./recipes/changeOrderReviewFixtures";
+import {
+  createRecipeReviewFixture,
+  fixtureSuccess,
+} from "./recipes/recipeReviewFixtures";
+import {
+  createChangeOrderFixture,
+  fixtureTargets,
+} from "./recipes/changeOrderReviewFixtures";
 
 beforeEach(() =>
   vi.stubGlobal(
@@ -57,6 +63,17 @@ const primary = () =>
           ),
         ),
     );
+const hasRestingBackground = (control: HTMLElement, background: string) =>
+  [...document.styleSheets].some((sheet) =>
+    [...sheet.cssRules].some(
+      (rule) =>
+        rule instanceof CSSStyleRule &&
+        [...control.classList].some(
+          (name) => rule.selectorText === `.${name}`,
+        ) &&
+        rule.style.background === background,
+    ),
+  );
 
 async function schools() {
   const api = createSchoolDefaultsReviewFixture();
@@ -109,30 +126,210 @@ async function planning(job: "menu" | "attendance" | "pantry") {
   return { review, read, pantryRead };
 }
 
+function choose(label: string, value: string) {
+  change(screen.getByLabelText(label), value);
+}
+async function renderChangeOrders(
+  fixture = createChangeOrderFixture("ACTIVE"),
+) {
+  render(
+    <AtlasVNextProvider>
+      <RecipeCapability
+        authSubject="operator"
+        recipeApi={createRecipeReviewFixture("DISH_ACTIVE_EDITABLE").api}
+        adjustmentApi={fixture.api}
+        initialDate="2026-09-12"
+        initialJob="changes"
+      />
+    </AtlasVNextProvider>,
+  );
+  await waitFor(() => expect(button("Tạo lệnh điều chỉnh")).toBeEnabled());
+  return fixture;
+}
+async function startDishAdd(ingredientId = "ingredient-2") {
+  fireEvent.click(button("Tạo lệnh điều chỉnh"));
+  choose("Món", "dish-0");
+  choose("Loại công thức", "scope-0");
+  choose("Hành động", "ADD");
+  choose("Nguyên liệu thêm", ingredientId);
+  choose("Định lượng mới", "13");
+  choose("Lý do điều chỉnh", "Điều chỉnh theo thực đơn");
+}
+
+describe("06D-C duplicate ADD operator safety", () => {
+  it("blocks one duplicate until an explicit exact-line quantity transition", async () => {
+    const f = await renderChangeOrders();
+    await startDishAdd();
+
+    expect(
+      await screen.findByText(/Hành lá đã có trong công thức/i),
+    ).toBeVisible();
+    expect(screen.getByText(/0,2 Kilôgam/i)).toBeVisible();
+    expect(button("Xem tác động")).toBeDisabled();
+    expect(f.calls.filter((call) => call.name === "preview")).toHaveLength(0);
+    expect(f.calls.filter((call) => call.name === "create")).toHaveLength(0);
+
+    fireEvent.click(button("Chuyển sang Điều chỉnh định lượng"));
+
+    expect(screen.getByLabelText("Hành động")).toHaveValue("ADJUST_QUANTITY");
+    expect(screen.getByLabelText("Thành phần hiện tại")).toHaveValue(
+      "ADJUSTMENT_LINE:prior-add-line",
+    );
+    expect(screen.getByLabelText("Định lượng mới")).toHaveValue("13");
+    expect(f.calls.filter((call) => call.name === "preview")).toHaveLength(0);
+    expect(f.calls.filter((call) => call.name === "create")).toHaveLength(0);
+  });
+
+  it("blocks ambiguous duplicates and requires manual action and target selection", async () => {
+    const f = createChangeOrderFixture("ACTIVE");
+    f.api.getEffectiveTargetContext = async (
+      _subject,
+      _correlation,
+      date,
+      dish,
+      context,
+    ) => {
+      const targets = fixtureTargets(
+        date,
+        dish,
+        context.kind === "school" ? context.schoolId : null,
+        context.kind === "system" ? context.schoolTypeId : "scope-0",
+      );
+      targets.effective_lines.push({
+        ...targets.effective_lines[1]!,
+        target_id: "second-add-line",
+        adjustment_line_id: "second-add-line",
+      });
+      return fixtureSuccess({ target_context: targets });
+    };
+    await renderChangeOrders(f);
+    await startDishAdd();
+
+    expect(
+      await screen.findByText(
+        /Nguyên liệu đã xuất hiện ở nhiều dòng hiệu lực/i,
+      ),
+    ).toBeVisible();
+    expect(button("Xem tác động")).toBeDisabled();
+    expect(
+      screen.queryByRole("button", {
+        name: "Chuyển sang Điều chỉnh định lượng",
+      }),
+    ).not.toBeInTheDocument();
+
+    choose("Hành động", "ADJUST_QUANTITY");
+    expect(screen.getByLabelText("Thành phần hiện tại")).toHaveValue("");
+    choose("Thành phần hiện tại", "ADJUSTMENT_LINE:second-add-line");
+    expect(screen.getByLabelText("Thành phần hiện tại")).toHaveValue(
+      "ADJUSTMENT_LINE:second-add-line",
+    );
+  });
+
+  it("keeps an existing ADD correction on its immutable action identity", async () => {
+    const f = createChangeOrderFixture("ACTIVE");
+    const row = f.data.operator_rows[0]!;
+    row.action_kind = "ADD";
+    row.target_ingredient_id = "ingredient-2";
+    row.target_recipe_line_id = null;
+    row.adjustment_line_id = "prior-add-line";
+    for (const revision of [
+      row.command_revision,
+      row.content_revision,
+      row.display_revision,
+      ...row.history,
+    ]) {
+      revision.substitute_ingredient_id = null;
+      revision.quantity_per_basis = 0.2;
+      revision.unit_id = "kg";
+    }
+    await renderChangeOrders(f);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Xem lệnh Thêm nguyên liệu/ }),
+    );
+    fireEvent.click(button("Sửa lệnh"));
+
+    await waitFor(() => expect(button("Xem tác động")).toBeEnabled());
+    expect(screen.getByLabelText("Hành động")).toHaveValue("ADD");
+    expect(
+      screen.queryByRole("button", {
+        name: "Chuyển sang Điều chỉnh định lượng",
+      }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(button("Xem tác động"));
+    await waitFor(() =>
+      expect(f.calls.filter((call) => call.name === "preview")).toHaveLength(1),
+    );
+    expect(
+      (
+        f.calls.find((call) => call.name === "preview")?.payload as {
+          proposed_adjustment: { action_kind: string };
+        }
+      ).proposed_adjustment.action_kind,
+    ).toBe("ADD");
+  });
+});
+
+describe("06D-C locked Recipe peer navigation", () => {
+  it("opens the existing Change Order job without a backend mutation", async () => {
+    const recipe = createRecipeReviewFixture("DISH_ACTIVE_LOCKED");
+    recipe.data.recipe_versions[0]!.recipe_version_status = "LOCKED";
+    const adjustment = createChangeOrderFixture("ACTIVE");
+    const recipeWrite = vi.spyOn(recipe.api, "saveRecipe");
+    render(
+      <AtlasVNextProvider>
+        <RecipeCapability
+          authSubject="operator"
+          recipeApi={recipe.api}
+          adjustmentApi={adjustment.api}
+          initialDate="2026-09-12"
+          initialJob="recipes"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Xem công thức Canh bí đỏ thịt bằm",
+      }),
+    );
+    const forwardAction = await screen.findByRole("button", {
+      name: "Tạo lệnh điều chỉnh",
+    });
+    expect(
+      hasRestingBackground(forwardAction, "var(--atlas-colors-bg-toolbar)"),
+    ).toBe(true);
+    fireEvent.click(forwardAction);
+
+    expect(
+      screen.getByRole("tab", { name: "Lệnh điều chỉnh" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      await screen.findByRole("table", { name: "Lệnh điều chỉnh" }),
+    ).toBeInTheDocument();
+    expect(recipeWrite).not.toHaveBeenCalled();
+    expect(
+      adjustment.calls.filter((call) =>
+        ["create", "supersede", "cancel"].includes(call.name),
+      ),
+    ).toHaveLength(0);
+  });
+});
+
 describe("06B frozen Review safety and focus", () => {
-  it("preserves a School draft on normal refresh but cannot refresh its frozen Review", async () => {
+  it("preserves a School draft on normal refresh and saves directly without Review", async () => {
     const { input, read } = await schools();
     expect(button("Làm mới dữ liệu")).toBeEnabled();
     fireEvent.click(button("Làm mới dữ liệu"));
     await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(button("Làm mới dữ liệu")).toBeEnabled());
     expect(input).toHaveValue("123");
-    fireEvent.click(button("Xem thay đổi"));
-    expect(button("Làm mới dữ liệu")).toBeDisabled();
-    fireEvent.click(button("Làm mới dữ liệu"));
-    expect(read).toHaveBeenCalledTimes(2);
     expect(
-      screen.getByRole("complementary", { name: "Thay đổi sĩ số mặc định" }),
-    ).toHaveFocus();
-    fireEvent.click(button("Đóng"));
+      screen.queryByRole("complementary", {
+        name: "Thay đổi sĩ số mặc định",
+      }),
+    ).not.toBeInTheDocument();
     expect(button("Làm mới dữ liệu")).toBeEnabled();
-    expect(input).toHaveValue("123");
-  });
-  it("returns focus to the remounted School Review action on close", async () => {
-    await schools();
-    fireEvent.click(button("Xem thay đổi"));
-    fireEvent.click(button("Đóng"));
-    await waitFor(() => expect(button("Xem thay đổi")).toHaveFocus());
+    expect(button("Lưu thay đổi")).toBeEnabled();
+    expect(primary()).toContain(button("Lưu thay đổi"));
   });
   it.each(["menu", "attendance", "pantry"] as const)(
     "blocks routine refresh during %s Preview and restores it on back",
@@ -186,6 +383,12 @@ describe("06B peer navigation and action hierarchy", () => {
       document.getElementById(tab.getAttribute("aria-controls")!),
     ).toHaveAttribute("role", "tabpanel");
     expect(primary().map((b) => b.textContent)).toEqual(["Tạo nguyên liệu"]);
+    expect(
+      hasRestingBackground(
+        screen.getByRole("button", { name: /Xem.*Rau muống/ }),
+        "var(--atlas-colors-bg-subtle)",
+      ),
+    ).toBe(true);
   });
   it("keeps a dirty peer switch guarded through Cancel and Discard", async () => {
     await master();
@@ -259,7 +462,7 @@ describe("06B peer navigation and action hierarchy", () => {
       fireEvent.click(
         job === "recipes"
           ? screen.getByRole("button", {
-              name: "Xem công thức Canh bí đỏ thịt bằm",
+              name: "Sửa công thức Canh bí đỏ thịt bằm",
             })
           : create,
       );

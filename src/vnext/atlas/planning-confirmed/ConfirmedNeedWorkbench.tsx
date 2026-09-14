@@ -10,7 +10,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useState, useImperativeHandle } from "react";
+import { useRef, useState, useImperativeHandle } from "react";
 import { AtlasDateInput } from "../AtlasDateInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
@@ -28,6 +28,9 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const c = useConfirmedNeedWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
+  const [workbookBusy, setWorkbookBusy] = useState(false);
+  const [workbookError, setWorkbookError] = useState<string | null>(null);
+  const workbookInput = useRef<HTMLInputElement>(null);
   const days = weekDates(c.week);
   const contextKey = `${c.date}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
   const detailOpen = detailKey === contextKey;
@@ -192,7 +195,78 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               </Checkbox.Control>
               <Checkbox.Label>Chỉ hiển thị thay đổi chưa lưu</Checkbox.Label>
             </Checkbox.Root>
+            {props.onExportShoppingList && props.onImportShoppingList && (
+              <Flex gap="sm" wrap="wrap">
+                <Button
+                  variant="tertiary"
+                  disabled={workbookBusy || c.released}
+                  onClick={() => {
+                    setWorkbookError(null);
+                    setWorkbookBusy(true);
+                    void props.onExportShoppingList!(c.workbench!, c.drafts)
+                      .catch(() =>
+                        setWorkbookError(
+                          "Không thể xuất Shopping List. Hãy thử lại.",
+                        ),
+                      )
+                      .finally(() => setWorkbookBusy(false));
+                  }}
+                >
+                  Xuất Shopping List
+                </Button>
+                <Button
+                  variant="tertiary"
+                  disabled={workbookBusy || c.released}
+                  onClick={() => workbookInput.current?.click()}
+                >
+                  Nhập Shopping List
+                </Button>
+                <input
+                  ref={workbookInput}
+                  type="file"
+                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  aria-label="Nhập Shopping List .xlsx"
+                  style={{
+                    position: "absolute",
+                    width: 1,
+                    height: 1,
+                    padding: 0,
+                    margin: -1,
+                    overflow: "hidden",
+                    clip: "rect(0, 0, 0, 0)",
+                    whiteSpace: "nowrap",
+                    border: 0,
+                  }}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (!file) return;
+                    setWorkbookError(null);
+                    setWorkbookBusy(true);
+                    void props.onImportShoppingList!(
+                      file,
+                      c.workbench!,
+                      c.drafts,
+                    )
+                      .then(c.applyShoppingListImport)
+                      .catch((error: unknown) =>
+                        setWorkbookError(
+                          error instanceof Error
+                            ? error.message
+                            : "Không thể nhập Shopping List.",
+                        ),
+                      )
+                      .finally(() => setWorkbookBusy(false));
+                  }}
+                />
+              </Flex>
+            )}
           </Flex>
+          {workbookError && (
+            <Text px="md" pb="xs" role="alert" color="status.danger">
+              {workbookError}
+            </Text>
+          )}
           {c.dirty && !c.released && (
             <Text px="md" pb="xs" textStyle="helper" color="status.warning">
               Đang chỉnh sửa · chưa lưu
@@ -223,7 +297,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             wrap="wrap"
           >
             <Button
-              variant="utility"
+              variant="tertiary"
               aria-expanded={detailOpen}
               onClick={() => setDetailKey(detailOpen ? null : contextKey)}
             >

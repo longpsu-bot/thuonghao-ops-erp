@@ -198,6 +198,7 @@ export function createRecipeReviewFixture(
   const locked = ["DISH_ACTIVE_LOCKED", "RECIPE_OPERATIONALLY_LOCKED"].includes(
     scenario,
   );
+  if (locked) data.recipe_versions[0]!.recipe_version_status = "LOCKED";
   let wrote = false;
   let sequence = 0;
   if (scenario === "EMPTY_CATALOG") {
@@ -334,7 +335,11 @@ export function createRecipeReviewFixture(
         })),
         school_exception_count: 0,
         allowed_actions:
-          locked || scenario === "COPY_INELIGIBLE" ? [] : ["COPY_DISH_RECIPES"],
+          scenario === "DISH_ACTIVE_LOCKED"
+            ? ["CREATE_CHANGE_ORDER"]
+            : locked || scenario === "COPY_INELIGIBLE"
+              ? []
+              : ["COPY_DISH_RECIPES"],
         blockers: [],
         warnings: [],
         history_periods: [],

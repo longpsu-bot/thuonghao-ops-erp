@@ -7,6 +7,7 @@ import type {
 import type { AtlasVNextApis } from "../AtlasVNextApis";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { ConfirmedNeedWorkbench } from "../planning-confirmed/ConfirmedNeedWorkbench";
+import type { ConfirmedNeedWorkbenchProps } from "../planning-confirmed/useConfirmedNeedWorkbench";
 export function PlanningCapability(
   props: AtlasModuleExitProps & {
     authSubject: string;
@@ -14,6 +15,8 @@ export function PlanningCapability(
     serviceDate: string;
     onServiceDateChange: (date: string) => void;
     onContinueAllocation: (date: string) => void;
+    onExportShoppingList?: ConfirmedNeedWorkbenchProps["onExportShoppingList"];
+    onImportShoppingList?: ConfirmedNeedWorkbenchProps["onImportShoppingList"];
   },
 ) {
   const [phase, setPhase] = useState("sources");
@@ -61,6 +64,8 @@ export function PlanningCapability(
                 needGenerationApi={props.apis.needGeneration}
                 confirmedNeedApi={props.apis.confirmedNeed}
                 onContinueAllocation={props.onContinueAllocation}
+                onExportShoppingList={props.onExportShoppingList}
+                onImportShoppingList={props.onImportShoppingList}
               />
             )}
           </Tabs.Content>

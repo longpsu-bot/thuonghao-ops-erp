@@ -17,6 +17,54 @@ afterEach(() => {
 });
 
 describe("Atlas routine refresh", () => {
+  it("keeps 8px controls, 6px workbenches and the circular compact Refresh exception", () => {
+    const theme = atlasSystem._config.theme;
+    expect(theme?.tokens?.radii?.control).toEqual({ value: "8px" });
+    expect(theme?.tokens?.radii?.workbench).toEqual({ value: "6px" });
+    expect(theme?.tokens?.sizes?.control).toEqual({ value: "40px" });
+    expect(theme?.tokens?.sizes?.compact).toEqual({ value: "36px" });
+    render(
+      <AtlasVNextProvider>
+        <AtlasRefreshButton loading={false} onClick={() => {}} />
+      </AtlasVNextProvider>,
+    );
+    const button = screen.getByRole("button");
+    const rules = [...document.styleSheets].flatMap((sheet) => [
+      ...sheet.cssRules,
+    ]);
+    expect(
+      rules.some(
+        (rule) =>
+          rule instanceof CSSStyleRule &&
+          [...button.classList].some(
+            (name) => rule.selectorText === `.${name}`,
+          ) &&
+          rule.style.borderRadius === "var(--atlas-radii-full)" &&
+          rule.style.width === "var(--atlas-sizes-compact)" &&
+          rule.style.height === "var(--atlas-sizes-compact)",
+      ),
+    ).toBe(true);
+  });
+
+  it("adds only local detail-entry motion and preserves Refresh timing", () => {
+    const theme = atlasSystem._config.theme;
+    expect(theme?.keyframes?.atlasDetailEnter).toEqual({
+      from: { opacity: 0, transform: "translateY(6px)" },
+      to: { opacity: 1, transform: "translateY(0)" },
+    });
+    expect(theme?.animationStyles?.detailEnter).toEqual({
+      value: {
+        animation: "atlasDetailEnter 160ms ease-out",
+        _motionReduce: { animation: "none" },
+      },
+    });
+    expect(theme?.animationStyles?.refreshSpin?.value?.animation).toBe(
+      "atlasRefreshSpin 800ms linear infinite",
+    );
+    expect(theme?.animationStyles?.refreshComplete?.value?.animation).toBe(
+      "atlasRefreshComplete 200ms ease-out",
+    );
+  });
   it("names the utility and invokes only enabled activation", () => {
     const onClick = vi.fn();
     const { rerender } = render(

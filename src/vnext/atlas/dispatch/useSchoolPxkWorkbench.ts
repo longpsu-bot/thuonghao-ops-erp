@@ -19,6 +19,9 @@ export type SchoolPxkWorkbenchProps = AtlasModuleExitProps & {
   schools?: { school_id: string; school_name: string }[];
   onExportXlsx?: (document: SchoolDispatchDocument) => void | Promise<void>;
   onExportPdf?: (document: SchoolDispatchDocument) => void | Promise<void>;
+  onExportGroupedXlsx?: (
+    documents: SchoolDispatchDocument[],
+  ) => void | Promise<void>;
 };
 type Transition = {
   exit?: () => void;

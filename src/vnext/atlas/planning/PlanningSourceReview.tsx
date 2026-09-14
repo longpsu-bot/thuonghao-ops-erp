@@ -86,7 +86,7 @@ export function PlanningSourceReview({
             {changes.length} thay đổi · toàn tuần
           </Text>
         </Box>
-        <Button variant="utility" size="sm" onClick={c.closeReview}>
+        <Button variant="tertiary" size="sm" onClick={c.closeReview}>
           Đóng
         </Button>
       </Flex>

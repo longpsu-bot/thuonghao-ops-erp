@@ -88,6 +88,19 @@ changed only from `RELEASED` to `SUPERSEDED` inside the same successful transact
 The predecessor remains exportable with identical number, lines, snapshots, and
 lineage. There is no Draft PXK lifecycle.
 
+Before insert, the server freezes the School `display_order` and the direct
+document business facts `dispatch_document_issuer_name` and
+`dispatch_document_issuer_address` into the release. These configured facts replace
+the retained v1 `contract_type` lookup at export time. Missing School document-header
+configuration blocks release; current School changes never alter an existing PXK.
+The shaped read exposes the three snapshots and derives `export_ready` only when all
+are present. Legacy releases missing them remain readable but fail closed for export.
+
+The client may package multiple authoritative `RELEASED`/`SUPERSEDED` snapshots in
+one grouped XLSX. Ordering is service date, frozen School display order, School name,
+then document number. Grouping is download coordination only and creates no business
+write or new lifecycle state.
+
 ## Readiness and blockers
 
 Release requires current applicable released Confirmed Need, current explicitly
@@ -136,3 +149,9 @@ objects.
 Rollback is forward-only. A later migration may revoke the two entry points while
 retaining all released documents, numbers, immutable lines, lineage, receipts,
 events, and audit evidence.
+
+The document-output amendment follows the same rule: a forward rollback may disable
+the enhanced exports, but must retain frozen School order and issuer facts. Before a
+deployment enables new release traffic, every in-scope School must have both issuer
+configuration values populated through an authorized administrative rollout; this
+06D-E task does not write hosted School data.

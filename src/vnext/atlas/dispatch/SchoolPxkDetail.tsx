@@ -91,7 +91,7 @@ function OfficialDocument({
             {exports.onExportXlsx && (
               <Button
                 size="sm"
-                variant="utility"
+                variant="secondary"
                 disabled={exporting}
                 onClick={() => void run(exports.onExportXlsx!)}
               >
@@ -101,7 +101,7 @@ function OfficialDocument({
             {exports.onExportPdf && (
               <Button
                 size="sm"
-                variant="utility"
+                variant="secondary"
                 disabled={exporting}
                 onClick={() => void run(exports.onExportPdf!)}
               >
@@ -215,7 +215,7 @@ export function SchoolPxkDetail({
         </Box>
         <Button
           size="sm"
-          variant="utility"
+          variant="tertiary"
           aria-label="Đóng chi tiết"
           disabled={busy || locked}
           onClick={onClose}

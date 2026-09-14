@@ -20,6 +20,7 @@ export const changeOrderScenarios = [
   "SYSTEM_DISH_SCHOOL_INSPECTION",
   "SYSTEM_DISH_ADD",
   "SYSTEM_DISH_TARGET_PRIOR_ADD",
+  "EXISTING_ADD_CORRECTION",
   "SCHOOL_DISH_CREATE",
   "SCHOOL_CREATE",
   "SYSTEM_INGREDIENT_CREATE",
@@ -248,6 +249,23 @@ export function createChangeOrderFixture(
   const data = changeOrderFixtureData();
   if (scenario === "EMPTY") data.operator_rows = [];
   const row = data.operator_rows[0];
+  if (row && scenario === "EXISTING_ADD_CORRECTION") {
+    row.action_kind = "ADD";
+    row.target_ingredient_id = "ingredient-2";
+    row.target_recipe_line_id = null;
+    row.adjustment_line_id = "prior-add-line";
+    for (const revision of [
+      row.display_revision,
+      row.content_revision,
+      row.command_revision,
+      ...row.history,
+    ]) {
+      revision.substitute_ingredient_id = null;
+      revision.quantity_per_basis = 0.2;
+      revision.unit_id = "kg";
+      revision.reason_note = "Thêm hành lá theo thực đơn";
+    }
+  }
   if (
     row &&
     [

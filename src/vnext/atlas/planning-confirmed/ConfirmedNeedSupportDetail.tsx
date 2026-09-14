@@ -245,7 +245,7 @@ export function ConfirmedNeedSupportDetail({
                     </Table.Cell>
                     <Table.Cell>
                       <Button
-                        variant="utility"
+                        variant="tertiary"
                         onClick={() =>
                           setGroup({
                             service_date: date,

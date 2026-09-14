@@ -51,7 +51,9 @@ type Story = StoryObj<typeof meta>;
 const select: Story["play"] = async ({ canvasElement }) => {
   const c = within(canvasElement);
   await userEvent.click(
-    await c.findByRole("button", { name: "Xem công thức Canh bí đỏ thịt bằm" }),
+    await c.findByRole("button", {
+      name: /^(Sửa|Xem) công thức Canh bí đỏ thịt bằm$/,
+    }),
   );
   await c.findByRole("heading", { name: "Công thức gốc" });
 };
@@ -117,6 +119,9 @@ const imported =
     }
   };
 export const Catalogue: Story = {};
+export const LockedCatalogue: Story = {
+  args: { scenario: "DISH_ACTIVE_LOCKED" },
+};
 export const EmptyCatalog: Story = { args: { scenario: "EMPTY_CATALOG" } };
 export const DishActiveEditable: Story = { play: select };
 export const DishActiveLocked: Story = {

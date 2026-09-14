@@ -50,7 +50,7 @@ export function SchoolFulfilmentDetail({
         </Box>
         <Button
           size="sm"
-          variant="utility"
+          variant="tertiary"
           aria-label="Đóng chi tiết"
           onClick={onClose}
         >

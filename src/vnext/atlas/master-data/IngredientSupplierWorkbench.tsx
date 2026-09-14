@@ -34,6 +34,25 @@ export function IngredientSupplierWorkbench({
   const c = useIngredientSupplierWorkbench({ authSubject, api });
   useImperativeHandle(exitRef, () => ({ requestExit: c.requestExit }));
   const detailOpen = Boolean(c.activeSurface || c.review);
+  const detailKind = c.review?.kind ?? c.activeSurface?.kind;
+  const detailId =
+    c.selectedIngredient?.ingredient_id ??
+    c.selectedSupplier?.supplier_id ??
+    "create";
+  const detailLabel =
+    detailKind === "ingredient"
+      ? c.review
+        ? "Xem thay đổi nguyên liệu"
+        : "Chi tiết nguyên liệu"
+      : detailKind === "supplier"
+        ? c.review
+          ? "Xem thay đổi nhà cung ứng"
+          : "Chi tiết nhà cung ứng"
+        : detailKind === "priorities"
+          ? c.review
+            ? "Xem thay đổi ưu tiên nhà cung ứng"
+            : "Ưu tiên nhà cung ứng"
+          : null;
   return (
     <Box
       as="section"
@@ -108,6 +127,8 @@ export function IngredientSupplierWorkbench({
             </Box>
           )}
           <Grid
+            data-testid="ingredient-supplier-master-detail"
+            data-detail-open={detailOpen || undefined}
             mt="sm"
             templateColumns={{
               base: "minmax(0, 1fr)",
@@ -130,14 +151,26 @@ export function IngredientSupplierWorkbench({
                 onSelect={c.requestSupplier}
               />
             )}
-            {c.review ? (
-              <MasterDataReview c={c} />
-            ) : (
-              <>
-                <IngredientDetail c={c} />
-                <SupplierDetail c={c} />
-                <IngredientPriorityEditor c={c} />
-              </>
+            {detailLabel && (
+              <Box
+                key={`${c.job}:${c.review ? "review" : "detail"}:${detailKind}:${detailId}`}
+                role="region"
+                aria-label={detailLabel}
+                data-testid="master-detail-content"
+                data-detail-animation="true"
+                animationStyle="detailEnter"
+                minW="var(--atlas-layout-zero, 0)"
+              >
+                {c.review ? (
+                  <MasterDataReview c={c} />
+                ) : (
+                  <>
+                    <IngredientDetail c={c} />
+                    <SupplierDetail c={c} />
+                    <IngredientPriorityEditor c={c} />
+                  </>
+                )}
+              </Box>
             )}
           </Grid>
         </Tabs.Content>

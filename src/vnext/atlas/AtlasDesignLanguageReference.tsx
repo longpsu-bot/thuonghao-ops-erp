@@ -375,7 +375,7 @@ export function AtlasDesignLanguageReference({
                       </Table.Cell>
                       <Table.Cell>
                         <Button
-                          variant="utility"
+                          variant="tertiary"
                           size="sm"
                           aria-label={`${row.status === "Đã phân bổ" ? "Xem phân bổ" : "Phân bổ NCC"} ${row.name}`}
                           onClick={() => {
@@ -560,8 +560,18 @@ export function AtlasDesignLanguageReference({
           <Text textStyle="helper" color="fg.muted">
             Thao tác bổ trợ:
           </Text>
+          <Button variant="secondary" size="sm">
+            Áp dụng bộ lọc
+          </Button>
           <Button
-            variant="utility"
+            variant="tertiary"
+            size="sm"
+            onClick={() => setSelectedName(null)}
+          >
+            Đóng chi tiết
+          </Button>
+          <Button
+            variant="tertiary"
             size="sm"
             onClick={() =>
               setFeedback("Ví dụ xem chi tiết; không gọi dữ liệu bên ngoài.")

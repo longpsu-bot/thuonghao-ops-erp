@@ -1,6 +1,7 @@
 import { SchoolDefaultsExitDialog } from "./SchoolDefaultsExitDialog";
 import {
   Box,
+  Badge,
   Button,
   Field,
   Flex,
@@ -11,7 +12,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { useEffect, useRef, useImperativeHandle } from "react";
+import { useImperativeHandle } from "react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 import { parsePortionDraft } from "./schoolDefaultsModel";
@@ -23,19 +24,8 @@ import {
 export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
   const c = useSchoolDefaultsWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
-  const reviewTrigger = useRef<HTMLButtonElement>(null);
-  const reviewPanel = useRef<HTMLElement>(null);
-  const wasReviewOpen = useRef(false);
-  useEffect(() => {
-    if (c.review) reviewPanel.current?.focus();
-    else if (wasReviewOpen.current) reviewTrigger.current?.focus();
-    wasReviewOpen.current = Boolean(c.review);
-  }, [c.review]);
   const editingDisabled =
-    c.saving ||
-    c.lock === "unknown" ||
-    c.lock === "readback" ||
-    Boolean(c.review);
+    c.saving || c.lock === "unknown" || c.lock === "readback";
   const activeCount = c.schools.filter(
     (school) => school.school_status === "ACTIVE",
   ).length;
@@ -62,10 +52,6 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         <Heading as="h1" textStyle="workbenchTitle">
           Sĩ số mặc định
         </Heading>
-        <Text textStyle="helper" color="fg.muted" mt="xs">
-          Giá trị mặc định dùng khi chuẩn bị sĩ số; sĩ số thực tế vẫn được xác
-          nhận theo ngày.
-        </Text>
       </Box>
 
       <Grid
@@ -108,12 +94,7 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         </Field.Root>
         <AtlasRefreshButton
           loading={c.loading}
-          disabled={
-            c.saving ||
-            c.lock === "unknown" ||
-            c.lock === "readback" ||
-            Boolean(c.review)
-          }
+          disabled={c.saving || c.lock === "unknown" || c.lock === "readback"}
           onClick={() => void c.refresh()}
         />
       </Grid>
@@ -175,22 +156,20 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
             </Text>
           )}
         </Box>
-        {!c.review && (
-          <Button
-            ref={reviewTrigger}
-            variant="businessPrimary"
-            disabled={
-              c.loading ||
-              c.saving ||
-              Boolean(c.lock) ||
-              c.dirtyCount === 0 ||
-              c.invalidDraftCount > 0
-            }
-            onClick={c.openReview}
-          >
-            Xem thay đổi
-          </Button>
-        )}
+        <Button
+          variant="businessPrimary"
+          loading={c.saving}
+          disabled={
+            c.loading ||
+            c.saving ||
+            Boolean(c.lock) ||
+            c.dirtyCount === 0 ||
+            c.invalidDraftCount > 0
+          }
+          onClick={() => void c.save()}
+        >
+          Lưu thay đổi
+        </Button>
       </Flex>
 
       {c.loading && c.schools.length === 0 && (
@@ -202,110 +181,12 @@ export function SchoolDefaultsWorkbench(props: SchoolDefaultsWorkbenchProps) {
         <Text p="md">Chưa có trường học.</Text>
       )}
 
-      <Grid
-        templateColumns={{
-          base: "minmax(0, 1fr)",
-          lg: c.review
-            ? "minmax(0, 62fr) minmax(320px, 38fr)"
-            : "minmax(0, 1fr)",
-        }}
-        minW="var(--atlas-layout-zero, 0)"
-      >
-        <SchoolDefaultsTable
-          schools={c.visibleSchools}
-          drafts={c.drafts}
-          disabled={editingDisabled}
-          onEdit={c.edit}
-        />
-        {c.review && (
-          <Box
-            as="aside"
-            ref={reviewPanel}
-            tabIndex={-1}
-            aria-label="Thay đổi sĩ số mặc định"
-            bg="bg.subtle"
-            borderLeftWidth="var(--atlas-layout-edge, 1px)"
-            borderColor="border.subtle"
-            minW="var(--atlas-layout-zero, 0)"
-            display="flex"
-            flexDirection="column"
-          >
-            <Flex p="md" justify="space-between" align="center" gap="sm">
-              <Box>
-                <Heading as="h2" textStyle="section">
-                  Thay đổi sĩ số mặc định
-                </Heading>
-                <Text textStyle="helper" color="fg.muted">
-                  {c.review.length} trường
-                </Text>
-              </Box>
-              <Button
-                size="sm"
-                variant="utility"
-                disabled={c.saving}
-                onClick={c.closeReview}
-              >
-                Đóng
-              </Button>
-            </Flex>
-            <Box
-              overflow="auto"
-              flex="1"
-              maxH="var(--atlas-layout-review-height, max(240px, calc(100dvh - 430px)))"
-              px="sm"
-            >
-              <Table.Root
-                size="sm"
-                aria-label="So sánh thay đổi sĩ số mặc định"
-                tableLayout="fixed"
-                minW="var(--atlas-layout-zero, 0)"
-                width="full"
-              >
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeader width="var(--atlas-layout-review-school-width, 45%)">
-                      Trường
-                    </Table.ColumnHeader>
-                    <Table.ColumnHeader>Thay đổi</Table.ColumnHeader>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {c.review.map((row) => (
-                    <Table.Row key={row.school_id}>
-                      <Table.Cell overflowWrap="anywhere">
-                        <Text fontWeight="semibold">{row.school_name}</Text>
-                        <Text textStyle="helper" color="fg.muted">
-                          {row.school_code}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell overflowWrap="anywhere">
-                        <Text>
-                          Học sinh: {row.current_student_portions} →{" "}
-                          {row.new_student_portions}
-                        </Text>
-                        <Text>
-                          Giáo viên: {row.current_teacher_portions} →{" "}
-                          {row.new_teacher_portions}
-                        </Text>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Root>
-            </Box>
-            <Flex p="md" justify="end">
-              <Button
-                variant="businessPrimary"
-                loading={c.saving}
-                disabled={Boolean(c.lock)}
-                onClick={() => void c.save()}
-              >
-                Lưu thay đổi
-              </Button>
-            </Flex>
-          </Box>
-        )}
-      </Grid>
+      <SchoolDefaultsTable
+        schools={c.visibleSchools}
+        drafts={c.drafts}
+        disabled={editingDisabled}
+        onEdit={c.edit}
+      />
     </Box>
   );
 }
@@ -336,8 +217,12 @@ function SchoolDefaultsTable({
       >
         <Table.Header>
           <Table.Row>
+            <Table.ColumnHeader width="var(--atlas-layout-school-order-width, 56px)">
+              #
+            </Table.ColumnHeader>
             <Table.ColumnHeader>Trường</Table.ColumnHeader>
             <Table.ColumnHeader>Loại trường</Table.ColumnHeader>
+            <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
             <Table.ColumnHeader>Điểm giao</Table.ColumnHeader>
             <Table.ColumnHeader textAlign="right">
               Học sinh mặc định
@@ -364,20 +249,32 @@ function SchoolDefaultsTable({
                 <Table.Cell
                   borderLeftWidth="var(--atlas-layout-rail, 3px)"
                   borderLeftColor={dirty ? "border.accent" : "transparent"}
+                  fontVariantNumeric="tabular-nums"
                 >
+                  {school.display_order}
+                </Table.Cell>
+                <Table.Cell>
                   <Text fontWeight="semibold">{school.school_name}</Text>
                   <Text
                     textStyle="helper"
                     color={dirty ? "fg.primary" : "fg.muted"}
                   >
                     {school.school_code} · {school.customer_name}
-                    {school.school_status === "INACTIVE"
-                      ? " · Ngừng hoạt động"
-                      : ""}
                   </Text>
                 </Table.Cell>
                 <Table.Cell>
                   {school.school_type_name ?? "Chưa phân loại"}
+                </Table.Cell>
+                <Table.Cell>
+                  <Badge
+                    variant={
+                      school.school_status === "ACTIVE" ? "success" : "neutral"
+                    }
+                  >
+                    {school.school_status === "ACTIVE"
+                      ? "Đang hoạt động"
+                      : "Ngừng hoạt động"}
+                  </Badge>
                 </Table.Cell>
                 <Table.Cell>
                   <Text>{school.delivery_location_name}</Text>

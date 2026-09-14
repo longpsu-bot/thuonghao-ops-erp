@@ -4,6 +4,7 @@ import type {
   PantryPreview,
   PlanningCorrectionImpact,
 } from "../bridges/planning";
+import type { PlanningSourcesProps } from "./usePlanningSources";
 import {
   createPlanningReviewFixture,
   menuPreview,
@@ -19,6 +20,7 @@ export type PlanningReviewScenario =
   | "attendance_pantry_failed"
   | "pantry_planning_failed"
   | "pantry_subset"
+  | "pantry_optional"
   | "pantry_required"
   | "pantry_prohibited"
   | "menu_read_failure"
@@ -193,7 +195,33 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
         ],
       },
     };
-    fixture.pantryApi.preview = async () => success({ preview });
+    (fixture.pantryApi as PlanningSourcesProps["pantryApi"]).preview = async (
+      _authSubject,
+      _correlationId,
+      _weekStart,
+      _noAdditionsConfirmed,
+      rows,
+      schoolDateModes,
+    ) => {
+      const requestedRows = rows as unknown as PantryDraftRow[];
+      const requestedFirstLine = requestedRows.find(
+        (row) =>
+          row.source_row_reference === directRows[0].source_row_reference,
+      );
+      return success({
+        preview: {
+          ...preview,
+          canonical_rows: requestedRows,
+          school_date_modes: schoolDateModes,
+          comparison: {
+            ...preview.comparison,
+            changed_lines: requestedFirstLine
+              ? [{ before: directRows[0], after: requestedFirstLine }]
+              : [],
+          },
+        },
+      });
+    };
   }
   if (scenario === "pantry_blocked")
     fixture.pantry.catalog_issues.blockers = [
@@ -241,5 +269,9 @@ export function createPlanningStoryFixture(scenario: PlanningReviewScenario) {
     fixture.api.getWorkbench = async () => unknown;
   if (scenario === "pantry_prohibited")
     fixture.pantry.purposes[0].note_rule = "PROHIBITED";
+  if (scenario === "pantry_optional")
+    fixture.pantry.purposes[0].note_rule = "OPTIONAL";
+  if (scenario === "pantry_required")
+    fixture.pantry.batch!.active_lines[0].note = "";
   return fixture;
 }

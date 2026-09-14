@@ -38,6 +38,15 @@ Its browser-facing command envelope accepts `requested_at` at most 60 seconds ah
 
 `get_school_catering_purchase_orders` accepts payload `{ date_start, date_end, supplier_ids, statuses, search }`. It returns supplier/date roots, the current revision/version, multi-destination lines and exact family/split sources, server-derived stale/release/export state, the official number only after release, blockers/warnings, and backend-owned allowed/disabled actions.
 
+Each newly released school-catering PO line also freezes
+`school_breakdown_snapshot`: the exact contribution/supplier interval overlap grouped
+by immutable School ID/name/display order and delivery-location ID/name. The grouped
+quantities must sum exactly to the line `ordered_quantity`; otherwise release fails
+atomically. The shaped read exposes this as `line.school_breakdown`. Official export
+is fail-closed when any released line lacks a complete snapshot, including legacy
+released rows created before this amendment; clients must never reconstruct released
+School identity from mutable master data or location text.
+
 Every line `ordered_quantity` is serialized as a six-fractional-digit JSON string. Clients must parse or format that exact decimal text without first coercing it through an IEEE-754 number.
 
 ## Errors, correction and tests
@@ -47,6 +56,10 @@ Safe failures include malformed requests, authentication/authorization denial, n
 D-042 remains blocked for WHOLESALE Handoffs. A school-catering Allocation Family plus DRAFT PO is not a supplier commitment: correction invalidates only the current Handoff revision/root state, retains all lineage and PO history, reopens Confirmed Need, and leaves the DRAFT to become derived-stale. A `RELEASED_TO_SUPPLIER` school-catering PO is a later-domain commitment and returns `BLOCKED_BY_DOWNSTREAM_COMMITMENT`; neither the Handoff nor released PO is mutated.
 
 Verification authority includes `purchase_review_confirm_release.sql`, `purchase_handoff_clock_skew.sql`, `school_catering_handoff_allocation.sql`, `school_catering_planning_correction.sql`, `school_catering_purchase_orders.sql`, the unchanged PA-05D/PA-05E/PA-05G and issue-222 regressions, the exact 107-table/29-capability/103-API platform security catalog, and the authenticated local journey verifier.
+
+The document snapshot amendment is additive. Forward rollback may disable the new
+export surface while retaining already frozen breakdowns; dropping snapshot data is
+not a valid rollback because it would destroy released-document reproducibility.
 
 ## PURCHASE-REVIEW-CONFIRM-RELEASE-01 amendment
 
@@ -132,7 +145,8 @@ The PO read derives `CURRENT | REPLACEMENT_REQUIRED | CANCELLATION_REQUIRED` plu
 overall `procurement_current`. If a supplier has no positive current allocation,
 replacement creation returns `CANCELLATION_REQUIRED`; the old PO stays released and
 active, no zero-line document is created, and Procurement/PXK remain blocked. This
-contract adds no cancellation API. After D-044, the exact platform catalog contains
-112 private forced-RLS tables, 31 capabilities, 111 physical `atlas_api` functions,
-and 110 authenticated browser-callable functions; the non-callable extra function
-is the private predecessor PO-read implementation retained for compatibility.
+contract adds no cancellation API. After the 06D-E document-output amendment, the
+exact platform catalog contains 112 private forced-RLS tables, 31 capabilities, 114
+physical `atlas_api` functions, and 111 authenticated browser-callable functions.
+The three non-browser-callable functions are predecessor PO/PXK read
+implementations retained behind shaped public wrappers.

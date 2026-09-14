@@ -115,7 +115,7 @@ export function SchoolFulfilmentTable({
               </Table.Cell>
               <Table.Cell minW="var(--atlas-layout-row-action-min, 88px)">
                 <Button
-                  variant="utility"
+                  variant="tertiary"
                   size="sm"
                   whiteSpace="normal"
                   onClick={(event) => onSelect(row, event.currentTarget)}

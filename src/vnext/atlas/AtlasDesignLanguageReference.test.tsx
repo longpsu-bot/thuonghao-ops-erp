@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { AtlasVNextProvider } from "./AtlasVNextProvider";
 import { AtlasDesignLanguageReference } from "./AtlasDesignLanguageReference";
+import { atlasSystem } from "./system";
 
 afterEach(() => {
   cleanup();
@@ -23,6 +24,48 @@ const show = () =>
   );
 
 describe("Atlas design language reference", () => {
+  it("shows surfaced primary, secondary and tertiary commands at rest", () => {
+    show();
+    for (const [name, background, border] of [
+      ["Lưu phân bổ", "action-primary-default", null],
+      ["Áp dụng bộ lọc", "bg-toolbar", "border-default"],
+      ["Đóng chi tiết", "bg-subtle", "border-subtle"],
+    ]) {
+      const button = screen.getByRole("button", { name: name! });
+      const rule = [...document.styleSheets]
+        .flatMap((sheet) => [...sheet.cssRules])
+        .find(
+          (rule): rule is CSSStyleRule =>
+            rule instanceof CSSStyleRule &&
+            [...button.classList].some(
+              (name) => rule.selectorText === `.${name}`,
+            ) &&
+            rule.style.background === `var(--atlas-colors-${background})`,
+        );
+      expect(rule).toBeDefined();
+      if (border) {
+        expect(rule?.style.borderColor).toBe(`var(--atlas-colors-${border})`);
+        expect(rule?.style.borderWidth).toBe("var(--atlas-layout-edge, 1px)");
+      }
+    }
+  });
+
+  it("retains transparent utility and explicit pressed states for real commands", () => {
+    const variants =
+      atlasSystem._config.theme?.recipes?.button?.variants?.variant;
+    expect(variants?.utility).toMatchObject({ bg: "transparent" });
+    for (const role of [
+      "businessPrimary",
+      "secondary",
+      "tertiary",
+      "destructive",
+    ]) {
+      expect(variants?.[role]).toHaveProperty(
+        "_active.transform",
+        "translateY(var(--atlas-layout-button-press, 1px))",
+      );
+    }
+  });
   it("exposes one workbench heading and the canonical filter order", () => {
     show();
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -41,7 +84,13 @@ describe("Atlas design language reference", () => {
     );
     expect(
       Array.from(fields, (field) => field.getAttribute("aria-label")),
-    ).toEqual(["Trường", "Tìm kiếm", "Trạng thái", "Làm mới dữ liệu"]);
+    ).toEqual([
+      "Mở lịch — Ngày phục vụ",
+      "Trường",
+      "Tìm kiếm",
+      "Trạng thái",
+      "Làm mới dữ liệu",
+    ]);
   });
   it("uses semantic columns, dense accessible selection and explicit row actions", () => {
     show();

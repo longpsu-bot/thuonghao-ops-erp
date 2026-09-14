@@ -90,6 +90,8 @@ export function PlanningMenuStage({
         )}
       </Flex>
       <Box
+        data-testid="weekly-menu-scroll"
+        data-horizontal-scroll="local"
         overflow="auto"
         maxH={
           c.locked
@@ -97,12 +99,29 @@ export function PlanningMenuStage({
             : "var(--atlas-layout-planning-table-height, max(240px, calc(100dvh - 480px)))"
         }
       >
-        <Table.Root aria-label="Thực đơn theo trường" size="sm" stickyHeader>
+        <Table.Root
+          aria-label="Thực đơn theo trường"
+          size="sm"
+          stickyHeader
+          minW="var(--atlas-layout-menu-table-min-width, max-content)"
+        >
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeader>Trường / điểm giao</Table.ColumnHeader>
+              <Table.ColumnHeader
+                data-sticky-column="school"
+                position="sticky"
+                left="var(--atlas-layout-zero, 0)"
+                zIndex="var(--atlas-layer-sticky-corner, 3)"
+                bg="bg.toolbar"
+                minW="var(--atlas-layout-menu-school-column, 220px)"
+              >
+                Trường / điểm giao
+              </Table.ColumnHeader>
               {types.map((t) => (
-                <Table.ColumnHeader key={t.dish_type_id}>
+                <Table.ColumnHeader
+                  key={t.dish_type_id}
+                  minW="var(--atlas-layout-menu-dish-column, 180px)"
+                >
                   {t.dish_type_name}
                 </Table.ColumnHeader>
               ))}
@@ -113,7 +132,15 @@ export function PlanningMenuStage({
               .filter((s) => visibleSchoolIds.includes(s.school_id))
               .map((s) => (
                 <Table.Row key={s.school_id}>
-                  <Table.Cell>{s.school_name}</Table.Cell>
+                  <Table.Cell
+                    data-sticky-column="school"
+                    position="sticky"
+                    left="var(--atlas-layout-zero, 0)"
+                    zIndex="var(--atlas-layer-sticky-cell, 1)"
+                    bg="bg.workbench"
+                  >
+                    {s.school_name}
+                  </Table.Cell>
                   {types.map((t) => {
                     const line = c.menuRows.find(
                       (r) =>

@@ -4,7 +4,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set search_path = extensions, public, pg_catalog;
 
-select plan(95);
+select plan(100);
 
 -- Public surface, ownership, and execute boundary.
 select has_function('atlas_api', 'create_school_catering_purchase_order_drafts', array['jsonb']);
@@ -93,6 +93,9 @@ select has_check('atlas_procurement','purchase_order_lines','purchase_order_line
 select has_column('atlas_procurement','purchase_order_line_revisions',
   'school_catering_allocation_supplier_split_id',
   'PO line revision supports an exact school-catering Supplier Split source');
+select has_column('atlas_procurement','purchase_order_line_revisions',
+  'school_breakdown_snapshot',
+  'released PO line revision supports an immutable School quantity breakdown');
 select ok(exists(
   select 1 from information_schema.columns
   where table_schema='atlas_procurement' and table_name='purchase_order_line_revisions'
@@ -171,6 +174,25 @@ values
    '2026-01-01',1,'PR-B test');
 
 set session_replication_role = replica;
+insert into atlas_planning.confirmed_need_lines(
+  confirmed_need_line_id,confirmed_need_batch_id,source_kind,service_date,customer_id,
+  school_id,delivery_location_id,ingredient_id,controlled_unit_id)
+values
+  ('24030000-0000-4000-8000-000000000171','24030000-0000-4000-8000-000000000060','NEED_GENERATION','2026-09-21','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000021','24020000-0000-4000-8000-000000000011','24020000-0000-4000-8000-000000000041','24020000-0000-4000-8000-000000000031'),
+  ('24030000-0000-4000-8000-000000000172','24030000-0000-4000-8000-000000000060','NEED_GENERATION','2026-09-21','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000022','24020000-0000-4000-8000-000000000012','24020000-0000-4000-8000-000000000041','24020000-0000-4000-8000-000000000031'),
+  ('24030000-0000-4000-8000-000000000173','24030000-0000-4000-8000-000000000060','NEED_GENERATION','2026-09-21','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000021','24020000-0000-4000-8000-000000000011','24020000-0000-4000-8000-000000000042','24020000-0000-4000-8000-000000000031'),
+  ('24030000-0000-4000-8000-000000000174','24030000-0000-4000-8000-000000000060','NEED_GENERATION','2026-09-22','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000021','24020000-0000-4000-8000-000000000011','24020000-0000-4000-8000-000000000041','24020000-0000-4000-8000-000000000031');
+insert into atlas_planning.confirmed_need_line_revisions(
+  confirmed_need_line_revision_id,confirmed_need_line_id,revision_number,ingredient_id,
+  theoretical_quantity,confirmed_quantity,unit_id,revision_status,is_current,
+  created_by_actor_id,source_kind,confirmed_need_batch_id,need_generation_run_id,
+  need_generation_run_version,need_generation_release_snapshot_id,service_date,
+  customer_id,school_id,delivery_location_id)
+values
+  ('24030000-0000-4000-8000-000000000181','24030000-0000-4000-8000-000000000171',1,'24020000-0000-4000-8000-000000000041',100,100,'24020000-0000-4000-8000-000000000031','RELEASED',true,'24000000-0000-4000-8000-000000000001','NEED_GENERATION','24030000-0000-4000-8000-000000000060','24030000-0000-4000-8000-000000000160',1,'24030000-0000-4000-8000-000000000161','2026-09-21','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000021','24020000-0000-4000-8000-000000000011'),
+  ('24030000-0000-4000-8000-000000000182','24030000-0000-4000-8000-000000000172',1,'24020000-0000-4000-8000-000000000041',50,50,'24020000-0000-4000-8000-000000000031','RELEASED',true,'24000000-0000-4000-8000-000000000001','NEED_GENERATION','24030000-0000-4000-8000-000000000060','24030000-0000-4000-8000-000000000160',1,'24030000-0000-4000-8000-000000000161','2026-09-21','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000022','24020000-0000-4000-8000-000000000012'),
+  ('24030000-0000-4000-8000-000000000183','24030000-0000-4000-8000-000000000173',1,'24020000-0000-4000-8000-000000000042',30,30,'24020000-0000-4000-8000-000000000031','RELEASED',true,'24000000-0000-4000-8000-000000000001','NEED_GENERATION','24030000-0000-4000-8000-000000000060','24030000-0000-4000-8000-000000000160',1,'24030000-0000-4000-8000-000000000161','2026-09-21','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000021','24020000-0000-4000-8000-000000000011'),
+  ('24030000-0000-4000-8000-000000000184','24030000-0000-4000-8000-000000000174',1,'24020000-0000-4000-8000-000000000041',20,20,'24020000-0000-4000-8000-000000000031','RELEASED',true,'24000000-0000-4000-8000-000000000001','NEED_GENERATION','24030000-0000-4000-8000-000000000060','24030000-0000-4000-8000-000000000160',1,'24030000-0000-4000-8000-000000000161','2026-09-22','24020000-0000-4000-8000-000000000001','24020000-0000-4000-8000-000000000021','24020000-0000-4000-8000-000000000011');
 insert into atlas_planning.purchase_handoff_batches(
   purchase_handoff_batch_id,confirmed_need_batch_id,period_start,period_end,
   handoff_status,created_by_actor_id)
@@ -573,6 +595,18 @@ select ok((
   where po.supplier_id='24020000-0000-4000-8000-000000000051'
     and por.is_current and por.revision_status='RELEASED_TO_SUPPLIER'
 ), 'released successor lines preserve exact immutable source and predecessor references');
+select ok((
+  select bool_and(jsonb_typeof(polr.school_breakdown_snapshot)='array'
+      and jsonb_array_length(polr.school_breakdown_snapshot)>0
+      and (select sum((school->>'ordered_quantity')::numeric)
+        from jsonb_array_elements(polr.school_breakdown_snapshot) school)=
+        polr.ordered_quantity)
+  from atlas_procurement.purchase_order_line_revisions polr
+  join atlas_procurement.purchase_order_revisions por using(purchase_order_revision_id)
+  join atlas_procurement.purchase_orders po using(purchase_order_id)
+  where po.supplier_id='24020000-0000-4000-8000-000000000051'
+    and por.is_current and por.revision_status='RELEASED_TO_SUPPLIER'
+), 'release freezes a complete exact School breakdown on every official PO line');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
@@ -589,6 +623,56 @@ select ok((
     and not (row ->> 'release_eligible')::boolean
     and row ->> 'document_number' is not null
 ), 'read model exposes only a released PO as export-ready with its official number');
+select ok((
+  select exists(select 1
+  from prb_results r
+  cross join lateral jsonb_array_elements(r.response->'purchase_orders') po
+  cross join lateral jsonb_array_elements(po->'lines') line
+  where r.name='read-released'
+    and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'
+    and line->'school_breakdown' @> '[{"school_id":"24020000-0000-4000-8000-000000000021","school_name":"PR-B School Alpha","school_display_order":1}]'::jsonb)
+), 'released PO read exposes immutable School identity and order from the line snapshot');
+
+update atlas_admin.schools set school_name='PR-B School Alpha renamed',display_order=9
+where school_id='24020000-0000-4000-8000-000000000021';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('read-released-after-school-change',
+  atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select ok((
+  select exists(select 1
+  from prb_results r
+  cross join lateral jsonb_array_elements(r.response->'purchase_orders') po
+  cross join lateral jsonb_array_elements(po->'lines') line
+  where r.name='read-released-after-school-change'
+    and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'
+    and line->'school_breakdown' @> '[{"school_id":"24020000-0000-4000-8000-000000000021","school_name":"PR-B School Alpha","school_display_order":1}]'::jsonb)
+), 'released PO School labels and order do not follow later mutable master changes');
+update atlas_admin.schools set school_name='PR-B School Alpha',display_order=1
+where school_id='24020000-0000-4000-8000-000000000021';
+
+savepoint legacy_po_export_guard;
+set session_replication_role=replica;
+update atlas_procurement.purchase_order_line_revisions set school_breakdown_snapshot=null
+where purchase_order_revision_id in (
+  select por.purchase_order_revision_id from atlas_procurement.purchase_order_revisions por
+  join atlas_procurement.purchase_orders po using(purchase_order_id)
+  where po.supplier_id='24020000-0000-4000-8000-000000000051' and por.is_current);
+set session_replication_role=origin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','24000000-0000-4000-8000-000000000101',true);
+insert into prb_results values('read-legacy-released',
+  atlas_api.get_school_catering_purchase_orders(pg_temp.prb_read()));
+reset role;
+select ok((
+  select not (po->>'export_ready')::boolean
+    and not (po#>>'{allowed_actions,export}')::boolean
+  from prb_results r cross join lateral jsonb_array_elements(r.response->'purchase_orders') po
+  where r.name='read-legacy-released'
+    and po#>>'{supplier,supplier_id}'='24020000-0000-4000-8000-000000000051'
+), 'legacy released PO without a School snapshot fails closed for official export');
+rollback to savepoint legacy_po_export_guard;
 
 -- A corrected current Handoff can remove one business key while retaining the
 -- old Allocation Family and DRAFT evidence. Only the corrected source universe
