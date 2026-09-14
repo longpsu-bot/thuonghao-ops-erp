@@ -109,10 +109,11 @@ export function PlanningPantryStage({
           <Table.Header>
             <Table.Row>
               {[
+                "Trường / điểm giao",
                 "Nguyên liệu / Đơn vị",
                 "Mục đích",
                 "Số lượng",
-                "Ghi chú",
+                "Ghi chú / Lý do",
                 "Tham chiếu",
                 "",
               ].map((name, i) => (
@@ -126,7 +127,7 @@ export function PlanningPantryStage({
               .map((s) => (
                 <Fragment key={s.school_id}>
                   <Table.Row bg="bg.subtle">
-                    <Table.Cell colSpan={6}>
+                    <Table.Cell colSpan={7}>
                       <Flex align="center" gap="sm" wrap="wrap">
                         <Box>
                           <Text fontWeight="semibold">{s.school_name}</Text>
@@ -175,8 +176,46 @@ export function PlanningPantryStage({
                       const unit = c.pantryData?.ingredients.find(
                         (i) => i.ingredient_id === r.ingredient_id,
                       )?.purchase_unit.unit_name;
+                      const selectedSchool = c.pantryData?.schools.find(
+                        (school) => school.school_id === r.school_id,
+                      );
                       return (
                         <Table.Row key={r.source_row_reference || index}>
+                          <Table.Cell>
+                            <NativeSelect.Root disabled={!c.canEdit}>
+                              <NativeSelect.Field
+                                aria-label={`Trường dòng ${index + 1}`}
+                                value={r.school_id}
+                                minW="var(--atlas-layout-pantry-school-width, 180px)"
+                                onChange={(e) =>
+                                  c.editPantryRow(index, {
+                                    school_id: e.target.value,
+                                  })
+                                }
+                              >
+                                {c.pantryData?.schools
+                                  .filter(
+                                    (school) =>
+                                      school.school_status === "ACTIVE",
+                                  )
+                                  .map((school) => (
+                                    <option
+                                      key={school.school_id}
+                                      value={school.school_id}
+                                    >
+                                      {school.school_name}
+                                    </option>
+                                  ))}
+                              </NativeSelect.Field>
+                              <NativeSelect.Indicator />
+                            </NativeSelect.Root>
+                            <Text textStyle="helper" color="fg.muted">
+                              {
+                                selectedSchool?.default_delivery_location
+                                  .location_name
+                              }
+                            </Text>
+                          </Table.Cell>
                           <Table.Cell>
                             <Field.Root invalid={!!errors.ingredient}>
                               <NativeSelect.Root

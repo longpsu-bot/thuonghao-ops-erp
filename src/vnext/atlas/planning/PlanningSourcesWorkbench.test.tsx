@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
+import type { PantryApi } from "../bridges/planning";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { createPlanningStoryFixture } from "./planningStoryFixtures";
 import {
@@ -316,13 +317,101 @@ describe("Planning sources Chakra workbench", () => {
       { target: { value: "ingredient-1" } },
     );
     expect(screen.getByText("kg")).toBeVisible();
-    expect(screen.getByText("Bếp Trường Nguyễn Du")).toBeVisible();
+    expect(screen.getAllByText("Bếp Trường Nguyễn Du")[0]).toBeVisible();
     fireEvent.click(
       screen.getByRole("checkbox", {
         name: "Xác nhận toàn tuần không có bổ sung",
       }),
     );
     expect(await screen.findByRole("dialog")).toBeVisible();
+  });
+  it("keeps Pantry School edits local and sends the selected School to Preview", async () => {
+    const fixture = createPlanningStoryFixture("pantry_review");
+    const read = vi.spyOn(fixture.pantryApi, "getWorkbench");
+    const preview = vi.spyOn(fixture.pantryApi, "preview");
+    const save = vi.spyOn(fixture.pantryApi, "saveCompleted");
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          initialJob="pantry"
+        />
+      </AtlasVNextProvider>,
+    );
+    const school = await screen.findByRole("combobox", {
+      name: "Trường dòng 1",
+    });
+    expect(school).toHaveValue("school-0");
+    expect(
+      within(school.closest("tr")!).getByText("Bếp Trường Nguyễn Du"),
+    ).toBeVisible();
+
+    const readsBefore = read.mock.calls.length;
+    fireEvent.change(school, { target: { value: "school-1" } });
+    expect(read).toHaveBeenCalledTimes(readsBefore);
+    expect(preview).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+    const regroupedSchool = screen.getByRole("combobox", {
+      name: "Trường dòng 1",
+    });
+    expect(
+      within(regroupedSchool.closest("tr")!).getByText("Bếp Trường Lê Lợi"),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    await waitFor(() => expect(preview).toHaveBeenCalledTimes(1));
+    const previewCall = preview.mock.calls[0] as unknown as Parameters<
+      PantryApi["preview"]
+    >;
+    expect(previewCall[4]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source_row_reference: "fixture:1",
+          school_id: "school-1",
+        }),
+      ]),
+    );
+  });
+  it("regroups a Pantry line under the destination School mode", async () => {
+    const fixture = createPlanningStoryFixture("pantry_review");
+    fixture.pantry.batch!.school_date_modes = [
+      {
+        school_id: "school-0",
+        service_date: reviewWeek,
+        direct_need_mode: "COMPLETE",
+      },
+      {
+        school_id: "school-1",
+        service_date: reviewWeek,
+        direct_need_mode: "ADDITIVE",
+      },
+    ];
+    render(
+      <AtlasVNextProvider>
+        <PlanningSourcesWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialWeek={reviewWeek}
+          initialJob="pantry"
+        />
+      </AtlasVNextProvider>,
+    );
+    fireEvent.change(
+      await screen.findByRole("combobox", { name: "Trường dòng 1" }),
+      { target: { value: "school-1" } },
+    );
+    expect(
+      screen.getByRole("combobox", {
+        name: "Cách kết hợp Trường Lê Lợi",
+      }),
+    ).toHaveValue("ADDITIVE");
+    expect(
+      screen.queryByRole("combobox", {
+        name: "Cách kết hợp Trường Nguyễn Du",
+      }),
+    ).not.toBeInTheDocument();
   });
 });
 
