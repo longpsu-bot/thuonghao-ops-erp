@@ -10,7 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useState, type ReactNode } from "react";
-import thuongHaoLogo from "./assets/thuong-hao-logo.jpg";
+import thuongHaoLogo from "../../assets/thuong-hao-logo.jpg";
 
 export type AtlasSessionModel = {
   status:
