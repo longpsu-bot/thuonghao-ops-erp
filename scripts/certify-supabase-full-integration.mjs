@@ -35,6 +35,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "rmvp_01_atlas_master_data.sql",
   "master_data_rehearsal_import.sql",
   "rmvp_02a_connected_recipes_bom.sql",
+  "master_data_rehearsal_recipe_import.sql",
   "rmvp_02b_recipe_adjustments_effective_bom.sql",
   "recipe_effective_contract_01.sql",
   "recipe_effective_product_model_correction.sql",

@@ -73,3 +73,12 @@ The exact parameter/envelope and retry binding must be approved and added to the
 - RED: 8/9 schema assertions failed before the migration. GREEN: 47 new pgTAP assertions; inherited RMVP-01 + core total 90/90 passed.
 - Tests run against disposable local project `atlas-master-rehearsal-01`, ports 553xx, in a separate Supabase work directory. The original `thuonghao-ops-erp` stack is not reset or stopped.
 - The core deliberately rejects nonempty Recipe/Dish data until the Task 3 extension is installed. This is not yet a complete importer certification.
+
+## Task 3 progress
+
+- Replaced the core fail-closed Recipe extension hooks with typed Dish/Recipe/current-BOM planning and materialization.
+- Explicit source-row-ID churn creates no successor; quantity/membership change produces one immutable successor with exact line predecessors. Removed-line tombstones continue through intermediate corrections so reintroduction retains stable identity.
+- Uses the existing approved-Menu Dish-use predicate and actual lifecycle/lineage constraints. Locks also protect concurrent approval-snapshot insertion; no new persisted lock flag or operational fact.
+- Current imported versions validate/release with the explicitly supplied Actor and truthful import source evidence; v1 `is_locked` is not imported.
+- RED: unsupported full Recipe snapshot failed the intended assertion. GREEN: 37 new Recipe pgTAP assertions. New core + Recipe + inherited RMVP-02A total: 126/126 PASS.
+- Import runner and full real-source rehearsal/certification have not yet run at this checkpoint.
