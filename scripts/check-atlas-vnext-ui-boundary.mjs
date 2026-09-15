@@ -42,9 +42,7 @@ const approvedLegacyBusinessModules = [
 // Exact shared presentation assets approved for vNext reuse. Wildcards are
 // intentionally forbidden: non-vNext assets remain rejected unless separately
 // approved.
-const approvedVnextSharedAssets = new Set([
-  "src/assets/thuong-hao-logo.jpg",
-]);
+const approvedVnextSharedAssets = new Set(["src/assets/thuong-hao-logo.jpg"]);
 // Application-to-technology composition only; normal vNext bridge rules are unchanged.
 const connectedRootModules = new Set([
   "react",
