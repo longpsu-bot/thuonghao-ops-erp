@@ -65,18 +65,18 @@ FDW, database links, direct cross-project runtime reads, scheduled synchronizati
 
 Fresh read-only inspection during this design found:
 
-| Source object | Rows |
-| --- | ---: |
-| Schools | 43 |
-| Ingredient Types | 17 |
-| Ingredient Shopping Types | 3 |
-| Ingredients | 376 |
-| Suppliers | 36 |
-| Ingredient–Supplier relationships | 846 |
-| Dish Types | 6 |
-| Dishes | 660 |
-| Recipes | 1,320 |
-| Bill of Materials lines | 4,045 |
+| Source object                     |  Rows |
+| --------------------------------- | ----: |
+| Schools                           |    43 |
+| Ingredient Types                  |    17 |
+| Ingredient Shopping Types         |     3 |
+| Ingredients                       |   376 |
+| Suppliers                         |    36 |
+| Ingredient–Supplier relationships |   846 |
+| Dish Types                        |     6 |
+| Dishes                            |   660 |
+| Recipes                           | 1,320 |
+| Bill of Materials lines           | 4,045 |
 
 Lifecycle distribution:
 
@@ -110,14 +110,14 @@ The current source and Staging catalogs are close enough for explicit mappings:
 
 Dish Type mapping is explicit by source identity, not fuzzy text:
 
-| OPS v1 Dish Type | Atlas Dish Type |
-| --- | --- |
-| `1 / Canh` | `soup / Món canh` |
-| `2 / Món mặn` | `savory / Món mặn` |
-| `3 / Món xào` | `stir_fry / Món xào` |
-| `4 / Tráng miệng` | `dessert / Tráng miệng` |
-| `5 / Món xế` | `afternoon_snack / Buổi xế` |
-| `6 / Nước` | `beverage / Nước` |
+| OPS v1 Dish Type  | Atlas Dish Type             |
+| ----------------- | --------------------------- |
+| `1 / Canh`        | `soup / Món canh`           |
+| `2 / Món mặn`     | `savory / Món mặn`          |
+| `3 / Món xào`     | `stir_fry / Món xào`        |
+| `4 / Tráng miệng` | `dessert / Tráng miệng`     |
+| `5 / Món xế`      | `afternoon_snack / Buổi xế` |
+| `6 / Nước`        | `beverage / Nước`           |
 
 ### 3.3 Unit reconciliation observed now
 
@@ -140,24 +140,24 @@ The source token `123` is not a Unit alias. It occurs on inactive Ingredient `11
 
 Current Staging is intentionally partial:
 
-| Atlas object | Rows |
-| --- | ---: |
-| Customers | 34 |
-| Delivery Locations | 34 |
-| School Types | 3 |
-| Schools | 34 |
-| Units | 16 |
-| Ingredient Types | 17 |
-| Ingredient Order Groups | 3 |
-| Ingredients | 360 |
-| Suppliers | 37 |
-| Supplier Eligibilities | 828 |
-| Dish Types | 6 |
-| Dishes | 2 |
-| Recipes | 3 |
-| Recipe Versions | 5 |
-| Recipe Lines | 4 |
-| Recipe Line Revisions | 6 |
+| Atlas object            | Rows |
+| ----------------------- | ---: |
+| Customers               |   34 |
+| Delivery Locations      |   34 |
+| School Types            |    3 |
+| Schools                 |   34 |
+| Units                   |   16 |
+| Ingredient Types        |   17 |
+| Ingredient Order Groups |    3 |
+| Ingredients             |  360 |
+| Suppliers               |   37 |
+| Supplier Eligibilities  |  828 |
+| Dish Types              |    6 |
+| Dishes                  |    2 |
+| Recipes                 |    3 |
+| Recipe Versions         |    5 |
+| Recipe Lines            |    4 |
+| Recipe Line Revisions   |    6 |
 
 `atlas_legacy.master_data_mappings` is currently empty on shared Staging, so Staging data must not be mistaken for an already established migration crosswalk.
 
