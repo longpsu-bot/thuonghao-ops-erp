@@ -62,9 +62,11 @@ This certifies synthetic behavior only; it is not a real OPS v1 source rehearsal
 
 ## Real source and hosted boundary
 
-The local extraction process currently has no `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`. Connected SQL can inspect source metadata/data, but that connection runs as `postgres`, not the dedicated read-only extraction role. A role-switch probe was denied; no grant, role, policy or source row was changed. The importer is not weakened to accept fabricated read-only proof.
+The approved real-source route is GitHub Actions rather than a copied local secret. `.github/workflows/atlas-master-data-rehearsal-validate.yml` is manual-only, uses the existing `atlas-staging` environment solely to access `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`, verifies the requested checkout is exact current `origin/main` before dependency installation or repository-code execution, and injects the secret only into the read-only extraction step.
 
-A full real-source extraction and normalized dry-run require the approved dedicated read-only source transport. Until that is available, do not claim a real-source snapshot, current full reconciliation, or cutover readiness from synthetic evidence. Shared Staging is still excluded from all apply commands.
+The workflow writes the raw snapshot only under `RUNNER_TEMP`, never uploads it, deletes it during final cleanup, starts a disposable local Supabase target, and executes preview only. It contains no apply flag, Atlas Staging target reference, deploy command, Google-source configuration, or hosted database mutation. The workflow cannot be used until its definition and importer are present on current `main`; that preserves the existing secret boundary against unmerged branch code.
+
+Until that workflow runs successfully on a certified current-main commit, do not claim a real-source snapshot, current full reconciliation, or cutover readiness from synthetic evidence. Shared Staging remains excluded from all apply commands.
 
 ## Safety
 

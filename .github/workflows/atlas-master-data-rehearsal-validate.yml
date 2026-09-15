@@ -1,0 +1,82 @@
+name: Atlas OPS v1 Master Data Rehearsal Validate
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full current-main SHA to validate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate-master-data-rehearsal:
+    name: Read-only OPS v1 master rehearsal
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: atlas-staging
+    env:
+      SUPABASE_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out requested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Verify exact current main before any repository code runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "${{ inputs.commit_sha }}"
+          test "$(git rev-parse origin/main)" = "${{ inputs.commit_sha }}"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Extract immutable OPS v1 master snapshot read-only
+        env:
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+        run: >-
+          pnpm ops:v1:master:snapshot --
+          --output "$RUNNER_TEMP/ops-v1-master.json"
+          --snapshot-id "ops-v1-master-gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+      - name: Start disposable local Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm exec supabase start \
+            --exclude edge-runtime,imgproxy,logflare,mailpit,postgres-meta,realtime,storage-api,studio,supavisor,vector
+
+      - name: Reset disposable target from repository migrations
+        run: pnpm exec supabase db reset --local --no-seed
+
+      - name: Preview real OPS v1 master snapshot against disposable Atlas
+        run: >-
+          pnpm local:master-data:rehearsal:preview --
+          --file "$RUNNER_TEMP/ops-v1-master.json"
+
+      - name: Remove raw snapshot and stop disposable Supabase
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/ops-v1-master.json"
+          pnpm exec supabase stop --no-backup || true

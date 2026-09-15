@@ -36,7 +36,11 @@ Creating configuration for this disposable project is local test setup, not an a
 
 ## 3. Extract one immutable source snapshot
 
-The read-only extraction command requires the already-authorized management token through `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`. Never commit, print or pass the token on a command line. The extractor uses only the fixed `/database/query/read-only` source endpoint and verifies read-only role/table privileges plus unfiltered source completeness.
+The preferred real-source path is the manual **Atlas OPS v1 Master Data Rehearsal Validate** GitHub Actions workflow. Dispatch it only from the workflow definition on current `main` and provide the exact current-main SHA. The job verifies the checked-out SHA against `origin/main` **before dependency installation or repository code execution**. It then injects the existing protected `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN` only into the extraction step.
+
+The GitHub workflow is validate-only: the raw snapshot exists only under `RUNNER_TEMP`, is never uploaded, is removed in the final cleanup step, and is previewed against a disposable local Supabase database created from repository migrations. The workflow contains no apply path, Atlas Staging project target, Google-source configuration, or hosted database mutation. Using the `atlas-staging` GitHub Environment here grants access to the existing protected secret only; it does not authorize or perform a Staging write.
+
+For local support/debugging only, the same read-only extraction command requires the already-authorized management token through `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`. Never commit, print or pass the token on a command line. The extractor uses only the fixed `/database/query/read-only` source endpoint and verifies read-only role/table privileges plus unfiltered source completeness.
 
 ```powershell
 pnpm ops:v1:master:snapshot -- --snapshot-id ops-v1-master-rehearsal-a --output '<private-output>/ops-v1-master-a.json'
