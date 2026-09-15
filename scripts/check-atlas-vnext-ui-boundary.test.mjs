@@ -260,6 +260,24 @@ describe("Atlas vNext presentation boundary", () => {
       }),
     ).toHaveLength(1);
   });
+  it("permits only the approved shared Thượng Hảo logo asset", () => {
+    expect(
+      checkSources({
+        "src/vnext/atlas/AtlasSessionGate.tsx":
+          'import logo from "../../assets/thuong-hao-logo.jpg";',
+      }),
+    ).toEqual([]);
+    for (const asset of [
+      "../../assets/another-logo.jpg",
+      "../../assets/random-image.jpg",
+    ]) {
+      expect(
+        checkSources({
+          "src/vnext/atlas/AtlasSessionGate.tsx": `import image from "${asset}";`,
+        }),
+      ).toHaveLength(1);
+    }
+  });
   it.each([
     "@mantine/core",
     "@mantine/dates",
