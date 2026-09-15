@@ -1,10 +1,11 @@
 # MASTER-DATA-REHEARSAL-IMPORT-01 — Repeatable OPS v1 Master-Data Rehearsal and Cutover Import
 
-**Status:** Design self-reviewed; awaiting Product Owner approval  
+**Status:** Product-approved for implementation planning
 **Date:** 15/09/2026  
 **Architecture authority:** OPS_SYSTEM_MAP v1.0 / ARCH-002  
 **Parent contracts:** RMVP-01, RMVP-02A, D-037 Atlas Model Convergence  
 **Principle:** **FACTS EXPLICIT — STATE DERIVED — SUPPORTING OBJECTS GENERATED.**
+**Product approval:** 15/09/2026; canonical Unit decisions: `kg` is the only kilogram Unit, `Hũ` is canonical, and source `Hủ` is an explicit alias of `Hũ`.
 
 ## 1. Decision
 
@@ -122,12 +123,16 @@ Dish Type mapping is explicit by source identity, not fuzzy text:
 
 OPS v1 currently exposes 18 distinct trimmed purchase-unit strings across Ingredient and BOM facts, while Staging has 16 active Atlas Units.
 
-Most source strings already correspond one-to-one to Atlas names, including distinct `Hũ` and `Hủ`.
+Most source strings already correspond one-to-one to Atlas names. The approved Unit canonicalization collapses only explicitly reviewed spelling/case aliases before mapping; no fuzzy normalization is permitted.
 
-Two explicit aliases represent the same reviewed Unit:
+Approved canonical aliases are:
 
-- `Kg` → Atlas `unit_code = kg` / `Kilogram`;
-- `kg` → Atlas `unit_code = kg` / `Kilogram`.
+- `Kg` → canonical source token `kg` → Atlas `unit_code = kg` / `Kilogram`;
+- `kg` → canonical source token `kg` → Atlas `unit_code = kg` / `Kilogram`;
+- `Hủ` → canonical source token `Hũ` → Atlas canonical Unit `Hũ`;
+- `Hũ` → canonical source token `Hũ` → Atlas canonical Unit `Hũ`.
+
+Therefore Atlas must have only one kilogram Unit (`kg`) and one jar Unit spelling (`Hũ`) for these source values. The pre-cutover Atlas `Hủ` Unit is non-canonical and must be remapped/inactivated during migration preparation before authority cutover.
 
 The source token `123` is not a Unit alias. It occurs on inactive Ingredient `1170 / Deact test` and one BOM row for active Dish `1983 / Deact Test`; it is a current source-data blocker until staff corrects or explicitly removes that test artifact from current master truth.
 
@@ -310,16 +315,18 @@ The extractor derives the source Unit set from the union of:
 - `ingredients.purchase_unit`;
 - `bill_of_materials.purchase_unit`.
 
-Source Unit identity is exact NFC+trimmed text.
+Source Unit identity is NFC+trimmed text after applying the explicit reviewed Unit alias table. The canonical source token, not the raw spelling variant, is used for crosswalk identity.
 
-Distinct business spellings remain distinct unless an explicit reviewed alias exists. `Hũ` and `Hủ` therefore remain separate Atlas Units.
+Distinct business spellings remain distinct unless an explicit reviewed alias exists. `Hủ` is an approved spelling alias of canonical `Hũ`, so it must not survive as a separate active Atlas Unit after pre-cutover canonicalization.
 
 Explicit current aliases:
 
-- `Kg` → Atlas `kg / Kilogram`;
-- `kg` → Atlas `kg / Kilogram`.
+- `Kg` → canonical `kg` → Atlas `kg / Kilogram`;
+- `kg` → canonical `kg` → Atlas `kg / Kilogram`;
+- `Hủ` → canonical `Hũ` → Atlas `Hũ`;
+- `Hũ` → canonical `Hũ` → Atlas `Hũ`.
 
-Multiple source Unit identities may map to one reviewed Atlas Unit. Fuzzy matching is prohibited.
+Multiple raw source spellings may map to one canonical source Unit only when listed in this reviewed alias table. Fuzzy matching is prohibited. The importer must not create a second kilogram Unit or retain `Hủ` as a separate active Unit.
 
 Unknown tokens such as current source `123` are blockers, not new Units.
 
@@ -641,8 +648,9 @@ Implementation is acceptable only when:
 17. Current invalid Unit token `123` / Ingredient `1170` condition is surfaced.
 18. All 846 Ingredient–Supplier relationships are reconciled.
 19. Current 17 Ingredient Types, 3 Order Groups, 6 Dish Types, and 2 source School Types reconcile through explicit catalog mappings.
-20. Retool, Live OPS data, and operational Atlas tables remain untouched by Rehearsal A.
-21. A later fresh snapshot can converge via legitimate actions while preserving target identities.
+20. Unit canonicalization proves `Kg` and `kg` converge to the same Atlas `kg / Kilogram` identity with no duplicate kilogram Unit, while `Hủ` and `Hũ` converge to canonical Atlas `Hũ` and no separate active `Hủ` Unit remains after pre-cutover canonicalization.
+21. Retool, Live OPS data, and operational Atlas tables remain untouched by Rehearsal A.
+22. A later fresh snapshot can converge via legitimate actions while preserving target identities.
 
 ## 16. Implementation decomposition after design approval
 
