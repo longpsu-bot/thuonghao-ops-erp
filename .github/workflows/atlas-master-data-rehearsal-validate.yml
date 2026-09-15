@@ -59,24 +59,48 @@ jobs:
           --output "$RUNNER_TEMP/ops-v1-master.json"
           --snapshot-id "ops-v1-master-gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
+      - name: Prepare isolated disposable Supabase workdir
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="$RUNNER_TEMP/atlas-master-rehearsal-01"
+          mkdir -p "$workdir"
+          cp -R supabase "$workdir/supabase"
+          sed -i 's/^project_id = .*/project_id = "atlas-master-rehearsal-01"/' \
+            "$workdir/supabase/config.toml"
+          grep -Fx 'project_id = "atlas-master-rehearsal-01"' \
+            "$workdir/supabase/config.toml"
+          echo "SUPABASE_WORKDIR=$workdir" >> "$GITHUB_ENV"
+
       - name: Start disposable local Supabase
         shell: bash
         run: |
           set -euo pipefail
-          pnpm exec supabase start \
+          pnpm exec supabase start --workdir "$SUPABASE_WORKDIR" \
             --exclude edge-runtime,imgproxy,logflare,mailpit,postgres-meta,realtime,storage-api,studio,supavisor,vector
 
       - name: Reset disposable target from repository migrations
-        run: pnpm exec supabase db reset --local --no-seed
+        run: pnpm exec supabase db reset --local --no-seed --workdir "$SUPABASE_WORKDIR"
 
       - name: Preview real OPS v1 master snapshot against disposable Atlas
-        run: >-
-          pnpm local:master-data:rehearsal:preview --
-          --file "$RUNNER_TEMP/ops-v1-master.json"
+        shell: bash
+        run: |
+          set +e
+          pnpm local:master-data:rehearsal:preview -- \
+            --file "$RUNNER_TEMP/ops-v1-master.json"
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ] || [ "$code" -eq 2 ]; then
+            exit 0
+          fi
+          exit "$code"
 
       - name: Remove raw snapshot and stop disposable Supabase
         if: always()
         shell: bash
         run: |
           rm -f "$RUNNER_TEMP/ops-v1-master.json"
-          pnpm exec supabase stop --no-backup || true
+          if [ -n "${SUPABASE_WORKDIR:-}" ]; then
+            pnpm exec supabase stop --workdir "$SUPABASE_WORKDIR" --no-backup || true
+            rm -rf "$SUPABASE_WORKDIR"
+          fi

@@ -47,4 +47,23 @@ describe("GitHub-only OPS v1 master rehearsal validation", () => {
       2,
     );
   });
+
+  it("uses the guarded disposable workdir and accepts a valid rejected preview", () => {
+    const text = workflow();
+
+    expect(text).toContain('workdir="$RUNNER_TEMP/atlas-master-rehearsal-01"');
+    expect(text).toContain('cp -R supabase "$workdir/supabase"');
+    expect(text).toContain('project_id = "atlas-master-rehearsal-01"');
+    expect(text).toContain('echo "SUPABASE_WORKDIR=$workdir" >> "$GITHUB_ENV"');
+    expect(text).toContain('supabase start --workdir "$SUPABASE_WORKDIR"');
+    expect(text).toContain(
+      'supabase db reset --local --no-seed --workdir "$SUPABASE_WORKDIR"',
+    );
+    expect(text).toContain(
+      'supabase stop --workdir "$SUPABASE_WORKDIR" --no-backup',
+    );
+    expect(text).toContain('if [ "$code" -eq 0 ] || [ "$code" -eq 2 ]; then');
+    expect(text).toContain('exit "$code"');
+    expect(text).toContain('rm -rf "$SUPABASE_WORKDIR"');
+  });
 });
