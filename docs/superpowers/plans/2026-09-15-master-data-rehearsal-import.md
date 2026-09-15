@@ -21,7 +21,8 @@
 - Do not add a browser/public migration endpoint; migration functions stay private under `atlas_legacy`.
 - Do not add generic ETL, FDW, live DB links, scheduled sync, or runtime legacy dependencies.
 - Full-snapshot root absence never deletes or auto-inactivates a root.
-- Complete child/relationship-set absence may create explicit inactive/REMOVED history only where the spec permits it.- `kg` is the only kilogram Unit. Raw `Kg` and `kg` canonicalize to source token `kg` and Atlas `unit_code = kg` / `Kilogram`.
+- Complete child/relationship-set absence may create explicit inactive/REMOVED history only where the spec permits it.
+- `kg` is the only kilogram Unit. Raw `Kg` and `kg` canonicalize to source token `kg` and Atlas `unit_code = kg` / `Kilogram`.
 - `Hũ` is the only canonical jar spelling. Raw `Hủ` and `Hũ` canonicalize to source token `Hũ`; no separate active `Hủ` Unit may survive cutover preparation.
 - Unit aliases are explicit only; no fuzzy normalization beyond the approved alias table.
 - Source Unit token `123` is a blocker, not a Unit.
@@ -30,6 +31,8 @@
 - Any full-snapshot blocker prevents partial target business writes.
 - Keep PR #286 untouched; production entrypoint cutover is outside this plan.
 - Do not weaken RLS, immutable Recipe revisions, or approved-Weekly-Menu committed-use locks.
+
+- Approved apply amendment: explicit existing ACTIVE `operator_actor_id uuid`, recorded as execution context outside the immutable source snapshot. Missing/inactive actors and different-actor replays block; no fabricated identity or hosted account creation.
 
 ## File Structure
 
@@ -45,7 +48,9 @@
 - Modify `scripts/certify-supabase-full-integration.mjs` and `package.json`.
 - Create `docs/runbooks/master-data-rehearsal-import.md`.
 
-Do not modify the existing `atlas-staging-v1-reference-*` target-apply workflow in this implementation.---
+Do not modify the existing `atlas-staging-v1-reference-*` target-apply workflow in this implementation.
+
+---
 
 ### Task 1: Canonical OPS v1 Snapshot Contract and Read-Only Extractor
 
@@ -157,7 +162,7 @@ git commit -m "feat(atlas): add read-only v1 master snapshot contract"
 **Interfaces:**
 
 - Consumes `OPS-V1-MASTER-SNAPSHOT.v1` from Task 1.
-- Produces private `atlas_legacy.preview_master_data_snapshot(snapshot jsonb)` and `atlas_legacy.apply_master_data_snapshot(snapshot jsonb, expected_plan_checksum text)`.
+- Produces private `atlas_legacy.preview_master_data_snapshot(snapshot jsonb)` and `atlas_legacy.apply_master_data_snapshot(snapshot jsonb, expected_plan_checksum text, operator_actor_id uuid)`.
 - Adds `last_seen_import_batch_id`, `last_source_fingerprint`, `last_target_version` to `atlas_legacy.master_data_mappings`.
 
 - [ ] **Step 1: Write schema/security tests RED**
@@ -167,7 +172,7 @@ select has_column('atlas_legacy','master_data_mappings','last_seen_import_batch_
 select has_column('atlas_legacy','master_data_mappings','last_source_fingerprint');
 select has_column('atlas_legacy','master_data_mappings','last_target_version');
 select has_function('atlas_legacy','preview_master_data_snapshot',array['jsonb']);
-select has_function('atlas_legacy','apply_master_data_snapshot',array['jsonb','text']);
+select has_function('atlas_legacy','apply_master_data_snapshot',array['jsonb','text','uuid']);
 ```
 
 Prove `anon`, `authenticated`, and `service_role` cannot execute the functions or read private migration tables.
@@ -204,11 +209,11 @@ Assert wrong plan checksum, blocker, or target drift produces zero business writ
 Apply the approved source mapping exactly:
 
 - Source School `N` owns migration identities `school:N:customer`, `school:N:delivery-location`, and School legacy ID `N`.
-- Source School Type ID `1` maps to Atlas `v1-school-type-1 / TI?U H?C`; source ID `2` maps to `v1-school-type-2 / TRUNG H?C`. Any new/ambiguous source School Type blocks until a reviewed mapping is added.
+- Source School Type ID `1` maps to Atlas `v1-school-type-1 / TIỂU HỌC`; source ID `2` maps to `v1-school-type-2 / TRUNG HỌC`. Any new/ambiguous source School Type blocks until a reviewed mapping is added.
 - Ingredient Type and Ingredient Shopping Type are initially resolved by the currently reviewed exact catalog names, then persisted by source numeric ID; later display-name drift does not create a second catalog mapping.
 - Customer name = `school_full_name` falling back to `name`; School name = `name`; Delivery Location `address_text` = `delivery_info`.
 - Preserve School defaults, `display_order`, School Type mapping and explicit active/inactive lifecycle. `region_code` is `SOURCE_ONLY_UNMAPPED`.
-- `contract_type = 1` sets issuer `C? S? CUNG C?P TH?C PH?M TH??NG H?O`; `contract_type = 2` sets issuer `C?NG TY TNHH MTV TM - DV TH??NG H?O`; any other value blocks. Use the accepted issuer address `?C: 96/3 KP. Th?nh L?i, Ph??ng Thu?n An, Tp H? Ch? Minh, Vi?t Nam`.
+- `contract_type = 1` sets issuer `CƠ SỞ CUNG CẤP THỰC PHẨM THƯỢNG HẢO`; `contract_type = 2` sets issuer `CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO`; any other value blocks. Use the accepted issuer address `ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam`.
 - Ingredient legacy ID = source `ingredients.id`; preserve name, explicit lifecycle, Ingredient Type, Order Group, canonical purchase Unit and `order_step`; technical code is `v1-ingredient-<id>`.
 - Supplier legacy ID = source `suppliers.id`; import name as ACTIVE current master truth and technical code `v1-supplier-<id>`. Preserve free-form `contact_details` only as `SOURCE_ONLY_UNMAPPED`; do not guess phone/email/name fields.
 - Supplier Eligibility identity = `ingredient:<ingredient_id>:supplier:<supplier_id>`; map `default_priority`; retain non-null `lead_time_days` as `SOURCE_ONLY_UNMAPPED`.
@@ -338,7 +343,7 @@ Follow the temp-SQL pattern in `scripts/import-local-master-data-snapshot.mjs` a
 
 ```bash
 pnpm local:master-data:rehearsal:preview -- --file C:/secure/rehearsal/ops-v1-master.json
-pnpm local:master-data:rehearsal:apply -- --file C:/secure/rehearsal/ops-v1-master.json --apply
+pnpm local:master-data:rehearsal:apply -- --file C:/secure/rehearsal/ops-v1-master.json --apply --actor-id <existing-active-Atlas-actor-UUID>
 ```
 
 The runner accepts only an explicit file and never fetches live OPS itself.

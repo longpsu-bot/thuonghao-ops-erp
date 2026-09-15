@@ -494,6 +494,14 @@ Each planned fact receives one action:
 - `BLOCKED` — invalid/ambiguous/missing dependency.
 - `SOURCE_ONLY_UNMAPPED` — source fact retained as evidence because Atlas has no approved target fact.
 
+### 9.0 Approved execution-attribution amendment (15/09/2026)
+
+The private apply signature is `atlas_legacy.apply_master_data_snapshot(snapshot jsonb, expected_plan_checksum text, operator_actor_id uuid)`.
+
+`operator_actor_id` is mandatory execution context, not source master data. Validate an explicitly supplied existing ACTIVE `atlas_core.actors` row under the existing privileged database-operator boundary before writes. Record that Actor, the database principal and actual execution time in the import batch. Recipe creation/validation/release and line revisions use the same accountable Actor. Do not infer an Actor from `postgres`, borrow a hosted synthetic operator, create Auth accounts, or weaken any lifecycle/foreign-key rule.
+
+The immutable source snapshot and its checksum remain target-independent. An exact replay is bound to the original Actor as well as the snapshot identity/checksum; a different Actor must not relabel a completed import. Preview remains read-only. Local tests provision explicitly synthetic Actors only in their disposable fixture target.
+
 ### 9.1 No delete-by-absence for roots
 
 `MISSING_FROM_SOURCE` for a School, Ingredient, Supplier, Dish, or other root never deletes or automatically inactivates the Atlas root. It requires reviewed disposition.

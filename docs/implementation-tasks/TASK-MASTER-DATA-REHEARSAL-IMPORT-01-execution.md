@@ -2,7 +2,7 @@
 
 **Approved baseline:** `fc5b3a002ea660f90f3fdd06282c4bf74fef067b` (Draft PR #290).
 **Implementation branch:** `feat/master-data-rehearsal-import-01`.
-**Status:** Task 1 implemented and focused tests passed; Tasks 2–5 paused before database-write implementation because the approved private apply contract omits execution-actor attribution.
+**Status:** Task 1 implemented. The Product Owner approved the explicit `operator_actor_id` amendment; Task 2 core preview/apply now passes its local database tests. Recipe extension, runner and full certification remain in progress.
 
 ## Completed scope
 
@@ -34,7 +34,7 @@ The CLI requires an explicit snapshot ID and output path, refuses to overwrite a
 - All new fetch/normalization/export tests use synthetic data. No real OPS v1 full export, local database apply, or end-to-end rehearsal has been executed.
 - Exact-head GitHub CI status is recorded separately in the implementation PR; local focused tests are not a substitute for the required CI gate.
 
-## Unresolved private execution contract
+## Execution-attribution omission — resolved by explicit Product approval
 
 The approved plan currently defines:
 
@@ -63,3 +63,13 @@ The exact parameter/envelope and retry binding must be approved and added to the
 - PR #286 and documentation PR #290 are not modified or merged by this checkpoint.
 
 **Gate:** `TASK_1_IMPLEMENTED — IMPORT_EXECUTION_ACTOR_CONTRACT_REQUIRED`.
+
+## Task 2 progress
+
+- Added the approved actor-bound private apply signature; no actorless overload. Missing/inactive Actors and different-Actor replay are rejected.
+- Added typed catalog/eligibility mappings and the three planned mapping-evidence fields.
+- Non-versioned drift fingerprints are stored in the existing batch reconciliation receipt; no separate ETL schema/table was added.
+- Implemented deterministic non-writing preview, actor-bound atomic apply, stable root identity, non-destructive root absence, explicit inactive relationship removal and authoritative readback.
+- RED: 8/9 schema assertions failed before the migration. GREEN: 47 new pgTAP assertions; inherited RMVP-01 + core total 90/90 passed.
+- Tests run against disposable local project `atlas-master-rehearsal-01`, ports 553xx, in a separate Supabase work directory. The original `thuonghao-ops-erp` stack is not reset or stopped.
+- The core deliberately rejects nonempty Recipe/Dish data until the Task 3 extension is installed. This is not yet a complete importer certification.
