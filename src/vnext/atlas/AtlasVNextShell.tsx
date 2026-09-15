@@ -16,6 +16,7 @@ import {
   CookingPot,
   Truck,
   Scales,
+  ShoppingCart,
   X,
 } from "@phosphor-icons/react";
 import { formatVietnamBusinessDate } from "./businessDate";
@@ -35,7 +36,7 @@ const navigation = [
     icon: ClipboardText,
     group: "Công việc hằng ngày",
   },
-  { id: "procurement", label: "Kế hoạch mua hàng", icon: Package },
+  { id: "procurement", label: "Kế hoạch mua hàng", icon: ShoppingCart },
   { id: "pxk", label: "Phiếu xuất kho", icon: Truck },
   {
     id: "reconciliation",
@@ -152,7 +153,15 @@ export function AtlasVNextShell({
                 }}
               >
                 <Icon asChild flexShrink="0" boxSize="18px">
-                  <NavIcon weight={id === activeModule ? "bold" : "regular"} />
+                  <NavIcon
+                    weight={id === activeModule ? "bold" : "regular"}
+                    data-testid={
+                      id === "procurement" ? "procurement-nav-icon" : undefined
+                    }
+                    data-icon={
+                      id === "procurement" ? "shopping-cart" : undefined
+                    }
+                  />
                 </Icon>
                 {label}
               </Button>
@@ -267,12 +276,9 @@ export function AtlasVNextShell({
           gap="md"
           wrap="wrap"
         >
-          <Text color="fg.primary" fontWeight="semibold">
-            Vận hành trường học
-          </Text>
           <Text textStyle="helper" color="fg.muted">
             {mode === "reference"
-              ? "Thứ năm, 10/09/2026"
+              ? "Hôm nay: 10/09/2026"
               : formatVietnamBusinessDate(now)}
           </Text>
           {mode === "connected" && (

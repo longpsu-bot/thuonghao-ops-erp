@@ -2,12 +2,15 @@ import {
   Box,
   Button,
   Field,
+  Flex,
   Heading,
+  Image,
   Input,
   Stack,
   Text,
 } from "@chakra-ui/react";
 import { useState, type ReactNode } from "react";
+import thuongHaoLogo from "../../assets/thuong-hao-logo.jpg";
 
 export type AtlasSessionModel = {
   status:
@@ -38,19 +41,35 @@ export function AtlasSessionGate({
       p="lg"
     >
       <Box
-        maxW="var(--atlas-layout-signin-width, 400px)"
+        maxW="var(--atlas-layout-signin-width, 440px)"
         mx="var(--atlas-layout-auto, auto)"
         mt="lg"
         p="lg"
         bg="bg.workbench"
         borderRadius="workbench"
       >
-        <Heading as="h1" textStyle="workbenchTitle">
-          Atlas
-        </Heading>
-        <Text textStyle="helper" color="fg.muted" mt="xs">
-          Vận hành trường học
-        </Text>
+        <Flex align="flex-start" justify="space-between" gap="md">
+          <Box minW="var(--atlas-layout-zero, 0)">
+            <Heading as="h1" textStyle="workbenchTitle">
+              Atlas
+            </Heading>
+            <Text
+              textStyle="helper"
+              color="fg.muted"
+              mt="xs"
+              fontWeight="semibold"
+            >
+              CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO
+            </Text>
+          </Box>
+          <Image
+            src={thuongHaoLogo}
+            alt="Thượng Hảo"
+            boxSize={{ base: "64px", sm: "72px" }}
+            objectFit="contain"
+            flexShrink="0"
+          />
+        </Flex>
         {session.status === "loading" ||
         session.status === "configuration_error" ? (
           <Text role="status" mt="md">

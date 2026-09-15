@@ -39,6 +39,10 @@ const approvedLegacyBusinessModules = [
   "src/modules/atlas/procurement/procurementOperatorCopy",
   "src/modules/atlas/connection/atlasRpc",
 ];
+// Exact shared presentation assets approved for vNext reuse. Wildcards are
+// intentionally forbidden: non-vNext assets remain rejected unless separately
+// approved.
+const approvedVnextSharedAssets = new Set(["src/assets/thuong-hao-logo.jpg"]);
 // Application-to-technology composition only; normal vNext bridge rules are unchanged.
 const connectedRootModules = new Set([
   "react",
@@ -120,6 +124,7 @@ export function checkSources(
         vnext &&
         target.startsWith("src/") &&
         !target.startsWith("src/vnext/") &&
+        !approvedVnextSharedAssets.has(target) &&
         !(
           file.startsWith("src/vnext/atlas/bridges/") &&
           (!target.includes("/recipe-adjustments/") ||

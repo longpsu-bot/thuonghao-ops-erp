@@ -8,6 +8,7 @@ import type { AtlasVNextApis } from "../AtlasVNextApis";
 import { PlanningSourcesWorkbench } from "./PlanningSourcesWorkbench";
 import { ConfirmedNeedWorkbench } from "../planning-confirmed/ConfirmedNeedWorkbench";
 import type { ConfirmedNeedWorkbenchProps } from "../planning-confirmed/useConfirmedNeedWorkbench";
+import { atlasPrimaryTabList, atlasPrimaryTabTrigger } from "../AtlasTaskTabs";
 export function PlanningCapability(
   props: AtlasModuleExitProps & {
     authSubject: string;
@@ -36,9 +37,17 @@ export function PlanningCapability(
             active.current?.requestExit(() => setPhase(value));
         }}
       >
-        <Tabs.List aria-label="Công việc lập nhu cầu">
-          <Tabs.Trigger value="sources">Nguồn lập nhu cầu</Tabs.Trigger>
-          <Tabs.Trigger value="confirmed">Xác nhận nhu cầu</Tabs.Trigger>
+        <Tabs.List
+          aria-label="Giai đoạn lập nhu cầu"
+          mb="sm"
+          {...atlasPrimaryTabList}
+        >
+          <Tabs.Trigger value="sources" {...atlasPrimaryTabTrigger}>
+            Nguồn lập nhu cầu
+          </Tabs.Trigger>
+          <Tabs.Trigger value="confirmed" {...atlasPrimaryTabTrigger}>
+            Xác nhận nhu cầu
+          </Tabs.Trigger>
         </Tabs.List>
         <Box ref={content}>
           <Tabs.Content value="sources" p="var(--atlas-layout-zero, 0)">

@@ -47,7 +47,8 @@ it("shows safe connected context and the injected Vietnam date across UTC midnig
       </AtlasVNextShell>
     </AtlasVNextProvider>,
   );
-  expect(screen.getByText("Chủ nhật, 13/09/2026")).toBeInTheDocument();
+  expect(screen.getByText("Hôm nay: 13/09/2026")).toBeInTheDocument();
+  expect(screen.queryByText("Vận hành trường học")).not.toBeInTheDocument();
   expect(screen.getByText("operator@example.test")).toBeInTheDocument();
   expect(screen.queryByText(/Bản tham chiếu/)).not.toBeInTheDocument();
   expect(screen.queryByText(/10\/09\/2026/)).not.toBeInTheDocument();
