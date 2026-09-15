@@ -1,84 +1,78 @@
-# MASTER-DATA-REHEARSAL-IMPORT-01 — Task 1 Execution Checkpoint
+# MASTER-DATA-REHEARSAL-IMPORT-01 — Execution record
 
-**Approved baseline:** `fc5b3a002ea660f90f3fdd06282c4bf74fef067b` (Draft PR #290).
-**Implementation branch:** `feat/master-data-rehearsal-import-01`.
-**Status:** Task 1 implemented. The Product Owner approved the explicit `operator_actor_id` amendment; Task 2 core preview/apply now passes its local database tests. Recipe extension, runner and full certification remain in progress.
+**Approved design baseline:** `fc5b3a002ea660f90f3fdd06282c4bf74fef067b` (#290).
+**Implementation branch / Draft PR:** `feat/master-data-rehearsal-import-01` / #292.
+**Status:** Tasks 1–4 implemented and focused checks passed; full exact-head certification and real-source rehearsal status are recorded below as they become available.
 
-## Completed scope
+## Task 1 — immutable source contract
 
-The read-only extractor covers only the ten source relations listed in the approved plan. One fixed SELECT returns the source facts and read-only access proof from the approved OPS v1 project. The transport rejects redirection, unexpected source projects, missing full-source arrays, and insufficient evidence of complete read-only access. Existing read-only bypass-RLS access is checked for completeness; the extractor changes no role, privilege, policy or RLS setting.
+Added `ops-v1-master-snapshot-contract.mjs`, its tests, and the explicit source-export CLI. The fixed query reads only the ten approved OPS v1 master relations. Source IDs and exact decimal quantities are selected as text. It requires dedicated read-only role/table-privilege and unfiltered-source proof. It changes no source role, grant, RLS setting or business data.
 
-Source bigint identifiers and exact decimal quantities are selected as text. Normalization preserves inactive rows and reports invalid or missing references rather than filtering them. Recipe and BOM physical row IDs remain evidence; durable migration keys use Dish + School Type and Recipe + Ingredient respectively. Business fingerprints ignore physical Recipe/BOM row-ID churn, while the immutable snapshot checksum retains that changed evidence.
+Normalization preserves inactive roots and invalid records for explicit diagnostics. Recipe identity is Dish + School Type, line identity is Recipe + Ingredient. Physical source-row churn remains evidence but does not change business fingerprints. The reviewed Unit aliases converge `Kg`/`kg` to `kg` and `Hủ`/`Hũ` to `Hũ`; invalid tokens such as `123` remain blockers.
 
-The approved aliases `Kg`/`kg` converge to `kg`; `Hủ`/`Hũ` converge to `Hũ`. Raw-to-canonical aliases remain explicit evidence. Unknown values, including `123`, remain blockers. Nothing edits current Atlas Unit records.
+TDD evidence: missing-contract RED → 18 GREEN; file-export RED 2 → 20 GREEN; integrity RED 3 → 23 GREEN. Inherited source/local-status tests add 34, for 57 affected tests passed at the Task 1 checkpoint. Source-export tests use synthetic data.
 
-The CLI requires an explicit snapshot ID and output path, refuses to overwrite an existing file before fetching, verifies the snapshot checksum, and removes a partial output on a handled failure. It returns only counts/checksum/diagnostic totals to the console. It neither reads nor writes an Atlas target.
+## Approved execution-Actor correction
 
-## Files implemented
-
-- `scripts/ops-v1-master-snapshot-contract.mjs`
-- `scripts/ops-v1-master-snapshot-contract.test.mjs`
-- `scripts/extract-ops-v1-master-snapshot.mjs`
-- `package.json` — one extraction command and explicit format coverage; no dependency change.
-
-## Verification evidence
-
-- Existing source/local-status baseline: 2 files, 34 tests passed.
-- Initial contract RED: expected missing contract module.
-- First GREEN: 18 contract tests passed.
-- File-export RED: 2 expected missing-CLI failures, 18 tests passed.
-- File-export GREEN: 20 tests passed.
-- Integrity RED: 3 failures for physical duplicate IDs, unfiltered source proof and alias evidence, 20 tests passed.
-- Final focused GREEN: 3 files, 57 tests passed (23 new, 34 inherited).
-- Changed-file Prettier and `git diff --check`: passed.
-- All new fetch/normalization/export tests use synthetic data. No real OPS v1 full export, local database apply, or end-to-end rehearsal has been executed.
-- Exact-head GitHub CI status is recorded separately in the implementation PR; local focused tests are not a substitute for the required CI gate.
-
-## Execution-attribution omission — resolved by explicit Product approval
-
-The approved plan currently defines:
+The Product Owner approved the explicit private signature:
 
 ```sql
-atlas_legacy.preview_master_data_snapshot(snapshot jsonb)
-atlas_legacy.apply_master_data_snapshot(snapshot jsonb, expected_plan_checksum text)
+atlas_legacy.apply_master_data_snapshot(
+  snapshot jsonb,
+  expected_plan_checksum text,
+  operator_actor_id uuid
+)
 ```
 
-Neither the plan nor the snapshot contract specifies an Atlas execution actor. However, `20260719140821_pa_06e_h0a2_recipe_bom_immutable_reference_foundation.sql` requires non-null `recipe_versions.created_by_actor_id` and `recipe_line_revisions.created_by_actor_id`, with foreign keys to `atlas_core.actors`. Validation/release require corresponding actor and timestamp evidence. SQL role `postgres` alone does not identify an Atlas business actor.
+The Actor is required execution context outside the immutable source snapshot. The backend validates an existing ACTIVE Atlas Actor and stores actual attribution, database principal and execution time. Missing/inactive Actors and different-Actor exact replay fail closed. No Actor is guessed from the SQL role and no hosted Auth account or synthetic operator is created or borrowed.
 
-The existing RMVP-02B private adjustment importer explicitly validates `imported_by_actor_id` against an ACTIVE Atlas actor. This proves the attribution requirement is intentional; it does not authorize guessing an actor for the new importer. A staging synthetic operator must not be silently reused as a real migration actor.
+## Task 2 — repeatable core
 
-Recommended amendment, not implemented: keep the immutable source snapshot independent of the target and add a required private execution context to apply, including an explicit existing active Atlas `operator_actor_id`. Validate that context server-side under the privileged operator boundary, persist the actor with actual execution time/database principal, and bind replay semantics to that context. Preview remains non-writing and does not require invented target identities. Local tests may provision an explicitly synthetic fixture actor in a disposable target; no hosted Auth user or actor is created by this task.
+Added one version-controlled migration and pgTAP suite. Extended the existing typed crosswalk with catalog/eligibility FKs and the three planned continuity fields. Full target fingerprints, including non-versioned Units/catalogs, are stored in the existing batch reconciliation receipt rather than a new ETL table.
 
-The exact parameter/envelope and retry binding must be approved and added to the spec/plan before database-write implementation. No existing lifecycle check or foreign key may be weakened to work around the omission.
+Implemented deterministic non-writing preview, exact checksum/Actor-bound atomic apply, preserved root identity, explicit inactive relationship removal, non-destructive root absence, external target-drift detection and authoritative post-write readback.
 
-## Preserved boundaries
+TDD evidence: initial schema RED 8/9 failed as intended; 47 new core assertions GREEN. Inherited RMVP-01 plus core: 90/90 PASS. Tests ran only on the disposable local project.
 
-- Live OPS v1 writes: zero.
+## Task 3 — Dish / Recipe / BOM
+
+Added a second migration and Recipe suite. Current Recipes materialize through existing immutable lifecycle and line-revision constraints with actual import attribution. Source `is_locked` is never copied into fictitious Atlas history.
+
+A changed source physical ID alone creates no version. Composition changes create one successor with exact prior-version and line-revision links. Removed lines are explicit zero-quantity REMOVED revisions. Tombstones are retained through successive corrections so later reintroduction preserves stable line identity. The existing approved-Menu Dish-use predicate blocks base changes; locks also serialize actual commitment evidence.
+
+TDD evidence: initial full Recipe snapshot RED → 30 GREEN; correction/reintroduction and invalid-data coverage extended the Recipe suite to 37 assertions. Core + Recipe + inherited RMVP-02A: 126/126 PASS. A self-review found that source Dish Type IDs could be supplied with contradictory catalog codes; a dedicated regression failed before the correction and passed afterward. That regression is included in the final Recipe suite.
+
+## Task 4 — local runner and reporting
+
+Added explicit local preview/apply runner, deterministic text/JSON reporting, focused tests and a runbook. The runner requires `SUPABASE_WORKDIR`, exact disposable project `atlas-master-rehearsal-01`, loopback API/DB proof, an immutable input file, and an explicitly reviewed plan checksum plus Actor for apply. It creates no identity/account and has no hosted execution mode.
+
+Preview success is reported as `NOT_APPLIED`, never as migration acceptance. Only actual apply plus authoritative readback yields `REHEARSAL_ACCEPTED`. The runner never grants `CUTOVER_READY`. Human text reports omit raw free-form contact values; machine-readable reports remain private master-data evidence.
+
+TDD evidence: missing runner/report modules RED → 10 GREEN. Actual CLI rehearsal exposed the pinned Supabase CLI's array response rather than the older `rows` envelope. Two decoder regressions failed before the correction and passed afterward. Final runner/report count: 12 tests passed.
+
+## Actual disposable CLI rehearsal
+
+The independent local project uses ports 553xx and a separate Supabase work directory; the existing `thuonghao-ops-erp` stack remains untouched. Its migrations/tests point at this exact implementation worktree.
+
+Executed the real preview/apply/readback/replay runner against a clean full synthetic master snapshot, not mocked SQL. Explicit synthetic fixture Actor: `aa920000-0000-4000-8000-000000000001`.
+
+The first apply returned `COMPLETED` and reconciled; replay returned `REPLAYED` and reconciled. Authoritative counts after both commands: 1 School, 4 Ingredients, 1 Dish, 2 typed Recipes, 2 Recipe Versions, 3 line revisions, 1 import batch. Weekly Menus = 0 and Need Generation runs = 0. No duplicate root/version appeared on replay. Private local JSON/text evidence is retained outside Git.
+
+This certifies synthetic behavior only; it is not a real OPS v1 source rehearsal.
+
+## Real source and hosted boundary
+
+The local extraction process currently has no `ATLAS_STAGING_SUPABASE_ACCESS_TOKEN`. Connected SQL can inspect source metadata/data, but that connection runs as `postgres`, not the dedicated read-only extraction role. A role-switch probe was denied; no grant, role, policy or source row was changed. The importer is not weakened to accept fabricated read-only proof.
+
+A full real-source extraction and normalized dry-run require the approved dedicated read-only source transport. Until that is available, do not claim a real-source snapshot, current full reconciliation, or cutover readiness from synthetic evidence. Shared Staging is still excluded from all apply commands.
+
+## Safety
+
+- Live OPS v1 business/schema writes: zero.
 - Retool writes: zero.
 - Atlas Staging writes: zero.
-- No database migration created or applied.
-- No existing local Supabase stack reset/stopped; the pre-existing stack remains outside this checkpoint.
-- No operational-history import, released-fact rewrite, real Google-source configuration, or cutover.
-- Original parent checkout working files unchanged; work is isolated in the task worktree.
-- PR #286 and documentation PR #290 are not modified or merged by this checkpoint.
-
-**Gate:** `TASK_1_IMPLEMENTED — IMPORT_EXECUTION_ACTOR_CONTRACT_REQUIRED`.
-
-## Task 2 progress
-
-- Added the approved actor-bound private apply signature; no actorless overload. Missing/inactive Actors and different-Actor replay are rejected.
-- Added typed catalog/eligibility mappings and the three planned mapping-evidence fields.
-- Non-versioned drift fingerprints are stored in the existing batch reconciliation receipt; no separate ETL schema/table was added.
-- Implemented deterministic non-writing preview, actor-bound atomic apply, stable root identity, non-destructive root absence, explicit inactive relationship removal and authoritative readback.
-- RED: 8/9 schema assertions failed before the migration. GREEN: 47 new pgTAP assertions; inherited RMVP-01 + core total 90/90 passed.
-- Tests run against disposable local project `atlas-master-rehearsal-01`, ports 553xx, in a separate Supabase work directory. The original `thuonghao-ops-erp` stack is not reset or stopped.
-- The core deliberately rejects nonempty Recipe/Dish data until the Task 3 extension is installed. This is not yet a complete importer certification.
-
-## Task 3 progress
-
-- Replaced the core fail-closed Recipe extension hooks with typed Dish/Recipe/current-BOM planning and materialization.
-- Explicit source-row-ID churn creates no successor; quantity/membership change produces one immutable successor with exact line predecessors. Removed-line tombstones continue through intermediate corrections so reintroduction retains stable identity.
-- Uses the existing approved-Menu Dish-use predicate and actual lifecycle/lineage constraints. Locks also protect concurrent approval-snapshot insertion; no new persisted lock flag or operational fact.
-- Current imported versions validate/release with the explicitly supplied Actor and truthful import source evidence; v1 `is_locked` is not imported.
-- RED: unsupported full Recipe snapshot failed the intended assertion. GREEN: 37 new Recipe pgTAP assertions. New core + Recipe + inherited RMVP-02A total: 126/126 PASS.
-- Import runner and full real-source rehearsal/certification have not yet run at this checkpoint.
+- Executable migrations applied only to the disposable local database.
+- Existing local main stack not reset, stopped or mutated by the importer.
+- No operational-history import, released-fact rewrite or Google-source configuration.
+- PR #286 and documentation PR #290 not changed or merged.
+- Implementation changes remain on Draft PR #292; no merge is authorized.

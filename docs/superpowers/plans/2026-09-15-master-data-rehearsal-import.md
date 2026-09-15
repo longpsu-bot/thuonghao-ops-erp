@@ -343,7 +343,7 @@ Follow the temp-SQL pattern in `scripts/import-local-master-data-snapshot.mjs` a
 
 ```bash
 pnpm local:master-data:rehearsal:preview -- --file C:/secure/rehearsal/ops-v1-master.json
-pnpm local:master-data:rehearsal:apply -- --file C:/secure/rehearsal/ops-v1-master.json --apply --actor-id <existing-active-Atlas-actor-UUID>
+pnpm local:master-data:rehearsal:apply -- --file C:/secure/rehearsal/ops-v1-master.json --actor-id <existing-active-Atlas-actor-UUID> --plan-checksum <reviewed-plan-SHA256>
 ```
 
 The runner accepts only an explicit file and never fetches live OPS itself.
