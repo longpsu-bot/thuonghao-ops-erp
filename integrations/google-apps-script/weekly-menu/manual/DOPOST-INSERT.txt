@@ -1,0 +1,20 @@
+INSERT THESE TWO LINES AT THE START OF YOUR EXISTING doPost(e):
+
+  const atlasRead = maybeHandleAtlasWeeklyMenuRead_(e);
+  if (atlasRead !== null) return atlasRead;
+
+PLACEMENT EXAMPLE ONLY — DO NOT CREATE A SECOND doPost:
+
+function doPost(e) {
+  const atlasRead = maybeHandleAtlasWeeklyMenuRead_(e);
+  if (atlasRead !== null) return atlasRead;
+
+  // KEEP ALL YOUR EXISTING CODE BELOW EXACTLY AS IT IS:
+  try {
+    const props = PropertiesService.getScriptProperties();
+    // existing SYNC_SECRET check, school sync, dish sync, response, catch...
+  }
+  // ...rest of your existing function...
+}
+
+The full existing function is intentionally not replaced by this package.

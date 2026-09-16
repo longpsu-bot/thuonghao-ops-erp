@@ -137,22 +137,27 @@ async function fetchSyntheticGoogleMenu({
         const values = {
           SUPABASE_URL: apiUrl,
           SUPABASE_ANON_KEY: browserKey,
-          GOOGLE_SERVICE_ACCOUNT_JSON:
-            '{"client_email":"local-fixture@example.test","private_key":"not-used"}',
+          GOOGLE_APPS_SCRIPT_WEBAPP_URL:
+            "https://script.google.com/macros/s/local-fixture/exec",
+          GOOGLE_APPS_SCRIPT_SECRET: "local-synthetic-read-secret",
         };
         return values[name];
       },
     },
     now: () => new Date(`${weekStart}T03:00:00.000Z`),
-    getGoogleAccessToken: async () => ({
-      accessToken: "local-synthetic-google-token",
-    }),
     fetch: async (input, init) => {
       const url = String(input);
-      if (url.startsWith("https://sheets.googleapis.com/")) {
+      if (url.startsWith("https://script.google.com/")) {
         return new Response(
           JSON.stringify({
-            values: [
+            success: true,
+            contract_version: "ATLAS-WEEKLY-MENU-READ.v1",
+            request_id: JSON.parse(init.body).request_id,
+            week_start: weekStart,
+            spreadsheet_id: "local-synthetic-spreadsheet-id",
+            sheet_name: `Tuần ${weekStart.split("-").reverse().join("-")}`,
+            range: `'Tuần ${weekStart.split("-").reverse().join("-")}'!A3:I500`,
+            rows: [
               ["Thứ", "Ngày", "Tên trường", dishType.dish_type_name],
               ["Thứ Hai", weekStart, school.school_name, dish.dish_name],
             ],

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import { createGoogleSyncHandler } from "./index";
 
@@ -10,7 +11,7 @@ const source = {
   source_name: "Synthetic weekly menu",
   spreadsheet_id: "synthetic-spreadsheet",
   sheet_name_pattern: "Tuần {DD-MM-YYYY}",
-  range_a1_template: "'{sheet}'!A3:Z500",
+  range_a1_template: "'{sheet}'!A3:I500",
   source_status: "ACTIVE",
   display_order: 1,
   version: 1,
@@ -40,9 +41,9 @@ function environment(hasCredential = true) {
     SUPABASE_URL: "http://supabase.test",
     SUPABASE_ANON_KEY: "test-browser-key",
   };
-  if (hasCredential)
-    values.GOOGLE_SERVICE_ACCOUNT_JSON =
-      '{"client_email":"fixture@example.test","private_key":"not-used"}';
+  values.GOOGLE_APPS_SCRIPT_WEBAPP_URL =
+    "https://script.google.com/macros/s/synthetic-deployment/exec";
+  if (hasCredential) values.GOOGLE_APPS_SCRIPT_SECRET = "test-webapp-secret";
   return { get: (name: string) => values[name] };
 }
 
@@ -55,7 +56,14 @@ function json(value: unknown, status = 200) {
 
 function successfulFetch(
   googleResponse: Response = json({
-    values: [
+    success: true,
+    contract_version: "ATLAS-WEEKLY-MENU-READ.v1",
+    request_id: correlationId,
+    week_start: "2026-07-27",
+    spreadsheet_id: source.spreadsheet_id,
+    sheet_name: "Tuần 27-07-2026",
+    range: "'Tuần 27-07-2026'!A3:I500",
+    rows: [
       ["Tên trường", "Ngày", "Món canh"],
       ["school-a", "2026-07-27", "dish-a"],
     ],
@@ -66,7 +74,7 @@ function successfulFetch(
     if (url.endsWith("/auth/v1/user")) return json({ id: "user-1" });
     if (url.includes("/rpc/get_planning_inputs_workbench"))
       return json({ success: true, google_connector_source: source });
-    if (url.startsWith("https://sheets.googleapis.com/")) return googleResponse;
+    if (url.startsWith("https://script.google.com/")) return googleResponse;
     throw new Error(`Unexpected fetch: ${url}`);
   });
 }
@@ -78,7 +86,6 @@ function handler(fetchMock = successfulFetch(), hasCredential = true) {
       fetch: fetchMock,
       env: environment(hasCredential),
       now: () => new Date("2026-07-27T03:00:00.000Z"),
-      getGoogleAccessToken: async () => ({ accessToken: "test-google-token" }),
     }),
   };
 }
@@ -169,7 +176,13 @@ describe("atlas-weekly-menu-google-sync", () => {
 
   it("classifies a missing weekly sheet safely", async () => {
     const { handle } = handler(
-      successfulFetch(json({ error: { message: "not exposed" } }, 404)),
+      successfulFetch(
+        json({
+          success: false,
+          error_code: "WEEKLY_SHEET_MISSING",
+          message: "not exposed",
+        }),
+      ),
     );
     const response = await handle(request());
     expect(await response.json()).toMatchObject({
@@ -199,7 +212,7 @@ describe("atlas-weekly-menu-google-sync", () => {
         source_code: "synthetic-menu",
         source_name: "Synthetic weekly menu",
         sheet_name: "Tuần 27-07-2026",
-        range: "'Tuần 27-07-2026'!A3:Z500",
+        range: "'Tuần 27-07-2026'!A3:I500",
       },
       fetched_at: "2026-07-27T03:00:00.000Z",
       rows: [
@@ -219,12 +232,8 @@ describe("atlas-weekly-menu-google-sync", () => {
         method: "POST",
       },
       {
-        url:
-          "https://sheets.googleapis.com/v4/spreadsheets/" +
-          "synthetic-spreadsheet/values/" +
-          encodeURIComponent("'Tuần 27-07-2026'!A3:Z500") +
-          "?majorDimension=ROWS",
-        method: "GET",
+        url: "https://script.google.com/macros/s/synthetic-deployment/exec",
+        method: "POST",
       },
     ]);
   });
@@ -236,7 +245,7 @@ describe("atlas-weekly-menu-google-sync", () => {
       .mockImplementation(() => undefined);
     const { handle } = handler(successfulFetch(json({}, 500)));
     const responseText = await (await handle(request())).text();
-    expect(responseText).not.toContain("test-google-token");
+    expect(responseText).not.toContain("test-webapp-secret");
     expect(responseText).not.toContain("fixture@example.test");
     expect(log).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();

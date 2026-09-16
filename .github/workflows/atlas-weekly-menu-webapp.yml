@@ -1,0 +1,69 @@
+name: Atlas Weekly Menu Web App Shadow
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact certified current-main SHA
+        required: true
+        type: string
+      spreadsheet_id:
+        description: Existing owner-approved Weekly Menu spreadsheet
+        required: true
+        type: string
+      week_start:
+        description: Monday ISO date for read and preview only
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: atlas-weekly-menu-webapp-staging
+  cancel-in-progress: false
+jobs:
+  shadow:
+    name: Deploy reader, configure source, shadow fetch and preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    steps:
+      - name: Check out exact approved commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Require exact current main before repository execution
+        env:
+          APPROVED_COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$APPROVED_COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$APPROVED_COMMIT_SHA"
+          test "$(git rev-parse origin/main)" = "$APPROVED_COMMIT_SHA"
+          test -z "$(git status --porcelain)"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Deploy and verify read-only Weekly Menu integration
+        env:
+          APPROVED_COMMIT_SHA: ${{ inputs.commit_sha }}
+          ATLAS_WEEKLY_MENU_SPREADSHEET_ID: ${{ inputs.spreadsheet_id }}
+          ATLAS_SHADOW_WEEK: ${{ inputs.week_start }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_WEEKLY_MENU_WEBAPP_URL: ${{ secrets.ATLAS_WEEKLY_MENU_WEBAPP_URL }}
+          ATLAS_WEEKLY_MENU_WEBAPP_SECRET: ${{ secrets.ATLAS_WEEKLY_MENU_WEBAPP_SECRET }}
+          SUPABASE_TELEMETRY_DISABLED: "1"
+        run: node scripts/deploy-atlas-weekly-menu-webapp.mjs
