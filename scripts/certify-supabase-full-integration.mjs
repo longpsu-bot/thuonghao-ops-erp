@@ -34,6 +34,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "pa_05f_dispatch_setup_command_family.sql",
   "rmvp_01_atlas_master_data.sql",
   "master_data_rehearsal_import.sql",
+  "atlas_staging_master_load.sql",
   "rmvp_02a_connected_recipes_bom.sql",
   "master_data_rehearsal_recipe_import.sql",
   "rmvp_02b_recipe_adjustments_effective_bom.sql",
@@ -86,19 +87,24 @@ function pnpm(...args) {
 }
 
 const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
-  file === "purchase_review_confirm_release.sql"
+  file === "atlas_staging_master_load.sql"
     ? Object.freeze({
         command: "node",
-        args: Object.freeze(["scripts/test-local-purchase-review.mjs", file]),
+        args: Object.freeze(["scripts/test-local-staging-master-load.mjs"]),
       })
-    : pnpm(
-        "exec",
-        "supabase",
-        "test",
-        "db",
-        `supabase/tests/${file}`,
-        "--local",
-      ),
+    : file === "purchase_review_confirm_release.sql"
+      ? Object.freeze({
+          command: "node",
+          args: Object.freeze(["scripts/test-local-purchase-review.mjs", file]),
+        })
+      : pnpm(
+          "exec",
+          "supabase",
+          "test",
+          "db",
+          `supabase/tests/${file}`,
+          "--local",
+        ),
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([

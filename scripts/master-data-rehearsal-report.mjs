@@ -76,6 +76,24 @@ export function formatMasterDataRehearsalReport({
     ([a], [b]) => compare(a, b),
   ))
     output.push(`  ${text(code)}: ${count}`);
+
+  const reviewedCodes = new Set([
+    "REVIEWED_TEST_ARTIFACT_IGNORED",
+    "REVIEWED_SOURCE_CORRECTION",
+    "MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO",
+    "INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED",
+  ]);
+  const reviewedDecisionCounts = new Map();
+  for (const issue of issues.filter((row) => reviewedCodes.has(row.code)))
+    reviewedDecisionCounts.set(
+      issue.code,
+      (reviewedDecisionCounts.get(issue.code) ?? 0) + 1,
+    );
+  output.push("", "Reviewed source decisions");
+  for (const [code, count] of [...reviewedDecisionCounts.entries()].sort(
+    ([a], [b]) => compare(a, b),
+  ))
+    output.push(`  ${text(code)}: ${count}`);
   for (const [title, rows] of [
     ["Blockers", blockerRows],
     ["Target drift", issues.filter((i) => i.code === "TARGET_DRIFT")],

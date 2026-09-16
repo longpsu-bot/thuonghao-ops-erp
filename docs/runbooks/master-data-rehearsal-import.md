@@ -62,7 +62,7 @@ Use `--json` for the machine-readable plan, source counts, actions and issues. J
 
 A successful preview prints `Gate: NOT_APPLIED`. This is a diagnostic statement, not a new persisted business lifecycle or import certification. A blocked preview prints `REJECTED`, exits with code 2 and never calls apply.
 
-Review every `BLOCKED`, `TARGET_DRIFT`, `MISSING_FROM_SOURCE`, `REMOVE_RELATIONSHIP` and `SOURCE_ONLY_UNMAPPED` entry. The design-time `Deact Test` / Unit `123` cluster is an example of a legitimate rejection; current staff corrections may change which blockers actually occur. Counts in documentation are observations, not hardcoded filters.
+Review every `BLOCKED`, `TARGET_DRIFT`, `MISSING_FROM_SOURCE`, `REMOVE_RELATIONSHIP` and `SOURCE_ONLY_UNMAPPED` entry. Reviewed source decisions are also reported explicitly: current `Deact Test` rows are an exact owner-approved exclusion, Ingredient `903 / B?t m?` is an ID-and-name-guarded lifecycle correction, and null School attendance defaults resolve to zero with INFO evidence. These are bounded decisions, not generic filters. Counts in documentation are observations, not hardcoded assumptions.
 
 ## 5. Apply the exact reviewed plan with an explicit Actor
 
@@ -103,3 +103,15 @@ Synthetic tests certify implementation behavior, not the quality of the actual v
 ## Final boundary
 
 This runner never grants `CUTOVER_READY` or hosted-write authority. Shared Staging rehearsal requires separate approval, an explicit fixture-isolation/canonical-Unit plan, and real data reconciliation. Final refresh requires a fresh immutable source snapshot in the agreed master-data freeze window. PR #286 and the real Google Weekly Menu source remain outside this task.
+
+## Authorized shared Staging copy (16/09/2026)
+
+The owner separately authorized **ATLAS-STAGING-MASTER-LOAD-01** to populate the actual shared Atlas Staging now. This does not change the local-only runner: the new **Atlas Staging Master Data Load** manual workflow is the only hosted load entrypoint. It uses certified exact current `main`, the protected `atlas-staging` environment, read-only source extraction, and explicit target/apply inputs. Apply is false by default.
+
+Deploy repository migrations first using the existing guarded Staging deployment workflow. Then run the hosted load workflow first in preview mode and subsequently with `apply=true` and `target_project_ref=rnzxmxiiqgtdevzregff`. The hosted command is `pnpm atlas:staging:master:load -- --commit-sha <exact-main>`; add `--apply --target-project-ref rnzxmxiiqgtdevzregff` only for the authorized copy.
+
+The session-local package adopts prior reference-import roots only when source-derived codes, old UUIDv5 identities and School/Location links prove their origin. It stores before-values in a truthful private adoption receipt, preserves Atlas IDs, and generates a technical MIGRATION Actor with no Auth identity or runtime permissions. Preview rolls back all preparation. Apply rechecks the exact preview and performs preparation plus the ordinary private master importer atomically; an explicit replay verifies idempotency. Unmanaged master fixtures and existing Planning/Procurement/Dispatch/Warehouse facts are fingerprinted and preserved. No reset, truncate or operational-history copy is performed.
+
+The old misspelled Hủ Unit is retained inactive only after current Ingredient references converge to Hũ. Existing immutable operational references are not rewritten. The workflow verifies catalogue counts through authenticated Atlas read RPCs with the existing protected test account, never a service key. Output contains summaries and checksums, not raw source snapshots or contact fields.
+
+Rehearsal data remains separate from production acceptance. The future final v1 refresh must account for test-created approved Menu/Recipe commitments; the current import does not bypass those guards and does not merge PR #286.

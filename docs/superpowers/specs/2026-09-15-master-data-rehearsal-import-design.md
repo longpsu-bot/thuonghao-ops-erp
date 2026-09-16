@@ -96,7 +96,7 @@ BOM inspection found:
 - no duplicate `(recipe_id, ingredient_id)` pair;
 - 1,319 of 1,320 Recipe rows have at least one BOM line.
 
-The one no-BOM Recipe is current source Recipe `3362`, Dish `1983` (`Deact Test`), School Type `2`. The sibling Recipe `3361` for the same Dish/School Type family references inactive Ingredient `1170` (`Deact test`) using purchase Unit text `123`. This is a **source-data blocker cluster**, not an importer exception to silently normalize away.
+The one no-BOM Recipe is current source Recipe `3362`, Dish `1983` (`Deact Test`), School Type `2`. The sibling Recipe `3361` references inactive Ingredient `1170` (`Deact test`) using purchase Unit text `123`. On 16/09/2026 the owner explicitly classified Dish `1983` and Ingredient `1170` as a test-artifact cluster that must not be copied. The normalizer therefore excludes the exact reviewed roots and dependent Recipe/BOM rows with INFO evidence, and fails closed if either reviewed source ID is later reused for a different business object or if Ingredient `1170` escapes the reviewed Dish cluster.
 
 ### 3.2 Catalog reconciliation observed now
 
@@ -134,7 +134,7 @@ Approved canonical aliases are:
 
 Therefore Atlas must have only one kilogram Unit (`kg`) and one jar Unit spelling (`Hũ`) for these source values. The pre-cutover Atlas `Hủ` Unit is non-canonical and must be remapped/inactivated during migration preparation before authority cutover.
 
-The source token `123` is not a Unit alias. It occurs on inactive Ingredient `1170 / Deact test` and one BOM row for active Dish `1983 / Deact Test`; it is a current source-data blocker until staff corrects or explicitly removes that test artifact from current master truth.
+The source token `123` is not a Unit alias. Its current occurrences belong only to the reviewed `Deact Test` artifact cluster, which is explicitly excluded from migration. Any occurrence of `123` outside that exact reviewed exclusion remains a blocker.
 
 ### 3.4 Atlas Staging current target
 
@@ -280,7 +280,7 @@ For each `public.schools.id = N`:
 - `delivery_info` → Delivery Location `address_text`.
 - `default_students_num` → `default_student_portions`.
 - `default_teacher_num` → `default_teacher_portions`.
-- missing active-School attendance defaults remain blockers; the importer never invents zero attendance from an unknown source value.
+- a null School attendance default is materialized as `0` with `MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO` INFO evidence, per the owner decision of 16/09/2026; malformed or negative non-null values remain blockers.
 - active `display_order` is preserved.
 - an INACTIVE source School with `display_order = null` materializes as Atlas `display_order = 0` and retains an INFO diagnostic that the target value was generated; an ACTIVE School with a missing/invalid display order remains blocked.
 - `is_active` → ACTIVE/INACTIVE.
@@ -298,6 +298,16 @@ Issuer address for both accepted mappings:
 `ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam`
 
 A null `contract_type` is retained as a paired-null Atlas issuer configuration plus INFO evidence; master-data import may proceed, but PXK/School Dispatch release remains fail-closed until an issuer is configured. Any other non-null `contract_type` is a blocker.
+
+### 7.1A Owner-reviewed source resolutions (16/09/2026)
+
+These are explicit migration facts, not fuzzy cleanup rules:
+
+- Active Dish names are type-scoped. Source Dish ID remains the stable migration identity; the same display name may coexist across different Dish Types. Same-name duplicates inside one active Dish Type remain blockers. Current pairs `1436/1984` (`Cà ri gà + bánh mì`) and `1814/1865` (`Sâm bổ lượng`) are preserved as separate identities because their Dish Types and Recipe compositions differ.
+- Weekly Menu workbook/Google resolution must resolve a Dish name inside the current Dish Type/menu-slot column; it must not choose the first global name match.
+- Ingredient `903 / Bột mì` is an explicit reviewed lifecycle correction to ACTIVE for migration. The decision is guarded by source ID + expected name and retained as INFO evidence; if the ID is repurposed the importer blocks rather than applying the correction.
+- Dish `1983 / Deact Test` and Ingredient `1170 / Deact test` are explicit reviewed test-artifact exclusions. All Recipes/BOM rows under Dish `1983` are omitted. Ingredient `1170` may be omitted only while it has no reference outside that excluded Dish cluster.
+- Null School student/teacher defaults resolve to `0` with INFO evidence. Non-null malformed/negative values still block.
 
 ### 7.2 School Types
 
@@ -330,7 +340,7 @@ Explicit current aliases:
 
 Multiple raw source spellings may map to one canonical source Unit only when listed in this reviewed alias table. Fuzzy matching is prohibited. The importer must not create a second kilogram Unit or retain `Hủ` as a separate active Unit.
 
-Unknown tokens such as current source `123` are blockers, not new Units.
+Unknown Unit tokens remain blockers, not new Units. The current `123` rows are absent from the canonical migration snapshot only because their exact reviewed `Deact Test` roots are explicitly excluded.
 
 ### 7.4 Ingredient classifications
 
@@ -389,7 +399,7 @@ Dish Type mapping uses the explicit six-row table in section 3.2. It is persiste
 - active/inactive state;
 - stable source-derived technical code, e.g. `v1-dish-<legacy_id>`.
 
-No Dish is merged by name after a source mapping exists.
+Dish display names are unique only within Dish Type for migration/Planning resolution. The same display name may coexist across different Dish Types; source `dishes.id` remains identity and no Dish is merged by name.
 
 ### 7.9 Recipe root identity
 
@@ -437,7 +447,7 @@ For each composition line:
 
 If a previously imported Ingredient line disappears from a declared full composition for the same stable Recipe root, the importer materializes the existing Atlas `REMOVED` line-revision semantics; it does not delete immutable Recipe Line history.
 
-A current Recipe root with zero composition lines is a blocker. Source Recipe `3362` currently demonstrates this condition.
+A current Recipe root with zero composition lines is a blocker unless its entire Dish root is an explicit reviewed migration exclusion. Source Recipe `3362` is excluded only because it belongs to reviewed test Dish `1983 / Deact Test`; no generic empty-Recipe exception exists.
 
 ## 8. Persistent identity and repeatability
 
@@ -518,7 +528,7 @@ A full planned snapshot apply is one controlled migration transaction after all 
 
 If any `BLOCKED` item would make the target ambiguous or invalid, target business rows are not partially written. Rejected-batch evidence may still be recorded privately as in RMVP-01.
 
-This means the current `Deact Test` blocker cluster is expected to make the first full preview `REJECTED` until staff corrects it or an explicit reviewed source-data disposition is made. That is desirable evidence, not a reason to weaken validation.
+The `Deact Test` cluster now has an explicit reviewed source-data disposition: do not copy Dish `1983`, Ingredient `1170`, or dependent Recipe/BOM rows. The exclusion is exact, evidence-bearing, and guarded against ID reuse/scope escape; validation remains fail-closed for every other source row.
 
 ### 10.2 Cascade means master dependency cascade only
 
