@@ -141,7 +141,20 @@ export async function runAtlasStagingMasterLoad({
     applied.operational_data_unchanged !== true
   )
     throw new Error(
-      `STAGING_APPLY_FAILED:${/^[A-Z_]+$/.test(applied.error_code ?? "") ? applied.error_code : "READBACK"}`,
+      `STAGING_APPLY_FAILED:${/^[A-Z_]+$/.test(applied.error_code ?? "") ? applied.error_code : "READBACK"}${[
+        "constraint_state",
+        "apply_phase",
+        "constraint_schema",
+        "constraint_table",
+        "constraint_name",
+      ]
+        .map((key) => applied[key])
+        .filter(
+          (value) =>
+            typeof value === "string" && /^[A-Za-z0-9_]{1,63}$/.test(value),
+        )
+        .map((value) => `:${value}`)
+        .join("")}`,
     );
   const replay = await execute(true, preview.plan_checksum);
   if (

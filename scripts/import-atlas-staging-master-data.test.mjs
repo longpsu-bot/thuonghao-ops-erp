@@ -298,3 +298,41 @@ describe("authenticated Atlas visibility", () => {
     ).rejects.toThrow(/VISIBLE_MASTER_COUNT/);
   });
 });
+
+describe("safe apply failure diagnostics", () => {
+  it("reports constraint metadata without upstream messages or retrying the write", async () => {
+    let calls = 0;
+    await expect(
+      runAtlasStagingMasterLoad({
+        commitSha: "a".repeat(40),
+        apply: true,
+        targetConfirmation: target,
+        environment: env,
+        verifyCheckout: () => "a".repeat(40),
+        extractSnapshot: async () => fixture(),
+        executeTarget: async () =>
+          JSON.stringify([
+            {
+              result:
+                ++calls === 1
+                  ? preview
+                  : {
+                      success: false,
+                      error_code: "APPLY_INVARIANT_FAILURE",
+                      constraint_state: "23505",
+                      constraint_schema: "atlas_admin",
+                      constraint_table: "dishes",
+                      constraint_name: "dishes_active_normalized_name_key",
+                      apply_phase: "RECIPES",
+                      message: "SECRET source values",
+                      detail: "SECRET source values",
+                    },
+            },
+          ]),
+      }),
+    ).rejects.toThrow(
+      "STAGING_APPLY_FAILED:APPLY_INVARIANT_FAILURE:23505:RECIPES:atlas_admin:dishes:dishes_active_normalized_name_key",
+    );
+    expect(calls).toBe(2);
+  });
+});
