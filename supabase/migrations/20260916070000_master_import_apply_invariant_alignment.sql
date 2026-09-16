@@ -1,6 +1,8 @@
 -- Repair approved typed Dish identity and transactional supplier-priority replacement.
 -- Keep existing index names/ACLs/validation; no data edits, disabled checks or new API.
 set role atlas_owner;
+do $typed_dish_index$
+begin
 lock table atlas_admin.dishes in share row exclusive mode;
 drop index atlas_admin.dishes_active_normalized_name_key;
 create unique index dishes_active_normalized_name_key
@@ -8,6 +10,8 @@ create unique index dishes_active_normalized_name_key
   where dish_status='ACTIVE';
 comment on index atlas_admin.dishes_active_normalized_name_key is
   'Active normalized Dish names are unique inside their Dish Type; unclassified null types share one uniqueness scope.';
+
+end $typed_dish_index$;
 
 reset role;
 do $align_runtime$

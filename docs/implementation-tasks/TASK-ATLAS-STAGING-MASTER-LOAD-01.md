@@ -58,3 +58,5 @@ The correction aligns the existing named Dish index and create/update/reactivati
 Private failures now retain bounded SQLSTATE/constraint/table/phase metadata through the Staging wrapper and CLI. Raw SQL messages, detail, data, secrets and stack traces are not logged. No blind retry occurs after failure.
 
 Regression evidence includes real typed-Dish apply + BOM readback, same-type physical rejection, browser typed creation, priority swap with stable relationship IDs, and forced-check rollback/redaction. The authoritative production baseline and released document/Recipe guards remain unchanged. This is a repair of the approved import, not new cutover authorization.
+
+The first repair CI exposed Supabase CLI statement-by-statement migration execution: a top-level LOCK required an explicit transaction. Index lock/drop/rebuild are now one atomic DO statement, also tested without an outer transaction. The local synthetic volume rehearsal separately applied and reconciled 659 Dishes, 1,318 Recipes and 1,977 lines, then rolled back; it does not substitute for actual hosted reconciliation.
