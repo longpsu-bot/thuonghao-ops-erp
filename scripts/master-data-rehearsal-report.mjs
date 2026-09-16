@@ -64,8 +64,20 @@ export function formatMasterDataRehearsalReport({
     compare(a, b),
   ))
     output.push(`  ${text(key)}: ${count}`);
+  const blockerRows = issues.filter((issue) => issue.severity === "BLOCKER");
+  const blockerCategories = new Map();
+  for (const issue of blockerRows)
+    blockerCategories.set(
+      issue.code,
+      (blockerCategories.get(issue.code) ?? 0) + 1,
+    );
+  output.push("", "Blocker categories");
+  for (const [code, count] of [...blockerCategories.entries()].sort(
+    ([a], [b]) => compare(a, b),
+  ))
+    output.push(`  ${text(code)}: ${count}`);
   for (const [title, rows] of [
-    ["Blockers", issues.filter((i) => i.severity === "BLOCKER")],
+    ["Blockers", blockerRows],
     ["Target drift", issues.filter((i) => i.code === "TARGET_DRIFT")],
     [
       "Missing roots",
@@ -90,10 +102,19 @@ export function formatMasterDataRehearsalReport({
     ],
   ]) {
     output.push("", `${title}: ${rows.length}`);
-    for (const row of [...rows].sort((a, b) =>
+    const sortedRows = [...rows].sort((a, b) =>
       compare(issueLabel(a), issueLabel(b)),
-    ))
-      output.push(`  ${issueLabel(row)}`);
+    );
+    const visibleRows =
+      title === "Source-only fields" ? sortedRows.slice(0, 20) : sortedRows;
+    for (const row of visibleRows) output.push(`  ${issueLabel(row)}`);
+    if (
+      title === "Source-only fields" &&
+      sortedRows.length > visibleRows.length
+    )
+      output.push(
+        `  … ${sortedRows.length - visibleRows.length} more source-only fields omitted from console output`,
+      );
   }
   output.push("", "Units");
   for (const alias of [...(snapshot.unit_alias_evidence ?? [])].sort((a, b) =>

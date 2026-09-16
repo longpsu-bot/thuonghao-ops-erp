@@ -340,12 +340,39 @@ export function normalizeOpsV1MasterSnapshot(
     for (const field of ["default_students_num", "default_teacher_num"])
       if (!Number.isSafeInteger(row[field]) || row[field] < 0)
         diag("INVALID_SCHOOL_DEFAULT", "schools", key, field);
-    if (!Number.isSafeInteger(row.display_order) || row.display_order < 0)
+    let targetDisplayOrder = row.display_order;
+    if (row.display_order == null && status === "INACTIVE") {
+      targetDisplayOrder = 0;
+      diag(
+        "INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED",
+        "schools",
+        key,
+        "display_order",
+        null,
+        "INFO",
+      );
+    } else if (
+      !Number.isSafeInteger(row.display_order) ||
+      row.display_order < 0
+    ) {
       diag("INVALID_DISPLAY_ORDER", "schools", key, "display_order");
+    }
     if (!text(row.delivery_info))
       diag("MISSING_DELIVERY_ADDRESS", "schools", key, "delivery_info");
-    if (!ISSUERS.has(row.contract_type))
+    if (row.contract_type == null) {
+      diag(
+        "MISSING_ISSUER_CONFIGURATION",
+        "schools",
+        key,
+        "contract_type",
+        null,
+        "INFO",
+      );
+    } else if (!ISSUERS.has(row.contract_type)) {
       diag("UNKNOWN_ISSUER", "schools", key, "contract_type");
+    }
+    const issuerName = ISSUERS.get(row.contract_type) ?? null;
+    const issuerAddress = issuerName ? ISSUER_ADDRESS : null;
     records.customers.push({
       legacy_id: customer,
       customer_code: `v1-customer-${key}`,
@@ -371,11 +398,11 @@ export function normalizeOpsV1MasterSnapshot(
       school_code: `v1-school-${key}`,
       school_name: name,
       school_status: status,
-      display_order: row.display_order,
+      display_order: targetDisplayOrder,
       default_student_portions: row.default_students_num,
       default_teacher_portions: row.default_teacher_num,
-      dispatch_document_issuer_name: ISSUERS.get(row.contract_type) ?? null,
-      dispatch_document_issuer_address: ISSUER_ADDRESS,
+      dispatch_document_issuer_name: issuerName,
+      dispatch_document_issuer_address: issuerAddress,
     });
     sourceOnly("schools", key, "region_code", row.region_code);
   }

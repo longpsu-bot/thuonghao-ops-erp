@@ -280,7 +280,9 @@ For each `public.schools.id = N`:
 - `delivery_info` → Delivery Location `address_text`.
 - `default_students_num` → `default_student_portions`.
 - `default_teacher_num` → `default_teacher_portions`.
-- `display_order` preserved.
+- missing active-School attendance defaults remain blockers; the importer never invents zero attendance from an unknown source value.
+- active `display_order` is preserved.
+- an INACTIVE source School with `display_order = null` materializes as Atlas `display_order = 0` and retains an INFO diagnostic that the target value was generated; an ACTIVE School with a missing/invalid display order remains blocked.
 - `is_active` → ACTIVE/INACTIVE.
 - `school_type_id` resolves through the persistent School Type mapping.
 
@@ -295,7 +297,7 @@ Issuer address for both accepted mappings:
 
 `ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam`
 
-Any other non-null `contract_type` is a blocker.
+A null `contract_type` is retained as a paired-null Atlas issuer configuration plus INFO evidence; master-data import may proceed, but PXK/School Dispatch release remains fail-closed until an issuer is configured. Any other non-null `contract_type` is a blocker.
 
 ### 7.2 School Types
 
