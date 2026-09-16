@@ -40,3 +40,11 @@ Results are appended after exact-head certification and hosted execution.
 - Source corrections retain their earlier RED/GREEN evidence; hosted runner and workflow failed before implementation, and the SQL package demonstrated the expected missing-adoption fingerprint failures before its additive compatibility migration.
 - The integration command assertion is now exactly 92 (91 existing + one new package test); no prior command was removed. Full Integration is required in GitHub before deployment.
 - No hosted write has occurred at this pre-push checkpoint.
+
+### Full-source transport correction
+
+The first hosted preview (`35057598020`) stopped with Management API HTTP 413 before target execution. Schema deployment succeeded separately (`35057526128`), bringing Staging to 78 repository migrations; master mappings remain zero. Synthetic payloads did not exercise the actual request size.
+
+The target now uses PostgreSQL wire transport through the exact CLI-linked Staging session pooler, preserving the same session-local SQL, preview rollback, checksum-bound apply and readback. The source still uses the Management API read-only endpoint and protected PAT. The already-existing protected database password remains inside GitHub Actions, never a process argument or log. SQL is streamed to `psql` stdin. TLS uses `verify-full` with the system roots plus the publicly distributed Supabase CA, downloaded by HTTPS and SHA-256 pinned. There is no automatic HTTP fallback, chunked partial apply, retry on uncertain writes, new database object or changed migration rule.
+
+Focused transport/regression checks: 118/118 passed (4 new tests include a 3 MiB SQL payload, wrong-target/link rejection, secret-safe error handling and TLS/argument safety). Required GitHub certification follows on the transport-fix PR. No further hosted master write has occurred at this checkpoint.

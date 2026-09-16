@@ -60,6 +60,25 @@ jobs:
           cache: pnpm
       - name: Install frozen dependencies
         run: pnpm install --frozen-lockfile
+      - name: Prepare verified TLS and exact Staging PostgreSQL link
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          EXPECTED_PROJECT: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_PROJECT" = "rnzxmxiiqgtdevzregff"
+          command -v psql >/dev/null
+          ca="$RUNNER_TEMP/supabase-root-ca.crt"
+          curl --fail --silent --show-error --proto '=https' \
+            'https://supabase-downloads.s3.ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt' \
+            --output "$ca"
+          echo "700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7  $ca" | sha256sum --check --status
+          bundle="$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
+          cat /etc/ssl/certs/ca-certificates.crt "$ca" > "$bundle"
+          echo "ATLAS_STAGING_CA_BUNDLE=$bundle" >> "$GITHUB_ENV"
+          pnpm exec supabase link --project-ref "$EXPECTED_PROJECT" >/dev/null
       - name: Snapshot, adopt existing IDs, preview, apply and verify
         env:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
@@ -71,6 +90,7 @@ jobs:
           ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
           ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
           ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
         shell: bash
         run: |
           set -euo pipefail
@@ -79,3 +99,9 @@ jobs:
             args+=(--apply --target-project-ref "$CONFIRMED_TARGET")
           fi
           pnpm atlas:staging:master:load -- "${args[@]}"
+      - name: Remove transient linked metadata and public CA bundle
+        if: always()
+        shell: bash
+        run: |
+          rm -f supabase/.temp/pooler-url supabase/.temp/project-ref
+          rm -f "$RUNNER_TEMP/supabase-root-ca.crt" "$RUNNER_TEMP/atlas-postgres-ca-bundle.pem"
