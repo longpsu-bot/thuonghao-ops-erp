@@ -1,10 +1,8 @@
+import { executeAtlasStagingPostgres } from "./atlas-staging-postgres-transport.mjs";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  executeAtlasStagingManagementSql,
-  redactAtlasStagingDiagnostic,
-} from "./atlas-staging-contract.mjs";
+import { redactAtlasStagingDiagnostic } from "./atlas-staging-contract.mjs";
 import { validateV1ReferenceImportRequest } from "./atlas-staging-v1-reference-target.mjs";
 import { verifyExactMainCheckout } from "./import-atlas-staging-v1-reference-snapshot.mjs";
 import {
@@ -80,7 +78,7 @@ export async function runAtlasStagingMasterLoad({
   cwd = process.cwd(),
   verifyCheckout = verifyExactMainCheckout,
   extractSnapshot = extractOpsV1MasterSnapshot,
-  executeTarget = executeAtlasStagingManagementSql,
+  executeTarget,
   fetchImpl = fetch,
 } = {}) {
   const authority = validateV1ReferenceImportRequest({
@@ -101,9 +99,12 @@ export async function runAtlasStagingMasterLoad({
     supabaseUrl: authority.targetSupabaseUrl,
     accessToken: authority.targetAccessToken,
   };
+  const targetSql =
+    executeTarget ??
+    ((t, sql) => executeAtlasStagingPostgres(t, sql, { environment, cwd }));
   const execute = async (requestedApply, planChecksum) =>
     parseStagingMasterResult(
-      await executeTarget(
+      await targetSql(
         target,
         buildStagingMasterLoadSql(snapshot, {
           targetProjectRef: target.projectRef,
