@@ -110,4 +110,50 @@ describe("master-only rehearsal report", () => {
       formatMasterDataRehearsalReport({ ...input, afterPreview: undefined }),
     ).toContain("Gate: REJECTED");
   });
+  it("summarizes blocker categories and caps verbose source-only evidence", () => {
+    const issues = [
+      {
+        code: "RECIPE_EMPTY",
+        severity: "BLOCKER",
+        object_type: "RECIPE",
+        legacy_id: "r1",
+      },
+      {
+        code: "RECIPE_EMPTY",
+        severity: "BLOCKER",
+        object_type: "RECIPE",
+        legacy_id: "r2",
+      },
+      {
+        code: "UNSUPPORTED_UNIT",
+        severity: "BLOCKER",
+        object_type: "UNIT",
+        legacy_id: "123",
+      },
+      ...Array.from({ length: 25 }, (_, index) => ({
+        code: "SOURCE_ONLY_UNMAPPED",
+        severity: "INFO",
+        entity: "recipes",
+        legacy_id: `dish:${String(index).padStart(2, "0")}`,
+        field: "recipe_name",
+      })),
+    ];
+    const report = formatMasterDataRehearsalReport({
+      snapshot: { snapshot_id: "x", source_counts: {} },
+      preview: { success: false, actions: [], issues },
+    });
+    expect(report).toContain("Blocker categories");
+    expect(report).toContain("  RECIPE_EMPTY: 2");
+    expect(report).toContain("  UNSUPPORTED_UNIT: 1");
+    expect(report).toContain("Source-only fields: 25");
+    expect(report).toContain(
+      "SOURCE_ONLY_UNMAPPED | recipes | dish:19 | recipe_name",
+    );
+    expect(report).not.toContain(
+      "SOURCE_ONLY_UNMAPPED | recipes | dish:20 | recipe_name",
+    );
+    expect(report).toContain(
+      "  … 5 more source-only fields omitted from console output",
+    );
+  });
 });

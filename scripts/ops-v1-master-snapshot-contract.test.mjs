@@ -393,3 +393,70 @@ describe("full-source integrity", () => {
     expect(n.records.units).toHaveLength(2);
   });
 });
+
+describe("School optional migration semantics", () => {
+  it("defaults an inactive School missing source display order to zero with INFO evidence", () => {
+    const s = source();
+    s.schools[0].is_active = false;
+    s.schools[0].display_order = null;
+    const n = normalized(s);
+    expect(n.records.schools[0].display_order).toBe(0);
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "INACTIVE_SCHOOL_DISPLAY_ORDER_DEFAULTED",
+        entity: "schools",
+        legacy_id: "21",
+        severity: "INFO",
+      }),
+    );
+    expect(
+      n.source_diagnostics.filter((d) => d.code === "INVALID_DISPLAY_ORDER"),
+    ).toEqual([]);
+  });
+
+  it("still blocks an active School missing display order", () => {
+    const s = source();
+    s.schools[0].display_order = null;
+    const n = normalized(s);
+    expect(n.records.schools[0].display_order).toBeNull();
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "INVALID_DISPLAY_ORDER",
+        severity: "BLOCKER",
+      }),
+    );
+  });
+
+  it("retains missing issuer configuration as INFO with a paired-null Atlas target", () => {
+    const s = source();
+    s.schools[0].contract_type = null;
+    const n = normalized(s);
+    expect(n.records.schools[0].dispatch_document_issuer_name).toBeNull();
+    expect(n.records.schools[0].dispatch_document_issuer_address).toBeNull();
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "MISSING_ISSUER_CONFIGURATION",
+        entity: "schools",
+        legacy_id: "21",
+        severity: "INFO",
+      }),
+    );
+    expect(
+      n.source_diagnostics.filter((d) => d.code === "UNKNOWN_ISSUER"),
+    ).toEqual([]);
+  });
+
+  it("keeps an unknown non-null issuer type as a blocker", () => {
+    const s = source();
+    s.schools[0].contract_type = 3;
+    const n = normalized(s);
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "UNKNOWN_ISSUER",
+        entity: "schools",
+        legacy_id: "21",
+        severity: "BLOCKER",
+      }),
+    );
+  });
+});
