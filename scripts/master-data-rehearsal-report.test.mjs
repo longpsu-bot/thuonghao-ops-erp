@@ -156,4 +156,46 @@ describe("master-only rehearsal report", () => {
       "  … 5 more source-only fields omitted from console output",
     );
   });
+
+  it("summarizes owner-reviewed source decisions separately from blockers", () => {
+    const report = formatMasterDataRehearsalReport({
+      mode: "preview",
+      snapshot: { snapshot_id: "owner-decisions", source_counts: {} },
+      preview: {
+        success: true,
+        actions: [],
+        issues: [
+          {
+            code: "REVIEWED_TEST_ARTIFACT_IGNORED",
+            severity: "INFO",
+            entity: "dishes",
+            legacy_id: "1983",
+          },
+          {
+            code: "REVIEWED_TEST_ARTIFACT_IGNORED",
+            severity: "INFO",
+            entity: "ingredients",
+            legacy_id: "1170",
+          },
+          {
+            code: "REVIEWED_SOURCE_CORRECTION",
+            severity: "INFO",
+            entity: "ingredients",
+            legacy_id: "903",
+          },
+          {
+            code: "MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO",
+            severity: "INFO",
+            entity: "schools",
+            legacy_id: "41",
+            field: "default_students_num",
+          },
+        ],
+      },
+    });
+    expect(report).toContain("Reviewed source decisions");
+    expect(report).toContain("  REVIEWED_TEST_ARTIFACT_IGNORED: 2");
+    expect(report).toContain("  REVIEWED_SOURCE_CORRECTION: 1");
+    expect(report).toContain("  MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO: 1");
+  });
 });

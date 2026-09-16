@@ -43,6 +43,10 @@ const ISSUERS = new Map([
 const ISSUER_ADDRESS =
   "ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam";
 
+const REVIEWED_IGNORED_DISHES = new Map([["1983", "Deact Test"]]);
+const REVIEWED_IGNORED_INGREDIENTS = new Map([["1170", "Deact test"]]);
+const REVIEWED_ACTIVE_INGREDIENTS = new Map([["903", "Bột mì"]]);
+
 // Fixed relation/column allowlist. No caller-supplied SQL, table, field or project.
 const SOURCE_COLUMNS = Object.freeze({
   schools: {
@@ -305,9 +309,79 @@ export function normalizeOpsV1MasterSnapshot(
       seen.add(key);
     }
   }
+  const ignoredDishIds = new Set();
+  for (const [legacyId, expectedName] of REVIEWED_IGNORED_DISHES) {
+    const row = s.dishes.find((item) => id(item.id) === legacyId);
+    if (!row) continue;
+    if (text(row.name) !== expectedName) {
+      diag(
+        "REVIEWED_SOURCE_DECISION_ID_REUSED",
+        "dishes",
+        legacyId,
+        "name",
+        text(row.name),
+      );
+      continue;
+    }
+    ignoredDishIds.add(legacyId);
+    diag(
+      "REVIEWED_TEST_ARTIFACT_IGNORED",
+      "dishes",
+      legacyId,
+      "id",
+      expectedName,
+      "INFO",
+    );
+  }
+  const ignoredRecipeRecordIds = new Set(
+    s.recipes
+      .filter((row) => ignoredDishIds.has(id(row.dish_id)))
+      .map((row) => id(row.id)),
+  );
+  const ignoredIngredientIds = new Set();
+  for (const [legacyId, expectedName] of REVIEWED_IGNORED_INGREDIENTS) {
+    const row = s.ingredients.find((item) => id(item.id) === legacyId);
+    if (!row) continue;
+    if (text(row.name) !== expectedName) {
+      diag(
+        "REVIEWED_SOURCE_DECISION_ID_REUSED",
+        "ingredients",
+        legacyId,
+        "name",
+        text(row.name),
+      );
+      continue;
+    }
+    const escapedScope = s.bill_of_materials.some(
+      (bom) =>
+        id(bom.ingredient_id) === legacyId &&
+        !ignoredRecipeRecordIds.has(id(bom.recipe_id)),
+    );
+    if (escapedScope) {
+      diag(
+        "REVIEWED_SOURCE_DECISION_SCOPE_VIOLATION",
+        "ingredients",
+        legacyId,
+        "bill_of_materials",
+      );
+      continue;
+    }
+    ignoredIngredientIds.add(legacyId);
+    diag(
+      "REVIEWED_TEST_ARTIFACT_IGNORED",
+      "ingredients",
+      legacyId,
+      "id",
+      expectedName,
+      "INFO",
+    );
+  }
+
   const types = new Set();
   for (const row of s.schools) types.add(id(row.school_type_id));
-  for (const row of s.recipes) types.add(id(row.school_type_id));
+  for (const row of s.recipes)
+    if (!ignoredRecipeRecordIds.has(id(row.id)))
+      types.add(id(row.school_type_id));
   for (const key of types) {
     if (!SCHOOL_TYPES.has(key))
       diag("UNKNOWN_SCHOOL_TYPE", "school_types", key, "school_type_id");
@@ -337,9 +411,24 @@ export function normalizeOpsV1MasterSnapshot(
     const name = requiredName(row.name, "schools", key),
       status = lifecycle(row, "schools", key, false);
     const full = text(row.school_full_name) || name;
-    for (const field of ["default_students_num", "default_teacher_num"])
+    const resolvedSchoolDefault = (field) => {
+      if (row[field] == null) {
+        diag(
+          "MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO",
+          "schools",
+          key,
+          field,
+          null,
+          "INFO",
+        );
+        return 0;
+      }
       if (!Number.isSafeInteger(row[field]) || row[field] < 0)
         diag("INVALID_SCHOOL_DEFAULT", "schools", key, field);
+      return row[field];
+    };
+    const targetStudentPortions = resolvedSchoolDefault("default_students_num");
+    const targetTeacherPortions = resolvedSchoolDefault("default_teacher_num");
     let targetDisplayOrder = row.display_order;
     if (row.display_order == null && status === "INACTIVE") {
       targetDisplayOrder = 0;
@@ -399,8 +488,8 @@ export function normalizeOpsV1MasterSnapshot(
       school_name: name,
       school_status: status,
       display_order: targetDisplayOrder,
-      default_student_portions: row.default_students_num,
-      default_teacher_portions: row.default_teacher_num,
+      default_student_portions: targetStudentPortions,
+      default_teacher_portions: targetTeacherPortions,
       dispatch_document_issuer_name: issuerName,
       dispatch_document_issuer_address: issuerAddress,
     });
@@ -445,8 +534,42 @@ export function normalizeOpsV1MasterSnapshot(
     return label;
   }
   const ingredientById = new Map(s.ingredients.map((r) => [id(r.id), r]));
+  const ingredientStatusById = new Map();
   for (const row of s.ingredients) {
     const key = id(row.id);
+    if (ignoredIngredientIds.has(key)) continue;
+    let ingredientStatus = lifecycle(row, "ingredients", key);
+    const reviewedName = REVIEWED_ACTIVE_INGREDIENTS.get(key);
+    if (reviewedName) {
+      if (text(row.name) !== reviewedName) {
+        diag(
+          "REVIEWED_SOURCE_DECISION_ID_REUSED",
+          "ingredients",
+          key,
+          "name",
+          text(row.name),
+        );
+      } else if (ingredientStatus === "INACTIVE") {
+        ingredientStatus = "ACTIVE";
+        diag(
+          "REVIEWED_SOURCE_CORRECTION",
+          "ingredients",
+          key,
+          "is_active",
+          "INACTIVE→ACTIVE",
+          "INFO",
+        );
+      } else if (ingredientStatus !== "ACTIVE") {
+        diag(
+          "REVIEWED_SOURCE_CORRECTION_CONFLICT",
+          "ingredients",
+          key,
+          "is_active",
+          ingredientStatus,
+        );
+      }
+    }
+    ingredientStatusById.set(key, ingredientStatus);
     records.ingredients.push({
       legacy_id: key,
       ingredient_code: `v1-ingredient-${key}`,
@@ -455,7 +578,7 @@ export function normalizeOpsV1MasterSnapshot(
       ingredient_order_group_legacy_id: nullableId(row.shopping_type_id),
       purchase_unit_legacy_id: unit(row.purchase_unit, "ingredients", key),
       order_step: positive(row.order_step, "ingredients", key, "order_step"),
-      ingredient_status: lifecycle(row, "ingredients", key),
+      ingredient_status: ingredientStatus,
     });
     if (
       !s.ingredient_type.some(
@@ -481,6 +604,7 @@ export function normalizeOpsV1MasterSnapshot(
     sourceOnly("suppliers", key, "contact_details", row.contact_details);
   }
   for (const row of s.ingredient_suppliers) {
+    if (ignoredIngredientIds.has(id(row.ingredient_id))) continue;
     const ingredient = id(row.ingredient_id),
       supplier = id(row.supplier_id),
       key = `ingredient:${ingredient}:supplier:${supplier}`;
@@ -530,6 +654,7 @@ export function normalizeOpsV1MasterSnapshot(
   }
   for (const row of s.dishes) {
     const key = id(row.id);
+    if (ignoredDishIds.has(key)) continue;
     records.dishes.push({
       legacy_id: key,
       dish_code: `v1-dish-${key}`,
@@ -542,6 +667,7 @@ export function normalizeOpsV1MasterSnapshot(
   }
   const recipeByRecordId = new Map();
   for (const row of s.recipes) {
+    if (ignoredRecipeRecordIds.has(id(row.id))) continue;
     const key = recipeLegacyId({
       dishId: row.dish_id,
       schoolTypeId: row.school_type_id,
@@ -567,6 +693,7 @@ export function normalizeOpsV1MasterSnapshot(
       sourceOnly("recipes", key, f, row[f]);
   }
   for (const row of s.bill_of_materials) {
+    if (ignoredRecipeRecordIds.has(id(row.recipe_id))) continue;
     const recipe = recipeByRecordId.get(id(row.recipe_id)),
       ingredient = id(row.ingredient_id);
     const key = recipe
@@ -580,7 +707,7 @@ export function normalizeOpsV1MasterSnapshot(
     const ingredientRow = ingredientById.get(ingredient);
     if (!ingredientRow)
       diag("MISSING_INGREDIENT", "recipe_lines", key, "ingredient_id");
-    else if (ingredientRow.is_active !== true || ingredientRow.archived_at)
+    else if (ingredientStatusById.get(ingredient) !== "ACTIVE")
       diag(
         "INACTIVE_INGREDIENT_REFERENCE",
         "recipe_lines",

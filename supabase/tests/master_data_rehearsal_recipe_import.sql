@@ -4,6 +4,36 @@ create function pg_temp.recipe_fixture() returns jsonb language sql as $fixture$
 
 create function pg_temp.sign(s jsonb) returns jsonb language sql as $$ select s||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(s-'snapshot_checksum')) $$;
 select is(atlas_legacy.preview_master_data_snapshot(pg_temp.sign(jsonb_set(jsonb_set(pg_temp.recipe_fixture(),'{snapshot_id}','"wrong-dish-type-code"'),'{records,dish_types,0,dish_type_code}','"stir_fry"')))->>'success','false','approved source Dish Type ID cannot be rebound to another catalogue code');
+select is(
+  atlas_legacy.preview_master_data_snapshot(
+    pg_temp.sign(
+      jsonb_set(
+        jsonb_set(
+          jsonb_set(pg_temp.recipe_fixture(),'{snapshot_id}','"duplicate-name-different-type"'),
+          '{records,dish_types}',
+          pg_temp.recipe_fixture()#>'{records,dish_types}' || jsonb_build_array(jsonb_build_object('legacy_id','2','dish_type_code','savory','source_name','Món mặn'))
+        ),
+        '{records,dishes}',
+        pg_temp.recipe_fixture()#>'{records,dishes}' || jsonb_build_array(jsonb_build_object('legacy_id','101','dish_code','v1-dish-101','dish_name','Canh mẫu','dish_type_legacy_id','2','dish_status','ACTIVE'))
+      )
+    )
+  )->>'success',
+  'true',
+  'same active Dish display name in different Dish Types is a valid separate identity'
+);
+select is(
+  atlas_legacy.preview_master_data_snapshot(
+    pg_temp.sign(
+      jsonb_set(
+        jsonb_set(pg_temp.recipe_fixture(),'{snapshot_id}','"duplicate-name-same-type"'),
+        '{records,dishes}',
+        pg_temp.recipe_fixture()#>'{records,dishes}' || jsonb_build_array(jsonb_build_object('legacy_id','102','dish_code','v1-dish-102','dish_name','Canh mẫu','dish_type_legacy_id','1','dish_status','ACTIVE'))
+      )
+    )
+  )->>'success',
+  'false',
+  'same active Dish display name within one Dish Type remains ambiguous and blocked'
+);
 insert into atlas_core.actors(actor_id,actor_type,display_name) values ('aa920000-0000-4000-8000-000000000001','HUMAN','Synthetic Recipe importer');
 create temp table evidence(label text primary key,snapshot jsonb,preview jsonb,result jsonb);
 insert into evidence values ('a',pg_temp.recipe_fixture(),atlas_legacy.preview_master_data_snapshot(pg_temp.recipe_fixture()),null);

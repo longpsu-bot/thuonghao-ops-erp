@@ -233,13 +233,19 @@ describe("approved master snapshot contract", () => {
       ]),
     );
   });
-  it("does not coerce a missing School default into zero", () => {
+  it("defaults a missing School attendance default to zero with review evidence", () => {
     const s = source();
     s.schools[0].default_students_num = null;
-    expect(normalized(s).source_diagnostics.map((d) => d.code)).toContain(
-      "INVALID_SCHOOL_DEFAULT",
+    const n = normalized(s);
+    expect(n.records.schools[0].default_student_portions).toBe(0);
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO",
+        legacy_id: "21",
+        field: "default_students_num",
+        severity: "INFO",
+      }),
     );
-    expect(normalized(s).records.schools).toHaveLength(1);
   });
   it("reports duplicate business identities and reference mismatches", () => {
     const s = source();
@@ -455,6 +461,207 @@ describe("School optional migration semantics", () => {
         code: "UNKNOWN_ISSUER",
         entity: "schools",
         legacy_id: "21",
+        severity: "BLOCKER",
+      }),
+    );
+  });
+});
+
+describe("owner-approved source resolutions", () => {
+  it("defaults missing School attendance defaults to zero with explicit INFO evidence", () => {
+    const s = source();
+    s.schools[0].default_students_num = null;
+    s.schools[0].default_teacher_num = null;
+    const n = normalized(s);
+    expect(n.records.schools[0]).toMatchObject({
+      default_student_portions: 0,
+      default_teacher_portions: 0,
+    });
+    expect(
+      n.source_diagnostics.filter(
+        (d) => d.code === "MISSING_SCHOOL_DEFAULT_DEFAULTED_ZERO",
+      ),
+    ).toHaveLength(2);
+    expect(
+      n.source_diagnostics.filter((d) => d.code === "INVALID_SCHOOL_DEFAULT"),
+    ).toEqual([]);
+  });
+
+  it("keeps invalid non-null School attendance defaults fail-closed", () => {
+    const s = source();
+    s.schools[0].default_students_num = -1;
+    expect(normalized(s).source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "INVALID_SCHOOL_DEFAULT",
+        legacy_id: "21",
+        field: "default_students_num",
+        severity: "BLOCKER",
+      }),
+    );
+  });
+
+  it("excludes only the reviewed Deact Test master artifact cluster", () => {
+    const s = source();
+    s.ingredients.push({
+      id: "1170",
+      name: "Deact test",
+      purchase_unit: "123",
+      ingredient_type_id: "37",
+      shopping_type_id: "2",
+      is_active: false,
+      archived_at: null,
+      order_step: "1",
+    });
+    s.dishes.push({
+      id: "1983",
+      name: "Deact Test",
+      dish_type_id: "1",
+      is_active: true,
+      archived_at: null,
+    });
+    s.recipes.push(
+      {
+        id: "3361",
+        dish_id: "1983",
+        school_type_id: "1",
+        recipe_name: "Deact Test",
+        school_id: null,
+        is_general: true,
+        is_active: true,
+        is_locked: false,
+        archived_at: null,
+      },
+      {
+        id: "3362",
+        dish_id: "1983",
+        school_type_id: "2",
+        recipe_name: "Deact Test",
+        school_id: null,
+        is_general: true,
+        is_active: true,
+        is_locked: false,
+        archived_at: null,
+      },
+    );
+    s.bill_of_materials.push({
+      id: "13637",
+      recipe_id: "3361",
+      ingredient_id: "1170",
+      usable_quantity: "123",
+      purchase_unit: "123",
+      note: null,
+    });
+    const n = normalized(s);
+    expect(n.records.dishes.some((r) => r.legacy_id === "1983")).toBe(false);
+    expect(n.records.ingredients.some((r) => r.legacy_id === "1170")).toBe(
+      false,
+    );
+    expect(n.records.recipes.some((r) => r.dish_legacy_id === "1983")).toBe(
+      false,
+    );
+    expect(
+      n.records.recipe_lines.some((r) => r.ingredient_legacy_id === "1170"),
+    ).toBe(false);
+    expect(n.records.units.some((r) => r.legacy_id === "123")).toBe(false);
+    expect(
+      n.source_diagnostics.filter((d) => d.severity === "BLOCKER"),
+    ).toEqual([]);
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "REVIEWED_TEST_ARTIFACT_IGNORED",
+        entity: "dishes",
+        legacy_id: "1983",
+        severity: "INFO",
+      }),
+    );
+  });
+
+  it("fails closed if a reviewed exclusion ID is reused for a different business object", () => {
+    const s = source();
+    s.dishes.push({
+      id: "1983",
+      name: "Real production dish",
+      dish_type_id: "1",
+      is_active: true,
+      archived_at: null,
+    });
+    const n = normalized(s);
+    expect(n.records.dishes.some((r) => r.legacy_id === "1983")).toBe(true);
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "REVIEWED_SOURCE_DECISION_ID_REUSED",
+        entity: "dishes",
+        legacy_id: "1983",
+        severity: "BLOCKER",
+      }),
+    );
+  });
+
+  it("imports reviewed Ingredient 903 Bột mì as active and clears its active-Recipe reference blocker", () => {
+    const s = source();
+    s.ingredients.push({
+      id: "903",
+      name: "Bột mì",
+      purchase_unit: "Kg",
+      ingredient_type_id: "37",
+      shopping_type_id: "2",
+      is_active: false,
+      archived_at: null,
+      order_step: "1",
+    });
+    s.bill_of_materials.push({
+      id: "90300",
+      recipe_id: "200",
+      ingredient_id: "903",
+      usable_quantity: "0.5",
+      purchase_unit: "Kg",
+      note: null,
+    });
+    const n = normalized(s);
+    expect(
+      n.records.ingredients.find((r) => r.legacy_id === "903")
+        ?.ingredient_status,
+    ).toBe("ACTIVE");
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "REVIEWED_SOURCE_CORRECTION",
+        entity: "ingredients",
+        legacy_id: "903",
+        field: "is_active",
+        severity: "INFO",
+      }),
+    );
+    expect(
+      n.source_diagnostics.some(
+        (d) =>
+          d.code === "INACTIVE_INGREDIENT_REFERENCE" &&
+          String(d.legacy_id).includes("ingredient:903"),
+      ),
+    ).toBe(false);
+  });
+
+  it("does not apply Ingredient 903 correction if the source ID has been repurposed", () => {
+    const s = source();
+    s.ingredients.push({
+      id: "903",
+      name: "Different ingredient",
+      purchase_unit: "Kg",
+      ingredient_type_id: "37",
+      shopping_type_id: "2",
+      is_active: false,
+      archived_at: null,
+      order_step: "1",
+    });
+    const n = normalized(s);
+    expect(
+      n.records.ingredients.find((r) => r.legacy_id === "903")
+        ?.ingredient_status,
+    ).toBe("INACTIVE");
+    expect(n.source_diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "REVIEWED_SOURCE_DECISION_ID_REUSED",
+        entity: "ingredients",
+        legacy_id: "903",
         severity: "BLOCKER",
       }),
     );

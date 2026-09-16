@@ -202,3 +202,72 @@ describe("Planning workbook canonicalization", () => {
     expect(review.rows[0].teacher_portions).toBe(0);
   });
 });
+
+describe("typed duplicate Dish names", () => {
+  it("resolves the same Dish name within the source column Dish Type", async () => {
+    const typedDishTypes: PlanningDishType[] = [
+      {
+        dish_type_id: "type-savory",
+        dish_type_code: "savory",
+        dish_type_name: "Món mặn",
+        source_header_aliases: ["Món Mặn"],
+        display_order: 2,
+        dish_type_status: "ACTIVE",
+        version: 1,
+      },
+      {
+        dish_type_id: "type-snack",
+        dish_type_code: "afternoon_snack",
+        dish_type_name: "Món xế",
+        source_header_aliases: ["Buổi xế"],
+        display_order: 5,
+        dish_type_status: "ACTIVE",
+        version: 1,
+      },
+    ];
+    const typedDishes: PlanningDish[] = [
+      {
+        dish_id: "dish-snack",
+        dish_code: "v1-dish-1436",
+        dish_name: "Cà ri gà + bánh mì",
+        dish_type_id: "type-snack",
+        dish_type_code: "afternoon_snack",
+        dish_type_name: "Món xế",
+        dish_status: "ACTIVE",
+        display_order: 1,
+        requires_need_generation: true,
+      },
+      {
+        dish_id: "dish-savory",
+        dish_code: "v1-dish-1984",
+        dish_name: "Cà ri gà + bánh mì",
+        dish_type_id: "type-savory",
+        dish_type_code: "savory",
+        dish_type_name: "Món mặn",
+        dish_status: "ACTIVE",
+        display_order: 2,
+        requires_need_generation: true,
+      },
+    ];
+    const review = await parseMenuMatrix(
+      [
+        ["Tên trường", "Ngày", "Món Mặn", "Buổi xế"],
+        ["TH001", "2026-08-03", "Cà ri gà + bánh mì", "Cà ri gà + bánh mì"],
+      ],
+      { sourceName: "Google", sheetName: "Tuần" },
+      typedDishTypes,
+      schools,
+      typedDishes,
+    );
+    expect(review.rows).toEqual([
+      expect.objectContaining({
+        menu_slot_code: "savory",
+        dish_id: "dish-savory",
+      }),
+      expect.objectContaining({
+        menu_slot_code: "afternoon_snack",
+        dish_id: "dish-snack",
+      }),
+    ]);
+  });
+});

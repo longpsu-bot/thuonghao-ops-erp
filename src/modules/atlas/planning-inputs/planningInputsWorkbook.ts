@@ -86,6 +86,28 @@ function reference<T>(
   );
 }
 
+function typedDishReference(
+  value: string,
+  dishType: PlanningDishType,
+  dishes: PlanningDish[],
+) {
+  const key = normalized(value);
+  const candidates = dishes.filter(
+    (dish) =>
+      dish.dish_type_id === dishType.dish_type_id ||
+      dish.dish_type_code === dishType.dish_type_code,
+  );
+  const codeMatches = candidates.filter(
+    (dish) => normalized(dish.dish_code) === key,
+  );
+  if (codeMatches.length === 1) return codeMatches[0];
+  if (codeMatches.length > 1) return undefined;
+  const nameMatches = candidates.filter(
+    (dish) => normalized(dish.dish_name) === key,
+  );
+  return nameMatches.length === 1 ? nameMatches[0] : undefined;
+}
+
 function isoDate(value: MatrixCell | undefined): string {
   if (value instanceof Date) return value.toISOString().slice(0, 10);
   const text = String(value ?? "").trim();
@@ -260,12 +282,7 @@ export async function parseMenuMatrix(
     for (const { dishType, index } of typeColumns) {
       const dishText = cellAt(sourceRow, index);
       if (!dishText) continue;
-      const dish = reference(
-        dishText,
-        dishes,
-        (item) => item.dish_code,
-        (item) => item.dish_name,
-      );
+      const dish = typedDishReference(dishText, dishType, dishes);
       rows.push({
         school_id: school?.school_id ?? unresolved("school", schoolText),
         service_date: serviceDate,

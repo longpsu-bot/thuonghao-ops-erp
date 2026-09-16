@@ -1,0 +1,81 @@
+name: Atlas Staging Master Data Load
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full certified current-main SHA
+        required: true
+        type: string
+      apply:
+        description: Apply the reviewed current v1 master snapshot to Atlas Staging
+        required: true
+        type: boolean
+        default: false
+      target_project_ref:
+        description: Exact Atlas Staging project confirmation for apply
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: atlas-staging-master-data-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    name: Guarded master snapshot load and authenticated readback
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: atlas-staging
+    steps:
+      - name: Check out requested exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Verify exact current main before repository execution
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          test "$(git rev-parse HEAD)" = "$REQUESTED_SHA"
+          test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          test -z "$(git status --porcelain)"
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Snapshot, adopt existing IDs, preview, apply and verify
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          CONFIRMED_TARGET: ${{ inputs.target_project_ref }}
+          ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--commit-sha "$REQUESTED_SHA")
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            args+=(--apply --target-project-ref "$CONFIRMED_TARGET")
+          fi
+          pnpm atlas:staging:master:load -- "${args[@]}"

@@ -932,7 +932,11 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(91);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(92);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
+      command: "node",
+      args: ["scripts/test-local-staging-master-load.mjs"],
+    });
     for (const masterDataRehearsalTest of [
       "master_data_rehearsal_import.sql",
       "master_data_rehearsal_recipe_import.sql",
