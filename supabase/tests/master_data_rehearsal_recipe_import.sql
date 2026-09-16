@@ -35,6 +35,21 @@ select is(
   'same active Dish display name within one Dish Type remains ambiguous and blocked'
 );
 insert into atlas_core.actors(actor_id,actor_type,display_name) values ('aa920000-0000-4000-8000-000000000001','HUMAN','Synthetic Recipe importer');
+savepoint typed_identity_apply;
+create temp table typed_evidence(snapshot jsonb, preview jsonb, result jsonb);
+insert into typed_evidence(snapshot)
+select pg_temp.sign(jsonb_set(jsonb_set(jsonb_set(pg_temp.recipe_fixture(),'{snapshot_id}','"typed-apply-regression"'),
+ '{records,dish_types}',pg_temp.recipe_fixture()#>'{records,dish_types}' || '[{"legacy_id":"2","dish_type_code":"savory","source_name":"Món mặn"}]'::jsonb),
+ '{records,dishes}',pg_temp.recipe_fixture()#>'{records,dishes}' || '[{"legacy_id":"101","dish_code":"v1-dish-101","dish_name":"Canh mẫu","dish_type_legacy_id":"2","dish_status":"ACTIVE"}]'::jsonb));
+update typed_evidence set preview=atlas_legacy.preview_master_data_snapshot(snapshot);
+select is((select preview->>'success' from typed_evidence),'true','typed same-name apply regression first passes preview');
+update typed_evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa920000-0000-4000-8000-000000000001');
+select is((select result->>'success' from typed_evidence),'true','preview-approved typed same-name Dishes actually apply');
+select is((select count(*) from atlas_admin.dishes where dish_code in ('v1-dish-100','v1-dish-101')),2::bigint,'both typed Dish IDs physically exist');
+select is((select count(*) from atlas_admin.recipe_line_revisions),3::bigint,'Recipe/BOM apply remains intact with typed duplicate names');
+select throws_ok($q$insert into atlas_admin.dishes(dish_code,dish_name,dish_type_id,dish_status) values ('typed-conflict','  CANH MẪU  ','d1500000-0000-4000-8000-000000000001','ACTIVE')$q$,
+ '23505','duplicate key value violates unique constraint "dishes_active_normalized_name_key"','same-type duplicate remains physically rejected');
+rollback to savepoint typed_identity_apply;
 create temp table evidence(label text primary key,snapshot jsonb,preview jsonb,result jsonb);
 insert into evidence values ('a',pg_temp.recipe_fixture(),atlas_legacy.preview_master_data_snapshot(pg_temp.recipe_fixture()),null);
 select is((select preview->>'success' from evidence where label='a'),'true','full typed Recipe snapshot is supported');

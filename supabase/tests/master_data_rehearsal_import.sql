@@ -21,6 +21,38 @@ insert into atlas_core.actors(actor_id,actor_type,display_name,actor_status,deac
  ('aa910000-0000-4000-8000-000000000001','HUMAN','Synthetic rehearsal operator A','ACTIVE',null),
  ('aa910000-0000-4000-8000-000000000002','HUMAN','Synthetic rehearsal operator B','ACTIVE',null),
  ('aa910000-0000-4000-8000-000000000003','HUMAN','Synthetic inactive operator','INACTIVE',clock_timestamp());
+savepoint safe_apply_diagnostics;
+create function pg_temp.reject_test_import_ingredient() returns trigger language plpgsql as $$
+begin raise check_violation using message='PRIVATE SOURCE VALUES MUST NOT LEAK',schema='atlas_admin',table='ingredients',constraint='test_import_fixture_check'; end $$;
+create trigger test_import_guard before insert on atlas_admin.ingredients for each row execute function pg_temp.reject_test_import_ingredient();
+create temp table failure_evidence as select atlas_legacy.apply_master_data_snapshot(pg_temp.fixture(),atlas_legacy.preview_master_data_snapshot(pg_temp.fixture())->>'plan_checksum','aa910000-0000-4000-8000-000000000001') result;
+select is((select result->>'error_code' from failure_evidence),'APPLY_INVARIANT_FAILURE','constraint failure retains safe error contract');
+select is((select result->>'constraint_name' from failure_evidence),'test_import_fixture_check','private apply identifies the actual failed constraint');
+select is((select result->>'constraint_table' from failure_evidence),'ingredients','private apply identifies the target table');
+select is((select result->>'apply_phase' from failure_evidence),'CORE_ROWS','private apply identifies execution phase');
+select ok((select result::text not like '%PRIVATE SOURCE VALUES%' from failure_evidence),'constraint diagnostics never expose raw error messages');
+select is((select count(*) from atlas_admin.schools),0::bigint,'invariant failure rolls back earlier School writes');
+select is((select count(*) from atlas_legacy.import_batches),0::bigint,'invariant failure rolls back batch receipt');
+rollback to savepoint safe_apply_diagnostics;
+savepoint priority_replacement_regression;
+create temp table priority_evidence(label text primary key,snapshot jsonb,preview jsonb,result jsonb);
+insert into priority_evidence(label,snapshot) select 'start',pg_temp.sign(jsonb_set(jsonb_set(jsonb_set(pg_temp.fixture(),'{snapshot_id}','"priority-replace-start"'),
+ '{records,suppliers}',pg_temp.fixture()#>'{records,suppliers}' || '[{"legacy_id":"13","supplier_code":"v1-supplier-13","supplier_name":"Second supplier","supplier_status":"ACTIVE"}]'::jsonb),
+ '{records,supplier_eligibilities}',pg_temp.fixture()#>'{records,supplier_eligibilities}' || '[{"legacy_id":"ingredient:1:supplier:13","ingredient_legacy_id":"1","supplier_legacy_id":"13","priority":2}]'::jsonb));
+update priority_evidence set preview=atlas_legacy.preview_master_data_snapshot(snapshot);
+update priority_evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa910000-0000-4000-8000-000000000001');
+select is((select result->>'success' from priority_evidence where label='start'),'true','two supplier priorities initially apply');
+create temp table priority_ids as select supplier_eligibility_id from atlas_admin.supplier_eligibilities;
+insert into priority_evidence(label,snapshot) select 'swap',pg_temp.sign(jsonb_set(jsonb_set(jsonb_set(snapshot,'{snapshot_id}','"priority-replace-swap"'),'{records,supplier_eligibilities,0,priority}','2'),'{records,supplier_eligibilities,1,priority}','1')) from priority_evidence where label='start';
+update priority_evidence set preview=atlas_legacy.preview_master_data_snapshot(snapshot) where label='swap';
+select is((select preview->>'success' from priority_evidence where label='swap'),'true','complete valid priority swap previews');
+update priority_evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa910000-0000-4000-8000-000000000001') where label='swap';
+select is((select result->>'success' from priority_evidence where label='swap'),'true','valid priority swap actually applies without transient uniqueness conflict');
+select is((select priority::integer from atlas_admin.supplier_eligibilities e join atlas_admin.suppliers s using(supplier_id) where s.supplier_code='v1-supplier-12'),2,'first Supplier reads back swapped priority');
+select is((select priority::integer from atlas_admin.supplier_eligibilities e join atlas_admin.suppliers s using(supplier_id) where s.supplier_code='v1-supplier-13'),1,'second Supplier reads back swapped priority');
+select is((select count(*) from priority_ids old join atlas_admin.supplier_eligibilities new using(supplier_eligibility_id)),2::bigint,'priority swap retains both relationship identities');
+select is((select count(*) from atlas_admin.supplier_eligibilities where eligibility_status='ACTIVE' and priority is null),0::bigint,'no intermediate null priority survives apply');
+rollback to savepoint priority_replacement_regression;
 create temp table evidence(label text primary key,snapshot jsonb,preview jsonb,result jsonb);
 insert into evidence values ('a',pg_temp.fixture(),atlas_legacy.preview_master_data_snapshot(pg_temp.fixture()),null);
 select is((select preview->>'success' from evidence where label='a'),'true','clean snapshot previews successfully');

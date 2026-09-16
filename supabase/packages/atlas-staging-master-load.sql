@@ -169,7 +169,9 @@ begin
    end if;
    applied:=atlas_legacy.apply_master_data_snapshot(snapshot,expected_plan_checksum,(adoption->>'actor_id')::uuid);
    if applied->>'success' is distinct from 'true' then
-     response:=response||jsonb_build_object('success',false,'status','REJECTED','error_code',applied->>'error_code');
+     response:=response||jsonb_build_object('success',false,'status','REJECTED','error_code',applied->>'error_code','constraint_state',applied->>'constraint_state',
+       'apply_phase',applied->>'apply_phase','constraint_schema',applied->>'constraint_schema',
+       'constraint_table',applied->>'constraint_table','constraint_name',applied->>'constraint_name');
      raise exception using errcode='P9001',message='STAGING_APPLY_ROLLBACK';
    end if;
    -- Never rewrite immutable Unit references. Inactivate only the exact old spelling after current roots converge.

@@ -864,5 +864,16 @@ select ok(
   'P. approved-Menu lock blocks copy without changing target Recipe history'
 );
 
+-- Type-scoped identity must agree in browser commands and the physical unique index.
+savepoint typed_name_commands;
+set local role authenticated;
+insert into active_create_results values ('typed-first',atlas_api.create_dish(pg_temp.active_create_command('typed-first',pg_temp.active_create_dish_payload('typed-first','Typed shared name'))));
+insert into active_create_results values ('typed-second',atlas_api.create_dish(pg_temp.active_create_command('typed-second',pg_temp.active_create_dish_payload('typed-second','Typed shared name','d1500000-0000-4000-8000-000000000001'))));
+insert into active_create_results values ('typed-duplicate',atlas_api.create_dish(pg_temp.active_create_command('typed-duplicate',pg_temp.active_create_dish_payload('typed-duplicate',' Typed shared name ','d1500000-0000-4000-8000-000000000001'))));
+reset role;
+select is((select response_payload->>'success' from active_create_results where result_name='typed-first'),'true','typed create first succeeds');
+select is((select response_payload->>'success' from active_create_results where result_name='typed-second'),'true','typed create same name in different Dish Type succeeds');
+select is((select response_payload->>'error_code' from active_create_results where result_name='typed-duplicate'),'CONFLICT','typed create still rejects duplicate within one Dish Type');
+select is((select count(*) from atlas_admin.dishes where dish_code in ('typed-first','typed-second')),2::bigint,'typed browser commands preserve separate Dish identities');
 select * from finish();
 rollback;
