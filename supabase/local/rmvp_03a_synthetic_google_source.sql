@@ -13,7 +13,7 @@ insert into atlas_planning.weekly_menu_google_sources (
   'RMVP-03A Local Synthetic Google Source',
   'local-synthetic-spreadsheet-id',
   'Tuần {DD-MM-YYYY}',
-  '''{sheet}''!A3:Z500',
+  '''{sheet}''!A3:I500',
   'ACTIVE',
   1
 )

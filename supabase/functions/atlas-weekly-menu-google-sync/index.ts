@@ -1,3 +1,5 @@
+import { readWeeklyMenuWebApp } from "./webAppTransport.ts";
+
 type RuntimeEnv = {
   get(name: string): string | undefined;
 };
@@ -6,12 +8,6 @@ type HandlerDependencies = {
   fetch: typeof fetch;
   env: RuntimeEnv;
   now: () => Date;
-  getGoogleAccessToken?: (
-    credential: Record<string, unknown>,
-  ) => Promise<
-    | { accessToken: string; error?: never }
-    | { error: string; accessToken?: never }
-  >;
 };
 
 type GoogleSource = {
@@ -40,9 +36,6 @@ const jsonHeaders = {
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const weekPattern = /^\d{4}-\d{2}-\d{2}$/;
-const maximumResponseBytes = 1_500_000;
-const maximumRows = 500;
-const maximumColumns = 100;
 
 function safeResponse(
   status: number,
@@ -108,99 +101,13 @@ function configuredRange(source: GoogleSource, weekStart: string) {
     escapedSheetName,
   );
   const valid =
+    source.sheet_name_pattern === "Tuần {DD-MM-YYYY}" &&
+    source.range_a1_template === "'{sheet}'!A3:I500" &&
     sheetName.length > 0 &&
     sheetName.length <= 100 &&
     range.length <= 250 &&
     /^(?:'[^']+'|[^'!]+)![A-Z]{1,3}\d+:[A-Z]{1,3}\d+$/i.test(range);
   return { sheetName, range, valid };
-}
-
-function base64Url(bytes: Uint8Array) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
-}
-
-function encodedJson(value: unknown) {
-  return base64Url(new TextEncoder().encode(JSON.stringify(value)));
-}
-
-function pemBytes(pem: string) {
-  const body = pem
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\s/gu, "");
-  const binary = atob(body);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-}
-
-async function googleAccessToken(
-  credential: Record<string, unknown>,
-  dependencies: HandlerDependencies,
-) {
-  const clientEmail =
-    typeof credential.client_email === "string" ? credential.client_email : "";
-  const privateKey =
-    typeof credential.private_key === "string" ? credential.private_key : "";
-  const tokenUri =
-    typeof credential.token_uri === "string"
-      ? credential.token_uri
-      : "https://oauth2.googleapis.com/token";
-  if (!clientEmail || !privateKey || !tokenUri.startsWith("https://")) {
-    return { error: "GOOGLE_CREDENTIAL_INVALID" } as const;
-  }
-  try {
-    const issuedAt = Math.floor(dependencies.now().valueOf() / 1000);
-    const header = encodedJson({ alg: "RS256", typ: "JWT" });
-    const payload = encodedJson({
-      iss: clientEmail,
-      scope: "https://www.googleapis.com/auth/spreadsheets.readonly",
-      aud: tokenUri,
-      iat: issuedAt,
-      exp: issuedAt + 3600,
-    });
-    const signingInput = `${header}.${payload}`;
-    const key = await crypto.subtle.importKey(
-      "pkcs8",
-      pemBytes(privateKey),
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["sign"],
-    );
-    const signature = await crypto.subtle.sign(
-      "RSASSA-PKCS1-v1_5",
-      key,
-      new TextEncoder().encode(signingInput),
-    );
-    const assertion = `${signingInput}.${base64Url(new Uint8Array(signature))}`;
-    const response = await dependencies.fetch(tokenUri, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }),
-    });
-    const body = await safeJson(response);
-    if (
-      !response.ok ||
-      !isRecord(body) ||
-      typeof body.access_token !== "string"
-    ) {
-      return {
-        error:
-          response.status === 429 || response.status >= 500
-            ? "GOOGLE_AUTH_RETRYABLE"
-            : "GOOGLE_AUTH_FAILED",
-      } as const;
-    }
-    return { accessToken: body.access_token } as const;
-  } catch {
-    return { error: "GOOGLE_CREDENTIAL_INVALID" } as const;
-  }
 }
 
 function defaultEnvironment(): RuntimeEnv {
@@ -284,7 +191,11 @@ export function createGoogleSyncHandler(
       "spreadsheet_id" in body ||
       "sheet_name" in body ||
       "range" in body ||
-      "range_a1" in body
+      "range_a1" in body ||
+      "url" in body ||
+      "webapp_url" in body ||
+      "secret" in body ||
+      "event" in body
     ) {
       return failure(
         400,
@@ -424,158 +335,25 @@ export function createGoogleSyncHandler(
       );
     }
 
-    const credentialText = dependencies.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    if (!credentialText) {
-      return failure(
-        503,
-        "GOOGLE_CREDENTIAL_MISSING",
-        "The read-only Google credential is not configured.",
-        correlationId,
-      );
-    }
-    let credential: Record<string, unknown>;
-    try {
-      const parsed = JSON.parse(credentialText);
-      if (!isRecord(parsed))
-        return failure(
-          503,
-          "GOOGLE_CREDENTIAL_INVALID",
-          "The read-only Google credential is invalid.",
-          correlationId,
-        );
-      credential = parsed;
-    } catch {
-      return failure(
-        503,
-        "GOOGLE_CREDENTIAL_INVALID",
-        "The read-only Google credential is invalid.",
-        correlationId,
-      );
-    }
-    const token = dependencies.getGoogleAccessToken
-      ? await dependencies.getGoogleAccessToken(credential)
-      : await googleAccessToken(credential, dependencies);
-    if ("error" in token) {
-      const retryable = token.error === "GOOGLE_AUTH_RETRYABLE";
-      return failure(
-        retryable ? 503 : 502,
-        token.error,
-        retryable
-          ? "Google authentication is temporarily unavailable."
-          : "Google authentication failed safely.",
-        correlationId,
-        retryable,
-      );
-    }
-    const googleUrl =
-      "https://sheets.googleapis.com/v4/spreadsheets/" +
-      `${encodeURIComponent(source.spreadsheet_id)}/values/` +
-      `${encodeURIComponent(range.range)}?majorDimension=ROWS`;
-    const googleResponse = await dependencies.fetch(googleUrl, {
-      headers: { Authorization: `Bearer ${token.accessToken}` },
+    const webApp = await readWeeklyMenuWebApp({
+      url: dependencies.env.get("GOOGLE_APPS_SCRIPT_WEBAPP_URL"),
+      secret: dependencies.env.get("GOOGLE_APPS_SCRIPT_SECRET"),
+      spreadsheetId: source.spreadsheet_id,
+      sheetName: range.sheetName,
+      range: range.range,
+      weekStart,
+      requestId: correlationId,
+      fetchImpl: dependencies.fetch,
     });
-    const contentLength = Number(
-      googleResponse.headers.get("Content-Length") ?? "0",
-    );
-    if (contentLength > maximumResponseBytes) {
+    if (!webApp.ok)
       return failure(
-        413,
-        "RESPONSE_SIZE_LIMIT",
-        "The Google Sheet response exceeds the safe size limit.",
+        webApp.status,
+        webApp.code,
+        webApp.message,
         correlationId,
+        webApp.retryable,
       );
-    }
-    const googleBody = await safeJson(googleResponse);
-    if (!googleResponse.ok) {
-      if (googleResponse.status === 404 || googleResponse.status === 400) {
-        return failure(
-          404,
-          "WEEKLY_SHEET_MISSING",
-          "The selected weekly sheet was not found.",
-          correlationId,
-        );
-      }
-      if (googleResponse.status === 401) {
-        return failure(
-          502,
-          "GOOGLE_AUTH_FAILED",
-          "Google authentication failed safely.",
-          correlationId,
-        );
-      }
-      if (googleResponse.status === 403) {
-        return failure(
-          403,
-          "SPREADSHEET_INACCESSIBLE",
-          "The configured spreadsheet is not accessible.",
-          correlationId,
-        );
-      }
-      const retryable =
-        googleResponse.status === 429 || googleResponse.status >= 500;
-      return failure(
-        retryable ? 503 : 502,
-        retryable ? "GOOGLE_UPSTREAM_RETRYABLE" : "GOOGLE_UPSTREAM_FAILED",
-        retryable
-          ? "Google Sheets is temporarily unavailable; retry the same fetch."
-          : "Google Sheets rejected the configured read safely.",
-        correlationId,
-        retryable,
-      );
-    }
-    if (!isRecord(googleBody)) {
-      return failure(
-        502,
-        "MALFORMED_GOOGLE_RESPONSE",
-        "Google Sheets returned malformed data.",
-        correlationId,
-      );
-    }
-    const values = googleBody.values;
-    if (
-      values === undefined ||
-      (Array.isArray(values) && values.length === 0)
-    ) {
-      return failure(
-        422,
-        "EMPTY_SHEET",
-        "The selected weekly sheet contains no rows.",
-        correlationId,
-      );
-    }
-    if (
-      !Array.isArray(values) ||
-      !values.every(
-        (row) =>
-          Array.isArray(row) &&
-          row.length <= maximumColumns &&
-          row.every(
-            (cell) =>
-              typeof cell === "string" ||
-              typeof cell === "number" ||
-              typeof cell === "boolean" ||
-              cell === null,
-          ),
-      )
-    ) {
-      return failure(
-        502,
-        "MALFORMED_GOOGLE_RESPONSE",
-        "Google Sheets returned malformed matrix rows.",
-        correlationId,
-      );
-    }
-    if (
-      values.length > maximumRows ||
-      JSON.stringify(values).length > maximumResponseBytes
-    ) {
-      return failure(
-        413,
-        "RESPONSE_SIZE_LIMIT",
-        "The Google Sheet response exceeds the safe size limit.",
-        correlationId,
-      );
-    }
+    const values = webApp.values;
     return safeResponse(200, {
       success: true,
       source: {

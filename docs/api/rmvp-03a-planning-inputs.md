@@ -1,5 +1,13 @@
 # RMVP-03A Planning Inputs API Contract
 
+## Approved transport amendment — 16/09/2026
+
+The owner approved the existing Apps Script Web App as the Weekly Menu transport in place of Google service-account OAuth. `GOOGLE_SERVICE_ACCOUNT_JSON` is no longer used by the current reader. The server uses `GOOGLE_APPS_SCRIPT_WEBAPP_URL` and `GOOGLE_APPS_SCRIPT_SECRET`, supplied through the protected Staging workflow. The existing browser request/response, user authentication, Planning capability enforcement, configured source authority, parser, backend Preview and explicit Save behavior remain unchanged.
+
+The Web App reads only its server-configured spreadsheet and `Tuần DD-MM-YYYY!A3:I500`. Dates use the spreadsheet timezone; source/week/request evidence is checked and the ContentService redirect is followed without forwarding credentials. Existing v1 school/dish webhooks are preserved, with the new read event routed before the legacy write fallback. No schema, business fact, lifecycle or downstream command is added. The owner also clarified that Google Sheet is the only menu-authoring workflow; this task adds no Weekly Menu XLSX import/export UI.
+
+The detailed deployment/security/rollback contract is `integrations/google-apps-script/weekly-menu/README.md`; implementation evidence is in `docs/implementation-tasks/TASK-WEEKLY-MENU-WEBAPP-01.md`. Older service-account notes below describe the original implementation and are superseded only for this transport.
+
 ## Boundary
 
 Contract version: `RMVP-03A.v1`
