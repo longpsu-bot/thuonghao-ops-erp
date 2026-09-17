@@ -450,6 +450,7 @@ export function createAtlasRpcTransport(client: SupabaseClient) {
         headers: {
           Authorization: `Bearer ${sessionData.session.access_token}`,
         },
+        timeout: 45_000,
       });
       if (isRecord(data) && data.success === true) {
         return { kind: "success", response: data as AtlasSuccessEnvelope };

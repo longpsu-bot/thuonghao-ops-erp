@@ -529,56 +529,56 @@ export function usePlanningSources({
       epoch = generation.current;
     setSyncing(true);
     clearReview();
-    const result = await invoke(() =>
-      api.syncMenuFromGoogle(id, week, crypto.randomUUID()),
-    );
-    if (token !== googleGeneration.current || epoch !== generation.current)
-      return;
-    if (result.kind !== "success") {
-      setOutcome("Không tải được Google Sheet. Dữ liệu chưa được lưu.");
-      setSyncing(false);
-      return;
-    }
-    const source = result.response.source;
-    if (
-      !source ||
-      typeof source !== "object" ||
-      Array.isArray(source) ||
-      typeof source.source_name !== "string" ||
-      typeof source.sheet_name !== "string" ||
-      !Array.isArray(result.response.rows) ||
-      !result.response.rows.every(Array.isArray)
-    ) {
-      setOutcome("Google Sheet trả về dữ liệu không hợp lệ.");
-      setSyncing(false);
-      return;
-    }
     try {
-      const review = await parseMenuMatrix(
-        result.response.rows as SourceMatrix,
-        {
-          sourceName: source.source_name,
-          sheetName: source.sheet_name,
-          firstRowNumber: 3,
-        },
-        data.dish_types,
-        data.schools,
-        data.dishes,
+      const result = await invoke(() =>
+        api.syncMenuFromGoogle(id, week, crypto.randomUUID()),
       );
       if (token !== googleGeneration.current || epoch !== generation.current)
         return;
-      setMenuRows(review.rows);
-      setMenuSource({ type: "GOOGLE_SHEET", name: review.sourceName });
-      setMenuCandidate(true);
-      setImportErrors(review.errors);
-      setImportWarnings(review.warnings);
-      setOutcome("");
-    } catch {
-      if (token === googleGeneration.current && epoch === generation.current)
-        setOutcome("Không đọc được dữ liệu Google Sheet.");
+      if (result.kind !== "success") {
+        setOutcome("Không tải được Google Sheet. Dữ liệu chưa được lưu.");
+        return;
+      }
+      const source = result.response.source;
+      if (
+        !source ||
+        typeof source !== "object" ||
+        Array.isArray(source) ||
+        typeof source.source_name !== "string" ||
+        typeof source.sheet_name !== "string" ||
+        !Array.isArray(result.response.rows) ||
+        !result.response.rows.every(Array.isArray)
+      ) {
+        setOutcome("Google Sheet trả về dữ liệu không hợp lệ.");
+        return;
+      }
+      try {
+        const review = await parseMenuMatrix(
+          result.response.rows as SourceMatrix,
+          {
+            sourceName: source.source_name,
+            sheetName: source.sheet_name,
+            firstRowNumber: 3,
+          },
+          data.dish_types,
+          data.schools,
+          data.dishes,
+        );
+        if (token !== googleGeneration.current || epoch !== generation.current)
+          return;
+        setMenuRows(review.rows);
+        setMenuSource({ type: "GOOGLE_SHEET", name: review.sourceName });
+        setMenuCandidate(true);
+        setImportErrors(review.errors);
+        setImportWarnings(review.warnings);
+        setOutcome("");
+      } catch {
+        if (token === googleGeneration.current && epoch === generation.current)
+          setOutcome("Không đọc được dữ liệu Google Sheet.");
+      }
+    } finally {
+      if (token === googleGeneration.current) setSyncing(false);
     }
-    if (token === googleGeneration.current && epoch === generation.current)
-      setSyncing(false);
   };
   const payloadFor = (
     p: NonNullable<typeof preview>,

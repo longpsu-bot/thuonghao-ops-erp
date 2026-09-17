@@ -113,6 +113,26 @@ describe("Planning source safety", () => {
     expect(result.current.menuRows[0].dish_id).toBe("dish-1");
     expect(result.current.dirty).toBe(false);
   });
+  it("clears Google sync state when its response becomes obsolete without a replacement sync", async () => {
+    const { result, fixture } = await setup();
+    let resolve!: (r: ReturnType<typeof success>) => void;
+    const response = await fixture.api.syncMenuFromGoogle();
+    fixture.api.syncMenuFromGoogle = () =>
+      new Promise((r) => {
+        resolve = r;
+      });
+    let pending!: Promise<void>;
+    act(() => {
+      pending = result.current.syncGoogle("google-1");
+    });
+    expect(result.current.syncing).toBe(true);
+    act(() => result.current.editAttendance(0, "student_portions", "0"));
+    await act(async () => {
+      resolve(response);
+      await pending;
+    });
+    expect(result.current.syncing).toBe(false);
+  });
   it("does not let an older read overwrite a later refresh", async () => {
     const { result, fixture } = await setup();
     let resolve!: (r: ReturnType<typeof success>) => void;

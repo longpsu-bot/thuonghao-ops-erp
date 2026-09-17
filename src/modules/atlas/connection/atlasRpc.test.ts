@@ -404,6 +404,7 @@ describe("Atlas RPC transport", () => {
     expect(fake.invoke).toHaveBeenCalledWith("atlas-weekly-menu-google-sync", {
       body: { correlation_id: "correlation-1" },
       headers: { Authorization: "Bearer local-access-token" },
+      timeout: 45_000,
     });
   });
 
