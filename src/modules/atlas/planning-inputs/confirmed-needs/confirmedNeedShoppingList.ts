@@ -197,7 +197,7 @@ function addSheet(
         bottom: { style: "thin", color: { argb: "FF000000" } },
       };
     }
-    row.getCell(quantityColumn).numFmt = "0.##";
+    row.getCell(quantityColumn).numFmt = "0.######";
     row.getCell(quantityColumn).protection = { locked: false };
     row.getCell(noteColumn).protection = { locked: false };
     previousSchoolId = line.school.id;
@@ -311,17 +311,25 @@ export async function parseConfirmedNeedShoppingListXlsx(
         );
       seen.add(lineId!);
 
-      const rawQuantity = cellText(row.getCell(quantityColumn).value);
-      const normalizedQuantity = normalizeConfirmedNeedEntry(rawQuantity);
-      if (!normalizedQuantity)
+      const exportedExact = normalizeConfirmedNeedQuantity(exportedQuantity!);
+      if (!exportedExact)
         throw new Error(
-          `Số lượng tại dòng ${rowNumber} phải là số không âm, tối đa 2 chữ số thập phân.`,
+          `Số lượng trong siêu dữ liệu không còn khớp tại dòng ${rowNumber}.`,
+        );
+      const rawQuantity = cellText(row.getCell(quantityColumn).value);
+      // Untouched numeric(20,6) is evidence, not newly entered operator precision.
+      const normalizedQuantity = normalizeConfirmedNeedQuantity(rawQuantity);
+      const quantityChanged =
+        normalizedQuantity !== null &&
+        !exactDecimalEqual(exportedExact, normalizedQuantity);
+      if (
+        !normalizedQuantity ||
+        (quantityChanged && !normalizeConfirmedNeedEntry(rawQuantity))
+      )
+        throw new Error(
+          `Số lượng tại dòng ${rowNumber} phải là số không âm, tối đa 2 chữ số thập phân khi thay đổi.`,
         );
       const note = cellText(row.getCell(noteColumn).value);
-      const quantityChanged = !exactDecimalEqual(
-        normalizeConfirmedNeedQuantity(exportedQuantity!) ?? exportedQuantity!,
-        normalizedQuantity,
-      );
       if (quantityChanged && !note)
         throw new Error(`Dòng ${rowNumber} cần ghi chú khi thay đổi số lượng.`);
 
@@ -352,7 +360,13 @@ export async function parseConfirmedNeedShoppingListXlsx(
         reason_note: note,
       };
       if (
-        !exactDecimalEqual(existing.exact_quantity, normalizedQuantity) ||
+        (quantityChanged &&
+          (!exactDecimalEqual(
+            normalizeConfirmedNeedQuantity(existing.exact_quantity) ??
+              existing.exact_quantity,
+            normalizedQuantity,
+          ) ||
+            !existing.quantity_entered)) ||
         existing.reason_code !== reasonCode ||
         existing.reason_note.trim() !== note
       )

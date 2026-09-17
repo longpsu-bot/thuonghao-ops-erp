@@ -1,5 +1,11 @@
 # RMVP-05 Connected Confirmed Need Review API Contract
 
+## Shopping List round-trip precision correction — AUD-003 (17/09/2026)
+
+After workbook identity/version validation, the importer compares the visible and exported quantities as exact up-to-six-decimal representations. Unchanged source quantities preserve the current local draft and its `quantity_entered` flag; a note-only change is not a quantity entry. A real quantity edit still requires the existing two-decimal operator-entry validation and a reason note. Invalid quantity metadata is rejected. The workbook baseline is change-detection evidence, never authority to replace a draft with a six-decimal value supplied by the file.
+
+Quantity cells display up to six fractional digits (`0.######`) without rounding the stored value. The existing document layout, hidden identities, marker, local-only import boundary, backend Preview/Save contracts and policy rules are unchanged. Reimporting an untouched older workbook does not report a phantom quantity change when the current local quantity is preserved.
+
 **Status:** Implemented on a draft branch; exact-head GitHub validation and merge pending
 
 **Contract version:** `RMVP-05.v1`
