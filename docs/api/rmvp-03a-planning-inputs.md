@@ -1,5 +1,11 @@
 # RMVP-03A Planning Inputs API Contract
 
+## Import integrity correction — AUD-001/002 (17/09/2026)
+
+School resolution uses one normalized code match first and a name match only when unique. Multiple code/name matches or blank identities remain unresolved for the existing Preview blockers, never resolved by reference-array order. An explicit `Mã trường` / `school_code` column is code-only; the historical mixed-value `Tên trường` column and unlabeled Attendance paste retain unique-code-first fallback to unique names. This is shared by Google Menu matrices, Menu workbook parsing, Attendance workbook and Attendance paste; no new Menu workbook UI is added.
+
+Header parsing retains all source positions. Multiple recognized columns for a single School/date/Attendance field, duplicate normalized Dish Type headings, and alias collisions are blocking structural errors with zero candidate rows. Empty and presentation-only headings do not become business fields. Backend Preview/Save/checksum contracts, stable IDs, Attendance zero/blank rules, and typed Dish resolution are unchanged.
+
 ## Approved transport amendment — 16/09/2026
 
 The owner approved the existing Apps Script Web App as the Weekly Menu transport in place of Google service-account OAuth. `GOOGLE_SERVICE_ACCOUNT_JSON` is no longer used by the current reader. The server uses `GOOGLE_APPS_SCRIPT_WEBAPP_URL` and `GOOGLE_APPS_SCRIPT_SECRET`, supplied through the protected Staging workflow. The existing browser request/response, user authentication, Planning capability enforcement, configured source authority, parser, backend Preview and explicit Save behavior remain unchanged.
