@@ -10,7 +10,8 @@ import type {
 export type MatrixCell = CellValue | string | number | boolean | null;
 export type SourceMatrix = MatrixCell[][];
 
-const SCHOOL_COLUMNS = ["Tên trường", "Mã trường", "school_code"] as const;
+const SCHOOL_CODE_COLUMNS = ["Mã trường", "school_code"] as const;
+const SCHOOL_COLUMNS = ["Tên trường", ...SCHOOL_CODE_COLUMNS] as const;
 const DATE_COLUMNS = ["Ngày", "service_date"] as const;
 const ATTENDANCE_COLUMNS = {
   student: ["Số suất học sinh", "Sĩ số học sinh"],
@@ -23,21 +24,37 @@ const normalized = (value: unknown) =>
     .trim()
     .toLocaleLowerCase("vi");
 
-function headerIndex(row: MatrixCell[]) {
-  return new Map(
-    row.flatMap((value, index) => {
-      const key = normalized(value);
-      return key ? [[key, index] as const] : [];
-    }),
-  );
+// Preserve every source position until recognized-column validation is complete.
+type HeaderIndex = Map<string, number[]>;
+function headerIndex(row: MatrixCell[]): HeaderIndex {
+  const headers: HeaderIndex = new Map();
+  row.forEach((value, index) => {
+    const key = normalized(value);
+    if (key) headers.set(key, [...(headers.get(key) ?? []), index]);
+  });
+  return headers;
 }
 
-function aliasIndex(headers: Map<string, number>, names: readonly string[]) {
-  for (const name of names) {
-    const index = headers.get(normalized(name));
-    if (index !== undefined) return index;
+function aliasIndexes(headers: HeaderIndex, names: readonly string[]) {
+  return [
+    ...new Set(names.flatMap((name) => headers.get(normalized(name)) ?? [])),
+  ];
+}
+
+function aliasIndex(headers: HeaderIndex, names: readonly string[]) {
+  const indexes = aliasIndexes(headers, names);
+  return indexes.length === 1 ? indexes[0] : undefined;
+}
+
+function validateColumns(
+  headers: HeaderIndex,
+  groups: readonly (readonly string[])[],
+  errors: string[],
+) {
+  for (const names of groups) {
+    if (aliasIndexes(headers, names).length > 1)
+      errors.push(`Có nhiều cột cùng ánh xạ tới trường dữ liệu: ${names[0]}.`);
   }
-  return undefined;
 }
 
 function cellAt(row: MatrixCell[], index: number | undefined) {
@@ -50,14 +67,14 @@ function cellAt(row: MatrixCell[], index: number | undefined) {
 
 function cellAlias(
   row: MatrixCell[],
-  headers: Map<string, number>,
+  headers: HeaderIndex,
   names: readonly string[],
 ) {
   return cellAt(row, aliasIndex(headers, names));
 }
 
-function hasAlias(headers: Map<string, number>, names: readonly string[]) {
-  return aliasIndex(headers, names) !== undefined;
+function hasAlias(headers: HeaderIndex, names: readonly string[]) {
+  return aliasIndexes(headers, names).length > 0;
 }
 
 function headerRowIndex(sheet: SourceMatrix) {
@@ -79,11 +96,16 @@ function reference<T>(
   values: T[],
   code: (item: T) => string,
   label: (item: T) => string,
+  allowLabel = true,
 ) {
   const key = normalized(value);
-  return values.find(
-    (item) => normalized(code(item)) === key || normalized(label(item)) === key,
-  );
+  if (!key) return undefined;
+  const codeMatches = values.filter((item) => normalized(code(item)) === key);
+  if (codeMatches.length > 0)
+    return codeMatches.length === 1 ? codeMatches[0] : undefined;
+  if (!allowLabel) return undefined;
+  const labelMatches = values.filter((item) => normalized(label(item)) === key);
+  return labelMatches.length === 1 ? labelMatches[0] : undefined;
 }
 
 function typedDishReference(
@@ -179,7 +201,7 @@ export async function browserChecksum(
 }
 
 function dishTypeHeaderIndexes(
-  headers: Map<string, number>,
+  headers: HeaderIndex,
   dishTypes: PlanningDishType[],
   errors: string[],
   warnings: string[],
@@ -193,14 +215,7 @@ function dishTypeHeaderIndexes(
         dishType.dish_type_code,
         ...dishType.source_header_aliases,
       ];
-      const indexes = Array.from(
-        new Set(
-          names.flatMap((name) => {
-            const index = headers.get(normalized(name));
-            return index === undefined ? [] : [index];
-          }),
-        ),
-      );
+      const indexes = aliasIndexes(headers, names);
       if (indexes.length === 0) {
         warnings.push(
           `Không có cột tùy chọn cho loại món: ${dishType.dish_type_name}.`,
@@ -257,6 +272,7 @@ export async function parseMenuMatrix(
   if (!hasAlias(headers, DATE_COLUMNS))
     errors.push("Thiếu cột bắt buộc: Ngày.");
 
+  validateColumns(headers, [SCHOOL_COLUMNS, DATE_COLUMNS], errors);
   const typeColumns = dishTypeHeaderIndexes(
     headers,
     dishTypes,
@@ -265,7 +281,7 @@ export async function parseMenuMatrix(
   );
   const rows: MenuLine[] = [];
   const dataRows = sheet.slice(Math.max(headerOffset + 1, 0));
-  for (const [offset, sourceRow] of dataRows.entries()) {
+  for (const [offset, sourceRow] of (errors.length ? [] : dataRows).entries()) {
     if (sourceRow.every((value) => normalized(value) === "")) continue;
     const schoolText = cellAlias(sourceRow, headers, SCHOOL_COLUMNS);
     const serviceDate = isoDate(
@@ -276,6 +292,7 @@ export async function parseMenuMatrix(
       schools,
       (item) => item.school_code,
       (item) => item.school_name,
+      !hasAlias(headers, SCHOOL_CODE_COLUMNS),
     );
     const rowNumber =
       (source.firstRowNumber ?? 1) + Math.max(headerOffset, -1) + offset + 1;
@@ -354,10 +371,19 @@ export async function parseAttendanceWorkbook(
     errors.push("Thiếu cột bắt buộc: Số suất học sinh.");
   if (!hasAlias(headers, ATTENDANCE_COLUMNS.teacher))
     errors.push("Thiếu cột bắt buộc: Số suất giáo viên.");
+  validateColumns(
+    headers,
+    [
+      SCHOOL_COLUMNS,
+      DATE_COLUMNS,
+      ATTENDANCE_COLUMNS.student,
+      ATTENDANCE_COLUMNS.teacher,
+    ],
+    errors,
+  );
   const rows: AttendanceLine[] = [];
-  for (const [offset, source] of sheet
-    .slice(Math.max(headerOffset + 1, 0))
-    .entries()) {
+  const dataRows = sheet.slice(Math.max(headerOffset + 1, 0));
+  for (const [offset, source] of (errors.length ? [] : dataRows).entries()) {
     if (source.every((value) => normalized(value) === "")) continue;
     const schoolText = cellAlias(source, headers, SCHOOL_COLUMNS);
     const school = reference(
@@ -365,6 +391,7 @@ export async function parseAttendanceWorkbook(
       schools,
       (item) => item.school_code,
       (item) => item.school_name,
+      !hasAlias(headers, SCHOOL_CODE_COLUMNS),
     );
     rows.push({
       school_id: school?.school_id ?? unresolved("school", schoolText),
