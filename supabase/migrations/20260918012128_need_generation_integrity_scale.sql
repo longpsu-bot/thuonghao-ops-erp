@@ -202,14 +202,9 @@ $scope$);
   definition:=replace(definition,target,$predicate$where revision.confirmed_need_batch_id = v_batch_id
       and (v_revision_id is null or revision.confirmed_need_line_revision_id = v_revision_id)
       and revision.source_kind = 'NEED_GENERATION'$predicate$);
-  target:=$predicate$where contribution.confirmed_need_batch_id = v_batch_id
-      and ($predicate$;
-  if (length(definition)-length(replace(definition,target,'')))/length(target)<>1 then
-    raise exception 'Confirmed Need membership scale patch found unexpected contribution predicates';
-  end if;
-  definition:=replace(definition,target,$predicate$where contribution.confirmed_need_batch_id = v_batch_id
-      and (v_revision_id is null or contribution.confirmed_need_line_revision_id = v_revision_id)
-      and ($predicate$);
+  -- Keep the entire original batch-wide contribution-fact scan as well as
+  -- partition checks. It also checks live School/customer ownership, which
+  -- can change outside this revision's event and is not an immutable sibling.
   execute definition;
 end;
 $confirmed_membership$;
