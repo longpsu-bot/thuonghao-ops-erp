@@ -106,3 +106,93 @@ begin
   execute replace(definition,anchor,anchor||fast_paths);
 end;
 $migration$;
+
+-- The same atomic command materializes Confirmed Need. After the generation
+-- guard is bounded, profiling exposes batch-wide checks repeated per revision
+-- and contribution. Validate the affected immutable ownership set locally;
+-- KEEP the global active-release partition checks on EVERY invocation.
+do $confirmed_source$
+declare
+  definition text := pg_get_functiondef(
+    'atlas_planning.pa_06e_h0b1b_confirmed_need_current_source_consistency()'::regprocedure
+  );
+  anchor text := $anchor$  if not exists (
+    select 1
+    from atlas_planning.need_generation_runs origin_run$anchor$;
+  prefix text;
+  scoped text;
+  target text;
+begin
+  if position('NG_SCALE_SOURCE:' in definition)>0
+    or (length(definition)-length(replace(definition,anchor,'')))/length(anchor)<>1
+  then raise exception 'Confirmed Need source scale patch requires its exact reviewed boundary'; end if;
+  definition:=replace(definition,'  v_batch_id uuid;',E'  v_batch_id uuid;\n  v_line_id uuid;');
+  prefix:=substring(definition from 1 for position(anchor in definition)-1);
+  scoped:=substring(definition from position(anchor in definition));
+  foreach target in array array[
+    'where line.confirmed_need_batch_id = v_batch_id',
+    'where revision.confirmed_need_batch_id = v_batch_id'
+  ] loop
+    if (length(scoped)-length(replace(scoped,target,'')))/length(target)<>1 then
+      raise exception 'Confirmed Need source scale patch found unexpected ownership predicates';
+    end if;
+    scoped:=replace(scoped,target,target||E'\n      and (v_line_id is null or '||
+      case when target like 'where line.%' then 'line' else 'revision' end||
+      '.confirmed_need_line_id = v_line_id)');
+  end loop;
+  definition:=prefix||$scope$  -- NG_SCALE_SOURCE: child events recheck their stable line and history.
+  -- Batch INSERT/UPDATE events retain the complete source scan; advancing a
+  -- batch source therefore still checks ALL lines/revisions. Wholesale and
+  -- the final global active-release partition query remain unchanged.
+  if tg_table_name in ('confirmed_need_lines','confirmed_need_line_revisions') then
+    v_line_id:=new.confirmed_need_line_id;
+  end if;
+
+$scope$||scoped;
+  execute definition;
+end;
+$confirmed_source$;
+
+do $confirmed_membership$
+declare
+  definition text := pg_get_functiondef(
+    'atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()'::regprocedure
+  );
+  target text;
+  expected_count integer;
+begin
+  if position('NG_SCALE_MEMBERSHIP:' in definition)>0 then
+    raise exception 'Confirmed Need membership scale patch is already present';
+  end if;
+  definition:=replace(definition,'  v_batch_id uuid;',E'  v_batch_id uuid;\n  v_revision_id uuid;');
+  target:='  v_batch_id := new.confirmed_need_batch_id;';
+  if (length(definition)-length(replace(definition,target,'')))/length(target)<>1 then
+    raise exception 'Confirmed Need membership scale patch requires its exact reviewed assignment';
+  end if;
+  definition:=replace(definition,target,target||$scope$
+  -- NG_SCALE_MEMBERSHIP: both registered trigger tables identify one revision.
+  -- Its nonempty membership, every exact contribution, sum, predecessor and
+  -- completeness checks all remain. Unchanged immutable sibling revisions do
+  -- not need revalidation. The final GLOBAL partition check is NOT filtered.
+  v_revision_id:=new.confirmed_need_line_revision_id;
+$scope$);
+  target:=$predicate$where revision.confirmed_need_batch_id = v_batch_id
+      and revision.source_kind = 'NEED_GENERATION'$predicate$;
+  expected_count:=2;
+  if (length(definition)-length(replace(definition,target,'')))/length(target)<>expected_count then
+    raise exception 'Confirmed Need membership scale patch found unexpected revision predicates';
+  end if;
+  definition:=replace(definition,target,$predicate$where revision.confirmed_need_batch_id = v_batch_id
+      and revision.confirmed_need_line_revision_id = v_revision_id
+      and revision.source_kind = 'NEED_GENERATION'$predicate$);
+  target:=$predicate$where contribution.confirmed_need_batch_id = v_batch_id
+      and ($predicate$;
+  if (length(definition)-length(replace(definition,target,'')))/length(target)<>1 then
+    raise exception 'Confirmed Need membership scale patch found unexpected contribution predicates';
+  end if;
+  definition:=replace(definition,target,$predicate$where contribution.confirmed_need_batch_id = v_batch_id
+      and contribution.confirmed_need_line_revision_id = v_revision_id
+      and ($predicate$);
+  execute definition;
+end;
+$confirmed_membership$;

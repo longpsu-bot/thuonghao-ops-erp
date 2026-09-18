@@ -5,7 +5,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 set local track_functions = 'all';
-select plan(28);
+select plan(32);
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
@@ -177,6 +177,10 @@ begin
    return null;
  elsif current_setting('atlas.test_ng_fault',true)='release' and tg_table_name='need_generation_release_snapshot_lines' then
    return null;
+ elsif current_setting('atlas.test_ng_fault',true)='confirmed-facts' and tg_table_name='confirmed_need_line_revision_contributions' then
+   new.controlled_contribution_quantity:=new.controlled_contribution_quantity+1;
+ elsif current_setting('atlas.test_ng_fault',true)='confirmed-members' and tg_table_name='confirmed_need_line_revision_contributions' then
+   return null;
  end if;
  return new;
 end;
@@ -184,6 +188,7 @@ $$;
 create trigger ng_scale_fault before insert on atlas_planning.theoretical_need_lines for each row execute function pg_temp.ng_scale_fault();
 create trigger ng_scale_fault before insert on atlas_planning.need_generation_recipe_line_uses for each row execute function pg_temp.ng_scale_fault();
 create trigger ng_scale_fault before insert on atlas_planning.need_generation_release_snapshot_lines for each row execute function pg_temp.ng_scale_fault();
+create trigger ng_scale_fault before insert on atlas_planning.confirmed_need_line_revision_contributions for each row execute function pg_temp.ng_scale_fault();
 select set_config('atlas.test_ng_fault','quantity',true);
 insert into ng_requests select 'quantity',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
  jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
@@ -211,6 +216,24 @@ select is((select response->>'success' from ng_results where name='release'),'fa
 reset role;
 select is((select count(*) from atlas_planning.need_generation_runs where period_start='2050-09-20')+
  (select count(*) from atlas_planning.confirmed_need_batches where period_start='2050-09-20'),0::bigint,'release failure leaves no partial generation or Confirmed Need');
+select set_config('atlas.test_ng_fault','confirmed-facts',true);
+insert into ng_requests select 'confirmed-facts',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+ jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
+set local role authenticated;
+insert into ng_results select 'confirmed-facts',atlas_api.execute_need_generation(request),null from ng_requests where name='confirmed-facts';
+select is((select response->>'success' from ng_results where name='confirmed-facts'),'false','scoped guard rejects forged Confirmed Need contribution quantity');
+reset role;
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2050-09-20')+
+ (select count(*) from atlas_planning.confirmed_need_batches where period_start='2050-09-20'),0::bigint,'confirmed-facts failure leaves no partial generation or Confirmed Need');
+select set_config('atlas.test_ng_fault','confirmed-members',true);
+insert into ng_requests select 'confirmed-members',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+ jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
+set local role authenticated;
+insert into ng_results select 'confirmed-members',atlas_api.execute_need_generation(request),null from ng_requests where name='confirmed-members';
+select is((select response->>'success' from ng_results where name='confirmed-members'),'false','scoped guard rejects omitted Confirmed Need membership');
+reset role;
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2050-09-20')+
+ (select count(*) from atlas_planning.confirmed_need_batches where period_start='2050-09-20'),0::bigint,'confirmed-members failure leaves no partial generation or Confirmed Need');
 select set_config('atlas.test_ng_fault','',true);
 insert into ng_requests select 'after-faults',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
  jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));

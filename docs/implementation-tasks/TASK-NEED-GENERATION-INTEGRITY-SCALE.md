@@ -31,3 +31,11 @@ Four existing Need Generation foundation suites, Pantry generation, daily/atomic
 ## Deployment boundary
 
 This PR is implementation/certification only. A repository merge is not a hosted migration. Keep the PR Draft/unmerged pending owner approval; apply only to Atlas Staging through the protected deployment path after acceptance, then repeat real operator generation/readback. Live OPS v1 and Retool remain untouched. A rollback is a forward migration restoring the previous guard body and its previous performance; no operational data transformation is needed.
+
+## End-to-end materialization boundary
+
+After bounding the generation guard, the 480-contribution test proceeds to materialization. Profiling the same eight-second failed command attributes 3,284 ms to `confirmed_need_revision_membership_total` and 2,275 ms to `confirmed_need_current_source_consistency`; the generation guard is down to 1,668 ms. These are inside the same atomic public command, not a separate operator step.
+
+The migration therefore also bounds those two existing private guards. Source-consistency child events recheck the affected stable line and its revision history; batch events still scan every line after source changes. Membership-total events recheck the affected revision, all its contribution facts, exact sums, complete membership and predecessor anchors. Both functions retain their GLOBAL active-release partition checks on every invocation. Wholesale behavior is unchanged. No guard, constraint or immutable evidence is removed.
+
+Two additional corruption tests cover altered Confirmed Need contribution quantities and omitted materialization membership, with no surviving partial run or batch. Thirty-two operational/adversarial assertions and the existing H0B1b foundation suites protect this expanded execution boundary.
