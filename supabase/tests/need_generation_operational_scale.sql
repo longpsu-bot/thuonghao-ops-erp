@@ -42,8 +42,8 @@ select pg_temp.ng_id(5000+i),pg_temp.ng_id(10),'need-scale-school-'||i,'Need sca
 insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id)
 select pg_temp.ng_id(2000+i),'need-scale-ingredient-'||i,'Need scale ingredient '||i,pg_temp.ng_id(13)
 from generate_series(1,4) i;
-insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_type_id,requires_need_generation)
-select pg_temp.ng_id(1000+i),'need-scale-dish-'||i,'Need scale dish '||i,t.dish_type_id,true
+insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_type_id,requires_need_generation,dish_status)
+select pg_temp.ng_id(1000+i),'need-scale-dish-'||i,'Need scale dish '||i,t.dish_type_id,true,'ACTIVE'
 from unnest(array['soup','savory','stir_fry','dessert']) with ordinality d(code,i)
 join atlas_admin.dish_types t on t.dish_type_code=d.code;
 insert into atlas_admin.recipes(recipe_id,dish_id,school_type_id)
@@ -98,7 +98,7 @@ select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.ng_id(10
 set local role authenticated;
 insert into ng_results select 'menu',atlas_api.save_weekly_menu(request),null from ng_requests where name='menu';
 select is((select response->>'success' from ng_results where name='menu'),'true','600-assignment weekly Menu is saved through the real command');
-select diag((response-'authoritative_readback')::text) from ng_results where name='menu' and response->>'success'<>'true';
+select diag(jsonb_build_object('error_code',response->>'error_code','first_blocker',response#>'{blocking_references,0}')::text) from ng_results where name='menu' and response->>'success'<>'true';
 insert into ng_results select 'attendance',atlas_api.save_attendance(request),null from ng_requests where name='attendance';
 select is((select response->>'success' from ng_results where name='attendance'),'true','150-row Attendance is saved through the real command');
 insert into ng_results select 'pantry',atlas_api.save_pantry(request),null from ng_requests where name='pantry';
