@@ -6,7 +6,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 set local track_functions = 'all';
-select plan(32);
+select plan(33);
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
@@ -166,6 +166,15 @@ select throws_ok($$insert into atlas_planning.need_generation_release_snapshot_l
  select member.need_generation_release_snapshot_id,member.need_generation_run_id,member.released_run_version,member.theoretical_need_line_id
  from atlas_planning.need_generation_release_snapshot_lines member join atlas_planning.need_generation_runs run using(need_generation_run_id)
  where run.period_start='2050-09-19' limit 1$$,'23505',null,'late duplicate release membership is rejected after early flush');
+
+-- Removing current ownership without a replacement must recheck the old
+-- revision's retained members even without a batch/header event.
+select throws_ok($$update atlas_planning.confirmed_need_line_revisions set is_current=false
+ where confirmed_need_line_revision_id=(select revision.confirmed_need_line_revision_id
+ from atlas_planning.confirmed_need_line_revisions revision join atlas_planning.confirmed_need_batches batch using(confirmed_need_batch_id)
+ where batch.period_start='2050-09-19' and revision.is_current limit 1);
+ set constraints all immediate$$,'23514',null,'late loss of current ownership cannot bypass the partition check');
+set constraints all deferred;
 
 -- Deliberately corrupt NEW evidence on the next day, not source facts or guards.
 -- All production constraints/triggers remain enabled; the atomic public command
