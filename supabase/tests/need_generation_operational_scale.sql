@@ -98,6 +98,7 @@ select set_config('request.jwt.claims',jsonb_build_object('sub',pg_temp.ng_id(10
 set local role authenticated;
 insert into ng_results select 'menu',atlas_api.save_weekly_menu(request),null from ng_requests where name='menu';
 select is((select response->>'success' from ng_results where name='menu'),'true','600-assignment weekly Menu is saved through the real command');
+select diag((response-'authoritative_readback')::text) from ng_results where name='menu' and response->>'success'<>'true';
 insert into ng_results select 'attendance',atlas_api.save_attendance(request),null from ng_requests where name='attendance';
 select is((select response->>'success' from ng_results where name='attendance'),'true','150-row Attendance is saved through the real command');
 insert into ng_results select 'pantry',atlas_api.save_pantry(request),null from ng_requests where name='pantry';
@@ -113,8 +114,6 @@ with started as materialized(select clock_timestamp() as at), result as material
 ) insert into ng_results select 'generate',response,1000*extract(epoch from clock_timestamp()-at) from result;
 select is((select response->>'success' from ng_results where name='generate'),'true','daily generation completes under eight seconds');
 select diag((select jsonb_build_object('elapsed_ms',elapsed_ms,'error_code',response->>'error_code')::text from ng_results where name='generate'));
-select case when (select response->>'success' from ng_results where name='generate') <> 'true'
-then bail_out('Generation failed at operational scale') end;
 select is((select response#>>'{authoritative_readback,preflight,downstream_currentness}' from ng_results where name='generate'),'CURRENT','completed Need becomes authoritative current state');
 insert into ng_results select 'review',atlas_api.get_confirmed_need_review(jsonb_build_object(
  'contract_version','RMVP-05.v1','requested_by_auth_subject',pg_temp.ng_id(101),'correlation_id',gen_random_uuid(),
