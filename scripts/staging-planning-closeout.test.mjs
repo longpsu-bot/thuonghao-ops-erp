@@ -18,3 +18,17 @@ test("rollback probes keep the operator timeout and restrict approved dates", ()
   assert.doesNotMatch(sql, /commit;/);
   assert.throws(() => rollbackProbeSql("2026-09-21"));
 });
+
+test("rollback review starts a new statement after materializing generation", () => {
+  const sql = rollbackProbeSql("2026-09-17");
+  // A STABLE review in the generation statement cannot see its new batch.
+  // Preserve atomic rollback, but mirror the browser's separate read request.
+  const generationEnd = sql.indexOf("from generated;");
+  const reviewCall = sql.indexOf("atlas_api.get_confirmed_need_review");
+  assert.ok(generationEnd >= 0 && generationEnd < reviewCall);
+  assert.match(sql, /create temp table planning_closeout_probe_result/);
+  assert.match(sql, /insert into planning_closeout_probe_result/);
+  assert.match(sql, /'review_error_code',review->>'error_code'/);
+  assert.match(sql, /rollback;$/);
+  assert.doesNotMatch(sql, /commit;/);
+});

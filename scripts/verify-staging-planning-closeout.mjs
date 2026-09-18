@@ -26,6 +26,8 @@ export function nextCent(value) {
 export function rollbackProbeSql(date) {
   if (!DAYS.includes(date)) throw new Error("UNAPPROVED_PROBE_DATE");
   return `begin; set local lock_timeout='2s'; set local statement_timeout='8s';
+create temp table planning_closeout_probe_result(r jsonb, generation_ms numeric);
+grant select, insert on planning_closeout_probe_result to authenticated;
 set local request.jwt.claims='{"sub":"${SUBJECT}","role":"authenticated"}';
 set local role authenticated;
 with started as materialized(select clock_timestamp() as at,gen_random_uuid() as id),
@@ -34,16 +36,18 @@ generated as materialized(select at,atlas_api.execute_need_generation(jsonb_buil
  'idempotency_key','planning-closeout-probe:'||id,'expected_version',1,
  'requested_by_auth_subject','${SUBJECT}','requested_at',now(),
  'reason_code','NEED_GENERATION_EXECUTED','reason_note','Owner-approved rollback-only Staging closeout verification.',
- 'payload',jsonb_build_object('service_date','${date}','expected_current_need_generation_run_id',null))) r from started),
-measured as materialized(select r,1000*extract(epoch from clock_timestamp()-at) as generation_ms from generated),
-reviewed as materialized(select r,generation_ms,case when r->>'success'='true' then
+ 'payload',jsonb_build_object('service_date','${date}','expected_current_need_generation_run_id',null))) r from started)
+insert into planning_closeout_probe_result
+select r,1000*extract(epoch from clock_timestamp()-at) as generation_ms from generated;
+-- The STABLE read needs its own statement to see the newly materialized batch.
+with reviewed as materialized(select r,generation_ms,case when r->>'success'='true' then
  atlas_api.get_confirmed_need_review(jsonb_build_object('contract_version','RMVP-05.v1',
  'requested_by_auth_subject','${SUBJECT}','correlation_id',gen_random_uuid(),
  'payload',jsonb_build_object('confirmed_need_batch_id',r#>'{affected_aggregate_ids,confirmed_need_batch_id}',
- 'filters',jsonb_build_object('service_date','${date}'),'line_offset',0,'line_limit',10000))) else null end as review from measured)
+ 'filters',jsonb_build_object('service_date','${date}'),'line_offset',0,'line_limit',10000))) else null end as review from planning_closeout_probe_result)
 select jsonb_build_object('date','${date}','success',r->'success','error_code',r->>'error_code',
  'generation_ms',generation_ms,'currentness',r#>>'{authoritative_readback,preflight,downstream_currentness}',
- 'review_success',review->'success','line_count',jsonb_array_length(review#>'{workbench,lines}'),
+ 'review_success',review->'success','review_error_code',review->>'error_code','line_count',jsonb_array_length(review#>'{workbench,lines}'),
  'has_more',review#>'{workbench,pagination,has_more}',
  'blocker_count',jsonb_array_length(review#>'{workbench,blockers}'),
  'editing_allowed',review#>'{workbench,editing_allowed}') as probe from reviewed;
