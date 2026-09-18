@@ -1,5 +1,6 @@
 -- Disposable local/CI only. All source and generation constraints stay enabled.
--- 30 Schools x 4 Dishes x 4 Recipe Ingredients = 480 daily atomic contributions.
+-- 30 Schools x 4 Dishes x 4 DISTINCT Ingredients = 480 daily atomic contributions
+-- and 480 grouped Confirmed Need rows (not the earlier 120-row grouping).
 begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
@@ -42,7 +43,7 @@ select pg_temp.ng_id(5000+i),pg_temp.ng_id(10),'need-scale-school-'||i,'Need sca
   pg_temp.ng_id(12),pg_temp.ng_id(11),i from generate_series(1,30) i;
 insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id)
 select pg_temp.ng_id(2000+i),'need-scale-ingredient-'||i,'Need scale ingredient '||i,pg_temp.ng_id(13)
-from generate_series(1,4) i;
+from generate_series(1,16) i;
 insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_type_id,requires_need_generation,dish_status)
 select pg_temp.ng_id(1000+i),'need-scale-dish-'||i,'Need scale dish '||i,t.dish_type_id,true,'ACTIVE'
 from unnest(array['soup','savory','stir_fry','dessert']) with ordinality d(code,i)
@@ -56,7 +57,7 @@ select pg_temp.ng_id(3000+i*100+j),pg_temp.ng_id(1100+i),'ingredient-'||j
 from generate_series(1,4) i cross join generate_series(1,4) j;
 insert into atlas_admin.recipe_line_revisions(recipe_line_revision_id,recipe_id,recipe_version_id,recipe_line_id,line_revision_number,ingredient_id,quantity_per_basis,unit_id,created_by_actor_id)
 select pg_temp.ng_id(4000+i*100+j),pg_temp.ng_id(1100+i),pg_temp.ng_id(1200+i),
- pg_temp.ng_id(3000+i*100+j),1,pg_temp.ng_id(2000+j),1.234567,pg_temp.ng_id(13),pg_temp.ng_id(1)
+ pg_temp.ng_id(3000+i*100+j),1,pg_temp.ng_id(2000+(i-1)*4+j),1.234567,pg_temp.ng_id(13),pg_temp.ng_id(1)
 from generate_series(1,4) i cross join generate_series(1,4) j;
 update atlas_admin.recipe_versions set recipe_version_status='VALIDATED',validated_by_actor_id=pg_temp.ng_id(1),validated_at=now()
 where recipe_version_id in(select pg_temp.ng_id(1200+i) from generate_series(1,4) i);
@@ -140,7 +141,7 @@ insert into ng_results select 'review',atlas_api.get_confirmed_need_review(jsonb
  'filters',jsonb_build_object('service_date','2050-09-19','school_id',null,'delivery_location_id',null,'ingredient_id',null,'decision_state',null),
  'line_offset',0,'line_limit',10000))),null from ng_results where name='generate';
 select is((select response->>'success' from ng_results where name='review'),'true','Confirmed Need review can be read by the operator');
-select is((select jsonb_array_length(response#>'{workbench,lines}') from ng_results where name='review'),120,'review contains all 120 School/Ingredient rows');
+select is((select jsonb_array_length(response#>'{workbench,lines}') from ng_results where name='review'),480,'review contains all 480 School/Ingredient rows');
 select is((select response#>>'{workbench,pagination,has_more}' from ng_results where name='review'),'false','review is complete, not silently paginated');
 select is((select response#>>'{workbench,editing_allowed}' from ng_results where name='review'),'true','the current Confirmed Need is editable by the operator');
 select is((select jsonb_array_length(response#>'{workbench,blockers}') from ng_results where name='review'),0,'Confirmed Need has no batch blockers');
