@@ -4,7 +4,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
-select plan(16);
+select plan(28);
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
@@ -65,6 +65,14 @@ insert into atlas_planning.need_generation_calculation_contracts(need_generation
 values(pg_temp.ng_id(20),'school_catering_proportional_per_basis',pg_temp.ng_id(21),1);
 insert into atlas_planning.need_generation_calculation_contract_revisions(need_generation_calculation_contract_revision_id,need_generation_calculation_contract_id,revision_number,formula_kind,quantity_precision,quantity_scale,factor_precision,factor_scale,final_coercion_mode,approved_by_actor_id,approved_at)
 values(pg_temp.ng_id(21),pg_temp.ng_id(20),1,'STUDENT_TEACHER_PORTIONS_X_RECIPE_QTY_DIV_BASIS',20,6,24,12,'POSTGRES_NUMERIC_SCALE_HALF_AWAY_FROM_ZERO',pg_temp.ng_id(1),now());
+insert into atlas_planning.planning_quantity_policies(planning_quantity_policy_id,unit_id,created_by_actor_id)
+values(pg_temp.ng_id(30),pg_temp.ng_id(13),pg_temp.ng_id(1));
+insert into atlas_planning.planning_quantity_policy_revisions(planning_quantity_policy_revision_id,planning_quantity_policy_id,unit_id,
+ revision_number,predecessor_policy_revision_id,planning_step,effective_from,policy_revision_status,created_by_actor_id)
+values(pg_temp.ng_id(31),pg_temp.ng_id(30),pg_temp.ng_id(13),1,null,0.1,'2050-01-01','DRAFT',pg_temp.ng_id(1));
+update atlas_planning.planning_quantity_policy_revisions set policy_revision_status='ACTIVE',approved_by_actor_id=pg_temp.ng_id(1),
+ approved_at=now(),activated_by_actor_id=pg_temp.ng_id(1),activated_at=now()
+where planning_quantity_policy_revision_id=pg_temp.ng_id(31);
 set constraints all immediate;
 set constraints all deferred;
 create temp table ng_requests(name text primary key,request jsonb not null);
@@ -123,6 +131,8 @@ insert into ng_results select 'review',atlas_api.get_confirmed_need_review(jsonb
 select is((select response->>'success' from ng_results where name='review'),'true','Confirmed Need review can be read by the operator');
 select is((select jsonb_array_length(response#>'{workbench,lines}') from ng_results where name='review'),120,'review contains all 120 School/Ingredient rows');
 select is((select response#>>'{workbench,pagination,has_more}' from ng_results where name='review'),'false','review is complete, not silently paginated');
+select is((select response#>>'{workbench,editing_allowed}' from ng_results where name='review'),'true','the current Confirmed Need is editable by the operator');
+select is((select jsonb_array_length(response#>'{workbench,blockers}') from ng_results where name='review'),0,'Confirmed Need has no batch blockers');
 insert into ng_results select 'replay',atlas_api.execute_need_generation(request),null from ng_requests where name='generate';
 select is((select response->>'success' from ng_results where name='replay'),'true','explicit identical replay succeeds');
 reset role;
@@ -132,5 +142,70 @@ select ok((select bool_and(theoretical_quantity=1.234567) from atlas_planning.th
 select is((select count(*) from atlas_planning.need_generation_release_snapshot_lines member join atlas_planning.need_generation_runs run using(need_generation_run_id) where run.period_start='2050-09-19'),480::bigint,'release preserves the exact 480-member set');
 select throws_ok($$update atlas_planning.theoretical_need_lines set theoretical_quantity=9 where service_date='2050-09-19'$$,'23514',null,'generated evidence remains immutable');
 select is((select count(*) from atlas_core.command_receipts where command_id=(select (request->>'command_id')::uuid from ng_requests where name='generate')),1::bigint,'replay retains one command receipt');
+-- These checks run after a completed aggregate and an explicit early flush.
+set constraints all immediate;
+set constraints all deferred;
+select throws_ok($$delete from atlas_planning.theoretical_need_lines where service_date='2050-09-19'$$,
+ '23514',null,'completed theoretical evidence cannot be deleted');
+select throws_ok($$update atlas_planning.need_generation_runs set generated_line_count=generated_line_count+1 where period_start='2050-09-19'$$,
+ '23514',null,'a caller cannot enlarge immutable counts to admit a late child');
+select throws_ok($$insert into atlas_planning.need_generation_release_snapshot_lines(
+ need_generation_release_snapshot_id,need_generation_run_id,released_run_version,theoretical_need_line_id)
+ select member.need_generation_release_snapshot_id,member.need_generation_run_id,member.released_run_version,member.theoretical_need_line_id
+ from atlas_planning.need_generation_release_snapshot_lines member join atlas_planning.need_generation_runs run using(need_generation_run_id)
+ where run.period_start='2050-09-19' limit 1$$,'23505',null,'late duplicate release membership is rejected after early flush');
+
+-- Deliberately corrupt NEW evidence on the next day, not source facts or guards.
+-- All production constraints/triggers remain enabled; the atomic public command
+-- must reject each malformed package and leave no run or Confirmed Need batch.
+create function pg_temp.ng_scale_fault() returns trigger language plpgsql as $$
+begin
+ if current_setting('atlas.test_ng_fault',true)='quantity' and tg_table_name='theoretical_need_lines' then
+   new.theoretical_quantity:=new.theoretical_quantity+1;
+ elsif current_setting('atlas.test_ng_fault',true)='composition' and tg_table_name='need_generation_recipe_line_uses' then
+   return null;
+ elsif current_setting('atlas.test_ng_fault',true)='release' and tg_table_name='need_generation_release_snapshot_lines' then
+   return null;
+ end if;
+ return new;
+end;
+$$;
+create trigger ng_scale_fault before insert on atlas_planning.theoretical_need_lines for each row execute function pg_temp.ng_scale_fault();
+create trigger ng_scale_fault before insert on atlas_planning.need_generation_recipe_line_uses for each row execute function pg_temp.ng_scale_fault();
+create trigger ng_scale_fault before insert on atlas_planning.need_generation_release_snapshot_lines for each row execute function pg_temp.ng_scale_fault();
+select set_config('atlas.test_ng_fault','quantity',true);
+insert into ng_requests select 'quantity',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+ jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
+set local role authenticated;
+insert into ng_results select 'quantity',atlas_api.execute_need_generation(request),null from ng_requests where name='quantity';
+select is((select response->>'success' from ng_results where name='quantity'),'false','full aggregate guard rejects forged numeric result');
+reset role;
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2050-09-20')+
+ (select count(*) from atlas_planning.confirmed_need_batches where period_start='2050-09-20'),0::bigint,'quantity failure leaves no partial generation or Confirmed Need');
+select set_config('atlas.test_ng_fault','composition',true);
+insert into ng_requests select 'composition',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+ jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
+set local role authenticated;
+insert into ng_results select 'composition',atlas_api.execute_need_generation(request),null from ng_requests where name='composition';
+select is((select response->>'success' from ng_results where name='composition'),'false','full aggregate guard rejects omitted Recipe composition');
+reset role;
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2050-09-20')+
+ (select count(*) from atlas_planning.confirmed_need_batches where period_start='2050-09-20'),0::bigint,'composition failure leaves no partial generation or Confirmed Need');
+select set_config('atlas.test_ng_fault','release',true);
+insert into ng_requests select 'release',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+ jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
+set local role authenticated;
+insert into ng_results select 'release',atlas_api.execute_need_generation(request),null from ng_requests where name='release';
+select is((select response->>'success' from ng_results where name='release'),'false','full aggregate guard rejects incomplete release membership');
+reset role;
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2050-09-20')+
+ (select count(*) from atlas_planning.confirmed_need_batches where period_start='2050-09-20'),0::bigint,'release failure leaves no partial generation or Confirmed Need');
+select set_config('atlas.test_ng_fault','',true);
+insert into ng_requests select 'after-faults',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
+ jsonb_build_object('service_date','2050-09-20','expected_current_need_generation_run_id',null));
+set local role authenticated;
+insert into ng_results select 'after-faults',atlas_api.execute_need_generation(request),null from ng_requests where name='after-faults';
+select is((select response->>'success' from ng_results where name='after-faults'),'true','a valid subsequent generation still succeeds after rejected packages');
+reset role;
 select * from finish();
 rollback;
