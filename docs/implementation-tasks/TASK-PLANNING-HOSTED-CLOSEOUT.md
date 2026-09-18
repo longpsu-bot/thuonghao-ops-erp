@@ -25,3 +25,19 @@ Only the explicit persist_rehearsal=true option performs one retained browser jo
 No live OPS v1, Retool, Google Sheet, Apps Script, PR #286 or production-cutover change. Retool comparison uses retained exported workflow evidence, not fresh live UI certification. Existing source headers and lines must preserve their pre-task fingerprints. Final CI, deployment and operator results are recorded on the PR.
 
 Rollback: a forward migration restores the two previous guard bodies and removes only these three indexes. Policy correction requires controlled retirement with retained history, never deletion after use. A retained Staging verification edit is explicitly identified in the final evidence.
+
+## Closeout verifier statement-snapshot correction
+
+After PR #305 deployed, the policy package installed and replayed successfully.
+The first hosted 17/09 generation succeeded in 4,723.197 ms, but the automated
+review in the same SQL statement could not observe the new batch. The review
+RPC is STABLE. A fresh rollback-only probe using separate generation and review
+statements succeeded in 5,782.007 ms and returned all 248 editable rows with no
+blockers and no pagination remainder. No operational record was retained.
+
+The verifier now materializes the generation response into a transaction-local
+temporary table and performs the authoritative read in a subsequent statement,
+mirroring the browser's separate calls. The transaction still always rolls back,
+the eight-second role limit stays unchanged, and there is no retry or schema,
+policy, frontend, PR #286 or live v1 change. A regression asserts the separate
+statement boundary and safe review error category in failed probe diagnostics.
