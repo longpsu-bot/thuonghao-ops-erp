@@ -210,6 +210,7 @@ jobs:
         run: |
           pnpm exec supabase db reset --local --no-seed
           pnpm exec supabase test db supabase/tests/need_generation_operational_scale.sql --local
+          node scripts/test-local-count-unit-policies.mjs
           pnpm exec supabase test db supabase/tests/pa_06e_h0b1b_confirmed_need_structure_security_catalog.sql supabase/tests/pa_06e_h0b1b_contribution_membership_total_partition_history.sql supabase/tests/pa_06e_h0b1b_school_catering_identity_current_source.sql supabase/tests/pa_06e_h0b1b_wholesale_compatibility_source_classification.sql --local
           pnpm exec supabase test db supabase/tests/pa_06e_h0a5b_need_generation_lifecycle_issues_invalidation_history.sql supabase/tests/pa_06e_h0a5b_need_generation_run_input_recipe_calculation_integrity.sql supabase/tests/pa_06e_h0a5b_need_generation_structure_security.sql supabase/tests/pa_06e_h0a5b_theoretical_line_source_predecessor_release_integrity.sql supabase/tests/pantry_ng_02_direct_ingredient_persistence_materialization.sql --local
           pnpm exec supabase test db supabase/tests/atlas_current_platform_security_catalog.sql --local
