@@ -11,12 +11,12 @@ declare
   end if;
 $anchor$;
   fast_paths text := $paths$
-  -- NG_SCALE: immutable run counts have just been checked against exact rows.
-  -- Adding a child to an already-valid run changes its count and fails above.
-  -- A run with a matching larger count must itself have been INSERTed (its
-  -- generated facts cannot be updated). That deferred run event performs ALL
-  -- original set-wide source, quantity, completeness and history checks.
-  -- Flushing constraints early cannot authorize subsequent extra children.
+  -- NG_SCALE: stored run counts have just been checked against exact rows.
+  -- The generated line count is immutable. Issue counts can grow only with a
+  -- checked run UPDATE; that event still runs the complete original guard.
+  -- Thus a new counted package has a mandatory full run INSERT/UPDATE event,
+  -- and uncounted later children fail above. Early constraint flushing cannot
+  -- authorize an extra row after its matching complete check has finished.
   if tg_op = 'INSERT' and tg_table_name in (
     'theoretical_need_lines', 'need_generation_issues'
   ) then

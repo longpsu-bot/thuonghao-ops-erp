@@ -4,6 +4,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
+set local track_functions = 'all';
 select plan(28);
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
@@ -116,12 +117,22 @@ insert into ng_results select 'preflight',atlas_api.get_planning_input_preflight
  'payload',jsonb_build_object('period_start','2050-09-19','period_end','2050-09-19'))),null;
 select is((select response#>>'{preflight,readiness_state}' from ng_results where name='preflight'),'READY','all three completed sources are ready');
 -- This is the production authenticated budget, not a relaxed test timeout.
+create temp table ng_profile_before as select funcid,calls,self_time,total_time from pg_stat_xact_user_functions;
 set local statement_timeout='8s';
 with started as materialized(select clock_timestamp() as at), result as materialized(
  select at,atlas_api.execute_need_generation(request) as response from ng_requests cross join started where name='generate'
 ) insert into ng_results select 'generate',response,1000*extract(epoch from clock_timestamp()-at) from result;
 select is((select response->>'success' from ng_results where name='generate'),'true','daily generation completes under eight seconds');
 select diag((select jsonb_build_object('elapsed_ms',elapsed_ms,'error_code',response->>'error_code')::text from ng_results where name='generate'));
+reset role;
+select diag(jsonb_agg(to_jsonb(x))::text) from (
+ select a.schemaname,a.funcname,a.calls-coalesce(b.calls,0) as calls,
+ round((a.self_time-coalesce(b.self_time,0))::numeric,2) as self_ms
+ from pg_stat_xact_user_functions a left join ng_profile_before b using(funcid)
+ where a.schemaname like 'atlas%' and a.calls>coalesce(b.calls,0)
+ order by a.self_time-coalesce(b.self_time,0) desc limit 8
+) x;
+set local role authenticated;
 select is((select response#>>'{authoritative_readback,preflight,downstream_currentness}' from ng_results where name='generate'),'CURRENT','completed Need becomes authoritative current state');
 insert into ng_results select 'review',atlas_api.get_confirmed_need_review(jsonb_build_object(
  'contract_version','RMVP-05.v1','requested_by_auth_subject',pg_temp.ng_id(101),'correlation_id',gen_random_uuid(),

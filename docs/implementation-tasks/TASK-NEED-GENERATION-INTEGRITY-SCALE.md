@@ -14,7 +14,7 @@ The API maps query cancellation to `RETRYABLE_CONCURRENCY_FAILURE`. This task do
 
 Patch the current guard definition at the exact line/issue count boundary, preserving all later Recipe and direct-Need amendments. Root, input snapshot, Recipe selection and release-header events retain the complete original guard. No trigger is removed or disabled, and UPDATE/DELETE behavior is unchanged.
 
-Immutable theoretical-line and issue INSERTs first verify exact owned counts against the immutable run facts. A subsequent extra child cannot fit an already-valid count. A newly created run still owns a mandatory deferred complete validation event, including exact quantities, sources, permitted blockers and predecessor history. Flushing constraints early does not permit later uncounted additions.
+Immutable theoretical-line and issue INSERTs first verify exact owned counts. The generated-line count is immutable. Issue counts may grow only through a checked, versioned run UPDATE; that UPDATE retains the complete original guard. A new counted package therefore has a mandatory full run INSERT/UPDATE event, including the original source, quantity, permitted-blocker and history checks. Uncounted later children fail immediately when deferred checks are flushed; flushing early does not authorize later additions.
 
 Recipe-use INSERTs verify their exact selection, Recipe, Version, stable Line and Revision ownership plus complete affected-selection cardinality. Existing unique selection/Line membership and exact revision ownership imply every-and-only composition membership. Release-member INSERTs retain exact composite foreign keys, unique membership and complete immutable run/header cardinality. The header event retains full release metadata checks.
 
