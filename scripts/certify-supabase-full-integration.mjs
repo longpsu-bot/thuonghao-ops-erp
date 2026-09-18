@@ -15,6 +15,8 @@ const DIAGNOSTIC_COMMAND_TIMEOUT_MS = 10_000;
 
 const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "atlas_current_platform_security_catalog.sql",
+  "need_generation_operational_scale.sql",
+  "staging_count_unit_policies.sql",
   "school_catering_handoff_allocation.sql",
   "school_catering_planning_correction.sql",
   "school_catering_purchase_orders.sql",
@@ -87,24 +89,32 @@ function pnpm(...args) {
 }
 
 const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
-  file === "atlas_staging_master_load.sql"
+  file === "staging_count_unit_policies.sql"
     ? Object.freeze({
         command: "node",
-        args: Object.freeze(["scripts/test-local-staging-master-load.mjs"]),
+        args: Object.freeze(["scripts/test-local-count-unit-policies.mjs"]),
       })
-    : file === "purchase_review_confirm_release.sql"
+    : file === "atlas_staging_master_load.sql"
       ? Object.freeze({
           command: "node",
-          args: Object.freeze(["scripts/test-local-purchase-review.mjs", file]),
+          args: Object.freeze(["scripts/test-local-staging-master-load.mjs"]),
         })
-      : pnpm(
-          "exec",
-          "supabase",
-          "test",
-          "db",
-          `supabase/tests/${file}`,
-          "--local",
-        ),
+      : file === "purchase_review_confirm_release.sql"
+        ? Object.freeze({
+            command: "node",
+            args: Object.freeze([
+              "scripts/test-local-purchase-review.mjs",
+              file,
+            ]),
+          })
+        : pnpm(
+            "exec",
+            "supabase",
+            "test",
+            "db",
+            `supabase/tests/${file}`,
+            "--local",
+          ),
 );
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
