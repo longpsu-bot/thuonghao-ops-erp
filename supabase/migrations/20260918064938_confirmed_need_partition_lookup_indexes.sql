@@ -84,3 +84,42 @@ begin
   end loop;
 end;
 $partition_scope$;
+
+-- Immutable contribution facts and the mutable School/customer reference have
+-- different dependency scopes. Preserve the latter as an independent GLOBAL
+-- check; validate immutable facts for the changed current revision only. The
+-- prior history fallback leaves v_revision_id NULL and still scans all facts.
+do $contribution_fact_scope$
+declare
+  definition text:=pg_get_functiondef('atlas_planning.pa_06e_h0b1b_confirmed_need_revision_membership_total()'::regprocedure);
+  anchor text:=$anchor$    where contribution.confirmed_need_batch_id = v_batch_id
+      and ($anchor$;
+  original_check text:=$anchor$  if exists (
+    select 1
+    from atlas_planning.confirmed_need_line_revision_contributions contribution
+    join atlas_planning.confirmed_need_line_revisions revision$anchor$;
+  ownership_check text:=$owner$  -- LIVE_OWNER_SCOPE: changes outside this revision remain checked globally.
+  if exists (
+    select 1
+    from atlas_planning.confirmed_need_line_revision_contributions contribution
+    join atlas_planning.confirmed_need_lines line
+      on line.confirmed_need_line_id=contribution.confirmed_need_line_id
+    join atlas_admin.schools school on school.school_id=contribution.school_id
+    where contribution.confirmed_need_batch_id=v_batch_id
+      and school.customer_id<>line.customer_id
+  ) then
+    raise exception using errcode='23514',message='Need Generation contribution facts are not exact active release facts';
+  end if;
+
+$owner$;
+begin
+  if position('LIVE_OWNER_SCOPE:' in definition)>0
+    or (length(definition)-length(replace(definition,anchor,'')))/length(anchor)<>1
+    or (length(definition)-length(replace(definition,original_check,'')))/length(original_check)<>1
+  then raise exception 'CONTRIBUTION_FACT_SCOPE_BOUNDARY_MISMATCH'; end if;
+  definition:=replace(definition,anchor,$anchor$    where contribution.confirmed_need_batch_id = v_batch_id
+      and (v_revision_id is null or contribution.confirmed_need_line_revision_id=v_revision_id)
+      and ($anchor$);
+  execute replace(definition,original_check,ownership_check||original_check);
+end;
+$contribution_fact_scope$;

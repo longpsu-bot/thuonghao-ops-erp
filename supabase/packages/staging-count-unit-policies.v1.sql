@@ -20,20 +20,20 @@ begin
     and subject.subject_status='ACTIVE' and actor.actor_status='ACTIVE';
   perform pg_advisory_xact_lock(hashtextextended('atlas-staging-count-unit-policies.v1',0));
   for expected in select * from (values
-    ('v1-unit-034ce34d3ff3','Qu?'),
-    ('v1-unit-2d183c73d76a','B?'),
-    ('v1-unit-469606e98b7e','G?i'),
-    ('v1-unit-46bab433cc1a','C?c'),
-    ('v1-unit-83bea5cf6378','Mi?ng'),
-    ('v1-unit-91a0b1c14124','C?i'),
-    ('v1-unit-9837090d3b3f','H?'),
+    ('v1-unit-034ce34d3ff3','Quả'),
+    ('v1-unit-2d183c73d76a','Bó'),
+    ('v1-unit-469606e98b7e','Gói'),
+    ('v1-unit-46bab433cc1a','Cốc'),
+    ('v1-unit-83bea5cf6378','Miếng'),
+    ('v1-unit-91a0b1c14124','Cái'),
+    ('v1-unit-9837090d3b3f','Hũ'),
     ('v1-unit-b1e160b3fbfb','Chai'),
-    ('v1-unit-c854d71627b2','C?y'),
+    ('v1-unit-c854d71627b2','Cây'),
     ('v1-unit-cac06658f903','Lon'),
-    ('v1-unit-cad1515b85c4','?'),
-    ('v1-unit-dafac3b7da11','B?ch'),
-    ('v1-unit-ea9046ea54e4','H?p'),
-    ('v1-unit-eb0ce03e77fa','Tr?i')
+    ('v1-unit-cad1515b85c4','Ổ'),
+    ('v1-unit-dafac3b7da11','Bịch'),
+    ('v1-unit-ea9046ea54e4','Hộp'),
+    ('v1-unit-eb0ce03e77fa','Trái')
   ) approved(code,name) order by code loop
     select * into controlled_unit from atlas_admin.units where unit_code=expected.code for update;
     if not found or controlled_unit.unit_status<>'ACTIVE'

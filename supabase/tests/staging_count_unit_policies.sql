@@ -9,20 +9,20 @@ values('a1010000-0000-4000-8000-000000000001','HUMAN','Staging policy test');
 insert into atlas_core.actor_auth_subjects(actor_id,auth_subject_id)
 values('a1010000-0000-4000-8000-000000000001','a1010000-0000-4000-8000-000000000101');
 insert into atlas_admin.units(unit_code,unit_name,dimension_code) values
-('v1-unit-034ce34d3ff3','Qu?','COUNT'),
-('v1-unit-2d183c73d76a','B?','COUNT'),
-('v1-unit-469606e98b7e','G?i','COUNT'),
-('v1-unit-46bab433cc1a','C?c','COUNT'),
-('v1-unit-83bea5cf6378','Mi?ng','COUNT'),
-('v1-unit-91a0b1c14124','C?i','COUNT'),
-('v1-unit-9837090d3b3f','H?','COUNT'),
+('v1-unit-034ce34d3ff3','Quả','COUNT'),
+('v1-unit-2d183c73d76a','Bó','COUNT'),
+('v1-unit-469606e98b7e','Gói','COUNT'),
+('v1-unit-46bab433cc1a','Cốc','COUNT'),
+('v1-unit-83bea5cf6378','Miếng','COUNT'),
+('v1-unit-91a0b1c14124','Cái','COUNT'),
+('v1-unit-9837090d3b3f','Hũ','COUNT'),
 ('v1-unit-b1e160b3fbfb','Chai','COUNT'),
-('v1-unit-c854d71627b2','C?y','COUNT'),
+('v1-unit-c854d71627b2','Cây','COUNT'),
 ('v1-unit-cac06658f903','Lon','COUNT'),
-('v1-unit-cad1515b85c4','?','COUNT'),
-('v1-unit-dafac3b7da11','B?ch','COUNT'),
-('v1-unit-ea9046ea54e4','H?p','COUNT'),
-('v1-unit-eb0ce03e77fa','Tr?i','COUNT');
+('v1-unit-cad1515b85c4','Ổ','COUNT'),
+('v1-unit-dafac3b7da11','Bịch','COUNT'),
+('v1-unit-ea9046ea54e4','Hộp','COUNT'),
+('v1-unit-eb0ce03e77fa','Trái','COUNT');
 -- The package may not guess a policy for this unapproved COUNT unit.
 insert into atlas_admin.units(unit_code,unit_name,dimension_code)
 values('unapproved-count','Unapproved count','COUNT'),('policy-test-kg','Policy test kilogram','MASS');
@@ -48,7 +48,7 @@ select is((select md5(jsonb_agg(to_jsonb(r) order by planning_quantity_policy_re
 -- PACKAGE_TEST_FUNCTION
 update atlas_admin.units set unit_name='Unexpected rename' where unit_code='v1-unit-034ce34d3ff3';
 select throws_ok('select pg_temp.run_policy_package()','P0001','STAGING_COUNT_POLICY_UNIT_MISMATCH','unexpected unit meaning fails closed');
-update atlas_admin.units set unit_name='Qu?' where unit_code='v1-unit-034ce34d3ff3';
+update atlas_admin.units set unit_name='Quả' where unit_code='v1-unit-034ce34d3ff3';
 update atlas_planning.planning_quantity_policy_revisions set policy_revision_status='RETIRED',effective_to='2026-09-21',
  retired_by_actor_id='a1010000-0000-4000-8000-000000000001',retired_at=now()
 where unit_id=(select unit_id from atlas_admin.units where unit_code='v1-unit-034ce34d3ff3');
