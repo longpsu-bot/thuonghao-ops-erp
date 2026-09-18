@@ -176,6 +176,23 @@ begin
   -- not need revalidation. The final GLOBAL partition check is NOT filtered.
   v_revision_id:=new.confirmed_need_line_revision_id;
 $scope$);
+  target:='  where batch.confirmed_need_batch_id = v_batch_id;';
+  if (length(definition)-length(replace(definition,target,'')))/length(target)<>1 then
+    raise exception 'Confirmed Need membership scale patch requires the exact batch lookup';
+  end if;
+  definition:=replace(definition,target,target||$scope$
+  -- Historical membership can supply predecessor/captured-location facts to
+  -- later revisions. Preserve the original full-batch validation whenever a
+  -- historical revision is touched; only current-source revisions are local.
+  if not exists (
+    select 1 from atlas_planning.confirmed_need_line_revisions target_revision
+    where target_revision.confirmed_need_line_revision_id = v_revision_id
+      and target_revision.is_current
+      and target_revision.need_generation_release_snapshot_id = v_current_snapshot_id
+  ) then
+    v_revision_id:=null;
+  end if;
+$scope$);
   target:=$predicate$where revision.confirmed_need_batch_id = v_batch_id
       and revision.source_kind = 'NEED_GENERATION'$predicate$;
   expected_count:=2;
@@ -183,7 +200,7 @@ $scope$);
     raise exception 'Confirmed Need membership scale patch found unexpected revision predicates';
   end if;
   definition:=replace(definition,target,$predicate$where revision.confirmed_need_batch_id = v_batch_id
-      and revision.confirmed_need_line_revision_id = v_revision_id
+      and (v_revision_id is null or revision.confirmed_need_line_revision_id = v_revision_id)
       and revision.source_kind = 'NEED_GENERATION'$predicate$);
   target:=$predicate$where contribution.confirmed_need_batch_id = v_batch_id
       and ($predicate$;
@@ -191,7 +208,7 @@ $scope$);
     raise exception 'Confirmed Need membership scale patch found unexpected contribution predicates';
   end if;
   definition:=replace(definition,target,$predicate$where contribution.confirmed_need_batch_id = v_batch_id
-      and contribution.confirmed_need_line_revision_id = v_revision_id
+      and (v_revision_id is null or contribution.confirmed_need_line_revision_id = v_revision_id)
       and ($predicate$);
   execute definition;
 end;
