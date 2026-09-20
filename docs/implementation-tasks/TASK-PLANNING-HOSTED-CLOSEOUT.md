@@ -41,3 +41,21 @@ mirroring the browser's separate calls. The transaction still always rolls back,
 the eight-second role limit stays unchanged, and there is no retry or schema,
 policy, frontend, PR #286 or live v1 change. A regression asserts the separate
 statement boundary and safe review error category in failed probe diagnostics.
+
+## Browser navigation closeout correction
+
+Protected run `35332222044` completed all seven rollback generation/read probes,
+then stopped before Generate at `BROWSER_GATE_button_Xác nhận nhu cầu`. The
+application starts on the School capability, whose exit guard intentionally
+ignores navigation while its initial authoritative read is loading. The browser
+verifier clicked `Lập nhu cầu` only once as soon as the shell appeared, so that
+guard could reject the click and the Planning phase tablist never mounted.
+
+The verifier now treats primary and phase changes as safe navigation rather than
+consequential writes: it scopes `Lập nhu cầu` to the Atlas navigation buttons,
+scopes `Xác nhận nhu cầu` to the `Giai đoạn lập nhu cầu` tablist, and retries only
+until the exact destination surface is rendered. Generate and Save remain
+one-shot actions and retain the unknown-outcome rule. Safe diagnostics record the
+URL, rendered roles, labels, and disabled states after sign-in, authentication,
+Planning mount, and Confirmed Need mount. No application, backend, policy,
+quantity, authentication, PR #286, or production-cutover behavior changes.

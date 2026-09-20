@@ -14,6 +14,37 @@ async function until(fn, label, timeout = 60000) {
   }
   throw new Error(`BROWSER_GATE_${label}`);
 }
+export async function navigateUntil({
+  evaluate,
+  scope,
+  role,
+  label,
+  destination,
+  timeout = 60000,
+  interval = 300,
+}) {
+  const selector = `${scope} ${role === "tab" ? '[role="tab"]' : "button"}`;
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    if (
+      await evaluate(
+        `Boolean(document.querySelector(${JSON.stringify(destination)}))`,
+      )
+    )
+      return;
+    await evaluate(
+      `(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>e.textContent.trim()===${JSON.stringify(label)}&&!e.disabled&&e.getAttribute('aria-disabled')!=='true');if(!e)return false;e.click();return true;})()`,
+    );
+    if (
+      await evaluate(
+        `Boolean(document.querySelector(${JSON.stringify(destination)}))`,
+      )
+    )
+      return;
+    await sleep(interval);
+  }
+  throw new Error(`BROWSER_GATE_navigation_${role}_${label}`);
+}
 async function cdp(url) {
   const socket = new WebSocket(url);
   await new Promise((yes, no) => {
@@ -113,6 +144,12 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
         `(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled||e.readOnly)throw Error('input');e.focus();Object.getOwnPropertyDescriptor(${kind === "select" ? "HTMLSelectElement" : "HTMLInputElement"}.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event(${kind === "select" ? "'change'" : "'input'"},{bubbles:true}));})()`,
       );
     };
+    const logNavigation = async (transition) => {
+      const state = await evaluate(
+        `({transition:${JSON.stringify(transition)},url:location.href,controls:[...document.querySelectorAll('nav[aria-label="Điều hướng Atlas"] button,[role="tablist"][aria-label="Giai đoạn lập nhu cầu"],[role="tablist"][aria-label="Giai đoạn lập nhu cầu"] [role="tab"]')].map(e=>({tag:e.tagName.toLowerCase(),role:e.getAttribute('role')||e.tagName.toLowerCase(),label:e.getAttribute('aria-label')||e.textContent.trim(),disabled:Boolean(e.disabled)||e.getAttribute('aria-disabled')==='true'}))})`,
+      );
+      console.log(JSON.stringify({ browser_navigation: state }));
+    };
     await send("Page.enable");
     await send("Runtime.enable");
     stage = "authenticated_preview";
@@ -121,13 +158,38 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
       () => evaluate(`Boolean(document.querySelector('#atlas-signin-email'))`),
       "signin_form",
     );
+    await logNavigation("signin_form");
     if ((await evaluate("location.origin")) !== new URL(PREVIEW).origin)
       throw new Error("BROWSER_ORIGIN_MISMATCH");
     await input("#atlas-signin-email", target.testEmail);
     await input("#atlas-signin-password", target.testPassword);
     await click("Đăng nhập");
-    await click("Lập nhu cầu");
-    await click("Xác nhận nhu cầu");
+    await until(
+      () =>
+        evaluate(
+          `Boolean(document.querySelector('nav[aria-label="Điều hướng Atlas"]'))`,
+        ),
+      "authenticated_shell",
+    );
+    await logNavigation("authenticated");
+    stage = "planning_navigation";
+    await navigateUntil({
+      evaluate,
+      scope: 'nav[aria-label="Điều hướng Atlas"]',
+      role: "button",
+      label: "Lập nhu cầu",
+      destination: '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]',
+    });
+    await logNavigation("planning_open");
+    stage = "confirmed_need_navigation";
+    await navigateUntil({
+      evaluate,
+      scope: '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]',
+      role: "tab",
+      label: "Xác nhận nhu cầu",
+      destination: 'select[aria-label="Ngày phục vụ"]',
+    });
+    await logNavigation("confirmed_need_open");
     stage = "service_date";
     await until(
       () =>
@@ -234,8 +296,20 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
         ),
       "save_settled",
     );
-    await click("Nguồn lập nhu cầu");
-    await click("Xác nhận nhu cầu");
+    await navigateUntil({
+      evaluate,
+      scope: '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]',
+      role: "tab",
+      label: "Nguồn lập nhu cầu",
+      destination: '[role="tablist"][aria-label="Nguồn lập nhu cầu"]',
+    });
+    await navigateUntil({
+      evaluate,
+      scope: '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]',
+      role: "tab",
+      label: "Xác nhận nhu cầu",
+      destination: 'select[aria-label="Ngày phục vụ"]',
+    });
     await until(
       () =>
         evaluate(
