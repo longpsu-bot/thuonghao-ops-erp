@@ -98,3 +98,26 @@ fingerprints. These are diagnostic results, not the post-merge protected closeou
 Rollback is a forward migration that runs
 `alter function atlas_api.execute_need_generation(jsonb) reset plan_cache_mode`.
 No data rollback, policy rollback, or recalculation is required.
+
+## Protected Staging catalog verifier correction
+
+The protected deployment of `90aa9c1c04a910c13166a12ef9c023646313badf`
+applied migration `20260920154302` successfully, then failed during the
+read-only platform catalog verification. The verifier still required every
+`atlas_api` function to have exactly `search_path=""`, so it rejected the
+approved function-local `plan_cache_mode=force_generic_plan` setting on
+`atlas_api.execute_need_generation(request jsonb)`.
+
+The catalog verifier now keeps the default exact `search_path=""` rule for
+every other `atlas_api` function and models one explicit governed exception by
+function name and identity arguments. That command must remain `SECURITY
+DEFINER` and its configuration must be exactly the order-independent set
+`search_path=""` plus `plan_cache_mode=force_generic_plan`. Missing, wrong,
+duplicate, or additional settings fail closed. Signature, ownership, execute
+grant, schema grant, private-relation exposure, policy-catalog, and application
+role checks remain unchanged.
+
+This correction changes repository verification logic only. It adds no
+migration, does not modify the deployed function, and performs no Staging or
+OPS v1 mutation. The protected deployment must be rerun only after this change
+is approved and merged; its prior failed run is not deployment-pass evidence.
