@@ -59,3 +59,42 @@ one-shot actions and retain the unknown-outcome rule. Safe diagnostics record th
 URL, rendered roles, labels, and disabled states after sign-in, authentication,
 Planning mount, and Confirmed Need mount. No application, backend, policy,
 quantity, authentication, PR #286, or production-cutover behavior changes.
+
+## Need Generation tail-latency stabilization
+
+Rollback-only 17/09 profiling at the unchanged authenticated eight-second limit
+reproduced 304 atomic contributions and 248 current Confirmed Need groups. Normal
+executions ranged from 5,470.127 ms to 6,341.340 ms. The stable high-fanout paths
+were 1,013 Need Generation integrity calls and 552 Confirmed Need membership
+calls; current-source consistency remained secondary. No lock waiter or deadlock
+was present. Recent autovacuum activity, low persistent live/dead row counts, and
+stable call geometry gave no evidence that vacuum or statistics caused the
+variance. Every diagnostic preserved all six approved source fingerprints.
+
+The controlled plan comparison isolated repeated custom planning as the tail
+amplifier. `force_custom_plan` reached 8,007.970 ms and returned the existing
+retryable timeout classification, while the same workload under
+`force_generic_plan` completed in 4,594.096 ms. The bounded correction sets
+`plan_cache_mode=force_generic_plan` only on
+`atlas_api.execute_need_generation(jsonb)`. It does not change a role setting,
+the eight-second timeout, any query or trigger body, privileges, lifecycle,
+calculation, source selection, response contract, or integrity predicate.
+
+The scale regression now matches the real grouping geometry and performs fresh
+sequential daily commands and authoritative reviews. Existing adversarial checks
+continue to reject forged quantity, omitted Recipe composition, incomplete
+release membership, forged Confirmed Need contribution quantity, missing
+Confirmed Need membership, immutable-evidence mutation, duplicate release
+membership, and loss of current ownership. Because only planner selection
+changes, every invariant executes through the same functions and predicates.
+
+Three rollback-applied correction probes completed in 4,829.181 ms,
+3,899.521 ms, and 3,888.307 ms. Both complete review probes returned exactly 248
+rows, `CURRENT`, editable state, zero blockers, and no pagination remainder.
+Each probe rolled back the temporary function setting and all generated facts;
+fresh checks found zero retained rehearsal-week runs/batches and exact source
+fingerprints. These are diagnostic results, not the post-merge protected closeout.
+
+Rollback is a forward migration that runs
+`alter function atlas_api.execute_need_generation(jsonb) reset plan_cache_mode`.
+No data rollback, policy rollback, or recalculation is required.
