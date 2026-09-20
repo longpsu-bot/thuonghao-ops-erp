@@ -4,7 +4,8 @@ import {
   nextCent,
   rollbackProbeSql,
 } from "./verify-staging-planning-closeout.mjs";
-import { navigateUntil } from "./staging-planning-browser.mjs";
+import * as planningBrowser from "./staging-planning-browser.mjs";
+const { navigateUntil } = planningBrowser;
 test("staged verification edit uses an exact next-cent value", () => {
   assert.equal(nextCent("1.234567"), "1.24");
   assert.equal(nextCent("1.230000"), "1.24");
@@ -93,5 +94,81 @@ test("browser navigation waits for scoped Chakra destinations after guarded clic
   assert.equal(
     document.querySelector("#confirmed").getAttribute("role"),
     "tab",
+  );
+});
+
+
+test("browser moves to the fixed rehearsal week before selecting a historical service date", async () => {
+  document.body.innerHTML = `
+    <input aria-label="Tuần phục vụ" value="05/10/2026 – 11/10/2026" readonly />
+    <select aria-label="Ngày phục vụ">
+      <option value="2026-10-05">05/10/2026</option>
+      <option value="2026-10-06">06/10/2026</option>
+    </select>
+  `;
+  let previousMonthClicks = 0;
+  let weekClicks = 0;
+  const weekInput = document.querySelector('input[aria-label="Tuần phục vụ"]');
+  const renderOctober = () => {
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `<div role="application" aria-label="Lịch — Tuần phục vụ">
+        <button aria-label="Tháng trước">Tháng trước</button>
+        <button aria-label="Tháng sau">Tháng sau</button>
+        <button data-view="day" data-value="2026-10-05">5</button>
+      </div>`,
+    );
+    document
+      .querySelector('button[aria-label="Tháng trước"]')
+      .addEventListener("click", () => {
+        previousMonthClicks += 1;
+        document
+          .querySelector('[role="application"][aria-label="Lịch — Tuần phục vụ"]')
+          .remove();
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          `<div role="application" aria-label="Lịch — Tuần phục vụ">
+            <button aria-label="Tháng trước">Tháng trước</button>
+            <button aria-label="Tháng sau">Tháng sau</button>
+            <button data-view="day" data-value="2026-09-14">14</button>
+          </div>`,
+        );
+        document
+          .querySelector('button[data-value="2026-09-14"]')
+          .addEventListener("click", () => {
+            weekClicks += 1;
+            weekInput.value = "14/09/2026 – 20/09/2026";
+            const select = document.querySelector(
+              'select[aria-label="Ngày phục vụ"]',
+            );
+            select.innerHTML = Array.from({ length: 7 }, (_, i) => {
+              const day = String(14 + i).padStart(2, "0");
+              return `<option value="2026-09-${day}">${day}/09/2026</option>`;
+            }).join("");
+          });
+      });
+  };
+  weekInput.addEventListener("click", renderOctober);
+  const evaluate = async (expression) => globalThis.eval(expression);
+
+  assert.equal(
+    typeof planningBrowser.ensurePlanningServiceDateAvailable,
+    "function",
+  );
+  await planningBrowser.ensurePlanningServiceDateAvailable({
+    evaluate,
+    serviceDate: "2026-09-17",
+    weekStart: "2026-09-14",
+    interval: 0,
+    timeout: 100,
+  });
+
+  assert.equal(previousMonthClicks, 1);
+  assert.equal(weekClicks, 1);
+  assert.equal(
+    document.querySelector('select[aria-label="Ngày phục vụ"]').querySelector(
+      'option[value="2026-09-17"]',
+    )?.value,
+    "2026-09-17",
   );
 });
