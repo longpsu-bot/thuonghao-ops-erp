@@ -45,6 +45,44 @@ export async function navigateUntil({
   }
   throw new Error(`BROWSER_GATE_navigation_${role}_${label}`);
 }
+
+export async function ensurePlanningServiceDateAvailable({
+  evaluate,
+  serviceDate,
+  weekStart,
+  timeout = 60000,
+  interval = 300,
+}) {
+  const serviceDateSelector = 'select[aria-label="Ngày phục vụ"]';
+  const weekInputSelector = 'input[aria-label="Tuần phục vụ"]';
+  const calendarSelector =
+    '[role="application"][aria-label="Lịch — Tuần phục vụ"]';
+  const hasServiceDate = () =>
+    evaluate(
+      `(()=>{const s=document.querySelector(${JSON.stringify(serviceDateSelector)});return Boolean(s&&!s.disabled&&[...s.options].some(o=>o.value===${JSON.stringify(serviceDate)}));})()`,
+    );
+  if (await hasServiceDate()) return;
+
+  const weekInputReady = await evaluate(
+    `(()=>{const e=document.querySelector(${JSON.stringify(weekInputSelector)});return Boolean(e&&!e.disabled);})()`,
+  );
+  if (!weekInputReady) throw new Error("BROWSER_GATE_rehearsal_week_input");
+  await evaluate(
+    `document.querySelector(${JSON.stringify(weekInputSelector)}).click()`,
+  );
+
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    if (await hasServiceDate()) return;
+    const action = await evaluate(
+      `(()=>{const root=document.querySelector(${JSON.stringify(calendarSelector)});if(!root)return 'wait';const target=root.querySelector('button[data-view="day"][data-value="${weekStart}"]');if(target&&!target.disabled&&target.getAttribute('aria-disabled')!=='true'){target.click();return 'selected';}const values=[...root.querySelectorAll('button[data-view="day"][data-value]')].map(e=>e.getAttribute('data-value')).filter(Boolean).sort();if(!values.length)return 'wait';const direction=${JSON.stringify(weekStart)}<values[0]?'Tháng trước':${JSON.stringify(weekStart)}>values[values.length-1]?'Tháng sau':null;if(!direction)return 'blocked';const nav=[...root.querySelectorAll('button')].find(e=>e.getAttribute('aria-label')===direction&&!e.disabled&&e.getAttribute('aria-disabled')!=='true');if(!nav)return 'blocked';nav.click();return direction;})()`,
+    );
+    if (action === "blocked")
+      throw new Error("BROWSER_GATE_rehearsal_week_navigation");
+    await sleep(interval);
+  }
+  throw new Error("BROWSER_GATE_service_date");
+}
 async function cdp(url) {
   const socket = new WebSocket(url);
   await new Promise((yes, no) => {
@@ -190,14 +228,20 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
       destination: 'select[aria-label="Ngày phục vụ"]',
     });
     await logNavigation("confirmed_need_open");
+    const logServiceDateState = async (transition) => {
+      const state = await evaluate(
+        `(()=>{const week=document.querySelector('input[aria-label="Tuần phục vụ"]');const service=document.querySelector('select[aria-label="Ngày phục vụ"]');return {transition:${JSON.stringify(transition)},week_value:week?.value??null,week_disabled:Boolean(week?.disabled),service_date:service?.value??null,service_disabled:Boolean(service?.disabled),service_options:service?[...service.options].map(o=>o.value):[]};})()`,
+      );
+      console.log(JSON.stringify({ browser_service_date: state }));
+    };
     stage = "service_date";
-    await until(
-      () =>
-        evaluate(
-          `Boolean(document.querySelector('select[aria-label="Ngày phục vụ"] option[value="2026-09-17"]')) && !document.querySelector('select[aria-label="Ngày phục vụ"]').disabled`,
-        ),
-      stage,
-    );
+    await logServiceDateState("before_rehearsal_week");
+    await ensurePlanningServiceDateAvailable({
+      evaluate,
+      serviceDate: "2026-09-17",
+      weekStart: "2026-09-14",
+    });
+    await logServiceDateState("rehearsal_week_ready");
     await input('select[aria-label="Ngày phục vụ"]', "2026-09-17", "select");
     stage = "generate_once";
     await click("Tạo nhu cầu");
