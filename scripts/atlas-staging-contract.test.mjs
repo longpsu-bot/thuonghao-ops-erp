@@ -2145,6 +2145,65 @@ describe("Atlas staging hosted evidence", () => {
     expect(sql).toContain("ATLAS_ISOLATED_POLICY_MISMATCH");
   });
 
+  it("requires the default exact configuration for ordinary Atlas APIs", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain(
+      "else p.proconfig is distinct from array['search_path=\"\"']::text[]",
+    );
+  });
+
+  it("accepts the governed Need Generation configuration as an exact order-independent set", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain("p.proname = 'execute_need_generation'");
+    expect(sql).toContain(
+      "pg_get_function_identity_arguments(p.oid) = 'request jsonb'",
+    );
+    expect(sql).toContain("cardinality(p.proconfig) = 2");
+    expect(sql).toContain(
+      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+    );
+    expect(sql).toContain(
+      "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+    );
+  });
+
+  it("rejects Need Generation with only the default search path", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain("cardinality(p.proconfig) = 2");
+    expect(sql).toContain(
+      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+    );
+    expect(sql).toContain(") is not true");
+  });
+
+  it("rejects Need Generation with the wrong planner mode", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain(
+      "p.proconfig @> array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+    );
+    expect(sql).toContain(") is not true");
+  });
+
+  it("rejects an undeclared third Need Generation setting", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain("cardinality(p.proconfig) = 2");
+    expect(sql).toContain(
+      "p.proconfig <@ array['search_path=\"\"', 'plan_cache_mode=force_generic_plan']::text[]",
+    );
+  });
+
+  it("rejects an undeclared setting on every ordinary Atlas API", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain(
+      "else p.proconfig is distinct from array['search_path=\"\"']::text[]",
+    );
+  });
+
+  it("still requires SECURITY DEFINER for every Atlas API", () => {
+    const sql = catalogVerificationSql(readCatalogAuthority());
+    expect(sql).toContain("not p.prosecdef");
+  });
+
   it.each([
     [646, 1, true],
     [646, 0, false],
@@ -2164,11 +2223,19 @@ describe("Atlas staging hosted evidence", () => {
 
   it("retains the unrelated fail-closed catalog checks", () => {
     const sql = catalogVerificationSql(readCatalogAuthority());
-    expect(sql).toContain("ATLAS_API_SIGNATURE_MISMATCH");
-    expect(sql).toContain("ATLAS_API_OWNER_MISMATCH");
-    expect(sql).toContain(
-      "p.proconfig is distinct from array['search_path=\"\"']",
-    );
+    for (const failure of [
+      "ATLAS_DATABASE_ROLE_POSTURE_MISMATCH",
+      "ATLAS_API_SIGNATURE_MISMATCH",
+      "ATLAS_API_OWNER_MISMATCH",
+      "ATLAS_API_EXECUTE_GRANT_MISMATCH",
+      "ATLAS_API_SCHEMA_GRANT_MISMATCH",
+      "ATLAS_PRIVATE_RELATION_EXPOSURE",
+      "ATLAS_POLICY_COUNT_MISMATCH",
+      "ATLAS_POLICY_DIGEST_MISMATCH",
+      "ATLAS_ISOLATED_POLICY_MISMATCH",
+    ]) {
+      expect(sql).toContain(failure);
+    }
     expect(sql).not.toContain("ATLAS_API_FINGERPRINT_MISMATCH");
   });
 

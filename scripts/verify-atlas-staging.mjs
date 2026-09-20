@@ -147,6 +147,11 @@ export function catalogVerificationSql(
   const authenticatedSignatures = sqlArray(
     authority.authenticatedApiSignatures,
   );
+  const defaultApiProconfig = sqlArray(['search_path=""']);
+  const needGenerationApiProconfig = sqlArray([
+    'search_path=""',
+    "plan_cache_mode=force_generic_plan",
+  ]);
   const managedRoleId = String(managedApplicationRole?.role_id ?? "");
   const managedRoleCode = String(managedApplicationRole?.role_code ?? "");
   if (
@@ -190,7 +195,25 @@ begin
   if actual is distinct from ${owners} then
     raise exception 'ATLAS_API_OWNER_MISMATCH';
   end if;
-  if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and (not p.prosecdef or p.proconfig is distinct from array['search_path=""']::text[])) then
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'atlas_api'
+      and (
+        not p.prosecdef
+        or case
+          when p.proname = 'execute_need_generation'
+            and pg_get_function_identity_arguments(p.oid) = 'request jsonb'
+          then (
+            cardinality(p.proconfig) = 2
+            and p.proconfig @> ${needGenerationApiProconfig}
+            and p.proconfig <@ ${needGenerationApiProconfig}
+          ) is not true
+          else p.proconfig is distinct from ${defaultApiProconfig}
+        end
+      )
+  ) then
     raise exception 'ATLAS_API_SECURITY_MODE_MISMATCH';
   end if;
   select array_agg(format('%s(%s)', p.proname, pg_get_function_identity_arguments(p.oid)) order by p.proname, pg_get_function_identity_arguments(p.oid))::text[] into actual from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'atlas_api' and has_function_privilege('authenticated', p.oid, 'EXECUTE');
