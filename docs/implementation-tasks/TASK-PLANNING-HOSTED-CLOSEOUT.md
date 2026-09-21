@@ -121,3 +121,113 @@ This correction changes repository verification logic only. It adds no
 migration, does not modify the deployed function, and performs no Staging or
 OPS v1 mutation. The protected deployment must be rerun only after this change
 is approved and merged; its prior failed run is not deployment-pass evidence.
+
+## Final hosted browser-contract hardening
+
+The final verifier-only audit reconciled the lead review with one independent
+read-only reviewer. It found three deterministic harness defects beyond the
+reported calendar mismatch: the Sources workbench could satisfy the old
+Confirmed Need destination selector, reopen had the same collision, and the
+protected performance predicate still allowed generation below 8,000 ms rather
+than the approved strict 7,000-ms engineering margin. No product, backend,
+workflow or migration defect was found.
+
+The exact candidate is the immutable Cloudflare deployment
+`https://0d969e3b.thuonghao-ops-erp.pages.dev/`. Cloudflare Check Run
+`105147561944` records that URL for PR #286 head
+`dcf6be78cd71b4eca4565a5d014f7f4b86888103`. The moving branch alias is no
+longer used by this closeout verifier, and PR #286 remains unchanged.
+
+Installed package authority is `@ark-ui/react` 5.39.0 with
+`@zag-js/date-picker` 1.43.3. In that exact implementation, DatePicker Content
+is an Ark `div` with `role="application"`; PrevTrigger, NextTrigger and Trigger
+are Ark `button` elements; and TableCellTrigger is an Ark `div` carrying
+`role="button"`, `data-part="table-cell-trigger"`, `data-view="day"` and an ISO
+`data-value`. The browser therefore uses anatomy and accessible-state selectors,
+never an HTML-tag assumption for day cells.
+
+### Complete selector and action audit
+
+|   # | Browser action             | Product / library authority                              | Actual DOM or API contract                                                        | Final verifier selector / action                                                                                   | Status             |
+| --: | -------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------ |
+|   1 | Sign-in email              | `AtlasSessionGate.tsx`                                   | Native input, `id="atlas-signin-email"`                                           | `#atlas-signin-email`                                                                                              | Retained, valid    |
+|   2 | Sign-in password           | `AtlasSessionGate.tsx`                                   | Native password input, `id="atlas-signin-password"`                               | `#atlas-signin-password`                                                                                           | Retained, valid    |
+|   3 | Đăng nhập                  | `AtlasSessionGate.tsx`                                   | Enabled Chakra button with exact text                                             | Exact enabled button text `Đăng nhập`                                                                              | Retained, valid    |
+|   4 | Authenticated Atlas nav    | `AtlasVNextShell.tsx`                                    | `nav[aria-label="Điều hướng Atlas"]`                                              | Exact nav landmark                                                                                                 | Retained, valid    |
+|   5 | Lập nhu cầu navigation     | `AtlasVNextShell.tsx`                                    | Chakra button inside the Atlas nav                                                | Scoped exact-text button; retry only until Planning tablist mounts                                                 | Retained, valid    |
+|   6 | Planning phase tablist     | `PlanningCapability.tsx`                                 | `role="tablist"`, label `Giai đoạn lập nhu cầu`                                   | `[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]`                                                             | Retained, valid    |
+|   7 | Xác nhận nhu cầu tab       | `PlanningCapability.tsx` / Ark Tabs                      | `role="tab"`, exact text and `aria-selected`                                      | Scoped exact-text tab plus selected-state assertion                                                                | Corrected          |
+|   8 | Tuần phục vụ field         | `AtlasWeekRangeInput.tsx`                                | Read-only input labeled `Tuần phục vụ`                                            | `input[aria-label="Tuần phục vụ"]`                                                                                 | Retained, valid    |
+|   9 | DatePicker open trigger    | `AtlasWeekRangeInput.tsx`; Ark Trigger                   | `button[data-part="trigger"]`, label `Mở lịch — Tuần phục vụ`                     | Exact data-part and accessible name                                                                                | Corrected          |
+|  10 | DatePicker content         | Ark Content / Zag content props                          | `div[role="application"][aria-label="Lịch — Tuần phục vụ"]`                       | Exact role and accessible label                                                                                    | Corrected          |
+|  11 | Previous month             | Ark PrevTrigger / Zag anatomy                            | Enabled `button[data-part="prev-trigger"]`                                        | Scoped `[data-part="prev-trigger"]`                                                                                | Corrected          |
+|  12 | Next month                 | Ark NextTrigger / Zag anatomy                            | Enabled `button[data-part="next-trigger"]`                                        | Scoped `[data-part="next-trigger"]`                                                                                | Corrected          |
+|  13 | Day/date trigger           | Ark TableCellTrigger / Zag anatomy                       | `div[role="button"][data-part="table-cell-trigger"][data-view="day"][data-value]` | Anatomy attributes plus exact ISO `data-value`; no tag assumption                                                  | Corrected blocker  |
+|  14 | Ngày phục vụ               | `ConfirmedNeedWorkbench.tsx`                             | Native select labeled `Ngày phục vụ` inside Confirmed workbench                   | Confirmed-section-scoped select; exact seven options                                                               | Corrected scope    |
+|  15 | Tạo nhu cầu                | `ConfirmedNeedWorkbench.tsx`                             | Enabled Chakra button only when no workbench and generation is allowed            | Confirmed-section-scoped exact text; hard pre-generate gate; one click                                             | Hardened           |
+|  16 | Nhu cầu xác nhận table     | `ConfirmedNeedTable.tsx`                                 | Native table labeled `Nhu cầu xác nhận`                                           | `table[aria-label="Nhu cầu xác nhận"]`                                                                             | Retained, valid    |
+|  17 | Table row identity         | `ConfirmedNeedTable.tsx`                                 | First cell: ingredient, then `school · delivery location`, then state             | Audited first-cell text mapped to authoritative names; safe because staging has no relevant active-name duplicates | Retained, verified |
+|  18 | kg unit cell               | `ConfirmedNeedTable.tsx`                                 | Second table cell contains controlled-unit code                                   | Second cell exact text `kg`, within authoritative row                                                              | Retained, verified |
+|  19 | Confirmed quantity         | `ConfirmedNeedTable.tsx`                                 | Native input labeled `Số lượng xác nhận <ingredient>`                             | Row-scoped `input[aria-label^="Số lượng xác nhận"]`                                                                | Hardened scope     |
+|  20 | Reason                     | `ConfirmedNeedTable.tsx`                                 | Native select labeled `Lý do <ingredient>`                                        | Row-scoped `select[aria-label^="Lý do"]`                                                                           | Hardened scope     |
+|  21 | Note                       | `ConfirmedNeedTable.tsx`                                 | Conditional native input labeled `Ghi chú <ingredient>`                           | Row-scoped `input[aria-label^="Ghi chú"]` after it mounts                                                          | Retained, valid    |
+|  22 | Lưu                        | `ConfirmedNeedWorkbench.tsx`                             | Enabled Chakra button only while the draft is dirty and valid                     | Confirmed-section-scoped exact text; hard pre-save gate; one click                                                 | Hardened           |
+|  23 | Navigate to Sources        | `PlanningCapability.tsx`; `PlanningSourcesWorkbench.tsx` | Sources tab plus `section[aria-label="Nguồn lập nhu cầu"]`                        | Scoped tab; retry only until exact Sources section mounts                                                          | Corrected          |
+|  24 | Navigate back to Confirmed | `PlanningCapability.tsx`; `ConfirmedNeedWorkbench.tsx`   | Confirmed tab plus `section[aria-label="Xác nhận nhu cầu"]`, selected tab         | Exact section and `aria-selected=true`; shared service select cannot satisfy it                                    | Corrected blocker  |
+|  25 | Reopened table             | `ConfirmedNeedTable.tsx`                                 | Same labeled table with 248 rows                                                  | Exact table selector, row count, then identical authoritative readback                                             | Hardened           |
+|  26 | Screenshot capture         | Chrome DevTools Protocol                                 | `Page.captureScreenshot` PNG                                                      | Runner-local file under `RUNNER_TEMP`; no artifact upload                                                          | Retained, safe     |
+
+### Protected gates and first-Save authority
+
+Calendar navigation is bounded by the month distance between the rendered
+calendar midpoint and 14/09/2026 plus a two-step safety margin. Each month action
+is a non-consequential previous/next anatomy click, followed by a wait for the
+rendered ISO day-value signature to change. The already-correct week returns
+without opening the calendar. Selection must settle to the exact week field,
+enabled service selector and the exact seven 14–20/09 options.
+
+Before Generate, the verifier logs and requires the exact week, selected
+17/09 date, exact options, enabled service select, enabled `Tạo nhu cầu`, absent
+`Cập nhật nhu cầu`, and zero rendered rows. A mismatch stops with
+`BROWSER_GATE_pre_generate`; Generate remains exactly one click with no retry.
+Before Save, it requires 248 rows, exactly one nonzero business-quantity delta,
+exactly one operational-adjustment reason, exactly one nonblank note, zero
+invalid controls, and an enabled Save button. Fresh undecided lines legitimately
+render 247 zero deltas because their first decisions are pending; those zeroes
+are not business adjustments. Save remains exactly one click with no retry.
+
+The owner-resolved initial-decision contract is explicit. Before Save, all 248
+stable lines must have null `current_decision_id`. After the normal single Save
+version transition, all 248 must have a first decision with no predecessor. The
+intended line alone differs from its generated proposal and carries the exact
+next-cent quantity, `OPERATIONAL_QUANTITY_ADJUSTMENT` reason and approved note.
+The other 247 quantities equal their generated proposals and their first reasons
+are `PROPOSAL_ACCEPTED`. Stable IDs and all theoretical/generated proposal
+quantities remain identical. Reopen repeats the same authority assertion and
+requires byte-equivalent authoritative line readback, so navigation creates no
+additional decision.
+
+The formal authenticated database statement timeout remains eight seconds.
+Protected acceptance is now separately and strictly `generation_ms < 7000`:
+6,999.999 ms is eligible, 7,000.000 ms and above fail. Deterministic unit tests
+cover that boundary; no local wall-clock test substitutes for hosted evidence.
+
+Failure diagnostics are read-only and preserve the original error even if a
+diagnostic read fails. They contain only browser stage, week/date/options,
+Generate/Save presence and enabled state, rendered row count, batch existence,
+batch version, authoritative line count, editing flag, blocker count and
+pagination remainder. A regression proves that names, quantities and full row
+payloads are discarded. Credentials, tokens and keys are never included.
+
+The final post-browser read-only proof requires exactly one retained 17/09 Need
+Generation run, one Confirmed Need batch, 248 current editable review lines, no
+blockers or pagination remainder, zero Purchase Handoff rows, and equality of
+the existing preflight Menu/Attendance/Pantry selected-source fingerprints from
+before the rollback probes through final readback. Baseline and rollback checks
+now require both rehearsal-week Need runs and Confirmed Need batches to remain
+zero.
+
+Rollback and boundaries: this change adds no migration and has no data rollback.
+Reverting the verifier/doc commit restores the previous harness only. It changes
+no React product behavior, Planning lifecycle, Supabase API, quantity policy,
+timeout, workflow, Retool, live OPS v1, Google Sheet, Apps Script or PR #286.

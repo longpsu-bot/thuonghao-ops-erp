@@ -15,6 +15,64 @@ const DAYS = [
   "2026-09-17",
   "2026-09-18",
 ];
+export const PLANNING_CLOSEOUT_GENERATION_MAX_MS = 7000;
+export function planningCloseoutProbeAccepted(row) {
+  return Boolean(
+    row?.success &&
+    row.review_success &&
+    row.currentness === "CURRENT" &&
+    !row.has_more &&
+    row.blocker_count === 0 &&
+    row.editing_allowed &&
+    Number.isFinite(row.generation_ms) &&
+    row.generation_ms < PLANNING_CLOSEOUT_GENERATION_MAX_MS,
+  );
+}
+function canonicalJson(value) {
+  if (Array.isArray(value)) return value.map(canonicalJson);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalJson(value[key])]),
+    );
+  return value;
+}
+export function assertFinalPlanningCloseoutProof({
+  browser,
+  state,
+  review,
+  baselineFingerprints,
+  finalFingerprints,
+}) {
+  const fingerprintsMatch =
+    baselineFingerprints != null &&
+    finalFingerprints != null &&
+    JSON.stringify(canonicalJson(baselineFingerprints)) ===
+      JSON.stringify(canonicalJson(finalFingerprints));
+  if (
+    state?.runs !== 1 ||
+    state?.batches !== 1 ||
+    state?.handoffs !== 0 ||
+    !browser?.batchId ||
+    review?.confirmed_need_batch_id !== browser.batchId ||
+    review?.batch_version !== browser.batchVersion ||
+    review?.source_kind !== "NEED_GENERATION" ||
+    review?.lines?.length !== 248 ||
+    review?.pagination?.has_more ||
+    review?.blockers?.length !== 0 ||
+    !review?.editing_allowed ||
+    !fingerprintsMatch
+  )
+    throw new Error("FINAL_PLANNING_CLOSEOUT_PROOF_FAILED");
+  return {
+    retainedRuns: state.runs,
+    retainedBatches: state.batches,
+    retainedLines: review.lines.length,
+    purchaseHandoffs: state.handoffs,
+    sourceFingerprintsUnchanged: true,
+  };
+}
 export function nextCent(value) {
   if (!/^\d+(?:\.\d{1,6})?$/.test(value))
     throw new Error("INVALID_EXACT_QUANTITY");
@@ -64,33 +122,41 @@ export async function verifyPlanningCloseout({
     JSON.parse(await executeAtlasStagingManagementSql(target, query));
   const baseline = (
     await sql(
-      `begin read only; select count(*)::int as batches from atlas_planning.confirmed_need_batches where period_start between '2026-09-14' and '2026-09-18'; rollback;`,
+      `begin read only; select
+  (select count(*) from atlas_planning.need_generation_runs where period_start between '2026-09-14' and '2026-09-18')::int as runs,
+  (select count(*) from atlas_planning.confirmed_need_batches where period_start between '2026-09-14' and '2026-09-18')::int as batches;
+rollback;`,
     )
   )[0];
-  if (baseline?.batches !== 0)
+  if (baseline?.runs !== 0 || baseline?.batches !== 0)
     throw new Error("REHEARSAL_ALREADY_PERSISTED_REVIEW_REQUIRED");
+  const readSourceFingerprints = async () =>
+    (
+      await sql(
+        `begin read only; select atlas_core.planning_contract_01_preflight_payload(
+  '2026-09-17'::date,'2026-09-17'::date,null
+)#>'{source_date_fingerprints,selected}' as fingerprints; rollback;`,
+      )
+    )[0]?.fingerprints;
+  const baselineFingerprints = await readSourceFingerprints();
   for (const date of ["2026-09-17", "2026-09-17", ...DAYS]) {
     const row = (await sql(rollbackProbeSql(date)))[0]?.probe;
     console.log(JSON.stringify({ rollback_probe: row }));
-    if (
-      !row?.success ||
-      !row.review_success ||
-      row.currentness !== "CURRENT" ||
-      row.has_more ||
-      row.blocker_count !== 0 ||
-      !row.editing_allowed ||
-      row.generation_ms >= 8000
-    )
+    if (!planningCloseoutProbeAccepted(row))
       throw new Error("HOSTED_PLANNING_ACCEPTANCE_FAILED");
     if (date === "2026-09-17" && row.line_count !== 248)
       throw new Error("REAL_DAY_RECONCILIATION_MISMATCH");
   }
   const after = (
     await sql(
-      `begin read only; select count(*)::int as batches from atlas_planning.confirmed_need_batches where period_start between '2026-09-14' and '2026-09-18'; rollback;`,
+      `begin read only; select
+  (select count(*) from atlas_planning.need_generation_runs where period_start between '2026-09-14' and '2026-09-18')::int as runs,
+  (select count(*) from atlas_planning.confirmed_need_batches where period_start between '2026-09-14' and '2026-09-18')::int as batches;
+rollback;`,
     )
   )[0];
-  if (after?.batches !== 0) throw new Error("ROLLBACK_VERIFICATION_FAILED");
+  if (after?.runs !== 0 || after?.batches !== 0)
+    throw new Error("ROLLBACK_VERIFICATION_FAILED");
   if (!persist)
     return { status: "rollback-verification-pass", retainedBatches: 0 };
   const client = createClient(target.supabaseUrl, target.publishableKey, {
@@ -132,12 +198,33 @@ export async function verifyPlanningCloseout({
   try {
     const { verifyPlanningBrowser } =
       await import("./staging-planning-browser.mjs");
-    return await verifyPlanningBrowser({
+    const browser = await verifyPlanningBrowser({
       target,
       session: data.session,
       readReview,
       nextCent,
     });
+    const state = (
+      await sql(
+        `begin read only; select
+  (select count(*) from atlas_planning.need_generation_runs where period_start='2026-09-17' and period_end='2026-09-17')::int as runs,
+  (select count(*) from atlas_planning.confirmed_need_batches where period_start='2026-09-17' and period_end='2026-09-17')::int as batches,
+  (select count(*) from atlas_planning.purchase_handoff_batches handoff
+    join atlas_planning.confirmed_need_batches batch using(confirmed_need_batch_id)
+    where batch.period_start='2026-09-17' and batch.period_end='2026-09-17')::int as handoffs;
+rollback;`,
+      )
+    )[0];
+    const review = await readReview();
+    const finalProof = assertFinalPlanningCloseoutProof({
+      browser,
+      state,
+      review,
+      baselineFingerprints,
+      finalFingerprints: await readSourceFingerprints(),
+    });
+    console.log(JSON.stringify({ final_planning_closeout_proof: finalProof }));
+    return { ...browser, finalProof };
   } finally {
     client.auth.stopAutoRefresh();
   }
