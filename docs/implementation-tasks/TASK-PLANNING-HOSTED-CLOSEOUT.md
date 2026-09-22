@@ -231,3 +231,148 @@ Rollback and boundaries: this change adds no migration and has no data rollback.
 Reverting the verifier/doc commit restores the previous harness only. It changes
 no React product behavior, Planning lifecycle, Supabase API, quantity policy,
 timeout, workflow, Retool, live OPS v1, Google Sheet, Apps Script or PR #286.
+
+## Interactive Chrome async settlement audit — 21/09/2026
+
+The immutable candidate was opened in Codex Chrome at
+`https://0d969e3b.thuonghao-ops-erp.pages.dev/`. PR #286 remained open,
+draft, and at head `dcf6be78cd71b4eca4565a5d014f7f4b86888103`.
+Staging read-only preflight confirmed migration `20260920154302`,
+`authenticated` `statement_timeout=8s`, the exact empty-search-path and
+generic-plan function settings, and zero rehearsal-week Need runs, Confirmed
+batches, and 17/09 handoffs. No Generate or Save was clicked in Chrome.
+
+The signed-in shell showed `Lập nhu cầu`; Planning navigation mounted its
+phase tablist. Initial Confirmed selection was clicked at
+`2026-09-21T09:19:24.068Z`. By +781 ms, the section existed and the tab had
+`aria-selected=true`, but the week input was disabled/read-only, Refresh was
+disabled, `Đang tải nhu cầu…` was shown, and Generate was absent. The
+21–27/09 service select remained enabled with its seven option values. The
+first later ready sample had the week and Refresh enabled and the loading
+status gone. On a measured safe reopen at `2026-09-21T09:21:40.766Z`,
+the same busy state was sampled at +606 ms and the ready state at +739 ms;
+the visible transition therefore occurred in that 133 ms sampling interval.
+
+Selecting 14/09 in the real Ark calendar at
+`2026-09-21T09:20:09.644Z` immediately changed the week display and
+service options to exactly 14–20/09, reset the selected date to 14/09,
+disabled week and Refresh, showed loading, and hid Generate. Once settled,
+week and Refresh enabled and Generate appeared. Selecting 17/09 at
+`2026-09-21T09:20:33.730Z` caused the same loading cycle; at +98 ms the
+week was disabled and Generate absent. The settled read-only surface had
+week `14/09/2026 – 20/09/2026`, service date `2026-09-17`, exactly seven
+14–20/09 options, enabled Generate, absent Update, and zero rows. The
+service select reported `disabled=false` during both busy periods, so it
+is not a readiness signal. The deterministic signal is the
+Confirmed-section week input enabled together with Refresh
+`aria-busy=false`/enabled, no loading status, and the exact desired
+surface. The gaps between some manual samples bound the observed delay;
+they are not network latency measurements.
+
+The installed Chakra `NativeSelectRoot` forwards disabled through field
+context; the hosted DOM's select remained enabled while
+`useConfirmedNeedWorkbench.transition` rejected busy actions. Ark's day
+trigger is a role-button `div`, matching the prior selector audit.
+The source review covered the complete browser verifier, closeout tests
+and orchestrator, Week input, Planning capability, Confirmed workbench,
+hooks, table, feedback and authority helpers.
+
+|   # | Transition                  | Before: verifier assumption                                        | Product state / finding                         | Classification              | Correction                                                                             |
+| --: | --------------------------- | ------------------------------------------------------------------ | ----------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+|   1 | Sign-in completion          | Wait for Atlas nav                                                 | Shell follows successful auth                   | SAFE                        | Retain shell wait                                                                      |
+|   2 | Atlas shell mount           | Nav landmark is exact                                              | Authenticated shell renders nav                 | SAFE                        | Retain                                                                                 |
+|   3 | Planning mount              | Retry scoped nav until phase tablist                               | School exit guard may reject early click        | SAFE                        | Retain bounded navigation                                                              |
+|   4 | Confirmed mount             | Section plus selected tab                                          | Mount precedes preflight completion             | RACE                        | Keep identity check; wait for week readiness before using controls                     |
+|   5 | Initial preflight           | No separate settlement check                                       | Initial `busy=true`; week/Refresh disabled      | RACE                        | Wait for enabled week                                                                  |
+|   6 | Week editable               | Fail immediately if disabled; early return on matching date option | Week disabled while select may be enabled       | RACE / GLOBAL SELECTOR RISK | Scope to Confirmed and wait even for already-correct week                              |
+|   7 | Week selection              | Exact Ark day trigger                                              | Real role-button `div` and date value           | SAFE                        | Retain one day click and bounded month navigation                                      |
+|   8 | Week reload                 | Exact options and enabled select alone                             | Options change before preflight settles         | RACE                        | Require enabled week and exact option set                                              |
+|   9 | Service-date selection      | Native select event then proceed                                   | React transition changes selected date          | RACE                        | Wait for exact selected value and settled pre-Generate state                           |
+|  10 | Service-date reload         | Presence of section ends wait                                      | Week/Refresh disable and Generate disappears    | RACE                        | Poll exact ready surface                                                               |
+|  11 | Generate eligibility        | Assert one immediate snapshot                                      | Button appears only after valid preflight       | RACE                        | Poll pre-Generate gate before one click                                                |
+|  12 | Post-Generate table         | Wait only for 248 rows                                             | Rows can appear before busy/draft settlement    | RACE / WRITE-OUTCOME RISK   | Wait 248 rows plus enabled week/Refresh; poll authoritative review                     |
+|  13 | Draft initialization        | Immediately find editable kg row                                   | Drafts reset after authoritative adoption       | RACE                        | Wait for editable kg input                                                             |
+|  14 | Quantity update             | Immediately set reason                                             | React controlled delta appears later            | RACE                        | Wait for matching input and nonzero displayed delta                                    |
+|  15 | Reason update               | Immediately seek note                                              | React controlled reason may lag                 | RACE                        | Wait for exact reason value and note                                                   |
+|  16 | Conditional note            | Presence alone                                                     | Fresh undecided drafts may already show note    | RACE                        | Combine reason check with final Save eligibility                                       |
+|  17 | Note update                 | Immediate pre-Save evaluation                                      | React validation and button state lag           | RACE                        | Poll pre-Save gate                                                                     |
+|  18 | Save eligibility            | Fail on one snapshot                                               | Save enabled only after complete valid draft    | RACE                        | Poll 248 rows, one adjustment, one reason/note, zero invalid controls and enabled Save |
+|  19 | Post-Save readback          | Poll version increase                                              | Authoritative read is separately issued         | SAFE / WRITE-OUTCOME RISK   | Retain read-only version poll; never retry Save                                        |
+|  20 | Lưu disappearance           | Global button absence                                              | Other surfaces share text; UI may still be busy | GLOBAL SELECTOR RISK / RACE | Scope to Confirmed and require ready week/Refresh                                      |
+|  21 | Sources navigation          | Sources section mount                                              | Phase selection can lag mount                   | RACE                        | Also wait for Sources tab selected                                                     |
+|  22 | Confirmed reopen            | Section plus tab selected                                          | Fresh hook starts busy                          | RACE                        | Wait for ready Confirmed context                                                       |
+|  23 | Reopened authoritative load | Exact row count alone                                              | Initial read/draft state settles asynchronously | RACE                        | Wait enabled week/Refresh before readback                                              |
+|  24 | 248-row settlement          | Rendered count only                                                | Count alone does not prove workbench ready      | RACE                        | Require exact count and settled controls; poll same batch/version readback             |
+
+Generate and Save remain one-shot business clicks. Navigation, calendar
+movement, and authoritative reads may poll; no business write is retried.
+The disposable local Planning stack has repository fixtures and auth
+provisioning, but the Docker Desktop Linux engine was unavailable during
+this task, so no disposable full browser journey was run. Delayed React
+and DOM component tests stand in for the async transitions without any
+Staging write. The verifier-only patch has no migration or data rollback;
+reverting its commit restores the previous harness.
+
+Final adversarial verifier review: the complete final browser file was read
+top to bottom after implementation. A mounted but unselected phase section
+could previously make navigation return without clicking its tab; a RED test
+reproduced the timeout, and navigation now requires the selected tab as well
+as the destination section. The remaining business clicks occur once each,
+after exact UI gates; uncertain outcomes use read-only authoritative checks.
+Week, service-date, table, draft, note, Save, and reopened states are scoped
+and checked after their asynchronous transitions. No further deterministic
+browser-harness blocker was found in this review. A disposable end-to-end
+browser run remains unverified because the local Docker engine was unavailable;
+the protected run is still required after review and CI.
+
+## Preserved 17/09 generation and safe closeout resume — 22/09/2026
+
+The initial zero baseline above is historical. A later read-only inspection
+found one valid retained 17/09 Need run
+`0c83b440-8fb2-4a77-9735-804ef4c89ea0` and one Confirmed Need batch
+`a0311e0a-a4de-48b9-a529-fe7464a3352b`. The owner explicitly chose to
+preserve this generated result as audit evidence. The run remains
+`RELEASED_FOR_CONFIRMATION` at version 3 with 304 generated contributions,
+zero blockers/warnings, and the synthetic Planning actor. The batch remains
+`DRAFT_REVIEW` at version 1 with 248 stable lines, zero human/current
+decisions, and zero Purchase Handoffs. These two line counts measure different
+objects and must not be made equal.
+
+The verifier now classifies exactly two starting modes. `ZERO_BASELINE`
+requires no rehearsal-week run/batch and a ready, not-generated preflight;
+its browser may click Generate once. `PRISTINE_GENERATED_RESUME` requires the
+exact retained IDs, status, versions, actor, origin/current linkage, counts,
+CURRENT/READY preflight, equal selected/current Weekly Menu, Attendance and
+Pantry fingerprints, and one successful completed `execute_need_generation`
+receipt with both affected aggregate IDs and matching returned versions.
+It rejects any previous Save receipt, decision, handoff, blocker, changed
+source, duplicate, missing provenance, or unexpected retained state. The
+retained receipt is `5a8a87a5-2686-4785-a717-ca869e800665` for command
+`d777e744-c487-420e-b7ab-75f676ab7685`. Provenance is proven through
+the receipt response, not its timestamp.
+
+The protected verifier reads this checkpoint in a read-only transaction,
+rechecks it after rollback probes and again before the browser journey, then
+compares selected source fingerprints at final proof. In resume mode the
+rollback probes omit 17/09; they do not run Generate against the retained
+fact. The 14/15/16/18 probes remain rollback-only and non-retaining. The
+formal database `statement_timeout` remains 8 seconds; the existing
+`generation_ms < 7000` test is engineering headroom for those probes.
+
+Both browser modes converge at one authoritative ready-to-review checkpoint.
+Resume requires the existing 248-row workbench and absence of both Generate
+and Update actions, then skips Generate entirely. The shared path requires
+all 248 lines undecided with no decision history, makes one next-cent kg
+edit, selects the exact reason and note, clicks Save once, verifies the
+authoritative version-2 readback, waits for the Sources workbench to settle,
+reopens Confirmed Need, and verifies identical decisions. No uncertain
+Generate or Save outcome is blindly retried.
+
+The final read-only proof requires one unchanged run, one unchanged batch at
+version 2, 248 lines, 248 human/current decisions, one business quantity
+adjustment, 247 proposal acceptances, zero handoffs, the same provenance,
+CURRENT/READY preflight and unchanged source fingerprints. This task adds
+only verifier, deterministic tests and documentation; it performs no Staging
+business write or data rollback. The retained fact must not be deleted,
+invalidated, reset or regenerated. The protected merged-head resume run,
+after owner review and CI, remains the only route to hosted closeout PASS.
