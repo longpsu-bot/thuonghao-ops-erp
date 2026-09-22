@@ -191,6 +191,20 @@ export function classifyPlanningCloseoutBaseline(snapshot) {
   return classifyPlanningCheckpoint(snapshot);
 }
 
+function requireProtectedPlanningCloseoutBaseline(snapshot) {
+  const baseline = classifyPlanningCloseoutBaseline(snapshot);
+  if (baseline.mode !== "PRISTINE_GENERATED_RESUME")
+    throw new Error("PLANNING_CLOSEOUT_RESUME_REQUIRED");
+  return baseline;
+}
+
+export async function startProtectedPlanningBrowserCloseout(
+  snapshot,
+  browserJourney,
+) {
+  return browserJourney(requireProtectedPlanningCloseoutBaseline(snapshot));
+}
+
 export function planningCloseoutSnapshotSql() {
   const approvedUnitCodes = [...APPROVED_COUNT_POLICIES.keys(), "kg"]
     .map((code) => `'${code}'`)
@@ -247,9 +261,9 @@ select jsonb_build_object(
     from atlas_admin.units u
     left join atlas_planning.planning_quantity_policies p on p.unit_id=u.unit_id
     left join atlas_planning.planning_quantity_policy_revisions r on r.planning_quantity_policy_id=p.planning_quantity_policy_id
+      and r.policy_revision_status='ACTIVE'
     where u.unit_code in (${approvedUnitCodes})
-      or (r.planning_step=1 and r.effective_from='2026-09-14' and r.effective_to is null
-        and r.policy_revision_status='ACTIVE')),
+      or (u.dimension_code='COUNT' and (u.unit_status='ACTIVE' or r.policy_revision_status='ACTIVE'))),
   'preflight', (select jsonb_build_object(
     'readiness_state', p.payload->'readiness_state',
     'downstream_currentness', p.payload->'downstream_currentness',
@@ -293,7 +307,7 @@ export function assertFinalPlanningCloseoutProof({
   const run = state?.runs?.[0];
   const batch = state?.batches?.[0];
   if (
-    !["ZERO_BASELINE", "PRISTINE_GENERATED_RESUME"].includes(baseline?.mode) ||
+    baseline?.mode !== "PRISTINE_GENERATED_RESUME" ||
     state?.runs?.length !== 1 ||
     state?.batches?.length !== 1 ||
     state?.handoffs !== 0 ||
@@ -319,13 +333,13 @@ export function assertFinalPlanningCloseoutProof({
     batch.acceptance_count !== 247 ||
     !generationReceiptAccepted(state.receipts, run, batch) ||
     state.save_receipt_count !== 1 ||
-    (baseline.runId && baseline.runId !== run.id) ||
-    (baseline.batchId && baseline.batchId !== batch.id) ||
+    baseline.runId !== run.id ||
+    baseline.batchId !== batch.id ||
     !preflightAccepted(state.preflight, "CURRENT", run.id, batch.id) ||
     state.preflight.current_need.confirmed_need_batch_version !== 2 ||
     !browser?.batchId ||
     browser.batchId !== batch.id ||
-    browser.generateClicks !== (baseline.mode === "ZERO_BASELINE" ? 1 : 0) ||
+    browser.generateClicks !== 0 ||
     browser.saveClicks !== 1 ||
     browser.newDecisions !== 248 ||
     browser.businessQuantityAdjustments !== 1 ||
@@ -370,13 +384,15 @@ export async function verifyPlanningCloseout({
     JSON.parse(await executeAtlasStagingManagementSql(target, query));
   const readSnapshot = async () =>
     (await sql(planningCloseoutSnapshotSql()))[0]?.checkpoint;
-  const baseline = classifyPlanningCloseoutBaseline(await readSnapshot());
+  const baseline = requireProtectedPlanningCloseoutBaseline(
+    await readSnapshot(),
+  );
   const baselineFingerprints = baseline.fingerprints;
   if (!persist)
     return {
       status: "read-only-checkpoint-pass",
       mode: baseline.mode,
-      retainedBatches: baseline.mode === "PRISTINE_GENERATED_RESUME" ? 1 : 0,
+      retainedBatches: 1,
     };
   const client = createClient(target.supabaseUrl, target.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -418,25 +434,26 @@ export async function verifyPlanningCloseout({
     return result.data.workbench;
   };
   try {
-    const beforeBrowser = classifyPlanningCloseoutBaseline(
+    const browser = await startProtectedPlanningBrowserCloseout(
       await readSnapshot(),
+      async (beforeBrowser) => {
+        if (
+          beforeBrowser.runId !== baseline.runId ||
+          beforeBrowser.batchId !== baseline.batchId ||
+          !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
+        )
+          throw new Error("PLANNING_CLOSEOUT_CHECKPOINT_CHANGED");
+        const { verifyPlanningBrowser } =
+          await import("./staging-planning-browser.mjs");
+        return verifyPlanningBrowser({
+          target,
+          baseline: beforeBrowser,
+          session: data.session,
+          readReview,
+          nextCent,
+        });
+      },
     );
-    if (
-      beforeBrowser.mode !== baseline.mode ||
-      beforeBrowser.runId !== baseline.runId ||
-      beforeBrowser.batchId !== baseline.batchId ||
-      !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
-    )
-      throw new Error("PLANNING_CLOSEOUT_CHECKPOINT_CHANGED");
-    const { verifyPlanningBrowser } =
-      await import("./staging-planning-browser.mjs");
-    const browser = await verifyPlanningBrowser({
-      target,
-      baseline,
-      session: data.session,
-      readReview,
-      nextCent,
-    });
     const state = await readSnapshot();
     const review = await readReview();
     const finalProof = assertFinalPlanningCloseoutProof({

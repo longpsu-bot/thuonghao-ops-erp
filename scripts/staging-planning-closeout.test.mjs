@@ -456,6 +456,20 @@ test("final retained proof requires one run, one batch, no handoff, and unchange
     purchaseHandoffs: 0,
     sourceFingerprintsUnchanged: true,
   });
+  for (const rejectedProof of [
+    { baseline: { ...proof.baseline, mode: "ZERO_BASELINE" } },
+    { browser: { ...proof.browser, generateClicks: 1 } },
+    { browser: { ...proof.browser, saveClicks: 2 } },
+  ]) {
+    assert.throws(
+      () =>
+        closeoutVerifier.assertFinalPlanningCloseoutProof({
+          ...proof,
+          ...rejectedProof,
+        }),
+      /FINAL_PLANNING_CLOSEOUT_PROOF_FAILED/,
+    );
+  }
   assert.throws(
     () =>
       closeoutVerifier.assertFinalPlanningCloseoutProof({
@@ -986,6 +1000,10 @@ test("closeout snapshot verifies policies in a read-only transaction", () => {
   assert.match(sql, /^begin read only;/);
   assert.match(sql, /planning_quantity_policy_revisions/);
   assert.match(sql, /atlas_admin\.units/);
+  assert.match(sql, /u\.dimension_code='COUNT'/);
+  assert.match(sql, /u\.unit_status='ACTIVE'/);
+  assert.doesNotMatch(sql, /r\.planning_step=1/);
+  assert.doesNotMatch(sql, /r\.effective_from='2026-09-14'/);
   assert.match(sql, /rollback;$/);
   assert.doesNotMatch(sql, /\b(insert|update|delete|create|alter)\b/i);
 });
@@ -995,6 +1013,16 @@ for (const [label, mutate] of [
   [
     "extra 14/09 step-1 COUNT policy",
     (rows) => rows.push({ ...rows[0], unit_code: "extra" }),
+  ],
+  [
+    "extra active COUNT policy with a different step and effective date",
+    (rows) =>
+      rows.push({
+        ...rows[0],
+        unit_code: "unexpected-count-unit",
+        planning_step: 2,
+        effective_from: "2026-09-15",
+      }),
   ],
   [
     "wrong COUNT step",
@@ -1101,6 +1129,38 @@ test("zero baseline and exact retained state classify into only two modes", () =
       fingerprints: sourceFingerprints,
     },
   );
+});
+
+test("protected closeout rejects zero baseline before invoking the browser journey", async () => {
+  const zero = pristineResumeSnapshot();
+  zero.runs = [];
+  zero.batches = [];
+  zero.receipts = [];
+  zero.preflight.downstream_currentness = "NOT_GENERATED";
+  zero.preflight.current_need = null;
+  let browserInvocations = 0;
+  await assert.rejects(
+    closeoutVerifier.startProtectedPlanningBrowserCloseout(zero, async () => {
+      browserInvocations += 1;
+      return { generateClicks: 1, saveClicks: 1 };
+    }),
+    /PLANNING_CLOSEOUT_RESUME_REQUIRED/,
+  );
+  assert.equal(browserInvocations, 0);
+});
+
+test("protected closeout starts the pristine resume browser with zero Generate and one Save", async () => {
+  let browserInvocations = 0;
+  const result = await closeoutVerifier.startProtectedPlanningBrowserCloseout(
+    pristineResumeSnapshot(),
+    async (baseline) => {
+      browserInvocations += 1;
+      assert.equal(baseline.mode, "PRISTINE_GENERATED_RESUME");
+      return { generateClicks: 0, saveClicks: 1 };
+    },
+  );
+  assert.equal(browserInvocations, 1);
+  assert.deepEqual(result, { generateClicks: 0, saveClicks: 1 });
 });
 
 for (const [label, mutate] of [

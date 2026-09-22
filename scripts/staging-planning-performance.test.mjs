@@ -235,6 +235,26 @@ test("performance classification does not inherit browser policy acceptance", as
   assert.equal(calls, 1);
 });
 
+test("performance certification rejects the saved browser checkpoint before any probe", async () => {
+  const saved = pristineCheckpoint();
+  saved.batches[0].version = 2;
+  saved.batches[0].decision_count = 248;
+  saved.batches[0].current_decision_count = 248;
+  saved.save_receipt_count = 1;
+  saved.preflight.current_need.confirmed_need_batch_version = 2;
+  let probes = 0;
+  await assert.rejects(
+    runPlanningPerformanceProbes({
+      readSnapshot: async () => saved,
+      runProbe: async () => {
+        probes += 1;
+      },
+    }),
+    /PLANNING_CLOSEOUT_BASELINE_REJECTED/,
+  );
+  assert.equal(probes, 0);
+});
+
 test("every successful probe proves unchanged checkpoint", async () => {
   const baseline = pristineCheckpoint();
   let reads = 0;
