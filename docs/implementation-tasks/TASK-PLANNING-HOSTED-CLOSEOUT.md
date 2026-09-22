@@ -376,3 +376,49 @@ only verifier, deterministic tests and documentation; it performs no Staging
 business write or data rollback. The retained fact must not be deleted,
 invalidated, reset or regenerated. The protected merged-head resume run,
 after owner review and CI, remains the only route to hosted closeout PASS.
+
+## Planning certification boundary split — 22/09/2026
+
+The previous hosted closeout workflow coupled rollback Need Generation timing
+probes to the Confirmed Need browser Save/readback/reopen journey. Run
+`35681053170` failed twice on its first 14/09 probe at approximately eight
+seconds (`7993.769` and `8001.863` ms), both with
+`RETRYABLE_CONCURRENCY_FAILURE`. Neither attempt reached Chrome. The retained
+17/09 run and batch remained a pristine generated resume checkpoint. These
+failures are a real performance blocker; the browser result cannot erase it.
+
+Two independently dispatchable protected workflows now answer separate
+questions:
+
+- `GENERATION_PERFORMANCE_CERTIFICATION`: rollback-only 14/09, 14/09,
+  15/09, 16/09, and 18/09 probes. Each must finish below the strict 7000 ms
+  engineering margin under the unchanged eight-second database timeout,
+  reconcile its exact 232/232/225/213/210 Confirmed Need rows, pass current
+  authoritative review, and preserve the 17/09 checkpoint after every probe.
+  The observed status remains **BLOCKED** pending this separate protected run
+  and backend performance investigation. No failed probe is retried.
+- `PLANNING_BROWSER_CLOSEOUT_CERTIFICATION`: read-only checkpoint and exact
+  quantity-policy verification precede Chrome. The current
+  `PRISTINE_GENERATED_RESUME` path clicks Generate zero times, makes one
+  owner-approved Confirmed Need edit and Save, reads authoritative state,
+  leaves/reopens the view, and proves 248 first decisions, one adjustment,
+  247 acceptances, and zero handoffs. This status is **PENDING** the owner's
+  protected browser run. It does not execute performance probes or install or
+  replay policies.
+
+The earlier rollback-probe description in the preceding section records the
+historical workflow. The split supersedes that coupling. Both statuses must
+be **PASS** before overall Planning certification is complete; either can be
+observed without replaying the other phase. The browser workflow remains
+read-only against Staging until its single explicit `save_confirmed_needs`
+browser command in the approved resume journey.
+
+Backend performance is a separate follow-up. Current function statistics
+point to repeated high fan-out validation in
+`pa_06e_h0a5b_need_generation_integrity_guard`,
+`pa_06e_h0b1b_confirmed_need_revision_membership_total`, and
+`pa_06e_h0b1b_confirmed_need_current_source_consistency`. Investigate whether
+immutable child-local checks plus one complete aggregate-boundary validation
+can replace repeated broad validation while preserving every invariant. This
+split changes no migration, trigger, index, RLS rule, planner setting,
+timeout, cache, bypass flag, or backend validation contract.
