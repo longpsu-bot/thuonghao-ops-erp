@@ -64,6 +64,29 @@ async function navigateToPlanningSources({ evaluate }) {
     label: "Nguồn lập nhu cầu",
     destination: SOURCES_WORKBENCH,
   });
+  await until(
+    () =>
+      evaluate(
+        `(()=>{const tab=[...document.querySelectorAll(${JSON.stringify(`${PHASE_TABLIST} [role="tab"]`)})].find(e=>e.textContent.trim()==='Nguồn lập nhu cầu');return Boolean(document.querySelector(${JSON.stringify(SOURCES_WORKBENCH)})&&tab?.getAttribute('aria-selected')==='true');})()`,
+      ),
+    "planning_sources_phase_state",
+  );
+  await waitForPlanningSourcesReady({ evaluate });
+}
+export async function waitForPlanningSourcesReady({
+  evaluate,
+  timeout = 60000,
+  interval = 300,
+}) {
+  return until(
+    () =>
+      evaluate(
+        `(()=>{const root=document.querySelector(${JSON.stringify(SOURCES_WORKBENCH)});const refresh=root?.querySelector('button[aria-label="Làm mới dữ liệu"]');return Boolean(root&&refresh&&!refresh.disabled&&refresh.getAttribute('aria-busy')!=='true'&&!root.querySelector('[role="alert"]'));})()`,
+      ),
+    "planning_sources_ready",
+    timeout,
+    interval,
+  );
 }
 export async function navigateUntil({
   evaluate,
@@ -75,23 +98,14 @@ export async function navigateUntil({
   interval = 300,
 }) {
   const selector = `${scope} ${role === "tab" ? '[role="tab"]' : "button"}`;
+  const destinationReady = `(()=>{const destination=document.querySelector(${JSON.stringify(destination)});if(!destination)return false;${role === "tab" ? `const tab=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>e.textContent.trim()===${JSON.stringify(label)});return tab?.getAttribute('aria-selected')==='true';` : "return true;"}})()`;
   const end = Date.now() + timeout;
   while (Date.now() < end) {
-    if (
-      await evaluate(
-        `Boolean(document.querySelector(${JSON.stringify(destination)}))`,
-      )
-    )
-      return;
+    if (await evaluate(destinationReady)) return;
     await evaluate(
       `(()=>{const e=[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>e.textContent.trim()===${JSON.stringify(label)}&&!e.disabled&&e.getAttribute('aria-disabled')!=='true');if(!e)return false;e.click();return true;})()`,
     );
-    if (
-      await evaluate(
-        `Boolean(document.querySelector(${JSON.stringify(destination)}))`,
-      )
-    )
-      return;
+    if (await evaluate(destinationReady)) return;
     await sleep(interval);
   }
   throw new Error(`BROWSER_GATE_navigation_${role}_${label}`);
@@ -104,24 +118,39 @@ export async function ensurePlanningServiceDateAvailable({
   timeout = 60000,
   interval = 300,
 }) {
-  const serviceDateSelector = 'select[aria-label="Ngày phục vụ"]';
-  const weekInputSelector = 'input[aria-label="Tuần phục vụ"]';
-  const calendarTriggerSelector =
-    'button[data-part="trigger"][aria-label="Mở lịch — Tuần phục vụ"]';
+  const serviceDateSelector = `${CONFIRMED_WORKBENCH} select[aria-label="Ngày phục vụ"]`;
+  const weekInputSelector = `${CONFIRMED_WORKBENCH} input[aria-label="Tuần phục vụ"]`;
+  const calendarTriggerSelector = `${CONFIRMED_WORKBENCH} button[data-part="trigger"][aria-label="Mở lịch — Tuần phục vụ"]`;
   const calendarSelector =
     '[role="application"][aria-label="Lịch — Tuần phục vụ"]';
   const daySelector =
     '[data-part="table-cell-trigger"][data-view="day"][data-value]';
+  const expectedWeekEnd = (() => {
+    const date = new Date(`${weekStart}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + 6);
+    return date.toISOString().slice(0, 10);
+  })();
+  const viDate = (date) => date.split("-").reverse().join("/");
+  const expectedWeek = `${viDate(weekStart)} – ${viDate(expectedWeekEnd)}`;
+  const expectedOptions = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(`${weekStart}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
   const hasServiceDate = () =>
     evaluate(
-      `(()=>{const s=document.querySelector(${JSON.stringify(serviceDateSelector)});return Boolean(s&&!s.disabled&&[...s.options].some(o=>o.value===${JSON.stringify(serviceDate)}));})()`,
+      `(()=>{const week=document.querySelector(${JSON.stringify(weekInputSelector)});const service=document.querySelector(${JSON.stringify(serviceDateSelector)});return Boolean(week?.value===${JSON.stringify(expectedWeek)}&&!week.disabled&&service&&!service.disabled&&JSON.stringify([...service.options].map(o=>o.value))===${JSON.stringify(JSON.stringify(expectedOptions))}&&[...service.options].some(o=>o.value===${JSON.stringify(serviceDate)}));})()`,
     );
-  if (await hasServiceDate()) return;
-
-  const weekInputReady = await evaluate(
-    `(()=>{const e=document.querySelector(${JSON.stringify(weekInputSelector)});return Boolean(e&&!e.disabled);})()`,
+  await until(
+    () =>
+      evaluate(
+        `(()=>{const e=document.querySelector(${JSON.stringify(weekInputSelector)});return Boolean(e&&!e.disabled);})()`,
+      ),
+    "rehearsal_week_input",
+    timeout,
+    interval,
   );
-  if (!weekInputReady) throw new Error("BROWSER_GATE_rehearsal_week_input");
+  if (await hasServiceDate()) return;
   const opened = await evaluate(
     `(()=>{const e=document.querySelector(${JSON.stringify(calendarTriggerSelector)});if(!e||e.disabled||e.getAttribute('aria-disabled')==='true')return false;e.click();return true;})()`,
   );
@@ -160,23 +189,8 @@ export async function ensurePlanningServiceDateAvailable({
         `(()=>{const root=document.querySelector(${JSON.stringify(calendarSelector)});const target=root?.querySelector(${JSON.stringify(`${daySelector}[data-value="${weekStart}"]`)});if(!target||target.getAttribute('aria-disabled')==='true')return false;target.click();return true;})()`,
       );
       if (!selected) throw new Error("BROWSER_GATE_rehearsal_week_selection");
-      const expectedWeekEnd = (() => {
-        const date = new Date(`${weekStart}T12:00:00Z`);
-        date.setUTCDate(date.getUTCDate() + 6);
-        return date.toISOString().slice(0, 10);
-      })();
-      const viDate = (date) => date.split("-").reverse().join("/");
-      const expectedWeek = `${viDate(weekStart)} – ${viDate(expectedWeekEnd)}`;
-      const expectedOptions = Array.from({ length: 7 }, (_, index) => {
-        const date = new Date(`${weekStart}T12:00:00Z`);
-        date.setUTCDate(date.getUTCDate() + index);
-        return date.toISOString().slice(0, 10);
-      });
       await until(
-        () =>
-          evaluate(
-            `(()=>{const week=document.querySelector(${JSON.stringify(weekInputSelector)});const service=document.querySelector(${JSON.stringify(serviceDateSelector)});return Boolean(week?.value===${JSON.stringify(expectedWeek)}&&service&&!service.disabled&&JSON.stringify([...service.options].map(o=>o.value))===${JSON.stringify(JSON.stringify(expectedOptions))}&&[...service.options].some(o=>o.value===${JSON.stringify(serviceDate)}));})()`,
-          ),
+        hasServiceDate,
         "service_date",
         Math.max(0, end - Date.now()),
         interval,
@@ -343,6 +357,9 @@ export function safeAuthoritativeDiagnostic(workbench) {
 export function assertPreGenerateGate(state) {
   if (
     state?.week_value !== REHEARSAL_WEEK ||
+    !state.week_enabled ||
+    !state.refresh_ready ||
+    state.loading ||
     state.service_date !== REHEARSAL_SERVICE_DATE ||
     JSON.stringify(state.service_options) !==
       JSON.stringify(REHEARSAL_WEEK_DATES) ||
@@ -368,10 +385,202 @@ export function assertPreSaveGate(state) {
     throw new Error("BROWSER_GATE_pre_save");
 }
 
+export function preGenerateGateStateExpression() {
+  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const service=root?.querySelector('select[aria-label="Ngày phục vụ"]');const refresh=root?.querySelector('button[aria-label="Làm mới dữ liệu"]');const buttons=root?[...root.querySelectorAll('button')]:[];const generate=buttons.find(e=>e.textContent.trim()==='Tạo nhu cầu');const update=buttons.find(e=>e.textContent.trim()==='Cập nhật nhu cầu');return root?{week_value:week?.value??null,week_enabled:Boolean(week&&!week.disabled),service_date:service?.value??null,service_options:service?[...service.options].map(o=>o.value):[],service_enabled:Boolean(service&&!service.disabled),refresh_ready:Boolean(refresh&&!refresh.disabled&&refresh.getAttribute('aria-busy')!=='true'),loading:Boolean(root.querySelector('[role="status"]')?.textContent.includes('Đang tải')),generate_present:Boolean(generate),generate_enabled:Boolean(generate&&!generate.disabled&&generate.getAttribute('aria-disabled')!=='true'),update_present:Boolean(update),rendered_rows:root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length}:null;})()`;
+}
+export async function waitForPreGenerateSurface({
+  evaluate,
+  timeout = 60000,
+  interval = 300,
+}) {
+  return until(
+    async () => {
+      const state = await evaluate(preGenerateGateStateExpression());
+      try {
+        assertPreGenerateGate(state);
+        return state;
+      } catch {
+        return null;
+      }
+    },
+    "pre_generate",
+    timeout,
+    interval,
+  );
+}
+export async function waitForReasonNoteReady({
+  evaluate,
+  row,
+  reason,
+  timeout = 60000,
+  interval = 300,
+}) {
+  return until(
+    () =>
+      evaluate(
+        `(()=>{const root=document.querySelector(${JSON.stringify(row)});const select=root?.querySelector('select[aria-label^="Lý do"]');const note=root?.querySelector('input[aria-label^="Ghi chú"]');return Boolean(select?.value===${JSON.stringify(reason)}&&note&&!note.disabled);})()`,
+      ),
+    "note_input",
+    timeout,
+    interval,
+  );
+}
+export async function waitForPreSaveSurface({
+  evaluate,
+  timeout = 60000,
+  interval = 300,
+}) {
+  return until(
+    async () => {
+      const state = await evaluate(preSaveGateStateExpression());
+      try {
+        assertPreSaveGate(state);
+        return state;
+      } catch {
+        return null;
+      }
+    },
+    "pre_save",
+    timeout,
+    interval,
+  );
+}
+export async function waitForRenderedConfirmedRows({
+  evaluate,
+  timeout = 60000,
+  interval = 300,
+}) {
+  return until(
+    async () => {
+      const state = await evaluate(
+        `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const refresh=root?.querySelector('button[aria-label="Làm mới dữ liệu"]');return {rendered_rows:root?.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length??0,week_enabled:Boolean(week&&!week.disabled),refresh_ready:Boolean(refresh&&!refresh.disabled&&refresh.getAttribute('aria-busy')!=='true')};})()`,
+      );
+      return state.rendered_rows === 248 &&
+        state.week_enabled &&
+        state.refresh_ready
+        ? state
+        : null;
+    },
+    "rendered_confirmed_rows",
+    timeout,
+    interval,
+  );
+}
+
+export async function clickBusinessActionOnce({
+  evaluate,
+  scope,
+  label,
+  gate,
+}) {
+  const clicked = await evaluate(
+    `(()=>{const root=document.querySelector(${JSON.stringify(scope)});const button=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()===${JSON.stringify(label)}&&!e.disabled&&e.getAttribute('aria-disabled')!=='true'):null;if(!button)return false;button.click();return true;})()`,
+  );
+  if (!clicked) throw new Error(`BROWSER_GATE_${gate}`);
+}
+
+function assertPreResumeGate(state) {
+  if (
+    state?.week_value !== REHEARSAL_WEEK ||
+    !state.week_enabled ||
+    !state.refresh_ready ||
+    state.loading ||
+    state.service_date !== REHEARSAL_SERVICE_DATE ||
+    JSON.stringify(state.service_options) !==
+      JSON.stringify(REHEARSAL_WEEK_DATES) ||
+    !state.service_enabled ||
+    state.generate_present ||
+    state.update_present ||
+    state.rendered_rows !== 248
+  )
+    throw new Error("BROWSER_GATE_pre_resume");
+}
+
+export async function reachReadyToReview({
+  mode,
+  expectedBatchId,
+  evaluate,
+  readReview,
+  clickOnce,
+  timeout = 60000,
+  interval = 300,
+}) {
+  let generateClicks = 0;
+  if (mode === "ZERO_BASELINE") {
+    await waitForPreGenerateSurface({ evaluate, timeout, interval });
+    await clickOnce(CONFIRMED_WORKBENCH, "Tạo nhu cầu", "generate_once");
+    generateClicks = 1;
+  } else if (mode === "PRISTINE_GENERATED_RESUME") {
+    await until(
+      async () => {
+        const state = await evaluate(preGenerateGateStateExpression());
+        try {
+          assertPreResumeGate(state);
+          return state;
+        } catch {
+          return null;
+        }
+      },
+      "pre_resume",
+      timeout,
+      interval,
+    );
+  } else {
+    throw new Error("BROWSER_BASELINE_MODE_REJECTED");
+  }
+  await waitForRenderedConfirmedRows({ evaluate, timeout, interval });
+  const before = await until(
+    async () => {
+      try {
+        const review = await readReview();
+        return review?.lines?.length === 248 &&
+          !review.pagination?.has_more &&
+          review.editing_allowed
+          ? review
+          : null;
+      } catch {
+        return null;
+      }
+    },
+    "ready_to_review_readback",
+    timeout,
+    interval,
+  );
+  if (
+    before.batch_version !== 1 ||
+    before.blockers?.length !== 0 ||
+    before.source_kind !== "NEED_GENERATION" ||
+    before.service_period?.period_start !== REHEARSAL_SERVICE_DATE ||
+    before.service_period?.period_end !== REHEARSAL_SERVICE_DATE ||
+    (expectedBatchId && before.confirmed_need_batch_id !== expectedBatchId) ||
+    before.lines.some(
+      (line) =>
+        line.current_decision_id !== null ||
+        line.decision_history?.length !== 0,
+    )
+  )
+    throw new Error("BROWSER_READY_TO_REVIEW_FAILED");
+  return { before, generateClicks };
+}
+
+export function assertReopenedReview(saved, reopened) {
+  if (
+    saved?.confirmed_need_batch_id !== reopened?.confirmed_need_batch_id ||
+    saved?.batch_version !== reopened?.batch_version ||
+    JSON.stringify(saved?.lines) !== JSON.stringify(reopened?.lines)
+  )
+    throw new Error("REOPEN_READBACK_CHANGED");
+}
+
 export function preSaveGateStateExpression() {
   return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const save=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu'):null;const deltaText=r=>(r.children[4]?.textContent??'').trim();const isNonzeroDelta=r=>{const text=deltaText(r);const value=Number(text.replaceAll('.','').replace(',','.'));return Number.isFinite(value)&&value!==0;};return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>deltaText(r)!=='—').length,quantity_adjustment_rows:rows.filter(isNonzeroDelta).length,adjustment_reason_rows:rows.filter(r=>r.querySelector('select[aria-label^="Lý do"]')?.value==='OPERATIONAL_QUANTITY_ADJUSTMENT').length,nonblank_note_rows:rows.filter(r=>(r.querySelector('input[aria-label^="Ghi chú"]')?.value??'').trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
 }
-export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
+export async function verifyPlanningBrowser({
+  target,
+  baseline,
+  readReview,
+  nextCent,
+}) {
   if (target.projectRef !== "rnzxmxiiqgtdevzregff")
     throw new Error("BROWSER_TARGET_REJECTED");
   const profile = mkdtempSync(join(tmpdir(), "atlas-planning-browser-"));
@@ -439,12 +648,8 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
       );
       console.log(JSON.stringify({ browser_navigation: state }));
     };
-    const oneShotButton = async (scope, label, gate) => {
-      const clicked = await evaluate(
-        `(()=>{const root=document.querySelector(${JSON.stringify(scope)});const button=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()===${JSON.stringify(label)}&&!e.disabled&&e.getAttribute('aria-disabled')!=='true'):null;if(!button)return false;button.click();return true;})()`,
-      );
-      if (!clicked) throw new Error(`BROWSER_GATE_${gate}`);
-    };
+    const oneShotButton = (scope, label, gate) =>
+      clickBusinessActionOnce({ evaluate, scope, label, gate });
     await send("Page.enable");
     await send("Runtime.enable");
     stage = "authenticated_preview";
@@ -483,7 +688,7 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
     await logNavigation("confirmed_need_open");
     const logServiceDateState = async (transition) => {
       const state = await evaluate(
-        `(()=>{const week=document.querySelector('input[aria-label="Tuần phục vụ"]');const service=document.querySelector('select[aria-label="Ngày phục vụ"]');return {transition:${JSON.stringify(transition)},week_value:week?.value??null,week_disabled:Boolean(week?.disabled),service_date:service?.value??null,service_disabled:Boolean(service?.disabled),service_options:service?[...service.options].map(o=>o.value):[]};})()`,
+        `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const service=root?.querySelector('select[aria-label="Ngày phục vụ"]');return {transition:${JSON.stringify(transition)},week_value:week?.value??null,week_disabled:Boolean(week?.disabled),service_date:service?.value??null,service_disabled:Boolean(service?.disabled),service_options:service?[...service.options].map(o=>o.value):[]};})()`,
       );
       console.log(JSON.stringify({ browser_service_date: state }));
     };
@@ -500,38 +705,30 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
       REHEARSAL_SERVICE_DATE,
       "select",
     );
-    const preGenerate = await until(
+    stage = "ready_to_review";
+    const { before, generateClicks } = await reachReadyToReview({
+      mode: baseline.mode,
+      expectedBatchId: baseline.batchId,
+      evaluate,
+      readReview,
+      clickOnce: oneShotButton,
+    });
+    console.log(
+      JSON.stringify({
+        browser_ready_to_review: {
+          mode: baseline.mode,
+          generateClicks,
+          batchVersion: before.batch_version,
+          lineCount: before.lines.length,
+        },
+      }),
+    );
+    const candidate = await until(
       () =>
         evaluate(
-          `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const service=root?.querySelector('select[aria-label="Ngày phục vụ"]');const buttons=root?[...root.querySelectorAll('button')]:[];const generate=buttons.find(e=>e.textContent.trim()==='Tạo nhu cầu');const update=buttons.find(e=>e.textContent.trim()==='Cập nhật nhu cầu');return root?{week_value:week?.value??null,service_date:service?.value??null,service_options:service?[...service.options].map(o=>o.value):[],service_enabled:Boolean(service&&!service.disabled),generate_present:Boolean(generate),generate_enabled:Boolean(generate&&!generate.disabled&&generate.getAttribute('aria-disabled')!=='true'),update_present:Boolean(update),rendered_rows:root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length}:null;})()`,
+          `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const index=rows.findIndex(r=>r.children[1].textContent.trim()==='kg'&&r.querySelector('input[aria-label^="Số lượng xác nhận"]')&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').disabled&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').readOnly);if(index<0)return null;const r=rows[index];return {index,ingredient:r.children[0].children[0].textContent,recipient:r.children[0].children[1].textContent};})()`,
         ),
-      "pre_generate_surface",
-    );
-    console.log(JSON.stringify({ browser_pre_generate: preGenerate }));
-    assertPreGenerateGate(preGenerate);
-    stage = "generate_once";
-    await oneShotButton(CONFIRMED_WORKBENCH, "Tạo nhu cầu", "generate_once");
-    await until(
-      () =>
-        evaluate(
-          `document.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length===248`,
-        ),
-      "248_rendered_rows",
-    );
-    const before = await readReview();
-    if (
-      before?.lines.length !== 248 ||
-      before.pagination.has_more ||
-      before.blockers.length ||
-      !before.editing_allowed ||
-      before.source_kind !== "NEED_GENERATION" ||
-      before.service_period?.period_start !== REHEARSAL_SERVICE_DATE ||
-      before.service_period?.period_end !== REHEARSAL_SERVICE_DATE ||
-      before.lines.some((line) => line.current_decision_id !== null)
-    )
-      throw new Error("BROWSER_GENERATION_READBACK_FAILED");
-    const candidate = await evaluate(
-      `(()=>{const rows=[...document.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})];const index=rows.findIndex(r=>r.children[1].textContent.trim()==='kg'&&r.querySelector('input[aria-label^="Số lượng xác nhận"]')&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').disabled&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').readOnly);if(index<0)return null;const r=rows[index];return {index,ingredient:r.children[0].children[0].textContent,recipient:r.children[0].children[1].textContent};})()`,
+      "editable_kg_row",
     );
     if (!candidate) throw new Error("NO_EDITABLE_KG_REHEARSAL_ROW");
     const line = before.lines.find(
@@ -544,25 +741,29 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
     const proposed = nextCent(
       line.confirmed_quantity_after ?? line.proposed_confirmed_quantity,
     );
-    const row = `${CONFIRMED_TABLE} tbody tr:nth-child(${candidate.index + 1})`;
+    const row = `${CONFIRMED_WORKBENCH} ${CONFIRMED_TABLE} tbody tr:nth-child(${candidate.index + 1})`;
     stage = "quantity_edit";
     await input(`${row} input[aria-label^="Số lượng xác nhận"]`, proposed);
+    await until(
+      () =>
+        evaluate(
+          `(()=>{const r=document.querySelector(${JSON.stringify(row)});const input=r?.querySelector('input[aria-label^="Số lượng xác nhận"]');const text=(r?.children[4]?.textContent??'').trim();const delta=Number(text.replaceAll('.','').replace(',','.'));return Boolean(input?.value===${JSON.stringify(proposed)}&&Number.isFinite(delta)&&delta!==0);})()`,
+        ),
+      "quantity_edit_settled",
+    );
     await input(
       `${row} select[aria-label^="Lý do"]`,
       "OPERATIONAL_QUANTITY_ADJUSTMENT",
       "select",
     );
-    await until(
-      () =>
-        evaluate(
-          `Boolean(document.querySelector(${JSON.stringify(`${row} input[aria-label^="Ghi chú"]`)}))`,
-        ),
-      "note_input",
-    );
+    await waitForReasonNoteReady({
+      evaluate,
+      row,
+      reason: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+    });
     await input(`${row} input[aria-label^="Ghi chú"]`, REHEARSAL_NOTE);
-    const preSave = await evaluate(preSaveGateStateExpression());
+    const preSave = await waitForPreSaveSurface({ evaluate });
     console.log(JSON.stringify({ browser_pre_save: preSave }));
-    assertPreSaveGate(preSave);
     stage = "save_once";
     await oneShotButton(CONFIRMED_WORKBENCH, "Lưu", "save_once");
     const after = await until(async () => {
@@ -586,22 +787,27 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
     await until(
       () =>
         evaluate(
-          `![...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Lưu')`,
+          `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const refresh=root?.querySelector('button[aria-label="Làm mới dữ liệu"]');return Boolean(root&&week&&!week.disabled&&refresh&&!refresh.disabled&&refresh.getAttribute('aria-busy')!=='true'&&![...root.querySelectorAll('button')].some(b=>b.textContent.trim()==='Lưu'));})()`,
         ),
       "save_settled",
     );
     await navigateToPlanningSources({ evaluate });
     await navigateToConfirmedNeed({ evaluate });
-    await until(
-      () =>
-        evaluate(
-          `document.querySelectorAll('table[aria-label="Nhu cầu xác nhận"] tbody tr').length===248`,
-        ),
-      "reopened_rows",
-    );
-    const reopened = await readReview();
-    if (JSON.stringify(reopened.lines) !== JSON.stringify(after.lines))
-      throw new Error("REOPEN_READBACK_CHANGED");
+    await waitForRenderedConfirmedRows({ evaluate });
+    const reopened = await until(async () => {
+      try {
+        const review = await readReview();
+        return review?.confirmed_need_batch_id ===
+          after.confirmed_need_batch_id &&
+          review.batch_version === after.batch_version &&
+          review.lines?.length === 248
+          ? review
+          : null;
+      } catch {
+        return null;
+      }
+    }, "reopened_readback");
+    assertReopenedReview(after, reopened);
     assertFirstSaveTransition({
       before,
       after: reopened,
@@ -620,16 +826,16 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
       );
     }
     return {
-      status: "browser-generation-save-reopen-pass",
+      status: "browser-review-save-reopen-pass",
       serviceDate: "2026-09-17",
       renderedRows: 248,
-      generatedBatches: 1,
+      retainedBatches: 1,
       businessQuantityAdjustments: firstSave.businessQuantityAdjustments,
       newDecisions: firstSave.newDecisions,
       proposalAcceptances: firstSave.proposalAcceptances,
       batchId: after.confirmed_need_batch_id,
       batchVersion: after.batch_version,
-      generateClicks: 1,
+      generateClicks,
       saveClicks: 1,
       otherQuantitiesEqualGeneratedProposal: true,
       theoreticalQuantitiesUnchanged: true,
@@ -639,7 +845,7 @@ export async function verifyPlanningBrowser({ target, readReview, nextCent }) {
     const diagnostic = { browser_stage: stage };
     try {
       diagnostic.ui = await evaluate(
-        `(()=>{const week=document.querySelector('input[aria-label="Tuần phục vụ"]');const service=document.querySelector('select[aria-label="Ngày phục vụ"]');const buttons=[...document.querySelectorAll('button')];const generate=buttons.find(e=>e.textContent.trim()==='Tạo nhu cầu');const save=buttons.find(e=>e.textContent.trim()==='Lưu');return {week_value:week?.value??null,service_date:service?.value??null,service_options:service?[...service.options].map(o=>o.value):[],generate_present:Boolean(generate),generate_enabled:Boolean(generate&&!generate.disabled&&generate.getAttribute('aria-disabled')!=='true'),save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true'),rendered_rows:document.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length};})()`,
+        `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const week=root?.querySelector('input[aria-label="Tuần phục vụ"]');const service=root?.querySelector('select[aria-label="Ngày phục vụ"]');const buttons=root?[...root.querySelectorAll('button')]:[];const generate=buttons.find(e=>e.textContent.trim()==='Tạo nhu cầu');const save=buttons.find(e=>e.textContent.trim()==='Lưu');return {week_value:week?.value??null,week_disabled:Boolean(week?.disabled),service_date:service?.value??null,service_options:service?[...service.options].map(o=>o.value):[],generate_present:Boolean(generate),generate_enabled:Boolean(generate&&!generate.disabled&&generate.getAttribute('aria-disabled')!=='true'),save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true'),rendered_rows:root?.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)}).length??0};})()`,
       );
     } catch {
       diagnostic.ui_read_failed = true;
