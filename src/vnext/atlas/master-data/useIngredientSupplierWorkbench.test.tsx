@@ -49,6 +49,21 @@ function readSuccess(overrides: Record<string, unknown> = {}): AtlasRpcResult {
           unit_id: "unit-1",
           unit_code: "KG",
           unit_name: "Kilôgam",
+          dimension_code: "MASS",
+          unit_status: "ACTIVE",
+        },
+        {
+          unit_id: "unit-count",
+          unit_code: "piece",
+          unit_name: "Cái",
+          dimension_code: "COUNT",
+          unit_status: "ACTIVE",
+        },
+        {
+          unit_id: "unit-other",
+          unit_code: "liter",
+          unit_name: "Lít",
+          dimension_code: "VOLUME",
           unit_status: "ACTIVE",
         },
       ],
@@ -340,6 +355,71 @@ describe("useIngredientSupplierWorkbench", () => {
       }),
     );
     expect(api.getIngredientsAndSuppliers).toHaveBeenCalledTimes(2);
+  });
+
+  it("suggests a new Ingredient rounding step from the exact Unit while the field is untouched", async () => {
+    const api = apiWithRead();
+    const { result, rerender } = renderHook(
+      ({ authSubject }) =>
+        useIngredientSupplierWorkbench({
+          authSubject,
+          api,
+        }),
+      { initialProps: { authSubject: "operator-1" } },
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.openIngredient("NEW"));
+
+    act(() => result.current.setIngredientField("purchaseUnitId", "unit-1"));
+    expect(result.current.ingredientDraft.orderStep).toBe("0.1");
+
+    rerender({ authSubject: "operator-1" });
+    expect(result.current.ingredientDraft.orderStep).toBe("0.1");
+
+    act(() =>
+      result.current.setIngredientField("purchaseUnitId", "unit-count"),
+    );
+    expect(result.current.ingredientDraft.orderStep).toBe("1");
+  });
+
+  it("preserves a manually entered new-Ingredient step across rerenders and Unit changes", async () => {
+    const api = apiWithRead();
+    const { result, rerender } = renderHook(
+      ({ authSubject }) => useIngredientSupplierWorkbench({ authSubject, api }),
+      { initialProps: { authSubject: "operator-1" } },
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    act(() => result.current.openIngredient("NEW"));
+    act(() => result.current.setIngredientField("purchaseUnitId", "unit-1"));
+    act(() => result.current.setIngredientField("orderStep", "0.25"));
+    act(() => result.current.setIngredientField("ingredientName", "Bí đỏ"));
+    rerender({ authSubject: "operator-1" });
+    expect(result.current.ingredientDraft.orderStep).toBe("0.25");
+
+    act(() =>
+      result.current.setIngredientField("purchaseUnitId", "unit-count"),
+    );
+    expect(result.current.ingredientDraft.orderStep).toBe("0.25");
+  });
+
+  it("does not guess for unsupported Units or rewrite an existing Ingredient step", async () => {
+    const api = apiWithRead();
+    const { result } = renderHook(() =>
+      useIngredientSupplierWorkbench({ authSubject: "operator-1", api }),
+    );
+    await waitFor(() => expect(result.current.ingredients).toHaveLength(1));
+
+    act(() => result.current.openIngredient("NEW"));
+    act(() =>
+      result.current.setIngredientField("purchaseUnitId", "unit-other"),
+    );
+    expect(result.current.ingredientDraft.orderStep).toBe("");
+
+    act(() => result.current.openIngredient("ingredient-1"));
+    act(() =>
+      result.current.setIngredientField("purchaseUnitId", "unit-count"),
+    );
+    expect(result.current.ingredientDraft.orderStep).toBe("0.5");
   });
 
   it("updates a Supplier with its current version without changing code or status", async () => {

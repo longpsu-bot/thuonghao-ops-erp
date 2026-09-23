@@ -115,12 +115,10 @@ export function ConfirmedNeedTable({
                   <Text>
                     {exactQuantityDisplay(line.proposed_confirmed_quantity)}
                   </Text>
-                  {line.effective_policy && (
+                  {line.proposal_rounding_step && (
                     <Text textStyle="helper" color="fg.muted">
-                      Bước lượng:{" "}
-                      {exactQuantityDisplay(
-                        line.effective_policy.planning_step,
-                      )}{" "}
+                      Làm tròn:{" "}
+                      {exactQuantityDisplay(line.proposal_rounding_step)}{" "}
                       {line.controlled_unit.code}
                     </Text>
                   )}
@@ -151,6 +149,15 @@ export function ConfirmedNeedTable({
                       })
                     }
                   />
+                  {line.effective_policy && (
+                    <Text textStyle="helper" color="fg.muted">
+                      Bước xác nhận:{" "}
+                      {exactQuantityDisplay(
+                        line.effective_policy.planning_step,
+                      )}{" "}
+                      {line.controlled_unit.code}
+                    </Text>
+                  )}
                   {historical && (
                     <Text id={description} textStyle="helper" color="fg.muted">
                       Giữ nguyên độ chính xác gốc · chỉ đọc.

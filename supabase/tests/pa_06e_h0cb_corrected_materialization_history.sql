@@ -47,12 +47,14 @@ insert into atlas_planning.planning_quantity_policy_revisions (
  'cb200000-0000-0000-0000-000000000001',transaction_timestamp(),
  'cb200000-0000-0000-0000-000000000001',transaction_timestamp()
 );
-insert into atlas_admin.ingredients (ingredient_id,ingredient_code,ingredient_name) values
- ('cb200000-0000-0000-0000-000000000015','h0cb-correction-rice','H0Cb rice'),
- ('cb200000-0000-0000-0000-000000000016','h0cb-correction-salt','H0Cb salt'),
- ('cb200000-0000-0000-0000-000000000017','h0cb-correction-oil','H0Cb oil'),
- ('cb200000-0000-0000-0000-000000000018','h0cb-correction-beans','H0Cb beans'),
- ('cb200000-0000-0000-0000-000000000019','h0cb-correction-pepper','H0Cb pepper');
+insert into atlas_admin.ingredients (
+ ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,order_step
+) values
+ ('cb200000-0000-0000-0000-000000000015','h0cb-correction-rice','H0Cb rice','cb200000-0000-0000-0000-000000000014',0.01),
+ ('cb200000-0000-0000-0000-000000000016','h0cb-correction-salt','H0Cb salt','cb200000-0000-0000-0000-000000000014',0.01),
+ ('cb200000-0000-0000-0000-000000000017','h0cb-correction-oil','H0Cb oil','cb200000-0000-0000-0000-000000000014',0.01),
+ ('cb200000-0000-0000-0000-000000000018','h0cb-correction-beans','H0Cb beans','cb200000-0000-0000-0000-000000000014',0.01),
+ ('cb200000-0000-0000-0000-000000000019','h0cb-correction-pepper','H0Cb pepper','cb200000-0000-0000-0000-000000000014',0.01);
 
 insert into atlas_planning.need_generation_runs (
  need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,

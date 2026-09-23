@@ -301,8 +301,10 @@ insert into atlas_admin.schools(school_id,customer_id,school_code,school_name,sc
 values('d0210000-0000-0000-0000-000000000014','d0210000-0000-0000-0000-000000000010','png02-mixed-school','PNG02 mixed school','d0210000-0000-0000-0000-000000000013','d0210000-0000-0000-0000-000000000011');
 insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
 values('d0210000-0000-0000-0000-000000000015','png02-mixed-kg','PNG02 mixed kilogram','mass');
-insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name)
-values('d0210000-0000-0000-0000-000000000016','png02-mixed-rice','PNG02 mixed rice');
+insert into atlas_admin.ingredients(
+ ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,order_step
+)
+values('d0210000-0000-0000-0000-000000000016','png02-mixed-rice','PNG02 mixed rice','d0210000-0000-0000-0000-000000000015',0.01);
 
 insert into atlas_planning.need_generation_runs(need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,period_start,period_end,attempt_ordinal,input_snapshot_id,run_status,version,generated_line_count,blocking_issue_count,warning_count,generated_by_actor_id,generated_at,validated_by_actor_id,validated_at,released_by_actor_id,released_at,updated_at)
 values('d0210000-0000-0000-0000-000000000100','d0210000-0000-0000-0000-000000000101','d0210000-0000-0000-0000-000000000102',1,date '2026-08-03',date '2026-08-03',1,'d0210000-0000-0000-0000-000000000103','RELEASED_FOR_CONFIRMATION',1,2,0,0,'d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:00:00+07','d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:01:00+07','d0210000-0000-0000-0000-000000000001',timestamptz '2026-08-03 08:02:00+07',timestamptz '2026-08-03 08:02:00+07');

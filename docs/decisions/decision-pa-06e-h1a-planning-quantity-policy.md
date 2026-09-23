@@ -84,8 +84,11 @@ H1A-P06 governs the quantity entered for human confirmation: it must already be
 an exact whole number of the effective Planning step and is rejected without a
 replacement otherwise. D-046 governs the earlier system derivation: after exact
 contributions are aggregated, materialization derives the non-authoritative
-Draft proposal with exact PostgreSQL
-`ceil(theoretical_total / planning_step) * planning_step`. That system
+Draft proposal from the exact versioned `Ingredient.order_step` with PostgreSQL
+`ceil(theoretical_total / ingredient.order_step) * ingredient.order_step`.
+H1A is not the proposal-rounding source. It remains the minimum human
+confirmation quantum, and the Ingredient step must be an exact positive integer
+multiple of H1A so the generated proposal is representable. That system
 quantization creates no human adjustment or decision evidence.
 
 The product-owner instruction on 2026-07-23 explicitly approved H1A-P01 through H1A-P10 as recommended. It also approved the separate pre-H1A platform-maintenance dependency. Approval of the product contract is not authorization to begin SQL.

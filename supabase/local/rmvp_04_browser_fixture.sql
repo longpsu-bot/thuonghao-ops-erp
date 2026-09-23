@@ -24,7 +24,7 @@ begin
     unit.unit_id,
     'LOCAL_ACCEPTANCE',
     'LOCAL_ACCEPTANCE',
-    0.000001
+    0.1
   from atlas_admin.units unit
   where unit.unit_code = 'kg'
     and unit.dimension_code = 'MASS'

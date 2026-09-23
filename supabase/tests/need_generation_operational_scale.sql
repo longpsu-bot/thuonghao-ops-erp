@@ -45,8 +45,8 @@ insert into atlas_admin.schools(school_id,customer_id,school_code,school_name,sc
 select pg_temp.ng_id(5000+i),pg_temp.ng_id(10),'need-scale-school-'||i,'Need scale school '||i,
   case when i<19 then pg_temp.ng_id(12) else pg_temp.ng_id(14) end,pg_temp.ng_id(11),i
 from generate_series(1,19) i;
-insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id)
-select pg_temp.ng_id(2000+i),'need-scale-ingredient-'||i,'Need scale ingredient '||i,pg_temp.ng_id(13)
+insert into atlas_admin.ingredients(ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,order_step)
+select pg_temp.ng_id(2000+i),'need-scale-ingredient-'||i,'Need scale ingredient '||i,pg_temp.ng_id(13),0.1
 from generate_series(1,16) i;
 insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_type_id,requires_need_generation,dish_status)
 select pg_temp.ng_id(1000+i),'need-scale-dish-'||i,'Need scale dish '||i,t.dish_type_id,true,'ACTIVE'

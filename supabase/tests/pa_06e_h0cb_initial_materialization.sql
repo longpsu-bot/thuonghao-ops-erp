@@ -50,9 +50,11 @@ insert into atlas_planning.planning_quantity_policy_revisions (
   'cb100000-0000-0000-0000-000000000001',transaction_timestamp(),
   'cb100000-0000-0000-0000-000000000001',transaction_timestamp()
 );
-insert into atlas_admin.ingredients (ingredient_id,ingredient_code,ingredient_name) values
- ('cb100000-0000-0000-0000-000000000015','h0cb-initial-rice','H0Cb rice'),
- ('cb100000-0000-0000-0000-000000000016','h0cb-initial-oil','H0Cb oil');
+insert into atlas_admin.ingredients (
+  ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,order_step
+) values
+ ('cb100000-0000-0000-0000-000000000015','h0cb-initial-rice','H0Cb rice','cb100000-0000-0000-0000-000000000014',0.01),
+ ('cb100000-0000-0000-0000-000000000016','h0cb-initial-oil','H0Cb oil','cb100000-0000-0000-0000-000000000014',0.01);
 
 insert into atlas_planning.need_generation_runs (
   need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,

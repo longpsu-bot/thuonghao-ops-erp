@@ -80,9 +80,9 @@ Every call requires exact equality between the JWT subject and `requested_by_aut
 
 The `workbench` contains batch identity, `NEED_GENERATION` source kind, lifecycle status and version, exact Need Generation run/version/release snapshot, service period, total/unreviewed/confirmed/adjusted counts, blockers before warnings, backend-derived allowed actions and disabled reasons, pagination, current lines, and returned-line decision history.
 
-Each line contains its stable line ID, current revision ID/number, service date, Customer, School, Delivery Location, Ingredient, controlled Unit identity/code/name/current status, theoretical quantity, proposed confirmed quantity, current decision identity/number/kind, authoritative confirmed quantity after, exact eligible policy root/revision/number/step/status/effective interval, source membership count, stale flag, blockers, warnings, and newest-first immutable decision history.
+Each line contains its stable line ID, current revision ID/number, service date, Customer, School, Delivery Location, Ingredient, controlled Unit identity/code/name/current status, theoretical quantity, proposed confirmed quantity, `proposal_rounding_step` snapshotted from the exact Ingredient version, current decision identity/number/kind, authoritative confirmed quantity after, exact eligible H1A policy root/revision/number/step/status/effective interval, source membership count, stale flag, blockers, warnings, and newest-first immutable decision history.
 
-Quantities and Planning steps are returned as exact decimal strings. A proposal is not authoritative confirmation until the stable line's current-decision pointer identifies an H1B1 decision.
+Quantities, the Ingredient proposal-rounding step, and the H1A confirmation step are returned as exact decimal strings. A proposal is not authoritative confirmation until the stable line's current-decision pointer identifies an H1B1 decision.
 
 Review and confirmation are allowed only for `DRAFT_REVIEW` or `REOPENED` batches with current released-source bindings, nonempty current memberships, an `ACTIVE` controlled Unit, and exactly one effective policy per line.
 
@@ -126,8 +126,11 @@ confirmed quantity = whole planning tick count × exact Planning step
 
 Per [D-046](../decisions/decision-planning-operational-proposal.md), the
 materialized proposal was already derived from the exact grouped raw requirement
-with PostgreSQL `ceil(total / planning_step) * planning_step`. That system
-derivation is not a human adjustment.
+with PostgreSQL
+`ceil(total / ingredient.order_step) * ingredient.order_step`. The snapshotted
+Ingredient step explains proposal rounding; the effective H1A step below
+governs only human-input representability. That system derivation is not a
+human adjustment.
 
 At this human preview/confirmation boundary there is no rounding, ceiling,
 truncation, epsilon comparison, or JavaScript numeric calculation. Invalid

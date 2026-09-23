@@ -294,9 +294,11 @@ insert into atlas_admin.schools (school_id, customer_id, school_code, school_nam
 values ('f5100000-0000-0000-0000-000000000004', 'f5100000-0000-0000-0000-000000000001', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000003', 'f5100000-0000-0000-0000-000000000002', 10);
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'mass');
-insert into atlas_admin.ingredients (ingredient_id, ingredient_code, ingredient_name) values
-  ('f5100000-0000-0000-0000-000000000006', 'rmvp05-rice', 'RMVP-05 rice'),
-  ('f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans');
+insert into atlas_admin.ingredients (
+  ingredient_id, ingredient_code, ingredient_name, purchase_unit_id, order_step
+) values
+  ('f5100000-0000-0000-0000-000000000006', 'rmvp05-rice', 'RMVP-05 rice', 'f5100000-0000-0000-0000-000000000005', 0.25),
+  ('f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 0.25);
 
 insert into atlas_planning.weekly_menus (weekly_menu_id, week_start, week_end, source_type, source_name, source_signature, row_count, imported_by_actor_id, weekly_menu_status, latest_approved_by_actor_id, latest_approved_at, latest_approval_snapshot_id)
 values ('f5200000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-05 empty menu', 'rmvp05-menu', 0, 'f5000000-0000-0000-0000-000000000001', 'APPROVED', 'f5000000-0000-0000-0000-000000000001', '2026-11-01 09:00:00+07', 'f5200000-0000-0000-0000-000000000002');

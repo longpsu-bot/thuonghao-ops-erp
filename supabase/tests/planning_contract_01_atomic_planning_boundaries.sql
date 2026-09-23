@@ -335,32 +335,32 @@ values (
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram', 'mass');
 insert into atlas_admin.ingredients (
-  ingredient_id, ingredient_code, ingredient_name, purchase_unit_id
+  ingredient_id, ingredient_code, ingredient_name, purchase_unit_id, order_step
 )
 values
   (
     'e4100000-0000-0000-0000-000000000007', 'rmvp04-rice',
-    'RMVP-04 rice', 'e4100000-0000-0000-0000-000000000006'
+    'RMVP-04 rice', 'e4100000-0000-0000-0000-000000000006', 0.5
   ),
   (
     'e4100000-0000-0000-0000-000000000013', 'rmvp04-oil',
-    'RMVP-04 oil', 'e4100000-0000-0000-0000-000000000006'
+    'RMVP-04 oil', 'e4100000-0000-0000-0000-000000000006', 0.5
   ),
   (
     'e4100000-0000-0000-0000-000000000016', 'rmvp04-carrot',
-    'RMVP-04 carrot', 'e4100000-0000-0000-0000-000000000006'
+    'RMVP-04 carrot', 'e4100000-0000-0000-0000-000000000006', 0.5
   ),
   (
     'e4100000-0000-0000-0000-000000000019', 'rmvp04-potato',
-    'RMVP-04 potato', 'e4100000-0000-0000-0000-000000000006'
+    'RMVP-04 potato', 'e4100000-0000-0000-0000-000000000006', 0.5
   ),
   (
     'e4100000-0000-0000-0000-000000000020', 'rmvp04-spinach',
-    'RMVP-04 spinach', 'e4100000-0000-0000-0000-000000000006'
+    'RMVP-04 spinach', 'e4100000-0000-0000-0000-000000000006', 0.5
   ),
   (
     'e4100000-0000-0000-0000-000000000021', 'rmvp04-celery',
-    'RMVP-04 celery', 'e4100000-0000-0000-0000-000000000006'
+    'RMVP-04 celery', 'e4100000-0000-0000-0000-000000000006', 0.5
   );
 insert into atlas_admin.dishes (
   dish_id, dish_code, dish_name, dish_type_id, dish_status, display_order,

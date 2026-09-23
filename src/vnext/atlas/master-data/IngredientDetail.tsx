@@ -174,7 +174,7 @@ export function IngredientDetail({
               required
               invalid={c.ingredientDraft.orderStep !== "" && !c.ingredientValid}
             >
-              <Field.Label>Mức làm tròn khi đặt hàng</Field.Label>
+              <Field.Label>Bước làm tròn mặc định</Field.Label>
               <Input
                 required
                 inputMode="decimal"
@@ -187,7 +187,8 @@ export function IngredientDetail({
                 }
               />
               <Field.HelperText>
-                Nhập số dương, ví dụ 0,5 hoặc 1.
+                Atlas gợi ý theo đơn vị. Có thể nhập bước khác phù hợp với
+                nguyên liệu; bước này dùng cho đề xuất vận hành.
               </Field.HelperText>
             </Field.Root>
           </Box>

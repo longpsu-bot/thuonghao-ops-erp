@@ -106,16 +106,26 @@ function scaledQuantity(quantity) {
   );
 }
 
-function policyDerivedProposal(theoretical, proposal, planningStep) {
+function ingredientDerivedProposal(
+  theoretical,
+  proposal,
+  proposalRoundingStep,
+  planningStep,
+) {
   const raw = scaledQuantity(theoretical);
   const proposed = scaledQuantity(proposal);
-  const step = scaledQuantity(planningStep);
+  const proposalStep = scaledQuantity(proposalRoundingStep);
+  const confirmationStep = scaledQuantity(planningStep);
   return (
     raw !== null &&
     proposed !== null &&
-    step !== null &&
-    step > 0n &&
-    proposed === ((raw + step - 1n) / step) * step
+    proposalStep !== null &&
+    confirmationStep !== null &&
+    proposalStep > 0n &&
+    confirmationStep > 0n &&
+    proposalStep % confirmationStep === 0n &&
+    proposed === ((raw + proposalStep - 1n) / proposalStep) * proposalStep &&
+    proposed % confirmationStep === 0n
   );
 }
 
@@ -233,13 +243,14 @@ async function main() {
         (line) =>
           typeof line.theoretical_quantity === "string" &&
           typeof line.proposed_confirmed_quantity === "string" &&
-          policyDerivedProposal(
+          ingredientDerivedProposal(
             line.theoretical_quantity,
             line.proposed_confirmed_quantity,
+            line.proposal_rounding_step,
             line.effective_policy?.planning_step,
           ),
       ),
-    "RMVP-05 shaped read did not expose exact policy-derived reviewable proposals.",
+    "RMVP-05 shaped read did not expose exact Ingredient-derived reviewable proposals and H1A-compatible snapshots.",
   );
 
   const selected = initial.workbench.lines.slice(0, 2);

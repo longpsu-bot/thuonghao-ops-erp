@@ -134,24 +134,28 @@ const UNITS: UnitMasterData[] = [
     unit_code: "kg",
     unit_name: "Kilôgam",
     unit_status: "ACTIVE",
+    dimension_code: "MASS",
   },
   {
     unit_id: "unit-l",
     unit_code: "l",
     unit_name: "Lít",
     unit_status: "ACTIVE",
+    dimension_code: "VOLUME",
   },
   {
     unit_id: "unit-pack",
     unit_code: "gói",
     unit_name: "Gói",
     unit_status: "ACTIVE",
+    dimension_code: "COUNT",
   },
   {
     unit_id: "unit-tray",
     unit_code: "khay",
     unit_name: "Khay",
     unit_status: "ACTIVE",
+    dimension_code: "COUNT",
   },
 ];
 

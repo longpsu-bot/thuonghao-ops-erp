@@ -460,8 +460,10 @@ As amended by [D-046](../decisions/decision-planning-operational-proposal.md),
 H0C keeps the exact grouped total in `theoretical_quantity` and uses the
 existing `confirmed_quantity` storage field for a clearly non-authoritative
 Draft proposal. After aggregation it resolves exactly one effective H1A policy
-for the exact Unit and service date, then derives the proposal with PostgreSQL
-`ceil(theoretical_quantity / planning_step) * planning_step`. It never
+for the exact Unit and service date, resolves the exact active Ingredient whose
+purchase Unit equals that Unit, and derives the proposal with PostgreSQL
+`ceil(theoretical_quantity / Ingredient.order_step) * Ingredient.order_step`.
+The Ingredient step must be an exact positive integer multiple of H1A. It never
 quantizes contributions individually and never creates confirmation or human
 decision evidence.
 
@@ -575,9 +577,12 @@ For an exact existing batch in `DRAFT_REVIEW` or explicitly `REOPENED`:
 8. Create new stable operational lines and revision 1 for new operational identities, including a new ingredient requirement or the destination line of an ingredient correction when absent.
 9. Handle an ingredient correction as an explicit contribution move from the old ingredient group's new membership to the new ingredient group's new membership. Never mutate the old stable line's ingredient.
 10. Preserve each exact recomputed theoretical total, then derive each new
-    non-authoritative proposal once from the exact effective Planning step using
-    `ceil(total / step) * step`. D-040 separately governs eligible carry of an
-    existing human decision; no other prior confirmed value is carried.
+    non-authoritative proposal once from the exact versioned
+    `Ingredient.order_step` using `ceil(total / step) * step`. The Ingredient
+    purchase Unit must equal the controlled Unit, and its step must be an exact
+    positive integer multiple of the effective H1A human-confirmation step.
+    D-040 separately governs eligible carry of an existing human decision; no
+    other prior confirmed value is carried.
 11. Reject unresolved zero/empty-group, removal, split, merge, incomplete, duplicate-predecessor, conversion-required grouping, and mixed-authorization-scope cases with no partial write.
 12. Move the batch's controlled current released-run pointer, increment the batch version exactly once, and make all revisions/memberships/current metadata visible atomically.
 13. Append exactly one completed receipt, proposed `ConfirmedNeedsRematerialized` domain event, and matching audit event atomically.
@@ -906,7 +911,7 @@ The first four prerequisite decisions below are retained for provenance and mark
 13. **Resolved by H0B1a:** Alternative B and the final seven-part operational identity are accepted.
 14. Zero/empty-line and removed-contribution review, materialization, approval, and release behavior.
 15. Split and merge mapping/approval behavior.
-16. **Resolved by D-046:** H0C never carries a prior confirmed quantity automatically. It preserves the new exact theoretical total, then derives the successor Draft proposal after aggregation from exactly one effective Unit/service-date Planning policy. Existing revisions remain immutable.
+16. **Resolved by D-046:** H0C never carries a prior confirmed quantity automatically. It preserves the new exact theoretical total, then derives the successor Draft proposal after aggregation from the exact versioned `Ingredient.order_step`. Exactly one effective Unit/service-date H1A policy remains mandatory for human representability, not proposal rounding. Existing revisions remain immutable.
 17. Planning policy scope levels, precedence, owner, approver, effective-date semantics, and production step values.
 18. Reason-code taxonomy, when a note is mandatory, and decision-evidence correction authority.
 19. Separation of duties for materialization, confirmation, later approval, and release.

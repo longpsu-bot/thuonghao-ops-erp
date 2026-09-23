@@ -39,8 +39,10 @@ insert into atlas_planning.planning_quantity_policy_revisions (
  'cb300000-0000-0000-0000-000000000001',transaction_timestamp(),
  'cb300000-0000-0000-0000-000000000001',transaction_timestamp()
 );
-insert into atlas_admin.ingredients (ingredient_id,ingredient_code,ingredient_name)
-values ('cb300000-0000-0000-0000-000000000015','h0cb-error-rice','H0Cb rice');
+insert into atlas_admin.ingredients (
+ ingredient_id,ingredient_code,ingredient_name,purchase_unit_id,order_step
+)
+values ('cb300000-0000-0000-0000-000000000015','h0cb-error-rice','H0Cb rice','cb300000-0000-0000-0000-000000000014',0.01);
 
 insert into atlas_core.actors (actor_id,actor_type,display_name,actor_status,deactivated_at) values
  ('cb300000-0000-0000-0000-000000000001','HUMAN','Global planner','ACTIVE',null),

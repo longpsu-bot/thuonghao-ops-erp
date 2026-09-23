@@ -95,6 +95,12 @@ Added columns:
 
 The existing ingredient_id and unit_id carry the exact Ingredient and controlled Unit. Existing rows are backfilled with their owning batch ID before that column becomes required. wholesale_order_line_revision_id becomes nullable only by the mutually exclusive source-family check.
 
+D-046 later adds nullable `proposal_rounding_step numeric(20,6)` and
+`proposal_rounding_ingredient_version bigint` to this existing revision. Legacy
+rows remain null and are not backfilled. Every newly materialized
+`NEED_GENERATION` revision stores both positive values as a pair so its Draft
+proposal remains explainable from the exact Ingredient configuration used.
+
 ### confirmed_need_line_revision_contributions
 
 The new relation has exactly:

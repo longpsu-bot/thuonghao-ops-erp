@@ -210,7 +210,8 @@ describe("Confirmed Need Chakra operator surface", () => {
     show("needs_review", {}, (fixture) => {
       Object.assign(fixture.batch.lines[0]!, {
         theoretical_quantity: "0.025500",
-        proposed_confirmed_quantity: "0.030000",
+        proposed_confirmed_quantity: "0.100000",
+        proposal_rounding_step: "0.100000",
       });
       fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
     });
@@ -230,9 +231,12 @@ describe("Confirmed Need Chakra operator surface", () => {
     ).toHaveTextContent("0,0255");
     expect(
       row.querySelector('[data-field="operational-proposal"]'),
-    ).toHaveTextContent("0,03");
-    expect(row).toHaveTextContent("Bước lượng: 0,01 kg");
-    expect(input).toHaveValue("0,03");
+    ).toHaveTextContent("0,1");
+    expect(
+      row.querySelector('[data-field="operational-proposal"]'),
+    ).toHaveTextContent("Làm tròn: 0,1 kg");
+    expect(row).toHaveTextContent("Bước xác nhận: 0,01 kg");
+    expect(input).toHaveValue("0,1");
   });
   it("does not classify a fresh six-place proposal as historical", async () => {
     show("needs_review", {}, (fixture) => {

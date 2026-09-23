@@ -139,17 +139,23 @@ begin
   insert into atlas_admin.ingredients (
     ingredient_id,
     ingredient_code,
-    ingredient_name
+    ingredient_name,
+    purchase_unit_id,
+    order_step
   ) values
     (
       'b6500000-0000-0000-0000-000000000006',
       'rmvp05-browser-rice',
-      'RMVP-05 browser rice'
+      'RMVP-05 browser rice',
+      'b6500000-0000-0000-0000-000000000005',
+      0.1
     ),
     (
       'b6500000-0000-0000-0000-000000000007',
       'rmvp05-browser-beans',
-      'RMVP-05 browser beans'
+      'RMVP-05 browser beans',
+      'b6500000-0000-0000-0000-000000000005',
+      0.1
     );
 
   insert into atlas_planning.weekly_menus (
@@ -937,6 +943,8 @@ begin
     ingredient_id,
     theoretical_quantity,
     confirmed_quantity,
+    proposal_rounding_step,
+    proposal_rounding_ingredient_version,
     unit_id,
     revision_status,
     is_current,
@@ -961,7 +969,9 @@ begin
       null,
       'b6500000-0000-0000-0000-000000000006',
       v_rice_quantity,
-      v_rice_quantity,
+      ceil(v_rice_quantity / 0.1) * 0.1,
+      0.1,
+      1,
       'b6500000-0000-0000-0000-000000000005',
       'DRAFT',
       true,
@@ -987,6 +997,8 @@ begin
       'b6500000-0000-0000-0000-000000000007',
       3.000000,
       3.000000,
+      0.1,
+      1,
       'b6500000-0000-0000-0000-000000000005',
       'DRAFT',
       true,
@@ -1110,7 +1122,7 @@ begin
     policy.unit_id,
     1,
     null,
-    0.000001,
+    0.01,
     date '2000-01-01',
     'DRAFT',
     v_actor_id,
@@ -1143,7 +1155,7 @@ begin
       activated_at = v_now
   where revision.policy_revision_status = 'DRAFT'
     and revision.revision_number = 1
-    and revision.planning_step = 0.000001
+    and revision.planning_step = 0.01
     and revision.effective_from = date '2000-01-01'
     and revision.created_by_actor_id = v_actor_id
     and exists (
@@ -1222,7 +1234,7 @@ begin
         where revision.unit_id = line.controlled_unit_id
           and revision.policy_revision_status = 'ACTIVE'
           and revision.effective_from <= line.service_date
-          and revision.planning_step = 0.000001
+          and revision.planning_step = 0.01
       ) <> 1
   ) then
     raise exception 'RMVP-05 fixture requires one exact active Unit policy per line.';
