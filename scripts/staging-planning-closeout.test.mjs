@@ -8,6 +8,8 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, test } from "vitest";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import * as closeoutVerifier from "./verify-staging-planning-closeout.mjs";
 import * as planningBrowser from "./staging-planning-browser.mjs";
 import { AtlasVNextProvider } from "../src/vnext/atlas/AtlasVNextProvider";
@@ -15,7 +17,45 @@ import { AtlasWeekRangeInput } from "../src/vnext/atlas/AtlasWeekRangeInput";
 import { ConfirmedNeedTable } from "../src/vnext/atlas/planning-confirmed/ConfirmedNeedTable";
 import { initialConfirmedNeedDraft } from "../src/vnext/atlas/bridges/confirmedNeed";
 
-const { nextCent, rollbackProbeSql } = closeoutVerifier;
+const { nextCent } = closeoutVerifier;
+
+test("closeout preparation schedules no rollback generation benchmark", () => {
+  const source = readFileSync(
+    resolve(process.cwd(), "scripts/verify-staging-planning-closeout.mjs"),
+    "utf8",
+  );
+  assert.doesNotMatch(source, /rollbackProbeSql\(date\)/);
+  assert.doesNotMatch(source, /atlas_api\.execute_need_generation/);
+});
+
+test("closeout workflow never installs or replays quantity policies", () => {
+  const workflow = readFileSync(
+    resolve(
+      process.cwd(),
+      ".github/workflows/atlas-staging-planning-closeout.yml",
+    ),
+    "utf8",
+  );
+  assert.doesNotMatch(workflow, /install-staging-count-unit-policies/);
+});
+
+test("closeout workflow is read-only before the browser Save", () => {
+  const workflow = readFileSync(
+    resolve(
+      process.cwd(),
+      ".github/workflows/atlas-staging-planning-closeout.yml",
+    ),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    workflow,
+    /Validate the approved policy package with rollback/,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /Install and idempotently replay approved Staging policies/,
+  );
+});
 
 beforeEach(() => {
   globalThis.ResizeObserver = class {
@@ -95,27 +135,6 @@ test("staged verification edit uses an exact next-cent value", () => {
   assert.equal(nextCent("90071992547409.910000"), "90071992547409.92");
   assert.throws(() => nextCent("1e4"));
   assert.throws(() => nextCent("-1"));
-});
-test("rollback probes keep the operator timeout and restrict approved dates", () => {
-  const sql = rollbackProbeSql("2026-09-17");
-  assert.match(sql, /statement_timeout='8s'/);
-  assert.match(sql, /rollback;$/);
-  assert.doesNotMatch(sql, /commit;/);
-  assert.throws(() => rollbackProbeSql("2026-09-21"));
-});
-
-test("rollback review starts a new statement after materializing generation", () => {
-  const sql = rollbackProbeSql("2026-09-17");
-  // A STABLE review in the generation statement cannot see its new batch.
-  // Preserve atomic rollback, but mirror the browser's separate read request.
-  const generationEnd = sql.indexOf("from generated;");
-  const reviewCall = sql.indexOf("atlas_api.get_confirmed_need_review");
-  assert.ok(generationEnd >= 0 && generationEnd < reviewCall);
-  assert.match(sql, /create temp table planning_closeout_probe_result/);
-  assert.match(sql, /insert into planning_closeout_probe_result/);
-  assert.match(sql, /'review_error_code',review->>'error_code'/);
-  assert.match(sql, /rollback;$/);
-  assert.doesNotMatch(sql, /commit;/);
 });
 
 test("browser enters Confirmed Need even while Sources keeps the shared service-date select mounted", async () => {
@@ -319,43 +338,6 @@ test("browser reaches the historical week from October through real Ark month na
   );
 });
 
-test("protected generation acceptance is strict below 7000 ms", () => {
-  const valid = {
-    success: true,
-    review_success: true,
-    currentness: "CURRENT",
-    has_more: false,
-    blocker_count: 0,
-    editing_allowed: true,
-    line_count: 248,
-  };
-  assert.equal(
-    typeof closeoutVerifier.planningCloseoutProbeAccepted,
-    "function",
-  );
-  assert.equal(
-    closeoutVerifier.planningCloseoutProbeAccepted({
-      ...valid,
-      generation_ms: 6999.999,
-    }),
-    true,
-  );
-  assert.equal(
-    closeoutVerifier.planningCloseoutProbeAccepted({
-      ...valid,
-      generation_ms: 7000,
-    }),
-    false,
-  );
-  assert.equal(
-    closeoutVerifier.planningCloseoutProbeAccepted({
-      ...valid,
-      generation_ms: 7000.001,
-    }),
-    false,
-  );
-});
-
 function firstSaveFixture() {
   const lines = Array.from({ length: 248 }, (_, index) => ({
     confirmed_need_line_id: `line-${index}`,
@@ -474,6 +456,30 @@ test("final retained proof requires one run, one batch, no handoff, and unchange
     purchaseHandoffs: 0,
     sourceFingerprintsUnchanged: true,
   });
+  for (const rejectedProof of [
+    { baseline: { ...proof.baseline, mode: "ZERO_BASELINE" } },
+    { browser: { ...proof.browser, generateClicks: 1 } },
+    { browser: { ...proof.browser, saveClicks: 2 } },
+  ]) {
+    assert.throws(
+      () =>
+        closeoutVerifier.assertFinalPlanningCloseoutProof({
+          ...proof,
+          ...rejectedProof,
+        }),
+      /FINAL_PLANNING_CLOSEOUT_PROOF_FAILED/,
+    );
+  }
+  const policyDrift = structuredClone(state);
+  policyDrift.policies[0].planning_step = 2;
+  assert.throws(
+    () =>
+      closeoutVerifier.assertFinalPlanningCloseoutProof({
+        ...proof,
+        state: policyDrift,
+      }),
+    /FINAL_PLANNING_CLOSEOUT_PROOF_FAILED/,
+  );
   assert.throws(
     () =>
       closeoutVerifier.assertFinalPlanningCloseoutProof({
@@ -883,6 +889,50 @@ const sourceFingerprints = {
   pantry: "pantry",
 };
 
+const approvedCountPolicyNames = [
+  ["v1-unit-034ce34d3ff3", "Quả"],
+  ["v1-unit-2d183c73d76a", "Bó"],
+  ["v1-unit-469606e98b7e", "Gói"],
+  ["v1-unit-46bab433cc1a", "Cốc"],
+  ["v1-unit-83bea5cf6378", "Miếng"],
+  ["v1-unit-91a0b1c14124", "Cái"],
+  ["v1-unit-9837090d3b3f", "Hũ"],
+  ["v1-unit-b1e160b3fbfb", "Chai"],
+  ["v1-unit-c854d71627b2", "Cây"],
+  ["v1-unit-cac06658f903", "Lon"],
+  ["v1-unit-cad1515b85c4", "Ổ"],
+  ["v1-unit-dafac3b7da11", "Bịch"],
+  ["v1-unit-ea9046ea54e4", "Hộp"],
+  ["v1-unit-eb0ce03e77fa", "Trái"],
+];
+
+function approvedPolicyRows() {
+  return [
+    ...approvedCountPolicyNames.map(([unit_code, unit_name]) => ({
+      unit_code,
+      unit_name,
+      dimension_code: "COUNT",
+      unit_status: "ACTIVE",
+      planning_step: 1,
+      effective_from: "2026-09-14",
+      effective_to: null,
+      policy_revision_status: "ACTIVE",
+      revision_number: 1,
+    })),
+    {
+      unit_code: "kg",
+      unit_name: "Kilogram",
+      dimension_code: "MASS",
+      unit_status: "ACTIVE",
+      planning_step: 0.01,
+      effective_from: "2026-01-01",
+      effective_to: null,
+      policy_revision_status: "ACTIVE",
+      revision_number: 1,
+    },
+  ];
+}
+
 function pristineResumeSnapshot() {
   return {
     runs: [
@@ -951,7 +1001,120 @@ function pristineResumeSnapshot() {
       },
     ],
     save_receipt_count: 0,
+    policies: approvedPolicyRows(),
   };
+}
+
+test("closeout snapshot verifies policies in a read-only transaction", () => {
+  const sql = closeoutVerifier.planningCloseoutSnapshotSql();
+  assert.match(sql, /^begin read only;/);
+  assert.match(sql, /planning_quantity_policy_revisions/);
+  assert.match(sql, /atlas_admin\.units/);
+  assert.match(sql, /u\.dimension_code='COUNT'/);
+  assert.match(sql, /u\.unit_status='ACTIVE'/);
+  assert.doesNotMatch(sql, /r\.planning_step=1/);
+  assert.doesNotMatch(sql, /r\.effective_from='2026-09-14'/);
+  assert.match(sql, /rollback;$/);
+  assert.doesNotMatch(sql, /\b(insert|update|delete|create|alter)\b/i);
+});
+
+for (const [label, mutate] of [
+  ["missing COUNT policy", (rows) => rows.shift()],
+  [
+    "extra 14/09 step-1 COUNT policy",
+    (rows) => rows.push({ ...rows[0], unit_code: "extra" }),
+  ],
+  [
+    "extra active COUNT policy with a different step and effective date",
+    (rows) =>
+      rows.push({
+        ...rows[0],
+        unit_code: "unexpected-count-unit",
+        planning_step: 2,
+        effective_from: "2026-09-15",
+      }),
+  ],
+  [
+    "wrong COUNT step",
+    (rows) => {
+      rows[0].planning_step = 2;
+    },
+  ],
+  [
+    "wrong COUNT effective date",
+    (rows) => {
+      rows[0].effective_from = "2026-09-15";
+    },
+  ],
+  [
+    "inactive COUNT policy",
+    (rows) => {
+      rows[0].policy_revision_status = "RETIRED";
+    },
+  ],
+  [
+    "inactive COUNT unit",
+    (rows) => {
+      rows[0].unit_status = "INACTIVE";
+    },
+  ],
+  [
+    "wrong COUNT dimension",
+    (rows) => {
+      rows[0].dimension_code = "MASS";
+    },
+  ],
+  [
+    "ended COUNT policy",
+    (rows) => {
+      rows[0].effective_to = "2026-09-20";
+    },
+  ],
+  [
+    "wrong COUNT revision",
+    (rows) => {
+      rows[0].revision_number = 2;
+    },
+  ],
+  [
+    "wrong COUNT name",
+    (rows) => {
+      rows[0].unit_name = "Other";
+    },
+  ],
+  [
+    "wrong COUNT code",
+    (rows) => {
+      rows[0].unit_code = "other";
+    },
+  ],
+  [
+    "wrong kg step",
+    (rows) => {
+      rows.at(-1).planning_step = 1;
+    },
+  ],
+  [
+    "wrong kg date",
+    (rows) => {
+      rows.at(-1).effective_from = "2026-09-14";
+    },
+  ],
+  [
+    "inactive kg policy",
+    (rows) => {
+      rows.at(-1).policy_revision_status = "RETIRED";
+    },
+  ],
+]) {
+  test(`pristine resume rejects ${label}`, () => {
+    const snapshot = pristineResumeSnapshot();
+    mutate(snapshot.policies);
+    assert.throws(
+      () => closeoutVerifier.classifyPlanningCloseoutBaseline(snapshot),
+      /PLANNING_CLOSEOUT_BASELINE_REJECTED/,
+    );
+  });
 }
 
 test("zero baseline and exact retained state classify into only two modes", () => {
@@ -976,6 +1139,38 @@ test("zero baseline and exact retained state classify into only two modes", () =
       fingerprints: sourceFingerprints,
     },
   );
+});
+
+test("protected closeout rejects zero baseline before invoking the browser journey", async () => {
+  const zero = pristineResumeSnapshot();
+  zero.runs = [];
+  zero.batches = [];
+  zero.receipts = [];
+  zero.preflight.downstream_currentness = "NOT_GENERATED";
+  zero.preflight.current_need = null;
+  let browserInvocations = 0;
+  await assert.rejects(
+    closeoutVerifier.startProtectedPlanningBrowserCloseout(zero, async () => {
+      browserInvocations += 1;
+      return { generateClicks: 1, saveClicks: 1 };
+    }),
+    /PLANNING_CLOSEOUT_RESUME_REQUIRED/,
+  );
+  assert.equal(browserInvocations, 0);
+});
+
+test("protected closeout starts the pristine resume browser with zero Generate and one Save", async () => {
+  let browserInvocations = 0;
+  const result = await closeoutVerifier.startProtectedPlanningBrowserCloseout(
+    pristineResumeSnapshot(),
+    async (baseline) => {
+      browserInvocations += 1;
+      assert.equal(baseline.mode, "PRISTINE_GENERATED_RESUME");
+      return { generateClicks: 0, saveClicks: 1 };
+    },
+  );
+  assert.equal(browserInvocations, 1);
+  assert.deepEqual(result, { generateClicks: 0, saveClicks: 1 });
 });
 
 for (const [label, mutate] of [
@@ -1253,18 +1448,4 @@ test("Sources navigation waits for its refresh control to settle", async () => {
   } finally {
     clearTimeout(timer);
   }
-});
-
-test("resume rollback probes omit the retained 17/09 Generate date", () => {
-  assert.deepEqual(
-    closeoutVerifier.planningCloseoutProbeDates("PRISTINE_GENERATED_RESUME"),
-    ["2026-09-14", "2026-09-15", "2026-09-16", "2026-09-18"],
-  );
-  assert.equal(
-    closeoutVerifier
-      .planningCloseoutProbeDates("ZERO_BASELINE")
-      .filter((date) => date === "2026-09-17").length,
-    3,
-  );
-  assert.throws(() => closeoutVerifier.planningCloseoutProbeDates("OTHER"));
 });

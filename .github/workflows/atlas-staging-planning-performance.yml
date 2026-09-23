@@ -1,4 +1,4 @@
-name: Atlas Staging Planning Closeout
+name: Atlas Staging Planning Performance
 
 on:
   workflow_dispatch:
@@ -7,10 +7,6 @@ on:
         description: Exact full commit SHA already certified on main
         required: true
         type: string
-      persist_rehearsal:
-        description: Run one Confirmed Need Save and reopen through Chrome
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -18,8 +14,8 @@ permissions:
   checks: read
 
 jobs:
-  planning-closeout:
-    name: Guarded Planning closeout
+  planning-performance:
+    name: Guarded Planning performance
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: atlas-staging
@@ -63,13 +59,5 @@ jobs:
       - name: Run non-mutating protected preflight
         run: pnpm atlas:staging:deploy -- --commit-sha "${{ inputs.commit_sha }}" --certification github --preflight
 
-      - name: Verify read-only checkpoint and browser closeout
-        env:
-          PERSIST_REHEARSAL: ${{ inputs.persist_rehearsal }}
-        run: |
-          if [ "$PERSIST_REHEARSAL" != "true" ]; then
-            echo "Browser closeout requires explicit persist_rehearsal=true" >&2
-            exit 1
-          fi
-          command -v google-chrome
-          node scripts/verify-staging-planning-closeout.mjs --commit-sha "${{ inputs.commit_sha }}" --persist-rehearsal
+      - name: Verify rollback-only Planning performance
+        run: node scripts/verify-staging-planning-performance.mjs --commit-sha "${{ inputs.commit_sha }}"

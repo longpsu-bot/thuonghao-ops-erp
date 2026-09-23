@@ -11,30 +11,57 @@ const SUBJECT = "a1010000-0000-4000-8000-000000000101";
 const SYNTHETIC_ACTOR = "a1010000-0000-4000-8000-000000000001";
 const RETAINED_RUN = "0c83b440-8fb2-4a77-9735-804ef4c89ea0";
 const RETAINED_BATCH = "a0311e0a-a4de-48b9-a529-fe7464a3352b";
-const DAYS = [
-  "2026-09-14",
-  "2026-09-15",
-  "2026-09-16",
-  "2026-09-17",
-  "2026-09-18",
-];
-export const PLANNING_CLOSEOUT_GENERATION_MAX_MS = 7000;
-export function planningCloseoutProbeDates(mode) {
-  if (mode === "ZERO_BASELINE") return ["2026-09-17", "2026-09-17", ...DAYS];
-  if (mode === "PRISTINE_GENERATED_RESUME")
-    return DAYS.filter((date) => date !== "2026-09-17");
-  throw new Error("PLANNING_CLOSEOUT_BASELINE_REJECTED");
-}
-export function planningCloseoutProbeAccepted(row) {
-  return Boolean(
-    row?.success &&
-    row.review_success &&
-    row.currentness === "CURRENT" &&
-    !row.has_more &&
-    row.blocker_count === 0 &&
-    row.editing_allowed &&
-    Number.isFinite(row.generation_ms) &&
-    row.generation_ms < PLANNING_CLOSEOUT_GENERATION_MAX_MS,
+const APPROVED_COUNT_POLICIES = new Map([
+  ["v1-unit-034ce34d3ff3", "Quả"],
+  ["v1-unit-2d183c73d76a", "Bó"],
+  ["v1-unit-469606e98b7e", "Gói"],
+  ["v1-unit-46bab433cc1a", "Cốc"],
+  ["v1-unit-83bea5cf6378", "Miếng"],
+  ["v1-unit-91a0b1c14124", "Cái"],
+  ["v1-unit-9837090d3b3f", "Hũ"],
+  ["v1-unit-b1e160b3fbfb", "Chai"],
+  ["v1-unit-c854d71627b2", "Cây"],
+  ["v1-unit-cac06658f903", "Lon"],
+  ["v1-unit-cad1515b85c4", "Ổ"],
+  ["v1-unit-dafac3b7da11", "Bịch"],
+  ["v1-unit-ea9046ea54e4", "Hộp"],
+  ["v1-unit-eb0ce03e77fa", "Trái"],
+]);
+
+export function planningCloseoutPoliciesAccepted(rows) {
+  if (!Array.isArray(rows) || rows.length !== 15) return false;
+  const seen = new Set();
+  for (const row of rows) {
+    if (seen.has(row.unit_code)) return false;
+    seen.add(row.unit_code);
+    if (row.unit_code === "kg") {
+      if (
+        row.unit_name !== "Kilogram" ||
+        row.dimension_code !== "MASS" ||
+        row.unit_status !== "ACTIVE" ||
+        row.planning_step !== 0.01 ||
+        row.effective_from !== "2026-01-01" ||
+        row.effective_to !== null ||
+        row.policy_revision_status !== "ACTIVE" ||
+        row.revision_number !== 1
+      )
+        return false;
+    } else if (
+      row.unit_name !== APPROVED_COUNT_POLICIES.get(row.unit_code) ||
+      row.dimension_code !== "COUNT" ||
+      row.unit_status !== "ACTIVE" ||
+      row.planning_step !== 1 ||
+      row.effective_from !== "2026-09-14" ||
+      row.effective_to !== null ||
+      row.policy_revision_status !== "ACTIVE" ||
+      row.revision_number !== 1
+    )
+      return false;
+  }
+  return (
+    seen.size === 15 &&
+    [...APPROVED_COUNT_POLICIES.keys()].every((code) => seen.has(code)) &&
+    seen.has("kg")
   );
 }
 function canonicalJson(value) {
@@ -89,7 +116,7 @@ function generationReceiptAccepted(receipts, run, batch) {
   );
 }
 
-export function classifyPlanningCloseoutBaseline(snapshot) {
+export function classifyPlanningCheckpoint(snapshot) {
   const fail = () => {
     throw new Error("PLANNING_CLOSEOUT_BASELINE_REJECTED");
   };
@@ -158,7 +185,30 @@ export function classifyPlanningCloseoutBaseline(snapshot) {
   };
 }
 
+export function classifyPlanningCloseoutBaseline(snapshot) {
+  if (!planningCloseoutPoliciesAccepted(snapshot?.policies))
+    throw new Error("PLANNING_CLOSEOUT_BASELINE_REJECTED");
+  return classifyPlanningCheckpoint(snapshot);
+}
+
+function requireProtectedPlanningCloseoutBaseline(snapshot) {
+  const baseline = classifyPlanningCloseoutBaseline(snapshot);
+  if (baseline.mode !== "PRISTINE_GENERATED_RESUME")
+    throw new Error("PLANNING_CLOSEOUT_RESUME_REQUIRED");
+  return baseline;
+}
+
+export async function startProtectedPlanningBrowserCloseout(
+  snapshot,
+  browserJourney,
+) {
+  return browserJourney(requireProtectedPlanningCloseoutBaseline(snapshot));
+}
+
 export function planningCloseoutSnapshotSql() {
+  const approvedUnitCodes = [...APPROVED_COUNT_POLICIES.keys(), "kg"]
+    .map((code) => `'${code}'`)
+    .join(",");
   return `begin read only;
 with scoped_runs as (
   select * from atlas_planning.need_generation_runs
@@ -202,6 +252,18 @@ select jsonb_build_object(
   )), '[]'::jsonb) from scoped_batches b),
   'handoffs', (select count(*) from atlas_planning.purchase_handoff_batches h
     where h.period_start <= '2026-09-20' and h.period_end >= '2026-09-14'),
+  'policies', (select coalesce(jsonb_agg(jsonb_build_object(
+    'unit_code', u.unit_code, 'unit_name', u.unit_name,
+    'dimension_code', u.dimension_code, 'unit_status', u.unit_status,
+    'planning_step', r.planning_step, 'effective_from', r.effective_from,
+    'effective_to', r.effective_to, 'policy_revision_status', r.policy_revision_status,
+    'revision_number', r.revision_number) order by u.unit_code, r.revision_number), '[]'::jsonb)
+    from atlas_admin.units u
+    left join atlas_planning.planning_quantity_policies p on p.unit_id=u.unit_id
+    left join atlas_planning.planning_quantity_policy_revisions r on r.planning_quantity_policy_id=p.planning_quantity_policy_id
+      and r.policy_revision_status='ACTIVE'
+    where u.unit_code in (${approvedUnitCodes})
+      or (u.dimension_code='COUNT' and (u.unit_status='ACTIVE' or r.policy_revision_status='ACTIVE'))),
   'preflight', (select jsonb_build_object(
     'readiness_state', p.payload->'readiness_state',
     'downstream_currentness', p.payload->'downstream_currentness',
@@ -245,7 +307,8 @@ export function assertFinalPlanningCloseoutProof({
   const run = state?.runs?.[0];
   const batch = state?.batches?.[0];
   if (
-    !["ZERO_BASELINE", "PRISTINE_GENERATED_RESUME"].includes(baseline?.mode) ||
+    baseline?.mode !== "PRISTINE_GENERATED_RESUME" ||
+    !planningCloseoutPoliciesAccepted(state?.policies) ||
     state?.runs?.length !== 1 ||
     state?.batches?.length !== 1 ||
     state?.handoffs !== 0 ||
@@ -271,13 +334,13 @@ export function assertFinalPlanningCloseoutProof({
     batch.acceptance_count !== 247 ||
     !generationReceiptAccepted(state.receipts, run, batch) ||
     state.save_receipt_count !== 1 ||
-    (baseline.runId && baseline.runId !== run.id) ||
-    (baseline.batchId && baseline.batchId !== batch.id) ||
+    baseline.runId !== run.id ||
+    baseline.batchId !== batch.id ||
     !preflightAccepted(state.preflight, "CURRENT", run.id, batch.id) ||
     state.preflight.current_need.confirmed_need_batch_version !== 2 ||
     !browser?.batchId ||
     browser.batchId !== batch.id ||
-    browser.generateClicks !== (baseline.mode === "ZERO_BASELINE" ? 1 : 0) ||
+    browser.generateClicks !== 0 ||
     browser.saveClicks !== 1 ||
     browser.newDecisions !== 248 ||
     browser.businessQuantityAdjustments !== 1 ||
@@ -311,36 +374,6 @@ export function nextCent(value) {
     BigInt(whole) * 100n + BigInt((decimal + "00").slice(0, 2)) + 1n;
   return `${ticks / 100n}.${String(ticks % 100n).padStart(2, "0")}`;
 }
-export function rollbackProbeSql(date) {
-  if (!DAYS.includes(date)) throw new Error("UNAPPROVED_PROBE_DATE");
-  return `begin; set local lock_timeout='2s'; set local statement_timeout='8s';
-create temp table planning_closeout_probe_result(r jsonb, generation_ms numeric);
-grant select, insert on planning_closeout_probe_result to authenticated;
-set local request.jwt.claims='{"sub":"${SUBJECT}","role":"authenticated"}';
-set local role authenticated;
-with started as materialized(select clock_timestamp() as at,gen_random_uuid() as id),
-generated as materialized(select at,atlas_api.execute_need_generation(jsonb_build_object(
- 'contract_version','RMVP-04.v3','command_id',id,'correlation_id',gen_random_uuid(),
- 'idempotency_key','planning-closeout-probe:'||id,'expected_version',1,
- 'requested_by_auth_subject','${SUBJECT}','requested_at',now(),
- 'reason_code','NEED_GENERATION_EXECUTED','reason_note','Owner-approved rollback-only Staging closeout verification.',
- 'payload',jsonb_build_object('service_date','${date}','expected_current_need_generation_run_id',null))) r from started)
-insert into planning_closeout_probe_result
-select r,1000*extract(epoch from clock_timestamp()-at) as generation_ms from generated;
--- The STABLE read needs its own statement to see the newly materialized batch.
-with reviewed as materialized(select r,generation_ms,case when r->>'success'='true' then
- atlas_api.get_confirmed_need_review(jsonb_build_object('contract_version','RMVP-05.v1',
- 'requested_by_auth_subject','${SUBJECT}','correlation_id',gen_random_uuid(),
- 'payload',jsonb_build_object('confirmed_need_batch_id',r#>'{affected_aggregate_ids,confirmed_need_batch_id}',
- 'filters',jsonb_build_object('service_date','${date}'),'line_offset',0,'line_limit',10000))) else null end as review from planning_closeout_probe_result)
-select jsonb_build_object('date','${date}','success',r->'success','error_code',r->>'error_code',
- 'generation_ms',generation_ms,'currentness',r#>>'{authoritative_readback,preflight,downstream_currentness}',
- 'review_success',review->'success','review_error_code',review->>'error_code','line_count',jsonb_array_length(review#>'{workbench,lines}'),
- 'has_more',review#>'{workbench,pagination,has_more}',
- 'blocker_count',jsonb_array_length(review#>'{workbench,blockers}'),
- 'editing_allowed',review#>'{workbench,editing_allowed}') as probe from reviewed;
-rollback;`;
-}
 export async function verifyPlanningCloseout({
   commitSha,
   persist = false,
@@ -352,30 +385,15 @@ export async function verifyPlanningCloseout({
     JSON.parse(await executeAtlasStagingManagementSql(target, query));
   const readSnapshot = async () =>
     (await sql(planningCloseoutSnapshotSql()))[0]?.checkpoint;
-  const baseline = classifyPlanningCloseoutBaseline(await readSnapshot());
+  const baseline = requireProtectedPlanningCloseoutBaseline(
+    await readSnapshot(),
+  );
   const baselineFingerprints = baseline.fingerprints;
-  const probeDates = planningCloseoutProbeDates(baseline.mode);
-  for (const date of probeDates) {
-    const row = (await sql(rollbackProbeSql(date)))[0]?.probe;
-    console.log(JSON.stringify({ rollback_probe: row }));
-    if (!planningCloseoutProbeAccepted(row))
-      throw new Error("HOSTED_PLANNING_ACCEPTANCE_FAILED");
-    if (date === "2026-09-17" && row.line_count !== 248)
-      throw new Error("REAL_DAY_RECONCILIATION_MISMATCH");
-  }
-  const afterProbes = classifyPlanningCloseoutBaseline(await readSnapshot());
-  if (
-    afterProbes.mode !== baseline.mode ||
-    afterProbes.runId !== baseline.runId ||
-    afterProbes.batchId !== baseline.batchId ||
-    !sameJson(afterProbes.fingerprints, baselineFingerprints)
-  )
-    throw new Error("ROLLBACK_VERIFICATION_FAILED");
   if (!persist)
     return {
-      status: "rollback-verification-pass",
+      status: "read-only-checkpoint-pass",
       mode: baseline.mode,
-      retainedBatches: baseline.mode === "PRISTINE_GENERATED_RESUME" ? 1 : 0,
+      retainedBatches: 1,
     };
   const client = createClient(target.supabaseUrl, target.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -417,25 +435,26 @@ export async function verifyPlanningCloseout({
     return result.data.workbench;
   };
   try {
-    const beforeBrowser = classifyPlanningCloseoutBaseline(
+    const browser = await startProtectedPlanningBrowserCloseout(
       await readSnapshot(),
+      async (beforeBrowser) => {
+        if (
+          beforeBrowser.runId !== baseline.runId ||
+          beforeBrowser.batchId !== baseline.batchId ||
+          !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
+        )
+          throw new Error("PLANNING_CLOSEOUT_CHECKPOINT_CHANGED");
+        const { verifyPlanningBrowser } =
+          await import("./staging-planning-browser.mjs");
+        return verifyPlanningBrowser({
+          target,
+          baseline: beforeBrowser,
+          session: data.session,
+          readReview,
+          nextCent,
+        });
+      },
     );
-    if (
-      beforeBrowser.mode !== baseline.mode ||
-      beforeBrowser.runId !== baseline.runId ||
-      beforeBrowser.batchId !== baseline.batchId ||
-      !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
-    )
-      throw new Error("PLANNING_CLOSEOUT_CHECKPOINT_CHANGED");
-    const { verifyPlanningBrowser } =
-      await import("./staging-planning-browser.mjs");
-    const browser = await verifyPlanningBrowser({
-      target,
-      baseline,
-      session: data.session,
-      readReview,
-      nextCent,
-    });
     const state = await readSnapshot();
     const review = await readReview();
     const finalProof = assertFinalPlanningCloseoutProof({
