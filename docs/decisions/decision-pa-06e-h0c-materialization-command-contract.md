@@ -198,7 +198,7 @@ The command:
 - when an old group remains nonempty after matched moves, creates its required successor revision from the remaining complete active membership;
 - permits genuinely new same-Ingredient contributions to join the matching retained or new group;
 - rejects any empty old group not explained entirely by accepted direct one-to-one Ingredient moves as `SOURCE_REMOVAL_POLICY_REQUIRED`;
-- sets each new proposal to the new exact theoretical total, never carrying a prior proposal or confirmed value automatically;
+- preserves each new exact theoretical total as source truth and, under D-046, derives the new Draft proposal after aggregation as `ceil(theoretical_total / Ingredient.order_step) * Ingredient.order_step` from the exact versioned Ingredient; H1A remains the exact Unit/service-date human-confirmation quantum and compatibility gate, never carrying a prior proposal or confirmed value automatically;
 - advances the controlled-current source and increments the batch version exactly once; and
 - completes one receipt, one `ConfirmedNeedsRematerialized` event, and one audit event.
 
@@ -252,14 +252,14 @@ After revoke-first hardening, `authenticated` may execute only the implemented C
 
 ## 12. Limits, locks, and retry
 
-| Limit | Value |
-|---|---:|
-| Inclusive run period | 14 days |
-| Distinct Schools | 500 |
-| Active release members | 25,000 |
-| Operational groups | 15,000 |
-| `lock_timeout` | 5 seconds |
-| `statement_timeout` | 120 seconds |
+| Limit                  |       Value |
+| ---------------------- | ----------: |
+| Inclusive run period   |     14 days |
+| Distinct Schools       |         500 |
+| Active release members |      25,000 |
+| Operational groups     |      15,000 |
+| `lock_timeout`         |   5 seconds |
+| `statement_timeout`    | 120 seconds |
 
 Business-size limits are checked before domain mutation and return `MATERIALIZATION_LIMIT_EXCEEDED`.
 
@@ -298,7 +298,7 @@ Issue #143 fixes the four H0Cb plans at `64`, `80`, `104`, and `112`, for exactl
 
 ## 15. Consequences
 
-H0Ca closed the business and command decisions without misrepresenting an unimplemented function as executable. H0Cb implements that accepted contract and performs the single authorized canonical/physical transition from 18 to 19.
+H0Ca closed the business and command decisions without misrepresenting an unimplemented function as executable. H0Cb implements that accepted contract and performs the single authorized canonical/physical transition from 18 to 19. D-046 later clarifies that the materialized proposal is derived after aggregation from the exact versioned `Ingredient.order_step`; H1A remains the human confirmation quantum and compatibility gate.
 
 H1 policy, decision evidence, authorized review/preview/confirmation, validation, approval, release, Purchase Handoff, Procurement, Warehouse, Dispatch, application connection, hosted deployment, and production rollout remain separate.
 

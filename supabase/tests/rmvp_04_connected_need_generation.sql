@@ -339,8 +339,10 @@ insert into atlas_admin.schools (school_id, customer_id, school_code, school_nam
 values ('e4100000-0000-0000-0000-000000000005', 'e4100000-0000-0000-0000-000000000001', 'rmvp04-school', 'RMVP-04 School', 'e4100000-0000-0000-0000-000000000004', 'e4100000-0000-0000-0000-000000000002', 10);
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('e4100000-0000-0000-0000-000000000006', 'rmvp04-kg', 'RMVP-04 kilogram', 'mass');
-insert into atlas_admin.ingredients (ingredient_id, ingredient_code, ingredient_name)
-values ('e4100000-0000-0000-0000-000000000007', 'rmvp04-rice', 'RMVP-04 rice');
+insert into atlas_admin.ingredients (
+  ingredient_id, ingredient_code, ingredient_name, purchase_unit_id, order_step
+)
+values ('e4100000-0000-0000-0000-000000000007', 'rmvp04-rice', 'RMVP-04 rice', 'e4100000-0000-0000-0000-000000000006', 0.5);
 insert into atlas_admin.dishes (dish_id, dish_code, dish_name, dish_status, display_order, requires_need_generation) values
   ('e4100000-0000-0000-0000-000000000008', 'rmvp04-dish', 'RMVP-04 dish', 'ACTIVE', 10, false),
   ('e4600000-0000-0000-0000-000000000001', 'rmvp04-typed-ambiguous', 'RMVP-04 typed ambiguity dish', 'ACTIVE', 20, true),
@@ -815,6 +817,35 @@ select is(
   jsonb_build_object('success', 'true', 'version', '3', 'line_members', 2, 'issue_members', 0),
   'RMVP04-23 release advances once and captures every line and issue'
 );
+
+-- CMD-15 requires the exact Unit/service-date policy that later RMVP-05
+-- confirmation and correction coverage also exercises.
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id, unit_id, created_by_actor_id
+) values (
+  'e4900000-0000-0000-0000-000000000090',
+  'e4100000-0000-0000-0000-000000000006',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
+  revision_number, predecessor_policy_revision_id, planning_step,
+  effective_from, policy_revision_status, created_by_actor_id, created_at
+) values (
+  'e4900000-0000-0000-0000-000000000091',
+  'e4900000-0000-0000-0000-000000000090',
+  'e4100000-0000-0000-0000-000000000006',
+  1, null, 0.500000, '2026-01-01', 'DRAFT',
+  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
+);
+update atlas_planning.planning_quantity_policy_revisions
+set policy_revision_status = 'ACTIVE',
+    approved_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
+    approved_at = transaction_timestamp(),
+    activated_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
+    activated_at = transaction_timestamp()
+where planning_quantity_policy_revision_id =
+  'e4900000-0000-0000-0000-000000000091';
 
 set local role authenticated;
 insert into rmvp04_responses
@@ -1639,41 +1670,14 @@ where capability.capability_code in (
 )
 on conflict (role_id, capability_id) do nothing;
 
-insert into atlas_planning.planning_quantity_policies (
-  planning_quantity_policy_id, unit_id, created_by_actor_id
-) values (
-  'e4900000-0000-0000-0000-000000000090',
-  'e4100000-0000-0000-0000-000000000006',
-  'e4000000-0000-0000-0000-000000000001'
-);
-insert into atlas_planning.planning_quantity_policy_revisions (
-  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
-  revision_number, predecessor_policy_revision_id, planning_step,
-  effective_from, policy_revision_status, created_by_actor_id, created_at
-) values (
-  'e4900000-0000-0000-0000-000000000091',
-  'e4900000-0000-0000-0000-000000000090',
-  'e4100000-0000-0000-0000-000000000006',
-  1, null, 0.500000, '2026-01-01', 'DRAFT',
-  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
-);
-update atlas_planning.planning_quantity_policy_revisions
-set policy_revision_status = 'ACTIVE',
-    approved_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
-    approved_at = transaction_timestamp(),
-    activated_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
-    activated_at = transaction_timestamp()
-where planning_quantity_policy_revision_id =
-  'e4900000-0000-0000-0000-000000000091';
-
 set local session_replication_role = replica;
 
 insert into atlas_admin.ingredients (
-  ingredient_id, ingredient_code, ingredient_name
+  ingredient_id, ingredient_code, ingredient_name, purchase_unit_id, order_step
 ) values
-  ('e4900000-0000-0000-0000-000000000001', 'rmvp04-pork', 'RMVP-04 pork'),
-  ('e4900000-0000-0000-0000-000000000002', 'rmvp04-onion', 'RMVP-04 onion'),
-  ('e4900000-0000-0000-0000-000000000003', 'rmvp04-potato', 'RMVP-04 potato');
+  ('e4900000-0000-0000-0000-000000000001', 'rmvp04-pork', 'RMVP-04 pork', 'e4100000-0000-0000-0000-000000000006', 0.5),
+  ('e4900000-0000-0000-0000-000000000002', 'rmvp04-onion', 'RMVP-04 onion', 'e4100000-0000-0000-0000-000000000006', 0.5),
+  ('e4900000-0000-0000-0000-000000000003', 'rmvp04-potato', 'RMVP-04 potato', 'e4100000-0000-0000-0000-000000000006', 0.5);
 
 insert into atlas_admin.dishes (
   dish_id, dish_code, dish_name, dish_status, display_order,

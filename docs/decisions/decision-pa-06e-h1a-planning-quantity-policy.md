@@ -77,6 +77,20 @@ This is the sole complete H1A-P01 through H1A-P10 registry. Other documents may 
 | H1A-P09     | What is the smallest lifecycle and what may change?                                     | Atlas preserves released history and commonly freezes revision payload while allowing controlled lifecycle metadata; Issue #145 asks to compare explicit lifecycle with statusless effectivity. | `DRAFT -> ACTIVE -> RETIRED`; immutable statusless revisions; generic approval workflow.                                                          | Use the bounded lifecycle `DRAFT -> ACTIVE -> RETIRED`. Draft business fields may be corrected only before activation. Activation freezes Unit, step, start, revision identity, predecessor, and approval evidence. Retirement may set an open `effective_to` once and record retirement evidence; retired rows are fully immutable and remain historically resolvable within their closed interval. | Administration can prepare and schedule a revision while activated business meaning and history remain protected.                                                                                  | Generic workflow engine; reactivation; Active payload edit; Retired edit/delete; status inferred from row order; silent in-place step correction.  | `APPROVED 2026-07-23` | One local status check plus ordinary immutability/lifecycle guard and deferred effectivity integrity trigger.                      |
 | H1A-P10     | What happens when policy resolution is missing or unsafe?                               | PA-06E already requires missing/inactive/ambiguous policy failure; Issue #145 prohibits all legacy and guessed fallbacks.                                                                       | Guess default; use Unit dimension; use purchase step; use legacy precision; block.                                                                | H1B2 preview and commit block for missing root, Draft-only/inactive policy, future-only policy, expired policy, overlapping/ambiguous/tied policy, inactive Unit, nonrepresentable quantity, or stale revision binding. No guessed fallback exists.                                                                                                                                                  | Operators receive a safe, actionable blocker and no authoritative quantity or decision evidence is written.                                                                                        | `0.01`, `0.1`, `1`, six decimals, Unit dimension, purchase-step, existing-row, `coalesce`, or client fallback.                                     | `APPROVED 2026-07-23` | H1A prevents overlap and exposes no resolver. H1B2 later maps exact safe errors and guarantees zero decision writes on failure.    |
 
+### D-046 clarification of H1A-P06
+
+[D-046](decision-planning-operational-proposal.md) does not weaken H1A-P06.
+H1A-P06 governs the quantity entered for human confirmation: it must already be
+an exact whole number of the effective Planning step and is rejected without a
+replacement otherwise. D-046 governs the earlier system derivation: after exact
+contributions are aggregated, materialization derives the non-authoritative
+Draft proposal from the exact versioned `Ingredient.order_step` with PostgreSQL
+`ceil(theoretical_total / ingredient.order_step) * ingredient.order_step`.
+H1A is not the proposal-rounding source. It remains the minimum human
+confirmation quantum, and the Ingredient step must be an exact positive integer
+multiple of H1A so the generated proposal is representable. That system
+quantization creates no human adjustment or decision evidence.
+
 The product-owner instruction on 2026-07-23 explicitly approved H1A-P01 through H1A-P10 as recommended. It also approved the separate pre-H1A platform-maintenance dependency. Approval of the product contract is not authorization to begin SQL.
 
 ## 4. Recommended business contract

@@ -372,6 +372,13 @@ describe("Atlas Staging packages", () => {
     expect(browserFixture).not.toMatch(
       /insert into atlas_planning\.need_generation_calculation_contracts/i,
     );
+    expect(browserFixture).toMatch(
+      /insert into atlas_planning\.planning_quantity_policies/i,
+    );
+    expect(browserFixture).toMatch(
+      /unit\.unit_code in \('kg', 'rmvp02b-local-kg'\)/i,
+    );
+    expect(browserFixture).toMatch(/revision\.planning_step = 0\.01/i);
     expect(pantryPurposeFixture).toMatch(/on conflict do nothing/iu);
     expect(pantryPurposeFixture).not.toMatch(
       /update\s+atlas_planning\.pantry_need_purposes/iu,

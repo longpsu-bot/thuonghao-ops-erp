@@ -40,15 +40,16 @@ The approved direction is that Planning owns the reviewed operational need, Proc
 
 The following separation is approved. Values labeled **pending** are not approved merely because OPS uses them today.
 
-| Concept                        | Meaning                                                        | Contract direction                                                                              | Approval state                                                |
-| ------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `calculation_precision`        | Precision retained while deriving quantities and entitlements  | PostgreSQL high-precision `numeric`; do not truncate to display scale during calculation        | Approved direction                                            |
-| `comparison_epsilon`           | Technical tolerance for legacy floating-point comparisons      | OPS evidence is `0.000001`; future tick equality should be exact                                | Approved distinction; future use pending                      |
-| `ratio_precision`              | Precision of a derived supplier share                          | Up to six decimals when useful; ratios never author supplier quantities                         | Approved direction                                            |
-| `planning_operational_step` | Smallest meaningful Planning confirmation increment for a unit | `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed indivisible/count Unit, and no fallback | Approved in H1A |
-| `purchase_order_step`          | Smallest purchasable increment                                 | Ingredient/supplier policy; current OPS data uses `0.1 kg` and `1` for current count-like units | Upward-only direction approved; exact fallback policy pending |
-| `persisted_quantity_precision` | Exact operational value stored                                 | Persist integer ticks plus step/rule identity, or an exactly equivalent decimal representation  | Recommended; physical design pending                          |
-| `display_precision`            | Digits required to show the entire operational value           | Derived from the applicable step; raw calculation may appear in secondary details               | Approved direction                                            |
+| Concept                        | Meaning                                                       | Contract direction                                                                                              | Approval state                                                |
+| ------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `calculation_precision`        | Precision retained while deriving quantities and entitlements | PostgreSQL high-precision `numeric`; do not truncate to display scale during calculation                        | Approved direction                                            |
+| `comparison_epsilon`           | Technical tolerance for legacy floating-point comparisons     | OPS evidence is `0.000001`; future tick equality should be exact                                                | Approved distinction; future use pending                      |
+| `ratio_precision`              | Precision of a derived supplier share                         | Up to six decimals when useful; ratios never author supplier quantities                                         | Approved direction                                            |
+| `ingredient_proposal_step`     | Upward step for the Draft Planning operational proposal       | Exact versioned `Ingredient.order_step`; purchase Unit must equal controlled Unit; no fallback                  | Approved in D-046                                             |
+| `planning_confirmation_step`   | Minimum human confirmation quantum for an exact Unit          | `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed indivisible/count Unit, and no fallback | Approved in H1A                                               |
+| `purchase_order_step`          | Smallest purchasable increment                                | Ingredient/supplier policy; current OPS data uses `0.1 kg` and `1` for current count-like units                 | Upward-only direction approved; exact fallback policy pending |
+| `persisted_quantity_precision` | Exact operational value stored                                | Persist integer ticks plus step/rule identity, or an exactly equivalent decimal representation                  | Recommended; physical design pending                          |
+| `display_precision`            | Digits required to show the entire operational value          | Derived from the applicable step; raw calculation may appear in secondary details                               | Approved direction                                            |
 
 Retool's six-decimal convention primarily supports floating-point comparison, proportional arithmetic and deterministic residual handling. It is not an approved six-decimal operational quantity rule for Atlas.
 
@@ -56,25 +57,31 @@ Retool's six-decimal convention primarily supports floating-point comparison, pr
 
 ### 4.1 Meanings, ownership, and authority
 
-| English contract term         | Vietnamese UI term                    | Owner                          | Authority                     | Created or changed by                                   | Precision and rounding                             | Persistence and consumers                           |
-| ----------------------------- | ------------------------------------- | ------------------------------ | ----------------------------- | ------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------- |
-| Raw Calculated Requirement    | Nhu cầu tính toán                     | Planning                       | Derived                       | Need calculation from versioned source/BOM facts        | High precision; no operational rounding            | Calculation snapshot; explanation only              |
-| Planning Operational Quantity | Nhu cầu vận hành (đề xuất)            | Planning                       | Derived proposal              | Apply approved unit-specific Planning step              | Planning step; policy rounding must be named       | Preview/snapshot; feeds confirmation                |
-| Confirmed Operational Need    | Nhu cầu đã xác nhận                   | Planning                       | Authoritative Planning fact   | Human confirmation command with reason and versions     | Planning step; no hidden purchase rounding         | Immutable revision; feeds Purchase Handoff          |
-| Purchase Order Step           | Bước đặt hàng                         | Procurement/master-data policy | Authoritative rule            | Effective-dated ingredient or supplier rule             | Positive step in the purchase unit                 | Rule-set version; used by preview/commit/documents  |
-| Proposed Purchasable Quantity | Số lượng đề xuất đặt mua              | Procurement                    | Derived preview               | Upward quantization of confirmed need to purchase ticks | `ceil(need / step) * step`                         | Preview only until confirmed                        |
-| Confirmed Purchase Quantity   | Số lượng mua đã xác nhận              | Procurement                    | Authoritative purchase target | Operator confirms a current preview                     | Exact integer ticks                                | Allocation aggregate; PO/Dispatch source            |
-| Current Allocated Quantity    | Số lượng đã phân bổ                   | Procurement                    | Derived total                 | Sum of current authoritative supplier portions          | Exact tick sum                                     | Allocation read model                               |
-| Supplier Portion              | Số lượng phân bổ cho nhà cung cấp     | Procurement                    | Authoritative line fact       | Rebalance/manual allocation commit                      | Positive whole ticks; zero rows removed explicitly | Allocation revision; PO source                      |
-| Unallocated Balance           | Số lượng chưa phân bổ                 | Procurement                    | Derived                       | Confirmed purchase ticks minus allocated ticks          | Exact ticks                                        | Preview/read model; must be zero to commit/release  |
-| Rounding Difference           | Chênh lệch do làm tròn                | Procurement                    | Derived explanation           | Proposed purchase minus confirmed need                  | Same purchase unit; never hidden                   | Preview/audit/document explanation where required   |
-| Residual Quantity             | Phần dư phân bổ                       | Procurement                    | Derived explanation           | Residual ticks after provisional entitlements           | Whole ticks                                        | Preview/audit; recipient explicit                   |
-| PO Committed Quantity         | Số lượng đã cam kết trên đơn đặt hàng | Procurement                    | Authoritative released fact   | PO release from committed allocation revision           | Exact sum of persisted portions for that PO grain  | Immutable PO revision; supplier and Dispatch source |
-| Dispatch Committed Quantity   | Số lượng giao theo cam kết            | Dispatch                       | Authoritative consumed fact   | Copy/reference same committed allocation snapshot       | No second rounding                                 | Dispatch revision, load planning                    |
-| Loaded Quantity               | Số lượng đã xếp hàng                  | Dispatch                       | Authoritative physical fact   | Load confirmation                                       | Measurement policy of execution unit               | Load evidence; not a rewrite of committed quantity  |
-| Delivered Quantity            | Số lượng đã giao                      | Dispatch                       | Authoritative physical fact   | Delivery confirmation                                   | Measurement policy of execution unit               | Delivery evidence and exceptions                    |
+| English contract term         | Vietnamese UI term                    | Owner                          | Authority                     | Created or changed by                                                   | Precision and rounding                             | Persistence and consumers                           |
+| ----------------------------- | ------------------------------------- | ------------------------------ | ----------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------- |
+| Raw Calculated Requirement    | Nhu cầu tính toán                     | Planning                       | Derived                       | Need calculation from versioned source/BOM facts                        | High precision; no operational rounding            | Calculation snapshot; explanation only              |
+| Planning Operational Quantity | Nhu cầu vận hành (đề xuất)            | Planning                       | Derived proposal              | Aggregate raw need, then ceil once by versioned `Ingredient.order_step` | Ingredient step/version snapshotted; no conversion | Draft revision; feeds confirmation                  |
+| Confirmed Operational Need    | Nhu cầu đã xác nhận                   | Planning                       | Authoritative Planning fact   | Human confirmation command with reason and versions                     | Exact H1A confirmation ticks; no hidden rounding   | Immutable decision; feeds Purchase Handoff          |
+| Purchase Order Step           | Bước đặt hàng                         | Procurement/master-data policy | Authoritative rule            | Effective-dated ingredient or supplier rule                             | Positive step in the purchase unit                 | Rule-set version; used by preview/commit/documents  |
+| Proposed Purchasable Quantity | Số lượng đề xuất đặt mua              | Procurement                    | Derived preview               | Upward quantization of confirmed need to purchase ticks                 | `ceil(need / step) * step`                         | Preview only until confirmed                        |
+| Confirmed Purchase Quantity   | Số lượng mua đã xác nhận              | Procurement                    | Authoritative purchase target | Operator confirms a current preview                                     | Exact integer ticks                                | Allocation aggregate; PO/Dispatch source            |
+| Current Allocated Quantity    | Số lượng đã phân bổ                   | Procurement                    | Derived total                 | Sum of current authoritative supplier portions                          | Exact tick sum                                     | Allocation read model                               |
+| Supplier Portion              | Số lượng phân bổ cho nhà cung cấp     | Procurement                    | Authoritative line fact       | Rebalance/manual allocation commit                                      | Positive whole ticks; zero rows removed explicitly | Allocation revision; PO source                      |
+| Unallocated Balance           | Số lượng chưa phân bổ                 | Procurement                    | Derived                       | Confirmed purchase ticks minus allocated ticks                          | Exact ticks                                        | Preview/read model; must be zero to commit/release  |
+| Rounding Difference           | Chênh lệch do làm tròn                | Procurement                    | Derived explanation           | Proposed purchase minus confirmed need                                  | Same purchase unit; never hidden                   | Preview/audit/document explanation where required   |
+| Residual Quantity             | Phần dư phân bổ                       | Procurement                    | Derived explanation           | Residual ticks after provisional entitlements                           | Whole ticks                                        | Preview/audit; recipient explicit                   |
+| PO Committed Quantity         | Số lượng đã cam kết trên đơn đặt hàng | Procurement                    | Authoritative released fact   | PO release from committed allocation revision                           | Exact sum of persisted portions for that PO grain  | Immutable PO revision; supplier and Dispatch source |
+| Dispatch Committed Quantity   | Số lượng giao theo cam kết            | Dispatch                       | Authoritative consumed fact   | Copy/reference same committed allocation snapshot                       | No second rounding                                 | Dispatch revision, load planning                    |
+| Loaded Quantity               | Số lượng đã xếp hàng                  | Dispatch                       | Authoritative physical fact   | Load confirmation                                                       | Measurement policy of execution unit               | Load evidence; not a rewrite of committed quantity  |
+| Delivered Quantity            | Số lượng đã giao                      | Dispatch                       | Authoritative physical fact   | Delivery confirmation                                                   | Measurement policy of execution unit               | Delivery evidence and exceptions                    |
 
 Every persisted state carries stable line identity, aggregate/revision version, source revision, unit, step/rule-set version, actor, time, reason where applicable, and before/after quantities. Derived values identify their authoritative inputs.
+
+Per [D-046](../decisions/decision-planning-operational-proposal.md), proposal
+rounding and human representability are different contracts. The system uses
+`ceil(grouped_raw / Ingredient.order_step) * Ingredient.order_step`; H1A does
+not produce that proposal. H1A remains the minimum confirmation quantum, and
+the Ingredient step must be an exact positive integer multiple of it.
 
 `Nhu cầu vận hành` is proposed pending product-owner and operations-language review. PA-06D does not treat that Vietnamese label as final; the terminology comparison and acceptance gate are in the UI specification.
 
@@ -209,6 +216,25 @@ The two schema families must remain distinct: public objects use `service_date +
 11. Detail replacement is destructive and its optimistic success state is not an authorized readback.
 
 Legacy `theoretical_orderable_qty` can return below the source need. Examples: `2.01` at step `0.1` becomes `2`; `2.01` at step `0.25` becomes `2`; and `10.05` at steps `0.1` or `0.25` becomes `10`. More generally, after step ceiling, any result at or above `2` is rounded to a whole number and can move downward. This threshold must not survive by accident.
+
+### 6.1 D-046 Planning proposal amendment
+
+[D-046](../decisions/decision-planning-operational-proposal.md) approves the
+bounded Planning derivation that this contract previously left implicit. The
+raw Calculated Requirement remains exact. After all released contributions are
+aggregated to one Confirmed Need operational identity, PostgreSQL derives the
+non-authoritative Planning operational proposal as
+`ceil(raw_total / Ingredient.order_step) * Ingredient.order_step` using the
+exact versioned Ingredient whose purchase Unit equals the controlled Unit. H1A
+remains the minimum human-confirmation quantum and compatibility gate; it does
+not round the proposal. This does not reproduce the legacy second-stage
+whole-number rule or authorize a new downstream Procurement transformation.
+
+The later human-confirmation boundary remains different: operator input must
+already be an exact whole number of Planning ticks and is rejected without a
+replacement value otherwise. System proposal derivation therefore does not
+authorize invisible normalization of human input and creates no human adjustment
+evidence.
 
 ## 7. Recommended operational quantization model
 

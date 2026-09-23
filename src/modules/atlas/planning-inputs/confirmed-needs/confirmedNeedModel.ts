@@ -175,6 +175,7 @@ export type ConfirmedNeedLine = {
   };
   theoretical_quantity: string;
   proposed_confirmed_quantity: string;
+  proposal_rounding_step: string | null;
   current_decision_id: string | null;
   current_decision_number: number | null;
   current_decision_kind: string | null;
@@ -368,6 +369,20 @@ function decimalParts(value: string) {
   if (!normalized) return null;
   const [integer, fraction = ""] = normalized.split(".");
   return BigInt(`${integer}${fraction.padEnd(6, "0")}`);
+}
+
+export function confirmedNeedQuantityMatchesStep(
+  quantity: string,
+  planningStep: string,
+) {
+  const quantityValue = decimalParts(quantity);
+  const stepValue = decimalParts(planningStep);
+  return (
+    quantityValue !== null &&
+    stepValue !== null &&
+    stepValue > 0n &&
+    quantityValue % stepValue === 0n
+  );
 }
 
 export function subtractExactDecimals(left: string, right: string) {

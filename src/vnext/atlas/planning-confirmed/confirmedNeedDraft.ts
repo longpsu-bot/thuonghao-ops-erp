@@ -1,8 +1,9 @@
 import {
   confirmedNeedInputDisplay,
+  confirmedNeedQuantityMatchesStep,
   exactDecimalEqual,
+  exactQuantityDisplay,
   initialConfirmedNeedDraft,
-  normalizeConfirmedNeedEntry,
   normalizeConfirmedNeedQuantity,
   type ConfirmedNeedDraftLine,
   type ConfirmedNeedLine,
@@ -16,7 +17,11 @@ export function draftChanged(
   return (
     line.current_decision_id === null ||
     (draft.quantity_entered === true &&
-      !normalizeConfirmedNeedEntry(draft.exact_quantity)) ||
+      (!line.effective_policy ||
+        !confirmedNeedQuantityMatchesStep(
+          draft.exact_quantity,
+          line.effective_policy.planning_step,
+        ))) ||
     !exactDecimalEqual(
       initial.exact_quantity,
       normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
@@ -27,25 +32,38 @@ export function draftChanged(
   );
 }
 export function historicalQuantity(line: ConfirmedNeedLine) {
-  return !normalizeConfirmedNeedEntry(
-    confirmedNeedInputDisplay(initialConfirmedNeedDraft(line).exact_quantity),
+  return Boolean(
+    line.current_decision_id &&
+    (!line.effective_policy ||
+      !line.confirmed_quantity_after ||
+      !confirmedNeedQuantityMatchesStep(
+        line.confirmed_quantity_after,
+        line.effective_policy.planning_step,
+      )),
   );
 }
-// Local input restrictions mirror the reviewed legacy editor; the backend remains
-// authoritative for policy steps, source membership and final eligibility.
+// Local feedback uses the exact effective Planning step; the backend remains
+// authoritative for policy resolution, source membership and final eligibility.
 export function draftError(
   line: ConfirmedNeedLine,
   draft: ConfirmedNeedDraftLine,
 ) {
   const initial = initialConfirmedNeedDraft(line);
+  if (!line.effective_policy)
+    return "Không có bước lượng hiệu lực cho dòng nhu cầu này.";
+  const entry = draft.quantity_entered
+    ? draft.exact_quantity
+    : confirmedNeedInputDisplay(initial.exact_quantity);
   if (
-    !normalizeConfirmedNeedEntry(
-      draft.quantity_entered
-        ? draft.exact_quantity
-        : confirmedNeedInputDisplay(initial.exact_quantity),
+    !normalizeConfirmedNeedQuantity(entry) ||
+    !confirmedNeedQuantityMatchesStep(
+      entry,
+      line.effective_policy.planning_step,
     )
   )
-    return "Số lượng phải là số không âm, tối đa 2 chữ số thập phân.";
+    return `Số lượng phải là bội số của bước ${exactQuantityDisplay(
+      line.effective_policy.planning_step,
+    )} ${line.controlled_unit.code}.`;
   const equalsProposal = exactDecimalEqual(
     normalizeConfirmedNeedQuantity(draft.exact_quantity) ??
       draft.exact_quantity,

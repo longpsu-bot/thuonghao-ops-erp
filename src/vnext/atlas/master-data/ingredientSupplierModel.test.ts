@@ -87,6 +87,7 @@ describe("Ingredient/Supplier vNext model", () => {
           unit_code: "KG",
           unit_name: "Kilôgam",
           unit_status: "ACTIVE",
+          dimension_code: "MASS",
         },
       ] satisfies UnitMasterData[],
       ingredientTypes: [

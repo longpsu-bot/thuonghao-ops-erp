@@ -345,10 +345,64 @@ describe("Confirmed Need local draft and safety", () => {
           quantity_entered: true,
         }),
       );
-      expect(h.result.current.errors["line-0"]).toContain("2 chữ số");
+      expect(h.result.current.errors["line-0"]).toContain("bước 0,25 kg");
       expect(h.result.current.canSave).toBe(false);
     },
   );
+  it("uses H1A only as the human confirmation quantum", async () => {
+    const h = await ready();
+    h.fixture.batch.lines[0]!.proposed_confirmed_quantity = "1.500000";
+    h.fixture.batch.lines[0]!.proposal_rounding_step = "0.500000";
+    h.fixture.batch.lines[0]!.confirmed_quantity_after = "1.500000";
+    h.fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
+    await act(() => h.result.current.recover());
+    act(() =>
+      h.result.current.edit("line-0", {
+        exact_quantity: "1.370000",
+        quantity_entered: true,
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    expect(h.result.current.dirty).toBe(true);
+    expect(h.result.current.errors).toEqual({});
+    expect(h.result.current.canSave).toBe(true);
+    act(() =>
+      h.result.current.edit("line-0", {
+        exact_quantity: "1.375000",
+        quantity_entered: true,
+      }),
+    );
+    expect(h.result.current.errors["line-0"]).toContain("bước 0,01 kg");
+    expect(h.result.current.canSave).toBe(false);
+  });
+  it("keeps COUNT human confirmation on H1A rather than the proposal step", async () => {
+    const h = await ready();
+    h.fixture.batch.lines[0]!.controlled_unit.code = "Chai";
+    h.fixture.batch.lines[0]!.proposed_confirmed_quantity = "18.000000";
+    h.fixture.batch.lines[0]!.proposal_rounding_step = "6.000000";
+    h.fixture.batch.lines[0]!.confirmed_quantity_after = "18.000000";
+    h.fixture.batch.lines[0]!.effective_policy!.planning_step = "1.000000";
+    await act(() => h.result.current.recover());
+    act(() =>
+      h.result.current.edit("line-0", {
+        exact_quantity: "17",
+        quantity_entered: true,
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    expect(h.result.current.errors).toEqual({});
+    expect(h.result.current.canSave).toBe(true);
+    act(() =>
+      h.result.current.edit("line-0", {
+        exact_quantity: "17.5",
+        quantity_entered: true,
+      }),
+    );
+    expect(h.result.current.errors["line-0"]).toContain("bước 1 Chai");
+    expect(h.result.current.canSave).toBe(false);
+  });
   it("accepts proposed quantities for new lines using Save", async () => {
     const h = await ready("needs_review");
     expect(h.result.current.canSave).toBe(true);

@@ -61,6 +61,7 @@ export function reviewLine(index = 0): ConfirmedNeedLine {
     },
     theoretical_quantity: "10.250000",
     proposed_confirmed_quantity: "10.250000",
+    proposal_rounding_step: "0.250000",
     current_decision_id: `decision-${index}`,
     current_decision_number: 1,
     current_decision_kind: "PROPOSAL_ACCEPTED",

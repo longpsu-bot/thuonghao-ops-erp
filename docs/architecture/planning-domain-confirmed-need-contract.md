@@ -167,7 +167,16 @@ Commands are the only approved way to change Confirmed Need state.
 
 ### CreateConfirmedNeedsFromGeneration
 
-Creates a Draft Review batch from one exact Need Generation run/released version/release snapshot. It groups every `ACTIVE` release member by the exact school-catering operational tuple, creates one stable line and immutable Draft revision per group, records complete revision-owned contribution membership, and sets the stored `confirmed_quantity` proposal equal to the exact theoretical membership total. That proposal is not Planning authority until later decision evidence exists.
+Creates a Draft Review batch from one exact Need Generation run/released
+version/release snapshot. It groups every `ACTIVE` release member by the exact
+school-catering operational tuple, creates one stable line and immutable Draft
+revision per group, and records complete revision-owned contribution
+membership. The exact membership total is retained as `theoretical_quantity`.
+Per [D-046](../decisions/decision-planning-operational-proposal.md), the stored
+`confirmed_quantity` proposal is derived after aggregation as
+`ceil(theoretical_quantity / planning_step) * planning_step` under exactly one
+effective exact-Unit/service-date Planning policy. That proposal is not Planning
+authority until later decision evidence exists.
 
 Every member stays in its exact source Unit; source Unit equals controlled Unit and controlled contribution quantity equals source theoretical quantity. The command fails closed when grouping would require conversion. It creates no Planning decision, approval, release, Purchase Handoff, or downstream fact.
 

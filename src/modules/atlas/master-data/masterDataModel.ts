@@ -84,6 +84,7 @@ export type UnitMasterData = {
   unit_code: string;
   unit_name: string;
   unit_status: "ACTIVE" | "INACTIVE";
+  dimension_code: string;
 };
 
 export function responseArray<T>(

@@ -40,13 +40,14 @@ export function ConfirmedNeedTable({
               "Nguyên liệu / nơi nhận",
               "ĐVT",
               "Nhu cầu tính",
+              "Đề xuất vận hành",
               "Số lượng xác nhận",
               "Thay đổi",
               "Lý do / ghi chú",
             ].map((label, i) => (
               <Table.ColumnHeader
                 key={label}
-                textAlign={i >= 2 && i <= 4 ? "end" : "start"}
+                textAlign={i >= 2 && i <= 5 ? "end" : "start"}
               >
                 {label}
               </Table.ColumnHeader>
@@ -72,10 +73,22 @@ export function ConfirmedNeedTable({
               line.confirmation_state,
             );
             return (
-              <Table.Row key={line.confirmed_need_line_id}>
-                <Table.Cell minW="var(--atlas-layout-identity-width, 210px)">
-                  <Text fontWeight="semibold">{line.ingredient.name}</Text>
-                  <Text textStyle="helper" color="fg.muted">
+              <Table.Row
+                key={line.confirmed_need_line_id}
+                data-confirmed-need-line
+              >
+                <Table.Cell
+                  data-field="identity"
+                  minW="var(--atlas-layout-identity-width, 210px)"
+                >
+                  <Text data-role="ingredient-name" fontWeight="semibold">
+                    {line.ingredient.name}
+                  </Text>
+                  <Text
+                    data-role="recipient"
+                    textStyle="helper"
+                    color="fg.muted"
+                  >
                     {line.school.name} · {line.delivery_location.name}
                   </Text>
                   <Text
@@ -88,11 +101,32 @@ export function ConfirmedNeedTable({
                     )}
                   </Text>
                 </Table.Cell>
-                <Table.Cell>{line.controlled_unit.code}</Table.Cell>
-                <Table.Cell textAlign="end">
+                <Table.Cell data-field="unit">
+                  {line.controlled_unit.code}
+                </Table.Cell>
+                <Table.Cell data-field="raw-requirement" textAlign="end">
                   {exactQuantityDisplay(line.theoretical_quantity)}
                 </Table.Cell>
-                <Table.Cell minW="var(--atlas-layout-quantity-width, 145px)">
+                <Table.Cell
+                  data-field="operational-proposal"
+                  textAlign="end"
+                  whiteSpace="nowrap"
+                >
+                  <Text>
+                    {exactQuantityDisplay(line.proposed_confirmed_quantity)}
+                  </Text>
+                  {line.proposal_rounding_step && (
+                    <Text textStyle="helper" color="fg.muted">
+                      Làm tròn:{" "}
+                      {exactQuantityDisplay(line.proposal_rounding_step)}{" "}
+                      {line.controlled_unit.code}
+                    </Text>
+                  )}
+                </Table.Cell>
+                <Table.Cell
+                  data-field="confirmation"
+                  minW="var(--atlas-layout-quantity-width, 145px)"
+                >
                   <Input
                     aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
                     inputMode="decimal"
@@ -115,16 +149,32 @@ export function ConfirmedNeedTable({
                       })
                     }
                   />
+                  {line.effective_policy && (
+                    <Text textStyle="helper" color="fg.muted">
+                      Bước xác nhận:{" "}
+                      {exactQuantityDisplay(
+                        line.effective_policy.planning_step,
+                      )}{" "}
+                      {line.controlled_unit.code}
+                    </Text>
+                  )}
                   {historical && (
                     <Text id={description} textStyle="helper" color="fg.muted">
                       Giữ nguyên độ chính xác gốc · chỉ đọc.
                     </Text>
                   )}
                 </Table.Cell>
-                <Table.Cell textAlign="end" whiteSpace="nowrap">
+                <Table.Cell
+                  data-field="delta"
+                  textAlign="end"
+                  whiteSpace="nowrap"
+                >
                   {delta ? exactQuantityDisplay(delta) : "—"}
                 </Table.Cell>
-                <Table.Cell minW="var(--atlas-layout-reason-width, 255px)">
+                <Table.Cell
+                  data-field="reason"
+                  minW="var(--atlas-layout-reason-width, 255px)"
+                >
                   <Box display="grid" gap="xs">
                     <NativeSelect.Root disabled={!editable || historical}>
                       <NativeSelect.Field

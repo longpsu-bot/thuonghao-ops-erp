@@ -148,6 +148,13 @@ const normalizedPriorities = (items: PriorityDraft[]) =>
       (a, b) =>
         a.priority - b.priority || a.supplierId.localeCompare(b.supplierId),
     );
+type OrderStepInputState = "blank" | "suggested" | "manual" | "persisted";
+const suggestedOrderStep = (unit: UnitMasterData | undefined) => {
+  if (!unit) return "";
+  if (unit.unit_code.trim().toLowerCase() === "kg") return "0.1";
+  if (unit.dimension_code.trim().toUpperCase() === "COUNT") return "1";
+  return "";
+};
 
 export function useIngredientSupplierWorkbench({
   authSubject,
@@ -181,10 +188,12 @@ export function useIngredientSupplierWorkbench({
     useState<PendingTransition | null>(null);
   const discardedTransition = useRef<PendingTransition | null>(null);
   const requestGeneration = useRef(0);
+  const orderStepInputState = useRef<OrderStepInputState>("blank");
 
   const resetSurfaces = useCallback(() => {
     setActiveSurface(null);
     setReview(null);
+    orderStepInputState.current = "blank";
     setIngredientDraft(emptyIngredient());
     setSupplierDraft(emptySupplier());
     setPrioritiesState([]);
@@ -333,6 +342,7 @@ export function useIngredientSupplierWorkbench({
       (value) => value.ingredient_id === id,
     );
     setActiveSurface({ kind: "ingredient", id });
+    orderStepInputState.current = item ? "persisted" : "blank";
     setIngredientDraft(item ? ingredientDraftFor(item) : emptyIngredient());
     setReview(null);
     setNotice(null);
@@ -379,6 +389,30 @@ export function useIngredientSupplierWorkbench({
     if (selectedIngredient?.ingredient_status === "ARCHIVED") return;
     setReview(null);
     setNotice(null);
+    if (field === "orderStep") {
+      orderStepInputState.current =
+        activeSurface?.kind === "ingredient" && activeSurface.id === "NEW"
+          ? "manual"
+          : "persisted";
+    }
+    if (
+      field === "purchaseUnitId" &&
+      activeSurface?.kind === "ingredient" &&
+      activeSurface.id === "NEW" &&
+      (orderStepInputState.current === "blank" ||
+        orderStepInputState.current === "suggested")
+    ) {
+      const suggestion = suggestedOrderStep(
+        authority.units.find((unit) => unit.unit_id === value),
+      );
+      orderStepInputState.current = suggestion ? "suggested" : "blank";
+      setIngredientDraft((current) => ({
+        ...current,
+        purchaseUnitId: value,
+        orderStep: suggestion,
+      }));
+      return;
+    }
     setIngredientDraft((current) => ({ ...current, [field]: value }));
   };
   const setSupplierField = (field: keyof SupplierDraft, value: string) => {
