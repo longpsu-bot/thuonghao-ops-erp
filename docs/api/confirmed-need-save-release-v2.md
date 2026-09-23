@@ -10,7 +10,7 @@
 
 The closed command envelope uses reason `CONFIRMED_NEED_SAVED`, the current expected batch version, and one nonempty unique array of actual changed decisions. There is no 250-line command ceiling. Each line carries stable line identity, expected current revision/decision, exact decimal quantity, governed reason, and note.
 
-The command authorizes `confirmed_need_quantities.confirm`, locks and rereads authoritative bindings, applies the existing exact decimal, Planning-step, reason/note, policy, Unit, source-membership, predecessor, and currentness rules, appends immutable decisions and any required successor revisions atomically, increments the batch once, records receipt/event/audit evidence, returns the complete authoritative workbench, and leaves `DRAFT_REVIEW` or `REOPENED` editable. It never validates, approves, releases, or writes downstream.
+The command authorizes `confirmed_need_quantities.confirm`, locks and rereads authoritative bindings, applies the existing exact decimal, Planning-step, reason/note, policy, Unit, source-membership, predecessor, and currentness rules, appends immutable decisions and any required successor revisions atomically, increments the batch once, records receipt/event/audit evidence, returns the complete authoritative workbench, and leaves `DRAFT_REVIEW` or `REOPENED` editable. Under D-046, an adjusted successor copies the predecessor's immutable proposal-rounding step/version snapshot without re-resolving Ingredient. Readback reconstructs the system proposal from raw quantity plus that snapshot and keeps it distinct from the human confirmed result; legacy null-snapshot revisions retain their prior fallback. It never validates, approves, releases, or writes downstream.
 
 ## Release — `RMVP-07.v2`
 

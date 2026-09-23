@@ -84,6 +84,13 @@ Each line contains its stable line ID, current revision ID/number, service date,
 
 Quantities, the Ingredient proposal-rounding step, and the H1A confirmation step are returned as exact decimal strings. A proposal is not authoritative confirmation until the stable line's current-decision pointer identifies an H1B1 decision.
 
+For revisions with D-046 snapshot evidence, readback derives
+`proposed_confirmed_quantity` as
+`ceil(theoretical_quantity / proposal_rounding_step) * proposal_rounding_step`.
+It never substitutes a later human adjustment for the proposal. Legacy
+revisions with a null snapshot pair retain the previous
+`revision.confirmed_quantity` fallback.
+
 Review and confirmation are allowed only for `DRAFT_REVIEW` or `REOPENED` batches with current released-source bindings, nonempty current memberships, an `ACTIVE` controlled Unit, and exactly one effective policy per line.
 
 ## 4. Write-free preview
@@ -190,7 +197,7 @@ The line payload is identical to the preview selection. The browser cannot autho
 
 The command starts or replays the standard receipt, locks the batch and selected stable lines in UUID order, locks every selected controlled Unit in UUID order with `FOR SHARE`, and reruns the same canonical preview over current Unit status, revisions, decisions, memberships and policies. `FOR SHARE` conflicts with the repository's ordinary Unit-status update path. PostgreSQL requires `UPDATE` on at least one selected column and applies an UPDATE `USING` policy for a locking read, so the contained runtime receives only `update(unit_id)` on Unit plus a lock-only policy with `USING (true)` and `WITH CHECK (false)`; it never receives `update(unit_status)`, and actual Unit writes fail RLS. Confirmation requires every Unit to remain `ACTIVE`, the current expected version, and exact preview-hash equality before any Confirmed Need business write.
 
-For each adjusted line it supersedes only permitted current-revision metadata, creates one direct current successor with the confirmed quantity, and copies the prior revision's exact contribution memberships without recalculation. An unchanged line keeps its current revision. The transaction appends one complete H1B1 decision per selected line, advances every current-decision pointer, increments the batch version exactly once without changing `DRAFT_REVIEW`/`REOPENED`, emits one `ConfirmedNeedQuantitiesConfirmed` domain event, writes one audit event, completes one receipt, flushes deferred integrity guards, and returns authoritative review readback. It commits all effects or none.
+For each adjusted line it supersedes only permitted current-revision metadata, creates one direct current successor with the confirmed quantity, and copies the prior revision's exact contribution memberships and D-046 proposal-rounding snapshot pair without recalculation or current-Ingredient re-resolution. The snapshot fields are immutable revision evidence. An unchanged line keeps its current revision. The transaction appends one complete H1B1 decision per selected line, advances every current-decision pointer, increments the batch version exactly once without changing `DRAFT_REVIEW`/`REOPENED`, emits one `ConfirmedNeedQuantitiesConfirmed` domain event, writes one audit event, completes one receipt, flushes deferred integrity guards, and returns authoritative review readback. It commits all effects or none.
 
 Success reports the batch/new version, created successor and superseded revision IDs, created decision IDs, advanced stable-line IDs, unchanged/adjusted counts, receipt/event/audit IDs, safe message, and authoritative workbench.
 
@@ -217,7 +224,7 @@ Safe failures report write certainty, whether the local Draft may be preserved, 
 
 ## 7. Verification
 
-`supabase/tests/rmvp_05_connected_confirmed_need_review.sql` uses a real RMVP-04-created, validated and released multi-line run and actual CMD-15 materialization. Its exact `plan(41)` covers shaped read, missing/ambiguous policy fail-closed behavior, inactive-Unit review/preview/confirmation rejection, ordered lock/recheck structure, exact step/precision preview, preview non-mutation, mixed unchanged/adjusted confirmation, revision and membership behavior, decisions and pointers, version/event/audit/receipt atomicity, replay/conflict, stale failure, authorization denials, and predecessor-linked replacement history.
+`supabase/tests/rmvp_05_connected_confirmed_need_review.sql` uses a real RMVP-04-created, validated and released multi-line run and actual CMD-15 materialization. Its exact `plan(41)` covers shaped read, missing/ambiguous policy fail-closed behavior, inactive-Unit review/preview/confirmation rejection, ordered lock/recheck structure, exact step/precision preview, preview non-mutation, mixed unchanged/adjusted confirmation, successor proposal-snapshot continuity, post-Confirm proposal-versus-human readback, revision and membership behavior, decisions and pointers, version/event/audit/receipt atomicity, replay/conflict, stale failure, authorization denials, and predecessor-linked replacement history.
 
 `scripts/verify-local-rmvp05-confirmed-need-review.mjs` is GitHub-only. Draft smoke uses its deterministic disposable RMVP-05 batch for short browser-key review, mixed exact preview, confirmation, exact replay, and authoritative decision readback without calling RMVP-04. Full integration selects its upstream mode after the real RMVP-04/CMD-15 browser journey and additionally verifies correction-note enforcement and replacement confirmation.
 

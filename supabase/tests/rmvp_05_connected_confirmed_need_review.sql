@@ -298,7 +298,7 @@ insert into atlas_admin.ingredients (
   ingredient_id, ingredient_code, ingredient_name, purchase_unit_id, order_step
 ) values
   ('f5100000-0000-0000-0000-000000000006', 'rmvp05-rice', 'RMVP-05 rice', 'f5100000-0000-0000-0000-000000000005', 0.25),
-  ('f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 0.25);
+  ('f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 0.5);
 
 insert into atlas_planning.weekly_menus (weekly_menu_id, week_start, week_end, source_type, source_name, source_signature, row_count, imported_by_actor_id, weekly_menu_status, latest_approved_by_actor_id, latest_approved_at, latest_approval_snapshot_id)
 values ('f5200000-0000-0000-0000-000000000001', '2026-11-02', '2026-11-08', 'FIXTURE', 'RMVP-05 empty menu', 'rmvp05-menu', 0, 'f5000000-0000-0000-0000-000000000001', 'APPROVED', 'f5000000-0000-0000-0000-000000000001', '2026-11-01 09:00:00+07', 'f5200000-0000-0000-0000-000000000002');
@@ -316,7 +316,7 @@ insert into atlas_planning.pantry_need_batches (pantry_need_batch_id, week_start
 values ('f5400000-0000-0000-0000-000000000002', '2026-11-02', repeat('f', 64), false, 'f5000000-0000-0000-0000-000000000001', 'APPROVED', 'f5000000-0000-0000-0000-000000000001', '2026-11-01 09:02:00+07', 'f5400000-0000-0000-0000-000000000003');
 insert into atlas_planning.pantry_need_lines (pantry_need_line_id, pantry_need_batch_id, service_date, school_id, delivery_location_id, ingredient_id, unit_id, pantry_need_purpose_id, requested_quantity, note, source_request_reference, source_row_reference, updated_by_actor_id) values
   ('f5400000-0000-0000-0000-000000000004', 'f5400000-0000-0000-0000-000000000002', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'f5100000-0000-0000-0000-000000000002', 'f5100000-0000-0000-0000-000000000006', 'f5100000-0000-0000-0000-000000000005', 'f5400000-0000-0000-0000-000000000001', 2, 'Rice supplement', 'RMVP05', '1', 'f5000000-0000-0000-0000-000000000001'),
-  ('f5400000-0000-0000-0000-000000000005', 'f5400000-0000-0000-0000-000000000002', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'f5100000-0000-0000-0000-000000000002', 'f5100000-0000-0000-0000-000000000007', 'f5100000-0000-0000-0000-000000000005', 'f5400000-0000-0000-0000-000000000001', 3, 'Bean supplement', 'RMVP05', '2', 'f5000000-0000-0000-0000-000000000001');
+  ('f5400000-0000-0000-0000-000000000005', 'f5400000-0000-0000-0000-000000000002', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'f5100000-0000-0000-0000-000000000002', 'f5100000-0000-0000-0000-000000000007', 'f5100000-0000-0000-0000-000000000005', 'f5400000-0000-0000-0000-000000000001', 1.225, 'Bean supplement', 'RMVP05', '2', 'f5000000-0000-0000-0000-000000000001');
 insert into atlas_planning.pantry_need_approval_snapshots (pantry_need_approval_snapshot_id, pantry_need_batch_id, approved_batch_version, approved_by_actor_id, approved_at, source_signature, no_additions_confirmed, line_count)
 values ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000002', 1, 'f5000000-0000-0000-0000-000000000001', '2026-11-01 09:02:00+07', repeat('f', 64), false, 2);
 insert into atlas_planning.pantry_need_approval_snapshot_lines (
@@ -329,7 +329,7 @@ insert into atlas_planning.pantry_need_approval_snapshot_lines (
   requested_quantity, note, source_request_reference, source_row_reference
 ) values
   ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000004', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000006', 'rmvp05-rice', 'RMVP-05 rice', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 2, 'Rice supplement', 'RMVP05', '1'),
-  ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000005', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 3, 'Bean supplement', 'RMVP05', '2');
+  ('f5400000-0000-0000-0000-000000000003', 'f5400000-0000-0000-0000-000000000005', '2026-11-02', 'f5100000-0000-0000-0000-000000000004', 'rmvp05-school', 'RMVP-05 School', 'f5100000-0000-0000-0000-000000000002', 'rmvp05-kitchen', 'RMVP-05 Kitchen', 'Fixture kitchen', 'f5100000-0000-0000-0000-000000000007', 'rmvp05-beans', 'RMVP-05 beans', 'f5100000-0000-0000-0000-000000000005', 'rmvp05-kg', 'RMVP-05 kilogram', 'f5400000-0000-0000-0000-000000000001', 'rmvp05_supplement', 'Bổ sung RMVP-05', 'Synthetic focused fixture.', 'OPTIONAL', 1.225, 'Bean supplement', 'RMVP05', '2');
 
 insert into atlas_planning.need_generation_calculation_contracts (need_generation_calculation_contract_id, contract_code, current_revision_id, version, created_at, updated_at)
 values ('f5400000-0000-0000-0000-000000000010', 'school_catering_proportional_per_basis', 'f5400000-0000-0000-0000-000000000011', 1, '2026-11-01 07:00:00+07', '2026-11-01 07:00:00+07');
@@ -427,7 +427,7 @@ insert into atlas_planning.planning_quantity_policy_revisions (
   'f5600000-0000-0000-0000-000000000005',
   'f5600000-0000-0000-0000-000000000004',
   'f5100000-0000-0000-0000-000000000005',
-  1, 0.25, '2026-01-01', 'ACTIVE',
+  1, 0.01, '2026-01-01', 'ACTIVE',
   'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:00:00+07',
   'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:01:00+07',
   'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:02:00+07'
@@ -479,7 +479,7 @@ insert into atlas_planning.planning_quantity_policy_revisions (
   activated_by_actor_id, activated_at
 ) values (
   'f5600000-0000-0000-0000-000000000002', 'f5600000-0000-0000-0000-000000000001', 'f5100000-0000-0000-0000-000000000005',
-  1, 0.25, '2026-01-01', 'ACTIVE',
+  1, 0.01, '2026-01-01', 'ACTIVE',
   'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:00:00+07',
   'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:01:00+07',
   'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:02:00+07'
@@ -510,7 +510,7 @@ where planning_quantity_policy_revision_id = 'f5600000-0000-0000-0000-0000000000
 set local session_replication_role = origin;
 
 set local role authenticated;
-insert into rmvp05_responses select 'preview-nonrepresentable', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(1, pg_temp.rmvp05_lines(null, 'PROPOSAL_ACCEPTED', null, '3.10', 'PLANNING_STEP_ADJUSTMENT', null)));
+insert into rmvp05_responses select 'preview-nonrepresentable', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(1, pg_temp.rmvp05_lines(null, 'PROPOSAL_ACCEPTED', null, '1.375', 'PLANNING_STEP_ADJUSTMENT', null)));
 reset role;
 select is((select response->'preview'->>'error_code' from rmvp05_responses where response_name = 'preview-nonrepresentable'), 'QUANTITY_NOT_REPRESENTABLE', 'RMVP05-14 a nonintegral exact Planning step is blocked');
 
@@ -525,7 +525,7 @@ select
 
 insert into rmvp05_requests values (
   'mixed-lines',
-  pg_temp.rmvp05_lines(null, 'PROPOSAL_ACCEPTED', null, '3.25', 'PLANNING_STEP_ADJUSTMENT', null)
+  pg_temp.rmvp05_lines(null, 'PROPOSAL_ACCEPTED', null, '1.37', 'PLANNING_STEP_ADJUSTMENT', null)
 );
 set local role authenticated;
 insert into rmvp05_responses select 'preview-mixed', atlas_api.preview_confirmed_need_confirmation(pg_temp.rmvp05_preview(1, request)) from rmvp05_requests where request_name = 'mixed-lines';
@@ -539,8 +539,8 @@ select is(
    from rmvp05_responses r cross join lateral jsonb_array_elements(r.response->'preview'->'ordered_preview_lines') line
    where r.response_name = 'preview-mixed'),
   jsonb_build_object(
-    'UNCHANGED_PROPOSAL_ACCEPTED', jsonb_build_object('quantity', '2.000000', 'step', '0.250000', 'ticks', '8', 'successor', 'false'),
-    'ADJUSTED_QUANTITY_CONFIRMED', jsonb_build_object('quantity', '3.250000', 'step', '0.250000', 'ticks', '13', 'successor', 'true')
+    'UNCHANGED_PROPOSAL_ACCEPTED', jsonb_build_object('quantity', '2.000000', 'step', '0.010000', 'ticks', '200', 'successor', 'false'),
+    'ADJUSTED_QUANTITY_CONFIRMED', jsonb_build_object('quantity', '1.370000', 'step', '0.010000', 'ticks', '137', 'successor', 'true')
   ),
   'RMVP05-15 shared preview distinguishes unchanged and adjusted exact quantities'
 );
@@ -734,13 +734,21 @@ select is(
   'RMVP05-21 mixed confirmation succeeds and advances the batch once'
 );
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context) and revision_number = 1 and is_current), 1, 'RMVP05-22 unchanged acceptance creates no successor revision');
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id = (select batch_id from rmvp05_context) and revision_number = 2 and is_current and confirmed_quantity = 3.25), 1, 'RMVP05-23 adjustment creates exactly one current successor revision');
+select is(
+  (select row(theoretical_quantity, confirmed_quantity, proposal_rounding_step, proposal_rounding_ingredient_version)::text
+   from atlas_planning.confirmed_need_line_revisions
+   where confirmed_need_batch_id = (select batch_id from rmvp05_context)
+     and ingredient_id = 'f5100000-0000-0000-0000-000000000007'
+     and revision_number = 2 and is_current),
+  '(1.225000,1.370000,0.500000,1)',
+  'RMVP05-23 v1 Confirm carries the exact proposal snapshot into the adjusted successor revision'
+);
 select is(
   (select jsonb_build_object('members', count(*), 'source_total', sum(source_theoretical_quantity), 'controlled_total', sum(controlled_contribution_quantity))
    from atlas_planning.confirmed_need_line_revision_contributions c
    join atlas_planning.confirmed_need_line_revisions r using (confirmed_need_line_revision_id)
    where r.confirmed_need_batch_id = (select batch_id from rmvp05_context) and r.revision_number = 2),
-  jsonb_build_object('members', 1, 'source_total', 3.000000, 'controlled_total', 3.000000),
+  jsonb_build_object('members', 1, 'source_total', 1.225000, 'controlled_total', 1.225000),
   'RMVP05-24 adjusted successor preserves the exact source membership without recalculation'
 );
 select is(
@@ -863,10 +871,10 @@ select is(
    from rmvp05_responses r cross join lateral jsonb_array_elements(r.response->'workbench'->'lines') line
    where r.response_name = 'read-final'),
   jsonb_build_array(
-    jsonb_build_object('theoretical', '3.000000', 'proposal', '3.250000', 'confirmed', '3.250000', 'history', 1),
+    jsonb_build_object('theoretical', '1.225000', 'proposal', '1.500000', 'confirmed', '1.370000', 'history', 1),
     jsonb_build_object('theoretical', '2.000000', 'proposal', '2.000000', 'confirmed', '2.000000', 'history', 2)
   ),
-  'RMVP05-39 readback preserves exact decimal strings and complete decision history'
+  'RMVP05-39 v1 post-Confirm readback preserves raw, proposal, human decision, and complete history'
 );
 select is(
   (select jsonb_build_object(

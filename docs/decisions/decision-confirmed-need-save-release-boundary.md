@@ -14,6 +14,12 @@ Edit → Save → continue working if needed → Release to ordering
 
 `Lưu` records the operator's submitted line decisions atomically, preserves immutable correction/audit evidence, returns authoritative readback, leaves the batch editable, and releases nothing downstream.
 
+For a D-046 adjusted line, Save carries the predecessor revision's exact
+proposal-rounding step/version snapshot into the successor without consulting
+current Ingredient configuration. Authoritative readback continues to show the
+snapshot-derived system proposal separately from the saved human quantity;
+legacy null-snapshot revisions retain their existing fallback behavior.
+
 `Chuyển sang lên đơn` is the human commitment. One backend command requires the current complete saved batch, performs deterministic complete-batch validation, creates the existing immutable validation and approval evidence internally, records the Planning release atomically, and returns released authoritative readback. It does not select suppliers or create Purchase Handoff, purchase-order, Warehouse, or Dispatch facts.
 
 The backend remains the gatekeeper and workload manager. React must not chain RMVP-05, RMVP-06, and RMVP-07 lifecycle calls or partition a human action into API-sized groups.

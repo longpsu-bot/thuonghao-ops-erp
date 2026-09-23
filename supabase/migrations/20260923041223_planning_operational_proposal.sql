@@ -26,9 +26,9 @@ alter table atlas_planning.confirmed_need_line_revisions
   );
 
 comment on column atlas_planning.confirmed_need_line_revisions.proposal_rounding_step is
-  'Exact Ingredient.order_step used to derive this NEED_GENERATION proposal; null only for legacy revisions.';
+  'Exact Ingredient.order_step used to derive this NEED_GENERATION proposal; null only for pre-D-046 lineages.';
 comment on column atlas_planning.confirmed_need_line_revisions.proposal_rounding_ingredient_version is
-  'Ingredient version paired with proposal_rounding_step; null only for legacy revisions.';
+  'Ingredient version paired with proposal_rounding_step; null only for pre-D-046 lineages.';
 
 reset role;
 grant atlas_planning_materialization_runtime,
@@ -37,7 +37,65 @@ grant atlas_planning_materialization_runtime,
 set role atlas_owner;
 grant create on schema atlas_core to atlas_planning_materialization_runtime;
 grant create on schema atlas_core to atlas_confirmed_need_review_runtime;
+grant create on schema atlas_api to atlas_confirmed_need_review_runtime;
 grant create on schema atlas_api to atlas_read_runtime;
+
+do $$
+declare
+  v_oid oid;
+  v_definition text;
+  v_before text;
+begin
+  select p.oid, pg_catalog.pg_get_functiondef(p.oid)
+  into strict v_oid, v_definition
+  from pg_catalog.pg_proc p
+  join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'atlas_planning'
+    and p.proname = 'pa_06e_h0b1b_confirmed_need_guard'
+    and pg_catalog.pg_get_function_identity_arguments(p.oid) = '';
+
+  if pg_catalog.md5((select p.prosrc from pg_catalog.pg_proc p where p.oid = v_oid))
+      <> 'c30bb161999f3a5d57a6c2b4535882ba'
+  then
+    raise exception 'Unexpected Confirmed Need revision guard baseline';
+  end if;
+
+  v_before := v_definition;
+  v_definition := pg_catalog.replace(v_definition,
+$old$      new.unit_id,
+      new.theoretical_quantity
+    ) is distinct from row(
+$old$,
+$new$      new.unit_id,
+      new.theoretical_quantity,
+      new.proposal_rounding_step,
+      new.proposal_rounding_ingredient_version
+    ) is distinct from row(
+$new$);
+  if v_definition = v_before then
+    raise exception 'Confirmed Need revision guard new-row patch made no change';
+  end if;
+
+  v_before := v_definition;
+  v_definition := pg_catalog.replace(v_definition,
+$old$      old.unit_id,
+      old.theoretical_quantity
+    ) then
+$old$,
+$new$      old.unit_id,
+      old.theoretical_quantity,
+      old.proposal_rounding_step,
+      old.proposal_rounding_ingredient_version
+    ) then
+$new$);
+  if v_definition = v_before then
+    raise exception 'Confirmed Need revision guard old-row patch made no change';
+  end if;
+
+  execute v_definition;
+end;
+$$;
+
 set role atlas_planning_materialization_runtime;
 
 do $$
@@ -356,6 +414,101 @@ begin
   into strict v_oid, v_definition
   from pg_catalog.pg_proc p
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'atlas_api'
+    and p.proname = 'confirm_need_quantities'
+    and pg_catalog.pg_get_function_identity_arguments(p.oid) = 'request jsonb';
+
+  if pg_catalog.md5((select p.prosrc from pg_catalog.pg_proc p where p.oid = v_oid))
+      <> 'ac75f3f57cc7459ac1da056c29c437fe'
+  then
+    raise exception 'Unexpected Confirmed Need v1 writer baseline';
+  end if;
+
+  v_before := v_definition;
+  v_definition := pg_catalog.replace(v_definition,
+$old$        theoretical_quantity,
+        confirmed_quantity,
+        unit_id,
+$old$,
+$new$        theoretical_quantity,
+        confirmed_quantity,
+        proposal_rounding_step,
+        proposal_rounding_ingredient_version,
+        unit_id,
+$new$);
+  if v_definition = v_before then
+    raise exception 'Confirmed Need v1 writer snapshot-column patch made no change';
+  end if;
+
+  v_before := v_definition;
+  v_definition := pg_catalog.replace(v_definition,
+$old$        (v_preview_line ->> 'confirmed_quantity_after')::numeric(20, 6),
+        v_revision.unit_id,
+$old$,
+$new$        (v_preview_line ->> 'confirmed_quantity_after')::numeric(20, 6),
+        v_revision.proposal_rounding_step,
+        v_revision.proposal_rounding_ingredient_version,
+        v_revision.unit_id,
+$new$);
+  if v_definition = v_before then
+    raise exception 'Confirmed Need v1 writer snapshot-value patch made no change';
+  end if;
+
+  execute v_definition;
+
+  select p.oid, pg_catalog.pg_get_functiondef(p.oid)
+  into strict v_oid, v_definition
+  from pg_catalog.pg_proc p
+  join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'atlas_api'
+    and p.proname = 'save_confirmed_needs'
+    and pg_catalog.pg_get_function_identity_arguments(p.oid) = 'request jsonb';
+
+  if pg_catalog.md5((select p.prosrc from pg_catalog.pg_proc p where p.oid = v_oid))
+      <> '4fc9cc5e4f6f3a8165f999c4a036fc06'
+  then
+    raise exception 'Unexpected Confirmed Need v2 writer baseline';
+  end if;
+
+  v_before := v_definition;
+  v_definition := pg_catalog.replace(v_definition,
+$old$        theoretical_quantity, confirmed_quantity, unit_id, revision_status,
+$old$,
+$new$        theoretical_quantity, confirmed_quantity, proposal_rounding_step,
+        proposal_rounding_ingredient_version, unit_id, revision_status,
+$new$);
+  if v_definition = v_before then
+    raise exception 'Confirmed Need v2 writer snapshot-column patch made no change';
+  end if;
+
+  v_before := v_definition;
+  v_definition := pg_catalog.replace(v_definition,
+$old$        (v_preview_line ->> 'confirmed_quantity_after')::numeric(20, 6),
+        v_revision.unit_id, 'DRAFT', true,
+$old$,
+$new$        (v_preview_line ->> 'confirmed_quantity_after')::numeric(20, 6),
+        v_revision.proposal_rounding_step,
+        v_revision.proposal_rounding_ingredient_version,
+        v_revision.unit_id, 'DRAFT', true,
+$new$);
+  if v_definition = v_before then
+    raise exception 'Confirmed Need v2 writer snapshot-value patch made no change';
+  end if;
+
+  execute v_definition;
+end;
+$$;
+
+do $$
+declare
+  v_oid oid;
+  v_definition text;
+  v_before text;
+begin
+  select p.oid, pg_catalog.pg_get_functiondef(p.oid)
+  into strict v_oid, v_definition
+  from pg_catalog.pg_proc p
+  join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'atlas_core'
     and p.proname = 'rmvp_05_workbench_payload'
     and pg_catalog.pg_get_function_identity_arguments(p.oid) =
@@ -372,7 +525,13 @@ begin
 $old$      revision.confirmed_quantity as proposed_confirmed_quantity,
       revision.need_generation_run_id,
 $old$,
-$new$      revision.confirmed_quantity as proposed_confirmed_quantity,
+$new$      case
+        when revision.proposal_rounding_step is null
+          then revision.confirmed_quantity
+        else pg_catalog.ceil(
+          revision.theoretical_quantity / revision.proposal_rounding_step
+        ) * revision.proposal_rounding_step
+      end as proposed_confirmed_quantity,
       revision.proposal_rounding_step,
       revision.need_generation_run_id,
 $new$);
@@ -443,6 +602,7 @@ reset role;
 set role atlas_owner;
 revoke create on schema atlas_core from atlas_planning_materialization_runtime;
 revoke create on schema atlas_core from atlas_confirmed_need_review_runtime;
+revoke create on schema atlas_api from atlas_confirmed_need_review_runtime;
 revoke create on schema atlas_api from atlas_read_runtime;
 reset role;
 revoke atlas_planning_materialization_runtime,

@@ -79,12 +79,22 @@ real operator change remains an operational adjustment. The system proposal is
 explained by raw quantity plus the Ingredient rounding snapshot and creates no
 decision row itself.
 
+When either RMVP-05.v1 Confirm or RMVP-05.v2 Save creates an adjusted successor
+revision, it copies `proposal_rounding_step` and
+`proposal_rounding_ingredient_version` from the predecessor. It does not
+re-resolve the current Ingredient. Authorized readback reconstructs the system
+proposal from the revision's exact raw quantity and snapshotted step, keeping it
+distinct from the human `confirmed_quantity_after`. A legacy revision whose
+snapshot pair is null retains the prior `confirmed_quantity` readback fallback.
+
 ## Consequences and boundaries
 
 The existing Confirmed Need aggregate and revision storage are reused. The
 revision gains nullable `proposal_rounding_step` and
 `proposal_rounding_ingredient_version` evidence columns: legacy revisions stay
-null, while every new `NEED_GENERATION` revision snapshots both values. No
+null; materializer-created `NEED_GENERATION` revisions snapshot both values;
+and a human-adjustment successor carries its predecessor's pair, including a
+null pair from a pre-D-046 lineage. Both fields are immutable revision evidence. No
 proposal table, aggregate, lifecycle, new public endpoint, fallback policy,
 production seed, or generic rules engine is introduced. Reusing
 `Ingredient.order_step` does not move human confirmation authority to

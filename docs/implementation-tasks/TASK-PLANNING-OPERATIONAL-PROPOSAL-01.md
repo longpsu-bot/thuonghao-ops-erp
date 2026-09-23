@@ -39,6 +39,7 @@ raw Planning source facts
 → RMVP-05 proposed_confirmed_quantity readback
 → local confirmation draft
 → RMVP-05.v2 preview/Save
+→ adjusted successor carries the original proposal step/version snapshot
 → H1B1 append-only decision evidence
 ```
 
@@ -158,8 +159,14 @@ exact Ingredient step/version that produced the proposal.
 - Proposal is exactly
   `ceil(sum(raw contributions) / ingredient.order_step) * ingredient.order_step`
   with exact Unit equality, one effective H1A policy, and no fallback.
-- Every new NEED_GENERATION revision snapshots a non-null positive Ingredient
-  step/version pair; legacy revisions remain null and are not backfilled.
+- Every materializer-created NEED_GENERATION revision snapshots a non-null
+  positive Ingredient step/version pair; legacy revisions remain null and are
+  not backfilled, and their human-adjustment successors carry that null pair.
+- RMVP-05.v1 Confirm and RMVP-05.v2 Save copy that pair into an adjusted
+  successor without re-resolving Ingredient; authorized readback reconstructs
+  the proposal from raw quantity plus the snapshot and keeps the human result
+  separate. Legacy null-pair readback retains its existing fallback.
+- Both proposal snapshot fields are protected by the immutable revision guard.
 - Initial and correction materialization share the rule; old revisions remain
   immutable.
 - Backend independently rejects nonrepresentable human input without a
@@ -197,9 +204,10 @@ separate owner-authorized change.
 ## Implementation evidence
 
 - the existing unmerged forward migration adds only the two revision snapshot
-  columns, patches the private H0 materializer and additive authorized read
-  fields, and adds no table, business aggregate, public endpoint, persistent
-  runtime grant, policy fallback, or production seed;
+  columns, patches the private H0 materializer, both existing human-adjustment
+  writers, the immutable revision guard, and additive authorized read fields,
+  and adds no table, business aggregate, public endpoint, persistent runtime
+  grant, policy fallback, or production seed;
 - initial and correction paths aggregate raw contributions first, resolve
   Ingredient configuration plus H1A set-wise, and derive the Draft proposal
   from `Ingredient.order_step` with PostgreSQL `numeric` arithmetic;
@@ -214,8 +222,10 @@ separate owner-authorized change.
 - local operational-scale coverage passes; this is development evidence only
   and is not the independent protected performance certification.
 
-The correction's clean-reset migration and focused 53-assertion proposal suite
+The correction's clean-reset migration and focused 57-assertion proposal suite
 pass locally. Focused active-Chakra master-data and Confirmed Need suites cover
 the suggestion lifecycle, distinct proposal/confirmation steps, and exact H1A
-human validation. GitHub Actions remains the exact-head broad frontend
-authority.
+human validation. The RMVP-05.v1 and v2 regressions both prove the exact
+`1.225000` raw / `1.500000` proposal / `1.370000` human result and preserved
+`0.500000` / Ingredient-version snapshot after Save. GitHub Actions remains the
+exact-head broad authority.

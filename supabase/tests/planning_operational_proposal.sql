@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(57);
 
 set local session_replication_role = replica;
 
@@ -496,6 +496,13 @@ insert into proposal_results values (
     pg_temp.proposal_save(pg_temp.proposal_decision_lines('VALID'))
   )
 );
+insert into proposal_results values (
+  'review-after-save',
+  atlas_api.get_confirmed_need_review(pg_temp.proposal_read((
+    select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
+    from proposal_results where result_name='examples'
+  )))
+);
 reset role;
 
 select ok((select response->>'success'='true'
@@ -517,7 +524,8 @@ select ok((select response->>'success'='true' and response#>>'{authoritative_rea
 select is((select jsonb_object_agg(decision_kind, line_count) from (select decision_kind, count(*)::integer line_count from atlas_planning.confirmed_need_line_decisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples') group by decision_kind) counts), jsonb_build_object('ADJUSTED_QUANTITY_CONFIRMED',1,'UNCHANGED_PROPOSAL_ACCEPTED',8), 'POPD-09 first Save creates eight accepted proposals and one explicit adjustment');
 select is((select jsonb_object_agg(reason_code, line_count) from (select reason_code, count(*)::integer line_count from atlas_planning.confirmed_need_line_decisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples') group by reason_code) counts), jsonb_build_object('OPERATIONAL_QUANTITY_ADJUSTMENT',1,'PROPOSAL_ACCEPTED',8), 'POPD-10 system quantization never creates a human Planning-step adjustment');
 select is((select count(*) from atlas_planning.confirmed_need_line_decisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='examples') and decision_number=1 and predecessor_decision_id is null), 9::bigint, 'POPD-11 every fresh line receives exactly one first decision');
-select is((select row(theoretical_quantity,confirmed_quantity)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000102' and revision_number=1), '(0.025500,0.100000)', 'POPD-12 Save preserves the raw quantity and Ingredient-step system proposal revision');
+select is((select row(theoretical_quantity,confirmed_quantity,proposal_rounding_step,proposal_rounding_ingredient_version)::text from atlas_planning.confirmed_need_line_revisions where ingredient_id='d4600000-0000-0000-0000-000000000114' and revision_number=2 and is_current), '(1.225000,1.370000,0.500000,1)', 'POPD-12 v2 Save carries the exact proposal snapshot into the adjusted successor revision');
+select is((select row(read_line->>'theoretical_quantity',read_line->>'proposed_confirmed_quantity',read_line->>'confirmed_quantity_after',read_line->>'proposal_rounding_step')::text from proposal_results r cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line where r.result_name='review-after-save' and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000114'), '(1.225000,1.500000,1.370000,0.500000)', 'POPD-12A v2 post-Save readback keeps the system proposal distinct from the human decision');
 select is((select count(*) from atlas_planning.purchase_handoff_batches), 0::bigint, 'POPD-13 first Save creates no Purchase Handoff');
 
 set local session_replication_role = replica;
@@ -673,6 +681,55 @@ select is((select response->>'error_code' from proposal_results where result_nam
 select is((select count(*) from atlas_planning.confirmed_need_batches where origin_need_generation_run_id='d4600000-0000-0000-0000-000000004200'), 0::bigint, 'POP-31 incompatible Ingredient rounding step creates no partial batch');
 select is((select response->>'error_code' from proposal_results where result_name='rounding-unit-mismatch'), 'INGREDIENT_ROUNDING_CONFIGURATION_INVALID', 'POP-32 Ingredient purchase Unit mismatch fails closed');
 select is((select count(*) from atlas_planning.confirmed_need_line_revisions where need_generation_run_id in ('d4600000-0000-0000-0000-000000004000','d4600000-0000-0000-0000-000000004200','d4600000-0000-0000-0000-000000004400','d4600000-0000-0000-0000-000000004600')), 0::bigint, 'POP-33 every Ingredient rounding failure leaves zero revisions');
+
+select throws_ok(
+  $$update atlas_planning.confirmed_need_line_revisions
+    set proposal_rounding_step = 0.25
+    where ingredient_id = 'd4600000-0000-0000-0000-000000000114'
+      and revision_number = 2$$,
+  '23514',
+  'Confirmed Need revision source identity and theoretical total are immutable',
+  'POP-34 proposal rounding step is immutable revision evidence'
+);
+select throws_ok(
+  $$update atlas_planning.confirmed_need_line_revisions
+    set proposal_rounding_ingredient_version = 2
+    where ingredient_id = 'd4600000-0000-0000-0000-000000000114'
+      and revision_number = 2$$,
+  '23514',
+  'Confirmed Need revision source identity and theoretical total are immutable',
+  'POP-35 proposal Ingredient version is immutable revision evidence'
+);
+
+set local session_replication_role = replica;
+update atlas_planning.confirmed_need_line_revisions
+set proposal_rounding_step = null,
+    proposal_rounding_ingredient_version = null
+where ingredient_id = 'd4600000-0000-0000-0000-000000000101'
+  and is_current;
+set local session_replication_role = origin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'd4600000-0000-0000-0000-000000000002', true);
+insert into proposal_results values (
+  'legacy-readback',
+  atlas_api.get_confirmed_need_review(pg_temp.proposal_read((
+    select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid
+    from proposal_results where result_name='examples'
+  )))
+);
+reset role;
+select is(
+  (select jsonb_build_object(
+    'theoretical', read_line->>'theoretical_quantity',
+    'proposal', read_line->>'proposed_confirmed_quantity',
+    'step', read_line->'proposal_rounding_step'
+  ) from proposal_results r
+  cross join lateral jsonb_array_elements(r.response#>'{workbench,lines}') read_line
+  where r.result_name='legacy-readback'
+    and read_line#>>'{ingredient,id}'='d4600000-0000-0000-0000-000000000101'),
+  jsonb_build_object('theoretical','0.080000','proposal','0.100000','step',null),
+  'POP-36 legacy null-snapshot readback retains the stored proposal fallback'
+);
 
 select * from finish();
 rollback;
