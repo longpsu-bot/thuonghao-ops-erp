@@ -816,6 +816,35 @@ select is(
   'RMVP04-23 release advances once and captures every line and issue'
 );
 
+-- CMD-15 requires the exact Unit/service-date policy that later RMVP-05
+-- confirmation and correction coverage also exercises.
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id, unit_id, created_by_actor_id
+) values (
+  'e4900000-0000-0000-0000-000000000090',
+  'e4100000-0000-0000-0000-000000000006',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
+  revision_number, predecessor_policy_revision_id, planning_step,
+  effective_from, policy_revision_status, created_by_actor_id, created_at
+) values (
+  'e4900000-0000-0000-0000-000000000091',
+  'e4900000-0000-0000-0000-000000000090',
+  'e4100000-0000-0000-0000-000000000006',
+  1, null, 0.500000, '2026-01-01', 'DRAFT',
+  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
+);
+update atlas_planning.planning_quantity_policy_revisions
+set policy_revision_status = 'ACTIVE',
+    approved_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
+    approved_at = transaction_timestamp(),
+    activated_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
+    activated_at = transaction_timestamp()
+where planning_quantity_policy_revision_id =
+  'e4900000-0000-0000-0000-000000000091';
+
 set local role authenticated;
 insert into rmvp04_responses
 select 'materialize', atlas_api.create_confirmed_needs_from_generation(pg_temp.rmvp04_cmd15((response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid, 3))
@@ -1638,33 +1667,6 @@ where capability.capability_code in (
   'confirmed_need_quantities.confirm'
 )
 on conflict (role_id, capability_id) do nothing;
-
-insert into atlas_planning.planning_quantity_policies (
-  planning_quantity_policy_id, unit_id, created_by_actor_id
-) values (
-  'e4900000-0000-0000-0000-000000000090',
-  'e4100000-0000-0000-0000-000000000006',
-  'e4000000-0000-0000-0000-000000000001'
-);
-insert into atlas_planning.planning_quantity_policy_revisions (
-  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
-  revision_number, predecessor_policy_revision_id, planning_step,
-  effective_from, policy_revision_status, created_by_actor_id, created_at
-) values (
-  'e4900000-0000-0000-0000-000000000091',
-  'e4900000-0000-0000-0000-000000000090',
-  'e4100000-0000-0000-0000-000000000006',
-  1, null, 0.500000, '2026-01-01', 'DRAFT',
-  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
-);
-update atlas_planning.planning_quantity_policy_revisions
-set policy_revision_status = 'ACTIVE',
-    approved_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
-    approved_at = transaction_timestamp(),
-    activated_by_actor_id = 'e4000000-0000-0000-0000-000000000001',
-    activated_at = transaction_timestamp()
-where planning_quantity_policy_revision_id =
-  'e4900000-0000-0000-0000-000000000091';
 
 set local session_replication_role = replica;
 

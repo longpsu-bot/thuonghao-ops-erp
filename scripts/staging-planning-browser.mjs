@@ -573,7 +573,15 @@ export function assertReopenedReview(saved, reopened) {
 }
 
 export function preSaveGateStateExpression() {
-  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const save=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu'):null;const deltaText=r=>(r.children[4]?.textContent??'').trim();const isNonzeroDelta=r=>{const text=deltaText(r);const value=Number(text.replaceAll('.','').replace(',','.'));return Number.isFinite(value)&&value!==0;};return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>deltaText(r)!=='—').length,quantity_adjustment_rows:rows.filter(isNonzeroDelta).length,adjustment_reason_rows:rows.filter(r=>r.querySelector('select[aria-label^="Lý do"]')?.value==='OPERATIONAL_QUANTITY_ADJUSTMENT').length,nonblank_note_rows:rows.filter(r=>(r.querySelector('input[aria-label^="Ghi chú"]')?.value??'').trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
+  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const save=root?[...root.querySelectorAll('button')].find(e=>e.textContent.trim()==='Lưu'):null;const deltaText=r=>(r.querySelector('[data-field="delta"]')?.textContent??'').trim();const isNonzeroDelta=r=>{const text=deltaText(r);const value=Number(text.replaceAll('.','').replace(',','.'));return Number.isFinite(value)&&value!==0;};return {rendered_rows:rows.length,quantity_delta_rows:rows.filter(r=>deltaText(r)!=='—').length,quantity_adjustment_rows:rows.filter(isNonzeroDelta).length,adjustment_reason_rows:rows.filter(r=>r.querySelector('select[aria-label^="Lý do"]')?.value==='OPERATIONAL_QUANTITY_ADJUSTMENT').length,nonblank_note_rows:rows.filter(r=>(r.querySelector('input[aria-label^="Ghi chú"]')?.value??'').trim()!=='').length,invalid_controls:root?.querySelectorAll('[aria-invalid="true"]').length??0,save_present:Boolean(save),save_enabled:Boolean(save&&!save.disabled&&save.getAttribute('aria-disabled')!=='true')};})()`;
+}
+
+export function editableConfirmedNeedCandidateExpression() {
+  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const index=rows.findIndex(r=>(r.querySelector('[data-field="unit"]')?.textContent??'').trim()==='kg'&&r.querySelector('input[aria-label^="Số lượng xác nhận"]')&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').disabled&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').readOnly);if(index<0)return null;const r=rows[index];return {index,ingredient:(r.querySelector('[data-role="ingredient-name"]')?.textContent??'').trim(),recipient:(r.querySelector('[data-role="recipient"]')?.textContent??'').trim()};})()`;
+}
+
+export function quantityEditSettledExpression(row, proposed) {
+  return `(()=>{const r=document.querySelector(${JSON.stringify(row)});const input=r?.querySelector('input[aria-label^="Số lượng xác nhận"]');const text=(r?.querySelector('[data-field="delta"]')?.textContent??'').trim();const delta=Number(text.replaceAll('.','').replace(',','.'));return Boolean(input?.value===${JSON.stringify(proposed)}&&Number.isFinite(delta)&&delta!==0);})()`;
 }
 export async function verifyPlanningBrowser({
   target,
@@ -724,10 +732,7 @@ export async function verifyPlanningBrowser({
       }),
     );
     const candidate = await until(
-      () =>
-        evaluate(
-          `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const index=rows.findIndex(r=>r.children[1].textContent.trim()==='kg'&&r.querySelector('input[aria-label^="Số lượng xác nhận"]')&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').disabled&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').readOnly);if(index<0)return null;const r=rows[index];return {index,ingredient:r.children[0].children[0].textContent,recipient:r.children[0].children[1].textContent};})()`,
-        ),
+      () => evaluate(editableConfirmedNeedCandidateExpression()),
       "editable_kg_row",
     );
     if (!candidate) throw new Error("NO_EDITABLE_KG_REHEARSAL_ROW");
@@ -738,17 +743,12 @@ export async function verifyPlanningBrowser({
           `${l.school.name} · ${l.delivery_location.name}`,
     );
     if (!line) throw new Error("BROWSER_ROW_IDENTITY_MISMATCH");
-    const proposed = nextCent(
-      line.confirmed_quantity_after ?? line.proposed_confirmed_quantity,
-    );
+    const proposed = nextCent(line.proposed_confirmed_quantity);
     const row = `${CONFIRMED_WORKBENCH} ${CONFIRMED_TABLE} tbody tr:nth-child(${candidate.index + 1})`;
     stage = "quantity_edit";
     await input(`${row} input[aria-label^="Số lượng xác nhận"]`, proposed);
     await until(
-      () =>
-        evaluate(
-          `(()=>{const r=document.querySelector(${JSON.stringify(row)});const input=r?.querySelector('input[aria-label^="Số lượng xác nhận"]');const text=(r?.children[4]?.textContent??'').trim();const delta=Number(text.replaceAll('.','').replace(',','.'));return Boolean(input?.value===${JSON.stringify(proposed)}&&Number.isFinite(delta)&&delta!==0);})()`,
-        ),
+      () => evaluate(quantityEditSettledExpression(row, proposed)),
       "quantity_edit_settled",
     );
     await input(

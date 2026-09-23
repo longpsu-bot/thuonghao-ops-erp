@@ -81,6 +81,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "rmvp_04_connected_need_generation.sql",
   "planning_contract_01_atomic_planning_boundaries.sql",
   "planning_contract_02b_selective_confirmation_continuity.sql",
+  "planning_operational_proposal.sql",
   "rmvp_05_connected_confirmed_need_review.sql",
 ]);
 

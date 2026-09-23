@@ -32,6 +32,24 @@ insert into atlas_admin.schools (school_id,customer_id,school_code,school_name,s
 values ('cb100000-0000-0000-0000-000000000013','cb100000-0000-0000-0000-000000000010','h0cb-initial-school','H0Cb initial school','cb100000-0000-0000-0000-000000000012','cb100000-0000-0000-0000-000000000011');
 insert into atlas_admin.units (unit_id,unit_code,unit_name,dimension_code)
 values ('cb100000-0000-0000-0000-000000000014','h0cb-initial-kg','H0Cb kilogram','mass');
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id,unit_id,created_by_actor_id
+) values (
+  'cb100000-0000-0000-0000-000000000020','cb100000-0000-0000-0000-000000000014',
+  'cb100000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id,planning_quantity_policy_id,unit_id,
+  revision_number,planning_step,effective_from,policy_revision_status,
+  created_by_actor_id,created_at,approved_by_actor_id,approved_at,
+  activated_by_actor_id,activated_at
+) values (
+  'cb100000-0000-0000-0000-000000000021','cb100000-0000-0000-0000-000000000020',
+  'cb100000-0000-0000-0000-000000000014',1,0.01,date '2026-01-01','ACTIVE',
+  'cb100000-0000-0000-0000-000000000001',transaction_timestamp(),
+  'cb100000-0000-0000-0000-000000000001',transaction_timestamp(),
+  'cb100000-0000-0000-0000-000000000001',transaction_timestamp()
+);
 insert into atlas_admin.ingredients (ingredient_id,ingredient_code,ingredient_name) values
  ('cb100000-0000-0000-0000-000000000015','h0cb-initial-rice','H0Cb rice'),
  ('cb100000-0000-0000-0000-000000000016','h0cb-initial-oil','H0Cb oil');
@@ -185,9 +203,9 @@ select is((select count(*)::integer from atlas_planning.confirmed_need_line_revi
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where is_current),2,'both revisions are current');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where predecessor_revision_id is null),2,'initial revisions have no predecessor');
 select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where ingredient_id='cb100000-0000-0000-0000-000000000015'),12::numeric,'same-identity contributions sum exactly to twelve');
-select is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where ingredient_id='cb100000-0000-0000-0000-000000000015'),12::numeric,'Draft proposal equals exact theoretical sum');
+select is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where ingredient_id='cb100000-0000-0000-0000-000000000015'),12::numeric,'representable Draft proposal equals exact theoretical sum');
 select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where ingredient_id='cb100000-0000-0000-0000-000000000016'),3::numeric,'second operational group retains exact quantity');
-select is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where ingredient_id='cb100000-0000-0000-0000-000000000016'),3::numeric,'second proposal equals exact theoretical quantity');
+select is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where ingredient_id='cb100000-0000-0000-0000-000000000016'),3::numeric,'second representable proposal equals exact theoretical quantity');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions),3,'membership is complete');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions where ingredient_id='cb100000-0000-0000-0000-000000000015'),2,'grouped rice revision has two members');
 select is((select sum(controlled_contribution_quantity) from atlas_planning.confirmed_need_line_revision_contributions where ingredient_id='cb100000-0000-0000-0000-000000000015'),12::numeric,'rice membership total equals revision total');
@@ -197,7 +215,7 @@ select is((select count(distinct theoretical_need_line_id)::integer from atlas_p
 select is((select count(distinct need_generation_release_snapshot_line_id)::integer from atlas_planning.confirmed_need_line_revision_contributions),3,'each active release member appears once');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions c join atlas_planning.confirmed_need_line_revisions r using(confirmed_need_line_revision_id) where c.controlled_contribution_quantity>0 and r.theoretical_quantity>0),3,'positive memberships attach to positive revisions');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions r where r.theoretical_quantity=(select sum(c.controlled_contribution_quantity) from atlas_planning.confirmed_need_line_revision_contributions c where c.confirmed_need_line_revision_id=r.confirmed_need_line_revision_id)),2,'each revision equals its exact membership total');
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_quantity=theoretical_quantity),2,'all Draft proposals equal theory without claiming approval');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions where confirmed_quantity=theoretical_quantity),2,'representable Draft proposals equal theory without claiming approval');
 select is((select count(*)::integer from atlas_planning.confirmed_need_approval_snapshots),0,'materialization creates no approval snapshot');
 select is((select count(*)::integer from atlas_planning.purchase_handoff_batches),0,'materialization creates no Purchase Handoff');
 

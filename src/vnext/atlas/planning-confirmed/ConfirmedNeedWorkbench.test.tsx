@@ -36,8 +36,12 @@ function show(
     ConfirmedNeedWorkbenchProps,
     "onExportShoppingList" | "onImportShoppingList"
   > = {},
+  prepare?: (
+    fixture: ReturnType<typeof createConfirmedNeedReviewFixture>,
+  ) => void,
 ) {
   const f = createConfirmedNeedReviewFixture(scenario);
+  prepare?.(f);
   const navigate = vi.fn();
   const detail = vi.spyOn(f.needGenerationApi, "getWorkbench");
   const save = vi.spyOn(f.confirmedNeedApi, "save");
@@ -121,6 +125,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     const h = show();
     await quantity();
     h.f.batch.lines[0]!.confirmed_quantity_after = "99999999999999.980000";
+    h.f.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
     fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
     await waitFor(() =>
       expect(
@@ -195,11 +200,48 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Xác nhận nhu cầu",
     );
-    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(7);
     expect(document.body.textContent).not.toMatch(
       /batch-current|line-0|revision-0|decision-0|DRAFT_REVIEW/,
     );
     expect(screen.getByText(/6 dòng/)).toBeVisible();
+  });
+  it("shows raw requirement, operational proposal, confirmation, and exact step as distinct meanings", async () => {
+    show("needs_review", {}, (fixture) => {
+      Object.assign(fixture.batch.lines[0]!, {
+        theoretical_quantity: "0.025500",
+        proposed_confirmed_quantity: "0.030000",
+      });
+      fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
+    });
+    const input = await quantity();
+    const row = input.closest("tr")!;
+    expect(
+      screen.getByRole("columnheader", { name: "Nhu cầu tính" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("columnheader", { name: "Đề xuất vận hành" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("columnheader", { name: "Số lượng xác nhận" }),
+    ).toBeVisible();
+    expect(
+      row.querySelector('[data-field="raw-requirement"]'),
+    ).toHaveTextContent("0,0255");
+    expect(
+      row.querySelector('[data-field="operational-proposal"]'),
+    ).toHaveTextContent("0,03");
+    expect(row).toHaveTextContent("Bước lượng: 0,01 kg");
+    expect(input).toHaveValue("0,03");
+  });
+  it("does not classify a fresh six-place proposal as historical", async () => {
+    show("needs_review", {}, (fixture) => {
+      fixture.batch.lines[0]!.proposed_confirmed_quantity = "10.123456";
+      fixture.batch.lines[0]!.effective_policy!.planning_step = "0.000001";
+    });
+    expect(await quantity()).toHaveValue("10,123456");
+    expect(await quantity()).not.toHaveAttribute("readonly");
+    expect(await quantity()).toBeEnabled();
   });
   it("links invalid quantity to its error and disables Save/Continue", async () => {
     show();
@@ -208,7 +250,7 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(
       document.getElementById(input.getAttribute("aria-describedby")!),
-    ).toHaveTextContent("2 chữ số thập phân");
+    ).toHaveTextContent("bước 0,25 kg");
     expect(screen.getByRole("button", { name: "Lưu" })).toBeDisabled();
     expect(
       screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),

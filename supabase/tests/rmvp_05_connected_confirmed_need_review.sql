@@ -405,6 +405,33 @@ select ok(
   'RMVP05-10 real RMVP-04 release captures both lines'
 );
 
+-- CMD-15 now requires an exact effective policy. Seed it only for
+-- materialization, then remove it so the existing read-level missing-policy
+-- blocker remains independently covered below.
+set local session_replication_role = replica;
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id, unit_id, created_by_actor_id
+) values (
+  'f5600000-0000-0000-0000-000000000004',
+  'f5100000-0000-0000-0000-000000000005',
+  'f5000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
+  revision_number, planning_step, effective_from, policy_revision_status,
+  created_by_actor_id, created_at, approved_by_actor_id, approved_at,
+  activated_by_actor_id, activated_at
+) values (
+  'f5600000-0000-0000-0000-000000000005',
+  'f5600000-0000-0000-0000-000000000004',
+  'f5100000-0000-0000-0000-000000000005',
+  1, 0.25, '2026-01-01', 'ACTIVE',
+  'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:00:00+07',
+  'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:01:00+07',
+  'f5000000-0000-0000-0000-000000000001', '2026-01-01 08:02:00+07'
+);
+set local session_replication_role = origin;
+
 set local role authenticated;
 insert into rmvp05_responses
 select 'materialize', atlas_api.create_confirmed_needs_from_generation(pg_temp.rmvp05_cmd15((response->'affected_aggregate_ids'->>'need_generation_run_id')::uuid))
@@ -420,6 +447,13 @@ select ok(
   and (select count(*) from atlas_planning.confirmed_need_lines where confirmed_need_batch_id = (select batch_id from rmvp05_context)) = 2,
   'RMVP05-11 real CMD-15 materializes the two-line batch'
 );
+
+set local session_replication_role = replica;
+delete from atlas_planning.planning_quantity_policy_revisions
+where planning_quantity_policy_revision_id = 'f5600000-0000-0000-0000-000000000005';
+delete from atlas_planning.planning_quantity_policies
+where planning_quantity_policy_id = 'f5600000-0000-0000-0000-000000000004';
+set local session_replication_role = origin;
 
 set local role authenticated;
 insert into rmvp05_responses select 'read-missing-policy', atlas_api.get_confirmed_need_review(pg_temp.rmvp05_read((select batch_id from rmvp05_context)));

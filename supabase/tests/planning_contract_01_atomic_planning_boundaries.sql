@@ -597,6 +597,36 @@ values ('e4400000-0000-0000-0000-000000000011', 'e4400000-0000-0000-0000-0000000
 
 set local session_replication_role = origin;
 set constraints all immediate;
+
+-- The materialization boundary resolves one exact Unit/service-date policy.
+-- The same policy remains the PLANNING-CONTRACT-02B continuity fixture below.
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id, unit_id, created_by_actor_id
+) values (
+  'e4810000-0000-0000-0000-000000000001',
+  'e4100000-0000-0000-0000-000000000006',
+  'e4000000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
+  revision_number, predecessor_policy_revision_id, planning_step,
+  effective_from, policy_revision_status, created_by_actor_id, created_at
+) values (
+  'e4810000-0000-0000-0000-000000000002',
+  'e4810000-0000-0000-0000-000000000001',
+  'e4100000-0000-0000-0000-000000000006',
+  1, null, 0.500000, '2026-01-01', 'DRAFT',
+  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
+);
+update atlas_planning.planning_quantity_policy_revisions
+set policy_revision_status='ACTIVE',
+    approved_by_actor_id='e4000000-0000-0000-0000-000000000001',
+    approved_at=transaction_timestamp(),
+    activated_by_actor_id='e4000000-0000-0000-0000-000000000001',
+    activated_at=transaction_timestamp()
+where planning_quantity_policy_revision_id=
+  'e4810000-0000-0000-0000-000000000002';
+
 set constraints all deferred;
 
 
@@ -737,36 +767,9 @@ from pct01_requests where request_name='execute-initial';
 reset role;
 select is((select response->>'error_code' from pct01_responses where response_name='execute-conflict'),'IDEMPOTENCY_CONFLICT','PCT01-40 changed command reuse is rejected');
 
--- PLANNING-CONTRACT-02B integration setup: bind all current lines to one exact
--- policy, save one adjusted and one accepted human decision, then let the real
--- public correction below decide continuity from aggregate business facts.
-insert into atlas_planning.planning_quantity_policies (
-  planning_quantity_policy_id, unit_id, created_by_actor_id
-) values (
-  'e4810000-0000-0000-0000-000000000001',
-  'e4100000-0000-0000-0000-000000000006',
-  'e4000000-0000-0000-0000-000000000001'
-);
-insert into atlas_planning.planning_quantity_policy_revisions (
-  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
-  revision_number, predecessor_policy_revision_id, planning_step,
-  effective_from, policy_revision_status, created_by_actor_id, created_at
-) values (
-  'e4810000-0000-0000-0000-000000000002',
-  'e4810000-0000-0000-0000-000000000001',
-  'e4100000-0000-0000-0000-000000000006',
-  1, null, 0.500000, '2026-01-01', 'DRAFT',
-  'e4000000-0000-0000-0000-000000000001', transaction_timestamp()
-);
-update atlas_planning.planning_quantity_policy_revisions
-set policy_revision_status='ACTIVE',
-    approved_by_actor_id='e4000000-0000-0000-0000-000000000001',
-    approved_at=transaction_timestamp(),
-    activated_by_actor_id='e4000000-0000-0000-0000-000000000001',
-    activated_at=transaction_timestamp()
-where planning_quantity_policy_revision_id=
-  'e4810000-0000-0000-0000-000000000002';
-
+-- PLANNING-CONTRACT-02B integration setup: save one adjusted and one accepted
+-- human decision, then let the real public correction below decide continuity
+-- from aggregate business facts.
 insert into atlas_core.role_capabilities (role_id, capability_id)
 select 'e4000000-0000-0000-0000-000000000020', capability.capability_id
 from atlas_core.capabilities capability

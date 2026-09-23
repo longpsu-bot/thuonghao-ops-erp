@@ -40,15 +40,15 @@ The approved direction is that Planning owns the reviewed operational need, Proc
 
 The following separation is approved. Values labeled **pending** are not approved merely because OPS uses them today.
 
-| Concept                        | Meaning                                                        | Contract direction                                                                              | Approval state                                                |
-| ------------------------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `calculation_precision`        | Precision retained while deriving quantities and entitlements  | PostgreSQL high-precision `numeric`; do not truncate to display scale during calculation        | Approved direction                                            |
-| `comparison_epsilon`           | Technical tolerance for legacy floating-point comparisons      | OPS evidence is `0.000001`; future tick equality should be exact                                | Approved distinction; future use pending                      |
-| `ratio_precision`              | Precision of a derived supplier share                          | Up to six decimals when useful; ratios never author supplier quantities                         | Approved direction                                            |
-| `planning_operational_step` | Smallest meaningful Planning confirmation increment for a unit | `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed indivisible/count Unit, and no fallback | Approved in H1A |
-| `purchase_order_step`          | Smallest purchasable increment                                 | Ingredient/supplier policy; current OPS data uses `0.1 kg` and `1` for current count-like units | Upward-only direction approved; exact fallback policy pending |
-| `persisted_quantity_precision` | Exact operational value stored                                 | Persist integer ticks plus step/rule identity, or an exactly equivalent decimal representation  | Recommended; physical design pending                          |
-| `display_precision`            | Digits required to show the entire operational value           | Derived from the applicable step; raw calculation may appear in secondary details               | Approved direction                                            |
+| Concept                        | Meaning                                                        | Contract direction                                                                                              | Approval state                                                |
+| ------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `calculation_precision`        | Precision retained while deriving quantities and entitlements  | PostgreSQL high-precision `numeric`; do not truncate to display scale during calculation                        | Approved direction                                            |
+| `comparison_epsilon`           | Technical tolerance for legacy floating-point comparisons      | OPS evidence is `0.000001`; future tick equality should be exact                                                | Approved distinction; future use pending                      |
+| `ratio_precision`              | Precision of a derived supplier share                          | Up to six decimals when useful; ratios never author supplier quantities                                         | Approved direction                                            |
+| `planning_operational_step`    | Smallest meaningful Planning confirmation increment for a unit | `0.01 kg` for the exact kilogram Unit, `1` for each explicitly governed indivisible/count Unit, and no fallback | Approved in H1A                                               |
+| `purchase_order_step`          | Smallest purchasable increment                                 | Ingredient/supplier policy; current OPS data uses `0.1 kg` and `1` for current count-like units                 | Upward-only direction approved; exact fallback policy pending |
+| `persisted_quantity_precision` | Exact operational value stored                                 | Persist integer ticks plus step/rule identity, or an exactly equivalent decimal representation                  | Recommended; physical design pending                          |
+| `display_precision`            | Digits required to show the entire operational value           | Derived from the applicable step; raw calculation may appear in secondary details                               | Approved direction                                            |
 
 Retool's six-decimal convention primarily supports floating-point comparison, proportional arithmetic and deterministic residual handling. It is not an approved six-decimal operational quantity rule for Atlas.
 
@@ -209,6 +209,23 @@ The two schema families must remain distinct: public objects use `service_date +
 11. Detail replacement is destructive and its optimistic success state is not an authorized readback.
 
 Legacy `theoretical_orderable_qty` can return below the source need. Examples: `2.01` at step `0.1` becomes `2`; `2.01` at step `0.25` becomes `2`; and `10.05` at steps `0.1` or `0.25` becomes `10`. More generally, after step ceiling, any result at or above `2` is rounded to a whole number and can move downward. This threshold must not survive by accident.
+
+### 6.1 D-046 Planning proposal amendment
+
+[D-046](../decisions/decision-planning-operational-proposal.md) approves the
+bounded Planning derivation that this contract previously left implicit. The
+raw Calculated Requirement remains exact. After all released contributions are
+aggregated to one Confirmed Need operational identity, PostgreSQL derives the
+non-authoritative Planning operational proposal as
+`ceil(raw_total / planning_step) * planning_step` using the one exact effective
+Unit/service-date H1A policy. This is Planning policy, not a Procurement purchase
+step, and it does not reproduce the legacy second-stage whole-number rule.
+
+The later human-confirmation boundary remains different: operator input must
+already be an exact whole number of Planning ticks and is rejected without a
+replacement value otherwise. System proposal derivation therefore does not
+authorize invisible normalization of human input and creates no human adjustment
+evidence.
 
 ## 7. Recommended operational quantization model
 

@@ -198,7 +198,7 @@ The command:
 - when an old group remains nonempty after matched moves, creates its required successor revision from the remaining complete active membership;
 - permits genuinely new same-Ingredient contributions to join the matching retained or new group;
 - rejects any empty old group not explained entirely by accepted direct one-to-one Ingredient moves as `SOURCE_REMOVAL_POLICY_REQUIRED`;
-- sets each new proposal to the new exact theoretical total, never carrying a prior proposal or confirmed value automatically;
+- preserves each new exact theoretical total as source truth and, under D-046, derives the new Draft proposal after aggregation as `ceil(theoretical_total / planning_step) * planning_step` from exactly one effective Unit/service-date Planning policy, never carrying a prior proposal or confirmed value automatically;
 - advances the controlled-current source and increments the batch version exactly once; and
 - completes one receipt, one `ConfirmedNeedsRematerialized` event, and one audit event.
 
@@ -252,14 +252,14 @@ After revoke-first hardening, `authenticated` may execute only the implemented C
 
 ## 12. Limits, locks, and retry
 
-| Limit | Value |
-|---|---:|
-| Inclusive run period | 14 days |
-| Distinct Schools | 500 |
-| Active release members | 25,000 |
-| Operational groups | 15,000 |
-| `lock_timeout` | 5 seconds |
-| `statement_timeout` | 120 seconds |
+| Limit                  |       Value |
+| ---------------------- | ----------: |
+| Inclusive run period   |     14 days |
+| Distinct Schools       |         500 |
+| Active release members |      25,000 |
+| Operational groups     |      15,000 |
+| `lock_timeout`         |   5 seconds |
+| `statement_timeout`    | 120 seconds |
 
 Business-size limits are checked before domain mutation and return `MATERIALIZATION_LIMIT_EXCEEDED`.
 

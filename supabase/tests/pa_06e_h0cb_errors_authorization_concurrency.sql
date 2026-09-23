@@ -21,6 +21,24 @@ insert into atlas_admin.schools (school_id,customer_id,school_code,school_name,s
 insert into atlas_admin.units (unit_id,unit_code,unit_name,dimension_code) values
  ('cb300000-0000-0000-0000-000000000014','h0cb-error-kg','H0Cb kg','mass'),
  ('cb300000-0000-0000-0000-000000000024','h0cb-error-g','H0Cb gram','mass');
+insert into atlas_planning.planning_quantity_policies (
+ planning_quantity_policy_id,unit_id,created_by_actor_id
+) values (
+ 'cb300000-0000-0000-0000-000000000025','cb300000-0000-0000-0000-000000000014',
+ 'cb300000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+ planning_quantity_policy_revision_id,planning_quantity_policy_id,unit_id,
+ revision_number,planning_step,effective_from,policy_revision_status,
+ created_by_actor_id,created_at,approved_by_actor_id,approved_at,
+ activated_by_actor_id,activated_at
+) values (
+ 'cb300000-0000-0000-0000-000000000026','cb300000-0000-0000-0000-000000000025',
+ 'cb300000-0000-0000-0000-000000000014',1,0.01,date '2026-01-01','ACTIVE',
+ 'cb300000-0000-0000-0000-000000000001',transaction_timestamp(),
+ 'cb300000-0000-0000-0000-000000000001',transaction_timestamp(),
+ 'cb300000-0000-0000-0000-000000000001',transaction_timestamp()
+);
 insert into atlas_admin.ingredients (ingredient_id,ingredient_code,ingredient_name)
 values ('cb300000-0000-0000-0000-000000000015','h0cb-error-rice','H0Cb rice');
 
@@ -333,8 +351,9 @@ select is((select count(*)::integer from (values
  ('SOURCE_SUCCESSOR_AMBIGUOUS'),('OPERATIONAL_IDENTITY_UNAPPROVED'),('CONTRIBUTION_MEMBERSHIP_INVALID'),
  ('CONTRIBUTION_TOTAL_MISMATCH'),('EMPTY_ACTIVE_RELEASE'),('ZERO_ACTIVE_CONTRIBUTION_POLICY_REQUIRED'),
  ('SOURCE_REMOVAL_POLICY_REQUIRED'),('SOURCE_SPLIT_MERGE_POLICY_REQUIRED'),('REOPEN_REQUIRED'),
- ('DOWNSTREAM_CORRECTION_REQUIRED'),('MATERIALIZATION_LIMIT_EXCEEDED')) required(code)
- where pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%'||code||'%'),15,'all fifteen H0C-specific safe codes are reachable');
+ ('DOWNSTREAM_CORRECTION_REQUIRED'),('MATERIALIZATION_LIMIT_EXCEEDED'),
+ ('MISSING_PLANNING_QUANTITY_POLICY'),('AMBIGUOUS_PLANNING_QUANTITY_POLICY')) required(code)
+ where pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like '%'||code||'%'),17,'all seventeen H0C-specific safe codes are reachable');
 select ok((select pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure) like all(array['%unit_id <> old_contribution.source_unit_id%','%PANTRY_DIRECT%','%theoretical.delivery_location_id%'])),'Unit conversion remains rejected while Pantry uses its immutable theoretical destination');
 select ok(exists(select 1 from pg_constraint where conrelid='atlas_planning.confirmed_need_line_revision_contributions'::regclass and conname='confirmed_need_line_revision_contributions_unit_check'),'membership enforces source Unit equals controlled Unit');
 select isnt(has_column_privilege('atlas_planning_materialization_runtime','atlas_planning.confirmed_need_line_revision_contributions','controlled_unit_id','UPDATE'),true,'runtime cannot rewrite controlled contribution Unit');

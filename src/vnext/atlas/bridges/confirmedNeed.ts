@@ -35,6 +35,7 @@ export {
   normalizeConfirmedNeedQuantity,
   normalizeConfirmedNeedEntry,
   confirmedNeedInputDisplay,
+  confirmedNeedQuantityMatchesStep,
   subtractExactDecimals,
   confirmedNeedWorkbenchFromResult,
   confirmedNeedReadbackFromResult,

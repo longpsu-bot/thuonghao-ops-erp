@@ -2,7 +2,14 @@
 
 ## Shopping List round-trip precision correction — AUD-003 (17/09/2026)
 
-After workbook identity/version validation, the importer compares the visible and exported quantities as exact up-to-six-decimal representations. Unchanged source quantities preserve the current local draft and its `quantity_entered` flag; a note-only change is not a quantity entry. A real quantity edit still requires the existing two-decimal operator-entry validation and a reason note. Invalid quantity metadata is rejected. The workbook baseline is change-detection evidence, never authority to replace a draft with a six-decimal value supplied by the file.
+After workbook identity/version validation, the importer compares the visible
+and exported quantities as exact up-to-six-decimal representations. Unchanged
+source quantities preserve the current local draft and its `quantity_entered`
+flag; a note-only change is not a quantity entry. A real quantity edit must be
+an exact whole number of the line's effective Planning step and still requires
+the applicable reason note. Invalid quantity metadata is rejected. The workbook
+baseline is change-detection evidence, never authority to replace a draft with
+a value supplied by the file.
 
 Quantity cells display up to six fractional digits (`0.######`) without rounding the stored value. The existing document layout, hidden identities, marker, local-only import boundary, backend Preview/Save contracts and policy rules are unchanged. Reimporting an untouched older workbook does not report a phantom quantity change when the current local quantity is preserved.
 
@@ -117,7 +124,15 @@ Representability is exact:
 confirmed quantity = whole planning tick count × exact Planning step
 ```
 
-There is no rounding, ceiling, truncation, epsilon comparison, or JavaScript numeric calculation.
+Per [D-046](../decisions/decision-planning-operational-proposal.md), the
+materialized proposal was already derived from the exact grouped raw requirement
+with PostgreSQL `ceil(total / planning_step) * planning_step`. That system
+derivation is not a human adjustment.
+
+At this human preview/confirmation boundary there is no rounding, ceiling,
+truncation, epsilon comparison, or JavaScript numeric calculation. Invalid
+operator input returns `QUANTITY_NOT_REPRESENTABLE` without a replacement
+quantity.
 
 ### 4.2 Decision semantics
 

@@ -370,6 +370,20 @@ function decimalParts(value: string) {
   return BigInt(`${integer}${fraction.padEnd(6, "0")}`);
 }
 
+export function confirmedNeedQuantityMatchesStep(
+  quantity: string,
+  planningStep: string,
+) {
+  const quantityValue = decimalParts(quantity);
+  const stepValue = decimalParts(planningStep);
+  return (
+    quantityValue !== null &&
+    stepValue !== null &&
+    stepValue > 0n &&
+    quantityValue % stepValue === 0n
+  );
+}
+
 export function subtractExactDecimals(left: string, right: string) {
   const leftValue = decimalParts(left);
   const rightValue = decimalParts(right);

@@ -97,11 +97,36 @@ function isoDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
-function incrementMicro(quantity) {
-  const [whole, fraction = ""] = quantity.split(".");
-  const scaled =
-    BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0").slice(0, 6));
-  const next = scaled + 1n;
+function scaledQuantity(quantity) {
+  if (typeof quantity !== "string") return null;
+  const match = /^(\d+)(?:\.(\d+))?$/.exec(quantity);
+  if (!match || (match[2]?.length ?? 0) > 6) return null;
+  return (
+    BigInt(match[1]) * 1_000_000n + BigInt((match[2] ?? "").padEnd(6, "0"))
+  );
+}
+
+function policyDerivedProposal(theoretical, proposal, planningStep) {
+  const raw = scaledQuantity(theoretical);
+  const proposed = scaledQuantity(proposal);
+  const step = scaledQuantity(planningStep);
+  return (
+    raw !== null &&
+    proposed !== null &&
+    step !== null &&
+    step > 0n &&
+    proposed === ((raw + step - 1n) / step) * step
+  );
+}
+
+function incrementByPlanningStep(quantity, planningStep) {
+  const current = scaledQuantity(quantity);
+  const step = scaledQuantity(planningStep);
+  assert(
+    current !== null && step !== null && step > 0n,
+    "RMVP-05 cannot construct an exact one-step adjustment.",
+  );
+  const next = current + step;
   return `${next / 1_000_000n}.${String(next % 1_000_000n).padStart(6, "0")}`;
 }
 
@@ -208,9 +233,13 @@ async function main() {
         (line) =>
           typeof line.theoretical_quantity === "string" &&
           typeof line.proposed_confirmed_quantity === "string" &&
-          line.effective_policy?.planning_step === "0.000001",
+          policyDerivedProposal(
+            line.theoretical_quantity,
+            line.proposed_confirmed_quantity,
+            line.effective_policy?.planning_step,
+          ),
       ),
-    "RMVP-05 shaped read did not expose exact reviewable proposals and policies.",
+    "RMVP-05 shaped read did not expose exact policy-derived reviewable proposals.",
   );
 
   const selected = initial.workbench.lines.slice(0, 2);
@@ -223,9 +252,12 @@ async function main() {
     ),
     draftLine(
       selected[1],
-      incrementMicro(selected[1].proposed_confirmed_quantity),
-      "PLANNING_STEP_ADJUSTMENT",
-      null,
+      incrementByPlanningStep(
+        selected[1].proposed_confirmed_quantity,
+        selected[1].effective_policy.planning_step,
+      ),
+      "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      "GitHub-only exact one-step operational adjustment",
     ),
   ];
   const preview = await invokeSuccess(

@@ -28,6 +28,18 @@ test("closeout preparation schedules no rollback generation benchmark", () => {
   assert.doesNotMatch(source, /atlas_api\.execute_need_generation/);
 });
 
+test("browser adjustment starts from the system operational proposal", () => {
+  const source = readFileSync(
+    resolve(process.cwd(), "scripts/staging-planning-browser.mjs"),
+    "utf8",
+  );
+  assert.match(source, /nextCent\(line\.proposed_confirmed_quantity\)/);
+  assert.doesNotMatch(
+    source,
+    /line\.confirmed_quantity_after \?\? line\.proposed_confirmed_quantity/,
+  );
+});
+
 test("closeout workflow never installs or replays quantity policies", () => {
   const workflow = readFileSync(
     resolve(
@@ -631,7 +643,15 @@ function freshConfirmedNeedLine(index) {
     current_decision_kind: null,
     confirmed_quantity_after: null,
     confirmation_state: "NEW",
-    effective_policy: null,
+    effective_policy: {
+      root_id: "policy-kg",
+      revision_id: "policy-kg-1",
+      revision_number: 1,
+      planning_step: "0.010000",
+      status: "ACTIVE",
+      effective_from: "2026-01-01",
+      effective_to: null,
+    },
     source_membership_count: 1,
     source_stale: false,
     blockers: [],
@@ -685,6 +705,22 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
   assert.equal(state.rendered_rows, 3);
   assert.equal(state.quantity_delta_rows, 3);
   assert.equal(state.quantity_adjustment_rows, 1);
+  const candidate = await browserEvaluate(
+    planningBrowser.editableConfirmedNeedCandidateExpression(),
+  );
+  assert.deepEqual(candidate, {
+    index: 0,
+    ingredient: "Ingredient 0",
+    recipient: "School 0 · Location 0",
+  });
+  const row =
+    'section[aria-label="Xác nhận nhu cầu"] table[aria-label="Nhu cầu xác nhận"] tbody tr:nth-child(1)';
+  assert.equal(
+    await browserEvaluate(
+      planningBrowser.quantityEditSettledExpression(row, "1.01"),
+    ),
+    true,
+  );
   assert.doesNotThrow(() =>
     planningBrowser.assertPreSaveGate({
       ...state,
@@ -800,9 +836,9 @@ test("pre-Save waits for quantity, reason, note, and Save eligibility to settle"
   const rows = Array.from(
     { length: 248 },
     (_, index) => `<tr>
-    <td>Ingredient ${index}</td><td>kg</td><td>1</td>
-    <td><input aria-label="Số lượng xác nhận ${index}" value="1"></td>
-    <td class="delta">${index === 0 ? "—" : "0"}</td>
+    <td data-field="identity">Ingredient ${index}</td><td data-field="unit">kg</td><td data-field="raw-requirement">1</td>
+    <td data-field="operational-proposal">1</td><td data-field="confirmation"><input aria-label="Số lượng xác nhận ${index}" value="1"></td>
+    <td data-field="delta" class="delta">${index === 0 ? "—" : "0"}</td>
     <td><select aria-label="Lý do ${index}">
       <option value="PROPOSAL_ACCEPTED">Accepted</option>
       <option value="OPERATIONAL_QUANTITY_ADJUSTMENT">Adjusted</option>

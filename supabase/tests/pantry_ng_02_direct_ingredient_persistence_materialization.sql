@@ -325,6 +325,33 @@ insert into atlas_planning.need_generation_release_snapshot_lines(need_generatio
 
 set local session_replication_role = origin;
 
+insert into atlas_planning.planning_quantity_policies (
+  planning_quantity_policy_id, unit_id, created_by_actor_id
+) values (
+  'd0210000-0000-0000-0000-000000000020',
+  'd0210000-0000-0000-0000-000000000015',
+  'd0210000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+  planning_quantity_policy_revision_id, planning_quantity_policy_id, unit_id,
+  revision_number, predecessor_policy_revision_id, planning_step,
+  effective_from, policy_revision_status, created_by_actor_id, created_at
+) values (
+  'd0210000-0000-0000-0000-000000000021',
+  'd0210000-0000-0000-0000-000000000020',
+  'd0210000-0000-0000-0000-000000000015',
+  1, null, 0.010000, '2026-01-01', 'DRAFT',
+  'd0210000-0000-0000-0000-000000000001', transaction_timestamp()
+);
+update atlas_planning.planning_quantity_policy_revisions
+set policy_revision_status = 'ACTIVE',
+    approved_by_actor_id = 'd0210000-0000-0000-0000-000000000001',
+    approved_at = transaction_timestamp(),
+    activated_by_actor_id = 'd0210000-0000-0000-0000-000000000001',
+    activated_at = transaction_timestamp()
+where planning_quantity_policy_revision_id =
+  'd0210000-0000-0000-0000-000000000021';
+
 create temporary table png02_mixed_result(response_payload jsonb not null);
 grant select,insert on png02_mixed_result to authenticated;
 create function pg_temp.png02_mixed_request()

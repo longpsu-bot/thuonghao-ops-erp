@@ -29,6 +29,24 @@ insert into atlas_admin.schools (school_id,customer_id,school_code,school_name,s
 values ('cb200000-0000-0000-0000-000000000013','cb200000-0000-0000-0000-000000000010','h0cb-correction-school','H0Cb correction school','cb200000-0000-0000-0000-000000000012','cb200000-0000-0000-0000-000000000011');
 insert into atlas_admin.units (unit_id,unit_code,unit_name,dimension_code)
 values ('cb200000-0000-0000-0000-000000000014','h0cb-correction-kg','H0Cb kilogram','mass');
+insert into atlas_planning.planning_quantity_policies (
+ planning_quantity_policy_id,unit_id,created_by_actor_id
+) values (
+ 'cb200000-0000-0000-0000-000000000020','cb200000-0000-0000-0000-000000000014',
+ 'cb200000-0000-0000-0000-000000000001'
+);
+insert into atlas_planning.planning_quantity_policy_revisions (
+ planning_quantity_policy_revision_id,planning_quantity_policy_id,unit_id,
+ revision_number,planning_step,effective_from,policy_revision_status,
+ created_by_actor_id,created_at,approved_by_actor_id,approved_at,
+ activated_by_actor_id,activated_at
+) values (
+ 'cb200000-0000-0000-0000-000000000021','cb200000-0000-0000-0000-000000000020',
+ 'cb200000-0000-0000-0000-000000000014',1,0.01,date '2026-01-01','ACTIVE',
+ 'cb200000-0000-0000-0000-000000000001',transaction_timestamp(),
+ 'cb200000-0000-0000-0000-000000000001',transaction_timestamp(),
+ 'cb200000-0000-0000-0000-000000000001',transaction_timestamp()
+);
 insert into atlas_admin.ingredients (ingredient_id,ingredient_code,ingredient_name) values
  ('cb200000-0000-0000-0000-000000000015','h0cb-correction-rice','H0Cb rice'),
  ('cb200000-0000-0000-0000-000000000016','h0cb-correction-salt','H0Cb salt'),
@@ -255,7 +273,7 @@ select is((select count(distinct theoretical_need_line_id)::integer from atlas_p
 select is((select count(distinct need_generation_release_snapshot_line_id)::integer from atlas_planning.confirmed_need_line_revision_contributions where need_generation_run_id='cb200000-0000-0000-0000-000000000200'),6,'each new release member appears once');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions c join atlas_planning.confirmed_need_line_revisions r using(confirmed_need_line_revision_id) where r.is_current),6,'all current memberships attach to current revisions');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions r where r.is_current and r.theoretical_quantity=(select sum(c.controlled_contribution_quantity) from atlas_planning.confirmed_need_line_revision_contributions c where c.confirmed_need_line_revision_id=r.confirmed_need_line_revision_id)),5,'every current total equals complete membership');
-select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions r where r.is_current and r.confirmed_quantity=r.theoretical_quantity),5,'every new proposal equals theory');
+select is((select count(*)::integer from atlas_planning.confirmed_need_line_revisions r where r.is_current and r.confirmed_quantity=r.theoretical_quantity),5,'every representable new proposal equals theory');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions where theoretical_need_line_id='cb200000-0000-0000-0000-000000000402' and ingredient_id='cb200000-0000-0000-0000-000000000018'),1,'first one-to-one Ingredient move is explicit');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions where theoretical_need_line_id='cb200000-0000-0000-0000-000000000403' and ingredient_id='cb200000-0000-0000-0000-000000000019'),1,'emptying Ingredient move is explicit');
 select is((select count(*)::integer from atlas_planning.confirmed_need_line_revision_contributions where theoretical_need_line_id='cb200000-0000-0000-0000-000000000405' and ingredient_id='cb200000-0000-0000-0000-000000000015'),1,'new same-Ingredient contribution joins rice');

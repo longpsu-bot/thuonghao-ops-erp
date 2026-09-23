@@ -345,10 +345,26 @@ describe("Confirmed Need local draft and safety", () => {
           quantity_entered: true,
         }),
       );
-      expect(h.result.current.errors["line-0"]).toContain("2 chữ số");
+      expect(h.result.current.errors["line-0"]).toContain("bước 0,25 kg");
       expect(h.result.current.canSave).toBe(false);
     },
   );
+  it("enables Save for one exact step-0.01 operational adjustment", async () => {
+    const h = await ready();
+    h.fixture.batch.lines[0]!.effective_policy!.planning_step = "0.010000";
+    await act(() => h.result.current.recover());
+    act(() =>
+      h.result.current.edit("line-0", {
+        exact_quantity: "1.230000",
+        quantity_entered: true,
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: "Bếp yêu cầu",
+      }),
+    );
+    expect(h.result.current.dirty).toBe(true);
+    expect(h.result.current.errors).toEqual({});
+    expect(h.result.current.canSave).toBe(true);
+  });
   it("accepts proposed quantities for new lines using Save", async () => {
     const h = await ready("needs_review");
     expect(h.result.current.canSave).toBe(true);
