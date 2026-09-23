@@ -470,6 +470,16 @@ test("final retained proof requires one run, one batch, no handoff, and unchange
       /FINAL_PLANNING_CLOSEOUT_PROOF_FAILED/,
     );
   }
+  const policyDrift = structuredClone(state);
+  policyDrift.policies[0].planning_step = 2;
+  assert.throws(
+    () =>
+      closeoutVerifier.assertFinalPlanningCloseoutProof({
+        ...proof,
+        state: policyDrift,
+      }),
+    /FINAL_PLANNING_CLOSEOUT_PROOF_FAILED/,
+  );
   assert.throws(
     () =>
       closeoutVerifier.assertFinalPlanningCloseoutProof({

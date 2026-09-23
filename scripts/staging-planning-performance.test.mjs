@@ -235,25 +235,79 @@ test("performance classification does not inherit browser policy acceptance", as
   assert.equal(calls, 1);
 });
 
-test("performance certification rejects the saved browser checkpoint before any probe", async () => {
+test("performance certification preserves a saved browser checkpoint across every probe", async () => {
   const saved = pristineCheckpoint();
   saved.batches[0].version = 2;
   saved.batches[0].decision_count = 248;
   saved.batches[0].current_decision_count = 248;
+  saved.batches[0].adjustment_count = 1;
+  saved.batches[0].acceptance_count = 247;
   saved.save_receipt_count = 1;
   saved.preflight.current_need.confirmed_need_batch_version = 2;
-  let probes = 0;
-  await assert.rejects(
-    runPlanningPerformanceProbes({
-      readSnapshot: async () => saved,
-      runProbe: async () => {
-        probes += 1;
-      },
-    }),
-    /PLANNING_CLOSEOUT_BASELINE_REJECTED/,
+  let reads = 0;
+  const calls = [];
+  const result = await runPlanningPerformanceProbes({
+    readSnapshot: async () => {
+      reads += 1;
+      return structuredClone(saved);
+    },
+    runProbe: async (date) => {
+      calls.push(date);
+      return {
+        ...valid,
+        line_count:
+          PLANNING_PERFORMANCE_PROBES[calls.length - 1].expectedLineCount,
+      };
+    },
+  });
+  assert.deepEqual(result, {
+    status: "GENERATION_PERFORMANCE_PASS",
+    probes: 5,
+    checkpointPreserved: true,
+  });
+  assert.equal(reads, 6);
+  assert.deepEqual(
+    calls,
+    PLANNING_PERFORMANCE_PROBES.map(({ date }) => date),
   );
-  assert.equal(probes, 0);
 });
+
+for (const [label, contaminate] of [
+  [
+    "retained Need run overlapping a probe date",
+    (checkpoint) =>
+      checkpoint.runs.push({
+        id: "retained-probe-run",
+        period_start: "2026-09-14",
+        period_end: "2026-09-16",
+      }),
+  ],
+  [
+    "retained Confirmed Need batch on a probe date",
+    (checkpoint) =>
+      checkpoint.batches.push({
+        id: "retained-probe-batch",
+        period_start: "2026-09-18",
+        period_end: "2026-09-18",
+      }),
+  ],
+]) {
+  test(`performance certification rejects ${label} before probing`, async () => {
+    const checkpoint = pristineCheckpoint();
+    contaminate(checkpoint);
+    let probes = 0;
+    await assert.rejects(
+      runPlanningPerformanceProbes({
+        readSnapshot: async () => checkpoint,
+        runProbe: async () => {
+          probes += 1;
+        },
+      }),
+      /PERFORMANCE_PROBE_DATE_NOT_CLEAN/,
+    );
+    assert.equal(probes, 0);
+  });
+}
 
 test("every successful probe proves unchanged checkpoint", async () => {
   const baseline = pristineCheckpoint();

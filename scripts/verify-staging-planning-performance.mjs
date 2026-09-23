@@ -6,10 +6,7 @@ import {
   redactAtlasStagingDiagnostic,
 } from "./atlas-staging-contract.mjs";
 import { verifyPackageCheckout } from "./install-atlas-staging-package.mjs";
-import {
-  classifyPlanningCheckpoint,
-  planningCloseoutSnapshotSql,
-} from "./verify-staging-planning-closeout.mjs";
+import { planningCloseoutSnapshotSql } from "./verify-staging-planning-closeout.mjs";
 
 const SUBJECT = "a1010000-0000-4000-8000-000000000101";
 export const PLANNING_GENERATION_MAX_MS = 7000;
@@ -74,10 +71,36 @@ export function assertPlanningPerformanceCheckpoint(before, after) {
     throw new Error("PERFORMANCE_CHECKPOINT_CHANGED");
 }
 
+function periodContainsDate(item, date) {
+  return item.period_start <= date && item.period_end >= date;
+}
+
+export function assertPlanningPerformanceBaseline(snapshot) {
+  if (
+    !Array.isArray(snapshot?.runs) ||
+    !Array.isArray(snapshot?.batches) ||
+    [...snapshot.runs, ...snapshot.batches].some(
+      (item) =>
+        typeof item?.period_start !== "string" ||
+        typeof item?.period_end !== "string" ||
+        item.period_start > item.period_end,
+    )
+  )
+    throw new Error("PERFORMANCE_CHECKPOINT_INVALID");
+  const probeDates = new Set(
+    PLANNING_PERFORMANCE_PROBES.map(({ date }) => date),
+  );
+  if (
+    [...snapshot.runs, ...snapshot.batches].some((item) =>
+      [...probeDates].some((date) => periodContainsDate(item, date)),
+    )
+  )
+    throw new Error("PERFORMANCE_PROBE_DATE_NOT_CLEAN");
+}
+
 export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
   const before = await readSnapshot();
-  if (classifyPlanningCheckpoint(before).mode !== "PRISTINE_GENERATED_RESUME")
-    throw new Error("PERFORMANCE_RESUME_CHECKPOINT_REJECTED");
+  assertPlanningPerformanceBaseline(before);
   for (const { date, expectedLineCount } of PLANNING_PERFORMANCE_PROBES) {
     let row;
     let failure;
@@ -88,7 +111,6 @@ export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
     }
     const after = await readSnapshot();
     assertPlanningPerformanceCheckpoint(before, after);
-    classifyPlanningCheckpoint(after);
     if (failure)
       throw new Error("GENERATION_PERFORMANCE_BLOCKED", { cause: failure });
     console.log(JSON.stringify({ rollback_probe: row }));

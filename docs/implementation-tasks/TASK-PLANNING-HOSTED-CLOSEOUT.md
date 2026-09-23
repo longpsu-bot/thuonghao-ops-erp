@@ -394,9 +394,10 @@ questions:
   15/09, 16/09, and 18/09 probes. Each must finish below the strict 7000 ms
   engineering margin under the unchanged eight-second database timeout,
   reconcile its exact 232/232/225/213/210 Confirmed Need rows, pass current
-  authoritative review, and preserve the pristine 17/09 checkpoint after every
-  probe. This contract applies before the browser Save, while the retained
-  batch is version 1 with zero decisions and zero Save receipts.
+  authoritative review, and preserve the complete captured Staging checkpoint
+  after every probe. Before probing, the verifier rejects any retained Need run
+  or Confirmed Need batch overlapping 14/09, 15/09, 16/09, or 18/09. It does
+  not require the retained 17/09 batch to be pre-Save or post-Save.
   The observed status remains **BLOCKED** pending this separate protected run
   and backend performance investigation. No failed probe is retried.
 - `PLANNING_BROWSER_CLOSEOUT_CERTIFICATION`: read-only checkpoint and exact
@@ -412,22 +413,23 @@ questions:
 
 The earlier rollback-probe and two-browser-mode descriptions in the preceding
 section record the historical workflow. The split supersedes that coupling.
-The initial owner sequence is performance certification once, then browser
-closeout once. Both statuses must be **PASS** before overall Planning
-certification is complete. After browser Save, the retained batch is version
-2 with 248 first decisions and one Save receipt, so the current performance
-verifier rejects that checkpoint. If later backend optimization requires
-performance recertification after browser closeout, a separate task must
-approve a non-destructive checkpoint-preservation contract first; the current
-verifier cannot be rerun against the saved batch. The browser workflow remains
-read-only against Staging until its single explicit `save_confirmed_needs`
-browser command in the approved resume journey.
+Both statuses must be **PASS** before overall Planning certification is
+complete. Performance certification may run before browser Save against the
+pristine version-1 checkpoint, or after browser Save against the expected
+version-2 checkpoint with 248 decisions and one Save receipt. In either case,
+the verifier captures the complete checkpoint, runs only rollback probes on
+clean probe dates, and requires exact deep equality after every attempted
+probe. This permits a later performance rerun after backend optimization
+without altering or resetting the retained 17/09 state. The browser workflow
+remains read-only against Staging until its single explicit
+`save_confirmed_needs` browser command in the approved resume journey.
 
 The protected read-only policy snapshot includes the complete active COUNT
 Unit catalogue and active COUNT policy revisions, plus the approved Unit codes
 and kg. It rejects any extra active COUNT Unit or revision, wrong policy
-attribute, missing approved policy, or kg drift before Chrome Save. No policy
-data is installed or changed by this verification.
+attribute, missing approved policy, or kg drift before Chrome Save. Final
+closeout proof reasserts the same exact catalogue after Save and reopen. No
+policy data is installed or changed by this verification.
 
 Backend performance is a separate follow-up. Current function statistics
 point to repeated high fan-out validation in

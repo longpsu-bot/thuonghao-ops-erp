@@ -308,6 +308,7 @@ export function assertFinalPlanningCloseoutProof({
   const batch = state?.batches?.[0];
   if (
     baseline?.mode !== "PRISTINE_GENERATED_RESUME" ||
+    !planningCloseoutPoliciesAccepted(state?.policies) ||
     state?.runs?.length !== 1 ||
     state?.batches?.length !== 1 ||
     state?.handoffs !== 0 ||
