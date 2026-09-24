@@ -233,3 +233,23 @@ Safe failures report write certainty, whether the local Draft may be preserved, 
 The `RMVP-05.v1` public surface and request envelopes remain unchanged. Current line readback adds backend-owned `confirmation_state`: `CARRIED_FORWARD`, `CHANGED`, `NEW`, `UNREVIEWED`, or `CONFIRMED_CURRENT`. Counts preserve `total`, `unreviewed`, `confirmed`, and `adjusted` and add `carried_forward`, `needs_review`, `changed`, `new`, and `removed`; removed facts are not current lines. `removed` uses the same direct-predecessor business-identity absence definition as RMVP-04 `removed_count`, independently of decision-continuity evidence.
 
 A carried decision may bind an older human-authored revision only through exact immutable continuity evidence to the current direct successor revision. Preview/save therefore treats carried authority as current, while an untouched carried row is omitted from the Save selection and receives no new decision. If edited later, the ordinary command appends the next human decision to the existing chain. After a source invalidation, an unchanged proposal acceptance may keep a null note; a manual adjustment retains the existing reason/note requirements. An invalidated stable line uses its latest historical decision as the new human predecessor rather than restarting at decision `1`.
+
+## 9. D-047 correction readback boundary
+
+D-047 changes no RMVP-05 public signature or request envelope. A corrected
+Need successor rematerializes the existing batch through immutable revision
+lineage. Current revisions use the corrected Ingredient purchase Unit and carry
+the D-046 proposal-rounding step/version pair. Old pre-D-046 revisions remain
+queryable with their null pair and are never backfilled.
+
+No Confirmed Need decision is fabricated for a Unit-changing or group-merging
+identity, and no decision is carried merely because the numeric quantity is
+equal. The existing D-040 continuity contract remains the only carry authority
+and still requires its complete unchanged stable identity, proposal, and policy
+predicate. The bounded 17/09 correction therefore reaches a reviewable
+248-line DRAFT batch with zero decisions; the first Save records 248 explicit
+human decisions under the existing RMVP-05 semantics.
+
+Review continues to fail closed on stale bindings, Unit mismatch, invalid
+D-046 snapshots, missing/ambiguous H1A policy, or unauthorized state. It does
+not expose private adoption evidence or raw legacy source payloads.

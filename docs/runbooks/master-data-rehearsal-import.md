@@ -117,3 +117,31 @@ The old misspelled Hủ Unit is retained inactive only after current Ingredient 
 Rehearsal data remains separate from production acceptance. The future final v1 refresh must account for test-created approved Menu/Recipe commitments; the current import does not bypass those guards and does not merge PR #286.
 
 The hosted master-load target uses PostgreSQL wire transport because the full snapshot exceeds the Management API query-body limit. The workflow links only the protected Staging project using the existing database password, validates the saved project reference and session-pooler URL, and streams the unchanged package/SQL over stdin. It requires verified TLS and the pinned public Supabase CA. A transport failure during apply is an uncertain outcome: inspect the private import receipt before any further execution; never blindly replay a newly extracted snapshot to hide the failure. The raw source remains memory-only, is not a workflow artifact, and is never printed.
+
+## OPS-v1 Recipe Unit adoption evidence
+
+The normalized snapshot must continue to preserve each raw BoM
+`purchase_unit` as Recipe-line source evidence. Operational Recipe
+materialization resolves the same Ingredient's authoritative purchase Unit.
+When those Units differ, apply is allowed only when all typed mappings,
+completed import identity, source fingerprint, stable Recipe line, Ingredient,
+and positive unchanged quantity are present. The importer records private
+`OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION` evidence; it performs no conversion
+and does not replace the raw Unit fact. Missing provenance fails the private
+apply with `LEGACY_ADOPTION_LINEAGE_REQUIRED`; it is not downgraded to a
+warning or automatic Unit alias.
+
+Atlas does not persist the raw master snapshot payload. The private immutable
+line-level evidence relation is therefore required to retain later proof of
+the exact raw Unit and operational Unit. It is a generated supporting object,
+not a generic exception flag or a new business authority. Replaying the same
+snapshot must reconcile to the same mapping/evidence facts.
+
+Before any D-047 Staging deployment, run the repository read-only pre-deploy
+manifest and require exactly 76 eligible lines, 74 released versions, 322
+projected PRESENT successor rows, 76 corrected rows, 246 sibling copies, the
+four legacy Ingredient IDs `956`, `1012`, `1045`, `1057`, and exactly one
+excluded native `UIQ03A_SAVE` mismatch. After deployment, run the post-deploy
+manifest and require the identical authority represented by immutable
+successors and evidence. Drift blocks the sequence. Neither manifest authorizes
+or performs import, migration, correction, or other hosted mutation.

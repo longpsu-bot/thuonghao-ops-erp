@@ -51,10 +51,11 @@ values (
 );
 
 insert into atlas_admin.ingredients (
-  ingredient_id, ingredient_code, ingredient_name
+  ingredient_id, ingredient_code, ingredient_name, purchase_unit_id
 ) values (
   'b5100000-0000-0000-0000-000000000140',
-  'h0a5b-run-rice', 'H0A5b run rice'
+  'h0a5b-run-rice', 'H0A5b run rice',
+  'b5100000-0000-0000-0000-000000000130'
 );
 
 insert into atlas_admin.dishes (

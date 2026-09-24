@@ -6,6 +6,10 @@ import {
   redactAtlasStagingDiagnostic,
 } from "./atlas-staging-contract.mjs";
 import { verifyPackageCheckout } from "./install-atlas-staging-package.mjs";
+import {
+  classifyPlanningAdoptionManifest,
+  planningAdoptionPostDeployQuerySql,
+} from "./verify-staging-planning-adoption-manifest.mjs";
 
 const SUBJECT = "a1010000-0000-4000-8000-000000000101";
 const SYNTHETIC_ACTOR = "a1010000-0000-4000-8000-000000000001";
@@ -101,18 +105,16 @@ function preflightAccepted(preflight, currentness, runId, batchId) {
       : preflight.current_need == null)
   );
 }
-function generationReceiptAccepted(receipts, run, batch) {
-  const receipt = receipts?.[0];
+function generationReceiptAccepted(receipt, run, batch, batchVersion) {
   return (
-    receipts?.length === 1 &&
-    receipt.command_name === "execute_need_generation" &&
+    receipt?.command_name === "execute_need_generation" &&
     receipt.actor_id === SYNTHETIC_ACTOR &&
     receipt.outcome === "COMPLETED" &&
     receipt.success === true &&
     receipt.affected_aggregate_ids?.need_generation_run_id === run.id &&
     receipt.affected_aggregate_ids?.confirmed_need_batch_id === batch.id &&
     receipt.new_versions?.need_generation_run_version === 3 &&
-    receipt.new_versions?.confirmed_need_batch_version === 1
+    receipt.new_versions?.confirmed_need_batch_version === batchVersion
   );
 }
 
@@ -142,28 +144,38 @@ export function classifyPlanningCheckpoint(snapshot) {
     };
   }
   if (
-    snapshot.runs.length !== 1 ||
+    snapshot.runs.length !== 2 ||
     snapshot.batches.length !== 1 ||
-    snapshot.receipts.length !== 1
+    snapshot.receipts.length !== 2
   )
     fail();
-  const run = snapshot.runs[0];
+  const predecessor = snapshot.runs.find((run) => run.id === RETAINED_RUN);
+  const run = snapshot.runs.find((item) => item.id !== RETAINED_RUN);
   const batch = snapshot.batches[0];
   if (
+    !predecessor ||
+    !run ||
+    !exactDate(predecessor) ||
     !exactDate(run) ||
     !exactDate(batch) ||
-    run.id !== RETAINED_RUN ||
     batch.id !== RETAINED_BATCH ||
+    predecessor.status !== "INVALIDATED" ||
+    predecessor.version !== 4 ||
+    predecessor.generated_line_count !== 304 ||
+    predecessor.release_snapshot_line_count !== 304 ||
+    predecessor.actor_id !== SYNTHETIC_ACTOR ||
     run.status !== "RELEASED_FOR_CONFIRMATION" ||
     run.version !== 3 ||
+    run.predecessor_run_id !== predecessor.id ||
     run.generated_line_count !== 304 ||
+    run.release_snapshot_line_count !== 304 ||
     run.blocking_issue_count !== 0 ||
     run.warning_count !== 0 ||
     run.actor_id !== SYNTHETIC_ACTOR ||
     batch.status !== "DRAFT_REVIEW" ||
-    batch.version !== 1 ||
+    batch.version !== 2 ||
     batch.source_kind !== "NEED_GENERATION" ||
-    batch.origin_run_id !== run.id ||
+    batch.origin_run_id !== predecessor.id ||
     batch.current_run_id !== run.id ||
     batch.origin_run_version !== 3 ||
     batch.current_run_version !== 3 ||
@@ -173,14 +185,48 @@ export function classifyPlanningCheckpoint(snapshot) {
     batch.adjustment_count !== 0 ||
     batch.acceptance_count !== 0 ||
     !preflightAccepted(snapshot.preflight, "CURRENT", run.id, batch.id) ||
-    snapshot.preflight.current_need.confirmed_need_batch_version !== 1 ||
-    !generationReceiptAccepted(snapshot.receipts, run, batch)
+    snapshot.preflight.current_need.confirmed_need_batch_version !== 2 ||
+    !generationReceiptAccepted(
+      snapshot.receipts.find(
+        (receipt) =>
+          receipt.affected_aggregate_ids?.need_generation_run_id ===
+          predecessor.id,
+      ),
+      predecessor,
+      batch,
+      1,
+    ) ||
+    !generationReceiptAccepted(
+      snapshot.receipts.find(
+        (receipt) =>
+          receipt.affected_aggregate_ids?.need_generation_run_id === run.id,
+      ),
+      run,
+      batch,
+      2,
+    ) ||
+    snapshot.d046?.predecessor_release_contribution_count !== 304 ||
+    snapshot.d046?.successor_release_contribution_count !== 304 ||
+    snapshot.d046?.current_snapshot_pair_count !== 248 ||
+    snapshot.d046?.exact_proposal_count !== 248 ||
+    snapshot.d046?.invalid_proposal_count !== 0 ||
+    snapshot.d046?.retained_pre_d046_null_pair_count !== 248 ||
+    snapshot.d046?.allowed_unit_transition_count !== 1 ||
+    snapshot.d046?.invalid_unit_transition_count !== 0 ||
+    snapshot.d046?.current_raw_membership_count !== 304
   )
     fail();
+  try {
+    classifyPlanningAdoptionManifest(snapshot.adoption_manifest, "post-deploy");
+  } catch {
+    fail();
+  }
   return {
-    mode: "PRISTINE_GENERATED_RESUME",
-    runId: run.id,
+    mode: "D046_CORRECTED_RESUME",
+    predecessorRunId: predecessor.id,
+    currentRunId: run.id,
     batchId: batch.id,
+    currentLineCount: batch.line_count,
     fingerprints: snapshot.preflight.source_date_fingerprints.selected,
   };
 }
@@ -193,7 +239,7 @@ export function classifyPlanningCloseoutBaseline(snapshot) {
 
 function requireProtectedPlanningCloseoutBaseline(snapshot) {
   const baseline = classifyPlanningCloseoutBaseline(snapshot);
-  if (baseline.mode !== "PRISTINE_GENERATED_RESUME")
+  if (baseline.mode !== "D046_CORRECTED_RESUME")
     throw new Error("PLANNING_CLOSEOUT_RESUME_REQUIRED");
   return baseline;
 }
@@ -209,6 +255,7 @@ export function planningCloseoutSnapshotSql() {
   const approvedUnitCodes = [...APPROVED_COUNT_POLICIES.keys(), "kg"]
     .map((code) => `'${code}'`)
     .join(",");
+  const adoptionManifest = planningAdoptionPostDeployQuerySql();
   return `begin read only;
 with scoped_runs as (
   select * from atlas_planning.need_generation_runs
@@ -219,14 +266,70 @@ with scoped_runs as (
 ), preflight as (
   select atlas_core.planning_contract_01_preflight_payload(
     '2026-09-17'::date, '2026-09-17'::date, null) as payload
+), current_revisions as materialized (
+  select revision.*
+  from scoped_batches batch
+  join atlas_planning.confirmed_need_lines line
+    on line.confirmed_need_batch_id=batch.confirmed_need_batch_id
+  join atlas_planning.confirmed_need_line_revisions revision
+    on revision.confirmed_need_line_id=line.confirmed_need_line_id
+   and revision.is_current
+), current_contributions as materialized (
+  select contribution.*
+  from current_revisions revision
+  join atlas_planning.confirmed_need_line_revision_contributions contribution
+    on contribution.confirmed_need_line_revision_id=revision.confirmed_need_line_revision_id
+), adoption_run_transitions as materialized (
+  select predecessor.theoretical_need_line_id predecessor_line_id,
+         successor.theoretical_need_line_id successor_line_id,
+         predecessor.unit_id predecessor_unit_id,
+         successor.unit_id successor_unit_id
+  from scoped_batches batch
+  join atlas_planning.theoretical_need_lines predecessor
+    on predecessor.need_generation_run_id=batch.origin_need_generation_run_id
+  join atlas_planning.theoretical_need_lines successor
+    on successor.need_generation_run_id=batch.current_need_generation_run_id
+   and successor.predecessor_need_generation_run_id=predecessor.need_generation_run_id
+   and successor.predecessor_theoretical_need_line_id=predecessor.theoretical_need_line_id
+  where predecessor.line_disposition='ACTIVE'
+    and successor.line_disposition='ACTIVE'
+), retained_adoption_workload as materialized (
+  select theoretical.theoretical_need_line_id,
+         line_mapping.legacy_id legacy_recipe_line_id,
+         ingredient_mapping.legacy_id legacy_ingredient_id
+  from scoped_batches batch
+  join atlas_planning.theoretical_need_lines theoretical
+    on theoretical.need_generation_run_id=batch.current_need_generation_run_id
+   and theoretical.service_date='2026-09-17'
+   and theoretical.line_disposition='ACTIVE'
+  join atlas_legacy.recipe_unit_adoption_evidence evidence
+    on evidence.evidence_kind='OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION'
+   and evidence.source_system='OPS_V1'
+   and evidence.target_recipe_version_id=theoretical.recipe_version_id
+   and evidence.target_recipe_line_revision_id=theoretical.recipe_line_revision_id
+   and evidence.recipe_id=theoretical.recipe_id
+   and evidence.recipe_line_id=theoretical.recipe_line_id
+   and evidence.ingredient_id=theoretical.ingredient_id
+   and evidence.corrected_unit_id=theoretical.unit_id
+  join atlas_legacy.master_data_mappings line_mapping
+    on line_mapping.source_system='OPS_V1' and line_mapping.object_type='RECIPE_LINE'
+   and line_mapping.recipe_line_id=evidence.recipe_line_id
+  join atlas_legacy.master_data_mappings ingredient_mapping
+    on ingredient_mapping.source_system='OPS_V1' and ingredient_mapping.object_type='INGREDIENT'
+   and ingredient_mapping.ingredient_id=evidence.ingredient_id
 )
 select jsonb_build_object(
   'runs', (select coalesce(jsonb_agg(jsonb_build_object(
     'id', r.need_generation_run_id, 'period_start', r.period_start,
     'period_end', r.period_end, 'status', r.run_status, 'version', r.version,
+    'predecessor_run_id', r.predecessor_need_generation_run_id,
     'generated_line_count', r.generated_line_count,
+    'release_snapshot_line_count', (select count(*)::integer
+      from atlas_planning.need_generation_release_snapshot_lines release_line
+      where release_line.need_generation_run_id=r.need_generation_run_id),
     'blocking_issue_count', r.blocking_issue_count, 'warning_count', r.warning_count,
-    'actor_id', r.generated_by_actor_id)), '[]'::jsonb) from scoped_runs r),
+    'actor_id', r.generated_by_actor_id) order by r.attempt_ordinal), '[]'::jsonb)
+    from scoped_runs r),
   'batches', (select coalesce(jsonb_agg(jsonb_build_object(
     'id', b.confirmed_need_batch_id, 'period_start', b.period_start,
     'period_end', b.period_end, 'status', b.batch_status, 'version', b.version,
@@ -269,13 +372,43 @@ select jsonb_build_object(
     'downstream_currentness', p.payload->'downstream_currentness',
     'blocking_issue_count', p.payload->'blocking_issue_count',
     'current_need', p.payload->'current_need',
-    'source_date_fingerprints', p.payload->'source_date_fingerprints'
+    'source_date_fingerprints', p.payload->'source_date_fingerprints',
+    'outdated_reasons', case
+      when p.payload->>'downstream_currentness'='OUTDATED'
+       and p.payload#>'{source_date_fingerprints,selected}'=
+           p.payload#>'{source_date_fingerprints,current}'
+       and exists (
+         select 1
+         from atlas_planning.theoretical_need_lines theoretical
+         join atlas_legacy.recipe_unit_adoption_evidence evidence
+           on evidence.predecessor_recipe_version_id=theoretical.recipe_version_id
+          and evidence.predecessor_recipe_line_revision_id=theoretical.recipe_line_revision_id
+         join atlas_admin.recipe_versions successor_version
+           on successor_version.recipe_version_id=evidence.target_recipe_version_id
+          and successor_version.recipe_version_status='RELEASED_FOR_PLANNING'
+         where theoretical.need_generation_run_id='${RETAINED_RUN}'::uuid
+       )
+       and not exists (
+         select 1
+         from atlas_planning.theoretical_need_lines theoretical
+         join atlas_admin.recipe_versions successor_version
+           on successor_version.predecessor_recipe_version_id=theoretical.recipe_version_id
+          and successor_version.recipe_version_status='RELEASED_FOR_PLANNING'
+         where theoretical.need_generation_run_id='${RETAINED_RUN}'::uuid
+           and not exists (
+             select 1 from atlas_legacy.recipe_unit_adoption_evidence evidence
+             where evidence.predecessor_recipe_version_id=theoretical.recipe_version_id
+               and evidence.target_recipe_version_id=successor_version.recipe_version_id
+           )
+       )
+      then jsonb_build_array('RECIPE_SUCCESSOR_CHANGED') else '[]'::jsonb end
   ) from preflight p),
   'receipts', (select coalesce(jsonb_agg(jsonb_build_object(
-    'command_name', c.command_name, 'actor_id', c.actor_id,
+    'command_id', c.command_id, 'command_name', c.command_name, 'actor_id', c.actor_id,
     'outcome', c.outcome, 'success', c.response_payload->'success',
     'affected_aggregate_ids', c.response_payload->'affected_aggregate_ids',
-    'new_versions', c.response_payload->'new_versions')), '[]'::jsonb)
+    'new_versions', c.response_payload->'new_versions')
+    order by c.started_at,c.command_receipt_id), '[]'::jsonb)
     from atlas_core.command_receipts c where c.command_name='execute_need_generation'
       and (exists(select 1 from scoped_runs r where
         c.response_payload#>>'{affected_aggregate_ids,need_generation_run_id}'=r.need_generation_run_id::text)
@@ -284,7 +417,62 @@ select jsonb_build_object(
   'save_receipt_count', (select count(*) from atlas_core.command_receipts c
     where c.command_name='save_confirmed_needs' and exists(
       select 1 from scoped_batches b where
-        c.scope_key like '%:ConfirmedNeedBatch:' || b.confirmed_need_batch_id::text))
+        c.scope_key like '%:ConfirmedNeedBatch:' || b.confirmed_need_batch_id::text)),
+  'adoption_workload', jsonb_build_object(
+    'date','2026-09-17',
+    'adoption_occurrence_count',(select count(distinct theoretical_need_line_id)::integer from retained_adoption_workload),
+    'adoption_legacy_line_ids',(select coalesce(jsonb_agg(legacy_recipe_line_id order by legacy_recipe_line_id),'[]'::jsonb) from (select distinct legacy_recipe_line_id from retained_adoption_workload) ids),
+    'adoption_ingredient_ids',(select coalesce(jsonb_agg(legacy_ingredient_id order by legacy_ingredient_id),'[]'::jsonb) from (select distinct legacy_ingredient_id from retained_adoption_workload) ids)
+  ),
+  'd046', jsonb_build_object(
+    'predecessor_release_contribution_count', (select count(*)::integer
+      from atlas_planning.need_generation_release_snapshot_lines line
+      where line.need_generation_run_id='${RETAINED_RUN}'::uuid),
+    'successor_release_contribution_count', (select count(*)::integer
+      from atlas_planning.need_generation_release_snapshot_lines line
+      join scoped_runs run on run.need_generation_run_id=line.need_generation_run_id
+      where run.predecessor_need_generation_run_id='${RETAINED_RUN}'::uuid),
+    'current_snapshot_pair_count', (select count(*)::integer from current_revisions),
+    'exact_proposal_count', (select count(*)::integer
+      from current_revisions revision
+      join atlas_admin.ingredients ingredient on ingredient.ingredient_id=revision.ingredient_id
+      where revision.proposal_rounding_step=ingredient.order_step
+        and revision.proposal_rounding_ingredient_version=ingredient.version
+        and revision.unit_id=ingredient.purchase_unit_id
+        and revision.confirmed_quantity=
+          ceil(revision.theoretical_quantity/revision.proposal_rounding_step)
+            * revision.proposal_rounding_step),
+    'invalid_proposal_count', (select count(*)::integer
+      from current_revisions revision
+      left join atlas_admin.ingredients ingredient on ingredient.ingredient_id=revision.ingredient_id
+      where revision.proposal_rounding_step is null
+         or revision.proposal_rounding_ingredient_version is null
+         or revision.proposal_rounding_step is distinct from ingredient.order_step
+         or revision.proposal_rounding_ingredient_version is distinct from ingredient.version
+         or revision.unit_id is distinct from ingredient.purchase_unit_id
+         or revision.confirmed_quantity is distinct from
+           ceil(revision.theoretical_quantity/revision.proposal_rounding_step)
+             * revision.proposal_rounding_step),
+    'retained_pre_d046_null_pair_count', (select count(*)::integer
+      from atlas_planning.confirmed_need_line_revisions revision
+      join scoped_batches batch
+        on batch.confirmed_need_batch_id=revision.confirmed_need_batch_id
+      where revision.need_generation_run_id='${RETAINED_RUN}'::uuid
+        and revision.proposal_rounding_step is null
+        and revision.proposal_rounding_ingredient_version is null),
+    'allowed_unit_transition_count', (select count(*)::integer
+      from adoption_run_transitions transition
+      where transition.predecessor_unit_id<>transition.successor_unit_id
+        and atlas_core.planning_legacy_adoption_unit_transition_allowed(
+          transition.predecessor_line_id,transition.successor_line_id)),
+    'invalid_unit_transition_count', (select count(*)::integer
+      from adoption_run_transitions transition
+      where transition.predecessor_unit_id<>transition.successor_unit_id
+        and not atlas_core.planning_legacy_adoption_unit_transition_allowed(
+          transition.predecessor_line_id,transition.successor_line_id)),
+    'current_raw_membership_count', (select count(*)::integer from current_contributions)
+  ),
+  'adoption_manifest', (${adoptionManifest})
 ) as checkpoint;
 rollback;`;
 }
@@ -304,40 +492,78 @@ export function assertFinalPlanningCloseoutProof({
       finalFingerprints,
       state?.preflight?.source_date_fingerprints?.current,
     );
-  const run = state?.runs?.[0];
+  const predecessor = state?.runs?.find((run) => run.id === RETAINED_RUN);
+  const run = state?.runs?.find((item) => item.id !== RETAINED_RUN);
   const batch = state?.batches?.[0];
   if (
-    baseline?.mode !== "PRISTINE_GENERATED_RESUME" ||
+    baseline?.mode !== "D046_CORRECTED_RESUME" ||
     !planningCloseoutPoliciesAccepted(state?.policies) ||
-    state?.runs?.length !== 1 ||
+    state?.runs?.length !== 2 ||
     state?.batches?.length !== 1 ||
     state?.handoffs !== 0 ||
+    !exactDate(predecessor) ||
     !exactDate(run) ||
     !exactDate(batch) ||
+    predecessor.status !== "INVALIDATED" ||
+    predecessor.version !== 4 ||
+    predecessor.generated_line_count !== 304 ||
+    predecessor.release_snapshot_line_count !== 304 ||
+    predecessor.actor_id !== SYNTHETIC_ACTOR ||
     run.status !== "RELEASED_FOR_CONFIRMATION" ||
     run.version !== 3 ||
+    run.predecessor_run_id !== predecessor.id ||
     run.generated_line_count !== 304 ||
+    run.release_snapshot_line_count !== 304 ||
     run.actor_id !== SYNTHETIC_ACTOR ||
     run.blocking_issue_count !== 0 ||
     run.warning_count !== 0 ||
     batch.status !== "DRAFT_REVIEW" ||
-    batch.version !== 2 ||
+    batch.version !== 3 ||
     batch.source_kind !== "NEED_GENERATION" ||
-    batch.origin_run_id !== run.id ||
+    batch.origin_run_id !== predecessor.id ||
     batch.current_run_id !== run.id ||
-    batch.origin_run_version !== run.version ||
+    batch.origin_run_version !== 3 ||
     batch.current_run_version !== run.version ||
     batch.line_count !== 248 ||
     batch.decision_count !== 248 ||
     batch.current_decision_count !== 248 ||
     batch.adjustment_count !== 1 ||
     batch.acceptance_count !== 247 ||
-    !generationReceiptAccepted(state.receipts, run, batch) ||
+    !generationReceiptAccepted(
+      state.receipts?.find(
+        (receipt) =>
+          receipt.affected_aggregate_ids?.need_generation_run_id ===
+          predecessor.id,
+      ),
+      predecessor,
+      batch,
+      1,
+    ) ||
+    !generationReceiptAccepted(
+      state.receipts?.find(
+        (receipt) =>
+          receipt.affected_aggregate_ids?.need_generation_run_id === run.id,
+      ),
+      run,
+      batch,
+      2,
+    ) ||
+    state.receipts?.length !== 2 ||
     state.save_receipt_count !== 1 ||
-    baseline.runId !== run.id ||
+    baseline.predecessorRunId !== predecessor.id ||
+    baseline.currentRunId !== run.id ||
     baseline.batchId !== batch.id ||
     !preflightAccepted(state.preflight, "CURRENT", run.id, batch.id) ||
-    state.preflight.current_need.confirmed_need_batch_version !== 2 ||
+    state.preflight.current_need.confirmed_need_batch_version !== 3 ||
+    state.d046?.predecessor_release_contribution_count !== 304 ||
+    state.d046?.successor_release_contribution_count !== 304 ||
+    state.d046?.current_snapshot_pair_count !== 248 ||
+    state.d046?.exact_proposal_count !== 248 ||
+    state.d046?.invalid_proposal_count !== 0 ||
+    state.d046?.retained_pre_d046_null_pair_count !== 248 ||
+    state.d046?.allowed_unit_transition_count !== 1 ||
+    state.d046?.invalid_unit_transition_count !== 0 ||
+    state.d046?.current_raw_membership_count !== 304 ||
     !browser?.batchId ||
     browser.batchId !== batch.id ||
     browser.generateClicks !== 0 ||
@@ -355,6 +581,11 @@ export function assertFinalPlanningCloseoutProof({
     !fingerprintsMatch
   )
     throw new Error("FINAL_PLANNING_CLOSEOUT_PROOF_FAILED");
+  try {
+    classifyPlanningAdoptionManifest(state.adoption_manifest, "post-deploy");
+  } catch {
+    throw new Error("FINAL_PLANNING_CLOSEOUT_PROOF_FAILED");
+  }
   return {
     mode: baseline.mode,
     retainedRuns: state.runs.length,
@@ -439,7 +670,8 @@ export async function verifyPlanningCloseout({
       await readSnapshot(),
       async (beforeBrowser) => {
         if (
-          beforeBrowser.runId !== baseline.runId ||
+          beforeBrowser.predecessorRunId !== baseline.predecessorRunId ||
+          beforeBrowser.currentRunId !== baseline.currentRunId ||
           beforeBrowser.batchId !== baseline.batchId ||
           !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
         )

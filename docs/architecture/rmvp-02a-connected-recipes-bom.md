@@ -90,3 +90,29 @@ Review mode uses deterministic browser-only data and retains its non-persistence
 This task performs no hosted Supabase, production data, OPS v1/v2, or Retool mutation.
 
 On a disposable pre-cutover database, rollback is a local reset to the prior migration set. Once Recipe Versions or Planning evidence are referenced, rollback must be a forward migration that preserves all stable identities, immutable revisions, mappings, events, and audit facts. Dropping the new columns or functions is not a production-safe rollback.
+
+## D-047 OPS-v1 adoption correction amendment
+
+All new PRESENT Recipe line revisions must use the same Ingredient's
+authoritative purchase Unit at release. The normal Save, successor, copy, and
+import paths fail closed on a mismatch. Existing released Recipe history is
+not rewritten.
+
+The sole bounded exception is a migration-owned successor for proven OPS-v1
+adoption lineage. It requires the predecessor line's Unit to equal the raw
+mapped BoM Unit, the successor Unit to equal the unchanged Ingredient's
+`purchase_unit_id`, and the numeric quantity, stable line, Recipe scope, and
+every other business fact to remain identical. It performs no conversion. The
+successor keeps direct Recipe-version and line-revision predecessors, while
+the released predecessor becomes locked and immutable.
+
+Private `recipe_unit_adoption_evidence` records the exact import batch,
+snapshot identity/checksum, mapping fingerprint, legacy stable line, raw Unit,
+corrected Unit, unchanged quantity, and predecessor/successor pair. This is a
+generated supporting object needed because the raw master snapshot payload is
+not retained; it is not a public flag or alternate Recipe authority. Native
+Recipes without this evidence, including the Cánh gà mismatch, remain blocked.
+
+Public RMVP-02A signatures and normal committed-use behavior do not change.
+After deployment, rollback is a reviewed forward correction that retains both
+Recipe versions and the immutable evidence.
