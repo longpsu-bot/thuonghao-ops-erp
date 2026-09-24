@@ -696,3 +696,33 @@ This design does **not**:
 - implement importer code yet.
 
 Those remain separate gates.
+
+## 18. D-047 Recipe Unit adoption amendment — 24/09/2026
+
+The original Recipe-composition mapping treated the raw BoM Unit as the
+operational Atlas Recipe Unit. OPS v1 instead retained the numeric BoM quantity
+while effective Planning used the Ingredient purchase Unit. For future imports,
+the snapshot still preserves `recipe_lines.unit_legacy_id` as raw evidence,
+while operational composition resolves `Ingredient.purchase_unit_id`.
+
+When the raw and operational Units differ, validation requires complete typed
+OPS-v1 mappings, a completed import batch and matching snapshot checksum,
+stable Recipe+Ingredient line identity, source fingerprint, positive unchanged
+quantity, and both mapped Units. Apply records private immutable
+`OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION` evidence. Replay must reconcile to
+the same evidence and target facts. Unknown or incomplete cases block the
+whole apply.
+
+For the already adopted catalog, only the exact 76 proven mismatches across 74
+released versions are eligible for immutable direct successors. Their 322
+PRESENT successor rows consist of 76 Unit corrections and 246 exact sibling
+copies. The legacy Ingredient set is exactly `956`, `1012`, `1045`, `1057`.
+The native `UIQ03A_SAVE` Cánh gà mismatch has no adoption mapping and remains
+excluded and blocked.
+
+No conversion factor or numeric quantity conversion exists. The durable
+line-level evidence is a generated supporting object because Atlas retains
+snapshot identity and mapping fingerprints but not the raw snapshot payload.
+It is not a generic bypass flag. Public import/Recipe APIs remain unchanged;
+existing immutable Recipe and Planning history is not backfilled. Deployment
+requires exact read-only pre/post manifests and separate owner authorization.

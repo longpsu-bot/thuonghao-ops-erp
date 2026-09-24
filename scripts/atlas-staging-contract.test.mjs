@@ -932,11 +932,45 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(95);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(96);
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: ["scripts/test-local-staging-master-load.mjs"],
     });
+    const legacyAdoptionIndex = SUPABASE_FULL_INTEGRATION_COMMANDS.findIndex(
+      (entry) =>
+        entry.args?.includes(
+          "supabase/tests/planning_legacy_adoption_unit_transition.sql",
+        ),
+    );
+    const operationalProposalIndex =
+      SUPABASE_FULL_INTEGRATION_COMMANDS.findIndex((entry) =>
+        entry.args?.includes(
+          "supabase/tests/planning_operational_proposal.sql",
+        ),
+      );
+    expect(legacyAdoptionIndex).toBeGreaterThan(-1);
+    expect(operationalProposalIndex).toBe(legacyAdoptionIndex + 1);
+    const smoke = supabaseWorkflow.slice(
+      supabaseWorkflow.indexOf("  smoke:"),
+      supabaseWorkflow.indexOf("  full-integration:"),
+    );
+    expect(
+      smoke.indexOf("planning_legacy_adoption_unit_transition.sql"),
+    ).toBeGreaterThan(-1);
+    expect(smoke.indexOf("planning_operational_proposal.sql")).toBeGreaterThan(
+      smoke.indexOf("planning_legacy_adoption_unit_transition.sql"),
+    );
+    const protectedDeployWorkflow = readFileSync(
+      ".github/workflows/atlas-staging-deploy.yml",
+      "utf8",
+    );
+    expect(protectedDeployWorkflow).not.toContain(
+      "planning_legacy_adoption_unit_transition.sql",
+    );
+    expect(protectedDeployWorkflow).not.toContain(
+      "planning_operational_proposal.sql",
+    );
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "pnpm",
       args: [
@@ -2027,8 +2061,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(646);
-    expect(authority.policyDigest).toBe("6748022ace668ecaf65879d09bbe2e38");
+    expect(authority.policyCount).toBe(651);
+    expect(authority.policyDigest).toBe("e5c957783700de7c2dc978986101daa3");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2141,7 +2175,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 646");
+    expect(sql).toContain("normal_policy_count <> 651");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2216,11 +2250,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [646, 1, true],
-    [646, 0, false],
-    [646, 2, false],
-    [645, 1, false],
-    [647, 1, false],
+    [651, 1, true],
+    [651, 0, false],
+    [651, 2, false],
+    [650, 1, false],
+    [652, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

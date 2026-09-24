@@ -322,3 +322,38 @@ For additive or mixed dates, the existing `COMPOSED` path remains authoritative.
 snapshots without mode behave as `ADDITIVE`. Fingerprints include the exact snapshot
 mode and source membership, while the closed `RECIPE_DERIVED | PANTRY_DIRECT`
 lineage families remain unchanged.
+
+## 16. D-047 proven legacy-adoption Unit transition
+
+The public `RMVP-04.v3` signature, request envelope, lifecycle, and safe
+response shape are unchanged. The private materializer keeps the ordinary
+cross-Unit predecessor guard. Its Unit-difference branch delegates to one
+private provenance predicate that accepts only a direct theoretical successor
+backed by exact `OPS_V1` import mappings, completed import identity and
+fingerprint, immutable Recipe-version/line predecessors, and one D-047
+correction-evidence row.
+
+The predicate requires the same Ingredient, numeric Recipe quantity,
+theoretical quantity, service date, Customer, School, Delivery Location, and
+contribution lineage. The predecessor Unit must be the imported BoM Unit and
+the successor Unit must be the Ingredient `purchase_unit_id`. There is no
+conversion factor and no quantity conversion. Quantity equality without the
+complete provenance join remains `SOURCE_SPLIT_MERGE_POLICY_REQUIRED`.
+
+New Recipe release rejects PRESENT lines whose Unit differs from the
+Ingredient purchase Unit. Existing releases, Need snapshots, and Confirmed Need
+revisions are not rewritten or backfilled. Correction uses the existing
+successor command path: the old run/release stays immutable, one direct
+successor is generated, and D-046 snapshots the corrected Ingredient Unit and
+`order_step`. A Unit-changing or merge-changing line receives no fabricated
+human decision. D-040 may carry a decision only for a separate exact unchanged
+operational identity satisfying its full predicate.
+
+The native Cánh gà mismatch and any missing, ambiguous, remapped, or converted
+case fail closed. Safe errors expose only the established configuration or
+lineage failure code: `SOURCE_SPLIT_MERGE_POLICY_REQUIRED` remains the Planning
+blocker and D-046 configuration still uses
+`INGREDIENT_ROUNDING_CONFIGURATION_INVALID`. The private import boundary uses
+`LEGACY_ADOPTION_LINEAGE_REQUIRED`; Recipe release rejects the invalid Unit
+configuration under its integrity constraint. Raw legacy payloads, private
+evidence rows, and alternate quantities are never returned.

@@ -935,3 +935,27 @@ The first four prerequisite decisions below are retained for provenance and mark
 This contract changes documentation only. It creates no SQL, migration, RPC, RLS policy, role, grant, generated type, React code, Storybook, package, Retool resource, Supabase project state, production row, credential, deployment, API-registry entry, or executable test.
 
 Security and live systems are unchanged. Documentation rollback is a normal Git revert. There is no database or deployment rollback for this task.
+
+## 19. D-047 bounded amendment — proven legacy Unit adoption
+
+D-047 narrows the previously unresolved split/merge boundary without changing
+the seven-part operational identity or introducing conversion. The default H0C
+rule remains source Unit equals controlled Unit. A direct theoretical successor
+may differ in Unit only when a private predicate proves one exact OPS-v1
+adoption correction from the predecessor imported BoM Unit to the same
+Ingredient's purchase Unit.
+
+The predicate also requires unchanged Recipe/stable-line/Ingredient identity,
+numeric Recipe and theoretical quantities, service date, Customer, School,
+Delivery Location, and direct predecessor lineage. Persistent line-level
+evidence joins the completed import batch, snapshot identity, mapping
+fingerprint, immutable Recipe predecessor/successor, and both Units. It has no
+conversion factor and grants no general exception.
+
+Materialization retains old release snapshots and pre-D-046 Confirmed Need
+revisions. The corrected successor receives D-046 proposal step/version
+evidence. A Unit-changing or group-merging identity receives no synthetic or
+carried human decision; D-040 remains separately authoritative only for an
+unchanged exact identity. Missing or native evidence fails with the established
+source split/merge policy blocker. Public APIs, status lifecycles, and H1
+decision authority are unchanged.
