@@ -42,7 +42,7 @@ export function IngredientCatalogue({
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeader
-                  position={{ base: "sticky", md: "static" }}
+                  position={{ base: "sticky", lg: "static" }}
                   left="var(--atlas-layout-zero, 0)"
                   zIndex="var(--atlas-layout-sticky-header-z, 3)"
                   bg="bg.toolbar"
@@ -75,7 +75,7 @@ export function IngredientCatalogue({
                 return (
                   <Table.Row key={item.ingredient_id} aria-selected={chosen}>
                     <Table.Cell
-                      position={{ base: "sticky", md: "static" }}
+                      position={{ base: "sticky", lg: "static" }}
                       left="var(--atlas-layout-zero, 0)"
                       zIndex="var(--atlas-layout-sticky-cell-z, 1)"
                       bg={chosen ? "bg.selected" : "bg.workbench"}

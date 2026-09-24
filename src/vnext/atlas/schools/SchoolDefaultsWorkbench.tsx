@@ -227,7 +227,7 @@ function SchoolDefaultsTable({
           <Table.Row>
             <Table.ColumnHeader
               width="var(--atlas-layout-school-order-width, 56px)"
-              position={{ base: "sticky", md: "static" }}
+              position={{ base: "sticky", lg: "static" }}
               left="var(--atlas-layout-zero, 0)"
               zIndex="var(--atlas-layout-sticky-header-z, 3)"
               bg="bg.toolbar"
@@ -235,7 +235,7 @@ function SchoolDefaultsTable({
               #
             </Table.ColumnHeader>
             <Table.ColumnHeader
-              position={{ base: "sticky", md: "static" }}
+              position={{ base: "sticky", lg: "static" }}
               left="var(--atlas-layout-school-order-width, 56px)"
               zIndex="var(--atlas-layout-sticky-header-z, 3)"
               bg="bg.toolbar"
@@ -268,7 +268,7 @@ function SchoolDefaultsTable({
                 bg={dirty ? "bg.selected" : undefined}
               >
                 <Table.Cell
-                  position={{ base: "sticky", md: "static" }}
+                  position={{ base: "sticky", lg: "static" }}
                   left="var(--atlas-layout-zero, 0)"
                   zIndex="var(--atlas-layout-sticky-cell-z, 1)"
                   bg={dirty ? "bg.selected" : "bg.workbench"}
@@ -279,7 +279,7 @@ function SchoolDefaultsTable({
                   {school.display_order}
                 </Table.Cell>
                 <Table.Cell
-                  position={{ base: "sticky", md: "static" }}
+                  position={{ base: "sticky", lg: "static" }}
                   left="var(--atlas-layout-school-order-width, 56px)"
                   zIndex="var(--atlas-layout-sticky-cell-z, 1)"
                   bg={dirty ? "bg.selected" : "bg.workbench"}

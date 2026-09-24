@@ -60,16 +60,26 @@ export function DishRecipeWorkbench(props: {
     props.onOpenChangeOrders,
   );
   const catalogueToolbar = (
-    <Flex
-      display={{ base: open ? "none" : "flex", lg: "flex" }}
+    <Grid
+      display={{ base: open ? "none" : "grid", lg: "grid" }}
       px="md"
       py="sm"
       bg="bg.toolbar"
       gap="sm"
-      align="flex-end"
-      wrap="wrap"
+      alignItems="flex-end"
+      templateColumns={
+        open
+          ? "minmax(0, 1fr)"
+          : {
+              base: "repeat(2, minmax(0, 1fr))",
+              lg: "minmax(200px, 1fr) 140px 160px auto",
+            }
+      }
     >
-      <Field.Root flex="var(--atlas-layout-search-grow, 1 1 200px)">
+      <Field.Root
+        minW="var(--atlas-layout-zero, 0)"
+        gridColumn={open ? undefined : { base: "1 / -1", md: "auto" }}
+      >
         <Field.Label>Tìm món</Field.Label>
         <Input
           value={c.query}
@@ -77,13 +87,7 @@ export function DishRecipeWorkbench(props: {
           onChange={(e) => c.setQuery(e.target.value)}
         />
       </Field.Root>
-      <Field.Root
-        w={
-          open
-            ? "var(--atlas-layout-compact-filter, 119px)"
-            : "var(--atlas-layout-filter-width, 140px)"
-        }
-      >
+      <Field.Root minW="var(--atlas-layout-zero, 0)">
         <Field.Label>Trạng thái</Field.Label>
         <NativeSelect.Root>
           <NativeSelect.Field
@@ -100,13 +104,7 @@ export function DishRecipeWorkbench(props: {
           <NativeSelect.Indicator />
         </NativeSelect.Root>
       </Field.Root>
-      <Field.Root
-        w={
-          open
-            ? "var(--atlas-layout-compact-filter, 119px)"
-            : "var(--atlas-layout-filter-width, 160px)"
-        }
-      >
+      <Field.Root minW="var(--atlas-layout-zero, 0)">
         <Field.Label>Loại món</Field.Label>
         <NativeSelect.Root>
           <NativeSelect.Field
@@ -123,19 +121,26 @@ export function DishRecipeWorkbench(props: {
           <NativeSelect.Indicator />
         </NativeSelect.Root>
       </Field.Root>
-      <AtlasRefreshButton
-        loading={c.loading}
-        disabled={c.refreshDisabled}
-        onClick={() => c.transition({ kind: "refresh" })}
-      />
-      <Button
-        variant={open ? "secondary" : "businessPrimary"}
-        disabled={!c.canCommand}
-        onClick={() => c.transition({ kind: "create" })}
+      <Flex
+        gap="sm"
+        align="center"
+        wrap="wrap"
+        gridColumn={open ? undefined : { base: "1 / -1", md: "auto" }}
       >
-        Tạo món mới
-      </Button>
-    </Flex>
+        <AtlasRefreshButton
+          loading={c.loading}
+          disabled={c.refreshDisabled}
+          onClick={() => c.transition({ kind: "refresh" })}
+        />
+        <Button
+          variant={open ? "secondary" : "businessPrimary"}
+          disabled={!c.canCommand}
+          onClick={() => c.transition({ kind: "create" })}
+        >
+          Tạo món mới
+        </Button>
+      </Flex>
+    </Grid>
   );
   const feedback = !modal && (c.notice || c.error) && (
     <Box py="sm" role={c.lock || c.error ? "alert" : "status"}>

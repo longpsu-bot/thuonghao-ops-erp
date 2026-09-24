@@ -56,7 +56,7 @@ export function ProcurementAllocationTable({
                   key={label}
                   textAlign={index >= 2 && index <= 4 ? "end" : "start"}
                   position={
-                    index === 0 ? { base: "sticky", md: "static" } : undefined
+                    index === 0 ? { base: "sticky", lg: "static" } : undefined
                   }
                   left={index === 0 ? "var(--atlas-layout-zero, 0)" : undefined}
                   zIndex={
@@ -95,7 +95,7 @@ export function ProcurementAllocationTable({
                   data-attention={attention || undefined}
                 >
                   <Table.Cell
-                    position={{ base: "sticky", md: "relative" }}
+                    position={{ base: "sticky", lg: "relative" }}
                     left="var(--atlas-layout-zero, 0)"
                     zIndex="var(--atlas-layout-sticky-cell-z, 1)"
                     bg={selectedKey === key ? "bg.selected" : "bg.workbench"}
