@@ -6,6 +6,7 @@ import {
   PLANNING_PERFORMANCE_PROBES,
   projectAdoptionGroups,
   planningAdoptionMergeProofAccepted,
+  planningAdoptionWorkloadAccepted,
   planningPerformanceProbeAccepted,
   rollbackProbeSql,
   assertPlanningPerformanceCheckpoint,
@@ -101,6 +102,71 @@ const valid = {
   lost_contribution_count: 0,
 };
 
+const adoptionWorkloadByDate = Object.freeze({
+  "2026-09-14": {
+    adoption_occurrence_count: 6,
+    adoption_legacy_line_ids: ["line-1", "line-2", "line-3"],
+    adoption_ingredient_ids: ["ingredient-1", "ingredient-2"],
+  },
+  "2026-09-15": {
+    adoption_occurrence_count: 5,
+    adoption_legacy_line_ids: ["line-1", "line-4", "line-5"],
+    adoption_ingredient_ids: ["ingredient-1", "ingredient-3"],
+  },
+  "2026-09-16": {
+    adoption_occurrence_count: 4,
+    adoption_legacy_line_ids: ["line-2", "line-6"],
+    adoption_ingredient_ids: ["ingredient-2"],
+  },
+  "2026-09-17": {
+    adoption_occurrence_count: 5,
+    adoption_legacy_line_ids: ["line-3", "line-7"],
+    adoption_ingredient_ids: ["ingredient-1", "ingredient-3"],
+  },
+  "2026-09-18": {
+    adoption_occurrence_count: 4,
+    adoption_legacy_line_ids: ["line-5", "line-8"],
+    adoption_ingredient_ids: ["ingredient-2", "ingredient-3"],
+  },
+});
+
+const probeForDate = (date, changes = {}) => ({
+  ...valid,
+  date,
+  ...adoptionWorkloadByDate[date],
+  ...changes,
+});
+
+test("selected 14-18 September workload is exactly 24 mapped occurrences", () => {
+  const rows = Object.entries(adoptionWorkloadByDate).map(([date, proof]) => ({
+    date,
+    ...proof,
+  }));
+  assert.equal(planningAdoptionWorkloadAccepted(rows), true);
+  for (const mutate of [
+    (copy) => {
+      copy[0].adoption_occurrence_count -= 1;
+    },
+    (copy) => {
+      copy[4].adoption_legacy_line_ids =
+        copy[4].adoption_legacy_line_ids.filter((id) => id !== "line-8");
+    },
+    (copy) => {
+      copy[0].adoption_ingredient_ids.push("ingredient-4");
+    },
+    (copy) => {
+      copy.pop();
+    },
+    (copy) => {
+      copy[1].date = copy[0].date;
+    },
+  ]) {
+    const changed = structuredClone(rows);
+    mutate(changed);
+    assert.equal(planningAdoptionWorkloadAccepted(changed), false);
+  }
+});
+
 test("performance probe sequence starts with two rollback-only 14/09 calls", () => {
   assert.deepEqual(PLANNING_PERFORMANCE_PROBES, [
     {
@@ -164,6 +230,9 @@ test("approved rollback SQL retains formal timeouts and never commits", () => {
   assert.match(sql, /merge_count/);
   assert.match(sql, /split_count/);
   assert.match(sql, /lost_contribution_count/);
+  assert.match(sql, /adoption_occurrence_count/);
+  assert.match(sql, /adoption_legacy_line_ids/);
+  assert.match(sql, /adoption_ingredient_ids/);
   assert.match(sql, /rollback;$/);
   assert.doesNotMatch(sql, /commit;/i);
   assert.throws(() => rollbackProbeSql("2026-09-17"), /UNAPPROVED_PROBE_DATE/);
@@ -281,6 +350,10 @@ function pristineCheckpoint() {
       },
     ],
     save_receipt_count: 0,
+    adoption_workload: {
+      date: "2026-09-17",
+      ...adoptionWorkloadByDate["2026-09-17"],
+    },
   };
 }
 
@@ -296,11 +369,10 @@ test("failed first probe stops without retry after checkpoint readback", async (
       },
       runProbe: async (date) => {
         calls.push(date);
-        return {
-          ...valid,
+        return probeForDate(date, {
           success: false,
           error_code: "RETRYABLE_CONCURRENCY_FAILURE",
-        };
+        });
       },
     }),
     /GENERATION_PERFORMANCE_BLOCKED/,
@@ -316,13 +388,12 @@ test("performance classification does not inherit browser policy acceptance", as
   await assert.rejects(
     runPlanningPerformanceProbes({
       readSnapshot: async () => structuredClone(baseline),
-      runProbe: async () => {
+      runProbe: async (date) => {
         calls += 1;
-        return {
-          ...valid,
+        return probeForDate(date, {
           success: false,
           error_code: "RETRYABLE_CONCURRENCY_FAILURE",
-        };
+        });
       },
     }),
     /GENERATION_PERFORMANCE_BLOCKED/,
@@ -348,17 +419,17 @@ test("performance certification preserves a saved browser checkpoint across ever
     },
     runProbe: async (date) => {
       calls.push(date);
-      return {
-        ...valid,
+      return probeForDate(date, {
         line_count:
           PLANNING_PERFORMANCE_PROBES[calls.length - 1].expectedLineCount,
-      };
+      });
     },
   });
   assert.deepEqual(result, {
     status: "GENERATION_PERFORMANCE_PASS",
     probes: 5,
     checkpointPreserved: true,
+    adoptionWorkloadVerified: true,
   });
   assert.equal(reads, 6);
   assert.deepEqual(
@@ -415,11 +486,10 @@ test("every successful probe proves unchanged checkpoint", async () => {
     },
     runProbe: async (date) => {
       calls.push(date);
-      return {
-        ...valid,
+      return probeForDate(date, {
         line_count:
           PLANNING_PERFORMANCE_PROBES[calls.length - 1].expectedLineCount,
-      };
+      });
     },
   });
   assert.equal(result.status, "GENERATION_PERFORMANCE_PASS");
@@ -444,7 +514,7 @@ test("retained probe effects block certification before the next date", async ()
       },
       runProbe: async () => {
         calls += 1;
-        return valid;
+        return probeForDate("2026-09-14");
       },
     }),
     /PERFORMANCE_CHECKPOINT_CHANGED/,

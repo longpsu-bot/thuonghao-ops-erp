@@ -215,13 +215,24 @@ proves the current pre-migration manifest is still exactly:
 - 322 projected successor PRESENT rows, comprising 76 corrected rows and 246
   exact sibling copies;
 - complete import/mapping/fingerprint/raw-Unit evidence for every candidate;
+- exactly one completed-import reconciliation action matching each candidate's
+  target revision, Recipe, stable line, Ingredient, numeric quantity, and raw
+  Unit (`exact_reconciliation_action_count = 76`), with no remapped or
+  duplicate action;
 - zero native or partially mapped candidates, with Cánh gà explicitly excluded.
 
 Any drift blocks deployment and requires owner review. After deployment, the
 same verifier runs in post-deploy mode and proves that the exact manifest became
 74 immutable successors and 76 correction-evidence rows with all sibling facts
-preserved. Both phases are read-only; neither verifier applies the migration or
-changes business data.
+preserved. Direct predecessor comparison must report zero successor-version
+mismatches and zero sibling business-fact mismatches. Both phases are
+read-only; neither verifier applies the migration or changes business data.
+
+The local Supabase certification also executes a true upgrade rehearsal. It
+resets to migration `20260923041223`, seeds two mapped OPS-v1 Unit mismatches,
+one unaffected sibling, and one unmapped native `UIQ03A_SAVE` mismatch, applies
+the real D-047 migration, and verifies immutable successor/evidence behavior.
+It then resets to the current schema even when the rehearsal fails.
 
 ### Release invariant
 
@@ -296,7 +307,10 @@ batch advances once to v3 and contains 248 first decisions (one adjustment and
 The performance verifier expects `231, 231, 225, 213, 210`. Each 14/09 probe
 also proves, from contribution and adoption evidence, 232 legacy-label groups
 project to 231 corrected groups through exactly one two-to-one merge with zero
-contribution loss and no split.
+contribution loss and no split. Across the five 14–18/09 probes, the same
+evidence must total exactly 24 generated adoption occurrences spanning exactly
+eight legacy Recipe lines and three Ingredients; a missing date, duplicate
+date, extra Ingredient, or count drift fails certification.
 
 The following post-merge owner sequence is deliberately unexecuted by this
 implementation task and is strictly ordered:
@@ -356,3 +370,6 @@ old/new Confirmed Need revisions also remain immutable.
 - A read-only pre-deploy manifest gate blocks deployment on any deviation from
   76/74/322/246, the four approved Ingredients, or native Cánh gà exclusion;
   post-deploy readback proves the same manifest was repaired.
+- The executable pre-migration upgrade rehearsal proves two corrections, one
+  exact sibling copy, deterministic evidence, replay convergence, and native
+  mismatch exclusion using the real D-047 migration.

@@ -932,7 +932,11 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(fullIntegration).toContain("pnpm certify:supabase:full-integration");
     expect(fullIntegration).not.toContain("supabase test db");
-    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(96);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toHaveLength(97);
+    expect(SUPABASE_FULL_INTEGRATION_COMMANDS[1]).toEqual({
+      command: "node",
+      args: ["scripts/test-local-planning-legacy-adoption-upgrade.mjs"],
+    });
     expect(SUPABASE_FULL_INTEGRATION_COMMANDS).toContainEqual({
       command: "node",
       args: ["scripts/test-local-staging-master-load.mjs"],
@@ -957,6 +961,9 @@ describe("Atlas staging dry-run and workflow", () => {
     );
     expect(
       smoke.indexOf("planning_legacy_adoption_unit_transition.sql"),
+    ).toBeGreaterThan(-1);
+    expect(
+      smoke.indexOf("test-local-planning-legacy-adoption-upgrade.mjs"),
     ).toBeGreaterThan(-1);
     expect(smoke.indexOf("planning_operational_proposal.sql")).toBeGreaterThan(
       smoke.indexOf("planning_legacy_adoption_unit_transition.sql"),

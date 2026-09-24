@@ -293,6 +293,30 @@ with scoped_runs as (
    and successor.predecessor_theoretical_need_line_id=predecessor.theoretical_need_line_id
   where predecessor.line_disposition='ACTIVE'
     and successor.line_disposition='ACTIVE'
+), retained_adoption_workload as materialized (
+  select theoretical.theoretical_need_line_id,
+         line_mapping.legacy_id legacy_recipe_line_id,
+         ingredient_mapping.legacy_id legacy_ingredient_id
+  from scoped_batches batch
+  join atlas_planning.theoretical_need_lines theoretical
+    on theoretical.need_generation_run_id=batch.current_need_generation_run_id
+   and theoretical.service_date='2026-09-17'
+   and theoretical.line_disposition='ACTIVE'
+  join atlas_legacy.recipe_unit_adoption_evidence evidence
+    on evidence.evidence_kind='OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION'
+   and evidence.source_system='OPS_V1'
+   and evidence.target_recipe_version_id=theoretical.recipe_version_id
+   and evidence.target_recipe_line_revision_id=theoretical.recipe_line_revision_id
+   and evidence.recipe_id=theoretical.recipe_id
+   and evidence.recipe_line_id=theoretical.recipe_line_id
+   and evidence.ingredient_id=theoretical.ingredient_id
+   and evidence.corrected_unit_id=theoretical.unit_id
+  join atlas_legacy.master_data_mappings line_mapping
+    on line_mapping.source_system='OPS_V1' and line_mapping.object_type='RECIPE_LINE'
+   and line_mapping.recipe_line_id=evidence.recipe_line_id
+  join atlas_legacy.master_data_mappings ingredient_mapping
+    on ingredient_mapping.source_system='OPS_V1' and ingredient_mapping.object_type='INGREDIENT'
+   and ingredient_mapping.ingredient_id=evidence.ingredient_id
 )
 select jsonb_build_object(
   'runs', (select coalesce(jsonb_agg(jsonb_build_object(
@@ -394,6 +418,12 @@ select jsonb_build_object(
     where c.command_name='save_confirmed_needs' and exists(
       select 1 from scoped_batches b where
         c.scope_key like '%:ConfirmedNeedBatch:' || b.confirmed_need_batch_id::text)),
+  'adoption_workload', jsonb_build_object(
+    'date','2026-09-17',
+    'adoption_occurrence_count',(select count(distinct theoretical_need_line_id)::integer from retained_adoption_workload),
+    'adoption_legacy_line_ids',(select coalesce(jsonb_agg(legacy_recipe_line_id order by legacy_recipe_line_id),'[]'::jsonb) from (select distinct legacy_recipe_line_id from retained_adoption_workload) ids),
+    'adoption_ingredient_ids',(select coalesce(jsonb_agg(legacy_ingredient_id order by legacy_ingredient_id),'[]'::jsonb) from (select distinct legacy_ingredient_id from retained_adoption_workload) ids)
+  ),
   'd046', jsonb_build_object(
     'predecessor_release_contribution_count', (select count(*)::integer
       from atlas_planning.need_generation_release_snapshot_lines line

@@ -1106,11 +1106,14 @@ function correctedResumeSnapshot() {
     incomplete_candidate_count: 0,
     duplicate_candidate_count: 0,
     remapped_source_count: 0,
+    exact_reconciliation_action_count: 76,
     correction_evidence_count: 76,
     direct_successor_version_count: 74,
     successor_present_count: 322,
     exact_sibling_copy_count: 246,
     locked_predecessor_version_count: 74,
+    successor_version_mismatch_count: 0,
+    sibling_mismatch_count: 0,
   };
   return snapshot;
 }

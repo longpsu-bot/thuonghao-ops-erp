@@ -86,6 +86,44 @@ export function planningAdoptionMergeProofAccepted(row) {
   );
 }
 
+const ADOPTION_WORKLOAD_DATES = Object.freeze([
+  "2026-09-14",
+  "2026-09-15",
+  "2026-09-16",
+  "2026-09-17",
+  "2026-09-18",
+]);
+
+export function planningAdoptionWorkloadAccepted(rows) {
+  if (!Array.isArray(rows) || rows.length !== ADOPTION_WORKLOAD_DATES.length)
+    return false;
+  const byDate = new Map();
+  for (const row of rows) {
+    if (
+      !ADOPTION_WORKLOAD_DATES.includes(row?.date) ||
+      byDate.has(row.date) ||
+      !Number.isInteger(row.adoption_occurrence_count) ||
+      row.adoption_occurrence_count <= 0 ||
+      !Array.isArray(row.adoption_legacy_line_ids) ||
+      !row.adoption_legacy_line_ids.every((id) => typeof id === "string") ||
+      !Array.isArray(row.adoption_ingredient_ids) ||
+      !row.adoption_ingredient_ids.every((id) => typeof id === "string")
+    )
+      return false;
+    byDate.set(row.date, row);
+  }
+  if (!ADOPTION_WORKLOAD_DATES.every((date) => byDate.has(date))) return false;
+  const occurrences = rows.reduce(
+    (total, row) => total + row.adoption_occurrence_count,
+    0,
+  );
+  const lines = new Set(rows.flatMap((row) => row.adoption_legacy_line_ids));
+  const ingredients = new Set(
+    rows.flatMap((row) => row.adoption_ingredient_ids),
+  );
+  return occurrences === 24 && lines.size === 8 && ingredients.size === 3;
+}
+
 export function planningPerformanceProbeAccepted(
   row,
   expectedLineCount,
@@ -147,7 +185,10 @@ with reviewed as materialized(select r,generation_ms,review from planning_perfor
    on revision.confirmed_need_line_revision_id=contribution.confirmed_need_line_revision_id
   and revision.is_current
 ),projected_contributions as materialized(
- select source.contribution_id,
+ select source.contribution_id,source.theoretical_need_line_id,
+        evidence.recipe_unit_adoption_evidence_id,
+        line_mapping.legacy_id adoption_legacy_line_id,
+        ingredient_mapping.legacy_id adoption_ingredient_id,
         jsonb_build_array(source.service_date,source.customer_id,source.school_id,
           source.delivery_location_id,source.ingredient_id,
           coalesce(evidence.source_unit_id,source.source_unit_id))::text legacy_operational_key,
@@ -173,6 +214,12 @@ with reviewed as materialized(select r,generation_ms,review from planning_perfor
       and batch.snapshot_id=evidence.snapshot_id
       and batch.snapshot_checksum=evidence.snapshot_checksum
   )
+ left join atlas_legacy.master_data_mappings line_mapping
+   on line_mapping.source_system='OPS_V1' and line_mapping.object_type='RECIPE_LINE'
+  and line_mapping.recipe_line_id=evidence.recipe_line_id
+ left join atlas_legacy.master_data_mappings ingredient_mapping
+   on ingredient_mapping.source_system='OPS_V1' and ingredient_mapping.object_type='INGREDIENT'
+  and ingredient_mapping.ingredient_id=evidence.ingredient_id
 ),adoption_merge_proof as materialized(
  select
    (select count(distinct legacy_operational_key)::integer from projected_contributions) legacy_group_count,
@@ -190,6 +237,14 @@ with reviewed as materialized(select r,generation_ms,review from planning_perfor
    (select count(*)::integer from source_contributions source
       where not exists (select 1 from projected_contributions projected
         where projected.contribution_id=source.contribution_id)) lost_contribution_count
+),adoption_workload_proof as materialized(
+ select count(distinct theoretical_need_line_id)::integer adoption_occurrence_count,
+        coalesce(jsonb_agg(distinct adoption_legacy_line_id order by adoption_legacy_line_id)
+          filter (where adoption_legacy_line_id is not null),'[]'::jsonb) adoption_legacy_line_ids,
+        coalesce(jsonb_agg(distinct adoption_ingredient_id order by adoption_ingredient_id)
+          filter (where adoption_ingredient_id is not null),'[]'::jsonb) adoption_ingredient_ids
+ from projected_contributions
+ where recipe_unit_adoption_evidence_id is not null
 )
 select jsonb_build_object('date','${date}','success',r->'success','error_code',r->>'error_code',
  'generation_ms',generation_ms,'currentness',r#>>'{authoritative_readback,preflight,downstream_currentness}',
@@ -200,8 +255,11 @@ select jsonb_build_object('date','${date}','success',r->'success','error_code',r
  'legacy_group_count',proof.legacy_group_count,'corrected_group_count',proof.corrected_group_count,
  'contribution_count_before',proof.contribution_count_before,'contribution_count_after',proof.contribution_count_after,
  'merge_count',proof.merge_count,'split_count',proof.split_count,
- 'lost_contribution_count',proof.lost_contribution_count) as probe
-from reviewed cross join adoption_merge_proof proof;
+ 'lost_contribution_count',proof.lost_contribution_count,
+ 'adoption_occurrence_count',workload.adoption_occurrence_count,
+ 'adoption_legacy_line_ids',workload.adoption_legacy_line_ids,
+ 'adoption_ingredient_ids',workload.adoption_ingredient_ids) as probe
+from reviewed cross join adoption_merge_proof proof cross join adoption_workload_proof workload;
 rollback;`;
 }
 
@@ -240,6 +298,9 @@ export function assertPlanningPerformanceBaseline(snapshot) {
 export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
   const before = await readSnapshot();
   assertPlanningPerformanceBaseline(before);
+  const workloadByDate = new Map([
+    [before.adoption_workload?.date, before.adoption_workload],
+  ]);
   for (const {
     date,
     expectedLineCount,
@@ -265,11 +326,24 @@ export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
       )
     )
       throw new Error("GENERATION_PERFORMANCE_BLOCKED");
+    const workload = {
+      date: row.date,
+      adoption_occurrence_count: row.adoption_occurrence_count,
+      adoption_legacy_line_ids: row.adoption_legacy_line_ids,
+      adoption_ingredient_ids: row.adoption_ingredient_ids,
+    };
+    const prior = workloadByDate.get(row.date);
+    if (prior && !isDeepStrictEqual(prior, workload))
+      throw new Error("ADOPTION_WORKLOAD_DRIFT");
+    workloadByDate.set(row.date, workload);
   }
+  if (!planningAdoptionWorkloadAccepted([...workloadByDate.values()]))
+    throw new Error("ADOPTION_WORKLOAD_DRIFT");
   return {
     status: "GENERATION_PERFORMANCE_PASS",
     probes: PLANNING_PERFORMANCE_PROBES.length,
     checkpointPreserved: true,
+    adoptionWorkloadVerified: true,
   };
 }
 

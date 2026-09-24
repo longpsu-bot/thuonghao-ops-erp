@@ -44,6 +44,13 @@ Recipe, and Planning facts. No public API or browser role can write or read the
 relation. Evidence is insert-only and may be created only by the governed
 import/correction boundary.
 
+Candidate proof includes exactly one matching completed-import reconciliation
+action for the target Recipe-line revision. The action must repeat the same
+Recipe, stable line, Ingredient, numeric quantity, and raw Unit; target-only or
+partially matching actions are insufficient. Post-repair proof compares every
+successor and unaffected sibling directly with its predecessor rather than
+inferring correctness from cardinality alone.
+
 ## Recipe and Planning behavior
 
 Newly released PRESENT Recipe lines must use their Ingredient purchase Unit.

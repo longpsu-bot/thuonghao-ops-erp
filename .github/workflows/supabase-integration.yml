@@ -209,6 +209,7 @@ jobs:
       - name: Reset and run bounded database smoke
         run: |
           pnpm exec supabase db reset --local --no-seed
+          node scripts/test-local-planning-legacy-adoption-upgrade.mjs
           pnpm exec supabase test db supabase/tests/need_generation_operational_scale.sql --local
           node scripts/test-local-count-unit-policies.mjs
           pnpm exec supabase test db supabase/tests/pa_06e_h0b1b_confirmed_need_structure_security_catalog.sql supabase/tests/pa_06e_h0b1b_contribution_membership_total_partition_history.sql supabase/tests/pa_06e_h0b1b_school_catering_identity_current_source.sql supabase/tests/pa_06e_h0b1b_wholesale_compatibility_source_classification.sql --local

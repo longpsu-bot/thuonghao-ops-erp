@@ -30,6 +30,7 @@ function manifestFixture(phase) {
     incomplete_candidate_count: 0,
     duplicate_candidate_count: 0,
     remapped_source_count: 0,
+    exact_reconciliation_action_count: 76,
     ...(phase === "post-deploy"
       ? {
           correction_evidence_count: 76,
@@ -37,6 +38,8 @@ function manifestFixture(phase) {
           successor_present_count: 322,
           exact_sibling_copy_count: 246,
           locked_predecessor_version_count: 74,
+          successor_version_mismatch_count: 0,
+          sibling_mismatch_count: 0,
         }
       : {}),
   };
@@ -64,6 +67,7 @@ test("pre-deploy manifest accepts only the exact 76-line authority", () => {
     ["incomplete_candidate_count", 1],
     ["duplicate_candidate_count", 1],
     ["remapped_source_count", 1],
+    ["exact_reconciliation_action_count", 75],
   ]) {
     assert.throws(
       () =>
@@ -93,6 +97,9 @@ test("post-deploy manifest requires exact immutable successor evidence", () => {
     ["locked_predecessor_version_count", 73],
     ["duplicate_candidate_count", 1],
     ["remapped_source_count", 1],
+    ["exact_reconciliation_action_count", 75],
+    ["successor_version_mismatch_count", 1],
+    ["sibling_mismatch_count", 1],
   ]) {
     assert.throws(
       () =>
@@ -120,7 +127,19 @@ test("manifest SQL is phase-bounded, read-only, and payload-free", () => {
   assert.doesNotMatch(pre, /recipe_unit_adoption_evidence/);
   assert.match(pre, /master_data_mappings/);
   assert.match(pre, /import_batches/);
+  assert.match(pre, /reconciliation->'actions'/);
+  assert.match(pre, /action\.value#>>'\{values,recipe_id\}'/);
+  assert.match(pre, /action\.value#>>'\{values,recipe_line_id\}'/);
+  assert.match(pre, /action\.value#>>'\{values,ingredient_id\}'/);
+  assert.match(pre, /action\.value#>>'\{values,quantity_per_basis\}'/);
+  assert.match(pre, /action\.value#>>'\{values,unit_id\}'/);
+  assert.doesNotMatch(pre, /'remapped_source_count',0/);
   assert.match(post, /recipe_unit_adoption_evidence/);
+  assert.match(post, /predecessor_recipe_line_revision_id/);
+  assert.match(post, /calculation_kind is not distinct from/);
+  assert.match(post, /operational_note is not distinct from/);
+  assert.match(post, /successor_version_mismatch_count/);
+  assert.match(post, /sibling_mismatch_count/);
   assert.throws(
     () => planningAdoptionManifestSql("deploy"),
     /PLANNING_ADOPTION_MANIFEST_PHASE_REJECTED/,
