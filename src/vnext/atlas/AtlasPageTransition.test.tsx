@@ -117,14 +117,17 @@ it("keeps Schools through exit, mounts only Recipe during entry, then focuses it
   nav("Công thức");
   expect(old).toBeInTheDocument();
   expect(
-    screen.queryByRole("heading", { level: 1, name: "Công thức" }),
+    screen.queryByRole("heading", {
+      level: 1,
+      name: "Danh mục công thức",
+    }),
   ).not.toBeInTheDocument();
   expect(animations).toHaveLength(1);
   expect(animations[0]!.options.duration).toBe(60);
   expect(animations[0]!.frames).toEqual([{ opacity: 1 }, { opacity: 0.15 }]);
   complete();
   expect(old).not.toBeInTheDocument();
-  expect(heading("Công thức")).not.toHaveFocus();
+  expect(heading("Danh mục công thức")).not.toHaveFocus();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(animations).toHaveLength(2);
   expect(animations[1]!.options).toMatchObject({
@@ -142,7 +145,7 @@ it("keeps Schools through exit, mounts only Recipe during entry, then focuses it
     }
   }
   complete();
-  expect(heading("Công thức")).toHaveFocus();
+  expect(heading("Danh mục công thức")).toHaveFocus();
   expect(animations[1]!.target).not.toHaveAttribute("inert");
 });
 
@@ -164,7 +167,10 @@ it("does not move or activate the destination until the dirty domain authorizes 
     }),
   ).toHaveAttribute("aria-current", "page");
   expect(
-    screen.queryByRole("heading", { level: 1, name: "Công thức" }),
+    screen.queryByRole("heading", {
+      level: 1,
+      name: "Danh mục công thức",
+    }),
   ).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Tiếp tục chỉnh sửa" }));
   await waitFor(() =>
@@ -175,13 +181,13 @@ it("does not move or activate the destination until the dirty domain authorizes 
   fireEvent.click(await screen.findByRole("button", { name: "Bỏ thay đổi" }));
   expect(animations).toHaveLength(1);
   expect(heading("Sĩ số mặc định")).toBeInTheDocument();
-  await settle("Công thức");
+  await settle("Danh mục công thức");
 }, 15000);
 
 it("keeps UNKNOWN recovery intact with zero outgoing animation", async () => {
   await show(true);
   nav("Công thức");
-  await settle("Công thức");
+  await settle("Danh mục công thức");
   fireEvent.click(
     await screen.findByRole("button", {
       name: "Sửa công thức Canh bí đỏ thịt bằm",
@@ -195,7 +201,7 @@ it("keeps UNKNOWN recovery intact with zero outgoing animation", async () => {
   await screen.findByRole("button", { name: "Tải lại để xác nhận" });
   nav("Trường học");
   expect(animations).toHaveLength(2);
-  expect(heading("Công thức")).toBeInTheDocument();
+  expect(heading("Danh mục công thức")).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: "Tải lại để xác nhận" }),
   ).toBeInTheDocument();
@@ -213,7 +219,7 @@ it("ignores rapid requests during both phases without queueing a stale destinati
   nav("Phiếu xuất kho");
   expect(animations).toHaveLength(2);
   complete();
-  expect(heading("Công thức")).toHaveFocus();
+  expect(heading("Danh mục công thức")).toHaveFocus();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(
     screen.queryByRole("heading", { level: 1, name: "Thực đơn" }),
@@ -239,7 +245,7 @@ it("reduced motion still guards dirty exit then mounts and focuses immediately w
   expect(heading("Sĩ số mặc định")).toBeInTheDocument();
   expect(animations).toHaveLength(0);
   fireEvent.click(screen.getByRole("button", { name: "Bỏ thay đổi" }));
-  expect(heading("Công thức")).toHaveFocus();
+  expect(heading("Danh mục công thức")).toHaveFocus();
   expect(animations).toHaveLength(0);
   expect(
     screen.queryByRole("heading", { level: 1, name: "Sĩ số mặc định" }),
@@ -295,7 +301,7 @@ it("keeps shell and session context DOM stationary while only one content surfac
     screen.getByText("Môi trường · Local review"),
   ];
   nav("Công thức");
-  await settle("Công thức");
+  await settle("Danh mục công thức");
   for (const node of shell) {
     expect(node).toBeInTheDocument();
     expect(animations.every(({ target }) => !target.contains(node))).toBe(true);
