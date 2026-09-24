@@ -18,10 +18,10 @@ insert into atlas_admin.schools (school_id, customer_id, school_code, school_nam
 values ('b5200000-0000-0000-0000-000000000120', 'b5200000-0000-0000-0000-000000000100', 'pa06e-h0a5b-lineage-school', 'H0A5b Lineage School', 'b5200000-0000-0000-0000-000000000110', 'b5200000-0000-0000-0000-000000000101', 10);
 insert into atlas_admin.units (unit_id, unit_code, unit_name, dimension_code)
 values ('b5200000-0000-0000-0000-000000000130', 'kg-h0a5b-lineage', 'kilogram H0A5b lineage', 'mass');
-insert into atlas_admin.ingredients (ingredient_id, ingredient_code, ingredient_name) values
-  ('b5200000-0000-0000-0000-000000000140', 'h0a5b-lineage-rice', 'H0A5b lineage rice'),
-  ('b5200000-0000-0000-0000-000000000141', 'h0a5b-lineage-salt', 'H0A5b lineage salt'),
-  ('b5200000-0000-0000-0000-000000000142', 'h0a5b-lineage-pepper', 'H0A5b lineage pepper');
+insert into atlas_admin.ingredients (ingredient_id, ingredient_code, ingredient_name, purchase_unit_id) values
+  ('b5200000-0000-0000-0000-000000000140', 'h0a5b-lineage-rice', 'H0A5b lineage rice', 'b5200000-0000-0000-0000-000000000130'),
+  ('b5200000-0000-0000-0000-000000000141', 'h0a5b-lineage-salt', 'H0A5b lineage salt', 'b5200000-0000-0000-0000-000000000130'),
+  ('b5200000-0000-0000-0000-000000000142', 'h0a5b-lineage-pepper', 'H0A5b lineage pepper', 'b5200000-0000-0000-0000-000000000130');
 insert into atlas_admin.dishes (dish_id, dish_code, dish_name, dish_status, display_order, requires_need_generation)
 values ('b5200000-0000-0000-0000-000000000150', 'h0a5b-lineage-dish', 'H0A5b lineage dish', 'ACTIVE', 10, true);
 insert into atlas_admin.recipes (recipe_id, dish_id)
