@@ -4,11 +4,82 @@ import { resolve } from "node:path";
 import { test } from "vitest";
 import {
   PLANNING_PERFORMANCE_PROBES,
+  projectAdoptionGroups,
+  planningAdoptionMergeProofAccepted,
   planningPerformanceProbeAccepted,
   rollbackProbeSql,
   assertPlanningPerformanceCheckpoint,
   runPlanningPerformanceProbes,
 } from "./verify-staging-planning-performance.mjs";
+
+function adoptionMergeFixture() {
+  return [
+    ...Array.from({ length: 230 }, (_, index) => ({
+      contributionId: `stable-${index}`,
+      legacyOperationalKey: `stable-${index}`,
+      correctedOperationalKey: `stable-${index}`,
+    })),
+    {
+      contributionId: "binh-quoi-thom-qua",
+      legacyOperationalKey: "binh-quoi-thom-qua",
+      correctedOperationalKey: "binh-quoi-thom-trai",
+    },
+    {
+      contributionId: "binh-quoi-thom-trai",
+      legacyOperationalKey: "binh-quoi-thom-trai",
+      correctedOperationalKey: "binh-quoi-thom-trai",
+    },
+  ];
+}
+
+test("14/09 correction is exactly one operational merge with no contribution loss", () => {
+  assert.deepEqual(projectAdoptionGroups(adoptionMergeFixture()), {
+    legacyGroupCount: 232,
+    correctedGroupCount: 231,
+    contributionCountBefore: 232,
+    contributionCountAfter: 232,
+    mergeCount: 1,
+    splitCount: 0,
+    lostContributionCount: 0,
+  });
+});
+
+test("14/09 proof rejects loss, a second merge, a split, and constant-only evidence", () => {
+  const asProofRow = (projection) => ({
+    legacy_group_count: projection.legacyGroupCount,
+    corrected_group_count: projection.correctedGroupCount,
+    contribution_count_before: projection.contributionCountBefore,
+    contribution_count_after: projection.contributionCountAfter,
+    merge_count: projection.mergeCount,
+    split_count: projection.splitCount,
+    lost_contribution_count: projection.lostContributionCount,
+  });
+  const accepted = {
+    legacy_group_count: 232,
+    corrected_group_count: 231,
+    contribution_count_before: 232,
+    contribution_count_after: 232,
+    merge_count: 1,
+    split_count: 0,
+    lost_contribution_count: 0,
+  };
+  assert.equal(planningAdoptionMergeProofAccepted(accepted), true);
+  const missing = adoptionMergeFixture();
+  missing.at(-1).correctedOperationalKey = null;
+  const secondMerge = adoptionMergeFixture();
+  secondMerge[0].correctedOperationalKey =
+    secondMerge[1].correctedOperationalKey;
+  const split = adoptionMergeFixture();
+  split[0].legacyOperationalKey = split[1].legacyOperationalKey;
+  for (const invalid of [
+    asProofRow(projectAdoptionGroups(missing)),
+    asProofRow(projectAdoptionGroups(secondMerge)),
+    asProofRow(projectAdoptionGroups(split)),
+    { line_count: 231 },
+  ]) {
+    assert.equal(planningAdoptionMergeProofAccepted(invalid), false);
+  }
+});
 
 const valid = {
   success: true,
@@ -17,16 +88,31 @@ const valid = {
   currentness: "CURRENT",
   review_success: true,
   review_error_code: null,
-  line_count: 232,
+  line_count: 231,
   has_more: false,
   blocker_count: 0,
   editing_allowed: true,
+  legacy_group_count: 232,
+  corrected_group_count: 231,
+  contribution_count_before: 304,
+  contribution_count_after: 304,
+  merge_count: 1,
+  split_count: 0,
+  lost_contribution_count: 0,
 };
 
 test("performance probe sequence starts with two rollback-only 14/09 calls", () => {
   assert.deepEqual(PLANNING_PERFORMANCE_PROBES, [
-    { date: "2026-09-14", expectedLineCount: 232 },
-    { date: "2026-09-14", expectedLineCount: 232 },
+    {
+      date: "2026-09-14",
+      expectedLineCount: 231,
+      requireOneMergeProof: true,
+    },
+    {
+      date: "2026-09-14",
+      expectedLineCount: 231,
+      requireOneMergeProof: true,
+    },
     { date: "2026-09-15", expectedLineCount: 225 },
     { date: "2026-09-16", expectedLineCount: 213 },
     { date: "2026-09-18", expectedLineCount: 210 },
@@ -37,7 +123,7 @@ test("performance probe sequence starts with two rollback-only 14/09 calls", () 
 });
 
 test("performance acceptance enforces success, review, exact rows, and strict margin", () => {
-  assert.equal(planningPerformanceProbeAccepted(valid, 232), true);
+  assert.equal(planningPerformanceProbeAccepted(valid, 231, true), true);
   for (const changes of [
     { generation_ms: 7000 },
     { generation_ms: 7000.001 },
@@ -49,10 +135,11 @@ test("performance acceptance enforces success, review, exact rows, and strict ma
     { has_more: true },
     { blocker_count: 1 },
     { editing_allowed: false },
-    { line_count: 231 },
+    { line_count: 230 },
+    { merge_count: 2 },
   ]) {
     assert.equal(
-      planningPerformanceProbeAccepted({ ...valid, ...changes }, 232),
+      planningPerformanceProbeAccepted({ ...valid, ...changes }, 231, true),
       false,
     );
   }
@@ -69,6 +156,14 @@ test("approved rollback SQL retains formal timeouts and never commits", () => {
       sql.indexOf("atlas_api.get_confirmed_need_review"),
   );
   assert.match(sql, /'review_error_code',review->>'error_code'/);
+  assert.match(sql, /atlas_legacy\.recipe_unit_adoption_evidence/);
+  assert.match(sql, /legacy_group_count/);
+  assert.match(sql, /corrected_group_count/);
+  assert.match(sql, /contribution_count_before/);
+  assert.match(sql, /contribution_count_after/);
+  assert.match(sql, /merge_count/);
+  assert.match(sql, /split_count/);
+  assert.match(sql, /lost_contribution_count/);
   assert.match(sql, /rollback;$/);
   assert.doesNotMatch(sql, /commit;/i);
   assert.throws(() => rollbackProbeSql("2026-09-17"), /UNAPPROVED_PROBE_DATE/);
