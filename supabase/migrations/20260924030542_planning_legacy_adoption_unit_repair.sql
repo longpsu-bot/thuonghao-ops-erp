@@ -94,7 +94,18 @@ alter table atlas_legacy.recipe_unit_adoption_evidence enable row level security
 alter table atlas_legacy.recipe_unit_adoption_evidence force row level security;
 revoke all on table atlas_legacy.recipe_unit_adoption_evidence from public, anon, authenticated, service_role;
 grant select, insert on table atlas_legacy.recipe_unit_adoption_evidence to atlas_master_data_command_runtime;
+grant usage on schema atlas_legacy to atlas_planning_materialization_runtime;
 grant select on table atlas_legacy.recipe_unit_adoption_evidence to atlas_planning_materialization_runtime;
+grant select on table atlas_legacy.import_batches,atlas_legacy.master_data_mappings
+  to atlas_planning_materialization_runtime;
+create policy planning_unit_adoption_import_batch_select
+  on atlas_legacy.import_batches for select
+  to atlas_planning_materialization_runtime
+  using (source_system='OPS_V1' and import_status='COMPLETED');
+create policy planning_unit_adoption_mapping_select
+  on atlas_legacy.master_data_mappings for select
+  to atlas_planning_materialization_runtime
+  using (source_system='OPS_V1');
 create policy planning_unit_adoption_master_select
   on atlas_legacy.recipe_unit_adoption_evidence for select
   to atlas_master_data_command_runtime using (true);
@@ -454,6 +465,179 @@ end
 $patch_release_guard$;
 
 reset role;
+
+grant atlas_planning_materialization_runtime to postgres with set true;
+set role atlas_owner;
+grant create on schema atlas_core to atlas_planning_materialization_runtime;
+create function atlas_core.planning_legacy_adoption_unit_transition_allowed(
+  predecessor_line_id uuid,
+  successor_line_id uuid
+)
+returns boolean
+language sql
+stable
+security invoker
+set search_path=''
+as $$
+  select exists (
+    select 1
+    from atlas_planning.theoretical_need_lines predecessor
+    join atlas_planning.theoretical_need_lines successor
+      on successor.theoretical_need_line_id=successor_line_id
+     and successor.predecessor_theoretical_need_line_id=predecessor.theoretical_need_line_id
+     and successor.predecessor_need_generation_run_id=predecessor.need_generation_run_id
+    join atlas_admin.recipe_line_revisions predecessor_revision
+      on predecessor_revision.recipe_line_revision_id=predecessor.recipe_line_revision_id
+    join atlas_admin.recipe_line_revisions successor_revision
+      on successor_revision.recipe_line_revision_id=successor.recipe_line_revision_id
+     and successor_revision.predecessor_recipe_line_revision_id=predecessor_revision.recipe_line_revision_id
+    join atlas_admin.recipe_versions successor_version
+      on successor_version.recipe_version_id=successor.recipe_version_id
+     and successor_version.predecessor_recipe_version_id=predecessor.recipe_version_id
+    join atlas_legacy.recipe_unit_adoption_evidence evidence
+      on evidence.evidence_kind='OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION'
+     and evidence.source_system='OPS_V1'
+     and evidence.predecessor_recipe_version_id=predecessor.recipe_version_id
+     and evidence.target_recipe_version_id=successor.recipe_version_id
+     and evidence.predecessor_recipe_line_revision_id=predecessor.recipe_line_revision_id
+     and evidence.target_recipe_line_revision_id=successor.recipe_line_revision_id
+     and evidence.recipe_id=successor.recipe_id
+     and evidence.recipe_line_id=successor.recipe_line_id
+     and evidence.ingredient_id=successor.ingredient_id
+    join atlas_legacy.import_batches batch
+      on batch.import_batch_id=evidence.import_batch_id
+     and batch.source_system='OPS_V1'
+     and batch.import_status='COMPLETED'
+     and batch.snapshot_id=evidence.snapshot_id
+     and batch.snapshot_checksum=evidence.snapshot_checksum
+    join atlas_legacy.master_data_mappings line_mapping
+      on line_mapping.source_system='OPS_V1'
+     and line_mapping.object_type='RECIPE_LINE'
+     and line_mapping.legacy_id=evidence.legacy_recipe_line_id
+     and line_mapping.recipe_line_id=evidence.recipe_line_id
+    join atlas_legacy.master_data_mappings revision_mapping
+      on revision_mapping.source_system='OPS_V1'
+     and revision_mapping.object_type='RECIPE_LINE_REVISION'
+     and revision_mapping.recipe_line_revision_id=evidence.predecessor_recipe_line_revision_id
+     and revision_mapping.last_seen_import_batch_id=evidence.import_batch_id
+     and revision_mapping.last_source_fingerprint=evidence.source_fingerprint
+    join atlas_legacy.master_data_mappings recipe_mapping
+      on recipe_mapping.source_system='OPS_V1'
+     and recipe_mapping.object_type='RECIPE'
+     and recipe_mapping.recipe_id=evidence.recipe_id
+    join atlas_legacy.master_data_mappings version_mapping
+      on version_mapping.source_system='OPS_V1'
+     and version_mapping.object_type='RECIPE_VERSION'
+     and version_mapping.recipe_version_id=evidence.predecessor_recipe_version_id
+    join atlas_legacy.master_data_mappings ingredient_mapping
+      on ingredient_mapping.source_system='OPS_V1'
+     and ingredient_mapping.object_type='INGREDIENT'
+     and ingredient_mapping.ingredient_id=evidence.ingredient_id
+    join atlas_legacy.master_data_mappings source_unit_mapping
+      on source_unit_mapping.source_system='OPS_V1'
+     and source_unit_mapping.object_type='UNIT'
+     and source_unit_mapping.unit_id=evidence.source_unit_id
+    join atlas_admin.ingredients ingredient
+      on ingredient.ingredient_id=successor.ingredient_id
+     and ingredient.purchase_unit_id=successor.unit_id
+    join atlas_planning.confirmed_need_line_revision_contributions old_contribution
+      on old_contribution.theoretical_need_line_id=predecessor.theoretical_need_line_id
+     and old_contribution.need_generation_run_id=predecessor.need_generation_run_id
+     and old_contribution.service_date=predecessor.service_date
+     and old_contribution.school_id=predecessor.school_id
+     and old_contribution.ingredient_id=predecessor.ingredient_id
+     and old_contribution.source_unit_id=predecessor.unit_id
+     and old_contribution.source_theoretical_quantity=predecessor.theoretical_quantity
+    join atlas_admin.schools school
+      on school.school_id=successor.school_id
+     and school.customer_id=old_contribution.customer_id
+     and school.default_delivery_location_id=old_contribution.delivery_location_id
+    where predecessor.theoretical_need_line_id=predecessor_line_id
+      and predecessor.line_disposition='ACTIVE'
+      and successor.line_disposition='ACTIVE'
+      and predecessor.contribution_family='RECIPE_DERIVED'
+      and successor.contribution_family='RECIPE_DERIVED'
+      and predecessor.recipe_id=successor.recipe_id
+      and predecessor.recipe_line_id=successor.recipe_line_id
+      and predecessor.ingredient_id=successor.ingredient_id
+      and predecessor.theoretical_quantity=successor.theoretical_quantity
+      and predecessor.school_id=successor.school_id
+      and predecessor.service_date=successor.service_date
+      and evidence.source_unit_id=predecessor.unit_id
+      and evidence.corrected_unit_id=successor.unit_id
+      and evidence.quantity_per_basis=successor_revision.quantity_per_basis
+      and predecessor_revision.ingredient_id=successor_revision.ingredient_id
+      and predecessor_revision.quantity_per_basis=successor_revision.quantity_per_basis
+      and predecessor_revision.unit_id=evidence.source_unit_id
+      and successor_revision.unit_id=evidence.corrected_unit_id
+  )
+$$;
+revoke all on function atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)
+  from public,anon,authenticated,service_role;
+grant execute on function atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)
+  to atlas_planning_materialization_runtime;
+reset role;
+
+set role atlas_planning_materialization_runtime;
+do $patch_planning_materializer$
+declare
+  definition text;
+  prior_properties jsonb;
+  after_properties jsonb;
+  expected_md5 constant text := 'e301e98274c7b02ec541c5cfa28f6849';
+  old_guard text := $old$
+          successor.service_date <> old_contribution.service_date
+          or successor.school_id <> old_contribution.school_id
+          or successor.unit_id <> old_contribution.source_unit_id
+$old$;
+  new_guard text := $new$
+          successor.service_date <> old_contribution.service_date
+          or successor.school_id <> old_contribution.school_id
+          or (
+            successor.unit_id <> old_contribution.source_unit_id
+            and not atlas_core.planning_legacy_adoption_unit_transition_allowed(
+              old_contribution.theoretical_need_line_id,
+              successor.theoretical_need_line_id
+            )
+          )
+$new$;
+begin
+  select pg_get_functiondef(procedure.oid),jsonb_build_object(
+    'owner',procedure.proowner,'security_definer',procedure.prosecdef,
+    'volatility',procedure.provolatile,'config',procedure.proconfig,'acl',procedure.proacl
+  )
+  into definition,prior_properties
+  from pg_proc procedure
+  where procedure.oid='atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure;
+
+  if md5(definition)<>expected_md5 then
+    raise exception 'PLANNING_ADOPTION_MATERIALIZER_BASELINE_HASH_MISMATCH';
+  end if;
+  if position(old_guard in definition)=0 then
+    raise exception 'PLANNING_ADOPTION_MATERIALIZER_PATCH_ANCHOR_MISSING';
+  end if;
+  execute replace(definition,old_guard,new_guard);
+
+  select jsonb_build_object(
+    'owner',procedure.proowner,'security_definer',procedure.prosecdef,
+    'volatility',procedure.provolatile,'config',procedure.proconfig,'acl',procedure.proacl
+  )
+  into after_properties
+  from pg_proc procedure
+  where procedure.oid='atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure;
+  if after_properties is distinct from prior_properties then
+    raise exception 'PLANNING_ADOPTION_MATERIALIZER_PROPERTIES_CHANGED';
+  end if;
+end
+$patch_planning_materializer$;
+
+revoke all on function atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)
+  from public,anon,service_role;
+reset role;
+set role atlas_owner;
+revoke create on schema atlas_core from atlas_planning_materialization_runtime;
+reset role;
+revoke atlas_planning_materialization_runtime from postgres;
 
 do $reconcile_existing_ops_v1_adoption$
 declare

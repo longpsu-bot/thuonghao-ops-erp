@@ -418,10 +418,10 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 649,
-    'md5', '2cda85592de76d4690dfa84fe7f7b325'
+    'count', 651,
+    'md5', 'e5c957783700de7c2dc978986101daa3'
   ),
-  'CAT-07 exact RLS catalog includes backend-only 02B continuity and integrity policies'
+  'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
 
 select ok(
@@ -1718,15 +1718,15 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 649,
-    'policy_catalog_md5', '2cda85592de76d4690dfa84fe7f7b325',
+    'policy_count', 651,
+    'policy_catalog_md5', 'e5c957783700de7c2dc978986101daa3',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 323,
-    'private_function_catalog_md5', '2c6ebe86f68f4f0ef16573392f34aa83',
+    'private_function_count', 324,
+    'private_function_catalog_md5', '62c9d865fedbcf223abdb0a84a2eb842',
     'trigger_count', 112,
     'trigger_catalog_md5', '06e6cba439dc0c6c93fdbbd5a563627b',
-    'positive_target_grant_count', 1758,
-    'positive_target_grant_md5', '76b4d280136b9dc7f2c130dfb92e0490',
+    'positive_target_grant_count', 1762,
+    'positive_target_grant_md5', 'dea66f153dec2e0c839f89998f25c3df',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 114,
     'pa_06a_write_count', 15,
