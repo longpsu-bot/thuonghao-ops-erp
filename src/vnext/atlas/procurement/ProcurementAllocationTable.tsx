@@ -1,5 +1,6 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
@@ -26,14 +27,19 @@ export function ProcurementAllocationTable({
 }) {
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <Table.ScrollArea
+      <AtlasTableViewport
+        label="Bảng phân bổ nhà cung ứng"
         maxH={{
           base: "var(--atlas-layout-table-mobile-height, 50dvh)",
           xl: "var(--atlas-layout-table-height, calc(100dvh - 360px))",
         }}
-        overflow="auto"
       >
-        <Table.Root aria-label="Phân bổ nhà cung ứng" size="sm" stickyHeader>
+        <Table.Root
+          aria-label="Phân bổ nhà cung ứng"
+          minW="var(--atlas-layout-procurement-table-min, 1020px)"
+          size="sm"
+          stickyHeader
+        >
           <Table.Header>
             <Table.Row>
               {[
@@ -49,6 +55,16 @@ export function ProcurementAllocationTable({
                 <Table.ColumnHeader
                   key={label}
                   textAlign={index >= 2 && index <= 4 ? "end" : "start"}
+                  position={
+                    index === 0 ? { base: "sticky", md: "static" } : undefined
+                  }
+                  left={index === 0 ? "var(--atlas-layout-zero, 0)" : undefined}
+                  zIndex={
+                    index === 0
+                      ? "var(--atlas-layout-sticky-header-z, 3)"
+                      : undefined
+                  }
+                  bg={index === 0 ? "bg.toolbar" : undefined}
                 >
                   {label}
                 </Table.ColumnHeader>
@@ -79,7 +95,10 @@ export function ProcurementAllocationTable({
                   data-attention={attention || undefined}
                 >
                   <Table.Cell
-                    position="relative"
+                    position={{ base: "sticky", md: "relative" }}
+                    left="var(--atlas-layout-zero, 0)"
+                    zIndex="var(--atlas-layout-sticky-cell-z, 1)"
+                    bg={selectedKey === key ? "bg.selected" : "bg.workbench"}
                     minW="var(--atlas-layout-ingredient-width, 125px)"
                   >
                     {selectedKey === key && (
@@ -164,7 +183,7 @@ export function ProcurementAllocationTable({
             })}
           </Table.Body>
         </Table.Root>
-      </Table.ScrollArea>
+      </AtlasTableViewport>
       {!rows.length && (
         <Text p="lg" color="fg.muted">
           Không có nguyên liệu phù hợp trong phạm vi này.

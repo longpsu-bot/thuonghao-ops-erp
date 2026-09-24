@@ -1,6 +1,7 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import type { DishRecipeController } from "./useDishRecipeWorkbench";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 export const dishStatusLabel = {
   ACTIVE: "Đang dùng",
   INACTIVE: "Ngừng dùng",
@@ -60,8 +61,8 @@ export function DishCatalogue({
           </Button>
         </Box>
       )}
-      <Box
-        overflow="auto"
+      <AtlasTableViewport
+        label="Danh mục món"
         maxH={{
           base: compact
             ? "var(--atlas-layout-navigator-height, 24dvh)"
@@ -78,7 +79,15 @@ export function DishCatalogue({
               : "Chưa có món. Tạo món mới để bắt đầu."}
           </Text>
         ) : (
-          <Table.Root aria-label="Danh mục món" stickyHeader>
+          <Table.Root
+            aria-label="Danh mục món"
+            minW={
+              compact
+                ? "var(--atlas-layout-zero, 0)"
+                : "var(--atlas-layout-recipe-table-min, 720px)"
+            }
+            stickyHeader
+          >
             <Table.Header
               display={{
                 base:
@@ -93,7 +102,27 @@ export function DishCatalogue({
                   ? ["Món", "Thao tác"]
                   : ["Món", "Loại món", "Trạng thái", "Công thức", "Thao tác"]
                 ).map((label) => (
-                  <Table.ColumnHeader key={label}>{label}</Table.ColumnHeader>
+                  <Table.ColumnHeader
+                    key={label}
+                    position={
+                      label === "Món"
+                        ? { base: compact ? "static" : "sticky", lg: "static" }
+                        : undefined
+                    }
+                    left={
+                      label === "Món"
+                        ? "var(--atlas-layout-zero, 0)"
+                        : undefined
+                    }
+                    zIndex={
+                      label === "Món"
+                        ? "var(--atlas-layout-sticky-header-z, 3)"
+                        : undefined
+                    }
+                    bg={label === "Món" ? "bg.toolbar" : undefined}
+                  >
+                    {label}
+                  </Table.ColumnHeader>
                 ))}
               </Table.Row>
             </Table.Header>
@@ -119,7 +148,19 @@ export function DishCatalogue({
                       lg: "table-row",
                     }}
                   >
-                    <Table.Cell position="relative">
+                    <Table.Cell
+                      position={{
+                        base: compact ? "relative" : "sticky",
+                        lg: "relative",
+                      }}
+                      left="var(--atlas-layout-zero, 0)"
+                      zIndex="var(--atlas-layout-sticky-cell-z, 1)"
+                      bg={
+                        dish.dish_id === c.context?.dishId
+                          ? "bg.selected"
+                          : "bg.workbench"
+                      }
+                    >
                       {dish.dish_id === c.context?.dishId && (
                         <Box data-selection-indicator aria-hidden="true" />
                       )}
@@ -187,7 +228,7 @@ export function DishCatalogue({
             </Table.Body>
           </Table.Root>
         )}
-      </Box>
+      </AtlasTableViewport>
     </Box>
   );
 }

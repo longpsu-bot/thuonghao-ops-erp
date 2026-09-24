@@ -1,5 +1,5 @@
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
-import { Box, Heading, Tabs } from "@chakra-ui/react";
+import { Box, Heading, Tabs, Text } from "@chakra-ui/react";
 import { useRef, useState, useImperativeHandle } from "react";
 import type { DishRecipeApi } from "../bridges/dishRecipe";
 import type { RecipeAdjustmentApi } from "../bridges/recipeAdjustment";
@@ -32,9 +32,6 @@ export function RecipeCapability(
       borderRadius="workbench"
       minW="var(--atlas-layout-zero, 0)"
     >
-      <Heading as="h1" textStyle="workbenchTitle" px="md" pt="md" pb="sm">
-        Công thức
-      </Heading>
       <Tabs.Root
         value={job}
         variant="line"
@@ -44,10 +41,18 @@ export function RecipeCapability(
             switchJob(value);
         }}
       >
-        <Tabs.List px="md" aria-label="Công việc công thức">
-          <Tabs.Trigger value="recipes">Công thức</Tabs.Trigger>
-          <Tabs.Trigger value="changes">Lệnh điều chỉnh</Tabs.Trigger>
-        </Tabs.List>
+        <Box px="md" pt="md" pb="sm">
+          <Text textStyle="helper" color="fg.muted">
+            Công thức
+          </Text>
+          <Heading as="h1" textStyle="workbenchTitle" mt="xs">
+            {job === "recipes" ? "Danh mục công thức" : "Lệnh điều chỉnh"}
+          </Heading>
+          <Tabs.List mt="sm" aria-label="Công việc công thức">
+            <Tabs.Trigger value="recipes">Công thức</Tabs.Trigger>
+            <Tabs.Trigger value="changes">Lệnh điều chỉnh</Tabs.Trigger>
+          </Tabs.List>
+        </Box>
         <Tabs.Content value="recipes" p="var(--atlas-layout-zero, 0)">
           {job === "recipes" && (
             <DishRecipeWorkbench

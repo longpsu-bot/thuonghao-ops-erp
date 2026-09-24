@@ -8,21 +8,20 @@ import {
   createAtlasApplicationFixture,
   applicationReviewNow,
 } from "./atlasApplicationReviewFixtures";
-import { createProcurementReviewFixture } from "./procurement/procurementReviewFixtures";
 function Review() {
   const params = new URLSearchParams(window.location.search);
+  const requestedScenario = params.get("scenario");
+  const procurementScenario =
+    requestedScenario === "ready" || requestedScenario === "unknown"
+      ? requestedScenario
+      : undefined;
   const [signedIn, setSignedIn] = useState(
     params.get("session") !== "unauthenticated",
   );
-  const apis = useMemo(() => {
-    const fixture = createAtlasApplicationFixture();
-    if (params.get("scenario") === "unknown") {
-      const procurement = createProcurementReviewFixture("unknown");
-      fixture.purchaseReview = procurement.purchaseReviewApi;
-      fixture.procurement = procurement.procurementApi;
-    }
-    return fixture;
-  }, []);
+  const apis = useMemo(
+    () => createAtlasApplicationFixture(procurementScenario),
+    [procurementScenario],
+  );
   return (
     <AtlasVNextProvider>
       <AtlasSessionGate
