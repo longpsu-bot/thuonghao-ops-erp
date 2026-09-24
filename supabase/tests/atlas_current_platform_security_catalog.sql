@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(23);
+select plan(27);
 
 -- Exact Atlas schema and relation posture.
 select is(
@@ -37,7 +37,7 @@ select is(
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname like 'atlas\_%' escape '\'
   ),
-  jsonb_build_object('ordinary_tables', 112, 'views', 2),
+  jsonb_build_object('ordinary_tables', 113, 'views', 2),
   'CAT-02 exact whole-platform table and view totals include School PXK evidence'
 );
 
@@ -63,9 +63,9 @@ select is(
       and c.relkind = 'r'
   ),
   jsonb_build_object(
-    'authoritative_tables', 112,
-    'rls_enabled', 112,
-    'rls_forced', 112
+    'authoritative_tables', 113,
+    'rls_enabled', 113,
+    'rls_forced', 113
   ),
   'CAT-03 every authoritative Atlas table has RLS enabled and forced'
 );
@@ -418,8 +418,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 646,
-    'md5', '6748022ace668ecaf65879d09bbe2e38'
+    'count', 649,
+    'md5', '2cda85592de76d4690dfa84fe7f7b325'
   ),
   'CAT-07 exact RLS catalog includes backend-only 02B continuity and integrity policies'
 );
@@ -1313,6 +1313,75 @@ select ok(
   'CAT-21A corrected Recipe functions retain fixed paths, intended owners, and revoke-first execution'
 );
 
+select ok(
+  (
+    select c.relrowsecurity and c.relforcerowsecurity
+    from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='atlas_legacy'
+      and c.relname='recipe_unit_adoption_evidence'
+  )
+  and has_table_privilege('atlas_master_data_command_runtime','atlas_legacy.recipe_unit_adoption_evidence','SELECT,INSERT')
+  and not has_table_privilege('atlas_master_data_command_runtime','atlas_legacy.recipe_unit_adoption_evidence','UPDATE,DELETE')
+  and has_table_privilege('atlas_planning_materialization_runtime','atlas_legacy.recipe_unit_adoption_evidence','SELECT')
+  and not has_table_privilege('atlas_planning_materialization_runtime','atlas_legacy.recipe_unit_adoption_evidence','INSERT,UPDATE,DELETE')
+  and not has_table_privilege('anon','atlas_legacy.recipe_unit_adoption_evidence','SELECT,INSERT,UPDATE,DELETE')
+  and not has_table_privilege('authenticated','atlas_legacy.recipe_unit_adoption_evidence','SELECT,INSERT,UPDATE,DELETE')
+  and not has_table_privilege('service_role','atlas_legacy.recipe_unit_adoption_evidence','SELECT,INSERT,UPDATE,DELETE'),
+  'CAT-21B adoption evidence is forced-RLS and has only the two private runtime grants'
+);
+
+select is(
+  (
+    select count(*)
+    from pg_policy policy
+    join pg_class relation on relation.oid=policy.polrelid
+    join pg_namespace namespace on namespace.oid=relation.relnamespace
+    where namespace.nspname='atlas_legacy'
+      and relation.relname='recipe_unit_adoption_evidence'
+      and policy.polname in (
+        'planning_unit_adoption_master_select',
+        'planning_unit_adoption_master_insert',
+        'planning_unit_adoption_materialization_select'
+      )
+  ),
+  3::bigint,
+  'CAT-21C adoption evidence has the exact private RLS policy set'
+);
+
+select ok(
+  (
+    select count(*)=3
+      and bool_and(
+        procedure.proconfig=array['search_path=""']::text[]
+        and pg_get_userbyid(procedure.proowner)='atlas_owner'
+        and not procedure.prosecdef
+        and not has_function_privilege('anon',procedure.oid,'EXECUTE')
+        and not has_function_privilege('authenticated',procedure.oid,'EXECUTE')
+        and not has_function_privilege('service_role',procedure.oid,'EXECUTE')
+      )
+    from pg_proc procedure
+    join pg_namespace namespace on namespace.oid=procedure.pronamespace
+    where namespace.nspname='atlas_legacy'
+      and procedure.proname in (
+        'recipe_unit_adoption_evidence_guard',
+        'master_recipe_operational_unit',
+        'record_master_recipe_unit_adoption_evidence'
+      )
+  ),
+  'CAT-21D adoption helpers are private invokers with fixed empty paths'
+);
+
+select ok(
+  not exists (
+    select 1 from information_schema.columns
+    where table_schema='atlas_legacy'
+      and table_name='recipe_unit_adoption_evidence'
+      and column_name like '%conversion%'
+  ),
+  'CAT-21E adoption evidence stores no conversion factor or converted quantity'
+);
+
 -- Bounded digest of the complete current platform catalog.
 select is(
   (
@@ -1640,24 +1709,24 @@ select is(
   ),
   jsonb_build_object(
     'schema_count', 10,
-    'table_count', 112,
-    'table_catalog_md5', 'f4359969c6eee25d91a4d07565c8f629',
+    'table_count', 113,
+    'table_catalog_md5', '615d2972962be55d46aa1ba5233cfefd',
     'view_count', 2,
     'view_catalog_md5', 'b3f19bc684dec3a9203c4eb578336420',
-    'rls_enabled', 112,
-    'rls_forced', 112,
+    'rls_enabled', 113,
+    'rls_forced', 113,
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 646,
-    'policy_catalog_md5', '6748022ace668ecaf65879d09bbe2e38',
+    'policy_count', 649,
+    'policy_catalog_md5', '2cda85592de76d4690dfa84fe7f7b325',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 320,
-    'private_function_catalog_md5', 'b4f5ccf751c3bd79077e91aade7b8238',
-    'trigger_count', 111,
-    'trigger_catalog_md5', 'bdb759709044a4d8d6f7a7ce3bad4ee1',
-    'positive_target_grant_count', 1755,
-    'positive_target_grant_md5', '1361a4c94e34bac3b956c8a42a204aa4',
+    'private_function_count', 323,
+    'private_function_catalog_md5', '2c6ebe86f68f4f0ef16573392f34aa83',
+    'trigger_count', 112,
+    'trigger_catalog_md5', '06e6cba439dc0c6c93fdbbd5a563627b',
+    'positive_target_grant_count', 1758,
+    'positive_target_grant_md5', '76b4d280136b9dc7f2c130dfb92e0490',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 114,
     'pa_06a_write_count', 15,

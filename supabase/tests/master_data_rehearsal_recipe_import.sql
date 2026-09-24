@@ -13,12 +13,22 @@ create function pg_temp.recipe_adoption_fixture() returns jsonb language sql as 
           case
             when line.value->>'legacy_id'='recipe:dish:100:school-type:1:ingredient:1'
               then jsonb_set(jsonb_set(line.value,'{unit_legacy_id}','"Hũ"'),'{quantity_per_basis}','"12"')
+            when line.value->>'legacy_id'='recipe:dish:100:school-type:1:ingredient:2'
+              then jsonb_set(line.value,'{unit_legacy_id}','"Hũ"')
             else line.value
           end
           order by line.ordinality
         )
         from jsonb_array_elements(pg_temp.recipe_fixture()#>'{records,recipe_lines}') with ordinality line(value,ordinality)
-      )
+      ) || jsonb_build_array(jsonb_build_object(
+        'legacy_id','recipe:dish:100:school-type:1:ingredient:4',
+        'source_record_id','500',
+        'recipe_legacy_id','dish:100:school-type:1',
+        'ingredient_legacy_id','4',
+        'unit_legacy_id','Hũ',
+        'quantity_per_basis','0.25',
+        'operational_note','Already-correct sibling'
+      ))
     )
   )
 $$;
@@ -79,7 +89,7 @@ select is((select count(*) from atlas_admin.recipes),2::bigint,'two typed Recipe
 select is((select count(*) from atlas_admin.recipes where school_type_id is null),0::bigint,'legacy GENERAL flag does not create general roots');
 select is((select count(*) from atlas_admin.recipe_versions where recipe_version_status='RELEASED_FOR_PLANNING'),2::bigint,'initial Recipes are planning eligible');
 select is((select count(*) from atlas_admin.recipe_versions where recipe_version_status='LOCKED'),0::bigint,'legacy is_locked is not copied');
-select is((select count(*) from atlas_admin.recipe_line_revisions),3::bigint,'all exact BOM lines materialized');
+select is((select count(*) from atlas_admin.recipe_line_revisions),4::bigint,'all exact BOM lines materialized');
 select ok((select bool_and(basis_portions=100 and created_by_actor_id='aa920000-0000-4000-8000-000000000001'::uuid and validated_by_actor_id=created_by_actor_id and released_by_actor_id=created_by_actor_id and source_evidence->>'source_kind'='OPS_V1_MASTER_SNAPSHOT') from atlas_admin.recipe_versions),'actual import Actor and migration evidence retained');
 select is(
   (
@@ -116,6 +126,93 @@ select is(
   'Hũ',
   'raw BoM Unit remains auditable in immutable snapshot evidence'
 );
+select is(
+  (select count(*) from atlas_legacy.recipe_unit_adoption_evidence),
+  2::bigint,
+  'one immutable adoption evidence row is recorded per mismatched fixture line'
+);
+select ok(
+  (
+    select bool_and(
+      adoption.evidence_kind='OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION'
+      and adoption.source_unit_id<>adoption.corrected_unit_id
+      and adoption.predecessor_recipe_version_id is null
+      and adoption.predecessor_recipe_line_revision_id is null
+      and revision.unit_id=ingredient.purchase_unit_id
+      and revision.ingredient_id=adoption.ingredient_id
+      and revision.quantity_per_basis=adoption.quantity_per_basis
+    )
+    from atlas_legacy.recipe_unit_adoption_evidence adoption
+    join atlas_admin.recipe_line_revisions revision
+      on revision.recipe_line_revision_id=adoption.target_recipe_line_revision_id
+    join atlas_admin.ingredients ingredient on ingredient.ingredient_id=adoption.ingredient_id
+  ),
+  'adoption evidence binds raw Unit, corrected Unit, Ingredient and unchanged quantity'
+);
+select is(
+  (
+    select count(*)
+    from atlas_legacy.recipe_unit_adoption_evidence adoption
+    join atlas_admin.recipe_versions version on version.recipe_version_id=adoption.target_recipe_version_id
+    join atlas_admin.recipes recipe on recipe.recipe_id=version.recipe_id
+    join atlas_admin.school_types school_type on school_type.school_type_id=recipe.school_type_id
+    where school_type.school_type_code='v1-school-type-2'
+  ),
+  0::bigint,
+  'already-correct Recipe receives no adoption evidence'
+);
+select throws_ok(
+  $$update atlas_legacy.recipe_unit_adoption_evidence set quantity_per_basis=99$$,
+  '23514','recipe Unit adoption evidence is immutable',
+  'adoption evidence cannot be updated'
+);
+select throws_ok(
+  $$delete from atlas_legacy.recipe_unit_adoption_evidence$$,
+  '23514','recipe Unit adoption evidence is immutable',
+  'adoption evidence cannot be deleted'
+);
+savepoint release_unit_boundary;
+insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_type_id,dish_status)
+select 'aa920000-0000-4000-8000-000000000300','native-unit-mismatch','Native Unit mismatch',dish_type_id,'ACTIVE'
+from atlas_admin.dish_types where dish_type_code='soup';
+insert into atlas_admin.recipes(recipe_id,dish_id,school_type_id,recipe_status)
+select 'aa920000-0000-4000-8000-000000000301','aa920000-0000-4000-8000-000000000300',school_type_id,'ACTIVE'
+from atlas_admin.school_types where school_type_code='v1-school-type-1';
+insert into atlas_admin.recipe_versions(recipe_version_id,recipe_id,version_number,basis_portions,created_by_actor_id,source_evidence)
+values('aa920000-0000-4000-8000-000000000302','aa920000-0000-4000-8000-000000000301',1,100,'aa920000-0000-4000-8000-000000000001','{"source_kind":"NATIVE_FIXTURE"}');
+insert into atlas_admin.recipe_lines(recipe_line_id,recipe_id,line_code)
+values('aa920000-0000-4000-8000-000000000303','aa920000-0000-4000-8000-000000000301','native-unit-mismatch-line');
+insert into atlas_admin.recipe_line_revisions(
+  recipe_line_revision_id,recipe_id,recipe_version_id,recipe_line_id,line_revision_number,
+  ingredient_id,quantity_per_basis,unit_id,line_disposition,created_by_actor_id
+)
+select 'aa920000-0000-4000-8000-000000000304','aa920000-0000-4000-8000-000000000301',
+  'aa920000-0000-4000-8000-000000000302','aa920000-0000-4000-8000-000000000303',1,
+  ingredient.ingredient_id,12,unit.unit_id,'PRESENT','aa920000-0000-4000-8000-000000000001'
+from atlas_admin.ingredients ingredient
+cross join atlas_admin.units unit
+where ingredient.ingredient_code='v1-ingredient-1' and unit.unit_name='Hũ';
+update atlas_admin.recipe_versions
+set recipe_version_status='VALIDATED',validated_by_actor_id='aa920000-0000-4000-8000-000000000001',
+  validated_at=clock_timestamp(),version=version+1
+where recipe_version_id='aa920000-0000-4000-8000-000000000302';
+set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+set constraints atlas_admin.recipe_versions_integrity_guard deferred;
+create function pg_temp.release_native_unit_mismatch() returns void language plpgsql as $$
+begin
+  update atlas_admin.recipe_versions
+  set recipe_version_status='RELEASED_FOR_PLANNING',released_by_actor_id='aa920000-0000-4000-8000-000000000001',
+    released_at=clock_timestamp(),version=version+1
+  where recipe_version_id='aa920000-0000-4000-8000-000000000302';
+  set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+end
+$$;
+select throws_ok(
+  $$select pg_temp.release_native_unit_mismatch()$$,
+  '23514','released Recipe Unit must equal Ingredient purchase Unit',
+  'native cross-Unit Recipe release remains blocked without OPS-v1 adoption evidence'
+);
+rollback to savepoint release_unit_boundary;
 insert into evidence(label,snapshot,preview)
 select 'a-replay',snapshot,atlas_legacy.preview_master_data_snapshot(snapshot) from evidence where label='a';
 update evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa920000-0000-4000-8000-000000000001') where label='a-replay';
@@ -152,7 +249,7 @@ select ok((select not exists(select 1 from jsonb_array_elements(preview->'action
 update evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa920000-0000-4000-8000-000000000001') where label='b';
 select is((select result->>'success' from evidence where label='b'),'true','row-ID-only refresh applies');
 select is((select count(*) from atlas_admin.recipe_versions),2::bigint,'row-ID churn creates no duplicate versions');
-select is((select count(*) from atlas_admin.recipe_line_revisions),3::bigint,'row-ID churn creates no duplicate revisions');
+select is((select count(*) from atlas_admin.recipe_line_revisions),4::bigint,'row-ID churn creates no duplicate revisions');
 -- Change one quantity; remove Ingredient 2; add Ingredient 3 in the first Recipe.
 insert into evidence(label,snapshot)
 select 'c',pg_temp.sign(jsonb_set(jsonb_set(snapshot,'{snapshot_id}','"synthetic-recipe-c"'),'{records,recipe_lines}',
