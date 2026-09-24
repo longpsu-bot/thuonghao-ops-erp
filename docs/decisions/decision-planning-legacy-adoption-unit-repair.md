@@ -47,9 +47,14 @@ import/correction boundary.
 Candidate proof includes exactly one matching completed-import reconciliation
 action for the target Recipe-line revision. The action must repeat the same
 Recipe, stable line, Ingredient, numeric quantity, and raw Unit; target-only or
-partially matching actions are insufficient. Post-repair proof compares every
-successor and unaffected sibling directly with its predecessor rather than
-inferring correctness from cardinality alone.
+partially matching actions are insufficient. The migration itself requires
+exactly one target action, exactly one exact action, and exactly one OPS-v1
+mapping for the Recipe, Recipe version, stable line, revision, Ingredient, raw
+Unit, and corrected Ingredient purchase Unit. Duplicate actions or missing or
+ambiguous typed mappings make the candidate ineligible even if the hosted
+manifest gate is bypassed. Post-repair proof compares every successor and
+unaffected sibling directly with its predecessor rather than inferring
+correctness from cardinality alone.
 
 ## Recipe and Planning behavior
 

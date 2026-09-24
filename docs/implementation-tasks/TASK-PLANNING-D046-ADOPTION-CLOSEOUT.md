@@ -170,13 +170,19 @@ database facts.
 
 The forward migration deterministically discovers the complete eligible set
 from mappings, the completed import reconciliation, current released versions,
-and raw snapshot evidence. It reconciles every eligible mismatch and proves
-that its transitioned count equals its eligible count before commit. An empty
-database or a database without a completed OPS-v1 import is a valid no-op, so
-clean local resets remain installable. The protected Staging preflight and
-post-deployment readback, rather than a production-specific migration constant,
-must prove the expected 76 line transitions across 74 Recipe successors with
-322 PRESENT successor lines, of which 246 are exact copies.
+and raw snapshot evidence. Its candidate predicate independently requires
+exactly one target reconciliation action, exactly one action matching Recipe,
+stable line, Ingredient, numeric quantity, and raw Unit, and exactly one OPS-v1
+mapping for Recipe, Recipe version, stable line, revision, Ingredient, raw Unit,
+and corrected Ingredient purchase Unit. Duplicate actions and missing or
+ambiguous mappings fail closed inside the migration even if the hosted gate is
+bypassed. It reconciles every eligible mismatch and proves that its transitioned
+count equals its eligible count before commit. An empty database or a database
+without a completed OPS-v1 import is a valid no-op, so clean local resets remain
+installable. The protected Staging preflight and post-deployment readback,
+rather than a production-specific migration constant, must prove the expected
+76 line transitions across 74 Recipe successors with 322 PRESENT successor
+lines, of which 246 are exact copies.
 
 For each affected Recipe the migration:
 
@@ -232,7 +238,10 @@ The local Supabase certification also executes a true upgrade rehearsal. It
 resets to migration `20260923041223`, seeds two mapped OPS-v1 Unit mismatches,
 one unaffected sibling, and one unmapped native `UIQ03A_SAVE` mismatch, applies
 the real D-047 migration, and verifies immutable successor/evidence behavior.
-It then resets to the current schema even when the rehearsal fails.
+It then repeats the real upgrade with (1) a duplicated exact revision action
+and (2) a missing corrected purchase-Unit mapping, proving that each incomplete
+authority set creates no evidence or successor. It resets to the current schema
+even when any rehearsal fails.
 
 ### Release invariant
 
@@ -372,4 +381,6 @@ old/new Confirmed Need revisions also remain immutable.
   post-deploy readback proves the same manifest was repaired.
 - The executable pre-migration upgrade rehearsal proves two corrections, one
   exact sibling copy, deterministic evidence, replay convergence, and native
-  mismatch exclusion using the real D-047 migration.
+  mismatch exclusion using the real D-047 migration. Separate negative upgrades
+  prove that a duplicate exact reconciliation action and a missing corrected
+  purchase-Unit mapping both create no evidence or successor.

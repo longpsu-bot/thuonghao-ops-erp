@@ -20,6 +20,18 @@ describe("planning legacy adoption upgrade harness", () => {
       ...PLANNING_LEGACY_ADOPTION_UPGRADE_COMMANDS,
       RESTORE_CURRENT_SCHEMA_COMMAND,
     ]);
+    expect(PLANNING_LEGACY_ADOPTION_UPGRADE_COMMANDS.flat()).toContain(
+      "supabase/local/planning_legacy_adoption_upgrade_duplicate_action.sql",
+    );
+    expect(PLANNING_LEGACY_ADOPTION_UPGRADE_COMMANDS.flat()).toContain(
+      "supabase/tests/planning_legacy_adoption_upgrade_duplicate_action.sql",
+    );
+    expect(PLANNING_LEGACY_ADOPTION_UPGRADE_COMMANDS.flat()).toContain(
+      "supabase/local/planning_legacy_adoption_upgrade_missing_corrected_unit_mapping.sql",
+    );
+    expect(PLANNING_LEGACY_ADOPTION_UPGRADE_COMMANDS.flat()).toContain(
+      "supabase/tests/planning_legacy_adoption_upgrade_missing_corrected_unit_mapping.sql",
+    );
   });
 
   it("restores current schema after a failed migration and preserves the primary failure", () => {

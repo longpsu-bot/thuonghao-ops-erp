@@ -1,7 +1,7 @@
 begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(19);
 
 select is(
   (
@@ -249,6 +249,20 @@ select is(
   ),
   2::bigint,
   'the bounded correction carries explicit provenance and unconverted quantities'
+);
+
+select is(
+  (
+    select count(distinct corrected_mapping.unit_id)
+    from atlas_legacy.recipe_unit_adoption_evidence evidence
+    join atlas_legacy.master_data_mappings corrected_mapping
+      on corrected_mapping.source_system = 'OPS_V1'
+      and corrected_mapping.object_type = 'UNIT'
+      and corrected_mapping.unit_id = evidence.corrected_unit_id
+    where evidence.import_batch_id = 'd0480000-0000-0000-0000-000000000080'
+  ),
+  2::bigint,
+  'every corrected purchase Unit retains explicit OPS-v1 mapping authority'
 );
 
 select * from finish();

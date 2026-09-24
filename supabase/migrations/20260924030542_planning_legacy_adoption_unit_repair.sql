@@ -688,45 +688,71 @@ begin
     on batch.import_batch_id=revision_mapping.last_seen_import_batch_id
    and batch.source_system='OPS_V1'
    and batch.import_status='COMPLETED'
+  join lateral (
+    select
+      count(*) filter (
+        where action.value->>'object_type'='RECIPE_LINE_REVISION'
+          and action.value->>'target_id'=revision.recipe_line_revision_id::text
+      ) as target_action_count,
+      count(*) filter (
+        where action.value->>'object_type'='RECIPE_LINE_REVISION'
+          and action.value->>'target_id'=revision.recipe_line_revision_id::text
+          and action.value#>>'{values,recipe_id}'=revision.recipe_id::text
+          and action.value#>>'{values,recipe_line_id}'=revision.recipe_line_id::text
+          and action.value#>>'{values,ingredient_id}'=revision.ingredient_id::text
+          and (action.value#>>'{values,quantity_per_basis}')::numeric=revision.quantity_per_basis
+          and action.value#>>'{values,unit_id}'=revision.unit_id::text
+      ) as exact_action_count
+    from jsonb_array_elements(coalesce(batch.reconciliation->'actions','[]'::jsonb)) action(value)
+  ) reconciliation_authority
+    on reconciliation_authority.target_action_count=1
+   and reconciliation_authority.exact_action_count=1
   where revision.line_disposition='PRESENT'
     and revision.unit_id is distinct from ingredient.purchase_unit_id
     and revision_mapping.last_source_fingerprint is not null
     and batch.operator_actor_id is not null
-    and exists (
-      select 1 from atlas_legacy.master_data_mappings ingredient_mapping
+    and (
+      select count(*) from atlas_legacy.master_data_mappings candidate_line_mapping
+      where candidate_line_mapping.source_system='OPS_V1'
+        and candidate_line_mapping.object_type='RECIPE_LINE'
+        and candidate_line_mapping.recipe_line_id=revision.recipe_line_id
+    )=1
+    and (
+      select count(*) from atlas_legacy.master_data_mappings candidate_revision_mapping
+      where candidate_revision_mapping.source_system='OPS_V1'
+        and candidate_revision_mapping.object_type='RECIPE_LINE_REVISION'
+        and candidate_revision_mapping.recipe_line_revision_id=revision.recipe_line_revision_id
+    )=1
+    and (
+      select count(*) from atlas_legacy.master_data_mappings ingredient_mapping
       where ingredient_mapping.source_system='OPS_V1'
         and ingredient_mapping.object_type='INGREDIENT'
         and ingredient_mapping.ingredient_id=revision.ingredient_id
-    )
-    and exists (
-      select 1 from atlas_legacy.master_data_mappings unit_mapping
-      where unit_mapping.source_system='OPS_V1'
-        and unit_mapping.object_type='UNIT'
-        and unit_mapping.unit_id=revision.unit_id
-    )
-    and exists (
-      select 1 from atlas_legacy.master_data_mappings recipe_mapping
+    )=1
+    and (
+      select count(*) from atlas_legacy.master_data_mappings source_unit_mapping
+      where source_unit_mapping.source_system='OPS_V1'
+        and source_unit_mapping.object_type='UNIT'
+        and source_unit_mapping.unit_id=revision.unit_id
+    )=1
+    and (
+      select count(*) from atlas_legacy.master_data_mappings corrected_unit_mapping
+      where corrected_unit_mapping.source_system='OPS_V1'
+        and corrected_unit_mapping.object_type='UNIT'
+        and corrected_unit_mapping.unit_id=ingredient.purchase_unit_id
+    )=1
+    and (
+      select count(*) from atlas_legacy.master_data_mappings recipe_mapping
       where recipe_mapping.source_system='OPS_V1'
         and recipe_mapping.object_type='RECIPE'
         and recipe_mapping.recipe_id=revision.recipe_id
-    )
-    and exists (
-      select 1 from atlas_legacy.master_data_mappings version_mapping
+    )=1
+    and (
+      select count(*) from atlas_legacy.master_data_mappings version_mapping
       where version_mapping.source_system='OPS_V1'
         and version_mapping.object_type='RECIPE_VERSION'
         and version_mapping.recipe_version_id=revision.recipe_version_id
-    )
-    and exists (
-      select 1
-      from jsonb_array_elements(coalesce(batch.reconciliation->'actions','[]'::jsonb)) action
-      where action.value->>'object_type'='RECIPE_LINE_REVISION'
-        and action.value->>'target_id'=revision.recipe_line_revision_id::text
-        and action.value#>>'{values,recipe_id}'=revision.recipe_id::text
-        and action.value#>>'{values,recipe_line_id}'=revision.recipe_line_id::text
-        and action.value#>>'{values,ingredient_id}'=revision.ingredient_id::text
-        and (action.value#>>'{values,quantity_per_basis}')::numeric=revision.quantity_per_basis
-        and action.value#>>'{values,unit_id}'=revision.unit_id::text
-    );
+    )=1;
 
   select count(*),count(distinct predecessor_recipe_version_id)
     into eligible_line_count,eligible_recipe_count
