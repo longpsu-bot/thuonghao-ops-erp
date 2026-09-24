@@ -510,7 +510,7 @@ export async function reachReadyToReview({
     await waitForPreGenerateSurface({ evaluate, timeout, interval });
     await clickOnce(CONFIRMED_WORKBENCH, "Tạo nhu cầu", "generate_once");
     generateClicks = 1;
-  } else if (mode === "PRISTINE_GENERATED_RESUME") {
+  } else if (mode === "D046_CORRECTED_RESUME") {
     await until(
       async () => {
         const state = await evaluate(preGenerateGateStateExpression());
@@ -547,7 +547,7 @@ export async function reachReadyToReview({
     interval,
   );
   if (
-    before.batch_version !== 1 ||
+    before.batch_version !== (mode === "D046_CORRECTED_RESUME" ? 2 : 1) ||
     before.blockers?.length !== 0 ||
     before.source_kind !== "NEED_GENERATION" ||
     before.service_period?.period_start !== REHEARSAL_SERVICE_DATE ||
