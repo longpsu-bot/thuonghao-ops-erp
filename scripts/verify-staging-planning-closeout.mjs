@@ -31,6 +31,72 @@ const APPROVED_COUNT_POLICIES = new Map([
   ["v1-unit-ea9046ea54e4", "Hộp"],
   ["v1-unit-eb0ce03e77fa", "Trái"],
 ]);
+const RETAINED_ADOPTION_IDENTITY_FIELDS = Object.freeze([
+  ["recipe_id", "recipe_id"],
+  ["recipe_line_id", "recipe_line_id"],
+  ["ingredient_id", "ingredient_id"],
+]);
+const RETAINED_ADOPTION_LINEAGE_SIDES = Object.freeze([
+  Object.freeze({
+    name: "TARGET",
+    fields: Object.freeze([
+      ["target_recipe_version_id", "recipe_version_id"],
+      ["target_recipe_line_revision_id", "recipe_line_revision_id"],
+      ["corrected_unit_id", "unit_id"],
+    ]),
+  }),
+  Object.freeze({
+    name: "PREDECESSOR",
+    fields: Object.freeze([
+      ["predecessor_recipe_version_id", "recipe_version_id"],
+      ["predecessor_recipe_line_revision_id", "recipe_line_revision_id"],
+      ["source_unit_id", "unit_id"],
+    ]),
+  }),
+]);
+
+const exactRetainedAdoptionFields = (evidence, theoretical, fields) =>
+  fields.every(([evidenceField, theoreticalField]) => {
+    const evidenceValue = evidence?.[evidenceField];
+    const theoreticalValue = theoretical?.[theoreticalField];
+    return (
+      evidenceValue !== null &&
+      evidenceValue !== undefined &&
+      theoreticalValue !== null &&
+      theoreticalValue !== undefined &&
+      evidenceValue === theoreticalValue
+    );
+  });
+
+export function retainedAdoptionLineageSide(evidence, theoretical) {
+  if (
+    evidence?.evidence_kind !==
+      "OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION" ||
+    evidence.source_system !== "OPS_V1" ||
+    !exactRetainedAdoptionFields(
+      evidence,
+      theoretical,
+      RETAINED_ADOPTION_IDENTITY_FIELDS,
+    )
+  )
+    return null;
+  return (
+    RETAINED_ADOPTION_LINEAGE_SIDES.find(({ fields }) =>
+      exactRetainedAdoptionFields(evidence, theoretical, fields),
+    )?.name ?? null
+  );
+}
+
+const retainedAdoptionLineageSql = () =>
+  RETAINED_ADOPTION_LINEAGE_SIDES.map(
+    ({ fields }) =>
+      `(${fields
+        .map(
+          ([evidenceField, theoreticalField]) =>
+            `evidence.${evidenceField}=theoretical.${theoreticalField}`,
+        )
+        .join(" and ")})`,
+  ).join(" or ");
 
 export function planningCloseoutPoliciesAccepted(rows) {
   if (!Array.isArray(rows) || rows.length !== 15) return false;
@@ -305,12 +371,10 @@ with scoped_runs as (
   join atlas_legacy.recipe_unit_adoption_evidence evidence
     on evidence.evidence_kind='OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION'
    and evidence.source_system='OPS_V1'
-   and evidence.target_recipe_version_id=theoretical.recipe_version_id
-   and evidence.target_recipe_line_revision_id=theoretical.recipe_line_revision_id
    and evidence.recipe_id=theoretical.recipe_id
    and evidence.recipe_line_id=theoretical.recipe_line_id
    and evidence.ingredient_id=theoretical.ingredient_id
-   and evidence.corrected_unit_id=theoretical.unit_id
+   and (${retainedAdoptionLineageSql()})
   join atlas_legacy.master_data_mappings line_mapping
     on line_mapping.source_system='OPS_V1' and line_mapping.object_type='RECIPE_LINE'
    and line_mapping.recipe_line_id=evidence.recipe_line_id

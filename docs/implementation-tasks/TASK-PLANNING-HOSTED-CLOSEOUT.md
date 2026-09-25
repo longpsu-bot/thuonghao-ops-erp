@@ -524,3 +524,47 @@ reviewed forward migration that restores the prior private guard implementation;
 it must not rewrite retained planning evidence.
 This implementation does not deploy to Staging, run protected Performance,
 execute the 17/09 correction or run Browser Closeout.
+
+## Planning adoption-workload verifier lineage correction — 25/09/2026
+
+Protected Planning Performance passed every actual generation probe against
+`8ad33488450fbc3fa54341e2e9f1576c12ad2d3b`, but the repository verifier
+reported `ADOPTION_WORKLOAD_DRIFT`. The database and the certified `24 / 8 / 3`
+workload were correct. The read-only `retained_adoption_workload` query matched
+only the D-047 target Recipe version, target line revision, and corrected Unit.
+The immutable pre-correction 17/09 current run instead retains the complete
+predecessor Recipe version, predecessor line revision, and source Unit, so its
+one proven adoption occurrence was omitted.
+
+The verifier now accepts a theoretical line only when the existing exact
+evidence kind, source system, Recipe, Recipe line, Ingredient, and legacy
+mapping predicates are satisfied together with one complete lineage tuple:
+
+- target Recipe version + target line revision + corrected Unit; or
+- predecessor Recipe version + predecessor line revision + source Unit.
+
+Mixed tuples remain invalid. The workload remains scoped to the Confirmed Need
+batch's `current_need_generation_run_id` and counts distinct current
+theoretical lines, so immutable predecessor and successor history cannot count
+the same logical adoption twice. The certified fixture now records the actual
+date shape `8 / 2 / 4 / 1 / 9`, totaling 24 occurrences across eight legacy
+Recipe lines and three Ingredients. The formal `<7000 ms` threshold, 4000 ms
+operator-target reporting, and `231 / 231 / 225 / 213 / 210` line expectations
+are unchanged.
+
+This is repository-side certification logic only. It creates no migration and
+changes no database function, schema, business behavior, public API, RLS,
+privilege, or frontend behavior. It performs no Staging mutation, protected
+Performance rerun, 17/09 correction, Browser Closeout, Confirmed Need Save, or
+Purchase Handoff.
+
+The next owner-operated sequence is deliberately unexecuted here:
+
+```text
+review Draft PR
+→ merge verifier-only fix
+→ NO database deploy required
+→ rerun Atlas Staging Planning Performance using exact merged main SHA
+→ if GENERATION_PERFORMANCE_PASS and workload proof = 24/8/3:
+   authorize one-shot 17/09 D-046 correction separately
+```
