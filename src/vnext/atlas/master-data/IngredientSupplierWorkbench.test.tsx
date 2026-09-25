@@ -201,6 +201,31 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("uses the locked context/detail geometry and returns focus to the exact Ingredient action", async () => {
+    renderWorkbench();
+    await ready();
+    expect(
+      screen.getByRole("complementary", {
+        name: "Ngữ cảnh công việc dữ liệu gốc",
+      }),
+    ).toHaveStyle({
+      "--atlas-task-context-desktop-width": "196px",
+      "--atlas-task-context-mobile-height": "88px",
+    });
+    const trigger = screen.getByRole("button", { name: "Xem / sửa Bí mật" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
+      { "--atlas-attached-detail-width": "320px" },
+    );
+    expect(
+      screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
+    ).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng chi tiết" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+  });
+
   it("shows module context and the current job heading before local job tabs", async () => {
     renderWorkbench();
     await ready();
@@ -237,6 +262,42 @@ describe("IngredientSupplierWorkbench", () => {
       screen.queryByText("Nguyên liệu ngừng dùng"),
     ).not.toBeInTheDocument();
     expect(api.getIngredientsAndSuppliers).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps search and creation immediate while status stays in a mobile filter disclosure", async () => {
+    renderWorkbench();
+    await ready();
+
+    expect(screen.getByLabelText("Tìm nguyên liệu")).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Tạo nguyên liệu" }),
+    ).toBeEnabled();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute("aria-controls", "ingredient-filters");
+    expect(
+      screen.getByText("Trạng thái: Tất cả trạng thái"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    fireEvent.change(screen.getByRole("combobox", { name: "Trạng thái" }), {
+      target: { value: "INACTIVE" },
+    });
+    fireEvent.click(disclosure);
+
+    expect(screen.getByText("Trạng thái: Ngừng dùng")).toBeInTheDocument();
+  });
+
+  it("does not invent an Ingredient count when the authoritative read fails", async () => {
+    renderWorkbench(createIngredientSupplierReviewFixture("READ_FAILURE"));
+
+    expect(await screen.findByRole("alert")).toBeVisible();
+    const context = screen.getByRole("complementary", {
+      name: "Ngữ cảnh công việc dữ liệu gốc",
+    });
+    expect(within(context).getByText("Không xác định")).toBeVisible();
+    expect(document.body).not.toHaveTextContent("0 / 0");
+    expect(document.body).not.toHaveTextContent("0 nguyên liệu");
   });
 
   it("keeps the selected Ingredient catalogue row visible in a stationary attached detail split", async () => {
@@ -550,6 +611,12 @@ describe("IngredientSupplierWorkbench", () => {
     });
     expect(region).toHaveAttribute("tabindex", "0");
     expect(screen.getAllByRole("row")).toHaveLength(361);
+    const actions = screen.getAllByRole("button", {
+      name: /^(Xem \/ sửa|Xem) /,
+    });
+    expect(
+      new Set(actions.map((item) => item.getAttribute("aria-label"))).size,
+    ).toBe(360);
 
     fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
       target: { value: "không tồn tại" },

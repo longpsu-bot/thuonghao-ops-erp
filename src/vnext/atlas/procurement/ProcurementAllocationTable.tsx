@@ -1,6 +1,7 @@
 import { Box, Button, Table, Text } from "@chakra-ui/react";
 import type { AllocationFamilyRow } from "../bridges/procurement";
 import { AtlasTableViewport } from "../AtlasTableViewport";
+import type { CSSProperties } from "react";
 import {
   formatExactQuantityForOperator as quantity,
   parseExactQuantity,
@@ -31,17 +32,24 @@ export function ProcurementAllocationTable({
         label="Bảng phân bổ nhà cung ứng"
         maxH={{
           base: "var(--atlas-layout-table-mobile-height, 50dvh)",
-          xl: "var(--atlas-layout-table-height, calc(100dvh - 360px))",
+          lg: "var(--atlas-layout-natural-height, none)",
         }}
       >
         <Table.Root
           aria-label="Phân bổ nhà cung ứng"
-          minW="var(--atlas-layout-procurement-table-min, 1020px)"
+          style={
+            {
+              "--atlas-table-header-height": "38px",
+              "--atlas-table-row-height": "42px",
+              "--atlas-table-identity-width": "178px",
+            } as CSSProperties
+          }
+          minW="var(--atlas-layout-procurement-table-min, 980px)"
           size="sm"
           stickyHeader
         >
           <Table.Header>
-            <Table.Row>
+            <Table.Row h="var(--atlas-table-header-height)">
               {[
                 "Nguyên liệu",
                 "Trường / điểm giao",
@@ -65,6 +73,8 @@ export function ProcurementAllocationTable({
                       : undefined
                   }
                   bg={index === 0 ? "bg.toolbar" : undefined}
+                  h="var(--atlas-table-header-height)"
+                  py="var(--atlas-layout-zero, 0)"
                 >
                   {label}
                 </Table.ColumnHeader>
@@ -93,13 +103,16 @@ export function ProcurementAllocationTable({
                   key={key}
                   aria-selected={selectedKey === key}
                   data-attention={attention || undefined}
+                  h="var(--atlas-table-row-height)"
                 >
                   <Table.Cell
                     position={{ base: "sticky", lg: "relative" }}
                     left="var(--atlas-layout-zero, 0)"
                     zIndex="var(--atlas-layout-sticky-cell-z, 1)"
                     bg={selectedKey === key ? "bg.selected" : "bg.workbench"}
-                    minW="var(--atlas-layout-ingredient-width, 125px)"
+                    minW="var(--atlas-table-identity-width)"
+                    h="var(--atlas-table-row-height)"
+                    py="xs"
                   >
                     {selectedKey === key && (
                       <Box data-selection-indicator="" aria-hidden="true" />
@@ -168,12 +181,16 @@ export function ProcurementAllocationTable({
                     <Button
                       variant="tertiary"
                       size="sm"
-                      aria-label={`${action} ${row.ingredient_name}`}
+                      aria-label={`${action} ${row.ingredient_name} · ${row.schools?.map((school) => school.school_name).join(", ") || row.school_name || row.location_name}`}
                       aria-expanded={selectedKey === key}
                       disabled={
                         disabled || Boolean(selectedKey && selectedKey !== key)
                       }
                       onClick={(event) => onSelect(row, event.currentTarget)}
+                      minH={{
+                        base: "var(--atlas-layout-mobile-target, 44px)",
+                        lg: "compact",
+                      }}
                     >
                       {action}
                     </Button>

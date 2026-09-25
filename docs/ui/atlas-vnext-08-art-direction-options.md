@@ -1,16 +1,16 @@
 # Atlas vNext 08 Art-Direction Options
 
-**Status:** Product-selected direction refined; awaiting implementation approval
+**Status:** Product-locked direction; bounded production transfer implemented, with render/reviewer/CI evidence pending controller capture
 
 **Baseline:** PR #315 at `d96e59e82080f0f0091c4cf3e3bfece7427b2e15`
 
 **Branch:** `design/atlas-ui-vnext-08-art-direction`
 
-**Scope:** Presentation exploration only; no production implementation
+**Scope:** Art-direction authority plus the approved presentation-only Station transfer boundary
 
 ## Purpose and authority
 
-This document records the three original visual directions for Atlas over the accepted PR #315 responsive and structural foundation, the subsequent Product selection, and the implementation-ready visual specification produced by the required refinement round. It records a direction but does not authorize production implementation.
+This document records the three original visual directions for Atlas over the accepted PR #315 responsive and structural foundation, the subsequent Product selection, and the implementation-ready visual specification produced by the required refinement round. Product has now authorized the bounded presentation transfer recorded below.
 
 The exploration preserves OPS_SYSTEM_MAP v1.0, D-034, D-035, D-045, the approved three-stage operating baseline, current workflows, backend-owned state, commands, lifecycle, permissions, exact quantities, API contracts, RLS, immutable history, and the existing Procurement and Ingredient/Supplier operator jobs.
 
@@ -189,9 +189,9 @@ Comparison and audit artifacts:
 
 The final `atlas-ui-finish-reviewer` verdict is **PASS**, with no BLOCK, MAJOR, or MINOR findings in the refined prototype scope. The interaction audit passes all 22 checks; all eight renders use exact requested viewports, show no document-wide x/y overflow or browser errors, retain local mobile table overflow and its cue, and preserve all 360 Ingredient rows.
 
-### Proposed production implementation boundary
+### Approved production implementation boundary
 
-The future implementation should remain a presentation-only, bounded transfer into the existing Atlas vNext frontend:
+The implementation remains a presentation-only, bounded transfer into the existing Atlas vNext frontend:
 
 - `src/vnext/atlas/system.ts`: add `bg.context` only if required; otherwise reuse current semantic tokens and recipes;
 - a small presentation-only task-context component such as `src/vnext/atlas/AtlasTaskContext.tsx`;
@@ -203,14 +203,11 @@ Reuse existing `businessPrimary`, secondary, destructive, disabled, focus, and t
 
 The implementation boundary explicitly excludes hooks, bridges, business/read models, APIs, contracts, Supabase, RLS, migrations, quantities, statuses, lifecycles, Planning, recipes, schools, and any backend or production-data change. It must not modify PR #315.
 
-### Transfer verification and unresolved Product decisions
+### Transfer verification and locked Product decisions
 
 Production transfer must prove Procurement and Ingredients at 1440px, 1280px, 768px, and 390px; selected and no-selection states; loading, empty/no-match, error, permission/read-only, stale/uncertain, and reduced-motion behavior; accessible keyboard and focus-return behavior; local table overflow; and unchanged authoritative actions.
 
-Two Product decisions remain before or during implementation approval:
-
-1. Keep the desktop detail fixed at `320px`, as proven, or allow it to expand toward `36–42%` on wider viewports.
-2. Include secondary-job surfaces in the same visual-polish implementation slice, or preserve their current production composition until a later transfer.
+Product locked the desktop attached detail at exactly `320px`, the desktop task context at exactly `196px`, and the mobile task-context block at exactly `88px`. This slice applies the selected Station hierarchy only to Procurement allocation and the Ingredient catalogue/detail; secondary jobs may inherit the context primitive, but their internal composition is not redesigned. Table density and restraint are borrowed from Ledger without importing Ledger structure or Lanes semantics.
 
 ## Direction 1 — Sổ Điều Phối
 
@@ -390,8 +387,8 @@ The two remaining `BLOCK` verdicts apply only to the unselected original concept
 - The prototypes import the Atlas Chakra system but use isolated hard-coded prototype CSS. A selected direction must be translated into semantic Chakra tokens/recipes and re-proven; prototype markup must not be copied into production.
 - Rendering 360 row actions creates hundreds of tab stops and needs an explicit keyboard-flow decision in the selected direction.
 
-## Implementation approval gate
+## Implementation transfer state
 
-Product has selected and refined **Trạm Điều Hành**, borrowing only Sổ Điều Phối's table density and restraint. This document and Draft PR #317 are the specification artifact. Production React work must not begin until Product explicitly approves implementation and resolves or accepts the two decisions above.
+Product selected and approved **Trạm Điều Hành**, borrowing only Sổ Điều Phối's table density and restraint. The bounded React presentation transfer uses the fixed geometry and secondary-job boundary above. Production render capture, finish review, and GitHub CI evidence remain explicitly pending the controller-owned Task 5 gate; this document does not claim those results.
 
-`ATLAS_UI_SELECTED_DIRECTION = AWAITING_IMPLEMENTATION_APPROVAL`
+`ATLAS_UI_SELECTED_DIRECTION = REFINED_STATION_LOCKED`
