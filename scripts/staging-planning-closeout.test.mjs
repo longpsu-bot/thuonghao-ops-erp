@@ -1141,8 +1141,175 @@ test("corrected checkpoint is the only protected resume mode", () => {
   );
 });
 
+const retainedAdoptionEvidence = Object.freeze({
+  evidence_kind: "OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION",
+  source_system: "OPS_V1",
+  recipe_id: "recipe-1483",
+  recipe_line_id: "recipe-line-1483",
+  ingredient_id: "ingredient-1045",
+  predecessor_recipe_version_id: "recipe-version-predecessor",
+  predecessor_recipe_line_revision_id: "recipe-line-revision-predecessor",
+  source_unit_id: "unit-qua",
+  target_recipe_version_id: "recipe-version-target",
+  target_recipe_line_revision_id: "recipe-line-revision-target",
+  corrected_unit_id: "unit-trai",
+});
+
+const retainedAdoptionTheoreticalLine = (changes = {}) => ({
+  theoretical_need_line_id: "theoretical-17-09",
+  need_generation_run_id: retainedRunId,
+  recipe_id: retainedAdoptionEvidence.recipe_id,
+  recipe_line_id: retainedAdoptionEvidence.recipe_line_id,
+  ingredient_id: retainedAdoptionEvidence.ingredient_id,
+  recipe_version_id: retainedAdoptionEvidence.predecessor_recipe_version_id,
+  recipe_line_revision_id:
+    retainedAdoptionEvidence.predecessor_recipe_line_revision_id,
+  unit_id: retainedAdoptionEvidence.source_unit_id,
+  ...changes,
+});
+
+const retainedAdoptionWorkloadFixture = (currentRunId, theoreticalLines) => {
+  const matchedIds = new Set(
+    theoreticalLines
+      .filter(
+        (line) =>
+          line.need_generation_run_id === currentRunId &&
+          closeoutVerifier.retainedAdoptionLineageSide(
+            retainedAdoptionEvidence,
+            line,
+          ) !== null,
+      )
+      .map((line) => line.theoretical_need_line_id),
+  );
+  return {
+    adoption_occurrence_count: matchedIds.size,
+    adoption_legacy_line_ids:
+      matchedIds.size === 0
+        ? []
+        : ["recipe:dish:1483:school-type:1:ingredient:1045"],
+    adoption_ingredient_ids: matchedIds.size === 0 ? [] : ["1045"],
+  };
+};
+
+test("retained adoption workload accepts the complete predecessor lineage", () => {
+  assert.deepEqual(
+    retainedAdoptionWorkloadFixture(retainedRunId, [
+      retainedAdoptionTheoreticalLine(),
+    ]),
+    {
+      adoption_occurrence_count: 1,
+      adoption_legacy_line_ids: [
+        "recipe:dish:1483:school-type:1:ingredient:1045",
+      ],
+      adoption_ingredient_ids: ["1045"],
+    },
+  );
+});
+
+test("retained adoption workload accepts the complete target lineage", () => {
+  assert.deepEqual(
+    retainedAdoptionWorkloadFixture(correctedRunId, [
+      retainedAdoptionTheoreticalLine({
+        need_generation_run_id: correctedRunId,
+        recipe_version_id: retainedAdoptionEvidence.target_recipe_version_id,
+        recipe_line_revision_id:
+          retainedAdoptionEvidence.target_recipe_line_revision_id,
+        unit_id: retainedAdoptionEvidence.corrected_unit_id,
+      }),
+    ]),
+    {
+      adoption_occurrence_count: 1,
+      adoption_legacy_line_ids: [
+        "recipe:dish:1483:school-type:1:ingredient:1045",
+      ],
+      adoption_ingredient_ids: ["1045"],
+    },
+  );
+});
+
+test("retained adoption workload counts only the batch current run", () => {
+  const theoreticalLines = [
+    retainedAdoptionTheoreticalLine(),
+    retainedAdoptionTheoreticalLine({
+      theoretical_need_line_id: "theoretical-17-09-successor",
+      need_generation_run_id: correctedRunId,
+      recipe_version_id: retainedAdoptionEvidence.target_recipe_version_id,
+      recipe_line_revision_id:
+        retainedAdoptionEvidence.target_recipe_line_revision_id,
+      unit_id: retainedAdoptionEvidence.corrected_unit_id,
+    }),
+  ];
+  assert.deepEqual(
+    retainedAdoptionWorkloadFixture(correctedRunId, theoreticalLines),
+    {
+      adoption_occurrence_count: 1,
+      adoption_legacy_line_ids: [
+        "recipe:dish:1483:school-type:1:ingredient:1045",
+      ],
+      adoption_ingredient_ids: ["1045"],
+    },
+  );
+});
+
+test("retained adoption workload rejects mixed lineage tuples", () => {
+  for (const changes of [
+    {
+      recipe_line_revision_id:
+        retainedAdoptionEvidence.target_recipe_line_revision_id,
+    },
+    {
+      recipe_version_id: retainedAdoptionEvidence.target_recipe_version_id,
+    },
+    { unit_id: retainedAdoptionEvidence.corrected_unit_id },
+  ]) {
+    assert.equal(
+      closeoutVerifier.retainedAdoptionLineageSide(
+        retainedAdoptionEvidence,
+        retainedAdoptionTheoreticalLine(changes),
+      ),
+      null,
+    );
+  }
+});
+
+test("retained adoption workload rejects unrelated theoretical lines", () => {
+  assert.equal(
+    closeoutVerifier.retainedAdoptionLineageSide(
+      retainedAdoptionEvidence,
+      retainedAdoptionTheoreticalLine({ recipe_line_id: "unrelated-line" }),
+    ),
+    null,
+  );
+});
+
+test("retained adoption workload rejects incomplete lineage tuples", () => {
+  const incompleteEvidence = {
+    evidence_kind: retainedAdoptionEvidence.evidence_kind,
+    source_system: retainedAdoptionEvidence.source_system,
+    recipe_id: retainedAdoptionEvidence.recipe_id,
+    recipe_line_id: retainedAdoptionEvidence.recipe_line_id,
+    ingredient_id: retainedAdoptionEvidence.ingredient_id,
+  };
+  const incompleteLine = retainedAdoptionTheoreticalLine({
+    recipe_version_id: undefined,
+    recipe_line_revision_id: undefined,
+    unit_id: undefined,
+  });
+  assert.equal(
+    closeoutVerifier.retainedAdoptionLineageSide(
+      incompleteEvidence,
+      incompleteLine,
+    ),
+    null,
+  );
+});
+
 test("closeout snapshot verifies policies in a read-only transaction", () => {
   const sql = closeoutVerifier.planningCloseoutSnapshotSql();
+  const retainedWorkloadSql = sql.slice(
+    sql.indexOf("), retained_adoption_workload"),
+    sql.indexOf("\n)\nselect jsonb_build_object"),
+  );
   assert.match(sql, /^begin read only;/);
   assert.match(sql, /predecessor_run_id/);
   assert.match(sql, /release_snapshot_line_count/);
@@ -1152,6 +1319,11 @@ test("closeout snapshot verifies policies in a read-only transaction", () => {
   assert.match(sql, /planning_legacy_adoption_unit_transition_allowed/);
   assert.match(sql, /'adoption_manifest'/);
   assert.match(sql, /atlas_legacy\.recipe_unit_adoption_evidence/);
+  assert.match(
+    retainedWorkloadSql,
+    /theoretical\.need_generation_run_id=batch\.current_need_generation_run_id/,
+  );
+  assert.doesNotMatch(retainedWorkloadSql, /union(?:\s+all)?/i);
   assert.match(sql, /planning_quantity_policy_revisions/);
   assert.match(sql, /atlas_admin\.units/);
   assert.match(sql, /u\.dimension_code='COUNT'/);

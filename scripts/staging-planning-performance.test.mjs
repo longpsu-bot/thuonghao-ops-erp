@@ -105,12 +105,12 @@ const valid = {
 
 const adoptionWorkloadByDate = Object.freeze({
   "2026-09-14": {
-    adoption_occurrence_count: 6,
+    adoption_occurrence_count: 8,
     adoption_legacy_line_ids: ["line-1", "line-2", "line-3"],
     adoption_ingredient_ids: ["ingredient-1", "ingredient-2"],
   },
   "2026-09-15": {
-    adoption_occurrence_count: 5,
+    adoption_occurrence_count: 2,
     adoption_legacy_line_ids: ["line-1", "line-4", "line-5"],
     adoption_ingredient_ids: ["ingredient-1", "ingredient-3"],
   },
@@ -120,12 +120,12 @@ const adoptionWorkloadByDate = Object.freeze({
     adoption_ingredient_ids: ["ingredient-2"],
   },
   "2026-09-17": {
-    adoption_occurrence_count: 5,
-    adoption_legacy_line_ids: ["line-3", "line-7"],
-    adoption_ingredient_ids: ["ingredient-1", "ingredient-3"],
+    adoption_occurrence_count: 1,
+    adoption_legacy_line_ids: ["line-7"],
+    adoption_ingredient_ids: ["ingredient-3"],
   },
   "2026-09-18": {
-    adoption_occurrence_count: 4,
+    adoption_occurrence_count: 9,
     adoption_legacy_line_ids: ["line-5", "line-8"],
     adoption_ingredient_ids: ["ingredient-2", "ingredient-3"],
   },
