@@ -201,6 +201,34 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("uses the locked context/detail geometry and returns focus to the exact Ingredient action", async () => {
+    renderWorkbench();
+    await ready();
+    expect(
+      screen.getByRole("complementary", {
+        name: "Ngữ cảnh công việc dữ liệu gốc",
+      }),
+    ).toHaveStyle({
+      "--atlas-task-context-desktop-width": "196px",
+      "--atlas-task-context-mobile-height": "88px",
+    });
+    const trigger = screen.getByRole("button", { name: "Xem / sửa Bí mật" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("ingredient-supplier-master-detail")).toHaveStyle(
+      { "--atlas-attached-detail-width": "320px" },
+    );
+    expect(
+      screen.getByRole("complementary", { name: "Chi tiết nguyên liệu" }),
+    ).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Đóng chi tiết" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(
+      screen.getByText("Kéo ngang để xem đầy đủ danh mục →"),
+    ).toBeInTheDocument();
+  });
+
   it("shows module context and the current job heading before local job tabs", async () => {
     renderWorkbench();
     await ready();
@@ -550,6 +578,12 @@ describe("IngredientSupplierWorkbench", () => {
     });
     expect(region).toHaveAttribute("tabindex", "0");
     expect(screen.getAllByRole("row")).toHaveLength(361);
+    const actions = screen.getAllByRole("button", {
+      name: /^(Xem \/ sửa|Xem) /,
+    });
+    expect(
+      new Set(actions.map((item) => item.getAttribute("aria-label"))).size,
+    ).toBe(360);
 
     fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
       target: { value: "không tồn tại" },

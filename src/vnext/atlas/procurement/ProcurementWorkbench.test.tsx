@@ -50,8 +50,30 @@ function show(
   return { ...view, fixture, read, save };
 }
 const action = () =>
-  screen.findByRole("button", { name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm$/ });
+  screen.findByRole("button", {
+    name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm · Trường Tiểu học Nguyễn Du$/,
+  });
 describe("Procurement vNext operator workbench", () => {
+  it("uses the locked task-context and attached-detail geometry", async () => {
+    show("manual_split");
+    const context = screen.getByRole("complementary", {
+      name: "Ngữ cảnh công việc mua hàng",
+    });
+    expect(context).toHaveStyle({
+      "--atlas-task-context-desktop-width": "196px",
+      "--atlas-task-context-mobile-height": "88px",
+    });
+    const trigger = await action();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
+      "--atlas-attached-detail-width": "320px",
+    });
+    expect(
+      screen.getByText("Kéo ngang để xem đầy đủ bảng →"),
+    ).toBeInTheDocument();
+  });
   it("shows stage identity before primary job tabs and focuses the visible stage heading", async () => {
     show("ready");
     await action();
@@ -275,7 +297,10 @@ describe("Procurement vNext operator workbench", () => {
     expect(region).toHaveAttribute("tabindex", "0");
     expect(region).toContainElement(table);
     expect(table).toHaveStyle({
-      minWidth: "var(--atlas-layout-procurement-table-min, 1020px)",
+      minWidth: "var(--atlas-layout-procurement-table-min, 980px)",
+      "--atlas-table-header-height": "38px",
+      "--atlas-table-row-height": "42px",
+      "--atlas-table-identity-width": "178px",
     });
     expect(
       within(table)
@@ -309,7 +334,9 @@ describe("Procurement vNext operator workbench", () => {
       target: { value: "blocked" },
     });
     expect(
-      screen.queryByRole("button", { name: "Phân bổ NCC Gạo thơm" }),
+      screen.queryByRole("button", {
+        name: "Phân bổ NCC Gạo thơm · Trường Tiểu học Nguyễn Du",
+      }),
     ).not.toBeInTheDocument();
     expect(read).toHaveBeenCalledTimes(1);
   });

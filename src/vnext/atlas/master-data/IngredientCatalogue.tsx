@@ -1,13 +1,14 @@
-import { Badge, Box, Button, Table, Text } from "@chakra-ui/react";
+import { Box, Button, Table, Text } from "@chakra-ui/react";
+import type { CSSProperties } from "react";
 import type { IngredientMasterData } from "../bridges/ingredientSupplierMasterData";
 import { formatVietnameseDecimal } from "./ingredientSupplierModel";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 
 const status = {
-  ACTIVE: { label: "Đang dùng", variant: "success" as const },
-  INACTIVE: { label: "Ngừng dùng", variant: "warning" as const },
-  ARCHIVED: { label: "Lưu trữ", variant: "neutral" as const },
-};
+  ACTIVE: { label: "Đang dùng", color: "fg.muted" },
+  INACTIVE: { label: "Ngừng dùng", color: "status.warning" },
+  ARCHIVED: { label: "Lưu trữ", color: "fg.muted" },
+} as const;
 
 export function IngredientCatalogue({
   ingredients,
@@ -18,7 +19,7 @@ export function IngredientCatalogue({
   ingredients: IngredientMasterData[];
   totalCount: number;
   selectedId?: string;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
@@ -36,16 +37,24 @@ export function IngredientCatalogue({
         ) : (
           <Table.Root
             aria-label="Danh mục nguyên liệu"
+            style={
+              {
+                "--atlas-table-header-height": "38px",
+                "--atlas-table-row-height": "42px",
+                "--atlas-table-identity-width": "178px",
+              } as CSSProperties
+            }
             minW="var(--atlas-layout-ingredient-table-min, 940px)"
             stickyHeader
           >
             <Table.Header>
-              <Table.Row>
+              <Table.Row h="var(--atlas-table-header-height)">
                 <Table.ColumnHeader
                   position={{ base: "sticky", lg: "static" }}
                   left="var(--atlas-layout-zero, 0)"
                   zIndex="var(--atlas-layout-sticky-header-z, 3)"
                   bg="bg.toolbar"
+                  minW="var(--atlas-table-identity-width)"
                 >
                   Nguyên liệu
                 </Table.ColumnHeader>
@@ -73,7 +82,11 @@ export function IngredientCatalogue({
                   )
                   .join(" · ");
                 return (
-                  <Table.Row key={item.ingredient_id} aria-selected={chosen}>
+                  <Table.Row
+                    key={item.ingredient_id}
+                    aria-selected={chosen}
+                    h="var(--atlas-table-row-height)"
+                  >
                     <Table.Cell
                       position={{ base: "sticky", lg: "static" }}
                       left="var(--atlas-layout-zero, 0)"
@@ -86,11 +99,18 @@ export function IngredientCatalogue({
                       <Text fontWeight="semibold">{item.ingredient_name}</Text>
                     </Table.Cell>
                     <Table.Cell>
-                      <Badge variant={status[item.ingredient_status].variant}>
+                      <Text
+                        data-row-secondary=""
+                        color={status[item.ingredient_status].color}
+                      >
                         {status[item.ingredient_status].label}
-                      </Badge>
+                      </Text>
                     </Table.Cell>
-                    <Table.Cell>{item.purchase_unit_name ?? "—"}</Table.Cell>
+                    <Table.Cell>
+                      <Text data-row-secondary="" color="fg.muted">
+                        {item.purchase_unit_name ?? "—"}
+                      </Text>
+                    </Table.Cell>
                     <Table.Cell>
                       <Text>{item.ingredient_type_name ?? "—"}</Text>
                       <Text
@@ -107,17 +127,26 @@ export function IngredientCatalogue({
                         : formatVietnameseDecimal(item.order_step)}
                     </Table.Cell>
                     <Table.Cell>
-                      {preview || "Chưa có"}
-                      {priorities.length > 2
-                        ? ` · +${priorities.length - 2}`
-                        : ""}
+                      <Text data-row-secondary="" color="fg.muted">
+                        {preview || "Chưa có"}
+                        {priorities.length > 2
+                          ? ` · +${priorities.length - 2}`
+                          : ""}
+                      </Text>
                     </Table.Cell>
                     <Table.Cell>
                       <Button
                         size="sm"
                         variant="tertiary"
-                        onClick={() => onSelect(item.ingredient_id)}
+                        onClick={(event) =>
+                          onSelect(item.ingredient_id, event.currentTarget)
+                        }
                         aria-label={`${item.ingredient_status === "ARCHIVED" ? "Xem" : "Xem / sửa"} ${item.ingredient_name}`}
+                        aria-expanded={chosen}
+                        minH={{
+                          base: "var(--atlas-layout-mobile-target, 44px)",
+                          lg: "compact",
+                        }}
                       >
                         {item.ingredient_status === "ARCHIVED"
                           ? "Xem"
@@ -131,6 +160,16 @@ export function IngredientCatalogue({
           </Table.Root>
         )}
       </AtlasTableViewport>
+      <Text
+        display={{ base: "block", lg: "none" }}
+        px="md"
+        py="xs"
+        textStyle="helper"
+        color="fg.muted"
+        aria-hidden="true"
+      >
+        Kéo ngang để xem đầy đủ danh mục →
+      </Text>
     </Box>
   );
 }
