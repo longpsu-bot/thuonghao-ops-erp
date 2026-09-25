@@ -153,11 +153,22 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       }}
     >
       <Grid
+        style={
+          {
+            minHeight:
+              "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
+          } as CSSProperties
+        }
+        css={{
+          "--atlas-procurement-station-height": {
+            base: "var(--atlas-layout-workbench-mobile-height, calc(100dvh - 132px))",
+            lg: "var(--atlas-layout-workbench-height, calc(100dvh - 100px))",
+          },
+        }}
         templateColumns={{
           base: "minmax(0, 1fr)",
           lg: "var(--atlas-task-context-desktop-width, 196px) minmax(0, 1fr)",
         }}
-        minH="full"
       >
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc mua hàng"

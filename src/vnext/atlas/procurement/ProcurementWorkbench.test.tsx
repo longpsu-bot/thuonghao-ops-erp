@@ -56,9 +56,19 @@ const action = () =>
 describe("Procurement vNext operator workbench", () => {
   it("uses the locked task-context and attached-detail geometry", async () => {
     show("manual_split");
+    const workbench = screen.getByRole("region", {
+      name: "Kế hoạch mua hàng",
+    });
+    const station = workbench.firstElementChild as HTMLElement;
     const context = screen.getByRole("complementary", {
       name: "Ngữ cảnh công việc mua hàng",
     });
+    expect(station).toHaveStyle({
+      minHeight:
+        "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
+    });
+    expect(station).not.toHaveStyle({ minHeight: "100%" });
+    expect(context.parentElement).toBe(station);
     expect(context).toHaveStyle({
       "--atlas-task-context-desktop-width": "196px",
       "--atlas-task-context-mobile-height": "88px",
