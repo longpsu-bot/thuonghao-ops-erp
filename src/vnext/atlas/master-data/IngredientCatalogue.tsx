@@ -13,28 +13,32 @@ const status = {
 export function IngredientCatalogue({
   ingredients,
   totalCount,
+  countUnavailable = false,
   selectedId,
   onSelect,
 }: {
   ingredients: IngredientMasterData[];
   totalCount: number;
+  countUnavailable?: boolean;
   selectedId?: string;
   onSelect: (id: string, trigger: HTMLButtonElement) => void;
 }) {
   return (
     <Box minW="var(--atlas-layout-zero, 0)">
-      <Text px="md" py="xs" textStyle="helper" color="fg.muted">
-        {ingredients.length === totalCount
-          ? `${ingredients.length} nguyên liệu`
-          : `${ingredients.length} / ${totalCount} nguyên liệu`}
-      </Text>
+      {!countUnavailable && (
+        <Text px="md" py="xs" textStyle="helper" color="fg.muted">
+          {ingredients.length === totalCount
+            ? `${ingredients.length} nguyên liệu`
+            : `${ingredients.length} / ${totalCount} nguyên liệu`}
+        </Text>
+      )}
       <AtlasTableViewport
         label="Danh mục nguyên liệu"
         maxH="var(--atlas-layout-catalog-height, calc(100dvh - 340px))"
       >
-        {!ingredients.length ? (
+        {!ingredients.length && !countUnavailable ? (
           <Text p="md">Không có nguyên liệu phù hợp bộ lọc.</Text>
-        ) : (
+        ) : ingredients.length ? (
           <Table.Root
             aria-label="Danh mục nguyên liệu"
             style={
@@ -158,18 +162,8 @@ export function IngredientCatalogue({
               })}
             </Table.Body>
           </Table.Root>
-        )}
+        ) : null}
       </AtlasTableViewport>
-      <Text
-        display={{ base: "block", lg: "none" }}
-        px="md"
-        py="xs"
-        textStyle="helper"
-        color="fg.muted"
-        aria-hidden="true"
-      >
-        Kéo ngang để xem đầy đủ danh mục →
-      </Text>
     </Box>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useRef } from "react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import {
@@ -89,8 +89,9 @@ export function IngredientSupplierWorkbench({
           details={[
             {
               label: "Kết quả",
-              value:
-                c.job === "ingredients"
+              value: c.error
+                ? "Không xác định"
+                : c.job === "ingredients"
                   ? `${c.visibleIngredients.length} / ${c.ingredients.length}`
                   : `${c.visibleSuppliers.length} / ${c.suppliers.length}`,
             },
@@ -190,6 +191,7 @@ export function IngredientSupplierWorkbench({
                   <IngredientCatalogue
                     ingredients={c.visibleIngredients}
                     totalCount={c.ingredients.length}
+                    countUnavailable={Boolean(c.error)}
                     selectedId={c.selectedIngredient?.ingredient_id}
                     onSelect={(id, trigger) => {
                       rowTrigger.current = trigger;
@@ -247,19 +249,31 @@ function IngredientToolbar({
   c: ReturnType<typeof useIngredientSupplierWorkbench>;
   onCreate: () => void;
 }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const statusLabel = {
+    ALL: "Tất cả trạng thái",
+    ACTIVE: "Đang dùng",
+    INACTIVE: "Ngừng dùng",
+    ARCHIVED: "Lưu trữ",
+  }[c.ingredientStatus];
   return (
     <Grid
       bg="bg.toolbar"
-      p="md"
+      p={{ base: "sm", md: "md" }}
       gap="sm"
       alignItems="end"
       templateColumns={{
-        base: "minmax(0, 1fr)",
+        base: "minmax(0, 1fr) auto auto",
         md: "minmax(220px, 1fr) minmax(150px, 220px) auto auto",
       }}
     >
-      <Field.Root>
-        <Field.Label>Tìm nguyên liệu</Field.Label>
+      <Field.Root
+        gridColumn={{ base: "1 / 3", md: "auto" }}
+        gridRow={{ base: "1", md: "auto" }}
+      >
+        <Field.Label display={{ base: "none", md: "block" }}>
+          Tìm nguyên liệu
+        </Field.Label>
         <Input
           aria-label="Tìm nguyên liệu"
           placeholder="Tên hoặc thông tin liên quan"
@@ -267,7 +281,12 @@ function IngredientToolbar({
           onChange={(e) => c.setIngredientQuery(e.target.value)}
         />
       </Field.Root>
-      <Field.Root>
+      <Field.Root
+        id="ingredient-filters"
+        display={{ base: filtersOpen ? "block" : "none", md: "block" }}
+        gridColumn={{ base: "1 / -1", md: "auto" }}
+        gridRow={{ base: "3", md: "auto" }}
+      >
         <Field.Label>Trạng thái</Field.Label>
         <NativeSelect.Root>
           <NativeSelect.Field
@@ -285,12 +304,42 @@ function IngredientToolbar({
           <NativeSelect.Indicator />
         </NativeSelect.Root>
       </Field.Root>
-      <AtlasRefreshButton
-        loading={c.loading}
-        disabled={!c.canRefresh}
-        onClick={() => void c.refresh()}
-      />
       <Button
+        display={{ base: "inline-flex", md: "none" }}
+        gridColumn="3"
+        gridRow="1"
+        variant="secondary"
+        minH="var(--atlas-layout-mobile-target, 44px)"
+        aria-expanded={filtersOpen}
+        aria-controls="ingredient-filters"
+        onClick={() => setFiltersOpen((open) => !open)}
+      >
+        Bộ lọc
+      </Button>
+      <Text
+        display={{ base: filtersOpen ? "none" : "block", md: "none" }}
+        gridColumn="1"
+        gridRow="2"
+        textStyle="helper"
+        color="fg.muted"
+        alignSelf="center"
+      >
+        Trạng thái: {statusLabel}
+      </Text>
+      <Box
+        gridColumn={{ base: "2", md: "auto" }}
+        gridRow={{ base: "2", md: "auto" }}
+        alignSelf="center"
+      >
+        <AtlasRefreshButton
+          loading={c.loading}
+          disabled={!c.canRefresh}
+          onClick={() => void c.refresh()}
+        />
+      </Box>
+      <Button
+        gridColumn={{ base: "3", md: "auto" }}
+        gridRow={{ base: "2", md: "auto" }}
         variant={c.activeSurface || c.review ? "secondary" : "businessPrimary"}
         disabled={Boolean(c.lock)}
         onClick={onCreate}

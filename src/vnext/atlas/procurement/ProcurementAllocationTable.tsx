@@ -201,16 +201,6 @@ export function ProcurementAllocationTable({
           </Table.Body>
         </Table.Root>
       </AtlasTableViewport>
-      <Text
-        display={{ base: "block", lg: "none" }}
-        px="md"
-        py="xs"
-        textStyle="helper"
-        color="fg.muted"
-        aria-hidden="true"
-      >
-        Kéo ngang để xem đầy đủ bảng →
-      </Text>
       {!rows.length && (
         <Text p="lg" color="fg.muted">
           Không có nguyên liệu phù hợp trong phạm vi này.

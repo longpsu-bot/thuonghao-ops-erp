@@ -224,9 +224,6 @@ describe("IngredientSupplierWorkbench", () => {
     ).toHaveFocus();
     fireEvent.click(screen.getByRole("button", { name: "Đóng chi tiết" }));
     await waitFor(() => expect(trigger).toHaveFocus());
-    expect(
-      screen.getByText("Kéo ngang để xem đầy đủ danh mục →"),
-    ).toBeInTheDocument();
   });
 
   it("shows module context and the current job heading before local job tabs", async () => {
@@ -265,6 +262,42 @@ describe("IngredientSupplierWorkbench", () => {
       screen.queryByText("Nguyên liệu ngừng dùng"),
     ).not.toBeInTheDocument();
     expect(api.getIngredientsAndSuppliers).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps search and creation immediate while status stays in a mobile filter disclosure", async () => {
+    renderWorkbench();
+    await ready();
+
+    expect(screen.getByLabelText("Tìm nguyên liệu")).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Tạo nguyên liệu" }),
+    ).toBeEnabled();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute("aria-controls", "ingredient-filters");
+    expect(
+      screen.getByText("Trạng thái: Tất cả trạng thái"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    fireEvent.change(screen.getByRole("combobox", { name: "Trạng thái" }), {
+      target: { value: "INACTIVE" },
+    });
+    fireEvent.click(disclosure);
+
+    expect(screen.getByText("Trạng thái: Ngừng dùng")).toBeInTheDocument();
+  });
+
+  it("does not invent an Ingredient count when the authoritative read fails", async () => {
+    renderWorkbench(createIngredientSupplierReviewFixture("READ_FAILURE"));
+
+    expect(await screen.findByRole("alert")).toBeVisible();
+    const context = screen.getByRole("complementary", {
+      name: "Ngữ cảnh công việc dữ liệu gốc",
+    });
+    expect(within(context).getByText("Không xác định")).toBeVisible();
+    expect(document.body).not.toHaveTextContent("0 / 0");
+    expect(document.body).not.toHaveTextContent("0 nguyên liệu");
   });
 
   it("keeps the selected Ingredient catalogue row visible in a stationary attached detail split", async () => {

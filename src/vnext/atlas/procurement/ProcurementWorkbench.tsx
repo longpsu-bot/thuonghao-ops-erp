@@ -47,6 +47,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   const controller = useProcurementWorkbench(props);
   const [search, setSearch] = useState("");
   const [exception, setException] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [catalogue, setCatalogue] = useState<ProcurementSchoolOption[]>(
     props.schools ?? [],
@@ -138,6 +139,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
         )?.school_name ?? "1 trường")
       : `${controller.schoolIds.length} trường`
     : "Tất cả trường";
+  const exceptionSummary = {
+    "": "Tất cả",
+    unallocated: "Chưa phân bổ",
+    needs_update: "Cần cập nhật",
+    blocked: "Bị chặn",
+  }[exception];
+  const dateSummary = [day, month, year].filter(Boolean).join("/");
   return (
     <Box
       as="section"
@@ -169,6 +177,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
           base: "minmax(0, 1fr)",
           lg: "var(--atlas-task-context-desktop-width, 196px) minmax(0, 1fr)",
         }}
+        alignContent={{ base: "start", lg: "stretch" }}
       >
         <AtlasTaskContext
           ariaLabel="Ngữ cảnh công việc mua hàng"
@@ -233,7 +242,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
               gap="sm"
               alignItems="end"
               templateColumns={{
-                base: "minmax(0, 1fr)",
+                base: "minmax(0, 1fr) auto auto",
                 md: "repeat(2, minmax(0, 1fr))",
                 xl:
                   controller.stage === "allocation"
@@ -241,35 +250,87 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     : "minmax(155px, 0.8fr) minmax(200px, 2fr) auto",
               }}
             >
-              <AtlasDateInput
-                disabled={Boolean(selected)}
-                label="Ngày phục vụ"
-                value={controller.date}
-                onValueChange={(value) => {
-                  if (selected) return;
-                  setSelectedKey(null);
-                  controller.changeDate(value);
-                }}
-              />
-              {controller.stage === "allocation" && (
-                <Box>
-                  <Text textStyle="label" mb="xs">
-                    Trường / điểm giao
-                  </Text>
-                  <ProcurementSchoolScope
-                    schools={catalogue}
-                    value={controller.schoolIds}
-                    disabled={controller.loading || Boolean(selected)}
-                    onApply={(ids) => {
+              <Box id="procurement-filters" display="contents">
+                <Box
+                  display={{
+                    base: filtersOpen ? "block" : "none",
+                    md: "block",
+                  }}
+                  order={{ base: 4, md: 1 }}
+                  gridColumn={{ base: "1 / -1", md: "auto" }}
+                >
+                  <AtlasDateInput
+                    disabled={Boolean(selected)}
+                    label="Ngày phục vụ"
+                    value={controller.date}
+                    onValueChange={(value) => {
                       if (selected) return;
                       setSelectedKey(null);
-                      controller.changeSchools(ids);
+                      controller.changeDate(value);
                     }}
                   />
                 </Box>
-              )}
-              <Field.Root>
-                <Field.Label>Tìm kiếm</Field.Label>
+                {controller.stage === "allocation" && (
+                  <Box
+                    display={{
+                      base: filtersOpen ? "block" : "none",
+                      md: "block",
+                    }}
+                    order={{ base: 5, md: 2 }}
+                    gridColumn={{ base: "1 / -1", md: "auto" }}
+                  >
+                    <Text textStyle="label" mb="xs">
+                      Trường / điểm giao
+                    </Text>
+                    <ProcurementSchoolScope
+                      schools={catalogue}
+                      value={controller.schoolIds}
+                      disabled={controller.loading || Boolean(selected)}
+                      onApply={(ids) => {
+                        if (selected) return;
+                        setSelectedKey(null);
+                        controller.changeSchools(ids);
+                      }}
+                    />
+                  </Box>
+                )}
+                {controller.stage === "allocation" && (
+                  <Field.Root
+                    disabled={Boolean(selected)}
+                    display={{
+                      base: filtersOpen ? "block" : "none",
+                      md: "block",
+                    }}
+                    order={{ base: 6, md: 4 }}
+                    gridColumn={{ base: "1 / -1", md: "auto" }}
+                  >
+                    <Field.Label>Ngoại lệ</Field.Label>
+                    <NativeSelect.Root disabled={Boolean(selected)}>
+                      <NativeSelect.Field
+                        aria-label="Ngoại lệ"
+                        value={exception}
+                        onChange={(event) => setException(event.target.value)}
+                      >
+                        <option value="">Tất cả</option>
+                        <option value="unallocated">Chưa phân bổ</option>
+                        <option value="needs_update">Cần cập nhật</option>
+                        <option value="blocked">Bị chặn</option>
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  </Field.Root>
+                )}
+              </Box>
+              <Field.Root
+                order={{
+                  base: 0,
+                  md: controller.stage === "allocation" ? 3 : 2,
+                }}
+                gridColumn={{ base: "1", md: "auto" }}
+              >
+                <Field.Label display={{ base: "none", md: "block" }}>
+                  Tìm kiếm
+                </Field.Label>
                 <Input
                   aria-label="Tìm kiếm"
                   placeholder="Nguyên liệu, trường, nhà cung ứng"
@@ -278,31 +339,46 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   onChange={(event) => setSearch(event.target.value)}
                 />
               </Field.Root>
-              {controller.stage === "allocation" && (
-                <Field.Root disabled={Boolean(selected)}>
-                  <Field.Label>Ngoại lệ</Field.Label>
-                  <NativeSelect.Root disabled={Boolean(selected)}>
-                    <NativeSelect.Field
-                      aria-label="Ngoại lệ"
-                      value={exception}
-                      onChange={(event) => setException(event.target.value)}
-                    >
-                      <option value="">Tất cả</option>
-                      <option value="unallocated">Chưa phân bổ</option>
-                      <option value="needs_update">Cần cập nhật</option>
-                      <option value="blocked">Bị chặn</option>
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
-                </Field.Root>
-              )}
-              <AtlasRefreshButton
-                loading={controller.loading}
-                disabled={
-                  controller.busy || controller.locked || Boolean(selected)
-                }
-                onClick={() => void controller.reload()}
-              />
+              <Button
+                display={{ base: "inline-flex", md: "none" }}
+                order="1"
+                gridColumn="2"
+                variant="secondary"
+                minH="var(--atlas-layout-mobile-target, 44px)"
+                aria-expanded={filtersOpen}
+                aria-controls="procurement-filters"
+                onClick={() => setFiltersOpen((open) => !open)}
+              >
+                Bộ lọc
+              </Button>
+              <Text
+                display={{ base: filtersOpen ? "none" : "block", md: "none" }}
+                order="3"
+                gridColumn="1 / -1"
+                textStyle="helper"
+                color="fg.muted"
+              >
+                Ngày {dateSummary}
+                {controller.stage === "allocation"
+                  ? ` · ${scopeSummary} · Ngoại lệ: ${exceptionSummary}`
+                  : ""}
+              </Text>
+              <Box
+                order={{
+                  base: 2,
+                  md: controller.stage === "allocation" ? 5 : 3,
+                }}
+                gridColumn={{ base: "3", md: "auto" }}
+                alignSelf="center"
+              >
+                <AtlasRefreshButton
+                  loading={controller.loading}
+                  disabled={
+                    controller.busy || controller.locked || Boolean(selected)
+                  }
+                  onClick={() => void controller.reload()}
+                />
+              </Box>
             </Grid>
             {controller.feedback && (
               <ProcurementCommandFeedback
