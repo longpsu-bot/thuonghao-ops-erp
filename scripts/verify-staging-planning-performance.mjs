@@ -10,6 +10,7 @@ import { planningCloseoutSnapshotSql } from "./verify-staging-planning-closeout.
 
 const SUBJECT = "a1010000-0000-4000-8000-000000000101";
 export const PLANNING_GENERATION_MAX_MS = 7000;
+export const PLANNING_GENERATION_OPERATOR_TARGET_MS = 4000;
 export const PLANNING_PERFORMANCE_PROBES = Object.freeze([
   {
     date: "2026-09-14",
@@ -143,6 +144,26 @@ export function planningPerformanceProbeAccepted(
     row.editing_allowed === true &&
     (!requireOneMergeProof || planningAdoptionMergeProofAccepted(row)),
   );
+}
+
+export function summarizePlanningPerformanceTimings(timings) {
+  if (
+    !Array.isArray(timings) ||
+    timings.length === 0 ||
+    timings.some((value) => !Number.isFinite(value) || value < 0)
+  )
+    throw new Error("INVALID_PERFORMANCE_TIMINGS");
+  const samples = [...timings].sort((left, right) => left - right);
+  const nearestRank = (percentile) =>
+    samples[Math.ceil(percentile * samples.length) - 1];
+  const p95 = nearestRank(0.95);
+  return {
+    samples_ms: samples,
+    p50_ms: nearestRank(0.5),
+    p95_ms: p95,
+    operator_target_ms: PLANNING_GENERATION_OPERATOR_TARGET_MS,
+    operator_target_met: p95 <= PLANNING_GENERATION_OPERATOR_TARGET_MS,
+  };
 }
 
 export function rollbackProbeSql(date) {
@@ -298,6 +319,7 @@ export function assertPlanningPerformanceBaseline(snapshot) {
 export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
   const before = await readSnapshot();
   assertPlanningPerformanceBaseline(before);
+  const timings = [];
   const workloadByDate = new Map([
     [before.adoption_workload?.date, before.adoption_workload],
   ]);
@@ -326,6 +348,7 @@ export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
       )
     )
       throw new Error("GENERATION_PERFORMANCE_BLOCKED");
+    timings.push(row.generation_ms);
     const workload = {
       date: row.date,
       adoption_occurrence_count: row.adoption_occurrence_count,
@@ -344,6 +367,7 @@ export async function runPlanningPerformanceProbes({ readSnapshot, runProbe }) {
     probes: PLANNING_PERFORMANCE_PROBES.length,
     checkpointPreserved: true,
     adoptionWorkloadVerified: true,
+    timing: summarizePlanningPerformanceTimings(timings),
   };
 }
 

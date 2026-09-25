@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(68);
+select plan(69);
 
 insert into atlas_core.actors (actor_id, actor_type, display_name) values
   ('b6300000-0000-0000-0000-000000000001', 'HUMAN', 'H0A5b lineage generator'),
@@ -248,6 +248,16 @@ select lives_ok($h0$
  set constraints all immediate;
  set constraints all deferred
 $h0$,'direct released successor atomically replaces the controlled-current revision set');
+select throws_ok($h0$
+ update atlas_planning.confirmed_need_line_revisions
+ set is_current=false,revision_status='SUPERSEDED'
+ where confirmed_need_line_revision_id='b6300000-0000-0000-0000-000000000850';
+ insert into atlas_planning.confirmed_need_line_revisions (confirmed_need_line_revision_id,confirmed_need_line_id,revision_number,ingredient_id,theoretical_quantity,confirmed_quantity,unit_id,revision_status,is_current,predecessor_revision_id,created_by_actor_id,source_kind,confirmed_need_batch_id,need_generation_run_id,need_generation_run_version,need_generation_release_snapshot_id,service_date,customer_id,school_id,delivery_location_id) values
+ ('b6300000-0000-0000-0000-000000000852','b6300000-0000-0000-0000-000000000610',3,'b6300000-0000-0000-0000-000000000140',10,10,'b6300000-0000-0000-0000-000000000130','DRAFT',true,'b6300000-0000-0000-0000-000000000620','b6300000-0000-0000-0000-000000000001','NEED_GENERATION','b6300000-0000-0000-0000-000000000600','b6300000-0000-0000-0000-000000000800',3,'b6300000-0000-0000-0000-000000000840',date '2026-12-07','b6300000-0000-0000-0000-000000000100','b6300000-0000-0000-0000-000000000120','b6300000-0000-0000-0000-000000000101');
+ insert into atlas_planning.confirmed_need_line_revision_contributions (confirmed_need_line_revision_contribution_id,confirmed_need_batch_id,confirmed_need_line_id,confirmed_need_line_revision_id,need_generation_run_id,need_generation_run_version,need_generation_release_snapshot_id,need_generation_release_snapshot_line_id,theoretical_need_line_id,service_date,customer_id,school_id,delivery_location_id,ingredient_id,source_unit_id,controlled_unit_id,source_theoretical_quantity,controlled_contribution_quantity) values
+ ('b6300000-0000-0000-0000-000000000862','b6300000-0000-0000-0000-000000000600','b6300000-0000-0000-0000-000000000610','b6300000-0000-0000-0000-000000000852','b6300000-0000-0000-0000-000000000800',3,'b6300000-0000-0000-0000-000000000840','b6300000-0000-0000-0000-000000000841','b6300000-0000-0000-0000-000000000830',date '2026-12-07','b6300000-0000-0000-0000-000000000100','b6300000-0000-0000-0000-000000000120','b6300000-0000-0000-0000-000000000101','b6300000-0000-0000-0000-000000000140','b6300000-0000-0000-0000-000000000130','b6300000-0000-0000-0000-000000000130',10,10);
+ set constraints all immediate
+$h0$,'23514',null,'a current revision cannot skip its immediate predecessor');
 select throws_ok($h0$insert into atlas_planning.need_generation_runs (need_generation_run_id,planning_input_set_id,planning_input_evaluation_id,evaluation_version,period_start,period_end,attempt_ordinal,predecessor_need_generation_run_id,input_snapshot_id,run_status,version,generated_line_count,blocking_issue_count,warning_count,generated_by_actor_id,generated_at,updated_at) values ('b6300000-0000-0000-0000-000000000899','b6300000-0000-0000-0000-000000000400','b6300000-0000-0000-0000-000000000401',1,date '2026-12-07',date '2026-12-07',2,'b6300000-0000-0000-0000-000000000500','b6300000-0000-0000-0000-000000000898','GENERATED',1,0,0,0,'b6300000-0000-0000-0000-000000000001',timestamptz '2026-12-01 15:00:00+07',timestamptz '2026-12-01 15:00:00+07')$h0$,'23505',null,'linear predecessor uniqueness rejects a fork');
 
 select ok(check_value,description) from (values

@@ -39,3 +39,49 @@ After bounding the generation guard, the 480-contribution test proceeds to mater
 The migration therefore also bounds those two existing private guards. Source-consistency child events recheck the affected stable line and its revision history; batch events still scan every line after source changes. Membership-total events recheck the affected current-source revision, exact sums, complete membership and predecessor anchors. The original contribution-fact scan remains batch-wide because it also checks live School/customer ownership, which can change outside the affected revision. Historical revision changes retain the original full-batch validation, because historical contribution facts can anchor later revisions. Both functions retain their GLOBAL active-release partition checks on every invocation. Wholesale behavior is unchanged. No guard, constraint or immutable evidence is removed.
 
 Two additional corruption tests cover altered Confirmed Need contribution quantities and omitted materialization membership, with no surviving partial run or batch. Thirty-two operational/adversarial assertions and the existing H0B1b foundation suites protect this expanded execution boundary.
+
+## Current-source event ownership correction — 25/09/2026
+
+After D-047, one owner-authorized rollback-only 14/09 diagnostic completed in
+7,781.175 ms. Transaction-local function statistics isolated 4,199.392 ms in
+463 invocations of
+`pa_06e_h0b1b_confirmed_need_current_source_consistency`: one batch event, 231
+stable-line events and 231 current-revision events. The D-047 transition
+predicate was not executed on this initial materialization path. Indexed child
+partition and source-chain probes were sub-millisecond in direct `EXPLAIN`; the
+defect was repeated proof ownership, not a missing index or weaker D-047 rule.
+
+Migration `20260925015857_planning_generation_tail_latency_02.sql` keeps the
+complete authoritative source/release/partition proof on batch INSERT and
+source-advance UPDATE. A stable-line INSERT validates only its immutable source
+identity. A current-revision INSERT validates its exact released source triple,
+stable identity, immediate predecessor and affected source-member partition.
+UPDATE and historical-revision paths retain the prior broader checks. The
+membership-total guard is unchanged and continues to prove nonempty exact
+membership, quantities, contribution facts, predecessor provenance and
+completeness. No timeout, retry, trigger, constraint, RLS rule, public RPC,
+D-046 rule or D-047 rule changes.
+
+The regression suite explicitly proves that inserting a batch and every stable
+line and then flushing deferred constraints before revisions fails with the
+complete-partition error. It separately proves that a direct source advance,
+child replacement and final deferred flush succeed only for a complete valid
+source, and rejects a current revision that skips its immediate predecessor.
+The 304-contribution/248-group scale test records transaction-local function
+timings and requires current-source validation not to dominate the materializer.
+After the correction, five independent fresh local runs measured
+`2631.646`, `2689.611`, `2737.625`, `3036.337` and `3202.173 ms`: nearest-rank
+P50 was `2737.625 ms` and P95 was `3202.173 ms`. The final scale run's three
+sequential samples were `3202.173`, `3640.077` and `3941.605 ms`, for P50
+`3640.077 ms` and P95 `3941.605 ms`; all remained below the 4,000-ms desired
+operator target. These are local diagnostics, not protected Staging evidence.
+Protected Staging acceptance remains one-shot and strictly
+`generation_ms < 7000`; the five-probe verifier now also reports sorted samples,
+P50/P95 and whether the 4,000-ms operator target is met.
+
+Final local verification on 25/09/2026 passed the 42-assertion operational
+scale test, the focused H0B1b/H0Cb and D-046/D-047 matrices, all 17 verifier
+tests, TypeScript typecheck and `pnpm certify:supabase:full-integration`. The
+migration performs no data rewrite. If rollback is required, it must be a
+reviewed forward migration restoring the prior private function body; deployed
+immutable planning evidence is not modified.

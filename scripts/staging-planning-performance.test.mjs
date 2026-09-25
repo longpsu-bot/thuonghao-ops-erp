@@ -8,6 +8,7 @@ import {
   planningAdoptionMergeProofAccepted,
   planningAdoptionWorkloadAccepted,
   planningPerformanceProbeAccepted,
+  summarizePlanningPerformanceTimings,
   rollbackProbeSql,
   assertPlanningPerformanceCheckpoint,
   runPlanningPerformanceProbes,
@@ -209,6 +210,28 @@ test("performance acceptance enforces success, review, exact rows, and strict ma
       false,
     );
   }
+});
+
+test("performance timing summary reports repeated P50/P95 evidence and the operator target", () => {
+  assert.deepEqual(
+    summarizePlanningPerformanceTimings([3900, 3100, 2800, 4200, 3500]),
+    {
+      samples_ms: [2800, 3100, 3500, 3900, 4200],
+      p50_ms: 3500,
+      p95_ms: 4200,
+      operator_target_ms: 4000,
+      operator_target_met: false,
+    },
+  );
+  assert.equal(
+    summarizePlanningPerformanceTimings([2600, 2700, 2800, 2900, 3000])
+      .operator_target_met,
+    true,
+  );
+  assert.throws(
+    () => summarizePlanningPerformanceTimings([3000, Number.NaN]),
+    /INVALID_PERFORMANCE_TIMINGS/,
+  );
 });
 
 test("approved rollback SQL retains formal timeouts and never commits", () => {
@@ -430,6 +453,13 @@ test("performance certification preserves a saved browser checkpoint across ever
     probes: 5,
     checkpointPreserved: true,
     adoptionWorkloadVerified: true,
+    timing: {
+      samples_ms: [6999.999, 6999.999, 6999.999, 6999.999, 6999.999],
+      p50_ms: 6999.999,
+      p95_ms: 6999.999,
+      operator_target_ms: 4000,
+      operator_target_met: false,
+    },
   });
   assert.equal(reads, 6);
   assert.deepEqual(

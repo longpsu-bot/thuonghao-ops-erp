@@ -7,7 +7,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 set local track_functions = 'all';
-select plan(41);
+select plan(42);
 create function pg_temp.ng_id(n bigint) returns uuid language sql immutable as $$
   select ('a7400000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid;
 $$;
@@ -134,15 +134,33 @@ with started as materialized(select clock_timestamp() as at), result as material
  select at,atlas_api.execute_need_generation(request) as response from ng_requests cross join started where name='generate'
 ) insert into ng_results select 'generate',response,1000*extract(epoch from clock_timestamp()-at) from result;
 select is((select response->>'success' from ng_results where name='generate'),'true','daily generation completes under eight seconds');
-select diag((select jsonb_build_object('elapsed_ms',elapsed_ms,'error_code',response->>'error_code')::text from ng_results where name='generate'));
+select diag((select jsonb_build_object(
+ 'elapsed_ms',elapsed_ms,
+ 'error_code',response->>'error_code',
+ 'message',response->>'message',
+ 'blocking_references',response->'blocking_references'
+)::text from ng_results where name='generate'));
 reset role;
+create temp table ng_profile_delta as
+  select a.schemaname,a.funcname,a.calls-coalesce(b.calls,0) as calls,
+  a.self_time-coalesce(b.self_time,0) as self_ms,
+  a.total_time-coalesce(b.total_time,0) as total_ms
+  from pg_stat_xact_user_functions a left join ng_profile_before b using(funcid)
+  where a.schemaname like 'atlas%' and a.calls>coalesce(b.calls,0)
+;
 select diag(jsonb_agg(to_jsonb(x))::text) from (
- select a.schemaname,a.funcname,a.calls-coalesce(b.calls,0) as calls,
- round((a.self_time-coalesce(b.self_time,0))::numeric,2) as self_ms
- from pg_stat_xact_user_functions a left join ng_profile_before b using(funcid)
- where a.schemaname like 'atlas%' and a.calls>coalesce(b.calls,0)
- order by a.self_time-coalesce(b.self_time,0) desc limit 8
+ select schemaname,funcname,calls,round(self_ms::numeric,2) self_ms
+ from ng_profile_delta order by self_ms desc limit 8
 ) x;
+select ok(
+ (select self_ms from ng_profile_delta
+  where schemaname='atlas_planning'
+    and funcname='pa_06e_h0b1b_confirmed_need_current_source_consistency')
+ < (select self_ms from ng_profile_delta
+    where schemaname='atlas_core'
+      and funcname='planning_contract_01_materialize_confirmed_needs'),
+ 'current-source validation remains event-local instead of dominating materialization'
+);
 set local role authenticated;
 select is((select response#>>'{authoritative_readback,preflight,downstream_currentness}' from ng_results where name='generate'),'CURRENT','completed Need becomes authoritative current state');
 insert into ng_results select 'review',atlas_api.get_confirmed_need_review(jsonb_build_object(
@@ -170,9 +188,9 @@ select ok(coalesce((select p.proconfig @> array['plan_cache_mode=force_generic_p
    and pg_get_function_identity_arguments(p.oid)='request jsonb'),false),
  'the high-fanout public command pins generic plans instead of replanning hundreds of trigger calls');
 
--- Two fresh daily generations exercise the real 304 -> 248 geometry
--- sequentially. This is structural regression coverage; hosted rollback probes
--- remain the latency acceptance layer for the managed database.
+-- Two fresh daily generations plus the initial command produce three repeated
+-- local timings at the real 304 -> 248 geometry. This is structural regression
+-- coverage; hosted rollback probes remain the formal managed-database layer.
 insert into ng_requests select 'sequential-21',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
  jsonb_build_object('service_date','2050-09-21','expected_current_need_generation_run_id',null));
 insert into ng_requests select 'sequential-22',pg_temp.ng_request('RMVP-04.v3','NEED_GENERATION_EXECUTED',
@@ -186,8 +204,15 @@ with started as materialized(select clock_timestamp() at), generated as material
 ) insert into ng_results select 'sequential-22',response,1000*extract(epoch from clock_timestamp()-at) from generated;
 select ok((select bool_and(response->>'success'='true') from ng_results where name in ('sequential-21','sequential-22')),
  'multiple sequential real-shape generations succeed');
-select ok((select bool_and(elapsed_ms<8000) from ng_results where name in ('sequential-21','sequential-22')),
- 'multiple sequential real-shape generations stay inside the authenticated eight-second budget');
+select ok((select bool_and(elapsed_ms<8000) from ng_results where name in ('generate','sequential-21','sequential-22')),
+ 'three local real-shape generations stay within the unchanged authenticated timeout');
+select diag((select jsonb_build_object(
+ 'samples_ms',jsonb_agg(elapsed_ms order by elapsed_ms),
+ 'p50_ms',percentile_disc(0.50) within group(order by elapsed_ms),
+ 'p95_ms',percentile_disc(0.95) within group(order by elapsed_ms),
+ 'operator_target_ms',4000,
+ 'operator_target_met',percentile_disc(0.95) within group(order by elapsed_ms)<=4000
+)::text from ng_results where name in ('generate','sequential-21','sequential-22')));
 reset role;
 select ok((select bool_and(line_count=304) from (
  select run.period_start,count(line.*) line_count from atlas_planning.need_generation_runs run
