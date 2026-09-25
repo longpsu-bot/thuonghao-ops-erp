@@ -484,3 +484,43 @@ manifest drift, native Cánh gà inclusion, protected failure, or ambiguous
 correction outcome stops the sequence. After deployment or correction,
 rollback is a reviewed forward fix; immutable Recipe, Need, Confirmed Need,
 receipt, and adoption evidence is never deleted or rewritten.
+
+## Planning Generation tail-latency correction 02 — 25/09/2026
+
+The owner-approved diagnostic after D-047 measured 7,781.175 ms for the
+rollback-only 14/09 command. Of that, the deferred current-source guard consumed
+4,199.392 ms across exactly 463 calls: `1 batch + 231 stable lines + 231 current
+revisions`. The materializer itself consumed 369.697 ms total. D-047 changed the
+group count from 232 to 231 without losing any of the 304 source contributions,
+but its transition predicate is confined to correction/rematerialization and
+was not entered by this initial generation. The measured tail was therefore
+redundant child-event validation, not D-047 computation.
+
+The bounded migration assigns proof to the event that owns the fact. Batch
+INSERT and source-advance UPDATE retain the complete authoritative proof.
+Stable-line INSERT checks its immutable source identity. Current-revision INSERT
+checks the exact released source triple, operational identity, immediate
+predecessor and affected partition. Updates and historical revisions keep the
+broader prior path, while the separate membership-total guard remains unchanged.
+An early deferred flush after the batch and all stable lines, but before any
+revision, still fails; the complete batch event cannot expose incomplete current
+ownership as valid.
+
+Repository verification remains separate from protected certification. Every
+protected probe must still be `<7000 ms` under the unchanged eight-second
+database timeout, with no retry. Passing that ceiling alone is not sufficient
+evidence of useful operator latency: the verifier now returns the five timing
+samples with P50/P95 plus a non-weakening `4000 ms` operator target indicator.
+Five independent fresh local runs after the fix measured `2631.646`,
+`2689.611`, `2737.625`, `3036.337` and `3202.173 ms`, yielding nearest-rank P50
+`2737.625 ms` and P95 `3202.173 ms`. The final in-run repeated diagnostic was
+P50 `3640.077 ms` and P95 `3941.605 ms`; it also met the desired operator target.
+These local measurements are diagnostic only and do not replace the protected
+one-shot Staging acceptance.
+Final local verification passed the 42-assertion scale test, all 17 performance
+verifier tests, TypeScript typecheck and `pnpm certify:supabase:full-integration`.
+The migration has no data transformation. Its rollback effect is limited to a
+reviewed forward migration that restores the prior private guard implementation;
+it must not rewrite retained planning evidence.
+This implementation does not deploy to Staging, run protected Performance,
+execute the 17/09 correction or run Browser Closeout.
