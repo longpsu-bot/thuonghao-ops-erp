@@ -11,12 +11,17 @@ import { classifyPlanningAdoptionManifest } from "./verify-staging-planning-adop
 import {
   classifyPlanningCheckpoint,
   planningCloseoutSnapshotSql,
+  retainedAdoptionLineageSide,
 } from "./verify-staging-planning-closeout.mjs";
 
 const SUBJECT = "a1010000-0000-4000-8000-000000000101";
 const SYNTHETIC_ACTOR = "a1010000-0000-4000-8000-000000000001";
 export const RETAINED_RUN = "0c83b440-8fb2-4a77-9735-804ef4c89ea0";
 export const RETAINED_BATCH = "a0311e0a-a4de-48b9-a529-fe7464a3352b";
+const RETAINED_ADOPTION_LEGACY_LINE =
+  "recipe:dish:1483:school-type:1:ingredient:1045";
+const RETAINED_ADOPTION_INGREDIENT = "1045";
+const SOURCE_FINGERPRINT_KEYS = ["attendance", "pantry", "weekly_menu"];
 
 const canonicalJson = (value) => {
   if (Array.isArray(value)) return value.map(canonicalJson);
@@ -30,6 +35,59 @@ const canonicalJson = (value) => {
 };
 const sameJson = (left, right) =>
   JSON.stringify(canonicalJson(left)) === JSON.stringify(canonicalJson(right));
+
+const correctionSourceFingerprintsAccepted = (source) =>
+  source?.service_date === "2026-09-17" &&
+  sameJson(
+    Object.keys(source.selected ?? {}).sort(),
+    SOURCE_FINGERPRINT_KEYS,
+  ) &&
+  SOURCE_FINGERPRINT_KEYS.every(
+    (key) =>
+      typeof source.selected[key] === "string" &&
+      source.selected[key].length > 0,
+  ) &&
+  sameJson(source.selected, source.current);
+
+const correctionTargetAccepted = (evidence, target) =>
+  evidence?.source_unit_id !== evidence?.corrected_unit_id &&
+  target?.recipe_version_status === "RELEASED_FOR_PLANNING" &&
+  target.line_disposition === "PRESENT" &&
+  target.recipe_version_id === evidence.target_recipe_version_id &&
+  target.recipe_line_revision_id === evidence.target_recipe_line_revision_id &&
+  target.predecessor_recipe_version_id ===
+    evidence.predecessor_recipe_version_id &&
+  target.predecessor_recipe_line_revision_id ===
+    evidence.predecessor_recipe_line_revision_id &&
+  target.recipe_id === evidence.recipe_id &&
+  target.recipe_line_id === evidence.recipe_line_id &&
+  target.ingredient_id === evidence.ingredient_id &&
+  target.unit_id === evidence.corrected_unit_id &&
+  target.quantity_per_basis === evidence.quantity_per_basis;
+
+const correctionAdoptionWorkloadAccepted = (workload) => {
+  if (
+    workload?.date !== "2026-09-17" ||
+    workload.adoption_occurrence_count !== 1 ||
+    !sameJson(workload.adoption_legacy_line_ids, [
+      RETAINED_ADOPTION_LEGACY_LINE,
+    ]) ||
+    !sameJson(workload.adoption_ingredient_ids, [
+      RETAINED_ADOPTION_INGREDIENT,
+    ]) ||
+    !Array.isArray(workload.adoption_occurrences) ||
+    workload.adoption_occurrences.length !== 1
+  )
+    return false;
+  const occurrence = workload.adoption_occurrences[0];
+  return (
+    occurrence?.legacy_recipe_line_id === RETAINED_ADOPTION_LEGACY_LINE &&
+    occurrence.legacy_ingredient_id === RETAINED_ADOPTION_INGREDIENT &&
+    retainedAdoptionLineageSide(occurrence.evidence, occurrence.theoretical) ===
+      "PREDECESSOR" &&
+    correctionTargetAccepted(occurrence.evidence, occurrence.target)
+  );
+};
 
 export function classifyD046CorrectionBaseline(snapshot) {
   const reject = () => {
@@ -86,18 +144,15 @@ export function classifyD046CorrectionBaseline(snapshot) {
     receipt.new_versions?.need_generation_run_version !== 3 ||
     receipt.new_versions?.confirmed_need_batch_version !== 1 ||
     snapshot.preflight?.readiness_state !== "READY" ||
-    snapshot.preflight?.downstream_currentness !== "OUTDATED" ||
+    snapshot.preflight?.downstream_currentness !== "CURRENT" ||
     snapshot.preflight?.blocking_issue_count !== 0 ||
     snapshot.preflight?.current_need?.need_generation_run_id !== RETAINED_RUN ||
     snapshot.preflight?.current_need?.confirmed_need_batch_id !==
       RETAINED_BATCH ||
     snapshot.preflight?.current_need?.need_generation_run_version !== 3 ||
     snapshot.preflight?.current_need?.confirmed_need_batch_version !== 1 ||
-    source?.service_date !== "2026-09-17" ||
-    !sameJson(source.selected, source.current) ||
-    !sameJson(snapshot.preflight?.outdated_reasons, [
-      "RECIPE_SUCCESSOR_CHANGED",
-    ])
+    !correctionSourceFingerprintsAccepted(source) ||
+    !correctionAdoptionWorkloadAccepted(snapshot.adoption_workload)
   )
     reject();
   try {

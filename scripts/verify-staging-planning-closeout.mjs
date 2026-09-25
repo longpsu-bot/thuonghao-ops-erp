@@ -87,17 +87,6 @@ export function retainedAdoptionLineageSide(evidence, theoretical) {
   );
 }
 
-const retainedAdoptionLineageSql = () =>
-  RETAINED_ADOPTION_LINEAGE_SIDES.map(
-    ({ fields }) =>
-      `(${fields
-        .map(
-          ([evidenceField, theoreticalField]) =>
-            `evidence.${evidenceField}=theoretical.${theoreticalField}`,
-        )
-        .join(" and ")})`,
-  ).join(" or ");
-
 export function planningCloseoutPoliciesAccepted(rows) {
   if (!Array.isArray(rows) || rows.length !== 15) return false;
   const seen = new Set();
@@ -362,7 +351,36 @@ with scoped_runs as (
 ), retained_adoption_workload as materialized (
   select theoretical.theoretical_need_line_id,
          line_mapping.legacy_id legacy_recipe_line_id,
-         ingredient_mapping.legacy_id legacy_ingredient_id
+         ingredient_mapping.legacy_id legacy_ingredient_id,
+         theoretical.recipe_id theoretical_recipe_id,
+         theoretical.recipe_line_id theoretical_recipe_line_id,
+         theoretical.ingredient_id theoretical_ingredient_id,
+         theoretical.recipe_version_id theoretical_recipe_version_id,
+         theoretical.recipe_line_revision_id theoretical_recipe_line_revision_id,
+         theoretical.unit_id theoretical_unit_id,
+         evidence.evidence_kind,
+         evidence.source_system,
+         evidence.recipe_id evidence_recipe_id,
+         evidence.recipe_line_id evidence_recipe_line_id,
+         evidence.ingredient_id evidence_ingredient_id,
+         evidence.predecessor_recipe_version_id,
+         evidence.predecessor_recipe_line_revision_id,
+         evidence.source_unit_id,
+         evidence.target_recipe_version_id,
+         evidence.target_recipe_line_revision_id,
+         evidence.corrected_unit_id,
+         evidence.quantity_per_basis::text evidence_quantity_per_basis,
+         target_version.predecessor_recipe_version_id target_predecessor_recipe_version_id,
+         target_version.recipe_version_status,
+         target_revision.recipe_line_revision_id actual_target_recipe_line_revision_id,
+         target_revision.recipe_version_id target_revision_recipe_version_id,
+         target_revision.predecessor_recipe_line_revision_id target_predecessor_recipe_line_revision_id,
+         target_revision.recipe_id target_recipe_id,
+         target_revision.recipe_line_id target_recipe_line_id,
+         target_revision.ingredient_id target_ingredient_id,
+         target_revision.unit_id target_unit_id,
+         target_revision.quantity_per_basis::text target_quantity_per_basis,
+         target_revision.line_disposition target_line_disposition
   from scoped_batches batch
   join atlas_planning.theoretical_need_lines theoretical
     on theoretical.need_generation_run_id=batch.current_need_generation_run_id
@@ -374,7 +392,10 @@ with scoped_runs as (
    and evidence.recipe_id=theoretical.recipe_id
    and evidence.recipe_line_id=theoretical.recipe_line_id
    and evidence.ingredient_id=theoretical.ingredient_id
-   and (${retainedAdoptionLineageSql()})
+  join atlas_admin.recipe_versions target_version
+    on target_version.recipe_version_id=evidence.target_recipe_version_id
+  join atlas_admin.recipe_line_revisions target_revision
+    on target_revision.recipe_line_revision_id=evidence.target_recipe_line_revision_id
   join atlas_legacy.master_data_mappings line_mapping
     on line_mapping.source_system='OPS_V1' and line_mapping.object_type='RECIPE_LINE'
    and line_mapping.recipe_line_id=evidence.recipe_line_id
@@ -436,36 +457,7 @@ select jsonb_build_object(
     'downstream_currentness', p.payload->'downstream_currentness',
     'blocking_issue_count', p.payload->'blocking_issue_count',
     'current_need', p.payload->'current_need',
-    'source_date_fingerprints', p.payload->'source_date_fingerprints',
-    'outdated_reasons', case
-      when p.payload->>'downstream_currentness'='OUTDATED'
-       and p.payload#>'{source_date_fingerprints,selected}'=
-           p.payload#>'{source_date_fingerprints,current}'
-       and exists (
-         select 1
-         from atlas_planning.theoretical_need_lines theoretical
-         join atlas_legacy.recipe_unit_adoption_evidence evidence
-           on evidence.predecessor_recipe_version_id=theoretical.recipe_version_id
-          and evidence.predecessor_recipe_line_revision_id=theoretical.recipe_line_revision_id
-         join atlas_admin.recipe_versions successor_version
-           on successor_version.recipe_version_id=evidence.target_recipe_version_id
-          and successor_version.recipe_version_status='RELEASED_FOR_PLANNING'
-         where theoretical.need_generation_run_id='${RETAINED_RUN}'::uuid
-       )
-       and not exists (
-         select 1
-         from atlas_planning.theoretical_need_lines theoretical
-         join atlas_admin.recipe_versions successor_version
-           on successor_version.predecessor_recipe_version_id=theoretical.recipe_version_id
-          and successor_version.recipe_version_status='RELEASED_FOR_PLANNING'
-         where theoretical.need_generation_run_id='${RETAINED_RUN}'::uuid
-           and not exists (
-             select 1 from atlas_legacy.recipe_unit_adoption_evidence evidence
-             where evidence.predecessor_recipe_version_id=theoretical.recipe_version_id
-               and evidence.target_recipe_version_id=successor_version.recipe_version_id
-           )
-       )
-      then jsonb_build_array('RECIPE_SUCCESSOR_CHANGED') else '[]'::jsonb end
+    'source_date_fingerprints', p.payload->'source_date_fingerprints'
   ) from preflight p),
   'receipts', (select coalesce(jsonb_agg(jsonb_build_object(
     'command_id', c.command_id, 'command_name', c.command_name, 'actor_id', c.actor_id,
@@ -486,7 +478,44 @@ select jsonb_build_object(
     'date','2026-09-17',
     'adoption_occurrence_count',(select count(distinct theoretical_need_line_id)::integer from retained_adoption_workload),
     'adoption_legacy_line_ids',(select coalesce(jsonb_agg(legacy_recipe_line_id order by legacy_recipe_line_id),'[]'::jsonb) from (select distinct legacy_recipe_line_id from retained_adoption_workload) ids),
-    'adoption_ingredient_ids',(select coalesce(jsonb_agg(legacy_ingredient_id order by legacy_ingredient_id),'[]'::jsonb) from (select distinct legacy_ingredient_id from retained_adoption_workload) ids)
+    'adoption_ingredient_ids',(select coalesce(jsonb_agg(legacy_ingredient_id order by legacy_ingredient_id),'[]'::jsonb) from (select distinct legacy_ingredient_id from retained_adoption_workload) ids),
+    'adoption_occurrences',(select coalesce(jsonb_agg(jsonb_build_object(
+      'legacy_recipe_line_id', legacy_recipe_line_id,
+      'legacy_ingredient_id', legacy_ingredient_id,
+      'theoretical', jsonb_build_object(
+        'recipe_id', theoretical_recipe_id,
+        'recipe_line_id', theoretical_recipe_line_id,
+        'ingredient_id', theoretical_ingredient_id,
+        'recipe_version_id', theoretical_recipe_version_id,
+        'recipe_line_revision_id', theoretical_recipe_line_revision_id,
+        'unit_id', theoretical_unit_id),
+      'evidence', jsonb_build_object(
+        'evidence_kind', evidence_kind,
+        'source_system', source_system,
+        'recipe_id', evidence_recipe_id,
+        'recipe_line_id', evidence_recipe_line_id,
+        'ingredient_id', evidence_ingredient_id,
+        'predecessor_recipe_version_id', predecessor_recipe_version_id,
+        'predecessor_recipe_line_revision_id', predecessor_recipe_line_revision_id,
+        'source_unit_id', source_unit_id,
+        'target_recipe_version_id', target_recipe_version_id,
+        'target_recipe_line_revision_id', target_recipe_line_revision_id,
+        'corrected_unit_id', corrected_unit_id,
+        'quantity_per_basis', evidence_quantity_per_basis),
+      'target', jsonb_build_object(
+        'recipe_id', target_recipe_id,
+        'recipe_line_id', target_recipe_line_id,
+        'ingredient_id', target_ingredient_id,
+        'recipe_version_id', target_revision_recipe_version_id,
+        'recipe_line_revision_id', actual_target_recipe_line_revision_id,
+        'predecessor_recipe_version_id', target_predecessor_recipe_version_id,
+        'predecessor_recipe_line_revision_id', target_predecessor_recipe_line_revision_id,
+        'unit_id', target_unit_id,
+        'quantity_per_basis', target_quantity_per_basis,
+        'line_disposition', target_line_disposition,
+        'recipe_version_status', recipe_version_status)
+    ) order by theoretical_need_line_id,target_recipe_line_revision_id),'[]'::jsonb)
+    from retained_adoption_workload)
   ),
   'd046', jsonb_build_object(
     'predecessor_release_contribution_count', (select count(*)::integer

@@ -568,3 +568,57 @@ review Draft PR
 → if GENERATION_PERFORMANCE_PASS and workload proof = 24/8/3:
    authorize one-shot 17/09 D-046 correction separately
 ```
+
+## D-046 correction eligibility currentness repair — 25/09/2026
+
+The one-shot correction verifier previously treated Planning
+`downstream_currentness` as a proxy for Recipe-successor correction necessity.
+That was incorrect: the deployed preflight compares selected/current Menu,
+Attendance, and Pantry facts, and those source fingerprints remain unchanged
+for the retained 17/09 run. Its authoritative pre-correction state is therefore
+`READY / CURRENT`, with zero blockers.
+
+Eligibility now requires two independent facts. First, preflight must be
+`READY / CURRENT`, have zero blockers, and report identical nonempty
+selected/current fingerprints for exactly Weekly Menu, Attendance, and Pantry.
+Second, the retained run must expose exactly one predecessor-side D-047
+occurrence backed by immutable
+`OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION` / `OPS_V1` evidence,
+the complete predecessor Recipe-version/line-revision/source-Unit tuple, and
+the corresponding direct target Recipe-version/line-revision/corrected-Unit
+tuple in `RELEASED_FOR_PLANNING` state. The exact protected workload remains:
+
+```text
+date = 2026-09-17
+occurrence count = 1
+legacy Recipe line = recipe:dish:1483:school-type:1:ingredient:1045
+legacy Ingredient = 1045
+```
+
+Missing evidence, mixed lineage, an unrelated or non-authoritative successor,
+source fingerprint drift, a widened workload, or an already-corrected snapshot
+fails closed. The snapshot query no longer manufactures
+`RECIPE_SUCCESSOR_CHANGED`; it projects the immutable D-047 facts needed by the
+repository classifier. Existing run, batch, receipt, decision, adjustment,
+acceptance, Handoff, actor, manifest, and one-shot protections remain unchanged.
+
+This is verifier/certification logic only. It creates no migration and changes
+no database function, schema, business behavior, public API, RLS, privilege,
+frontend, Retool, OPS v1, or Procurement behavior. It performs no Staging
+mutation, Performance rerun, 17/09 correction, Confirmed Need Save, Purchase
+Handoff, deployment, or Browser Closeout.
+
+The exact owner-operated sequence remains unexecuted:
+
+```text
+review Draft PR
+→ merge verifier-only fix
+→ NO database deployment
+→ run read-only D-046 eligibility check using exact merged main SHA
+→ require D046_CORRECTION_ELIGIBLE
+→ STOP
+→ owner separately authorizes one-shot 17/09 correction
+→ execute correction exactly once
+→ read-only prove D046_CORRECTED_RESUME
+→ only then run Planning Browser Closeout
+```
