@@ -171,6 +171,38 @@ describe("approved master snapshot contract", () => {
       result.source_diagnostics.filter((d) => d.severity === "BLOCKER"),
     ).toEqual([]);
   });
+  it.each([
+    ["956", "Kg", "Cái", "kg"],
+    ["1045", "Trái", "Quả", "Trái"],
+    ["1012", "Chai", "Bịch", "Chai"],
+  ])(
+    "retains raw BoM Unit evidence for legacy Ingredient %s while preserving purchase Unit authority",
+    (ingredientId, purchaseUnit, bomUnit, normalizedPurchaseUnit) => {
+      const s = source();
+      s.ingredients[0].id = ingredientId;
+      s.ingredients[0].purchase_unit = purchaseUnit;
+      s.bill_of_materials[0].ingredient_id = ingredientId;
+      s.bill_of_materials[0].purchase_unit = bomUnit;
+      s.bill_of_materials[0].usable_quantity = "12.000000";
+
+      const snapshot = normalized(s);
+      const ingredient = snapshot.records.ingredients.find(
+        (row) => row.legacy_id === ingredientId,
+      );
+      const line = snapshot.records.recipe_lines.find(
+        (row) => row.ingredient_legacy_id === ingredientId,
+      );
+
+      expect(ingredient.purchase_unit_legacy_id).toBe(normalizedPurchaseUnit);
+      expect(line.unit_legacy_id).toBe(bomUnit);
+      expect(line.quantity_per_basis).toBe("12");
+      expect(ingredient.purchase_unit_legacy_id).not.toBe(line.unit_legacy_id);
+      expect(snapshot.unit_alias_evidence).not.toContainEqual({
+        source_label: bomUnit,
+        canonical_label: normalizedPurchaseUnit,
+      });
+    },
+  );
   it("hashes equivalent reordered source rows identically without mutating input", () => {
     const a = source();
     const before = structuredClone(a);

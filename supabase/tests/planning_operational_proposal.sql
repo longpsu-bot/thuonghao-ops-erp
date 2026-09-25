@@ -2,7 +2,7 @@ begin;
 
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
-select plan(57);
+select plan(62);
 
 set local session_replication_role = replica;
 
@@ -207,10 +207,10 @@ begin
   loop
     v_selection := gen_random_uuid();
     v_use := gen_random_uuid();
-    v_recipe := gen_random_uuid();
-    v_recipe_version := gen_random_uuid();
-    v_recipe_line := gen_random_uuid();
-    v_recipe_line_revision := gen_random_uuid();
+    v_recipe := coalesce((v_line->>'recipe_id')::uuid, gen_random_uuid());
+    v_recipe_version := coalesce((v_line->>'recipe_version_id')::uuid, gen_random_uuid());
+    v_recipe_line := coalesce((v_line->>'recipe_line_id')::uuid, gen_random_uuid());
+    v_recipe_line_revision := coalesce((v_line->>'recipe_line_revision_id')::uuid, gen_random_uuid());
 
     insert into atlas_planning.need_generation_recipe_selections (
       need_generation_recipe_selection_id, need_generation_input_snapshot_id, need_generation_run_id,
@@ -529,10 +529,53 @@ select is((select row(read_line->>'theoretical_quantity',read_line->>'proposed_c
 select is((select count(*) from atlas_planning.purchase_handoff_batches), 0::bigint, 'POPD-13 first Save creates no Purchase Handoff');
 
 set local session_replication_role = replica;
+insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_status) values
+  ('d4600000-0000-0000-0000-000000002509','proposal-adoption-dish','Proposal adoption dish','ACTIVE');
+insert into atlas_admin.recipes(recipe_id,dish_id,school_type_id,recipe_status) values
+  ('d4600000-0000-0000-0000-000000002510','d4600000-0000-0000-0000-000000002509','d4600000-0000-0000-0000-000000000012','ACTIVE');
+insert into atlas_admin.recipe_versions(
+  recipe_version_id,recipe_id,version_number,predecessor_recipe_version_id,basis_portions,created_by_actor_id
+) values
+  ('d4600000-0000-0000-0000-000000002511','d4600000-0000-0000-0000-000000002510',1,null,100,'d4600000-0000-0000-0000-000000000001'),
+  ('d4600000-0000-0000-0000-000000002512','d4600000-0000-0000-0000-000000002510',2,'d4600000-0000-0000-0000-000000002511',100,'d4600000-0000-0000-0000-000000000001');
+insert into atlas_admin.recipe_lines(recipe_line_id,recipe_id,line_code) values
+  ('d4600000-0000-0000-0000-000000002513','d4600000-0000-0000-0000-000000002510','proposal-adoption-line');
+insert into atlas_admin.recipe_line_revisions(
+  recipe_line_revision_id,recipe_id,recipe_version_id,recipe_line_id,line_revision_number,
+  predecessor_recipe_line_revision_id,ingredient_id,quantity_per_basis,unit_id,line_disposition,created_by_actor_id
+) values
+  ('d4600000-0000-0000-0000-000000002514','d4600000-0000-0000-0000-000000002510','d4600000-0000-0000-0000-000000002511','d4600000-0000-0000-0000-000000002513',1,null,'d4600000-0000-0000-0000-000000000108',12,'d4600000-0000-0000-0000-000000000015','PRESENT','d4600000-0000-0000-0000-000000000001'),
+  ('d4600000-0000-0000-0000-000000002515','d4600000-0000-0000-0000-000000002510','d4600000-0000-0000-0000-000000002512','d4600000-0000-0000-0000-000000002513',2,'d4600000-0000-0000-0000-000000002514','d4600000-0000-0000-0000-000000000108',12,'d4600000-0000-0000-0000-000000000014','PRESENT','d4600000-0000-0000-0000-000000000001');
+insert into atlas_legacy.import_batches(
+  import_batch_id,source_system,snapshot_id,snapshot_checksum,exported_at,import_status,source_counts,
+  completed_at,operator_actor_id,execution_database_principal,plan_checksum,snapshot_contract_version
+) values(
+  'd4600000-0000-0000-0000-000000002520','OPS_V1','proposal-adoption-snapshot',repeat('b',64),transaction_timestamp(),
+  'COMPLETED','{}',transaction_timestamp(),'d4600000-0000-0000-0000-000000000001','postgres',repeat('c',64),'OPS-V1-MASTER-SNAPSHOT.v1'
+);
+insert into atlas_legacy.master_data_mappings(
+  master_data_mapping_id,import_batch_id,source_system,object_type,legacy_id,
+  recipe_id,recipe_version_id,recipe_line_id,recipe_line_revision_id,ingredient_id,unit_id,
+  last_seen_import_batch_id,last_source_fingerprint,last_target_version
+) values
+  ('d4600000-0000-0000-0000-000000002521','d4600000-0000-0000-0000-000000002520','OPS_V1','RECIPE','proposal-adoption-recipe','d4600000-0000-0000-0000-000000002510',null,null,null,null,null,'d4600000-0000-0000-0000-000000002520',repeat('a',64),1),
+  ('d4600000-0000-0000-0000-000000002522','d4600000-0000-0000-0000-000000002520','OPS_V1','RECIPE_VERSION','proposal-adoption-recipe:version:1',null,'d4600000-0000-0000-0000-000000002511',null,null,null,null,'d4600000-0000-0000-0000-000000002520',repeat('a',64),1),
+  ('d4600000-0000-0000-0000-000000002523','d4600000-0000-0000-0000-000000002520','OPS_V1','RECIPE_LINE','proposal-adoption-line',null,null,'d4600000-0000-0000-0000-000000002513',null,null,null,'d4600000-0000-0000-0000-000000002520',repeat('a',64),1),
+  ('d4600000-0000-0000-0000-000000002524','d4600000-0000-0000-0000-000000002520','OPS_V1','RECIPE_LINE_REVISION','proposal-adoption-line:revision:1',null,null,null,'d4600000-0000-0000-0000-000000002514',null,null,'d4600000-0000-0000-0000-000000002520',repeat('a',64),1),
+  ('d4600000-0000-0000-0000-000000002525','d4600000-0000-0000-0000-000000002520','OPS_V1','INGREDIENT','proposal-adoption-ingredient',null,null,null,null,'d4600000-0000-0000-0000-000000000108',null,'d4600000-0000-0000-0000-000000002520',repeat('a',64),1),
+  ('d4600000-0000-0000-0000-000000002526','d4600000-0000-0000-0000-000000002520','OPS_V1','UNIT','Cái',null,null,null,null,null,'d4600000-0000-0000-0000-000000000015','d4600000-0000-0000-0000-000000002520',repeat('a',64),1);
+update atlas_admin.ingredients
+set purchase_unit_id='d4600000-0000-0000-0000-000000000015',order_step=1
+where ingredient_id='d4600000-0000-0000-0000-000000000108';
 select pg_temp.proposal_seed_run(
   'd4600000-0000-0000-0000-000000002000', 'd4600000-0000-0000-0000-000000002001',
   'd4600000-0000-0000-0000-000000002002', '2026-09-17', '2026-09-17',
-  jsonb_build_array(jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000002101','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000108','unit_id','d4600000-0000-0000-0000-000000000014','quantity','0.0255'))
+  jsonb_build_array(jsonb_build_object(
+    'theoretical_id','d4600000-0000-0000-0000-000000002101','service_date','2026-09-17',
+    'ingredient_id','d4600000-0000-0000-0000-000000000108','unit_id','d4600000-0000-0000-0000-000000000015','quantity','12',
+    'recipe_id','d4600000-0000-0000-0000-000000002510','recipe_version_id','d4600000-0000-0000-0000-000000002511',
+    'recipe_line_id','d4600000-0000-0000-0000-000000002513','recipe_line_revision_id','d4600000-0000-0000-0000-000000002514'
+  ))
 );
 set local session_replication_role = origin;
 set local role authenticated;
@@ -544,6 +587,7 @@ insert into proposal_results values (
 );
 reset role;
 select is((select response->>'success' from proposal_results where result_name='correction-initial'), 'true', 'POP-14 correction fixture initial materialization succeeds');
+select is((select unit_id from atlas_planning.confirmed_need_line_revisions where need_generation_run_id='d4600000-0000-0000-0000-000000002000'), 'd4600000-0000-0000-0000-000000000015'::uuid, 'POP-14A predecessor retains the imported raw Unit');
 create temporary table proposal_old_revision as
 select confirmed_need_line_revision_id, md5(jsonb_build_object(
   'theoretical_quantity', r.theoretical_quantity,
@@ -559,10 +603,32 @@ set local session_replication_role = replica;
 update atlas_planning.need_generation_runs
 set run_status='INVALIDATED', invalidated_by_actor_id='d4600000-0000-0000-0000-000000000001', invalidated_at=transaction_timestamp()
 where need_generation_run_id='d4600000-0000-0000-0000-000000002000';
+update atlas_admin.ingredients
+set purchase_unit_id='d4600000-0000-0000-0000-000000000014',order_step=0.5
+where ingredient_id='d4600000-0000-0000-0000-000000000108';
+insert into atlas_legacy.recipe_unit_adoption_evidence(
+  recipe_unit_adoption_evidence_id,evidence_kind,source_system,import_batch_id,snapshot_id,snapshot_checksum,
+  legacy_recipe_line_id,source_fingerprint,recipe_id,recipe_line_id,predecessor_recipe_version_id,target_recipe_version_id,
+  predecessor_recipe_line_revision_id,target_recipe_line_revision_id,ingredient_id,quantity_per_basis,
+  source_unit_id,corrected_unit_id,recorded_by_actor_id
+) values(
+  'd4600000-0000-0000-0000-000000002530','OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION','OPS_V1',
+  'd4600000-0000-0000-0000-000000002520','proposal-adoption-snapshot',repeat('b',64),'proposal-adoption-line',repeat('a',64),
+  'd4600000-0000-0000-0000-000000002510','d4600000-0000-0000-0000-000000002513',
+  'd4600000-0000-0000-0000-000000002511','d4600000-0000-0000-0000-000000002512',
+  'd4600000-0000-0000-0000-000000002514','d4600000-0000-0000-0000-000000002515',
+  'd4600000-0000-0000-0000-000000000108',12,'d4600000-0000-0000-0000-000000000015',
+  'd4600000-0000-0000-0000-000000000014','d4600000-0000-0000-0000-000000000001'
+);
 select pg_temp.proposal_seed_run(
   'd4600000-0000-0000-0000-000000002200', 'd4600000-0000-0000-0000-000000002201',
   'd4600000-0000-0000-0000-000000002202', '2026-09-17', '2026-09-17',
-  jsonb_build_array(jsonb_build_object('theoretical_id','d4600000-0000-0000-0000-000000002301','predecessor_id','d4600000-0000-0000-0000-000000002101','service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000108','unit_id','d4600000-0000-0000-0000-000000000014','quantity','0.105')),
+  jsonb_build_array(jsonb_build_object(
+    'theoretical_id','d4600000-0000-0000-0000-000000002301','predecessor_id','d4600000-0000-0000-0000-000000002101',
+    'service_date','2026-09-17','ingredient_id','d4600000-0000-0000-0000-000000000108','unit_id','d4600000-0000-0000-0000-000000000014','quantity','12',
+    'recipe_id','d4600000-0000-0000-0000-000000002510','recipe_version_id','d4600000-0000-0000-0000-000000002512',
+    'recipe_line_id','d4600000-0000-0000-0000-000000002513','recipe_line_revision_id','d4600000-0000-0000-0000-000000002515'
+  )),
   'd4600000-0000-0000-0000-000000002000'
 );
 set local session_replication_role = origin;
@@ -576,6 +642,11 @@ insert into proposal_results values (
 );
 reset role;
 select is((select response->>'success' from proposal_results where result_name='correction'), 'true', 'POP-15 correction materialization succeeds');
+select is(
+  (select response#>>'{affected_aggregate_ids,confirmed_need_batch_id}' from proposal_results where result_name='correction'),
+  (select response#>>'{affected_aggregate_ids,confirmed_need_batch_id}' from proposal_results where result_name='correction-initial'),
+  'POP-15A adoption correction rematerializes the same Confirmed Need batch'
+);
 select is((select md5(jsonb_build_object(
   'theoretical_quantity', r.theoretical_quantity,
   'confirmed_quantity', r.confirmed_quantity,
@@ -583,10 +654,13 @@ select is((select md5(jsonb_build_object(
   'need_generation_run_id', r.need_generation_run_id,
   'need_generation_release_snapshot_id', r.need_generation_release_snapshot_id
 )::text) from atlas_planning.confirmed_need_line_revisions r join proposal_old_revision old using(confirmed_need_line_revision_id)), (select fingerprint from proposal_old_revision), 'POP-16 correction changes lifecycle state without rewriting historical quantity/source facts');
-select is((select count(*) from atlas_planning.confirmed_need_line_revisions where confirmed_need_line_id=(select confirmed_need_line_id from atlas_planning.confirmed_need_line_revisions where need_generation_run_id='d4600000-0000-0000-0000-000000002000')), 2::bigint, 'POP-17 correction appends one successor revision');
-select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where need_generation_run_id='d4600000-0000-0000-0000-000000002200' and is_current), 0.105000::numeric, 'POP-18 correction preserves the new exact raw total');
-select is((select confirmed_quantity from atlas_planning.confirmed_need_line_revisions where need_generation_run_id='d4600000-0000-0000-0000-000000002200' and is_current), 0.500000::numeric, 'POP-19 correction derives the new proposal from the current Ingredient rounding step');
-select is((select sum(controlled_contribution_quantity) from atlas_planning.confirmed_need_line_revision_contributions c join atlas_planning.confirmed_need_line_revisions r using(confirmed_need_line_revision_id) where r.need_generation_run_id='d4600000-0000-0000-0000-000000002200'), 0.105000::numeric, 'POP-20 correction membership remains exact raw evidence');
+select is((select count(*) from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='correction')), 2::bigint, 'POP-17 correction preserves the old revision and appends one corrected operational identity');
+select is((select theoretical_quantity from atlas_planning.confirmed_need_line_revisions where need_generation_run_id='d4600000-0000-0000-0000-000000002200' and is_current), 12.000000::numeric, 'POP-18 correction preserves the new exact raw total');
+select is((select jsonb_agg(theoretical_quantity order by need_generation_run_id) from atlas_planning.theoretical_need_lines where theoretical_need_line_id in ('d4600000-0000-0000-0000-000000002101','d4600000-0000-0000-0000-000000002301')), '[12.000000,12.000000]'::jsonb, 'POP-18A adoption Unit repair performs no quantity conversion');
+select is((select row(unit_id,theoretical_quantity,confirmed_quantity,proposal_rounding_step,proposal_rounding_ingredient_version)::text from atlas_planning.confirmed_need_line_revisions where need_generation_run_id='d4600000-0000-0000-0000-000000002200' and is_current), '(d4600000-0000-0000-0000-000000000014,12.000000,12.000000,0.500000,1)', 'POP-19 correction snapshots the authoritative Ingredient Unit, order step, and version');
+select is((select sum(controlled_contribution_quantity) from atlas_planning.confirmed_need_line_revision_contributions c join atlas_planning.confirmed_need_line_revisions r using(confirmed_need_line_revision_id) where r.need_generation_run_id='d4600000-0000-0000-0000-000000002200'), 12.000000::numeric, 'POP-20 correction membership remains exact raw evidence');
+select is((select count(*) from atlas_planning.confirmed_need_line_decisions where confirmed_need_batch_id=(select (response#>>'{affected_aggregate_ids,confirmed_need_batch_id}')::uuid from proposal_results where result_name='correction')),0::bigint,'POP-20A adoption Unit repair fabricates or carries no human decision');
+select is((select count(*) from atlas_planning.purchase_handoff_batches),0::bigint,'POP-20B adoption Unit repair creates no Purchase Handoff');
 
 set local session_replication_role = replica;
 select pg_temp.proposal_seed_run(

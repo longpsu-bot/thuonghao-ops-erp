@@ -1,0 +1,252 @@
+import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { createClient } from "@supabase/supabase-js";
+import {
+  executeAtlasStagingManagementSql,
+  validateAtlasStagingPackageProtectedValues,
+  redactAtlasStagingDiagnostic,
+} from "./atlas-staging-contract.mjs";
+import { verifyPackageCheckout } from "./install-atlas-staging-package.mjs";
+import { classifyPlanningAdoptionManifest } from "./verify-staging-planning-adoption-manifest.mjs";
+import {
+  classifyPlanningCheckpoint,
+  planningCloseoutSnapshotSql,
+} from "./verify-staging-planning-closeout.mjs";
+
+const SUBJECT = "a1010000-0000-4000-8000-000000000101";
+const SYNTHETIC_ACTOR = "a1010000-0000-4000-8000-000000000001";
+export const RETAINED_RUN = "0c83b440-8fb2-4a77-9735-804ef4c89ea0";
+export const RETAINED_BATCH = "a0311e0a-a4de-48b9-a529-fe7464a3352b";
+
+const canonicalJson = (value) => {
+  if (Array.isArray(value)) return value.map(canonicalJson);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalJson(value[key])]),
+    );
+  return value;
+};
+const sameJson = (left, right) =>
+  JSON.stringify(canonicalJson(left)) === JSON.stringify(canonicalJson(right));
+
+export function classifyD046CorrectionBaseline(snapshot) {
+  const reject = () => {
+    throw new Error("D046_CORRECTION_BASELINE_REJECTED");
+  };
+  if (
+    !Array.isArray(snapshot?.runs) ||
+    snapshot.runs.length !== 1 ||
+    !Array.isArray(snapshot?.batches) ||
+    snapshot.batches.length !== 1 ||
+    !Array.isArray(snapshot?.receipts) ||
+    snapshot.receipts.length !== 1 ||
+    snapshot.handoffs !== 0 ||
+    snapshot.save_receipt_count !== 0
+  )
+    reject();
+  const run = snapshot.runs[0];
+  const batch = snapshot.batches[0];
+  const receipt = snapshot.receipts[0];
+  const source = snapshot.preflight?.source_date_fingerprints;
+  if (
+    run.id !== RETAINED_RUN ||
+    run.period_start !== "2026-09-17" ||
+    run.period_end !== "2026-09-17" ||
+    run.status !== "RELEASED_FOR_CONFIRMATION" ||
+    run.version !== 3 ||
+    run.generated_line_count !== 304 ||
+    run.release_snapshot_line_count !== 304 ||
+    run.blocking_issue_count !== 0 ||
+    run.warning_count !== 0 ||
+    run.actor_id !== SYNTHETIC_ACTOR ||
+    batch.id !== RETAINED_BATCH ||
+    batch.period_start !== "2026-09-17" ||
+    batch.period_end !== "2026-09-17" ||
+    batch.status !== "DRAFT_REVIEW" ||
+    batch.version !== 1 ||
+    batch.source_kind !== "NEED_GENERATION" ||
+    batch.origin_run_id !== RETAINED_RUN ||
+    batch.current_run_id !== RETAINED_RUN ||
+    batch.origin_run_version !== 3 ||
+    batch.current_run_version !== 3 ||
+    batch.line_count !== 248 ||
+    batch.decision_count !== 0 ||
+    batch.current_decision_count !== 0 ||
+    batch.adjustment_count !== 0 ||
+    batch.acceptance_count !== 0 ||
+    receipt.command_name !== "execute_need_generation" ||
+    receipt.actor_id !== SYNTHETIC_ACTOR ||
+    receipt.outcome !== "COMPLETED" ||
+    receipt.success !== true ||
+    receipt.affected_aggregate_ids?.need_generation_run_id !== RETAINED_RUN ||
+    receipt.affected_aggregate_ids?.confirmed_need_batch_id !==
+      RETAINED_BATCH ||
+    receipt.new_versions?.need_generation_run_version !== 3 ||
+    receipt.new_versions?.confirmed_need_batch_version !== 1 ||
+    snapshot.preflight?.readiness_state !== "READY" ||
+    snapshot.preflight?.downstream_currentness !== "OUTDATED" ||
+    snapshot.preflight?.blocking_issue_count !== 0 ||
+    snapshot.preflight?.current_need?.need_generation_run_id !== RETAINED_RUN ||
+    snapshot.preflight?.current_need?.confirmed_need_batch_id !==
+      RETAINED_BATCH ||
+    snapshot.preflight?.current_need?.need_generation_run_version !== 3 ||
+    snapshot.preflight?.current_need?.confirmed_need_batch_version !== 1 ||
+    source?.service_date !== "2026-09-17" ||
+    !sameJson(source.selected, source.current) ||
+    !sameJson(snapshot.preflight?.outdated_reasons, [
+      "RECIPE_SUCCESSOR_CHANGED",
+    ])
+  )
+    reject();
+  try {
+    classifyPlanningAdoptionManifest(snapshot.adoption_manifest, "post-deploy");
+  } catch {
+    reject();
+  }
+  return {
+    mode: "D046_CORRECTION_ELIGIBLE",
+    predecessorRunId: run.id,
+    batchId: batch.id,
+    expectedVersion: run.version,
+    currentLineCount: batch.line_count,
+    fingerprints: source.selected,
+  };
+}
+
+export function buildD046CorrectionRequest(snapshot, commandId) {
+  const baseline = classifyD046CorrectionBaseline(snapshot);
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      commandId,
+    )
+  )
+    throw new Error("D046_CORRECTION_COMMAND_ID_REJECTED");
+  return {
+    contract_version: "RMVP-04.v3",
+    command_id: commandId,
+    correlation_id: randomUUID(),
+    idempotency_key: `planning-d046-correction:${commandId}`,
+    expected_version: baseline.expectedVersion,
+    requested_by_auth_subject: SUBJECT,
+    requested_at: new Date().toISOString(),
+    reason_code: "NEED_GENERATION_EXECUTED",
+    reason_note:
+      "Owner-approved one-shot D-046 legacy adoption Unit correction.",
+    payload: {
+      service_date: "2026-09-17",
+      expected_current_need_generation_run_id: baseline.predecessorRunId,
+    },
+  };
+}
+
+export async function executeD046Correction({
+  invoke,
+  readSnapshot,
+  commandId,
+}) {
+  const before = await readSnapshot();
+  const baseline = classifyD046CorrectionBaseline(before);
+  const request = buildD046CorrectionRequest(before, commandId);
+  let response;
+  let invocationError;
+  try {
+    response = await invoke(request);
+  } catch (error) {
+    invocationError = error;
+  }
+  const after = await readSnapshot();
+  let corrected;
+  try {
+    corrected = classifyPlanningCheckpoint(after);
+  } catch (error) {
+    throw new Error("D046_CORRECTION_OUTCOME_REJECTED", {
+      cause: invocationError ?? error,
+    });
+  }
+  const correctionReceipt = after.receipts.find(
+    (receipt) => receipt.command_id === commandId,
+  );
+  if (
+    corrected.mode !== "D046_CORRECTED_RESUME" ||
+    corrected.predecessorRunId !== baseline.predecessorRunId ||
+    corrected.batchId !== baseline.batchId ||
+    !sameJson(corrected.fingerprints, baseline.fingerprints) ||
+    !correctionReceipt ||
+    (response?.success === true &&
+      (response.affected_aggregate_ids?.need_generation_run_id !==
+        corrected.currentRunId ||
+        response.affected_aggregate_ids?.confirmed_need_batch_id !==
+          corrected.batchId))
+  )
+    throw new Error("D046_CORRECTION_OUTCOME_REJECTED", {
+      cause: invocationError,
+    });
+  return corrected;
+}
+
+export async function correctStagingPlanningD046({
+  commitSha,
+  persist = false,
+  commandId = randomUUID(),
+  environment = process.env,
+} = {}) {
+  const target = validateAtlasStagingPackageProtectedValues(environment);
+  verifyPackageCheckout({ commitSha });
+  const sql = async (query) =>
+    JSON.parse(await executeAtlasStagingManagementSql(target, query));
+  const readSnapshot = async () =>
+    (await sql(planningCloseoutSnapshotSql()))[0]?.checkpoint;
+  const before = await readSnapshot();
+  const baseline = classifyD046CorrectionBaseline(before);
+  if (!persist) return { status: "D046_CORRECTION_ELIGIBLE", ...baseline };
+
+  const client = createClient(target.supabaseUrl, target.publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    db: { retry: false },
+  });
+  const { data, error } = await client.auth.signInWithPassword({
+    email: target.testEmail,
+    password: target.testPassword,
+  });
+  if (error || data.user?.id !== SUBJECT || !data.session)
+    throw new Error("STAGING_OPERATOR_AUTH_FAILED");
+  try {
+    let firstRead = true;
+    return await executeD046Correction({
+      commandId,
+      readSnapshot: async () => {
+        if (firstRead) {
+          firstRead = false;
+          return before;
+        }
+        return readSnapshot();
+      },
+      invoke: async (request) => {
+        const result = await client
+          .schema("atlas_api")
+          .rpc("execute_need_generation", { request });
+        if (result.error) throw new Error("D046_CORRECTION_RPC_UNKNOWN");
+        return result.data;
+      },
+    });
+  } finally {
+    client.auth.stopAutoRefresh();
+  }
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  const shaAt = process.argv.indexOf("--commit-sha");
+  const commandAt = process.argv.indexOf("--command-id");
+  correctStagingPlanningD046({
+    commitSha: process.argv[shaAt + 1],
+    commandId: commandAt >= 0 ? process.argv[commandAt + 1] : randomUUID(),
+    persist: process.argv.includes("--persist-correction"),
+  })
+    .then((result) => console.log(JSON.stringify(result)))
+    .catch((error) => {
+      console.error(redactAtlasStagingDiagnostic(error.message));
+      process.exitCode = 1;
+    });
+}

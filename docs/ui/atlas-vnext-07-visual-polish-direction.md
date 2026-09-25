@@ -1,8 +1,8 @@
 # Atlas vNext 07 Visual Polish Direction
 
-**Status:** Approved for implementation  
-**Branch:** `feat/atlas-ui-vnext-07-visual-polish`  
-**Draft PR:** #315  
+**Status:** Approved for implementation
+**Branch:** `feat/atlas-ui-vnext-07-visual-polish`
+**Draft PR:** #315
 **Approved slice:** Workbench identity + bounded responsive table geometry
 
 ## 1. Purpose
@@ -331,4 +331,3 @@ The fixture may produce a saved/BALANCED allocation while `preparation` remains 
 1. The contradictory Procurement review fixture should be corrected or documented in a separate fixture/test-evidence task. It is not production contract work for this PR.
 2. Ingredient pagination, authoritative server search or virtualisation may require a separate Product/performance task if real connected scale warrants it.
 3. Any future shared tab treatment must preserve the distinction between primary operator-job navigation and secondary/local tabs and must be reviewed with Planning consumers in scope.
-

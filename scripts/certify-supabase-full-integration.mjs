@@ -81,6 +81,7 @@ const DATABASE_TESTS_BEFORE_BROWSER = Object.freeze([
   "rmvp_04_connected_need_generation.sql",
   "planning_contract_01_atomic_planning_boundaries.sql",
   "planning_contract_02b_selective_confirmation_continuity.sql",
+  "planning_legacy_adoption_unit_transition.sql",
   "planning_operational_proposal.sql",
   "rmvp_05_connected_confirmed_need_review.sql",
 ]);
@@ -120,6 +121,12 @@ const databaseTests = DATABASE_TESTS_BEFORE_BROWSER.map((file) =>
 
 export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
   pnpm("exec", "supabase", "db", "reset", "--local", "--no-seed"),
+  Object.freeze({
+    command: "node",
+    args: Object.freeze([
+      "scripts/test-local-planning-legacy-adoption-upgrade.mjs",
+    ]),
+  }),
   ...databaseTests,
   pnpm(
     "exec",
