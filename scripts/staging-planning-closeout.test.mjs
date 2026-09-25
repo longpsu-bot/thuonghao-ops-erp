@@ -414,19 +414,22 @@ test("first Save rejects a second business quantity adjustment", () => {
   );
 });
 
-test("final retained proof requires one run, one batch, no handoff, and unchanged source fingerprints", () => {
-  const state = pristineResumeSnapshot();
-  state.batches[0].version = 2;
+test("final retained proof requires corrected run lineage, one batch, no handoff, and unchanged source fingerprints", () => {
+  const baselineSnapshot = correctedResumeSnapshot();
+  const baseline =
+    closeoutVerifier.classifyPlanningCloseoutBaseline(baselineSnapshot);
+  const state = structuredClone(baselineSnapshot);
+  state.batches[0].version = 3;
   state.batches[0].decision_count = 248;
   state.batches[0].current_decision_count = 248;
   state.batches[0].adjustment_count = 1;
   state.batches[0].acceptance_count = 247;
-  state.preflight.current_need.confirmed_need_batch_version = 2;
+  state.preflight.current_need.confirmed_need_batch_version = 3;
   state.save_receipt_count = 1;
   const review = {
     confirmed_need_batch_id: retainedBatchId,
     source_kind: "NEED_GENERATION",
-    batch_version: 2,
+    batch_version: 3,
     editing_allowed: true,
     blockers: [],
     pagination: { has_more: false },
@@ -435,14 +438,10 @@ test("final retained proof requires one run, one batch, no handoff, and unchange
     })),
   };
   const proof = {
-    baseline: {
-      mode: "PRISTINE_GENERATED_RESUME",
-      runId: retainedRunId,
-      batchId: retainedBatchId,
-    },
+    baseline,
     browser: {
       batchId: retainedBatchId,
-      batchVersion: 2,
+      batchVersion: 3,
       generateClicks: 0,
       saveClicks: 1,
       newDecisions: 248,
@@ -459,8 +458,8 @@ test("final retained proof requires one run, one batch, no handoff, and unchange
     "function",
   );
   assert.deepEqual(closeoutVerifier.assertFinalPlanningCloseoutProof(proof), {
-    mode: "PRISTINE_GENERATED_RESUME",
-    retainedRuns: 1,
+    mode: "D046_CORRECTED_RESUME",
+    retainedRuns: 2,
     retainedBatches: 1,
     retainedLines: 248,
     humanDecisions: 248,
@@ -1041,9 +1040,118 @@ function pristineResumeSnapshot() {
   };
 }
 
+const correctedRunId = "d0460000-0000-4000-8000-000000000017";
+
+function correctedResumeSnapshot() {
+  const snapshot = pristineResumeSnapshot();
+  snapshot.runs = [
+    {
+      ...snapshot.runs[0],
+      status: "INVALIDATED",
+      version: 4,
+      predecessor_run_id: null,
+      release_snapshot_line_count: 304,
+    },
+    {
+      ...snapshot.runs[0],
+      id: correctedRunId,
+      predecessor_run_id: retainedRunId,
+      release_snapshot_line_count: 304,
+    },
+  ];
+  snapshot.batches[0] = {
+    ...snapshot.batches[0],
+    version: 2,
+    current_run_id: correctedRunId,
+  };
+  snapshot.receipts.push({
+    ...snapshot.receipts[0],
+    command_id: "d0460000-0000-4000-8000-000000000018",
+    affected_aggregate_ids: {
+      need_generation_run_id: correctedRunId,
+      confirmed_need_batch_id: retainedBatchId,
+    },
+    new_versions: {
+      need_generation_run_version: 3,
+      confirmed_need_batch_version: 2,
+    },
+  });
+  snapshot.preflight.current_need = {
+    need_generation_run_id: correctedRunId,
+    confirmed_need_batch_id: retainedBatchId,
+    need_generation_run_version: 3,
+    confirmed_need_batch_version: 2,
+  };
+  snapshot.d046 = {
+    predecessor_release_contribution_count: 304,
+    successor_release_contribution_count: 304,
+    current_snapshot_pair_count: 248,
+    exact_proposal_count: 248,
+    invalid_proposal_count: 0,
+    retained_pre_d046_null_pair_count: 248,
+    allowed_unit_transition_count: 1,
+    invalid_unit_transition_count: 0,
+    current_raw_membership_count: 304,
+  };
+  snapshot.adoption_manifest = {
+    phase: "post-deploy",
+    eligible_line_count: 76,
+    affected_released_version_count: 74,
+    projected_successor_present_count: 322,
+    corrected_line_count: 76,
+    copied_sibling_count: 246,
+    legacy_ingredient_ids: ["956", "1012", "1045", "1057"],
+    excluded_native_mismatch_count: 1,
+    excluded_native_source_kind: "UIQ03A_SAVE",
+    incomplete_candidate_count: 0,
+    duplicate_candidate_count: 0,
+    remapped_source_count: 0,
+    exact_reconciliation_action_count: 76,
+    correction_evidence_count: 76,
+    direct_successor_version_count: 74,
+    successor_present_count: 322,
+    exact_sibling_copy_count: 246,
+    locked_predecessor_version_count: 74,
+    successor_version_mismatch_count: 0,
+    sibling_mismatch_count: 0,
+  };
+  return snapshot;
+}
+
+test("corrected checkpoint is the only protected resume mode", () => {
+  assert.deepEqual(
+    closeoutVerifier.classifyPlanningCloseoutBaseline(
+      correctedResumeSnapshot(),
+    ),
+    {
+      mode: "D046_CORRECTED_RESUME",
+      predecessorRunId: retainedRunId,
+      currentRunId: correctedRunId,
+      batchId: retainedBatchId,
+      currentLineCount: 248,
+      fingerprints: sourceFingerprints,
+    },
+  );
+  assert.throws(
+    () =>
+      closeoutVerifier.classifyPlanningCloseoutBaseline(
+        pristineResumeSnapshot(),
+      ),
+    /PLANNING_CLOSEOUT_BASELINE_REJECTED/,
+  );
+});
+
 test("closeout snapshot verifies policies in a read-only transaction", () => {
   const sql = closeoutVerifier.planningCloseoutSnapshotSql();
   assert.match(sql, /^begin read only;/);
+  assert.match(sql, /predecessor_run_id/);
+  assert.match(sql, /release_snapshot_line_count/);
+  assert.match(sql, /outdated_reasons/);
+  assert.match(sql, /command_id/);
+  assert.match(sql, /'d046'/);
+  assert.match(sql, /planning_legacy_adoption_unit_transition_allowed/);
+  assert.match(sql, /'adoption_manifest'/);
+  assert.match(sql, /atlas_legacy\.recipe_unit_adoption_evidence/);
   assert.match(sql, /planning_quantity_policy_revisions/);
   assert.match(sql, /atlas_admin\.units/);
   assert.match(sql, /u\.dimension_code='COUNT'/);
@@ -1153,7 +1261,7 @@ for (const [label, mutate] of [
   });
 }
 
-test("zero baseline and exact retained state classify into only two modes", () => {
+test("zero diagnostic and exact corrected state are the only accepted classifier modes", () => {
   const zero = pristineResumeSnapshot();
   zero.runs = [];
   zero.batches = [];
@@ -1167,13 +1275,24 @@ test("zero baseline and exact retained state classify into only two modes", () =
     fingerprints: sourceFingerprints,
   });
   assert.deepEqual(
-    closeoutVerifier.classifyPlanningCloseoutBaseline(pristineResumeSnapshot()),
+    closeoutVerifier.classifyPlanningCloseoutBaseline(
+      correctedResumeSnapshot(),
+    ),
     {
-      mode: "PRISTINE_GENERATED_RESUME",
-      runId: retainedRunId,
+      mode: "D046_CORRECTED_RESUME",
+      predecessorRunId: retainedRunId,
+      currentRunId: correctedRunId,
       batchId: retainedBatchId,
+      currentLineCount: 248,
       fingerprints: sourceFingerprints,
     },
+  );
+  assert.throws(
+    () =>
+      closeoutVerifier.classifyPlanningCloseoutBaseline(
+        pristineResumeSnapshot(),
+      ),
+    /PLANNING_CLOSEOUT_BASELINE_REJECTED/,
   );
 });
 
@@ -1195,13 +1314,13 @@ test("protected closeout rejects zero baseline before invoking the browser journ
   assert.equal(browserInvocations, 0);
 });
 
-test("protected closeout starts the pristine resume browser with zero Generate and one Save", async () => {
+test("protected closeout starts only the corrected resume browser with zero Generate and one Save", async () => {
   let browserInvocations = 0;
   const result = await closeoutVerifier.startProtectedPlanningBrowserCloseout(
-    pristineResumeSnapshot(),
+    correctedResumeSnapshot(),
     async (baseline) => {
       browserInvocations += 1;
-      assert.equal(baseline.mode, "PRISTINE_GENERATED_RESUME");
+      assert.equal(baseline.mode, "D046_CORRECTED_RESUME");
       return { generateClicks: 0, saveClicks: 1 };
     },
   );
@@ -1379,7 +1498,7 @@ for (const [label, mutate] of [
   });
 }
 
-test("resume reaches shared review without Generate while zero mode clicks once", async () => {
+test("corrected resume reaches shared review without Generate while zero mode clicks once", async () => {
   const review = {
     confirmed_need_batch_id: retainedBatchId,
     batch_version: 1,
@@ -1401,8 +1520,8 @@ test("resume reaches shared review without Generate while zero mode clicks once"
     <button aria-label="Làm mới dữ liệu" aria-busy="false"></button>
     ${resume ? `<table aria-label="Nhu cầu xác nhận"><tbody>${tableRows}</tbody></table>` : "<button>Tạo nhu cầu</button>"}
   </section>`;
-  for (const mode of ["PRISTINE_GENERATED_RESUME", "ZERO_BASELINE"]) {
-    document.body.innerHTML = readyMarkup(mode === "PRISTINE_GENERATED_RESUME");
+  for (const mode of ["D046_CORRECTED_RESUME", "ZERO_BASELINE"]) {
+    document.body.innerHTML = readyMarkup(mode === "D046_CORRECTED_RESUME");
     const clicks = [];
     const clickOnce = async (_scope, label) => {
       clicks.push(label);
@@ -1413,14 +1532,18 @@ test("resume reaches shared review without Generate while zero mode clicks once"
           `<table aria-label="Nhu cầu xác nhận"><tbody>${tableRows}</tbody></table>`,
         );
     };
+    const expectedReview = {
+      ...review,
+      batch_version: mode === "D046_CORRECTED_RESUME" ? 2 : 1,
+    };
     const result = await planningBrowser.reachReadyToReview({
       mode,
       expectedBatchId: retainedBatchId,
       evaluate: browserEvaluate,
-      readReview: async () => review,
+      readReview: async () => expectedReview,
       clickOnce,
     });
-    assert.equal(result.before, review);
+    assert.equal(result.before, expectedReview);
     assert.equal(result.generateClicks, mode === "ZERO_BASELINE" ? 1 : 0);
     assert.deepEqual(clicks, mode === "ZERO_BASELINE" ? ["Tạo nhu cầu"] : []);
   }

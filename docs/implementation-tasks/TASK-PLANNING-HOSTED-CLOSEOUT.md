@@ -440,3 +440,47 @@ immutable child-local checks plus one complete aggregate-boundary validation
 can replace repeated broad validation while preserving every invariant. This
 split changes no migration, trigger, index, RLS rule, planner setting,
 timeout, cache, bypass flag, or backend validation contract.
+
+## D-047 adoption correction gate — 24/09/2026
+
+The earlier `PRISTINE_GENERATED_RESUME` browser entry and
+`232/232/225/213/210` performance expectations are historical and are
+superseded by the owner-approved D-047 adoption repair. Protected work remains
+unexecuted by the implementation task.
+
+Performance now requires `231/231/225/213/210`. Each 14/09 probe must also
+prove that 232 raw legacy-label groups project to 231 corrected operational
+groups through exactly one two-to-one Thơm Unit merge, with unchanged
+contribution membership, no split, and no unexplained loss.
+
+Browser Closeout now accepts only `D046_CORRECTED_RESUME`: retained run
+`0c83b440-8fb2-4a77-9735-804ef4c89ea0` is immutable as the INVALIDATED v4
+predecessor, one direct v3 released successor is current, and retained batch
+`a0311e0a-a4de-48b9-a529-fe7464a3352b` is DRAFT_REVIEW v2 before Save. Both
+release snapshots contain 304 members; the current batch contains 248 exact
+D-046 proposals, zero decisions, zero Save receipts, and zero Handoffs. The
+browser clicks Generate zero times and Save once, leaving batch v3 with 248
+first decisions, one adjustment, and 247 proposal acceptances.
+
+The exact owner-operated sequence is:
+
+```text
+merge reviewed PR
+→ run read-only pre-deploy adoption manifest against Atlas Staging
+→ if and only if exact 76/74/322/246 + four-Ingredient + Cánh exclusion PASS, authorize deployment
+→ deploy exact merged SHA/migration to Atlas Staging
+→ run read-only post-deploy adoption manifest and catalog/preflight proof
+→ protected Planning Performance
+→ if and only if PASS, separately authorize and run one 17/09 correction
+→ read-only D046_CORRECTED_RESUME proof
+→ pin immutable frontend deployment for exact certified SHA
+→ protected Planning Browser Closeout
+→ final read-only proof
+→ declare certified only when both independent statuses PASS
+```
+
+No step above is authorized or executed by this implementation task. Any
+manifest drift, native Cánh gà inclusion, protected failure, or ambiguous
+correction outcome stops the sequence. After deployment or correction,
+rollback is a reviewed forward fix; immutable Recipe, Need, Confirmed Need,
+receipt, and adoption evidence is never deleted or rewritten.

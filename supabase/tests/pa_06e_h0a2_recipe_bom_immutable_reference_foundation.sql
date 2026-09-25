@@ -237,32 +237,38 @@ insert into atlas_admin.units (
 insert into atlas_admin.ingredients (
   ingredient_id,
   ingredient_code,
-  ingredient_name
+  ingredient_name,
+  purchase_unit_id
 ) values
   (
     '8a000000-0000-0000-0000-000000000030',
     'h0a2-rice',
-    'H0A2 Rice'
+    'H0A2 Rice',
+    '8a000000-0000-0000-0000-000000000020'
   ),
   (
     '8a000000-0000-0000-0000-000000000031',
     'h0a2-onion',
-    'H0A2 Onion'
+    'H0A2 Onion',
+    '8a000000-0000-0000-0000-000000000020'
   ),
   (
     '8a000000-0000-0000-0000-000000000032',
     'h0a2-fish',
-    'H0A2 Fish'
+    'H0A2 Fish',
+    '8a000000-0000-0000-0000-000000000020'
   ),
   (
     '8a000000-0000-0000-0000-000000000033',
     'h0a2-spice',
-    'H0A2 Spice'
+    'H0A2 Spice',
+    '8a000000-0000-0000-0000-000000000020'
   ),
   (
     '8a000000-0000-0000-0000-000000000034',
     'h0a2-salt',
-    'H0A2 Salt'
+    'H0A2 Salt',
+    '8a000000-0000-0000-0000-000000000020'
   );
 
 select lives_ok(

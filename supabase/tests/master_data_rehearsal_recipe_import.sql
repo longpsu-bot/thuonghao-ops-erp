@@ -3,6 +3,35 @@ select no_plan();
 create function pg_temp.recipe_fixture() returns jsonb language sql as $fixture$ select $json${"contract_version":"OPS-V1-MASTER-SNAPSHOT.v1","source_system":"OPS_V1","source_project_ref":"qnthofvccilhnefdcxnz","snapshot_id":"synthetic-recipe-a","exported_at":"2026-09-15T08:00:00.000Z","extractor_version":"synthetic-v1","complete_entities":["customers","delivery_locations","dish_types","dishes","ingredient_order_groups","ingredient_types","ingredients","recipe_lines","recipes","school_types","schools","supplier_eligibilities","suppliers","units"],"records":{"school_types":[{"legacy_id":"1","school_type_code":"v1-school-type-1","school_type_name":"TIỂU HỌC","school_type_status":"ACTIVE"},{"legacy_id":"2","school_type_code":"v1-school-type-2","school_type_name":"TRUNG HỌC","school_type_status":"ACTIVE"}],"customers":[{"legacy_id":"school:21:customer","customer_code":"v1-customer-21","customer_name":"Trường mẫu đầy đủ","customer_type":"SCHOOL_CATERING","customer_status":"ACTIVE"}],"delivery_locations":[{"legacy_id":"school:21:delivery-location","customer_legacy_id":"school:21:customer","location_code":"v1-location-21","location_name":"Trường mẫu","address_text":"21 Đường mẫu","delivery_instructions":null,"timezone_name":"Asia/Ho_Chi_Minh","location_status":"ACTIVE"}],"schools":[{"legacy_id":"21","customer_legacy_id":"school:21:customer","delivery_location_legacy_id":"school:21:delivery-location","school_type_legacy_id":"1","school_code":"v1-school-21","school_name":"Trường mẫu","school_status":"ACTIVE","display_order":1,"default_student_portions":420,"default_teacher_portions":32,"dispatch_document_issuer_name":"CÔNG TY TNHH MTV TM - DV THƯỢNG HẢO","dispatch_document_issuer_address":"ĐC: 96/3 KP. Thạnh Lợi, Phường Thuận An, Tp Hồ Chí Minh, Việt Nam"}],"units":[{"legacy_id":"Hũ","unit_code":"v1-unit-9837090d3b3f","unit_name":"Hũ","dimension_code":"COUNT","decimal_scale":0,"unit_status":"ACTIVE"},{"legacy_id":"kg","unit_code":"kg","unit_name":"Kilogram","dimension_code":"MASS","decimal_scale":6,"unit_status":"ACTIVE"}],"ingredient_types":[{"legacy_id":"37","ingredient_type_name":"Khác"}],"ingredient_order_groups":[{"legacy_id":"2","ingredient_order_group_name":"Còn lại"}],"ingredients":[{"legacy_id":"1","ingredient_code":"v1-ingredient-1","ingredient_name":"Nguyên liệu 1","ingredient_type_legacy_id":"37","ingredient_order_group_legacy_id":"2","purchase_unit_legacy_id":"kg","order_step":"1","ingredient_status":"ACTIVE"},{"legacy_id":"2","ingredient_code":"v1-ingredient-2","ingredient_name":"Nguyên liệu 2","ingredient_type_legacy_id":"37","ingredient_order_group_legacy_id":"2","purchase_unit_legacy_id":"kg","order_step":"1","ingredient_status":"ACTIVE"},{"legacy_id":"3","ingredient_code":"v1-ingredient-3","ingredient_name":"Nguyên liệu 3","ingredient_type_legacy_id":"37","ingredient_order_group_legacy_id":"2","purchase_unit_legacy_id":"Hũ","order_step":"1","ingredient_status":"ACTIVE"},{"legacy_id":"4","ingredient_code":"v1-ingredient-4","ingredient_name":"Nguyên liệu 4","ingredient_type_legacy_id":"37","ingredient_order_group_legacy_id":"2","purchase_unit_legacy_id":"Hũ","order_step":"1","ingredient_status":"ACTIVE"}],"suppliers":[{"legacy_id":"12","supplier_code":"v1-supplier-12","supplier_name":"NCC mẫu","supplier_status":"ACTIVE"}],"supplier_eligibilities":[{"legacy_id":"ingredient:1:supplier:12","ingredient_legacy_id":"1","supplier_legacy_id":"12","priority":1}],"dish_types":[{"legacy_id":"1","dish_type_code":"soup","source_name":"Canh"}],"dishes":[{"legacy_id":"100","dish_code":"v1-dish-100","dish_name":"Canh mẫu","dish_type_legacy_id":"1","dish_status":"ACTIVE"}],"recipes":[{"legacy_id":"dish:100:school-type:1","source_record_id":"200","dish_legacy_id":"100","school_type_legacy_id":"1","recipe_status":"ACTIVE","basis_portions":100},{"legacy_id":"dish:100:school-type:2","source_record_id":"201","dish_legacy_id":"100","school_type_legacy_id":"2","recipe_status":"ACTIVE","basis_portions":100}],"recipe_lines":[{"legacy_id":"recipe:dish:100:school-type:1:ingredient:1","source_record_id":"300","recipe_legacy_id":"dish:100:school-type:1","ingredient_legacy_id":"1","unit_legacy_id":"kg","quantity_per_basis":"1.5","operational_note":null},{"legacy_id":"recipe:dish:100:school-type:1:ingredient:2","source_record_id":"400","recipe_legacy_id":"dish:100:school-type:1","ingredient_legacy_id":"2","unit_legacy_id":"kg","quantity_per_basis":"0.5","operational_note":"Second fixture line"},{"legacy_id":"recipe:dish:100:school-type:2:ingredient:1","source_record_id":"301","recipe_legacy_id":"dish:100:school-type:2","ingredient_legacy_id":"1","unit_legacy_id":"kg","quantity_per_basis":"1.5","operational_note":null}]},"source_counts":{"schools":1,"ingredient_type":1,"ingredient_shopping_type":1,"ingredients":4,"suppliers":1,"ingredient_suppliers":1,"dish_types":1,"dishes":1,"recipes":2,"bill_of_materials":3},"source_fingerprints":{"school_types":[{"legacy_id":"1","fingerprint":"3c8d4fa9af973fa033167751d408923016aa723a606a3d5ee01f0e01dc6e5487"},{"legacy_id":"2","fingerprint":"5d595c00824d7ee444eb2df9681ab6f3239022028a9895c09e0aa5204b8850d4"}],"customers":[{"legacy_id":"school:21:customer","fingerprint":"80bdb81409e1d08304ba8125fd9c083ea69fdb4732dc8db6d14aeedcdafa06c4"}],"delivery_locations":[{"legacy_id":"school:21:delivery-location","fingerprint":"bfa469b78e7ff9f0f4e13a61d52768a2b5c9db0f8812fa818e48f73ca27b7fb2"}],"schools":[{"legacy_id":"21","fingerprint":"bd83170a8e12e95b212e190b37306b3047f82dbff6bffc968e7290883282823d"}],"units":[{"legacy_id":"Hũ","fingerprint":"f8488e2ce32d8c8b9060201530bd28295ea2e03a1ea4e5e0bf42f4ea8c833def"},{"legacy_id":"kg","fingerprint":"26666290ad012bcad4ba3ffb45fa80e4bb246648dbe2c11cd36693f22f5be99d"}],"ingredient_types":[{"legacy_id":"37","fingerprint":"a23049e6a1813f39b26ea67a3e627c3ce18fcc9bff8e15c8c128ccd7aaea78ed"}],"ingredient_order_groups":[{"legacy_id":"2","fingerprint":"505691e2431ad1ab67b63ea2ea979f36e592522caff8bebfc5a26ab041ef3f54"}],"ingredients":[{"legacy_id":"1","fingerprint":"a6800ee73dc3522508ed09be9386f177800b3ea5245bc5a99c10b42d795b8276"},{"legacy_id":"2","fingerprint":"e6e6cbab5ff34eb6c4068c6bf9ebbe30476d9a232a1084d3b90dc77144dc86ae"},{"legacy_id":"3","fingerprint":"d13ebcc818559fe56ef71ad6f4f1bc438641dda638f6fb78905e3f00d74a5785"},{"legacy_id":"4","fingerprint":"b361d84acd77e931120550c9eacbd9ee1755fc7c0e34f728c85ce897b5dee6c6"}],"suppliers":[{"legacy_id":"12","fingerprint":"1eff7d7f1ed72cf11fae6f0911772c1841e996a6c4f436379f0619ba8e095e4a"}],"supplier_eligibilities":[{"legacy_id":"ingredient:1:supplier:12","fingerprint":"fec2bdde4bfdeb0195e2a9060e05dcad558ad0454e5c90d329b105bb603a2160"}],"dish_types":[{"legacy_id":"1","fingerprint":"c2ab41b5c24e9d3375713885016ba2563dd7d0b4253fa11aca05cb62eff3e5aa"}],"dishes":[{"legacy_id":"100","fingerprint":"49871eba3583acdc5381a35c300ada7ecd948df894117b2c3da86844a7eb24d8"}],"recipes":[{"legacy_id":"dish:100:school-type:1","fingerprint":"e2901c873561bdf843915bd31f51e544fd17b5ee7c7f3d4db359f42fbdbaf8b1"},{"legacy_id":"dish:100:school-type:2","fingerprint":"3c46abf07b8be98e2ff6f346c18840025775d17f21f2ebade5b68a1849f9e499"}],"recipe_lines":[{"legacy_id":"recipe:dish:100:school-type:1:ingredient:1","fingerprint":"6d7fc585d095553ca63769737e7e7108b55b453b0bd6d01d5146ab6f937a1336"},{"legacy_id":"recipe:dish:100:school-type:1:ingredient:2","fingerprint":"4176781d9a1847ceb64a97e715196f394d6268bf941aa288e3eb0130e610dfb9"},{"legacy_id":"recipe:dish:100:school-type:2:ingredient:1","fingerprint":"7d68fe6d8ddce3c1413d5505cf03a509197db650d1b3c88dcc421de457501d42"}]},"source_diagnostics":[{"code":"SOURCE_ONLY_UNMAPPED","entity":"recipes","legacy_id":"dish:100:school-type:1","field":"recipe_name","detail":"Công thức 1","severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"recipes","legacy_id":"dish:100:school-type:2","field":"recipe_name","detail":"Công thức 2","severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"suppliers","legacy_id":"12","field":"contact_details","detail":"Raw contact evidence","severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"schools","legacy_id":"21","field":"region_code","detail":1,"severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"supplier_eligibilities","legacy_id":"ingredient:1:supplier:12","field":"lead_time_days","detail":2,"severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"recipes","legacy_id":"dish:100:school-type:1","field":"is_general","detail":true,"severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"recipes","legacy_id":"dish:100:school-type:2","field":"is_general","detail":true,"severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"recipes","legacy_id":"dish:100:school-type:1","field":"is_locked","detail":true,"severity":"INFO"},{"code":"SOURCE_ONLY_UNMAPPED","entity":"recipes","legacy_id":"dish:100:school-type:2","field":"is_locked","detail":true,"severity":"INFO"}],"unit_alias_evidence":[{"source_label":"Hũ","canonical_label":"Hũ"},{"source_label":"Hủ","canonical_label":"Hũ"},{"source_label":"Kg","canonical_label":"kg"},{"source_label":"kg","canonical_label":"kg"}],"source_access":{"role_name":"supabase_read_only_user","bypass_rls":true,"superuser":false,"create_role":false,"create_db":false,"has_required_select":true,"has_non_select_privilege":false},"snapshot_checksum":"47987d8011ddfe3bea94072f5734a820cbe767d578349fa1950021c65209edfb"}$json$::jsonb $fixture$;
 
 create function pg_temp.sign(s jsonb) returns jsonb language sql as $$ select s||jsonb_build_object('snapshot_checksum',atlas_legacy.master_snapshot_hash(s-'snapshot_checksum')) $$;
+create function pg_temp.recipe_adoption_fixture() returns jsonb language sql as $$
+  select pg_temp.sign(
+    jsonb_set(
+      jsonb_set(pg_temp.recipe_fixture(),'{snapshot_id}','"synthetic-recipe-adoption-a"'),
+      '{records,recipe_lines}',
+      (
+        select jsonb_agg(
+          case
+            when line.value->>'legacy_id'='recipe:dish:100:school-type:1:ingredient:1'
+              then jsonb_set(jsonb_set(line.value,'{unit_legacy_id}','"Hũ"'),'{quantity_per_basis}','"12"')
+            when line.value->>'legacy_id'='recipe:dish:100:school-type:1:ingredient:2'
+              then jsonb_set(line.value,'{unit_legacy_id}','"Hũ"')
+            else line.value
+          end
+          order by line.ordinality
+        )
+        from jsonb_array_elements(pg_temp.recipe_fixture()#>'{records,recipe_lines}') with ordinality line(value,ordinality)
+      ) || jsonb_build_array(jsonb_build_object(
+        'legacy_id','recipe:dish:100:school-type:1:ingredient:4',
+        'source_record_id','500',
+        'recipe_legacy_id','dish:100:school-type:1',
+        'ingredient_legacy_id','4',
+        'unit_legacy_id','Hũ',
+        'quantity_per_basis','0.25',
+        'operational_note','Already-correct sibling'
+      ))
+    )
+  )
+$$;
 select is(atlas_legacy.preview_master_data_snapshot(pg_temp.sign(jsonb_set(jsonb_set(pg_temp.recipe_fixture(),'{snapshot_id}','"wrong-dish-type-code"'),'{records,dish_types,0,dish_type_code}','"stir_fry"')))->>'success','false','approved source Dish Type ID cannot be rebound to another catalogue code');
 select is(
   atlas_legacy.preview_master_data_snapshot(
@@ -51,7 +80,7 @@ select throws_ok($q$insert into atlas_admin.dishes(dish_code,dish_name,dish_type
  '23505','duplicate key value violates unique constraint "dishes_active_normalized_name_key"','same-type duplicate remains physically rejected');
 rollback to savepoint typed_identity_apply;
 create temp table evidence(label text primary key,snapshot jsonb,preview jsonb,result jsonb);
-insert into evidence values ('a',pg_temp.recipe_fixture(),atlas_legacy.preview_master_data_snapshot(pg_temp.recipe_fixture()),null);
+insert into evidence values ('a',pg_temp.recipe_adoption_fixture(),atlas_legacy.preview_master_data_snapshot(pg_temp.recipe_adoption_fixture()),null);
 select is((select preview->>'success' from evidence where label='a'),'true','full typed Recipe snapshot is supported');
 update evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa920000-0000-4000-8000-000000000001') where label='a';
 select is((select result->>'success' from evidence where label='a'),'true','full master snapshot applies atomically');
@@ -60,8 +89,156 @@ select is((select count(*) from atlas_admin.recipes),2::bigint,'two typed Recipe
 select is((select count(*) from atlas_admin.recipes where school_type_id is null),0::bigint,'legacy GENERAL flag does not create general roots');
 select is((select count(*) from atlas_admin.recipe_versions where recipe_version_status='RELEASED_FOR_PLANNING'),2::bigint,'initial Recipes are planning eligible');
 select is((select count(*) from atlas_admin.recipe_versions where recipe_version_status='LOCKED'),0::bigint,'legacy is_locked is not copied');
-select is((select count(*) from atlas_admin.recipe_line_revisions),3::bigint,'all exact BOM lines materialized');
+select is((select count(*) from atlas_admin.recipe_line_revisions),4::bigint,'all exact BOM lines materialized');
 select ok((select bool_and(basis_portions=100 and created_by_actor_id='aa920000-0000-4000-8000-000000000001'::uuid and validated_by_actor_id=created_by_actor_id and released_by_actor_id=created_by_actor_id and source_evidence->>'source_kind'='OPS_V1_MASTER_SNAPSHOT') from atlas_admin.recipe_versions),'actual import Actor and migration evidence retained');
+select is(
+  (
+    select revision.unit_id
+    from atlas_admin.recipe_line_revisions revision
+    join atlas_admin.recipe_versions version using(recipe_version_id)
+    join atlas_admin.recipes recipe on recipe.recipe_id=version.recipe_id
+    join atlas_admin.school_types school_type on school_type.school_type_id=recipe.school_type_id
+    join atlas_admin.ingredients ingredient using(ingredient_id)
+    where version.recipe_version_status='RELEASED_FOR_PLANNING'
+      and school_type.school_type_code='v1-school-type-1'
+      and ingredient.ingredient_code='v1-ingredient-1'
+  ),
+  (select purchase_unit_id from atlas_admin.ingredients where ingredient_code='v1-ingredient-1'),
+  'legacy adoption uses Ingredient purchase Unit operationally'
+);
+select is(
+  (
+    select revision.quantity_per_basis
+    from atlas_admin.recipe_line_revisions revision
+    join atlas_admin.recipe_versions version using(recipe_version_id)
+    join atlas_admin.recipes recipe on recipe.recipe_id=version.recipe_id
+    join atlas_admin.school_types school_type on school_type.school_type_id=recipe.school_type_id
+    join atlas_admin.ingredients ingredient using(ingredient_id)
+    where version.recipe_version_status='RELEASED_FOR_PLANNING'
+      and school_type.school_type_code='v1-school-type-1'
+      and ingredient.ingredient_code='v1-ingredient-1'
+  ),
+  12.000000::numeric,
+  'legacy adoption performs no numeric conversion'
+);
+select is(
+  (select line.value->>'unit_legacy_id' from evidence e cross join lateral jsonb_array_elements(e.snapshot#>'{records,recipe_lines}') line(value) where e.label='a' and line.value->>'legacy_id'='recipe:dish:100:school-type:1:ingredient:1'),
+  'Hũ',
+  'raw BoM Unit remains auditable in immutable snapshot evidence'
+);
+select is(
+  (select count(*) from atlas_legacy.recipe_unit_adoption_evidence),
+  2::bigint,
+  'one immutable adoption evidence row is recorded per mismatched fixture line'
+);
+select ok(
+  (
+    select bool_and(
+      adoption.evidence_kind='OPS_V1_INGREDIENT_PURCHASE_UNIT_ADOPTION'
+      and adoption.source_unit_id<>adoption.corrected_unit_id
+      and adoption.predecessor_recipe_version_id is null
+      and adoption.predecessor_recipe_line_revision_id is null
+      and revision.unit_id=ingredient.purchase_unit_id
+      and revision.ingredient_id=adoption.ingredient_id
+      and revision.quantity_per_basis=adoption.quantity_per_basis
+    )
+    from atlas_legacy.recipe_unit_adoption_evidence adoption
+    join atlas_admin.recipe_line_revisions revision
+      on revision.recipe_line_revision_id=adoption.target_recipe_line_revision_id
+    join atlas_admin.ingredients ingredient on ingredient.ingredient_id=adoption.ingredient_id
+  ),
+  'adoption evidence binds raw Unit, corrected Unit, Ingredient and unchanged quantity'
+);
+select is(
+  (
+    select count(*)
+    from atlas_legacy.recipe_unit_adoption_evidence adoption
+    join atlas_admin.recipe_versions version on version.recipe_version_id=adoption.target_recipe_version_id
+    join atlas_admin.recipes recipe on recipe.recipe_id=version.recipe_id
+    join atlas_admin.school_types school_type on school_type.school_type_id=recipe.school_type_id
+    where school_type.school_type_code='v1-school-type-2'
+  ),
+  0::bigint,
+  'already-correct Recipe receives no adoption evidence'
+);
+select throws_ok(
+  $$update atlas_legacy.recipe_unit_adoption_evidence set quantity_per_basis=99$$,
+  '23514','recipe Unit adoption evidence is immutable',
+  'adoption evidence cannot be updated'
+);
+select throws_ok(
+  $$delete from atlas_legacy.recipe_unit_adoption_evidence$$,
+  '23514','recipe Unit adoption evidence is immutable',
+  'adoption evidence cannot be deleted'
+);
+savepoint release_unit_boundary;
+insert into atlas_admin.dishes(dish_id,dish_code,dish_name,dish_type_id,dish_status)
+select 'aa920000-0000-4000-8000-000000000300','native-unit-mismatch','Native Unit mismatch',dish_type_id,'ACTIVE'
+from atlas_admin.dish_types where dish_type_code='soup';
+insert into atlas_admin.recipes(recipe_id,dish_id,school_type_id,recipe_status)
+select 'aa920000-0000-4000-8000-000000000301','aa920000-0000-4000-8000-000000000300',school_type_id,'ACTIVE'
+from atlas_admin.school_types where school_type_code='v1-school-type-1';
+insert into atlas_admin.recipe_versions(recipe_version_id,recipe_id,version_number,basis_portions,created_by_actor_id,source_evidence)
+values('aa920000-0000-4000-8000-000000000302','aa920000-0000-4000-8000-000000000301',1,100,'aa920000-0000-4000-8000-000000000001','{"source_kind":"NATIVE_FIXTURE"}');
+insert into atlas_admin.recipe_lines(recipe_line_id,recipe_id,line_code)
+values('aa920000-0000-4000-8000-000000000303','aa920000-0000-4000-8000-000000000301','native-unit-mismatch-line');
+insert into atlas_admin.recipe_line_revisions(
+  recipe_line_revision_id,recipe_id,recipe_version_id,recipe_line_id,line_revision_number,
+  ingredient_id,quantity_per_basis,unit_id,line_disposition,created_by_actor_id
+)
+select 'aa920000-0000-4000-8000-000000000304','aa920000-0000-4000-8000-000000000301',
+  'aa920000-0000-4000-8000-000000000302','aa920000-0000-4000-8000-000000000303',1,
+  ingredient.ingredient_id,12,unit.unit_id,'PRESENT','aa920000-0000-4000-8000-000000000001'
+from atlas_admin.ingredients ingredient
+cross join atlas_admin.units unit
+where ingredient.ingredient_code='v1-ingredient-1' and unit.unit_name='Hũ';
+update atlas_admin.recipe_versions
+set recipe_version_status='VALIDATED',validated_by_actor_id='aa920000-0000-4000-8000-000000000001',
+  validated_at=clock_timestamp(),version=version+1
+where recipe_version_id='aa920000-0000-4000-8000-000000000302';
+set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+set constraints atlas_admin.recipe_versions_integrity_guard deferred;
+create function pg_temp.release_native_unit_mismatch() returns void language plpgsql as $$
+begin
+  update atlas_admin.recipe_versions
+  set recipe_version_status='RELEASED_FOR_PLANNING',released_by_actor_id='aa920000-0000-4000-8000-000000000001',
+    released_at=clock_timestamp(),version=version+1
+  where recipe_version_id='aa920000-0000-4000-8000-000000000302';
+  set constraints atlas_admin.recipe_versions_integrity_guard immediate;
+end
+$$;
+select throws_ok(
+  $$select pg_temp.release_native_unit_mismatch()$$,
+  '23514','released Recipe Unit must equal Ingredient purchase Unit',
+  'native cross-Unit Recipe release remains blocked without OPS-v1 adoption evidence'
+);
+rollback to savepoint release_unit_boundary;
+insert into evidence(label,snapshot,preview)
+select 'a-replay',snapshot,atlas_legacy.preview_master_data_snapshot(snapshot) from evidence where label='a';
+update evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa920000-0000-4000-8000-000000000001') where label='a-replay';
+select is((select result->>'status' from evidence where label='a-replay'),'REPLAYED','same snapshot replay is idempotent');
+select is(
+  (
+    select count(*)
+    from atlas_admin.recipe_versions version
+    join atlas_admin.recipes recipe using(recipe_id)
+    join atlas_admin.school_types school_type using(school_type_id)
+    where school_type.school_type_code='v1-school-type-2'
+  ),
+  1::bigint,
+  'already-correct Recipe is not unnecessarily revised during adoption'
+);
+savepoint partial_adoption_mapping;
+delete from atlas_legacy.master_data_mappings
+where source_system='OPS_V1'
+  and object_type='RECIPE_LINE'
+  and legacy_id='recipe:dish:100:school-type:1:ingredient:1';
+select is(
+  atlas_legacy.preview_master_data_snapshot(pg_temp.recipe_adoption_fixture())->>'success',
+  'false',
+  'partially mapped legacy adoption evidence is blocked rather than repaired'
+);
+rollback to savepoint partial_adoption_mapping;
 create temp table prior_versions as select * from atlas_admin.recipe_versions;
 create temp table prior_lines as select * from atlas_admin.recipe_line_revisions;
 create temp table recipe_ids as select * from atlas_admin.recipes;
@@ -72,7 +249,7 @@ select ok((select not exists(select 1 from jsonb_array_elements(preview->'action
 update evidence set result=atlas_legacy.apply_master_data_snapshot(snapshot,preview->>'plan_checksum','aa920000-0000-4000-8000-000000000001') where label='b';
 select is((select result->>'success' from evidence where label='b'),'true','row-ID-only refresh applies');
 select is((select count(*) from atlas_admin.recipe_versions),2::bigint,'row-ID churn creates no duplicate versions');
-select is((select count(*) from atlas_admin.recipe_line_revisions),3::bigint,'row-ID churn creates no duplicate revisions');
+select is((select count(*) from atlas_admin.recipe_line_revisions),4::bigint,'row-ID churn creates no duplicate revisions');
 -- Change one quantity; remove Ingredient 2; add Ingredient 3 in the first Recipe.
 insert into evidence(label,snapshot)
 select 'c',pg_temp.sign(jsonb_set(jsonb_set(snapshot,'{snapshot_id}','"synthetic-recipe-c"'),'{records,recipe_lines}',

@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(205);
+select plan(209);
 
 select is(
   (
@@ -152,6 +152,39 @@ select is(
   ),
   'atlas_planning_materialization_runtime',
   'PCT01-18 the single private H0C algorithm retains its dedicated runtime'
+);
+select ok(
+  (
+    select pg_get_userbyid(p.proowner)='atlas_owner'
+      and p.provolatile='s'
+      and not p.prosecdef
+      and p.proconfig @> array['search_path=""']
+    from pg_proc p
+    where p.oid='atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure
+  ),
+  'PCT01-19 legacy-adoption predicate is stable, invoker-rights, owner-controlled, and fixes an empty search path'
+);
+select ok(
+  has_function_privilege('atlas_planning_materialization_runtime','atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure,'EXECUTE')
+  and not has_function_privilege('anon','atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure,'EXECUTE')
+  and not has_function_privilege('authenticated','atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure,'EXECUTE')
+  and not has_function_privilege('service_role','atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure,'EXECUTE')
+  and not has_function_privilege('public','atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure,'EXECUTE'),
+  'PCT01-20 only the materialization runtime may execute the legacy-adoption predicate'
+);
+select ok(
+  pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure)
+    like '%planning_legacy_adoption_unit_transition_allowed(%',
+  'PCT01-21 the sole materializer delegates the bounded Unit inequality to the provenance predicate'
+);
+select ok(
+  pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure)
+    like '%successor.service_date <> old_contribution.service_date%'
+  and pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure)
+    like '%successor.school_id <> old_contribution.school_id%'
+  and pg_get_functiondef('atlas_core.planning_contract_01_materialize_confirmed_needs(jsonb)'::regprocedure)
+    like '%SOURCE_SPLIT_MERGE_POLICY_REQUIRED%',
+  'PCT01-22 date, School, and fail-closed split/merge guards remain unconditional'
 );
 
 -- H0A2 normally prevents duplicate active Recipe roots in either scope. The
