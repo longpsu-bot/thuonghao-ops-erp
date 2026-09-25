@@ -1,7 +1,7 @@
 # TASK-ATLAS-UI-VNEXT-07 — Visual polish with dedicated Chakra design agents
 
-**Status:** Draft implementation task  
-**Baseline:** `55a9fb2702043fba7c8f3a7d8cdcc43a76577808`  
+**Status:** Draft implementation task
+**Baseline:** `55a9fb2702043fba7c8f3a7d8cdcc43a76577808`
 **Branch:** `feat/atlas-ui-vnext-07-visual-polish`
 
 ## Goal

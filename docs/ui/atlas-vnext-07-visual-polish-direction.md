@@ -1,8 +1,8 @@
 # Atlas vNext 07 Visual Polish Direction
 
-**Status:** Approved for implementation  
-**Branch:** `feat/atlas-ui-vnext-07-visual-polish`  
-**Draft PR:** #315  
+**Status:** Approved for implementation
+**Branch:** `feat/atlas-ui-vnext-07-visual-polish`
+**Draft PR:** #315
 **Approved slice:** Workbench identity + bounded responsive table geometry
 
 ## 1. Purpose
