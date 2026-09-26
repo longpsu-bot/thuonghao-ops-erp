@@ -1,0 +1,118 @@
+name: Atlas Staging Planning D046 Correction
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact full commit SHA already merged to main
+        required: true
+        type: string
+      persist_correction:
+        description: Execute the one-shot 17/09 correction
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+jobs:
+  d046-correction:
+    name: Guarded D046 correction
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: atlas-staging
+    env:
+      ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
+      VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      ATLAS_STAGING_TEST_EMAIL: ${{ vars.ATLAS_STAGING_TEST_EMAIL }}
+      SUPABASE_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Fetch main for ancestry verification
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Verify exact merged commit
+        env:
+          REQUESTED_COMMIT_SHA: ${{ inputs.commit_sha }}
+        shell: bash
+        run: |
+          if [[ ! "$REQUESTED_COMMIT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "commit_sha must be an exact full 40-character commit SHA" >&2
+            exit 1
+          fi
+
+          if [[ "$(git rev-parse HEAD)" != "$REQUESTED_COMMIT_SHA" ]]; then
+            echo "Checked-out HEAD does not match commit_sha" >&2
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$REQUESTED_COMMIT_SHA" refs/remotes/origin/main; then
+            echo "commit_sha is not merged to origin/main" >&2
+            exit 1
+          fi
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Working tree is not clean after checkout" >&2
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run non-mutating protected preflight
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+        run: >
+          pnpm atlas:staging:deploy --
+          --commit-sha "${{ inputs.commit_sha }}"
+          --certification github
+          --preflight
+
+      - name: Verify D046 correction eligibility
+        if: ${{ inputs.persist_correction == false }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+        run: >
+          node scripts/correct-staging-planning-d046.mjs
+          --commit-sha "${{ inputs.commit_sha }}"
+
+      - name: Execute one-shot D046 correction
+        if: ${{ inputs.persist_correction == true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ATLAS_STAGING_SUPABASE_ACCESS_TOKEN: ${{ secrets.ATLAS_STAGING_SUPABASE_ACCESS_TOKEN }}
+          ATLAS_STAGING_DB_PASSWORD: ${{ secrets.ATLAS_STAGING_DB_PASSWORD }}
+          ATLAS_STAGING_TEST_PASSWORD: ${{ secrets.ATLAS_STAGING_TEST_PASSWORD }}
+        run: >
+          node scripts/correct-staging-planning-d046.mjs
+          --commit-sha "${{ inputs.commit_sha }}"
+          --persist-correction
