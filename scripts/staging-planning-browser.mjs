@@ -2,7 +2,6 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-const PREVIEW = "https://0d969e3b.thuonghao-ops-erp.pages.dev/";
 const PHASE_TABLIST = '[role="tablist"][aria-label="Giai đoạn lập nhu cầu"]';
 const CONFIRMED_WORKBENCH = 'section[aria-label="Xác nhận nhu cầu"]';
 const SOURCES_WORKBENCH = 'section[aria-label="Nguồn lập nhu cầu"]';
@@ -224,7 +223,7 @@ export async function ensurePlanningServiceDateAvailable({
   }
   throw new Error("BROWSER_GATE_service_date");
 }
-async function cdp(url) {
+export async function cdp(url) {
   const socket = new WebSocket(url);
   await new Promise((yes, no) => {
     socket.addEventListener("open", yes, { once: true });
@@ -577,7 +576,91 @@ export function preSaveGateStateExpression() {
 }
 
 export function editableConfirmedNeedCandidateExpression() {
-  return `(()=>{const root=document.querySelector(${JSON.stringify(CONFIRMED_WORKBENCH)});const rows=root?[...root.querySelectorAll(${JSON.stringify(`${CONFIRMED_TABLE} tbody tr`)})]:[];const index=rows.findIndex(r=>(r.querySelector('[data-field="unit"]')?.textContent??'').trim()==='kg'&&r.querySelector('input[aria-label^="Số lượng xác nhận"]')&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').disabled&&!r.querySelector('input[aria-label^="Số lượng xác nhận"]').readOnly);if(index<0)return null;const r=rows[index];return {index,ingredient:(r.querySelector('[data-role="ingredient-name"]')?.textContent??'').trim(),recipient:(r.querySelector('[data-role="recipient"]')?.textContent??'').trim()};})()`;
+  return `(()=>{const rows=[...document.querySelectorAll(${JSON.stringify(`${CONFIRMED_WORKBENCH} ${CONFIRMED_TABLE} tbody tr`)})];const ids=rows.map(r=>r.getAttribute('data-confirmed-need-line-id'));if(ids.some(id=>!id)||new Set(ids).size!==ids.length)throw Error('BROWSER_ROW_IDENTITY_MISSING');const row=rows.find(r=>{const input=r.querySelector('input[aria-label^="Số lượng xác nhận"]');return input&&!input.disabled&&!input.readOnly;});return row?{lineId:row.getAttribute('data-confirmed-need-line-id')}:null;})()`;
+}
+
+export function minimalPlanningAdjustment(line) {
+  const proposal = line.proposed_confirmed_quantity;
+  const step = line.effective_policy?.planning_step;
+  if (
+    line.effective_policy?.status !== "ACTIVE" ||
+    !/^\d+(\.\d{1,6})?$/.test(String(proposal)) ||
+    !/^\d+(\.\d{1,6})?$/.test(String(step)) ||
+    exact(step) <= 0n ||
+    exact(proposal) % exact(step) !== 0n
+  )
+    throw new Error("BROWSER_ADJUSTMENT_POLICY_REJECTED");
+  const value = exact(proposal) + exact(step);
+  if (value >= 100000000000000n * 1000000n)
+    throw new Error("BROWSER_ADJUSTMENT_QUANTITY_OVERFLOW");
+  const fraction = String(value % 1000000n)
+    .padStart(6, "0")
+    .replace(/0+$/, "");
+  return `${value / 1000000n}${fraction ? `,${fraction}` : ""}`;
+}
+
+export function controlledInputExpression(selector, value, kind = "input") {
+  return `(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled||e.readOnly)throw Error('BROWSER_INPUT_NOT_EDITABLE');e.focus();Object.getOwnPropertyDescriptor(${kind === "select" ? "HTMLSelectElement" : "HTMLInputElement"}.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event(${kind === "select" ? "'change'" : "'input'"},{bubbles:true}));e.blur();})()`;
+}
+
+export async function prepareConfirmedNeedEdit({
+  evaluate,
+  before,
+  timeout = 60000,
+  interval = 300,
+}) {
+  const candidate = await until(
+    () => evaluate(editableConfirmedNeedCandidateExpression()),
+    "editable_policy_row",
+    timeout,
+    interval,
+  );
+  const matches = before.lines.filter(
+    (line) => line.confirmed_need_line_id === candidate.lineId,
+  );
+  if (matches.length !== 1) throw new Error("BROWSER_ROW_IDENTITY_MISMATCH");
+  const line = matches[0];
+  const proposed = minimalPlanningAdjustment(line);
+  const row = `${CONFIRMED_WORKBENCH} ${CONFIRMED_TABLE} tr[data-confirmed-need-line-id=${JSON.stringify(candidate.lineId)}]`;
+  await evaluate(
+    controlledInputExpression(
+      `${row} input[aria-label^="Số lượng xác nhận"]`,
+      proposed,
+    ),
+  );
+  await until(
+    () => evaluate(quantityEditSettledExpression(row, proposed)),
+    "quantity_edit_settled",
+    timeout,
+    interval,
+  );
+  await evaluate(
+    controlledInputExpression(
+      `${row} select[aria-label^="Lý do"]`,
+      "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      "select",
+    ),
+  );
+  await waitForReasonNoteReady({
+    evaluate,
+    row,
+    reason: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+    timeout,
+    interval,
+  });
+  await evaluate(
+    controlledInputExpression(
+      `${row} input[aria-label^="Ghi chú"]`,
+      REHEARSAL_NOTE,
+    ),
+  );
+  const preSave = await waitForPreSaveSurface({ evaluate, timeout, interval });
+  return {
+    line,
+    proposed: proposed.replace(",", "."),
+    note: REHEARSAL_NOTE,
+    preSave,
+  };
 }
 
 export function quantityEditSettledExpression(row, proposed) {
@@ -587,10 +670,12 @@ export async function verifyPlanningBrowser({
   target,
   baseline,
   readReview,
-  nextCent,
+  preview,
 }) {
   if (target.projectRef !== "rnzxmxiiqgtdevzregff")
     throw new Error("BROWSER_TARGET_REJECTED");
+  if (preview?.approvedCandidate !== 286 || !preview.url || !preview.commit)
+    throw new Error("PLANNING_PREVIEW_PROVENANCE_REQUIRED");
   const profile = mkdtempSync(join(tmpdir(), "atlas-planning-browser-"));
   const chrome = spawn(
     process.env.CHROME_BIN || "google-chrome",
@@ -646,9 +731,7 @@ export async function verifyPlanningBrowser({
       );
     };
     const input = async (selector, value, kind = "input") => {
-      await evaluate(
-        `(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e||e.disabled||e.readOnly)throw Error('input');e.focus();Object.getOwnPropertyDescriptor(${kind === "select" ? "HTMLSelectElement" : "HTMLInputElement"}.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event(${kind === "select" ? "'change'" : "'input'"},{bubbles:true}));})()`,
-      );
+      await evaluate(controlledInputExpression(selector, value, kind));
     };
     const logNavigation = async (transition) => {
       const state = await evaluate(
@@ -661,13 +744,13 @@ export async function verifyPlanningBrowser({
     await send("Page.enable");
     await send("Runtime.enable");
     stage = "authenticated_preview";
-    await send("Page.navigate", { url: PREVIEW });
+    await send("Page.navigate", { url: preview.url });
     await until(
       () => evaluate(`Boolean(document.querySelector('#atlas-signin-email'))`),
       "signin_form",
     );
     await logNavigation("signin_form");
-    if ((await evaluate("location.origin")) !== new URL(PREVIEW).origin)
+    if ((await evaluate("location.origin")) !== new URL(preview.url).origin)
       throw new Error("BROWSER_ORIGIN_MISMATCH");
     await input("#atlas-signin-email", target.testEmail);
     await input("#atlas-signin-password", target.testPassword);
@@ -731,38 +814,11 @@ export async function verifyPlanningBrowser({
         },
       }),
     );
-    const candidate = await until(
-      () => evaluate(editableConfirmedNeedCandidateExpression()),
-      "editable_kg_row",
-    );
-    if (!candidate) throw new Error("NO_EDITABLE_KG_REHEARSAL_ROW");
-    const line = before.lines.find(
-      (l) =>
-        l.ingredient.name === candidate.ingredient &&
-        candidate.recipient ===
-          `${l.school.name} · ${l.delivery_location.name}`,
-    );
-    if (!line) throw new Error("BROWSER_ROW_IDENTITY_MISMATCH");
-    const proposed = nextCent(line.proposed_confirmed_quantity);
-    const row = `${CONFIRMED_WORKBENCH} ${CONFIRMED_TABLE} tbody tr:nth-child(${candidate.index + 1})`;
     stage = "quantity_edit";
-    await input(`${row} input[aria-label^="Số lượng xác nhận"]`, proposed);
-    await until(
-      () => evaluate(quantityEditSettledExpression(row, proposed)),
-      "quantity_edit_settled",
-    );
-    await input(
-      `${row} select[aria-label^="Lý do"]`,
-      "OPERATIONAL_QUANTITY_ADJUSTMENT",
-      "select",
-    );
-    await waitForReasonNoteReady({
+    const { line, proposed, preSave } = await prepareConfirmedNeedEdit({
       evaluate,
-      row,
-      reason: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+      before,
     });
-    await input(`${row} input[aria-label^="Ghi chú"]`, REHEARSAL_NOTE);
-    const preSave = await waitForPreSaveSurface({ evaluate });
     console.log(JSON.stringify({ browser_pre_save: preSave }));
     stage = "save_once";
     await oneShotButton(CONFIRMED_WORKBENCH, "Lưu", "save_once");
@@ -827,6 +883,7 @@ export async function verifyPlanningBrowser({
     }
     return {
       status: "browser-review-save-reopen-pass",
+      preview,
       serviceDate: "2026-09-17",
       renderedRows: 248,
       retainedBatches: 1,

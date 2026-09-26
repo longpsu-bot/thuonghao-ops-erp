@@ -9,6 +9,10 @@ import {
 import { verifyPackageCheckout } from "./install-atlas-staging-package.mjs";
 import { classifyPlanningAdoptionManifest } from "./verify-staging-planning-adoption-manifest.mjs";
 import {
+  certifyCorrectionRollback,
+  correctionRollbackSql,
+} from "./staging-planning-correction-performance.mjs";
+import {
   classifyPlanningCheckpoint,
   classifyPlanningGenerationReceipts,
   planningCloseoutSnapshotSql,
@@ -130,6 +134,7 @@ export function classifyD046CorrectionBaseline(snapshot) {
     batch.origin_run_version !== 3 ||
     batch.current_run_version !== 3 ||
     batch.line_count !== 248 ||
+    batch.stable_line_count !== 248 ||
     batch.decision_count !== 0 ||
     batch.current_decision_count !== 0 ||
     batch.adjustment_count !== 0 ||
@@ -163,6 +168,8 @@ export function classifyD046CorrectionBaseline(snapshot) {
 
 export function buildD046CorrectionRequest(snapshot, commandId) {
   const baseline = classifyD046CorrectionBaseline(snapshot);
+  if (snapshot.receipts.some((receipt) => receipt.command_id === commandId))
+    throw new Error("D046_CORRECTION_COMMAND_ID_REUSED");
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       commandId,
@@ -247,7 +254,18 @@ export async function correctStagingPlanningD046({
     (await sql(planningCloseoutSnapshotSql()))[0]?.checkpoint;
   const before = await readSnapshot();
   const baseline = classifyD046CorrectionBaseline(before);
-  if (!persist) return { status: "D046_CORRECTION_ELIGIBLE", ...baseline };
+  console.log(
+    JSON.stringify({ status: "D046_CORRECTION_ELIGIBLE", ...baseline }),
+  );
+  const certification = await certifyCorrectionRollback({
+    readSnapshot,
+    makeRequest: (snapshot) =>
+      buildD046CorrectionRequest(snapshot, randomUUID()),
+    runProbe: async (request) =>
+      (await sql(correctionRollbackSql(request)))[0]?.probe,
+  });
+  console.log(JSON.stringify(certification));
+  if (!persist) return certification;
 
   const client = createClient(target.supabaseUrl, target.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -260,16 +278,9 @@ export async function correctStagingPlanningD046({
   if (error || data.user?.id !== SUBJECT || !data.session)
     throw new Error("STAGING_OPERATOR_AUTH_FAILED");
   try {
-    let firstRead = true;
     return await executeD046Correction({
       commandId,
-      readSnapshot: async () => {
-        if (firstRead) {
-          firstRead = false;
-          return before;
-        }
-        return readSnapshot();
-      },
+      readSnapshot,
       invoke: async (request) => {
         const result = await client
           .schema("atlas_api")

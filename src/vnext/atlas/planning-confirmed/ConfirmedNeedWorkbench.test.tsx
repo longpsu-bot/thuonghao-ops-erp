@@ -71,6 +71,20 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("exposes authoritative stable line identity across controlled rerenders", async () => {
+    show();
+    const input = await quantity();
+    expect(input.closest("tr")).toHaveAttribute(
+      "data-confirmed-need-line-id",
+      "line-0",
+    );
+    fireEvent.change(input, { target: { value: "12,5" } });
+    expect((await quantity()).closest("tr")).toHaveAttribute(
+      "data-confirmed-need-line-id",
+      "line-0",
+    );
+    expect(await quantity()).toBeEnabled();
+  });
   it("imports Phiếu đi chợ changes into local drafts and leaves Save as the sole write", async () => {
     const onExportShoppingList = vi.fn().mockResolvedValue(undefined);
     const onImportShoppingList = vi

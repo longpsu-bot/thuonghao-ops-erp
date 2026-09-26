@@ -1,5 +1,7 @@
 # TASK-PLANNING-D046-ADOPTION-CLOSEOUT — Legacy Recipe Unit adoption repair
 
+The subsequent [Final Planning Closeout Completion](TASK-PLANNING-FINAL-CLOSEOUT-COMPLETION.md) defines the current rollback certification, historical retryable-receipt recovery, browser candidate refresh and unexecuted owner sequence. This document retains the original D047 adoption authority and historical evidence.
+
 ## Status and authority
 
 Owner-approved for implementation on 24/09/2026 with the narrow conditions

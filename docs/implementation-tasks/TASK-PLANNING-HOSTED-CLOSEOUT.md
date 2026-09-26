@@ -1,5 +1,7 @@
 # Planning hosted closeout
 
+Current owner sequence and candidate provenance are defined by [Final Planning Closeout Completion](TASK-PLANNING-FINAL-CLOSEOUT-COMPLETION.md). Its 26/09/2026 requirements supersede the historical fixed preview URL and pre-certification procedure below. Historical execution evidence remains unchanged.
+
 Authority: OPS_SYSTEM_MAP v1.0 / ARCH-002, D-036, D-041 and H1A. Owner approved the remaining performance correction, explicit Staging count-unit policies, merge/deployment and real generation -> edit -> Save -> reopen acceptance. Baseline `f75abebbb0b7d924a4a89e6872beeda6a0a3b7c5`.
 
 ## Evidence and correction

@@ -3,7 +3,7 @@ begin;
 create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 
-select plan(27);
+select plan(28);
 
 -- D-047 regeneration adds one invoker helper and three SELECT-only policies.
 -- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
@@ -1726,7 +1726,9 @@ select is(
     'policy_catalog_md5', '1333f218f38f7e61db02fd18fcd64c70',
     'rmvp_05_unit_lock_policy_count', 1,
     'private_function_count', 325,
-    'private_function_catalog_md5', 'ead4e6decb34f4fa84eda6979eeaae4f',
+    -- Only the exact D047 proof gains join_collapse_limit=1; owner, ACL,
+    -- SECURITY DEFINER, search_path and all other catalog fingerprints stay fixed.
+    'private_function_catalog_md5', '2b8a48a2ecaa3abebe9dc03dcafbe364',
     'trigger_count', 112,
     'trigger_catalog_md5', '06e6cba439dc0c6c93fdbbd5a563627b',
     'positive_target_grant_count', 1767,
@@ -1742,6 +1744,9 @@ select is(
   'CAT-22 exact whole-platform security and catalog integrity summary is retained'
 );
 
+select ok((select proconfig @> array['search_path=""','join_collapse_limit=1']
+  from pg_proc where oid='atlas_core.planning_legacy_adoption_unit_transition_allowed(uuid,uuid)'::regprocedure),
+  'D047 proof preserves its fixed search path and bounds only join planning');
 select * from finish();
 
 rollback;
