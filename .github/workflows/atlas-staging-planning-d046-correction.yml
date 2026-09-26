@@ -57,8 +57,9 @@ jobs:
             exit 1
           fi
 
-          if ! git merge-base --is-ancestor "$REQUESTED_COMMIT_SHA" refs/remotes/origin/main; then
-            echo "commit_sha is not merged to origin/main" >&2
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if [[ "$REQUESTED_COMMIT_SHA" != "$MAIN_SHA" ]]; then
+            echo "commit_sha must equal the current origin/main SHA" >&2
             exit 1
           fi
 
