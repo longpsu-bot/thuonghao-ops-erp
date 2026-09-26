@@ -16,6 +16,65 @@ const fingerprints = {
   pantry: "pantry",
   weekly_menu: "menu",
 };
+const retainedLegacyRecipeLine =
+  "recipe:dish:1483:school-type:1:ingredient:1045";
+const retainedLegacyIngredient = "1045";
+const adoptionEvidence = Object.freeze({
+  evidence_kind: "OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION",
+  source_system: "OPS_V1",
+  recipe_id: "recipe-1483",
+  recipe_line_id: "recipe-line-1483",
+  ingredient_id: "ingredient-1045",
+  predecessor_recipe_version_id: "recipe-version-predecessor",
+  predecessor_recipe_line_revision_id: "recipe-line-revision-predecessor",
+  source_unit_id: "unit-qua",
+  target_recipe_version_id: "recipe-version-target",
+  target_recipe_line_revision_id: "recipe-line-revision-target",
+  corrected_unit_id: "unit-trai",
+  quantity_per_basis: "0.025000",
+});
+
+function predecessorAdoptionOccurrence() {
+  return {
+    legacy_recipe_line_id: retainedLegacyRecipeLine,
+    legacy_ingredient_id: retainedLegacyIngredient,
+    theoretical: {
+      recipe_id: adoptionEvidence.recipe_id,
+      recipe_line_id: adoptionEvidence.recipe_line_id,
+      ingredient_id: adoptionEvidence.ingredient_id,
+      recipe_version_id: adoptionEvidence.predecessor_recipe_version_id,
+      recipe_line_revision_id:
+        adoptionEvidence.predecessor_recipe_line_revision_id,
+      unit_id: adoptionEvidence.source_unit_id,
+    },
+    evidence: { ...adoptionEvidence },
+    target: {
+      recipe_id: adoptionEvidence.recipe_id,
+      recipe_line_id: adoptionEvidence.recipe_line_id,
+      ingredient_id: adoptionEvidence.ingredient_id,
+      recipe_version_id: adoptionEvidence.target_recipe_version_id,
+      recipe_line_revision_id: adoptionEvidence.target_recipe_line_revision_id,
+      predecessor_recipe_version_id:
+        adoptionEvidence.predecessor_recipe_version_id,
+      predecessor_recipe_line_revision_id:
+        adoptionEvidence.predecessor_recipe_line_revision_id,
+      unit_id: adoptionEvidence.corrected_unit_id,
+      quantity_per_basis: adoptionEvidence.quantity_per_basis,
+      line_disposition: "PRESENT",
+      recipe_version_status: "RELEASED_FOR_PLANNING",
+    },
+  };
+}
+
+function retainedAdoptionWorkload() {
+  return {
+    date: "2026-09-17",
+    adoption_occurrence_count: 1,
+    adoption_legacy_line_ids: [retainedLegacyRecipeLine],
+    adoption_ingredient_ids: [retainedLegacyIngredient],
+    adoption_occurrences: [predecessorAdoptionOccurrence()],
+  };
+}
 
 function postDeployManifest() {
   return {
@@ -101,7 +160,7 @@ export function preCorrectionSnapshot() {
     receipts: [receipt(RETAINED_RUN, 1)],
     preflight: {
       readiness_state: "READY",
-      downstream_currentness: "OUTDATED",
+      downstream_currentness: "CURRENT",
       blocking_issue_count: 0,
       current_need: {
         need_generation_run_id: RETAINED_RUN,
@@ -114,8 +173,8 @@ export function preCorrectionSnapshot() {
         selected: { ...fingerprints },
         current: { ...fingerprints },
       },
-      outdated_reasons: ["RECIPE_SUCCESSOR_CHANGED"],
     },
+    adoption_workload: retainedAdoptionWorkload(),
     adoption_manifest: postDeployManifest(),
   };
 }
@@ -150,7 +209,6 @@ export function correctedSnapshot() {
     need_generation_run_version: 3,
     confirmed_need_batch_version: 2,
   };
-  snapshot.preflight.outdated_reasons = [];
   snapshot.d046 = {
     predecessor_release_contribution_count: 304,
     successor_release_contribution_count: 304,
@@ -165,7 +223,7 @@ export function correctedSnapshot() {
   return snapshot;
 }
 
-test("pre-correction classifier accepts only the preserved outdated D-046 checkpoint", () => {
+test("pre-correction classifier accepts the preserved current D-046 checkpoint", () => {
   assert.deepEqual(classifyD046CorrectionBaseline(preCorrectionSnapshot()), {
     mode: "D046_CORRECTION_ELIGIBLE",
     predecessorRunId: RETAINED_RUN,
@@ -174,6 +232,16 @@ test("pre-correction classifier accepts only the preserved outdated D-046 checkp
     currentLineCount: 248,
     fingerprints,
   });
+});
+
+test("pre-correction eligibility requires CURRENT without a fabricated Recipe outdated reason", () => {
+  const snapshot = preCorrectionSnapshot();
+  snapshot.preflight.downstream_currentness = "OUTDATED";
+  snapshot.preflight.outdated_reasons = ["RECIPE_SUCCESSOR_CHANGED"];
+  assert.throws(
+    () => classifyD046CorrectionBaseline(snapshot),
+    /D046_CORRECTION_BASELINE_REJECTED/,
+  );
 });
 
 test("D-046 request keeps one stable logical idempotency key", () => {
@@ -230,6 +298,17 @@ test("unknown RPC response is resolved only by one authoritative readback", asyn
   assert.equal(result.mode, "D046_CORRECTED_RESUME");
 });
 
+for (const source of ["weekly_menu", "attendance", "pantry"]) {
+  test(`pre-correction classifier rejects ${source} fingerprint drift`, () => {
+    const snapshot = preCorrectionSnapshot();
+    snapshot.preflight.source_date_fingerprints.current[source] = "changed";
+    assert.throws(
+      () => classifyD046CorrectionBaseline(snapshot),
+      /D046_CORRECTION_BASELINE_REJECTED/,
+    );
+  });
+}
+
 for (const [label, mutate] of [
   ["decision", (s) => (s.batches[0].decision_count = 1)],
   ["Save receipt", (s) => (s.save_receipt_count = 1)],
@@ -238,15 +317,67 @@ for (const [label, mutate] of [
     "second correction receipt",
     (s) => s.receipts.push(receipt(RETAINED_RUN, 1)),
   ],
-  [
-    "source fingerprint drift",
-    (s) => (s.preflight.source_date_fingerprints.current.pantry = "changed"),
-  ],
   ["wrong current run", (s) => (s.batches[0].current_run_id = "wrong")],
   ["non-248 current count", (s) => (s.batches[0].line_count = 247)],
   [
-    "non-Recipe outdated reason",
-    (s) => s.preflight.outdated_reasons.push("MENU_CHANGED"),
+    "missing predecessor adoption evidence",
+    (s) => {
+      s.adoption_workload.adoption_occurrence_count = 0;
+      s.adoption_workload.adoption_legacy_line_ids = [];
+      s.adoption_workload.adoption_ingredient_ids = [];
+      s.adoption_workload.adoption_occurrences = [];
+    },
+  ],
+  [
+    "mixed predecessor and target lineage",
+    (s) => {
+      s.adoption_workload.adoption_occurrences[0].theoretical.recipe_line_revision_id =
+        adoptionEvidence.target_recipe_line_revision_id;
+    },
+  ],
+  [
+    "non-authoritative target successor",
+    (s) => {
+      s.adoption_workload.adoption_occurrences[0].target.recipe_version_status =
+        "LOCKED";
+    },
+  ],
+  [
+    "missing target successor",
+    (s) => {
+      s.adoption_workload.adoption_occurrences[0].target = null;
+    },
+  ],
+  [
+    "unrelated Recipe successor",
+    (s) => {
+      s.adoption_workload.adoption_occurrences[0].evidence.evidence_kind =
+        "ORDINARY_RECIPE_SUCCESSOR";
+    },
+  ],
+  [
+    "wrong retained Recipe line",
+    (s) => {
+      s.adoption_workload.adoption_legacy_line_ids = ["unexpected-line"];
+      s.adoption_workload.adoption_occurrences[0].legacy_recipe_line_id =
+        "unexpected-line";
+    },
+  ],
+  [
+    "wrong retained Ingredient",
+    (s) => {
+      s.adoption_workload.adoption_ingredient_ids = ["9999"];
+      s.adoption_workload.adoption_occurrences[0].legacy_ingredient_id = "9999";
+    },
+  ],
+  [
+    "unexpected additional adoption correction",
+    (s) => {
+      s.adoption_workload.adoption_occurrence_count = 2;
+      s.adoption_workload.adoption_occurrences.push(
+        structuredClone(s.adoption_workload.adoption_occurrences[0]),
+      );
+    },
   ],
   [
     "manifest drift",
@@ -262,6 +393,13 @@ for (const [label, mutate] of [
     );
   });
 }
+
+test("already-corrected state is not pre-correction eligible", () => {
+  assert.throws(
+    () => classifyD046CorrectionBaseline(correctedSnapshot()),
+    /D046_CORRECTION_BASELINE_REJECTED/,
+  );
+});
 
 test("rejected baseline performs no RPC", async () => {
   const snapshot = preCorrectionSnapshot();

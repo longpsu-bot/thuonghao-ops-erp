@@ -1313,15 +1313,32 @@ test("closeout snapshot verifies policies in a read-only transaction", () => {
   assert.match(sql, /^begin read only;/);
   assert.match(sql, /predecessor_run_id/);
   assert.match(sql, /release_snapshot_line_count/);
-  assert.match(sql, /outdated_reasons/);
+  assert.doesNotMatch(sql, /outdated_reasons/);
   assert.match(sql, /command_id/);
   assert.match(sql, /'d046'/);
   assert.match(sql, /planning_legacy_adoption_unit_transition_allowed/);
   assert.match(sql, /'adoption_manifest'/);
   assert.match(sql, /atlas_legacy\.recipe_unit_adoption_evidence/);
+  assert.match(sql, /'adoption_occurrences'/);
+  assert.match(
+    retainedWorkloadSql,
+    /join atlas_admin\.recipe_versions target_version/,
+  );
+  assert.match(
+    retainedWorkloadSql,
+    /join atlas_admin\.recipe_line_revisions target_revision/,
+  );
   assert.match(
     retainedWorkloadSql,
     /theoretical\.need_generation_run_id=batch\.current_need_generation_run_id/,
+  );
+  assert.doesNotMatch(
+    retainedWorkloadSql,
+    /evidence\.target_recipe_version_id=theoretical\.recipe_version_id/,
+  );
+  assert.doesNotMatch(
+    retainedWorkloadSql,
+    /evidence\.predecessor_recipe_version_id=theoretical\.recipe_version_id/,
   );
   assert.doesNotMatch(retainedWorkloadSql, /union(?:\s+all)?/i);
   assert.match(sql, /planning_quantity_policy_revisions/);
