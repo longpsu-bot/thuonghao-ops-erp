@@ -622,3 +622,19 @@ review Draft PR
 → read-only prove D046_CORRECTED_RESUME
 → only then run Planning Browser Closeout
 ```
+
+## Dedicated D-046 correction workflow — 26/09/2026
+
+The manual `Atlas Staging Planning D046 Correction` workflow provides the
+repository-owned GitHub Actions entry point for the one-shot verifier. It
+checks out one required full commit SHA, verifies the exact `HEAD` and
+`origin/main` ancestry before dependency installation, and runs the
+non-mutating protected deployment preflight before invoking the correction
+script. Staging credentials are exposed only to those guarded execution steps.
+
+`persist_correction` is a required boolean input whose default is `false`.
+That default path runs only the read-only eligibility classifier. The `true`
+path passes `--persist-correction` and therefore remains a separately
+authorized Staging mutation. Planning Closeout and Planning Performance are
+not invoked by this workflow. Adding the workflow creates no migration,
+deployment, correction, Save, Handoff, or Browser Closeout.

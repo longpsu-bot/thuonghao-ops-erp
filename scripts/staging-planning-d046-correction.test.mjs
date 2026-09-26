@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { test } from "vitest";
 import {
   RETAINED_BATCH,
@@ -16,6 +18,10 @@ const fingerprints = {
   pantry: "pantry",
   weekly_menu: "menu",
 };
+const correctionWorkflowPath = resolve(
+  process.cwd(),
+  ".github/workflows/atlas-staging-planning-d046-correction.yml",
+);
 const retainedLegacyRecipeLine =
   "recipe:dish:1483:school-type:1:ingredient:1045";
 const retainedLegacyIngredient = "1045";
@@ -421,4 +427,76 @@ test("rejected baseline performs no RPC", async () => {
   );
   assert.equal(invokes, 0);
   assert.equal(reads, 1);
+});
+
+test("D046 correction workflow is manual, protected, and read-only by default", () => {
+  const workflow = readFileSync(correctionWorkflowPath, "utf8");
+  const triggerBlock = workflow.match(/^on:\n([\s\S]*?)\npermissions:/m)?.[1];
+  const jobHeader = workflow.slice(0, workflow.indexOf("    steps:"));
+  const guard = workflow.indexOf("Verify exact merged commit");
+  const install = workflow.indexOf("Install frozen dependencies");
+  assert.match(workflow, /^name: Atlas Staging Planning D046 Correction$/m);
+  assert.match(workflow, /on:\s*\n\s*workflow_dispatch:/);
+  assert.deepEqual(
+    [...(triggerBlock?.matchAll(/^  ([a-z_]+):/gm) ?? [])].map(
+      (match) => match[1],
+    ),
+    ["workflow_dispatch"],
+  );
+  assert.match(
+    workflow,
+    /commit_sha:\s*\n\s+description: Exact full commit SHA already merged to main\s*\n\s+required: true\s*\n\s+type: string/,
+  );
+  assert.match(
+    workflow,
+    /persist_correction:\s*\n\s+description: Execute the one-shot 17\/09 correction\s*\n\s+required: true\s*\n\s+type: boolean\s*\n\s+default: false/,
+  );
+  assert.match(
+    workflow,
+    /permissions:\s*\n\s+contents: read\s*\n\s+actions: read\s*\n\s+checks: read/,
+  );
+  assert.doesNotMatch(workflow, /permissions:[\s\S]*\bwrite\b/);
+  assert.match(workflow, /environment: atlas-staging/);
+  assert.match(workflow, /ref: \$\{\{ inputs\.commit_sha \}\}/);
+  assert.match(workflow, /fetch-depth: 0/);
+  assert.match(
+    workflow,
+    /git fetch --no-tags origin main:refs\/remotes\/origin\/main/,
+  );
+  assert.ok(guard >= 0);
+  assert.ok(install > guard);
+  assert.match(workflow, /\^\[0-9a-f\]\{40\}\$/);
+  assert.match(workflow, /git rev-parse HEAD/);
+  assert.match(workflow, /git merge-base --is-ancestor/);
+  assert.doesNotMatch(jobHeader, /secrets\./);
+  assert.match(workflow, /version: 11\.7\.0/);
+  assert.match(workflow, /node-version: 24/);
+  assert.match(workflow, /pnpm install --frozen-lockfile/);
+});
+
+test("D046 correction workflow separates eligibility from explicit mutation", () => {
+  const workflow = readFileSync(correctionWorkflowPath, "utf8");
+  const preflight = workflow.indexOf("Run non-mutating protected preflight");
+  const eligibility = workflow.indexOf("Verify D046 correction eligibility");
+  const mutation = workflow.indexOf("Execute one-shot D046 correction");
+  assert.ok(preflight >= 0);
+  assert.ok(eligibility > preflight);
+  assert.ok(mutation > eligibility);
+  assert.match(
+    workflow,
+    /if: \$\{\{ inputs\.persist_correction == false \}\}[\s\S]*?node scripts\/correct-staging-planning-d046\.mjs\s+--commit-sha "\$\{\{ inputs\.commit_sha \}\}"/,
+  );
+  assert.match(
+    workflow,
+    /if: \$\{\{ inputs\.persist_correction == true \}\}[\s\S]*?node scripts\/correct-staging-planning-d046\.mjs\s+--commit-sha "\$\{\{ inputs\.commit_sha \}\}"\s+--persist-correction/,
+  );
+  assert.equal(workflow.match(/--persist-correction/g)?.length, 1);
+  assert.match(
+    workflow,
+    /atlas:staging:deploy --[\s\S]*?--certification github[\s\S]*?--preflight/,
+  );
+  assert.doesNotMatch(
+    workflow,
+    /planning-(closeout|performance)|persist-rehearsal/i,
+  );
 });
