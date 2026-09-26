@@ -357,3 +357,34 @@ blocker and D-046 configuration still uses
 `LEGACY_ADOPTION_LINEAGE_REQUIRED`; Recipe release rejects the invalid Unit
 configuration under its integrity constraint. Raw legacy payloads, private
 evidence rows, and alternate quantities are never returned.
+
+### Current sources and derived adoption regeneration
+
+`downstream_currentness` describes completed Menu, Attendance and Pantry source
+facts. D-047 Recipe adoption correction is a separate derived regeneration
+condition. `CURRENT` does not imply `NO_CHANGE` when an ACTIVE `RECIPE_DERIVED`
+line in the current terminal released run still uses an exact D-047 predecessor.
+
+The private invoker predicate
+`atlas_core.planning_legacy_adoption_regeneration_required(uuid)` proves the
+correction evidence kind, OPS_V1 completed import identity, unique typed mappings,
+source fingerprint, exact reconciliation action, stable Recipe/line/Ingredient,
+predecessor version/revision/Unit, and a direct PRESENT successor revision in a
+`RELEASED_FOR_PLANNING` Recipe version. Its unchanged quantity and corrected Unit
+must equal the evidence and the Ingredient purchase Unit. Missing, partial,
+remapped, native, unrelated or superseded target evidence does not qualify.
+
+The existing `atlas_api.execute_need_generation(jsonb)` checks that proof after
+locking and validating the expected terminal run. Ordinary `CURRENT` returns
+`NO_CHANGE`; qualifying adoption uses the existing atomic invalidation,
+readiness reevaluation, create/validate/release and Confirmed Need correction
+path. Need invalidation records `PLANNING_CORRECTION` with a nonblank command
+note; readiness retains `PLANNING_REVIEW_CORRECTION`. Real source drift retains
+`UPSTREAM_SOURCE_CHANGED`. Optimistic concurrency, downstream commitment guards,
+transaction rollback, deferred integrity and command receipts remain mandatory.
+
+After the successor uses the corrected Recipe revisions, ordinary current-source
+execution again returns `NO_CHANGE`. No force flag, public RPC, lifecycle,
+fingerprint change or source-currentness reinterpretation is introduced. Public
+roles cannot execute the predicate or read adoption evidence; only the existing
+Need Generation runtime receives the private read privileges required by it.

@@ -1,5 +1,12 @@
 # Planning D-046 Adoption Closeout Implementation Plan
 
+> Closeout execution clarification (26/09/2026): the historical `OUTDATED` and
+> pristine two-receipt assumptions below are superseded by the
+> [current-source recovery contract](../../implementation-tasks/TASK-PLANNING-HOSTED-CLOSEOUT.md#final-d-046--d-047-current-source-recovery--26092026).
+> Source currentness remains `CURRENT`; exact D-047 predecessor evidence derives
+> regeneration independently. Receipt proof accepts one original, at most one
+> qualified benign `NO_CHANGE`, and exactly one successful correction.
+
 > **For the implementing agent:** REQUIRED SUB-SKILL: Use superpowers:executing-plans with one lead agent. Do not dispatch implementation subagents. One independent whole-branch review is allowed only after implementation is complete. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Repair the proven OPS-v1 Recipe Unit adoption defect through immutable successors, keep D-046 fail-closed, and make the protected 17/09 closeout certify the corrected D-046 state.

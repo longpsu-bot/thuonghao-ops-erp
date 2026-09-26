@@ -467,6 +467,12 @@ test("final retained proof requires corrected run lineage, one batch, no handoff
     purchaseHandoffs: 0,
     sourceFingerprintsUnchanged: true,
   });
+  state.receipts.unshift(benignCloseoutReceipt());
+  assert.equal(
+    closeoutVerifier.assertFinalPlanningCloseoutProof(proof).humanDecisions,
+    248,
+  );
+  state.receipts.shift();
   for (const rejectedProof of [
     { baseline: { ...proof.baseline, mode: "ZERO_BASELINE" } },
     { browser: { ...proof.browser, generateClicks: 1 } },
@@ -1021,6 +1027,10 @@ function pristineResumeSnapshot() {
     },
     receipts: [
       {
+        command_id: "original",
+        expected_version: 1,
+        idempotency_key: "generation:original",
+        idempotency_status: "COMPLETED",
         command_name: "execute_need_generation",
         actor_id: syntheticActorId,
         outcome: "COMPLETED",
@@ -1067,6 +1077,9 @@ function correctedResumeSnapshot() {
   snapshot.receipts.push({
     ...snapshot.receipts[0],
     command_id: "d0460000-0000-4000-8000-000000000018",
+    expected_version: 3,
+    idempotency_key:
+      "planning-d046-correction:d0460000-0000-4000-8000-000000000018",
     affected_aggregate_ids: {
       need_generation_run_id: correctedRunId,
       confirmed_need_batch_id: retainedBatchId,
@@ -1117,6 +1130,76 @@ function correctedResumeSnapshot() {
   };
   return snapshot;
 }
+
+function benignCloseoutReceipt() {
+  return {
+    ...pristineResumeSnapshot().receipts[0],
+    command_id: "benign",
+    expected_version: 3,
+    idempotency_key: "planning-d046-correction:benign",
+    idempotency_status: "NO_CHANGE",
+  };
+}
+
+test("corrected recovery receipt classification is independent of ordering", () => {
+  const snapshot = correctedResumeSnapshot();
+  const [original, correction] = snapshot.receipts;
+  const benign = benignCloseoutReceipt();
+  for (const receipts of [
+    [original, benign, correction],
+    [benign, original, correction],
+    [correction, benign, original],
+    [correction, original, benign],
+    [original, correction, benign],
+    [benign, correction, original],
+  ]) {
+    assert.equal(
+      closeoutVerifier.classifyPlanningCheckpoint({ ...snapshot, receipts })
+        .mode,
+      "D046_CORRECTED_RESUME",
+    );
+  }
+  for (const receipts of [
+    [benign, correction],
+    [original, benign],
+    [original, benign, benign, correction],
+    [original, correction, { ...benign, idempotency_key: "unknown" }],
+    [original, { ...correction, idempotency_status: "NO_CHANGE" }],
+    [
+      original,
+      correction,
+      {
+        command_id: "failed-extra",
+        command_name: "execute_need_generation",
+        actor_id: syntheticActorId,
+        outcome: "FAILED_NON_RETRYABLE",
+        success: false,
+        expected_version: 2,
+        idempotency_key: "unknown-stale-attempt",
+      },
+    ],
+  ]) {
+    assert.throws(
+      () =>
+        closeoutVerifier.classifyPlanningCheckpoint({ ...snapshot, receipts }),
+      /BASELINE_REJECTED/,
+    );
+  }
+});
+
+test("snapshot query projects receipt roles and includes failures without affected IDs", () => {
+  const sql = closeoutVerifier.planningCloseoutSnapshotSql();
+  assert.match(sql, /'expected_version', c\.expected_version/);
+  assert.match(sql, /'idempotency_key', c\.idempotency_key/);
+  assert.match(
+    sql,
+    /'idempotency_status', c\.response_payload->'idempotency_status'/,
+  );
+  assert.match(
+    sql,
+    /c\.scope_key like '%:need-generation:2026-09-17:2026-09-17'\s+or exists/,
+  );
+});
 
 test("corrected checkpoint is the only protected resume mode", () => {
   assert.deepEqual(

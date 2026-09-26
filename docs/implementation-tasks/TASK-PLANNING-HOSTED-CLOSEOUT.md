@@ -642,3 +642,97 @@ not invoked by this workflow. Adding the workflow creates no migration,
 deployment, data mutation, correction, Save, Handoff, or Browser Closeout.
 The current-tip equality change is workflow safety hardening only and does not
 alter D-046 logic, eligibility semantics, or Planning business behavior.
+
+## Final D-046 / D-047 current-source recovery — 26/09/2026
+
+Starting authority: `e3e1bc99fb01478f18caa0ab130ca0303b8247d6`. One implementation
+branch and Draft PR cover the backend correction and repository closeout proof.
+No frontend, Procurement, Retool or OPS v1 change is included.
+
+The private v2 implementation behind the public v3 Need command previously
+returned `NO_CHANGE` solely from source `CURRENT`. That omitted the independent
+D-047 adoption condition. Migration
+`20260926043448_planning_d047_current_source_regeneration.sql` adds a private,
+stable, empty-search-path invoker predicate and patches the existing private
+command with guarded definition/property checks. It grants only legacy schema
+usage, three SELECT privileges and helper execution to the existing generation
+runtime, with three restricted SELECT policies. The exact security catalog is
+updated to account for these additions; public grants and forced RLS remain
+unchanged. There is no data transformation or deployment in this task.
+
+Receipt projection now includes expected version, idempotency key and status.
+Both eligibility and corrected-resume proof classify unordered semantic roles:
+
+- Exactly one original completed generation: retained run v3, retained batch v1,
+  synthetic actor, expected version 1 and a non-correction generation key.
+- At most one benign D046 attempt: the same run/batch versions, expected version
+  3, `planning-d046-correction:` key, successful completed outcome and
+  `idempotency_status = NO_CHANGE`.
+- Exactly one successful correction after regeneration: direct successor run v3,
+  retained batch v2, expected version 3 and a completed D046 correction key.
+
+Duplicate command identities, duplicate roles and unknown extras reject.
+The actual hosted benign command `25d5f3b3-171c-4157-bab9-0ae9270eb277` is immutable
+history; no production classifier hard-codes it. A clean history without it is
+also supported. Recovery does not relax any run, batch, proposal, transition,
+source, decision, Handoff or manifest predicate.
+
+The bounded audit also found the same count/first-match assumptions in the final
+post-Save proof, and insufficient submitted-command attribution in the one-shot
+correction readback. Both now use semantic roles. Transport loss is resolved by
+one readback, with no second invocation, and the submitted command must be the
+successful correction receipt. Same-date failed attempts without affected aggregate IDs are included by exact
+command scope, so they cannot disappear before unknown-extra rejection. Browser
+entry still requires
+`D046_CORRECTED_RESUME` before its one Save.
+
+### Verification and review scope
+
+The RED public-command fixture observed `NO_CHANGE`, an uninvalidated predecessor,
+no successor and an unchanged batch. RED receipt tests rejected valid recovery
+history and exposed acceptance of a benign receipt without the original. The
+integration fixture then covers ordinary current state, full correction, repeat
+execution, exact source fingerprints, audit reasons, missing/mixed/native/stale
+provenance, quantity mismatch, downstream commitment protection and private grants.
+Existing D-047 transition, native mismatch, Need correction, materialization and
+scale suites remain required. Focused JS coverage includes all receipt orderings,
+unknown extras, two benign attempts, post-Save proof and unknown RPC outcome.
+
+The final review asks whether normal or unrelated Recipe changes can regenerate;
+whether incomplete evidence or stale targets qualify; whether downstream
+commitments survive; whether repeat execution creates another successor; whether
+receipt order or extras can falsify correction; and whether source fingerprints,
+human decisions, quantity membership or security boundaries can change silently.
+
+### Post-merge owner sequence — not executed by this PR
+
+1. Obtain the new exact `origin/main` SHA after review and merge.
+2. Deploy the one new migration to Atlas Staging.
+3. Read-only verify the installed migration, intact D-047 manifest, unchanged
+   retained run/batch, preserved benign receipt, zero Saves and zero Handoffs.
+4. Run the D046 workflow at that SHA with `persist_correction = false`.
+5. Require `D046_CORRECTION_ELIGIBLE`.
+6. Run exactly one protected Planning Performance certification and require
+   `GENERATION_PERFORMANCE_PASS`. The existing certification split requires
+   performance and browser PASS; the changed generation implementation needs
+   certification at this new deployed SHA. Preserve the existing `<7000 ms`
+   threshold, eight-second timeout, samples, workload proof and no-retry rule.
+   The Performance verifier itself is unchanged.
+7. Obtain the owner's explicit authorization for the one-shot mutation.
+8. Run the D046 workflow with `persist_correction = true`, using a fresh command
+   identity; do not reuse the immutable prior NO_CHANGE command.
+9. Require `D046_CORRECTED_RESUME`.
+10. Immediately prove read-only: predecessor INVALIDATED v4; direct successor
+    RELEASED_FOR_CONFIRMATION v3; 304/304 release contributions; the same batch v2
+    with 248 lines; zero decisions and Handoffs; unchanged fingerprints; 248 exact
+    proposals and zero invalid proposals; one allowed Unit transition and zero
+    invalid transitions; 304 current raw members; 248 retained pre-D046 null
+    proposal pairs; intact D-047 manifest.
+11. Only then run Planning Browser Closeout.
+12. Require final closeout PASS.
+
+Before deployment, rollback is removal of this unmerged change. After deployment,
+use a reviewed forward migration for function/privilege rollback; never rewrite
+historical receipts, runs, releases or Confirmed Need revisions. No hosted deploy,
+Staging mutation, D046 correction, Confirmed Need Save, Handoff or Browser Closeout
+is authorized by this implementation PR.

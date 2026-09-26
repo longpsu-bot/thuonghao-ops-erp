@@ -3,7 +3,7 @@ create schema if not exists extensions;
 create extension if not exists pgtap with schema extensions;
 set local search_path = pg_catalog, public, extensions;
 
-select plan(209);
+select plan(258);
 
 select is(
   (
@@ -3311,6 +3311,268 @@ select is((select pg_catalog.jsonb_build_object('purchase_handoffs',counts->'pur
 select is((select response from pct01_responses where response_name='execute-tuesday-replay'),(select response from pct01_responses where response_name='execute-tuesday'),'PCT01-D15 exact Tuesday retry replays without history');
 select is((select response->'authoritative_readback'->'preflight'->>'downstream_currentness' from pct01_responses where response_name='execute-tuesday'),'CURRENT','PCT01-D16 committed Tuesday result is current');
 select is((select count(*) from atlas_core.command_receipts where command_id='e4800000-0000-0000-0000-000000000092'),1::bigint,'PCT01-D18 Tuesday replay owns one receipt and no extra history');
+
+
+-- D-047: assemble legacy adoption history around the real daily public command.
+-- Only fixture construction uses replica mode; every command and deferred guard
+-- below executes with ordinary enforcement. The savepoint preserves later tests.
+savepoint d047_current_sources;
+create temporary table d047_before as
+select response#>>'{affected_aggregate_ids,need_generation_run_id}' run_id,
+       response#>>'{affected_aggregate_ids,confirmed_need_batch_id}' batch_id,
+       response#>'{authoritative_readback,preflight,source_date_fingerprints}' fingerprints
+from pct01_responses where response_name='execute-tuesday';
+grant select on d047_before to authenticated;
+create function pg_temp.d047_execute(key text, run_id uuid, expected bigint default 3)
+returns jsonb language sql as $$
+ select atlas_api.execute_need_generation(jsonb_build_object(
+   'contract_version','RMVP-04.v3','command_id',gen_random_uuid(),
+   'correlation_id',gen_random_uuid(),'idempotency_key',key,
+   'expected_version',expected,'requested_by_auth_subject','e4000000-0000-0000-0000-000000000101',
+   'requested_at',transaction_timestamp(),'reason_code','NEED_GENERATION_EXECUTED',
+   'reason_note',case when key='d047-corrected' then null else 'D-047 current-source integration test' end,
+   'payload',jsonb_build_object('service_date','2026-11-03',
+     'expected_current_need_generation_run_id',run_id)))
+$$;
+set local role authenticated;
+insert into pct01_responses select 'd047-ordinary',pg_temp.d047_execute('d047-ordinary',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-ordinary'),'NO_CHANGE','D047 ordinary CURRENT remains NO_CHANGE');
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2026-11-03'),1::bigint,'D047 ordinary CURRENT creates no successor');
+
+-- A historical imported predecessor plus its released adoption successor.
+set local session_replication_role=replica;
+insert into atlas_admin.units(unit_id,unit_code,unit_name,dimension_code)
+values('d0471000-0000-4000-8000-000000000001','d047-target','D047 target','mass');
+update atlas_admin.ingredients set purchase_unit_id='d0471000-0000-4000-8000-000000000001'
+where ingredient_id='e4100000-0000-0000-0000-000000000016';
+create temporary table d047_recipe as
+select distinct recipe_version_id from atlas_planning.theoretical_need_lines
+where need_generation_run_id=(select run_id::uuid from d047_before)
+  and ingredient_id='e4100000-0000-0000-0000-000000000016';
+update atlas_admin.recipe_versions set recipe_version_status='LOCKED',
+ locked_at=transaction_timestamp(),locked_by_actor_id='e4000000-0000-0000-0000-000000000001'
+where recipe_version_id in (select recipe_version_id from d047_recipe);
+insert into atlas_admin.recipe_versions
+select (jsonb_populate_record(null::atlas_admin.recipe_versions,to_jsonb(v)||jsonb_build_object(
+ 'recipe_version_id','d0471000-0000-4000-8000-000000000002','version_number',v.version_number+1,
+ 'predecessor_recipe_version_id',v.recipe_version_id,'recipe_version_status','RELEASED_FOR_PLANNING',
+ 'locked_at',null,'locked_by_actor_id',null))).*
+from atlas_admin.recipe_versions v join d047_recipe using(recipe_version_id);
+insert into atlas_admin.recipe_line_revisions
+select (jsonb_populate_record(null::atlas_admin.recipe_line_revisions,to_jsonb(r)||jsonb_build_object(
+ 'recipe_line_revision_id',gen_random_uuid(),'recipe_version_id','d0471000-0000-4000-8000-000000000002',
+ 'line_revision_number',r.line_revision_number+1,'predecessor_recipe_line_revision_id',r.recipe_line_revision_id,
+ 'unit_id',case when r.ingredient_id='e4100000-0000-0000-0000-000000000016' then 'd0471000-0000-4000-8000-000000000001'::uuid else r.unit_id end))).*
+from atlas_admin.recipe_line_revisions r join d047_recipe using(recipe_version_id);
+insert into atlas_legacy.import_batches(import_batch_id,source_system,snapshot_id,snapshot_checksum,exported_at,import_status,source_counts,completed_at,operator_actor_id,execution_database_principal,plan_checksum,snapshot_contract_version,reconciliation)
+select 'd0471000-0000-4000-8000-000000000003','OPS_V1','d047-current',repeat('b',64),transaction_timestamp(),'COMPLETED','{}',transaction_timestamp(),'e4000000-0000-0000-0000-000000000001','postgres',repeat('c',64),'OPS-V1-MASTER-SNAPSHOT.v1',
+ jsonb_build_object('actions',jsonb_build_array(jsonb_build_object('object_type','RECIPE_LINE_REVISION','target_id',r.recipe_line_revision_id,'values',to_jsonb(r))))
+from atlas_admin.recipe_line_revisions r join d047_recipe using(recipe_version_id)
+where r.ingredient_id='e4100000-0000-0000-0000-000000000016';
+insert into atlas_legacy.master_data_mappings(master_data_mapping_id,import_batch_id,source_system,object_type,legacy_id,recipe_id,recipe_version_id,recipe_line_id,recipe_line_revision_id,ingredient_id,unit_id,last_seen_import_batch_id,last_source_fingerprint,last_target_version)
+select gen_random_uuid(),'d0471000-0000-4000-8000-000000000003','OPS_V1',m.kind,m.kind,
+ case when m.kind='RECIPE' then r.recipe_id end,
+ case when m.kind='RECIPE_VERSION' then r.recipe_version_id end,
+ case when m.kind='RECIPE_LINE' then r.recipe_line_id end,
+ case when m.kind='RECIPE_LINE_REVISION' then r.recipe_line_revision_id end,
+ case when m.kind='INGREDIENT' then r.ingredient_id end,
+ case when m.kind='UNIT' then r.unit_id end,
+ 'd0471000-0000-4000-8000-000000000003',repeat('a',64),1
+from atlas_admin.recipe_line_revisions r join d047_recipe using(recipe_version_id)
+cross join unnest(array['RECIPE','RECIPE_VERSION','RECIPE_LINE','RECIPE_LINE_REVISION','INGREDIENT','UNIT']) m(kind)
+where r.ingredient_id='e4100000-0000-0000-0000-000000000016';
+insert into atlas_legacy.master_data_mappings(master_data_mapping_id,import_batch_id,source_system,object_type,legacy_id,unit_id,last_seen_import_batch_id,last_source_fingerprint,last_target_version)
+values(gen_random_uuid(),'d0471000-0000-4000-8000-000000000003','OPS_V1','UNIT','target-unit','d0471000-0000-4000-8000-000000000001','d0471000-0000-4000-8000-000000000003',repeat('a',64),1);
+insert into atlas_legacy.recipe_unit_adoption_evidence(recipe_unit_adoption_evidence_id,evidence_kind,source_system,import_batch_id,snapshot_id,snapshot_checksum,legacy_recipe_line_id,source_fingerprint,recipe_id,recipe_line_id,predecessor_recipe_version_id,target_recipe_version_id,predecessor_recipe_line_revision_id,target_recipe_line_revision_id,ingredient_id,quantity_per_basis,source_unit_id,corrected_unit_id,recorded_by_actor_id)
+select 'd0471000-0000-4000-8000-000000000004','OPS_V1_BOM_UNIT_TO_INGREDIENT_PURCHASE_UNIT_CORRECTION','OPS_V1','d0471000-0000-4000-8000-000000000003','d047-current',repeat('b',64),'RECIPE_LINE',repeat('a',64),
+ r.recipe_id,r.recipe_line_id,r.recipe_version_id,t.recipe_version_id,r.recipe_line_revision_id,t.recipe_line_revision_id,r.ingredient_id,r.quantity_per_basis,r.unit_id,t.unit_id,'e4000000-0000-0000-0000-000000000001'
+from atlas_admin.recipe_line_revisions r join d047_recipe using(recipe_version_id)
+join atlas_admin.recipe_line_revisions t on t.predecessor_recipe_line_revision_id=r.recipe_line_revision_id
+where r.ingredient_id='e4100000-0000-0000-0000-000000000016';
+insert into atlas_planning.planning_quantity_policies(planning_quantity_policy_id,unit_id,created_by_actor_id)
+values('d0471000-0000-4000-8000-000000000005','d0471000-0000-4000-8000-000000000001','e4000000-0000-0000-0000-000000000001');
+insert into atlas_planning.planning_quantity_policy_revisions
+select (jsonb_populate_record(null::atlas_planning.planning_quantity_policy_revisions,to_jsonb(r)||jsonb_build_object(
+ 'planning_quantity_policy_revision_id','d0471000-0000-4000-8000-000000000006',
+ 'planning_quantity_policy_id','d0471000-0000-4000-8000-000000000005','unit_id','d0471000-0000-4000-8000-000000000001',
+ 'revision_number',1,'predecessor_policy_revision_id',null))).*
+from atlas_planning.planning_quantity_policy_revisions r where r.policy_revision_status='ACTIVE'
+ and r.unit_id='e4100000-0000-0000-0000-000000000006';
+update atlas_planning.confirmed_need_line_revisions
+set proposal_rounding_step=null,proposal_rounding_ingredient_version=null
+where confirmed_need_batch_id=(select batch_id::uuid from d047_before);
+create temporary table d047_retained_history as select
+ (select jsonb_agg(to_jsonb(l) order by l.theoretical_need_line_id) from atlas_planning.theoretical_need_lines l where l.need_generation_run_id=(select run_id::uuid from d047_before)) theoretical,
+ (select jsonb_agg(to_jsonb(l) order by l.need_generation_release_snapshot_line_id) from atlas_planning.need_generation_release_snapshot_lines l where l.need_generation_run_id=(select run_id::uuid from d047_before)) release_lines,
+ (select count(*) from atlas_planning.confirmed_need_line_revisions where confirmed_need_batch_id=(select batch_id::uuid from d047_before)) revision_count;
+set local session_replication_role=origin;
+select is(atlas_core.planning_contract_01_preflight_payload('2026-11-03','2026-11-03',null)->>'downstream_currentness','CURRENT','D047 target adoption does not change source currentness');
+
+select ok(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)), 'D047 private pre-generation proof needs no theoretical successor');
+select ok((select not p.prosecdef and p.provolatile='s' and p.proconfig @> array['search_path=""']
+ from pg_proc p where p.oid='atlas_core.planning_legacy_adoption_regeneration_required(uuid)'::regprocedure), 'D047 helper is stable invoker with empty search path');
+select ok(has_function_privilege('atlas_need_generation_runtime','atlas_core.planning_legacy_adoption_regeneration_required(uuid)','EXECUTE')
+ and not has_function_privilege('anon','atlas_core.planning_legacy_adoption_regeneration_required(uuid)','EXECUTE')
+ and not has_function_privilege('authenticated','atlas_core.planning_legacy_adoption_regeneration_required(uuid)','EXECUTE')
+ and not has_function_privilege('service_role','atlas_core.planning_legacy_adoption_regeneration_required(uuid)','EXECUTE')
+ and not has_function_privilege('public','atlas_core.planning_legacy_adoption_regeneration_required(uuid)','EXECUTE'), 'D047 helper is private to the generation runtime');
+select ok(not has_table_privilege('authenticated','atlas_legacy.recipe_unit_adoption_evidence','SELECT')
+ and not has_table_privilege('anon','atlas_legacy.recipe_unit_adoption_evidence','SELECT'), 'D047 evidence remains private');
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+delete from atlas_legacy.recipe_unit_adoption_evidence where recipe_unit_adoption_evidence_id='d0471000-0000-4000-8000-000000000004';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 missing-evidence cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-missing-evidence',pg_temp.d047_execute('d047-missing-evidence',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-missing-evidence'),'NO_CHANGE','D047 public command remains NO_CHANGE for missing-evidence');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+delete from atlas_legacy.master_data_mappings where import_batch_id='d0471000-0000-4000-8000-000000000003'; update atlas_admin.recipe_versions set source_evidence='{"source_kind":"UIQ03A_SAVE"}' where recipe_version_id='d0471000-0000-4000-8000-000000000002';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 native-canh-ga cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-native-canh-ga',pg_temp.d047_execute('d047-native-canh-ga',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-native-canh-ga'),'NO_CHANGE','D047 public command remains NO_CHANGE for native-canh-ga');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_legacy.recipe_unit_adoption_evidence set predecessor_recipe_line_revision_id='e4100000-0000-0000-0000-000000000012' where recipe_unit_adoption_evidence_id='d0471000-0000-4000-8000-000000000004';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 mixed-lineage cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-mixed-lineage',pg_temp.d047_execute('d047-mixed-lineage',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-mixed-lineage'),'NO_CHANGE','D047 public command remains NO_CHANGE for mixed-lineage');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_admin.recipe_versions set recipe_version_status='LOCKED',locked_at=transaction_timestamp(),locked_by_actor_id='e4000000-0000-0000-0000-000000000001' where recipe_version_id='d0471000-0000-4000-8000-000000000002';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 target-not-released cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-target-not-released',pg_temp.d047_execute('d047-target-not-released',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-target-not-released'),'NO_CHANGE','D047 public command remains NO_CHANGE for target-not-released');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_admin.recipe_line_revisions set predecessor_recipe_line_revision_id=null where recipe_version_id='d0471000-0000-4000-8000-000000000002';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 ordinary-successor cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-ordinary-successor',pg_temp.d047_execute('d047-ordinary-successor',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-ordinary-successor'),'NO_CHANGE','D047 public command remains NO_CHANGE for ordinary-successor');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+delete from atlas_legacy.master_data_mappings where legacy_id='target-unit';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 missing-target-unit-mapping cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-missing-target-unit-mapping',pg_temp.d047_execute('d047-missing-target-unit-mapping',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-missing-target-unit-mapping'),'NO_CHANGE','D047 public command remains NO_CHANGE for missing-target-unit-mapping');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_legacy.master_data_mappings set last_source_fingerprint=repeat('f',64) where import_batch_id='d0471000-0000-4000-8000-000000000003' and object_type='RECIPE_LINE_REVISION';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 fingerprint-mismatch cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-fingerprint-mismatch',pg_temp.d047_execute('d047-fingerprint-mismatch',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-fingerprint-mismatch'),'NO_CHANGE','D047 public command remains NO_CHANGE for fingerprint-mismatch');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_legacy.import_batches set import_status='REJECTED' where import_batch_id='d0471000-0000-4000-8000-000000000003';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 incomplete-import cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-incomplete-import',pg_temp.d047_execute('d047-incomplete-import',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-incomplete-import'),'NO_CHANGE','D047 public command remains NO_CHANGE for incomplete-import');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_legacy.import_batches set reconciliation='{"actions":[]}' where import_batch_id='d0471000-0000-4000-8000-000000000003';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 unproven-reconciliation cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-unproven-reconciliation',pg_temp.d047_execute('d047-unproven-reconciliation',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-unproven-reconciliation'),'NO_CHANGE','D047 public command remains NO_CHANGE for unproven-reconciliation');
+rollback to savepoint d047_negative;
+
+savepoint d047_negative;
+set local session_replication_role=replica;
+update atlas_admin.recipe_line_revisions set quantity_per_basis=quantity_per_basis+1 where recipe_version_id='d0471000-0000-4000-8000-000000000002' and ingredient_id='e4100000-0000-0000-0000-000000000016';
+set local session_replication_role=origin;
+select is(atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)),false,'D047 changed-target-quantity cannot trigger regeneration');
+set local role authenticated;
+insert into pct01_responses select 'd047-changed-target-quantity',pg_temp.d047_execute('d047-changed-target-quantity',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-changed-target-quantity'),'NO_CHANGE','D047 public command remains NO_CHANGE for changed-target-quantity');
+rollback to savepoint d047_negative;
+
+savepoint d047_downstream;
+set local session_replication_role=replica;
+update atlas_planning.confirmed_need_batches set batch_status='RELEASED_FOR_PURCHASE_HANDOFF'
+where confirmed_need_batch_id=(select batch_id::uuid from d047_before);
+set local session_replication_role=origin;
+set local role authenticated;
+insert into pct01_responses select 'd047-downstream',pg_temp.d047_execute('d047-downstream',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'error_code' from pct01_responses where response_name='d047-downstream'),'DOWNSTREAM_CORRECTION_REQUIRED','D047 downstream commitment rejects before correction');
+select is((select run_status from atlas_planning.need_generation_runs where need_generation_run_id=(select run_id::uuid from d047_before)),'RELEASED_FOR_CONFIRMATION','D047 downstream blocker leaves predecessor released');
+rollback to savepoint d047_downstream;
+
+set local role authenticated;
+insert into pct01_responses select 'd047-corrected',pg_temp.d047_execute('d047-corrected',run_id::uuid) from d047_before;
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-corrected'),'COMPLETED','D047 CURRENT predecessor executes correction instead of NO_CHANGE');
+select is((select run_status from atlas_planning.need_generation_runs where need_generation_run_id=(select run_id::uuid from d047_before)),'INVALIDATED','D047 predecessor is invalidated');
+select is((select count(*) from atlas_planning.need_generation_runs where predecessor_need_generation_run_id=(select run_id::uuid from d047_before) and run_status='RELEASED_FOR_CONFIRMATION' and version=3),1::bigint,'D047 exactly one direct successor is released');
+select is((select version from atlas_planning.confirmed_need_batches where confirmed_need_batch_id=(select batch_id::uuid from d047_before)),2::bigint,'D047 existing batch is corrected');
+select is((select response#>'{authoritative_readback,preflight,source_date_fingerprints}' from pct01_responses where response_name='d047-corrected'),(select fingerprints from d047_before),'D047 all fingerprints remain byte-identical');
+set local role authenticated;
+insert into pct01_responses select 'd047-repeat',pg_temp.d047_execute('d047-repeat',(response#>>'{affected_aggregate_ids,need_generation_run_id}')::uuid) from pct01_responses where response_name='d047-corrected';
+reset role;
+select is((select response->>'idempotency_status' from pct01_responses where response_name='d047-repeat'),'NO_CHANGE','D047 corrected current target naturally returns NO_CHANGE');
+select is((select count(*) from atlas_planning.need_generation_runs where period_start='2026-11-03'),2::bigint,'D047 repeat cannot create a second successor');
+
+select ok(not atlas_core.planning_legacy_adoption_regeneration_required((select (response#>>'{affected_aggregate_ids,need_generation_run_id}')::uuid from pct01_responses where response_name='d047-corrected')), 'D047 corrected successor is ineligible');
+select ok(not atlas_core.planning_legacy_adoption_regeneration_required((select run_id::uuid from d047_before)), 'D047 historical predecessor is ineligible after correction');
+select is((select count(*) from atlas_planning.confirmed_need_line_decisions d join atlas_planning.confirmed_need_lines l using(confirmed_need_line_id) where l.confirmed_need_batch_id=(select batch_id::uuid from d047_before)),0::bigint,'D047 correction fabricates no human decision');
+select is((select count(*) from atlas_planning.purchase_handoff_batches where confirmed_need_batch_id=(select batch_id::uuid from d047_before)),0::bigint,'D047 correction creates no Handoff');
+select ok(not exists(select 1 from atlas_planning.theoretical_need_lines successor join atlas_planning.theoretical_need_lines predecessor on predecessor.theoretical_need_line_id=successor.predecessor_theoretical_need_line_id where successor.predecessor_need_generation_run_id=(select run_id::uuid from d047_before) and (successor.theoretical_quantity<>predecessor.theoretical_quantity or successor.ingredient_id<>predecessor.ingredient_id or successor.school_id<>predecessor.school_id or successor.service_date<>predecessor.service_date)), 'D047 successor retains exact numeric and source identities');
+select is((select count(*) from atlas_planning.theoretical_need_lines successor join atlas_planning.theoretical_need_lines predecessor on predecessor.theoretical_need_line_id=successor.predecessor_theoretical_need_line_id where successor.predecessor_need_generation_run_id=(select run_id::uuid from d047_before) and successor.unit_id<>predecessor.unit_id and atlas_core.planning_legacy_adoption_unit_transition_allowed(predecessor.theoretical_need_line_id,successor.theoretical_need_line_id)),1::bigint,'D047 exactly one governed Unit transition reaches the materializer');
+
+
+select ok(exists(select 1 from atlas_audit.audit_events where aggregate_id=(select run_id::uuid from d047_before) and event_type='NeedGenerationInvalidated' and reason_code='PLANNING_CORRECTION' and reason_note like 'D-047 governed Recipe adoption correction; command %'), 'D047 invalidation has truthful correction reason and command-derived note');
+select ok(exists(select 1 from atlas_audit.audit_events a join atlas_planning.need_generation_runs r on r.planning_input_set_id=a.aggregate_id where r.need_generation_run_id=(select run_id::uuid from d047_before) and a.event_type='PlanningInputReadinessInvalidated' and a.reason_code='PLANNING_REVIEW_CORRECTION'), 'D047 readiness reevaluation preserves unchanged-source review reason');
+select ok(exists(select 1 from atlas_audit.audit_events a join atlas_planning.need_generation_runs r on r.predecessor_need_generation_run_id=a.aggregate_id where r.need_generation_run_id=(select (response#>>'{affected_aggregate_ids,need_generation_run_id}')::uuid from pct01_responses where response_name='execute-correction') and a.event_type='NeedGenerationInvalidated' and a.reason_code='UPSTREAM_SOURCE_CHANGED'), 'D047 real source drift retains upstream reason');
+
+select is((select jsonb_agg(to_jsonb(l) order by l.theoretical_need_line_id) from atlas_planning.theoretical_need_lines l where l.need_generation_run_id=(select run_id::uuid from d047_before)),(select theoretical from d047_retained_history),'D047 predecessor theoretical rows remain byte-identical');
+select is((select jsonb_agg(to_jsonb(l) order by l.need_generation_release_snapshot_line_id) from atlas_planning.need_generation_release_snapshot_lines l where l.need_generation_run_id=(select run_id::uuid from d047_before)),(select release_lines from d047_retained_history),'D047 predecessor release snapshot remains byte-identical');
+select is((select count(*) from atlas_planning.confirmed_need_line_revisions where need_generation_run_id=(select run_id::uuid from d047_before) and proposal_rounding_step is null and proposal_rounding_ingredient_version is null),(select revision_count from d047_retained_history),'D047 retained pre-D046 proposal pairs remain null without backfill');
+select ok((select bool_and(r.unit_id=i.purchase_unit_id and r.proposal_rounding_step=i.order_step and r.proposal_rounding_ingredient_version=i.version and r.confirmed_quantity=ceil(r.theoretical_quantity/i.order_step)*i.order_step) from atlas_planning.confirmed_need_line_revisions r join atlas_admin.ingredients i using(ingredient_id) where r.confirmed_need_batch_id=(select batch_id::uuid from d047_before) and r.is_current),'D047 all current proposals use exact Ingredient step and Unit snapshots');
+rollback to savepoint d047_current_sources;
 
 -- Change Thursday only after Tuesday exists. The exact parent snapshot advances,
 -- but Tuesday's stable date-line facts remain identical and therefore current.

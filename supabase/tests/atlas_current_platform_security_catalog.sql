@@ -5,6 +5,10 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(27);
 
+-- D-047 regeneration adds one invoker helper and three SELECT-only policies.
+-- Five private grants: legacy schema USAGE, three relation SELECTs, helper EXECUTE.
+-- Public API counts, browser privileges, forced RLS and triggers are unchanged.
+
 -- Exact Atlas schema and relation posture.
 select is(
   (
@@ -418,8 +422,8 @@ select is(
     from policy_catalog
   ),
   jsonb_build_object(
-    'count', 651,
-    'md5', 'e5c957783700de7c2dc978986101daa3'
+    'count', 654,
+    'md5', '1333f218f38f7e61db02fd18fcd64c70'
   ),
   'CAT-07 exact RLS catalog includes backend-only continuity, integrity, and OPS-v1 adoption policies'
 );
@@ -1718,15 +1722,15 @@ select is(
     'database_role_count', 11,
     'application_role_count', 0,
     'capability_count', 31,
-    'policy_count', 651,
-    'policy_catalog_md5', 'e5c957783700de7c2dc978986101daa3',
+    'policy_count', 654,
+    'policy_catalog_md5', '1333f218f38f7e61db02fd18fcd64c70',
     'rmvp_05_unit_lock_policy_count', 1,
-    'private_function_count', 324,
-    'private_function_catalog_md5', '62c9d865fedbcf223abdb0a84a2eb842',
+    'private_function_count', 325,
+    'private_function_catalog_md5', 'ead4e6decb34f4fa84eda6979eeaae4f',
     'trigger_count', 112,
     'trigger_catalog_md5', '06e6cba439dc0c6c93fdbbd5a563627b',
-    'positive_target_grant_count', 1762,
-    'positive_target_grant_md5', 'dea66f153dec2e0c839f89998f25c3df',
+    'positive_target_grant_count', 1767,
+    'positive_target_grant_md5', '40ddc0dcb013e88e9cfdbb2062efda72',
     'rmvp_05_unit_lock_grant_count', 1,
     'api_function_count', 114,
     'pa_06a_write_count', 15,

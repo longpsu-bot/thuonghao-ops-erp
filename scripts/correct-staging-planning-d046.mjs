@@ -10,6 +10,7 @@ import { verifyPackageCheckout } from "./install-atlas-staging-package.mjs";
 import { classifyPlanningAdoptionManifest } from "./verify-staging-planning-adoption-manifest.mjs";
 import {
   classifyPlanningCheckpoint,
+  classifyPlanningGenerationReceipts,
   planningCloseoutSnapshotSql,
   retainedAdoptionLineageSide,
 } from "./verify-staging-planning-closeout.mjs";
@@ -99,14 +100,13 @@ export function classifyD046CorrectionBaseline(snapshot) {
     !Array.isArray(snapshot?.batches) ||
     snapshot.batches.length !== 1 ||
     !Array.isArray(snapshot?.receipts) ||
-    snapshot.receipts.length !== 1 ||
+    !classifyPlanningGenerationReceipts(snapshot.receipts) ||
     snapshot.handoffs !== 0 ||
     snapshot.save_receipt_count !== 0
   )
     reject();
   const run = snapshot.runs[0];
   const batch = snapshot.batches[0];
-  const receipt = snapshot.receipts[0];
   const source = snapshot.preflight?.source_date_fingerprints;
   if (
     run.id !== RETAINED_RUN ||
@@ -134,15 +134,6 @@ export function classifyD046CorrectionBaseline(snapshot) {
     batch.current_decision_count !== 0 ||
     batch.adjustment_count !== 0 ||
     batch.acceptance_count !== 0 ||
-    receipt.command_name !== "execute_need_generation" ||
-    receipt.actor_id !== SYNTHETIC_ACTOR ||
-    receipt.outcome !== "COMPLETED" ||
-    receipt.success !== true ||
-    receipt.affected_aggregate_ids?.need_generation_run_id !== RETAINED_RUN ||
-    receipt.affected_aggregate_ids?.confirmed_need_batch_id !==
-      RETAINED_BATCH ||
-    receipt.new_versions?.need_generation_run_version !== 3 ||
-    receipt.new_versions?.confirmed_need_batch_version !== 1 ||
     snapshot.preflight?.readiness_state !== "READY" ||
     snapshot.preflight?.downstream_currentness !== "CURRENT" ||
     snapshot.preflight?.blocking_issue_count !== 0 ||
@@ -220,15 +211,16 @@ export async function executeD046Correction({
       cause: invocationError ?? error,
     });
   }
-  const correctionReceipt = after.receipts.find(
-    (receipt) => receipt.command_id === commandId,
-  );
+  const correctionReceipt = classifyPlanningGenerationReceipts(
+    after.receipts,
+    corrected.currentRunId,
+  )?.correction;
   if (
     corrected.mode !== "D046_CORRECTED_RESUME" ||
     corrected.predecessorRunId !== baseline.predecessorRunId ||
     corrected.batchId !== baseline.batchId ||
     !sameJson(corrected.fingerprints, baseline.fingerprints) ||
-    !correctionReceipt ||
+    correctionReceipt?.command_id !== commandId ||
     (response?.success === true &&
       (response.affected_aggregate_ids?.need_generation_run_id !==
         corrected.currentRunId ||
