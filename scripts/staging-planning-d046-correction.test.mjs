@@ -9,6 +9,7 @@ import {
   buildD046CorrectionRequest,
   executeD046Correction,
 } from "./correct-staging-planning-d046.mjs";
+import { certifyCorrectionRollback } from "./staging-planning-correction-performance.mjs";
 
 const successorRunId = "d0460000-0000-4000-8000-000000000017";
 const commandId = "d0460000-0000-4000-8000-000000000018";
@@ -255,6 +256,7 @@ export function preCorrectionSnapshot() {
         origin_run_version: 3,
         current_run_version: 3,
         line_count: 248,
+        stable_line_count: 248,
         decision_count: 0,
         current_decision_count: 0,
         adjustment_count: 0,
@@ -304,6 +306,7 @@ export function correctedSnapshot() {
   snapshot.batches[0] = {
     ...snapshot.batches[0],
     version: 2,
+    stable_line_count: 249,
     current_run_id: successorRunId,
     current_run_version: 3,
   };
@@ -361,6 +364,98 @@ test("D-046 request keeps one stable logical idempotency key", () => {
     service_date: "2026-09-17",
     expected_current_need_generation_run_id: RETAINED_RUN,
   });
+});
+
+test("correction never reuses an immutable attempt command identity", () => {
+  const before = preCorrectionSnapshot();
+  before.receipts.push({ ...benignReceipt(), command_id: commandId });
+  assert.throws(
+    () => buildD046CorrectionRequest(before, commandId),
+    /COMMAND_ID_REUSED/,
+  );
+});
+
+test("three full rollback probes preserve the checkpoint and bind each successful receipt", async () => {
+  const before = preCorrectionSnapshot();
+  let probes = 0,
+    reads = 0;
+  const result = await certifyCorrectionRollback({
+    readSnapshot: async () => {
+      reads++;
+      return structuredClone(before);
+    },
+    makeRequest: () => ({ command_id: `probe-${probes}` }),
+    runProbe: async (request) => {
+      probes++;
+      const checkpoint = correctedSnapshot();
+      checkpoint.receipts.at(-1).command_id = request.command_id;
+      return {
+        response: {
+          success: true,
+          idempotency_status: "COMPLETED",
+          affected_aggregate_ids:
+            checkpoint.receipts.at(-1).affected_aggregate_ids,
+          new_versions: checkpoint.receipts.at(-1).new_versions,
+        },
+        server_ms: 4000 + probes,
+        effective_statement_timeout_ms: 8000,
+        checkpoint,
+      };
+    },
+  });
+  assert.equal(probes, 3);
+  assert.equal(reads, 4);
+  assert.equal(result.status, "D046_CORRECTION_ROLLBACK_PASS");
+  assert.equal(result.checkpointPreserved, true);
+});
+
+test("rollback probe failures still check preservation and never retry", async () => {
+  for (const failure of [
+    "transport",
+    "retryable",
+    "wrong-command",
+    "wrong-response",
+    "changed-checkpoint",
+  ]) {
+    const before = preCorrectionSnapshot();
+    let probes = 0,
+      reads = 0;
+    await assert.rejects(() =>
+      certifyCorrectionRollback({
+        readSnapshot: async () => {
+          reads++;
+          return failure === "changed-checkpoint" && reads > 1
+            ? { ...before, handoffs: 1 }
+            : before;
+        },
+        makeRequest: () => ({ command_id: commandId }),
+        runProbe: async () => {
+          probes++;
+          if (failure === "transport") throw new Error("transport");
+          const checkpoint = correctedSnapshot();
+          if (failure === "wrong-command")
+            checkpoint.receipts.at(-1).command_id = "other";
+          return {
+            response: {
+              success: failure !== "retryable",
+              retryable: failure === "retryable",
+              idempotency_status: "COMPLETED",
+              affected_aggregate_ids:
+                failure === "wrong-response"
+                  ? {}
+                  : checkpoint.receipts.at(-1).affected_aggregate_ids,
+              new_versions: checkpoint.receipts.at(-1).new_versions,
+            },
+            server_ms: 4000,
+            effective_statement_timeout_ms: 8000,
+            checkpoint,
+          };
+        },
+      }),
+    );
+    assert.equal(probes, 1);
+    assert.equal(reads, 2);
+  }
 });
 
 test("one-shot correction invokes once and reads authoritative state twice", async () => {

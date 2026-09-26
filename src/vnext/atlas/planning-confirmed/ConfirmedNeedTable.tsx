@@ -76,6 +76,7 @@ export function ConfirmedNeedTable({
               <Table.Row
                 key={line.confirmed_need_line_id}
                 data-confirmed-need-line
+                data-confirmed-need-line-id={line.confirmed_need_line_id}
               >
                 <Table.Cell
                   data-field="identity"

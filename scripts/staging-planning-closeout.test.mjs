@@ -16,8 +16,136 @@ import { AtlasVNextProvider } from "../src/vnext/atlas/AtlasVNextProvider";
 import { AtlasWeekRangeInput } from "../src/vnext/atlas/AtlasWeekRangeInput";
 import { ConfirmedNeedTable } from "../src/vnext/atlas/planning-confirmed/ConfirmedNeedTable";
 import { initialConfirmedNeedDraft } from "../src/vnext/atlas/bridges/confirmedNeed";
+import { ConfirmedNeedWorkbench } from "../src/vnext/atlas/planning-confirmed/ConfirmedNeedWorkbench";
+import {
+  createConfirmedNeedReviewFixture,
+  reviewSuccess,
+} from "../src/vnext/atlas/planning-confirmed/confirmedNeedReviewFixtures";
 
 const { nextCent } = closeoutVerifier;
+
+test("historical preview anatomy fails closed even when an input appears editable", async () => {
+  document.body.innerHTML =
+    '<section aria-label="Xác nhận nhu cầu"><table aria-label="Nhu cầu xác nhận"><tbody><tr><td>kg</td><td><input aria-label="Số lượng xác nhận Gạo"></td></tr></tbody></table></section>';
+  await assert.rejects(
+    () =>
+      browserEvaluate(
+        planningBrowser.editableConfirmedNeedCandidateExpression(),
+      ),
+    /BROWSER_ROW_IDENTITY_MISSING/,
+  );
+});
+
+test("real 248-row controller accepts precision proposals, commits one edit and reopens identical fixture readback", async () => {
+  const fixture = createConfirmedNeedReviewFixture();
+  const before = fixture.batch;
+  before.batch_version = 2;
+  fixture.preflight.period_start = "2026-09-17";
+  fixture.preflight.period_end = "2026-09-17";
+  fixture.preflight.current_need.confirmed_need_batch_version = 2;
+  before.service_period = {
+    period_start: "2026-09-17",
+    period_end: "2026-09-17",
+  };
+  before.lines = Array.from({ length: 248 }, (_, i) => ({
+    ...freshConfirmedNeedLine(i),
+    proposed_confirmed_quantity: i < 39 ? "1.125000" : "1.000000",
+    effective_policy: {
+      ...freshConfirmedNeedLine(i).effective_policy,
+      planning_step: "0.001000",
+    },
+    decision_history: [],
+  }));
+  before.line_counts = {
+    ...before.line_counts,
+    total: 248,
+    unreviewed: 248,
+    confirmed: 0,
+  };
+  before.pagination = { ...before.pagination, total_lines: 248 };
+  let current = structuredClone(before);
+  let saves = 0;
+  fixture.confirmedNeedApi.getReview = async () =>
+    reviewSuccess({ workbench: current });
+  fixture.confirmedNeedApi.save = async (request) => {
+    saves++;
+    assert.equal(request.payload.lines.length, 248);
+    const decisions = new Map(
+      request.payload.lines.map((line) => [line.confirmed_need_line_id, line]),
+    );
+    current = {
+      ...structuredClone(before),
+      batch_version: 3,
+      lines: before.lines.map((line) => {
+        const d = decisions.get(line.confirmed_need_line_id);
+        assert.ok(d);
+        return {
+          ...line,
+          current_decision_id: `decision-${line.confirmed_need_line_id}`,
+          current_decision_number: 1,
+          confirmed_quantity_after: d.proposed_confirmed_quantity,
+          confirmation_state: "CONFIRMED_CURRENT",
+          decision_history: [
+            {
+              decision_id: `decision-${line.confirmed_need_line_id}`,
+              decision_number: 1,
+              predecessor_decision_id: null,
+              ...d,
+              confirmed_quantity_after: d.proposed_confirmed_quantity,
+            },
+          ],
+        };
+      }),
+    };
+    return reviewSuccess({ authoritative_readback: current });
+  };
+  const mount = () =>
+    render(
+      React.createElement(
+        AtlasVNextProvider,
+        null,
+        React.createElement(ConfirmedNeedWorkbench, {
+          ...fixture,
+          authSubject: "operator",
+          initialServiceDate: "2026-09-17",
+        }),
+      ),
+    );
+  let view = mount();
+  await screen.findByRole("textbox", {
+    name: "Số lượng xác nhận Ingredient 0",
+  });
+  const edit = await planningBrowser.prepareConfirmedNeedEdit({
+    evaluate: browserEvaluate,
+    before,
+    timeout: 10000,
+    interval: 5,
+  });
+  assert.equal(edit.proposed, "1.126");
+  await planningBrowser.clickBusinessActionOnce({
+    evaluate: browserEvaluate,
+    scope: 'section[aria-label="Xác nhận nhu cầu"]',
+    label: "Lưu",
+    gate: "save_once",
+  });
+  assert.equal(saves, 1);
+  const saved = structuredClone(current);
+  planningBrowser.assertFirstSaveTransition({
+    before,
+    after: saved,
+    adjustedLineId: edit.line.confirmed_need_line_id,
+    adjustedQuantity: edit.proposed,
+    note: edit.note,
+  });
+  view.unmount();
+  view = mount();
+  await screen.findByRole("textbox", {
+    name: "Số lượng xác nhận Ingredient 0",
+  });
+  planningBrowser.assertReopenedReview(saved, current);
+  assert.equal(saves, 1);
+  assert.equal(screen.queryByRole("button", { name: "Lưu" }), null);
+}, 30000);
 
 test("closeout preparation schedules no rollback generation benchmark", () => {
   const source = readFileSync(
@@ -28,15 +156,21 @@ test("closeout preparation schedules no rollback generation benchmark", () => {
   assert.doesNotMatch(source, /atlas_api\.execute_need_generation/);
 });
 
-test("browser adjustment starts from the system operational proposal", () => {
-  const source = readFileSync(
-    resolve(process.cwd(), "scripts/staging-planning-browser.mjs"),
-    "utf8",
-  );
-  assert.match(source, /nextCent\(line\.proposed_confirmed_quantity\)/);
-  assert.doesNotMatch(
-    source,
-    /line\.confirmed_quantity_after \?\? line\.proposed_confirmed_quantity/,
+test("browser adjustment adds exactly one effective Planning step to the proposal", () => {
+  const line = freshConfirmedNeedLine(0);
+  for (const [proposal, step, expected] of [
+    ["1.125000", "0.001000", "1,126"],
+    ["2.000000", "1.000000", "3"],
+    ["99999999999999.980000", "0.010000", "99999999999999,99"],
+  ]) {
+    line.proposed_confirmed_quantity = proposal;
+    line.effective_policy.planning_step = step;
+    assert.equal(planningBrowser.minimalPlanningAdjustment(line), expected);
+  }
+  line.effective_policy = null;
+  assert.throws(
+    () => planningBrowser.minimalPlanningAdjustment(line),
+    /POLICY/,
   );
 });
 
@@ -713,11 +847,7 @@ test("real Confirmed Need rows distinguish one nonzero edit from pending zero de
   const candidate = await browserEvaluate(
     planningBrowser.editableConfirmedNeedCandidateExpression(),
   );
-  assert.deepEqual(candidate, {
-    index: 0,
-    ingredient: "Ingredient 0",
-    recipient: "School 0 · Location 0",
-  });
+  assert.deepEqual(candidate, { lineId: "line-0" });
   const row =
     'section[aria-label="Xác nhận nhu cầu"] table[aria-label="Nhu cầu xác nhận"] tbody tr:nth-child(1)';
   assert.equal(
@@ -1002,6 +1132,7 @@ function pristineResumeSnapshot() {
         origin_run_version: 3,
         current_run_version: 3,
         line_count: 248,
+        stable_line_count: 248,
         decision_count: 0,
         current_decision_count: 0,
         adjustment_count: 0,
@@ -1073,6 +1204,7 @@ function correctedResumeSnapshot() {
     ...snapshot.batches[0],
     version: 2,
     current_run_id: correctedRunId,
+    stable_line_count: 249,
   };
   snapshot.receipts.push({
     ...snapshot.receipts[0],
@@ -1140,6 +1272,132 @@ function benignCloseoutReceipt() {
     idempotency_status: "NO_CHANGE",
   };
 }
+
+function legacyRetryableReceipt() {
+  return {
+    command_id: "historical-timeout",
+    command_name: "execute_need_generation",
+    actor_id: syntheticActorId,
+    expected_version: 3,
+    idempotency_key: "planning-d046-correction:historical-timeout",
+    outcome: "FAILED_NON_RETRYABLE",
+    success: false,
+    retryable: true,
+    error_code: "RETRYABLE_CONCURRENCY_FAILURE",
+    idempotency_status: null,
+    affected_aggregate_ids: null,
+    new_versions: null,
+  };
+}
+
+const receiptPermutations = (rows) =>
+  rows.length === 0
+    ? [[]]
+    : rows.flatMap((row, i) =>
+        receiptPermutations(rows.filter((_, j) => i !== j)).map((rest) => [
+          row,
+          ...rest,
+        ]),
+      );
+
+test("immutable receipt recovery accepts all eight valid role subsets in every order", () => {
+  const snapshot = correctedResumeSnapshot();
+  const [original, correction] = snapshot.receipts;
+  for (const corrected of [false, true])
+    for (const benign of [false, true])
+      for (const legacy of [false, true]) {
+        const rows = [
+          original,
+          ...(benign ? [benignCloseoutReceipt()] : []),
+          ...(legacy ? [legacyRetryableReceipt()] : []),
+          ...(corrected ? [correction] : []),
+        ];
+        for (const receipts of receiptPermutations(rows)) {
+          const roles = closeoutVerifier.classifyPlanningGenerationReceipts(
+            receipts,
+            corrected ? correctedRunId : null,
+          );
+          assert.ok(
+            roles,
+            JSON.stringify({ corrected, benign, legacy, receipts }),
+          );
+          assert.equal(Boolean(roles.legacy_retryable_failure), legacy);
+          assert.equal(Boolean(roles.correction), corrected);
+          if (corrected)
+            assert.equal(
+              closeoutVerifier.classifyPlanningCheckpoint({
+                ...snapshot,
+                receipts,
+              }).mode,
+              "D046_CORRECTED_RESUME",
+            );
+        }
+      }
+});
+
+test("receipt recovery rejects malformed artifacts, unknowns, missing original and each duplicate role", () => {
+  const [original, correction] = correctedResumeSnapshot().receipts;
+  const benign = benignCloseoutReceipt();
+  const legacy = legacyRetryableReceipt();
+  for (const change of [
+    { command_name: "other" },
+    { actor_id: "other" },
+    { expected_version: 1 },
+    { idempotency_key: "other" },
+    { retryable: false },
+    { retryable: undefined },
+    { error_code: "INTERNAL_COMMAND_FAILURE" },
+    { success: true },
+    { outcome: "COMPLETED" },
+    { idempotency_status: "NO_CHANGE" },
+    { affected_aggregate_ids: {} },
+    { new_versions: {} },
+  ])
+    assert.equal(
+      closeoutVerifier.classifyPlanningGenerationReceipts(
+        [original, { ...legacy, ...change }, correction],
+        correctedRunId,
+      ),
+      null,
+    );
+  for (const role of [original, benign, legacy, correction]) {
+    assert.equal(
+      closeoutVerifier.classifyPlanningGenerationReceipts(
+        [
+          original,
+          benign,
+          legacy,
+          correction,
+          { ...role, command_id: "duplicate" },
+        ],
+        correctedRunId,
+      ),
+      null,
+    );
+  }
+  assert.equal(
+    closeoutVerifier.classifyPlanningGenerationReceipts(
+      [benign, legacy, correction],
+      correctedRunId,
+    ),
+    null,
+  );
+  assert.equal(
+    closeoutVerifier.classifyPlanningGenerationReceipts(
+      [original, legacy, correction],
+      "wrong-successor",
+    ),
+    null,
+  );
+  assert.equal(
+    closeoutVerifier.classifyPlanningGenerationReceipts([
+      original,
+      legacy,
+      correction,
+    ]),
+    null,
+  );
+});
 
 test("corrected recovery receipt classification is independent of ordering", () => {
   const snapshot = correctedResumeSnapshot();

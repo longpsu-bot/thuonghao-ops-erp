@@ -128,6 +128,10 @@ export const SUPABASE_FULL_INTEGRATION_COMMANDS = Object.freeze([
     ]),
   }),
   ...databaseTests,
+  Object.freeze({
+    command: "node",
+    args: Object.freeze(["scripts/test-local-planning-final-closeout.mjs"]),
+  }),
   pnpm(
     "exec",
     "supabase",
@@ -503,6 +507,12 @@ export function certifySupabaseFullIntegration({
               env: itemEnvironment,
             });
       requireCommandSuccess(result, label, protectedValues);
+      if (item.args[0] === "scripts/test-local-planning-final-closeout.mjs") {
+        for (const line of result.stdout
+          .split(/\r?\n/)
+          .filter((line) => line.startsWith("{")))
+          console.log(redactAtlasStagingDiagnostic(line, protectedValues));
+      }
     }
   } catch (error) {
     primaryError = error;

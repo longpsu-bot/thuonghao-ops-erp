@@ -16,6 +16,7 @@ permissions:
   contents: read
   actions: read
   checks: read
+  pull-requests: read
 
 jobs:
   planning-closeout:
@@ -25,6 +26,8 @@ jobs:
     environment: atlas-staging
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ATLAS_PLANNING_PREVIEW_URL: ${{ vars.ATLAS_PLANNING_PREVIEW_URL }}
+      ATLAS_PLANNING_PREVIEW_SHA: ${{ vars.ATLAS_PLANNING_PREVIEW_SHA }}
       ATLAS_STAGING_PROJECT_REF: ${{ vars.ATLAS_STAGING_PROJECT_REF }}
       VITE_ATLAS_ENVIRONMENT: ${{ vars.VITE_ATLAS_ENVIRONMENT }}
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}

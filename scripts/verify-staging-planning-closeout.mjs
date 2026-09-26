@@ -179,7 +179,12 @@ export function classifyPlanningGenerationReceipts(
   successorRunId = null,
 ) {
   if (!Array.isArray(receipts)) return null;
-  const roles = { original: null, benign: null, correction: null };
+  const roles = {
+    original: null,
+    benign: null,
+    legacy_retryable_failure: null,
+    correction: null,
+  };
   const commands = new Set();
   for (const receipt of receipts) {
     if (
@@ -216,6 +221,20 @@ export function classifyPlanningGenerationReceipts(
       correctionKey
     ) {
       role = "benign";
+    } else if (
+      receipt.command_name === "execute_need_generation" &&
+      receipt.actor_id === SYNTHETIC_ACTOR &&
+      receipt.expected_version === 3 &&
+      correctionKey &&
+      receipt.outcome === "FAILED_NON_RETRYABLE" &&
+      receipt.success === false &&
+      receipt.retryable === true &&
+      receipt.error_code === "RETRYABLE_CONCURRENCY_FAILURE" &&
+      receipt.idempotency_status === null &&
+      receipt.affected_aggregate_ids == null &&
+      receipt.new_versions == null
+    ) {
+      role = "legacy_retryable_failure";
     } else if (
       successorRunId &&
       generationReceiptAccepted(
@@ -296,6 +315,7 @@ export function classifyPlanningCheckpoint(snapshot) {
     batch.origin_run_version !== 3 ||
     batch.current_run_version !== 3 ||
     batch.line_count !== 248 ||
+    batch.stable_line_count !== 249 ||
     batch.decision_count !== 0 ||
     batch.current_decision_count !== 0 ||
     batch.adjustment_count !== 0 ||
@@ -466,6 +486,10 @@ select jsonb_build_object(
     'origin_run_version', b.origin_need_generation_run_version,
     'current_run_version', b.current_need_generation_run_version,
     'line_count', (select count(*) from atlas_planning.confirmed_need_lines l
+      where l.confirmed_need_batch_id=b.confirmed_need_batch_id and exists (
+        select 1 from atlas_planning.confirmed_need_line_revisions revision
+        where revision.confirmed_need_line_id=l.confirmed_need_line_id and revision.is_current)),
+    'stable_line_count', (select count(*) from atlas_planning.confirmed_need_lines l
       where l.confirmed_need_batch_id=b.confirmed_need_batch_id),
     'decision_count', (select count(*) from atlas_planning.confirmed_need_line_decisions d
       where d.confirmed_need_batch_id=b.confirmed_need_batch_id),
@@ -507,6 +531,7 @@ select jsonb_build_object(
     'expected_version', c.expected_version, 'idempotency_key', c.idempotency_key,
     'idempotency_status', c.response_payload->'idempotency_status',
     'outcome', c.outcome, 'success', c.response_payload->'success',
+    'retryable', c.response_payload->'retryable', 'error_code', c.response_payload->'error_code',
     'affected_aggregate_ids', c.response_payload->'affected_aggregate_ids',
     'new_versions', c.response_payload->'new_versions')
     order by c.started_at,c.command_receipt_id), '[]'::jsonb)
@@ -664,6 +689,7 @@ export function assertFinalPlanningCloseoutProof({
     batch.origin_run_version !== 3 ||
     batch.current_run_version !== run.version ||
     batch.line_count !== 248 ||
+    batch.stable_line_count !== 249 ||
     batch.decision_count !== 248 ||
     batch.current_decision_count !== 248 ||
     batch.adjustment_count !== 1 ||
@@ -746,6 +772,12 @@ export async function verifyPlanningCloseout({
       mode: baseline.mode,
       retainedBatches: 1,
     };
+  const { verifyPlanningPreview } =
+    await import("./staging-planning-preview.mjs");
+  const preview = await verifyPlanningPreview({
+    environment,
+    requiredSha: commitSha,
+  });
   const client = createClient(target.supabaseUrl, target.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     db: { retry: false },
@@ -803,7 +835,7 @@ export async function verifyPlanningCloseout({
           baseline: beforeBrowser,
           session: data.session,
           readReview,
-          nextCent,
+          preview,
         });
       },
     );
