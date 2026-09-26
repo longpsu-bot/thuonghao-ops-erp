@@ -97,7 +97,7 @@ jobs:
 
       - name: Verify D046 correction eligibility
         # The script requires eligibility AND three rollback public-command
-        # probes with dynamically verified timeout headroom in both modes.
+        # probes under the owner-only transaction-local 60s policy in both modes.
         if: ${{ inputs.persist_correction == false }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -109,7 +109,8 @@ jobs:
           --commit-sha "${{ inputs.commit_sha }}"
 
       - name: Execute one-shot D046 correction
-        # Repeats all non-persisting guards immediately before the one RPC.
+        # Repeats rollback certification before one protected 60s transaction.
+        # Normal authenticated traffic remains governed by the 8s role policy.
         if: ${{ inputs.persist_correction == true }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

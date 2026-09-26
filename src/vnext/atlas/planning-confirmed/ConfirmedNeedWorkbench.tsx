@@ -1,3 +1,4 @@
+import { AtlasOperationStatus } from "../AtlasOperationStatus";
 import {
   Box,
   Button,
@@ -135,14 +136,15 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
           />
         </Box>
       </Grid>
+      <AtlasOperationStatus operation={c.operation} />
       <ConfirmedNeedCommandFeedback
         lock={c.lock}
-        notice={c.notice}
+        notice={c.operation.status === "IDLE" ? c.notice : null}
         readError={c.readError}
         busy={c.busy}
         onRecover={() => void c.recover()}
       />
-      {c.busy && !c.workbench ? (
+      {c.busy && !c.workbench && c.operation.status !== "RUNNING" ? (
         <Text p="md" role="status">
           Đang tải nhu cầu…
         </Text>
@@ -152,10 +154,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             Ngày phục vụ {viDate(c.date)}
           </Text>
           <Text>{preflightMessage(c.preflight)}</Text>
-          {c.canGenerate && (
+          {(c.canGenerate || c.operation.status === "RUNNING") && (
             <Button
               mt="sm"
               variant="businessPrimary"
+              loading={c.operation.status === "RUNNING"}
+              disabled={!c.canGenerate}
               onClick={() => void c.generate()}
             >
               {c.preflight?.downstream_currentness === "OUTDATED"

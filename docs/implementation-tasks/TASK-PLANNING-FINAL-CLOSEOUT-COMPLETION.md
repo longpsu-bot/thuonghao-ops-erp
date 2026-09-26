@@ -39,6 +39,8 @@ The READY-evaluation path accounts for about 45 ms after optimization. It was de
 
 ## Rollback certification contract and evidence
 
+**Policy amendment (26 September 2026):** The historical 8s/75% correction certification described below is superseded by the owner-approved [protected maintenance policy](TASK-PLANNING-MAINTENANCE-TIMEOUT-UX.md). D046 rollback and persistence now use a transaction-local 60s envelope with separate RPC/constraint-flush measurements and no percentage gate. The following measurements remain historical evidence.
+
 Both D046 workflow modes first require protected preflight, `D046_CORRECTION_ELIGIBLE`, and `D046_CORRECTION_ROLLBACK_PASS`. Three fresh command identities execute the complete public correction in transactions that always roll back. Every corrected in-transaction checkpoint is classified, including D046/D047 evidence, receipt attribution, source fingerprints, zero Saves and zero Handoffs. An independent snapshot after **every** attempt must equal the original snapshot, including on transport/command failure.
 
 The authenticated timeout is resolved from PostgreSQL database/role configuration and captured **before** the command. Existing nested `SET LOCAL` calls can leave a later `pg_settings` read showing 120 seconds; this does not replace the running statement's original timer. Certification must never mistake that post-command value for the initial authenticated policy. It restores the captured policy before explicitly flushing deferred guards. No timeout is increased by this change. Missing, disabled, inconsistent or function-local ambiguous timeout policy rejects.

@@ -11,6 +11,8 @@ import {
 } from "./planning-closeout-local-fixture.mjs";
 import {
   correctionRollbackSql,
+  correctionPersistenceSql,
+  normalGenerationRollbackSql,
   summarizeCorrectionPerformance,
 } from "./staging-planning-correction-performance.mjs";
 import { planningCloseoutSnapshotSql } from "./verify-staging-planning-closeout.mjs";
@@ -64,6 +66,11 @@ export async function certifyLocalFinalCloseout({
         .replaceAll("a1010000-0000-4000-8000-000000000101", subject);
     const snapshot = () => localSql(adapt(planningCloseoutSnapshotSql()))[0];
     const before = snapshot();
+    const rolePolicy = () =>
+      localSql(
+        "select coalesce(jsonb_agg(to_jsonb(c) order by setdatabase,setrole),'[]') from pg_db_role_setting c",
+      )[0];
+    const originalRolePolicy = rolePolicy();
     assert.equal(before.receipts.length, 3);
     assert.equal(
       before.receipts.filter((r) => r.idempotency_status === "NO_CHANGE")
@@ -79,7 +86,10 @@ export async function certifyLocalFinalCloseout({
       ).length,
       1,
     );
-    const samples = [];
+    const samples = [],
+      flush = [],
+      endToEnd = [];
+    let normalTimeout;
     let timeout;
     for (let i = 0; i < 3; i++) {
       const id = randomUUID();
@@ -109,6 +119,11 @@ export async function certifyLocalFinalCloseout({
         snapshot(),
         before,
         "rollback must preserve every captured fact",
+      );
+      assert.deepEqual(
+        rolePolicy(),
+        originalRolePolicy,
+        "rollback must not alter global timeout policy",
       );
       const c = probe.checkpoint;
       assert.equal(c.receipts.length, 4);
@@ -145,19 +160,26 @@ export async function certifyLocalFinalCloseout({
         invalid_unit_transition_count: 0,
         current_raw_membership_count: 304,
       });
-      samples.push(probe.server_ms);
+      samples.push(probe.rpc_ms);
+      flush.push(probe.constraint_flush_ms);
+      endToEnd.push(performance.now() - started);
+      normalTimeout = probe.normal_authenticated_statement_timeout_ms;
+      assert.equal(probe.invocation_role, "authenticated");
+      assert.equal(probe.invocation_subject, subject);
       timeout = probe.effective_statement_timeout_ms;
       console.log(
         JSON.stringify({
           local_correction_probe: i + 1,
-          server_ms: probe.server_ms,
+          rpc_ms: probe.rpc_ms,
+          constraint_flush_ms: probe.constraint_flush_ms,
           end_to_end_ms: performance.now() - started,
         }),
       );
     }
     const report = {
       status: "LOCAL_D046_CORRECTION_ROLLBACK_PASS",
-      ...summarizeCorrectionPerformance(samples, timeout),
+      ...summarizeCorrectionPerformance(samples, flush, timeout, normalTimeout),
+      end_to_end_samples_ms: endToEnd,
       checkpointPreserved: true,
       correctionBusinessProof: true,
     };
@@ -186,7 +208,7 @@ export async function certifyLocalFinalCloseout({
           expected_current_need_generation_run_id: null,
         },
       };
-      const probe = localSql(adapt(correctionRollbackSql(request)))[0];
+      const probe = localSql(adapt(normalGenerationRollbackSql(request)))[0];
       assert.equal(probe.response.success, true);
       assert.deepEqual(snapshot(), before);
       const batch = probe.checkpoint.batches.find(
@@ -199,10 +221,10 @@ export async function certifyLocalFinalCloseout({
       assert.equal(run.release_snapshot_line_count, 304);
       assert.equal(probe.checkpoint.handoffs, 0);
       assert.ok(
-        probe.server_ms < 7000,
+        probe.rpc_ms < 7000,
         "preserve existing normal-generation performance contract",
       );
-      normal.push(probe.server_ms);
+      normal.push(probe.rpc_ms);
     }
     const sorted = [...normal].sort((a, b) => a - b);
     const normalReport = {
@@ -244,6 +266,75 @@ export async function certifyLocalFinalCloseout({
     if (tap.status !== 0 || /(^|\n)not ok/.test(tap.stdout))
       throw new Error(tap.stderr + tap.stdout);
     console.log(tap.stdout);
+    // Exercise the real shared persistence transport against the disposable
+    // fixture only. The following browser proof accepts its corrected v2 batch.
+    const correctionId = randomUUID();
+    const persistedRequest = {
+      contract_version: "RMVP-04.v3",
+      command_id: correctionId,
+      correlation_id: randomUUID(),
+      idempotency_key: `planning-d046-correction:${correctionId}`,
+      expected_version: 3,
+      requested_by_auth_subject: subject,
+      requested_at: new Date().toISOString(),
+      reason_code: "NEED_GENERATION_EXECUTED",
+      reason_note: "Disposable protected persistence certification",
+      payload: {
+        service_date: "2050-09-19",
+        expected_current_need_generation_run_id: identity.run,
+      },
+    };
+    // A different business subject cannot borrow the management channel's authority.
+    assert.throws(
+      () =>
+        localSql(
+          adapt(
+            correctionPersistenceSql({
+              ...persistedRequest,
+              requested_by_auth_subject: "a7400000-0000-4000-8000-000000000999",
+            }),
+          ),
+        ),
+      /D046_CORRECTION_COMMAND_REJECTED/,
+    );
+    assert.deepEqual(snapshot(), before);
+    const persisted = localSql(
+      adapt(correctionPersistenceSql(persistedRequest)),
+    )[0];
+    assert.equal(persisted.success, true);
+    assert.equal(persisted.idempotency_status, "COMPLETED");
+    const after = snapshot();
+    assert.equal(after.receipts.length, before.receipts.length + 1);
+    assert.equal(
+      after.receipts.filter((r) => r.command_id === correctionId).length,
+      1,
+    );
+    assert.deepEqual(
+      after.receipts.filter((r) => r.command_id !== correctionId),
+      before.receipts,
+    );
+    assert.equal(after.batches[0].version, 2);
+    assert.equal(after.batches[0].line_count, 248);
+    assert.equal(after.batches[0].stable_line_count, 249);
+    assert.equal(after.save_receipt_count, 0);
+    assert.equal(after.handoffs, 0);
+    assert.deepEqual(
+      after.preflight.source_date_fingerprints,
+      before.preflight.source_date_fingerprints,
+    );
+    assert.deepEqual(
+      rolePolicy(),
+      originalRolePolicy,
+      "commit must not alter global timeout policy",
+    );
+    console.log(
+      JSON.stringify({
+        status: "LOCAL_D046_PROTECTED_PERSISTENCE_PASS",
+        invocations: 1,
+        globalPolicyUnchanged: true,
+        historicalReceiptsPreserved: true,
+      }),
+    );
     let browser;
     if (!process.argv.includes("--skip-browser")) {
       const { certifyLocalCloseoutBrowser } =

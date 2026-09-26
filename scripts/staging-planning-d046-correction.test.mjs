@@ -384,7 +384,10 @@ test("three full rollback probes preserve the checkpoint and bind each successfu
       reads++;
       return structuredClone(before);
     },
-    makeRequest: () => ({ command_id: `probe-${probes}` }),
+    makeRequest: () => ({
+      command_id: `probe-${probes}`,
+      requested_by_auth_subject: "a1010000-0000-4000-8000-000000000101",
+    }),
     runProbe: async (request) => {
       probes++;
       const checkpoint = correctedSnapshot();
@@ -397,8 +400,12 @@ test("three full rollback probes preserve the checkpoint and bind each successfu
             checkpoint.receipts.at(-1).affected_aggregate_ids,
           new_versions: checkpoint.receipts.at(-1).new_versions,
         },
-        server_ms: 4000 + probes,
-        effective_statement_timeout_ms: 8000,
+        rpc_ms: 7000 + probes,
+        constraint_flush_ms: 2,
+        effective_statement_timeout_ms: 60000,
+        normal_authenticated_statement_timeout_ms: 8000,
+        invocation_role: "authenticated",
+        invocation_subject: "a1010000-0000-4000-8000-000000000101",
         checkpoint,
       };
     },
