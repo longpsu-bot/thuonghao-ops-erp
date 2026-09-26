@@ -11,6 +11,7 @@ import { classifyPlanningAdoptionManifest } from "./verify-staging-planning-adop
 import {
   certifyCorrectionRollback,
   correctionRollbackSql,
+  correctionPersistenceSql,
 } from "./staging-planning-correction-performance.mjs";
 import {
   classifyPlanningCheckpoint,
@@ -282,11 +283,7 @@ export async function correctStagingPlanningD046({
       commandId,
       readSnapshot,
       invoke: async (request) => {
-        const result = await client
-          .schema("atlas_api")
-          .rpc("execute_need_generation", { request });
-        if (result.error) throw new Error("D046_CORRECTION_RPC_UNKNOWN");
-        return result.data;
+        return (await sql(correctionPersistenceSql(request)))[0]?.response;
       },
     });
   } finally {

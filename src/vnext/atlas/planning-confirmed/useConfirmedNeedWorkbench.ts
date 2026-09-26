@@ -1,3 +1,4 @@
+import type { AtlasOperation } from "../AtlasOperationStatus";
 import type { AtlasModuleExitProps } from "../AtlasModuleExit";
 import { useConfirmedNeedDraft } from "./useConfirmedNeedDraft";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -80,6 +81,9 @@ export function useConfirmedNeedWorkbench({
   const [workbench, setWorkbench] = useState<ConfirmedNeedWorkbenchData | null>(
     null,
   );
+  const [operation, setOperation] = useState<AtlasOperation>({
+    status: "IDLE",
+  });
   const [busy, setBusy] = useState(true);
   const [lock, setLock] = useState<Lock>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -187,6 +191,7 @@ export function useConfirmedNeedWorkbench({
       setLock(null);
       saveNeedsReadback.current = false;
       setNotice(null);
+      setOperation({ status: "IDLE" });
     } catch (e) {
       if (epoch.current === requestEpoch) {
         failRead(e instanceof Error ? e.message : readFailure);
@@ -207,6 +212,7 @@ export function useConfirmedNeedWorkbench({
     failRead,
   ]);
   useEffect(() => {
+    setOperation({ status: "IDLE" });
     setPreflight(null);
     setWorkbench(null);
     setDrafts({});
@@ -267,6 +273,25 @@ export function useConfirmedNeedWorkbench({
     setDrafts((d) => ({ ...d, [id]: { ...d[id]!, ...change } }));
   };
   const classifyFailure = (r: AtlasRpcResult, generation = false) => {
+    if (generation) {
+      const unknown =
+        r.kind === "success" || confirmedNeedResultHasUnknownWriteOutcome(r);
+      const message = unknown
+        ? "Chưa xác định được kết quả. Tải lại để xác nhận trước khi gửi yêu cầu khác."
+        : needGenerationResultMessage(r);
+      setOperation(
+        unknown
+          ? { status: "UNKNOWN_OUTCOME", message }
+          : {
+              status: "FAILED",
+              message,
+              failureKind:
+                r.kind === "backend_error" && r.error.retryable === true
+                  ? "retryable"
+                  : "business",
+            },
+      );
+    }
     if (
       confirmedNeedResultIsStale(r) ||
       (generation && needGenerationResultIsStale(r))
@@ -299,6 +324,7 @@ export function useConfirmedNeedWorkbench({
       inFlight.current
     )
       return;
+    setOperation({ status: "IDLE" });
     inFlight.current = true;
     setBusy(true);
     setNotice(null);
@@ -342,6 +368,14 @@ export function useConfirmedNeedWorkbench({
     if (!canGenerate || !authSubject || !preflight || inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
+    setOperation({
+      status: "RUNNING",
+      startedAt: Date.now(),
+      action:
+        preflight.downstream_currentness === "OUTDATED"
+          ? "Đang cập nhật nhu cầu…"
+          : "Đang tạo nhu cầu…",
+    });
     setNotice(null);
     const requestEpoch = epoch.current;
     const request = needGenerationExecutionRequest(
@@ -385,6 +419,14 @@ export function useConfirmedNeedWorkbench({
       adopt(b);
       setLock(null);
       const counts = needGenerationContinuitySummaryFromResult(r);
+      setOperation({
+        status: "SUCCEEDED",
+        message:
+          `${preflight.downstream_currentness === "OUTDATED" ? "Đã cập nhật nhu cầu." : "Đã tạo nhu cầu."} ${b.line_counts.total} dòng nhu cầu đã sẵn sàng để xác nhận.` +
+          (preflight.downstream_currentness === "OUTDATED" && counts
+            ? ` ${counts.needsReview} dòng cần rà soát · ${counts.carriedForward} xác nhận được giữ nguyên.`
+            : ""),
+      });
       setNotice(
         preflight.downstream_currentness === "OUTDATED" && counts
           ? `Đã cập nhật nhu cầu · ${counts.needsReview} dòng cần rà soát · ${counts.carriedForward} xác nhận được giữ nguyên`
@@ -393,6 +435,11 @@ export function useConfirmedNeedWorkbench({
     } catch {
       if (epoch.current === requestEpoch) {
         setLock("unknown");
+        setOperation({
+          status: "UNKNOWN_OUTCOME",
+          message:
+            "Chưa xác định được kết quả tạo nhu cầu. Tải lại để xác nhận trước khi gửi yêu cầu khác.",
+        });
         setNotice(
           "Chưa xác định được kết quả tạo nhu cầu. Tải lại để xác nhận.",
         );
@@ -427,12 +474,13 @@ export function useConfirmedNeedWorkbench({
     applyTransition(next);
   };
   useEffect(() => {
-    if (!dirty && !lock) return;
+    if (!dirty && !lock && operation.status !== "RUNNING") return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, lock]);
+  }, [dirty, lock, operation.status]);
   return {
+    operation,
     date,
     week,
     schoolIds,
@@ -476,6 +524,7 @@ export function useConfirmedNeedWorkbench({
       if (canContinue && !inFlight.current) onContinueAllocation?.(date);
     },
     applyShoppingListImport: (imported: ConfirmedNeedShoppingListImport) => {
+      setOperation({ status: "IDLE" });
       setDrafts(imported.drafts);
       setNotice(
         `Đã nhập ${imported.changedLineIds.length} thay đổi vào bản nháp.`,

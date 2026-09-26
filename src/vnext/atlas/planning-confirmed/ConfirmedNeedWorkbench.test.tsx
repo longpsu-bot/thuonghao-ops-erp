@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -419,4 +420,48 @@ describe("Confirmed Need Chakra operator surface", () => {
     expect(screen.getByText(/Bổ sung suất ăn/)).toBeVisible();
     expect(document.body.textContent).not.toContain("atomic-private");
   });
+});
+
+it("keeps the initiating action loading and disabled while a long generation is pending", async () => {
+  let finish!: () => void;
+  let calls = 0;
+  show("not_generated", {}, (f) => {
+    const execute = f.needGenerationApi.execute.bind(f.needGenerationApi);
+    f.needGenerationApi.execute = async (request) => {
+      calls++;
+      await new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      return execute(request);
+    };
+  });
+  const button = await screen.findByRole("button", { name: "Tạo nhu cầu" });
+  vi.useFakeTimers();
+  try {
+    fireEvent.click(button);
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(calls).toBe(1);
+    expect(screen.queryByText(/Đang xử lý…/)).not.toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(2000));
+    expect(screen.getByText(/Đang xử lý…/)).toBeVisible();
+    expect(screen.getByText("Đã xử lý 2 giây")).toBeVisible();
+    await act(async () => {
+      finish();
+    });
+    expect(screen.getByText("✓ Hoàn tất")).toBeVisible();
+    expect(screen.getByText(/6 dòng nhu cầu đã sẵn sàng/)).toBeVisible();
+    expect(calls).toBe(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("retains Update Need continuity counts in the authoritative completion feedback", async () => {
+  show("outdated");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Cập nhật nhu cầu" }),
+  );
+  await screen.findByText("✓ Hoàn tất");
+  expect(screen.getByText(/5 xác nhận được giữ nguyên/)).toBeVisible();
 });

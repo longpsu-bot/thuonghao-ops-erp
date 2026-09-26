@@ -529,3 +529,97 @@ describe("Confirmed Need local draft and safety", () => {
     },
   );
 });
+
+describe("long-running generation interaction", () => {
+  it("keeps the operation running through readback, blocks duplicates and then shows authoritative success", async () => {
+    const h = await ready("not_generated");
+    let finish!: () => void;
+    let finishRead!: () => void;
+    h.read.mockImplementation(async () => {
+      await new Promise<void>((resolve) => {
+        finishRead = resolve;
+      });
+      return reviewSuccess({ workbench: h.fixture.batch });
+    });
+    h.execute.mockRestore();
+    const original = h.fixture.needGenerationApi.execute.bind(
+      h.fixture.needGenerationApi,
+    );
+    const call = vi
+      .spyOn(h.fixture.needGenerationApi, "execute")
+      .mockImplementation(async (request) => {
+        await new Promise<void>((resolve) => {
+          finish = resolve;
+        });
+        return original(request);
+      });
+    let pending!: Promise<void>;
+    act(() => {
+      pending = h.result.current.generate();
+      void h.result.current.generate();
+    });
+    expect(h.result.current.operation.status).toBe("RUNNING");
+    expect(h.result.current.canGenerate).toBe(false);
+    expect(call).toHaveBeenCalledTimes(1);
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    await act(async () => {
+      finish();
+    });
+    expect(h.read).toHaveBeenCalledTimes(1);
+    expect(h.result.current.operation.status).toBe("RUNNING");
+    expect(h.result.current.canGenerate).toBe(false);
+    await act(async () => {
+      finishRead();
+      await pending;
+    });
+    expect(h.result.current.operation.status).toBe("SUCCEEDED");
+    expect(
+      "message" in h.result.current.operation &&
+        h.result.current.operation.message,
+    ).toContain("6 dòng");
+    expect(h.read).toHaveBeenCalledTimes(1);
+    expect(h.result.current.workbench?.lines).toHaveLength(6);
+  });
+  it("locks unknown generation until authoritative recovery and never resubmits", async () => {
+    const h = await ready("not_generated");
+    h.execute.mockRejectedValue(new Error("connection lost"));
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("UNKNOWN_OUTCOME");
+    await act(() => h.result.current.generate());
+    expect(h.execute).toHaveBeenCalledTimes(1);
+    expect(h.result.current.canGenerate).toBe(false);
+    await act(() => h.result.current.recover());
+    expect(h.preflightRead).toHaveBeenCalledTimes(2);
+    expect(h.result.current.operation.status).toBe("IDLE");
+    expect(h.result.current.canGenerate).toBe(true);
+  });
+  it("shows a known retryable failure without retrying", async () => {
+    const h = await ready("not_generated");
+    h.execute.mockResolvedValue(
+      reviewFailure("RETRYABLE_CONCURRENCY_FAILURE", "NO_COMMITTED_CHANGE"),
+    );
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("FAILED");
+    expect(
+      h.result.current.operation.status === "FAILED" &&
+        h.result.current.operation.failureKind,
+    ).toBe("retryable");
+    expect(h.execute).toHaveBeenCalledTimes(1);
+  });
+  it("shows a deterministic business failure and preserves eligibility recovery", async () => {
+    const h = await ready("not_generated");
+    const failure = reviewFailure("CAPABILITY_DENIED", "NO_BUSINESS_WRITE");
+    if (failure.kind === "backend_error") failure.error.retryable = false;
+    h.execute.mockResolvedValue(failure);
+    await act(() => h.result.current.generate());
+    expect(h.result.current.operation.status).toBe("FAILED");
+    expect(
+      h.result.current.operation.status === "FAILED" &&
+        h.result.current.operation.failureKind,
+    ).toBe("business");
+    expect(h.result.current.lock).toBe("eligibility");
+    expect(h.execute).toHaveBeenCalledTimes(1);
+  });
+});
