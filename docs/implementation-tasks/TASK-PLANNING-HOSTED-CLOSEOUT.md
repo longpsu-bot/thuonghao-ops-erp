@@ -627,14 +627,18 @@ review Draft PR
 
 The manual `Atlas Staging Planning D046 Correction` workflow provides the
 repository-owned GitHub Actions entry point for the one-shot verifier. It
-checks out one required full commit SHA, verifies the exact `HEAD` and
-`origin/main` ancestry before dependency installation, and runs the
-non-mutating protected deployment preflight before invoking the correction
-script. Staging credentials are exposed only to those guarded execution steps.
+checks out one required full commit SHA, verifies the exact `HEAD`, and requires
+that SHA to equal the current `origin/main` tip before dependency installation.
+Historical merged SHAs are rejected even when they remain ancestors of current
+`main`. The workflow then runs the non-mutating protected deployment preflight
+before invoking the correction script. Staging credentials are exposed only to
+those guarded execution steps.
 
 `persist_correction` is a required boolean input whose default is `false`.
 That default path runs only the read-only eligibility classifier. The `true`
 path passes `--persist-correction` and therefore remains a separately
 authorized Staging mutation. Planning Closeout and Planning Performance are
 not invoked by this workflow. Adding the workflow creates no migration,
-deployment, correction, Save, Handoff, or Browser Closeout.
+deployment, data mutation, correction, Save, Handoff, or Browser Closeout.
+The current-tip equality change is workflow safety hardening only and does not
+alter D-046 logic, eligibility semantics, or Planning business behavior.

@@ -433,7 +433,7 @@ test("D046 correction workflow is manual, protected, and read-only by default", 
   const workflow = readFileSync(correctionWorkflowPath, "utf8");
   const triggerBlock = workflow.match(/^on:\n([\s\S]*?)\npermissions:/m)?.[1];
   const jobHeader = workflow.slice(0, workflow.indexOf("    steps:"));
-  const guard = workflow.indexOf("Verify exact merged commit");
+  const guard = workflow.indexOf("Verify exact current main commit");
   const install = workflow.indexOf("Install frozen dependencies");
   assert.match(workflow, /^name: Atlas Staging Planning D046 Correction$/m);
   assert.match(workflow, /on:\s*\n\s*workflow_dispatch:/);
@@ -445,7 +445,7 @@ test("D046 correction workflow is manual, protected, and read-only by default", 
   );
   assert.match(
     workflow,
-    /commit_sha:\s*\n\s+description: Exact full commit SHA already merged to main\s*\n\s+required: true\s*\n\s+type: string/,
+    /commit_sha:\s*\n\s+description: Exact full commit SHA at the current origin\/main tip\s*\n\s+required: true\s*\n\s+type: string/,
   );
   assert.match(
     workflow,
@@ -467,7 +467,16 @@ test("D046 correction workflow is manual, protected, and read-only by default", 
   assert.ok(install > guard);
   assert.match(workflow, /\^\[0-9a-f\]\{40\}\$/);
   assert.match(workflow, /git rev-parse HEAD/);
-  assert.match(workflow, /git merge-base --is-ancestor/);
+  assert.match(
+    workflow,
+    /MAIN_SHA="\$\(git rev-parse refs\/remotes\/origin\/main\)"/,
+  );
+  assert.match(
+    workflow,
+    /if \[\[ "\$REQUESTED_COMMIT_SHA" != "\$MAIN_SHA" \]\]; then/,
+  );
+  assert.match(workflow, /commit_sha must equal the current origin\/main SHA/);
+  assert.doesNotMatch(workflow, /git merge-base --is-ancestor/);
   assert.doesNotMatch(jobHeader, /secrets\./);
   assert.match(workflow, /version: 11\.7\.0/);
   assert.match(workflow, /node-version: 24/);

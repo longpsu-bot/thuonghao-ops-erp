@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       commit_sha:
-        description: Exact full commit SHA already merged to main
+        description: Exact full commit SHA at the current origin/main tip
         required: true
         type: string
       persist_correction:
@@ -39,10 +39,10 @@ jobs:
           ref: ${{ inputs.commit_sha }}
           fetch-depth: 0
 
-      - name: Fetch main for ancestry verification
+      - name: Fetch main for tip verification
         run: git fetch --no-tags origin main:refs/remotes/origin/main
 
-      - name: Verify exact merged commit
+      - name: Verify exact current main commit
         env:
           REQUESTED_COMMIT_SHA: ${{ inputs.commit_sha }}
         shell: bash
@@ -57,8 +57,9 @@ jobs:
             exit 1
           fi
 
-          if ! git merge-base --is-ancestor "$REQUESTED_COMMIT_SHA" refs/remotes/origin/main; then
-            echo "commit_sha is not merged to origin/main" >&2
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if [[ "$REQUESTED_COMMIT_SHA" != "$MAIN_SHA" ]]; then
+            echo "commit_sha must equal the current origin/main SHA" >&2
             exit 1
           fi
 
