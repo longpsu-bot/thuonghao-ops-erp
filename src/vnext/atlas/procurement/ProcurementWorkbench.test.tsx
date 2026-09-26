@@ -52,6 +52,35 @@ function show(
 const action = () =>
   screen.findByRole("button", { name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm$/ });
 describe("Procurement vNext operator workbench", () => {
+  it("shows stage identity before primary job tabs and focuses the visible stage heading", async () => {
+    show("ready");
+    await action();
+
+    const context = screen.getByText("Kế hoạch mua hàng");
+    const allocationHeading = screen.getByRole("heading", {
+      level: 1,
+      name: "Phân bổ nhà cung ứng",
+    });
+    const tabs = screen.getByRole("tablist", { name: "Công việc mua hàng" });
+    expect(allocationHeading).toBeVisible();
+    expect(
+      context.compareDocumentPosition(allocationHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      allocationHeading.compareDocumentPosition(tabs) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Đơn mua" }));
+    const ordersHeading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Đơn mua",
+    });
+    await waitFor(() => expect(ordersHeading).toHaveFocus());
+    expect(ordersHeading).toBeVisible();
+  });
+
   it("shows preparation blockers even when ready but not permitted", async () => {
     const fixture = createProcurementReviewFixture("ready");
     fixture.allocation.preparation!.allowed = false;
@@ -237,8 +266,19 @@ describe("Procurement vNext operator workbench", () => {
       "Phân bổ NCC",
       "Đơn mua",
     ]);
+    const region = screen.getByRole("region", {
+      name: "Bảng phân bổ nhà cung ứng",
+    });
+    const table = screen.getByRole("table", {
+      name: "Phân bổ nhà cung ứng",
+    });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region).toContainElement(table);
+    expect(table).toHaveStyle({
+      minWidth: "var(--atlas-layout-procurement-table-min, 1020px)",
+    });
     expect(
-      within(screen.getByRole("table", { name: "Phân bổ nhà cung ứng" }))
+      within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([

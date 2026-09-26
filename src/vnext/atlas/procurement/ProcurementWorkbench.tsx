@@ -34,11 +34,7 @@ import {
   useProcurementWorkbench,
   type ProcurementControllerProps,
 } from "./useProcurementWorkbench";
-import {
-  atlasPrimaryTabList,
-  atlasPrimaryTabTrigger,
-  atlasVisuallyHidden,
-} from "../AtlasTaskTabs";
+import { atlasPrimaryTabList, atlasPrimaryTabTrigger } from "../AtlasTaskTabs";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
@@ -142,6 +138,10 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
       borderWidth="var(--atlas-layout-edge, 1px)"
       borderColor="border.subtle"
       minW="var(--atlas-layout-zero, 0)"
+      minH={{
+        base: "var(--atlas-layout-workbench-mobile-height, calc(100dvh - 132px))",
+        lg: "var(--atlas-layout-workbench-height, calc(100dvh - 100px))",
+      }}
     >
       <Tabs.Root
         value={controller.stage}
@@ -153,19 +153,26 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
         }}
         variant="line"
       >
-        <Heading
-          as="h1"
-          tabIndex={-1}
-          ref={heading}
-          data-visually-hidden="true"
-          {...atlasVisuallyHidden}
-        >
-          {controller.stage === "allocation"
-            ? "Phân bổ nhà cung ứng"
-            : "Đơn mua"}
-        </Heading>
         <Box p="md">
-          <Tabs.List aria-label="Công việc mua hàng" {...atlasPrimaryTabList}>
+          <Text textStyle="helper" color="fg.muted">
+            Kế hoạch mua hàng
+          </Text>
+          <Heading
+            as="h1"
+            tabIndex={-1}
+            ref={heading}
+            textStyle="workbenchTitle"
+            mt="xs"
+          >
+            {controller.stage === "allocation"
+              ? "Phân bổ nhà cung ứng"
+              : "Đơn mua"}
+          </Heading>
+          <Tabs.List
+            mt="sm"
+            aria-label="Công việc mua hàng"
+            {...atlasPrimaryTabList}
+          >
             <Tabs.Trigger
               value="allocation"
               disabled={Boolean(selected) && controller.stage !== "allocation"}

@@ -193,6 +193,7 @@ export function AtlasVNextShell({
       <Flex
         hideFrom="lg"
         p="sm"
+        minH="var(--atlas-layout-mobile-navigation-height, 60px)"
         bg="bg.navigation"
         color="fg.inverse"
         align="center"
@@ -266,14 +267,17 @@ export function AtlasVNextShell({
       <Box flex="1" minW="var(--atlas-layout-zero, 0)">
         <Flex
           as="header"
+          role="region"
+          aria-label="Phiên làm việc"
           minH="var(--atlas-layout-header-height, 52px)"
-          px={{ base: "md", lg: "lg" }}
-          py="sm"
+          px={{ base: "sm", md: "md", lg: "lg" }}
+          py="xs"
           bg="bg.workbench"
           borderBottomWidth="var(--atlas-layout-edge, 1px)"
           borderColor="border.subtle"
           justify="space-between"
-          gap="md"
+          gap="sm"
+          align="center"
           wrap="wrap"
         >
           <Text textStyle="helper" color="fg.muted">
@@ -282,8 +286,21 @@ export function AtlasVNextShell({
               : formatVietnamBusinessDate(now)}
           </Text>
           {mode === "connected" && (
-            <Flex align="center" gap="sm" wrap="wrap">
-              <Text textStyle="helper">{userLabel}</Text>
+            <Flex align="center" gap="xs" minW="var(--atlas-layout-zero, 0)">
+              <Text
+                textStyle="helper"
+                minW="var(--atlas-layout-zero, 0)"
+                maxW={{
+                  base: "var(--atlas-layout-session-user-mobile, 128px)",
+                  md: "var(--atlas-layout-session-user, 240px)",
+                }}
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                title={userLabel}
+              >
+                {userLabel}
+              </Text>
               {onSignOut && (
                 <Button variant="utility" onClick={onSignOut}>
                   Đăng xuất

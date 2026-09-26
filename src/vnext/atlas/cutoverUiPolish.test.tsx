@@ -165,23 +165,28 @@ describe("Atlas pre-cutover UI polish", () => {
     );
   });
 
-  it("puts Procurement tabs first and removes the duplicated visible title block", async () => {
+  it("orders Procurement context, visible job title, then primary tabs", async () => {
     show();
     await nav("Kế hoạch mua hàng");
     const section = screen.getByRole("region", { name: "Kế hoạch mua hàng" });
+    const context = within(section).getByText("Kế hoạch mua hàng");
+    const heading = within(section).getByRole("heading", {
+      level: 1,
+      name: "Phân bổ nhà cung ứng",
+    });
     const tabs = within(section).getByRole("tablist", {
       name: "Công việc mua hàng",
     });
+    expect(context).toBeVisible();
+    expect(heading).toBeVisible();
+    expect(
+      context.compareDocumentPosition(heading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(tabs).toHaveAttribute("data-tab-tier", "primary");
     expect(tabs).toHaveAttribute("data-tab-align", "start");
-    expect(
-      within(section).queryByText("Kế hoạch mua hàng"),
-    ).not.toBeInTheDocument();
-    expect(
-      within(section).getByRole("heading", {
-        level: 1,
-        name: "Phân bổ nhà cung ứng",
-      }),
-    ).toHaveAttribute("data-visually-hidden", "true");
   });
 });
