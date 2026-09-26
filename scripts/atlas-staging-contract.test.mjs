@@ -2068,8 +2068,8 @@ describe("Atlas staging hosted evidence", () => {
     expect(authority.authenticatedApiSignatures).not.toContain(
       dispatchSnapshotBase,
     );
-    expect(authority.policyCount).toBe(651);
-    expect(authority.policyDigest).toBe("e5c957783700de7c2dc978986101daa3");
+    expect(authority.policyCount).toBe(654);
+    expect(authority.policyDigest).toBe("1333f218f38f7e61db02fd18fcd64c70");
   });
 
   it("compares authenticated EXECUTE against CAT-18 rather than physical CAT-15", () => {
@@ -2182,7 +2182,7 @@ describe("Atlas staging hosted evidence", () => {
     expect(normalCatalog?.[1]).toContain(
       "not (n.nspname = 'atlas_admin' and c.relname = 'units' and p.polname = 'rmvp_05_unit_lock')",
     );
-    expect(sql).toContain("normal_policy_count <> 651");
+    expect(sql).toContain("normal_policy_count <> 654");
     expect(sql).not.toContain("if (select count(*) from pg_policy");
     expect(sql).toContain("ATLAS_POLICY_COUNT_MISMATCH");
     expect(sql).toContain("ATLAS_POLICY_DIGEST_MISMATCH");
@@ -2257,11 +2257,11 @@ describe("Atlas staging hosted evidence", () => {
   });
 
   it.each([
-    [651, 1, true],
-    [651, 0, false],
-    [651, 2, false],
-    [650, 1, false],
-    [652, 1, false],
+    [654, 1, true],
+    [654, 0, false],
+    [654, 2, false],
+    [653, 1, false],
+    [655, 1, false],
   ])(
     "models %i normal and %i isolated policies as accepted=%s",
     (normalPolicyCount, isolatedPolicyCount, accepted) => {

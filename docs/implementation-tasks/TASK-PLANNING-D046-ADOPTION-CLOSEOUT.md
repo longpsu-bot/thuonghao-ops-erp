@@ -264,11 +264,13 @@ D-046's configuration predicate and exact proposal formula remain unchanged.
 ## Preserved 17/09 correction contract
 
 The deployed Recipe repair makes the current Recipe successor authoritative,
-but does not touch the preserved Planning evidence. The preflight therefore
-derives `OUTDATED` while the selected/current Menu, Attendance, and Pantry
-fingerprints remain equal. A separately
+but does not touch the preserved Planning evidence. Preflight remains `CURRENT`
+while selected/current Menu, Attendance and Pantry fingerprints remain equal.
+Exact D-047 predecessor provenance independently derives regeneration necessity
+inside the canonical command; it does not manufacture source drift. A separately
 owner-authorized one-shot invocation of existing `RMVP-04.v3`
-`execute_need_generation` performs the correction:
+`execute_need_generation` performs the correction with `PLANNING_CORRECTION`
+invalidation semantics:
 
 ```text
 old run 0c83… v3 RELEASED_FOR_CONFIRMATION
@@ -305,8 +307,10 @@ The browser closeout accepts only `D046_CORRECTED_RESUME`, not the old
   snapshot pairs and exact upward-rounded proposals;
 - every old pre-D-046 revision remains retained with its null snapshot pair;
 - zero decisions, Save receipts, and Purchase Handoffs;
-- one original and one correction generation receipt, with no duplicate or
-  replayed correction;
+- one original completed generation receipt, an optional single exact benign
+  D046 `NO_CHANGE` attempt, and one completed correction generation receipt;
+  semantic roles are independent of ordering and unknown extras or duplicate
+  roles reject;
 - source fingerprints are unchanged.
 
 After the one browser Save, the same two-run/one-batch lineage remains; the

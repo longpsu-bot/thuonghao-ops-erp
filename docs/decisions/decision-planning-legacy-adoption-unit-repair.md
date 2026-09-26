@@ -97,3 +97,28 @@ also remain immutable.
 - [D-046](decision-planning-operational-proposal.md): exact proposal Unit and
   Ingredient-step authority.
 - [Implementation task](../implementation-tasks/TASK-PLANNING-D046-ADOPTION-CLOSEOUT.md).
+
+## Current-source recovery clarification — 26/09/2026
+
+Facts remain explicit, state derived, and supporting objects generated. Source
+currentness and Recipe adoption correction necessity are independent. A current
+terminal Need run embedding a proven D-047 predecessor requires regeneration even
+when all completed source fingerprints remain `CURRENT`. The released exact
+adoption successor and immutable provenance derive this requirement; callers
+cannot request an exemption. An ordinary newer Recipe or the native Cánh gà
+mismatch remains ineligible.
+
+The canonical atomic Need command records `PLANNING_CORRECTION` for this
+unchanged-source invalidation and preserves the separate readiness review reason.
+After correction it naturally returns `NO_CHANGE`. The migration changes future
+execution only: it does not backfill evidence, proposals, receipts or released
+history. Rollback after deployment is a reviewed forward migration restoring the
+prior private command definition and revoking/removing its unused private helper
+and read policies; any already-created correction history must be retained.
+
+The earlier hosted D046 attempt returned successful `NO_CHANGE`, producing an
+immutable audit receipt without a business-state mutation. Closeout accepts at
+most one exactly qualified benign attempt alongside the original generation
+receipt, and requires a separate completed successor-generation receipt. Unknown
+extra receipts or multiple benign attempts fail closed. This history is neither
+corruption nor successful correction evidence.

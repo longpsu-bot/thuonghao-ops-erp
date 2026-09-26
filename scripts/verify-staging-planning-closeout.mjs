@@ -173,6 +173,72 @@ function generationReceiptAccepted(receipt, run, batch, batchVersion) {
   );
 }
 
+// Audit history is unordered. Each receipt must have exactly one semantic role.
+export function classifyPlanningGenerationReceipts(
+  receipts,
+  successorRunId = null,
+) {
+  if (!Array.isArray(receipts)) return null;
+  const roles = { original: null, benign: null, correction: null };
+  const commands = new Set();
+  for (const receipt of receipts) {
+    if (
+      typeof receipt?.command_id !== "string" ||
+      !receipt.command_id ||
+      commands.has(receipt.command_id)
+    )
+      return null;
+    commands.add(receipt.command_id);
+    const retained = generationReceiptAccepted(
+      receipt,
+      { id: RETAINED_RUN },
+      { id: RETAINED_BATCH },
+      1,
+    );
+    const correctionKey =
+      typeof receipt.idempotency_key === "string" &&
+      receipt.idempotency_key.startsWith("planning-d046-correction:") &&
+      receipt.idempotency_key.length > "planning-d046-correction:".length;
+    let role;
+    if (
+      retained &&
+      receipt.idempotency_status === "COMPLETED" &&
+      receipt.expected_version === 1 &&
+      typeof receipt.idempotency_key === "string" &&
+      receipt.idempotency_key.length > 0 &&
+      !correctionKey
+    ) {
+      role = "original";
+    } else if (
+      retained &&
+      receipt.idempotency_status === "NO_CHANGE" &&
+      receipt.expected_version === 3 &&
+      correctionKey
+    ) {
+      role = "benign";
+    } else if (
+      successorRunId &&
+      generationReceiptAccepted(
+        receipt,
+        { id: successorRunId },
+        { id: RETAINED_BATCH },
+        2,
+      ) &&
+      receipt.idempotency_status === "COMPLETED" &&
+      receipt.expected_version === 3 &&
+      correctionKey
+    ) {
+      role = "correction";
+    } else return null;
+    if (roles[role]) return null;
+    roles[role] = receipt;
+  }
+  return roles.original &&
+    (successorRunId ? roles.correction : !roles.correction)
+    ? roles
+    : null;
+}
+
 export function classifyPlanningCheckpoint(snapshot) {
   const fail = () => {
     throw new Error("PLANNING_CLOSEOUT_BASELINE_REJECTED");
@@ -198,12 +264,7 @@ export function classifyPlanningCheckpoint(snapshot) {
       fingerprints: snapshot.preflight.source_date_fingerprints.selected,
     };
   }
-  if (
-    snapshot.runs.length !== 2 ||
-    snapshot.batches.length !== 1 ||
-    snapshot.receipts.length !== 2
-  )
-    fail();
+  if (snapshot.runs.length !== 2 || snapshot.batches.length !== 1) fail();
   const predecessor = snapshot.runs.find((run) => run.id === RETAINED_RUN);
   const run = snapshot.runs.find((item) => item.id !== RETAINED_RUN);
   const batch = snapshot.batches[0];
@@ -241,25 +302,7 @@ export function classifyPlanningCheckpoint(snapshot) {
     batch.acceptance_count !== 0 ||
     !preflightAccepted(snapshot.preflight, "CURRENT", run.id, batch.id) ||
     snapshot.preflight.current_need.confirmed_need_batch_version !== 2 ||
-    !generationReceiptAccepted(
-      snapshot.receipts.find(
-        (receipt) =>
-          receipt.affected_aggregate_ids?.need_generation_run_id ===
-          predecessor.id,
-      ),
-      predecessor,
-      batch,
-      1,
-    ) ||
-    !generationReceiptAccepted(
-      snapshot.receipts.find(
-        (receipt) =>
-          receipt.affected_aggregate_ids?.need_generation_run_id === run.id,
-      ),
-      run,
-      batch,
-      2,
-    ) ||
+    !classifyPlanningGenerationReceipts(snapshot.receipts, run.id) ||
     snapshot.d046?.predecessor_release_contribution_count !== 304 ||
     snapshot.d046?.successor_release_contribution_count !== 304 ||
     snapshot.d046?.current_snapshot_pair_count !== 248 ||
@@ -461,12 +504,15 @@ select jsonb_build_object(
   ) from preflight p),
   'receipts', (select coalesce(jsonb_agg(jsonb_build_object(
     'command_id', c.command_id, 'command_name', c.command_name, 'actor_id', c.actor_id,
+    'expected_version', c.expected_version, 'idempotency_key', c.idempotency_key,
+    'idempotency_status', c.response_payload->'idempotency_status',
     'outcome', c.outcome, 'success', c.response_payload->'success',
     'affected_aggregate_ids', c.response_payload->'affected_aggregate_ids',
     'new_versions', c.response_payload->'new_versions')
     order by c.started_at,c.command_receipt_id), '[]'::jsonb)
     from atlas_core.command_receipts c where c.command_name='execute_need_generation'
-      and (exists(select 1 from scoped_runs r where
+      and (c.scope_key like '%:need-generation:2026-09-17:2026-09-17'
+      or exists(select 1 from scoped_runs r where
         c.response_payload#>>'{affected_aggregate_ids,need_generation_run_id}'=r.need_generation_run_id::text)
       or exists(select 1 from scoped_batches b where
         c.response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}'=b.confirmed_need_batch_id::text))),
@@ -622,26 +668,7 @@ export function assertFinalPlanningCloseoutProof({
     batch.current_decision_count !== 248 ||
     batch.adjustment_count !== 1 ||
     batch.acceptance_count !== 247 ||
-    !generationReceiptAccepted(
-      state.receipts?.find(
-        (receipt) =>
-          receipt.affected_aggregate_ids?.need_generation_run_id ===
-          predecessor.id,
-      ),
-      predecessor,
-      batch,
-      1,
-    ) ||
-    !generationReceiptAccepted(
-      state.receipts?.find(
-        (receipt) =>
-          receipt.affected_aggregate_ids?.need_generation_run_id === run.id,
-      ),
-      run,
-      batch,
-      2,
-    ) ||
-    state.receipts?.length !== 2 ||
+    !classifyPlanningGenerationReceipts(state.receipts, run.id) ||
     state.save_receipt_count !== 1 ||
     baseline.predecessorRunId !== predecessor.id ||
     baseline.currentRunId !== run.id ||

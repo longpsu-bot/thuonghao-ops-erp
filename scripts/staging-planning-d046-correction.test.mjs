@@ -110,6 +110,12 @@ function postDeployManifest() {
 function receipt(runId, batchVersion, runVersion = 3, id = "initial") {
   return {
     command_id: id,
+    expected_version: batchVersion === 1 ? 1 : 3,
+    idempotency_key:
+      batchVersion === 1
+        ? `generation:${id}`
+        : `planning-d046-correction:${id}`,
+    idempotency_status: "COMPLETED",
     command_name: "execute_need_generation",
     actor_id: actorId,
     outcome: "COMPLETED",
@@ -124,6 +130,100 @@ function receipt(runId, batchVersion, runVersion = 3, id = "initial") {
     },
   };
 }
+
+function benignReceipt() {
+  return {
+    ...receipt(RETAINED_RUN, 1, 3, "benign-attempt"),
+    expected_version: 3,
+    idempotency_key: "planning-d046-correction:benign-attempt",
+    idempotency_status: "NO_CHANGE",
+  };
+}
+
+test("recovery accepts one benign NO_CHANGE before the original receipt", () => {
+  const snapshot = preCorrectionSnapshot();
+  snapshot.receipts.unshift(benignReceipt());
+  assert.equal(
+    classifyD046CorrectionBaseline(snapshot).mode,
+    "D046_CORRECTION_ELIGIBLE",
+  );
+});
+
+for (const [field, value] of Object.entries({
+  actor_id: "other",
+  expected_version: 1,
+  idempotency_key: "ordinary",
+  outcome: "FAILED",
+  success: false,
+  idempotency_status: "COMPLETED",
+  affected_aggregate_ids: {},
+  new_versions: {},
+})) {
+  test(`recovery rejects an extra receipt with invalid ${field}`, () => {
+    const snapshot = preCorrectionSnapshot();
+    snapshot.receipts.push({ ...benignReceipt(), [field]: value });
+    assert.throws(
+      () => classifyD046CorrectionBaseline(snapshot),
+      /BASELINE_REJECTED/,
+    );
+  });
+}
+
+test("recovery rejects two benign attempts and a missing original", () => {
+  const snapshot = preCorrectionSnapshot();
+  snapshot.receipts.push(benignReceipt(), {
+    ...benignReceipt(),
+    command_id: "second",
+  });
+  assert.throws(
+    () => classifyD046CorrectionBaseline(snapshot),
+    /BASELINE_REJECTED/,
+  );
+  snapshot.receipts = [benignReceipt()];
+  assert.throws(
+    () => classifyD046CorrectionBaseline(snapshot),
+    /BASELINE_REJECTED/,
+  );
+});
+
+test("unknown outcome recovery invokes once with existing benign audit history", async () => {
+  const before = preCorrectionSnapshot();
+  const after = correctedSnapshot();
+  before.receipts.unshift(benignReceipt());
+  after.receipts.unshift(benignReceipt());
+  let reads = 0;
+  let invokes = 0;
+  const result = await executeD046Correction({
+    commandId,
+    readSnapshot: async () => [before, after][reads++],
+    invoke: async () => {
+      invokes++;
+      throw new Error("transport lost after commit");
+    },
+  });
+  assert.equal(result.mode, "D046_CORRECTED_RESUME");
+  assert.equal(invokes, 1);
+  assert.equal(reads, 2);
+});
+
+test("readback cannot attribute another correction to this benign command", async () => {
+  const after = correctedSnapshot();
+  after.receipts.push({
+    ...benignReceipt(),
+    command_id: "d0460000-0000-4000-8000-000000000019",
+  });
+  let reads = 0;
+  await assert.rejects(
+    executeD046Correction({
+      commandId: "d0460000-0000-4000-8000-000000000019",
+      readSnapshot: async () => [preCorrectionSnapshot(), after][reads++],
+      invoke: async () => {
+        throw new Error("unknown");
+      },
+    }),
+    /OUTCOME_REJECTED/,
+  );
+});
 
 export function preCorrectionSnapshot() {
   return {
