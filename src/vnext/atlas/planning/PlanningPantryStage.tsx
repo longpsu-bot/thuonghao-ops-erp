@@ -11,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { Fragment, useState } from "react";
 import type { PlanningSourcesController } from "./usePlanningSources";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 
 function PantryFeedback({
   error,
@@ -125,11 +126,16 @@ export function PlanningPantryStage({
             : "Chưa có dòng bổ sung trong ngày. Chưa xác nhận toàn tuần không có bổ sung."}
         </Text>
       )}
-      <Box
-        overflow="auto"
+      <AtlasTableViewport
+        label="Bảng nguyên liệu bổ sung"
         maxH="var(--atlas-layout-planning-table-height, max(240px, calc(100dvh - 480px)))"
       >
-        <Table.Root aria-label="Nguyên liệu bổ sung" size="sm" stickyHeader>
+        <Table.Root
+          aria-label="Nguyên liệu bổ sung"
+          minW="var(--atlas-layout-pantry-table-min, 1200px)"
+          size="sm"
+          stickyHeader
+        >
           <Table.Header>
             <Table.Row>
               {[
@@ -391,7 +397,7 @@ export function PlanningPantryStage({
               ))}
           </Table.Body>
         </Table.Root>
-      </Box>
+      </AtlasTableViewport>
     </>
   );
 }
