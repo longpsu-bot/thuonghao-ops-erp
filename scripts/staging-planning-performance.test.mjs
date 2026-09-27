@@ -641,7 +641,18 @@ test("workflow responsibilities are independent", () => {
     "utf8",
   );
   assert.match(closeout, /verify-staging-planning-closeout/);
-  assert.match(closeout, /if \[ "\$PERSIST_REHEARSAL" != "true" \]; then/);
+  assert.match(closeout, /closeout_mode:/);
+  assert.match(closeout, /post_save_resume/);
+  assert.match(closeout, /pre_save_rehearsal/);
+  assert.match(
+    closeout,
+    /if \[ "\$CLOSEOUT_MODE" = "pre_save_rehearsal" \] && \[ "\$PERSIST_REHEARSAL" != "true" \]; then/,
+  );
+  assert.match(
+    closeout,
+    /if \[ "\$CLOSEOUT_MODE" = "post_save_resume" \] && \[ "\$PERSIST_REHEARSAL" = "true" \]; then/,
+  );
+  assert.match(closeout, /--closeout-mode "\$CLOSEOUT_MODE"/);
   assert.doesNotMatch(
     closeout,
     /install-staging-count-unit-policies|verify-staging-planning-performance|rollback generation probe/i,
