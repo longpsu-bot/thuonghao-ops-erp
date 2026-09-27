@@ -50,15 +50,15 @@
 - Consumes: existing Chakra system semantic tokens, spacing, table recipe and structural CSS-variable convention.
 - Produces: presentation-only `AtlasTaskContext` and `AtlasTableViewport`; semantic `bg.context` for Tasks 2–5.
 
-- [ ] **Step 1: Inspect the pinned components and current test conventions**
+- [x] **Step 1: Inspect the pinned components and current test conventions**
 
 Use `git show ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0:<path>` for the old shared components/tests and compare against current Chakra patterns. Do not copy stale consumer/controller code.
 
-- [ ] **Step 2: Write failing shared tests**
+- [x] **Step 2: Write failing shared tests**
 
 Test observable contracts: one supplied H1, explicit accessible summary, 196px desktop/88px compact composition, `bg.context`, named focusable region, local overflow and continuation cues, native children rendering, reduced-motion-compatible presentation, and no callback/business-state API.
 
-- [ ] **Step 3: Verify RED**
+- [x] **Step 3: Verify RED**
 
 Run:
 
@@ -68,15 +68,15 @@ pnpm exec vitest run --exclude ".worktrees/**" src/vnext/atlas/AtlasTaskContext.
 
 Expected: new component imports/contracts fail because they do not exist yet.
 
-- [ ] **Step 4: Implement the minimum shared presentation**
+- [x] **Step 4: Implement the minimum shared presentation**
 
 Adapt the pinned task context for explicit accessible text and current consumers. Port the table viewport without rows, columns, selection, filtering, sorting, pagination or business state. Add only the approved `bg.context` semantic token.
 
-- [ ] **Step 5: Verify GREEN and refactor**
+- [x] **Step 5: Verify GREEN and refactor**
 
 Run the Task 1 test command and `pnpm ui:vnext:check`. Keep presentation responsibilities explicit.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/vnext/atlas/AtlasTaskContext.tsx src/vnext/atlas/AtlasTaskContext.test.tsx src/vnext/atlas/AtlasTableViewport.tsx src/vnext/atlas/AtlasTableViewport.test.tsx src/vnext/atlas/system.ts src/vnext/atlas/system.test.tsx
@@ -101,11 +101,11 @@ git commit -m "feat(atlas-ui): converge shared Station presentation"
 - Consumes: Task 1 shared primitives and current `useProcurementWorkbench`, bridge/models and exact-quantity helpers unchanged.
 - Produces: current Procurement behavior inside Station context, natural-height table and fixed desktop detail.
 
-- [ ] **Step 1: Write failing Procurement tests**
+- [x] **Step 1: Write failing Procurement tests**
 
 Add focused assertions for Station H1/context, named local viewport, eight preserved columns, unique Ingredient+location row actions, synchronized `aria-selected`/`aria-expanded`, exact 320px desktop detail contract, 44px mobile targets, focus entry/return and editing action hierarchy. Retain every existing behavior assertion.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```bash
 pnpm exec vitest run --exclude ".worktrees/**" src/vnext/atlas/procurement/ProcurementWorkbench.test.tsx src/vnext/atlas/procurement/ProcurementSupplierDetail.test.tsx src/vnext/atlas/AtlasProcurementExit.test.tsx src/vnext/atlas/procurement/useProcurementWorkbench.test.tsx
@@ -113,15 +113,15 @@ pnpm exec vitest run --exclude ".worktrees/**" src/vnext/atlas/procurement/Procu
 
 Expected: only new Station/layout/accessibility assertions fail.
 
-- [ ] **Step 3: Implement the Station composition**
+- [x] **Step 3: Implement the Station composition**
 
 Use current controller outputs verbatim. Keep Orders stage behavior current. Make `Lưu phân bổ` dominant while detail is dirty/editable, preserve supplier participation/eligibility distinctions and keep routine refresh/continuation subordinate according to current state.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run the Task 2 command. Rerun any load-sensitive timeout individually instead of increasing global timeouts or weakening assertions.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/vnext/atlas/procurement
@@ -145,25 +145,25 @@ git commit -m "feat(atlas-ui): port Station Procurement"
 - Consumes: Task 1 primitives and current Ingredient/Supplier controller/model unchanged.
 - Produces: 360-row catalogue within Station context and fixed desktop Ingredient detail.
 
-- [ ] **Step 1: Write failing Ingredient tests**
+- [x] **Step 1: Write failing Ingredient tests**
 
 Cover truthful/unknown result count, 360 rows, condensed priority suppliers, restrained status text, unique explicit row actions, named viewport, selected state, exact 320px detail, archived/read-only presentation and focus entry/return. Preserve lifecycle, priority, review, dirty-exit, permission and validation tests.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```bash
 pnpm exec vitest run --exclude ".worktrees/**" src/vnext/atlas/master-data/IngredientSupplierWorkbench.test.tsx src/vnext/atlas/master-data/ingredientSupplierReviewFixtures.test.ts src/vnext/atlas/master-data/ingredientSupplierModel.test.ts src/vnext/atlas/master-data/useIngredientSupplierWorkbench.test.tsx
 ```
 
-- [ ] **Step 3: Implement the catalogue/detail composition**
+- [x] **Step 3: Implement the catalogue/detail composition**
 
 Keep Supplier inner workflow current. Do not add pagination/virtualization or change lifecycle authority. Ensure `Tạo nguyên liệu` dominates only when no detail/review is active.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run the Task 3 command; validate the 360-row assertion separately if aggregate execution reaches the inherited five-second timeout.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/vnext/atlas/master-data
@@ -189,25 +189,25 @@ git commit -m "feat(atlas-ui): port Station Ingredients"
 - Consumes: Task 1 primitives; current `usePlanningSources`, Planning APIs, payload/currentness semantics unchanged.
 - Produces: three current source jobs with Station hierarchy and a task-specific wide comparison review.
 
-- [ ] **Step 1: Write failing Planning tests**
+- [x] **Step 1: Write failing Planning tests**
 
 Cover visible current-job H1, context/workbar order, truthful mobile filter summary, named viewports and source-specific minimum-width/sticky behavior. Add focus-entry/return and review geometry assertions. Preserve week/date/School transitions, search, refresh, warnings, errors, imports, explicit zero/no-additions, correction, dirty exit and Save command counts.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```bash
 pnpm exec vitest run --exclude ".worktrees/**" src/vnext/atlas/planning/PlanningSourcesWorkbench.test.tsx src/vnext/atlas/planning/planningSourceIsolation.test.tsx src/vnext/atlas/planning/planningPantryReviewRows.test.ts src/vnext/atlas/planning/usePlanningSources.test.tsx src/vnext/atlas/AtlasModuleExit.test.tsx
 ```
 
-- [ ] **Step 3: Implement Station context and source-specific surfaces**
+- [x] **Step 3: Implement Station context and source-specific surfaces**
 
 Keep `PlanningCapability` navigation unchanged. Do not hide fields. Keep Menu, Attendance and Pantry utilities/semantics intact. Apply local viewports and the desktop `minmax(330px, .9fr) / minmax(440px, 1.1fr)` review; stack at 768px and below.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run the Task 4 command. Confirm frozen review disables routine refresh and focus returns to the exact trigger.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/vnext/atlas/planning
@@ -231,25 +231,25 @@ git commit -m "feat(atlas-ui): apply Station hierarchy to Planning sources"
 - Consumes: Task 1 primitives and current `useConfirmedNeedWorkbench`, `useConfirmedNeedDraft`, authority/draft helpers and bridge/contracts unchanged.
 - Produces: seven-function decision surface, correct Save/Continue hierarchy and UI-09 certified-shape review fixture.
 
-- [ ] **Step 1: Write failing Confirmed Need tests**
+- [x] **Step 1: Write failing Confirmed Need tests**
 
 Cover Station context, named table viewport, all seven semantic columns, proposal/confirmation/delta distinction, valid-adjustment versus invalid styling, both rounding-step disclosures, exact/historical strings, protected stable selector, secondary utilities/support detail, dirty Save dominance, clean authorized continuation dominance, read-only state, and 248 current rows with 249 historical identities only in fixture evidence.
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 ```bash
 pnpm exec vitest run --exclude ".worktrees/**" src/vnext/atlas/planning-confirmed/ConfirmedNeedWorkbench.test.tsx src/vnext/atlas/planning-confirmed/confirmedNeedDraft.test.ts src/vnext/atlas/planning-confirmed/useConfirmedNeedWorkbench.test.tsx src/vnext/atlas/AtlasOperationStatus.test.tsx src/vnext/atlas/AtlasUnresolvedExit.test.tsx src/vnext/atlas/formatExactQuantity.test.ts
 ```
 
-- [ ] **Step 3: Implement the decision composition**
+- [x] **Step 3: Implement the decision composition**
 
 Keep operation timing/status outside the table subtree. Do not change exact arithmetic, accessible field labels, stable selectors, generation/Save payloads or navigation semantics. Valid business adjustment is not a warning. Shopping-list and support actions stay secondary.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run the Task 5 command. Confirm timer ticks do not unnecessarily rerender the 248-row table using existing component boundaries/tests rather than new persisted state.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/vnext/atlas/planning-confirmed
@@ -270,11 +270,11 @@ git commit -m "feat(atlas-ui): refine Confirmed Need Station"
 - Consumes: completed Tasks 1–5 and actual production review stories.
 - Produces: review package for `atlas-ui-finish-reviewer`, complete evidence record and protected-boundary proof.
 
-- [ ] **Step 1: Run focused regression suites**
+- [x] **Step 1: Run focused regression suites**
 
 Run all Task 1–5 commands with `.worktrees/**` excluded. If aggregate execution times out, record it and rerun the timed-out tests individually; never weaken assertions or globally increase limits as a substitute for behavior proof.
 
-- [ ] **Step 2: Run required static validation**
+- [x] **Step 2: Run required static validation**
 
 ```bash
 pnpm typecheck
@@ -284,28 +284,39 @@ git diff --check
 
 List every tracked file changed from the baseline with `git diff --name-only 42e473b5b856100869538f4e41ef5a325b99c893...HEAD`, classify which paths Prettier supports, and run `pnpm exec prettier --check` with that explicit path list. Record the exact list and result in the implementation record.
 
-- [ ] **Step 3: Capture current production renders**
+- [x] **Step 3: Capture current production renders**
 
 Use review stories/fixtures without hosted writes. Capture Procurement, Ingredients, Planning Sources and Confirmed Need at 1440×900, 1280×800, 768×1024 and 390×844, including the state variants required by the design. Record browser/DPR, console and network. Label each image with exact commit SHA, surface, state, viewport and fixture. Produce a compact contact sheet outside Git.
 
-- [ ] **Step 4: Perform manual interaction review**
+- [x] **Step 4: Perform manual interaction review**
 
 Check keyboard order, focus entry/return, local versus document overflow, 44px mobile targets, 200% zoom, large text, long Vietnamese labels and reduced motion.
 
-- [ ] **Step 5: Write the implementation record**
+- [x] **Step 5: Write the implementation record**
 
 Record baseline/reference SHAs, director verdict, transfer ledger, actual files, test/render evidence, security review, zero database/migration rollback, protected paths and remaining evidence-backed risks.
 
-- [ ] **Step 6: Verify protected files**
+- [x] **Step 6: Verify protected files**
 
 Compare from `42e473b5b856100869538f4e41ef5a325b99c893` and confirm zero unauthorized changes under `supabase/**`, Planning certification/closeout/performance scripts and workflows, `index.html`, and `src/main.tsx`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add docs/implementation-tasks/TASK-ATLAS-UI-VNEXT-09-POST-PLANNING-CONVERGENCE.md docs/ui/atlas-vnext-09-post-planning-design.md docs/superpowers/plans/2026-09-27-atlas-ui-vnext-09-post-planning-convergence.md
 git commit -m "test/docs(atlas-ui): add UI-09 acceptance evidence"
 ```
+
+### Task 6 actual results
+
+- Focused Tasks 1–5: 22 files passed, 315 tests passed, zero failed.
+- Task 6 evidence-defect TDD: initial mobile-target RED was 2 failed/12 passed; first GREEN was 14/14; remaining date/tab RED was 2 failed/26 passed; final GREEN was 28/28.
+- Static checks: `pnpm typecheck`, `pnpm ui:vnext:check`, explicit Prettier for all supported changed files, and `git diff --check` passed.
+- Production evidence SHA: `d00d8ddd11428d9251ab6222294db6a3ec395919`; exact baseline SHA: `42e473b5b856100869538f4e41ef5a325b99c893`.
+- Render evidence: 40 current captures plus four exact-baseline 1440×900 comparisons; zero non-loopback requests, zero document overflow, zero 44px target violations, zero missing local continuation cues and zero focus-entry/return failures.
+- Evidence root: `C:\Users\hp\.codex\visualizations\2026\09\27\01a0e35e-6f81-7113-9bd0-ed7c6a5400c2\atlas-ui-09-evidence`.
+- Protected diff across `supabase/**`, `.github/workflows/**`, `scripts/**`, `index.html` and `src/main.tsx`: zero paths.
+- Full details, console/runtime limitation, security review, rollback and remaining risks are recorded in `docs/implementation-tasks/TASK-ATLAS-UI-VNEXT-09-POST-PLANNING-CONVERGENCE.md`.
 
 ## Finish-review loop
 
