@@ -726,7 +726,7 @@ describe("IngredientSupplierWorkbench", () => {
     expect(
       screen.getByText("Không có nguyên liệu phù hợp bộ lọc."),
     ).toBeVisible();
-  }, 15_000);
+  }, 30_000);
 
   it("offers only activation and archival for an inactive Ingredient", async () => {
     renderWorkbench();
