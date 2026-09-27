@@ -29,6 +29,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const c = useConfirmedNeedWorkbench(props);
   useImperativeHandle(props.exitRef, () => ({ requestExit: c.requestExit }));
   const [detailKey, setDetailKey] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
   const workbookInput = useRef<HTMLInputElement>(null);
@@ -43,6 +44,11 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
       : c.schoolIds.length
         ? `${c.schoolIds.length} trường`
         : "Tất cả trường";
+  const filterSummary = {
+    all: "Tất cả",
+    needs_review: "Cần rà soát",
+    carried_forward: "Giữ nguyên",
+  }[c.filter];
   return (
     <Box
       as="section"
@@ -82,47 +88,84 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             borderBottomWidth="var(--atlas-layout-edge, 1px)"
             borderColor="border.subtle"
             templateColumns={{
-              base: "minmax(0, 1fr)",
-              md: "repeat(2, minmax(0, 1fr))",
+              base: "minmax(0, 1fr) auto auto",
+              lg: "repeat(2, minmax(0, 1fr))",
               xl: "minmax(150px, 1fr) minmax(140px, 0.9fr) minmax(160px, 1.1fr) minmax(145px, 1fr) minmax(130px, 0.8fr) auto",
             }}
           >
-            <AtlasWeekRangeInput
-              label="Tuần phục vụ"
-              value={c.week}
-              disabled={contextDisabled}
-              onValueChange={(week) => c.transition({ week })}
-            />
-            <Field.Root>
-              <Field.Label>Ngày phục vụ</Field.Label>
-              <NativeSelect.Root disabled={contextDisabled}>
-                <NativeSelect.Field
-                  aria-label="Ngày phục vụ"
-                  value={c.date}
-                  onChange={(e) => c.transition({ date: e.target.value })}
-                >
-                  {days.map((d) => (
-                    <option key={d} value={d}>
-                      {viDate(d)}
-                    </option>
-                  ))}
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
-            </Field.Root>
-            <Box>
-              <Text textStyle="label" mb="xs">
-                Trường / điểm giao
-              </Text>
-              <AtlasSchoolScope
-                schools={c.schools}
-                value={c.schoolIds}
-                disabled={contextDisabled || !c.workbench}
-                onApply={(schoolIds) => c.transition({ schoolIds })}
-              />
+            <Box id="confirmed-need-filters" display="contents">
+              <Box
+                display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
+                order={{ base: 4, lg: 1 }}
+                gridColumn={{ base: "1 / -1", lg: "auto" }}
+              >
+                <AtlasWeekRangeInput
+                  label="Tuần phục vụ"
+                  value={c.week}
+                  disabled={contextDisabled}
+                  onValueChange={(week) => c.transition({ week })}
+                />
+              </Box>
+              <Field.Root
+                display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
+                order={{ base: 5, lg: 2 }}
+                gridColumn={{ base: "1 / -1", lg: "auto" }}
+              >
+                <Field.Label>Ngày phục vụ</Field.Label>
+                <NativeSelect.Root disabled={contextDisabled}>
+                  <NativeSelect.Field
+                    aria-label="Ngày phục vụ"
+                    value={c.date}
+                    onChange={(e) => c.transition({ date: e.target.value })}
+                  >
+                    {days.map((d) => (
+                      <option key={d} value={d}>
+                        {viDate(d)}
+                      </option>
+                    ))}
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Field.Root>
+              <Box
+                display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
+                order={{ base: 6, lg: 3 }}
+                gridColumn={{ base: "1 / -1", lg: "auto" }}
+              >
+                <Text textStyle="label" mb="xs">
+                  Trường / điểm giao
+                </Text>
+                <AtlasSchoolScope
+                  schools={c.schools}
+                  value={c.schoolIds}
+                  disabled={contextDisabled || !c.workbench}
+                  onApply={(schoolIds) => c.transition({ schoolIds })}
+                />
+              </Box>
+              <Field.Root
+                display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
+                order={{ base: 7, lg: 5 }}
+                gridColumn={{ base: "1 / -1", lg: "auto" }}
+              >
+                <Field.Label>Tình trạng</Field.Label>
+                <NativeSelect.Root>
+                  <NativeSelect.Field
+                    aria-label="Tình trạng"
+                    value={c.filter}
+                    onChange={(e) => c.setFilter(e.target.value)}
+                  >
+                    <option value="all">Tất cả</option>
+                    <option value="needs_review">Cần rà soát</option>
+                    <option value="carried_forward">Giữ nguyên</option>
+                  </NativeSelect.Field>
+                  <NativeSelect.Indicator />
+                </NativeSelect.Root>
+              </Field.Root>
             </Box>
             <Field.Root>
-              <Field.Label>Tìm kiếm</Field.Label>
+              <Field.Label display={{ base: "none", lg: "block" }}>
+                Tìm kiếm
+              </Field.Label>
               <Input
                 aria-label="Tìm kiếm"
                 placeholder="Nguyên liệu, nơi nhận…"
@@ -130,22 +173,31 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 onChange={(e) => c.setSearch(e.target.value)}
               />
             </Field.Root>
-            <Field.Root>
-              <Field.Label>Tình trạng</Field.Label>
-              <NativeSelect.Root>
-                <NativeSelect.Field
-                  aria-label="Tình trạng"
-                  value={c.filter}
-                  onChange={(e) => c.setFilter(e.target.value)}
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="needs_review">Cần rà soát</option>
-                  <option value="carried_forward">Giữ nguyên</option>
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
-            </Field.Root>
+            <Button
+              display={{ base: "inline-flex", lg: "none" }}
+              order="1"
+              gridColumn="2"
+              variant="secondary"
+              minH="var(--atlas-layout-mobile-target, 44px)"
+              aria-expanded={filtersOpen}
+              aria-controls="confirmed-need-filters"
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              Bộ lọc
+            </Button>
+            <Text
+              display={{ base: filtersOpen ? "none" : "block", lg: "none" }}
+              order="3"
+              gridColumn="1 / -1"
+              textStyle="helper"
+              color="fg.muted"
+            >
+              Tuần {viDate(c.week)} · Ngày {dateSummary} · {scopeSummary} · Tình
+              trạng: {filterSummary}
+            </Text>
             <Box
+              order={{ base: 2, lg: 6 }}
+              gridColumn={{ base: "3", lg: "auto" }}
               pt={{
                 base: "var(--atlas-layout-zero, 0)",
                 xl: "var(--atlas-layout-refresh-offset, 26px)",

@@ -94,6 +94,53 @@ describe("Confirmed Need Chakra operator surface", () => {
       minWidth: "var(--atlas-layout-confirmed-need-table-min, 1180px)",
     });
     expect(within(viewport).getAllByRole("columnheader")).toHaveLength(7);
+    expect(
+      within(viewport).getByRole("columnheader", {
+        name: "Nguyên liệu / nơi nhận",
+      }),
+    ).toHaveStyle({
+      position: "sticky",
+      left: "var(--atlas-layout-zero, 0)",
+      background: "var(--atlas-colors-bg-toolbar)",
+      zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",
+    });
+    expect(
+      within(viewport).getByText("Gạo thơm").closest('[data-field="identity"]'),
+    ).toHaveStyle({
+      position: "sticky",
+      left: "var(--atlas-layout-zero, 0)",
+      background: "var(--atlas-colors-bg-workbench)",
+      zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
+    });
+  });
+
+  it("keeps search and refresh immediate while compact filters disclose a truthful scope summary", async () => {
+    show();
+    await quantity();
+
+    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeEnabled();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute(
+      "aria-controls",
+      "confirmed-need-filters",
+    );
+    expect(
+      screen.getByText(
+        "Tuần 07/09/2026 · Ngày 07/09/2026 · Tất cả trường · Tình trạng: Tất cả",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    fireEvent.change(screen.getByRole("combobox", { name: "Tình trạng" }), {
+      target: { value: "needs_review" },
+    });
+    fireEvent.click(disclosure);
+    expect(screen.getByText(/Tình trạng: Cần rà soát/)).toBeInTheDocument();
   });
 
   it("reports an unknown Station scope when the authoritative read fails", async () => {
@@ -444,7 +491,39 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
     expect(await screen.findByText("Đã lưu thay đổi.")).toBeVisible();
     expect(await quantity()).toHaveValue("12,5");
+    expect(screen.getByText(/1 đã điều chỉnh/)).toBeVisible();
+    const row = (await quantity()).closest("tr")!;
+    expect(
+      within(row).getByRole("combobox", { name: "Lý do Gạo thơm" }),
+    ).toHaveValue("OTHER");
+    expect(
+      within(row).getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
+    ).toHaveValue("Bếp yêu cầu");
+    expect(row.querySelector('[data-field="delta"]')).toHaveTextContent("—");
+    expect(h.f.batch.lines[0]!.confirmed_quantity_after).toBe("10.250000");
     expect(h.save).toHaveBeenCalledTimes(1);
+    expect(await h.save.mock.results[0]!.value).toMatchObject({
+      kind: "success",
+      response: {
+        authoritative_readback: {
+          line_counts: { adjusted: 1 },
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              confirmed_quantity_after: "12.500000",
+              current_decision_kind: "OPERATIONAL_ADJUSTMENT",
+              decision_history: expect.arrayContaining([
+                expect.objectContaining({
+                  decision_kind: "OPERATIONAL_ADJUSTMENT",
+                  confirmed_quantity_after: "12.500000",
+                  reason_code: "OTHER",
+                  reason_note: "Bếp yêu cầu",
+                }),
+              ]),
+            }),
+          ]),
+        },
+      },
+    });
   });
   it("protects refresh through one dialog, preserving draft on cancel", async () => {
     show();
@@ -465,6 +544,7 @@ describe("Confirmed Need Chakra operator surface", () => {
   it("uses the same dirty dialog for committed School Apply", async () => {
     show();
     fireEvent.change(await quantity(), { target: { value: "12,5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
     fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
     fireEvent.click(
       await screen.findByRole("checkbox", { name: "Trường Nguyễn Du" }),

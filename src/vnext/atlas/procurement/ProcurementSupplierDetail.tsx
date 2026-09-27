@@ -12,6 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -160,6 +161,12 @@ export function ProcurementSupplierDetail({
       role="region"
       aria-label={`Phân bổ ${row.ingredient_name}`}
       direction="column"
+      style={
+        {
+          "--atlas-procurement-detail-desktop-max-height":
+            "calc(100dvh - 330px)",
+        } as CSSProperties
+      }
       minW="var(--atlas-layout-zero, 0)"
       bg="bg.subtle"
       borderColor="border.subtle"
@@ -173,7 +180,7 @@ export function ProcurementSupplierDetail({
       }}
       maxH={{
         base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
-        lg: "var(--atlas-layout-detail-height, calc(100dvh - 270px))",
+        lg: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
       <Box p="md" pb="sm">

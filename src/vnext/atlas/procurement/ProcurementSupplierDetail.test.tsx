@@ -35,7 +35,13 @@ const quantity = (name: string, value: string) =>
   });
 describe("Supplier decisions", () => {
   it("uses mobile-safe targets and keeps Save as the detail business action", () => {
-    show(reviewFamily("manual_split"));
+    const { container } = show(reviewFamily("manual_split"));
+
+    expect(
+      container.querySelector('[aria-label="Phân bổ Gạo thơm"]'),
+    ).toHaveStyle({
+      "--atlas-procurement-detail-desktop-max-height": "calc(100dvh - 330px)",
+    });
 
     for (const name of ["Đóng", "Lưu phân bổ", "+ Thêm nhà cung ứng"]) {
       expect(screen.getByRole("button", { name })).toHaveStyle({

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Text } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
-import { userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { AtlasVNextShell } from "../AtlasVNextShell";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
@@ -103,6 +103,21 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
             c.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
             "Bếp yêu cầu",
           );
+          await waitFor(() => {
+            expect(q).toHaveValue("12,5");
+            expect(q).toHaveAttribute("aria-invalid", "false");
+            expect(q.closest('[data-field="confirmation"]')).toHaveAttribute(
+              "data-adjustment-state",
+              "valid",
+            );
+            expect(c.getByRole("cell", { name: "+2,25" })).toBeVisible();
+            expect(c.getByRole("button", { name: "Lưu" })).toBeEnabled();
+            expect(c.getByRole("button", { name: "Lưu" })).toHaveAttribute(
+              "data-atlas-action-priority",
+              "primary",
+            );
+            expect(c.queryByRole("alert")).not.toBeInTheDocument();
+          });
           if (action === "save" || action === "recover")
             await userEvent.click(c.getByRole("button", { name: "Lưu" }));
           if (action === "recover")

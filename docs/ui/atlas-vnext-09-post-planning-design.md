@@ -1,10 +1,14 @@
 # Atlas vNext 09 — Post-Planning Station Convergence
 
-**Status:** Approved implementation authority  
-**Date:** 27/09/2026  
-**Current-main baseline:** `42e473b5b856100869538f4e41ef5a325b99c893`  
-**Pinned UI reference:** `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0`  
-**Branch:** `feat/atlas-ui-vnext-09-post-planning-convergence`  
+**Status:** Approved implementation authority
+
+**Date:** 27/09/2026
+
+**Current-main baseline:** `42e473b5b856100869538f4e41ef5a325b99c893`
+
+**Pinned UI reference:** `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0`
+
+**Branch:** `feat/atlas-ui-vnext-09-post-planning-convergence`
 **Scope:** React/Chakra presentation and review evidence only
 
 ## 1. Purpose and authority

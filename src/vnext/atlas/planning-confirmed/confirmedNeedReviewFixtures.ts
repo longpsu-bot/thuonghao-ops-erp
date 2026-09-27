@@ -417,11 +417,33 @@ export function createConfirmedNeedReviewFixture(
   }
   const saved = reviewBatch();
   saved.batch_version = 5;
+  saved.line_counts.adjusted = 1;
   saved.lines[0] = {
     ...saved.lines[0]!,
     confirmed_quantity_after: "12.500000",
     current_decision_id: "decision-saved",
     current_revision_id: "revision-saved",
+    current_revision_number: 2,
+    current_decision_number: 2,
+    current_decision_kind: "OPERATIONAL_ADJUSTMENT",
+    decision_history: [
+      {
+        decision_id: "decision-saved",
+        decision_number: 2,
+        predecessor_decision_id: "decision-0",
+        decision_kind: "OPERATIONAL_ADJUSTMENT",
+        revision_id: "revision-saved",
+        theoretical_quantity_before: "10.250000",
+        proposed_quantity_before: "10.250000",
+        confirmed_quantity_after: "12.500000",
+        planning_tick_count: "50",
+        reason_code: "OTHER",
+        reason_note: "Bếp yêu cầu",
+        policy_revision_id: "policy-revision",
+        decided_at: "2026-09-07T03:30:00Z",
+        batch_version: 5,
+      },
+    ],
   };
   let saveAttempted = false;
   let savedSnapshot = false;

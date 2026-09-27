@@ -56,6 +56,17 @@ export function ConfirmedNeedTable({
               <Table.ColumnHeader
                 key={label}
                 textAlign={i >= 2 && i <= 5 ? "end" : "start"}
+                {...(i === 0
+                  ? {
+                      position: "sticky",
+                      top: "var(--atlas-layout-zero, 0)",
+                      left: "var(--atlas-layout-zero, 0)",
+                      zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",
+                      style: {
+                        background: "var(--atlas-colors-bg-toolbar)",
+                      },
+                    }
+                  : {})}
               >
                 {label}
               </Table.ColumnHeader>
@@ -89,6 +100,12 @@ export function ConfirmedNeedTable({
                 <Table.Cell
                   data-field="identity"
                   minW="var(--atlas-layout-identity-width, 210px)"
+                  position="sticky"
+                  left="var(--atlas-layout-zero, 0)"
+                  zIndex="var(--atlas-layout-sticky-identity-z, 2)"
+                  style={{
+                    background: "var(--atlas-colors-bg-workbench)",
+                  }}
                 >
                   <Text data-role="ingredient-name" fontWeight="semibold">
                     {line.ingredient.name}
