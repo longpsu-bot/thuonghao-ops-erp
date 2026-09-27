@@ -112,9 +112,13 @@ describe("Atlas pre-cutover UI polish", () => {
         .getAllByRole("tab")
         .map((tab) => tab.textContent),
     ).toEqual(["Thực đơn", "Sĩ số", "Bổ sung"]);
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Thực đơn" }),
-    ).toHaveAttribute("data-visually-hidden", "true");
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Thực đơn",
+    });
+    expect(heading).toBeVisible();
+    expect(screen.getAllByRole("heading", { level: 1 })).toEqual([heading]);
+    fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
     expect(screen.getByRole("textbox", { name: "Tuần phục vụ" })).toHaveValue(
       "07/09/2026 – 13/09/2026",
     );
@@ -125,6 +129,7 @@ describe("Atlas pre-cutover UI polish", () => {
     const planningRead = vi.spyOn(apis.planning, "getWorkbench");
     await nav("Lập nhu cầu");
 
+    fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
     fireEvent.click(
       screen.getByRole("button", { name: "Mở lịch — Tuần phục vụ" }),
     );
@@ -160,12 +165,13 @@ describe("Atlas pre-cutover UI polish", () => {
     expect(
       screen.getByLabelText("Nhập Phiếu đi chợ .xlsx"),
     ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
     expect(screen.getByRole("textbox", { name: "Tuần phục vụ" })).toHaveValue(
       "07/09/2026 – 13/09/2026",
     );
   });
 
-  it("puts Procurement tabs first and removes the duplicated visible title block", async () => {
+  it("puts Procurement tabs first with one visible Station heading", async () => {
     show();
     await nav("Kế hoạch mua hàng");
     const section = screen.getByRole("region", { name: "Kế hoạch mua hàng" });
@@ -174,14 +180,14 @@ describe("Atlas pre-cutover UI polish", () => {
     });
     expect(tabs).toHaveAttribute("data-tab-tier", "primary");
     expect(tabs).toHaveAttribute("data-tab-align", "start");
-    expect(
-      within(section).queryByText("Kế hoạch mua hàng"),
-    ).not.toBeInTheDocument();
-    expect(
-      within(section).getByRole("heading", {
-        level: 1,
-        name: "Phân bổ nhà cung ứng",
-      }),
-    ).toHaveAttribute("data-visually-hidden", "true");
+    expect(within(section).getByText("Kế hoạch mua hàng")).toBeVisible();
+    const heading = within(section).getByRole("heading", {
+      level: 1,
+      name: "Phân bổ nhà cung ứng",
+    });
+    expect(heading).toBeVisible();
+    expect(within(section).getAllByRole("heading", { level: 1 })).toEqual([
+      heading,
+    ]);
   });
 });

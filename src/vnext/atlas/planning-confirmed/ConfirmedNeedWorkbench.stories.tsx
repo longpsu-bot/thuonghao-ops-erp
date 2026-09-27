@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Text } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
-import { userEvent, within } from "storybook/test";
+import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { AtlasVNextShell } from "../AtlasVNextShell";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
@@ -91,18 +91,34 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
           const q = c.getByRole("textbox", {
             name: "Số lượng xác nhận Gạo thơm",
           });
-          await userEvent.clear(q);
-          await userEvent.type(q, action === "invalid" ? "10,123" : "12,5");
+          fireEvent.change(q, {
+            target: { value: action === "invalid" ? "10,123" : "12,5" },
+          });
           if (action === "reason" || action === "invalid") return;
-          await userEvent.selectOptions(
+          fireEvent.change(
             c.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-            "OTHER",
+            { target: { value: "OTHER" } },
           );
           if (action === "note") return;
-          await userEvent.type(
+          fireEvent.change(
             c.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
-            "Bếp yêu cầu",
+            { target: { value: "Bếp yêu cầu" } },
           );
+          await waitFor(() => {
+            expect(q).toHaveValue("12,5");
+            expect(q).toHaveAttribute("aria-invalid", "false");
+            expect(q.closest('[data-field="confirmation"]')).toHaveAttribute(
+              "data-adjustment-state",
+              "valid",
+            );
+            expect(c.getByRole("cell", { name: "+2,25" })).toBeVisible();
+            expect(c.getByRole("button", { name: "Lưu" })).toBeEnabled();
+            expect(c.getByRole("button", { name: "Lưu" })).toHaveAttribute(
+              "data-atlas-action-priority",
+              "primary",
+            );
+            expect(c.queryByRole("alert")).not.toBeInTheDocument();
+          });
           if (action === "save" || action === "recover")
             await userEvent.click(c.getByRole("button", { name: "Lưu" }));
           if (action === "recover")
@@ -123,6 +139,7 @@ export const LegacyOverlap = story("legacy_overlap");
 export const ReleasedCorrectionBlocked = story("correction_blocked");
 export const GeneratedIntoConfirmedNeed = story("not_generated", "generate");
 export const CurrentConfirmedNeed = story("normal");
+export const CertifiedShape248CurrentLines = story("certified_shape");
 export const NeedsReview = story("needs_review");
 export const CarriedForward = story("carried");
 export const Adjusted = story("adjusted");

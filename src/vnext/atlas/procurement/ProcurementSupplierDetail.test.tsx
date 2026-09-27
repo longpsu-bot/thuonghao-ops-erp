@@ -34,6 +34,26 @@ const quantity = (name: string, value: string) =>
     target: { value },
   });
 describe("Supplier decisions", () => {
+  it("uses mobile-safe targets and keeps Save as the detail business action", () => {
+    const { container } = show(reviewFamily("manual_split"));
+
+    expect(
+      container.querySelector('[aria-label="Phân bổ Gạo thơm"]'),
+    ).toHaveStyle({
+      "--atlas-procurement-detail-desktop-max-height": "calc(100dvh - 330px)",
+    });
+
+    for (const name of ["Đóng", "Lưu phân bổ", "+ Thêm nhà cung ứng"]) {
+      expect(screen.getByRole("button", { name })).toHaveStyle({
+        minHeight: "var(--atlas-layout-mobile-target, 44px)",
+      });
+    }
+    expect(screen.getByRole("button", { name: "Lưu phân bổ" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Tiếp tục lên đơn" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("focuses the header and displays exact authoritative split/balance", async () => {
     show(reviewFamily("manual_split"));
     expect(screen.getByRole("heading", { name: "Gạo thơm" })).toHaveFocus();

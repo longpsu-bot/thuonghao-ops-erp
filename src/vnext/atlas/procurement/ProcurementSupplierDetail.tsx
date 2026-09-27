@@ -12,6 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState, useImperativeHandle } from "react";
+import type { CSSProperties } from "react";
 import {
   procurementOperatorMessages,
   type AllocationFamilyRow,
@@ -160,20 +161,26 @@ export function ProcurementSupplierDetail({
       role="region"
       aria-label={`Phân bổ ${row.ingredient_name}`}
       direction="column"
+      style={
+        {
+          "--atlas-procurement-detail-desktop-max-height":
+            "calc(100dvh - 330px)",
+        } as CSSProperties
+      }
       minW="var(--atlas-layout-zero, 0)"
       bg="bg.subtle"
       borderColor="border.subtle"
       borderLeftWidth={{
         base: "var(--atlas-layout-zero, 0)",
-        xl: "var(--atlas-layout-edge, 1px)",
+        lg: "var(--atlas-layout-edge, 1px)",
       }}
       borderTopWidth={{
         base: "var(--atlas-layout-edge, 1px)",
-        xl: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-zero, 0)",
       }}
       maxH={{
         base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
-        xl: "var(--atlas-layout-detail-height, calc(100dvh - 360px))",
+        lg: "var(--atlas-layout-detail-height, var(--atlas-procurement-detail-desktop-max-height))",
       }}
     >
       <Box p="md" pb="sm">
@@ -288,6 +295,10 @@ export function ProcurementSupplierDetail({
                         ),
                       )
                     }
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
                   >
                     Xóa
                   </Button>
@@ -309,6 +320,10 @@ export function ProcurementSupplierDetail({
             onClick={() => {
               setAdding(!adding);
               setSupplierId("");
+            }}
+            minH={{
+              base: "var(--atlas-layout-mobile-target, 44px)",
+              lg: "compact",
             }}
           >
             + Thêm nhà cung ứng
@@ -349,6 +364,10 @@ export function ProcurementSupplierDetail({
                   setAdded((ids) => [...ids, supplierId]);
                   setAdding(false);
                 }}
+                minH={{
+                  base: "var(--atlas-layout-mobile-target, 44px)",
+                  lg: "compact",
+                }}
               >
                 Thêm
               </Button>
@@ -386,12 +405,23 @@ export function ProcurementSupplierDetail({
         borderColor="border.subtle"
         flexShrink="0"
       >
-        <Button ref={closeButton} onClick={() => requestExit(onClose)}>
+        <Button
+          ref={closeButton}
+          onClick={() => requestExit(onClose)}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
+        >
           Đóng
         </Button>
         <Button
           variant="businessPrimary"
           disabled={!canSave}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
           onClick={() =>
             onSave(
               draft

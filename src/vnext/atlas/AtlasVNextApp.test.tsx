@@ -122,6 +122,7 @@ it("preserves a changed date through Planning, Confirmed Need, Procurement, PXK 
   const prepare = vi.spyOn(apis.purchaseReview, "preparePurchaseOrders");
   await screen.findAllByRole("textbox", { name: /Học sinh mặc định/ });
   await nav("Lập nhu cầu");
+  fireEvent.click(screen.getByRole("button", { name: "Bộ lọc" }));
   const date = await screen.findByRole("combobox", { name: "Ngày phục vụ" });
   fireEvent.change(date, { target: { value: "2026-09-09" } });
   fireEvent.click(screen.getByRole("tab", { name: "Xác nhận nhu cầu" }));

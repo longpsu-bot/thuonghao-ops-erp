@@ -72,7 +72,7 @@ it.each(["unknown", "retryable_failure"] as const)(
     );
     fireEvent.click(
       await screen.findByRole("button", {
-        name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm$/,
+        name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm · /,
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));

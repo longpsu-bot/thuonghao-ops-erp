@@ -7,6 +7,7 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
+import { userEvent } from "storybook/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementWorkbench } from "./ProcurementWorkbench";
@@ -50,8 +51,241 @@ function show(
   return { ...view, fixture, read, save };
 }
 const action = () =>
-  screen.findByRole("button", { name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm$/ });
+  screen.findByRole("button", {
+    name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du$/,
+  });
+const openFilters = () => {
+  const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+  if (disclosure.getAttribute("aria-expanded") === "false")
+    fireEvent.click(disclosure);
+};
 describe("Procurement vNext operator workbench", () => {
+  it("uses the locked Station context and attached-detail geometry", async () => {
+    show("manual_split");
+
+    const workbench = screen.getByRole("region", {
+      name: "Kế hoạch mua hàng",
+    });
+    const station = workbench.firstElementChild as HTMLElement;
+    const context = screen.getByRole("complementary", {
+      name: "Ngữ cảnh công việc mua hàng",
+    });
+    expect(station).toHaveStyle({
+      minHeight:
+        "var(--atlas-procurement-station-height, var(--atlas-layout-workbench-height, calc(100dvh - 100px)))",
+      alignContent: "start",
+    });
+    expect(context.parentElement).toBe(station);
+    expect(context).toHaveStyle({
+      "--atlas-task-context-desktop-width": "196px",
+      "--atlas-task-context-compact-height": "88px",
+    });
+    expect(
+      within(context).getByLabelText(
+        "Tóm tắt công việc: 10/09/2026 · Tất cả trường",
+      ),
+    ).toBeInTheDocument();
+
+    const trigger = await action();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).toHaveStyle({
+      minHeight: "var(--atlas-layout-mobile-target, 44px)",
+    });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("procurement-master-detail")).toHaveStyle({
+      "--atlas-attached-detail-width": "320px",
+    });
+  });
+
+  it("shows stage identity before job tabs and focuses the visible stage heading", async () => {
+    show("ready");
+    await action();
+
+    const context = screen.getByText("Kế hoạch mua hàng");
+    const allocationHeading = screen.getByRole("heading", {
+      level: 1,
+      name: "Phân bổ nhà cung ứng",
+    });
+    const tabs = screen.getByRole("tablist", { name: "Công việc mua hàng" });
+    expect(allocationHeading).toBeVisible();
+    expect(
+      context.compareDocumentPosition(allocationHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      allocationHeading.compareDocumentPosition(tabs) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Đơn mua" }));
+    const ordersHeading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Đơn mua",
+    });
+    await waitFor(() => expect(ordersHeading).toHaveFocus());
+    expect(ordersHeading).toBeVisible();
+  });
+
+  it("keeps search immediate while mobile filters expose a truthful summary", async () => {
+    show("ready");
+    await action();
+
+    expect(screen.getByRole("textbox", { name: "Tìm kiếm" })).toBeEnabled();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute("aria-controls", "procurement-filters");
+    expect(
+      screen.getByText("Ngày 10/09/2026 · Tất cả trường · Ngoại lệ: Tất cả"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    fireEvent.change(screen.getByRole("combobox", { name: "Ngoại lệ" }), {
+      target: { value: "blocked" },
+    });
+    fireEvent.click(disclosure);
+    expect(screen.getByText(/Ngoại lệ: Bị chặn/)).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    fireEvent.change(screen.getByRole("combobox", { name: "Ngoại lệ" }), {
+      target: { value: "" },
+    });
+    fireEvent.click(disclosure);
+    fireEvent.click(await action());
+    expect(disclosure).toBeEnabled();
+    fireEvent.click(disclosure);
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("combobox", { name: "Ngoại lệ" })).toBeDisabled();
+  });
+
+  it("tabs from the expanded 390px filter trigger into revealed controls", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    show("ready");
+    await action();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    screen.getByRole("textbox", { name: "Tìm kiếm" }).focus();
+    await userEvent.tab();
+    expect(disclosure).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
+    const filters = document.getElementById("procurement-filters");
+    expect(filters).toContainElement(document.activeElement as HTMLElement);
+    while (filters?.contains(document.activeElement)) await userEvent.tab();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toHaveFocus();
+  });
+
+  it("exits expanded filters while Refresh is loading at 390px and reverses to the trigger", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    const fixture = createProcurementReviewFixture("ready");
+    const initialRead = fixture.purchaseReviewApi.getConfirmedAllocations;
+    let reads = 0;
+    fixture.purchaseReviewApi.getConfirmedAllocations = (...args) => {
+      reads += 1;
+      return reads === 1 ? initialRead(...args) : new Promise(() => undefined);
+    };
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          schools={reviewSchools}
+        />
+      </AtlasVNextProvider>,
+    );
+    await action();
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    fireEvent.click(disclosure);
+    const filters = document.getElementById("procurement-filters")!;
+    filters.querySelector<HTMLElement>("[tabindex='0']")!.focus();
+    for (
+      let step = 0;
+      step < 20 && filters.contains(document.activeElement);
+      step += 1
+    )
+      await userEvent.tab();
+
+    expect(filters).not.toContainElement(document.activeElement as HTMLElement);
+    const onward = document.activeElement as HTMLElement;
+    expect(
+      disclosure.compareDocumentPosition(onward) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await userEvent.tab({ shift: true });
+    expect(disclosure).toHaveFocus();
+  });
+
+  it.each(["busy", "locked", "selected"] as const)(
+    "keeps the 390px onward path reversible when Procurement is %s",
+    async (state) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: 390,
+      });
+      const fixture = createProcurementReviewFixture(
+        state === "selected"
+          ? "ready"
+          : state === "locked"
+            ? "unknown"
+            : "normal",
+      );
+      if (state === "busy")
+        fixture.purchaseReviewApi.saveConfirmedAllocation = async () =>
+          new Promise(() => undefined);
+      render(
+        <AtlasVNextProvider>
+          <ProcurementWorkbench
+            {...fixture}
+            authSubject="operator"
+            initialServiceDate={reviewDate}
+            schools={reviewSchools}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.click(await action());
+      if (state !== "selected") {
+        fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+        fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+      }
+      if (state === "locked")
+        await screen.findByRole("button", { name: "Tải lại để xác nhận" });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+        ).toBeDisabled(),
+      );
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      fireEvent.click(disclosure);
+      disclosure.focus();
+      await userEvent.tab();
+      expect(disclosure).not.toHaveFocus();
+      const onward = document.activeElement as HTMLElement;
+      expect(
+        disclosure.compareDocumentPosition(onward) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      await userEvent.tab({ shift: true });
+      expect(disclosure).toHaveFocus();
+    },
+  );
+
   it("shows preparation blockers even when ready but not permitted", async () => {
     const fixture = createProcurementReviewFixture("ready");
     fixture.allocation.preparation!.allowed = false;
@@ -78,6 +312,7 @@ describe("Procurement vNext operator workbench", () => {
   it("protects the editing context until explicit dirty Close completes", async () => {
     const { read, fixture } = show("manual_split");
     const poRead = vi.spyOn(fixture.procurementApi, "getPurchaseOrders");
+    openFilters();
     fireEvent.click(await action());
     const input = screen.getByRole("textbox", { name: "Phân bổ NCC An Phú" });
     fireEvent.change(input, { target: { value: "48,500001" } });
@@ -139,6 +374,7 @@ describe("Procurement vNext operator workbench", () => {
   });
   it("clean Close restores context without a discard Dialog", async () => {
     show("manual_split");
+    openFilters();
     fireEvent.click(await action());
     expect(screen.getByRole("tab", { name: "Đơn mua" })).toBeDisabled();
     expect(
@@ -237,8 +473,22 @@ describe("Procurement vNext operator workbench", () => {
       "Phân bổ NCC",
       "Đơn mua",
     ]);
+    const region = screen.getByRole("region", {
+      name: "Bảng phân bổ nhà cung ứng",
+    });
+    const table = screen.getByRole("table", {
+      name: "Phân bổ nhà cung ứng",
+    });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region).toContainElement(table);
+    expect(table).toHaveStyle({
+      minWidth: "var(--atlas-layout-procurement-table-min, 980px)",
+      "--atlas-table-header-height": "38px",
+      "--atlas-table-row-height": "42px",
+      "--atlas-table-identity-width": "178px",
+    });
     expect(
-      within(screen.getByRole("table", { name: "Phân bổ nhà cung ứng" }))
+      within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
@@ -261,6 +511,7 @@ describe("Procurement vNext operator workbench", () => {
   it("keeps search and exception filtering local", async () => {
     const { read } = show();
     await action();
+    openFilters();
     fireEvent.change(screen.getByRole("textbox", { name: "Tìm kiếm" }), {
       target: { value: "gao" },
     });
@@ -269,17 +520,21 @@ describe("Procurement vNext operator workbench", () => {
       target: { value: "blocked" },
     });
     expect(
-      screen.queryByRole("button", { name: "Phân bổ NCC Gạo thơm" }),
+      screen.queryByRole("button", {
+        name: "Phân bổ NCC Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du",
+      }),
     ).not.toBeInTheDocument();
     expect(read).toHaveBeenCalledTimes(1);
   });
   it("opens detail, marks selection geometrically and returns focus to the row", async () => {
     show();
     const trigger = await action();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(trigger);
     expect(screen.getByRole("heading", { name: "Gạo thơm" })).toHaveFocus();
     const row = trigger.closest("tr")!;
     expect(row).toHaveAttribute("aria-selected", "true");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(row.querySelector("[data-selection-indicator]")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Đóng" }));
     expect(trigger).toHaveFocus();
@@ -305,6 +560,7 @@ describe("Procurement vNext operator workbench", () => {
   it("requires explicit School Apply, supports search, and prevents zero-scope application", async () => {
     const { read } = show();
     await action();
+    openFilters();
     fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
     const picker = await screen.findByRole("dialog", {
       name: "Trường / điểm giao",
@@ -345,6 +601,7 @@ describe("Procurement vNext operator workbench", () => {
   it("closing the School picker cancels draft changes and selecting all normalizes scope", async () => {
     const { read } = show();
     await action();
+    openFilters();
     const trigger = screen.getByRole("button", { name: "Tất cả trường" });
     fireEvent.click(trigger);
     const picker = await screen.findByRole("dialog", {

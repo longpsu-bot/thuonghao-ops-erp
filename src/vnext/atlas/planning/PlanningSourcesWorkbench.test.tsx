@@ -7,6 +7,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { userEvent } from "storybook/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import type { PantryApi } from "../bridges/planning";
@@ -51,7 +52,216 @@ async function show() {
   await screen.findByRole("table", { name: "Thực đơn theo trường" });
   return { fixture, read };
 }
+function openFilters() {
+  const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+  if (disclosure.getAttribute("aria-expanded") === "false")
+    fireEvent.click(disclosure);
+}
 describe("Planning sources Chakra workbench", () => {
+  it("places a visible current-job context before source tabs and the ordered workbar", async () => {
+    await show();
+
+    const context = screen.getByRole("complementary", {
+      name: "Ngữ cảnh nguồn lập nhu cầu",
+    });
+    expect(context).toHaveStyle({
+      "--atlas-task-context-desktop-width": "196px",
+      "--atlas-task-context-compact-height": "88px",
+    });
+    expect(
+      within(context).getByLabelText(
+        "Tóm tắt công việc: 07/09/2026 · Tất cả trường",
+      ),
+    ).toBeInTheDocument();
+    const module = within(context).getByText("Lập nhu cầu");
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Thực đơn",
+    });
+    const tabs = screen.getByRole("tablist", { name: "Nguồn lập nhu cầu" });
+    const workbar = screen.getByRole("group", {
+      name: "Phạm vi nguồn lập nhu cầu",
+    });
+    expect(heading).toBeVisible();
+    expect(
+      module.compareDocumentPosition(heading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      tabs.compareDocumentPosition(workbar) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const week = within(workbar).getByLabelText("Tuần phục vụ");
+    const date = within(workbar).getByLabelText("Ngày phục vụ");
+    openFilters();
+    const scope = within(workbar).getByRole("button", {
+      name: "Tất cả trường",
+    });
+    const search = within(workbar).getByRole("textbox", {
+      name: "Tìm trong công việc",
+    });
+    const refresh = within(workbar).getByRole("button", {
+      name: "Làm mới dữ liệu",
+    });
+    for (const [before, after] of [
+      [week, date],
+      [date, scope],
+      [scope, search],
+      [search, refresh],
+    ] as const)
+      expect(
+        before.compareDocumentPosition(after) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+  });
+
+  it("keeps search and refresh immediate while mobile filters expose a truthful summary", async () => {
+    await show();
+
+    expect(
+      screen.getByRole("textbox", { name: "Tìm trong công việc" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeEnabled();
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    expect(disclosure).toHaveAttribute("aria-expanded", "false");
+    expect(disclosure).toHaveAttribute(
+      "aria-controls",
+      "planning-source-filters",
+    );
+    expect(
+      screen.getByText("Tuần 07/09/2026 · Ngày 07/09/2026 · Tất cả trường"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(disclosure);
+    fireEvent.change(screen.getByRole("combobox", { name: "Ngày phục vụ" }), {
+      target: { value: "2026-09-08" },
+    });
+    fireEvent.click(disclosure);
+    expect(
+      screen.getByText("Tuần 07/09/2026 · Ngày 08/09/2026 · Tất cả trường"),
+    ).toBeInTheDocument();
+  });
+
+  it("tabs from the expanded 390px filter trigger into revealed controls", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    await show();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    screen.getByRole("textbox", { name: "Tìm trong công việc" }).focus();
+    await userEvent.tab();
+    expect(disclosure).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
+    const filters = document.getElementById("planning-source-filters");
+    expect(filters).toContainElement(document.activeElement as HTMLElement);
+    while (filters?.contains(document.activeElement)) await userEvent.tab();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toHaveFocus();
+  });
+
+  it("exits expanded review filters when Refresh is disabled at 390px and reverses to the trigger", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    await show();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xem thay đổi" }),
+    );
+    await screen.findByRole("complementary", { name: "Xem thay đổi" });
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    fireEvent.click(disclosure);
+    const filters = document.getElementById("planning-source-filters")!;
+    filters.querySelector<HTMLElement>("input, select, button")!.focus();
+    for (
+      let step = 0;
+      step < 20 && filters.contains(document.activeElement);
+      step += 1
+    )
+      await userEvent.tab();
+
+    expect(filters).not.toContainElement(document.activeElement as HTMLElement);
+    const onward = document.activeElement as HTMLElement;
+    expect(
+      disclosure.compareDocumentPosition(onward) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await userEvent.tab({ shift: true });
+    expect(disclosure).toHaveFocus();
+  });
+
+  it.each(["busy", "locked"] as const)(
+    "keeps the 390px onward path reversible when Planning is %s",
+    async (state) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: 390,
+      });
+      const fixture = createPlanningReviewFixture();
+      if (state === "busy")
+        fixture.api.saveCompletedMenu = async () =>
+          new Promise(() => undefined);
+      else fixture.api.saveCompletedMenu = async () => unknown;
+      render(
+        <AtlasVNextProvider>
+          <PlanningSourcesWorkbench
+            {...fixture}
+            authSubject="operator"
+            initialWeek={reviewWeek}
+          />
+        </AtlasVNextProvider>,
+      );
+      const sync = await screen.findByRole("button", {
+        name: "Đồng bộ Google Sheet",
+      });
+      fireEvent.click(sync);
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Xem thay đổi" }),
+      );
+      fireEvent.click(await screen.findByRole("button", { name: "Lưu" }));
+      if (state === "locked")
+        await screen.findByRole("button", { name: "Tải lại để xác nhận" });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+        ).toBeDisabled(),
+      );
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      fireEvent.click(disclosure);
+      const filters = document.getElementById("planning-source-filters")!;
+      filters.querySelector<HTMLElement>("input, select, button")!.focus();
+      for (
+        let step = 0;
+        step < 20 && filters.contains(document.activeElement);
+        step += 1
+      )
+        await userEvent.tab();
+      expect(filters).not.toContainElement(
+        document.activeElement as HTMLElement,
+      );
+      await userEvent.tab({ shift: true });
+      expect(disclosure).toHaveFocus();
+    },
+  );
+
   it("renders backend Pantry before/after pairs in the shared comparison table", async () => {
     const fixture = createPlanningStoryFixture("pantry_review");
     const before = fixture.pantry.batch!.active_lines[0];
@@ -161,6 +371,14 @@ describe("Planning sources Chakra workbench", () => {
       "data-horizontal-scroll",
       "local",
     );
+    const viewport = screen.getByRole("region", {
+      name: "Bảng thực đơn theo trường",
+    });
+    expect(viewport).toHaveAttribute("tabindex", "0");
+    expect(viewport).toContainElement(table);
+    expect(table).toHaveStyle({
+      minWidth: "var(--atlas-layout-menu-table-min-width, max-content)",
+    });
     const schoolHeader = within(table).getByRole("columnheader", {
       name: "Trường / điểm giao",
     });
@@ -195,6 +413,7 @@ describe("Planning sources Chakra workbench", () => {
   });
   it("rejects zero selected schools and leaves committed scope unchanged on close", async () => {
     await show();
+    openFilters();
     fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
     fireEvent.click(
       await screen.findByRole("button", { name: "Bỏ chọn tất cả" }),
@@ -210,6 +429,7 @@ describe("Planning sources Chakra workbench", () => {
   });
   it("commits one school on Apply and normalizes all explicitly selected schools", async () => {
     await show();
+    openFilters();
     fireEvent.click(screen.getByRole("button", { name: "Tất cả trường" }));
     fireEvent.click(
       await screen.findByRole("button", { name: "Bỏ chọn tất cả" }),
@@ -251,21 +471,43 @@ describe("Planning sources Chakra workbench", () => {
       screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
     );
     await screen.findByText("Đang chỉnh sửa · chưa lưu");
-    fireEvent.click(screen.getByRole("button", { name: "Xem thay đổi" }));
+    const trigger = screen.getByRole("button", { name: "Xem thay đổi" });
+    fireEvent.click(trigger);
     const review = await screen.findByRole("complementary", {
       name: "Xem thay đổi",
     });
+    expect(review).toHaveFocus();
+    expect(screen.getByTestId("planning-source-editor-review")).toHaveStyle({
+      "--atlas-planning-review-columns":
+        "minmax(330px, .9fr) minmax(440px, 1.1fr)",
+    });
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
     expect(within(review).getByText("Canh rau ngót")).toBeVisible();
     expect(within(review).getByRole("button", { name: "Lưu" })).toBeEnabled();
     expect(
       screen.queryByText(/menu-preview|menu-authority|APPROVED/),
     ).not.toBeInTheDocument();
+    fireEvent.click(within(review).getByRole("button", { name: "Đóng" }));
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
   it("shows editable attendance, explicit zero and totals, with one dirty exit dialog", async () => {
     await show();
     fireEvent.click(screen.getByRole("tab", { name: "Sĩ số" }));
     const input = await screen.findByRole("textbox", {
       name: "Học sinh Trường Nguyễn Du",
+    });
+    const attendanceTable = screen.getByRole("table", {
+      name: "Sĩ số theo trường",
+    });
+    const attendanceViewport = screen.getByRole("region", {
+      name: "Bảng sĩ số theo trường",
+    });
+    expect(attendanceViewport).toHaveAttribute("tabindex", "0");
+    expect(attendanceViewport).toContainElement(attendanceTable);
+    expect(attendanceTable).toHaveStyle({
+      minWidth: "var(--atlas-layout-attendance-table-min, 620px)",
     });
     fireEvent.change(input, { target: { value: "0" } });
     expect(input).toHaveValue("0");
@@ -303,6 +545,17 @@ describe("Planning sources Chakra workbench", () => {
   it("groups pantry mode by School/date and derives unit and delivery location", async () => {
     await show();
     fireEvent.click(screen.getByRole("tab", { name: "Bổ sung" }));
+    const pantryTable = await screen.findByRole("table", {
+      name: "Nguyên liệu bổ sung",
+    });
+    const pantryViewport = screen.getByRole("region", {
+      name: "Bảng nguyên liệu bổ sung",
+    });
+    expect(pantryViewport).toHaveAttribute("tabindex", "0");
+    expect(pantryViewport).toContainElement(pantryTable);
+    expect(pantryTable).toHaveStyle({
+      minWidth: "var(--atlas-layout-pantry-table-min, 1200px)",
+    });
     fireEvent.change(
       await screen.findByRole("combobox", { name: "Trường thêm dòng" }),
       { target: { value: "school-0" } },

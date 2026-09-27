@@ -1,5 +1,7 @@
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { useId } from "react";
+import type { CSSProperties } from "react";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   confirmedNeedConfirmationStateLabel,
   confirmedNeedInputDisplay,
@@ -16,24 +18,40 @@ export function ConfirmedNeedTable({
   drafts,
   errors,
   editable,
+  compactEditing = false,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, string>;
   editable: boolean;
+  compactEditing?: boolean;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   const id = useId();
   return (
-    <Table.ScrollArea
-      overflow="auto"
+    <AtlasTableViewport
+      label="Bảng xác nhận nhu cầu"
+      style={
+        {
+          "--atlas-confirmed-need-table-mobile-max-height": compactEditing
+            ? "28dvh"
+            : "var(--atlas-layout-table-mobile-height, 55dvh)",
+        } as CSSProperties
+      }
       maxH={{
-        base: "var(--atlas-layout-table-mobile-height, 55dvh)",
+        base: "var(--atlas-confirmed-need-table-mobile-max-height)",
         xl: "var(--atlas-layout-table-height, calc(100dvh - 425px))",
       }}
     >
-      <Table.Root aria-label="Nhu cầu xác nhận" size="sm" stickyHeader>
+      <Table.Root
+        aria-label="Nhu cầu xác nhận"
+        size="sm"
+        stickyHeader
+        style={{
+          minWidth: "var(--atlas-layout-confirmed-need-table-min, 1180px)",
+        }}
+      >
         <Table.Header>
           <Table.Row>
             {[
@@ -48,6 +66,18 @@ export function ConfirmedNeedTable({
               <Table.ColumnHeader
                 key={label}
                 textAlign={i >= 2 && i <= 5 ? "end" : "start"}
+                {...(i === 0
+                  ? {
+                      style: {
+                        position: "sticky",
+                        top: "var(--atlas-layout-zero, 0)",
+                        left: "var(--atlas-layout-zero, 0)",
+                        zIndex:
+                          "var(--atlas-layout-sticky-identity-header-z, 5)",
+                        background: "var(--atlas-colors-bg-toolbar)",
+                      },
+                    }
+                  : {})}
               >
                 {label}
               </Table.ColumnHeader>
@@ -81,6 +111,12 @@ export function ConfirmedNeedTable({
                 <Table.Cell
                   data-field="identity"
                   minW="var(--atlas-layout-identity-width, 210px)"
+                  style={{
+                    position: "sticky",
+                    left: "var(--atlas-layout-zero, 0)",
+                    zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
+                    background: "var(--atlas-colors-bg-workbench)",
+                  }}
                 >
                   <Text data-role="ingredient-name" fontWeight="semibold">
                     {line.ingredient.name}
@@ -126,7 +162,17 @@ export function ConfirmedNeedTable({
                 </Table.Cell>
                 <Table.Cell
                   data-field="confirmation"
+                  data-adjustment-state={
+                    error ? "invalid" : changed ? "valid" : "unchanged"
+                  }
                   minW="var(--atlas-layout-quantity-width, 145px)"
+                  style={{
+                    background: error
+                      ? "var(--atlas-colors-bg-danger)"
+                      : changed
+                        ? "var(--atlas-colors-bg-selected)"
+                        : undefined,
+                  }}
                 >
                   <Input
                     aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
@@ -238,6 +284,6 @@ export function ConfirmedNeedTable({
           Không có dòng phù hợp bộ lọc.
         </Text>
       )}
-    </Table.ScrollArea>
+    </AtlasTableViewport>
   );
 }
