@@ -606,6 +606,7 @@ export function assertCertificationOnlyDelta(files) {
   const exact = new Set([
     "scripts/verify-staging-planning-closeout.mjs",
     "scripts/staging-planning-browser.mjs",
+    "scripts/staging-planning-performance.test.mjs",
     ".github/workflows/atlas-staging-planning-closeout.yml",
     "docs/implementation-tasks/TASK-PLANNING-CLOSEOUT-POST-SAVE-VERIFIER.md",
   ]);
