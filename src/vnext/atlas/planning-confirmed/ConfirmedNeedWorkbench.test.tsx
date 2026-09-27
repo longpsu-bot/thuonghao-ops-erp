@@ -72,6 +72,164 @@ async function editValid() {
   });
 }
 describe("Confirmed Need Chakra operator surface", () => {
+  it("composes Confirmed Need as a Station with a named local table viewport", async () => {
+    show();
+    await quantity();
+
+    const context = screen.getByRole("complementary", {
+      name: "Ngữ cảnh xác nhận nhu cầu",
+    });
+    expect(context).toHaveTextContent("Lập nhu cầu");
+    expect(context).toHaveTextContent("Xác nhận nhu cầu");
+    expect(context).toHaveTextContent("Ngày phục vụ");
+    expect(context).toHaveTextContent("Trường / điểm giao");
+
+    const viewport = screen.getByRole("region", {
+      name: "Bảng xác nhận nhu cầu",
+    });
+    expect(viewport).toHaveAttribute("tabindex", "0");
+    expect(
+      within(viewport).getByRole("table", { name: "Nhu cầu xác nhận" }),
+    ).toHaveStyle({
+      minWidth: "var(--atlas-layout-confirmed-need-table-min, 1180px)",
+    });
+    expect(within(viewport).getAllByRole("columnheader")).toHaveLength(7);
+  });
+
+  it("reports an unknown Station scope when the authoritative read fails", async () => {
+    show("read_failure");
+
+    const context = await screen.findByRole("complementary", {
+      name: "Ngữ cảnh xác nhận nhu cầu",
+    });
+    await screen.findByRole("alert");
+    expect(context).toHaveTextContent("Không xác định");
+    expect(context).not.toHaveTextContent("0 trường");
+  });
+
+  it("keeps utilities secondary and exposes the persistent decision footer", async () => {
+    show("normal", {
+      onExportShoppingList: vi.fn().mockResolvedValue(undefined),
+      onImportShoppingList: vi.fn().mockResolvedValue({
+        drafts: {},
+        changedLineIds: [],
+      }),
+    });
+    await quantity();
+
+    const utilities = screen.getByRole("group", {
+      name: "Tiện ích nhu cầu xác nhận",
+    });
+    expect(
+      within(utilities).getByRole("button", { name: "Xuất Phiếu đi chợ" }),
+    ).toHaveAttribute("data-atlas-action-priority", "tertiary");
+    expect(
+      within(utilities).getByRole("button", {
+        name: "Xem cách hình thành nhu cầu",
+      }),
+    ).toHaveAttribute("data-atlas-action-priority", "tertiary");
+
+    const footer = screen.getByRole("group", {
+      name: "Thao tác xác nhận nhu cầu",
+    });
+    expect(footer).toHaveAttribute("data-atlas-persistent-actions", "true");
+    expect(
+      within(footer).getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    ).toHaveAttribute("data-atlas-action-priority", "primary");
+  });
+
+  it("styles a valid adjustment as a decision and only invalid input as danger", async () => {
+    show();
+    const input = await quantity();
+
+    await editValid();
+    expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
+      "data-adjustment-state",
+      "valid",
+    );
+    expect(input.closest('[data-field="confirmation"]')).toHaveStyle({
+      background: "var(--atlas-colors-bg-selected)",
+    });
+    expect(screen.getByRole("button", { name: "Lưu" })).toHaveAttribute(
+      "data-atlas-action-priority",
+      "primary",
+    );
+    expect(
+      screen.getByRole("button", { name: "Tiếp tục phân bổ NCC" }),
+    ).toHaveAttribute("data-atlas-action-priority", "secondary");
+
+    fireEvent.change(input, { target: { value: "10,123" } });
+    expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
+      "data-adjustment-state",
+      "invalid",
+    );
+    expect(input.closest('[data-field="confirmation"]')).toHaveStyle({
+      background: "var(--atlas-colors-bg-danger)",
+    });
+  });
+
+  it("provides certified review evidence without rendering historical identities as current rows", () => {
+    const fixture = createConfirmedNeedReviewFixture(
+      "certified_shape" as ConfirmedReviewScenario,
+    ) as ReturnType<typeof createConfirmedNeedReviewFixture> & {
+      reviewEvidence: {
+        currentDecisionCount: number;
+        proposalAcceptanceCount: number;
+        adjustedLineId: string;
+        retainedHistoricalIdentities: Array<{
+          confirmedNeedLineId: string;
+          decisionId: string;
+          exactQuantity: string;
+        }>;
+      };
+    };
+
+    expect(fixture.batch.lines).toHaveLength(248);
+    expect(fixture.reviewEvidence.currentDecisionCount).toBe(248);
+    expect(
+      fixture.batch.lines.filter((line) => line.current_decision_id !== null),
+    ).toHaveLength(248);
+    expect(fixture.reviewEvidence.proposalAcceptanceCount).toBe(247);
+    expect(
+      fixture.batch.lines.filter(
+        (line) => line.current_decision_kind === "PROPOSAL_ACCEPTED",
+      ),
+    ).toHaveLength(247);
+    expect(
+      fixture.batch.lines.filter(
+        (line) => line.current_decision_kind === "OPERATIONAL_ADJUSTMENT",
+      ),
+    ).toHaveLength(1);
+    expect(fixture.reviewEvidence.adjustedLineId).toBe(
+      fixture.batch.lines[247]!.confirmed_need_line_id,
+    );
+    expect(fixture.reviewEvidence.retainedHistoricalIdentities).toHaveLength(
+      249,
+    );
+    expect(
+      fixture.batch.lines.some(
+        (line) =>
+          line.confirmed_need_line_id ===
+          fixture.reviewEvidence.retainedHistoricalIdentities[248]!
+            .confirmedNeedLineId,
+      ),
+    ).toBe(false);
+    expect(
+      fixture.reviewEvidence.retainedHistoricalIdentities[248]!.exactQuantity,
+    ).toBe("10.123456");
+    expect(
+      fixture.batch.lines.some((line) => line.controlled_unit.code === "Quả"),
+    ).toBe(true);
+    expect(fixture.batch.lines[0]!.ingredient.name.length).toBeGreaterThan(60);
+    expect(
+      fixture.reviewEvidence.retainedHistoricalIdentities.some(
+        ({ confirmedNeedLineId, decisionId }) =>
+          /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(confirmedNeedLineId) ||
+          /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(decisionId),
+      ),
+    ).toBe(false);
+  });
+
   it("exposes authoritative stable line identity across controlled rerenders", async () => {
     show();
     const input = await quantity();

@@ -123,6 +123,7 @@ export const LegacyOverlap = story("legacy_overlap");
 export const ReleasedCorrectionBlocked = story("correction_blocked");
 export const GeneratedIntoConfirmedNeed = story("not_generated", "generate");
 export const CurrentConfirmedNeed = story("normal");
+export const CertifiedShape248CurrentLines = story("certified_shape");
 export const NeedsReview = story("needs_review");
 export const CarriedForward = story("carried");
 export const Adjusted = story("adjusted");

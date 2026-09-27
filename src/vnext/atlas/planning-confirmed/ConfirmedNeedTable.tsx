@@ -1,5 +1,6 @@
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { useId } from "react";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   confirmedNeedConfirmationStateLabel,
   confirmedNeedInputDisplay,
@@ -26,14 +27,21 @@ export function ConfirmedNeedTable({
 }) {
   const id = useId();
   return (
-    <Table.ScrollArea
-      overflow="auto"
+    <AtlasTableViewport
+      label="Bảng xác nhận nhu cầu"
       maxH={{
         base: "var(--atlas-layout-table-mobile-height, 55dvh)",
         xl: "var(--atlas-layout-table-height, calc(100dvh - 425px))",
       }}
     >
-      <Table.Root aria-label="Nhu cầu xác nhận" size="sm" stickyHeader>
+      <Table.Root
+        aria-label="Nhu cầu xác nhận"
+        size="sm"
+        stickyHeader
+        style={{
+          minWidth: "var(--atlas-layout-confirmed-need-table-min, 1180px)",
+        }}
+      >
         <Table.Header>
           <Table.Row>
             {[
@@ -126,7 +134,17 @@ export function ConfirmedNeedTable({
                 </Table.Cell>
                 <Table.Cell
                   data-field="confirmation"
+                  data-adjustment-state={
+                    error ? "invalid" : changed ? "valid" : "unchanged"
+                  }
                   minW="var(--atlas-layout-quantity-width, 145px)"
+                  style={{
+                    background: error
+                      ? "var(--atlas-colors-bg-danger)"
+                      : changed
+                        ? "var(--atlas-colors-bg-selected)"
+                        : undefined,
+                  }}
                 >
                   <Input
                     aria-label={`Số lượng xác nhận ${line.ingredient.name}`}
@@ -238,6 +256,6 @@ export function ConfirmedNeedTable({
           Không có dòng phù hợp bộ lọc.
         </Text>
       )}
-    </Table.ScrollArea>
+    </AtlasTableViewport>
   );
 }

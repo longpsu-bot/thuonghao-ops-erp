@@ -288,7 +288,8 @@ export type ConfirmedReviewScenario =
   | "stale"
   | "unknown"
   | "recovery_failed"
-  | "missing_readback";
+  | "missing_readback"
+  | "certified_shape";
 // Review snapshots are explicit fixtures, never a simulation of backend rules.
 export function createConfirmedNeedReviewFixture(
   scenario: ConfirmedReviewScenario = "normal",
@@ -296,6 +297,72 @@ export function createConfirmedNeedReviewFixture(
   const batch = reviewBatch();
   const preflight = reviewPreflight();
   const need = reviewNeed();
+  let reviewEvidence: {
+    currentDecisionCount: number;
+    proposalAcceptanceCount: number;
+    adjustedLineId: string;
+    retainedHistoricalIdentities: Array<{
+      confirmedNeedLineId: string;
+      decisionId: string;
+      exactQuantity: string;
+    }>;
+  } | null = null;
+  if (scenario === "certified_shape") {
+    batch.lines = Array.from({ length: 248 }, (_, index) => reviewLine(index));
+    batch.lines[0]!.ingredient.name =
+      "Thịt heo nạc vai sơ chế theo quy cách bếp bán trú Trường Nguyễn Du cơ sở trung tâm";
+    batch.lines[0]!.theoretical_quantity = "12.345000";
+    batch.lines[0]!.proposed_confirmed_quantity = "12.350000";
+    batch.lines[0]!.confirmed_quantity_after = "12.350000";
+    Object.assign(batch.lines[1]!.controlled_unit, {
+      id: "unit-qua",
+      code: "Quả",
+      name: "Quả",
+    });
+    batch.lines[1]!.theoretical_quantity = "18.000000";
+    batch.lines[1]!.proposed_confirmed_quantity = "18.000000";
+    batch.lines[1]!.confirmed_quantity_after = "18.000000";
+    batch.lines[1]!.proposal_rounding_step = "1.000000";
+    batch.lines[1]!.effective_policy!.planning_step = "1.000000";
+    const adjusted = batch.lines[247]!;
+    adjusted.current_decision_kind = "OPERATIONAL_ADJUSTMENT";
+    adjusted.confirmed_quantity_after = "10.500000";
+    adjusted.decision_history = [
+      {
+        decision_id: adjusted.current_decision_id!,
+        decision_number: 1,
+        predecessor_decision_id: null,
+        decision_kind: "OPERATIONAL_ADJUSTMENT",
+        revision_id: adjusted.current_revision_id,
+        theoretical_quantity_before: adjusted.theoretical_quantity,
+        proposed_quantity_before: adjusted.proposed_confirmed_quantity,
+        confirmed_quantity_after: "10.500000",
+        planning_tick_count: "42",
+        reason_code: "OPERATIONAL_QUANTITY_ADJUSTMENT",
+        reason_note: "Điều chỉnh vận hành đã xác nhận",
+        policy_revision_id: adjusted.effective_policy!.revision_id,
+        decided_at: "2026-09-07T03:00:00Z",
+        batch_version: batch.batch_version,
+      },
+    ];
+    batch.line_counts = {
+      ...batch.line_counts,
+      total: 248,
+      confirmed: 248,
+      adjusted: 1,
+    };
+    batch.pagination.total_lines = 248;
+    reviewEvidence = {
+      currentDecisionCount: 248,
+      proposalAcceptanceCount: 247,
+      adjustedLineId: adjusted.confirmed_need_line_id,
+      retainedHistoricalIdentities: Array.from({ length: 249 }, (_, index) => ({
+        confirmedNeedLineId: `retained-line-${index}`,
+        decisionId: `retained-decision-${index}`,
+        exactQuantity: index === 248 ? "10.123456" : "10.250000",
+      })),
+    };
+  }
   if (["needs_review", "not_generated", "outdated"].includes(scenario)) {
     Object.assign(batch.lines[0]!, {
       current_decision_id: null,
@@ -437,6 +504,7 @@ export function createConfirmedNeedReviewFixture(
     batch,
     preflight,
     need,
+    reviewEvidence,
     preflightApi,
     confirmedNeedApi,
     needGenerationApi,
