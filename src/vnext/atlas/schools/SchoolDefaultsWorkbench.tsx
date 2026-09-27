@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { useImperativeHandle } from "react";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
+import { AtlasTableViewport } from "../AtlasTableViewport";
 import type { SchoolMasterData } from "../bridges/schoolMasterData";
 import { parsePortionDraft } from "./schoolDefaultsModel";
 import {
@@ -209,18 +210,38 @@ function SchoolDefaultsTable({
   if (!schools.length)
     return <Text p="md">Không có trường phù hợp bộ lọc.</Text>;
   return (
-    <Box overflowX="auto" minW="var(--atlas-layout-zero, 0)">
+    <AtlasTableViewport
+      label="Bảng sĩ số mặc định theo trường"
+      maxH={{
+        base: "var(--atlas-layout-school-table-mobile-height, 52dvh)",
+        md: "var(--atlas-layout-school-table-height, calc(100dvh - 390px))",
+      }}
+    >
       <Table.Root
         size="sm"
         aria-label="Sĩ số mặc định theo trường"
         minW="var(--atlas-layout-school-table-min, 850px)"
+        stickyHeader
       >
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeader width="var(--atlas-layout-school-order-width, 56px)">
+            <Table.ColumnHeader
+              width="var(--atlas-layout-school-order-width, 56px)"
+              position={{ base: "sticky", lg: "static" }}
+              left="var(--atlas-layout-zero, 0)"
+              zIndex="var(--atlas-layout-sticky-header-z, 3)"
+              bg="bg.toolbar"
+            >
               #
             </Table.ColumnHeader>
-            <Table.ColumnHeader>Trường</Table.ColumnHeader>
+            <Table.ColumnHeader
+              position={{ base: "sticky", lg: "static" }}
+              left="var(--atlas-layout-school-order-width, 56px)"
+              zIndex="var(--atlas-layout-sticky-header-z, 3)"
+              bg="bg.toolbar"
+            >
+              Trường
+            </Table.ColumnHeader>
             <Table.ColumnHeader>Loại trường</Table.ColumnHeader>
             <Table.ColumnHeader>Trạng thái</Table.ColumnHeader>
             <Table.ColumnHeader>Điểm giao</Table.ColumnHeader>
@@ -247,13 +268,22 @@ function SchoolDefaultsTable({
                 bg={dirty ? "bg.selected" : undefined}
               >
                 <Table.Cell
+                  position={{ base: "sticky", lg: "static" }}
+                  left="var(--atlas-layout-zero, 0)"
+                  zIndex="var(--atlas-layout-sticky-cell-z, 1)"
+                  bg={dirty ? "bg.selected" : "bg.workbench"}
                   borderLeftWidth="var(--atlas-layout-rail, 3px)"
                   borderLeftColor={dirty ? "border.accent" : "transparent"}
                   fontVariantNumeric="tabular-nums"
                 >
                   {school.display_order}
                 </Table.Cell>
-                <Table.Cell>
+                <Table.Cell
+                  position={{ base: "sticky", lg: "static" }}
+                  left="var(--atlas-layout-school-order-width, 56px)"
+                  zIndex="var(--atlas-layout-sticky-cell-z, 1)"
+                  bg={dirty ? "bg.selected" : "bg.workbench"}
+                >
                   <Text fontWeight="semibold">{school.school_name}</Text>
                   <Text
                     textStyle="helper"
@@ -324,6 +354,6 @@ function SchoolDefaultsTable({
           })}
         </Table.Body>
       </Table.Root>
-    </Box>
+    </AtlasTableViewport>
   );
 }

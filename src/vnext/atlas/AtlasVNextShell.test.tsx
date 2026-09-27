@@ -139,6 +139,28 @@ describe("Atlas vNext shell", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).toHaveFocus();
   });
+
+  it("keeps connected session context together in a labelled compact header", () => {
+    render(
+      <AtlasVNextProvider>
+        <AtlasVNextShell
+          mode="connected"
+          now={new Date("2026-09-12T18:00:00Z")}
+          userLabel="operator@example.test"
+          onSignOut={() => {}}
+        >
+          <p>Nội dung</p>
+        </AtlasVNextShell>
+      </AtlasVNextProvider>,
+    );
+
+    const session = screen.getByRole("region", { name: "Phiên làm việc" });
+    expect(within(session).getByText("Hôm nay: 13/09/2026")).toBeVisible();
+    expect(within(session).getByText("operator@example.test")).toBeVisible();
+    expect(
+      within(session).getByRole("button", { name: "Đăng xuất" }),
+    ).toBeVisible();
+  });
 });
 
 describe("Atlas vNext provider", () => {

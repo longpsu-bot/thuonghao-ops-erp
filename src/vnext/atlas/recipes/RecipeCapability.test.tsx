@@ -71,10 +71,19 @@ describe("Unified Recipe capability and Change Order operator job", () => {
   it("has one capability heading and peer jobs above the full-width base catalogue", async () => {
     const f = await setup("ACTIVE", "recipes");
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Công thức",
-    );
+    const context = screen.getByText("Công thức", { selector: "p" });
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Danh mục công thức",
+    });
     const tabs = screen.getByRole("tablist");
+    expect(
+      context.compareDocumentPosition(heading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(tabs).getAllByRole("tab")).toHaveLength(2);
     expect(screen.getByRole("tab", { name: "Công thức" })).toHaveAttribute(
       "aria-selected",

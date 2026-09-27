@@ -6,7 +6,10 @@ import { createRecipeReviewFixture } from "./recipes/recipeReviewFixtures";
 import { createChangeOrderFixture } from "./recipes/changeOrderReviewFixtures";
 import { createPlanningReviewFixture } from "./planning/planningReviewFixtures";
 import { createConfirmedNeedReviewFixture } from "./planning-confirmed/confirmedNeedReviewFixtures";
-import { createProcurementReviewFixture } from "./procurement/procurementReviewFixtures";
+import {
+  createProcurementReviewFixture,
+  type ProcurementReviewScenario,
+} from "./procurement/procurementReviewFixtures";
 import { createSchoolPxkReviewFixture } from "./dispatch/schoolPxkReviewFixtures";
 import {
   fulfilmentRow,
@@ -16,10 +19,12 @@ import {
 
 export const applicationReviewDate = "2026-09-07";
 export const applicationReviewNow = new Date("2026-09-07T03:00:00Z");
-export function createAtlasApplicationFixture(): AtlasVNextApis {
+export function createAtlasApplicationFixture(
+  procurementScenario: ProcurementReviewScenario = "manual_split",
+): AtlasVNextApis {
   const planning = createPlanningReviewFixture();
   const confirmed = createConfirmedNeedReviewFixture();
-  const procurement = createProcurementReviewFixture("manual_split");
+  const procurement = createProcurementReviewFixture(procurementScenario);
   const preflightRead = confirmed.preflightApi.preflight;
   confirmed.preflightApi.preflight = async (...args) =>
     snapshotDate(await preflightRead(...args), applicationReviewDate, args[2]);

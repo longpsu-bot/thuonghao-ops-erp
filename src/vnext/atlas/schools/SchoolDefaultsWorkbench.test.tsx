@@ -116,6 +116,14 @@ describe("Chakra School default portions workbench", () => {
     const table = screen.getByRole("table", {
       name: "Sĩ số mặc định theo trường",
     });
+    const region = screen.getByRole("region", {
+      name: "Bảng sĩ số mặc định theo trường",
+    });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region).toContainElement(table);
+    expect(region).not.toContainElement(
+      screen.getByRole("button", { name: "Lưu thay đổi" }),
+    );
     expect(
       within(table)
         .getAllByRole("columnheader")

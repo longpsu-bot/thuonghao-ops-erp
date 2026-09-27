@@ -79,13 +79,13 @@ export function IngredientSupplierWorkbench({
           <Text textStyle="helper" color="fg.muted">
             Nguyên liệu và Nhà cung ứng
           </Text>
-          <Tabs.List mt="xs" aria-label="Công việc dữ liệu gốc">
+          <Heading as="h1" textStyle="workbenchTitle" mt="xs">
+            {c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
+          </Heading>
+          <Tabs.List mt="sm" aria-label="Công việc dữ liệu gốc">
             <Tabs.Trigger value="ingredients">Nguyên liệu</Tabs.Trigger>
             <Tabs.Trigger value="suppliers">Nhà cung ứng</Tabs.Trigger>
           </Tabs.List>
-          <Heading as="h1" textStyle="workbenchTitle" mt="sm">
-            {c.job === "ingredients" ? "Nguyên liệu" : "Nhà cung ứng"}
-          </Heading>
         </Box>
         <Tabs.Content
           value={c.job}
@@ -141,6 +141,7 @@ export function IngredientSupplierWorkbench({
             {c.job === "ingredients" ? (
               <IngredientCatalogue
                 ingredients={c.visibleIngredients}
+                totalCount={c.ingredients.length}
                 selectedId={c.selectedIngredient?.ingredient_id}
                 onSelect={c.requestIngredient}
               />

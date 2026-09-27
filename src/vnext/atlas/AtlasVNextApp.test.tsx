@@ -18,7 +18,7 @@ afterEach(cleanup);
 const modules = [
   ["Trường học", "Sĩ số mặc định"],
   ["Nguyên liệu và Nhà cung ứng", "Nguyên liệu"],
-  ["Công thức", "Công thức"],
+  ["Công thức", "Danh mục công thức"],
   ["Lập nhu cầu", "Thực đơn"],
   ["Kế hoạch mua hàng", "Phân bổ nhà cung ứng"],
   ["Phiếu xuất kho", "Phiếu xuất kho"],

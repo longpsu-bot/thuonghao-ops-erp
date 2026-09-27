@@ -108,6 +108,13 @@ describe("Công thức operator workbench", () => {
   });
   it("restores the full catalogue after closing the compact Dish navigator", async () => {
     await setup();
+    const region = screen.getByRole("region", { name: "Danh mục món" });
+    const table = screen.getByRole("table", { name: "Danh mục món" });
+    expect(region).toHaveAttribute("tabindex", "0");
+    expect(region).toContainElement(table);
+    expect(table).toHaveStyle({
+      minWidth: "var(--atlas-layout-recipe-table-min, 720px)",
+    });
     const columns = () =>
       within(screen.getByRole("table", { name: "Danh mục món" }))
         .getAllByRole("columnheader", { hidden: true })

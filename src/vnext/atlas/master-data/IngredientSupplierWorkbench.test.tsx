@@ -201,6 +201,27 @@ async function ready() {
 }
 
 describe("IngredientSupplierWorkbench", () => {
+  it("shows module context and the current job heading before local job tabs", async () => {
+    renderWorkbench();
+    await ready();
+
+    const context = screen.getByText("Nguyên liệu và Nhà cung ứng");
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Nguyên liệu",
+    });
+    const tabs = screen.getByRole("tablist", {
+      name: "Công việc dữ liệu gốc",
+    });
+    expect(
+      context.compareDocumentPosition(heading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      heading.compareDocumentPosition(tabs) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("renders a dense Ingredient catalogue and searches hidden codes without displaying them", async () => {
     const api = renderWorkbench();
     await ready();
@@ -523,7 +544,20 @@ describe("IngredientSupplierWorkbench", () => {
     expect(
       await screen.findByText("Nguyên liệu sơ chế 360"),
     ).toBeInTheDocument();
+    expect(screen.getByText("360 nguyên liệu")).toBeVisible();
+    const region = screen.getByRole("region", {
+      name: "Danh mục nguyên liệu",
+    });
+    expect(region).toHaveAttribute("tabindex", "0");
     expect(screen.getAllByRole("row")).toHaveLength(361);
+
+    fireEvent.change(screen.getByLabelText("Tìm nguyên liệu"), {
+      target: { value: "không tồn tại" },
+    });
+    expect(screen.getByText("0 / 360 nguyên liệu")).toBeVisible();
+    expect(
+      screen.getByText("Không có nguyên liệu phù hợp bộ lọc."),
+    ).toBeVisible();
   });
 
   it("offers only activation and archival for an inactive Ingredient", async () => {
