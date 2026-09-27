@@ -58,11 +58,12 @@ export function ConfirmedNeedTable({
                 textAlign={i >= 2 && i <= 5 ? "end" : "start"}
                 {...(i === 0
                   ? {
-                      position: "sticky",
-                      top: "var(--atlas-layout-zero, 0)",
-                      left: "var(--atlas-layout-zero, 0)",
-                      zIndex: "var(--atlas-layout-sticky-identity-header-z, 5)",
                       style: {
+                        position: "sticky",
+                        top: "var(--atlas-layout-zero, 0)",
+                        left: "var(--atlas-layout-zero, 0)",
+                        zIndex:
+                          "var(--atlas-layout-sticky-identity-header-z, 5)",
                         background: "var(--atlas-colors-bg-toolbar)",
                       },
                     }
@@ -100,10 +101,10 @@ export function ConfirmedNeedTable({
                 <Table.Cell
                   data-field="identity"
                   minW="var(--atlas-layout-identity-width, 210px)"
-                  position="sticky"
-                  left="var(--atlas-layout-zero, 0)"
-                  zIndex="var(--atlas-layout-sticky-identity-z, 2)"
                   style={{
+                    position: "sticky",
+                    left: "var(--atlas-layout-zero, 0)",
+                    zIndex: "var(--atlas-layout-sticky-identity-z, 2)",
                     background: "var(--atlas-colors-bg-workbench)",
                   }}
                 >
