@@ -15,6 +15,14 @@ const SUBJECT = "a1010000-0000-4000-8000-000000000101";
 const SYNTHETIC_ACTOR = "a1010000-0000-4000-8000-000000000001";
 const RETAINED_RUN = "0c83b440-8fb2-4a77-9735-804ef4c89ea0";
 const RETAINED_BATCH = "a0311e0a-a4de-48b9-a529-fe7464a3352b";
+const CERTIFIED_PREVIEW_BASE_SHA = "1ee97fdb2a51d992c0ee57a9763243ad2da7c279";
+const APPROVED_PREVIEW_SHA = "4eddd97a7524606ca6ce5e48e2700f6d23a31a03";
+const APPROVED_PREVIEW_URL = "https://2c95cd16.thuonghao-ops-erp.pages.dev/";
+const EXPECTED_SOURCE_FINGERPRINTS = Object.freeze({
+  pantry: "d751713988987e9331980363e24189ce",
+  attendance: "f0868d16c763ac48fc0d38bf22c47b95",
+  weekly_menu: "7a165883b92ada506dfdc7a021e44710",
+});
 const APPROVED_COUNT_POLICIES = new Map([
   ["v1-unit-034ce34d3ff3", "Quả"],
   ["v1-unit-2d183c73d76a", "Bó"],
@@ -349,6 +357,119 @@ export function classifyPlanningCheckpoint(snapshot) {
   };
 }
 
+function saveReceiptAccepted(receipt) {
+  return (
+    receipt?.command_name === "save_confirmed_needs" &&
+    receipt.actor_id === SYNTHETIC_ACTOR &&
+    receipt.scope_key ===
+      `${SYNTHETIC_ACTOR}:PLANNING:ConfirmedNeedBatch:${RETAINED_BATCH}` &&
+    receipt.outcome === "COMPLETED" &&
+    receipt.request_contract_version === "RMVP-05.v2" &&
+    receipt.requested_by_auth_subject === SUBJECT &&
+    receipt.request_reason_code === "CONFIRMED_NEED_SAVED" &&
+    receipt.request_batch_id === RETAINED_BATCH &&
+    receipt.expected_version === 2 &&
+    receipt.success === true &&
+    receipt.idempotency_status === "COMPLETED" &&
+    receipt.confirmed_need_batch_id === RETAINED_BATCH &&
+    receipt.prior_batch_version === 2 &&
+    receipt.resulting_batch_version === 3 &&
+    receipt.adjusted_line_count === 1 &&
+    receipt.unchanged_accepted_line_count === 247
+  );
+}
+
+export function classifyPostSavePlanningCloseout(snapshot) {
+  const fail = () => {
+    throw new Error("POST_SAVE_CLOSEOUT_REJECTED");
+  };
+  if (
+    !planningCloseoutPoliciesAccepted(snapshot?.policies) ||
+    !Array.isArray(snapshot?.runs) ||
+    snapshot.runs.length !== 2 ||
+    !Array.isArray(snapshot?.batches) ||
+    snapshot.batches.length !== 1 ||
+    !Array.isArray(snapshot?.receipts) ||
+    !Array.isArray(snapshot?.save_receipts) ||
+    snapshot.save_receipts.length !== 1 ||
+    snapshot.save_receipt_count !== 1 ||
+    !saveReceiptAccepted(snapshot.save_receipts[0]) ||
+    snapshot.handoffs !== 0 ||
+    !/^[a-f0-9]{64}$/.test(snapshot.decision_fingerprint ?? "")
+  )
+    fail();
+  const predecessor = snapshot.runs.find((run) => run.id === RETAINED_RUN);
+  const run = snapshot.runs.find((item) => item.id !== RETAINED_RUN);
+  const batch = snapshot.batches[0];
+  if (
+    !predecessor ||
+    !run ||
+    !exactDate(predecessor) ||
+    !exactDate(run) ||
+    !exactDate(batch) ||
+    batch.id !== RETAINED_BATCH ||
+    predecessor.status !== "INVALIDATED" ||
+    predecessor.version !== 4 ||
+    predecessor.generated_line_count !== 304 ||
+    predecessor.release_snapshot_line_count !== 304 ||
+    predecessor.actor_id !== SYNTHETIC_ACTOR ||
+    run.status !== "RELEASED_FOR_CONFIRMATION" ||
+    run.version !== 3 ||
+    run.predecessor_run_id !== predecessor.id ||
+    run.generated_line_count !== 304 ||
+    run.release_snapshot_line_count !== 304 ||
+    run.blocking_issue_count !== 0 ||
+    run.warning_count !== 0 ||
+    run.actor_id !== SYNTHETIC_ACTOR ||
+    batch.status !== "DRAFT_REVIEW" ||
+    batch.version !== 3 ||
+    batch.source_kind !== "NEED_GENERATION" ||
+    batch.origin_run_id !== predecessor.id ||
+    batch.current_run_id !== run.id ||
+    batch.origin_run_version !== 3 ||
+    batch.current_run_version !== 3 ||
+    batch.line_count !== 248 ||
+    batch.stable_line_count !== 249 ||
+    batch.decision_count !== 248 ||
+    batch.current_decision_count !== 248 ||
+    batch.adjustment_count !== 1 ||
+    batch.acceptance_count !== 247 ||
+    batch.invalid_decision_partition_count !== 0 ||
+    !preflightAccepted(snapshot.preflight, "CURRENT", run.id, batch.id) ||
+    snapshot.preflight.current_need.confirmed_need_batch_version !== 3 ||
+    !sameJson(
+      snapshot.preflight.source_date_fingerprints.selected,
+      EXPECTED_SOURCE_FINGERPRINTS,
+    ) ||
+    !classifyPlanningGenerationReceipts(snapshot.receipts, run.id) ||
+    snapshot.d046?.predecessor_release_contribution_count !== 304 ||
+    snapshot.d046?.successor_release_contribution_count !== 304 ||
+    snapshot.d046?.current_snapshot_pair_count !== 248 ||
+    snapshot.d046?.decision_proposal_count !== 248 ||
+    snapshot.d046?.exact_decision_proposal_count !== 248 ||
+    snapshot.d046?.invalid_decision_proposal_count !== 0 ||
+    snapshot.d046?.retained_pre_d046_null_pair_count !== 248 ||
+    snapshot.d046?.allowed_unit_transition_count !== 1 ||
+    snapshot.d046?.invalid_unit_transition_count !== 0 ||
+    snapshot.d046?.current_raw_membership_count !== 304
+  )
+    fail();
+  try {
+    classifyPlanningAdoptionManifest(snapshot.adoption_manifest, "post-deploy");
+  } catch {
+    fail();
+  }
+  return {
+    mode: "POST_SAVE_CLOSEOUT_RESUME",
+    predecessorRunId: predecessor.id,
+    currentRunId: run.id,
+    batchId: batch.id,
+    currentLineCount: batch.line_count,
+    decisionFingerprint: snapshot.decision_fingerprint,
+    fingerprints: snapshot.preflight.source_date_fingerprints.selected,
+  };
+}
+
 export function classifyPlanningCloseoutBaseline(snapshot) {
   if (!planningCloseoutPoliciesAccepted(snapshot?.policies))
     throw new Error("PLANNING_CLOSEOUT_BASELINE_REJECTED");
@@ -363,10 +484,124 @@ function requireProtectedPlanningCloseoutBaseline(snapshot) {
 }
 
 export async function startProtectedPlanningBrowserCloseout(
-  snapshot,
-  browserJourney,
+  snapshotOrOptions,
+  legacyBrowserJourney,
 ) {
-  return browserJourney(requireProtectedPlanningCloseoutBaseline(snapshot));
+  if (legacyBrowserJourney)
+    return legacyBrowserJourney(
+      requireProtectedPlanningCloseoutBaseline(snapshotOrOptions),
+    );
+  const {
+    snapshot,
+    closeoutMode,
+    persistRehearsal,
+    readOnlyJourney,
+    mutationJourney,
+  } = snapshotOrOptions ?? {};
+  if (closeoutMode === "post_save_resume") {
+    if (persistRehearsal) throw new Error("POST_SAVE_RESUME_MUST_BE_READ_ONLY");
+    return readOnlyJourney(classifyPostSavePlanningCloseout(snapshot));
+  }
+  if (closeoutMode === "pre_save_rehearsal") {
+    if (!persistRehearsal) throw new Error("PERSIST_REHEARSAL_REQUIRED");
+    return mutationJourney(requireProtectedPlanningCloseoutBaseline(snapshot));
+  }
+  throw new Error("PLANNING_CLOSEOUT_MODE_REQUIRED");
+}
+
+export function assertCertificationOnlyDelta(files) {
+  const exact = new Set([
+    "scripts/verify-staging-planning-closeout.mjs",
+    "scripts/staging-planning-browser.mjs",
+    ".github/workflows/atlas-staging-planning-closeout.yml",
+  ]);
+  if (
+    !Array.isArray(files) ||
+    files.length === 0 ||
+    files.some(
+      (file) =>
+        typeof file !== "string" ||
+        (!exact.has(file) &&
+          !file.startsWith("docs/") &&
+          !/^scripts\/staging-planning-(?:closeout|browser|preview).*\.test\.mjs$/.test(
+            file,
+          ) &&
+          ![
+            "scripts/test-local-planning-final-closeout.mjs",
+            "scripts/test-local-planning-closeout-browser.mjs",
+          ].includes(file)),
+    )
+  )
+    throw new Error("PLANNING_PREVIEW_CERTIFICATION_DELTA_REJECTED");
+}
+
+export function assertCertificationOnlyComparison({
+  verifierCommitSha,
+  comparison,
+}) {
+  if (
+    !/^[a-f0-9]{40}$/.test(verifierCommitSha ?? "") ||
+    comparison?.status !== "ahead" ||
+    comparison?.merge_base_commit?.sha !== CERTIFIED_PREVIEW_BASE_SHA ||
+    !Array.isArray(comparison.commits) ||
+    comparison.commits.length === 0 ||
+    comparison.commits.at(-1)?.sha !== verifierCommitSha ||
+    !Array.isArray(comparison.files)
+  )
+    throw new Error("PLANNING_PREVIEW_CERTIFICATION_DELTA_REJECTED");
+  assertCertificationOnlyDelta(comparison.files.map((file) => file?.filename));
+  return {
+    verifierCommitSha,
+    certifiedPreviewBaseSha: CERTIFIED_PREVIEW_BASE_SHA,
+    previewSha: APPROVED_PREVIEW_SHA,
+  };
+}
+
+export function assertCertifiedPreviewPullRequest(pr) {
+  if (
+    pr?.number !== 286 ||
+    pr.state !== "open" ||
+    pr.draft !== true ||
+    pr.head?.sha !== APPROVED_PREVIEW_SHA ||
+    pr.base?.sha !== CERTIFIED_PREVIEW_BASE_SHA
+  )
+    throw new Error("PLANNING_PREVIEW_PROVENANCE_REJECTED");
+}
+
+async function verifyCertificationOnlyPreviewDelta({
+  verifierCommitSha,
+  githubToken,
+  fetchImpl = fetch,
+}) {
+  if (!githubToken)
+    throw new Error("PLANNING_PREVIEW_PROVENANCE_CONFIGURATION_REQUIRED");
+  const request = (path) =>
+    fetchImpl(
+      `https://api.github.com/repos/longpsu-bot/thuonghao-ops-erp/${path}`,
+      {
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+          Accept: "application/vnd.github+json",
+        },
+        redirect: "error",
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+  const [comparisonResponse, pullRequestResponse] = await Promise.all([
+    request(`compare/${CERTIFIED_PREVIEW_BASE_SHA}...${verifierCommitSha}`),
+    request("pulls/286"),
+  ]);
+  if (!comparisonResponse.ok || !pullRequestResponse.ok)
+    throw new Error("PLANNING_PREVIEW_PROVENANCE_FETCH_FAILED");
+  const [comparison, pullRequest] = await Promise.all([
+    comparisonResponse.json(),
+    pullRequestResponse.json(),
+  ]);
+  assertCertifiedPreviewPullRequest(pullRequest);
+  return assertCertificationOnlyComparison({
+    verifierCommitSha,
+    comparison,
+  });
 }
 
 export function planningCloseoutSnapshotSql() {
@@ -397,6 +632,26 @@ with scoped_runs as (
   from current_revisions revision
   join atlas_planning.confirmed_need_line_revision_contributions contribution
     on contribution.confirmed_need_line_revision_id=revision.confirmed_need_line_revision_id
+), current_decisions as materialized (
+  select line.confirmed_need_line_id, decision.*, revision.theoretical_quantity,
+         revision.proposal_rounding_step,
+         revision.proposal_rounding_ingredient_version,
+         revision.unit_id revision_unit_id,
+         ingredient.order_step ingredient_order_step,
+         ingredient.version ingredient_version,
+         ingredient.purchase_unit_id,
+         policy.planning_step
+  from scoped_batches batch
+  join atlas_planning.confirmed_need_lines line
+    on line.confirmed_need_batch_id=batch.confirmed_need_batch_id
+  join atlas_planning.confirmed_need_line_decisions decision
+    on decision.confirmed_need_line_decision_id=line.current_confirmed_need_line_decision_id
+  join atlas_planning.confirmed_need_line_revisions revision
+    on revision.confirmed_need_line_revision_id=decision.confirmed_need_line_revision_id
+  join atlas_admin.ingredients ingredient
+    on ingredient.ingredient_id=revision.ingredient_id
+  join atlas_planning.planning_quantity_policy_revisions policy
+    on policy.planning_quantity_policy_revision_id=decision.planning_quantity_policy_revision_id
 ), adoption_run_transitions as materialized (
   select predecessor.theoretical_need_line_id predecessor_line_id,
          successor.theoretical_need_line_id successor_line_id,
@@ -496,14 +751,31 @@ select jsonb_build_object(
     'current_decision_count', (select count(*) from atlas_planning.confirmed_need_lines l
       where l.confirmed_need_batch_id=b.confirmed_need_batch_id
         and l.current_confirmed_need_line_decision_id is not null),
-    'adjustment_count', (select count(*) from atlas_planning.confirmed_need_line_decisions d
-      where d.confirmed_need_batch_id=b.confirmed_need_batch_id
-        and d.confirmed_quantity_after<>d.proposed_quantity_before
-        and d.reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT'),
-    'acceptance_count', (select count(*) from atlas_planning.confirmed_need_line_decisions d
-      where d.confirmed_need_batch_id=b.confirmed_need_batch_id
-        and d.confirmed_quantity_after=d.proposed_quantity_before
-        and d.reason_code='PROPOSAL_ACCEPTED')
+    'adjustment_count', (select count(*) from current_decisions decision
+      where decision.confirmed_need_batch_id=b.confirmed_need_batch_id
+        and decision.decision_kind='ADJUSTED_QUANTITY_CONFIRMED'
+        and decision.confirmed_quantity_after<>decision.proposed_quantity_before
+        and decision.reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT'
+        and nullif(btrim(decision.reason_note),'') is not null
+        and decision.planning_step>0
+        and mod(decision.confirmed_quantity_after,decision.planning_step)=0),
+    'acceptance_count', (select count(*) from current_decisions decision
+      where decision.confirmed_need_batch_id=b.confirmed_need_batch_id
+        and decision.decision_kind='UNCHANGED_PROPOSAL_ACCEPTED'
+        and decision.confirmed_quantity_after=decision.proposed_quantity_before
+        and decision.reason_code='PROPOSAL_ACCEPTED'),
+    'invalid_decision_partition_count', (select count(*) from current_decisions decision
+      where decision.confirmed_need_batch_id=b.confirmed_need_batch_id and not (
+        (decision.decision_kind='UNCHANGED_PROPOSAL_ACCEPTED'
+         and decision.confirmed_quantity_after=decision.proposed_quantity_before
+         and decision.reason_code='PROPOSAL_ACCEPTED')
+        or
+        (decision.decision_kind='ADJUSTED_QUANTITY_CONFIRMED'
+         and decision.confirmed_quantity_after<>decision.proposed_quantity_before
+         and decision.reason_code='OPERATIONAL_QUANTITY_ADJUSTMENT'
+         and nullif(btrim(decision.reason_note),'') is not null
+         and decision.planning_step>0
+         and mod(decision.confirmed_quantity_after,decision.planning_step)=0)))
   )), '[]'::jsonb) from scoped_batches b),
   'handoffs', (select count(*) from atlas_planning.purchase_handoff_batches h
     where h.period_start <= '2026-09-20' and h.period_end >= '2026-09-14'),
@@ -541,10 +813,42 @@ select jsonb_build_object(
         c.response_payload#>>'{affected_aggregate_ids,need_generation_run_id}'=r.need_generation_run_id::text)
       or exists(select 1 from scoped_batches b where
         c.response_payload#>>'{affected_aggregate_ids,confirmed_need_batch_id}'=b.confirmed_need_batch_id::text))),
+  'save_receipts', (select coalesce(jsonb_agg(jsonb_build_object(
+    'command_name',c.command_name,'actor_id',c.actor_id,'scope_key',c.scope_key,
+    'outcome',c.outcome,'request_contract_version',c.response_payload->>'contract_version',
+    'requested_by_auth_subject',auth.auth_subject_id,
+    'request_reason_code',audit.reason_code,
+    'request_batch_id',audit.aggregate_id,
+    'expected_version',c.expected_version,'success',c.response_payload->'success',
+    'idempotency_status',c.response_payload->>'idempotency_status',
+    'confirmed_need_batch_id',c.response_payload->>'confirmed_need_batch_id',
+    'prior_batch_version',(c.response_payload->>'prior_batch_version')::integer,
+    'resulting_batch_version',(c.response_payload->>'resulting_batch_version')::integer,
+    'adjusted_line_count',(c.response_payload->>'adjusted_line_count')::integer,
+    'unchanged_accepted_line_count',(c.response_payload->>'unchanged_accepted_line_count')::integer
+  ) order by c.started_at,c.command_receipt_id),'[]'::jsonb)
+    from atlas_core.command_receipts c
+    join atlas_core.actor_auth_subjects auth on auth.actor_id=c.actor_id
+      and auth.auth_provider='SUPABASE_AUTH' and auth.subject_status='ACTIVE'
+    join atlas_audit.audit_events audit on audit.command_receipt_id=c.command_receipt_id
+      and audit.event_type='ConfirmedNeedQuantitiesConfirmed'
+      and audit.aggregate_type='ConfirmedNeedBatch'
+    where c.command_name='save_confirmed_needs' and exists(
+      select 1 from scoped_batches b where
+        c.scope_key like '%:ConfirmedNeedBatch:' || b.confirmed_need_batch_id::text)),
   'save_receipt_count', (select count(*) from atlas_core.command_receipts c
     where c.command_name='save_confirmed_needs' and exists(
       select 1 from scoped_batches b where
         c.scope_key like '%:ConfirmedNeedBatch:' || b.confirmed_need_batch_id::text)),
+  'decision_fingerprint', (select case when count(*)=0 then null else
+    pg_catalog.encode(extensions.digest(pg_catalog.convert_to(
+      string_agg(concat_ws('|',confirmed_need_line_id,
+        confirmed_need_line_decision_id,decision_number,decision_kind,
+        confirmed_need_line_revision_id,theoretical_quantity_before,
+        proposed_quantity_before,confirmed_quantity_after,planning_tick_count,
+        reason_code,coalesce(reason_note,''),planning_quantity_policy_revision_id,
+        confirmed_need_batch_version),E'\\n' order by confirmed_need_line_id),
+      'UTF8'),'sha256'),'hex') end from current_decisions),
   'adoption_workload', jsonb_build_object(
     'date','2026-09-17',
     'adoption_occurrence_count',(select count(distinct theoretical_need_line_id)::integer from retained_adoption_workload),
@@ -617,6 +921,25 @@ select jsonb_build_object(
          or revision.confirmed_quantity is distinct from
            ceil(revision.theoretical_quantity/revision.proposal_rounding_step)
              * revision.proposal_rounding_step),
+    'decision_proposal_count', (select count(*)::integer from current_decisions),
+    'exact_decision_proposal_count', (select count(*)::integer
+      from current_decisions decision
+      where decision.proposal_rounding_step=decision.ingredient_order_step
+        and decision.proposal_rounding_ingredient_version=decision.ingredient_version
+        and decision.revision_unit_id=decision.purchase_unit_id
+        and decision.proposed_quantity_before=
+          ceil(decision.theoretical_quantity/decision.proposal_rounding_step)
+            * decision.proposal_rounding_step),
+    'invalid_decision_proposal_count', (select count(*)::integer
+      from current_decisions decision
+      where decision.proposal_rounding_step is null
+         or decision.proposal_rounding_ingredient_version is null
+         or decision.proposal_rounding_step is distinct from decision.ingredient_order_step
+         or decision.proposal_rounding_ingredient_version is distinct from decision.ingredient_version
+         or decision.revision_unit_id is distinct from decision.purchase_unit_id
+         or decision.proposed_quantity_before is distinct from
+           ceil(decision.theoretical_quantity/decision.proposal_rounding_step)
+             * decision.proposal_rounding_step),
     'retained_pre_d046_null_pair_count', (select count(*)::integer
       from atlas_planning.confirmed_need_line_revisions revision
       join scoped_batches batch
@@ -648,6 +971,107 @@ export function assertFinalPlanningCloseoutProof({
   baselineFingerprints,
   finalFingerprints,
 }) {
+  if (baseline?.mode === "POST_SAVE_CLOSEOUT_RESUME") {
+    let postStateAccepted = true;
+    let adoptionAccepted = true;
+    try {
+      classifyPostSavePlanningCloseout(state);
+    } catch {
+      postStateAccepted = false;
+    }
+    try {
+      classifyPlanningAdoptionManifest(state?.adoption_manifest, "post-deploy");
+    } catch {
+      adoptionAccepted = false;
+    }
+    const batch = state?.batches?.[0];
+    const expectedBrowserMode =
+      baseline.browserMode ?? "POST_SAVE_CLOSEOUT_RESUME";
+    const expectedBrowserSaveClicks = baseline.browserSaveClicks ?? 0;
+    const fingerprintsMatch =
+      baselineFingerprints != null &&
+      finalFingerprints != null &&
+      sameJson(baselineFingerprints, finalFingerprints) &&
+      sameJson(finalFingerprints, EXPECTED_SOURCE_FINGERPRINTS) &&
+      sameJson(
+        finalFingerprints,
+        state?.preflight?.source_date_fingerprints?.current,
+      );
+    const dimension = (expected, actual) => ({
+      expected,
+      actual: actual ?? null,
+      pass: sameJson(expected, actual),
+    });
+    const checks = {
+      post_save_state: dimension(true, postStateAccepted),
+      batch_version: dimension(3, batch?.version),
+      current_lines: dimension(248, batch?.line_count),
+      stable_line_identities: dimension(249, batch?.stable_line_count),
+      decision_count: dimension(248, batch?.decision_count),
+      current_decision_count: dimension(248, batch?.current_decision_count),
+      exact_decision_proposal_count: dimension(
+        248,
+        state?.d046?.exact_decision_proposal_count,
+      ),
+      invalid_decision_proposal_count: dimension(
+        0,
+        state?.d046?.invalid_decision_proposal_count,
+      ),
+      adjustment_count: dimension(1, batch?.adjustment_count),
+      acceptance_count: dimension(247, batch?.acceptance_count),
+      save_receipt_count: dimension(1, state?.save_receipts?.length),
+      purchase_handoffs: dimension(0, state?.handoffs),
+      browser_mode: dimension(expectedBrowserMode, browser?.mode),
+      browser_rows: dimension(248, browser?.renderedRows),
+      browser_save_invocations: dimension(
+        expectedBrowserSaveClicks,
+        browser?.saveClicks,
+      ),
+      browser_generate_invocations: dimension(0, browser?.generateClicks),
+      browser_handoff_invocations: dimension(0, browser?.handoffClicks),
+      browser_batch_version: dimension(3, browser?.batchVersion),
+      browser_batch_id: dimension(batch?.id, browser?.batchId),
+      authoritative_reopen: dimension(true, browser?.authoritativeReopen),
+      review_batch_id: dimension(batch?.id, review?.confirmed_need_batch_id),
+      review_batch_version: dimension(3, review?.batch_version),
+      review_lines: dimension(248, review?.lines?.length),
+      review_has_more: dimension(false, review?.pagination?.has_more),
+      review_blockers: dimension(0, review?.blockers?.length),
+      review_editing_allowed: dimension(true, review?.editing_allowed),
+      decision_fingerprint: dimension(
+        state?.decision_fingerprint,
+        browser?.decisionFingerprint,
+      ),
+      source_fingerprints_unchanged: dimension(true, fingerprintsMatch),
+      adoption_manifest: dimension(true, adoptionAccepted),
+    };
+    if (Object.values(checks).some((check) => !check.pass))
+      throw new Error(
+        JSON.stringify({
+          status: "FINAL_PLANNING_CLOSEOUT_PROOF_FAILED",
+          mode: "POST_SAVE_CLOSEOUT_RESUME",
+          checks,
+        }),
+      );
+    return {
+      status: "FINAL_PLANNING_CLOSEOUT_PASS",
+      mode: "POST_SAVE_CLOSEOUT_RESUME",
+      needGenerationRuns: state.runs.length,
+      confirmedNeedBatchVersion: batch.version,
+      currentLines: batch.line_count,
+      stableLineIdentities: batch.stable_line_count,
+      decisions: batch.decision_count,
+      currentDecisions: batch.current_decision_count,
+      proposalAcceptances: batch.acceptance_count,
+      operationalAdjustments: batch.adjustment_count,
+      exactDecisionProposals: state.d046.exact_decision_proposal_count,
+      invalidDecisionProposals: state.d046.invalid_decision_proposal_count,
+      saveReceipts: state.save_receipts.length,
+      purchaseHandoffs: state.handoffs,
+      sourceFingerprintsUnchanged: true,
+      authoritativeReopen: true,
+    };
+  }
   const fingerprintsMatch =
     baselineFingerprints != null &&
     finalFingerprints != null &&
@@ -753,6 +1177,7 @@ export function nextCent(value) {
 }
 export async function verifyPlanningCloseout({
   commitSha,
+  closeoutMode,
   persist = false,
   environment = process.env,
 } = {}) {
@@ -762,22 +1187,37 @@ export async function verifyPlanningCloseout({
     JSON.parse(await executeAtlasStagingManagementSql(target, query));
   const readSnapshot = async () =>
     (await sql(planningCloseoutSnapshotSql()))[0]?.checkpoint;
-  const baseline = requireProtectedPlanningCloseoutBaseline(
-    await readSnapshot(),
-  );
+  const initialSnapshot = await readSnapshot();
+  let baseline;
+  if (closeoutMode === "post_save_resume") {
+    if (persist) throw new Error("POST_SAVE_RESUME_MUST_BE_READ_ONLY");
+    baseline = classifyPostSavePlanningCloseout(initialSnapshot);
+  } else if (closeoutMode === "pre_save_rehearsal") {
+    if (!persist) throw new Error("PERSIST_REHEARSAL_REQUIRED");
+    baseline = requireProtectedPlanningCloseoutBaseline(initialSnapshot);
+  } else throw new Error("PLANNING_CLOSEOUT_MODE_REQUIRED");
   const baselineFingerprints = baseline.fingerprints;
-  if (!persist)
-    return {
-      status: "read-only-checkpoint-pass",
-      mode: baseline.mode,
-      retainedBatches: 1,
-    };
+  if (
+    environment.ATLAS_PLANNING_PREVIEW_URL !== APPROVED_PREVIEW_URL ||
+    environment.ATLAS_PLANNING_PREVIEW_SHA !== APPROVED_PREVIEW_SHA
+  )
+    throw new Error("PLANNING_PREVIEW_PROVENANCE_CONFIGURATION_REQUIRED");
+  const certification = await verifyCertificationOnlyPreviewDelta({
+    verifierCommitSha: commitSha,
+    githubToken: environment.GITHUB_TOKEN,
+  });
   const { verifyPlanningPreview } =
     await import("./staging-planning-preview.mjs");
   const preview = await verifyPlanningPreview({
     environment,
-    requiredSha: commitSha,
+    requiredSha: certification.certifiedPreviewBaseSha,
   });
+  if (
+    preview.url !== APPROVED_PREVIEW_URL ||
+    preview.commit !== APPROVED_PREVIEW_SHA ||
+    preview.requiredMainCommit !== CERTIFIED_PREVIEW_BASE_SHA
+  )
+    throw new Error("PLANNING_PREVIEW_PROVENANCE_REJECTED");
   const client = createClient(target.supabaseUrl, target.publishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     db: { retry: false },
@@ -818,31 +1258,43 @@ export async function verifyPlanningCloseout({
     return result.data.workbench;
   };
   try {
-    const browser = await startProtectedPlanningBrowserCloseout(
-      await readSnapshot(),
-      async (beforeBrowser) => {
-        if (
-          beforeBrowser.predecessorRunId !== baseline.predecessorRunId ||
-          beforeBrowser.currentRunId !== baseline.currentRunId ||
-          beforeBrowser.batchId !== baseline.batchId ||
-          !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
-        )
-          throw new Error("PLANNING_CLOSEOUT_CHECKPOINT_CHANGED");
-        const { verifyPlanningBrowser } =
-          await import("./staging-planning-browser.mjs");
-        return verifyPlanningBrowser({
-          target,
-          baseline: beforeBrowser,
-          session: data.session,
-          readReview,
-          preview,
-        });
-      },
-    );
+    const browserJourney = async (beforeBrowser) => {
+      if (
+        beforeBrowser.predecessorRunId !== baseline.predecessorRunId ||
+        beforeBrowser.currentRunId !== baseline.currentRunId ||
+        beforeBrowser.batchId !== baseline.batchId ||
+        !sameJson(beforeBrowser.fingerprints, baselineFingerprints)
+      )
+        throw new Error("PLANNING_CLOSEOUT_CHECKPOINT_CHANGED");
+      const { verifyPlanningBrowser } =
+        await import("./staging-planning-browser.mjs");
+      return verifyPlanningBrowser({
+        target,
+        baseline: beforeBrowser,
+        session: data.session,
+        readReview,
+        preview,
+      });
+    };
+    const browser = await startProtectedPlanningBrowserCloseout({
+      snapshot: await readSnapshot(),
+      closeoutMode,
+      persistRehearsal: persist,
+      readOnlyJourney: browserJourney,
+      mutationJourney: browserJourney,
+    });
     const state = await readSnapshot();
     const review = await readReview();
+    const proofBaseline =
+      closeoutMode === "pre_save_rehearsal"
+        ? {
+            ...classifyPostSavePlanningCloseout(state),
+            browserMode: "D046_CORRECTED_RESUME",
+            browserSaveClicks: 1,
+          }
+        : baseline;
     const finalProof = assertFinalPlanningCloseoutProof({
-      baseline,
+      baseline: proofBaseline,
       browser,
       state,
       review,
@@ -857,8 +1309,10 @@ export async function verifyPlanningCloseout({
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const at = process.argv.indexOf("--commit-sha");
+  const modeAt = process.argv.indexOf("--closeout-mode");
   verifyPlanningCloseout({
     commitSha: process.argv[at + 1],
+    closeoutMode: process.argv[modeAt + 1],
     persist: process.argv.includes("--persist-rehearsal"),
   })
     .then((result) => console.log(JSON.stringify(result)))

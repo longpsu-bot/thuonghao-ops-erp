@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -509,7 +510,10 @@ export async function reachReadyToReview({
     await waitForPreGenerateSurface({ evaluate, timeout, interval });
     await clickOnce(CONFIRMED_WORKBENCH, "Tạo nhu cầu", "generate_once");
     generateClicks = 1;
-  } else if (mode === "D046_CORRECTED_RESUME") {
+  } else if (
+    mode === "D046_CORRECTED_RESUME" ||
+    mode === "POST_SAVE_CLOSEOUT_RESUME"
+  ) {
     await until(
       async () => {
         const state = await evaluate(preGenerateGateStateExpression());
@@ -546,17 +550,24 @@ export async function reachReadyToReview({
     interval,
   );
   if (
-    before.batch_version !== (mode === "D046_CORRECTED_RESUME" ? 2 : 1) ||
+    before.batch_version !==
+      (mode === "POST_SAVE_CLOSEOUT_RESUME"
+        ? 3
+        : mode === "D046_CORRECTED_RESUME"
+          ? 2
+          : 1) ||
     before.blockers?.length !== 0 ||
     before.source_kind !== "NEED_GENERATION" ||
     before.service_period?.period_start !== REHEARSAL_SERVICE_DATE ||
     before.service_period?.period_end !== REHEARSAL_SERVICE_DATE ||
     (expectedBatchId && before.confirmed_need_batch_id !== expectedBatchId) ||
-    before.lines.some(
-      (line) =>
-        line.current_decision_id !== null ||
-        line.decision_history?.length !== 0,
-    )
+    (mode === "POST_SAVE_CLOSEOUT_RESUME"
+      ? before.lines.some((line) => !line.current_decision_id)
+      : before.lines.some(
+          (line) =>
+            line.current_decision_id !== null ||
+            line.decision_history?.length !== 0,
+        ))
   )
     throw new Error("BROWSER_READY_TO_REVIEW_FAILED");
   return { before, generateClicks };
@@ -569,6 +580,99 @@ export function assertReopenedReview(saved, reopened) {
     JSON.stringify(saved?.lines) !== JSON.stringify(reopened?.lines)
   )
     throw new Error("REOPEN_READBACK_CHANGED");
+}
+
+function currentDecision(line) {
+  const matches = (line?.decision_history ?? []).filter(
+    (decision) => decision.decision_id === line.current_decision_id,
+  );
+  return matches.length === 1 ? matches[0] : null;
+}
+
+export function persistedDecisionFingerprint(review) {
+  const rows = (review?.lines ?? [])
+    .map((line) => {
+      const decision = currentDecision(line);
+      if (!decision) throw new Error("BROWSER_POST_SAVE_READBACK_REJECTED");
+      return [
+        line.confirmed_need_line_id,
+        decision.decision_id,
+        decision.decision_number,
+        decision.decision_kind,
+        decision.revision_id,
+        decision.theoretical_quantity_before,
+        decision.proposed_quantity_before,
+        decision.confirmed_quantity_after,
+        decision.planning_tick_count,
+        decision.reason_code,
+        decision.reason_note ?? "",
+        decision.policy_revision_id,
+        decision.batch_version,
+      ].join("|");
+    })
+    .sort();
+  return createHash("sha256").update(rows.join("\n"), "utf8").digest("hex");
+}
+
+export function assertPostSaveResumeReview(review, expectedFingerprint = null) {
+  const fail = () => {
+    throw new Error("BROWSER_POST_SAVE_READBACK_REJECTED");
+  };
+  if (
+    review?.confirmed_need_batch_id == null ||
+    review.batch_version !== 3 ||
+    review.source_kind !== "NEED_GENERATION" ||
+    review.lines?.length !== 248 ||
+    review.pagination?.has_more ||
+    review.blockers?.length !== 0 ||
+    !review.editing_allowed ||
+    new Set(review.lines.map((line) => line.confirmed_need_line_id)).size !==
+      248 ||
+    new Set(review.lines.map((line) => line.current_decision_id)).size !== 248
+  )
+    fail();
+  let adjustments = 0;
+  let acceptances = 0;
+  for (const line of review.lines) {
+    const decision = currentDecision(line);
+    if (
+      !decision ||
+      line.current_decision_number !== decision.decision_number ||
+      line.current_decision_kind !== decision.decision_kind ||
+      exact(line.proposed_confirmed_quantity) !==
+        exact(decision.proposed_quantity_before) ||
+      exact(line.confirmed_quantity_after) !==
+        exact(decision.confirmed_quantity_after)
+    )
+      fail();
+    if (decision.decision_kind === "UNCHANGED_PROPOSAL_ACCEPTED") {
+      acceptances += 1;
+      if (
+        decision.reason_code !== "PROPOSAL_ACCEPTED" ||
+        exact(decision.confirmed_quantity_after) !==
+          exact(decision.proposed_quantity_before)
+      )
+        fail();
+    } else if (decision.decision_kind === "ADJUSTED_QUANTITY_CONFIRMED") {
+      adjustments += 1;
+      const step = line.effective_policy?.planning_step;
+      if (
+        decision.reason_code !== "OPERATIONAL_QUANTITY_ADJUSTMENT" ||
+        typeof decision.reason_note !== "string" ||
+        !decision.reason_note.trim() ||
+        exact(decision.confirmed_quantity_after) ===
+          exact(decision.proposed_quantity_before) ||
+        !step ||
+        exact(step) <= 0n ||
+        exact(decision.confirmed_quantity_after) % exact(step) !== 0n
+      )
+        fail();
+    } else fail();
+  }
+  if (adjustments !== 1 || acceptances !== 247) fail();
+  const fingerprint = persistedDecisionFingerprint(review);
+  if (expectedFingerprint && fingerprint !== expectedFingerprint) fail();
+  return { fingerprint, adjustments, acceptances, currentDecisions: 248 };
 }
 
 export function preSaveGateStateExpression() {
@@ -814,6 +918,53 @@ export async function verifyPlanningBrowser({
         },
       }),
     );
+    if (baseline.mode === "POST_SAVE_CLOSEOUT_RESUME") {
+      const firstRead = assertPostSaveResumeReview(
+        before,
+        baseline.decisionFingerprint,
+      );
+      stage = "read_only_reopen";
+      await navigateToPlanningSources({ evaluate });
+      await navigateToConfirmedNeed({ evaluate });
+      await waitForRenderedConfirmedRows({ evaluate });
+      const reopened = await until(async () => {
+        try {
+          const workbench = await readReview();
+          return workbench?.confirmed_need_batch_id === baseline.batchId &&
+            workbench.batch_version === 3 &&
+            workbench.lines?.length === 248
+            ? workbench
+            : null;
+        } catch {
+          return null;
+        }
+      }, "post_save_reopened_readback");
+      const reopenedRead = assertPostSaveResumeReview(
+        reopened,
+        baseline.decisionFingerprint,
+      );
+      if (firstRead.fingerprint !== reopenedRead.fingerprint)
+        throw new Error("BROWSER_POST_SAVE_READBACK_CHANGED");
+      return {
+        status: "browser-post-save-read-only-resume-pass",
+        mode: baseline.mode,
+        preview,
+        serviceDate: REHEARSAL_SERVICE_DATE,
+        renderedRows: 248,
+        retainedBatches: 1,
+        businessQuantityAdjustments: 1,
+        newDecisions: 248,
+        proposalAcceptances: 247,
+        batchId: reopened.confirmed_need_batch_id,
+        batchVersion: reopened.batch_version,
+        decisionFingerprint: reopenedRead.fingerprint,
+        generateClicks,
+        saveClicks: 0,
+        handoffClicks: 0,
+        authoritativeReopen: true,
+        procurementRelease: false,
+      };
+    }
     stage = "quantity_edit";
     const { line, proposed, preSave } = await prepareConfirmedNeedEdit({
       evaluate,
@@ -883,6 +1034,7 @@ export async function verifyPlanningBrowser({
     }
     return {
       status: "browser-review-save-reopen-pass",
+      mode: baseline.mode,
       preview,
       serviceDate: "2026-09-17",
       renderedRows: 248,
@@ -892,8 +1044,11 @@ export async function verifyPlanningBrowser({
       proposalAcceptances: firstSave.proposalAcceptances,
       batchId: after.confirmed_need_batch_id,
       batchVersion: after.batch_version,
+      decisionFingerprint: persistedDecisionFingerprint(reopened),
       generateClicks,
       saveClicks: 1,
+      handoffClicks: 0,
+      authoritativeReopen: true,
       otherQuantitiesEqualGeneratedProposal: true,
       theoreticalQuantitiesUnchanged: true,
       procurementRelease: false,
