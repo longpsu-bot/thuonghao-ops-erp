@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { SystemStyleObject } from "@chakra-ui/react";
+import {
+  atlasPrimaryTabTrigger,
+  atlasSecondaryTabTrigger,
+} from "./AtlasTaskTabs";
 import { atlasSystem } from "./system";
 
 // Typecheck must reject a casual raw color after the configured CLI typegen.
@@ -39,6 +43,26 @@ const palette = {
 };
 
 describe("Soft Mineral architecture", () => {
+  it("keeps interactive controls at the 44px mobile target without changing desktop density", () => {
+    const mobileTarget = {
+      base: "var(--atlas-layout-mobile-target, 44px)",
+      lg: "var(--atlas-layout-zero, 0)",
+    };
+    expect(atlasSystem.getRecipe("button").base?.minH).toEqual(mobileTarget);
+    expect(atlasSystem.getRecipe("input").base?.minH).toEqual(mobileTarget);
+    expect(atlasSystem.getSlotRecipe("nativeSelect").base?.field?.minH).toEqual(
+      mobileTarget,
+    );
+    expect(
+      atlasSystem.getSlotRecipe("dateInput").base?.segmentGroup?.minH,
+    ).toEqual(mobileTarget);
+    expect(atlasSystem.getSlotRecipe("datePicker").base?.trigger?.w).toEqual({
+      base: "var(--atlas-layout-mobile-target, 44px)",
+      lg: "compact",
+    });
+    expect(atlasPrimaryTabTrigger.minH).toEqual(mobileTarget);
+    expect(atlasSecondaryTabTrigger.minH).toEqual(mobileTarget);
+  });
   it("gives disabled controls readable neutral surfaces instead of fading active colors", () => {
     const disabled = {
       bg: "bg.subtle",

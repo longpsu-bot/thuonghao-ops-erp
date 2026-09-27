@@ -243,6 +243,10 @@ describe("IngredientSupplierWorkbench", () => {
     const tabs = screen.getByRole("tablist", {
       name: "Công việc dữ liệu gốc",
     });
+    for (const tab of within(tabs).getAllByRole("tab"))
+      expect(tab).toHaveStyle({
+        minHeight: "var(--atlas-layout-mobile-target, 44px)",
+      });
     expect(
       context.compareDocumentPosition(heading) &
         Node.DOCUMENT_POSITION_FOLLOWING,

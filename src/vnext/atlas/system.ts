@@ -15,6 +15,10 @@ const focus = {
   outlineColor: "focus.ring",
   outlineOffset: "var(--atlas-layout-focus-offset, 2px)",
 } as const;
+const mobileTargetHeight = {
+  base: "var(--atlas-layout-mobile-target, 44px)",
+  lg: "var(--atlas-layout-zero, 0)",
+} as const;
 const disabledControl = {
   bg: "bg.subtle",
   color: "fg.muted",
@@ -23,6 +27,7 @@ const disabledControl = {
   cursor: "disabled",
 } as const;
 const control = {
+  minH: mobileTargetHeight,
   borderRadius: "control",
   bg: "bg.workbench",
   borderColor: "border.default",
@@ -35,6 +40,7 @@ const control = {
 
 const button = defineRecipe({
   base: {
+    minH: mobileTargetHeight,
     borderRadius: "control",
     textStyle: "body",
     fontWeight: "semibold",
@@ -329,7 +335,10 @@ export const atlasSystem = createSystem(
             trigger: {
               ...control,
               bg: "bg.subtle",
-              w: "compact",
+              w: {
+                base: "var(--atlas-layout-mobile-target, 44px)",
+                lg: "compact",
+              },
               h: "compact",
               borderWidth: "var(--atlas-layout-edge, 1px)",
               _hover: { bg: "bg.selected", color: "fg.primary" },
@@ -439,7 +448,7 @@ export const atlasSystem = createSystem(
             segmentGroup: {
               ...control,
               h: "control",
-              minH: "control",
+              minH: mobileTargetHeight,
               px: "sm",
               textStyle: "body",
             },

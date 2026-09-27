@@ -128,8 +128,24 @@ export function IngredientSupplierWorkbench({
           >
             <Box px="md" py="sm">
               <Tabs.List aria-label="Công việc dữ liệu gốc">
-                <Tabs.Trigger value="ingredients">Nguyên liệu</Tabs.Trigger>
-                <Tabs.Trigger value="suppliers">Nhà cung ứng</Tabs.Trigger>
+                <Tabs.Trigger
+                  value="ingredients"
+                  minH={{
+                    base: "var(--atlas-layout-mobile-target, 44px)",
+                    lg: "var(--atlas-layout-zero, 0)",
+                  }}
+                >
+                  Nguyên liệu
+                </Tabs.Trigger>
+                <Tabs.Trigger
+                  value="suppliers"
+                  minH={{
+                    base: "var(--atlas-layout-mobile-target, 44px)",
+                    lg: "var(--atlas-layout-zero, 0)",
+                  }}
+                >
+                  Nhà cung ứng
+                </Tabs.Trigger>
               </Tabs.List>
             </Box>
             <Tabs.Content

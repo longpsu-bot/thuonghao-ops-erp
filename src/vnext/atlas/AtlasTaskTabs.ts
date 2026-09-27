@@ -15,6 +15,10 @@ export const atlasPrimaryTabList = {
 
 export const atlasPrimaryTabTrigger = {
   flexShrink: 0,
+  minH: {
+    base: "var(--atlas-layout-mobile-target, 44px)",
+    lg: "var(--atlas-layout-zero, 0)",
+  },
   px: "md",
   py: "sm",
   color: "fg.muted",
@@ -46,6 +50,10 @@ export const atlasSecondaryTabList = {
 
 export const atlasSecondaryTabTrigger = {
   flexShrink: 0,
+  minH: {
+    base: "var(--atlas-layout-mobile-target, 44px)",
+    lg: "var(--atlas-layout-zero, 0)",
+  },
   px: "sm",
   py: "xs",
   color: "fg.muted",
