@@ -309,11 +309,12 @@ git commit -m "test/docs(atlas-ui): add UI-09 acceptance evidence"
 
 ### Task 6 actual results
 
-- Focused Tasks 1–5: 22 files passed, 315 tests passed, zero failed.
+- Focused Tasks 1–5 after finish-review correction: 22 files passed, 316 tests passed, zero failed.
 - Task 6 evidence-defect TDD: initial mobile-target RED was 2 failed/12 passed; first GREEN was 14/14; remaining date/tab RED was 2 failed/26 passed; final GREEN was 28/28.
-- Static checks: `pnpm typecheck`, `pnpm ui:vnext:check`, explicit Prettier for all supported changed files, and `git diff --check` passed.
-- Production evidence SHA: `d00d8ddd11428d9251ab6222294db6a3ec395919`; exact baseline SHA: `42e473b5b856100869538f4e41ef5a325b99c893`.
-- Render evidence: 40 current captures plus four exact-baseline 1440×900 comparisons; zero non-loopback requests, zero document overflow, zero 44px target violations, zero missing local continuation cues and zero focus-entry/return failures.
+- Finish-review TDD: affected Confirmed Need/Procurement RED reproduced four failures; GREEN passed 46/46. Capture assertions separately reproduced the invalid dirty story and off-screen 390×844 Save before deterministic fixture/presentation correction.
+- Static checks: `pnpm typecheck`, `pnpm ui:vnext:check`, explicit Prettier for all supported changed files, `git diff --check`, and exact `git diff --check 42e473b5b856100869538f4e41ef5a325b99c893...HEAD` passed.
+- Production evidence SHA: `dfd077f04d8ea9f734ff39b00eb530026247a6ad`; exact baseline SHA: `42e473b5b856100869538f4e41ef5a325b99c893`.
+- Render evidence: 40 current captures plus four exact-baseline 1440×900 comparisons; 18 finish-review semantic checks passed; zero non-loopback requests, zero document overflow, zero 44px target violations, zero missing local continuation cues and zero focus-entry/return failures. Every ordinary capture resets document/local scroll; only labelled detail/review captures deliberately scroll.
 - Evidence root: `C:\Users\hp\.codex\visualizations\2026\09\27\01a0e35e-6f81-7113-9bd0-ed7c6a5400c2\atlas-ui-09-evidence`.
 - Protected diff across `supabase/**`, `.github/workflows/**`, `scripts/**`, `index.html` and `src/main.tsx`: zero paths.
 - Full details, console/runtime limitation, security review, rollback and remaining risks are recorded in `docs/implementation-tasks/TASK-ATLAS-UI-VNEXT-09-POST-PLANNING-CONVERGENCE.md`.
