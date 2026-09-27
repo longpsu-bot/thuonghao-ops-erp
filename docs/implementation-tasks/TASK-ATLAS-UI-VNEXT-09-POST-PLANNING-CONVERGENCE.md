@@ -2,7 +2,7 @@
 
 ## Result
 
-UI-09 is implemented on `feat/atlas-ui-vnext-09-post-planning-convergence`. After finish-review correction, the product render is pinned to `dfd077f04d8ea9f734ff39b00eb530026247a6ad`; the comparison baseline is exact `origin/main` commit `42e473b5b856100869538f4e41ef5a325b99c893`. The historical presentation reference `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0` remained read-only.
+UI-09 is implemented on `feat/atlas-ui-vnext-09-post-planning-convergence`. After the second finish-review correction, the product code and supplemental compact-keyboard evidence are pinned to `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`; the full visual matrix remains pinned to the otherwise visually identical `dfd077f04d8ea9f734ff39b00eb530026247a6ad`. The comparison baseline is exact `origin/main` commit `42e473b5b856100869538f4e41ef5a325b99c893`. The historical presentation reference `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0` remained read-only.
 
 The four target surfaces now share the approved Station hierarchy while retaining the current controllers, hooks, APIs, bridges, exact-quantity rules, permissions, lifecycles, dirty guards, operation status and navigation behavior. No database, migration, hosted data or production-cutover change exists.
 
@@ -34,6 +34,7 @@ The four target surfaces now share the approved Station hierarchy while retainin
 | Deterministic review interaction           | `1d70f4f743217fd43f23d3b7dff9688897d0d51b` | Production-control Storybook changes replace flaky typed instrumentation                                                |
 | Browser-verified identity inset            | `394a75d8653d6966f008fb8662b29852102a04a1` | Opaque first header/cell remain horizontally sticky in Chrome                                                           |
 | Reachable dirty mobile Save                | `dfd077f04d8ea9f734ff39b00eb530026247a6ad` | Dirty mobile table allocation keeps primary Save inside the viewport                                                    |
+| Compact filter keyboard order              | `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb` | Keyboard expansion enters revealed controls, traverses them, then continues to Refresh                                  |
 
 ## Finish-review correction evidence
 
@@ -44,6 +45,16 @@ Review 1 reported five MAJOR and two MINOR presentation/evidence findings, with 
 - Storybook RED: the hardened capture assertion stopped on the original dirty story at value `10,25`, adjustment state `invalid`, delta `0`, disabled Save. Deterministic production-control change events then passed all four viewport assertions at `12,5`, delta `+2,25`, enabled primary Save and no error.
 - Browser RED/GREEN: the capture check exposed an ambiguous header selector and then confirmed the scoped Confirmed Need header and cells resolve to `position: sticky`, `left: 0px` and opaque surfaces. The dirty 390×844 Save initially ended four pixels below the viewport; a test-first dirty-only mobile height correction moved the full 44px primary action on-screen.
 - Evidence hygiene: ordinary renders reset document and every local scroll origin; only nine labelled detail/review captures apply deliberate scrolling. Exact `git diff --check 42e473b5b856100869538f4e41ef5a325b99c893...HEAD` now passes after replacing the five Markdown hard-break spaces.
+
+### Finish-review loop 2 — compact keyboard order
+
+The second review found one MAJOR keyboard-order defect and confirmed that the original five MAJOR and two MINOR findings remained closed. On compact layouts, the revealed filter fields were visually below `Bộ lọc` but earlier in DOM order, so forward Tab from the expanded disclosure skipped them.
+
+- RED: five keyboard-driven cases failed — Procurement 390px, Ingredients 390px, Planning Sources 390px, and Confirmed Need at 390px and 768px. After search → Tab → keyboard activation, focus stayed on `Bộ lọc`; the next Tab reached Refresh without entering the filter group.
+- GREEN: the shared presentation helper moves focus to the first revealed control, keeps forward/reverse traversal inside the disclosed group, returns reverse traversal to `Bộ lọc`, and hands the last forward stop to Refresh. The same five cases passed 5/5.
+- Affected regression: the four workbench files passed 100/100 tests when run individually (32 Confirmed Need, 21 Procurement, 26 Planning Sources, 21 Ingredients). A combined resource-heavy run hit two existing five-second timeouts; isolated reruns passed both timed-out tests.
+- Static validation: `pnpm typecheck`, `pnpm ui:vnext:check`, explicit Prettier, `git diff --check`, and the protected-path check passed.
+- Browser proof: five production Storybook captures at exact code SHA `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb` passed search-to-disclosure, first-filter focus, complete forward traversal to Refresh, and reverse return to `Bộ lọc` assertions. No unrelated state or viewport was recaptured.
 
 ## Strict TDD evidence for the Task 6 correction
 
@@ -88,6 +99,8 @@ Primary artifacts:
 - `atlas-ui-09-contact-sheet.png` — compact 40-image current matrix.
 - `atlas-ui-09-before-after-contact-sheet.png` — four 1440×900 exact-baseline comparisons.
 - `console-network-notes.md` — console, exception, dialog, network and harness-limit notes.
+- `keyboard-review-2-c4448d1/keyboard-manifest.json` and `keyboard-summary.json` — five scoped expanded-filter keyboard proofs at `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`.
+- `keyboard-review-2-c4448d1/keyboard__*.png` — Procurement, Ingredients and Planning Sources at 390×844 plus Confirmed Need at 390×844 and 768×1024, each captured with focus on the first revealed control.
 
 Current state matrix (each state captured at 1440×900, 1280×800, 768×1024 and 390×844):
 
@@ -110,6 +123,7 @@ The dirty-adjustment captures use the production `DirtyValid` story. Before each
 - Storybook limitation: 16 current and one baseline `HTMLElement.focus` `Illegal invocation` exceptions occur while the static Storybook instrumentation and Chakra focus-visible tracking initialize Confirmed Need controls. The identical baseline signature, successful rendering and successful focus checks classify this as harness integration noise, not a clean-exception claim.
 - Dirty guard: three expected `beforeunload` dialogs appeared between viewport passes and were accepted by the harness.
 - Keyboard: ten subsequent focus stops were recorded for every capture (400 samples). This verifies representative order, not an exhaustive traversal of all 360 Ingredient row actions.
+- Compact keyboard supplement: all five scoped runs used real Chrome Tab and Space key dispatch. Each run proved search → `Bộ lọc`, keyboard expansion → first revealed control, disclosed-control traversal → Refresh, and Shift+Tab from the first control → `Bộ lọc`. The supplement made 82 loopback requests, zero non-loopback requests and zero console entries. Its two Confirmed Need `Illegal invocation` exceptions have the previously documented baseline-identical Storybook focus-instrumentation signature; all keyboard assertions still passed.
 - Focus: eight Procurement/Ingredient selected-state checks entered the attached region and returned to the exact initiating trigger; zero failures. Four authoritative Save/readback interactions also passed.
 - Overflow: zero document-wide horizontal-overflow captures; 39 local horizontally scrolling regions; every one had a semantic start or end continuation cue.
 - Scroll determinism: all 40 captures reset document and local scroll to origin. Four compact attached-detail, two compact Planning-review and three dirty-adjustment-review renders then applied deliberate labelled scroll only; each reason/selector is stored with its manifest entry.
@@ -121,7 +135,7 @@ The dirty-adjustment captures use the production `DirtyValid` story. Before each
 
 ## Exact tracked-file / Prettier classification
 
-Compared with `42e473b5b856100869538f4e41ef5a325b99c893`, the following 37 tracked files changed. The 34 Markdown/TypeScript/TSX files were passed explicitly to `pnpm exec prettier --check`; the three TOML agent definitions are unsupported by this Prettier configuration and were reviewed as text.
+Compared with `42e473b5b856100869538f4e41ef5a325b99c893`, 38 tracked files changed. The 35 Markdown/TypeScript/TSX files were passed explicitly to `pnpm exec prettier --check`; the three TOML agent definitions are unsupported by this Prettier configuration and were reviewed as text.
 
 ### TOML — manual text review
 
@@ -176,11 +190,11 @@ Compared with `42e473b5b856100869538f4e41ef5a325b99c893`, the following 37 track
 - no RLS, privilege, migration, RPC, API, bridge, contract, controller, authority/draft helper, hosted-state or credential behavior changed;
 - no new dependency, workflow stage, business concept or production data path was introduced.
 
-The Task 6 and finish-review corrections change only responsive Chakra presentation, review fixtures/tests/stories and evidence documentation. They do not grant authority, issue commands or expose data.
+The Task 6 and finish-review corrections change only responsive Chakra presentation, focus sequencing, review fixtures/tests/stories and evidence documentation. They do not grant authority, issue commands or expose data.
 
 ## Rollback
 
-Rollback is frontend/document-only. Revert the UI-09 commits through `dfd077f04d8ea9f734ff39b00eb530026247a6ad` and the acceptance-evidence commits. There is no database, migration, RLS, hosted-data or production-cutover rollback. External evidence can be removed independently because it is not application state.
+Rollback is frontend/document-only. Revert the UI-09 commits through `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb` and the acceptance-evidence commits. There is no database, migration, RLS, hosted-data or production-cutover rollback. External evidence can be removed independently because it is not application state.
 
 ## Remaining risks and gates
 
