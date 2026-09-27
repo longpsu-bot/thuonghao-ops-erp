@@ -2,7 +2,7 @@
 
 ## Result
 
-UI-09 is implemented on `feat/atlas-ui-vnext-09-post-planning-convergence`. After the second finish-review correction, the product code and supplemental compact-keyboard evidence are pinned to `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`; the full visual matrix remains pinned to the otherwise visually identical `dfd077f04d8ea9f734ff39b00eb530026247a6ad`. The comparison baseline is exact `origin/main` commit `42e473b5b856100869538f4e41ef5a325b99c893`. The historical presentation reference `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0` remained read-only.
+UI-09 is implemented on `feat/atlas-ui-vnext-09-post-planning-convergence`. After the third finish-review correction, the product code and disabled-onward compact-keyboard evidence are pinned to `bdc8235a7754224020c967df2db141089f530437`; the full visual matrix remains pinned to `dfd077f04d8ea9f734ff39b00eb530026247a6ad`, and the enabled-onward keyboard supplement remains pinned to `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`. The comparison baseline is exact `origin/main` commit `42e473b5b856100869538f4e41ef5a325b99c893`. The historical presentation reference `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0` remained read-only.
 
 The four target surfaces now share the approved Station hierarchy while retaining the current controllers, hooks, APIs, bridges, exact-quantity rules, permissions, lifecycles, dirty guards, operation status and navigation behavior. No database, migration, hosted data or production-cutover change exists.
 
@@ -19,6 +19,7 @@ The four target surfaces now share the approved Station hierarchy while retainin
 | Stale pinned consumers, prototype CSS/parser/data, non-target shell/Recipe/School hunks | OMIT                  | Not transferred                                                                                         | Current certified behavior and module boundaries                                      |
 | Evidence-detected 36–40px mobile controls                                               | FIX under Task 6 TDD  | Shared responsive 44px minimum target; desktop density retained                                         | Presentation only; no authority or workflow change                                    |
 | Finish-review identity/action/evidence findings                                         | FIX under review loop | Sticky identity, compact filters/actions, coherent Save fixture/evidence and visible Procurement footer | Current commands, controllers, APIs and exact-quantity rules unchanged                |
+| Disabled-onward compact keyboard trap                                                   | FIX under review loop | Resolve an enabled onward target before cancelling Tab; loading status is a stable focus fallback       | Enabled Refresh order and all controller/command eligibility remain unchanged         |
 
 ## Implemented tasks and commits
 
@@ -35,6 +36,7 @@ The four target surfaces now share the approved Station hierarchy while retainin
 | Browser-verified identity inset            | `394a75d8653d6966f008fb8662b29852102a04a1` | Opaque first header/cell remain horizontally sticky in Chrome                                                           |
 | Reachable dirty mobile Save                | `dfd077f04d8ea9f734ff39b00eb530026247a6ad` | Dirty mobile table allocation keeps primary Save inside the viewport                                                    |
 | Compact filter keyboard order              | `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb` | Keyboard expansion enters revealed controls, traverses them, then continues to Refresh                                  |
+| Disabled-onward keyboard exit              | `bdc8235a7754224020c967df2db141089f530437` | Disabled Refresh no longer traps the last revealed filter; forward and reverse paths remain logical                     |
 
 ## Finish-review correction evidence
 
@@ -55,6 +57,17 @@ The second review found one MAJOR keyboard-order defect and confirmed that the o
 - Affected regression: the four workbench files passed 100/100 tests when run individually (32 Confirmed Need, 21 Procurement, 26 Planning Sources, 21 Ingredients). A combined resource-heavy run hit two existing five-second timeouts; isolated reruns passed both timed-out tests.
 - Static validation: `pnpm typecheck`, `pnpm ui:vnext:check`, explicit Prettier, `git diff --check`, and the protected-path check passed.
 - Browser proof: five production Storybook captures at exact code SHA `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb` passed search-to-disclosure, first-filter focus, complete forward traversal to Refresh, and reverse return to `Bộ lọc` assertions. No unrelated state or viewport was recaptured.
+
+### Finish-review loop 3 — disabled-onward keyboard exit
+
+The third review found one MAJOR follow-on defect: forward Tab from the last revealed filter was always cancelled, even when native Refresh was disabled and therefore supplied no enabled target. Focus remained on the last filter.
+
+- RED: Procurement loading, Ingredients `canRefresh=false`, Planning review, and Confirmed Need loading at 390px and 768px retained focus inside the final revealed filter. The initial focused run failed 5/5 new assertions.
+- GREEN: `compactFilterFocus.ts` now resolves an enabled direct or following target before calling `preventDefault()`. If no target exists, native Tab is not cancelled. Confirmed Need initial loading exposes its existing status as a programmatic fallback (`tabIndex=-1`) after the workbar; no business control or command was added.
+- State matrix: automated user-Tab coverage passes Procurement busy/locked/selected at 390px; Planning busy/locked/review at 390px; Confirmed Need busy/loading/locked at 390px and 768px; and Ingredients `canRefresh=false` at 390px. Enabled-Refresh behavior from loop 2 remains covered.
+- Focused regression: the four affected suites pass 114/114 in isolated runs with a 15-second per-test ceiling (25 Procurement, 29 Planning Sources, 38 Confirmed Need, 22 Ingredients). The ceiling avoids the known resource-only five-second timeout seen when the dense 360-row fixture runs concurrently.
+- Static validation: `pnpm typecheck`, `pnpm ui:vnext:check`, explicit Prettier, exact `git diff --check 42e473b5b856100869538f4e41ef5a325b99c893`, and the protected-path check passed.
+- Browser proof: nine scoped production Storybook captures at `bdc8235a7754224020c967df2db141089f530437` cover stable selected/locked/review/loading/`canRefresh=false` disabled states at the required compact widths. Every run proved Refresh disabled, forward focus outside the revealed filter group, and Shift+Tab return to `Bộ lọc`. Busy transitions are deterministic in automated component tests but have no frozen production Storybook story, so no busy screenshot was fabricated.
 
 ## Strict TDD evidence for the Task 6 correction
 
@@ -101,6 +114,8 @@ Primary artifacts:
 - `console-network-notes.md` — console, exception, dialog, network and harness-limit notes.
 - `keyboard-review-2-c4448d1/keyboard-manifest.json` and `keyboard-summary.json` — five scoped expanded-filter keyboard proofs at `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`.
 - `keyboard-review-2-c4448d1/keyboard__*.png` — Procurement, Ingredients and Planning Sources at 390×844 plus Confirmed Need at 390×844 and 768×1024, each captured with focus on the first revealed control.
+- `keyboard-review-3-bdc8235/keyboard-manifest.json` and `keyboard-summary.json` — nine scoped disabled-onward proofs at `bdc8235a7754224020c967df2db141089f530437`.
+- `keyboard-review-3-bdc8235/keyboard-disabled__*.png` — Procurement selected/locked, Planning review/locked, Ingredients `canRefresh=false` at 390×844, plus Confirmed Need loading/locked at both 390×844 and 768×1024.
 
 Current state matrix (each state captured at 1440×900, 1280×800, 768×1024 and 390×844):
 
@@ -124,6 +139,7 @@ The dirty-adjustment captures use the production `DirtyValid` story. Before each
 - Dirty guard: three expected `beforeunload` dialogs appeared between viewport passes and were accepted by the harness.
 - Keyboard: ten subsequent focus stops were recorded for every capture (400 samples). This verifies representative order, not an exhaustive traversal of all 360 Ingredient row actions.
 - Compact keyboard supplement: all five scoped runs used real Chrome Tab and Space key dispatch. Each run proved search → `Bộ lọc`, keyboard expansion → first revealed control, disclosed-control traversal → Refresh, and Shift+Tab from the first control → `Bộ lọc`. The supplement made 82 loopback requests, zero non-loopback requests and zero console entries. Its two Confirmed Need `Illegal invocation` exceptions have the previously documented baseline-identical Storybook focus-instrumentation signature; all keyboard assertions still passed.
+- Disabled-onward keyboard supplement: all nine scoped runs used real Chrome Tab and Space dispatch and reset document/local scroll origins. All assertions passed; 149 requests were loopback-only, zero non-loopback requests and zero console entries occurred. Two Confirmed Need locked-state `Illegal invocation` exceptions match the already documented baseline-identical Storybook focus-instrumentation signature.
 - Focus: eight Procurement/Ingredient selected-state checks entered the attached region and returned to the exact initiating trigger; zero failures. Four authoritative Save/readback interactions also passed.
 - Overflow: zero document-wide horizontal-overflow captures; 39 local horizontally scrolling regions; every one had a semantic start or end continuation cue.
 - Scroll determinism: all 40 captures reset document and local scroll to origin. Four compact attached-detail, two compact Planning-review and three dirty-adjustment-review renders then applied deliberate labelled scroll only; each reason/selector is stored with its manifest entry.
@@ -135,7 +151,7 @@ The dirty-adjustment captures use the production `DirtyValid` story. Before each
 
 ## Exact tracked-file / Prettier classification
 
-Compared with `42e473b5b856100869538f4e41ef5a325b99c893`, 38 tracked files changed. The 35 Markdown/TypeScript/TSX files were passed explicitly to `pnpm exec prettier --check`; the three TOML agent definitions are unsupported by this Prettier configuration and were reviewed as text.
+Compared with `42e473b5b856100869538f4e41ef5a325b99c893`, 39 tracked files changed. The 36 Markdown/TypeScript/TSX files were passed explicitly to `pnpm exec prettier --check`; the three TOML agent definitions are unsupported by this Prettier configuration and were reviewed as text.
 
 ### TOML — manual text review
 
@@ -157,6 +173,7 @@ Compared with `42e473b5b856100869538f4e41ef5a325b99c893`, 38 tracked files chang
 - `src/vnext/atlas/AtlasTaskContext.tsx`
 - `src/vnext/atlas/AtlasTaskTabs.ts`
 - `src/vnext/atlas/AtlasUnresolvedExit.test.tsx`
+- `src/vnext/atlas/compactFilterFocus.ts`
 - `src/vnext/atlas/master-data/IngredientCatalogue.tsx`
 - `src/vnext/atlas/master-data/IngredientDetail.tsx`
 - `src/vnext/atlas/master-data/IngredientSupplierWorkbench.test.tsx`
@@ -194,7 +211,7 @@ The Task 6 and finish-review corrections change only responsive Chakra presentat
 
 ## Rollback
 
-Rollback is frontend/document-only. Revert the UI-09 commits through `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb` and the acceptance-evidence commits. There is no database, migration, RLS, hosted-data or production-cutover rollback. External evidence can be removed independently because it is not application state.
+Rollback is frontend/document-only. Revert the UI-09 commits through `bdc8235a7754224020c967df2db141089f530437` and the acceptance-evidence commits. There is no database, migration, RLS, hosted-data or production-cutover rollback. External evidence can be removed independently because it is not application state.
 
 ## Remaining risks and gates
 
