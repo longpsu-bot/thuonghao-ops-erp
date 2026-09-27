@@ -190,6 +190,11 @@ describe("Confirmed Need Chakra operator surface", () => {
     const input = await quantity();
 
     await editValid();
+    expect(
+      screen.getByRole("region", { name: "Bảng xác nhận nhu cầu" }),
+    ).toHaveStyle({
+      "--atlas-confirmed-need-table-mobile-max-height": "28dvh",
+    });
     expect(input.closest('[data-field="confirmation"]')).toHaveAttribute(
       "data-adjustment-state",
       "valid",

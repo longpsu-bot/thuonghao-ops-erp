@@ -1,5 +1,6 @@
 import { Box, Input, NativeSelect, Table, Text } from "@chakra-ui/react";
 import { useId } from "react";
+import type { CSSProperties } from "react";
 import { AtlasTableViewport } from "../AtlasTableViewport";
 import {
   confirmedNeedConfirmationStateLabel,
@@ -17,20 +18,29 @@ export function ConfirmedNeedTable({
   drafts,
   errors,
   editable,
+  compactEditing = false,
   onEdit,
 }: {
   lines: ConfirmedNeedLine[];
   drafts: Record<string, ConfirmedNeedDraftLine>;
   errors: Record<string, string>;
   editable: boolean;
+  compactEditing?: boolean;
   onEdit: (id: string, change: Partial<ConfirmedNeedDraftLine>) => void;
 }) {
   const id = useId();
   return (
     <AtlasTableViewport
       label="Bảng xác nhận nhu cầu"
+      style={
+        {
+          "--atlas-confirmed-need-table-mobile-max-height": compactEditing
+            ? "28dvh"
+            : "var(--atlas-layout-table-mobile-height, 55dvh)",
+        } as CSSProperties
+      }
       maxH={{
-        base: "var(--atlas-layout-table-mobile-height, 55dvh)",
+        base: "var(--atlas-confirmed-need-table-mobile-max-height)",
         xl: "var(--atlas-layout-table-height, calc(100dvh - 425px))",
       }}
     >

@@ -379,6 +379,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
                 drafts={c.drafts}
                 errors={c.errors}
                 editable={c.editable}
+                compactEditing={c.dirty && !c.released}
                 onEdit={c.edit}
               />
               <Flex
