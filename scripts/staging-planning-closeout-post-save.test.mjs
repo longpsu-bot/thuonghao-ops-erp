@@ -648,6 +648,19 @@ test("snapshot query measures decision proposals and semantic Save receipts with
   assert.doesNotMatch(sql, /'decisions',\s*\(select\s+coalesce\(jsonb_agg/i);
 });
 
+test("current decision snapshot projection exposes confirmed_need_line_id exactly once", () => {
+  const sql = verifier.planningCloseoutSnapshotSql();
+  const projection = sql.match(
+    /current_decisions as materialized \(\s*select ([\s\S]*?)\s+from scoped_batches/,
+  )?.[1];
+  assert.ok(projection, "expected current_decisions CTE projection");
+  assert.match(projection, /^decision\.\*/);
+  assert.doesNotMatch(
+    projection,
+    /line\.confirmed_need_line_id\s*,\s*decision\.\*/,
+  );
+});
+
 test("final post-Save proof accepts read-only browser evidence and emits the closeout summary", () => {
   const state = postSaveSnapshot();
   const review = postSaveReview();

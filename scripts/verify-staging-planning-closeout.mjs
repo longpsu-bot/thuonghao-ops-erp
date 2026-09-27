@@ -726,7 +726,7 @@ with scoped_runs as (
   join atlas_planning.confirmed_need_line_revision_contributions contribution
     on contribution.confirmed_need_line_revision_id=revision.confirmed_need_line_revision_id
 ), current_decisions as materialized (
-  select line.confirmed_need_line_id, decision.*, revision.theoretical_quantity,
+  select decision.*, revision.theoretical_quantity,
          revision.proposal_rounding_step,
          revision.proposal_rounding_ingredient_version,
          revision.unit_id revision_unit_id,
