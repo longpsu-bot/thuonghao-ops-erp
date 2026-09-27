@@ -30,7 +30,8 @@ and version. All 248 proposal-before facts must satisfy the D-046 formula.
   stable identities, 248 decisions/current decisions, 247 exact acceptances,
   one exact operational adjustment with nonblank note and Planning-step
   alignment, 248 valid proposal-before facts, one semantically valid completed
-  Save receipt, and zero Handoffs.
+  Save receipt, and zero Handoffs. The deployed receipt scope is exactly
+  `<actor>:ConfirmedNeedBatch:<batch>`; no domain segment is inserted.
 - The post-Save browser path is read-only. It opens the existing 17/09 review,
   checks all 248 persisted current decisions, navigates away and reopens, and
   compares a deterministic SHA-256 fingerprint of the persisted decision facts.
@@ -57,11 +58,14 @@ The verifier distinguishes:
 The older preview remains acceptable only when the GitHub comparison from the
 certified preview base to the verifier commit contains certification-only
 changes under the fail-closed allowlist: the closeout verifier, browser runner,
-closeout workflow, relevant verifier tests, and `docs/`. A UI, bridge, RPC,
-migration, runtime business-logic, or unrecognized script change rejects the
-candidate and requires a refreshed preview. PR #286 must remain Draft/Open at
-the exact head/base, and the existing immutable build-manifest checks remain
-mandatory.
+closeout workflow, relevant verifier tests, and this exact implementation-task
+document. A UI, bridge, RPC, migration, runtime business-logic, other document,
+or unrecognized script change rejects the candidate and requires a refreshed
+preview. PR #286 must remain Draft/Open at the exact head and target the `main`
+base ref. Its base SHA is intentionally not pinned because `main` advances when
+the verifier lands; the two independent comparison checks retain the immutable
+certified merge-base proofs. The existing immutable build-manifest checks
+remain mandatory.
 
 ## Migration, security, and rollback
 

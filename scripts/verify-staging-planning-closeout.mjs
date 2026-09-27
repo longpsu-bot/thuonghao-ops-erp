@@ -362,7 +362,7 @@ function saveReceiptAccepted(receipt) {
     receipt?.command_name === "save_confirmed_needs" &&
     receipt.actor_id === SYNTHETIC_ACTOR &&
     receipt.scope_key ===
-      `${SYNTHETIC_ACTOR}:PLANNING:ConfirmedNeedBatch:${RETAINED_BATCH}` &&
+      `${SYNTHETIC_ACTOR}:ConfirmedNeedBatch:${RETAINED_BATCH}` &&
     receipt.outcome === "COMPLETED" &&
     receipt.request_contract_version === "RMVP-05.v2" &&
     receipt.requested_by_auth_subject === SUBJECT &&
@@ -379,86 +379,179 @@ function saveReceiptAccepted(receipt) {
   );
 }
 
-export function classifyPostSavePlanningCloseout(snapshot) {
-  const fail = () => {
-    throw new Error("POST_SAVE_CLOSEOUT_REJECTED");
+function diagnosticDimension(expected, actual) {
+  return {
+    expected,
+    actual: actual ?? null,
+    pass: sameJson(expected, actual),
   };
-  if (
-    !planningCloseoutPoliciesAccepted(snapshot?.policies) ||
-    !Array.isArray(snapshot?.runs) ||
-    snapshot.runs.length !== 2 ||
-    !Array.isArray(snapshot?.batches) ||
-    snapshot.batches.length !== 1 ||
-    !Array.isArray(snapshot?.receipts) ||
-    !Array.isArray(snapshot?.save_receipts) ||
-    snapshot.save_receipts.length !== 1 ||
-    snapshot.save_receipt_count !== 1 ||
-    !saveReceiptAccepted(snapshot.save_receipts[0]) ||
-    snapshot.handoffs !== 0 ||
-    !/^[a-f0-9]{64}$/.test(snapshot.decision_fingerprint ?? "")
-  )
-    fail();
-  const predecessor = snapshot.runs.find((run) => run.id === RETAINED_RUN);
-  const run = snapshot.runs.find((item) => item.id !== RETAINED_RUN);
-  const batch = snapshot.batches[0];
-  if (
-    !predecessor ||
-    !run ||
-    !exactDate(predecessor) ||
-    !exactDate(run) ||
-    !exactDate(batch) ||
-    batch.id !== RETAINED_BATCH ||
-    predecessor.status !== "INVALIDATED" ||
-    predecessor.version !== 4 ||
-    predecessor.generated_line_count !== 304 ||
-    predecessor.release_snapshot_line_count !== 304 ||
-    predecessor.actor_id !== SYNTHETIC_ACTOR ||
-    run.status !== "RELEASED_FOR_CONFIRMATION" ||
-    run.version !== 3 ||
-    run.predecessor_run_id !== predecessor.id ||
-    run.generated_line_count !== 304 ||
-    run.release_snapshot_line_count !== 304 ||
-    run.blocking_issue_count !== 0 ||
-    run.warning_count !== 0 ||
-    run.actor_id !== SYNTHETIC_ACTOR ||
-    batch.status !== "DRAFT_REVIEW" ||
-    batch.version !== 3 ||
-    batch.source_kind !== "NEED_GENERATION" ||
-    batch.origin_run_id !== predecessor.id ||
-    batch.current_run_id !== run.id ||
-    batch.origin_run_version !== 3 ||
-    batch.current_run_version !== 3 ||
-    batch.line_count !== 248 ||
-    batch.stable_line_count !== 249 ||
-    batch.decision_count !== 248 ||
-    batch.current_decision_count !== 248 ||
-    batch.adjustment_count !== 1 ||
-    batch.acceptance_count !== 247 ||
-    batch.invalid_decision_partition_count !== 0 ||
-    !preflightAccepted(snapshot.preflight, "CURRENT", run.id, batch.id) ||
-    snapshot.preflight.current_need.confirmed_need_batch_version !== 3 ||
-    !sameJson(
-      snapshot.preflight.source_date_fingerprints.selected,
-      EXPECTED_SOURCE_FINGERPRINTS,
-    ) ||
-    !classifyPlanningGenerationReceipts(snapshot.receipts, run.id) ||
-    snapshot.d046?.predecessor_release_contribution_count !== 304 ||
-    snapshot.d046?.successor_release_contribution_count !== 304 ||
-    snapshot.d046?.current_snapshot_pair_count !== 248 ||
-    snapshot.d046?.decision_proposal_count !== 248 ||
-    snapshot.d046?.exact_decision_proposal_count !== 248 ||
-    snapshot.d046?.invalid_decision_proposal_count !== 0 ||
-    snapshot.d046?.retained_pre_d046_null_pair_count !== 248 ||
-    snapshot.d046?.allowed_unit_transition_count !== 1 ||
-    snapshot.d046?.invalid_unit_transition_count !== 0 ||
-    snapshot.d046?.current_raw_membership_count !== 304
-  )
-    fail();
+}
+
+function safelyAccepted(predicate) {
   try {
-    classifyPlanningAdoptionManifest(snapshot.adoption_manifest, "post-deploy");
+    return Boolean(predicate());
   } catch {
-    fail();
+    return false;
   }
+}
+
+function postSaveCloseoutChecks(snapshot) {
+  const runs = Array.isArray(snapshot?.runs) ? snapshot.runs : [];
+  const batches = Array.isArray(snapshot?.batches) ? snapshot.batches : [];
+  const receipts = Array.isArray(snapshot?.receipts) ? snapshot.receipts : [];
+  const saveReceipts = Array.isArray(snapshot?.save_receipts)
+    ? snapshot.save_receipts
+    : [];
+  const predecessor = runs.find((run) => run?.id === RETAINED_RUN);
+  const run = runs.find((item) => item?.id !== RETAINED_RUN);
+  const batch = batches[0];
+  const accepted = (predicate) => diagnosticDimension(true, predicate);
+  const checks = {
+    policies: accepted(
+      safelyAccepted(() =>
+        planningCloseoutPoliciesAccepted(snapshot?.policies),
+      ),
+    ),
+    run_count: diagnosticDimension(2, runs.length),
+    batch_count: diagnosticDimension(1, batches.length),
+    generation_receipt_semantics: accepted(
+      safelyAccepted(() =>
+        classifyPlanningGenerationReceipts(receipts, run?.id),
+      ),
+    ),
+    save_receipt_projection_count: diagnosticDimension(1, saveReceipts.length),
+    save_receipt_count: diagnosticDimension(1, snapshot?.save_receipt_count),
+    save_receipt_semantics: accepted(
+      saveReceipts.length === 1 && saveReceiptAccepted(saveReceipts[0]),
+    ),
+    purchase_handoff_count: diagnosticDimension(0, snapshot?.handoffs),
+    decision_fingerprint: accepted(
+      /^[a-f0-9]{64}$/.test(snapshot?.decision_fingerprint ?? ""),
+    ),
+    predecessor_present: accepted(Boolean(predecessor)),
+    current_run_present: accepted(Boolean(run)),
+    exact_service_dates: accepted(
+      safelyAccepted(
+        () => exactDate(predecessor) && exactDate(run) && exactDate(batch),
+      ),
+    ),
+    batch_identity: accepted(batch?.id === RETAINED_BATCH),
+    predecessor_lineage: accepted(
+      predecessor?.status === "INVALIDATED" &&
+        predecessor?.version === 4 &&
+        predecessor?.generated_line_count === 304 &&
+        predecessor?.release_snapshot_line_count === 304 &&
+        predecessor?.actor_id === SYNTHETIC_ACTOR,
+    ),
+    current_run_lineage: accepted(
+      run?.status === "RELEASED_FOR_CONFIRMATION" &&
+        run?.version === 3 &&
+        run?.predecessor_run_id === predecessor?.id &&
+        run?.generated_line_count === 304 &&
+        run?.release_snapshot_line_count === 304 &&
+        run?.blocking_issue_count === 0 &&
+        run?.warning_count === 0 &&
+        run?.actor_id === SYNTHETIC_ACTOR,
+    ),
+    batch_state_lineage: accepted(
+      batch?.status === "DRAFT_REVIEW" &&
+        batch?.version === 3 &&
+        batch?.source_kind === "NEED_GENERATION" &&
+        batch?.origin_run_id === predecessor?.id &&
+        batch?.current_run_id === run?.id &&
+        batch?.origin_run_version === 3 &&
+        batch?.current_run_version === 3,
+    ),
+    current_line_count: diagnosticDimension(248, batch?.line_count),
+    stable_line_identity_count: diagnosticDimension(
+      249,
+      batch?.stable_line_count,
+    ),
+    decision_count: diagnosticDimension(248, batch?.decision_count),
+    current_decision_count: diagnosticDimension(
+      248,
+      batch?.current_decision_count,
+    ),
+    adjustment_count: diagnosticDimension(1, batch?.adjustment_count),
+    acceptance_count: diagnosticDimension(247, batch?.acceptance_count),
+    invalid_decision_partition_count: diagnosticDimension(
+      0,
+      batch?.invalid_decision_partition_count,
+    ),
+    preflight: accepted(
+      safelyAccepted(() =>
+        preflightAccepted(snapshot?.preflight, "CURRENT", run?.id, batch?.id),
+      ),
+    ),
+    preflight_batch_version: diagnosticDimension(
+      3,
+      snapshot?.preflight?.current_need?.confirmed_need_batch_version,
+    ),
+    source_fingerprints: accepted(
+      sameJson(
+        snapshot?.preflight?.source_date_fingerprints?.selected,
+        EXPECTED_SOURCE_FINGERPRINTS,
+      ),
+    ),
+    predecessor_release_contribution_count: diagnosticDimension(
+      304,
+      snapshot?.d046?.predecessor_release_contribution_count,
+    ),
+    successor_release_contribution_count: diagnosticDimension(
+      304,
+      snapshot?.d046?.successor_release_contribution_count,
+    ),
+    current_snapshot_pair_count: diagnosticDimension(
+      248,
+      snapshot?.d046?.current_snapshot_pair_count,
+    ),
+    decision_proposal_count: diagnosticDimension(
+      248,
+      snapshot?.d046?.decision_proposal_count,
+    ),
+    exact_decision_proposal_count: diagnosticDimension(
+      248,
+      snapshot?.d046?.exact_decision_proposal_count,
+    ),
+    invalid_decision_proposal_count: diagnosticDimension(
+      0,
+      snapshot?.d046?.invalid_decision_proposal_count,
+    ),
+    retained_pre_d046_null_pair_count: diagnosticDimension(
+      248,
+      snapshot?.d046?.retained_pre_d046_null_pair_count,
+    ),
+    allowed_unit_transition_count: diagnosticDimension(
+      1,
+      snapshot?.d046?.allowed_unit_transition_count,
+    ),
+    invalid_unit_transition_count: diagnosticDimension(
+      0,
+      snapshot?.d046?.invalid_unit_transition_count,
+    ),
+    current_raw_membership_count: diagnosticDimension(
+      304,
+      snapshot?.d046?.current_raw_membership_count,
+    ),
+    adoption_manifest: accepted(
+      safelyAccepted(() => {
+        classifyPlanningAdoptionManifest(
+          snapshot?.adoption_manifest,
+          "post-deploy",
+        );
+        return true;
+      }),
+    ),
+  };
+  return { checks, predecessor, run, batch };
+}
+
+export function classifyPostSavePlanningCloseout(snapshot) {
+  const { checks, predecessor, run, batch } = postSaveCloseoutChecks(snapshot);
+  if (Object.values(checks).some((check) => !check.pass))
+    throw new Error(
+      JSON.stringify({ status: "POST_SAVE_CLOSEOUT_REJECTED", checks }),
+    );
   return {
     mode: "POST_SAVE_CLOSEOUT_RESUME",
     predecessorRunId: predecessor.id,
@@ -514,6 +607,7 @@ export function assertCertificationOnlyDelta(files) {
     "scripts/verify-staging-planning-closeout.mjs",
     "scripts/staging-planning-browser.mjs",
     ".github/workflows/atlas-staging-planning-closeout.yml",
+    "docs/implementation-tasks/TASK-PLANNING-CLOSEOUT-POST-SAVE-VERIFIER.md",
   ]);
   if (
     !Array.isArray(files) ||
@@ -522,7 +616,6 @@ export function assertCertificationOnlyDelta(files) {
       (file) =>
         typeof file !== "string" ||
         (!exact.has(file) &&
-          !file.startsWith("docs/") &&
           !/^scripts\/staging-planning-(?:closeout|browser|preview).*\.test\.mjs$/.test(
             file,
           ) &&
@@ -563,7 +656,7 @@ export function assertCertifiedPreviewPullRequest(pr) {
     pr.state !== "open" ||
     pr.draft !== true ||
     pr.head?.sha !== APPROVED_PREVIEW_SHA ||
-    pr.base?.sha !== CERTIFIED_PREVIEW_BASE_SHA
+    pr.base?.ref !== "main"
   )
     throw new Error("PLANNING_PREVIEW_PROVENANCE_REJECTED");
 }

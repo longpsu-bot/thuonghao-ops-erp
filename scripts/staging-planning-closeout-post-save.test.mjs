@@ -174,7 +174,7 @@ function postSaveSnapshot() {
       {
         command_name: "save_confirmed_needs",
         actor_id: actorId,
-        scope_key: `${actorId}:PLANNING:ConfirmedNeedBatch:${batchId}`,
+        scope_key: `${actorId}:ConfirmedNeedBatch:${batchId}`,
         outcome: "COMPLETED",
         request_contract_version: "RMVP-05.v2",
         requested_by_auth_subject: subjectId,
@@ -289,17 +289,6 @@ for (const [label, mutate] of [
     "only 247 exact original proposals",
     (s) => (s.d046.exact_decision_proposal_count = 247),
   ],
-  ["zero Save receipts", (s) => (s.save_receipts = [])],
-  ["two Save receipts", (s) => s.save_receipts.push({ ...s.save_receipts[0] })],
-  [
-    "wrong Save outcome",
-    (s) => (s.save_receipts[0].outcome = "FAILED_NON_RETRYABLE"),
-  ],
-  [
-    "wrong Save subject",
-    (s) => (s.save_receipts[0].requested_by_auth_subject = "wrong"),
-  ],
-  ["wrong Save scope", (s) => (s.save_receipts[0].scope_key = "wrong")],
   ["handoff present", (s) => (s.handoffs = 1)],
   [
     "changed fingerprint",
@@ -318,6 +307,102 @@ for (const [label, mutate] of [
     );
   });
 }
+
+for (const [label, mutate] of [
+  ["command name", (r) => (r.command_name = "execute_need_generation")],
+  ["actor", (r) => (r.actor_id = "wrong")],
+  ["auth subject", (r) => (r.requested_by_auth_subject = "wrong")],
+  [
+    "PLANNING-injected scope",
+    (r) => (r.scope_key = `${actorId}:PLANNING:ConfirmedNeedBatch:${batchId}`),
+  ],
+  ["scope", (r) => (r.scope_key = `${actorId}:ConfirmedNeedBatch:wrong`)],
+  ["outcome", (r) => (r.outcome = "FAILED_NON_RETRYABLE")],
+  ["response contract", (r) => (r.request_contract_version = "RMVP-05.v1")],
+  ["audit reason", (r) => (r.request_reason_code = "OTHER")],
+  ["audit batch id", (r) => (r.request_batch_id = "wrong")],
+  ["expected version", (r) => (r.expected_version = 3)],
+  ["success", (r) => (r.success = false)],
+  ["idempotency", (r) => (r.idempotency_status = "IN_PROGRESS")],
+  ["response batch id", (r) => (r.confirmed_need_batch_id = "wrong")],
+  ["prior version", (r) => (r.prior_batch_version = 1)],
+  ["resulting version", (r) => (r.resulting_batch_version = 4)],
+  ["adjusted count", (r) => (r.adjusted_line_count = 2)],
+  ["unchanged count", (r) => (r.unchanged_accepted_line_count = 246)],
+]) {
+  test(`post-Save classifier rejects receipt with wrong ${label}`, () => {
+    const snapshot = postSaveSnapshot();
+    mutate(snapshot.save_receipts[0]);
+    assert.throws(
+      () => verifier.classifyPostSavePlanningCloseout(snapshot),
+      /POST_SAVE_CLOSEOUT_REJECTED/,
+    );
+  });
+}
+
+for (const [label, mutate] of [
+  [
+    "zero receipts",
+    (snapshot) => {
+      snapshot.save_receipts = [];
+      snapshot.save_receipt_count = 0;
+    },
+  ],
+  [
+    "two receipts",
+    (snapshot) => {
+      snapshot.save_receipts.push({ ...snapshot.save_receipts[0] });
+      snapshot.save_receipt_count = 2;
+    },
+  ],
+]) {
+  test(`post-Save classifier rejects ${label}`, () => {
+    const snapshot = postSaveSnapshot();
+    mutate(snapshot);
+    assert.throws(
+      () => verifier.classifyPostSavePlanningCloseout(snapshot),
+      /POST_SAVE_CLOSEOUT_REJECTED/,
+    );
+  });
+}
+
+test("initial post-Save rejection reports compact dimension diagnostics", () => {
+  const snapshot = postSaveSnapshot();
+  snapshot.batches[0].decision_count = 247;
+  let diagnostic;
+  try {
+    verifier.classifyPostSavePlanningCloseout(snapshot);
+    assert.fail("expected post-Save classification to reject");
+  } catch (error) {
+    diagnostic = JSON.parse(error.message);
+  }
+  assert.equal(diagnostic.status, "POST_SAVE_CLOSEOUT_REJECTED");
+  assert.deepEqual(diagnostic.checks.decision_count, {
+    expected: 248,
+    actual: 247,
+    pass: false,
+  });
+  assert.doesNotMatch(JSON.stringify(diagnostic), /line-\d|decision-\d/);
+});
+
+test("initial post-Save receipt rejection exposes only its semantic dimension", () => {
+  const snapshot = postSaveSnapshot();
+  snapshot.save_receipts[0].scope_key = `${actorId}:PLANNING:ConfirmedNeedBatch:${batchId}`;
+  let diagnostic;
+  try {
+    verifier.classifyPostSavePlanningCloseout(snapshot);
+    assert.fail("expected post-Save classification to reject");
+  } catch (error) {
+    diagnostic = JSON.parse(error.message);
+  }
+  assert.deepEqual(diagnostic.checks.save_receipt_semantics, {
+    expected: true,
+    actual: false,
+    pass: false,
+  });
+  assert.equal(JSON.stringify(diagnostic).includes(actorId), false);
+  assert.equal(JSON.stringify(diagnostic).includes(batchId), false);
+});
 
 test("post-Save decision partition rejects wrong reason, blank note, equality adjustment and unequal acceptance", () => {
   for (const mutate of [
@@ -414,6 +499,23 @@ test("pre-Save mutation path requires explicit mode and persist_rehearsal=true",
   );
 });
 
+test("already-saved v3 cannot enter the explicit pre-Save mutation journey", async () => {
+  let mutationCalls = 0;
+  await assert.rejects(
+    verifier.startProtectedPlanningBrowserCloseout({
+      snapshot: postSaveSnapshot(),
+      closeoutMode: "pre_save_rehearsal",
+      persistRehearsal: true,
+      readOnlyJourney: async () => ({}),
+      mutationJourney: async () => {
+        mutationCalls += 1;
+        return {};
+      },
+    }),
+  );
+  assert.equal(mutationCalls, 0);
+});
+
 test("certification-only provenance accepts the explicit allowlist and rejects runtime changes", () => {
   assert.doesNotThrow(() =>
     verifier.assertCertificationOnlyDelta([
@@ -430,6 +532,10 @@ test("certification-only provenance accepts the explicit allowlist and rejects r
     "src/vnext/atlas/bridges/confirmedNeed.ts",
     "supabase/migrations/20260927000000_bad.sql",
     "scripts/staging-planning-preview.mjs",
+    "docs/decisions/decision-register.md",
+    "docs/business-rules/business-rule-register.md",
+    "docs/api/api-contracts.md",
+    "docs/implementation-tasks/UNRELATED.md",
   ]) {
     assert.throws(
       () => verifier.assertCertificationOnlyDelta([file]),
@@ -496,21 +602,22 @@ test("preview compatibility binds the certified base to the exact verifier commi
   }
 });
 
-test("preview compatibility keeps PR 286 Draft/Open at the exact head and base", () => {
+test("preview compatibility keeps PR 286 Draft/Open at the exact head and main base ref", () => {
   assert.doesNotThrow(() =>
     verifier.assertCertifiedPreviewPullRequest({
       number: 286,
       state: "open",
       draft: true,
       head: { sha: "4eddd97a7524606ca6ce5e48e2700f6d23a31a03" },
-      base: { sha: "1ee97fdb2a51d992c0ee57a9763243ad2da7c279" },
+      base: { ref: "main", sha: "a".repeat(40) },
     }),
   );
   for (const patch of [
+    { number: 287 },
     { state: "closed" },
     { draft: false },
     { head: { sha: "a".repeat(40) } },
-    { base: { sha: "b".repeat(40) } },
+    { base: { ref: "release", sha: "a".repeat(40) } },
   ]) {
     assert.throws(
       () =>
@@ -519,7 +626,7 @@ test("preview compatibility keeps PR 286 Draft/Open at the exact head and base",
           state: "open",
           draft: true,
           head: { sha: "4eddd97a7524606ca6ce5e48e2700f6d23a31a03" },
-          base: { sha: "1ee97fdb2a51d992c0ee57a9763243ad2da7c279" },
+          base: { ref: "main", sha: "a".repeat(40) },
           ...patch,
         }),
       /PLANNING_PREVIEW_PROVENANCE_REJECTED/,
