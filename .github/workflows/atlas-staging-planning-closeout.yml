@@ -4,11 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       commit_sha:
-        description: Exact full commit SHA already certified on main
+        description: Exact verifier commit SHA already certified on main
         required: true
         type: string
+      closeout_mode:
+        description: Exact verifier state; post-Save resume is read-only
+        required: true
+        type: choice
+        default: post_save_resume
+        options:
+          - post_save_resume
+          - pre_save_rehearsal
       persist_rehearsal:
-        description: Run one Confirmed Need Save and reopen through Chrome
+        description: Required only for the explicit pre-Save rehearsal
         type: boolean
         default: false
 
@@ -68,11 +76,20 @@ jobs:
 
       - name: Verify read-only checkpoint and browser closeout
         env:
+          CLOSEOUT_MODE: ${{ inputs.closeout_mode }}
           PERSIST_REHEARSAL: ${{ inputs.persist_rehearsal }}
         run: |
-          if [ "$PERSIST_REHEARSAL" != "true" ]; then
-            echo "Browser closeout requires explicit persist_rehearsal=true" >&2
+          if [ "$CLOSEOUT_MODE" = "pre_save_rehearsal" ] && [ "$PERSIST_REHEARSAL" != "true" ]; then
+            echo "pre_save_rehearsal requires explicit persist_rehearsal=true" >&2
+            exit 1
+          fi
+          if [ "$CLOSEOUT_MODE" = "post_save_resume" ] && [ "$PERSIST_REHEARSAL" = "true" ]; then
+            echo "post_save_resume is read-only and rejects persist_rehearsal=true" >&2
             exit 1
           fi
           command -v google-chrome
-          node scripts/verify-staging-planning-closeout.mjs --commit-sha "${{ inputs.commit_sha }}" --persist-rehearsal
+          ARGS=(--commit-sha "${{ inputs.commit_sha }}" --closeout-mode "$CLOSEOUT_MODE")
+          if [ "$PERSIST_REHEARSAL" = "true" ]; then
+            ARGS+=(--persist-rehearsal)
+          fi
+          node scripts/verify-staging-planning-closeout.mjs "${ARGS[@]}"
