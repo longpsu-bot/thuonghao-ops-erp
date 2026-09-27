@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Text } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { AtlasVNextShell } from "../AtlasVNextShell";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
@@ -91,17 +91,18 @@ function story(scenario: ConfirmedReviewScenario, action?: Action): Story {
           const q = c.getByRole("textbox", {
             name: "Số lượng xác nhận Gạo thơm",
           });
-          await userEvent.clear(q);
-          await userEvent.type(q, action === "invalid" ? "10,123" : "12,5");
+          fireEvent.change(q, {
+            target: { value: action === "invalid" ? "10,123" : "12,5" },
+          });
           if (action === "reason" || action === "invalid") return;
-          await userEvent.selectOptions(
+          fireEvent.change(
             c.getByRole("combobox", { name: "Lý do Gạo thơm" }),
-            "OTHER",
+            { target: { value: "OTHER" } },
           );
           if (action === "note") return;
-          await userEvent.type(
+          fireEvent.change(
             c.getByRole("textbox", { name: "Ghi chú Gạo thơm" }),
-            "Bếp yêu cầu",
+            { target: { value: "Bếp yêu cầu" } },
           );
           await waitFor(() => {
             expect(q).toHaveValue("12,5");
