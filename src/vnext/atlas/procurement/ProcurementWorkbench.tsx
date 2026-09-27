@@ -36,6 +36,10 @@ import {
 } from "./useProcurementWorkbench";
 import { atlasPrimaryTabList, atlasPrimaryTabTrigger } from "../AtlasTaskTabs";
 import { AtlasTaskContext } from "../AtlasTaskContext";
+import {
+  focusFirstCompactFilter,
+  preserveCompactFilterFocusOrder,
+} from "../compactFilterFocus";
 
 export type ProcurementWorkbenchProps = ProcurementControllerProps &
   AtlasModuleExitProps & {
@@ -54,7 +58,13 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
   );
   const rowTrigger = useRef<HTMLButtonElement | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const compactFilters = useRef<HTMLDivElement>(null);
+  const compactFilterTrigger = useRef<HTMLButtonElement>(null);
+  const compactFilterOnward = useRef<HTMLDivElement>(null);
   const previousStage = useRef(controller.stage);
+  useEffect(() => {
+    if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
+  }, [filtersOpen]);
   useEffect(() => {
     if (previousStage.current !== controller.stage) {
       setSelectedKey(null);
@@ -252,7 +262,20 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                     : "minmax(155px, 0.8fr) minmax(200px, 2fr) auto",
               }}
             >
-              <Box id="procurement-filters" display="contents">
+              <Box
+                ref={compactFilters}
+                id="procurement-filters"
+                display="contents"
+                onKeyDown={(event) => {
+                  if (filtersOpen)
+                    preserveCompactFilterFocusOrder(
+                      event,
+                      compactFilters.current,
+                      compactFilterTrigger.current,
+                      compactFilterOnward.current,
+                    );
+                }}
+              >
                 <Box
                   display={{
                     base: filtersOpen ? "block" : "none",
@@ -342,6 +365,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                 />
               </Field.Root>
               <Button
+                ref={compactFilterTrigger}
                 display={{ base: "inline-flex", md: "none" }}
                 order="1"
                 gridColumn="2"
@@ -366,6 +390,7 @@ export function ProcurementWorkbench(props: ProcurementWorkbenchProps) {
                   : ""}
               </Text>
               <Box
+                ref={compactFilterOnward}
                 order={{
                   base: 2,
                   md: controller.stage === "allocation" ? 5 : 3,

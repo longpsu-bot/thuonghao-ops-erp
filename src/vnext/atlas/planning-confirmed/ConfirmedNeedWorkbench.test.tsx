@@ -8,6 +8,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { userEvent } from "storybook/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ConfirmedNeedWorkbench } from "./ConfirmedNeedWorkbench";
@@ -142,6 +143,32 @@ describe("Confirmed Need Chakra operator surface", () => {
     fireEvent.click(disclosure);
     expect(screen.getByText(/Tình trạng: Cần rà soát/)).toBeInTheDocument();
   });
+
+  it.each([390, 768])(
+    "tabs from the expanded compact filter trigger into revealed controls at %ipx",
+    async (width) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: width,
+      });
+      show();
+      await quantity();
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      screen.getByRole("textbox", { name: "Tìm kiếm" }).focus();
+      await userEvent.tab();
+      expect(disclosure).toHaveFocus();
+      await userEvent.keyboard("{Enter}");
+      expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
+      const filters = document.getElementById("confirmed-need-filters");
+      expect(filters).toContainElement(document.activeElement as HTMLElement);
+      while (filters?.contains(document.activeElement)) await userEvent.tab();
+      expect(
+        screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+      ).toHaveFocus();
+    },
+  );
 
   it("reports an unknown Station scope when the authoritative read fails", async () => {
     show("read_failure");

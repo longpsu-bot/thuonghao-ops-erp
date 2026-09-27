@@ -7,6 +7,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import { userEvent } from "storybook/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import type {
@@ -295,6 +296,28 @@ describe("IngredientSupplierWorkbench", () => {
     fireEvent.click(disclosure);
 
     expect(screen.getByText("Trạng thái: Ngừng dùng")).toBeInTheDocument();
+  });
+
+  it("tabs from the expanded 390px filter trigger into the revealed status control", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    renderWorkbench();
+    await ready();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    screen.getByLabelText("Tìm nguyên liệu").focus();
+    await userEvent.tab();
+    expect(disclosure).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
+    expect(screen.getByRole("combobox", { name: "Trạng thái" })).toHaveFocus();
+    await userEvent.tab();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toHaveFocus();
   });
 
   it("does not invent an Ingredient count when the authoritative read fails", async () => {

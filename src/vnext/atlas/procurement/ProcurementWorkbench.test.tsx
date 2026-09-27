@@ -7,6 +7,7 @@ import {
   within,
   waitFor,
 } from "@testing-library/react";
+import { userEvent } from "storybook/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AtlasVNextProvider } from "../AtlasVNextProvider";
 import { ProcurementWorkbench } from "./ProcurementWorkbench";
@@ -156,6 +157,29 @@ describe("Procurement vNext operator workbench", () => {
     fireEvent.click(disclosure);
     expect(disclosure).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("combobox", { name: "Ngoại lệ" })).toBeDisabled();
+  });
+
+  it("tabs from the expanded 390px filter trigger into revealed controls", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    show("ready");
+    await action();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    screen.getByRole("textbox", { name: "Tìm kiếm" }).focus();
+    await userEvent.tab();
+    expect(disclosure).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(disclosure).toHaveAttribute("aria-expanded", "true");
+
+    const filters = document.getElementById("procurement-filters");
+    expect(filters).toContainElement(document.activeElement as HTMLElement);
+    while (filters?.contains(document.activeElement)) await userEvent.tab();
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toHaveFocus();
   });
 
   it("shows preparation blockers even when ready but not permitted", async () => {

@@ -30,6 +30,10 @@ import {
   type PlanningSourcesProps,
 } from "./usePlanningSources";
 import { AtlasTaskContext } from "../AtlasTaskContext";
+import {
+  focusFirstCompactFilter,
+  preserveCompactFilterFocusOrder,
+} from "../compactFilterFocus";
 const jobs = { menu: "Thực đơn", attendance: "Sĩ số", pantry: "Bổ sung" };
 export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const c = usePlanningSources(props);
@@ -37,11 +41,17 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
   const [search, setSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  const compactFilters = useRef<HTMLDivElement>(null);
+  const compactFilterTrigger = useRef<HTMLButtonElement>(null);
+  const compactFilterOnward = useRef<HTMLDivElement>(null);
   const previousJob = useRef(c.job);
   const reviewPanel = useRef<HTMLElement>(null);
   const reviewTrigger = useRef<HTMLButtonElement>(null);
   const wasReviewOpen = useRef(false);
   const reviewOpen = Boolean(c.preview);
+  useEffect(() => {
+    if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
+  }, [filtersOpen]);
   useEffect(() => {
     if (reviewOpen) reviewPanel.current?.focus();
     else if (wasReviewOpen.current) reviewTrigger.current?.focus();
@@ -137,7 +147,20 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 xl: "minmax(170px, 1fr) minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(150px, 1fr) auto",
               }}
             >
-              <Box id="planning-source-filters" display="contents">
+              <Box
+                ref={compactFilters}
+                id="planning-source-filters"
+                display="contents"
+                onKeyDown={(event) => {
+                  if (filtersOpen)
+                    preserveCompactFilterFocusOrder(
+                      event,
+                      compactFilters.current,
+                      compactFilterTrigger.current,
+                      compactFilterOnward.current,
+                    );
+                }}
+              >
                 <Box
                   display={{
                     base: filtersOpen ? "block" : "none",
@@ -220,6 +243,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 />
               </Field.Root>
               <Button
+                ref={compactFilterTrigger}
                 display={{ base: "inline-flex", md: "none" }}
                 order="2"
                 gridColumn="2"
@@ -232,6 +256,7 @@ export function PlanningSourcesWorkbench(props: PlanningSourcesProps) {
                 Bộ lọc
               </Button>
               <Box
+                ref={compactFilterOnward}
                 order={{ base: 3, md: 5 }}
                 gridColumn={{ base: "3", md: "auto" }}
                 pt={{ xl: "lg" }}

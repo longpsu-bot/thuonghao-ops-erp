@@ -10,7 +10,7 @@ import {
   NativeSelect,
   Text,
 } from "@chakra-ui/react";
-import { useRef, useState, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, useImperativeHandle } from "react";
 import { AtlasWeekRangeInput } from "../AtlasWeekRangeInput";
 import { AtlasRefreshButton } from "../AtlasRefreshButton";
 import { AtlasSchoolScope } from "../AtlasSchoolScope";
@@ -24,6 +24,10 @@ import { ConfirmedNeedTable } from "./ConfirmedNeedTable";
 import { ConfirmedNeedDirtyExitDialog } from "./ConfirmedNeedDirtyExitDialog";
 import { ConfirmedNeedCommandFeedback } from "./ConfirmedNeedCommandFeedback";
 import { ConfirmedNeedSupportDetail } from "./ConfirmedNeedSupportDetail";
+import {
+  focusFirstCompactFilter,
+  preserveCompactFilterFocusOrder,
+} from "../compactFilterFocus";
 const viDate = (date: string) => date.split("-").reverse().join("/");
 export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const c = useConfirmedNeedWorkbench(props);
@@ -33,6 +37,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
   const [workbookBusy, setWorkbookBusy] = useState(false);
   const [workbookError, setWorkbookError] = useState<string | null>(null);
   const workbookInput = useRef<HTMLInputElement>(null);
+  const compactFilters = useRef<HTMLDivElement>(null);
+  const compactFilterTrigger = useRef<HTMLButtonElement>(null);
+  const compactFilterOnward = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
+  }, [filtersOpen]);
   const days = weekDates(c.week);
   const contextKey = `${c.date}:${c.workbench?.need_generation_source.run_id}:${c.workbench?.batch_version}`;
   const detailOpen = detailKey === contextKey;
@@ -93,7 +103,20 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               xl: "minmax(150px, 1fr) minmax(140px, 0.9fr) minmax(160px, 1.1fr) minmax(145px, 1fr) minmax(130px, 0.8fr) auto",
             }}
           >
-            <Box id="confirmed-need-filters" display="contents">
+            <Box
+              ref={compactFilters}
+              id="confirmed-need-filters"
+              display="contents"
+              onKeyDown={(event) => {
+                if (filtersOpen)
+                  preserveCompactFilterFocusOrder(
+                    event,
+                    compactFilters.current,
+                    compactFilterTrigger.current,
+                    compactFilterOnward.current,
+                  );
+              }}
+            >
               <Box
                 display={{ base: filtersOpen ? "block" : "none", lg: "block" }}
                 order={{ base: 4, lg: 1 }}
@@ -174,6 +197,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               />
             </Field.Root>
             <Button
+              ref={compactFilterTrigger}
               display={{ base: "inline-flex", lg: "none" }}
               order="1"
               gridColumn="2"
@@ -196,6 +220,7 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
               trạng: {filterSummary}
             </Text>
             <Box
+              ref={compactFilterOnward}
               order={{ base: 2, lg: 6 }}
               gridColumn={{ base: "3", lg: "auto" }}
               pt={{

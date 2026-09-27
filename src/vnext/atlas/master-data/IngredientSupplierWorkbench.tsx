@@ -23,6 +23,10 @@ import { SupplierCatalogue } from "./SupplierCatalogue";
 import { SupplierDetail } from "./SupplierDetail";
 import { useIngredientSupplierWorkbench } from "./useIngredientSupplierWorkbench";
 import { AtlasTaskContext } from "../AtlasTaskContext";
+import {
+  focusFirstCompactFilter,
+  preserveCompactFilterFocusOrder,
+} from "../compactFilterFocus";
 
 export function IngredientSupplierWorkbench({
   authSubject,
@@ -279,6 +283,12 @@ function IngredientToolbar({
   onCreate: () => void;
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const compactFilters = useRef<HTMLSelectElement>(null);
+  const compactFilterTrigger = useRef<HTMLButtonElement>(null);
+  const compactFilterOnward = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (filtersOpen) focusFirstCompactFilter(compactFilters.current);
+  }, [filtersOpen]);
   const statusLabel = {
     ALL: "Tất cả trạng thái",
     ACTIVE: "Đang dùng",
@@ -319,8 +329,18 @@ function IngredientToolbar({
         <Field.Label>Trạng thái</Field.Label>
         <NativeSelect.Root>
           <NativeSelect.Field
+            ref={compactFilters}
             aria-label="Trạng thái"
             value={c.ingredientStatus}
+            onKeyDown={(event) => {
+              if (filtersOpen)
+                preserveCompactFilterFocusOrder(
+                  event,
+                  compactFilters.current,
+                  compactFilterTrigger.current,
+                  compactFilterOnward.current,
+                );
+            }}
             onChange={(e) =>
               c.setIngredientStatus(e.target.value as typeof c.ingredientStatus)
             }
@@ -334,6 +354,7 @@ function IngredientToolbar({
         </NativeSelect.Root>
       </Field.Root>
       <Button
+        ref={compactFilterTrigger}
         display={{ base: "inline-flex", md: "none" }}
         gridColumn="3"
         gridRow="1"
@@ -356,6 +377,7 @@ function IngredientToolbar({
         Trạng thái: {statusLabel}
       </Text>
       <Box
+        ref={compactFilterOnward}
         gridColumn={{ base: "2", md: "auto" }}
         gridRow={{ base: "2", md: "auto" }}
         alignSelf="center"
