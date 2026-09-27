@@ -165,15 +165,15 @@ export function ProcurementSupplierDetail({
       borderColor="border.subtle"
       borderLeftWidth={{
         base: "var(--atlas-layout-zero, 0)",
-        xl: "var(--atlas-layout-edge, 1px)",
+        lg: "var(--atlas-layout-edge, 1px)",
       }}
       borderTopWidth={{
         base: "var(--atlas-layout-edge, 1px)",
-        xl: "var(--atlas-layout-zero, 0)",
+        lg: "var(--atlas-layout-zero, 0)",
       }}
       maxH={{
         base: "var(--atlas-layout-detail-mobile-height, 80dvh)",
-        xl: "var(--atlas-layout-detail-height, calc(100dvh - 360px))",
+        lg: "var(--atlas-layout-detail-height, calc(100dvh - 270px))",
       }}
     >
       <Box p="md" pb="sm">
@@ -288,6 +288,10 @@ export function ProcurementSupplierDetail({
                         ),
                       )
                     }
+                    minH={{
+                      base: "var(--atlas-layout-mobile-target, 44px)",
+                      lg: "compact",
+                    }}
                   >
                     Xóa
                   </Button>
@@ -309,6 +313,10 @@ export function ProcurementSupplierDetail({
             onClick={() => {
               setAdding(!adding);
               setSupplierId("");
+            }}
+            minH={{
+              base: "var(--atlas-layout-mobile-target, 44px)",
+              lg: "compact",
             }}
           >
             + Thêm nhà cung ứng
@@ -349,6 +357,10 @@ export function ProcurementSupplierDetail({
                   setAdded((ids) => [...ids, supplierId]);
                   setAdding(false);
                 }}
+                minH={{
+                  base: "var(--atlas-layout-mobile-target, 44px)",
+                  lg: "compact",
+                }}
               >
                 Thêm
               </Button>
@@ -386,12 +398,23 @@ export function ProcurementSupplierDetail({
         borderColor="border.subtle"
         flexShrink="0"
       >
-        <Button ref={closeButton} onClick={() => requestExit(onClose)}>
+        <Button
+          ref={closeButton}
+          onClick={() => requestExit(onClose)}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
+        >
           Đóng
         </Button>
         <Button
           variant="businessPrimary"
           disabled={!canSave}
+          minH={{
+            base: "var(--atlas-layout-mobile-target, 44px)",
+            lg: "control",
+          }}
           onClick={() =>
             onSave(
               draft

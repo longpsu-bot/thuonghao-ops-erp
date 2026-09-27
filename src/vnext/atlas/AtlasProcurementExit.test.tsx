@@ -33,7 +33,7 @@ it("Procurement application exit uses its split discard dialog", async () => {
   );
   fireEvent.click(
     await screen.findByRole("button", {
-      name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm$/,
+      name: /^(Phân bổ NCC|Xem phân bổ) Gạo thơm · Trường Tiểu học Nguyễn Du · Bếp chính Nguyễn Du$/,
     }),
   );
   fireEvent.change(
