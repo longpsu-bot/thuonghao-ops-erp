@@ -2,7 +2,7 @@
 
 ## Result
 
-UI-09 is implemented on `feat/atlas-ui-vnext-09-post-planning-convergence`. After the third finish-review correction, the product code and disabled-onward compact-keyboard evidence are pinned to `bdc8235a7754224020c967df2db141089f530437`; the full visual matrix remains pinned to `dfd077f04d8ea9f734ff39b00eb530026247a6ad`, and the enabled-onward keyboard supplement remains pinned to `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`. The comparison baseline is exact `origin/main` commit `42e473b5b856100869538f4e41ef5a325b99c893`. The historical presentation reference `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0` remained read-only.
+UI-09 is implemented on `feat/atlas-ui-vnext-09-post-planning-convergence`. The independent `atlas-ui-finish-reviewer` returned final verdict **PASS** at exact branch code/evidence HEAD `2c7b4438c78ff479be10d26bdae98b417c718402`, with every prior finding closed and no remaining BLOCK or MAJOR finding. The final product code and disabled-onward compact-keyboard evidence are pinned to `bdc8235a7754224020c967df2db141089f530437`; the full visual matrix remains pinned to `dfd077f04d8ea9f734ff39b00eb530026247a6ad`, and the enabled-onward keyboard supplement remains pinned to `c4448d1e66e5923d599a2a28eeb0770e5db2f6cb`. The comparison baseline is exact `origin/main` commit `42e473b5b856100869538f4e41ef5a325b99c893`. The historical presentation reference `ea154020bef6a068c1a9f70f5b6ba93d65ccc4a0` remained read-only.
 
 The four target surfaces now share the approved Station hierarchy while retaining the current controllers, hooks, APIs, bridges, exact-quantity rules, permissions, lifecycles, dirty guards, operation status and navigation behavior. No database, migration, hosted data or production-cutover change exists.
 
@@ -83,18 +83,20 @@ The initial 390×844 production renders measured shared actions and controls at 
 
 All commands excluded `.worktrees/**`.
 
-| Command group                                                                 | Result                                                              |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Task 1 — context, viewport, system                                            | 3 files passed; 13 tests passed                                     |
-| Task 2 — Procurement workbench/detail/exit/controller                         | 4 files passed; 62 tests passed                                     |
-| Task 3 — Ingredient workbench/fixture/model/controller                        | 4 files passed; 56 tests passed                                     |
-| Task 4 — Planning workbench/isolation/Pantry/controller/exit                  | 5 files passed; 76 tests passed                                     |
-| Task 5 — Confirmed Need workbench/draft/controller/status/exit/exact quantity | 6 files passed; 109 tests passed                                    |
-| Focused Task 1–5 total                                                        | 22 files passed; 316 tests passed; zero failed                      |
-| `pnpm typecheck`                                                              | PASS; Chakra typegen and `tsc -b --pretty false` exited 0           |
-| `pnpm ui:vnext:check`                                                         | PASS; `Atlas vNext UI boundary passed.`                             |
-| Explicit Prettier check                                                       | PASS for all 34 supported changed files after this record was added |
-| `git diff --check` and exact baseline-to-HEAD diff check                      | PASS; zero whitespace errors                                        |
+The parent controller repeated the exact-HEAD focused validation at `2c7b4438c78ff479be10d26bdae98b417c718402` after the final independent review. The results below supersede the earlier 316-test pre-closeout run.
+
+| Command group                                                                 | Result                                                    |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Task 1 — context, viewport, system                                            | 3 files passed; 13 tests passed                           |
+| Task 2 — Procurement workbench/detail/exit/controller                         | 4 files passed; 67 tests passed                           |
+| Task 3 — Ingredient workbench/fixture/model/controller                        | 4 files passed; 58 tests passed                           |
+| Task 4 — Planning workbench/isolation/Pantry/controller/exit                  | 5 files passed; 80 tests passed                           |
+| Task 5 — Confirmed Need workbench/draft/controller/status/exit/exact quantity | 6 files passed; 117 tests passed                          |
+| Focused Task 1–5 total                                                        | 22 files passed; 335 tests passed; zero failed            |
+| `pnpm typecheck`                                                              | PASS; Chakra typegen and `tsc -b --pretty false` exited 0 |
+| `pnpm ui:vnext:check`                                                         | PASS; `Atlas vNext UI boundary passed.`                   |
+| Targeted Prettier check                                                       | PASS on the exact changed-file set                        |
+| Exact baseline diff and protected-boundary checks                             | PASS; zero whitespace errors and zero protected paths     |
 
 The full routine frontend install/format/test/build suite remains owned by `Frontend CI / Format, typecheck, test, build` on the pull request, as required by `AGENTS.md`.
 
@@ -219,4 +221,4 @@ Rollback is frontend/document-only. Revert the UI-09 commits through `bdc8235a77
 - Keyboard sampling does not exhaustively tab through every action in the 360-row Ingredient fixture.
 - The 200% result is device-metrics emulation, not an OS/browser UI zoom or assistive-technology session.
 - Real-device touch, screen-reader and browser-matrix validation remain unverified by the local headless harness.
-- GitHub `Frontend CI / Format, typecheck, test, build` and the independent finish review remain required before merge. No local BLOCK or MAJOR product finding remains.
+- Independent finish review is complete with final verdict **PASS** and every prior finding closed. GitHub `Frontend CI / Format, typecheck, test, build` remains pending until the pull request is opened and is still required before merge.
