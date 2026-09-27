@@ -169,6 +169,99 @@ describe("Planning sources Chakra workbench", () => {
     ).toHaveFocus();
   });
 
+  it("exits expanded review filters when Refresh is disabled at 390px and reverses to the trigger", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    await show();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Đồng bộ Google Sheet" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Xem thay đổi" }),
+    );
+    await screen.findByRole("complementary", { name: "Xem thay đổi" });
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    fireEvent.click(disclosure);
+    const filters = document.getElementById("planning-source-filters")!;
+    filters.querySelector<HTMLElement>("input, select, button")!.focus();
+    for (
+      let step = 0;
+      step < 20 && filters.contains(document.activeElement);
+      step += 1
+    )
+      await userEvent.tab();
+
+    expect(filters).not.toContainElement(document.activeElement as HTMLElement);
+    const onward = document.activeElement as HTMLElement;
+    expect(
+      disclosure.compareDocumentPosition(onward) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await userEvent.tab({ shift: true });
+    expect(disclosure).toHaveFocus();
+  });
+
+  it.each(["busy", "locked"] as const)(
+    "keeps the 390px onward path reversible when Planning is %s",
+    async (state) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: 390,
+      });
+      const fixture = createPlanningReviewFixture();
+      if (state === "busy")
+        fixture.api.saveCompletedMenu = async () =>
+          new Promise(() => undefined);
+      else fixture.api.saveCompletedMenu = async () => unknown;
+      render(
+        <AtlasVNextProvider>
+          <PlanningSourcesWorkbench
+            {...fixture}
+            authSubject="operator"
+            initialWeek={reviewWeek}
+          />
+        </AtlasVNextProvider>,
+      );
+      const sync = await screen.findByRole("button", {
+        name: "Đồng bộ Google Sheet",
+      });
+      fireEvent.click(sync);
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Xem thay đổi" }),
+      );
+      fireEvent.click(await screen.findByRole("button", { name: "Lưu" }));
+      if (state === "locked")
+        await screen.findByRole("button", { name: "Tải lại để xác nhận" });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+        ).toBeDisabled(),
+      );
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      fireEvent.click(disclosure);
+      const filters = document.getElementById("planning-source-filters")!;
+      filters.querySelector<HTMLElement>("input, select, button")!.focus();
+      for (
+        let step = 0;
+        step < 20 && filters.contains(document.activeElement);
+        step += 1
+      )
+        await userEvent.tab();
+      expect(filters).not.toContainElement(
+        document.activeElement as HTMLElement,
+      );
+      await userEvent.tab({ shift: true });
+      expect(disclosure).toHaveFocus();
+    },
+  );
+
   it("renders backend Pantry before/after pairs in the shared comparison table", async () => {
     const fixture = createPlanningStoryFixture("pantry_review");
     const before = fixture.pantry.batch!.active_lines[0];

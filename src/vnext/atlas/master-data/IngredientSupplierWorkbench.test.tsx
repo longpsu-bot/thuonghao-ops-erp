@@ -320,6 +320,37 @@ describe("IngredientSupplierWorkbench", () => {
     ).toHaveFocus();
   });
 
+  it("exits expanded filters when Refresh is unavailable at 390px and reverses to the trigger", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    renderWorkbench();
+    await ready();
+    fireEvent.click(screen.getByRole("button", { name: "Xem / sửa Bí mật" }));
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    fireEvent.click(disclosure);
+    const status = screen.getByRole("combobox", { name: "Trạng thái" });
+    status.focus();
+    await userEvent.tab();
+
+    expect(status).not.toHaveFocus();
+    expect(document.getElementById("ingredient-filters")).not.toContainElement(
+      document.activeElement as HTMLElement,
+    );
+    const onward = document.activeElement as HTMLElement;
+    expect(
+      disclosure.compareDocumentPosition(onward) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await userEvent.tab({ shift: true });
+    expect(disclosure).toHaveFocus();
+  });
+
   it("does not invent an Ingredient count when the authoritative read fails", async () => {
     renderWorkbench(createIngredientSupplierReviewFixture("READ_FAILURE"));
 

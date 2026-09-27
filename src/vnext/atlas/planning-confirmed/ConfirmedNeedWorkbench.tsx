@@ -244,7 +244,12 @@ export function ConfirmedNeedWorkbench(props: ConfirmedNeedWorkbenchProps) {
             onRecover={() => void c.recover()}
           />
           {c.busy && !c.workbench && c.operation.status !== "RUNNING" ? (
-            <Text p="md" role="status">
+            <Text
+              p="md"
+              role="status"
+              tabIndex={-1}
+              data-compact-filter-fallback
+            >
               Đang tải nhu cầu…
             </Text>
           ) : !c.workbench ? (

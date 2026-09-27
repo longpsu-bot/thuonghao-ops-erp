@@ -15,6 +15,27 @@ function focusableElements(root: HTMLElement | null) {
   return root.matches(focusableSelector) ? [root, ...elements] : elements;
 }
 
+function firstFocusableAfterOnward(
+  root: HTMLElement | null,
+  onward: HTMLElement | null,
+) {
+  const direct = focusableElements(onward)[0];
+  if (direct) return direct;
+  if (!root || !onward) return null;
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(
+      `${focusableSelector}, [data-compact-filter-fallback]`,
+    ),
+  ).find(
+    (candidate) =>
+      !root.contains(candidate) &&
+      Boolean(
+        onward.compareDocumentPosition(candidate) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+  );
+}
+
 export function focusFirstCompactFilter(root: HTMLElement | null) {
   focusableElements(root)[0]?.focus();
 }
@@ -32,7 +53,10 @@ export function preserveCompactFilterFocusOrder(
     event.preventDefault();
     trigger?.focus();
   } else if (!event.shiftKey && current === controls.at(-1)) {
-    event.preventDefault();
-    focusableElements(onward)[0]?.focus();
+    const target = firstFocusableAfterOnward(root, onward);
+    if (target) {
+      event.preventDefault();
+      target.focus();
+    }
   }
 }

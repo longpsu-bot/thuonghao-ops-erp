@@ -170,6 +170,93 @@ describe("Confirmed Need Chakra operator surface", () => {
     },
   );
 
+  it.each([
+    [390, "busy"],
+    [768, "busy"],
+    [390, "locked"],
+    [768, "locked"],
+  ] as const)(
+    "keeps the %ipx onward path reversible when Confirmed Need is %s",
+    async (width, state) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: width,
+      });
+      if (state === "busy") {
+        show("normal", {}, (fixture) => {
+          const initialRead = fixture.confirmedNeedApi.getReview;
+          let reads = 0;
+          fixture.confirmedNeedApi.getReview = (...args) => {
+            reads += 1;
+            return reads === 1
+              ? initialRead(...args)
+              : new Promise(() => undefined);
+          };
+        });
+        await quantity();
+        fireEvent.click(
+          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+        );
+      } else {
+        show("stale");
+        await editValid();
+        fireEvent.click(screen.getByRole("button", { name: "Lưu" }));
+        await screen.findByRole("button", {
+          name: "Tải lại dữ liệu hiện tại",
+        });
+      }
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+        ).toBeDisabled(),
+      );
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      fireEvent.click(disclosure);
+      const status = screen.getByRole("combobox", { name: "Tình trạng" });
+      status.focus();
+      await userEvent.tab();
+      expect(status).not.toHaveFocus();
+      expect(
+        document.getElementById("confirmed-need-filters"),
+      ).not.toContainElement(document.activeElement as HTMLElement);
+      await userEvent.tab({ shift: true });
+      expect(disclosure).toHaveFocus();
+    },
+  );
+
+  it.each([390, 768])(
+    "exits loading compact filters when Refresh is disabled at %ipx and reverses to the trigger",
+    async (width) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: width,
+      });
+      show("loading");
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      fireEvent.click(disclosure);
+      const status = screen.getByRole("combobox", { name: "Tình trạng" });
+      status.focus();
+      expect(
+        screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+      ).toBeDisabled();
+      await userEvent.tab();
+
+      expect(status).not.toHaveFocus();
+      expect(
+        document.getElementById("confirmed-need-filters"),
+      ).not.toContainElement(document.activeElement as HTMLElement);
+      const onward = document.activeElement as HTMLElement;
+      expect(
+        disclosure.compareDocumentPosition(onward) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      await userEvent.tab({ shift: true });
+      expect(disclosure).toHaveFocus();
+    },
+  );
+
   it("reports an unknown Station scope when the authoritative read fails", async () => {
     show("read_failure");
 

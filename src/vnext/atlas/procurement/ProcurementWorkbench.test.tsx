@@ -182,6 +182,110 @@ describe("Procurement vNext operator workbench", () => {
     ).toHaveFocus();
   });
 
+  it("exits expanded filters while Refresh is loading at 390px and reverses to the trigger", async () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 390,
+    });
+    const fixture = createProcurementReviewFixture("ready");
+    const initialRead = fixture.purchaseReviewApi.getConfirmedAllocations;
+    let reads = 0;
+    fixture.purchaseReviewApi.getConfirmedAllocations = (...args) => {
+      reads += 1;
+      return reads === 1 ? initialRead(...args) : new Promise(() => undefined);
+    };
+    render(
+      <AtlasVNextProvider>
+        <ProcurementWorkbench
+          {...fixture}
+          authSubject="operator"
+          initialServiceDate={reviewDate}
+          schools={reviewSchools}
+        />
+      </AtlasVNextProvider>,
+    );
+    await action();
+    fireEvent.click(screen.getByRole("button", { name: "Làm mới dữ liệu" }));
+    expect(
+      screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+    ).toBeDisabled();
+
+    const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+    fireEvent.click(disclosure);
+    const filters = document.getElementById("procurement-filters")!;
+    filters.querySelector<HTMLElement>("[tabindex='0']")!.focus();
+    for (
+      let step = 0;
+      step < 20 && filters.contains(document.activeElement);
+      step += 1
+    )
+      await userEvent.tab();
+
+    expect(filters).not.toContainElement(document.activeElement as HTMLElement);
+    const onward = document.activeElement as HTMLElement;
+    expect(
+      disclosure.compareDocumentPosition(onward) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await userEvent.tab({ shift: true });
+    expect(disclosure).toHaveFocus();
+  });
+
+  it.each(["busy", "locked", "selected"] as const)(
+    "keeps the 390px onward path reversible when Procurement is %s",
+    async (state) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: 390,
+      });
+      const fixture = createProcurementReviewFixture(
+        state === "selected"
+          ? "ready"
+          : state === "locked"
+            ? "unknown"
+            : "normal",
+      );
+      if (state === "busy")
+        fixture.purchaseReviewApi.saveConfirmedAllocation = async () =>
+          new Promise(() => undefined);
+      render(
+        <AtlasVNextProvider>
+          <ProcurementWorkbench
+            {...fixture}
+            authSubject="operator"
+            initialServiceDate={reviewDate}
+            schools={reviewSchools}
+          />
+        </AtlasVNextProvider>,
+      );
+      fireEvent.click(await action());
+      if (state !== "selected") {
+        fireEvent.click(screen.getByRole("button", { name: "Dùng đề xuất" }));
+        fireEvent.click(screen.getByRole("button", { name: "Lưu phân bổ" }));
+      }
+      if (state === "locked")
+        await screen.findByRole("button", { name: "Tải lại để xác nhận" });
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Làm mới dữ liệu" }),
+        ).toBeDisabled(),
+      );
+
+      const disclosure = screen.getByRole("button", { name: "Bộ lọc" });
+      fireEvent.click(disclosure);
+      disclosure.focus();
+      await userEvent.tab();
+      expect(disclosure).not.toHaveFocus();
+      const onward = document.activeElement as HTMLElement;
+      expect(
+        disclosure.compareDocumentPosition(onward) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      await userEvent.tab({ shift: true });
+      expect(disclosure).toHaveFocus();
+    },
+  );
+
   it("shows preparation blockers even when ready but not permitted", async () => {
     const fixture = createProcurementReviewFixture("ready");
     fixture.allocation.preparation!.allowed = false;
